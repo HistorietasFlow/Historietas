@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { obras as obrasCatalogo } from "../data/obras";
+import type { Obra as ObraCatalogo } from "../data/obras";
 import { supabase } from "../../lib/supabase/client";
 
 type CapituloLocal = {
@@ -133,6 +135,69 @@ function criarSlugBase(titulo: string) {
 
   return slug || "obra";
 }
+
+function obterImagemObraCatalogoBiblioteca(obra: ObraCatalogo) {
+  const obraComImagem = obra as ObraCatalogo & {
+    capa?: string;
+    capaUrl?: string;
+    cover?: string;
+    imagem?: string;
+  };
+
+  return (
+    [
+      obraComImagem.capa,
+      obraComImagem.capaUrl,
+      obraComImagem.cover,
+      obraComImagem.imagem,
+    ].find((imagem): imagem is string => {
+      return typeof imagem === "string" && Boolean(imagem.trim());
+    }) || ""
+  );
+}
+
+function criarObraCatalogoBiblioteca(
+  obra: ObraCatalogo,
+  index: number
+): ObraLocal {
+  const obraComCamposExtras = obra as ObraCatalogo & {
+    id?: string;
+    slug?: string;
+    link?: string;
+    formato?: string;
+  };
+  const titulo = obra.titulo.trim() || `Obra ${index + 1}`;
+  const slug = obraComCamposExtras.slug?.trim() || criarSlugBase(titulo);
+  const link =
+    obraComCamposExtras.link?.trim() ||
+    (obra.disponivel
+      ? `/obra/${slug}`
+      : `/em-breve?obra=${encodeURIComponent(titulo)}`);
+
+  return {
+    id: obraComCamposExtras.id?.trim() || slug,
+    titulo,
+    autor: obra.autor.trim() || "Autor não informado",
+    genero: obra.genero.trim() || "Não informado",
+    formato: obraComCamposExtras.formato?.trim() || "História",
+    classificacaoIndicativa:
+      obra.classificacaoIndicativa.trim() || "Não informada",
+    sinopse: obra.sinopse.trim() || "Nenhuma sinopse informada.",
+    tags: [obra.genero.trim() || "sem tags"],
+    capa: obterImagemObraCatalogoBiblioteca(obra),
+    capaNome: "",
+    arquivoObra: null,
+    publicado: Boolean(obra.disponivel),
+    capitulos: [],
+    criadaEm: "",
+    ultimoCapituloLidoId: "",
+    ultimaLeituraEm: "",
+    progressoLeitura: 0,
+    slug,
+    link,
+  };
+}
+
 
 function criarBookCoverStyle(capa: string, isDesktop = false): CSSProperties {
   const baseStyle = isDesktop ? desktopBookCoverStyle : bookCoverStyle;
@@ -1104,6 +1169,14 @@ export default function BibliotecaPage() {
       new Set([...obrasSeguidasNormalizadas, ...obrasSeguidasSupabase])
     );
 
+    const obrasCatalogoNormalizadas = obrasCatalogo.map(
+      criarObraCatalogoBiblioteca
+    );
+    const obrasParaExibir = mesclarObrasBiblioteca(
+      obrasCatalogoNormalizadas,
+      obrasNormalizadas
+    );
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
     localStorage.setItem(
       FOLLOW_STORAGE_KEY,
@@ -1118,7 +1191,7 @@ export default function BibliotecaPage() {
       JSON.stringify(obrasConcluidasNormalizadas)
     );
 
-    setObras(obrasNormalizadas);
+    setObras(obrasParaExibir);
     setObrasSeguidas(obrasSeguidasNormalizadas);
     setObrasFavoritas(obrasFavoritasNormalizadas);
     setObrasConcluidas(obrasConcluidasNormalizadas);
@@ -1198,11 +1271,11 @@ export default function BibliotecaPage() {
   }, [obrasLendoAgora]);
 
   const obrasFavoritasLista = useMemo(() => {
-    return obras.filter((obra) => obrasFavoritas.includes(obra.id));
+    return obras.filter((obra) => colecaoTemObra(obrasFavoritas, obra));
   }, [obras, obrasFavoritas]);
 
   const obrasConcluidasLista = useMemo(() => {
-    return obras.filter((obra) => obrasConcluidas.includes(obra.id));
+    return obras.filter((obra) => colecaoTemObra(obrasConcluidas, obra));
   }, [obras, obrasConcluidas]);
 
   const termoBusca = normalizarTexto(busca);
@@ -1340,13 +1413,13 @@ export default function BibliotecaPage() {
     setObrasSeguidas(novasObrasSeguidas);
   }
 
-  function alternarFavorito(obraId: string) {
-    const vaiFavoritar = !obrasFavoritas.includes(obraId);
+  function alternarFavorito(obra: ObraLocal) {
+    const vaiFavoritar = !colecaoTemObra(obrasFavoritas, obra);
     const novasObrasFavoritas = vaiFavoritar
-      ? [...obrasFavoritas, obraId]
-      : obrasFavoritas.filter((id) => id !== obraId);
+      ? [...removerObraDaColecao(obrasFavoritas, obra), obra.id]
+      : removerObraDaColecao(obrasFavoritas, obra);
 
-    void sincronizarColecaoObraSupabase("favoritos", obraId, vaiFavoritar);
+    void sincronizarColecaoObraSupabase("favoritos", obra.id, vaiFavoritar);
 
     localStorage.setItem(
       FAVORITES_STORAGE_KEY,
@@ -1356,13 +1429,13 @@ export default function BibliotecaPage() {
     setObrasFavoritas(novasObrasFavoritas);
   }
 
-  function alternarConcluido(obraId: string) {
-    const vaiConcluir = !obrasConcluidas.includes(obraId);
+  function alternarConcluido(obra: ObraLocal) {
+    const vaiConcluir = !colecaoTemObra(obrasConcluidas, obra);
     const novasObrasConcluidas = vaiConcluir
-      ? [...obrasConcluidas, obraId]
-      : obrasConcluidas.filter((id) => id !== obraId);
+      ? [...removerObraDaColecao(obrasConcluidas, obra), obra.id]
+      : removerObraDaColecao(obrasConcluidas, obra);
 
-    void sincronizarColecaoObraSupabase("concluidas", obraId, vaiConcluir);
+    void sincronizarColecaoObraSupabase("concluidas", obra.id, vaiConcluir);
 
     localStorage.setItem(
       COMPLETED_STORAGE_KEY,
@@ -1632,28 +1705,28 @@ export default function BibliotecaPage() {
                       <div style={isDesktop ? desktopSecondaryActionsRowStyle : secondaryActionsRowStyle}>
                         <button
                           type="button"
-                          onClick={() => alternarFavorito(item.obra.id)}
+                          onClick={() => alternarFavorito(item.obra)}
                           style={
-                            obrasFavoritas.includes(item.obra.id)
+                            colecaoTemObra(obrasFavoritas, item.obra)
                               ? favoriteActiveButtonStyle
                               : favoriteButtonStyle
                           }
                         >
-                          {obrasFavoritas.includes(item.obra.id)
+                          {colecaoTemObra(obrasFavoritas, item.obra)
                             ? "Favorita"
                             : "Favoritar"}
                         </button>
 
                         <button
                           type="button"
-                          onClick={() => alternarConcluido(item.obra.id)}
+                          onClick={() => alternarConcluido(item.obra)}
                           style={
-                            obrasConcluidas.includes(item.obra.id)
+                            colecaoTemObra(obrasConcluidas, item.obra)
                               ? completedActiveButtonStyle
                               : completedButtonStyle
                           }
                         >
-                          {obrasConcluidas.includes(item.obra.id)
+                          {colecaoTemObra(obrasConcluidas, item.obra)
                             ? "Concluída"
                             : "Concluir"}
                         </button>
@@ -1699,8 +1772,8 @@ export default function BibliotecaPage() {
                   const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
                     obra.autor
                   )}`;
-                  const obraFavorita = obrasFavoritas.includes(obra.id);
-                  const obraConcluida = obrasConcluidas.includes(obra.id);
+                  const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
+                  const obraConcluida = colecaoTemObra(obrasConcluidas, obra);
                   const capituloParaContinuar =
                     encontrarCapituloParaContinuar(obra);
                   const capituloInicial =
@@ -1796,7 +1869,7 @@ export default function BibliotecaPage() {
                       <div style={isDesktop ? desktopSecondaryActionsRowStyle : secondaryActionsRowStyle}>
                         <button
                           type="button"
-                          onClick={() => alternarFavorito(obra.id)}
+                          onClick={() => alternarFavorito(obra)}
                           style={
                             obraFavorita
                               ? favoriteActiveButtonStyle
@@ -1808,7 +1881,7 @@ export default function BibliotecaPage() {
 
                         <button
                           type="button"
-                          onClick={() => alternarConcluido(obra.id)}
+                          onClick={() => alternarConcluido(obra)}
                           style={
                             obraConcluida
                               ? completedActiveButtonStyle
@@ -1858,8 +1931,8 @@ export default function BibliotecaPage() {
                   const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
                     obra.autor
                   )}`;
-                  const obraFavorita = obrasFavoritas.includes(obra.id);
-                  const obraConcluida = obrasConcluidas.includes(obra.id);
+                  const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
+                  const obraConcluida = colecaoTemObra(obrasConcluidas, obra);
 
                   const capitulosAtivos = obra.capitulos.filter(
                     (capitulo) =>
@@ -1966,7 +2039,7 @@ export default function BibliotecaPage() {
                       <div style={isDesktop ? desktopSecondaryActionsRowStyle : secondaryActionsRowStyle}>
                         <button
                           type="button"
-                          onClick={() => alternarFavorito(obra.id)}
+                          onClick={() => alternarFavorito(obra)}
                           style={
                             obraFavorita
                               ? favoriteActiveButtonStyle
@@ -1978,7 +2051,7 @@ export default function BibliotecaPage() {
 
                         <button
                           type="button"
-                          onClick={() => alternarConcluido(obra.id)}
+                          onClick={() => alternarConcluido(obra)}
                           style={
                             obraConcluida
                               ? completedActiveButtonStyle
@@ -2019,7 +2092,7 @@ export default function BibliotecaPage() {
                   const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
                     obra.autor
                   )}`;
-                  const obraConcluida = obrasConcluidas.includes(obra.id);
+                  const obraConcluida = colecaoTemObra(obrasConcluidas, obra);
                   const capituloParaContinuar =
                     encontrarCapituloParaContinuar(obra);
                   const capituloInicial =
@@ -2114,7 +2187,7 @@ export default function BibliotecaPage() {
                       <div style={isDesktop ? desktopSecondaryActionsRowStyle : secondaryActionsRowStyle}>
                         <button
                           type="button"
-                          onClick={() => alternarFavorito(obra.id)}
+                          onClick={() => alternarFavorito(obra)}
                           style={favoriteActiveButtonStyle}
                         >
                           Remover favorito
@@ -2122,7 +2195,7 @@ export default function BibliotecaPage() {
 
                         <button
                           type="button"
-                          onClick={() => alternarConcluido(obra.id)}
+                          onClick={() => alternarConcluido(obra)}
                           style={
                             obraConcluida
                               ? completedActiveButtonStyle
@@ -2163,7 +2236,7 @@ export default function BibliotecaPage() {
                   const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
                     obra.autor
                   )}`;
-                  const obraFavorita = obrasFavoritas.includes(obra.id);
+                  const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
                   const capituloParaContinuar =
                     encontrarCapituloParaContinuar(obra);
                   const capituloInicial =
@@ -2256,7 +2329,7 @@ export default function BibliotecaPage() {
                       <div style={isDesktop ? desktopSecondaryActionsRowStyle : secondaryActionsRowStyle}>
                         <button
                           type="button"
-                          onClick={() => alternarFavorito(obra.id)}
+                          onClick={() => alternarFavorito(obra)}
                           style={
                             obraFavorita
                               ? favoriteActiveButtonStyle
@@ -2268,7 +2341,7 @@ export default function BibliotecaPage() {
 
                         <button
                           type="button"
-                          onClick={() => alternarConcluido(obra.id)}
+                          onClick={() => alternarConcluido(obra)}
                           style={completedActiveButtonStyle}
                         >
                           Remover concluída

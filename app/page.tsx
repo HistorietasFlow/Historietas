@@ -105,6 +105,36 @@ const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
 
+const OBRAS_HERO_COMPLEMENTARES = [
+  {
+    titulo: "Aurora de Cinzas",
+    autor: "Historietas Studio",
+    genero: "Fantasia",
+    classificacaoIndicativa: "14+",
+    sinopse:
+      "Depois da queda de uma antiga ordem mágica, uma jovem guardiã atravessa reinos em ruínas para impedir que uma chama proibida acorde outra guerra.",
+    status: "Em breve",
+    views: "4.8K",
+    likes: "920",
+    comentarios: "118",
+    disponivel: false,
+  },
+  {
+    titulo: "Marés do Abismo",
+    autor: "Historietas Studio",
+    genero: "Mistério",
+    classificacaoIndicativa: "16+",
+    sinopse:
+      "Em uma cidade costeira cercada por desaparecimentos, um investigador encontra mensagens vindas do fundo do mar e descobre uma verdade enterrada há décadas.",
+    status: "Em breve",
+    views: "3.6K",
+    likes: "740",
+    comentarios: "96",
+    disponivel: false,
+  },
+] as unknown as Obra[];
+
+
 function normalizarTexto(texto: string) {
   return texto
     .trim()
@@ -138,6 +168,42 @@ function criarHrefObraCatalogoHome(obra: Obra) {
   const slugObra = obraComLink.slug?.trim() || criarSlugBase(obra.titulo);
 
   return `/obra/${slugObra}`;
+}
+
+function criarObraHeroLocalHome(obra: ObraLocal): Obra {
+  const totalCurtidas = contarCurtidasObraLocal(obra);
+  const totalComentarios = contarComentariosObraLocal(obra);
+  const visualizacoesEstimadas = Math.max(
+    obra.capitulos.length * 120 + totalCurtidas * 18 + totalComentarios * 10,
+    120
+  );
+
+  return {
+    id: obra.id,
+    titulo: obra.titulo,
+    autor: obra.autor,
+    genero: obra.genero,
+    classificacaoIndicativa: obra.classificacaoIndicativa,
+    sinopse: obra.sinopse || "Nenhuma sinopse informada.",
+    status: obra.capitulos.length > 0 ? "Em andamento" : "Publicado",
+    views:
+      visualizacoesEstimadas >= 1000
+        ? `${(visualizacoesEstimadas / 1000).toFixed(1)}K`
+        : String(visualizacoesEstimadas),
+    likes: String(totalCurtidas),
+    comentarios: String(totalComentarios),
+    disponivel: true,
+    capa: obra.capa,
+    capaUrl: obra.capa,
+    slug: obra.slug,
+    link: obra.link,
+  } as Obra & {
+    id?: string;
+    capa?: string;
+    capaUrl?: string;
+    slug?: string;
+    link?: string;
+  };
 }
 
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
@@ -260,13 +326,100 @@ function obterImagemObraCatalogo(obra: Obra) {
   );
 }
 
+function formatarContadorHeroHome(valor: string | number | undefined) {
+  const textoOriginal = String(valor ?? "").trim();
+
+  if (!textoOriginal) {
+    return "0";
+  }
+
+  const textoNormalizado = textoOriginal.replace(",", ".").toUpperCase();
+  const contadorCompacto = textoNormalizado.match(/^(\d+(?:\.\d+)?)([KM])$/);
+
+  if (contadorCompacto) {
+    const numero = Number(contadorCompacto[1]);
+    const sufixo = contadorCompacto[2];
+
+    if (!Number.isFinite(numero)) {
+      return textoOriginal;
+    }
+
+    const numeroFormatado = Number.isInteger(numero)
+      ? String(numero)
+      : numero.toFixed(1).replace(/\.0$/, "");
+
+    return `${numeroFormatado}${sufixo}`;
+  }
+
+  const apenasNumero = Number(textoNormalizado.replace(/[^0-9.]/g, ""));
+
+  if (!Number.isFinite(apenasNumero)) {
+    return textoOriginal;
+  }
+
+  if (apenasNumero >= 1000000) {
+    return `${(apenasNumero / 1000000)
+      .toFixed(apenasNumero >= 10000000 ? 0 : 1)
+      .replace(/\.0$/, "")}M`;
+  }
+
+  if (apenasNumero >= 1000) {
+    return `${(apenasNumero / 1000)
+      .toFixed(apenasNumero >= 10000 ? 0 : 1)
+      .replace(/\.0$/, "")}K`;
+  }
+
+  return String(Math.round(apenasNumero));
+}
+
+
+function formatarSinopseHeroMobile(sinopse: string | undefined) {
+  const textoBase = String(sinopse || "Nenhuma sinopse informada.")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!textoBase) {
+    return "Nenhuma sinopse informada.";
+  }
+
+  const textoComPalavrasSeguras = textoBase
+    .split(" ")
+    .map((palavra) => {
+      if (palavra.length <= 18) {
+        return palavra;
+      }
+
+      return `${palavra.slice(0, 16)}…`;
+    })
+    .join(" ");
+
+  if (textoComPalavrasSeguras.length <= 132) {
+    return textoComPalavrasSeguras;
+  }
+
+  return `${textoComPalavrasSeguras.slice(0, 129).trim()}…`;
+}
+
+function obterIdentificadorFavoritoHome(obra: Obra) {
+  const obraComIdentificador = obra as Obra & {
+    id?: string;
+    slug?: string;
+  };
+
+  return (
+    obraComIdentificador.id?.trim() ||
+    obraComIdentificador.slug?.trim() ||
+    criarSlugBase(obra.titulo)
+  );
+}
+
 function criarHeroPosterStyle(obra: Obra): CSSProperties {
   const imagemObra = obterImagemObraCatalogo(obra);
 
   if (imagemObra) {
     return {
       ...desktopHeroPosterStyle,
-      backgroundImage: `linear-gradient(180deg, rgba(8, 5, 18, 0.10) 0%, rgba(8, 5, 18, 0.86) 100%), url(${imagemObra})`,
+      backgroundImage: `linear-gradient(180deg, rgba(8, 5, 18, 0.04) 0%, rgba(8, 5, 18, 0.58) 100%), url(${imagemObra})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
     };
@@ -279,7 +432,20 @@ function criarHeroPosterStyle(obra: Obra): CSSProperties {
   };
 }
 
-function criarHeroBackground(obra: Obra): CSSProperties {
+function criarHeroBackground(obra: Obra, usarImagemObra = false): CSSProperties {
+  if (usarImagemObra) {
+    const imagemObra = obterImagemObraCatalogo(obra);
+
+    if (imagemObra) {
+      return {
+        ...heroStyle,
+        backgroundImage: `url(${imagemObra})`,
+        backgroundSize: "cover",
+        backgroundPosition: obra.disponivel ? "center" : "center top",
+      };
+    }
+  }
+
   return {
     ...heroStyle,
     backgroundImage: `linear-gradient(90deg, rgba(8, 5, 18, 0.96) 0%, rgba(8, 5, 18, 0.82) 46%, rgba(8, 5, 18, 0.52) 100%), radial-gradient(circle at 82% 26%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 24%), radial-gradient(circle at 20% 20%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 48%, transparent)), transparent 34%), radial-gradient(circle at 64% 96%, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent), transparent 24%), linear-gradient(135deg, var(--historietas-bg-mid, #160A2A) 0%, #090711 58%, var(--historietas-bg-end, #17101B) 100%)`,
@@ -800,6 +966,7 @@ export default function Home() {
   const [perfisAutores, setPerfisAutores] = useState<PerfisAutoresSalvos>({});
   const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
@@ -917,26 +1084,75 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    if (obras.length <= 1) {
-      return;
-    }
-
-    const intervalo = window.setInterval(() => {
-      setHeroIndex((indexAtual) => (indexAtual + 1) % obras.length);
-    }, 9000);
-
-    return () => window.clearInterval(intervalo);
-  }, []);
-
   const termoBusca = normalizarTexto(busca);
-  const heroObra = obras[heroIndex] || obras[0];
-  const heroObraHref = heroObra ? criarHrefObraCatalogoHome(heroObra) : "/explorar";
-
 
   const obrasPublicadas = useMemo(() => {
     return obrasLocais.filter((obra) => obra.publicado);
   }, [obrasLocais]);
+
+  const obrasHero = useMemo(() => {
+    const obrasLocaisParaHero = obrasPublicadas
+      .filter((obra) => obraLocalCombinaBusca(obra, termoBusca))
+      .slice(0, Math.max(0, 6 - obras.length))
+      .map((obra) => criarObraHeroLocalHome(obra));
+    const titulosUsados = new Set(
+      [...obras, ...obrasLocaisParaHero].map((obra) => normalizarTexto(obra.titulo))
+    );
+    const obrasComplementares = OBRAS_HERO_COMPLEMENTARES.filter((obra) => {
+      return !titulosUsados.has(normalizarTexto(obra.titulo));
+    });
+
+    return [...obras, ...obrasLocaisParaHero, ...obrasComplementares].slice(0, 6);
+  }, [obrasPublicadas, termoBusca]);
+
+  useEffect(() => {
+    if (obrasHero.length === 0) {
+      return;
+    }
+
+    setHeroIndex((indexAtual) =>
+      indexAtual >= obrasHero.length ? 0 : indexAtual
+    );
+  }, [obrasHero.length]);
+
+  useEffect(() => {
+    if (obrasHero.length <= 1) {
+      return;
+    }
+
+    const intervalo = window.setInterval(() => {
+      setHeroIndex((indexAtual) => (indexAtual + 1) % obrasHero.length);
+    }, 9000);
+
+    return () => window.clearInterval(intervalo);
+  }, [obrasHero.length]);
+
+  const heroObra = obrasHero[heroIndex] || obrasHero[0] || obras[0];
+  const heroObraHref = heroObra ? criarHrefObraCatalogoHome(heroObra) : "/explorar";
+  const heroTemImagem = Boolean(heroObra && obterImagemObraCatalogo(heroObra));
+  const heroFavoritoId = heroObra ? obterIdentificadorFavoritoHome(heroObra) : "";
+  const heroEstaSalvo = Boolean(
+    heroFavoritoId && obrasFavoritas.includes(heroFavoritoId)
+  );
+
+  function alternarHeroFavorito() {
+    if (!heroFavoritoId) {
+      return;
+    }
+
+    setObrasFavoritas((favoritosAtuais) => {
+      const favoritosAtualizados = favoritosAtuais.includes(heroFavoritoId)
+        ? favoritosAtuais.filter((obraId) => obraId !== heroFavoritoId)
+        : [...favoritosAtuais, heroFavoritoId];
+
+      localStorage.setItem(
+        FAVORITES_STORAGE_KEY,
+        JSON.stringify(favoritosAtualizados)
+      );
+
+      return favoritosAtualizados;
+    });
+  }
 
   const obrasPublicadasFiltradas = useMemo(() => {
     return obrasPublicadas
@@ -1206,6 +1422,22 @@ export default function Home() {
               >
                 N
               </Link>
+
+              {!isDesktop && (
+                <button
+                  type="button"
+                  onClick={() => setBuscaMobileAberta((aberta) => !aberta)}
+                  aria-label={buscaMobileAberta ? "Fechar busca" : "Abrir busca"}
+                  aria-pressed={buscaMobileAberta}
+                  style={
+                    buscaMobileAberta
+                      ? mobileSearchToggleActiveStyle
+                      : mobileSearchToggleStyle
+                  }
+                >
+                  🔍
+                </button>
+              )}
             </div>
           </div>
 
@@ -1254,13 +1486,14 @@ export default function Home() {
             )}
           </nav>
 
-          {!isDesktop && (
+          {!isDesktop && buscaMobileAberta && (
             <div style={searchAreaStyle}>
               <input
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
                 placeholder="Buscar obras, autor, gênero..."
                 style={inputStyle}
+                autoFocus
               />
             </div>
           )}
@@ -1268,16 +1501,24 @@ export default function Home() {
       </header>
 
       <div style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <section style={isDesktop ? { ...criarHeroBackground(heroObra), ...desktopHeroStyle } : criarHeroBackground(heroObra)}>
-          <div style={heroGlowStyle} />
+        <section style={isDesktop ? { ...criarHeroBackground(heroObra), ...desktopHeroStyle } : criarHeroBackground(heroObra, true)}>
+          <div
+            style={
+              !isDesktop && heroTemImagem
+                ? mobileHeroImageGlowStyle
+                : heroGlowStyle
+            }
+          />
 
-          <div style={heroDecorationLayerStyle} aria-hidden="true">
-            {["✦", "◌", "✧", "◇"].map((decoracao, index) => (
-              <span key={`hero-${decoracao}-${index}`} style={criarDecoracaoHomeStyle(index)}>
-                {decoracao}
-              </span>
-            ))}
-          </div>
+          {(isDesktop || !heroTemImagem) && (
+            <div style={heroDecorationLayerStyle} aria-hidden="true">
+              {["✦", "◌", "✧", "◇"].map((decoracao, index) => (
+                <span key={`hero-${decoracao}-${index}`} style={criarDecoracaoHomeStyle(index)}>
+                  {decoracao}
+                </span>
+              ))}
+            </div>
+          )}
 
           {isDesktop ? (
             <div style={desktopHeroShellStyle}>
@@ -1287,95 +1528,128 @@ export default function Home() {
                 aria-label={`Abrir destaque ${heroObra.titulo}`}
               >
                 <span style={desktopHeroPosterGlowStyle} aria-hidden="true" />
-                <span style={desktopHeroPosterBadgeStyle}>{heroObra.genero}</span>
-                <strong style={desktopHeroPosterTitleStyle}>{heroObra.titulo}</strong>
-                <span style={desktopHeroPosterStatusStyle}>{heroObra.status}</span>
               </Link>
 
               <div style={desktopHeroContentStyle}>
-                <div style={heroMetaStyle}>
-                  <span style={heroKickerStyle}>Destaque da Historietas</span>
-                  <span style={heroPillStyle}>{heroObra.genero}</span>
-                  <span style={heroPillStyle}>{heroObra.classificacaoIndicativa}</span>
+                <div style={desktopHeroMetaStyle}>
+                  <span style={heroPillStyle}>✦ {heroObra.genero}</span>
+                  <span style={heroPillStyle}>◆ {heroObra.classificacaoIndicativa}</span>
                 </div>
 
                 <h1 style={desktopHeroTitleStyle}>{heroObra.titulo}</h1>
 
-                <p style={desktopHeroDescriptionStyle}>{heroObra.sinopse}</p>
-
-                <div style={heroStatsStyle}>
-                  <span style={safeTextStyle}>👁 {heroObra.views}</span>
-                  <span style={safeTextStyle}>♥ {heroObra.likes}</span>
-                  <span style={safeTextStyle}>💬 {heroObra.comentarios}</span>
-                  <span style={safeTextStyle}>{heroObra.status}</span>
-                </div>
+                <p style={desktopHeroDescriptionStyle}>{heroObra.sinopse || "Nenhuma sinopse informada."}</p>
 
                 <div style={desktopHeroButtonsStyle}>
                   <Link href={heroObraHref} style={primaryButtonStyle}>
                     {heroObra.disponivel ? "Ver obra" : "Ver detalhes"}
                   </Link>
 
-                  <Link href="/explorar" style={secondaryButtonStyle}>
-                    Explorar catálogo
-                  </Link>
+                  <button
+                    type="button"
+                    onClick={alternarHeroFavorito}
+                    aria-pressed={heroEstaSalvo}
+                    style={heroEstaSalvo ? savedHeroButtonStyle : secondaryButtonStyle}
+                  >
+                    {heroEstaSalvo ? "Salvo" : "Salvar"}
+                  </button>
                 </div>
 
-                <div style={heroDotsStyle} aria-label="Obras em destaque">
-                  {obras.map((obra, index) => (
+                <div style={desktopHeroFooterStyle}>
+                  <div style={desktopHeroStatsStyle}>
+                    <span style={desktopHeroStatItemStyle}>
+                      <span style={desktopHeroStatIconStyle}>👁</span>
+                      <span style={desktopHeroStatValueStyle}>{formatarContadorHeroHome(heroObra.views)}</span>
+                    </span>
+
+                    <span style={desktopHeroStatItemStyle}>
+                      <span style={desktopHeroStatHeartIconStyle}>♥</span>
+                      <span style={desktopHeroStatValueStyle}>{formatarContadorHeroHome(heroObra.likes)}</span>
+                    </span>
+
+                    <span style={desktopHeroStatItemStyle}>
+                      <span style={desktopHeroStatIconStyle}>💬</span>
+                      <span style={desktopHeroStatValueStyle}>{formatarContadorHeroHome(heroObra.comentarios)}</span>
+                    </span>
+                  </div>
+
+                  <div style={desktopHeroDotsStyle} aria-label="Obras em destaque">
+                    {obrasHero.map((obra, index) => (
+                      <button
+                        key={`${obra.titulo}-${index}`}
+                        type="button"
+                        onClick={() => setHeroIndex(index)}
+                        aria-label={`Mostrar ${obra.titulo}`}
+                        style={
+                          index === heroIndex ? heroDotActiveStyle : heroDotStyle
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={mobileHeroContentStyle}>
+              <div style={mobileHeroMetaStyle}>
+                <span style={mobileHeroPillStyle}>✦ {heroObra.genero}</span>
+                <span style={mobileHeroPillStyle}>◆ {heroObra.classificacaoIndicativa}</span>
+              </div>
+
+              <div style={mobileHeroTextBlockStyle}>
+                <h1 style={mobileHeroTitleStyle}>{heroObra.titulo}</h1>
+
+                <p style={mobileHeroDescriptionStyle}>{formatarSinopseHeroMobile(heroObra.sinopse)}</p>
+              </div>
+
+              <div style={mobileHeroButtonsStyle}>
+                <Link href={heroObraHref} style={primaryButtonStyle}>
+                  {heroObra.disponivel ? "Ver obra" : "Ver detalhes"}
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={alternarHeroFavorito}
+                  aria-pressed={heroEstaSalvo}
+                  style={heroEstaSalvo ? savedHeroButtonStyle : secondaryButtonStyle}
+                >
+                  {heroEstaSalvo ? "Salvo" : "Salvar"}
+                </button>
+              </div>
+
+              <div style={mobileHeroFooterStyle}>
+                <div style={mobileHeroStatsStyle}>
+                  <span style={mobileHeroStatItemStyle}>
+                    <span style={mobileHeroStatIconStyle}>👁</span>
+                    <span style={mobileHeroStatValueStyle}>{formatarContadorHeroHome(heroObra.views)}</span>
+                  </span>
+
+                  <span style={mobileHeroStatItemStyle}>
+                    <span style={mobileHeroStatHeartIconStyle}>♥</span>
+                    <span style={mobileHeroStatValueStyle}>{formatarContadorHeroHome(heroObra.likes)}</span>
+                  </span>
+
+                  <span style={mobileHeroStatItemStyle}>
+                    <span style={mobileHeroStatIconStyle}>💬</span>
+                    <span style={mobileHeroStatValueStyle}>{formatarContadorHeroHome(heroObra.comentarios)}</span>
+                  </span>
+                </div>
+
+                <div style={mobileHeroDotsStyle} aria-label="Obras em destaque">
+                  {obrasHero.map((obra, index) => (
                     <button
                       key={`${obra.titulo}-${index}`}
                       type="button"
                       onClick={() => setHeroIndex(index)}
                       aria-label={`Mostrar ${obra.titulo}`}
                       style={
-                        index === heroIndex ? heroDotActiveStyle : heroDotStyle
+                        index === heroIndex
+                          ? mobileHeroDotActiveStyle
+                          : mobileHeroDotStyle
                       }
                     />
                   ))}
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div style={heroContentStyle}>
-              <div style={heroMetaStyle}>
-                <span style={heroKickerStyle}>Destaque da Historietas</span>
-                <span style={heroPillStyle}>{heroObra.genero}</span>
-                <span style={heroPillStyle}>{heroObra.classificacaoIndicativa}</span>
-              </div>
-
-              <h1 style={heroTitleStyle}>{heroObra.titulo}</h1>
-
-              <p style={heroDescriptionStyle}>{heroObra.sinopse}</p>
-
-              <div style={heroStatsStyle}>
-                <span style={safeTextStyle}>👁 {heroObra.views}</span>
-                <span style={safeTextStyle}>♥ {heroObra.likes}</span>
-                <span style={safeTextStyle}>💬 {heroObra.comentarios}</span>
-                <span style={safeTextStyle}>{heroObra.status}</span>
-              </div>
-
-              <div style={heroButtonsStyle}>
-                <Link href={heroObraHref} style={primaryButtonStyle}>
-                  {heroObra.disponivel ? "Ver obra" : "Ver detalhes"}
-                </Link>
-
-                <Link href="/explorar" style={secondaryButtonStyle}>
-                  Explorar catálogo
-                </Link>
-              </div>
-
-              <div style={heroDotsStyle} aria-label="Obras em destaque">
-                {obras.map((obra, index) => (
-                  <button
-                    key={`${obra.titulo}-${index}`}
-                    type="button"
-                    onClick={() => setHeroIndex(index)}
-                    aria-label={`Mostrar ${obra.titulo}`}
-                    style={
-                      index === heroIndex ? heroDotActiveStyle : heroDotStyle
-                    }
-                  />
-                ))}
               </div>
             </div>
           )}
@@ -1952,7 +2226,7 @@ function CarouselRow({
 
   function rolarCarrossel(direcao: -1 | 1) {
     rowRef.current?.scrollBy({
-      left: direcao * 430,
+      left: direcao * 450,
       behavior: "smooth",
     });
   }
@@ -2045,11 +2319,10 @@ const navStyle: CSSProperties = {
   position: "sticky",
   top: 0,
   zIndex: 30,
-  backdropFilter: "blur(18px)",
   background:
-    "linear-gradient(180deg, rgba(10, 6, 18, 0.98) 0%, rgba(18, 8, 31, 0.92) 62%, rgba(18, 8, 31, 0.78) 100%)",
+    "linear-gradient(180deg, rgba(10, 6, 18, 0.98) 0%, rgba(18, 8, 31, 0.94) 70%, rgba(18, 8, 31, 0.88) 100%)",
   borderBottom: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 18px 44px rgba(0,0,0,0.24)",
+  boxShadow: "0 10px 24px rgba(0,0,0,0.20)",
   maxWidth: "100vw",
   overflowX: "hidden",
 };
@@ -2088,8 +2361,8 @@ const desktopNavInnerStyle: CSSProperties = {
   gridTemplateColumns: "1fr",
   gridTemplateAreas: '"top" "menu"',
   alignItems: "center",
-  gap: "12px",
-  padding: "14px 0 12px",
+  gap: "10px",
+  padding: "12px 0 10px",
 };
 
 const desktopNavTopRowStyle: CSSProperties = {
@@ -2161,7 +2434,7 @@ const publishSmallButtonStyle: CSSProperties = {
   boxSizing: "border-box",
   textAlign: "center",
   whiteSpace: "normal",
-  boxShadow: "0 10px 28px color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, rgba(255,255,255,0.16))",
   ...safeTextStyle,
 };
 
@@ -2169,7 +2442,7 @@ const notificationDotStyle: CSSProperties = {
   width: "34px",
   height: "34px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, transparent)",
   color: "#F5F3FF",
   textDecoration: "none",
@@ -2178,8 +2451,28 @@ const notificationDotStyle: CSSProperties = {
   justifyContent: "center",
   fontSize: "14px",
   fontWeight: 950,
-  boxShadow: "0 10px 28px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
   flex: "0 0 auto",
+};
+
+const mobileSearchToggleStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(255,255,255,0.07)",
+  color: "#FFFFFF",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "15px",
+  cursor: "pointer",
+  flex: "0 0 auto",
+};
+
+const mobileSearchToggleActiveStyle: CSSProperties = {
+  ...mobileSearchToggleStyle,
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 42%, rgba(255,255,255,0.12))",
+  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 20%, rgba(255,255,255,0.07))",
 };
 
 const menuStyle: CSSProperties = {
@@ -2256,11 +2549,11 @@ const inputStyle: CSSProperties = {
 };
 
 const heroStyle: CSSProperties = {
-  marginTop: "22px",
-  borderRadius: "30px",
+  marginTop: "20px",
+  borderRadius: "28px",
   overflow: "hidden",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  boxShadow: "0 34px 95px rgba(0,0,0,0.48), 0 0 46px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
+  boxShadow: "0 22px 54px rgba(0,0,0,0.36)",
   position: "relative",
   minWidth: 0,
   maxWidth: "100%",
@@ -2268,8 +2561,8 @@ const heroStyle: CSSProperties = {
 };
 
 const desktopHeroStyle: CSSProperties = {
-  marginTop: "20px",
-  borderRadius: "32px",
+  marginTop: "18px",
+  borderRadius: "30px",
   backgroundPosition: "center",
 };
 
@@ -2277,29 +2570,28 @@ const desktopHeroShellStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   display: "grid",
-  gridTemplateColumns: "minmax(260px, 360px) minmax(0, 1fr)",
+  gridTemplateColumns: "minmax(248px, 332px) minmax(0, 1fr)",
   alignItems: "stretch",
-  gap: "30px",
-  minHeight: "350px",
-  padding: "28px 34px",
+  gap: "28px",
+  minHeight: "330px",
+  padding: "26px 32px",
   boxSizing: "border-box",
 };
 
 const desktopHeroPosterStyle: CSSProperties = {
   position: "relative",
-  minHeight: "294px",
-  borderRadius: "28px",
+  minHeight: "276px",
+  borderRadius: "24px",
   overflow: "hidden",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  boxShadow:
-    "0 24px 58px rgba(0,0,0,0.42), 0 0 42px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
+  boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
   textDecoration: "none",
   color: "#FFFFFF",
   display: "flex",
   flexDirection: "column",
   justifyContent: "flex-end",
   gap: "10px",
-  padding: "22px",
+  padding: "20px",
   boxSizing: "border-box",
   backgroundSize: "cover",
   backgroundPosition: "center",
@@ -2309,8 +2601,22 @@ const desktopHeroPosterGlowStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
   background:
-    "linear-gradient(180deg, rgba(8, 5, 18, 0.10) 0%, rgba(8, 5, 18, 0.90) 100%)",
+    "linear-gradient(180deg, rgba(8, 5, 18, 0.02) 0%, rgba(8, 5, 18, 0.48) 100%)",
   pointerEvents: "none",
+};
+
+const desktopHeroPosterBadgesStyle: CSSProperties = {
+  position: "absolute",
+  zIndex: 1,
+  top: "18px",
+  left: "18px",
+  right: "18px",
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flexWrap: "wrap",
+  maxWidth: "calc(100% - 36px)",
+  minWidth: 0,
 };
 
 const desktopHeroPosterBadgeStyle: CSSProperties = {
@@ -2320,20 +2626,26 @@ const desktopHeroPosterBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "8px 12px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
+  background: "rgba(20, 11, 38, 0.64)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
+  textShadow: "0 1px 8px rgba(0,0,0,0.42)",
   ...safeTextStyle,
+};
+
+const desktopHeroPosterClassificationBadgeStyle: CSSProperties = {
+  ...desktopHeroPosterBadgeStyle,
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, transparent)",
 };
 
 const desktopHeroPosterTitleStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   color: "#FFFFFF",
-  fontSize: "32px",
-  lineHeight: 1,
+  fontSize: "28px",
+  lineHeight: 1.06,
   fontWeight: 950,
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -2360,14 +2672,20 @@ const heroGlowStyle: CSSProperties = {
     "linear-gradient(180deg, rgba(8, 5, 18, 0.24) 0%, rgba(8, 5, 18, 0.90) 100%)",
 };
 
+const mobileHeroImageGlowStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  background: "transparent",
+};
+
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  minHeight: "min(500px, 72vh)",
+  minHeight: "min(460px, 68vh)",
   display: "flex",
   flexDirection: "column",
   justifyContent: "flex-end",
-  gap: "16px",
+  gap: "15px",
   padding: "24px 16px 22px",
   boxSizing: "border-box",
   maxWidth: "100%",
@@ -2377,11 +2695,12 @@ const heroContentStyle: CSSProperties = {
 const desktopHeroContentStyle: CSSProperties = {
   ...heroContentStyle,
   minHeight: "auto",
-  justifyContent: "center",
+  justifyContent: "flex-start",
   alignSelf: "stretch",
-  padding: "10px 6px 10px 0",
+  padding: "48px 4px 8px 0",
   maxWidth: "100%",
-  gap: "14px",
+  gap: "12px",
+  position: "relative",
 };
 
 const heroMetaStyle: CSSProperties = {
@@ -2390,6 +2709,18 @@ const heroMetaStyle: CSSProperties = {
   flexWrap: "wrap",
   maxWidth: "100%",
   minWidth: 0,
+};
+
+const desktopHeroMetaStyle: CSSProperties = {
+  ...heroMetaStyle,
+  position: "absolute",
+  top: "4px",
+  right: "4px",
+  zIndex: 3,
+  alignItems: "center",
+  justifyContent: "flex-end",
+  marginBottom: 0,
+  maxWidth: "42%",
 };
 
 const heroKickerStyle: CSSProperties = {
@@ -2430,9 +2761,10 @@ const heroTitleStyle: CSSProperties = {
 
 const desktopHeroTitleStyle: CSSProperties = {
   ...heroTitleStyle,
-  fontSize: "clamp(38px, 4.4vw, 58px)",
-  lineHeight: 0.98,
+  fontSize: "clamp(34px, 4vw, 52px)",
+  lineHeight: 1.04,
   maxWidth: "640px",
+  marginTop: "-10px",
 };
 
 const heroDescriptionStyle: CSSProperties = {
@@ -2449,7 +2781,14 @@ const desktopHeroDescriptionStyle: CSSProperties = {
   ...heroDescriptionStyle,
   fontSize: "15px",
   lineHeight: 1.55,
-  maxWidth: "600px",
+  maxWidth: "680px",
+  minHeight: "93px",
+  display: "-webkit-box",
+  WebkitLineClamp: 5,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
 };
 
 const heroStatsStyle: CSSProperties = {
@@ -2472,17 +2811,29 @@ const heroButtonsStyle: CSSProperties = {
   minWidth: 0,
 };
 
+const mobileHeroButtonsStyle: CSSProperties = {
+  ...heroButtonsStyle,
+  position: "absolute",
+  left: "16px",
+  right: "16px",
+  bottom: "58px",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  alignSelf: "auto",
+  width: "auto",
+};
+
 const desktopHeroButtonsStyle: CSSProperties = {
   ...heroButtonsStyle,
   gridTemplateColumns: "repeat(2, minmax(164px, 198px))",
   justifyContent: "flex-start",
+  marginTop: "10px",
 };
 
 const primaryButtonStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  minHeight: "52px",
+  minHeight: "50px",
   padding: "0 22px",
   borderRadius: "999px",
   background: "var(--historietas-accent, #F97316)",
@@ -2490,7 +2841,7 @@ const primaryButtonStyle: CSSProperties = {
   textDecoration: "none",
   fontSize: "15px",
   fontWeight: 950,
-  boxShadow: "0 14px 40px color-mix(in srgb, var(--historietas-accent, #F97316) 36%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.16))",
   textAlign: "center",
   lineHeight: 1.15,
   minWidth: 0,
@@ -2504,15 +2855,18 @@ const secondaryButtonStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  minHeight: "52px",
+  minHeight: "50px",
   padding: "0 22px",
   borderRadius: "999px",
   background: "rgba(255,255,255,0.09)",
   color: "#FFFFFF",
   textDecoration: "none",
+  fontFamily: "inherit",
   fontSize: "15px",
   fontWeight: 900,
   border: "1px solid rgba(255,255,255,0.12)",
+  appearance: "none",
+  cursor: "pointer",
   textAlign: "center",
   lineHeight: 1.15,
   minWidth: 0,
@@ -2520,6 +2874,13 @@ const secondaryButtonStyle: CSSProperties = {
   boxSizing: "border-box",
   whiteSpace: "normal",
   ...safeTextStyle,
+};
+
+const savedHeroButtonStyle: CSSProperties = {
+  ...secondaryButtonStyle,
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, rgba(255,255,255,0.08))",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, rgba(255,255,255,0.12))",
+  color: "#FDBA74",
 };
 
 const heroDotsStyle: CSSProperties = {
@@ -2546,17 +2907,236 @@ const heroDotActiveStyle: CSSProperties = {
   background: "var(--historietas-accent, #F97316)",
 };
 
+const desktopHeroFooterStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(280px, 360px) minmax(0, 1fr)",
+  alignItems: "center",
+  gap: "18px",
+  maxWidth: "760px",
+  minWidth: 0,
+};
+
+const desktopHeroStatsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(76px, 1fr))",
+  alignItems: "center",
+  gap: "10px",
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 900,
+  width: "100%",
+  minWidth: 0,
+};
+
+const desktopHeroStatItemStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "6px",
+  minWidth: 0,
+  width: "100%",
+  padding: "9px 10px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.075)",
+  border: "1px solid rgba(255,255,255,0.11)",
+  boxSizing: "border-box",
+  whiteSpace: "nowrap",
+  ...safeTextStyle,
+};
+
+const desktopHeroStatIconStyle: CSSProperties = {
+  lineHeight: 1,
+  flexShrink: 0,
+};
+
+const desktopHeroStatHeartIconStyle: CSSProperties = {
+  ...desktopHeroStatIconStyle,
+  color: "#E11D48",
+};
+
+const desktopHeroStatValueStyle: CSSProperties = {
+  display: "inline-block",
+  minWidth: 0,
+  overflow: "visible",
+  textOverflow: "clip",
+  whiteSpace: "nowrap",
+};
+
+const desktopHeroDotsStyle: CSSProperties = {
+  ...heroDotsStyle,
+  justifyContent: "flex-end",
+  marginTop: 0,
+  flexWrap: "nowrap",
+  minWidth: "180px",
+};
+
+const mobileHeroContentStyle: CSSProperties = {
+  ...heroContentStyle,
+  display: "block",
+  minHeight: "min(460px, 68vh)",
+  padding: "22px 16px 18px",
+  position: "relative",
+};
+
+const mobileHeroMetaStyle: CSSProperties = {
+  position: "absolute",
+  top: "22px",
+  left: "16px",
+  right: "16px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "8px",
+  flexWrap: "wrap",
+  maxWidth: "calc(100% - 32px)",
+  minWidth: 0,
+};
+
+const mobileHeroPillStyle: CSSProperties = {
+  ...heroPillStyle,
+  padding: "8px 13px",
+  background: "rgba(20, 11, 38, 0.58)",
+  border: "1px solid rgba(255,255,255,0.18)",
+  color: "#FFFFFF",
+  boxShadow: "none",
+  textShadow: "0 1px 8px rgba(0,0,0,0.42)",
+};
+
+const mobileHeroTextBlockStyle: CSSProperties = {
+  position: "absolute",
+  left: "16px",
+  right: "16px",
+  bottom: "120px",
+  display: "grid",
+  justifyItems: "center",
+  gap: "10px",
+  textAlign: "center",
+  width: "auto",
+  maxWidth: "none",
+  minWidth: 0,
+};
+
+const mobileHeroTitleStyle: CSSProperties = {
+  ...heroTitleStyle,
+  width: "100%",
+  textAlign: "center",
+  fontSize: "clamp(34px, 10.2vw, 60px)",
+  lineHeight: 0.96,
+  textShadow: "0 2px 16px rgba(0,0,0,0.72)",
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
+};
+
+const mobileHeroDescriptionStyle: CSSProperties = {
+  ...heroDescriptionStyle,
+  justifySelf: "center",
+  textAlign: "center",
+  color: "#FFFFFF",
+  fontSize: "14px",
+  lineHeight: 1.5,
+  textShadow: "0 2px 14px rgba(0,0,0,0.78)",
+  display: "-webkit-box",
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: "vertical",
+  width: "100%",
+  maxWidth: "560px",
+  minHeight: "63px",
+  overflow: "hidden",
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
+  hyphens: "auto",
+};
+
+const mobileHeroFooterStyle: CSSProperties = {
+  position: "absolute",
+  left: "16px",
+  right: "16px",
+  bottom: "18px",
+  display: "grid",
+  gridTemplateColumns: "156px minmax(0, 1fr)",
+  alignSelf: "auto",
+  alignItems: "center",
+  gap: "8px",
+  width: "auto",
+  maxWidth: "none",
+  minWidth: 0,
+};
+
+const mobileHeroStatsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  alignItems: "center",
+  justifyContent: "stretch",
+  columnGap: "5px",
+  color: "#FFFFFF",
+  fontSize: "11.5px",
+  fontWeight: 900,
+  textShadow: "0 2px 12px rgba(0,0,0,0.78)",
+  width: "156px",
+  maxWidth: "100%",
+  minWidth: "156px",
+  whiteSpace: "nowrap",
+};
+
+const mobileHeroStatItemStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "3px",
+  minWidth: 0,
+  width: "100%",
+  whiteSpace: "nowrap",
+};
+
+const mobileHeroStatIconStyle: CSSProperties = {
+  lineHeight: 1,
+  flexShrink: 0,
+};
+
+const mobileHeroStatHeartIconStyle: CSSProperties = {
+  ...mobileHeroStatIconStyle,
+  color: "#E11D48",
+};
+
+const mobileHeroStatValueStyle: CSSProperties = {
+  display: "inline-block",
+  minWidth: 0,
+  overflow: "visible",
+  textOverflow: "clip",
+  whiteSpace: "nowrap",
+};
+
+const mobileHeroDotsStyle: CSSProperties = {
+  ...heroDotsStyle,
+  justifyContent: "flex-end",
+  marginTop: 0,
+  marginLeft: 0,
+  gap: "6px",
+};
+
+const mobileHeroDotStyle: CSSProperties = {
+  ...heroDotStyle,
+  width: "16px",
+};
+
+const mobileHeroDotActiveStyle: CSSProperties = {
+  ...mobileHeroDotStyle,
+  width: "34px",
+  background: "var(--historietas-accent, #F97316)",
+};
+
 const summaryStripStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(92px, 1fr))",
-  gap: "8px",
-  marginTop: "16px",
-  padding: "10px",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  alignItems: "center",
+  gap: "6px",
+  marginTop: "14px",
+  padding: "12px 8px",
   borderRadius: "22px",
   background:
-    "linear-gradient(135deg, rgba(255,255,255,0.065) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, transparent) 100%)",
+    "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 7%, transparent) 100%)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  boxShadow: "0 18px 46px rgba(0,0,0,0.22)",
+  boxShadow: "0 12px 28px rgba(0,0,0,0.18)",
   maxWidth: "100%",
   boxSizing: "border-box",
   minWidth: 0,
@@ -2573,6 +3153,8 @@ const desktopSummaryStripStyle: CSSProperties = {
 
 const summaryItemStyle: CSSProperties = {
   display: "grid",
+  justifyItems: "center",
+  alignContent: "center",
   gap: "4px",
   maxWidth: "100%",
   minWidth: 0,
@@ -2597,15 +3179,15 @@ const summaryLabelStyle: CSSProperties = {
 };
 
 const sectionStyle: CSSProperties = {
-  marginTop: "28px",
+  marginTop: "24px",
   maxWidth: "100%",
   boxSizing: "border-box",
   minWidth: 0,
 };
 
 const lastSectionStyle: CSSProperties = {
-  marginTop: "28px",
-  paddingBottom: "64px",
+  marginTop: "24px",
+  paddingBottom: "96px",
   maxWidth: "100%",
   boxSizing: "border-box",
   minWidth: 0,
@@ -2653,13 +3235,13 @@ const orangeTextStyle: CSSProperties = {
 
 const storyListStyle: CSSProperties = {
   display: "flex",
-  gap: "13px",
+  gap: "14px",
   maxWidth: "100%",
   minWidth: 0,
   boxSizing: "border-box",
   overflowX: "auto",
   overflowY: "hidden",
-  padding: "2px 2px 14px",
+  padding: "2px 2px 18px",
   margin: "0 -2px",
   scrollSnapType: "x mandatory",
   scrollPaddingLeft: "2px",
@@ -2677,9 +3259,9 @@ const desktopCarouselShellStyle: CSSProperties = {
 
 const desktopStoryListStyle: CSSProperties = {
   ...storyListStyle,
-  gap: "16px",
+  gap: "18px",
   width: "100%",
-  padding: "6px 0 18px",
+  padding: "6px 0 20px",
   margin: 0,
   scrollPaddingLeft: "0px",
   scrollPaddingRight: "0px",
@@ -2687,11 +3269,11 @@ const desktopStoryListStyle: CSSProperties = {
 
 const desktopStaticStoryListStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-  gap: "16px",
+  gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+  gap: "18px",
   width: "100%",
   maxWidth: "100%",
-  padding: "6px 0 8px",
+  padding: "6px 0 10px",
   margin: 0,
   boxSizing: "border-box",
   overflow: "visible",
@@ -2708,7 +3290,7 @@ const desktopCarouselArrowBaseStyle: CSSProperties = {
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.16)",
   background:
-    "linear-gradient(135deg, rgba(18,8,31,0.90) 0%, rgba(38,20,62,0.92) 100%)",
+    "linear-gradient(135deg, rgba(18,8,31,0.92) 0%, rgba(38,20,62,0.94) 100%)",
   color: "#FFFFFF",
   fontSize: 0,
   lineHeight: 1,
@@ -2717,8 +3299,6 @@ const desktopCarouselArrowBaseStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
-  boxShadow:
-    "0 8px 18px rgba(0,0,0,0.30), 0 0 16px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
 };
 
 const desktopCarouselArrowLeftStyle: CSSProperties = {
@@ -2994,20 +3574,18 @@ const authorProfileButtonStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   whiteSpace: "nowrap",
-  boxShadow:
-    "0 12px 26px color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
   ...safeTextStyle,
 };
 
 const publishedCardStyle: CSSProperties = {
-  flex: "0 0 min(352px, 86vw)",
-  width: "min(352px, 86vw)",
+  flex: "0 0 min(360px, 88vw)",
+  width: "min(360px, 88vw)",
   scrollSnapAlign: "start",
   display: "grid",
-  gridTemplateColumns: "minmax(84px, 94px) minmax(0, 1fr)",
-  gap: "13px",
+  gridTemplateColumns: "minmax(88px, 98px) minmax(0, 1fr)",
+  gap: "14px",
   alignItems: "stretch",
-  padding: "10px",
+  padding: "11px",
   borderRadius: "22px",
   background:
     "linear-gradient(145deg, rgba(26, 17, 43, 0.96) 0%, rgba(13, 9, 25, 0.98) 100%)",
@@ -3015,23 +3593,23 @@ const publishedCardStyle: CSSProperties = {
   color: "#FFFFFF",
   textDecoration: "none",
   minWidth: 0,
-  maxWidth: "86vw",
+  maxWidth: "88vw",
   overflow: "hidden",
-  boxShadow: "0 16px 36px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05)",
+  boxShadow: "0 12px 28px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.05)",
   boxSizing: "border-box",
 };
 
 const desktopPublishedCardStyle: CSSProperties = {
   ...publishedCardStyle,
-  flex: "0 0 382px",
-  width: "382px",
+  flex: "0 0 410px",
+  width: "410px",
   maxWidth: "100%",
-  gridTemplateColumns: "98px minmax(0, 1fr)",
-  gap: "14px",
-  padding: "12px",
+  gridTemplateColumns: "112px minmax(0, 1fr)",
+  gap: "15px",
+  padding: "13px",
   borderRadius: "24px",
   boxShadow:
-    "0 18px 42px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)",
+    "0 14px 34px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.05)",
 };
 
 const coverPlaceholderStyle: CSSProperties = {
@@ -3051,7 +3629,7 @@ const coverPlaceholderStyle: CSSProperties = {
 };
 
 const desktopCoverPlaceholderStyle: CSSProperties = {
-  minHeight: "126px",
+  minHeight: "142px",
   borderRadius: "18px",
 };
 
@@ -3239,9 +3817,9 @@ const progressTextStyle: CSSProperties = {
 const readNowStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  minHeight: "31px",
-  padding: "0 12px",
-  marginTop: "3px",
+  minHeight: "34px",
+  padding: "0 14px",
+  marginTop: "4px",
   borderRadius: "999px",
   background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, #FB923C 100%)",
   border: "1px solid rgba(255,255,255,0.12)",
@@ -3255,19 +3833,18 @@ const readNowStyle: CSSProperties = {
   justifyContent: "center",
   boxSizing: "border-box",
   whiteSpace: "normal",
-  boxShadow: "0 10px 20px color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
   ...safeTextStyle,
 };
 
 const obraCardStyle: CSSProperties = {
-  flex: "0 0 min(352px, 86vw)",
-  width: "min(352px, 86vw)",
+  flex: "0 0 min(360px, 88vw)",
+  width: "min(360px, 88vw)",
   scrollSnapAlign: "start",
   display: "grid",
-  gridTemplateColumns: "minmax(84px, 94px) minmax(0, 1fr)",
-  gap: "13px",
+  gridTemplateColumns: "minmax(88px, 98px) minmax(0, 1fr)",
+  gap: "14px",
   alignItems: "stretch",
-  padding: "10px",
+  padding: "11px",
   borderRadius: "22px",
   background:
     "linear-gradient(145deg, rgba(26, 17, 43, 0.96) 0%, rgba(13, 9, 25, 0.98) 100%)",
@@ -3275,23 +3852,23 @@ const obraCardStyle: CSSProperties = {
   color: "#FFFFFF",
   textDecoration: "none",
   minWidth: 0,
-  maxWidth: "86vw",
+  maxWidth: "88vw",
   overflow: "hidden",
-  boxShadow: "0 16px 36px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05)",
+  boxShadow: "0 12px 28px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.05)",
   boxSizing: "border-box",
 };
 
 const desktopObraCardStyle: CSSProperties = {
   ...obraCardStyle,
-  flex: "0 0 382px",
-  width: "382px",
+  flex: "0 0 410px",
+  width: "410px",
   maxWidth: "100%",
-  gridTemplateColumns: "98px minmax(0, 1fr)",
-  gap: "14px",
-  padding: "12px",
+  gridTemplateColumns: "112px minmax(0, 1fr)",
+  gap: "15px",
+  padding: "13px",
   borderRadius: "24px",
   boxShadow:
-    "0 18px 42px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)",
+    "0 14px 34px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.05)",
 };
 
 const obraCardSoonStyle: CSSProperties = {
@@ -3305,7 +3882,7 @@ const desktopObraCardSoonStyle: CSSProperties = {
 };
 
 const coverThumbStyle: CSSProperties = {
-  minHeight: "116px",
+  minHeight: "122px",
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
@@ -3320,7 +3897,7 @@ const coverThumbStyle: CSSProperties = {
 
 const desktopCoverThumbStyle: CSSProperties = {
   ...coverThumbStyle,
-  minHeight: "126px",
+  minHeight: "142px",
   borderRadius: "18px",
 };
 
