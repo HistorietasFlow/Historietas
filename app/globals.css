@@ -8,6 +8,16 @@
   color-scheme: dark;
 }
 
+html[data-historietas-tema-visual="branco"] {
+  color-scheme: light;
+}
+
+html[data-historietas-tema-visual="branco"] input,
+html[data-historietas-tema-visual="branco"] textarea,
+html[data-historietas-tema-visual="branco"] select {
+  color-scheme: light;
+}
+
 *,
 *::before,
 *::after {
@@ -25,8 +35,8 @@ html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--historietas-bg-start, var(--background));
+  color: var(--historietas-text-primary, var(--foreground));
 }
 
 body {
@@ -36,8 +46,8 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--historietas-bg-start, var(--background));
+  color: var(--historietas-text-primary, var(--foreground));
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -86,7 +96,11 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-  color: rgba(212, 212, 216, 0.62);
+  color: color-mix(
+    in srgb,
+    var(--historietas-text-secondary, rgba(212, 212, 216, 0.62)) 72%,
+    transparent
+  );
 }
 
 button,
@@ -147,12 +161,16 @@ pre {
 }
 
 ::selection {
-  background: rgba(124, 58, 237, 0.45);
+  background: color-mix(
+    in srgb,
+    var(--historietas-secondary, var(--accent-purple)) 45%,
+    transparent
+  );
   color: #ffffff;
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent-orange);
+  outline: 2px solid var(--historietas-accent, var(--accent-orange));
   outline-offset: 3px;
 }
 
@@ -162,17 +180,25 @@ pre {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f0f0f;
+  background: var(--historietas-bg-start, #0f0f0f);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: color-mix(
+    in srgb,
+    var(--historietas-text-secondary, #3f3f46) 44%,
+    transparent
+  );
   border-radius: 999px;
-  border: 2px solid #0f0f0f;
+  border: 2px solid var(--historietas-bg-start, #0f0f0f);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: color-mix(
+    in srgb,
+    var(--historietas-text-secondary, #52525b) 62%,
+    transparent
+  );
 }
 
 @media (max-width: 480px) {

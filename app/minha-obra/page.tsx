@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
+import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 
 type CapituloLocal = {
   id: string;
@@ -334,7 +335,7 @@ function criarCoverStyle(capa: string): CSSProperties {
 
   return {
     ...coverStyle,
-    background: "#18181B",
+    background: "var(--historietas-input-bg, #18181B)",
     backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%), url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -348,7 +349,7 @@ function criarDesktopCoverStyle(capa: string): CSSProperties {
 
   return {
     ...desktopCoverStyle,
-    background: "#18181B",
+    background: "var(--historietas-input-bg, #18181B)",
     backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.82) 100%), url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -769,6 +770,7 @@ export default function MinhaObraPage() {
   const [carregando, setCarregando] = useState(true);
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1518,7 +1520,8 @@ export default function MinhaObraPage() {
 
   if (carregando) {
     return (
-      <main style={pageStyle}>
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${minhaObraPageCss}`}</style>
         <section style={isDesktop ? desktopContainerStyle : containerStyle} />
       </main>
     );
@@ -1526,12 +1529,13 @@ export default function MinhaObraPage() {
 
   if (!obraAtual) {
     return (
-      <main style={pageStyle}>
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${minhaObraPageCss}`}</style>
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <header style={isDesktop ? desktopTopStyle : topStyle}>
             <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
               <span style={logoMarkStyle}>H</span>
-              <span style={logoTextStyle}>istorietas</span>
+              <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
 
             <span style={pagePillStyle}>Minha obra</span>
@@ -1576,12 +1580,13 @@ export default function MinhaObraPage() {
   const verArquivoHref = `/ver-arquivo?obraId=${encodeURIComponent(obraAtual.id)}`;
 
   return (
-    <main style={pageStyle}>
+    <main style={pageThemeStyle}>
+      <style>{`${historietasThemeCss}${minhaObraPageCss}`}</style>
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
           <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
             <span style={logoMarkStyle}>H</span>
-            <span style={logoTextStyle}>istorietas</span>
+            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
           <span style={pagePillStyle}>Minha obra</span>
@@ -2199,6 +2204,16 @@ export default function MinhaObraPage() {
   );
 }
 
+const minhaObraPageCss = `
+  html[data-historietas-tema-visual] nav a[href="/minhas-obras"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/minhas-obras"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/minhas-obras"] {
+    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
+    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
+    color: var(--historietas-accent, #F97316) !important;
+  }
+`;
+
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -2211,7 +2226,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   background:
     "radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), transparent 30%), radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent), transparent 24%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 42%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
@@ -2235,7 +2250,7 @@ const topStyle: CSSProperties = {
 };
 
 const logoStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "24px",
   fontWeight: 950,
@@ -2295,41 +2310,8 @@ const pagePillStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const topButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  flex: "1 1 0",
-  minWidth: 0,
-  ...safeTextStyle,
-};
 
-const topButtonAccentStyle: CSSProperties = {
-  ...topButtonStyle,
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-};
 
-const topActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "6px",
-  width: "100%",
-  minWidth: 0,
-};
 
 const heroStyle: CSSProperties = {
   display: "grid",
@@ -2353,7 +2335,7 @@ const coverStyle: CSSProperties = {
   overflow: "hidden",
   background:
     "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 58%, transparent), transparent 40%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
   minWidth: 0,
 };
@@ -2373,7 +2355,7 @@ const coverGenreStyle: CSSProperties = {
   padding: "5px 8px",
   borderRadius: "999px",
   background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 88%, transparent)",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "9px",
   fontWeight: 950,
   textAlign: "center",
@@ -2393,7 +2375,7 @@ const coverInfoStyle: CSSProperties = {
 };
 
 const coverNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "46px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2401,7 +2383,7 @@ const coverNumberStyle: CSSProperties = {
 };
 
 const coverTextStyle: CSSProperties = {
-  color: "#E4E4E7",
+  color: "var(--historietas-text-primary, #E4E4E7)",
   fontSize: "10px",
   fontWeight: 950,
   textTransform: "uppercase",
@@ -2447,8 +2429,8 @@ const publishedBadgeStyle: CSSProperties = {
 const draftBadgeStyle: CSSProperties = {
   ...badgeStyle,
   background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#D4D4D8",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const classificationBadgeStyle: CSSProperties = {
@@ -2508,7 +2490,7 @@ const authorLinkStyle: CSSProperties = {
 
 const sinopseStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.55,
   fontWeight: 650,
@@ -2544,7 +2526,7 @@ const progressTrackStyle: CSSProperties = {
   width: "100%",
   height: "5px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
   overflow: "hidden",
 };
 
@@ -2597,7 +2579,7 @@ const statNumberStyle: CSSProperties = {
 };
 
 const statLabelStyle: CSSProperties = {
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10px",
   lineHeight: 1.18,
   fontWeight: 850,
@@ -2635,7 +2617,7 @@ const readingPlanBadgeStyle: CSSProperties = {
 
 const readingPlanTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.58,
   fontWeight: 700,
@@ -2677,7 +2659,7 @@ const sectionMiniTitleStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "24px",
   lineHeight: 1.18,
   paddingBottom: "0.08em",
@@ -2729,7 +2711,7 @@ const infoObraCardStyle: CSSProperties = {
   padding: "8px",
   borderRadius: "14px",
   background: "rgba(255,255,255,0.05)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -2743,7 +2725,7 @@ const infoObraValueStyle: CSSProperties = {
 };
 
 const infoObraLabelStyle: CSSProperties = {
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "9px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -2787,9 +2769,9 @@ const starButtonStyle: CSSProperties = {
   width: "36px",
   height: "36px",
   borderRadius: "12px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.06)",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   cursor: "pointer",
   fontSize: "17px",
   display: "flex",
@@ -2836,9 +2818,9 @@ const clearRatingButtonStyle: CSSProperties = {
   minHeight: "36px",
   padding: "0 10px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   background: "rgba(255,255,255,0.05)",
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 900,
   cursor: "pointer",
@@ -2848,7 +2830,7 @@ const clearRatingButtonStyle: CSSProperties = {
 
 const reviewHelpTextStyle: CSSProperties = {
   margin: "-2px 0 0",
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
   lineHeight: 1.45,
   fontWeight: 750,
@@ -2880,9 +2862,9 @@ const reviewTextareaStyle: CSSProperties = {
   minHeight: "96px",
   resize: "vertical",
   borderRadius: "16px",
-  border: "1px solid #3F3F46",
-  background: "#18181B",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, #3F3F46)",
+  background: "var(--historietas-input-bg, #18181B)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   padding: "12px",
   outline: "none",
   fontSize: "13px",
@@ -2919,8 +2901,8 @@ const reviewCardStyle: CSSProperties = {
   gap: "7px",
   padding: "9px",
   borderRadius: "16px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -2941,7 +2923,7 @@ const reviewBadgeStyle: CSSProperties = {
 };
 
 const reviewDateStyle: CSSProperties = {
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -2949,7 +2931,7 @@ const reviewDateStyle: CSSProperties = {
 
 const reviewTextStyle: CSSProperties = {
   margin: 0,
-  color: "#E4E4E7",
+  color: "var(--historietas-text-primary, #E4E4E7)",
   fontSize: "12px",
   lineHeight: 1.5,
   fontWeight: 700,
@@ -2986,9 +2968,9 @@ const chapterSearchInputStyle: CSSProperties = {
   width: "100%",
   minHeight: "34px",
   borderRadius: "999px",
-  border: "1px solid #3F3F46",
-  background: "#18181B",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, #3F3F46)",
+  background: "var(--historietas-input-bg, #18181B)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   padding: "0 11px",
   outline: "none",
   fontSize: "11px",
@@ -3016,9 +2998,9 @@ const chapterOrderButtonStyle: CSSProperties = {
   minHeight: "29px",
   padding: "0 8px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.045)",
-  color: "#D4D4D8",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 900,
   cursor: "pointer",
@@ -3037,9 +3019,9 @@ const chapterFilterButtonStyle: CSSProperties = {
   minHeight: "26px",
   padding: "0 7px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   background: "rgba(255,255,255,0.04)",
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 850,
   cursor: "pointer",
@@ -3102,14 +3084,14 @@ const chapterReadStatusStyle: CSSProperties = {
 
 const chapterMetaBadgeStyle: CSSProperties = {
   ...chapterBadgeStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#D4D4D8",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const chapterTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "19px",
   lineHeight: 1.12,
   paddingBottom: "0.04em",
@@ -3123,7 +3105,7 @@ const chapterStatsStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   gap: "4px",
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "9px",
   lineHeight: 1.25,
   fontWeight: 850,
@@ -3133,7 +3115,7 @@ const chapterStatsStyle: CSSProperties = {
 
 const chapterTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   lineHeight: 1.35,
   fontWeight: 650,
@@ -3226,7 +3208,7 @@ const orangeActionStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   padding: "0 11px",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   cursor: "pointer",
   fontFamily: "inherit",
   ...safeTextStyle,
@@ -3258,9 +3240,9 @@ const favoriteActionActiveStyle: CSSProperties = {
 
 const completedActionStyle: CSSProperties = {
   ...orangeActionStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#D4D4D8",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const completedActionActiveStyle: CSSProperties = {
@@ -3294,8 +3276,8 @@ const publicPageActionStyle: CSSProperties = {
 const copyLinkActionStyle: CSSProperties = {
   ...orangeActionStyle,
   background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#E4E4E7",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  color: "var(--historietas-text-primary, #E4E4E7)",
 };
 
 const copiedLinkActionStyle: CSSProperties = {
@@ -3345,8 +3327,8 @@ const arquivoObraCardStyle: CSSProperties = {
   gap: "10px",
   padding: "10px",
   borderRadius: "18px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -3370,11 +3352,11 @@ const arquivoObraIconStyle: CSSProperties = {
   borderRadius: "15px",
   background:
     "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent), transparent 36%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), rgba(18,12,30,0.88))",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "14px",
   fontWeight: 950,
   letterSpacing: "-0.03em",
@@ -3388,8 +3370,8 @@ const arquivoObraPreviewButtonStyle: CSSProperties = {
   height: "72px",
   minHeight: "72px",
   borderRadius: "15px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "#18181B",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "var(--historietas-input-bg, #18181B)",
   padding: 0,
   overflow: "hidden",
   cursor: "pointer",
@@ -3415,7 +3397,7 @@ const arquivoObraContentStyle: CSSProperties = {
 };
 
 const arquivoObraTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "14px",
   lineHeight: 1.12,
   fontWeight: 950,
@@ -3430,7 +3412,7 @@ const arquivoObraTitleStyle: CSSProperties = {
 
 const arquivoObraTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   lineHeight: 1.35,
   fontWeight: 750,
@@ -3456,7 +3438,7 @@ const arquivoObraOpenButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border: "none",
   background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "11px",
   fontWeight: 950,
@@ -3498,7 +3480,7 @@ const emptyBoxStyle: CSSProperties = {
   marginTop: "18px",
   borderRadius: "24px",
   background: "rgba(31,31,35,0.96)",
-  border: "1px solid #2D2D32",
+  border: "1px solid var(--historietas-border-soft, #2D2D32)",
   padding: "20px",
   display: "grid",
   gap: "12px",
@@ -3508,7 +3490,7 @@ const emptyBoxStyle: CSSProperties = {
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "26px",
   lineHeight: 1.12,
   paddingBottom: "0.04em",
@@ -3520,7 +3502,7 @@ const emptyTitleStyle: CSSProperties = {
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.6,
   fontWeight: 650,
@@ -3545,13 +3527,6 @@ const desktopTopStyle: CSSProperties = {
   marginBottom: "18px",
 };
 
-const desktopTopActionsStyle: CSSProperties = {
-  ...topActionsStyle,
-  display: "flex",
-  justifyContent: "flex-end",
-  width: "auto",
-  flex: "0 0 auto",
-};
 
 
 const desktopHeroStyle: CSSProperties = {
@@ -3727,8 +3702,3 @@ const desktopChapterListStyle: CSSProperties = {
   gap: "12px",
 };
 
-const desktopEmptyBoxStyle: CSSProperties = {
-  ...emptyBoxStyle,
-  maxWidth: "760px",
-  margin: "24px auto 0",
-};

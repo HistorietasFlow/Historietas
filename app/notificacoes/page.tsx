@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { supabase } from "../../lib/supabase/client";
+import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
@@ -764,6 +765,7 @@ export default function NotificacoesPage() {
   const [ordenacao, setOrdenacao] = useState<OrdenacaoNotificacao>("recentes");
   const [isDesktop, setIsDesktop] = useState(false);
   const [carregando, setCarregando] = useState(true);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1072,74 +1074,64 @@ export default function NotificacoesPage() {
 
   if (carregando) {
     return (
-      <main style={pageStyle}>
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${notificacoesPageCss}`}</style>
         <section style={isDesktop ? desktopContainerStyle : containerStyle} />
       </main>
     );
   }
 
   return (
-    <main style={pageStyle}>
+    <main style={pageThemeStyle}>
+      <style>{`${historietasThemeCss}${notificacoesPageCss}`}</style>
+
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
           <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
             <span style={logoMarkStyle}>H</span>
-            <span style={logoTextStyle}>istorietas</span>
+            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <div style={topNotificationPillStyle} aria-label="Página de notificações">
-            <span style={topNotificationIconStyle} aria-hidden="true">🔔</span>
-            <span style={topNotificationTextStyle}>Notificações</span>
-          </div>
         </header>
 
         <section style={isDesktop ? desktopHeroBoxStyle : heroBoxStyle}>
-          <h1 style={isDesktop ? desktopTitleStyle : titleStyle}>Atualizações</h1>
+          <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Notificações</h1>
 
           <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
             Acompanhe novos capítulos das obras seguidas e mantenha sua leitura organizada.
           </p>
 
-          <div style={isDesktop ? desktopHeroMiniStatsStyle : heroMiniStatsStyle} aria-label="Status rápido das notificações">
-            <span style={heroMiniStatHighlightStyle}>
-              {totalNaoLidas} {totalNaoLidas === 1 ? "nova" : "novas"}
-            </span>
-
-            <span style={heroMiniStatStyle}>
-              {totalLidas} {totalLidas === 1 ? "lida" : "lidas"}
-            </span>
-          </div>
         </section>
 
         <section style={isDesktop ? desktopStatsGridStyle : statsGridStyle} aria-label="Resumo das notificações">
           <div style={statCardStyle}>
-            <span style={statLabelStyle}>Total</span>
             <strong style={statNumberStyle}>{totalNotificacoes}</strong>
+            <span style={statLabelStyle}>Total</span>
           </div>
 
           <div style={unreadStatCardStyle}>
-            <span style={statLabelStyle}>Não lidas</span>
             <strong style={statNumberStyle}>{totalNaoLidas}</strong>
+            <span style={statLabelStyle}>Novas</span>
           </div>
 
           <div style={readStatCardStyle}>
-            <span style={statLabelStyle}>Lidas</span>
             <strong style={statNumberStyle}>{totalLidas}</strong>
+            <span style={statLabelStyle}>Lidas</span>
           </div>
 
           <div style={statCardStyle}>
-            <span style={statLabelStyle}>Com obra</span>
             <strong style={statNumberStyle}>{totalComObra}</strong>
+            <span style={statLabelStyle}>Com obra</span>
           </div>
 
           <div style={statCardStyle}>
-            <span style={statLabelStyle}>Sem obra</span>
             <strong style={statNumberStyle}>{totalSemObra}</strong>
+            <span style={statLabelStyle}>Sem obra</span>
           </div>
 
           <div style={statCardStyle}>
-            <span style={statLabelStyle}>Última</span>
             <strong style={smallStatTextStyle}>{ultimaNotificacao}</strong>
+            <span style={statLabelStyle}>Última</span>
           </div>
         </section>
 
@@ -1147,7 +1139,7 @@ export default function NotificacoesPage() {
           <>
             <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
               <div style={isDesktop ? desktopFilterHeaderStyle : filterHeaderStyle}>
-                <div style={{ minWidth: 0 }}>
+                <div style={isDesktop ? desktopFilterHeaderTitleBoxStyle : filterHeaderTitleBoxStyle}>
                   <span style={miniTitleStyle}>ORGANIZAR</span>
 
                   <h2 style={filterTitleStyle}>Buscar e filtrar</h2>
@@ -1229,8 +1221,6 @@ export default function NotificacoesPage() {
               </div>
 
               <div style={isDesktop ? desktopFilterFooterStyle : filterFooterStyle}>
-                <label style={fieldLabelStyle}>Ordenar</label>
-
                 <select
                   value={ordenacao}
                   onChange={(event) =>
@@ -1365,14 +1355,6 @@ export default function NotificacoesPage() {
                     </div>
 
                     <div style={cardHeaderTextStyle}>
-                      <span
-                        style={
-                          notificacao.lida ? readBadgeStyle : unreadBadgeStyle
-                        }
-                      >
-                        {notificacao.lida ? "LIDA" : "NÃO LIDA"}
-                      </span>
-
                       <h2 style={notificationTitleStyle}>
                         {notificacao.titulo}
                       </h2>
@@ -1385,6 +1367,13 @@ export default function NotificacoesPage() {
 
                   <div style={isDesktop ? desktopMetaGridStyle : metaGridStyle}>
                     <div style={metaBoxStyle}>
+                      <span style={metaLabelStyle}>Data</span>
+                      <strong style={metaValueStyle}>
+                        {formatarData(notificacao.criadaEm)}
+                      </strong>
+                    </div>
+
+                    <div style={metaBoxStyle}>
                       <span style={metaLabelStyle}>Obra</span>
                       <strong style={metaValueStyle}>{tituloObra}</strong>
                     </div>
@@ -1392,13 +1381,6 @@ export default function NotificacoesPage() {
                     <div style={metaBoxStyle}>
                       <span style={metaLabelStyle}>Capítulo</span>
                       <strong style={metaValueStyle}>{tituloCapitulo}</strong>
-                    </div>
-
-                    <div style={metaBoxStyle}>
-                      <span style={metaLabelStyle}>Data</span>
-                      <strong style={metaValueStyle}>
-                        {formatarData(notificacao.criadaEm)}
-                      </strong>
                     </div>
                   </div>
 
@@ -1456,6 +1438,24 @@ export default function NotificacoesPage() {
   );
 }
 
+const notificacoesPageCss = `
+  html[data-historietas-tema-visual] nav a[href="/notificacoes"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/notificacoes"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/notificacoes"] {
+    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
+    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
+    color: var(--historietas-accent, #F97316) !important;
+  }
+
+  html[data-historietas-tema-visual="branco"] button:disabled {
+    opacity: 1 !important;
+    background: #F1F3F4 !important;
+    border-color: #DADCE0 !important;
+    color: #5F6368 !important;
+    cursor: not-allowed !important;
+  }
+`;
+
 const safeTextStyle: CSSProperties = {
   minWidth: 0,
   overflowWrap: "anywhere",
@@ -1470,7 +1470,7 @@ const pageStyle: CSSProperties = {
   boxSizing: "border-box",
   background:
     "radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), transparent 31%), radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent), transparent 24%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 42%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
@@ -1478,7 +1478,7 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 32px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 58px",
+  padding: "18px 0 calc(96px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1494,24 +1494,8 @@ const topStyle: CSSProperties = {
   maxWidth: "100%",
 };
 
-const topActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "6px",
-  width: "100%",
-  minWidth: 0,
-};
-
-const desktopTopActionsStyle: CSSProperties = {
-  ...topActionsStyle,
-  display: "flex",
-  width: "auto",
-  justifyContent: "flex-end",
-  flex: "0 0 auto",
-};
-
 const logoStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "24px",
   fontWeight: 950,
@@ -1542,61 +1526,11 @@ const logoMarkStyle: CSSProperties = {
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
-  background: "linear-gradient(135deg, #F5F3FF 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 35%, #FFFFFF) 42%, var(--historietas-accent, #FDBA74) 100%)",
+  background: "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
-};
-
-
-const topNotificationPillStyle: CSSProperties = {
-  minHeight: "34px",
-  padding: "0 11px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "6px",
-  background: "rgba(255,255,255,0.075)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#F5F3FF",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "-0.01em",
-  lineHeight: 1,
-  flex: "0 0 auto",
-  boxSizing: "border-box",
-};
-
-const topNotificationIconStyle: CSSProperties = {
-  fontSize: "15px",
-  lineHeight: 1,
-};
-
-const topNotificationTextStyle: CSSProperties = {
-  display: "inline-block",
-  maxWidth: "96px",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
-const topButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  ...safeTextStyle,
+  textShadow: "var(--historietas-logo-shadow, 0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent))",
 };
 
 const heroBoxStyle: CSSProperties = {
@@ -1608,27 +1542,12 @@ const heroBoxStyle: CSSProperties = {
   padding: "14px 14px 13px",
   borderRadius: "22px",
   background:
-    "radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent), transparent 34%), radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), transparent 38%), linear-gradient(135deg, rgba(31,16,52,0.96) 0%, rgba(12,7,23,0.99) 100%)",
-  border: "1px solid rgba(251,191,36,0.18)",
+    "radial-gradient(circle at 14% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)), transparent 34%), radial-gradient(circle at 88% 12%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 38%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.96)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, var(--historietas-border-soft, rgba(251,191,36,0.18)))",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
   boxSizing: "border-box",
-};
-
-const badgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  display: "inline-flex",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  ...safeTextStyle,
 };
 
 const titleStyle: CSSProperties = {
@@ -1641,7 +1560,7 @@ const titleStyle: CSSProperties = {
   letterSpacing: "-0.07em",
   maxWidth: "100%",
   paddingBottom: "2px",
-  background: "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 45%, var(--historietas-accent, #FDBA74) 100%)",
+  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 45%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -1652,7 +1571,7 @@ const descriptionStyle: CSSProperties = {
   margin: 0,
   justifySelf: "center",
   textAlign: "center",
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12.5px",
   lineHeight: 1.48,
   fontWeight: 650,
@@ -1660,42 +1579,11 @@ const descriptionStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const heroMiniStatsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  justifySelf: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const heroMiniStatStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#E4E4E7",
-  fontSize: "10.5px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const heroMiniStatHighlightStyle: CSSProperties = {
-  ...heroMiniStatStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-};
-
 const statsGridStyle: CSSProperties = {
-  marginTop: "14px",
+  marginTop: "12px",
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))",
-  gap: "8px",
+  gap: "7px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1703,13 +1591,16 @@ const statsGridStyle: CSSProperties = {
 
 const statCardStyle: CSSProperties = {
   display: "grid",
-  gap: "5px",
-  borderRadius: "18px",
-  padding: "11px",
+  justifyItems: "center",
+  alignContent: "center",
+  textAlign: "center",
+  gap: "3px",
+  borderRadius: "16px",
+  padding: "8px",
   background:
-    "linear-gradient(135deg, rgba(255,255,255,0.060), rgba(255,255,255,0.034))",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.18)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(255,255,255,0.060)), var(--historietas-surface-strong, rgba(255,255,255,0.034)))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -1718,22 +1609,21 @@ const statCardStyle: CSSProperties = {
 
 const unreadStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background:
-    "radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 55%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent), color-mix(in srgb, var(--historietas-secondary, #7C3AED) 6%, transparent))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
-  boxShadow: "0 16px 38px color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent), 0 14px 34px rgba(0,0,0,0.18)",
+  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "none",
 };
 
 const readStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background:
-    "linear-gradient(135deg, rgba(34,197,94,0.075), rgba(255,255,255,0.034))",
-  border: "1px solid rgba(34,197,94,0.12)",
+  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "none",
 };
 
 const statLabelStyle: CSSProperties = {
-  color: "#A1A1AA",
-  fontSize: "10px",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "9px",
   fontWeight: 950,
   textTransform: "uppercase",
   letterSpacing: "0.06em",
@@ -1742,7 +1632,7 @@ const statLabelStyle: CSSProperties = {
 
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "24px",
+  fontSize: "21px",
   lineHeight: 1,
   fontWeight: 950,
   ...safeTextStyle,
@@ -1750,22 +1640,23 @@ const statNumberStyle: CSSProperties = {
 
 const smallStatTextStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "14px",
-  lineHeight: 1.15,
+  fontSize: "12px",
+  lineHeight: 1.12,
   fontWeight: 950,
   ...safeTextStyle,
 };
 
 const filterBoxStyle: CSSProperties = {
+  position: "relative",
   marginTop: "12px",
   display: "grid",
   gap: "10px",
   padding: "12px",
   borderRadius: "22px",
   background:
-    "radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent), transparent 42%), rgba(18,12,30,0.82)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 14px 36px rgba(0,0,0,0.20)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.82)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -1775,10 +1666,26 @@ const filterBoxStyle: CSSProperties = {
 const filterHeaderStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "center",
   gap: "10px",
   flexWrap: "wrap",
   minWidth: 0,
+  padding: "0 58px",
+};
+
+const filterHeaderTitleBoxStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  display: "grid",
+  justifyItems: "center",
+  textAlign: "center",
+};
+
+const desktopFilterHeaderTitleBoxStyle: CSSProperties = {
+  minWidth: 0,
+  display: "grid",
+  justifyItems: "start",
+  textAlign: "left",
 };
 
 const miniTitleStyle: CSSProperties = {
@@ -1791,7 +1698,7 @@ const miniTitleStyle: CSSProperties = {
 
 const filterTitleStyle: CSSProperties = {
   margin: "4px 0 0",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
@@ -1800,8 +1707,11 @@ const filterTitleStyle: CSSProperties = {
 };
 
 const filterResultBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "12px",
+  right: "12px",
   width: "fit-content",
-  maxWidth: "100%",
+  maxWidth: "calc(100% - 24px)",
   padding: "6px 9px",
   borderRadius: "999px",
   background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
@@ -1816,14 +1726,15 @@ const searchInputStyle: CSSProperties = {
   width: "100%",
   minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "#18181B",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "var(--historietas-input-bg, #18181B)",
+  color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 13px",
   outline: "none",
   fontSize: "12px",
   fontWeight: 750,
   fontFamily: "inherit",
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1832,6 +1743,7 @@ const quickFiltersStyle: CSSProperties = {
   display: "flex",
   gap: "6px",
   flexWrap: "wrap",
+  justifyContent: "center",
   minWidth: 0,
 };
 
@@ -1839,9 +1751,9 @@ const quickFilterStyle: CSSProperties = {
   minHeight: "32px",
   padding: "0 9px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.065)",
-  color: "#D4D4D8",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.065))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 950,
   cursor: "pointer",
@@ -1854,7 +1766,7 @@ const quickFilterActiveStyle: CSSProperties = {
   background: "var(--historietas-accent, #F97316)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 60%, transparent)",
   color: "#FFFFFF",
-  boxShadow: "0 10px 24px color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
+  boxShadow: "none",
 };
 
 const filterFooterStyle: CSSProperties = {
@@ -1863,21 +1775,13 @@ const filterFooterStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const fieldLabelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  ...safeTextStyle,
-};
-
 const selectStyle: CSSProperties = {
   width: "100%",
   minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "#18181B",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "var(--historietas-input-bg, #18181B)",
+  color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 13px",
   outline: "none",
   fontSize: "12px",
@@ -1885,6 +1789,7 @@ const selectStyle: CSSProperties = {
   fontFamily: "inherit",
   boxSizing: "border-box",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const actionBarStyle: CSSProperties = {
@@ -1897,7 +1802,7 @@ const actionBarStyle: CSSProperties = {
 };
 
 const buttonBaseStyle: CSSProperties = {
-  minHeight: "42px",
+  minHeight: "40px",
   borderRadius: "999px",
   padding: "0 12px",
   color: "#FFFFFF",
@@ -1916,13 +1821,14 @@ const primaryButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
   border: "none",
   background: "var(--historietas-accent, #F97316)",
-  boxShadow: "0 10px 26px color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
+  boxShadow: "none",
 };
 
 const secondaryButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.11)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
 };
 
 const secondaryLinkButtonStyle: CSSProperties = {
@@ -1935,9 +1841,9 @@ const secondaryLinkButtonStyle: CSSProperties = {
 
 const dangerButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
-  border: "1px solid rgba(239, 68, 68, 0.24)",
-  background: "rgba(239, 68, 68, 0.13)",
-  color: "#FCA5A5",
+  border: "1px solid color-mix(in srgb, var(--historietas-danger-button-text, #FCA5A5) 28%, var(--historietas-border-soft, transparent))",
+  background: "var(--historietas-danger-surface, rgba(239,68,68,0.13))",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
 };
 
 const listStyle: CSSProperties = {
@@ -1951,11 +1857,11 @@ const listStyle: CSSProperties = {
 const cardStyle: CSSProperties = {
   position: "relative",
   borderRadius: "22px",
-  padding: "12px",
+  padding: "10px",
   background:
-    "radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent), transparent 36%), linear-gradient(135deg, rgba(31,16,52,0.90), rgba(18,12,30,0.96))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
-  boxShadow: "0 18px 42px rgba(0,0,0,0.26), 0 0 24px color-mix(in srgb, var(--historietas-accent, #F97316) 6%, transparent)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.90)), var(--historietas-surface-strong, rgba(18,12,30,0.96)))",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, transparent))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -1965,14 +1871,14 @@ const cardStyle: CSSProperties = {
 const readCardStyle: CSSProperties = {
   ...cardStyle,
   background:
-    "linear-gradient(135deg, rgba(31,16,52,0.64), rgba(18,12,30,0.78))",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.64)), var(--historietas-surface-strong, rgba(18,12,30,0.78)))",
   border: "1px solid rgba(34,197,94,0.12)",
-  boxShadow: "0 10px 26px rgba(0,0,0,0.16)",
+  boxShadow: "var(--historietas-card-shadow, none)",
 };
 
 const cardHeaderStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "42px minmax(0, 1fr)",
+  gridTemplateColumns: "52px minmax(0, 1fr)",
   alignItems: "start",
   gap: "10px",
   minWidth: 0,
@@ -1980,18 +1886,18 @@ const cardHeaderStyle: CSSProperties = {
 };
 
 const notificationIconStyle: CSSProperties = {
-  width: "42px",
-  height: "42px",
-  borderRadius: "16px",
+  width: "52px",
+  height: "52px",
+  borderRadius: "18px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   background: "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent), color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent))",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
   color: "#FFFFFF",
-  fontSize: "22px",
+  fontSize: "25px",
   fontWeight: 950,
-  boxShadow: "0 12px 28px color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
+  boxShadow: "none",
   flex: "0 0 auto",
 };
 
@@ -2005,58 +1911,37 @@ const readNotificationIconStyle: CSSProperties = {
 
 const cardHeaderTextStyle: CSSProperties = {
   display: "grid",
-  gap: "7px",
+  gap: "5px",
+  paddingTop: "6px",
   minWidth: 0,
   maxWidth: "100%",
 };
 
 const notificationTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
-  fontSize: "22px",
-  lineHeight: 1.05,
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "clamp(14px, 4.3vw, 18px)",
+  lineHeight: 1.12,
   fontWeight: 950,
-  letterSpacing: "-0.05em",
+  letterSpacing: "0.055em",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
 const notificationMessageStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
-  fontSize: "12px",
-  lineHeight: 1.55,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11.5px",
+  lineHeight: 1.48,
   fontWeight: 650,
   ...safeTextStyle,
 };
 
-const unreadBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "9px",
-  fontWeight: 950,
-  letterSpacing: "0.06em",
-  textTransform: "uppercase",
-  boxShadow: "0 8px 18px color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  ...safeTextStyle,
-};
-
-const readBadgeStyle: CSSProperties = {
-  ...unreadBadgeStyle,
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.24)",
-  color: "#86EFAC",
-};
-
 const metaGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))",
-  gap: "7px",
-  marginTop: "10px",
+  gridTemplateColumns: "1fr",
+  gap: "6px",
+  marginTop: "8px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -2065,9 +1950,9 @@ const metaBoxStyle: CSSProperties = {
   display: "grid",
   gap: "3px",
   borderRadius: "15px",
-  padding: "9px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  padding: "8px",
+  background: "color-mix(in srgb, var(--historietas-surface, rgba(255,255,255,0.045)) 92%, var(--historietas-bg-end, transparent))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -2075,7 +1960,7 @@ const metaBoxStyle: CSSProperties = {
 };
 
 const metaLabelStyle: CSSProperties = {
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "9px",
   fontWeight: 950,
   textTransform: "uppercase",
@@ -2084,7 +1969,7 @@ const metaLabelStyle: CSSProperties = {
 };
 
 const metaValueStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "12px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -2093,8 +1978,8 @@ const metaValueStyle: CSSProperties = {
 const cardActionsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))",
-  gap: "7px",
-  marginTop: "10px",
+  gap: "6px",
+  marginTop: "8px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -2111,8 +1996,8 @@ const emptyStyle: CSSProperties = {
   marginTop: "12px",
   borderRadius: "24px",
   padding: "24px 18px",
-  background: "rgba(18,12,30,0.82)",
-  border: "1px dashed rgba(255,255,255,0.14)",
+  background: "var(--historietas-surface, rgba(18,12,30,0.82))",
+  border: "1px dashed var(--historietas-border-soft, rgba(255,255,255,0.14))",
   textAlign: "center",
   display: "grid",
   justifyItems: "center",
@@ -2135,7 +2020,7 @@ const emptyIconStyle: CSSProperties = {
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "28px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2145,7 +2030,7 @@ const emptyTitleStyle: CSSProperties = {
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",
   lineHeight: 1.55,
   fontWeight: 700,
@@ -2174,7 +2059,7 @@ const emptyButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "24px 0 78px",
+  padding: "24px 0 92px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -2193,11 +2078,6 @@ const desktopHeroBoxStyle: CSSProperties = {
   minHeight: "184px",
 };
 
-const desktopBadgeStyle: CSSProperties = {
-  ...badgeStyle,
-  justifySelf: "center",
-};
-
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
   justifySelf: "center",
@@ -2214,14 +2094,6 @@ const desktopDescriptionStyle: CSSProperties = {
   maxWidth: "650px",
   fontSize: "14px",
   lineHeight: 1.6,
-};
-
-const desktopHeroMiniStatsStyle: CSSProperties = {
-  ...heroMiniStatsStyle,
-  justifyContent: "center",
-  justifySelf: "center",
-  gap: "10px",
-  marginTop: "2px",
 };
 
 const desktopStatsGridStyle: CSSProperties = {
@@ -2256,7 +2128,7 @@ const desktopQuickFiltersStyle: CSSProperties = {
 
 const desktopFilterFooterStyle: CSSProperties = {
   ...filterFooterStyle,
-  gridTemplateColumns: "auto minmax(220px, 280px) auto",
+  gridTemplateColumns: "minmax(220px, 280px) auto",
   alignItems: "center",
   justifyContent: "start",
   gap: "10px",
@@ -2289,7 +2161,7 @@ const desktopReadCardStyle: CSSProperties = {
 
 const desktopMetaGridStyle: CSSProperties = {
   ...metaGridStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "1fr",
   gap: "8px",
 };
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { supabase } from "../../lib/supabase/client";
+import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ChangeEvent, FormEvent } from "react";
 
@@ -606,6 +607,7 @@ export default function EditarCapituloPage() {
   const [arquivoImportadoNome, setArquivoImportadoNome] = useState("");
   const [arquivoImportadoErro, setArquivoImportadoErro] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -766,12 +768,6 @@ export default function EditarCapituloPage() {
     obraAtual && capituloAtual
       ? `/ler-capitulo?obraId=${obraAtual.id}&capituloId=${capituloAtual.id}`
       : "/minhas-obras";
-
-  const bibliotecaHref = "/biblioteca";
-  const notificacoesHref = "/notificacoes";
-  const paginaPublicaHref = obraAtual
-    ? obraAtual.link || `/obra/${obraAtual.slug || criarSlugBase(obraAtual.titulo)}`
-    : "/explorar";
 
   const estatisticasCapitulo = useMemo(() => {
     return calcularEstatisticasCapitulo(titulo, texto, numeroCapitulo || 1);
@@ -1007,7 +1003,8 @@ export default function EditarCapituloPage() {
 
   if (!obraAtual || !capituloAtual) {
     return (
-      <main style={pageStyle}>
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${editarCapituloPageCss}`}</style>
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <div style={emptyBoxStyle}>
             <h1 style={emptyTitleStyle}>Capítulo não encontrado</h1>
@@ -1026,12 +1023,13 @@ export default function EditarCapituloPage() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main style={pageThemeStyle}>
+      <style>{`${historietasThemeCss}${editarCapituloPageCss}`}</style>
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <section style={isDesktop ? desktopHeroBoxStyle : heroBoxStyle}>
           <span style={isDesktop ? desktopBadgeStyle : badgeStyle}>EDITAR CAPÍTULO {numeroCapitulo}</span>
 
-          <h1 style={isDesktop ? desktopTitleStyle : titleStyle}>Editar capítulo</h1>
+          <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Editar capítulo</h1>
 
           <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
             {obraAtual.titulo} • Capítulo {numeroCapitulo}
@@ -1270,6 +1268,16 @@ export default function EditarCapituloPage() {
   );
 }
 
+const editarCapituloPageCss = `
+  html[data-historietas-tema-visual="branco"] button:disabled {
+    opacity: 1 !important;
+    background: #F1F3F4 !important;
+    border-color: #DADCE0 !important;
+    color: #5F6368 !important;
+    cursor: not-allowed !important;
+  }
+`;
+
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -1282,7 +1290,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   background:
     "radial-gradient(circle at 12% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 31%), radial-gradient(circle at 88% 14%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 24%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 42%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
@@ -1290,70 +1298,14 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 56px",
+  padding: "16px 0 calc(100px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
 
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  marginBottom: "14px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
 
-const topActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const backLinkStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 13px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  textAlign: "center",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const topButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 13px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const heroBoxStyle: CSSProperties = {
   display: "grid",
@@ -1361,9 +1313,9 @@ const heroBoxStyle: CSSProperties = {
   padding: "14px",
   borderRadius: "24px",
   background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, rgba(12,7,23,0.98)) 0%, rgba(12,7,23,0.99) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  boxShadow: "0 14px 38px rgba(0,0,0,0.26), 0 0 28px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, transparent)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.96)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, var(--historietas-border-soft, transparent))",
+  boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1387,12 +1339,12 @@ const badgeStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(35px, 10vw, 56px)",
-  lineHeight: 0.94,
+  fontSize: "clamp(31px, 8.8vw, 44px)",
+  lineHeight: 1.02,
   fontWeight: 950,
-  letterSpacing: "-0.075em",
+  letterSpacing: "-0.045em",
   maxWidth: "100%",
-  background: "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 45%, var(--historietas-accent, #FDBA74) 100%)",
+  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 45%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -1401,7 +1353,7 @@ const titleStyle: CSSProperties = {
 
 const descriptionStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
   lineHeight: 1.45,
   fontWeight: 750,
@@ -1422,9 +1374,9 @@ const heroStatStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 10px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#E4E4E7",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  color: "var(--historietas-text-primary, #E4E4E7)",
   fontSize: "11px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -1432,15 +1384,15 @@ const heroStatStyle: CSSProperties = {
 
 const heroStatReadyStyle: CSSProperties = {
   ...heroStatStyle,
-  background: "rgba(34, 197, 94, 0.14)",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
-  color: "#86EFAC",
+  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
+  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
+  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
 };
 
 const heroStatWarningStyle: CSSProperties = {
   ...heroStatStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-surface, transparent))",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, var(--historietas-border-soft, transparent))",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
@@ -1449,8 +1401,8 @@ const progressBoxStyle: CSSProperties = {
   gap: "6px",
   padding: "8px",
   borderRadius: "15px",
-  background: "rgba(255,255,255,0.048)",
-  border: "1px solid rgba(255,255,255,0.075)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.048))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1467,7 +1419,7 @@ const progressTopStyle: CSSProperties = {
 };
 
 const progressLabelStyle: CSSProperties = {
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -1484,7 +1436,7 @@ const progressTrackStyle: CSSProperties = {
   height: "7px",
   overflow: "hidden",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.1)",
+  background: "color-mix(in srgb, var(--historietas-text-secondary, #D4D4D8) 16%, transparent)",
   maxWidth: "100%",
 };
 
@@ -1499,7 +1451,7 @@ const errorBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "14px",
   borderRadius: "20px",
-  background: "rgba(239, 68, 68, 0.12)",
+  background: "var(--historietas-danger-surface, rgba(239, 68, 68, 0.12))",
   border: "1px solid rgba(239, 68, 68, 0.30)",
   display: "grid",
   gap: "7px",
@@ -1511,7 +1463,7 @@ const errorBoxStyle: CSSProperties = {
 
 const errorTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FCA5A5",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "22px",
   fontWeight: 950,
   letterSpacing: "-0.045em",
@@ -1520,7 +1472,7 @@ const errorTitleStyle: CSSProperties = {
 
 const errorTextStyle: CSSProperties = {
   margin: 0,
-  color: "#FECACA",
+  color: "var(--historietas-danger-button-text, #FECACA)",
   fontSize: "13px",
   lineHeight: 1.6,
   fontWeight: 750,
@@ -1531,8 +1483,8 @@ const successBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "14px",
   borderRadius: "20px",
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
+  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
+  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
   display: "grid",
   gap: "12px",
   minWidth: 0,
@@ -1552,7 +1504,7 @@ const successTitleStyle: CSSProperties = {
 
 const successTextStyle: CSSProperties = {
   margin: "7px 0 0",
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.6,
   fontWeight: 700,
@@ -1592,9 +1544,9 @@ const successPrimaryButtonStyle: CSSProperties = {
 const successSecondaryButtonStyle: CSSProperties = {
   minHeight: "44px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
   textDecoration: "none",
   fontSize: "13px",
   fontWeight: 900,
@@ -1626,9 +1578,9 @@ const formStyle: CSSProperties = {
   gap: "12px",
   padding: "12px",
   borderRadius: "22px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.86))",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 14px 38px rgba(0,0,0,0.22)",
+  background: "var(--historietas-surface, rgba(18,12,30,0.86))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1666,7 +1618,7 @@ const fieldGroupStyle: CSSProperties = {
 };
 
 const labelStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "14px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -1676,9 +1628,9 @@ const inputStyle: CSSProperties = {
   width: "100%",
   minHeight: "46px",
   borderRadius: "16px",
-  border: "1px solid #3F3F46",
-  background: "#18181B",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, #3F3F46)",
+  background: "var(--historietas-input-bg, #18181B)",
+  color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 13px",
   outline: "none",
   fontSize: "13px",
@@ -1695,9 +1647,9 @@ const textareaStyle: CSSProperties = {
   minHeight: "260px",
   resize: "vertical",
   borderRadius: "18px",
-  border: "1px solid #3F3F46",
-  background: "#18181B",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, #3F3F46)",
+  background: "var(--historietas-input-bg, #18181B)",
+  color: "var(--historietas-input-text, #FFFFFF)",
   padding: "13px",
   outline: "none",
   fontSize: "14px",
@@ -1711,7 +1663,7 @@ const textareaStyle: CSSProperties = {
 };
 
 const hintStyle: CSSProperties = {
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",
   lineHeight: 1.5,
   fontWeight: 650,
@@ -1726,7 +1678,7 @@ const importBoxStyle: CSSProperties = {
   padding: "12px",
   borderRadius: "18px",
   background:
-    "radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent), transparent 34%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent), rgba(255,255,255,0.045))",
+    "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
   minWidth: 0,
   maxWidth: "100%",
@@ -1742,7 +1694,7 @@ const importInfoStyle: CSSProperties = {
 };
 
 const importTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "14px",
   fontWeight: 950,
   letterSpacing: "-0.02em",
@@ -1750,7 +1702,7 @@ const importTitleStyle: CSSProperties = {
 };
 
 const importTextStyle: CSSProperties = {
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
   lineHeight: 1.5,
   fontWeight: 700,
@@ -1762,9 +1714,9 @@ const importSuccessStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 9px",
   borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.13)",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
-  color: "#86EFAC",
+  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
+  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
+  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -1777,7 +1729,7 @@ const importErrorStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(239, 68, 68, 0.13)",
   border: "1px solid rgba(239, 68, 68, 0.28)",
-  color: "#FCA5A5",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -1796,7 +1748,7 @@ const importButtonStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   cursor: "pointer",
-  boxShadow: "0 12px 28px color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1820,9 +1772,9 @@ const inlineStatsItemStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 10px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#D4D4D8",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -1831,14 +1783,14 @@ const inlineStatsItemStyle: CSSProperties = {
 const inlineStatsReadyStyle: CSSProperties = {
   ...inlineStatsItemStyle,
   background: "rgba(34, 197, 94, 0.14)",
-  border: "1px solid rgba(34, 197, 94, 0.3)",
-  color: "#86EFAC",
+  border: "1px solid color-mix(in srgb, #22C55E 30%, var(--historietas-border-soft, transparent))",
+  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
 };
 
 const inlineStatsWarningStyle: CSSProperties = {
   ...inlineStatsItemStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-surface, transparent))",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, var(--historietas-border-soft, transparent))",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
@@ -1861,7 +1813,7 @@ const saveButtonStyle: CSSProperties = {
   fontSize: "13px",
   fontWeight: 950,
   cursor: "pointer",
-  boxShadow: "0 12px 32px color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
+  boxShadow: "none",
   fontFamily: "inherit",
   textAlign: "center",
   padding: "0 12px",
@@ -1875,8 +1827,8 @@ const saveButtonStyle: CSSProperties = {
 
 const disabledButtonStyle: CSSProperties = {
   ...saveButtonStyle,
-  background: "rgba(255,255,255,0.08)",
-  color: "#A1A1AA",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   boxShadow: "none",
   cursor: "not-allowed",
 };
@@ -1889,7 +1841,7 @@ const secondaryButtonStyle: CSSProperties = {
   textDecoration: "none",
   fontSize: "13px",
   fontWeight: 950,
-  boxShadow: "0 12px 32px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, transparent)",
+  boxShadow: "none",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1906,9 +1858,9 @@ const secondaryButtonStyle: CSSProperties = {
 const cancelButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
   textDecoration: "none",
   fontSize: "13px",
   fontWeight: 900,
@@ -1928,11 +1880,11 @@ const cancelButtonStyle: CSSProperties = {
 const previewPanelStyle: CSSProperties = {
   display: "grid",
   gap: "10px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.80))",
-  border: "1px solid rgba(255,255,255,0.07)",
+  background: "var(--historietas-surface, rgba(18,12,30,0.80))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   borderRadius: "22px",
   padding: "12px",
-  boxShadow: "0 14px 36px rgba(0,0,0,0.20)",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1967,8 +1919,8 @@ const previewChapterCardStyle: CSSProperties = {
   gap: "10px",
   padding: "14px",
   borderRadius: "20px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, rgba(31,31,35,0.92))",
-  border: "1px solid rgba(255,255,255,0.07)",
+  background: "var(--historietas-surface-strong, rgba(31,31,35,0.92))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2004,9 +1956,9 @@ const previewChapterStatusStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "6px 8px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#E4E4E7",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  color: "var(--historietas-secondary-button-text, #E4E4E7)",
   fontSize: "10px",
   fontWeight: 950,
   whiteSpace: "normal",
@@ -2015,7 +1967,7 @@ const previewChapterStatusStyle: CSSProperties = {
 
 const previewChapterTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "26px",
   lineHeight: 1.05,
   fontWeight: 950,
@@ -2026,7 +1978,7 @@ const previewChapterTitleStyle: CSSProperties = {
 
 const previewChapterTextStyle: CSSProperties = {
   margin: 0,
-  color: "#E4E4E7",
+  color: "var(--historietas-text-primary, #E4E4E7)",
   fontSize: "13px",
   lineHeight: 1.65,
   fontWeight: 600,
@@ -2043,7 +1995,7 @@ const previewStatsStyle: CSSProperties = {
   display: "flex",
   gap: "8px",
   flexWrap: "wrap",
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
   fontWeight: 850,
   minWidth: 0,
@@ -2055,8 +2007,8 @@ const commentBoxStyle: CSSProperties = {
   gap: "7px",
   padding: "10px",
   borderRadius: "14px",
-  background: "rgba(15,15,15,0.42)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2080,10 +2032,10 @@ const commentBadgeStyle: CSSProperties = {
 
 const commentTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-primary, #D4D4D8)",
   fontSize: "12px",
   lineHeight: 1.6,
-  fontWeight: 600,
+  fontWeight: 650,
   whiteSpace: "pre-wrap",
   maxWidth: "100%",
   overflowWrap: "break-word",
@@ -2094,8 +2046,8 @@ const commentTextStyle: CSSProperties = {
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
   borderRadius: "26px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, rgba(31,31,35,0.96))",
-  border: "1px solid #2D2D32",
+  background: "var(--historietas-surface, rgba(31,31,35,0.96))",
+  border: "1px solid var(--historietas-border-soft, #2D2D32)",
   padding: "22px",
   display: "grid",
   gap: "12px",
@@ -2115,7 +2067,7 @@ const emptyTitleStyle: CSSProperties = {
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "14px",
   lineHeight: 1.7,
   fontWeight: 600,
@@ -2149,16 +2101,7 @@ const desktopContainerStyle: CSSProperties = {
   padding: "22px 0 76px",
 };
 
-const desktopTopStyle: CSSProperties = {
-  ...topStyle,
-  flexWrap: "nowrap",
-  marginBottom: "16px",
-};
 
-const desktopTopActionsStyle: CSSProperties = {
-  ...topActionsStyle,
-  flexWrap: "nowrap",
-};
 
 const desktopHeroBoxStyle: CSSProperties = {
   ...heroBoxStyle,
@@ -2177,8 +2120,8 @@ const desktopBadgeStyle: CSSProperties = {
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
   gridColumn: "1",
-  fontSize: "clamp(38px, 4.1vw, 56px)",
-  letterSpacing: "-0.075em",
+  fontSize: "clamp(36px, 3.4vw, 48px)",
+  letterSpacing: "-0.045em",
 };
 
 const desktopDescriptionStyle: CSSProperties = {
@@ -2234,7 +2177,7 @@ const desktopImportBoxStyle: CSSProperties = {
   padding: "9px 11px",
   borderRadius: "16px",
   background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
 };
 
 const desktopImportTextStyle: CSSProperties = {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
+import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 
 type CapituloLocal = {
   id: string;
@@ -120,25 +121,6 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
-}
-
-function contarNotificacoesNaoLidas() {
-  try {
-    const notificacoesTexto = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    const notificacoesJson = notificacoesTexto
-      ? JSON.parse(notificacoesTexto)
-      : [];
-
-    if (!Array.isArray(notificacoesJson)) {
-      return 0;
-    }
-
-    return notificacoesJson.filter((notificacao) => {
-      return notificacao && typeof notificacao === "object" && !notificacao.lida;
-    }).length;
-  } catch {
-    return 0;
-  }
 }
 
 function normalizarCapitulo(
@@ -431,7 +413,7 @@ function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
   return {
     ...baseStyle,
     background: "#18181B",
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.82) 100%), url(${capa})`,
+    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.22) 100%), url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -452,16 +434,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
 
   return Math.round((capitulosLidos / capitulos.length) * 100);
-}
-
-function formatarData(dataIso: string) {
-  const data = new Date(dataIso);
-
-  if (Number.isNaN(data.getTime())) {
-    return "Não registrada";
-  }
-
-  return data.toLocaleDateString("pt-BR");
 }
 
 function encontrarCapituloParaContinuar(obra: ObraLocal) {
@@ -495,21 +467,10 @@ export default function MinhasObrasPage() {
   const [filtro, setFiltro] = useState<FiltroMinhasObras>("todas");
   const [ordenacao, setOrdenacao] =
     useState<OrdenacaoMinhasObras>("recentes");
-  const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
   const [obraComLinkCopiado, setObraComLinkCopiado] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
-  const perfilAutorHref = useMemo(() => {
-    const primeiraObraComAutor = obras.find((obra) => obra.autor.trim());
-
-    if (!primeiraObraComAutor) {
-      return "/perfil-autor";
-    }
-
-    return `/perfil-autor?autor=${encodeURIComponent(
-      primeiraObraComAutor.autor
-    )}`;
-  }, [obras]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -552,7 +513,6 @@ export default function MinhasObrasPage() {
           setObras(obrasLocais);
           setObrasFavoritas(obrasFavoritasNormalizadas);
           setObrasConcluidas(obrasConcluidasNormalizadas);
-          setNotificacoesNaoLidas(contarNotificacoesNaoLidas());
         }
 
         const { data: dadosUsuario, error: erroUsuario } =
@@ -628,7 +588,6 @@ export default function MinhasObrasPage() {
           setObras([]);
           setObrasFavoritas([]);
           setObrasConcluidas([]);
-          setNotificacoesNaoLidas(0);
         }
       }
     }
@@ -707,40 +666,7 @@ export default function MinhasObrasPage() {
   }, [obras, obrasFavoritas, obrasConcluidas]);
 
 
-  const textoNotificacoes =
-    notificacoesNaoLidas > 0
-      ? `Notificações (${notificacoesNaoLidas})`
-      : "Notificações";
 
-  const obrasParaContinuar = useMemo(() => {
-    return obras
-      .filter((obra) => encontrarCapituloParaContinuar(obra))
-      .sort((obraA, obraB) => {
-        const dataA = new Date(obraA.ultimaLeituraEm || obraA.criadaEm).getTime();
-        const dataB = new Date(obraB.ultimaLeituraEm || obraB.criadaEm).getTime();
-
-        return (Number.isNaN(dataB) ? 0 : dataB) -
-          (Number.isNaN(dataA) ? 0 : dataA);
-      });
-  }, [obras]);
-
-  const obraRecomendada = useMemo(() => {
-    const rascunhoComCapitulo = obras.find((obra) => {
-      return !obra.publicado && obra.capitulos.length > 0;
-    });
-
-    if (rascunhoComCapitulo) {
-      return rascunhoComCapitulo;
-    }
-
-    const rascunhoSemCapitulo = obras.find((obra) => !obra.publicado);
-
-    if (rascunhoSemCapitulo) {
-      return rascunhoSemCapitulo;
-    }
-
-    return obras[0] || null;
-  }, [obras]);
 
   const obrasFiltradas = useMemo(() => {
     const termoBusca = normalizarTexto(busca);
@@ -867,32 +793,6 @@ export default function MinhasObrasPage() {
     }
   }
 
-  function alternarFavoritoObra(obraId: string) {
-    const novasObrasFavoritas = obrasFavoritas.includes(obraId)
-      ? obrasFavoritas.filter((id) => id !== obraId)
-      : [...obrasFavoritas, obraId];
-
-    localStorage.setItem(
-      FAVORITES_STORAGE_KEY,
-      JSON.stringify(novasObrasFavoritas)
-    );
-
-    setObrasFavoritas(novasObrasFavoritas);
-  }
-
-  function alternarConcluidoObra(obraId: string) {
-    const novasObrasConcluidas = obrasConcluidas.includes(obraId)
-      ? obrasConcluidas.filter((id) => id !== obraId)
-      : [...obrasConcluidas, obraId];
-
-    localStorage.setItem(
-      COMPLETED_STORAGE_KEY,
-      JSON.stringify(novasObrasConcluidas)
-    );
-
-    setObrasConcluidas(novasObrasConcluidas);
-  }
-
   async function copiarLinkObra(obra: ObraLocal) {
     const linkPublico =
       obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
@@ -988,24 +888,23 @@ export default function MinhasObrasPage() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main style={pageThemeStyle}>
+      <style>{`${historietasThemeCss}${minhasObrasPageCss}`}</style>
+
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
           <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
             <span style={logoMarkStyle}>H</span>
-            <span style={logoTextStyle}>istorietas</span>
+            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <span style={isDesktop ? desktopTopPageLabelStyle : topPageLabelStyle}>
-            Minhas obras
-          </span>
         </header>
 
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
           <div style={heroGlowStyle} />
 
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <h1 style={titleStyle}>Suas histórias</h1>
+            <h1 className="historietas-theme-title" style={titleStyle}>Minhas Obras</h1>
 
             <p style={descriptionStyle}>
               Acompanhe rascunhos, capítulos e publicações em um painel limpo
@@ -1049,7 +948,7 @@ export default function MinhasObrasPage() {
             </span>
           </div>
 
-          <div style={isDesktop ? desktopStatCardStyle : statCardStyle}>
+          <div style={isDesktop ? desktopStatCardStyle : wideStatCardStyle}>
             <strong style={statNumberStyle}>{totais.totalComArquivo}</strong>
             <span style={statLabelStyle}>
               {totais.totalComArquivo === 1 ? "arquivo anexado" : "arquivos anexados"}
@@ -1126,10 +1025,10 @@ export default function MinhasObrasPage() {
 
         <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
           <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-            <div style={{ minWidth: 0 }}>
-              <span style={miniTitleStyle}>BIBLIOTECA</span>
-
-              <h2 style={sectionTitleStyle}>Obras salvas</h2>
+            <div style={{ width: "100%", minWidth: 0 }}>
+              <h2 style={{ ...sectionTitleStyle, textAlign: "center" }}>
+                OBRAS CRIADAS
+              </h2>
             </div>
           </div>
 
@@ -1161,18 +1060,6 @@ export default function MinhasObrasPage() {
           ) : (
             <div style={isDesktop ? desktopListStyle : listStyle}>
               {obrasFiltradas.map((obra) => {
-                const totalCurtidas = obra.capitulos.filter(
-                  (capitulo) => capitulo.curtiu
-                ).length;
-
-                const totalComentarios = obra.capitulos.filter((capitulo) =>
-                  capitulo.comentario.trim()
-                ).length;
-
-                const totalSalvos = obra.capitulos.filter(
-                  (capitulo) => capitulo.salvo
-                ).length;
-
                 const totalLidos = obra.capitulos.filter(
                   (capitulo) => capitulo.lido
                 ).length;
@@ -1191,12 +1078,6 @@ export default function MinhasObrasPage() {
                   encontrarCapituloParaContinuar(obra);
 
                 const capituloDestaque = capituloParaContinuar || ultimoCapitulo;
-
-                const capituloDestaqueIndex = capituloDestaque
-                  ? obra.capitulos.findIndex(
-                      (capitulo) => capitulo.id === capituloDestaque.id
-                    ) + 1
-                  : 0;
 
                 const adicionarCapituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
                 const editarObraHref = `/editar-obra?obraId=${obra.id}`;
@@ -1217,8 +1098,6 @@ export default function MinhasObrasPage() {
                     <div style={criarCoverStyle(obra.capa, isDesktop)}>
                       <div style={coverGlowStyle} />
 
-                      <span style={genreBadgeStyle}>{obra.genero}</span>
-
                       {!obra.capa && (
                         <span style={noCoverBadgeStyle}>Sem capa</span>
                       )}
@@ -1226,12 +1105,6 @@ export default function MinhasObrasPage() {
                       {mostrarClassificacao(obra) && (
                         <span style={coverClassificationBadgeStyle}>
                           {obra.classificacaoIndicativa}
-                        </span>
-                      )}
-
-                      {progressoLeitura > 0 && (
-                        <span style={coverProgressBadgeStyle}>
-                          {progressoLeitura}% lido
                         </span>
                       )}
 
@@ -1250,15 +1123,22 @@ export default function MinhasObrasPage() {
 
                     <div style={isDesktop ? desktopCardContentStyle : cardContentStyle}>
                       <div style={statusRowStyle}>
-                        <span
-                          style={
-                            obra.publicado ? publishedStatusStyle : statusStyle
-                          }
-                        >
-                          {obra.publicado ? "Publicado" : "Rascunho"}
-                        </span>
-
                         <span style={formatBadgeStyle}>{obra.formato}</span>
+
+                        {obra.tags.slice(0, 2).map((tag, index) => (
+                          <span
+                            key={`${obra.id}-status-tag-${tag}-${index}`}
+                            style={tagStyle}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+
+                        {obra.tags.length > 2 && (
+                          <span style={tagStyle}>+{obra.tags.length - 2}</span>
+                        )}
+
+                        <span style={genreInlineBadgeStyle}>{obra.genero}</span>
 
                         {obra.arquivoObra && (
                           <span style={fileBadgeStyle}>Arquivo anexado</span>
@@ -1276,25 +1156,8 @@ export default function MinhasObrasPage() {
                       <h3 style={isDesktop ? desktopCardTitleStyle : cardTitleStyle}>{obra.titulo}</h3>
 
                       <Link href={perfilAutorHref} style={authorLinkStyle}>
-                        por {obra.autor}
+                        Por {obra.autor}
                       </Link>
-
-                      <p style={isDesktop ? desktopSinopseStyle : sinopseStyle}>{obra.sinopse}</p>
-
-                      <div style={tagListStyle}>
-                        {obra.tags.slice(0, 2).map((tag, index) => (
-                          <span
-                            key={`${obra.id}-${tag}-${index}`}
-                            style={tagStyle}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-
-                        {obra.tags.length > 2 && (
-                          <span style={tagStyle}>+{obra.tags.length - 2}</span>
-                        )}
-                      </div>
 
                       {obra.capitulos.length > 0 && (
                         <section style={isDesktop ? desktopProgressBoxStyle : progressBoxStyle}>
@@ -1321,43 +1184,37 @@ export default function MinhasObrasPage() {
 
                       {capituloDestaque ? (
                         <section style={isDesktop ? desktopLastChapterBoxStyle : lastChapterBoxStyle}>
-                          <span style={lastChapterBadgeStyle}>
-                            {capituloParaContinuar
-                              ? "CONTINUAR LEITURA"
-                              : "ÚLTIMO CAPÍTULO"}
-                          </span>
+                          <div style={lastChapterActionsRowStyle}>
+                            <Link
+                              href={capituloDestaqueHref}
+                              style={lastChapterButtonStyle}
+                            >
+                              {capituloParaContinuar
+                                ? "Continuar lendo"
+                                : "Ler capítulo"}
+                            </Link>
 
-                          <h4 style={lastChapterTitleStyle}>
-                            Capítulo {capituloDestaqueIndex}: {capituloDestaque.titulo}
-                          </h4>
-
-                          <Link
-                            href={capituloDestaqueHref}
-                            style={lastChapterButtonStyle}
-                          >
-                            {capituloParaContinuar
-                              ? "Continuar lendo"
-                              : "Ler capítulo"}
-                          </Link>
+                            <Link href={verObraHref} style={orangeActionStyle}>
+                              Ver obra
+                            </Link>
+                          </div>
                         </section>
                       ) : (
                         <section style={isDesktop ? desktopLastChapterBoxStyle : lastChapterBoxStyle}>
-                          <span style={lastChapterBadgeStyle}>
-                            SEM CAPÍTULOS
-                          </span>
-
                           <p style={lastChapterTextStyle}>
                             Essa obra ainda não possui capítulos. Adicione o
                             primeiro para começar a leitura.
                           </p>
+
+                          <div style={lastChapterActionsRowStyle}>
+                            <Link href={verObraHref} style={orangeActionStyle}>
+                              Ver obra
+                            </Link>
+                          </div>
                         </section>
                       )}
 
                       <div style={isDesktop ? desktopPrimaryActionsGridStyle : primaryActionsGridStyle}>
-                        <Link href={verObraHref} style={orangeActionStyle}>
-                          Ver obra
-                        </Link>
-
                         <Link
                           href={paginaPublicaHref}
                           style={publicPageActionStyle}
@@ -1365,81 +1222,58 @@ export default function MinhasObrasPage() {
                           Página pública
                         </Link>
 
-                        {obra.arquivoObra && (
-                          <Link href={verArquivoHref} style={fileActionStyle}>
-                            Ver arquivo
-                          </Link>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => copiarLinkObra(obra)}
-                          style={
-                            obraComLinkCopiado === obra.id
-                              ? copiedLinkActionStyle
-                              : copyLinkActionStyle
-                          }
-                        >
-                          {obraComLinkCopiado === obra.id
-                            ? "Link copiado!"
-                            : "Copiar link"}
-                        </button>
-
                         <Link
                           href={adicionarCapituloHref}
                           style={purpleActionStyle}
                         >
                           Adicionar capítulo
                         </Link>
-                      </div>
 
-                      <div style={isDesktop ? desktopSecondaryActionsGridStyle : secondaryActionsGridStyle}>
-                        <Link href={editarObraHref} style={secondaryActionStyle}>
-                          Editar
-                        </Link>
-
-                        <button
-                          type="button"
-                          onClick={() => alternarFavoritoObra(obra.id)}
-                          style={
-                            obraFavorita
-                              ? favoriteActionActiveStyle
-                              : favoriteActionStyle
-                          }
-                        >
-                          {obraFavorita ? "Favorita" : "Favoritar"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => alternarConcluidoObra(obra.id)}
-                          style={
-                            obraConcluida
-                              ? completedActionActiveStyle
-                              : completedActionStyle
-                          }
-                        >
-                          {obraConcluida ? "Concluída" : "Concluir"}
-                        </button>
-
-                        {!obra.publicado && (
-                          <button
-                            type="button"
-                            onClick={() => publicarObra(obra.id)}
-                            style={publishActionStyle}
-                          >
-                            Publicar
-                          </button>
+                        {obra.arquivoObra && (
+                          <Link href={verArquivoHref} style={fileActionStyle}>
+                            Ver arquivo
+                          </Link>
                         )}
+                      </div>
 
+                    </div>
+
+                    <div style={isDesktop ? desktopSecondaryActionsGridStyle : secondaryActionsGridStyle}>
+                      <Link href={editarObraHref} style={secondaryActionStyle}>
+                        Editar
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() => copiarLinkObra(obra)}
+                        style={
+                          obraComLinkCopiado === obra.id
+                            ? copiedLinkSmallActionStyle
+                            : copyLinkSmallActionStyle
+                        }
+                      >
+                        {obraComLinkCopiado === obra.id
+                          ? "Copiado!"
+                          : "Copiar link"}
+                      </button>
+
+                      {!obra.publicado && (
                         <button
                           type="button"
-                          onClick={() => excluirObra(obra.id, obra.titulo)}
-                          style={deleteActionStyle}
+                          onClick={() => publicarObra(obra.id)}
+                          style={publishActionStyle}
                         >
-                          Excluir
+                          Publicar
                         </button>
-                      </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => excluirObra(obra.id, obra.titulo)}
+                        style={deleteActionStyle}
+                      >
+                        Excluir
+                      </button>
                     </div>
                   </article>
                 );
@@ -1453,6 +1287,16 @@ export default function MinhasObrasPage() {
     </main>
   );
 }
+
+const minhasObrasPageCss = `
+  html[data-historietas-tema-visual] nav a[href="/minhas-obras"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/minhas-obras"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/minhas-obras"] {
+    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
+    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
+    color: var(--historietas-accent, #F97316) !important;
+  }
+`;
 
 const safeTextStyle: CSSProperties = {
   minWidth: 0,
@@ -1468,7 +1312,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   background:
     "radial-gradient(circle at 12% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 30%), radial-gradient(circle at 88% 14%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 24%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 42%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
   boxSizing: "border-box",
 };
@@ -1477,7 +1321,7 @@ const containerStyle: CSSProperties = {
   width: "min(840px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 64px",
+  padding: "18px 0 calc(100px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1485,7 +1329,7 @@ const containerStyle: CSSProperties = {
 const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "flex-start",
   gap: "10px",
   marginBottom: "14px",
   flexWrap: "wrap",
@@ -1496,7 +1340,7 @@ const topStyle: CSSProperties = {
 
 
 const logoStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "24px",
   fontWeight: 950,
@@ -1505,7 +1349,7 @@ const logoStyle: CSSProperties = {
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "min(100%, calc(100% - 138px))",
+  maxWidth: "100%",
   overflow: "hidden",
   ...safeTextStyle,
 };
@@ -1527,64 +1371,15 @@ const logoMarkStyle: CSSProperties = {
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
-  background: "linear-gradient(135deg, #F5F3FF 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, #FFFFFF) 42%, var(--historietas-accent, #FDBA74) 100%)",
+  background: "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
+  textShadow: "var(--historietas-logo-shadow, 0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent))",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 };
-
-const topPageLabelStyle: CSSProperties = {
-  flex: "0 0 auto",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minHeight: "36px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 30%, rgba(255,255,255,0.06)) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, rgba(255,255,255,0.07)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, rgba(255,255,255,0.12))",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.04em",
-  boxShadow:
-    "0 12px 28px rgba(0,0,0,0.22), 0 0 24px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
-  ...safeTextStyle,
-};
-
-const desktopTopPageLabelStyle: CSSProperties = {
-  ...topPageLabelStyle,
-  minHeight: "40px",
-  padding: "0 18px",
-  fontSize: "12px",
-};
-
-
-const backButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 900,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-
-
-
 
 const heroStyle: CSSProperties = {
   position: "relative",
@@ -1597,24 +1392,13 @@ const heroStyle: CSSProperties = {
   borderRadius: "28px",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, rgba(255,255,255,0.08))",
   background:
-    "radial-gradient(circle at 15% 12%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), transparent 34%), radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent), transparent 26%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-bg-mid, #12081F) 82%, #FFFFFF) 0%, color-mix(in srgb, var(--historietas-bg-start, #0B0614) 94%, #000000) 100%)",
-  boxShadow:
-    "0 18px 48px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08), 0 0 34px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, transparent)",
+    "radial-gradient(circle at 15% 12%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 34%), radial-gradient(circle at 88% 18%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)), transparent 26%), linear-gradient(135deg, var(--historietas-surface, rgba(32,14,53,0.96)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
+  boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
 };
 
 const heroGlowStyle: CSSProperties = {
-  position: "absolute",
-  left: "-42px",
-  top: "18px",
-  width: "132px",
-  height: "132px",
-  borderRadius: "999px",
-  background:
-    "radial-gradient(circle, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 54%, transparent) 0%, transparent 68%)",
-  filter: "blur(2px)",
-  opacity: 0.82,
-  pointerEvents: "none",
+  display: "none",
 };
 
 const heroContentStyle: CSSProperties = {
@@ -1630,23 +1414,6 @@ const heroContentStyle: CSSProperties = {
   textAlign: "center",
 };
 
-const badgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  display: "inline-flex",
-  justifySelf: "center",
-  padding: "7px 11px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
 const titleStyle: CSSProperties = {
   margin: 0,
   fontSize: "clamp(35px, 9.6vw, 50px)",
@@ -1654,7 +1421,7 @@ const titleStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "-0.075em",
   maxWidth: "100%",
-  background: "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 42%, var(--historietas-accent, #FDBA74) 100%)",
+  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -1663,7 +1430,7 @@ const titleStyle: CSSProperties = {
 
 const descriptionStyle: CSSProperties = {
   margin: "0 auto",
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.55,
   fontWeight: 700,
@@ -1695,7 +1462,7 @@ const heroPrimaryButtonStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  boxShadow: "0 11px 26px color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
+  boxShadow: "none",
   textAlign: "center",
   padding: "0 12px",
   ...safeTextStyle,
@@ -1707,8 +1474,8 @@ const heroPrimaryButtonStyle: CSSProperties = {
 
 const statsBoxStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 116px), 1fr))",
-  gap: "7px",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "6px",
   marginTop: "10px",
   minWidth: 0,
   maxWidth: "100%",
@@ -1717,29 +1484,41 @@ const statsBoxStyle: CSSProperties = {
 
 const statCardStyle: CSSProperties = {
   borderRadius: "16px",
-  background: "linear-gradient(135deg, rgba(31,22,48,0.54) 0%, rgba(18,12,30,0.70) 100%)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  padding: "9px 10px",
+  background: "linear-gradient(135deg, var(--historietas-surface, rgba(31,22,48,0.54)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.70)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  padding: "8px 4px",
+  minHeight: "62px",
   display: "grid",
-  gap: "1px",
+  alignContent: "center",
+  justifyItems: "center",
+  gap: "3px",
+  textAlign: "center",
   minWidth: 0,
   overflow: "hidden",
-  boxShadow: "0 7px 18px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.035)",
+  boxShadow: "var(--historietas-card-shadow, none)",
+};
+
+const wideStatCardStyle: CSSProperties = {
+  ...statCardStyle,
 };
 
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "19px",
+  fontSize: "20px",
   lineHeight: 1,
   fontWeight: 950,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const statLabelStyle: CSSProperties = {
-  color: "#A1A1AA",
-  fontSize: "10px",
-  lineHeight: 1.18,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "9px",
+  lineHeight: 1.12,
   fontWeight: 850,
+  textAlign: "center",
+  overflowWrap: "normal",
+  wordBreak: "normal",
   ...safeTextStyle,
 };
 
@@ -1754,15 +1533,15 @@ const filterBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "12px",
   borderRadius: "22px",
-  background: "linear-gradient(135deg, rgba(31,22,48,0.74) 0%, rgba(18,12,30,0.88) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, rgba(255,255,255,0.08))",
+  background: "linear-gradient(135deg, var(--historietas-surface, rgba(31,22,48,0.74)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.88)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
   display: "grid",
   gap: "9px",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
   boxSizing: "border-box",
-  boxShadow: "0 12px 28px rgba(0,0,0,0.18)",
+  boxShadow: "var(--historietas-card-shadow, none)",
 };
 
 const filterGridStyle: CSSProperties = {
@@ -1774,14 +1553,19 @@ const filterGridStyle: CSSProperties = {
 
 const fieldBoxStyle: CSSProperties = {
   display: "grid",
+  justifyItems: "center",
   gap: "8px",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const filterLabelStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "13px",
   fontWeight: 950,
+  letterSpacing: "0.04em",
+  textAlign: "center",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
@@ -1789,13 +1573,14 @@ const searchInputStyle: CSSProperties = {
   width: "100%",
   minHeight: "41px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(11,6,20,0.82)",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "var(--historietas-input-bg, rgba(11,6,20,0.82))",
+  color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 14px",
   outline: "none",
   fontSize: "13px",
   fontWeight: 700,
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1804,13 +1589,14 @@ const selectStyle: CSSProperties = {
   width: "100%",
   minHeight: "41px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(11,6,20,0.82)",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "var(--historietas-input-bg, rgba(11,6,20,0.82))",
+  color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 14px",
   outline: "none",
   fontSize: "13px",
   fontWeight: 800,
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1825,7 +1611,7 @@ const filterFooterStyle: CSSProperties = {
 };
 
 const filterInfoStyle: CSSProperties = {
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "13px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -1835,9 +1621,9 @@ const clearFilterButtonStyle: CSSProperties = {
   minHeight: "40px",
   padding: "0 14px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "13px",
   fontWeight: 950,
   cursor: "pointer",
@@ -1857,29 +1643,22 @@ const sectionHeaderStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const miniTitleStyle: CSSProperties = {
-  display: "inline-flex",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  marginBottom: "6px",
-  ...safeTextStyle,
-};
-
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "clamp(28px, 8vw, 34px)",
   lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "-0.06em",
+  letterSpacing: "0.035em",
+  textAlign: "center",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
 const emptyBoxStyle: CSSProperties = {
   borderRadius: "26px",
-  background: "rgba(31,31,35,0.96)",
-  border: "1px solid #2D2D32",
+  background: "var(--historietas-surface, rgba(31,31,35,0.96))",
+  border: "1px solid var(--historietas-border-soft, #2D2D32)",
   padding: "22px",
   display: "grid",
   gap: "12px",
@@ -1896,7 +1675,7 @@ const emptyTitleStyle: CSSProperties = {
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "14px",
   lineHeight: 1.7,
   fontWeight: 600,
@@ -1930,29 +1709,33 @@ const listStyle: CSSProperties = {
 
 const obraCardStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "9px",
+  gridTemplateColumns: "minmax(112px, 0.38fr) minmax(0, 1fr)",
+  alignItems: "start",
+  gap: "10px",
   padding: "10px",
   borderRadius: "22px",
   background:
-    "linear-gradient(135deg, rgba(33,24,50,0.92) 0%, rgba(18,12,30,0.98) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 13%, rgba(255,255,255,0.07))",
-  color: "#FFFFFF",
-  boxShadow: "0 12px 30px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 22px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 6%, transparent)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 13%, var(--historietas-border-soft, rgba(255,255,255,0.07)))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  boxShadow: "var(--historietas-card-shadow, none)",
   boxSizing: "border-box",
   minWidth: 0,
   overflow: "hidden",
 };
 
 const coverStyle: CSSProperties = {
-  minHeight: "118px",
+  width: "100%",
+  minHeight: "216px",
+  height: "216px",
   maxWidth: "100%",
+  alignSelf: "start",
   boxSizing: "border-box",
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
   background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 52%, transparent), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
+    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent), transparent 38%), linear-gradient(135deg, var(--historietas-surface, #18181B) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)",
   minWidth: 0,
 };
 
@@ -1960,24 +1743,8 @@ const coverGlowStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
   background:
-    "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.76) 100%)",
-};
-
-const genreBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "9px",
-  left: "9px",
-  width: "fit-content",
-  maxWidth: "calc(100% - 18px)",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 78%, transparent)",
-  color: "#FFFFFF",
-  fontSize: "10px",
-  fontWeight: 950,
-  textAlign: "center",
-  whiteSpace: "normal",
-  ...safeTextStyle,
+    "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.18) 100%)",
+  pointerEvents: "none",
 };
 
 const noCoverBadgeStyle: CSSProperties = {
@@ -1988,9 +1755,9 @@ const noCoverBadgeStyle: CSSProperties = {
   maxWidth: "calc(100% - 28px)",
   padding: "8px 10px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.1)",
-  border: "1px solid rgba(255,255,255,0.14)",
-  color: "#D4D4D8",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.1))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -2012,52 +1779,44 @@ const coverClassificationBadgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const coverProgressBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "42px",
-  right: "9px",
-  width: "fit-content",
-  maxWidth: "calc(100% - 18px)",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.72)",
-  border: "1px solid rgba(34, 197, 94, 0.34)",
-  color: "#FFFFFF",
-  fontSize: "10px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-
 const coverBottomStyle: CSSProperties = {
   position: "absolute",
-  left: "12px",
-  right: "12px",
+  left: "10px",
+  right: "10px",
   bottom: "12px",
   display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "space-between",
-  gap: "10px",
+  alignItems: "baseline",
+  justifyContent: "center",
+  gap: "7px",
   minWidth: 0,
 };
 
 const coverTitleStyle: CSSProperties = {
   color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  textShadow: "none",
   fontSize: "34px",
   lineHeight: 0.85,
   fontWeight: 950,
   letterSpacing: "-0.08em",
+  flex: "0 0 auto",
   ...safeTextStyle,
 };
 
 const coverSubtitleStyle: CSSProperties = {
-  color: "#E4E4E7",
-  fontSize: "13px",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  textShadow: "none",
+  fontSize: "12px",
   fontWeight: 950,
   textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  textAlign: "right",
-  ...safeTextStyle,
+  letterSpacing: "0.055em",
+  textAlign: "left",
+  whiteSpace: "nowrap",
+  overflowWrap: "normal",
+  wordBreak: "normal",
+  flex: "0 1 auto",
+  minWidth: 0,
 };
 
 const cardContentStyle: CSSProperties = {
@@ -2075,42 +1834,14 @@ const statusRowStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const statusStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const publishedStatusStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.10)",
-  border: "1px solid rgba(34, 197, 94, 0.22)",
-  color: "#86EFAC",
-  fontSize: "10px",
-  fontWeight: 950,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
 const formatBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   padding: "6px 9px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#D4D4D8",
+  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-surface, rgba(255,255,255,0.055)))",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "10px",
   fontWeight: 950,
   whiteSpace: "normal",
@@ -2122,9 +1853,9 @@ const fileBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "6px 9px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 26%, transparent)",
-  color: "#FFFFFF",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, var(--historietas-surface, transparent))",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, var(--historietas-border-soft, transparent))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "10px",
   fontWeight: 950,
   whiteSpace: "normal",
@@ -2164,6 +1895,7 @@ const completedBadgeStyle: CSSProperties = {
 
 const cardTitleStyle: CSSProperties = {
   margin: 0,
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "26px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2185,37 +1917,29 @@ const authorLinkStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const sinopseStyle: CSSProperties = {
-  margin: 0,
-  color: "#D4D4D8",
-  fontSize: "13px",
-  lineHeight: 1.45,
-  fontWeight: 600,
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
-const tagListStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
 const tagStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "6px 9px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, #FFFFFF)",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, var(--historietas-surface, transparent))",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, var(--historietas-border-soft, transparent))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "11px",
   fontWeight: 900,
+  whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+const genreInlineBadgeStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "6px 9px",
+  borderRadius: "999px",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, var(--historietas-surface, transparent))",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 32%, var(--historietas-border-soft, transparent))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+  fontWeight: 950,
   whiteSpace: "normal",
   ...safeTextStyle,
 };
@@ -2225,8 +1949,8 @@ const progressBoxStyle: CSSProperties = {
   gap: "5px",
   padding: "7px 8px",
   borderRadius: "13px",
-  background: "rgba(15, 15, 15, 0.28)",
-  border: "1px solid rgba(255,255,255,0.065)",
+  background: "var(--historietas-secondary-surface, rgba(15,15,15,0.28))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -2259,8 +1983,8 @@ const progressTrackStyle: CSSProperties = {
   width: "100%",
   height: "6px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   overflow: "hidden",
 };
 
@@ -2272,7 +1996,7 @@ const progressBarStyle: CSSProperties = {
 
 const progressTextStyle: CSSProperties = {
   margin: 0,
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10px",
   lineHeight: 1.25,
   fontWeight: 800,
@@ -2287,46 +2011,17 @@ const lastChapterBoxStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
   gap: "6px",
-  padding: "9px",
-  borderRadius: "15px",
-  background: "rgba(255,255,255,0.032)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 12%, rgba(255,255,255,0.06))",
+  padding: "0",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   overflow: "hidden",
 };
 
-const lastChapterBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.06em",
-  ...safeTextStyle,
-};
-
-const lastChapterTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "15px",
-  lineHeight: 1.2,
-  fontWeight: 950,
-  letterSpacing: "-0.025em",
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
 const lastChapterTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.7,
   fontWeight: 600,
@@ -2337,27 +2032,37 @@ const lastChapterTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const lastChapterActionsRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "7px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
 const lastChapterButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  width: "fit-content",
+  minHeight: "36px",
+  width: "100%",
   maxWidth: "100%",
   borderRadius: "999px",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "11px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 11px",
+  padding: "0 8px",
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
 const primaryActionsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))",
+  gridTemplateColumns: "1fr",
   gap: "7px",
   minWidth: 0,
   maxWidth: "100%",
@@ -2365,10 +2070,13 @@ const primaryActionsGridStyle: CSSProperties = {
 };
 
 const secondaryActionsGridStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  alignItems: "center",
+  gridColumn: "1 / -1",
+  display: "grid",
+  gridAutoFlow: "column",
+  gridAutoColumns: "minmax(0, 1fr)",
+  alignItems: "stretch",
   gap: "5px",
+  width: "100%",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2377,7 +2085,7 @@ const secondaryActionsGridStyle: CSSProperties = {
 
 const publishActionStyle: CSSProperties = {
   minHeight: "28px",
-  width: "fit-content",
+  width: "100%",
   maxWidth: "100%",
   padding: "0 8px",
   borderRadius: "999px",
@@ -2387,7 +2095,7 @@ const publishActionStyle: CSSProperties = {
   textDecoration: "none",
   fontSize: "10px",
   fontWeight: 900,
-  display: "inline-flex",
+  display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
@@ -2397,96 +2105,13 @@ const publishActionStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const favoriteActionStyle: CSSProperties = {
-  minHeight: "28px",
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "0 8px",
-  borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 8%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  textDecoration: "none",
-  fontSize: "10px",
-  fontWeight: 900,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const favoriteActionActiveStyle: CSSProperties = {
-  minHeight: "28px",
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "0 8px",
-  borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  textDecoration: "none",
-  fontSize: "10px",
-  fontWeight: 900,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const completedActionStyle: CSSProperties = {
-  minHeight: "28px",
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "0 8px",
-  borderRadius: "999px",
-  border: "1px solid rgba(34,197,94,0.14)",
-  background: "rgba(34,197,94,0.07)",
-  color: "#86EFAC",
-  textDecoration: "none",
-  fontSize: "10px",
-  fontWeight: 900,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const completedActionActiveStyle: CSSProperties = {
-  minHeight: "28px",
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "0 8px",
-  borderRadius: "999px",
-  border: "1px solid rgba(34,197,94,0.22)",
-  background: "rgba(34,197,94,0.12)",
-  color: "#86EFAC",
-  textDecoration: "none",
-  fontSize: "10px",
-  fontWeight: 900,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 const orangeActionStyle: CSSProperties = {
-  minHeight: "36px",
+  minHeight: "34px",
+  width: "100%",
   borderRadius: "999px",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
@@ -2499,10 +2124,12 @@ const orangeActionStyle: CSSProperties = {
   textAlign: "center",
   padding: "0 10px",
   ...safeTextStyle,
+  whiteSpace: "nowrap",
 };
 
 const purpleActionStyle: CSSProperties = {
-  minHeight: "36px",
+  minHeight: "34px",
+  width: "100%",
   borderRadius: "999px",
   background: "var(--historietas-secondary, #7C3AED)",
   color: "#FFFFFF",
@@ -2515,98 +2142,89 @@ const purpleActionStyle: CSSProperties = {
   textAlign: "center",
   padding: "0 10px",
   ...safeTextStyle,
+  whiteSpace: "nowrap",
 };
 
 const publicPageActionStyle: CSSProperties = {
   minHeight: "36px",
+  width: "100%",
   borderRadius: "999px",
   background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "11px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 10px",
+  padding: "0 8px",
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
 const fileActionStyle: CSSProperties = {
   minHeight: "36px",
+  width: "100%",
   borderRadius: "999px",
   background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "11px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 10px",
+  padding: "0 8px",
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
-const copyLinkActionStyle: CSSProperties = {
-  minHeight: "36px",
+const copyLinkSmallActionStyle: CSSProperties = {
+  minHeight: "28px",
+  width: "100%",
+  maxWidth: "100%",
+  padding: "0 8px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#E4E4E7",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
+  color: "var(--historietas-text-primary, #E4E4E7)",
   textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
+  fontSize: "10px",
+  fontWeight: 900,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 10px",
   cursor: "pointer",
   fontFamily: "inherit",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
-const copiedLinkActionStyle: CSSProperties = {
-  ...copyLinkActionStyle,
-  background: "rgba(34, 197, 94, 0.14)",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
+const copiedLinkSmallActionStyle: CSSProperties = {
+  ...copyLinkSmallActionStyle,
+  border: "1px solid rgba(34,197,94,0.22)",
+  background: "rgba(34,197,94,0.12)",
   color: "#86EFAC",
-};
-
-const savedActionStyle: CSSProperties = {
-  minHeight: "44px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  ...safeTextStyle,
 };
 
 const secondaryActionStyle: CSSProperties = {
   minHeight: "28px",
-  width: "fit-content",
+  width: "100%",
   maxWidth: "100%",
   padding: "0 8px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.07)",
-  background: "rgba(255,255,255,0.045)",
-  color: "#A1A1AA",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   textDecoration: "none",
   fontSize: "10px",
   fontWeight: 900,
-  display: "inline-flex",
+  display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
@@ -2618,7 +2236,7 @@ const secondaryActionStyle: CSSProperties = {
 
 const deleteActionStyle: CSSProperties = {
   minHeight: "28px",
-  width: "fit-content",
+  width: "100%",
   maxWidth: "100%",
   padding: "0 8px",
   borderRadius: "999px",
@@ -2628,7 +2246,7 @@ const deleteActionStyle: CSSProperties = {
   textDecoration: "none",
   fontSize: "10px",
   fontWeight: 900,
-  display: "inline-flex",
+  display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
@@ -2638,40 +2256,10 @@ const deleteActionStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const infoBoxStyle: CSSProperties = {
-  marginTop: "24px",
-  padding: "16px",
-  borderRadius: "22px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 8%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-
-const infoTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "18px",
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
-  ...safeTextStyle,
-};
-
-const infoTextStyle: CSSProperties = {
-  margin: "8px 0 0",
-  color: "#D4D4D8",
-  fontSize: "13px",
-  lineHeight: 1.6,
-  fontWeight: 600,
-  ...safeTextStyle,
-};
-
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "28px 0 84px",
+  padding: "28px 0 96px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -2767,6 +2355,7 @@ const desktopCoverStyle: CSSProperties = {
   ...coverStyle,
   minHeight: "100%",
   height: "auto",
+  alignSelf: "stretch",
   borderRadius: "22px",
 };
 
@@ -2783,13 +2372,6 @@ const desktopCardTitleStyle: CSSProperties = {
   lineHeight: 0.96,
 };
 
-const desktopSinopseStyle: CSSProperties = {
-  ...sinopseStyle,
-  WebkitLineClamp: 3,
-  fontSize: "14px",
-  lineHeight: 1.55,
-};
-
 const desktopProgressBoxStyle: CSSProperties = {
   ...progressBoxStyle,
   padding: "10px 12px",
@@ -2798,28 +2380,21 @@ const desktopProgressBoxStyle: CSSProperties = {
 
 const desktopLastChapterBoxStyle: CSSProperties = {
   ...lastChapterBoxStyle,
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: "8px 14px",
-  padding: "11px 12px",
-  borderRadius: "18px",
+  gridTemplateColumns: "1fr",
+  alignItems: "start",
+  gap: "7px",
+  padding: "0",
+  borderRadius: 0,
 };
 
 const desktopPrimaryActionsGridStyle: CSSProperties = {
   ...primaryActionsGridStyle,
-  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "8px",
 };
 
 const desktopSecondaryActionsGridStyle: CSSProperties = {
   ...secondaryActionsGridStyle,
   gap: "7px",
-};
-
-const desktopInfoBoxStyle: CSSProperties = {
-  ...infoBoxStyle,
-  marginTop: "30px",
-  padding: "20px 22px",
-  borderRadius: "26px",
 };
 

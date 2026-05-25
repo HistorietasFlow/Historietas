@@ -42,15 +42,25 @@ export default function RootLayout({
       <body>
         <div className="historietas-app-shell">{children}</div>
 
-        <nav className="historietas-bottom-nav" aria-label="Navegação inferior">
+        <nav
+          className="historietas-bottom-nav"
+          data-bottom-nav="true"
+          data-mobile-nav="true"
+          aria-label="Navegação inferior"
+        >
           <Link href="/" className="historietas-bottom-nav-item">
             <span className="historietas-bottom-nav-icon">⌂</span>
-            <span className="historietas-bottom-nav-label">Home</span>
+            <span className="historietas-bottom-nav-label">Início</span>
           </Link>
 
           <Link href="/explorar" className="historietas-bottom-nav-item">
             <span className="historietas-bottom-nav-icon">◇</span>
             <span className="historietas-bottom-nav-label">Explorar</span>
+          </Link>
+
+          <Link href="/em-alta" className="historietas-bottom-nav-item">
+            <span className="historietas-bottom-nav-icon">↗</span>
+            <span className="historietas-bottom-nav-label">Em alta</span>
           </Link>
 
           <Link
@@ -64,6 +74,26 @@ export default function RootLayout({
           <Link href="/biblioteca" className="historietas-bottom-nav-item">
             <span className="historietas-bottom-nav-icon">▣</span>
             <span className="historietas-bottom-nav-label">Biblioteca</span>
+          </Link>
+
+          <Link href="/minhas-obras" className="historietas-bottom-nav-item">
+            <span className="historietas-bottom-nav-icon">✎</span>
+            <span className="historietas-bottom-nav-label">Obras</span>
+          </Link>
+
+          <Link href="/seguindo" className="historietas-bottom-nav-item">
+            <span className="historietas-bottom-nav-icon">♡</span>
+            <span className="historietas-bottom-nav-label">Seguindo</span>
+          </Link>
+
+          <Link href="/notificacoes" className="historietas-bottom-nav-item">
+            <span className="historietas-bottom-nav-icon">N</span>
+            <span className="historietas-bottom-nav-label">Avisos</span>
+          </Link>
+
+          <Link href="/configuracoes" className="historietas-bottom-nav-item">
+            <span className="historietas-bottom-nav-icon">⚙</span>
+            <span className="historietas-bottom-nav-label">Config.</span>
           </Link>
 
           <Link href="/painel-autor" className="historietas-bottom-nav-item">
@@ -87,25 +117,37 @@ export default function RootLayout({
                 left: 50%;
                 bottom: max(10px, env(safe-area-inset-bottom));
                 z-index: 80;
-                width: min(430px, calc(100% - 18px));
+                width: min(450px, calc(100% - 18px));
                 min-height: 66px;
                 transform: translateX(-50%);
                 display: none;
                 align-items: center;
-                justify-content: space-between;
+                justify-content: flex-start;
                 gap: 5px;
                 padding: 7px;
                 border-radius: 24px;
-                border: 1px solid rgba(255, 255, 255, 0.12);
-                background:
+                border: 1px solid var(--historietas-bottom-nav-border, rgba(255, 255, 255, 0.12));
+                background: var(
+                  --historietas-bottom-nav-bg,
                   radial-gradient(circle at 16% 0%, rgba(249, 115, 22, 0.18), transparent 34%),
                   radial-gradient(circle at 84% 0%, rgba(124, 58, 237, 0.24), transparent 38%),
-                  linear-gradient(180deg, rgba(18, 8, 31, 0.98) 0%, rgba(11, 6, 20, 0.98) 100%);
-                box-shadow:
+                  linear-gradient(180deg, rgba(18, 8, 31, 0.98) 0%, rgba(11, 6, 20, 0.98) 100%)
+                );
+                box-shadow: var(
+                  --historietas-bottom-nav-shadow,
                   0 14px 34px rgba(0, 0, 0, 0.42),
-                  0 0 24px rgba(124, 58, 237, 0.13),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.07);
-                overflow: hidden;
+                  inset 0 1px 0 rgba(255, 255, 255, 0.07)
+                );
+                overflow-x: auto;
+                overflow-y: hidden;
+                scroll-snap-type: x proximity;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-x: contain;
+              }
+
+              .historietas-bottom-nav::-webkit-scrollbar {
+                display: none;
               }
 
               .historietas-bottom-nav::before {
@@ -113,20 +155,24 @@ export default function RootLayout({
                 position: absolute;
                 inset: 0;
                 pointer-events: none;
-                background: linear-gradient(
-                  90deg,
-                  transparent 0%,
-                  rgba(255, 255, 255, 0.05) 50%,
-                  transparent 100%
+                background: var(
+                  --historietas-bottom-nav-shine,
+                  linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.05) 50%,
+                    transparent 100%
+                  )
                 );
               }
 
               .historietas-bottom-nav-item {
                 position: relative;
                 z-index: 1;
-                min-width: 0;
-                flex: 1 1 0;
+                min-width: 64px;
+                flex: 0 0 64px;
                 min-height: 50px;
+                scroll-snap-align: center;
                 padding: 6px 3px;
                 border-radius: 18px;
                 display: inline-flex;
@@ -134,7 +180,7 @@ export default function RootLayout({
                 align-items: center;
                 justify-content: center;
                 gap: 4px;
-                color: #d4d4d8;
+                color: var(--historietas-bottom-nav-text, #d4d4d8);
                 text-decoration: none;
                 font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
                 border: 1px solid transparent;
@@ -152,20 +198,20 @@ export default function RootLayout({
               }
 
               .historietas-bottom-nav-item:hover {
-                color: #ffffff;
-                border-color: rgba(255, 255, 255, 0.10);
-                background: rgba(255, 255, 255, 0.055);
+                color: var(--historietas-bottom-nav-hover-text, #ffffff);
+                border-color: var(--historietas-bottom-nav-border, rgba(255, 255, 255, 0.10));
+                background: var(--historietas-bottom-nav-hover-bg, rgba(255, 255, 255, 0.055));
               }
 
               .historietas-bottom-nav-main {
+                flex-basis: 70px;
                 color: #ffffff;
-                border-color: rgba(249, 115, 22, 0.55);
-                background:
-                  radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.12), transparent 54%),
-                  linear-gradient(135deg, rgba(249, 115, 22, 0.78) 0%, rgba(124, 58, 237, 0.72) 100%);
-                box-shadow:
-                  0 10px 22px rgba(249, 115, 22, 0.20),
-                  0 0 18px rgba(124, 58, 237, 0.18);
+                border-color: var(--historietas-bottom-nav-main-border, rgba(249, 115, 22, 0.55));
+                background: var(
+                  --historietas-bottom-nav-main-bg,
+                  linear-gradient(135deg, rgba(249, 115, 22, 0.78) 0%, rgba(124, 58, 237, 0.72) 100%)
+                );
+                box-shadow: var(--historietas-bottom-nav-main-shadow, none);
               }
 
               .historietas-bottom-nav-icon {
@@ -178,15 +224,15 @@ export default function RootLayout({
                 font-size: 16px;
                 line-height: 1;
                 font-weight: 950;
-                color: #f97316;
-                background: rgba(255, 255, 255, 0.045);
-                border: 1px solid rgba(255, 255, 255, 0.055);
+                color: var(--historietas-bottom-nav-icon-text, #f97316);
+                background: var(--historietas-bottom-nav-icon-bg, rgba(255, 255, 255, 0.045));
+                border: 1px solid var(--historietas-bottom-nav-icon-border, rgba(255, 255, 255, 0.055));
               }
 
               .historietas-bottom-nav-main .historietas-bottom-nav-icon {
                 color: #ffffff;
-                background: rgba(255, 255, 255, 0.16);
-                border-color: rgba(255, 255, 255, 0.18);
+                background: var(--historietas-bottom-nav-main-icon-bg, rgba(255, 255, 255, 0.16));
+                border-color: var(--historietas-bottom-nav-main-icon-border, rgba(255, 255, 255, 0.18));
               }
 
               .historietas-bottom-nav-label {
@@ -215,7 +261,7 @@ export default function RootLayout({
 
               @media (max-width: 360px) {
                 .historietas-bottom-nav {
-                  width: min(430px, calc(100% - 12px));
+                  width: min(450px, calc(100% - 12px));
                   bottom: max(6px, env(safe-area-inset-bottom));
                   padding: 6px;
                   border-radius: 22px;
@@ -223,8 +269,14 @@ export default function RootLayout({
                 }
 
                 .historietas-bottom-nav-item {
+                  min-width: 59px;
+                  flex-basis: 59px;
                   min-height: 48px;
                   border-radius: 16px;
+                }
+
+                .historietas-bottom-nav-main {
+                  flex-basis: 64px;
                 }
 
                 .historietas-bottom-nav-label {

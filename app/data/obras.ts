@@ -86,4 +86,21 @@ export const obras: Obra[] = [
       "Um romance dramático sobre reencontros, promessas quebradas e sentimentos que resistem mesmo depois de anos de distância.",
     tags: ["Romance", "Drama", "Slice of Life", "Emoção", "Completo"],
   },
+  {
+    titulo: "Neon Requiem",
+    autor: "Aiko Vesper",
+    genero: "Cyberpunk",
+    classificacaoIndicativa: "14+",
+    status: "Em andamento",
+    views: "4.8K",
+    likes: "720",
+    comentarios: "118",
+    link: "/obra/neon-requiem",
+    disponivel: false,
+    slug: "neon-requiem",
+    formato: "Webnovel",
+    sinopse:
+      "Em uma cidade iluminada por neon e dominada por megacorporações, uma hacker descobre uma conspiração capaz de apagar memórias, identidades e destinos.",
+    tags: ["Cyberpunk", "Sci-fi", "Ação", "Mistério", "Tecnologia"],
+  },
 ];

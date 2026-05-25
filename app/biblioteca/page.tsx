@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import { obras as obrasCatalogo } from "../data/obras";
 import type { Obra as ObraCatalogo } from "../data/obras";
 import { supabase } from "../../lib/supabase/client";
+import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 
 type CapituloLocal = {
   id: string;
@@ -116,7 +117,6 @@ const STORAGE_KEY = "historietas-obras";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 
 function normalizarTexto(texto: string) {
   return texto
@@ -209,7 +209,7 @@ function criarBookCoverStyle(capa: string, isDesktop = false): CSSProperties {
   return {
     ...baseStyle,
     background: "#18181B",
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.82) 100%), url(${capa})`,
+    backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -1040,9 +1040,9 @@ export default function BibliotecaPage() {
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [busca, setBusca] = useState("");
   const [filtroObra, setFiltroObra] = useState("todas");
-  const [abaAtiva, setAbaAtiva] = useState<AbaBiblioteca>("salvos");
-  const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
+  const [abaAtiva, setAbaAtiva] = useState<AbaBiblioteca | "">("salvos");
   const [isDesktop, setIsDesktop] = useState(false);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1070,29 +1070,7 @@ export default function BibliotecaPage() {
 
   useEffect(() => {
     void carregarObras();
-    carregarNotificacoes();
   }, []);
-
-  function carregarNotificacoes() {
-    try {
-      const notificacoesTexto = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-      const notificacoesJson = notificacoesTexto
-        ? JSON.parse(notificacoesTexto)
-        : [];
-
-      const notificacoes = Array.isArray(notificacoesJson)
-        ? notificacoesJson
-        : [];
-
-      const totalNaoLidas = notificacoes.filter((notificacao) => {
-        return !Boolean(notificacao?.lida);
-      }).length;
-
-      setNotificacoesNaoLidas(totalNaoLidas);
-    } catch {
-      setNotificacoesNaoLidas(0);
-    }
-  }
 
   async function carregarObras() {
     let obrasNormalizadas: ObraLocal[] = [];
@@ -1367,6 +1345,7 @@ export default function BibliotecaPage() {
     },
   ];
 
+  const abaSelecionada: AbaBiblioteca = abaAtiva || "salvos";
   function removerDosSalvos(obraId: string, capituloId: string) {
     void removerCapituloSalvoSupabase(obraId, capituloId);
 
@@ -1451,22 +1430,22 @@ export default function BibliotecaPage() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main style={pageThemeStyle}>
+      <style>{`${historietasThemeCss}${bibliotecaPageCss}`}</style>
+
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
           <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
             <span style={logoMarkStyle}>H</span>
-            <span style={logoTextStyle}>istorietas</span>
+            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
-
-          <span style={pagePillStyle}>Biblioteca</span>
         </header>
 
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
           <div style={heroGlowStyle} />
 
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <h1 style={isDesktop ? desktopTitleStyle : titleStyle}>Biblioteca</h1>
+            <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Biblioteca</h1>
 
             <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
               Continue leituras, encontre capítulos salvos, acompanhe obras
@@ -1475,46 +1454,10 @@ export default function BibliotecaPage() {
           </div>
         </section>
 
-        <section style={isDesktop ? desktopSummaryBoxStyle : summaryBoxStyle}>
-          <div style={isDesktop ? desktopSummaryItemStyle : summaryItemStyle}>
-            <strong style={summaryNumberStyle}>{totais.capitulosSalvos}</strong>
-            <span style={summaryLabelStyle}>
-              {totais.capitulosSalvos === 1
-                ? "capítulo salvo"
-                : "capítulos salvos"}
-            </span>
-          </div>
-
-          <div style={isDesktop ? desktopSummaryItemStyle : summaryItemStyle}>
-            <strong style={summaryNumberStyle}>{totais.continuarLeitura}</strong>
-            <span style={summaryLabelStyle}>continuar lendo</span>
-          </div>
-
-          <div style={isDesktop ? desktopSummaryItemStyle : summaryItemStyle}>
-            <strong style={summaryNumberStyle}>{totais.favoritos}</strong>
-            <span style={summaryLabelStyle}>
-              {totais.favoritos === 1 ? "favorito" : "favoritos"}
-            </span>
-          </div>
-
-          <div style={isDesktop ? desktopSummaryItemStyle : summaryItemStyle}>
-            <strong style={summaryNumberStyle}>{totais.concluidos}</strong>
-            <span style={summaryLabelStyle}>
-              {totais.concluidos === 1 ? "concluído" : "concluídos"}
-            </span>
-          </div>
-
-          <div style={isDesktop ? desktopSummaryItemStyle : summaryItemStyle}>
-            <strong style={summaryNumberStyle}>{totais.obrasSeguidas}</strong>
-            <span style={summaryLabelStyle}>seguindo</span>
-          </div>
-
-          <div style={isDesktop ? desktopSummaryItemStyle : summaryItemStyle}>
-            <strong style={summaryNumberStyle}>{notificacoesNaoLidas}</strong>
-            <span style={summaryLabelStyle}>avisos novos</span>
-          </div>
-        </section>
-        <section style={isDesktop ? desktopTabsBoxStyle : tabsBoxStyle}>
+        <section
+          style={isDesktop ? desktopSummaryBoxStyle : summaryBoxStyle}
+          aria-label="Atalhos da Biblioteca"
+        >
           {abas.map((aba) => {
             const ativa = abaAtiva === aba.id;
 
@@ -1522,28 +1465,30 @@ export default function BibliotecaPage() {
               <button
                 key={aba.id}
                 type="button"
-                onClick={() => setAbaAtiva(aba.id)}
+                onClick={() => setAbaAtiva((abaAtual) => (abaAtual === aba.id ? "" : aba.id))}
                 style={
                   ativa
                     ? isDesktop
-                      ? desktopTabButtonActiveStyle
-                      : tabButtonActiveStyle
+                      ? desktopSummaryItemActiveStyle
+                      : summaryItemActiveStyle
                     : isDesktop
-                      ? desktopTabButtonStyle
-                      : tabButtonStyle
+                      ? desktopSummaryItemStyle
+                      : summaryItemStyle
                 }
               >
-                <span style={tabTitleStyle}>{aba.titulo}</span>
-
-                <span style={ativa ? tabCountActiveStyle : tabCountStyle}>
+                <strong style={ativa ? summaryNumberActiveStyle : summaryNumberStyle}>
                   {aba.total}
+                </strong>
+
+                <span style={ativa ? summaryLabelActiveStyle : summaryLabelStyle}>
+                  {aba.titulo}
                 </span>
               </button>
             );
           })}
         </section>
 
-        {abaAtiva === "salvos" && capitulosSalvos.length > 0 && (
+        {abaSelecionada === "salvos" && capitulosSalvos.length > 0 && (
           <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
             <div style={isDesktop ? desktopFilterGridStyle : filterGridStyle}>
               <div style={fieldBoxStyle}>
@@ -1581,18 +1526,11 @@ export default function BibliotecaPage() {
                 {totais.resultados} de {totais.capitulosSalvos} salvos
               </span>
 
-              <button
-                type="button"
-                onClick={limparFiltros}
-                style={clearButtonStyle}
-              >
-                Limpar filtros
-              </button>
             </div>
           </section>
         )}
 
-        {abaAtiva === "salvos" && (
+        {abaSelecionada === "salvos" && (
           <>
             {capitulosSalvos.length === 0 ? (
               <section style={emptyBoxStyle}>
@@ -1645,12 +1583,6 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(item.obra.capa, isDesktop)}
                           aria-label={`Abrir ${item.obra.titulo}`}
                         >
-                          <div style={bookCoverGlowStyle} />
-
-                          <span style={bookCoverGenreStyle}>
-                            {item.obra.genero}
-                          </span>
-
                           {!item.obra.capa && (
                             <span style={bookNoCoverStyle}>Sem capa</span>
                           )}
@@ -1681,7 +1613,7 @@ export default function BibliotecaPage() {
                           </p>
 
                           <Link href={perfilAutorHref} style={authorLinkStyle}>
-                            por {item.obra.autor}
+                            Por {item.obra.autor}
                           </Link>
                         </div>
                       </div>
@@ -1749,7 +1681,7 @@ export default function BibliotecaPage() {
           </>
         )}
 
-        {abaAtiva === "seguindo" && (
+        {abaSelecionada === "seguindo" && (
           <>
             {obrasSeguidasLista.length === 0 ? (
               <section style={emptyBoxStyle}>
@@ -1796,12 +1728,6 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(obra.capa, isDesktop)}
                           aria-label={`Abrir ${obra.titulo}`}
                         >
-                          <div style={bookCoverGlowStyle} />
-
-                          <span style={bookCoverGenreStyle}>
-                            {obra.genero}
-                          </span>
-
                           {!obra.capa && (
                             <span style={bookNoCoverStyle}>Sem capa</span>
                           )}
@@ -1833,7 +1759,7 @@ export default function BibliotecaPage() {
                           </p>
 
                           <Link href={perfilAutorHref} style={authorLinkStyle}>
-                            por {obra.autor}
+                            Por {obra.autor}
                           </Link>
                         </div>
                       </div>
@@ -1907,7 +1833,7 @@ export default function BibliotecaPage() {
           </>
         )}
 
-        {abaAtiva === "lendo-agora" && (
+        {abaSelecionada === "lendo-agora" && (
           <>
             {obrasLendoAgora.length === 0 ? (
               <section style={emptyBoxStyle}>
@@ -1975,12 +1901,6 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(obra.capa, isDesktop)}
                           aria-label={`Abrir ${obra.titulo}`}
                         >
-                          <div style={bookCoverGlowStyle} />
-
-                          <span style={bookCoverGenreStyle}>
-                            {obra.genero}
-                          </span>
-
                           {!obra.capa && (
                             <span style={bookNoCoverStyle}>Sem capa</span>
                           )}
@@ -2008,7 +1928,7 @@ export default function BibliotecaPage() {
                           </p>
 
                           <Link href={perfilAutorHref} style={authorLinkStyle}>
-                            por {obra.autor}
+                            Por {obra.autor}
                           </Link>
                         </div>
                       </div>
@@ -2069,7 +1989,7 @@ export default function BibliotecaPage() {
           </>
         )}
 
-        {abaAtiva === "favoritos" && (
+        {abaSelecionada === "favoritos" && (
           <>
             {obrasFavoritasLista.length === 0 ? (
               <section style={emptyBoxStyle}>
@@ -2112,12 +2032,6 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(obra.capa, isDesktop)}
                           aria-label={`Abrir ${obra.titulo}`}
                         >
-                          <div style={bookCoverGlowStyle} />
-
-                          <span style={bookCoverGenreStyle}>
-                            {obra.genero}
-                          </span>
-
                           {!obra.capa && (
                             <span style={bookNoCoverStyle}>Sem capa</span>
                           )}
@@ -2149,7 +2063,7 @@ export default function BibliotecaPage() {
                           </p>
 
                           <Link href={perfilAutorHref} style={authorLinkStyle}>
-                            por {obra.autor}
+                            Por {obra.autor}
                           </Link>
                         </div>
                       </div>
@@ -2213,7 +2127,7 @@ export default function BibliotecaPage() {
           </>
         )}
 
-        {abaAtiva === "concluidos" && (
+        {abaSelecionada === "concluidos" && (
           <>
             {obrasConcluidasLista.length === 0 ? (
               <section style={emptyBoxStyle}>
@@ -2256,12 +2170,6 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(obra.capa, isDesktop)}
                           aria-label={`Abrir ${obra.titulo}`}
                         >
-                          <div style={bookCoverGlowStyle} />
-
-                          <span style={bookCoverGenreStyle}>
-                            {obra.genero}
-                          </span>
-
                           {!obra.capa && (
                             <span style={bookNoCoverStyle}>Sem capa</span>
                           )}
@@ -2293,7 +2201,7 @@ export default function BibliotecaPage() {
                           </p>
 
                           <Link href={perfilAutorHref} style={authorLinkStyle}>
-                            por {obra.autor}
+                            Por {obra.autor}
                           </Link>
                         </div>
                       </div>
@@ -2371,6 +2279,25 @@ export default function BibliotecaPage() {
   );
 }
 
+const bibliotecaPageCss = `
+  html[data-historietas-tema-visual] nav a[href="/biblioteca"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/biblioteca"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/biblioteca"] {
+    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
+    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
+    color: var(--historietas-accent, #F97316) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/publicar"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] {
+    background: var(--historietas-bottom-nav-main-bg, linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)) !important;
+    border-color: var(--historietas-bottom-nav-main-border, color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)) !important;
+    color: #FFFFFF !important;
+    box-shadow: var(--historietas-bottom-nav-main-shadow, none) !important;
+  }
+`;
+
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -2384,7 +2311,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   background:
     "radial-gradient(circle at 12% -6%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 40%, transparent), transparent 31%), radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 25%), radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent), transparent 36%), radial-gradient(circle at 6% 72%, rgba(236,72,153,0.10), transparent 25%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 34%, var(--historietas-bg-end, #180B2D) 66%, #0B0614 100%)",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
   isolation: "isolate",
 };
@@ -2395,7 +2322,7 @@ const containerStyle: CSSProperties = {
   width: "min(880px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 78px",
+  padding: "16px 0 12px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2419,7 +2346,7 @@ const topStyle: CSSProperties = {
 };
 
 const logoStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "24px",
   fontWeight: 950,
@@ -2450,63 +2377,13 @@ const logoMarkStyle: CSSProperties = {
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
-  background: "linear-gradient(135deg, #F5F3FF 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 45%, #FFFFFF) 42%, var(--historietas-accent, #FDBA74) 100%)",
+  background: "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
+  textShadow: "var(--historietas-logo-shadow, 0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent))",
 };
 
-const pagePillStyle: CSSProperties = {
-  minHeight: "34px",
-  padding: "0 12px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, rgba(255,255,255,0.08))",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  flex: "0 0 auto",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
-const topButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.055) 100%)",
-  border: "1px solid rgba(255,255,255,0.14)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  flex: "0 0 auto",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const topActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "7px",
-  width: "100%",
-  minWidth: 0,
-};
 
 const heroStyle: CSSProperties = {
   position: "relative",
@@ -2514,18 +2391,13 @@ const heroStyle: CSSProperties = {
   borderRadius: "28px",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.08))",
   background:
-    "radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent), transparent 32%), radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 44%, transparent), transparent 34%), linear-gradient(135deg, rgba(32,14,53,0.96) 0%, rgba(13,7,25,0.99) 58%, rgba(9,7,18,0.99) 100%)",
-  boxShadow:
-    "0 18px 48px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06)",
+    "radial-gradient(circle at 8% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)), transparent 32%), radial-gradient(circle at 88% 18%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 44%, transparent)), transparent 34%), linear-gradient(135deg, var(--historietas-surface, rgba(32,14,53,0.96)) 0%, var(--historietas-surface-strong, rgba(13,7,25,0.99)) 100%)",
+  boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
 };
 
 const heroGlowStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  background:
-    "linear-gradient(115deg, rgba(255,255,255,0.11) 0%, transparent 22%, transparent 70%, rgba(255,255,255,0.055) 100%), radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--historietas-accent, #F97316) 42%, transparent), transparent 34%), radial-gradient(circle at 80% 24%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 62%, transparent), transparent 38%)",
-  pointerEvents: "none",
+  display: "none",
 };
 
 const heroContentStyle: CSSProperties = {
@@ -2547,7 +2419,7 @@ const titleStyle: CSSProperties = {
   maxWidth: "100%",
   paddingBottom: "3px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 34%, var(--historietas-accent, #FDBA74) 72%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, #FFFFFF) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -2557,7 +2429,7 @@ const titleStyle: CSSProperties = {
 
 const descriptionStyle: CSSProperties = {
   margin: "0 auto",
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.55,
   fontWeight: 700,
@@ -2572,128 +2444,80 @@ const descriptionStyle: CSSProperties = {
 const summaryBoxStyle: CSSProperties = {
   marginTop: "12px",
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(104px, 1fr))",
-  gap: "8px",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
 const summaryItemStyle: CSSProperties = {
-  borderRadius: "20px",
+  borderRadius: "15px",
   background:
-    "linear-gradient(145deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 15%, rgba(255,255,255,0.06)) 0%, rgba(18,12,30,0.82) 100%)",
-  border: "1px solid rgba(255,255,255,0.085)",
-  padding: "12px 11px",
+    "linear-gradient(145deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 11%, var(--historietas-surface, rgba(255,255,255,0.06))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.82)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.085))",
+  padding: "8px 3px",
+  minHeight: "58px",
   display: "grid",
-  gap: "3px",
+  gap: "2px",
   alignContent: "center",
+  justifyItems: "center",
   minWidth: 0,
   overflow: "hidden",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textAlign: "center",
+  appearance: "none",
+  boxShadow: "none",
+};
+
+const summaryItemActiveStyle: CSSProperties = {
+  ...summaryItemStyle,
+  background:
+    "linear-gradient(135deg, var(--historietas-secondary, #7C3AED) 0%, var(--historietas-accent, #F97316) 100%)",
+  border: "1px solid rgba(255,255,255,0.22)",
 };
 
 const summaryNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "20px",
+  fontSize: "18px",
   fontWeight: 950,
-  lineHeight: 1.05,
+  lineHeight: 1,
+  textAlign: "center",
   ...safeTextStyle,
+};
+
+const summaryNumberActiveStyle: CSSProperties = {
+  ...summaryNumberStyle,
+  color: "#FFFFFF",
 };
 
 const summaryLabelStyle: CSSProperties = {
-  color: "#A1A1AA",
-  fontSize: "10px",
-  lineHeight: 1.18,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "8.5px",
+  lineHeight: 1.08,
   fontWeight: 850,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
-const tabsBoxStyle: CSSProperties = {
-  marginTop: "14px",
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(136px, 1fr))",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  padding: "8px",
-  borderRadius: "22px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.07)",
-};
-
-const tabButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "42px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.035) 100%)",
-  color: "#FFFFFF",
-  padding: "0 10px",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-const tabButtonActiveStyle: CSSProperties = {
-  ...tabButtonStyle,
-  background:
-    "linear-gradient(135deg, var(--historietas-secondary, #7C3AED) 0%, var(--historietas-accent, #F97316) 100%)",
-  border: "1px solid rgba(255,255,255,0.22)",
-  boxShadow: "none",
-};
-
-const tabTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "13px",
-  lineHeight: 1.15,
-  fontWeight: 950,
-  textAlign: "left",
-  minWidth: 0,
-  ...safeTextStyle,
-};
-
-const tabCountStyle: CSSProperties = {
-  minWidth: "28px",
-  flex: "0 0 auto",
-  height: "28px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  color: "#D4D4D8",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
-
-const tabCountActiveStyle: CSSProperties = {
-  ...tabCountStyle,
-  background: "rgba(255,255,255,0.2)",
-  border: "1px solid rgba(255,255,255,0.22)",
+const summaryLabelActiveStyle: CSSProperties = {
+  ...summaryLabelStyle,
   color: "#FFFFFF",
 };
 
 const filterBoxStyle: CSSProperties = {
   marginTop: "14px",
   display: "grid",
+  justifyItems: "center",
   gap: "10px",
   padding: "13px",
   borderRadius: "24px",
   background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(255,255,255,0.055)) 0%, rgba(18,12,30,0.86) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, rgba(255,255,255,0.08))",
-  boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, var(--historietas-surface, rgba(255,255,255,0.055))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.86)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -2701,20 +2525,28 @@ const filterBoxStyle: CSSProperties = {
 const filterGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
+  justifyItems: "center",
   gap: "12px",
+  width: "100%",
   minWidth: 0,
 };
 
 const fieldBoxStyle: CSSProperties = {
   display: "grid",
+  justifyItems: "center",
   gap: "8px",
+  width: "100%",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const filterLabelStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "13px",
   fontWeight: 950,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2723,12 +2555,13 @@ const searchInputStyle: CSSProperties = {
   height: "43px",
   borderRadius: "999px",
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, #3F3F46)",
-  background: "rgba(15,15,18,0.88)",
-  color: "#FFFFFF",
+  background: "var(--historietas-input-bg, rgba(15,15,18,0.88))",
+  color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 15px",
   outline: "none",
   fontSize: "13px",
   fontWeight: 750,
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
@@ -2739,12 +2572,13 @@ const selectStyle: CSSProperties = {
   height: "43px",
   borderRadius: "999px",
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, #3F3F46)",
-  background: "rgba(15,15,18,0.88)",
-  color: "#FFFFFF",
+  background: "var(--historietas-input-bg, rgba(15,15,18,0.88))",
+  color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 15px",
   outline: "none",
   fontSize: "13px",
   fontWeight: 850,
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
   overflow: "hidden",
@@ -2754,35 +2588,18 @@ const selectStyle: CSSProperties = {
 
 const filterFooterStyle: CSSProperties = {
   display: "flex",
-  alignItems: "stretch",
-  justifyContent: "space-between",
+  alignItems: "center",
+  justifyContent: "center",
   gap: "10px",
   flexWrap: "wrap",
   minWidth: 0,
 };
 
 const filterInfoStyle: CSSProperties = {
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "13px",
   fontWeight: 850,
-  ...safeTextStyle,
-};
-
-const clearButtonStyle: CSSProperties = {
-  flex: "1 1 132px",
-  minHeight: "40px",
-  maxWidth: "100%",
-  padding: "0 14px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
   textAlign: "center",
-  boxSizing: "border-box",
   ...safeTextStyle,
 };
 
@@ -2801,9 +2618,9 @@ const savedCardStyle: CSSProperties = {
   padding: "11px",
   borderRadius: "24px",
   background:
-    "radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent), transparent 30%), radial-gradient(circle at 100% 8%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent), transparent 30%), linear-gradient(145deg, rgba(33,24,50,0.96) 0%, rgba(18,12,30,0.99) 100%)",
-  border: "1px solid rgba(255,255,255,0.09)",
-  boxShadow: "0 14px 36px rgba(0,0,0,0.24)",
+    "linear-gradient(145deg, var(--historietas-surface, rgba(33,24,50,0.96)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.99)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2838,36 +2655,14 @@ const bookCoverStyle: CSSProperties = {
   overflow: "hidden",
   textDecoration: "none",
   background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 40%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 62%, transparent), transparent 38%), linear-gradient(145deg, #20162F 0%, #0F0F0F 100%)",
-  border: "1px solid rgba(255,255,255,0.11)",
+    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent), transparent 38%), linear-gradient(145deg, var(--historietas-surface, #20162F) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
   display: "block",
   minWidth: 0,
   boxSizing: "border-box",
-  boxShadow: "0 14px 28px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08)",
+  boxShadow: "var(--historietas-card-shadow, none)",
 };
 
-const bookCoverGlowStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  background:
-    "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.78) 100%)",
-};
-
-const bookCoverGenreStyle: CSSProperties = {
-  position: "absolute",
-  left: "6px",
-  right: "6px",
-  bottom: "6px",
-  padding: "4px 6px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 70%, transparent)",
-  color: "#FFFFFF",
-  fontSize: "8px",
-  fontWeight: 950,
-  textAlign: "center",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const bookNoCoverStyle: CSSProperties = {
   position: "absolute",
@@ -2876,9 +2671,9 @@ const bookNoCoverStyle: CSSProperties = {
   right: "8px",
   padding: "6px 7px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.1)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#D4D4D8",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.1))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 950,
   textAlign: "center",
@@ -2993,7 +2788,7 @@ const completedBadgeStyle: CSSProperties = {
 
 const chapterTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "18px",
   lineHeight: 1.16,
   fontWeight: 950,
@@ -3009,7 +2804,7 @@ const chapterTitleStyle: CSSProperties = {
 
 const bookInfoStyle: CSSProperties = {
   margin: 0,
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10px",
   lineHeight: 1.25,
   fontWeight: 700,
@@ -3036,8 +2831,8 @@ const authorLinkStyle: CSSProperties = {
 const readingProgressTrackStyle: CSSProperties = {
   height: "5px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   overflow: "hidden",
 };
 
@@ -3049,7 +2844,7 @@ const readingProgressBarStyle: CSSProperties = {
 
 const commentTextStyle: CSSProperties = {
   margin: 0,
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10px",
   lineHeight: 1.25,
   fontWeight: 700,
@@ -3119,9 +2914,9 @@ const secondaryActionStyle: CSSProperties = {
 const disabledActionStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#71717A",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.04))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  color: "var(--historietas-text-secondary, #71717A)",
   fontSize: "11px",
   fontWeight: 950,
   display: "flex",
@@ -3232,20 +3027,23 @@ const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
   borderRadius: "28px",
   background:
-    "radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent), transparent 32%), linear-gradient(135deg, rgba(31,31,35,0.98) 0%, rgba(18,12,30,0.98) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, #2D2D32)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,31,35,0.98)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, var(--historietas-border-soft, #2D2D32))",
   padding: "24px",
   display: "grid",
   gap: "12px",
+  textAlign: "center",
+  justifyItems: "center",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
-  boxShadow: "0 18px 42px rgba(0,0,0,0.26)",
+  boxShadow: "var(--historietas-card-shadow, none)",
 };
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
+  textAlign: "center",
   fontSize: "28px",
   fontWeight: 950,
   letterSpacing: "-0.05em",
@@ -3254,7 +3052,8 @@ const emptyTitleStyle: CSSProperties = {
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  textAlign: "center",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "14px",
   lineHeight: 1.7,
   fontWeight: 600,
@@ -3296,6 +3095,7 @@ const desktopEmptyButtonStyle: CSSProperties = {
 
 const infoBoxStyle: CSSProperties = {
   marginTop: "18px",
+  textAlign: "center",
   background:
     "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 7%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, transparent) 100%)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
@@ -3310,6 +3110,7 @@ const infoBoxStyle: CSSProperties = {
 
 const infoTitleStyle: CSSProperties = {
   margin: 0,
+  textAlign: "center",
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "16px",
   fontWeight: 950,
@@ -3317,8 +3118,9 @@ const infoTitleStyle: CSSProperties = {
 };
 
 const infoTextStyle: CSSProperties = {
-  margin: "6px 0 0",
-  color: "#A1A1AA",
+  margin: "6px auto 0",
+  textAlign: "center",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
   lineHeight: 1.45,
   fontWeight: 600,
@@ -3336,20 +3138,6 @@ const desktopTopStyle: CSSProperties = {
   marginBottom: "16px",
 };
 
-const desktopTopActionsStyle: CSSProperties = {
-  ...topActionsStyle,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  width: "auto",
-  flex: "0 0 auto",
-};
-
-const desktopTopButtonStyle: CSSProperties = {
-  ...topButtonStyle,
-  minHeight: "38px",
-  padding: "0 18px",
-};
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
@@ -3390,7 +3178,7 @@ const desktopDescriptionStyle: CSSProperties = {
 
 const desktopSummaryBoxStyle: CSSProperties = {
   ...summaryBoxStyle,
-  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
   gap: "10px",
   marginTop: "12px",
 };
@@ -3402,23 +3190,11 @@ const desktopSummaryItemStyle: CSSProperties = {
   minHeight: "74px",
 };
 
-const desktopTabsBoxStyle: CSSProperties = {
-  ...tabsBoxStyle,
-  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-  gap: "10px",
-  marginTop: "12px",
-};
-
-const desktopTabButtonStyle: CSSProperties = {
-  ...tabButtonStyle,
-  minHeight: "42px",
-  padding: "0 12px",
-};
-
-const desktopTabButtonActiveStyle: CSSProperties = {
-  ...tabButtonActiveStyle,
-  minHeight: "42px",
-  padding: "0 12px",
+const desktopSummaryItemActiveStyle: CSSProperties = {
+  ...summaryItemActiveStyle,
+  borderRadius: "18px",
+  padding: "12px 13px",
+  minHeight: "74px",
 };
 
 const desktopFilterBoxStyle: CSSProperties = {
@@ -3432,6 +3208,7 @@ const desktopFilterGridStyle: CSSProperties = {
   gridTemplateColumns: "minmax(0, 1.5fr) minmax(240px, 0.7fr)",
   gap: "12px",
   alignItems: "end",
+  justifyItems: "center",
 };
 
 const desktopFilterFooterStyle: CSSProperties = {
@@ -3487,4 +3264,3 @@ const desktopInfoBoxStyle: CSSProperties = {
   marginTop: "18px",
   padding: "14px 16px",
 };
-

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
+import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 
 type ArquivoObraCategoria = "texto" | "documento" | "imagem" | "outro";
 
@@ -695,6 +696,7 @@ export default function VerArquivoPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -833,7 +835,8 @@ export default function VerArquivoPage() {
 
   if (carregando) {
     return (
-      <main style={pageStyle}>
+      <main style={pageThemeStyle}>
+        <style>{historietasThemeCss}</style>
         <section style={isDesktop ? desktopContainerStyle : containerStyle} />
       </main>
     );
@@ -841,12 +844,13 @@ export default function VerArquivoPage() {
 
   if (!obraAtual) {
     return (
-      <main style={pageStyle}>
+      <main style={pageThemeStyle}>
+        <style>{historietasThemeCss}</style>
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <header style={isDesktop ? desktopTopStyle : topStyle}>
             <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
               <span style={logoMarkStyle}>H</span>
-              <span style={logoTextStyle}>istorietas</span>
+              <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
           </header>
 
@@ -867,12 +871,13 @@ export default function VerArquivoPage() {
 
   if (!arquivo) {
     return (
-      <main style={pageStyle}>
+      <main style={pageThemeStyle}>
+        <style>{historietasThemeCss}</style>
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <header style={isDesktop ? desktopTopStyle : topStyle}>
             <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
               <span style={logoMarkStyle}>H</span>
-              <span style={logoTextStyle}>istorietas</span>
+              <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
           </header>
 
@@ -958,12 +963,13 @@ export default function VerArquivoPage() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main style={pageThemeStyle}>
+      <style>{historietasThemeCss}</style>
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
           <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
             <span style={logoMarkStyle}>H</span>
-            <span style={logoTextStyle}>istorietas</span>
+            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
         </header>
 
@@ -973,7 +979,7 @@ export default function VerArquivoPage() {
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
             <span style={isDesktop ? desktopBadgeStyle : badgeStyle}>{arquivoTipoVisual}</span>
 
-            <h1 style={isDesktop ? desktopTitleStyle : titleStyle}>{obraAtual.titulo}</h1>
+            <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>{obraAtual.titulo}</h1>
 
             <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
               Visualização do arquivo anexado à obra. Use baixar se o navegador
@@ -1098,7 +1104,7 @@ const fullPageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   background: "#05020A",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
@@ -1123,14 +1129,14 @@ const fullHeaderStyle: CSSProperties = {
   padding: "12px",
   borderRadius: "20px",
   background: "rgba(18,12,30,0.88)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   minWidth: 0,
   overflow: "hidden",
 };
 
 const fullTitleStyle: CSSProperties = {
   margin: "8px 0 0",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "clamp(24px, 7vw, 44px)",
   lineHeight: 0.98,
   fontWeight: 950,
@@ -1140,7 +1146,7 @@ const fullTitleStyle: CSSProperties = {
 
 const fullTextStyle: CSSProperties = {
   margin: "7px 0 0",
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
   lineHeight: 1.45,
   fontWeight: 750,
@@ -1151,9 +1157,9 @@ const fullBackButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 12px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -1179,7 +1185,7 @@ const fullViewerStyle: CSSProperties = {
   padding: "10px",
   borderRadius: "22px",
   background: "rgba(18,12,30,0.82)",
-  border: "1px solid rgba(255,255,255,0.09)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
   boxShadow: "0 16px 42px rgba(0,0,0,0.26)",
   display: "flex",
   alignItems: "center",
@@ -1204,7 +1210,7 @@ const fullTextContentStyle: CSSProperties = {
   margin: 0,
   whiteSpace: "pre-wrap",
   overflow: "auto",
-  color: "#F4F4F5",
+  color: "var(--historietas-text-primary, #F4F4F5)",
   fontSize: "15px",
   lineHeight: 1.75,
   fontFamily: "Georgia, 'Times New Roman', serif",
@@ -1249,7 +1255,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   background:
     "radial-gradient(circle at 12% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 31%), radial-gradient(circle at 88% 14%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 24%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 42%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
@@ -1271,18 +1277,9 @@ const topStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const topActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
 const logoStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "24px",
   fontWeight: 950,
@@ -1319,35 +1316,10 @@ const logoTextStyle: CSSProperties = {
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow:
-    "0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
+  textShadow: "var(--historietas-logo-shadow, none)",
 };
 
-const topButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 13px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 900,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  flex: "0 0 auto",
-  ...safeTextStyle,
-};
 
-const topButtonAccentStyle: CSSProperties = {
-  ...topButtonStyle,
-  background:
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)",
-};
 
 const heroStyle: CSSProperties = {
   position: "relative",
@@ -1357,8 +1329,7 @@ const heroStyle: CSSProperties = {
     "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
   background:
     "radial-gradient(circle at 16% 18%, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 30%), radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 46%, transparent), transparent 38%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 20%, rgba(31,16,52,0.98)) 0%, rgba(12,7,23,0.99) 100%)",
-  boxShadow:
-    "0 18px 48px rgba(0,0,0,0.30), 0 0 34px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, transparent)",
+  boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
 };
 
@@ -1412,7 +1383,7 @@ const titleStyle: CSSProperties = {
 
 const descriptionStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.55,
   fontWeight: 700,
@@ -1433,8 +1404,8 @@ const fileInfoBoxStyle: CSSProperties = {
   alignItems: "center",
   padding: "10px",
   borderRadius: "19px",
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.09)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -1462,7 +1433,7 @@ const fileInfoContentStyle: CSSProperties = {
 };
 
 const fileNameTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "17px",
   lineHeight: 1.15,
   fontWeight: 950,
@@ -1482,9 +1453,9 @@ const fileMetaBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "6px 8px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#E4E4E7",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  color: "var(--historietas-text-secondary, #E4E4E7)",
   fontSize: "10px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -1510,8 +1481,7 @@ const primaryActionStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   padding: "0 12px",
-  boxShadow:
-    "0 12px 28px color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -1535,17 +1505,16 @@ const secondaryActionStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   padding: "0 12px",
-  boxShadow:
-    "0 12px 28px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const ghostActionStyle: CSSProperties = {
   minHeight: "44px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -1568,8 +1537,8 @@ const imageViewerStyle: CSSProperties = {
   borderRadius: "24px",
   background:
     "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.90)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 14px 36px rgba(0,0,0,0.22)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   overflow: "hidden",
 };
 
@@ -1589,8 +1558,8 @@ const textViewerStyle: CSSProperties = {
   borderRadius: "24px",
   background:
     "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.90)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 14px 36px rgba(0,0,0,0.22)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -1612,7 +1581,7 @@ const miniTitleStyle: CSSProperties = {
 
 const viewerTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "24px",
   lineHeight: 1,
   fontWeight: 950,
@@ -1624,12 +1593,12 @@ const viewerTitleStyle: CSSProperties = {
 const textContentStyle: CSSProperties = {
   margin: 0,
   whiteSpace: "pre-wrap",
-  color: "#F4F4F5",
+  color: "var(--historietas-text-primary, #F4F4F5)",
   fontSize: "15px",
   lineHeight: 1.78,
   fontFamily: "Georgia, 'Times New Roman', serif",
   background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.075)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
   borderRadius: "18px",
   padding: "14px",
   minWidth: 0,
@@ -1643,8 +1612,8 @@ const pdfViewerStyle: CSSProperties = {
   minHeight: "520px",
   borderRadius: "24px",
   background: "rgba(12,7,23,0.96)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 14px 36px rgba(0,0,0,0.22)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   overflow: "hidden",
 };
 
@@ -1663,8 +1632,8 @@ const genericFileBoxStyle: CSSProperties = {
   borderRadius: "24px",
   background:
     "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.90)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 14px 36px rgba(0,0,0,0.22)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -1678,14 +1647,14 @@ const emptyBoxStyle: CSSProperties = {
   borderRadius: "26px",
   background:
     "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(33,24,50,0.82)) 0%, rgba(18,12,30,0.94) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
   overflow: "hidden",
 };
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "clamp(34px, 10vw, 58px)",
   lineHeight: 0.95,
   fontWeight: 950,
@@ -1695,7 +1664,7 @@ const emptyTitleStyle: CSSProperties = {
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.6,
   fontWeight: 700,
@@ -1729,10 +1698,6 @@ const desktopTopStyle: CSSProperties = {
   marginBottom: "16px",
 };
 
-const desktopTopActionsStyle: CSSProperties = {
-  ...topActionsStyle,
-  flexWrap: "nowrap",
-};
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,

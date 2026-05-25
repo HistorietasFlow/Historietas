@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
+import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 
 type TemaVisual =
+  | "branco"
+  | "escuro"
+  | "foco"
   | "original"
   | "fantasia"
   | "romance"
@@ -51,10 +55,110 @@ const TEMAS_VISUAIS: Record<
     bgEnd: string;
     glowPrimary: string;
     glowSecondary: string;
+    textPrimary?: string;
+    textSecondary?: string;
+    surface?: string;
+    surfaceStrong?: string;
+    borderSoft?: string;
+    inputBg?: string;
+    inputText?: string;
+    titleFrom?: string;
+    titleMid?: string;
+    titleTo?: string;
+    heroShadow?: string;
+    cardShadow?: string;
+    logoShadow?: string;
+    activeSurface?: string;
+    secondarySurface?: string;
+    secondaryButtonText?: string;
+    dangerSurface?: string;
+    dangerButtonText?: string;
   }
 > = {
+  branco: {
+    nome: "Branco",
+    descricao: "Modo claro limpo no estilo Google/Play Store.",
+    icone: "G",
+    accent: "#1A73E8",
+    secondary: "#01875F",
+    bgStart: "#FFFFFF",
+    bgMid: "#FFFFFF",
+    bgEnd: "#F8F9FA",
+    glowPrimary: "rgba(26,115,232,0.020)",
+    glowSecondary: "rgba(1,135,95,0.018)",
+    textPrimary: "#202124",
+    textSecondary: "#5F6368",
+    surface: "#FFFFFF",
+    surfaceStrong: "#FFFFFF",
+    borderSoft: "#DADCE0",
+    inputBg: "#FFFFFF",
+    inputText: "#202124",
+    titleFrom: "#202124",
+    titleMid: "#202124",
+    titleTo: "#202124",
+    heroShadow: "none",
+    cardShadow: "none",
+    logoShadow: "none",
+    activeSurface: "rgba(26,115,232,0.10)",
+    secondarySurface: "rgba(1,135,95,0.10)",
+    secondaryButtonText: "#188038",
+    dangerSurface: "rgba(217,48,37,0.10)",
+    dangerButtonText: "#B3261E",
+  },
+  escuro: {
+    nome: "Escuro",
+    descricao: "Modo escuro com fundo preto e cores padrão do Historietas.",
+    icone: "N",
+    accent: "#F97316",
+    secondary: "#7C3AED",
+    bgStart: "#000000",
+    bgMid: "#000000",
+    bgEnd: "#000000",
+    glowPrimary: "rgba(249,115,22,0.030)",
+    glowSecondary: "rgba(124,58,237,0.030)",
+    textPrimary: "#FFFFFF",
+    textSecondary: "#B3B3B3",
+    surface: "#101010",
+    surfaceStrong: "#000000",
+    borderSoft: "rgba(255,255,255,0.11)",
+    inputBg: "#0B0B0B",
+    inputText: "#FFFFFF",
+    titleFrom: "#FFFFFF",
+    titleMid: "#FFFFFF",
+    titleTo: "#FFFFFF",
+    heroShadow: "none",
+    cardShadow: "none",
+    logoShadow: "none",
+    activeSurface: "rgba(124,58,237,0.14)",
+    secondarySurface: "rgba(124,58,237,0.12)",
+    secondaryButtonText: "#FFFFFF",
+    dangerSurface: "rgba(239,68,68,0.12)",
+    dangerButtonText: "#FCA5A5",
+  },
+  foco: {
+    nome: "Foco",
+    descricao: "Base escura quase preta, inspirada no modo foco da leitura.",
+    icone: "◉",
+    accent: "#A78BFA",
+    secondary: "#27272A",
+    bgStart: "#050506",
+    bgMid: "#030305",
+    bgEnd: "#020203",
+    glowPrimary: "rgba(124,58,237,0.08)",
+    glowSecondary: "rgba(255,255,255,0.045)",
+    textPrimary: "#F4F4F5",
+    textSecondary: "#D4D4D8",
+    surface: "rgba(9,9,11,0.88)",
+    surfaceStrong: "rgba(3,3,6,0.96)",
+    borderSoft: "rgba(255,255,255,0.065)",
+    inputBg: "#09090B",
+    inputText: "#F4F4F5",
+    titleFrom: "#FFFFFF",
+    titleMid: "#E4E4E7",
+    titleTo: "#A78BFA",
+  },
   original: {
-    nome: "Historietas Original",
+    nome: "Original",
     descricao: "Roxo e laranja premium, o visual padrão do app.",
     icone: "✦",
     accent: "#F97316",
@@ -176,6 +280,9 @@ const TEMAS_VISUAIS: Record<
 };
 
 const ORDEM_TEMAS_VISUAIS: TemaVisual[] = [
+  "branco",
+  "escuro",
+  "foco",
   "original",
   "fantasia",
   "romance",
@@ -265,6 +372,106 @@ function aplicarTemaVisual(temaVisual: TemaVisual) {
   raiz.style.setProperty("--historietas-bg-end", tema.bgEnd);
   raiz.style.setProperty("--historietas-glow-primary", tema.glowPrimary);
   raiz.style.setProperty("--historietas-glow-secondary", tema.glowSecondary);
+  raiz.style.setProperty("--historietas-text-primary", tema.textPrimary || "#FFFFFF");
+  raiz.style.setProperty("--historietas-text-secondary", tema.textSecondary || "#D4D4D8");
+  raiz.style.setProperty("--historietas-surface", tema.surface || "rgba(18,12,30,0.82)");
+  raiz.style.setProperty("--historietas-surface-strong", tema.surfaceStrong || "rgba(18,12,30,0.98)");
+  raiz.style.setProperty("--historietas-border-soft", tema.borderSoft || "rgba(255,255,255,0.08)");
+  raiz.style.setProperty("--historietas-input-bg", tema.inputBg || "#18181B");
+  raiz.style.setProperty("--historietas-input-text", tema.inputText || "#FFFFFF");
+  raiz.style.setProperty("--historietas-title-from", tema.titleFrom || "#FFFFFF");
+  raiz.style.setProperty("--historietas-title-mid", tema.titleMid || "#F5F3FF");
+  raiz.style.setProperty("--historietas-title-to", tema.titleTo || "#FDBA74");
+  raiz.style.setProperty("--historietas-hero-shadow", tema.heroShadow || "0 18px 48px rgba(0,0,0,0.32), 0 0 36px rgba(124,58,237,0.12)");
+  raiz.style.setProperty("--historietas-card-shadow", tema.cardShadow || "0 14px 36px rgba(0,0,0,0.20)");
+  raiz.style.setProperty("--historietas-logo-shadow", tema.logoShadow || "0 0 26px rgba(139, 92, 246, 0.24)");
+  raiz.style.setProperty("--historietas-active-surface", tema.activeSurface || "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))");
+  raiz.style.setProperty("--historietas-secondary-surface", tema.secondarySurface || "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(255,255,255,0.035))");
+  raiz.style.setProperty("--historietas-secondary-button-text", tema.secondaryButtonText || "#DDD6FE");
+  raiz.style.setProperty("--historietas-danger-surface", tema.dangerSurface || "rgba(239, 68, 68, 0.105)");
+  raiz.style.setProperty("--historietas-danger-button-text", tema.dangerButtonText || "#FCA5A5");
+
+  const surface = tema.surface || "rgba(18,12,30,0.82)";
+  const surfaceStrong = tema.surfaceStrong || "rgba(18,12,30,0.98)";
+  const borderSoft = tema.borderSoft || "rgba(255,255,255,0.08)";
+  const textPrimary = tema.textPrimary || "#FFFFFF";
+  const textSecondary = tema.textSecondary || "#D4D4D8";
+  const activeSurface =
+    tema.activeSurface ||
+    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))";
+
+  const isBranco = temaVisual === "branco";
+  const isEscuro = temaVisual === "escuro";
+  const isFoco = temaVisual === "foco";
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-bg",
+    isBranco
+      ? "#FFFFFF"
+      : isEscuro
+      ? "#050505"
+      : isFoco
+      ? "#050506"
+      : `radial-gradient(circle at 16% 0%, color-mix(in srgb, ${tema.accent} 18%, transparent), transparent 34%), radial-gradient(circle at 84% 0%, color-mix(in srgb, ${tema.secondary} 22%, transparent), transparent 38%), linear-gradient(180deg, ${surfaceStrong} 0%, ${tema.bgStart} 100%)`
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-border",
+    isBranco ? "#DADCE0" : borderSoft
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-shadow",
+    isBranco || isEscuro || isFoco
+      ? "none"
+      : "0 14px 34px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06)"
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-text",
+    isBranco ? "#5F6368" : textSecondary
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-hover-bg",
+    isBranco ? "#F1F3F4" : activeSurface
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-hover-text",
+    isBranco ? "#202124" : textPrimary
+  );
+  raiz.style.setProperty("--historietas-bottom-nav-icon-text", tema.accent);
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-icon-bg",
+    isBranco ? "#F1F3F4" : surface
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-icon-border",
+    isBranco ? "#E0E3E7" : borderSoft
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-main-bg",
+    isBranco
+      ? tema.accent
+      : `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-main-border",
+    isBranco ? tema.accent : `color-mix(in srgb, ${tema.accent} 55%, transparent)`
+  );
+  raiz.style.setProperty("--historietas-bottom-nav-main-shadow", "none");
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-main-icon-bg",
+    "rgba(255,255,255,0.16)"
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-main-icon-border",
+    "rgba(255,255,255,0.18)"
+  );
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-shine",
+    isBranco || isEscuro || isFoco
+      ? "none"
+      : "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)"
+  );
+  raiz.dataset.historietasTemaVisual = temaVisual;
+  document.body.dataset.historietasTemaVisual = temaVisual;
 }
 
 function carregarJsonArray(chave: string) {
@@ -390,6 +597,7 @@ export default function ConfiguracoesPage() {
   const [mensagem, setMensagem] = useState("");
   const [resumoAtualizadoEm, setResumoAtualizadoEm] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 900px)");
@@ -483,22 +691,23 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main style={pageThemeStyle}>
+      <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
+
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={topStyle}>
           <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
             <span style={logoMarkStyle}>H</span>
-            <span style={logoTextStyle}>istorietas</span>
+            <span className="historietas-config-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <span style={badgeStyle}>CONFIGURAÇÕES</span>
         </header>
 
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
           <div style={heroGlowStyle} />
 
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <h1 style={isDesktop ? desktopTitleStyle : titleStyle}>Conta e preferências</h1>
+            <h1 className="historietas-config-hero-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Configurações</h1>
 
             <p style={descriptionStyle}>
               Ajuste detalhes do seu perfil local, preferências de leitura e
@@ -521,8 +730,7 @@ export default function ConfiguracoesPage() {
 
         <section style={sectionStyle}>
           <div style={sectionHeaderStyle}>
-            <span style={miniTitleStyle}>CONTA</span>
-            <h2 style={sectionTitleStyle}>Dados básicos</h2>
+            <h2 style={accentSectionTitleStyle}>Conta</h2>
           </div>
 
           <div style={isDesktop ? desktopAccountCardStyle : cardStyle}>
@@ -553,71 +761,12 @@ export default function ConfiguracoesPage() {
               />
             </label>
 
-            <p style={isDesktop ? desktopHelperFullStyle : helperTextStyle}>
-              Esses dados ficam apenas no navegador. O login e as obras já usam
-              Supabase, mas essas preferências continuam locais.
-            </p>
           </div>
         </section>
 
         <section style={sectionStyle}>
           <div style={sectionHeaderStyle}>
-            <span style={miniTitleStyle}>APARÊNCIA</span>
-            <h2 style={sectionTitleStyle}>Tema visual</h2>
-          </div>
-
-          <div style={isDesktop ? desktopThemeGridStyle : themeGridStyle}>
-            {ORDEM_TEMAS_VISUAIS.map((temaVisual) => {
-              const tema = TEMAS_VISUAIS[temaVisual];
-              const temaAtivo = preferencias.temaVisual === temaVisual;
-
-              return (
-                <button
-                  key={temaVisual}
-                  type="button"
-                  onClick={() => atualizarTemaVisual(temaVisual)}
-                  style={
-                    temaAtivo
-                      ? isDesktop
-                        ? desktopThemeOptionActiveStyle
-                        : themeOptionActiveStyle
-                      : isDesktop
-                      ? desktopThemeOptionStyle
-                      : themeOptionStyle
-                  }
-                  aria-pressed={temaAtivo}
-                >
-                  <span
-                    style={{
-                      ...themePreviewStyle,
-                      background: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
-                      boxShadow: `0 0 22px ${tema.glowPrimary}`,
-                    }}
-                  >
-                    {tema.icone}
-                  </span>
-
-                  <span style={themeTextBoxStyle}>
-                    <strong style={themeTitleStyle}>{tema.nome}</strong>
-                    <span style={themeDescriptionStyle}>{tema.descricao}</span>
-                  </span>
-
-                  {temaAtivo && <span style={themeActiveBadgeStyle}>Ativo</span>}
-                </button>
-              );
-            })}
-          </div>
-
-          <p style={helperTextStyle}>
-            O tema escolhido fica salvo no navegador e já alimenta as cores globais
-            do app.
-          </p>
-        </section>
-
-        <section style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <span style={miniTitleStyle}>PREFERÊNCIAS</span>
-            <h2 style={sectionTitleStyle}>Experiência</h2>
+            <h2 style={accentSectionTitleStyle}>Preferências</h2>
           </div>
 
           <div style={isDesktop ? desktopSettingsGridStyle : settingsGridStyle}>
@@ -706,8 +855,7 @@ export default function ConfiguracoesPage() {
 
         <section style={sectionStyle}>
           <div style={sectionHeaderStyle}>
-            <span style={miniTitleStyle}>DADOS LOCAIS</span>
-            <h2 style={sectionTitleStyle}>Resumo do navegador</h2>
+            <h2 style={accentSectionTitleStyle}>Dados locais</h2>
           </div>
 
           <div style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
@@ -751,8 +899,7 @@ export default function ConfiguracoesPage() {
 
         <section style={sectionStyle}>
           <div style={sectionHeaderStyle}>
-            <span style={miniTitleStyle}>AÇÕES</span>
-            <h2 style={sectionTitleStyle}>Controle local</h2>
+            <h2 style={accentSectionTitleStyle}>Ações</h2>
           </div>
 
           <div style={isDesktop ? desktopActionsStyle : actionsStyle}>
@@ -786,19 +933,162 @@ export default function ConfiguracoesPage() {
           </div>
         </section>
 
-        <section style={isDesktop ? desktopInfoBoxStyle : infoBoxStyle}>
-          <h2 style={infoTitleStyle}>Preferências locais</h2>
+        <section style={sectionStyle}>
+          <div style={sectionHeaderStyle}>
+            <h2 style={accentSectionTitleStyle}>Tema visual</h2>
+          </div>
 
-          <p style={infoTextStyle}>
-            Algumas preferências desta tela ficam salvas neste navegador. O projeto
-            já está integrado ao Supabase nas áreas principais, mas tema visual,
-            backup local e preferências de experiência continuam locais.
-          </p>
+          <div style={isDesktop ? desktopThemeGridStyle : themeGridStyle}>
+            {ORDEM_TEMAS_VISUAIS.map((temaVisual) => {
+              const tema = TEMAS_VISUAIS[temaVisual];
+              const temaAtivo = preferencias.temaVisual === temaVisual;
+
+              return (
+                <button
+                  key={temaVisual}
+                  type="button"
+                  onClick={() => atualizarTemaVisual(temaVisual)}
+                  style={
+                    temaAtivo
+                      ? isDesktop
+                        ? desktopThemeOptionActiveStyle
+                        : themeOptionActiveStyle
+                      : isDesktop
+                      ? desktopThemeOptionStyle
+                      : themeOptionStyle
+                  }
+                  aria-pressed={temaAtivo}
+                >
+                  <span
+                    style={{
+                      ...themePreviewStyle,
+                      background: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
+                      boxShadow: "none",
+                    }}
+                  >
+                    {tema.icone}
+                  </span>
+
+                  <span style={themeTextBoxStyle}>
+                    <strong style={themeTitleStyle}>{tema.nome}</strong>
+                  </span>
+
+                </button>
+              );
+            })}
+          </div>
+
         </section>
+
       </section>
     </main>
   );
 }
+
+const configuracoesPageCss = `
+  html[data-historietas-tema-visual] body {
+    background: var(--historietas-bg-start, #0B0614) !important;
+    color: var(--historietas-text-primary, #FFFFFF) !important;
+  }
+
+  html[data-historietas-tema-visual] nav,
+  html[data-historietas-tema-visual] [data-bottom-nav],
+  html[data-historietas-tema-visual] [data-mobile-nav],
+  html[data-historietas-tema-visual] nav:has(a[href="/publicar"]),
+  html[data-historietas-tema-visual] div:has(> a[href="/publicar"]):has(> a[href="/biblioteca"]) {
+    background: var(--historietas-bottom-nav-bg, var(--historietas-surface-strong, rgba(18,8,31,0.98))) !important;
+    border-color: var(--historietas-bottom-nav-border, var(--historietas-border-soft, rgba(255,255,255,0.12))) !important;
+    box-shadow: var(--historietas-bottom-nav-shadow, none) !important;
+    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
+  }
+
+  html[data-historietas-tema-visual] nav::before,
+  html[data-historietas-tema-visual] [data-bottom-nav]::before,
+  html[data-historietas-tema-visual] [data-mobile-nav]::before {
+    background: var(--historietas-bottom-nav-shine, none) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a,
+  html[data-historietas-tema-visual] [data-bottom-nav] a,
+  html[data-historietas-tema-visual] [data-mobile-nav] a,
+  html[data-historietas-tema-visual] nav button,
+  html[data-historietas-tema-visual] [data-bottom-nav] button,
+  html[data-historietas-tema-visual] [data-mobile-nav] button {
+    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual] nav a:hover,
+  html[data-historietas-tema-visual] [data-bottom-nav] a:hover,
+  html[data-historietas-tema-visual] [data-mobile-nav] a:hover,
+  html[data-historietas-tema-visual] nav button:hover,
+  html[data-historietas-tema-visual] [data-bottom-nav] button:hover,
+  html[data-historietas-tema-visual] [data-mobile-nav] button:hover {
+    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(255,255,255,0.055))) !important;
+    border-color: var(--historietas-bottom-nav-border, var(--historietas-border-soft, rgba(255,255,255,0.10))) !important;
+    color: var(--historietas-bottom-nav-hover-text, var(--historietas-text-primary, #FFFFFF)) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/configuracoes"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/configuracoes"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/configuracoes"] {
+    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
+    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
+    color: var(--historietas-accent, #F97316) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/publicar"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] {
+    background: var(--historietas-bottom-nav-main-bg, linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)) !important;
+    border-color: var(--historietas-bottom-nav-main-border, color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)) !important;
+    box-shadow: var(--historietas-bottom-nav-main-shadow, none) !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] nav .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-icon {
+    color: var(--historietas-bottom-nav-icon-text, var(--historietas-accent, #F97316)) !important;
+    background: var(--historietas-bottom-nav-icon-bg, var(--historietas-surface, rgba(255,255,255,0.045))) !important;
+    border-color: var(--historietas-bottom-nav-icon-border, var(--historietas-border-soft, rgba(255,255,255,0.055))) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/publicar"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] .historietas-bottom-nav-icon {
+    color: #FFFFFF !important;
+    background: var(--historietas-bottom-nav-main-icon-bg, rgba(255,255,255,0.16)) !important;
+    border-color: var(--historietas-bottom-nav-main-icon-border, rgba(255,255,255,0.18)) !important;
+  }
+
+  html[data-historietas-tema-visual="branco"] .historietas-config-logo-text,
+  html[data-historietas-tema-visual="branco"] .historietas-config-hero-title {
+    background: none !important;
+    color: #1A73E8 !important;
+    -webkit-text-fill-color: #1A73E8 !important;
+    text-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="branco"] input,
+  html[data-historietas-tema-visual="branco"] textarea,
+  html[data-historietas-tema-visual="branco"] select {
+    color: #202124 !important;
+  }
+
+  html[data-historietas-tema-visual="escuro"] {
+    --historietas-bg-start: #000000;
+    --historietas-bg-mid: #000000;
+    --historietas-bg-end: #000000;
+    --historietas-accent: #F97316;
+    --historietas-secondary: #7C3AED;
+    --historietas-glow-primary: rgba(249,115,22,0.030);
+    --historietas-glow-secondary: rgba(124,58,237,0.030);
+    --historietas-active-surface: rgba(124,58,237,0.14);
+    --historietas-secondary-surface: rgba(124,58,237,0.12);
+    --historietas-danger-surface: rgba(239,68,68,0.12);
+  }
+`;
 
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
@@ -812,7 +1102,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   background:
     "radial-gradient(circle at 12% 0%, var(--historietas-glow-primary, rgba(124,58,237,0.32)), transparent 31%), radial-gradient(circle at 88% 12%, var(--historietas-glow-secondary, rgba(249,115,22,0.15)), transparent 25%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 42%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
@@ -820,7 +1110,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 32px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 96px",
+  padding: "18px 0 44px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -828,7 +1118,7 @@ const containerStyle: CSSProperties = {
 const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "flex-start",
   gap: "10px",
   marginBottom: "10px",
   padding: "6px 0",
@@ -836,7 +1126,7 @@ const topStyle: CSSProperties = {
 };
 
 const logoStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "24px",
   fontWeight: 950,
@@ -845,7 +1135,7 @@ const logoStyle: CSSProperties = {
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "calc(100% - 138px)",
+  maxWidth: "100%",
   overflow: "visible",
 };
 
@@ -868,40 +1158,23 @@ const logoMarkStyle: CSSProperties = {
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #F5F3FF 0%, #C4B5FD 42%, #FDBA74 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #C4B5FD) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "0 0 26px rgba(139, 92, 246, 0.24)",
+  textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139, 92, 246, 0.24))",
   overflow: "visible",
   whiteSpace: "nowrap",
-};
-
-const topButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 900,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  ...safeTextStyle,
 };
 
 const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "28px",
-  border: "1px solid rgba(251,191,36,0.16)",
+  border: "1px solid var(--historietas-border-soft, rgba(251,191,36,0.16))",
   background:
-    "linear-gradient(135deg, rgba(31,16,52,0.98) 0%, rgba(12,7,23,0.99) 100%)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.98)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
   boxShadow:
-    "0 18px 48px rgba(0,0,0,0.32), 0 0 36px rgba(124,58,237,0.12)",
+    "var(--historietas-hero-shadow, 0 18px 48px rgba(0,0,0,0.32), 0 0 36px rgba(124,58,237,0.12))",
   overflow: "hidden",
   minWidth: 0,
 };
@@ -925,27 +1198,6 @@ const heroContentStyle: CSSProperties = {
   textAlign: "center",
 };
 
-const badgeStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "8px 12px",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 40%, rgba(255,255,255,0.08))",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.095em",
-  whiteSpace: "nowrap",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
 const titleStyle: CSSProperties = {
   margin: 0,
   fontSize: "clamp(36px, 9.4vw, 60px)",
@@ -954,7 +1206,7 @@ const titleStyle: CSSProperties = {
   letterSpacing: "-0.08em",
   maxWidth: "100%",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 48%, #FDBA74 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -963,7 +1215,7 @@ const titleStyle: CSSProperties = {
 
 const descriptionStyle: CSSProperties = {
   margin: "0 auto",
-  color: "#D4D4D8",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.58,
   fontWeight: 650,
@@ -973,7 +1225,7 @@ const descriptionStyle: CSSProperties = {
 
 const heroActionsStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "8px",
   margin: "4px auto 0",
   width: "min(420px, 100%)",
@@ -999,8 +1251,9 @@ const primaryLinkStyle: CSSProperties = {
 
 const secondaryLinkStyle: CSSProperties = {
   ...primaryLinkStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
+  background: "var(--historietas-secondary-surface, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent))",
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 40%, transparent)",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
   boxShadow: "none",
 };
 
@@ -1026,17 +1279,11 @@ const sectionStyle: CSSProperties = {
 
 const sectionHeaderStyle: CSSProperties = {
   display: "grid",
+  justifyItems: "center",
   gap: "4px",
   marginBottom: "10px",
   minWidth: 0,
-};
-
-const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  ...safeTextStyle,
+  textAlign: "center",
 };
 
 const sectionTitleStyle: CSSProperties = {
@@ -1046,7 +1293,13 @@ const sectionTitleStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.06em",
+  textAlign: "center",
   ...safeTextStyle,
+};
+
+const accentSectionTitleStyle: CSSProperties = {
+  ...sectionTitleStyle,
+  color: "var(--historietas-accent, #FDBA74)",
 };
 
 const cardStyle: CSSProperties = {
@@ -1055,9 +1308,9 @@ const cardStyle: CSSProperties = {
   padding: "14px",
   borderRadius: "24px",
   background:
-    "linear-gradient(135deg, rgba(33,24,50,0.92) 0%, rgba(18,12,30,0.98) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 14px 36px rgba(0,0,0,0.20)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "var(--historietas-card-shadow, 0 14px 36px rgba(0,0,0,0.20))",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -1066,12 +1319,16 @@ const fieldStyle: CSSProperties = {
   display: "grid",
   gap: "7px",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const labelStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "12px",
   fontWeight: 950,
+  textAlign: "center",
+  textTransform: "uppercase",
+  letterSpacing: "0.035em",
   ...safeTextStyle,
 };
 
@@ -1079,9 +1336,9 @@ const inputStyle: CSSProperties = {
   width: "100%",
   minHeight: "44px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "#18181B",
-  color: "#FFFFFF",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "var(--historietas-input-bg, #18181B)",
+  color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 14px",
   outline: "none",
   fontSize: "13px",
@@ -1089,15 +1346,6 @@ const inputStyle: CSSProperties = {
   fontFamily: "inherit",
   boxSizing: "border-box",
   minWidth: 0,
-};
-
-const helperTextStyle: CSSProperties = {
-  margin: 0,
-  color: "#A1A1AA",
-  fontSize: "12px",
-  lineHeight: 1.55,
-  fontWeight: 650,
-  ...safeTextStyle,
 };
 
 const settingsGridStyle: CSSProperties = {
@@ -1109,27 +1357,28 @@ const settingsGridStyle: CSSProperties = {
 
 const themeGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 250px), 1fr))",
-  gap: "10px",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: "8px",
   minWidth: 0,
 };
 
 const themeOptionStyle: CSSProperties = {
   position: "relative",
-  minHeight: "124px",
-  borderRadius: "22px",
-  padding: "13px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(18,12,30,0.82)",
-  color: "#FFFFFF",
+  minHeight: "82px",
+  borderRadius: "18px",
+  padding: "8px 4px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface, rgba(18,12,30,0.82))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   display: "grid",
-  gridTemplateColumns: "44px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "11px",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  justifyItems: "center",
+  alignContent: "center",
+  gap: "6px",
   cursor: "pointer",
   fontFamily: "inherit",
-  textAlign: "left",
-  boxShadow: "0 12px 30px rgba(0,0,0,0.16)",
+  textAlign: "center",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -1139,78 +1388,58 @@ const themeOptionActiveStyle: CSSProperties = {
   border:
     "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 46%, transparent)",
   background:
-    "radial-gradient(circle at 92% 0%, var(--historietas-glow-secondary, rgba(249,115,22,0.16)), transparent 34%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, transparent), rgba(18,12,30,0.92))",
-  boxShadow:
-    "0 14px 34px rgba(0,0,0,0.18), 0 0 24px var(--historietas-glow-primary, rgba(124,58,237,0.12))",
+    "linear-gradient(135deg, var(--historietas-active-surface, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
+  boxShadow: "none",
 };
 
 const themePreviewStyle: CSSProperties = {
-  width: "44px",
-  height: "44px",
-  borderRadius: "17px",
+  width: "38px",
+  height: "38px",
+  borderRadius: "14px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   color: "#FFFFFF",
-  fontSize: "20px",
+  fontSize: "18px",
   fontWeight: 950,
   flex: "0 0 auto",
 };
 
 const themeTextBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "5px",
+  justifyItems: "center",
+  gap: "2px",
   minWidth: 0,
+  width: "100%",
+  textAlign: "center",
 };
 
 const themeTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "15px",
-  lineHeight: 1.1,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+  lineHeight: 1.08,
   fontWeight: 950,
   letterSpacing: "-0.035em",
-  ...safeTextStyle,
-};
-
-const themeDescriptionStyle: CSSProperties = {
-  color: "#D4D4D8",
-  fontSize: "11px",
-  lineHeight: 1.45,
-  fontWeight: 650,
-  ...safeTextStyle,
-};
-
-const themeActiveBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "10px",
-  right: "10px",
-  maxWidth: "calc(100% - 20px)",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "9px",
-  fontWeight: 950,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const preferenceStyle: CSSProperties = {
-  minHeight: "154px",
-  borderRadius: "22px",
-  padding: "14px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(18,12,30,0.82)",
-  color: "#FFFFFF",
+  minHeight: "78px",
+  borderRadius: "17px",
+  padding: "8px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface, rgba(18,12,30,0.82))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   display: "grid",
-  justifyItems: "start",
-  alignContent: "start",
-  gap: "8px",
+  gridTemplateColumns: "40px minmax(0, 1fr)",
+  alignItems: "center",
+  columnGap: "9px",
+  rowGap: "1px",
   cursor: "pointer",
   fontFamily: "inherit",
-  textAlign: "left",
-  boxShadow: "0 12px 30px rgba(0,0,0,0.16)",
+  textAlign: "center",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -1219,82 +1448,93 @@ const preferenceActiveStyle: CSSProperties = {
   ...preferenceStyle,
   border: "1px solid rgba(249, 115, 22, 0.30)",
   background:
-    "radial-gradient(circle at 92% 0%, rgba(249,115,22,0.16), transparent 34%), linear-gradient(135deg, rgba(124,58,237,0.24), rgba(18,12,30,0.92))",
-  boxShadow:
-    "0 14px 34px rgba(0,0,0,0.18), 0 0 24px rgba(124,58,237,0.12)",
+    "linear-gradient(135deg, var(--historietas-active-surface, rgba(249,115,22,0.16)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
+  boxShadow: "none",
 };
 
 const preferenceIconStyle: CSSProperties = {
-  width: "38px",
-  height: "38px",
+  width: "40px",
+  height: "40px",
   borderRadius: "15px",
   background:
     "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "18px",
+  fontSize: "19px",
+  gridRow: "1 / span 2",
 };
 
 const preferenceTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "16px",
-  lineHeight: 1.1,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "15.5px",
+  lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.035em",
+  textAlign: "center",
+  alignSelf: "end",
   ...safeTextStyle,
 };
 
 const preferenceTextStyle: CSSProperties = {
-  color: "#D4D4D8",
-  fontSize: "12px",
-  lineHeight: 1.45,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11.2px",
+  lineHeight: 1.14,
   fontWeight: 650,
+  textAlign: "center",
+  alignSelf: "start",
   ...safeTextStyle,
 };
 
 const statsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "8px",
   minWidth: 0,
 };
 
 const statCardStyle: CSSProperties = {
   display: "grid",
-  gap: "4px",
-  padding: "12px",
-  borderRadius: "18px",
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "0 10px 26px rgba(0,0,0,0.16)",
+  justifyItems: "center",
+  alignContent: "center",
+  gap: "2px",
+  minHeight: "66px",
+  padding: "8px 4px",
+  borderRadius: "15px",
+  background: "var(--historietas-surface, rgba(255,255,255,0.055))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
+  textAlign: "center",
 };
 
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "26px",
+  fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const statLabelStyle: CSSProperties = {
-  color: "#A1A1AA",
-  fontSize: "10px",
-  lineHeight: 1.25,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "8px",
+  lineHeight: 1.1,
   fontWeight: 950,
   textTransform: "uppercase",
-  letterSpacing: "0.055em",
+  letterSpacing: "0.04em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const lastUpdateStyle: CSSProperties = {
-  margin: "10px 0 0",
-  color: "#A1A1AA",
+  margin: "10px auto 0",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
   fontWeight: 750,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -1305,8 +1545,8 @@ const actionsStyle: CSSProperties = {
   padding: "12px",
   borderRadius: "24px",
   background:
-    "linear-gradient(135deg, rgba(33,24,50,0.90) 0%, rgba(18,12,30,0.98) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.90)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
   overflow: "hidden",
   boxSizing: "border-box",
@@ -1343,59 +1583,30 @@ const primaryButtonStyle: CSSProperties = {
 const secondaryButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 36%, rgba(255,255,255,0.08))",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(255,255,255,0.035))",
-  color: "#DDD6FE",
+  background: "var(--historietas-secondary-surface, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(255,255,255,0.035)))",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
   boxShadow: "none",
 };
 
 const dangerButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
   border: "1px solid rgba(239, 68, 68, 0.26)",
-  background: "rgba(239, 68, 68, 0.105)",
-  color: "#FCA5A5",
+  background: "var(--historietas-danger-surface, rgba(239, 68, 68, 0.105))",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
   boxShadow: "none",
-};
-
-const infoBoxStyle: CSSProperties = {
-  marginTop: "22px",
-  padding: "15px",
-  borderRadius: "22px",
-  background: "rgba(249, 115, 22, 0.075)",
-  border: "1px solid rgba(249, 115, 22, 0.18)",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
-const infoTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "20px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  ...safeTextStyle,
-};
-
-const infoTextStyle: CSSProperties = {
-  margin: "8px 0 0",
-  color: "#D4D4D8",
-  fontSize: "12px",
-  lineHeight: 1.58,
-  fontWeight: 650,
-  ...safeTextStyle,
 };
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 56px))",
-  padding: "24px 0 88px",
+  padding: "24px 0 52px",
 };
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
   borderRadius: "32px",
   boxShadow:
-    "0 24px 62px rgba(0,0,0,0.34), 0 0 42px var(--historietas-glow-primary, rgba(124,58,237,0.14))",
+    "var(--historietas-hero-shadow, 0 24px 62px rgba(0,0,0,0.34), 0 0 42px var(--historietas-glow-primary, rgba(124,58,237,0.14)))",
 };
 
 const desktopHeroContentStyle: CSSProperties = {
@@ -1429,27 +1640,22 @@ const desktopAccountCardStyle: CSSProperties = {
   padding: "18px",
 };
 
-const desktopHelperFullStyle: CSSProperties = {
-  ...helperTextStyle,
-  gridColumn: "1 / -1",
-};
-
 const desktopThemeGridStyle: CSSProperties = {
   ...themeGridStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
   gap: "12px",
 };
 
 const desktopThemeOptionStyle: CSSProperties = {
   ...themeOptionStyle,
-  minHeight: "118px",
-  padding: "14px",
+  minHeight: "104px",
+  padding: "12px 8px",
 };
 
 const desktopThemeOptionActiveStyle: CSSProperties = {
   ...themeOptionActiveStyle,
-  minHeight: "118px",
-  padding: "14px",
+  minHeight: "104px",
+  padding: "12px 8px",
 };
 
 const desktopSettingsGridStyle: CSSProperties = {
@@ -1460,14 +1666,14 @@ const desktopSettingsGridStyle: CSSProperties = {
 
 const desktopPreferenceStyle: CSSProperties = {
   ...preferenceStyle,
-  minHeight: "146px",
-  padding: "16px",
+  minHeight: "84px",
+  padding: "10px",
 };
 
 const desktopPreferenceActiveStyle: CSSProperties = {
   ...preferenceActiveStyle,
-  minHeight: "146px",
-  padding: "16px",
+  minHeight: "84px",
+  padding: "10px",
 };
 
 const desktopStatsGridStyle: CSSProperties = {
@@ -1484,11 +1690,3 @@ const desktopActionsStyle: CSSProperties = {
   borderRadius: "26px",
 };
 
-const desktopInfoBoxStyle: CSSProperties = {
-  ...infoBoxStyle,
-  padding: "18px",
-  display: "grid",
-  gridTemplateColumns: "240px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "18px",
-};
