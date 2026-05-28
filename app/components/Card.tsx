@@ -9,6 +9,33 @@ type CardProps = {
   obra?: Obra;
 };
 
+function normalizarTextoCard(texto: string) {
+  return texto
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function formatarGeneroCard(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTextoCard(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (
+    generoNormalizado === "sci-fi" ||
+    generoNormalizado === "sci fi" ||
+    generoNormalizado === "cyberpunk"
+  ) {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Gênero não informado";
+}
+
 export default function Card({ obra }: CardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -18,7 +45,7 @@ export default function Card({ obra }: CardProps) {
 
   const titulo = obra.titulo?.trim() || "Obra sem título";
   const autor = obra.autor?.trim() || "Autor não informado";
-  const genero = obra.genero?.trim() || "Gênero não informado";
+  const genero = formatarGeneroCard(obra.genero || "");
   const status = obra.status?.trim() || "Em andamento";
   const link = obra.link?.trim() || "/explorar";
   const classificacaoIndicativa =

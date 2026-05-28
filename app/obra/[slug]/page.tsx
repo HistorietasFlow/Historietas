@@ -178,6 +178,21 @@ function criarSlugBase(titulo: string) {
   return slug || "obra";
 }
 
+function formatarGeneroObraPublica(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTexto(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Não informado";
+}
+
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   if (capitulos.length === 0) {
     return 0;
@@ -906,6 +921,9 @@ export default function ObraDinamicaPage() {
   }, [slug, obrasLocais]);
 
   const obraNormalizada = obra ? normalizarTexto(obra.titulo) : "";
+  const generoObraFormatado = obra
+    ? formatarGeneroObraPublica(obra.genero)
+    : "Não informado";
   const obraDisponivel = Boolean(obra?.disponivel);
 
   useEffect(() => {
@@ -1043,9 +1061,7 @@ export default function ObraDinamicaPage() {
       const seguindo = novasObrasSeguidas.includes(obraNormalizada);
 
       setObraSeguida(seguindo);
-      setMensagemAcao(
-        seguindo ? "Obra adicionada aos seguidos." : "Obra removida dos seguidos."
-      );
+      setMensagemAcao("");
     } catch {
       setMensagemAcao("Não foi possível salvar agora.");
     }
@@ -1144,6 +1160,14 @@ export default function ObraDinamicaPage() {
             <span style={logoMarkStyle}>H</span>
             <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
+
+          <div style={ratingSummaryStyle}>
+            <strong style={ratingNumberStyle}>4.8</strong>
+            <span style={ratingStarsStyle}>★★★★★</span>
+            <span style={ratingTotalStyle}>
+              {obraDisponivel ? "126 avaliações" : "126 interações"}
+            </span>
+          </div>
         </header>
 
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
@@ -1151,8 +1175,6 @@ export default function ObraDinamicaPage() {
 
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
             <div style={isDesktop ? criarDesktopCoverArtStyle(obra.capa) : criarCoverArtStyle(obra.capa)} aria-hidden="true">
-              <span style={coverTopBadgeStyle}>{obra.formato}</span>
-
               {!obra.capa && (
                 <strong style={coverTitleStyle}>
                   {obra.titulo
@@ -1164,19 +1186,21 @@ export default function ObraDinamicaPage() {
                 </strong>
               )}
 
-              <span style={coverBottomBadgeStyle}>
-                {obra.classificacaoIndicativa}
-              </span>
             </div>
 
             <div style={isDesktop ? desktopBadgeRowStyle : badgeRowStyle}>
-              <span style={badgeStyle}>
-                {obra.origem === "local" ? "OBRA DO AUTOR" : "OBRA DO CATÁLOGO"}
-              </span>
+              <span style={infoBadgeStyle}>{generoObraFormatado}</span>
+              <span style={infoBadgeStyle}>{obra.formato}</span>
               <span style={ratingBadgeStyle}>{obra.classificacaoIndicativa}</span>
               <span style={statusBadgeStyle}>
                 {obraDisponivel ? obra.status : "Em breve"}
               </span>
+
+              {obra.tags.slice(0, 1).map((tag, index) => (
+                <span key={`${obra.id}-public-tag-${tag}-${index}`} style={tagBadgeStyle}>
+                  {tag}
+                </span>
+              ))}
 
               {obra.arquivoObra && (
                 <span style={fileAttachedBadgeStyle}>Arquivo anexado</span>
@@ -1185,13 +1209,11 @@ export default function ObraDinamicaPage() {
 
             <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>{obra.titulo}</h1>
 
-            <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>{obra.sinopse}</p>
-
             <div style={isDesktop ? desktopInfoRowStyle : infoRowStyle}>
-              <span style={infoBadgeStyle}>{obra.genero}</span>
-              <span style={infoBadgeStyle}>{obra.formato}</span>
-              <span style={infoBadgeStyle}>por {obra.autor}</span>
+              <span style={authorInlineStyle}>Por {obra.autor}</span>
             </div>
+
+            <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>{obra.sinopse}</p>
 
             <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
               {obraDisponivel ? (
@@ -1224,12 +1246,22 @@ export default function ObraDinamicaPage() {
                 {linkCopiado ? "Link copiado!" : "Copiar link"}
               </button>
 
-              <Link href="#capitulos" style={ghostButtonStyle}>
-                {obraDisponivel ? "Ver capítulos" : "Capítulos"}
-              </Link>
             </div>
 
             {mensagemAcao && <span style={actionMessageStyle}>{mensagemAcao}</span>}
+          </div>
+        </section>
+
+        <section style={isDesktop ? desktopCommunityBoxStyle : communityBoxStyle}>
+          <div style={communityHeaderStyle}>
+            <h2 style={communityTitleStyle}>COMUNIDADE</h2>
+
+          </div>
+
+          <div style={communityGridStyle}>
+            <CommunityItem numero="27" rotulo="teorias" />
+            <CommunityItem numero="64" rotulo="reviews" />
+            <CommunityItem numero="1.1K" rotulo="favoritos" />
           </div>
         </section>
 
@@ -1243,109 +1275,9 @@ export default function ObraDinamicaPage() {
           />
         </section>
 
-        <section style={isDesktop ? desktopAboutBoxStyle : aboutBoxStyle}>
-          <span style={miniTitleStyle}>SOBRE A OBRA</span>
-
-          <h2 style={sectionTitleStyle}>Sobre a história</h2>
-
-          <p style={textStyle}>{obra.sinopse}</p>
-
-          <div style={isDesktop ? desktopHighlightListStyle : highlightListStyle}>
-            <div style={highlightItemStyle}>
-              <span style={highlightIconStyle}>✓</span>
-              <span style={highlightTextStyle}>
-                Gênero principal: {obra.genero}
-              </span>
-            </div>
-
-            <div style={highlightItemStyle}>
-              <span style={highlightIconStyle}>✓</span>
-              <span style={highlightTextStyle}>Formato: {obra.formato}</span>
-            </div>
-
-            <div style={highlightItemStyle}>
-              <span style={highlightIconStyle}>✓</span>
-              <span style={highlightTextStyle}>
-                Status: {obraDisponivel ? obra.status : "Em breve"}
-              </span>
-            </div>
-          </div>
-
-          <div style={tagsStyle}>
-            {obra.tags.map((tag) => (
-              <span key={tag} style={tagStyle}>
-                {tag}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        {obra.arquivoObra && (
-          <ArquivoObraPublico arquivo={obra.arquivoObra} slug={obra.slug} isDesktop={isDesktop} />
-        )}
-
-        <section style={isDesktop ? desktopCommunityBoxStyle : communityBoxStyle}>
-          <div style={communityHeaderStyle}>
-            <div style={{ minWidth: 0 }}>
-              <span style={miniTitleStyle}>COMUNIDADE</span>
-
-              <h2 style={communityTitleStyle}>Comunidade</h2>
-            </div>
-
-            <span style={communityBadgeStyle}>
-              {obraDisponivel ? "em andamento" : "pré-lançamento"}
-            </span>
-          </div>
-
-          <div style={communityGridStyle}>
-            <CommunityItem numero="27" rotulo="teorias" />
-            <CommunityItem numero="64" rotulo="reviews" />
-            <CommunityItem numero="1.1K" rotulo="favoritos" />
-          </div>
-        </section>
-
-        <section style={isDesktop ? desktopReviewBoxStyle : reviewBoxStyle}>
-          <div style={reviewTopStyle}>
-            <div style={{ minWidth: 0 }}>
-              <span style={miniTitleStyle}>
-                {obraDisponivel ? "AVALIAÇÃO" : "EXPECTATIVA"}
-              </span>
-
-              <h2 style={sectionTitleStyle}>
-                {obraDisponivel
-                  ? "Opinião dos leitores"
-                  : "Leitores aguardando"}
-              </h2>
-            </div>
-
-            <div style={ratingSummaryStyle}>
-              <strong style={ratingNumberStyle}>4.8</strong>
-              <span style={ratingStarsStyle}>★★★★★</span>
-              <span style={ratingTotalStyle}>
-                {obraDisponivel ? "126 avaliações" : "126 interações"}
-              </span>
-            </div>
-          </div>
-
-          <div style={isDesktop ? desktopCommentsGridStyle : commentsGridStyle}>
-            {comentariosModelo.map((comentario) => (
-              <article key={comentario.autor} style={commentCardStyle}>
-                <strong style={commentAuthorStyle}>{comentario.autor}</strong>
-                <p style={commentTextStyle}>{comentario.texto}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
         <section id="capitulos" style={chaptersSectionStyle}>
           <div style={sectionHeaderStyle}>
-            <div style={{ minWidth: 0 }}>
-              <span style={miniTitleStyle}>CAPÍTULOS</span>
-
-              <h2 style={sectionTitleStyle}>
-                {obraDisponivel ? "Capítulos" : "Capítulos em breve"}
-              </h2>
-            </div>
+            <h2 style={accentSectionTitleStyle}>CAPÍTULOS</h2>
 
             <span style={chapterCountBadgeStyle}>
               {obraDisponivel
@@ -1395,6 +1327,34 @@ export default function ObraDinamicaPage() {
             ))}
           </div>
         </section>
+
+
+
+        {obra.arquivoObra && (
+          <ArquivoObraPublico arquivo={obra.arquivoObra} slug={obra.slug} isDesktop={isDesktop} />
+        )}
+
+
+
+        <section style={isDesktop ? desktopReviewBoxStyle : reviewBoxStyle}>
+          <div style={reviewTopStyle}>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={accentSectionTitleStyle}>COMENTÁRIOS DOS LEITORES</h2>
+            </div>
+
+          </div>
+
+          <div style={isDesktop ? desktopCommentsGridStyle : commentsGridStyle}>
+            {comentariosModelo.map((comentario) => (
+              <article key={comentario.autor} style={commentCardStyle}>
+                <strong style={commentAuthorStyle}>{comentario.autor}</strong>
+                <p style={commentTextStyle}>{comentario.texto}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+
 
       </section>
     </main>
@@ -1530,10 +1490,10 @@ const pageStyle: CSSProperties = {
 };
 
 const containerStyle: CSSProperties = {
-  width: "min(860px, calc(100% - 32px))",
+  width: "min(860px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(100px + env(safe-area-inset-bottom))",
+  padding: "14px 0 calc(52px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1541,7 +1501,7 @@ const containerStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 96px",
+  padding: "22px 0 22px",
 };
 
 
@@ -1550,28 +1510,29 @@ const topStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "10px",
-  marginBottom: "14px",
+  marginBottom: "10px",
   minWidth: 0,
+  maxWidth: "100%",
 };
 
 const desktopTopStyle: CSSProperties = {
   ...topStyle,
   flexWrap: "nowrap",
-  marginBottom: "18px",
+  marginBottom: "14px",
 };
 
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "23px",
   fontWeight: 950,
   letterSpacing: "-0.055em",
   display: "flex",
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "calc(100% - 158px)",
-  overflow: "visible",
+  maxWidth: "calc(100% - 108px)",
+  overflow: "hidden",
   ...safeTextStyle,
 };
 
@@ -1604,16 +1565,22 @@ const logoTextStyle: CSSProperties = {
 
 
 
+
+
+
+
 const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
-  borderRadius: "26px",
+  borderRadius: "22px",
   border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, var(--historietas-border-soft, transparent))",
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, transparent))",
   background:
-    "radial-gradient(circle at 16% 18%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)), transparent 30%), radial-gradient(circle at 82% 12%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 50%, transparent)), transparent 38%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.98)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.94)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.98)) 100%)",
+  boxShadow: "none",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const heroGlowStyle: CSSProperties = {
@@ -1623,35 +1590,48 @@ const heroGlowStyle: CSSProperties = {
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  padding: "15px",
+  padding: "10px",
   display: "grid",
-  gap: "11px",
+  gridTemplateColumns: "minmax(112px, 0.38fr) minmax(0, 1fr)",
+  gap: "6px 10px",
+  alignItems: "start",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const coverArtStyle: CSSProperties = {
-  minHeight: "162px",
-  borderRadius: "22px",
+  gridColumn: "1",
+  gridRow: "1 / span 5",
+  width: "100%",
+  minHeight: "198px",
+  height: "198px",
+  alignSelf: "start",
+  borderRadius: "17px",
   position: "relative",
   overflow: "hidden",
   background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 44%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 70%, transparent), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 56%, transparent), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   boxShadow: "none",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const coverTopBadgeStyle: CSSProperties = {
   position: "absolute",
-  top: "10px",
-  left: "10px",
-  padding: "7px 10px",
+  top: "8px",
+  left: "8px",
+  maxWidth: "calc(100% - 16px)",
+  padding: "5px 7px",
   borderRadius: "999px",
   background:
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 90%, transparent)",
+    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 86%, transparent)",
   color: "#FFFFFF",
-  fontSize: "10px",
+  fontSize: "8.8px",
   fontWeight: 950,
+  lineHeight: 1.1,
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -1673,56 +1653,66 @@ const coverTitleStyle: CSSProperties = {
 
 const coverBottomBadgeStyle: CSSProperties = {
   position: "absolute",
-  right: "10px",
-  bottom: "10px",
-  padding: "7px 10px",
+  right: "8px",
+  bottom: "8px",
+  maxWidth: "calc(100% - 16px)",
+  padding: "5px 7px",
   borderRadius: "999px",
   background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 88%, transparent)",
+    "color-mix(in srgb, var(--historietas-accent, #F97316) 86%, transparent)",
   color: "#FFFFFF",
-  fontSize: "11px",
+  fontSize: "9px",
   fontWeight: 950,
+  lineHeight: 1.1,
   textAlign: "center",
   ...safeTextStyle,
 };
 
 const badgeRowStyle: CSSProperties = {
+  gridColumn: "2",
   display: "flex",
   flexWrap: "wrap",
-  gap: "6px",
+  gap: "5px",
   minWidth: 0,
+  justifyContent: "flex-start",
+  alignItems: "center",
 };
 
 const infoBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "6px 9px",
+  padding: "4px 7px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   color: "var(--historietas-text-primary, #E4E4E7)",
-  fontSize: "10px",
+  fontSize: "8.8px",
+  lineHeight: 1.1,
   fontWeight: 900,
   ...safeTextStyle,
 };
 
-const badgeStyle: CSSProperties = {
-  ...infoBadgeStyle,
-  background:
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  letterSpacing: "0.08em",
+const authorInlineStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "10.5px",
+  lineHeight: 1.15,
+  fontWeight: 950,
+  textAlign: "left",
+  ...safeTextStyle,
 };
+
 
 const statusBadgeStyle: CSSProperties = {
   ...infoBadgeStyle,
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "rgba(34, 197, 94, 0.14)",
+  border: "1px solid rgba(34, 197, 94, 0.28)",
+  color: "#86EFAC",
 };
 
 const ratingBadgeStyle: CSSProperties = {
@@ -1734,13 +1724,24 @@ const ratingBadgeStyle: CSSProperties = {
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
 };
 
+const tagBadgeStyle: CSSProperties = {
+  ...infoBadgeStyle,
+  background:
+    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, var(--historietas-surface, transparent))",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, var(--historietas-border-soft, transparent))",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+};
+
 const titleStyle: CSSProperties = {
+  gridColumn: "2",
   margin: 0,
-  fontSize: "clamp(38px, 10vw, 68px)",
-  lineHeight: 0.92,
+  fontSize: "clamp(28px, 7.6vw, 42px)",
+  lineHeight: 0.98,
   fontWeight: 950,
-  letterSpacing: "-0.08em",
+  letterSpacing: "-0.07em",
   maxWidth: "100%",
+  textAlign: "left",
   background:
     "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
@@ -1750,32 +1751,43 @@ const titleStyle: CSSProperties = {
 };
 
 const descriptionStyle: CSSProperties = {
+  gridColumn: "2",
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.58,
+  fontSize: "11.2px",
+  lineHeight: 1.38,
   fontWeight: 650,
-  maxWidth: "760px",
+  maxWidth: "100%",
+  textAlign: "left",
+  display: "-webkit-box",
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
   ...safeTextStyle,
 };
 
 const infoRowStyle: CSSProperties = {
+  gridColumn: "2",
   display: "flex",
   flexWrap: "wrap",
-  gap: "7px",
+  justifyContent: "flex-start",
+  gap: "4px",
   minWidth: 0,
 };
 
 const heroActionsStyle: CSSProperties = {
+  gridColumn: "2",
   display: "grid",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
+  gap: "5px",
   marginTop: "2px",
   minWidth: 0,
+  maxWidth: "100%",
 };
 
 const primaryButtonStyle: CSSProperties = {
-  minHeight: "44px",
+  gridColumn: "1 / -1",
+  minHeight: "34px",
   borderRadius: "999px",
   border:
     "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
@@ -1783,7 +1795,7 @@ const primaryButtonStyle: CSSProperties = {
     "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 82%, #111827) 100%)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
@@ -1791,8 +1803,9 @@ const primaryButtonStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 8px",
   boxShadow: "none",
+  boxSizing: "border-box",
   ...safeTextStyle,
 };
 
@@ -1802,14 +1815,14 @@ const primaryLinkButtonStyle: CSSProperties = {
 };
 
 const secondaryButtonStyle: CSSProperties = {
-  minHeight: "44px",
+  minHeight: "34px",
   borderRadius: "999px",
   border:
     "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
   background: "var(--historietas-secondary, #7C3AED)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
@@ -1817,30 +1830,15 @@ const secondaryButtonStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 8px",
   boxShadow: "none",
+  boxSizing: "border-box",
   ...safeTextStyle,
 };
 
-const ghostButtonStyle: CSSProperties = {
-  minHeight: "42px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.05))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  color: "var(--historietas-secondary-button-text, #E4E4E7)",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  ...safeTextStyle,
-};
 
 const copyLinkButtonStyle: CSSProperties = {
-  minHeight: "42px",
+  minHeight: "34px",
   borderRadius: "999px",
   background:
     "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
@@ -1848,7 +1846,7 @@ const copyLinkButtonStyle: CSSProperties = {
     "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
@@ -1856,8 +1854,9 @@ const copyLinkButtonStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 8px",
   boxShadow: "none",
+  boxSizing: "border-box",
   ...safeTextStyle,
 };
 
@@ -1887,30 +1886,31 @@ const followedButtonStyle: CSSProperties = {
 };
 
 const actionMessageStyle: CSSProperties = {
+  gridColumn: "2",
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  lineHeight: 1.4,
+  fontSize: "10px",
+  lineHeight: 1.25,
   fontWeight: 800,
-  textAlign: "center",
-  gridColumn: "1 / -1",
+  textAlign: "left",
+  marginTop: 0,
   ...safeTextStyle,
 };
 
 const statsGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "7px",
-  marginTop: "10px",
+  gap: "6px",
+  marginTop: "8px",
   minWidth: 0,
 };
 
 const statCardStyle: CSSProperties = {
-  borderRadius: "16px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
-  padding: "9px 7px",
+  borderRadius: "14px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.04))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
+  padding: "7px 5px",
   display: "grid",
-  gap: "4px",
+  gap: "3px",
   minWidth: 0,
   overflow: "hidden",
   boxShadow: "none",
@@ -1919,7 +1919,7 @@ const statCardStyle: CSSProperties = {
 
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "clamp(17px, 5vw, 22px)",
+  fontSize: "clamp(16px, 4.6vw, 21px)",
   fontWeight: 950,
   lineHeight: 1,
   ...safeTextStyle,
@@ -1927,116 +1927,58 @@ const statNumberStyle: CSSProperties = {
 
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8.5px",
+  fontSize: "7.8px",
   fontWeight: 900,
   textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  lineHeight: 1.15,
+  letterSpacing: "0.025em",
+  lineHeight: 1.1,
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
-const aboutBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: "14px",
-  borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.78)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
-  display: "grid",
-  gap: "10px",
-  minWidth: 0,
-  overflow: "hidden",
-  boxShadow: "var(--historietas-card-shadow, none)",
-};
 
 const miniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  fontSize: "9.5px",
   fontWeight: 950,
-  letterSpacing: "0.08em",
+  letterSpacing: "0.075em",
   maxWidth: "100%",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(23px, 7vw, 32px)",
+  fontSize: "clamp(22px, 6.5vw, 31px)",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.055em",
   maxWidth: "100%",
+  textAlign: "center",
   ...safeTextStyle,
+};
+
+const accentSectionTitleStyle: CSSProperties = {
+  ...sectionTitleStyle,
+  color: "var(--historietas-accent, #FDBA74)",
+  textTransform: "uppercase",
 };
 
 const textStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.62,
+  fontSize: "12.5px",
+  lineHeight: 1.55,
   fontWeight: 650,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
-const highlightListStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-};
 
-const highlightItemStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "24px minmax(0, 1fr)",
-  gap: "8px",
-  alignItems: "center",
-  padding: "8px",
-  borderRadius: "14px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
-  minWidth: 0,
-};
 
-const highlightIconStyle: CSSProperties = {
-  width: "24px",
-  height: "24px",
-  borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.24)",
-  color: "#86EFAC",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
 
-const highlightTextStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #E4E4E7)",
-  fontSize: "12px",
-  fontWeight: 800,
-  lineHeight: 1.45,
-  ...safeTextStyle,
-};
 
-const tagsStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "7px",
-  minWidth: 0,
-};
 
-const tagStyle: CSSProperties = {
-  maxWidth: "100%",
-  padding: "7px 9px",
-  borderRadius: "999px",
-  background:
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
 
 const fileAttachedBadgeStyle: CSSProperties = {
   ...infoBadgeStyle,
@@ -2208,116 +2150,115 @@ const fileSecondaryButtonStyle: CSSProperties = {
 };
 
 const communityBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: "13px",
-  borderRadius: "20px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(255,255,255,0.045)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.78)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  marginTop: "10px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   display: "grid",
-  gap: "10px",
+  gap: "8px",
   minWidth: 0,
-  overflow: "hidden",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  overflow: "visible",
+  boxShadow: "none",
 };
 
 const communityHeaderStyle: CSSProperties = {
   display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: "10px",
-  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
   minWidth: 0,
+  maxWidth: "100%",
+  textAlign: "center",
 };
 
 const communityTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "clamp(22px, 6vw, 28px)",
+  width: "100%",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "clamp(22px, 6.5vw, 31px)",
   lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "-0.052em",
+  letterSpacing: "-0.045em",
+  textTransform: "uppercase",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
-const communityBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "7px 9px",
-  borderRadius: "999px",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
 const communityGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "8px",
+  gap: "6px",
   minWidth: 0,
 };
 
 const communityItemStyle: CSSProperties = {
-  padding: "9px",
+  padding: "8px 6px",
   borderRadius: "14px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.04))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
   display: "grid",
   gap: "3px",
-  minWidth: 0,
+  justifyItems: "center",
   textAlign: "center",
+  minWidth: 0,
 };
 
 const communityNumberStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "18px",
-  fontWeight: 950,
   lineHeight: 1,
+  fontWeight: 950,
   ...safeTextStyle,
 };
 
 const communityLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
+  fontSize: "8.5px",
   fontWeight: 900,
   textTransform: "uppercase",
-  letterSpacing: "0.04em",
+  letterSpacing: "0.035em",
   ...safeTextStyle,
 };
 
 const reviewBoxStyle: CSSProperties = {
   marginTop: "12px",
-  padding: "13px",
-  borderRadius: "20px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.80)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 8%, var(--historietas-border-soft, rgba(255,255,255,0.06)))",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   display: "grid",
   gap: "10px",
   minWidth: 0,
-  overflow: "hidden",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  overflow: "visible",
+  boxShadow: "none",
 };
 
 const reviewTopStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   gap: "10px",
-  alignItems: "start",
+  flexWrap: "wrap",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const ratingSummaryStyle: CSSProperties = {
+  flex: "0 0 auto",
+  width: "fit-content",
+  maxWidth: "132px",
   display: "grid",
-  justifyItems: "end",
-  gap: "2px",
-  minWidth: 0,
+  justifyItems: "center",
+  alignContent: "center",
+  gap: 0,
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  boxShadow: "none",
+  boxSizing: "border-box",
 };
 
 const ratingNumberStyle: CSSProperties = {
@@ -2332,6 +2273,7 @@ const ratingStarsStyle: CSSProperties = {
   color: "#FBBF24",
   fontSize: "12px",
   letterSpacing: "-0.02em",
+  marginTop: "-7px",
   ...safeTextStyle,
 };
 
@@ -2344,20 +2286,25 @@ const ratingTotalStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+
+
+
+
 const commentsGridStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
+  gap: "7px",
   minWidth: 0,
 };
 
 const commentCardStyle: CSSProperties = {
   padding: "9px",
-  borderRadius: "14px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  borderRadius: "15px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.04))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
   display: "grid",
-  gap: "4px",
+  gap: "5px",
   minWidth: 0,
+  boxShadow: "none",
 };
 
 const commentAuthorStyle: CSSProperties = {
@@ -2377,68 +2324,70 @@ const commentTextStyle: CSSProperties = {
 };
 
 const chaptersSectionStyle: CSSProperties = {
-  marginTop: "16px",
+  marginTop: "14px",
   minWidth: 0,
 };
 
 const sectionHeaderStyle: CSSProperties = {
-  marginBottom: "10px",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: "10px",
-  flexWrap: "wrap",
+  display: "grid",
+  gap: "8px",
+  alignItems: "center",
+  justifyItems: "center",
+  textAlign: "center",
   minWidth: 0,
+  marginBottom: "9px",
 };
 
 const chapterCountBadgeStyle: CSSProperties = {
   width: "fit-content",
-  maxWidth: "100%",
-  padding: "7px 9px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #E4E4E7)",
-  fontSize: "11px",
-  fontWeight: 900,
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "10px",
+  fontWeight: 950,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const chaptersListStyle: CSSProperties = {
   display: "grid",
-  gap: "9px",
+  gap: "8px",
   minWidth: 0,
 };
 
 const chapterCardStyle: CSSProperties = {
-  padding: "10px",
-  borderRadius: "18px",
+  padding: "9px",
+  borderRadius: "17px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.78)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.74)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.88)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
   display: "grid",
-  gridTemplateColumns: "40px minmax(0, 1fr)",
-  gap: "9px",
+  gridTemplateColumns: "38px minmax(0, 1fr)",
+  gap: "8px",
   alignItems: "center",
   minWidth: 0,
   overflow: "hidden",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  boxShadow: "none",
 };
 
 const chapterNumberStyle: CSSProperties = {
-  width: "40px",
-  height: "40px",
+  width: "38px",
+  height: "38px",
   borderRadius: "13px",
   background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-surface, transparent))",
+    "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
   border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, var(--historietas-border-soft, transparent))",
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "14px",
-  fontWeight: 950,
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
+  color: "var(--historietas-accent, #FDBA74)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  fontSize: "15px",
+  fontWeight: 950,
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const chapterContentStyle: CSSProperties = {
@@ -2480,26 +2429,30 @@ const chapterTitleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "17px",
+  lineHeight: 1.12,
   fontWeight: 950,
-  lineHeight: 1.08,
-  letterSpacing: "-0.04em",
+  letterSpacing: "-0.045em",
   ...safeTextStyle,
 };
 
 const chapterMetaStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontWeight: 800,
-  lineHeight: 1.45,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11.5px",
+  lineHeight: 1.42,
+  fontWeight: 650,
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
   ...safeTextStyle,
 };
 
 const chapterButtonStyle: CSSProperties = {
-  minHeight: "34px",
+  gridColumn: "1 / -1",
+  minHeight: "38px",
   borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 82%, #111827) 100%)",
+  background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11px",
@@ -2509,7 +2462,6 @@ const chapterButtonStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   padding: "0 10px",
-  gridColumn: "1 / -1",
   boxShadow: "none",
   ...safeTextStyle,
 };
@@ -2522,76 +2474,70 @@ const chapterButtonStyle: CSSProperties = {
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
-  borderRadius: "30px",
+  borderRadius: "26px",
 };
 
 const desktopHeroContentStyle: CSSProperties = {
   ...heroContentStyle,
-  gridTemplateColumns: "280px minmax(0, 1fr)",
-  gap: "12px 26px",
-  padding: "26px",
-  alignItems: "center",
+  gridTemplateColumns: "236px minmax(0, 1fr)",
+  gap: "8px 20px",
+  padding: "15px",
+  alignItems: "start",
 };
 
 const desktopCoverArtStyle: CSSProperties = {
   ...coverArtStyle,
   gridColumn: "1",
-  gridRow: "1 / span 7",
-  minHeight: "392px",
-  borderRadius: "26px",
+  gridRow: "1 / span 5",
+  minHeight: "304px",
+  height: "304px",
+  borderRadius: "21px",
 };
 
 const desktopBadgeRowStyle: CSSProperties = {
   ...badgeRowStyle,
   gridColumn: "2",
+  justifyContent: "flex-start",
 };
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
   gridColumn: "2",
-  fontSize: "clamp(52px, 5.4vw, 78px)",
-  maxWidth: "780px",
+  fontSize: "clamp(44px, 5vw, 66px)",
+  lineHeight: 0.94,
+  textAlign: "left",
 };
 
 const desktopDescriptionStyle: CSSProperties = {
   ...descriptionStyle,
   gridColumn: "2",
   maxWidth: "760px",
-  fontSize: "14px",
-  lineHeight: 1.68,
+  fontSize: "13px",
+  lineHeight: 1.55,
+  textAlign: "left",
 };
 
 const desktopInfoRowStyle: CSSProperties = {
   ...infoRowStyle,
   gridColumn: "2",
+  justifyContent: "flex-start",
 };
 
 const desktopHeroActionsStyle: CSSProperties = {
   ...heroActionsStyle,
   gridColumn: "2",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  maxWidth: "780px",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  maxWidth: "520px",
 };
 
 const desktopStatsGridStyle: CSSProperties = {
   ...statsGridStyle,
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: "8px",
-  marginTop: "12px",
+  marginTop: "10px",
 };
 
-const desktopAboutBoxStyle: CSSProperties = {
-  ...aboutBoxStyle,
-  padding: "18px",
-  borderRadius: "24px",
-  marginTop: "12px",
-};
 
-const desktopHighlightListStyle: CSSProperties = {
-  ...highlightListStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "8px",
-};
 
 const desktopFileBoxStyle: CSSProperties = {
   ...fileBoxStyle,
@@ -2614,16 +2560,18 @@ const desktopFileActionsStyle: CSSProperties = {
 
 const desktopCommunityBoxStyle: CSSProperties = {
   ...communityBoxStyle,
-  padding: "16px",
-  borderRadius: "24px",
   marginTop: "12px",
+  padding: 0,
+  borderRadius: 0,
+  gap: "10px",
 };
 
 const desktopReviewBoxStyle: CSSProperties = {
   ...reviewBoxStyle,
-  padding: "16px",
-  borderRadius: "24px",
-  marginTop: "12px",
+  marginTop: "14px",
+  padding: 0,
+  borderRadius: 0,
+  gap: "12px",
 };
 
 const desktopCommentsGridStyle: CSSProperties = {
@@ -2634,20 +2582,20 @@ const desktopCommentsGridStyle: CSSProperties = {
 
 const desktopChaptersListStyle: CSSProperties = {
   ...chaptersListStyle,
-  gap: "10px",
+  gap: "9px",
 };
 
 const desktopChapterCardStyle: CSSProperties = {
   ...chapterCardStyle,
-  gridTemplateColumns: "54px minmax(0, 1fr) 132px",
-  padding: "12px",
-  gap: "12px",
+  gridTemplateColumns: "50px minmax(0, 1fr) 126px",
+  padding: "10px",
+  gap: "10px",
 };
 
 const desktopChapterButtonStyle: CSSProperties = {
   ...chapterButtonStyle,
   gridColumn: "auto",
-  minHeight: "38px",
+  minHeight: "37px",
 };
 
 

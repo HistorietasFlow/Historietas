@@ -1478,7 +1478,7 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 32px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(96px + env(safe-area-inset-bottom))",
+  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2059,7 +2059,7 @@ const emptyButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "24px 0 92px",
+  padding: "24px 0 36px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -2176,4 +2176,3 @@ const desktopEmptyStyle: CSSProperties = {
   minHeight: "360px",
   padding: "34px",
 };
-

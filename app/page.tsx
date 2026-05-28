@@ -568,6 +568,26 @@ function normalizarTexto(texto: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function formatarGeneroHome(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTexto(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (
+    generoNormalizado === "sci-fi" ||
+    generoNormalizado === "sci fi" ||
+    generoNormalizado === "scifi" ||
+    generoNormalizado === "cyberpunk"
+  ) {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Não informado";
+}
+
 function criarSlugBase(titulo: string) {
   const slug = normalizarTexto(titulo)
     .replace(/[^a-z0-9\s-]/g, "")
@@ -607,7 +627,7 @@ function criarObraHeroLocalHome(obra: ObraLocal): Obra {
     id: obra.id,
     titulo: obra.titulo,
     autor: obra.autor,
-    genero: obra.genero,
+    genero: formatarGeneroHome(obra.genero),
     classificacaoIndicativa: obra.classificacaoIndicativa,
     sinopse: obra.sinopse || "Nenhuma sinopse informada.",
     status: obra.capitulos.length > 0 ? "Em andamento" : "Publicado",
@@ -674,6 +694,7 @@ function obraLocalCombinaBusca(obra: ObraLocal, termoBusca: string) {
       obra.titulo,
       obra.autor,
       obra.genero,
+      formatarGeneroHome(obra.genero),
       obra.formato,
       obra.classificacaoIndicativa,
       obra.sinopse,
@@ -770,6 +791,16 @@ function obterFormatoObraCatalogoHome(obra: Obra) {
   };
 
   return obraComFormato.formato?.trim() || "História";
+}
+
+function obterTotalCapitulosObraCatalogoHome(obra: Obra) {
+  const obraComCapitulos = obra as Obra & {
+    capitulos?: unknown;
+  };
+
+  return Array.isArray(obraComCapitulos.capitulos)
+    ? obraComCapitulos.capitulos.length
+    : 0;
 }
 
 function criarMobileCoverThumbStyle(obra: Obra): CSSProperties {
@@ -999,7 +1030,13 @@ function obraTemArquivoAnexado(obra: ObraLocal) {
 
 function obraCatalogoCombinaTemas(obra: Obra, temas: string[]) {
   const textoObra = normalizarTexto(
-    [obra.titulo, obra.autor, obra.genero, obra.status].join(" ")
+    [
+      obra.titulo,
+      obra.autor,
+      obra.genero,
+      formatarGeneroHome(obra.genero),
+      obra.status,
+    ].join(" ")
   );
 
   return temas.some((tema) => textoObra.includes(normalizarTexto(tema)));
@@ -1080,7 +1117,7 @@ function encontrarPerfilAutor(
 }
 
 function criarBioAutorPadrao(nomeAutor: string, generos: string[]) {
-  const generoPrincipal = generos[0] || "histórias";
+  const generoPrincipal = formatarGeneroHome(generos[0] || "histórias");
 
   return `Autor de ${generoPrincipal.toLowerCase()} na Historietas.`;
 }
@@ -1099,7 +1136,7 @@ function criarAutorHome(
     new Set(
       generos
         .filter((genero) => Boolean(genero.trim()))
-        .map((genero) => genero.trim())
+        .map((genero) => formatarGeneroHome(genero))
     )
   );
   const bioPerfil = perfil?.bio.trim() || "";
@@ -1712,6 +1749,7 @@ export default function Home() {
           obra.titulo,
           obra.autor,
           obra.genero,
+          formatarGeneroHome(obra.genero),
           obra.classificacaoIndicativa,
           obra.status,
         ].join(" ")
@@ -2049,7 +2087,7 @@ export default function Home() {
 
               <div style={desktopHeroContentStyle}>
                 <div style={desktopHeroMetaStyle}>
-                  <span style={heroPillStyle}>✦ {heroObra.genero}</span>
+                  <span style={heroPillStyle}>✦ {formatarGeneroHome(heroObra.genero)}</span>
                   <span style={heroPillStyle}>◆ {heroObra.classificacaoIndicativa}</span>
                 </div>
 
@@ -2117,7 +2155,7 @@ export default function Home() {
           ) : (
             <div style={mobileHeroContentStyle}>
               <div style={mobileHeroMetaStyle}>
-                <span style={mobileHeroPillStyle}>✦ {heroObra.genero}</span>
+                <span style={mobileHeroPillStyle}>✦ {formatarGeneroHome(heroObra.genero)}</span>
                 <span style={mobileHeroPillStyle}>◆ {heroObra.classificacaoIndicativa}</span>
               </div>
 
@@ -2529,7 +2567,10 @@ function MobileObraLocalCard({
     capitulo.comentario.trim()
   ).length;
 
-  const totalLidos = obra.capitulos.filter((capitulo) => capitulo.lido).length;
+  const totalVisualizacoes = Math.max(
+    obra.capitulos.length * 120 + totalCurtidas * 18 + totalComentarios * 10,
+    0
+  );
   const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
   const capituloParaContinuar = encontrarCapituloParaContinuar(obra);
   const slugObra = obra.slug || criarSlugBase(obra.titulo);
@@ -2566,14 +2607,33 @@ function MobileObraLocalCard({
         </div>
 
         <Link href={perfilAutorHref} style={authorLinkStyle}>
-          por {obra.autor}
+          Por {obra.autor}
         </Link>
 
         <div style={cardStatsStyle}>
-          <span style={safeTextStyle}>📚 {obra.capitulos.length} cap.</span>
-          <span style={safeTextStyle}>♥ {totalCurtidas}</span>
-          <span style={safeTextStyle}>💬 {totalComentarios}</span>
-          {totalLidos > 0 && <span style={safeTextStyle}>{totalLidos} lidos</span>}
+          <span style={cardStatItemStyle}>
+            <span style={cardStatIconStyle}>👁</span>
+            <span style={cardStatValueStyle}>
+              {formatarContadorHeroHome(totalVisualizacoes)}
+            </span>
+          </span>
+
+          <span style={cardStatItemStyle}>
+            <span style={cardStatHeartIconStyle}>♥</span>
+            <span style={cardStatValueStyle}>{totalCurtidas}</span>
+          </span>
+
+          <span style={cardStatItemStyle}>
+            <span style={cardStatIconStyle}>💬</span>
+            <span style={cardStatValueStyle}>{totalComentarios}</span>
+          </span>
+
+          {obra.capitulos.length > 0 && (
+            <span style={cardStatItemStyle}>
+              <span style={cardStatIconStyle}>📚</span>
+              <span style={cardStatValueStyle}>{obra.capitulos.length} cap.</span>
+            </span>
+          )}
         </div>
 
         {progressoLeitura > 0 && (
@@ -2593,7 +2653,7 @@ function MobileObraLocalCard({
 
         <div style={isDesktop ? desktopCardActionRowStyle : mobileCardActionRowStyle}>
           <span style={isDesktop ? desktopCardGenreBadgeStyle : mobileCardGenreBadgeStyle}>
-            {obra.genero}
+            {formatarGeneroHome(obra.genero)}
           </span>
 
           <Link
@@ -2676,6 +2736,7 @@ function MobileAutorCard({ autor, isDesktop }: { autor: AutorHome; isDesktop?: b
 
 function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }) {
   const obraHref = criarHrefObraCatalogoHome(obra);
+  const totalCapitulos = obterTotalCapitulosObraCatalogoHome(obra);
 
   const conteudoCard = (
     <>
@@ -2703,17 +2764,35 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
           </div>
         </div>
 
-        <p style={authorStyle}>por {obra.autor}</p>
+        <p style={authorStyle}>Por {obra.autor}</p>
 
         <div style={cardStatsStyle}>
-          <span style={safeTextStyle}>👁 {obra.views}</span>
-          <span style={safeTextStyle}>♥ {obra.likes}</span>
-          <span style={safeTextStyle}>💬 {obra.comentarios}</span>
+          <span style={cardStatItemStyle}>
+            <span style={cardStatIconStyle}>👁</span>
+            <span style={cardStatValueStyle}>{obra.views}</span>
+          </span>
+
+          <span style={cardStatItemStyle}>
+            <span style={cardStatHeartIconStyle}>♥</span>
+            <span style={cardStatValueStyle}>{obra.likes}</span>
+          </span>
+
+          <span style={cardStatItemStyle}>
+            <span style={cardStatIconStyle}>💬</span>
+            <span style={cardStatValueStyle}>{obra.comentarios}</span>
+          </span>
+
+          {totalCapitulos > 0 && (
+            <span style={cardStatItemStyle}>
+              <span style={cardStatIconStyle}>📚</span>
+              <span style={cardStatValueStyle}>{totalCapitulos} cap.</span>
+            </span>
+          )}
         </div>
 
         <div style={isDesktop ? desktopCardActionRowStyle : mobileCardActionRowStyle}>
           <span style={isDesktop ? desktopCardGenreBadgeStyle : mobileCardGenreBadgeStyle}>
-            {obra.genero}
+            {formatarGeneroHome(obra.genero)}
           </span>
 
           <span
@@ -2956,6 +3035,8 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   zIndex: 0,
   background:
     "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
 };
 
 
@@ -2969,6 +3050,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   zIndex: 0,
   background:
     "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
 };
 const desktopHeroWaterLayerStyle: CSSProperties = {
   position: "absolute",
@@ -2980,6 +3063,8 @@ const desktopHeroWaterLayerStyle: CSSProperties = {
   zIndex: 0,
   background:
     "linear-gradient(180deg, var(--historietas-glow-primary, rgba(45,16,78,0.34)) 0%, transparent 100%), radial-gradient(ellipse 58% 88% at 18% 0%, var(--historietas-glow-primary, rgba(124,58,237,0.26)) 0%, transparent 76%), radial-gradient(ellipse 34% 58% at 91% 0%, var(--historietas-glow-secondary, rgba(249,115,22,0.08)) 0%, transparent 76%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 68%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 68%, transparent 100%)",
 };
 
 const heroDecorationLayerStyle: CSSProperties = {
@@ -4502,6 +4587,7 @@ const authorLinkStyle: CSSProperties = {
 
 const cardStatsStyle: CSSProperties = {
   display: "flex",
+  alignItems: "center",
   gap: "8px",
   flexWrap: "wrap",
   color: "var(--historietas-text-secondary, #A1A1AA)",
@@ -4509,6 +4595,34 @@ const cardStatsStyle: CSSProperties = {
   fontWeight: 800,
   maxWidth: "100%",
   minWidth: 0,
+};
+
+const cardStatItemStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "4px",
+  minWidth: 0,
+  whiteSpace: "nowrap",
+  lineHeight: 1,
+};
+
+const cardStatIconStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  lineHeight: 1,
+  flex: "0 0 auto",
+};
+
+const cardStatHeartIconStyle: CSSProperties = {
+  ...cardStatIconStyle,
+  color: "#E11D48",
+};
+
+const cardStatValueStyle: CSSProperties = {
+  display: "inline-block",
+  lineHeight: 1,
+  whiteSpace: "nowrap",
 };
 
 const mobileCardActionRowStyle: CSSProperties = {

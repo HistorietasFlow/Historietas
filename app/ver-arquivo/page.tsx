@@ -412,7 +412,12 @@ function carregarObrasLocais() {
     : [];
 
   sincronizarBackupArquivosObras(obrasNormalizadas);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+  } catch {
+    // Se o navegador recusar gravar localmente, ainda assim a página deve exibir o que já foi carregado.
+  }
 
   return obrasNormalizadas;
 }
@@ -598,7 +603,12 @@ async function carregarObraSupabaseComFallback(
       : [obraNormalizada, ...obrasLocais];
 
     sincronizarBackupArquivosObras(obrasAtualizadas);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasAtualizadas));
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasAtualizadas));
+    } catch {
+      // Evita tela vazia quando o armazenamento local está cheio ou indisponível.
+    }
 
     return obrasAtualizadas;
   } catch (error) {
@@ -696,6 +706,9 @@ export default function VerArquivoPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [urlBusca, setUrlBusca] = useState(() =>
+    typeof window === "undefined" ? "" : window.location.search
+  );
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -723,10 +736,33 @@ export default function VerArquivoPage() {
   }, []);
 
   useEffect(() => {
+    const atualizarUrlBusca = () => {
+      const buscaAtual = window.location.search;
+      const params = new URLSearchParams(buscaAtual);
+
+      setObraIdBusca(params.get("obraId") || "");
+      setSlugBusca(params.get("slug") || "");
+      setTelaCheia(params.get("tela") === "cheia");
+      setUrlBusca(buscaAtual);
+    };
+
+    atualizarUrlBusca();
+    window.addEventListener("popstate", atualizarUrlBusca);
+    window.addEventListener("pageshow", atualizarUrlBusca);
+
+    return () => {
+      window.removeEventListener("popstate", atualizarUrlBusca);
+      window.removeEventListener("pageshow", atualizarUrlBusca);
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelado = false;
 
     async function carregarArquivoDaObra() {
-      const params = new URLSearchParams(window.location.search);
+      setCarregando(true);
+
+      const params = new URLSearchParams(urlBusca);
       const obraIdParam = params.get("obraId") || "";
       const slugParam = params.get("slug") || "";
       const telaCheiaParam = params.get("tela") === "cheia";
@@ -753,7 +789,7 @@ export default function VerArquivoPage() {
         }
       } catch {
         if (!cancelado) {
-          setObras([]);
+          setObras((obrasAtuais) => obrasAtuais);
         }
       } finally {
         if (!cancelado) {
@@ -767,7 +803,7 @@ export default function VerArquivoPage() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [urlBusca]);
 
   const obraAtual = useMemo(() => {
     if (!obraIdBusca && !slugBusca) {
@@ -804,9 +840,6 @@ export default function VerArquivoPage() {
   const obraPublicaHref = obraAtual
     ? obraAtual.link || `/obra/${obraAtual.slug || criarSlugBase(obraAtual.titulo)}`
     : "/explorar";
-  const perfilAutorHref = obraAtual
-    ? `/perfil-autor?autor=${encodeURIComponent(obraAtual.autor)}`
-    : "/explorar";
   const arquivoTipoVisual = arquivo ? obterTipoVisualArquivo(arquivo) : "Arquivo";
 
   function abrirArquivoEmNovaAba() {
@@ -826,6 +859,14 @@ export default function VerArquivoPage() {
     parametros.set("tela", "cheia");
 
     const urlTelaCheia = `/ver-arquivo?${parametros.toString()}`;
+
+    if (!isDesktop) {
+      window.history.pushState(null, "", urlTelaCheia);
+      setTelaCheia(true);
+      setUrlBusca(window.location.search);
+      return;
+    }
+
     const novaJanela = window.open(urlTelaCheia, "_blank", "noopener,noreferrer");
 
     if (!novaJanela) {
@@ -900,32 +941,6 @@ export default function VerArquivoPage() {
     return (
       <main style={fullPageStyle}>
         <section style={fullContainerStyle}>
-          <header style={fullHeaderStyle}>
-            <div style={{ minWidth: 0 }}>
-              <span style={miniTitleStyle}>VISUALIZAÇÃO EM TELA CHEIA</span>
-
-              <h1 style={fullTitleStyle}>{arquivo.nome}</h1>
-
-              <p style={fullTextStyle}>
-                {obraAtual.titulo} • {arquivoTipoVisual} • {formatarTamanhoArquivo(arquivo.tamanho)}
-              </p>
-            </div>
-
-            <div style={fullActionsStyle}>
-              <Link href={voltarHref} style={fullBackButtonStyle}>
-                Voltar
-              </Link>
-
-              <a
-                href={arquivo.conteudo}
-                download={arquivo.nome}
-                style={fullDownloadButtonStyle}
-              >
-                Baixar
-              </a>
-            </div>
-          </header>
-
           <section style={fullViewerStyle}>
             {arquivo.categoria === "imagem" && (
               <img
@@ -977,24 +992,10 @@ export default function VerArquivoPage() {
           <div style={heroGlowStyle} />
 
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <span style={isDesktop ? desktopBadgeStyle : badgeStyle}>{arquivoTipoVisual}</span>
-
             <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>{obraAtual.titulo}</h1>
 
-            <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-              Visualização do arquivo anexado à obra. Use baixar se o navegador
-              não conseguir abrir algum formato. Arquivo publicado por{" "}
-              <Link href={perfilAutorHref} style={inlineAuthorLinkStyle}>
-                {obraAtual.autor}
-              </Link>.
-            </p>
-
             <div style={isDesktop ? desktopFileInfoBoxStyle : fileInfoBoxStyle}>
-              <div style={isDesktop ? desktopFileIconStyle : fileIconStyle}>{arquivo.categoria === "imagem" ? "IMG" : arquivo.categoria === "documento" ? "PDF" : arquivo.categoria === "texto" ? "TXT" : "FILE"}</div>
-
               <div style={fileInfoContentStyle}>
-                <strong style={fileNameTitleStyle}>{arquivo.nome}</strong>
-
                 <div style={fileMetaGridStyle}>
                   <span style={fileMetaBadgeStyle}>{arquivoTipoVisual}</span>
                   <span style={fileMetaBadgeStyle}>{formatarTamanhoArquivo(arquivo.tamanho)}</span>
@@ -1111,82 +1112,30 @@ const fullPageStyle: CSSProperties = {
 const fullContainerStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100%",
-  minHeight: "100vh",
+  minHeight: "100dvh",
   margin: 0,
-  padding: "10px",
+  padding: "10px 10px calc(18px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   display: "grid",
-  gridTemplateRows: "auto minmax(0, 1fr)",
-  gap: "10px",
+  gridTemplateRows: "minmax(0, 1fr)",
+  gap: 0,
   minWidth: 0,
 };
 
-const fullHeaderStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  alignItems: "start",
-  gap: "10px",
-  padding: "12px",
-  borderRadius: "20px",
-  background: "rgba(18,12,30,0.88)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  minWidth: 0,
-  overflow: "hidden",
-};
 
-const fullTitleStyle: CSSProperties = {
-  margin: "8px 0 0",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "clamp(24px, 7vw, 44px)",
-  lineHeight: 0.98,
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
-  ...safeTextStyle,
-};
 
-const fullTextStyle: CSSProperties = {
-  margin: "7px 0 0",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.45,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
 
-const fullBackButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  padding: "0 12px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  whiteSpace: "nowrap",
-};
 
-const fullActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flexWrap: "wrap",
-};
 
 const fullViewerStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100%",
   minHeight: 0,
-  padding: "10px",
-  borderRadius: "22px",
-  background: "rgba(18,12,30,0.82)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  boxShadow: "0 16px 42px rgba(0,0,0,0.26)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  boxShadow: "none",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1197,7 +1146,7 @@ const fullViewerStyle: CSSProperties = {
 const fullImageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100%",
-  maxHeight: "calc(100vh - 132px)",
+  maxHeight: "calc(100dvh - 36px - env(safe-area-inset-bottom))",
   height: "auto",
   objectFit: "contain",
   display: "block",
@@ -1206,7 +1155,7 @@ const fullImageStyle: CSSProperties = {
 
 const fullTextContentStyle: CSSProperties = {
   width: "100%",
-  maxHeight: "calc(100vh - 132px)",
+  maxHeight: "calc(100dvh - 36px - env(safe-area-inset-bottom))",
   margin: 0,
   whiteSpace: "pre-wrap",
   overflow: "auto",
@@ -1224,29 +1173,13 @@ const fullTextContentStyle: CSSProperties = {
 
 const fullPdfFrameStyle: CSSProperties = {
   width: "100%",
-  height: "calc(100vh - 132px)",
-  minHeight: "calc(100vh - 132px)",
+  height: "calc(100dvh - 36px - env(safe-area-inset-bottom))",
+  minHeight: "calc(100dvh - 36px - env(safe-area-inset-bottom))",
   border: "none",
   borderRadius: "14px",
   background: "#111111",
 };
 
-const fullDownloadButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "46px",
-  borderRadius: "999px",
-  background: "#F97316",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  boxSizing: "border-box",
-};
 
 const pageStyle: CSSProperties = {
   minHeight: "100vh",
@@ -1263,7 +1196,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 64px",
+  padding: "16px 0 calc(18px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1324,7 +1257,7 @@ const logoTextStyle: CSSProperties = {
 const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
-  borderRadius: "26px",
+  borderRadius: "22px",
   border:
     "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
   background:
@@ -1344,35 +1277,25 @@ const heroGlowStyle: CSSProperties = {
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  padding: "16px",
+  padding: "10px 11px",
   display: "grid",
-  gap: "12px",
+  justifyItems: "center",
+  textAlign: "center",
+  gap: "5px",
   minWidth: 0,
 };
 
-const badgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "7px 10px",
-  borderRadius: "999px",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  ...safeTextStyle,
-};
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(36px, 10vw, 62px)",
-  lineHeight: 0.92,
+  fontSize: "clamp(31px, 8.6vw, 52px)",
+  lineHeight: 1.16,
   fontWeight: 950,
-  letterSpacing: "-0.08em",
+  letterSpacing: "-0.07em",
   maxWidth: "100%",
+  textAlign: "center",
+  padding: "3px 0 3px",
+  overflow: "visible",
   background:
     "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 48%, var(--historietas-accent, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
@@ -1381,107 +1304,79 @@ const titleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const descriptionStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.55,
-  fontWeight: 700,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
-const inlineAuthorLinkStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontWeight: 950,
-  textDecoration: "none",
-};
 
 const fileInfoBoxStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "64px minmax(0, 1fr)",
-  gap: "10px",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  gap: "6px",
   alignItems: "center",
-  padding: "10px",
-  borderRadius: "19px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  justifyItems: "center",
+  textAlign: "center",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
-  overflow: "hidden",
+  maxWidth: "100%",
+  overflow: "visible",
 };
 
-const fileIconStyle: CSSProperties = {
-  width: "64px",
-  height: "64px",
-  borderRadius: "18px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 950,
-  letterSpacing: "-0.02em",
-  flex: "0 0 auto",
-};
 
 const fileInfoContentStyle: CSSProperties = {
   display: "grid",
-  gap: "7px",
+  justifyItems: "center",
+  textAlign: "center",
+  gap: "3px",
   minWidth: 0,
+  maxWidth: "100%",
 };
 
-const fileNameTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "17px",
-  lineHeight: 1.15,
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  ...safeTextStyle,
-};
 
 const fileMetaGridStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "6px",
+  justifyContent: "center",
+  gap: "4px",
   minWidth: 0,
 };
 
 const fileMetaBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "6px 8px",
+  padding: "5px 7px",
   borderRadius: "999px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   color: "var(--historietas-text-secondary, #E4E4E7)",
-  fontSize: "10px",
+  fontSize: "9.5px",
   fontWeight: 900,
   ...safeTextStyle,
 };
 
 const actionsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
-  gap: "8px",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "5px",
+  marginTop: "2px",
   minWidth: 0,
 };
 
 const primaryActionStyle: CSSProperties = {
-  minHeight: "44px",
+  minHeight: "36px",
   borderRadius: "999px",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "9.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 6px",
   boxShadow: "none",
+  lineHeight: 1.08,
   ...safeTextStyle,
 };
 
@@ -1493,41 +1388,43 @@ const primaryActionButtonStyle: CSSProperties = {
 };
 
 const secondaryActionStyle: CSSProperties = {
-  minHeight: "44px",
+  minHeight: "36px",
   borderRadius: "999px",
   background: "var(--historietas-secondary, #7C3AED)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "9.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 6px",
   boxShadow: "none",
+  lineHeight: 1.08,
   ...safeTextStyle,
 };
 
 const ghostActionStyle: CSSProperties = {
-  minHeight: "44px",
+  minHeight: "36px",
   borderRadius: "999px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "9.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 6px",
+  lineHeight: 1.08,
   ...safeTextStyle,
 };
 
 const viewerShellStyle: CSSProperties = {
-  marginTop: "14px",
+  marginTop: "10px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -1690,7 +1587,7 @@ const primaryLinkButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 78px",
+  padding: "22px 0 32px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -1701,64 +1598,47 @@ const desktopTopStyle: CSSProperties = {
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
-  borderRadius: "30px",
+  borderRadius: "26px",
 };
 
 const desktopHeroContentStyle: CSSProperties = {
   ...heroContentStyle,
-  gridTemplateColumns: "minmax(0, 1fr) 360px",
-  gridTemplateRows: "auto auto auto 1fr",
+  gridTemplateColumns: "minmax(0, 1fr) 330px",
+  gridTemplateRows: "auto auto auto",
   alignItems: "center",
-  gap: "12px 28px",
-  padding: "24px",
+  gap: "6px 22px",
+  padding: "16px 18px",
 };
 
-const desktopBadgeStyle: CSSProperties = {
-  ...badgeStyle,
-  gridColumn: "1",
-  alignSelf: "end",
-};
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
   gridColumn: "1",
-  fontSize: "clamp(46px, 5.2vw, 76px)",
-  maxWidth: "720px",
+  fontSize: "clamp(40px, 4.5vw, 64px)",
+  lineHeight: 1.14,
+  maxWidth: "680px",
+  justifySelf: "center",
 };
 
-const desktopDescriptionStyle: CSSProperties = {
-  ...descriptionStyle,
-  gridColumn: "1",
-  maxWidth: "680px",
-  fontSize: "14px",
-  lineHeight: 1.58,
-};
 
 const desktopFileInfoBoxStyle: CSSProperties = {
   ...fileInfoBoxStyle,
   gridColumn: "2",
-  gridRow: "1 / span 3",
-  gridTemplateColumns: "78px minmax(0, 1fr)",
-  padding: "12px",
-  borderRadius: "22px",
-  alignSelf: "stretch",
+  gridRow: "1 / span 2",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  padding: 0,
+  borderRadius: 0,
+  alignSelf: "center",
 };
 
-const desktopFileIconStyle: CSSProperties = {
-  ...fileIconStyle,
-  width: "78px",
-  height: "78px",
-  borderRadius: "22px",
-  fontSize: "14px",
-};
 
 const desktopActionsGridStyle: CSSProperties = {
   ...actionsGridStyle,
-  gridColumn: "2",
-  gridRow: "4",
-  gridTemplateColumns: "1fr",
+  gridColumn: "1 / -1",
+  gridRow: "3",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   alignSelf: "start",
-  gap: "10px",
+  gap: "8px",
 };
 
 const desktopViewerShellStyle: CSSProperties = {
@@ -1809,4 +1689,3 @@ const desktopGenericFileBoxStyle: CSSProperties = {
   padding: "24px",
   borderRadius: "28px",
 };
-

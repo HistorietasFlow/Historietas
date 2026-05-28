@@ -196,9 +196,6 @@ export default function EmBrevePage() {
             <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <span style={desktopLayout ? desktopTopBadgeStyle : topBadgeStyle}>
-            EM BREVE
-          </span>
         </header>
 
         <section style={desktopLayout ? desktopHeroStyle : heroStyle}>
@@ -327,9 +324,7 @@ export default function EmBrevePage() {
             }
           >
             <div style={sectionHeaderStyle}>
-              <span style={miniTitleStyle}>LANÇAMENTOS</span>
-
-              <h2 style={sectionTitleStyle}>Fila de estreia</h2>
+              <h2 style={releaseSectionTitleStyle}>LANÇAMENTOS</h2>
             </div>
 
             <div style={desktopLayout ? desktopRelatedGridStyle : relatedGridStyle}>
@@ -495,7 +490,7 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 94px",
+  padding: "14px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -503,7 +498,7 @@ const containerStyle: CSSProperties = {
 const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "flex-start",
   gap: "10px",
   marginBottom: "10px",
   minWidth: 0,
@@ -577,10 +572,10 @@ const heroGlowStyle: CSSProperties = {
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  padding: "clamp(12px, 3.2vw, 16px)",
+  padding: "clamp(10px, 2.7vw, 14px)",
   display: "grid",
   justifyItems: "center",
-  gap: "7px",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
   textAlign: "center",
@@ -613,19 +608,6 @@ const badgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const topBadgeStyle: CSSProperties = {
-  ...badgeStyle,
-  flex: "0 0 auto",
-  padding: "8px 14px",
-  fontSize: "11px",
-  letterSpacing: "0.12em",
-  whiteSpace: "nowrap",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, rgba(255,255,255,0.08))",
-  color: "#FFE9D6",
-};
 
 const classificationBadgeStyle: CSSProperties = {
   width: "fit-content",
@@ -659,7 +641,7 @@ const genreBadgeStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(27px, 7.4vw, 42px)",
+  fontSize: "clamp(26px, 7.1vw, 40px)",
   lineHeight: 1.05,
   fontWeight: 950,
   letterSpacing: "-0.045em",
@@ -676,8 +658,8 @@ const titleStyle: CSSProperties = {
 const descriptionStyle: CSSProperties = {
   margin: "0 auto",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.42,
+  fontSize: "11.8px",
+  lineHeight: 1.38,
   fontWeight: 650,
   maxWidth: "100%",
   textAlign: "center",
@@ -856,21 +838,21 @@ const savedMessageStyle: CSSProperties = {
 const summaryGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "10px",
-  marginTop: "14px",
+  gap: "9px",
+  marginTop: "12px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
 const summaryCardStyle: CSSProperties = {
-  borderRadius: "19px",
+  borderRadius: "18px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 15%, rgba(255,255,255,0.075))",
-  padding: "12px",
+  padding: "10px",
   display: "grid",
   justifyItems: "center",
-  gap: "6px",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
   textAlign: "center",
@@ -905,7 +887,7 @@ const miniTitleStyle: CSSProperties = {
 };
 
 const relatedSectionStyle: CSSProperties = {
-  marginTop: "20px",
+  marginTop: "16px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -913,8 +895,10 @@ const relatedSectionStyle: CSSProperties = {
 
 const sectionHeaderStyle: CSSProperties = {
   display: "grid",
-  gap: "4px",
-  marginBottom: "10px",
+  justifyItems: "center",
+  textAlign: "center",
+  gap: "3px",
+  marginBottom: "8px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -934,10 +918,23 @@ const sectionTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const releaseSectionTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "clamp(24px, 7vw, 32px)",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "0.035em",
+  textAlign: "center",
+  textTransform: "uppercase",
+  maxWidth: "100%",
+  ...safeTextStyle,
+};
+
 const relatedGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "10px",
+  gap: "9px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -946,9 +943,9 @@ const relatedGridStyle: CSSProperties = {
 const relatedCardStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "minmax(78px, 96px) minmax(0, 1fr)",
-  gap: "10px",
-  padding: "11px",
-  borderRadius: "23px",
+  gap: "9px",
+  padding: "10px",
+  borderRadius: "22px",
   background:
     "radial-gradient(circle at 96% 18%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 15%, transparent)), transparent 28%), radial-gradient(circle at 12% 88%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, transparent)), transparent 32%), linear-gradient(135deg, var(--historietas-surface, rgba(34,24,51,0.95)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.99)) 100%)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, rgba(255,255,255,0.06))",
@@ -1003,7 +1000,7 @@ const relatedGenreStyle: CSSProperties = {
 const relatedContentStyle: CSSProperties = {
   display: "grid",
   alignContent: "stretch",
-  gap: "7px",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1135,9 +1132,9 @@ const relatedSavedButtonStyle: CSSProperties = {
 };
 
 const infoBoxStyle: CSSProperties = {
-  marginTop: "14px",
-  padding: "15px",
-  borderRadius: "21px",
+  marginTop: "12px",
+  padding: "13px",
+  borderRadius: "20px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, rgba(255,255,255,0.07))",
   display: "grid",
@@ -1174,7 +1171,7 @@ const infoTextStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "20px 0 96px",
+  padding: "20px 0 40px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -1187,10 +1184,6 @@ const desktopLogoStyle: CSSProperties = {
   maxWidth: "420px",
 };
 
-const desktopTopBadgeStyle: CSSProperties = {
-  ...topBadgeStyle,
-  padding: "8px 15px",
-};
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
@@ -1200,8 +1193,8 @@ const desktopHeroStyle: CSSProperties = {
 
 const desktopHeroContentStyle: CSSProperties = {
   ...heroContentStyle,
-  padding: "34px 32px",
-  gap: "13px",
+  padding: "28px 30px",
+  gap: "10px",
   justifyItems: "center",
   textAlign: "center",
 };
@@ -1223,7 +1216,7 @@ const desktopBadgeRowStyle: CSSProperties = {
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
   gridColumn: "1",
-  fontSize: "clamp(48px, 4.8vw, 68px)",
+  fontSize: "clamp(46px, 4.5vw, 64px)",
   lineHeight: 1.03,
   maxWidth: "760px",
   margin: "0 auto",
@@ -1283,8 +1276,8 @@ const desktopSavedMessageStyle: CSSProperties = {
 const desktopSummaryGridStyle: CSSProperties = {
   ...summaryGridStyle,
   width: "min(720px, 100%)",
-  margin: "18px auto 0",
-  gap: "14px",
+  margin: "14px auto 0",
+  gap: "12px",
 };
 
 const desktopSummaryCardStyle: CSSProperties = {
@@ -1295,13 +1288,13 @@ const desktopSummaryCardStyle: CSSProperties = {
 
 const desktopRelatedSectionStyle: CSSProperties = {
   ...relatedSectionStyle,
-  marginTop: "22px",
+  marginTop: "18px",
 };
 
 const desktopRelatedGridStyle: CSSProperties = {
   ...relatedGridStyle,
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "14px",
+  gap: "12px",
 };
 
 const desktopRelatedCardStyle: CSSProperties = {
@@ -1343,7 +1336,7 @@ const desktopRelatedBottomRowStyle: CSSProperties = {
 const desktopInfoBoxStyle: CSSProperties = {
   ...infoBoxStyle,
   width: "min(860px, 100%)",
-  margin: "18px auto 0",
-  padding: "20px",
-  borderRadius: "25px",
+  margin: "14px auto 0",
+  padding: "18px",
+  borderRadius: "24px",
 };

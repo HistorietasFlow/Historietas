@@ -60,6 +60,41 @@ const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_ARQUIVO_TEXTO = 900 * 1024;
 const TAMANHO_MAXIMO_ARQUIVO_OBRA = 2 * 1024 * 1024;
 
+const OUTRO_FORMATO_VALUE = "__outro_formato__";
+const OUTRO_GENERO_VALUE = "__outro_genero__";
+const OUTRA_TAG_VALUE = "__outra_tag__";
+const LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO = 14;
+const LIMITE_CARACTERES_TAG_PERSONALIZADA = 10;
+
+const LIMITE_TAGS_OBRA = 1;
+const OPCOES_TAGS_OBRA = [
+  "Sombria",
+  "Psicológico",
+  "Sci-fi",
+  "Cyberpunk",
+  "Espacial",
+  "Isekai",
+  "Distopia",
+  "Apocalipse",
+  "Escolar",
+  "Máfia",
+  "Investigação",
+  "Religioso",
+  "Mitologia",
+  "Folclore",
+  "Vampiro",
+  "Lobisomem",
+  "Zumbi",
+  "Super-herói",
+  "Magia",
+  "Guerra",
+  "Família",
+  "Amizade",
+  "Traição",
+  "Vingança",
+  "Sobrevivência",
+] as const;
+
 
 function gerarUuidFallback() {
   const bytes = new Uint8Array(16);
@@ -409,9 +444,58 @@ function normalizarObraSalva(obra: ObraSalva, obraIndex: number): ObraLocal {
   };
 }
 
+
+function ehDataUrl(valor: string) {
+  return valor.startsWith("data:");
+}
+
+function prepararObraParaLocalStorage(obra: ObraLocal): ObraLocal {
+  return {
+    ...obra,
+    capa: ehDataUrl(obra.capa) ? "" : obra.capa,
+    arquivoObra: obra.arquivoObra
+      ? {
+          ...obra.arquivoObra,
+          conteudo: ehDataUrl(obra.arquivoObra.conteudo)
+            ? ""
+            : obra.arquivoObra.conteudo,
+        }
+      : null,
+  };
+}
+
+function salvarObrasLocalmente(obrasParaSalvar: ObraLocal[]) {
+  const obrasSemArquivosPesados = obrasParaSalvar.map(prepararObraParaLocalStorage);
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasSemArquivosPesados));
+}
+
 function contarCaracteresValidos(texto: string) {
   return texto.match(/[\p{L}\p{N}]/gu)?.length || 0;
 }
+
+function limparTextoPersonalizado(texto: string, limite: number) {
+  return texto
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/\s+/g, " ")
+    .trimStart()
+    .slice(0, limite);
+}
+
+function textoPersonalizadoValido(texto: string, minimo: number, limite: number) {
+  const textoLimpo = texto.trim().replace(/\s+/g, " ");
+
+  if (textoLimpo.length > limite) {
+    return false;
+  }
+
+  if (contarCaracteresValidos(textoLimpo) < minimo) {
+    return false;
+  }
+
+  return /^[\p{L}\p{N}][\p{L}\p{N}\s-]*$/u.test(textoLimpo);
+}
+
 
 function campoValido(texto: string, minimo: number) {
   return contarCaracteresValidos(texto.trim()) >= minimo;
@@ -464,10 +548,14 @@ export default function PublicarPage() {
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
   const [genero, setGenero] = useState("");
+  const [generoPersonalizado, setGeneroPersonalizado] = useState("");
   const [formato, setFormato] = useState("");
+  const [formatoPersonalizado, setFormatoPersonalizado] = useState("");
   const [classificacaoIndicativa, setClassificacaoIndicativa] = useState("");
   const [sinopse, setSinopse] = useState("");
   const [tags, setTags] = useState("");
+  const [tagPersonalizada, setTagPersonalizada] = useState("");
+  const [usarTagPersonalizada, setUsarTagPersonalizada] = useState(false);
   const [capa, setCapa] = useState("");
   const [capaNome, setCapaNome] = useState("");
   const [capaArquivo, setCapaArquivo] = useState<File | null>(null);
@@ -517,21 +605,55 @@ export default function PublicarPage() {
     return tags
       .split(",")
       .map((tag) => tag.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, LIMITE_TAGS_OBRA);
   }, [tags]);
 
   const tagsPreview = tagsDaObra.length > 0 ? tagsDaObra : ["sem tags"];
+  const totalTagsSelecionadas = tagsDaObra.length;
+  const limiteTagsAtingido = totalTagsSelecionadas >= LIMITE_TAGS_OBRA;
+  const formatoEhPersonalizado = formato === OUTRO_FORMATO_VALUE;
+  const generoEhPersonalizado = genero === OUTRO_GENERO_VALUE;
+  const formatoFinal = formatoEhPersonalizado
+    ? formatoPersonalizado.trim().replace(/\s+/g, " ")
+    : formato.trim();
+  const generoFinal = generoEhPersonalizado
+    ? generoPersonalizado.trim().replace(/\s+/g, " ")
+    : genero.trim();
+  const tagPersonalizadaFinal = tagPersonalizada.trim().replace(/\s+/g, " ");
+  const formatoPersonalizadoValido =
+    !formatoEhPersonalizado ||
+    textoPersonalizadoValido(
+      formatoPersonalizado,
+      3,
+      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+    );
+  const generoPersonalizadoValido =
+    !generoEhPersonalizado ||
+    textoPersonalizadoValido(
+      generoPersonalizado,
+      3,
+      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+    );
+  const tagPersonalizadaValida =
+    !usarTagPersonalizada ||
+    (textoPersonalizadoValido(
+      tagPersonalizada,
+      2,
+      LIMITE_CARACTERES_TAG_PERSONALIZADA
+    ) &&
+      normalizarTexto(tagPersonalizadaFinal) !== normalizarTexto(formatoFinal) &&
+      normalizarTexto(tagPersonalizadaFinal) !== normalizarTexto(generoFinal));
 
   const tituloValido = campoValido(titulo, 3);
   const autorValido = campoValido(autor, 2);
-  const generoValido = Boolean(genero.trim());
-  const formatoValido = Boolean(formato.trim());
+  const generoValido = Boolean(generoFinal) && generoPersonalizadoValido;
+  const formatoValido = Boolean(formatoFinal) && formatoPersonalizadoValido;
   const classificacaoValida = Boolean(classificacaoIndicativa.trim());
   const sinopseValida = campoValido(sinopse, 20);
 
   const sinopseCaracteresValidos = contarCaracteresValidos(sinopse);
   const sinopsePalavras = contarPalavras(sinopse);
-  const capaStatusTexto = capa ? "Com capa" : "Sem capa";
   const temArquivoObra = Boolean(arquivoObra);
   const arquivoObraTamanhoTexto = arquivoObra
     ? formatarTamanhoArquivo(arquivoObra.tamanho)
@@ -577,8 +699,8 @@ export default function PublicarPage() {
   const previewTemConteudo = Boolean(
     titulo.trim() ||
       autor.trim() ||
-      genero.trim() ||
-      formato.trim() ||
+      generoFinal ||
+      formatoFinal ||
       classificacaoIndicativa.trim() ||
       sinopse.trim() ||
       tags.trim() ||
@@ -596,12 +718,20 @@ export default function PublicarPage() {
       return "O nome do autor precisa ter pelo menos 2 letras ou números.";
     }
 
-    if (!generoValido) {
-      return "Escolha o gênero principal da obra.";
+    if (!formatoValido) {
+      return formatoEhPersonalizado
+        ? "O formato personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho."
+        : "Escolha o formato da obra.";
     }
 
-    if (!formatoValido) {
-      return "Escolha o formato da obra.";
+    if (!generoValido) {
+      return generoEhPersonalizado
+        ? "O gênero personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho."
+        : "Escolha o gênero principal da obra.";
+    }
+
+    if (!tagPersonalizadaValida) {
+      return "A tag personalizada precisa ter 2 a 10 caracteres, sem vírgula, emoji ou símbolo estranho, e não pode repetir gênero ou formato.";
     }
 
     if (!classificacaoValida) {
@@ -797,6 +927,77 @@ export default function PublicarPage() {
     }
   }
 
+  function tagEstaSelecionada(tag: string) {
+    return tagsDaObra.some((tagAtual) => {
+      return normalizarTexto(tagAtual) === normalizarTexto(tag);
+    });
+  }
+
+  function atualizarTagPersonalizada(valor: string) {
+    const textoLimpo = limparTextoPersonalizado(
+      valor,
+      LIMITE_CARACTERES_TAG_PERSONALIZADA
+    );
+
+    setTagPersonalizada(textoLimpo);
+    setTags(
+      textoPersonalizadoValido(
+        textoLimpo,
+        2,
+        LIMITE_CARACTERES_TAG_PERSONALIZADA
+      )
+        ? textoLimpo.trim().replace(/\s+/g, " ")
+        : ""
+    );
+    setErro("");
+  }
+
+  function adicionarTagSelecionada(tag: string) {
+    if (!tag) {
+      return;
+    }
+
+    if (tag === OUTRA_TAG_VALUE) {
+      setUsarTagPersonalizada(true);
+      setTags(
+        textoPersonalizadoValido(
+          tagPersonalizada,
+          2,
+          LIMITE_CARACTERES_TAG_PERSONALIZADA
+        )
+          ? tagPersonalizada.trim().replace(/\s+/g, " ")
+          : ""
+      );
+      setErro("");
+      return;
+    }
+
+    if (tagEstaSelecionada(tag) || limiteTagsAtingido) {
+      return;
+    }
+
+    setUsarTagPersonalizada(false);
+    setTagPersonalizada("");
+    setTags(tag);
+    setErro("");
+  }
+
+  function removerTagSelecionada(tag: string) {
+    const tagNormalizada = normalizarTexto(tag);
+    const novasTags = tagsDaObra.filter((tagAtual) => {
+      return normalizarTexto(tagAtual) !== tagNormalizada;
+    });
+
+    setTags(novasTags.join(", "));
+
+    if (usarTagPersonalizada) {
+      setUsarTagPersonalizada(false);
+      setTagPersonalizada("");
+    }
+
+    setErro("");
+  }
+
   async function salvarObra(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -881,8 +1082,8 @@ export default function PublicarPage() {
         user_id: userId,
         titulo: titulo.trim(),
         autor: autor.trim(),
-        genero: genero.trim(),
-        formato: formato.trim(),
+        genero: generoFinal,
+        formato: formatoFinal,
         classificacao_indicativa: classificacaoIndicativa.trim(),
         sinopse: sinopse.trim(),
         tags: tagsDaObra.length > 0 ? tagsDaObra : ["sem tags"],
@@ -930,16 +1131,17 @@ export default function PublicarPage() {
         id: obraId,
         titulo: titulo.trim(),
         autor: autor.trim(),
-        genero: genero.trim(),
-        formato: formato.trim(),
+        genero: generoFinal,
+        formato: formatoFinal,
         classificacaoIndicativa: classificacaoIndicativa.trim(),
         sinopse: sinopse.trim(),
         tags: tagsDaObra.length > 0 ? tagsDaObra : ["sem tags"],
-        capa,
+        capa: capaUrlSupabase,
         capaNome,
         arquivoObra: arquivoObra
           ? {
               ...arquivoObra,
+              conteudo: arquivoObraUrlSupabase,
               criadoEm: criadaEm,
             }
           : null,
@@ -955,7 +1157,7 @@ export default function PublicarPage() {
 
       const novasObras = [novaObra, ...obrasSalvas];
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(novasObras));
+      salvarObrasLocalmente(novasObras);
 
       window.location.href = "/minhas-obras";
     } catch (erroDesconhecido) {
@@ -963,7 +1165,10 @@ export default function PublicarPage() {
       setProcessando(false);
 
       const mensagem =
-        erroDesconhecido instanceof Error
+        erroDesconhecido instanceof Error &&
+        erroDesconhecido.name === "QuotaExceededError"
+          ? "O navegador recusou salvar dados locais porque o armazenamento está cheio. A capa e o arquivo foram enviados para o Supabase; limpe obras antigas salvas localmente e tente novamente."
+          : erroDesconhecido instanceof Error
           ? erroDesconhecido.message
           : "Não consegui salvar a obra agora. Tente novamente.";
 
@@ -987,9 +1192,6 @@ export default function PublicarPage() {
             <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <span style={isDesktop ? desktopTopPublishLabelStyle : topPublishLabelStyle}>
-            Publicar
-          </span>
         </header>
 
         <section style={isDesktop ? desktopHeroBoxStyle : heroBoxStyle}>
@@ -1023,6 +1225,13 @@ export default function PublicarPage() {
                 <span style={safeTextStyle}>{erro}</span>
               </div>
             )}
+
+            <div style={isDesktop ? desktopFormSectionHeaderStyle : formSectionHeaderStyle}>
+              <strong style={formSectionTitleStyle}>Capa da obra</strong>
+              <span style={formSectionTextStyle}>
+                Comece pela capa. Ela é o primeiro impacto da sua obra no catálogo.
+              </span>
+            </div>
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
               <label style={labelStyle}>Capa da obra</label>
@@ -1085,6 +1294,13 @@ export default function PublicarPage() {
               </div>
             </div>
 
+            <div style={isDesktop ? desktopFormSectionHeaderStyle : formSectionHeaderStyle}>
+              <strong style={formSectionTitleStyle}>Dados principais</strong>
+              <span style={formSectionTextStyle}>
+                Preencha as informações que ajudam o leitor a entender o tom da história.
+              </span>
+            </div>
+
             <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
               <label style={labelStyle}>Título da obra</label>
 
@@ -1121,52 +1337,167 @@ export default function PublicarPage() {
 
             <div style={isDesktop ? desktopFullWidthDoubleFieldStyle : doubleFieldStyle}>
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>Gênero principal</label>
-
-                <select
-                  value={genero}
-                  onChange={(event) => {
-                    setGenero(event.target.value);
-                    setErro("");
-                  }}
-                  style={inputStyle}
-                >
-                  <option value="">Escolha um gênero</option>
-                  <option>Fantasia Sombria</option>
-                  <option>Romance</option>
-                  <option>Ação</option>
-                  <option>Terror</option>
-                  <option>Sci-fi</option>
-                  <option>Drama</option>
-                  <option>Aventura</option>
-                  <option>Comédia</option>
-                  <option>Mistério</option>
-                  <option>Sobrenatural</option>
-                </select>
-              </div>
-
-              <div style={fieldGroupStyle}>
                 <label style={labelStyle}>Formato</label>
 
                 <select
                   value={formato}
                   onChange={(event) => {
-                    setFormato(event.target.value);
+                    const novoFormato = event.target.value;
+
+                    setFormato(novoFormato);
+
+                    if (novoFormato !== OUTRO_FORMATO_VALUE) {
+                      setFormatoPersonalizado("");
+                    }
+
                     setErro("");
                   }}
                   style={inputStyle}
                 >
                   <option value="">Escolha o formato</option>
                   <option>Webnovel</option>
+                  <option>Light novel</option>
                   <option>Fanfic</option>
                   <option>Mangá</option>
                   <option>Webtoon</option>
-                  <option>Light novel</option>
                   <option>Conto</option>
+                  <option>Crônica</option>
                   <option>Roteiro</option>
                   <option>História Original</option>
+                  <option>Poesia</option>
+                  <option>Novel</option>
+                  <option>Livro</option>
+                  <option value={OUTRO_FORMATO_VALUE}>Outro formato</option>
                 </select>
+
+                {formatoEhPersonalizado && (
+                  <input
+                    value={formatoPersonalizado}
+                    onChange={(event) => {
+                      setFormatoPersonalizado(
+                        limparTextoPersonalizado(
+                          event.target.value,
+                          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+                        )
+                      );
+                      setErro("");
+                    }}
+                    style={inputStyle}
+                    placeholder="Digite o formato"
+                    maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
+                    type="text"
+                  />
+                )}
               </div>
+
+              <div style={fieldGroupStyle}>
+                <label style={labelStyle}>Gênero principal</label>
+
+                <select
+                  value={genero}
+                  onChange={(event) => {
+                    const novoGenero = event.target.value;
+
+                    setGenero(novoGenero);
+
+                    if (novoGenero !== OUTRO_GENERO_VALUE) {
+                      setGeneroPersonalizado("");
+                    }
+
+                    setErro("");
+                  }}
+                  style={inputStyle}
+                >
+                  <option value="">Escolha um gênero</option>
+                  <option>Ação</option>
+                  <option>Aventura</option>
+                  <option>Comédia</option>
+                  <option>Drama</option>
+                  <option>Fantasia</option>
+                  <option>Ficção</option>
+                  <option>Mistério</option>
+                  <option>Romance</option>
+                  <option>Suspense</option>
+                  <option>Terror</option>
+                  <option>Sobrenatural</option>
+                  <option>Histórico</option>
+                  <option>Biografia</option>
+                  <option value={OUTRO_GENERO_VALUE}>Outro gênero</option>
+                </select>
+
+                {generoEhPersonalizado && (
+                  <input
+                    value={generoPersonalizado}
+                    onChange={(event) => {
+                      setGeneroPersonalizado(
+                        limparTextoPersonalizado(
+                          event.target.value,
+                          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+                        )
+                      );
+                      setErro("");
+                    }}
+                    style={inputStyle}
+                    placeholder="Digite o gênero"
+                    maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
+                    type="text"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
+              <label style={labelStyle}>Tag</label>
+
+              <select
+                value=""
+                onChange={(event) => {
+                  adicionarTagSelecionada(event.target.value);
+                }}
+                style={inputStyle}
+                disabled={limiteTagsAtingido && !usarTagPersonalizada}
+              >
+                <option value="">
+                  {limiteTagsAtingido ? "Tag escolhida" : "Escolha uma tag"}
+                </option>
+
+                {OPCOES_TAGS_OBRA.filter((tag) => !tagEstaSelecionada(tag)).map(
+                  (tag) => (
+                    <option key={tag} value={tag}>
+                      {tag}
+                    </option>
+                  )
+                )}
+
+                <option value={OUTRA_TAG_VALUE}>Outra tag</option>
+              </select>
+
+              {usarTagPersonalizada && (
+                <input
+                  value={tagPersonalizada}
+                  onChange={(event) => atualizarTagPersonalizada(event.target.value)}
+                  style={inputStyle}
+                  placeholder="Digite a tag"
+                  maxLength={LIMITE_CARACTERES_TAG_PERSONALIZADA}
+                  type="text"
+                />
+              )}
+
+              {tagsDaObra.length > 0 && (
+                <div style={selectedTagsListStyle}>
+                  {tagsDaObra.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => removerTagSelecionada(tag)}
+                      style={selectedTagButtonStyle}
+                      aria-label={`Remover tag ${tag}`}
+                    >
+                      {tag} ×
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
@@ -1210,11 +1541,14 @@ export default function PublicarPage() {
                   setErro("");
                 }}
                 style={textareaStyle}
-                placeholder="Escreva um resumo chamativo da sua história..."
+                placeholder={`Escreva um resumo chamativo de sua história...\nMínimo 20 letras ou números. ${sinopsePalavras} palavras.`}
               />
+            </div>
 
-              <span style={hintStyle}>
-                Mínimo 20 letras ou números. {sinopsePalavras} palavras.
+            <div style={isDesktop ? desktopFormSectionHeaderStyle : formSectionHeaderStyle}>
+              <strong style={formSectionTitleStyle}>Arquivos e conteúdo inicial</strong>
+              <span style={formSectionTextStyle}>
+                Anexe materiais extras ou importe um primeiro capítulo sem sair da publicação.
               </span>
             </div>
 
@@ -1359,31 +1693,6 @@ export default function PublicarPage() {
               )}
             </div>
 
-            <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>Tags</label>
-
-              <input
-                value={tags}
-                onChange={(event) => {
-                  setTags(event.target.value);
-                  setErro("");
-                }}
-                style={inputStyle}
-                placeholder="Ex: ação, mistério, sobrenatural"
-                type="text"
-              />
-
-              {tagsDaObra.length > 0 && (
-                <div style={tagPreviewListStyle}>
-                  {tagsDaObra.slice(0, 6).map((tag, index) => (
-                    <span key={`${tag}-form-${index}`} style={previewTagStyle}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
               <button
                 type="submit"
@@ -1402,19 +1711,12 @@ export default function PublicarPage() {
           <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
             <div style={previewHeaderStyle}>
               <span style={previewMiniTitleStyle}>PRÉVIA</span>
-              <h2 style={previewTitleStyle}>
-                {previewTemConteudo ? "Como vai aparecer" : "Prévia da obra"}
-              </h2>
             </div>
 
             {previewTemConteudo ? (
               <article style={isDesktop ? desktopPreviewCardStyle : previewCardStyle}>
                 <div style={criarPreviewCoverStyle(capa)}>
                   <div style={previewCoverGlowStyle} />
-
-                  <span style={previewGenreStyle}>
-                    {genero.trim() || "Gênero"}
-                  </span>
 
                   <div style={previewCoverBottomStyle}>
                     <strong style={previewCoverNumberStyle}>
@@ -1429,16 +1731,22 @@ export default function PublicarPage() {
                 <div style={previewContentStyle}>
                   <div style={previewBadgesStyle}>
                     <span style={previewBadgeStyle}>
-                      {formato.trim() || "Formato"}
+                      {formatoFinal || "Formato"}
                     </span>
+
+                    <span style={previewBadgeStyle}>
+                      {generoFinal || "Gênero"}
+                    </span>
+
+                    {tagsDaObra.slice(0, 1).map((tag, index) => (
+                      <span key={`${tag}-preview-badge-${index}`} style={previewBadgeStyle}>
+                        {tag}
+                      </span>
+                    ))}
 
                     <span style={previewRatingBadgeStyle}>
                       {classificacaoIndicativa.trim() || "Classificação"}
                     </span>
-
-                    <span style={previewDraftBadgeStyle}>Rascunho</span>
-
-                    <span style={previewBadgeStyle}>{capaStatusTexto}</span>
 
                     {arquivoObra && (
                       <span style={previewImportedBadgeStyle}>
@@ -1458,28 +1766,12 @@ export default function PublicarPage() {
                   </h3>
 
                   <p style={previewAuthorStyle}>
-                    por {autor.trim() || "Autor não informado"}
+                    Por {autor.trim() || "Autor não informado"}
                   </p>
 
                   <p style={previewSinopseStyle}>
                     {sinopse.trim() || "Nenhuma sinopse informada."}
                   </p>
-
-                  {arquivoObra && (
-                    <div style={previewImportedChapterStyle}>
-                      <span style={previewImportedMiniStyle}>
-                        ARQUIVO DA OBRA
-                      </span>
-
-                      <strong style={previewImportedTitleStyle}>
-                        {arquivoObra.nome}
-                      </strong>
-
-                      <span style={previewImportedTextStyle}>
-                        {arquivoObraTipoTexto} • {arquivoObraTamanhoTexto}
-                      </span>
-                    </div>
-                  )}
 
                   {temCapituloImportado && (
                     <div style={previewImportedChapterStyle}>
@@ -1497,13 +1789,6 @@ export default function PublicarPage() {
                     </div>
                   )}
 
-                  <div style={previewTagsStyle}>
-                    {tagsPreview.slice(0, 6).map((tag, index) => (
-                      <span key={`${tag}-${index}`} style={previewTagStyle}>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
                 </div>
               </article>
             ) : (
@@ -1547,10 +1832,10 @@ const pageStyle: CSSProperties = {
 };
 
 const containerStyle: CSSProperties = {
-  width: "min(860px, calc(100% - 24px))",
+  width: "min(900px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 calc(100px + env(safe-area-inset-bottom))",
+  padding: "16px 0 18px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1575,7 +1860,7 @@ const logoStyle: CSSProperties = {
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "min(100%, calc(100% - 118px))",
+  maxWidth: "100%",
   overflow: "visible",
   ...safeTextStyle,
 };
@@ -1606,31 +1891,7 @@ const logoTextStyle: CSSProperties = {
   textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
 };
 
-const topPublishLabelStyle: CSSProperties = {
-  flex: "0 0 auto",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minHeight: "36px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 30%, rgba(255,255,255,0.06)) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, rgba(255,255,255,0.07)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, rgba(255,255,255,0.12))",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.04em",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const desktopTopPublishLabelStyle: CSSProperties = {
-  ...topPublishLabelStyle,
-  minHeight: "40px",
-  padding: "0 18px",
-  fontSize: "12px",
-};
 
 
 const heroBoxStyle: CSSProperties = {
@@ -1638,12 +1899,12 @@ const heroBoxStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
   textAlign: "center",
-  gap: "8px",
-  padding: "18px 16px 16px",
+  gap: "10px",
+  padding: "22px 16px 18px",
   borderRadius: "28px",
   background:
-    "radial-gradient(circle at 15% 12%, var(--historietas-glow-primary, rgba(124,58,237,0.30)), transparent 34%), radial-gradient(circle at 88% 18%, var(--historietas-glow-secondary, rgba(249,115,22,0.16)), transparent 26%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.96)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+    "radial-gradient(circle at 16% 8%, var(--historietas-glow-primary, rgba(124,58,237,0.24)), transparent 32%), radial-gradient(circle at 88% 18%, var(--historietas-glow-secondary, rgba(249,115,22,0.12)), transparent 28%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.94)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
   boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
@@ -1657,12 +1918,12 @@ const heroGlowOrbStyle: CSSProperties = {
 
 const heroStarStyle: CSSProperties = {
   position: "absolute",
-  right: "28px",
-  top: "26px",
+  right: "22px",
+  top: "22px",
   color: "color-mix(in srgb, var(--historietas-accent, #F97316) 72%, #FFFFFF)",
-  fontSize: "34px",
+  fontSize: "30px",
   fontWeight: 950,
-  opacity: 0.18,
+  opacity: 0.14,
   transform: "rotate(10deg)",
   pointerEvents: "none",
 };
@@ -1672,10 +1933,10 @@ const titleStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   margin: 0,
-  fontSize: "clamp(35px, 9.6vw, 50px)",
+  fontSize: "clamp(38px, 10vw, 54px)",
   lineHeight: 0.94,
   fontWeight: 950,
-  letterSpacing: "-0.075em",
+  letterSpacing: "-0.08em",
   maxWidth: "100%",
   background:
     "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 45%, var(--historietas-title-to, #FDBA74) 100%)",
@@ -1692,8 +1953,8 @@ const descriptionStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.55,
-  fontWeight: 650,
-  maxWidth: "100%",
+  fontWeight: 700,
+  maxWidth: "680px",
   ...safeTextStyle,
 };
 
@@ -1701,13 +1962,13 @@ const progressBoxStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   display: "grid",
-  gap: "7px",
-  padding: "9px 10px",
-  borderRadius: "16px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
+  gap: "8px",
+  padding: "10px 11px",
+  borderRadius: "18px",
+  background: "color-mix(in srgb, var(--historietas-surface, rgba(18,12,30,0.86)) 76%, transparent)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
-  width: "min(430px, 100%)",
+  width: "min(450px, 100%)",
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
@@ -1766,9 +2027,9 @@ const formPanelStyle: CSSProperties = {
   display: "grid",
   gap: "14px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.96)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.86)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
-  borderRadius: "24px",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.94)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.90)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  borderRadius: "26px",
   padding: "14px",
   boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
@@ -1793,6 +2054,41 @@ const errorBoxStyle: CSSProperties = {
   boxSizing: "border-box",
   overflow: "hidden",
 };
+
+const formSectionHeaderStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
+  textAlign: "center",
+  gap: "4px",
+  padding: "6px 0 2px",
+  background: "transparent",
+  border: "none",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+
+const formSectionTitleStyle: CSSProperties = {
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "18px",
+  lineHeight: 1.05,
+  fontWeight: 950,
+  letterSpacing: "-0.045em",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const formSectionTextStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  lineHeight: 1.45,
+  fontWeight: 700,
+  textAlign: "center",
+  maxWidth: "520px",
+  ...safeTextStyle,
+};
+
 
 const fieldGroupStyle: CSSProperties = {
   display: "grid",
@@ -1839,8 +2135,9 @@ const fileOptionalBadgeStyle: CSSProperties = {
 
 const labelStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
-  fontWeight: 900,
+  fontSize: "12px",
+  fontWeight: 950,
+  letterSpacing: "-0.01em",
   ...safeTextStyle,
 };
 
@@ -1850,12 +2147,12 @@ const hiddenInputStyle: CSSProperties = {
 
 const coverUploadBoxStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(76px, 86px) minmax(0, 1fr)",
+  gridTemplateColumns: "minmax(86px, 96px) minmax(0, 1fr)",
   gap: "12px",
   alignItems: "stretch",
   padding: "10px",
-  borderRadius: "19px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
+  borderRadius: "21px",
+  background: "color-mix(in srgb, var(--historietas-surface, rgba(18,12,30,0.86)) 78%, transparent)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
   maxWidth: "100%",
@@ -1869,15 +2166,15 @@ const coverUploadPreviewStyle: CSSProperties = {
 };
 
 const coverPlaceholderStyle: CSSProperties = {
-  minHeight: "124px",
-  borderRadius: "16px",
+  minHeight: "138px",
+  borderRadius: "18px",
   background:
-    "radial-gradient(circle at top left, var(--historietas-glow-secondary, rgba(249,115,22,0.32)), transparent 34%), radial-gradient(circle at bottom right, var(--historietas-glow-primary, rgba(124,58,237,0.50)), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
-  border: "1px dashed color-mix(in srgb, var(--historietas-accent, #F97316) 26%, rgba(255,255,255,0.18))",
+    "radial-gradient(circle at top left, var(--historietas-glow-secondary, rgba(249,115,22,0.26)), transparent 34%), radial-gradient(circle at bottom right, var(--historietas-glow-primary, rgba(124,58,237,0.40)), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
+  border: "1px dashed color-mix(in srgb, var(--historietas-accent, #F97316) 28%, rgba(255,255,255,0.16))",
   display: "grid",
   alignContent: "center",
   justifyItems: "center",
-  gap: "5px",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1915,9 +2212,9 @@ const coverUploadContentStyle: CSSProperties = {
 
 const coverUploadTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "16px",
+  fontSize: "17px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: "-0.045em",
   ...safeTextStyle,
 };
 
@@ -1946,9 +2243,9 @@ const coverButtonsStyle: CSSProperties = {
 
 const coverButtonStyle: CSSProperties = {
   flex: "1 1 94px",
-  minHeight: "34px",
+  minHeight: "36px",
   maxWidth: "100%",
-  padding: "0 11px",
+  padding: "0 12px",
   borderRadius: "999px",
   border: "none",
   background: "var(--historietas-secondary, #7C3AED)",
@@ -1984,15 +2281,15 @@ const removeCoverButtonStyle: CSSProperties = {
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "46px",
-  borderRadius: "16px",
+  minHeight: "48px",
+  borderRadius: "18px",
   border: "1px solid var(--historietas-border-soft, #3F3F46)",
   background: "var(--historietas-input-bg, #18181B)",
   color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 13px",
+  padding: "0 14px",
   outline: "none",
   fontSize: "13px",
-  fontWeight: 650,
+  fontWeight: 700,
   fontFamily: "inherit",
   boxSizing: "border-box",
   minWidth: 0,
@@ -2001,16 +2298,16 @@ const inputStyle: CSSProperties = {
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  minHeight: "118px",
-  borderRadius: "18px",
+  minHeight: "128px",
+  borderRadius: "20px",
   border: "1px solid var(--historietas-border-soft, #3F3F46)",
   background: "var(--historietas-input-bg, #18181B)",
   color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "13px",
+  padding: "14px",
   outline: "none",
   fontSize: "13px",
-  fontWeight: 650,
-  lineHeight: 1.55,
+  fontWeight: 700,
+  lineHeight: 1.58,
   resize: "vertical",
   fontFamily: "inherit",
   boxSizing: "border-box",
@@ -2027,6 +2324,37 @@ const hintStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+
+const selectedTagsListStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "7px",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
+const selectedTagButtonStyle: CSSProperties = {
+  minHeight: "32px",
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "0 10px",
+  borderRadius: "999px",
+  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 58%, transparent)",
+  color: "#FFFFFF",
+  fontSize: "10.5px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  textAlign: "center",
+  boxSizing: "border-box",
+  ...safeTextStyle,
+};
+
+
+
+
+
 const buttonAreaStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
@@ -2038,18 +2366,18 @@ const buttonAreaStyle: CSSProperties = {
 };
 
 const primaryButtonStyle: CSSProperties = {
-  minHeight: "48px",
+  minHeight: "50px",
   borderRadius: "999px",
   border: "none",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
-  fontSize: "13px",
+  fontSize: "14px",
   fontWeight: 950,
   cursor: "pointer",
   boxShadow: "none",
   fontFamily: "inherit",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 14px",
   lineHeight: 1.15,
   minWidth: 0,
   maxWidth: "100%",
@@ -2090,12 +2418,12 @@ const secondaryButtonStyle: CSSProperties = {
 
 const chapterImportBoxStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(52px, 60px) minmax(0, 1fr)",
+  gridTemplateColumns: "minmax(56px, 64px) minmax(0, 1fr)",
   gap: "12px",
   alignItems: "stretch",
   padding: "10px",
-  borderRadius: "19px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
+  borderRadius: "21px",
+  background: "color-mix(in srgb, var(--historietas-surface, rgba(18,12,30,0.86)) 78%, transparent)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
   maxWidth: "100%",
@@ -2104,9 +2432,9 @@ const chapterImportBoxStyle: CSSProperties = {
 };
 
 const chapterImportIconBoxStyle: CSSProperties = {
-  minHeight: "78px",
-  borderRadius: "16px",
-  background: "var(--historietas-surface, rgba(18,12,30,0.86))",
+  minHeight: "82px",
+  borderRadius: "18px",
+  background: "var(--historietas-surface, rgba(18,12,30,0.88))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   display: "flex",
   alignItems: "center",
@@ -2171,46 +2499,52 @@ const inlineStatStyle: CSSProperties = {
 const previewPanelStyle: CSSProperties = {
   display: "grid",
   gap: "12px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.96)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.86)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
-  borderRadius: "24px",
-  padding: "14px",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  padding: 0,
+  background: "transparent",
+  border: "none",
+  borderRadius: 0,
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
 };
 
 const previewHeaderStyle: CSSProperties = {
   display: "grid",
-  gap: "5px",
+  gap: "4px",
+  justifyItems: "center",
+  textAlign: "center",
   minWidth: 0,
 };
 
 const previewMiniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  fontSize: "19px",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "0.08em",
+  letterSpacing: "-0.035em",
+  textAlign: "center",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
-const previewTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "23px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  ...safeTextStyle,
-};
 
 const previewCardStyle: CSSProperties = {
   display: "grid",
-  gap: "11px",
+  gridTemplateColumns: "minmax(104px, 0.36fr) minmax(0, 1fr)",
+  alignItems: "start",
+  gap: "8px",
+  padding: "8px",
+  borderRadius: "20px",
+  background:
+    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 13%, var(--historietas-border-soft, rgba(255,255,255,0.07)))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
+  overflow: "hidden",
+  boxSizing: "border-box",
 };
 
 const emptyPreviewBoxStyle: CSSProperties = {
@@ -2277,15 +2611,20 @@ const emptyPreviewTextStyle: CSSProperties = {
 };
 
 const previewCoverStyle: CSSProperties = {
-  minHeight: "188px",
+  width: "100%",
+  minHeight: "164px",
+  height: "164px",
+  maxHeight: "164px",
   maxWidth: "100%",
-  borderRadius: "21px",
+  alignSelf: "start",
+  borderRadius: "14px",
   position: "relative",
   overflow: "hidden",
   background:
     "radial-gradient(circle at top left, var(--historietas-glow-secondary, rgba(249,115,22,0.44)), transparent 34%), radial-gradient(circle at bottom right, var(--historietas-glow-primary, rgba(124,58,237,0.66)), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
   minWidth: 0,
   boxSizing: "border-box",
+  flex: "0 0 auto",
 };
 
 const previewCoverGlowStyle: CSSProperties = {
@@ -2295,56 +2634,46 @@ const previewCoverGlowStyle: CSSProperties = {
     "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.18) 100%)",
 };
 
-const previewGenreStyle: CSSProperties = {
-  position: "absolute",
-  top: "12px",
-  left: "12px",
-  right: "12px",
-  maxWidth: "calc(100% - 24px)",
-  padding: "8px 10px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 92%, rgba(0,0,0,0.22))",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const previewCoverBottomStyle: CSSProperties = {
   position: "absolute",
-  left: "15px",
-  right: "15px",
-  bottom: "15px",
-  display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "space-between",
-  gap: "10px",
+  left: "9px",
+  right: "9px",
+  bottom: "9px",
+  display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr)",
+  alignItems: "end",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
 };
 
 const previewCoverNumberStyle: CSSProperties = {
   color: "#FFFFFF",
-  fontSize: "52px",
-  lineHeight: 0.85,
+  fontSize: "30px",
+  lineHeight: 0.88,
   fontWeight: 950,
-  letterSpacing: "-0.08em",
+  letterSpacing: "-0.07em",
+  textShadow: "0 1px 10px rgba(0,0,0,0.34)",
   ...safeTextStyle,
 };
 
 const previewCoverTextStyle: CSSProperties = {
   color: "#FFFFFF",
-  fontSize: "11px",
+  fontSize: "8.5px",
+  lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "0.08em",
-  textAlign: "right",
+  letterSpacing: "0.055em",
+  textAlign: "left",
+  textTransform: "uppercase",
+  textShadow: "0 1px 10px rgba(0,0,0,0.34)",
   ...safeTextStyle,
 };
 
 const previewContentStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
+  alignContent: "start",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -2352,7 +2681,8 @@ const previewContentStyle: CSSProperties = {
 const previewBadgesStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "6px",
+  gap: "4px",
+  rowGap: "4px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -2360,12 +2690,12 @@ const previewBadgesStyle: CSSProperties = {
 const previewBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "6px 8px",
+  padding: "4px 6px",
   borderRadius: "999px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   color: "var(--historietas-secondary-button-text, #E4E4E7)",
-  fontSize: "10px",
+  fontSize: "9px",
   fontWeight: 950,
   ...safeTextStyle,
 };
@@ -2377,12 +2707,6 @@ const previewRatingBadgeStyle: CSSProperties = {
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
 };
 
-const previewDraftBadgeStyle: CSSProperties = {
-  ...previewBadgeStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-};
 
 const previewImportedBadgeStyle: CSSProperties = {
   ...previewBadgeStyle,
@@ -2392,34 +2716,40 @@ const previewImportedBadgeStyle: CSSProperties = {
 };
 
 const previewObraTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "28px",
-  lineHeight: 1,
+  margin: "0",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "22px",
+  lineHeight: 1.02,
   fontWeight: 950,
   letterSpacing: "-0.06em",
   maxWidth: "100%",
+  textDecoration: "none",
+  borderBottom: "none",
   ...safeTextStyle,
 };
 
 const previewAuthorStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #B3B3B3)",
-  fontSize: "12px",
-  fontWeight: 800,
+  width: "fit-content",
   maxWidth: "100%",
+  margin: "-1px 0 0",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "12.5px",
+  fontWeight: 900,
+  textDecoration: "none",
+  borderBottom: "none",
   ...safeTextStyle,
 };
 
 const previewSinopseStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.55,
+  fontSize: "11px",
+  lineHeight: 1.38,
   fontWeight: 650,
   whiteSpace: "pre-wrap",
   maxWidth: "100%",
   display: "-webkit-box",
-  WebkitLineClamp: 4,
+  WebkitLineClamp: 3,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
   overflowWrap: "break-word",
@@ -2429,9 +2759,9 @@ const previewSinopseStyle: CSSProperties = {
 
 const previewImportedChapterStyle: CSSProperties = {
   display: "grid",
-  gap: "4px",
-  padding: "10px",
-  borderRadius: "16px",
+  gap: "3px",
+  padding: "7px",
+  borderRadius: "13px",
   background:
     "linear-gradient(135deg, color-mix(in srgb, #22C55E 8%, var(--historietas-surface, transparent)) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, var(--historietas-surface-strong, transparent)) 100%)",
   border: "1px solid color-mix(in srgb, #22C55E 18%, var(--historietas-border-soft, transparent))",
@@ -2464,13 +2794,6 @@ const previewImportedTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const previewTagsStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
 const tagPreviewListStyle: CSSProperties = {
   display: "flex",
@@ -2513,8 +2836,8 @@ const miniCounterWarningStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 96px",
+  width: "min(1220px, calc(100% - 64px))",
+  padding: "24px 0 28px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -2525,40 +2848,39 @@ const desktopTopStyle: CSSProperties = {
 
 const desktopHeroBoxStyle: CSSProperties = {
   ...heroBoxStyle,
-  padding: "28px 36px 24px",
+  padding: "28px 34px 24px",
   borderRadius: "30px",
-  gap: "10px",
-  minHeight: "206px",
+  gap: "12px",
 };
 
 
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
-  fontSize: "clamp(50px, 5vw, 72px)",
-  maxWidth: "850px",
+  fontSize: "clamp(50px, 5.4vw, 78px)",
+  maxWidth: "880px",
 };
 
 
 const desktopDescriptionStyle: CSSProperties = {
   ...descriptionStyle,
+  fontSize: "15px",
+  lineHeight: 1.6,
   maxWidth: "720px",
-  fontSize: "14px",
-  lineHeight: 1.55,
 };
 
 
 const desktopProgressBoxStyle: CSSProperties = {
   ...progressBoxStyle,
   width: "min(520px, 100%)",
-  padding: "10px 13px",
-  borderRadius: "18px",
+  padding: "11px 13px",
 };
 
 
 const desktopMainGridSingleStyle: CSSProperties = {
   ...mainGridStyle,
-  gridTemplateColumns: "1fr",
+  gridTemplateColumns: "minmax(0, 1.52fr) minmax(340px, 0.88fr)",
+  alignItems: "start",
   gap: "18px",
 };
 
@@ -2570,7 +2892,7 @@ const desktopFormPanelStyle: CSSProperties = {
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   alignItems: "start",
   padding: "18px",
-  borderRadius: "26px",
+  borderRadius: "28px",
   gap: "16px",
   overflow: "hidden",
 };
@@ -2590,6 +2912,13 @@ const desktopFullWidthErrorBoxStyle: CSSProperties = {
   gridColumn: "1 / -1",
 };
 
+const desktopFormSectionHeaderStyle: CSSProperties = {
+  ...formSectionHeaderStyle,
+  gridColumn: "1 / -1",
+  padding: "8px 0 4px",
+};
+
+
 
 const desktopDoubleFieldStyle: CSSProperties = {
   ...doubleFieldStyle,
@@ -2605,10 +2934,10 @@ const desktopFullWidthDoubleFieldStyle: CSSProperties = {
 
 const desktopCoverUploadBoxStyle: CSSProperties = {
   ...coverUploadBoxStyle,
-  gridTemplateColumns: "96px minmax(0, 1fr)",
-  gap: "14px",
+  gridTemplateColumns: "116px minmax(0, 1fr)",
+  gap: "16px",
   padding: "12px",
-  borderRadius: "20px",
+  borderRadius: "22px",
 };
 
 
@@ -2678,24 +3007,23 @@ const desktopFullWidthArquivoObraContentStyle: CSSProperties = {
 const desktopButtonAreaStyle: CSSProperties = {
   ...buttonAreaStyle,
   gridColumn: "1 / -1",
-  gridTemplateColumns: "minmax(180px, 240px) minmax(150px, 190px)",
+  gridTemplateColumns: "minmax(190px, 260px) minmax(150px, 190px)",
   justifyContent: "start",
   gap: "10px",
 };
 
 const desktopPreviewPanelStyle: CSSProperties = {
   ...previewPanelStyle,
-  position: "relative",
-  top: "auto",
-  padding: "16px",
-  borderRadius: "26px",
-  maxHeight: "none",
-  overflowY: "visible",
+  position: "sticky",
+  top: "24px",
+  alignSelf: "start",
 };
 
 
 const desktopPreviewCardStyle: CSSProperties = {
   ...previewCardStyle,
+  gridTemplateColumns: "138px minmax(0, 1fr)",
   gap: "12px",
+  padding: "10px",
+  borderRadius: "22px",
 };
-

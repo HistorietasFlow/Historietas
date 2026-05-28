@@ -123,6 +123,21 @@ function criarSlugBase(titulo: string) {
   return slug || "obra";
 }
 
+function formatarGeneroMinhasObras(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTexto(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Não informado";
+}
+
 function normalizarCapitulo(
   capitulo: Partial<CapituloLocal>,
   index: number
@@ -712,6 +727,7 @@ export default function MinhasObrasPage() {
             obra.titulo,
             obra.autor,
             obra.genero,
+            formatarGeneroMinhasObras(obra.genero),
             obra.formato,
             obra.classificacaoIndicativa,
             obra.sinopse,
@@ -743,55 +759,6 @@ export default function MinhasObrasPage() {
           (Number.isNaN(dataA) ? 0 : dataA);
       });
   }, [obras, obrasFavoritas, obrasConcluidas, busca, filtro, ordenacao]);
-
-  function limparFiltros() {
-    setBusca("");
-    setFiltro("todas");
-    setOrdenacao("recentes");
-  }
-
-  function salvarObras(novasObras: ObraLocal[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(novasObras));
-    setObras(novasObras);
-  }
-
-  async function publicarObra(obraId: string) {
-    const novasObras = obras.map((obra) => {
-      if (obra.id !== obraId) {
-        return obra;
-      }
-
-      return {
-        ...obra,
-        publicado: true,
-      };
-    });
-
-    salvarObras(novasObras);
-
-    try {
-      const { data: dadosUsuario } = await supabase.auth.getUser();
-
-      if (!dadosUsuario.user) {
-        return;
-      }
-
-      const { error } = await supabase
-        .from("obras")
-        .update({
-          publicado: true,
-          atualizado_em: new Date().toISOString(),
-        })
-        .eq("id", obraId)
-        .eq("user_id", dadosUsuario.user.id);
-
-      if (error) {
-        console.warn("Não consegui publicar no Supabase:", error.message);
-      }
-    } catch {
-      // O backup local já foi atualizado. O Supabase será sincronizado depois.
-    }
-  }
 
   async function copiarLinkObra(obra: ObraLocal) {
     const linkPublico =
@@ -1012,13 +979,6 @@ export default function MinhasObrasPage() {
                 Mostrando {obrasFiltradas.length} de {obras.length} obras
               </span>
 
-              <button
-                type="button"
-                onClick={limparFiltros}
-                style={clearFilterButtonStyle}
-              >
-                Limpar filtros
-              </button>
             </div>
           </section>
         )}
@@ -1053,17 +1013,10 @@ export default function MinhasObrasPage() {
                 Mude a busca, o filtro ou a ordenação para ver suas obras.
               </p>
 
-              <button type="button" onClick={limparFiltros} style={emptyButtonStyle}>
-                Limpar filtros
-              </button>
             </div>
           ) : (
             <div style={isDesktop ? desktopListStyle : listStyle}>
               {obrasFiltradas.map((obra) => {
-                const totalLidos = obra.capitulos.filter(
-                  (capitulo) => capitulo.lido
-                ).length;
-
                 const progressoLeitura = calcularProgressoLeitura(
                   obra.capitulos
                 );
@@ -1125,7 +1078,7 @@ export default function MinhasObrasPage() {
                       <div style={statusRowStyle}>
                         <span style={formatBadgeStyle}>{obra.formato}</span>
 
-                        {obra.tags.slice(0, 2).map((tag, index) => (
+                        {obra.tags.slice(0, 1).map((tag, index) => (
                           <span
                             key={`${obra.id}-status-tag-${tag}-${index}`}
                             style={tagStyle}
@@ -1134,15 +1087,9 @@ export default function MinhasObrasPage() {
                           </span>
                         ))}
 
-                        {obra.tags.length > 2 && (
-                          <span style={tagStyle}>+{obra.tags.length - 2}</span>
-                        )}
-
-                        <span style={genreInlineBadgeStyle}>{obra.genero}</span>
-
-                        {obra.arquivoObra && (
-                          <span style={fileBadgeStyle}>Arquivo anexado</span>
-                        )}
+                        <span style={genreInlineBadgeStyle}>
+                          {formatarGeneroMinhasObras(obra.genero)}
+                        </span>
 
                         {obraFavorita && (
                           <span style={favoriteBadgeStyle}>★</span>
@@ -1176,65 +1123,105 @@ export default function MinhasObrasPage() {
                             </span>
                           </div>
 
-                          <p style={progressTextStyle}>
-                            {totalLidos} de {obra.capitulos.length} lidos
-                          </p>
                         </section>
                       )}
 
-                      {capituloDestaque ? (
-                        <section style={isDesktop ? desktopLastChapterBoxStyle : lastChapterBoxStyle}>
-                          <div style={lastChapterActionsRowStyle}>
+                      {obra.arquivoObra && !capituloDestaque ? (
+                        <div
+                          style={
+                            isDesktop
+                              ? desktopFilePublicationActionsGridStyle
+                              : filePublicationActionsGridStyle
+                          }
+                        >
+                          <div style={filePublicationColumnStyle}>
+                            <Link href={verArquivoHref} style={fileActionStyle}>
+                              Ver arquivo
+                            </Link>
+
                             <Link
-                              href={capituloDestaqueHref}
-                              style={lastChapterButtonStyle}
+                              href={paginaPublicaHref}
+                              style={publicPageActionStyle}
                             >
-                              {capituloParaContinuar
-                                ? "Continuar lendo"
-                                : "Ler capítulo"}
+                              Página pública
                             </Link>
+                          </div>
 
+                          <div style={filePublicationColumnStyle}>
                             <Link href={verObraHref} style={orangeActionStyle}>
                               Ver obra
                             </Link>
+
+                            <Link
+                              href={adicionarCapituloHref}
+                              style={purpleActionStyle}
+                            >
+                              Adicionar capítulo
+                            </Link>
                           </div>
-                        </section>
+                        </div>
                       ) : (
-                        <section style={isDesktop ? desktopLastChapterBoxStyle : lastChapterBoxStyle}>
-                          <p style={lastChapterTextStyle}>
-                            Essa obra ainda não possui capítulos. Adicione o
-                            primeiro para começar a leitura.
-                          </p>
+                        <>
+                          {capituloDestaque ? (
+                            <section style={isDesktop ? desktopLastChapterBoxStyle : lastChapterBoxStyle}>
+                              <div style={lastChapterActionsRowStyle}>
+                                <Link
+                                  href={capituloDestaqueHref}
+                                  style={lastChapterButtonStyle}
+                                >
+                                  {capituloParaContinuar
+                                    ? "Continuar lendo"
+                                    : "Ler capítulo"}
+                                </Link>
 
-                          <div style={lastChapterActionsRowStyle}>
-                            <Link href={verObraHref} style={orangeActionStyle}>
-                              Ver obra
+                                <Link href={verObraHref} style={orangeActionStyle}>
+                                  Ver obra
+                                </Link>
+                              </div>
+                            </section>
+                          ) : (
+                            <section style={isDesktop ? desktopLastChapterBoxStyle : lastChapterBoxStyle}>
+                              <div style={singleLastChapterActionRowStyle}>
+                                <Link href={verObraHref} style={orangeActionStyle}>
+                                  Ver obra
+                                </Link>
+                              </div>
+                            </section>
+                          )}
+
+                          <div
+                            style={
+                              obra.arquivoObra
+                                ? isDesktop
+                                  ? desktopPrimaryActionsWithFileGridStyle
+                                  : primaryActionsWithFileGridStyle
+                                : isDesktop
+                                ? desktopPrimaryActionsGridStyle
+                                : primaryActionsGridStyle
+                            }
+                          >
+                            <Link
+                              href={paginaPublicaHref}
+                              style={publicPageActionStyle}
+                            >
+                              Página pública
                             </Link>
+
+                            <Link
+                              href={adicionarCapituloHref}
+                              style={purpleActionStyle}
+                            >
+                              Adicionar capítulo
+                            </Link>
+
+                            {obra.arquivoObra && (
+                              <Link href={verArquivoHref} style={fileActionStyle}>
+                                Ver arquivo
+                              </Link>
+                            )}
                           </div>
-                        </section>
+                        </>
                       )}
-
-                      <div style={isDesktop ? desktopPrimaryActionsGridStyle : primaryActionsGridStyle}>
-                        <Link
-                          href={paginaPublicaHref}
-                          style={publicPageActionStyle}
-                        >
-                          Página pública
-                        </Link>
-
-                        <Link
-                          href={adicionarCapituloHref}
-                          style={purpleActionStyle}
-                        >
-                          Adicionar capítulo
-                        </Link>
-
-                        {obra.arquivoObra && (
-                          <Link href={verArquivoHref} style={fileActionStyle}>
-                            Ver arquivo
-                          </Link>
-                        )}
-                      </div>
 
                     </div>
 
@@ -1256,16 +1243,6 @@ export default function MinhasObrasPage() {
                           ? "Copiado!"
                           : "Copiar link"}
                       </button>
-
-                      {!obra.publicado && (
-                        <button
-                          type="button"
-                          onClick={() => publicarObra(obra.id)}
-                          style={publishActionStyle}
-                        >
-                          Publicar
-                        </button>
-                      )}
 
                       <button
                         type="button"
@@ -1321,7 +1298,7 @@ const containerStyle: CSSProperties = {
   width: "min(840px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(100px + env(safe-area-inset-bottom))",
+  padding: "18px 0 20px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1604,33 +1581,22 @@ const selectStyle: CSSProperties = {
 const filterFooterStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "center",
   gap: "10px",
   flexWrap: "wrap",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const filterInfoStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "13px",
   fontWeight: 850,
+  textAlign: "center",
+  width: "100%",
   ...safeTextStyle,
 };
 
-const clearFilterButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const sectionStyle: CSSProperties = {
   marginTop: "20px",
@@ -1713,7 +1679,7 @@ const obraCardStyle: CSSProperties = {
   alignItems: "start",
   gap: "10px",
   padding: "10px",
-  borderRadius: "22px",
+  borderRadius: "21px",
   background:
     "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 13%, var(--historietas-border-soft, rgba(255,255,255,0.07)))",
@@ -1726,17 +1692,19 @@ const obraCardStyle: CSSProperties = {
 
 const coverStyle: CSSProperties = {
   width: "100%",
-  minHeight: "216px",
-  height: "216px",
+  minHeight: "180px",
+  height: "180px",
+  maxHeight: "180px",
   maxWidth: "100%",
   alignSelf: "start",
   boxSizing: "border-box",
-  borderRadius: "16px",
+  borderRadius: "15px",
   position: "relative",
   overflow: "hidden",
   background:
     "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent), transparent 38%), linear-gradient(135deg, var(--historietas-surface, #18181B) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)",
   minWidth: 0,
+  flex: "0 0 auto",
 };
 
 const coverGlowStyle: CSSProperties = {
@@ -1749,7 +1717,7 @@ const coverGlowStyle: CSSProperties = {
 
 const noCoverBadgeStyle: CSSProperties = {
   position: "absolute",
-  top: "60px",
+  top: "48px",
   left: "14px",
   width: "fit-content",
   maxWidth: "calc(100% - 28px)",
@@ -1831,6 +1799,7 @@ const statusRowStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   gap: "5px",
+  rowGap: "5px",
   minWidth: 0,
 };
 
@@ -1848,19 +1817,6 @@ const formatBadgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const fileBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, var(--historietas-border-soft, transparent))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "10px",
-  fontWeight: 950,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 
 const favoriteBadgeStyle: CSSProperties = {
@@ -1894,10 +1850,10 @@ const completedBadgeStyle: CSSProperties = {
 
 
 const cardTitleStyle: CSSProperties = {
-  margin: 0,
+  margin: "0",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "26px",
-  lineHeight: 1,
+  fontSize: "24px",
+  lineHeight: 1.02,
   fontWeight: 950,
   letterSpacing: "-0.06em",
   maxWidth: "100%",
@@ -1907,9 +1863,9 @@ const cardTitleStyle: CSSProperties = {
 const authorLinkStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  margin: 0,
+  margin: "-2px 0 1px",
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: 900,
   textDecoration: "none",
   borderBottom: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
@@ -1947,10 +1903,10 @@ const genreInlineBadgeStyle: CSSProperties = {
 const progressBoxStyle: CSSProperties = {
   display: "grid",
   gap: "5px",
-  padding: "7px 8px",
-  borderRadius: "13px",
-  background: "var(--historietas-secondary-surface, rgba(15,15,15,0.28))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+  padding: "0",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -1994,14 +1950,6 @@ const progressBarStyle: CSSProperties = {
   background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
 };
 
-const progressTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  lineHeight: 1.25,
-  fontWeight: 800,
-  ...safeTextStyle,
-};
 
 
 
@@ -2010,7 +1958,7 @@ const progressTextStyle: CSSProperties = {
 const lastChapterBoxStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "6px",
+  gap: "7px",
   padding: "0",
   borderRadius: 0,
   background: "transparent",
@@ -2019,37 +1967,54 @@ const lastChapterBoxStyle: CSSProperties = {
   overflow: "hidden",
 };
 
-const lastChapterTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.7,
-  fontWeight: 600,
-  whiteSpace: "pre-wrap",
-  maxHeight: "88px",
-  overflow: "hidden",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
 const lastChapterActionsRowStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "7px",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
+const singleLastChapterActionRowStyle: CSSProperties = {
+  ...lastChapterActionsRowStyle,
+  gridTemplateColumns: "1fr",
+};
+
+const filePublicationActionsGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "6px",
+  marginTop: "1px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+const filePublicationColumnStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  alignContent: "start",
+  gap: "6px",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
+const desktopFilePublicationActionsGridStyle: CSSProperties = {
+  ...filePublicationActionsGridStyle,
+  gap: "9px",
+};
+
 const lastChapterButtonStyle: CSSProperties = {
-  minHeight: "36px",
+  minHeight: "34px",
   width: "100%",
   maxWidth: "100%",
   borderRadius: "999px",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "11px",
+  fontSize: "10.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
@@ -2062,20 +2027,25 @@ const lastChapterButtonStyle: CSSProperties = {
 
 const primaryActionsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "7px",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
+const primaryActionsWithFileGridStyle: CSSProperties = {
+  ...primaryActionsGridStyle,
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "7px",
+};
+
 const secondaryActionsGridStyle: CSSProperties = {
   gridColumn: "1 / -1",
   display: "grid",
-  gridAutoFlow: "column",
-  gridAutoColumns: "minmax(0, 1fr)",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   alignItems: "stretch",
-  gap: "5px",
+  gap: "6px",
   width: "100%",
   minWidth: 0,
   maxWidth: "100%",
@@ -2083,27 +2053,6 @@ const secondaryActionsGridStyle: CSSProperties = {
   paddingTop: "2px",
 };
 
-const publishActionStyle: CSSProperties = {
-  minHeight: "28px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "0 8px",
-  borderRadius: "999px",
-  border: "1px solid rgba(34,197,94,0.18)",
-  background: "rgba(34,197,94,0.09)",
-  color: "#86EFAC",
-  textDecoration: "none",
-  fontSize: "10px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 
 
@@ -2116,15 +2065,17 @@ const orangeActionStyle: CSSProperties = {
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "10.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 10px",
+  padding: "0 8px",
   ...safeTextStyle,
   whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
 };
 
 const purpleActionStyle: CSSProperties = {
@@ -2134,52 +2085,58 @@ const purpleActionStyle: CSSProperties = {
   background: "var(--historietas-secondary, #7C3AED)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "12px",
+  fontSize: "10.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 10px",
+  padding: "0 6px",
   ...safeTextStyle,
   whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
 };
 
 const publicPageActionStyle: CSSProperties = {
-  minHeight: "36px",
+  minHeight: "34px",
   width: "100%",
   borderRadius: "999px",
   background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
   textDecoration: "none",
-  fontSize: "11px",
+  fontSize: "10.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 8px",
+  padding: "0 6px",
   whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
   ...safeTextStyle,
 };
 
 const fileActionStyle: CSSProperties = {
-  minHeight: "36px",
+  minHeight: "34px",
   width: "100%",
   borderRadius: "999px",
   background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "11px",
+  fontSize: "10.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 8px",
+  padding: "0 6px",
   whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
   ...safeTextStyle,
 };
 
@@ -2259,7 +2216,7 @@ const deleteActionStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "28px 0 96px",
+  padding: "28px 0 32px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -2317,8 +2274,8 @@ const desktopFilterGridStyle: CSSProperties = {
 
 const desktopFilterFooterStyle: CSSProperties = {
   ...filterFooterStyle,
-  justifyContent: "space-between",
-  flexWrap: "nowrap",
+  justifyContent: "center",
+  flexWrap: "wrap",
 };
 
 const desktopSectionStyle: CSSProperties = {
@@ -2344,26 +2301,23 @@ const desktopListStyle: CSSProperties = {
 
 const desktopObraCardStyle: CSSProperties = {
   ...obraCardStyle,
-  gridTemplateColumns: "minmax(240px, 0.42fr) minmax(0, 1fr)",
-  gap: "18px",
-  padding: "14px",
-  borderRadius: "28px",
-  alignItems: "stretch",
+  gridTemplateColumns: "176px minmax(0, 1fr)",
+  gap: "14px",
+  padding: "12px",
+  borderRadius: "24px",
 };
 
 const desktopCoverStyle: CSSProperties = {
   ...coverStyle,
-  minHeight: "100%",
-  height: "auto",
-  alignSelf: "stretch",
-  borderRadius: "22px",
+  minHeight: "210px",
+  height: "210px",
+  maxHeight: "210px",
+  borderRadius: "18px",
 };
 
 const desktopCardContentStyle: CSSProperties = {
   ...cardContentStyle,
-  gap: "10px",
-  alignContent: "start",
-  padding: "4px 4px 4px 0",
+  gap: "7px",
 };
 
 const desktopCardTitleStyle: CSSProperties = {
@@ -2374,8 +2328,8 @@ const desktopCardTitleStyle: CSSProperties = {
 
 const desktopProgressBoxStyle: CSSProperties = {
   ...progressBoxStyle,
-  padding: "10px 12px",
-  borderRadius: "16px",
+  padding: "0",
+  borderRadius: 0,
 };
 
 const desktopLastChapterBoxStyle: CSSProperties = {
@@ -2390,11 +2344,15 @@ const desktopLastChapterBoxStyle: CSSProperties = {
 const desktopPrimaryActionsGridStyle: CSSProperties = {
   ...primaryActionsGridStyle,
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "9px",
+};
+
+const desktopPrimaryActionsWithFileGridStyle: CSSProperties = {
+  ...primaryActionsWithFileGridStyle,
   gap: "8px",
 };
 
 const desktopSecondaryActionsGridStyle: CSSProperties = {
   ...secondaryActionsGridStyle,
-  gap: "7px",
+  gap: "8px",
 };
-

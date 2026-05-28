@@ -21,7 +21,7 @@ export const obras: Obra[] = [
   {
     titulo: "Shadow Eclipse",
     autor: "Historietas Studio",
-    genero: "Fantasia Sombria",
+    genero: "Fantasia",
     classificacaoIndicativa: "16+",
     status: "Em andamento",
     views: "12.4K",
@@ -33,7 +33,7 @@ export const obras: Obra[] = [
     formato: "Webnovel",
     sinopse:
       "Um universo sombrio onde poderes ocultos, mistérios ancestrais e escolhas impossíveis moldam o destino de jovens marcados pela sombra.",
-    tags: ["Fantasia", "Mistério", "Sobrenatural", "Lore", "Ação"],
+    tags: ["Sobrenatural"],
   },
   {
     titulo: "Dark Soul",
@@ -50,12 +50,12 @@ export const obras: Obra[] = [
     formato: "Webnovel",
     sinopse:
       "Uma história de terror sobrenatural sobre almas presas, pactos perigosos e segredos enterrados em uma cidade tomada pela escuridão.",
-    tags: ["Terror", "Sobrenatural", "Mistério", "Suspense", "Dark"],
+    tags: ["Suspense"],
   },
   {
     titulo: "Night Code",
     autor: "ZeroByte",
-    genero: "Sci-fi",
+    genero: "Ficção",
     classificacaoIndicativa: "12+",
     status: "Pausado",
     views: "6.2K",
@@ -67,7 +67,7 @@ export const obras: Obra[] = [
     formato: "Light novel",
     sinopse:
       "Em uma metrópole controlada por códigos secretos, um jovem programador encontra uma falha capaz de revelar a verdade por trás do sistema.",
-    tags: ["Sci-fi", "Tecnologia", "Mistério", "Ação", "Cyberpunk"],
+    tags: ["Sci-fi"],
   },
   {
     titulo: "Crimson Love",
@@ -84,12 +84,12 @@ export const obras: Obra[] = [
     formato: "Conto",
     sinopse:
       "Um romance dramático sobre reencontros, promessas quebradas e sentimentos que resistem mesmo depois de anos de distância.",
-    tags: ["Romance", "Drama", "Slice of Life", "Emoção", "Completo"],
+    tags: ["Drama"],
   },
   {
     titulo: "Neon Requiem",
     autor: "Aiko Vesper",
-    genero: "Cyberpunk",
+    genero: "Ficção",
     classificacaoIndicativa: "14+",
     status: "Em andamento",
     views: "4.8K",
@@ -101,6 +101,6 @@ export const obras: Obra[] = [
     formato: "Webnovel",
     sinopse:
       "Em uma cidade iluminada por neon e dominada por megacorporações, uma hacker descobre uma conspiração capaz de apagar memórias, identidades e destinos.",
-    tags: ["Cyberpunk", "Sci-fi", "Ação", "Mistério", "Tecnologia"],
+    tags: ["Cyberpunk"],
   },
 ];

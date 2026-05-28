@@ -133,9 +133,7 @@ type TipoRanking =
 
 type FiltroEmAlta =
   | "todos"
-  | "catalogo"
   | "publicadas"
-  | "em-leitura"
   | "favoritas"
   | "concluidas";
 
@@ -772,16 +770,8 @@ function obraRankingPassaFiltro(
   obrasFavoritas: string[],
   obrasConcluidas: string[]
 ) {
-  if (filtro === "catalogo") {
-    return obra.tipo === "fixa";
-  }
-
   if (filtro === "publicadas") {
     return obra.tipo === "local";
-  }
-
-  if (filtro === "em-leitura") {
-    return obra.tipo === "local" && obra.progressoLeitura > 0;
   }
 
   if (filtro === "favoritas") {
@@ -1116,14 +1106,11 @@ export default function EmAltaPage() {
   );
 
   const totalResultadosFiltrados = rankingFiltrado.length;
-  const totalCatalogoFiltrado = rankingFiltrado.filter(
-    (obra) => obra.tipo === "fixa"
-  ).length;
   const totalPublicadasFiltradas = rankingFiltrado.filter(
     (obra) => obra.tipo === "local"
   ).length;
 
-  const resumoFiltroCompacto = `${totalResultadosFiltrados} resultados • ${totalCatalogoFiltrado} catálogo • ${totalPublicadasFiltradas} publicadas locais`;
+  const resumoFiltroCompacto = `${totalResultadosFiltrados} resultados • ${totalPublicadasFiltradas} publicadas locais`;
 
   function limparFiltrosRanking() {
     setBuscaRanking("");
@@ -1229,9 +1216,7 @@ export default function EmAltaPage() {
           <div style={isDesktop ? desktopQuickFiltersGridStyle : quickFiltersGridStyle}>
             {[
               { id: "todos", titulo: "Todos" },
-              { id: "catalogo", titulo: "Catálogo" },
               { id: "publicadas", titulo: "Publicadas" },
-              { id: "em-leitura", titulo: "Em leitura" },
               { id: "favoritas", titulo: "Favoritas" },
               { id: "concluidas", titulo: "Concluídas" },
             ].map((filtro) => (

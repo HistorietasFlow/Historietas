@@ -105,6 +105,21 @@ function criarSlugBase(titulo: string) {
   return slug || "obra";
 }
 
+function formatarGeneroPerfilAutor(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTexto(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Não informado";
+}
+
 function obterTimestampData(dataIso: string) {
   const data = new Date(dataIso).getTime();
 
@@ -330,7 +345,7 @@ function criarBioAutor(perfil: AutorPerfil) {
   const generos = Array.from(
     new Set(
       perfil.obras
-        .map((obra) => obra.genero)
+        .map((obra) => formatarGeneroPerfilAutor(obra.genero))
         .filter((genero) => genero && genero !== "Não informado")
     )
   );
@@ -1124,9 +1139,6 @@ export default function PerfilAutorPage() {
   const obrasConcluidasPerfil = perfilParaMostrar
     ? perfilParaMostrar.obras.filter((obra) => obrasConcluidas.includes(obra.id)).length
     : 0;
-  const totalArquivosPerfil = perfilParaMostrar
-    ? perfilParaMostrar.obras.filter((obra) => Boolean(obra.arquivoObra)).length
-    : 0;
   const perfilSalvoAutor = autorNormalizadoParaSeguir
     ? perfisAutoresSalvos[autorNormalizadoParaSeguir] || {
         avatar: "",
@@ -1155,6 +1167,7 @@ export default function PerfilAutorPage() {
           obra.titulo,
           obra.autor,
           obra.genero,
+          formatarGeneroPerfilAutor(obra.genero),
           obra.formato,
           obra.classificacaoIndicativa,
           obra.sinopse,
@@ -1222,12 +1235,6 @@ export default function PerfilAutorPage() {
   const descriptionAtualStyle = isDesktop
     ? desktopDescriptionStyle
     : descriptionStyle;
-  const followButtonAtualStyle = isDesktop
-    ? desktopFollowButtonStyle
-    : followButtonStyle;
-  const followingButtonAtualStyle = isDesktop
-    ? desktopFollowingButtonStyle
-    : followingButtonStyle;
   const statsBoxAtualStyle = isDesktop ? desktopStatsBoxStyle : statsBoxStyle;
   const statCardAtualStyle = isDesktop ? desktopStatCardStyle : statCardStyle;
   const authorsBoxAtualStyle = isDesktop
@@ -1438,8 +1445,6 @@ export default function PerfilAutorPage() {
               <span style={logoMarkStyle}>H</span>
               <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
-
-            <span style={pagePillStyle}>Perfil do autor</span>
           </header>
 
           <section style={emptyBoxStyle}>
@@ -1469,8 +1474,6 @@ export default function PerfilAutorPage() {
               <span style={logoMarkStyle}>H</span>
               <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
-
-            <span style={pagePillStyle}>Perfil do autor</span>
           </header>
 
           <section style={emptyBoxStyle}>
@@ -1499,7 +1502,13 @@ export default function PerfilAutorPage() {
             <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <span style={pagePillStyle}>Perfil do autor</span>
+          <button
+            type="button"
+            onClick={alternarSeguirAutor}
+            style={seguindoAutor ? headerFollowingButtonStyle : headerFollowButtonStyle}
+          >
+            {seguindoAutor ? "Seguindo Autor" : "Seguir Autor"}
+          </button>
         </header>
 
         <section style={heroAtualStyle}>
@@ -1536,23 +1545,9 @@ export default function PerfilAutorPage() {
             )}
 
             <div style={authorTextBlockStyle}>
-              <span style={heroMiniTitleStyle}>PERFIL DO AUTOR</span>
-
               <h1 className="historietas-theme-title" style={titleAtualStyle}>{perfilParaMostrar.nome}</h1>
 
-              <div style={profileMetaRowStyle}>
-                <span style={profileMetaChipStyle}>
-                  {perfilParaMostrar.totalPublicadas} publicadas
-                </span>
-
-                <span style={profileMetaChipStyle}>
-                  {perfilParaMostrar.totalComentarios} comentários
-                </span>
-
-                <span style={profileMetaChipStyle}>
-                  {totalArquivosPerfil} arquivos
-                </span>
-              </div>
+              <p style={descriptionAtualStyle}>{bioAutor}</p>
             </div>
           </div>
 
@@ -1601,27 +1596,7 @@ export default function PerfilAutorPage() {
               </span>
             </>
           )}
-
-          <p style={descriptionAtualStyle}>{bioAutor}</p>
-
-          <button
-            type="button"
-            onClick={alternarSeguirAutor}
-            style={seguindoAutor ? followingButtonAtualStyle : followButtonAtualStyle}
-          >
-            {seguindoAutor ? "✓ Seguindo autor" : "+ Seguir autor"}
-          </button>
-
-          <div style={profileActionGridStyle}>
-            <Link href="/publicar" style={profilePrimaryLinkStyle}>
-              Publicar obra
-            </Link>
-
-            <Link href="/minhas-obras" style={profileSecondaryLinkStyle}>
-              Minhas obras
-            </Link>
-          </div>
-        </section>
+</section>
 
         <section style={statsBoxAtualStyle}>
           <div style={statCardAtualStyle}>
@@ -1687,9 +1662,7 @@ export default function PerfilAutorPage() {
 
         <section style={sectionStyle}>
           <div style={sectionHeaderAtualStyle}>
-            <span style={miniTitleStyle}>OBRAS DO AUTOR</span>
-
-            <h2 style={sectionTitleStyle}>Histórias</h2>
+            <h2 style={sectionTitleStyle}>Obras do autor</h2>
 
             <p style={sectionFilterTextStyle}>
               {obrasDoPerfilFiltradas.length} de {perfilParaMostrar.obras.length}{" "}
@@ -1773,8 +1746,6 @@ export default function PerfilAutorPage() {
                   <article key={obra.id} style={workCardAtualStyle}>
                     <Link href={obraHref} style={coverLinkStyle}>
                       <div style={isDesktop ? criarCoverStyleDesktop(obra.capa) : criarCoverStyle(obra.capa)}>
-                        <span style={genreBadgeStyle}>{obra.genero}</span>
-
                         {!obra.capa && (
                           <span style={noCoverBadgeStyle}>Sem capa</span>
                         )}
@@ -1806,6 +1777,10 @@ export default function PerfilAutorPage() {
                         </span>
 
                         <span style={formatBadgeStyle}>{obra.formato}</span>
+
+                        <span style={genreBadgeStyle}>
+                          {formatarGeneroPerfilAutor(obra.genero)}
+                        </span>
 
                         {mostrarClassificacao(obra) && (
                           <span style={classificationBadgeStyle}>
@@ -1917,7 +1892,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(100px + env(safe-area-inset-bottom))",
+  padding: "18px 0 18px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1932,16 +1907,6 @@ const topStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const topActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
@@ -1953,7 +1918,7 @@ const logoStyle: CSSProperties = {
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "min(100%, calc(100% - 115px))",
+  maxWidth: "100%",
   overflow: "visible",
   ...safeTextStyle,
 };
@@ -1982,52 +1947,39 @@ const logoTextStyle: CSSProperties = {
   textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
 };
 
-const pagePillStyle: CSSProperties = {
-  minHeight: "34px",
-  padding: "0 12px",
+
+
+const headerFollowButtonStyle: CSSProperties = {
+  minHeight: "36px",
+  padding: "0 14px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.08))",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  fontSize: "11px",
   fontWeight: 950,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
+  fontFamily: "inherit",
+  cursor: "pointer",
   textAlign: "center",
+  boxShadow: "none",
   flex: "0 0 auto",
-  maxWidth: "100%",
-  boxSizing: "border-box",
   ...safeTextStyle,
 };
 
-const topButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
+const headerFollowingButtonStyle: CSSProperties = {
+  ...headerFollowButtonStyle,
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  flex: "0 0 auto",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  ...safeTextStyle,
 };
+
+
 
 const heroBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "12px",
-  padding: "16px",
-  borderRadius: "24px",
+  gap: "8px",
+  padding: "12px 14px",
+  borderRadius: "22px",
   background:
     "radial-gradient(circle at 14% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)), transparent 34%), linear-gradient(135deg, var(--historietas-surface, rgba(12,7,23,0.98)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
@@ -2039,10 +1991,13 @@ const heroBoxStyle: CSSProperties = {
 };
 
 const authorTopRowStyle: CSSProperties = {
+  position: "relative",
   display: "grid",
-  gridTemplateColumns: "minmax(52px, 58px) minmax(0, 1fr)",
+  gridTemplateColumns: "1fr",
   alignItems: "center",
-  gap: "12px",
+  justifyItems: "center",
+  gap: "6px",
+  minHeight: "70px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2050,46 +2005,25 @@ const authorTopRowStyle: CSSProperties = {
 
 const authorTextBlockStyle: CSSProperties = {
   display: "grid",
-  gap: "5px",
+  justifyItems: "center",
+  gap: "2px",
   alignContent: "center",
   minWidth: 0,
-};
-
-const heroMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  ...safeTextStyle,
-};
-
-const profileMetaRowStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
+  width: "100%",
   maxWidth: "100%",
+  textAlign: "center",
 };
 
-const profileMetaChipStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.075))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-text-primary, #E4E4E7)",
-  fontSize: "9px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
 
 const avatarBaseStyle: CSSProperties = {
-  width: "100%",
-  maxWidth: "58px",
-  height: "58px",
-  borderRadius: "18px",
+  position: "absolute",
+  left: 0,
+  top: "50%",
+  transform: "translateY(-50%)",
+  width: "74px",
+  maxWidth: "74px",
+  height: "74px",
+  borderRadius: "22px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
   padding: 0,
   display: "flex",
@@ -2097,7 +2031,7 @@ const avatarBaseStyle: CSSProperties = {
   justifyContent: "center",
   background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
   color: "#FFFFFF",
-  fontSize: "19px",
+  fontSize: "24px",
   fontWeight: 950,
   overflow: "hidden",
   fontFamily: "inherit",
@@ -2197,14 +2131,15 @@ const bioCounterStyle: CSSProperties = {
 };
 
 const titleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "clamp(28px, 7.4vw, 40px)",
-  lineHeight: 1.16,
+  margin: "0 auto",
+  fontSize: "clamp(34px, 8.8vw, 46px)",
+  lineHeight: 1.08,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: "-0.06em",
   maxWidth: "100%",
-  paddingBottom: "8px",
+  paddingBottom: "5px",
   overflow: "visible",
+  textAlign: "center",
   background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
@@ -2213,80 +2148,29 @@ const titleStyle: CSSProperties = {
 };
 
 const descriptionStyle: CSSProperties = {
-  margin: 0,
+  margin: "0 auto",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   lineHeight: 1.4,
   fontWeight: 650,
-  maxWidth: "100%",
+  width: "min(260px, 100%)",
+  maxWidth: "260px",
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
-  ...safeTextStyle,
-};
-
-const followButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  lineHeight: 1.15,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const followingButtonStyle: CSSProperties = {
-  ...followButtonStyle,
-  background: "var(--historietas-accent, #F97316)",
-};
-
-const profileActionGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const profilePrimaryLinkStyle: CSSProperties = {
-  minHeight: "38px",
-  borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 42%, transparent)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
-  boxShadow: "none",
   ...safeTextStyle,
 };
 
-const profileSecondaryLinkStyle: CSSProperties = {
-  ...profilePrimaryLinkStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-};
+
+
+
 
 const statsBoxStyle: CSSProperties = {
   marginTop: "12px",
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(112px, 1fr))",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "8px",
   minWidth: 0,
   maxWidth: "100%",
@@ -2295,9 +2179,12 @@ const statsBoxStyle: CSSProperties = {
 
 const statCardStyle: CSSProperties = {
   display: "grid",
-  gap: "5px",
-  borderRadius: "18px",
-  padding: "11px",
+  justifyItems: "center",
+  alignContent: "center",
+  gap: "3px",
+  minHeight: "64px",
+  borderRadius: "16px",
+  padding: "7px 4px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.052))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
   minWidth: 0,
@@ -2308,18 +2195,20 @@ const statCardStyle: CSSProperties = {
 
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "24px",
+  fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
+  fontSize: "8.5px",
   fontWeight: 950,
   textTransform: "uppercase",
   letterSpacing: "0.06em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2381,8 +2270,11 @@ const sectionStyle: CSSProperties = {
 };
 
 const sectionHeaderStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
   marginBottom: "12px",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const miniTitleStyle: CSSProperties = {
@@ -2398,21 +2290,24 @@ const miniTitleStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "32px",
   lineHeight: 1.12,
   fontWeight: 950,
   letterSpacing: "-0.06em",
   maxWidth: "100%",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const sectionFilterTextStyle: CSSProperties = {
-  margin: "6px 0 0",
+  margin: "6px auto 0",
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",
   lineHeight: 1.5,
   fontWeight: 800,
   maxWidth: "100%",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2442,6 +2337,7 @@ const filterInputStyle: CSSProperties = {
   fontSize: "12px",
   fontWeight: 750,
   fontFamily: "inherit",
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2467,6 +2363,8 @@ const filterSelectStyle: CSSProperties = {
   fontSize: "12px",
   fontWeight: 750,
   fontFamily: "inherit",
+  textAlign: "center",
+  textAlignLast: "center",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2542,24 +2440,21 @@ const coverStyle: CSSProperties = {
 };
 
 const genreBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "8px",
-  left: "8px",
-  right: "8px",
-  maxWidth: "calc(100% - 16px)",
-  padding: "5px 7px",
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "4px 6px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 86%, transparent)",
-  color: "#FFFFFF",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
   fontSize: "8px",
   fontWeight: 950,
-  textAlign: "center",
   ...safeTextStyle,
 };
 
 const noCoverBadgeStyle: CSSProperties = {
   position: "absolute",
-  top: "41px",
+  top: "8px",
   left: "8px",
   width: "fit-content",
   maxWidth: "calc(100% - 16px)",
@@ -2797,32 +2692,27 @@ const smallButtonActiveStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 48px))",
-  padding: "24px 0 96px",
+  padding: "24px 0 64px",
 };
 
 const desktopHeroBoxStyle: CSSProperties = {
   ...heroBoxStyle,
-  gap: "18px",
-  padding: "24px",
-  borderRadius: "30px",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)), transparent 34%), radial-gradient(circle at 90% 8%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent)), transparent 36%), linear-gradient(135deg, var(--historietas-surface, rgba(12,7,23,0.98)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+  padding: "16px 22px",
+  borderRadius: "26px",
 };
 
 const desktopAuthorTopRowStyle: CSSProperties = {
   ...authorTopRowStyle,
-  gridTemplateColumns: "112px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "22px",
+  minHeight: "106px",
 };
 
 const desktopAvatarBaseStyle: CSSProperties = {
   ...avatarBaseStyle,
-  maxWidth: "112px",
-  height: "112px",
-  borderRadius: "30px",
-  fontSize: "50px",
+  width: "120px",
+  maxWidth: "120px",
+  height: "120px",
+  borderRadius: "32px",
+  fontSize: "54px",
 };
 
 const desktopAvatarButtonStyle: CSSProperties = {
@@ -2848,25 +2738,11 @@ const desktopDescriptionStyle: CSSProperties = {
   ...descriptionStyle,
   fontSize: "15px",
   lineHeight: 1.58,
-  maxWidth: "780px",
+  width: "min(520px, 100%)",
+  maxWidth: "520px",
   display: "block",
   WebkitLineClamp: "unset",
   overflow: "visible",
-};
-
-const desktopFollowButtonStyle: CSSProperties = {
-  ...followButtonStyle,
-  width: "fit-content",
-  minWidth: "220px",
-  minHeight: "46px",
-  padding: "0 22px",
-  fontSize: "13px",
-  justifySelf: "start",
-};
-
-const desktopFollowingButtonStyle: CSSProperties = {
-  ...desktopFollowButtonStyle,
-  background: "var(--historietas-accent, #F97316)",
 };
 
 const desktopAvatarActionsStyle: CSSProperties = {
@@ -2905,8 +2781,9 @@ const desktopStatsBoxStyle: CSSProperties = {
 
 const desktopStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  padding: "14px",
-  borderRadius: "20px",
+  minHeight: "82px",
+  padding: "12px",
+  borderRadius: "18px",
 };
 
 const desktopAuthorsBoxStyle: CSSProperties = {

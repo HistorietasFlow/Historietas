@@ -89,12 +89,135 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_ARQUIVO_OBRA = 2 * 1024 * 1024;
+const LIMITE_TAGS_OBRA = 1;
+const OUTRO_FORMATO_VALUE = "__outro_formato__";
+const OUTRO_GENERO_VALUE = "__outro_genero__";
+const OUTRA_TAG_VALUE = "__outra_tag__";
+const LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO = 14;
+const LIMITE_CARACTERES_TAG_PERSONALIZADA = 10;
+
+const OPCOES_FORMATO_OBRA = [
+  "Webnovel",
+  "Light novel",
+  "Fanfic",
+  "Mangá",
+  "Webtoon",
+  "Conto",
+  "Crônica",
+  "Roteiro",
+  "História Original",
+  "Poesia",
+  "Novel",
+  "Livro",
+] as const;
+
+const OPCOES_GENERO_OBRA = [
+  "Ação",
+  "Aventura",
+  "Comédia",
+  "Drama",
+  "Fantasia",
+  "Ficção",
+  "Mistério",
+  "Romance",
+  "Suspense",
+  "Terror",
+  "Sobrenatural",
+  "Histórico",
+  "Biografia",
+] as const;
+
+const OPCOES_TAGS_OBRA = [
+  "Sombria",
+  "Psicológico",
+  "Sci-fi",
+  "Cyberpunk",
+  "Espacial",
+  "Isekai",
+  "Distopia",
+  "Apocalipse",
+  "Escolar",
+  "Máfia",
+  "Investigação",
+  "Religioso",
+  "Mitologia",
+  "Folclore",
+  "Vampiro",
+  "Lobisomem",
+  "Zumbi",
+  "Super-herói",
+  "Magia",
+  "Guerra",
+  "Família",
+  "Amizade",
+  "Traição",
+  "Vingança",
+  "Sobrevivência",
+  "Infantil",
+  "Juvenil",
+  "Adulto",
+] as const;
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
 function contarLetrasNumeros(texto: string) {
   return (texto.match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9]/g) || []).length;
 }
+
+function opcaoExiste(opcoes: readonly string[], valor: string) {
+  return opcoes.some((opcao) => normalizarTexto(opcao) === normalizarTexto(valor));
+}
+
+function limparTextoPersonalizado(texto: string, limite: number) {
+  return texto
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/\s+/g, " ")
+    .trimStart()
+    .slice(0, limite);
+}
+
+function textoPersonalizadoValido(texto: string, minimo: number, limite: number) {
+  const textoLimpo = texto.trim().replace(/\s+/g, " ");
+
+  if (textoLimpo.length > limite) {
+    return false;
+  }
+
+  if (contarLetrasNumeros(textoLimpo) < minimo) {
+    return false;
+  }
+
+  return /^[\p{L}\p{N}][\p{L}\p{N}\s-]*$/u.test(textoLimpo);
+}
+
+function prepararValorEditavel(
+  valor: string,
+  opcoes: readonly string[],
+  outroValue: string,
+  limite: number
+) {
+  const valorLimpo = valor.trim();
+
+  if (!valorLimpo || valorLimpo === "Não informado" || valorLimpo === "Não informada") {
+    return {
+      selecionado: "",
+      personalizado: "",
+    };
+  }
+
+  if (opcaoExiste(opcoes, valorLimpo)) {
+    return {
+      selecionado: valorLimpo,
+      personalizado: "",
+    };
+  }
+
+  return {
+    selecionado: outroValue,
+    personalizado: limparTextoPersonalizado(valorLimpo, limite).trim(),
+  };
+}
+
 
 function contarPalavras(texto: string) {
   return texto.trim().split(/\s+/).filter(Boolean).length;
@@ -106,6 +229,21 @@ function normalizarTexto(texto: string) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function formatarGeneroEdicaoObra(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTexto(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Não informado";
 }
 
 function criarSlugBase(titulo: string) {
@@ -661,10 +799,14 @@ export default function EditarObraPage() {
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
   const [genero, setGenero] = useState("");
+  const [generoPersonalizado, setGeneroPersonalizado] = useState("");
   const [formato, setFormato] = useState("");
+  const [formatoPersonalizado, setFormatoPersonalizado] = useState("");
   const [classificacaoIndicativa, setClassificacaoIndicativa] = useState("");
   const [sinopse, setSinopse] = useState("");
   const [tags, setTags] = useState("");
+  const [tagPersonalizada, setTagPersonalizada] = useState("");
+  const [usarTagPersonalizada, setUsarTagPersonalizada] = useState(false);
   const [capa, setCapa] = useState("");
   const [capaNome, setCapaNome] = useState("");
   const [capaArquivo, setCapaArquivo] = useState<File | null>(null);
@@ -708,11 +850,28 @@ export default function EditarObraPage() {
     let cancelado = false;
 
     function aplicarObraNoFormulario(obraAtual: ObraLocal) {
+      const formatoEditavel = prepararValorEditavel(
+        obraAtual.formato,
+        OPCOES_FORMATO_OBRA,
+        OUTRO_FORMATO_VALUE,
+        LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+      );
+      const generoEditavel = prepararValorEditavel(
+        formatarGeneroEdicaoObra(obraAtual.genero),
+        OPCOES_GENERO_OBRA,
+        OUTRO_GENERO_VALUE,
+        LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+      );
+      const primeiraTag = obraAtual.tags.find((tag) => tag.trim() && tag !== "sem tags") || "";
+      const tagEhPersonalizada = Boolean(primeiraTag) && !opcaoExiste(OPCOES_TAGS_OBRA, primeiraTag);
+
       setObraEncontrada(true);
       setTitulo(obraAtual.titulo);
       setAutor(obraAtual.autor);
-      setGenero(obraAtual.genero);
-      setFormato(obraAtual.formato);
+      setGenero(generoEditavel.selecionado);
+      setGeneroPersonalizado(generoEditavel.personalizado);
+      setFormato(formatoEditavel.selecionado);
+      setFormatoPersonalizado(formatoEditavel.personalizado);
       setClassificacaoIndicativa(
         obraAtual.classificacaoIndicativa === "Não informada" ||
           obraAtual.classificacaoIndicativa === "Não informado"
@@ -720,7 +879,13 @@ export default function EditarObraPage() {
           : obraAtual.classificacaoIndicativa
       );
       setSinopse(obraAtual.sinopse);
-      setTags(obraAtual.tags.join(", "));
+      setUsarTagPersonalizada(tagEhPersonalizada);
+      setTagPersonalizada(
+        tagEhPersonalizada
+          ? limparTextoPersonalizado(primeiraTag, LIMITE_CARACTERES_TAG_PERSONALIZADA).trim()
+          : ""
+      );
+      setTags(primeiraTag || "");
       setCapa(obraAtual.capa);
       setCapaNome(obraAtual.capaNome);
       setCapaArquivo(null);
@@ -866,17 +1031,52 @@ export default function EditarObraPage() {
     return tags
       .split(",")
       .map((tag) => tag.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, LIMITE_TAGS_OBRA);
   }, [tags]);
 
   const tagsPreview = tagsTratadas.length > 0 ? tagsTratadas : ["sem tags"];
+  const totalTagsSelecionadas = tagsTratadas.length;
+  const limiteTagsAtingido = totalTagsSelecionadas >= LIMITE_TAGS_OBRA;
+  const formatoEhPersonalizado = formato === OUTRO_FORMATO_VALUE;
+  const generoEhPersonalizado = genero === OUTRO_GENERO_VALUE;
+  const formatoFinal = formatoEhPersonalizado
+    ? formatoPersonalizado.trim().replace(/\s+/g, " ")
+    : formato.trim();
+  const generoFinal = generoEhPersonalizado
+    ? generoPersonalizado.trim().replace(/\s+/g, " ")
+    : genero.trim();
+  const tagPersonalizadaFinal = tagPersonalizada.trim().replace(/\s+/g, " ");
+  const formatoPersonalizadoValido =
+    !formatoEhPersonalizado ||
+    textoPersonalizadoValido(
+      formatoPersonalizado,
+      3,
+      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+    );
+  const generoPersonalizadoValido =
+    !generoEhPersonalizado ||
+    textoPersonalizadoValido(
+      generoPersonalizado,
+      3,
+      LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+    );
+  const tagPersonalizadaValida =
+    !usarTagPersonalizada ||
+    (textoPersonalizadoValido(
+      tagPersonalizada,
+      2,
+      LIMITE_CARACTERES_TAG_PERSONALIZADA
+    ) &&
+      normalizarTexto(tagPersonalizadaFinal) !== normalizarTexto(formatoFinal) &&
+      normalizarTexto(tagPersonalizadaFinal) !== normalizarTexto(generoFinal));
 
   const progresso = useMemo(() => {
     const camposValidos = [
       contarLetrasNumeros(titulo.trim()) >= 3,
       contarLetrasNumeros(autor.trim()) >= 2,
-      Boolean(genero.trim()) && genero.trim() !== "Não informado",
-      Boolean(formato.trim()) && formato.trim() !== "Não informado",
+      Boolean(generoFinal) && generoPersonalizadoValido,
+      Boolean(formatoFinal) && formatoPersonalizadoValido,
       Boolean(classificacaoIndicativa.trim()) &&
         classificacaoIndicativa.trim() !== "Não informado" &&
         classificacaoIndicativa.trim() !== "Não informada",
@@ -884,7 +1084,16 @@ export default function EditarObraPage() {
     ].filter(Boolean).length;
 
     return Math.round((camposValidos / 6) * 100);
-  }, [titulo, autor, genero, formato, classificacaoIndicativa, sinopse]);
+  }, [
+    titulo,
+    autor,
+    generoFinal,
+    generoPersonalizadoValido,
+    formatoFinal,
+    formatoPersonalizadoValido,
+    classificacaoIndicativa,
+    sinopse,
+  ]);
 
   const totalPalavrasSinopse = useMemo(() => contarPalavras(sinopse), [sinopse]);
   const totalCaracteresSinopse = sinopse.length;
@@ -903,11 +1112,11 @@ export default function EditarObraPage() {
     return (
       titulo !== obraAtual.titulo ||
       autor !== obraAtual.autor ||
-      genero !== obraAtual.genero ||
-      formato !== obraAtual.formato ||
+      generoFinal !== obraAtual.genero ||
+      formatoFinal !== obraAtual.formato ||
       classificacaoIndicativa !== obraAtual.classificacaoIndicativa ||
       sinopse !== obraAtual.sinopse ||
-      tagsTratadas.join(", ") !== obraAtual.tags.join(", ") ||
+      tagsTratadas.join(", ") !== obraAtual.tags.slice(0, LIMITE_TAGS_OBRA).join(", ") ||
       capa !== obraAtual.capa ||
       capaNome !== obraAtual.capaNome ||
       JSON.stringify(arquivoObra || null) !==
@@ -917,8 +1126,8 @@ export default function EditarObraPage() {
     obraAtual,
     titulo,
     autor,
-    genero,
-    formato,
+    generoFinal,
+    formatoFinal,
     classificacaoIndicativa,
     sinopse,
     tagsTratadas,
@@ -943,8 +1152,8 @@ export default function EditarObraPage() {
   function validarFormulario() {
     const tituloLimpo = titulo.trim();
     const autorLimpo = autor.trim();
-    const generoLimpo = genero.trim();
-    const formatoLimpo = formato.trim();
+    const generoLimpo = generoFinal;
+    const formatoLimpo = formatoFinal;
     const classificacaoLimpa = classificacaoIndicativa.trim();
     const sinopseLimpa = sinopse.trim();
 
@@ -956,12 +1165,20 @@ export default function EditarObraPage() {
       return "O autor precisa ter pelo menos 2 letras ou números.";
     }
 
-    if (!generoLimpo || generoLimpo === "Não informado") {
-      return "Escolha um gênero para a obra.";
+    if (!formatoLimpo || formatoLimpo === "Não informado" || !formatoPersonalizadoValido) {
+      return formatoEhPersonalizado
+        ? "O formato personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho."
+        : "Escolha um formato para a obra.";
     }
 
-    if (!formatoLimpo || formatoLimpo === "Não informado") {
-      return "Escolha um formato para a obra.";
+    if (!generoLimpo || generoLimpo === "Não informado" || !generoPersonalizadoValido) {
+      return generoEhPersonalizado
+        ? "O gênero personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho."
+        : "Escolha um gênero para a obra.";
+    }
+
+    if (!tagPersonalizadaValida) {
+      return "A tag personalizada precisa ter 2 a 10 caracteres, sem vírgula, emoji ou símbolo estranho, e não pode repetir gênero ou formato.";
     }
 
     if (
@@ -1102,6 +1319,77 @@ export default function EditarObraPage() {
     }
   }
 
+  function tagEstaSelecionada(tag: string) {
+    return tagsTratadas.some((tagAtual) => {
+      return normalizarTexto(tagAtual) === normalizarTexto(tag);
+    });
+  }
+
+  function atualizarTagPersonalizada(valor: string) {
+    const textoLimpo = limparTextoPersonalizado(
+      valor,
+      LIMITE_CARACTERES_TAG_PERSONALIZADA
+    );
+
+    setTagPersonalizada(textoLimpo);
+    setTags(
+      textoPersonalizadoValido(
+        textoLimpo,
+        2,
+        LIMITE_CARACTERES_TAG_PERSONALIZADA
+      )
+        ? textoLimpo.trim().replace(/\s+/g, " ")
+        : ""
+    );
+    marcarAlteracao();
+  }
+
+  function adicionarTagSelecionada(tag: string) {
+    if (!tag) {
+      return;
+    }
+
+    if (tag === OUTRA_TAG_VALUE) {
+      setUsarTagPersonalizada(true);
+      setTags(
+        textoPersonalizadoValido(
+          tagPersonalizada,
+          2,
+          LIMITE_CARACTERES_TAG_PERSONALIZADA
+        )
+          ? tagPersonalizada.trim().replace(/\s+/g, " ")
+          : ""
+      );
+      marcarAlteracao();
+      return;
+    }
+
+    if (tagEstaSelecionada(tag) || limiteTagsAtingido) {
+      return;
+    }
+
+    setUsarTagPersonalizada(false);
+    setTagPersonalizada("");
+    setTags(tag);
+    marcarAlteracao();
+  }
+
+  function removerTagSelecionada(tag: string) {
+    const tagNormalizada = normalizarTexto(tag);
+    const novasTags = tagsTratadas.filter((tagAtual) => {
+      return normalizarTexto(tagAtual) !== tagNormalizada;
+    });
+
+    setTags(novasTags.join(", "));
+
+    if (usarTagPersonalizada) {
+      setUsarTagPersonalizada(false);
+      setTagPersonalizada("");
+    }
+
+    marcarAlteracao();
+  }
+
   async function salvarEdicao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1128,8 +1416,8 @@ export default function EditarObraPage() {
 
     const tituloFinal = titulo.trim();
     const autorFinal = autor.trim();
-    const generoFinal = genero.trim();
-    const formatoFinal = formato.trim();
+    const generoFinalSalvo = generoFinal;
+    const formatoFinalSalvo = formatoFinal;
     const classificacaoFinal = classificacaoIndicativa.trim();
     const sinopseFinal = sinopse.trim();
     const tagsFinais = tagsTratadas.length > 0 ? tagsTratadas : ["sem tags"];
@@ -1187,8 +1475,8 @@ export default function EditarObraPage() {
             .update({
               titulo: tituloFinal,
               autor: autorFinal,
-              genero: generoFinal,
-              formato: formatoFinal,
+              genero: generoFinalSalvo,
+              formato: formatoFinalSalvo,
               classificacao_indicativa: classificacaoFinal,
               sinopse: sinopseFinal,
               tags: tagsFinais,
@@ -1230,8 +1518,8 @@ export default function EditarObraPage() {
             ...obraNormalizada,
             titulo: tituloFinal,
             autor: autorFinal,
-            genero: generoFinal,
-            formato: formatoFinal,
+            genero: generoFinalSalvo,
+            formato: formatoFinalSalvo,
             classificacaoIndicativa: classificacaoFinal,
             sinopse: sinopseFinal,
             tags: tagsFinais,
@@ -1554,52 +1842,148 @@ export default function EditarObraPage() {
 
             <div style={isDesktop ? desktopDoubleFieldStyle : doubleFieldStyle}>
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>Gênero</label>
-
-                <select
-                  value={genero}
-                  onChange={(event) => {
-                    setGenero(event.target.value);
-                    marcarAlteracao();
-                  }}
-                  style={inputStyle}
-                >
-                  <option value="">Escolha um gênero</option>
-                  <option>Fantasia Sombria</option>
-                  <option>Romance</option>
-                  <option>Ação</option>
-                  <option>Terror</option>
-                  <option>Sci-fi</option>
-                  <option>Drama</option>
-                  <option>Aventura</option>
-                  <option>Comédia</option>
-                  <option>Mistério</option>
-                  <option>Sobrenatural</option>
-                </select>
-              </div>
-
-              <div style={fieldGroupStyle}>
                 <label style={labelStyle}>Formato</label>
 
                 <select
                   value={formato}
                   onChange={(event) => {
-                    setFormato(event.target.value);
+                    const novoFormato = event.target.value;
+
+                    setFormato(novoFormato);
+
+                    if (novoFormato !== OUTRO_FORMATO_VALUE) {
+                      setFormatoPersonalizado("");
+                    }
+
                     marcarAlteracao();
                   }}
                   style={inputStyle}
                 >
                   <option value="">Escolha um formato</option>
-                  <option>Webnovel</option>
-                  <option>Fanfic</option>
-                  <option>Mangá</option>
-                  <option>Webtoon</option>
-                  <option>Light novel</option>
-                  <option>Conto</option>
-                  <option>Roteiro</option>
-                  <option>História Original</option>
+                  {OPCOES_FORMATO_OBRA.map((opcao) => (
+                    <option key={opcao}>{opcao}</option>
+                  ))}
+                  <option value={OUTRO_FORMATO_VALUE}>Outro formato</option>
                 </select>
+
+                {formatoEhPersonalizado && (
+                  <input
+                    value={formatoPersonalizado}
+                    onChange={(event) => {
+                      setFormatoPersonalizado(
+                        limparTextoPersonalizado(
+                          event.target.value,
+                          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+                        )
+                      );
+                      marcarAlteracao();
+                    }}
+                    style={inputStyle}
+                    placeholder="Digite o formato"
+                    maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
+                    type="text"
+                  />
+                )}
               </div>
+
+              <div style={fieldGroupStyle}>
+                <label style={labelStyle}>Gênero</label>
+
+                <select
+                  value={genero}
+                  onChange={(event) => {
+                    const novoGenero = event.target.value;
+
+                    setGenero(novoGenero);
+
+                    if (novoGenero !== OUTRO_GENERO_VALUE) {
+                      setGeneroPersonalizado("");
+                    }
+
+                    marcarAlteracao();
+                  }}
+                  style={inputStyle}
+                >
+                  <option value="">Escolha um gênero</option>
+                  {OPCOES_GENERO_OBRA.map((opcao) => (
+                    <option key={opcao}>{opcao}</option>
+                  ))}
+                  <option value={OUTRO_GENERO_VALUE}>Outro gênero</option>
+                </select>
+
+                {generoEhPersonalizado && (
+                  <input
+                    value={generoPersonalizado}
+                    onChange={(event) => {
+                      setGeneroPersonalizado(
+                        limparTextoPersonalizado(
+                          event.target.value,
+                          LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
+                        )
+                      );
+                      marcarAlteracao();
+                    }}
+                    style={inputStyle}
+                    placeholder="Digite o gênero"
+                    maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
+                    type="text"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div style={fieldGroupStyle}>
+              <label style={labelStyle}>Tag</label>
+
+              <select
+                value=""
+                onChange={(event) => {
+                  adicionarTagSelecionada(event.target.value);
+                }}
+                style={inputStyle}
+                disabled={limiteTagsAtingido && !usarTagPersonalizada}
+              >
+                <option value="">
+                  {limiteTagsAtingido ? "Tag escolhida" : "Escolha uma tag"}
+                </option>
+
+                {OPCOES_TAGS_OBRA.filter((tag) => !tagEstaSelecionada(tag)).map(
+                  (tag) => (
+                    <option key={tag} value={tag}>
+                      {tag}
+                    </option>
+                  )
+                )}
+
+                <option value={OUTRA_TAG_VALUE}>Outra tag</option>
+              </select>
+
+              {usarTagPersonalizada && (
+                <input
+                  value={tagPersonalizada}
+                  onChange={(event) => atualizarTagPersonalizada(event.target.value)}
+                  style={inputStyle}
+                  placeholder="Digite a tag"
+                  maxLength={LIMITE_CARACTERES_TAG_PERSONALIZADA}
+                  type="text"
+                />
+              )}
+
+              {tagsTratadas.length > 0 && (
+                <div style={tagPreviewBoxStyle}>
+                  {tagsTratadas.map((tag, index) => (
+                    <button
+                      key={`edit-tag-${tag}-${index}`}
+                      type="button"
+                      onClick={() => removerTagSelecionada(tag)}
+                      style={selectedTagButtonStyle}
+                      aria-label={`Remover tag ${tag}`}
+                    >
+                      {tag} ×
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={fieldGroupStyle}>
@@ -1659,31 +2043,6 @@ export default function EditarObraPage() {
               </div>
             </div>
 
-            <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Tags</label>
-
-              <input
-                value={tags}
-                onChange={(event) => {
-                  setTags(event.target.value);
-                  marcarAlteracao();
-                }}
-                placeholder="Ex: sobrenatural, ação, mistério"
-                style={inputStyle}
-                type="text"
-              />
-
-              {tagsTratadas.length > 0 && (
-                <div style={tagPreviewBoxStyle}>
-                  {tagsTratadas.slice(0, 8).map((tag, index) => (
-                    <span key={`edit-tag-${tag}-${index}`} style={previewTagStyle}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
               <button
                 type="submit"
@@ -1715,7 +2074,7 @@ export default function EditarObraPage() {
                 <div style={previewCoverGlowStyle} />
 
                 <span style={previewGenreStyle}>
-                  {genero.trim() || "Gênero"}
+                  {generoFinal || "Gênero"}
                 </span>
 
                 {!capa && <span style={previewNoCoverStyle}>Sem capa</span>}
@@ -1736,7 +2095,7 @@ export default function EditarObraPage() {
               <div style={isDesktop ? desktopPreviewContentStyle : previewContentStyle}>
                 <div style={previewBadgesStyle}>
                   <span style={previewBadgeStyle}>
-                    {formato.trim() || "Formato"}
+                    {formatoFinal || "Formato"}
                   </span>
 
                   <span
@@ -1786,7 +2145,7 @@ export default function EditarObraPage() {
                 )}
 
                 <div style={previewTagsStyle}>
-                  {tagsPreview.slice(0, 8).map((tag, index) => (
+                  {tagsPreview.slice(0, 1).map((tag, index) => (
                     <span key={`${tag}-${index}`} style={previewTagStyle}>
                       {tag}
                     </span>
@@ -2434,6 +2793,25 @@ const tagPreviewBoxStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "100%",
 };
+
+const selectedTagButtonStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  minHeight: "32px",
+  padding: "0 10px",
+  borderRadius: "999px",
+  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 58%, transparent)",
+  color: "#FFFFFF",
+  fontSize: "10.5px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  textAlign: "center",
+  boxSizing: "border-box",
+  ...safeTextStyle,
+};
+
 
 const buttonAreaStyle: CSSProperties = {
   display: "grid",

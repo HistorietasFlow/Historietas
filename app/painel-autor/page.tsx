@@ -194,7 +194,7 @@ function criarBioPadraoAutor(nomeAutor: string, obrasAutor: ObraLocal[]) {
   const generos = Array.from(
     new Set(
       obrasAutor
-        .map((obra) => obra.genero)
+        .map((obra) => formatarGeneroPainelAutor(obra.genero))
         .filter((genero) => genero && genero !== "Não informado")
     )
   );
@@ -221,6 +221,21 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function formatarGeneroPainelAutor(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTexto(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Não informado";
 }
 
 function obterTimestamp(dataIso: string) {
@@ -1238,6 +1253,7 @@ export default function PainelAutorPage() {
                 obra.titulo,
                 obra.autor,
                 obra.genero,
+                formatarGeneroPainelAutor(obra.genero),
                 obra.formato,
                 obra.classificacaoIndicativa,
                 obra.sinopse,
@@ -1847,7 +1863,13 @@ function ObraPainelCard({
 
           <span style={formatBadgeStyle}>{obra.formato}</span>
 
-          <span style={genreBadgeStyle}>{obra.genero}</span>
+          <span style={genreBadgeStyle}>{formatarGeneroPainelAutor(obra.genero)}</span>
+
+          {obra.tags.slice(0, 1).map((tag, index) => (
+            <span key={`${obra.id}-painel-tag-${tag}-${index}`} style={tagBadgeStyle}>
+              {tag}
+            </span>
+          ))}
 
           {mostrarClassificacao(obra) && (
             <span style={classificationBadgeStyle}>
@@ -1984,7 +2006,7 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 calc(100px + env(safe-area-inset-bottom))",
+  padding: "16px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2737,6 +2759,22 @@ const genreBadgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const tagBadgeStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "4px 7px",
+  borderRadius: "999px",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, var(--historietas-surface, transparent))",
+  border: `1px solid ${themeSecondaryBorder}`,
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  fontSize: "9px",
+  fontWeight: 900,
+  textAlign: "center",
+  whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+
 const coverBottomStyle: CSSProperties = {
   position: "absolute",
   left: "10px",
@@ -3056,8 +3094,8 @@ const chapterButtonStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1180px, calc(100% - 56px))",
-  padding: "24px 0 96px",
+  width: "min(1180px, calc(100% - 64px))",
+  padding: "24px 0 36px",
 };
 
 const desktopHeroContentStyle: CSSProperties = {

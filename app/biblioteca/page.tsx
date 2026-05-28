@@ -136,6 +136,21 @@ function criarSlugBase(titulo: string) {
   return slug || "obra";
 }
 
+function formatarGeneroBiblioteca(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTexto(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Não informado";
+}
+
 function obterImagemObraCatalogoBiblioteca(obra: ObraCatalogo) {
   const obraComImagem = obra as ObraCatalogo & {
     capa?: string;
@@ -178,12 +193,12 @@ function criarObraCatalogoBiblioteca(
     id: obraComCamposExtras.id?.trim() || slug,
     titulo,
     autor: obra.autor.trim() || "Autor não informado",
-    genero: obra.genero.trim() || "Não informado",
+    genero: formatarGeneroBiblioteca(obra.genero),
     formato: obraComCamposExtras.formato?.trim() || "História",
     classificacaoIndicativa:
       obra.classificacaoIndicativa.trim() || "Não informada",
     sinopse: obra.sinopse.trim() || "Nenhuma sinopse informada.",
-    tags: [obra.genero.trim() || "sem tags"],
+    tags: [formatarGeneroBiblioteca(obra.genero) || "sem tags"],
     capa: obterImagemObraCatalogoBiblioteca(obra),
     capaNome: "",
     arquivoObra: null,
@@ -1271,6 +1286,7 @@ export default function BibliotecaPage() {
           item.obra.titulo,
           item.obra.autor,
           item.obra.genero,
+          formatarGeneroBiblioteca(item.obra.genero),
           item.obra.formato,
           item.obra.classificacaoIndicativa,
           item.obra.tags.join(" "),
@@ -1607,7 +1623,7 @@ export default function BibliotecaPage() {
                           </h2>
 
                           <p style={bookInfoStyle}>
-                            {item.obra.titulo} • {item.obra.genero} •{" "}
+                            {item.obra.titulo} • {formatarGeneroBiblioteca(item.obra.genero)} •{" "}
                             {item.obra.formato} •{" "}
                             {item.obra.classificacaoIndicativa}
                           </p>
@@ -1755,7 +1771,7 @@ export default function BibliotecaPage() {
                           <h2 style={chapterTitleStyle}>{obra.titulo}</h2>
 
                           <p style={bookInfoStyle}>
-                            {obra.genero} • {obra.formato}
+                            {formatarGeneroBiblioteca(obra.genero)} • {obra.formato}
                           </p>
 
                           <Link href={perfilAutorHref} style={authorLinkStyle}>
@@ -2059,7 +2075,7 @@ export default function BibliotecaPage() {
                           <h2 style={chapterTitleStyle}>{obra.titulo}</h2>
 
                           <p style={bookInfoStyle}>
-                            {obra.genero} • {obra.formato}
+                            {formatarGeneroBiblioteca(obra.genero)} • {obra.formato}
                           </p>
 
                           <Link href={perfilAutorHref} style={authorLinkStyle}>
@@ -2197,7 +2213,7 @@ export default function BibliotecaPage() {
                           <h2 style={chapterTitleStyle}>{obra.titulo}</h2>
 
                           <p style={bookInfoStyle}>
-                            {obra.genero} • {obra.formato}
+                            {formatarGeneroBiblioteca(obra.genero)} • {obra.formato}
                           </p>
 
                           <Link href={perfilAutorHref} style={authorLinkStyle}>

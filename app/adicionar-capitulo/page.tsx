@@ -1083,9 +1083,6 @@ export default function AdicionarCapituloPage() {
             <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <span style={isDesktop ? desktopEditorLabelStyle : editorLabelStyle}>
-            Editor de capítulo
-          </span>
         </header>
 
         <section style={isDesktop ? desktopHeroBoxStyle : heroBoxStyle}>
@@ -1121,12 +1118,10 @@ export default function AdicionarCapituloPage() {
             <div style={isDesktop ? desktopFormHeaderStyle : formHeaderStyle}>
               <span style={formMiniTitleStyle}>CAPÍTULO {numeroNovoCapitulo}</span>
 
-              <h2 style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>Escrever capítulo</h2>
+              <h2 style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>Título do capítulo</h2>
             </div>
 
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Título do capítulo</label>
-
               <input
                 value={titulo}
                 onChange={(event) => {
@@ -1146,7 +1141,7 @@ export default function AdicionarCapituloPage() {
             </div>
 
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Texto do capítulo</label>
+              <label style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>Texto do capítulo</label>
 
               <div style={isDesktop ? desktopImportBoxStyle : importBoxStyle}>
                 <div style={importInfoStyle}>
@@ -1367,7 +1362,7 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 calc(100px + env(safe-area-inset-bottom))",
+  padding: "14px 0 calc(82px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1377,8 +1372,8 @@ const topStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "10px",
-  marginBottom: "14px",
-  flexWrap: "wrap",
+  marginBottom: "10px",
+  flexWrap: "nowrap",
   minWidth: 0,
 };
 
@@ -1387,14 +1382,14 @@ const topStyle: CSSProperties = {
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "23px",
   fontWeight: 950,
   letterSpacing: "-0.055em",
   display: "flex",
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "min(100%, calc(100% - 162px))",
+  maxWidth: "100%",
   overflow: "hidden",
   ...safeTextStyle,
 };
@@ -1427,44 +1422,20 @@ const logoTextStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
-const editorLabelStyle: CSSProperties = {
-  flex: "0 0 auto",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minHeight: "36px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background: "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 28%, rgba(255,255,255,0.06)) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, rgba(255,255,255,0.07)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 32%, rgba(255,255,255,0.12))",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.035em",
-  boxShadow: "none",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
-const desktopEditorLabelStyle: CSSProperties = {
-  ...editorLabelStyle,
-  minHeight: "40px",
-  padding: "0 18px",
-  fontSize: "12px",
-};
 
 const heroBoxStyle: CSSProperties = {
   position: "relative",
   display: "grid",
   justifyItems: "center",
   textAlign: "center",
-  gap: "10px",
-  padding: "18px 16px",
-  borderRadius: "26px",
+  gap: "7px",
+  padding: "13px 12px",
+  borderRadius: "21px",
   background:
-    "radial-gradient(circle at 14% 12%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 34%), radial-gradient(circle at 88% 18%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)), transparent 26%), linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.92)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.96)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.96)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, rgba(255,255,255,0.07))",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1474,10 +1445,10 @@ const heroBoxStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(31px, 8.8vw, 46px)",
+  fontSize: "clamp(28px, 7.4vw, 40px)",
   lineHeight: 1.02,
   fontWeight: 950,
-  letterSpacing: "-0.045em",
+  letterSpacing: "-0.048em",
   maxWidth: "100%",
   textAlign: "center",
   background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 45%, var(--historietas-title-to, #FDBA74) 100%)",
@@ -1490,8 +1461,8 @@ const titleStyle: CSSProperties = {
 const descriptionStyle: CSSProperties = {
   margin: "0 auto",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.45,
+  fontSize: "11.5px",
+  lineHeight: 1.35,
   fontWeight: 750,
   maxWidth: "560px",
   textAlign: "center",
@@ -1500,12 +1471,12 @@ const descriptionStyle: CSSProperties = {
 
 const progressBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "6px",
-  width: "min(420px, 100%)",
-  padding: "8px",
-  borderRadius: "15px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.048))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
+  gap: "5px",
+  width: "min(360px, 100%)",
+  padding: "6px 7px",
+  borderRadius: "13px",
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1516,27 +1487,27 @@ const progressTopStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: "12px",
-  flexWrap: "wrap",
+  gap: "10px",
+  flexWrap: "nowrap",
   minWidth: 0,
 };
 
 const progressLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
+  fontSize: "10px",
   fontWeight: 900,
   ...safeTextStyle,
 };
 
 const progressNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "13px",
+  fontSize: "12px",
   fontWeight: 950,
   ...safeTextStyle,
 };
 
 const progressTrackStyle: CSSProperties = {
-  height: "7px",
+  height: "5px",
   overflow: "hidden",
   borderRadius: "999px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.10))",
@@ -1586,7 +1557,8 @@ const errorTextStyle: CSSProperties = {
 const inlineStatsBoxStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "8px",
+  justifyContent: "center",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -1594,12 +1566,12 @@ const inlineStatsBoxStyle: CSSProperties = {
 const inlineStatsItemStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "7px 10px",
+  padding: "6px 8px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
+  fontSize: "10px",
   fontWeight: 900,
   ...safeTextStyle,
 };
@@ -1619,10 +1591,10 @@ const inlineStatsWarningStyle: CSSProperties = {
 };
 
 const mainGridStyle: CSSProperties = {
-  marginTop: "12px",
+  marginTop: "10px",
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "12px",
+  gap: "10px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1630,12 +1602,12 @@ const mainGridStyle: CSSProperties = {
 
 const formPanelStyle: CSSProperties = {
   display: "grid",
-  gap: "12px",
-  background: "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.96)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  borderRadius: "22px",
-  padding: "12px",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  gap: "10px",
+  background: "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.96)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
+  borderRadius: "20px",
+  padding: "10px",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1644,53 +1616,59 @@ const formPanelStyle: CSSProperties = {
 
 const formHeaderStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
+  gap: "4px",
   minWidth: 0,
+  textAlign: "center",
+  justifyItems: "center",
 };
 
 const formMiniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
+  fontSize: "9.5px",
   fontWeight: 950,
   letterSpacing: "0.08em",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
 const formTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "26px",
+  fontSize: "24px",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.06em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const fieldGroupStyle: CSSProperties = {
   display: "grid",
-  gap: "7px",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
 };
 
 const labelStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: 900,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "46px",
-  borderRadius: "16px",
+  minHeight: "42px",
+  borderRadius: "15px",
   border: "1px solid var(--historietas-border-soft, #3F3F46)",
   background: "var(--historietas-input-bg, #18181B)",
   color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 13px",
+  padding: "0 12px",
   outline: "none",
   fontSize: "13px",
   fontWeight: 650,
   fontFamily: "inherit",
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
   maxWidth: "100%",
@@ -1699,16 +1677,16 @@ const inputStyle: CSSProperties = {
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  minHeight: "250px",
-  borderRadius: "18px",
+  minHeight: "210px",
+  borderRadius: "17px",
   border: "1px solid var(--historietas-border-soft, #3F3F46)",
   background: "var(--historietas-input-bg, #18181B)",
   color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "13px",
+  padding: "12px",
   outline: "none",
   fontSize: "14px",
   fontWeight: 650,
-  lineHeight: 1.7,
+  lineHeight: 1.65,
   resize: "vertical",
   fontFamily: "inherit",
   boxSizing: "border-box",
@@ -1719,21 +1697,21 @@ const textareaStyle: CSSProperties = {
 
 const hintStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "12px",
-  lineHeight: 1.5,
+  fontSize: "11px",
+  lineHeight: 1.4,
   fontWeight: 650,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const importBoxStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "10px",
-  padding: "12px",
-  borderRadius: "18px",
-  background:
-    "radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent), transparent 34%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent), rgba(255,255,255,0.045))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
+  gap: "7px",
+  padding: "9px",
+  borderRadius: "16px",
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1742,24 +1720,28 @@ const importBoxStyle: CSSProperties = {
 
 const importInfoStyle: CSSProperties = {
   display: "grid",
-  gap: "5px",
+  gap: "4px",
   minWidth: 0,
   maxWidth: "100%",
+  textAlign: "center",
+  justifyItems: "center",
 };
 
 const importTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: 950,
   letterSpacing: "-0.02em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const importTextStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.5,
+  fontSize: "11px",
+  lineHeight: 1.35,
   fontWeight: 700,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -1795,12 +1777,12 @@ const importErrorStyle: CSSProperties = {
 };
 
 const importButtonStyle: CSSProperties = {
-  minHeight: "42px",
+  minHeight: "38px",
   width: "100%",
   borderRadius: "999px",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 70%, transparent)",
   color: "#FFFFFF",
-  fontSize: "12px",
+  fontSize: "11px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
@@ -1914,27 +1896,27 @@ const successSecondaryButtonStyle: CSSProperties = {
 
 const buttonAreaStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
-  gap: "12px",
-  marginTop: "4px",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "8px",
+  marginTop: "2px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
 const primaryButtonStyle: CSSProperties = {
-  minHeight: "54px",
+  minHeight: "46px",
   borderRadius: "999px",
   border: "none",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
-  fontSize: "15px",
+  fontSize: "13px",
   fontWeight: 950,
   cursor: "pointer",
   boxShadow: "none",
   fontFamily: "inherit",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 10px",
   lineHeight: 1.15,
   minWidth: 0,
   maxWidth: "100%",
@@ -1944,17 +1926,17 @@ const primaryButtonStyle: CSSProperties = {
 };
 
 const disabledButtonStyle: CSSProperties = {
-  minHeight: "54px",
+  minHeight: "46px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "15px",
+  fontSize: "13px",
   fontWeight: 950,
   cursor: "not-allowed",
   fontFamily: "inherit",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 10px",
   lineHeight: 1.15,
   minWidth: 0,
   maxWidth: "100%",
@@ -1964,19 +1946,19 @@ const disabledButtonStyle: CSSProperties = {
 };
 
 const secondaryButtonStyle: CSSProperties = {
-  minHeight: "54px",
+  minHeight: "46px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
   textDecoration: "none",
-  fontSize: "15px",
+  fontSize: "13px",
   fontWeight: 900,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 10px",
   lineHeight: 1.15,
   minWidth: 0,
   maxWidth: "100%",
@@ -1988,26 +1970,28 @@ const secondaryButtonStyle: CSSProperties = {
 const previewPanelStyle: CSSProperties = {
   display: "grid",
   gap: "10px",
-  background: "var(--historietas-surface, rgba(18,12,30,0.80))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
-  borderRadius: "22px",
-  padding: "12px",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "transparent",
+  border: "none",
+  borderRadius: 0,
+  padding: 0,
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const previewHeaderStyle: CSSProperties = {
   display: "grid",
-  gap: "6px",
+  gap: "4px",
   minWidth: 0,
+  justifyItems: "center",
+  textAlign: "center",
 };
 
 const previewMiniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
+  fontSize: "9.5px",
   fontWeight: 950,
   letterSpacing: "0.08em",
   ...safeTextStyle,
@@ -2015,19 +1999,20 @@ const previewMiniTitleStyle: CSSProperties = {
 
 const previewTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "26px",
+  fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.055em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const previewChapterCardStyle: CSSProperties = {
   display: "grid",
-  gap: "10px",
-  padding: "16px",
-  borderRadius: "24px",
-  background: "var(--historietas-surface, rgba(31,31,35,0.96))",
+  gap: "8px",
+  padding: "11px",
+  borderRadius: "18px",
+  background: "var(--historietas-surface, rgba(31,31,35,0.86))",
   border: "1px solid var(--historietas-border-soft, #2D2D32)",
   minWidth: 0,
   maxWidth: "100%",
@@ -2076,26 +2061,25 @@ const previewChapterStatusStyle: CSSProperties = {
 const previewChapterTitleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "30px",
+  fontSize: "22px",
   lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "-0.06em",
-  maxWidth: "100%",
+  letterSpacing: "-0.055em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const previewChapterTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #E4E4E7)",
-  fontSize: "15px",
-  lineHeight: 1.8,
-  fontWeight: 600,
-  whiteSpace: "pre-wrap",
-  maxHeight: "210px",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12px",
+  lineHeight: 1.55,
+  fontWeight: 650,
+  display: "-webkit-box",
+  WebkitLineClamp: 4,
+  WebkitBoxOrient: "vertical",
   overflow: "hidden",
-  maxWidth: "100%",
-  overflowWrap: "break-word",
-  wordBreak: "break-word",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2113,42 +2097,47 @@ const previewStatsStyle: CSSProperties = {
 const recentBoxStyle: CSSProperties = {
   display: "grid",
   gap: "8px",
-  padding: "10px",
-  borderRadius: "18px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
+  padding: "12px",
+  borderRadius: "20px",
+  background:
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(18,12,30,0.78)) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, rgba(18,12,30,0.86)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, rgba(255,255,255,0.07)))",
   minWidth: 0,
+  width: "100%",
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const recentMiniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  fontSize: "9.5px",
   fontWeight: 950,
   letterSpacing: "0.08em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const recentListStyle: CSSProperties = {
   display: "grid",
-  gap: "6px",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
 };
 
 const recentItemStyle: CSSProperties = {
   display: "grid",
-  gap: "3px",
+  gap: "2px",
   padding: "8px",
   borderRadius: "14px",
-  background: "var(--historietas-secondary-surface, rgba(15,15,15,0.34))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+  background: "rgba(15,15,15,0.24)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
+  textAlign: "center",
 };
 
 const recentNumberStyle: CSSProperties = {
@@ -2226,13 +2215,13 @@ const emptyButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 106px",
+  padding: "22px 0 34px",
 };
 
 const desktopTopStyle: CSSProperties = {
   ...topStyle,
+  marginBottom: "14px",
   flexWrap: "nowrap",
-  marginBottom: "16px",
 };
 
 const desktopHeroBoxStyle: CSSProperties = {
@@ -2243,69 +2232,64 @@ const desktopHeroBoxStyle: CSSProperties = {
   gridTemplateColumns: "1fr",
   justifyItems: "center",
   textAlign: "center",
-  gap: "10px",
-  padding: "24px 30px",
-  borderRadius: "28px",
+  gap: "8px",
+  padding: "16px 24px",
+  borderRadius: "24px",
   alignItems: "center",
   overflow: "hidden",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+  boxShadow: "none",
 };
 
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
-  fontSize: "clamp(36px, 3.6vw, 50px)",
-  lineHeight: 1.02,
-  maxWidth: "780px",
-  paddingBottom: "2px",
+  fontSize: "clamp(38px, 4.4vw, 58px)",
 };
 
 const desktopDescriptionStyle: CSSProperties = {
   ...descriptionStyle,
-  maxWidth: "700px",
   fontSize: "13px",
-  lineHeight: 1.45,
+  maxWidth: "760px",
 };
 
 const desktopProgressBoxStyle: CSSProperties = {
   ...progressBoxStyle,
-  width: "min(460px, 100%)",
-  justifySelf: "center",
-  alignSelf: "center",
-  padding: "9px 10px",
-  borderRadius: "16px",
+  width: "min(360px, 100%)",
+  padding: "6px 8px",
 };
 
 const desktopMainGridSoloStyle: CSSProperties = {
   ...mainGridStyle,
   width: "100%",
   maxWidth: "100%",
-  margin: "18px 0 0",
-  gap: "16px",
+  margin: "14px 0 0",
+  gap: "12px",
 };
 
 
 const desktopFormPanelStyle: CSSProperties = {
   ...formPanelStyle,
   width: "100%",
-  padding: "18px",
-  borderRadius: "24px",
-  gap: "12px",
+  padding: "14px",
+  borderRadius: "22px",
+  gap: "10px",
 };
 
 const desktopFormHeaderStyle: CSSProperties = {
   ...formHeaderStyle,
-  gap: "4px",
+  justifyItems: "center",
+  textAlign: "center",
 };
 
 const desktopFormTitleStyle: CSSProperties = {
   ...formTitleStyle,
-  fontSize: "24px",
+  fontSize: "30px",
+  textAlign: "center",
 };
 
 const desktopImportBoxStyle: CSSProperties = {
   ...importBoxStyle,
-  gridTemplateColumns: "minmax(0, 1fr) 132px",
+  gridTemplateColumns: "minmax(0, 1fr) 128px",
   alignItems: "center",
   padding: "7px 9px",
   gap: "8px",
@@ -2316,57 +2300,53 @@ const desktopImportBoxStyle: CSSProperties = {
 
 const desktopImportButtonStyle: CSSProperties = {
   ...importButtonStyle,
-  width: "132px",
-  minHeight: "32px",
-  padding: "0 10px",
-  fontSize: "10px",
-  boxShadow: "none",
+  minHeight: "36px",
+  fontSize: "10.5px",
+  padding: "0 8px",
 };
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "300px",
+  minHeight: "250px",
   fontSize: "14px",
-  lineHeight: 1.7,
+  lineHeight: 1.65,
 };
 
 const desktopButtonAreaStyle: CSSProperties = {
   ...buttonAreaStyle,
-  gridTemplateColumns: "170px 140px",
-  justifyContent: "start",
-  gap: "9px",
-  marginTop: "0",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "10px",
+  marginTop: "2px",
 };
 
 const desktopPrimaryButtonStyle: CSSProperties = {
   ...primaryButtonStyle,
-  minHeight: "40px",
-  fontSize: "12px",
-  boxShadow: "none",
+  minHeight: "48px",
+  fontSize: "14px",
 };
 
 const desktopDisabledButtonStyle: CSSProperties = {
   ...disabledButtonStyle,
-  minHeight: "40px",
-  fontSize: "12px",
+  minHeight: "48px",
+  fontSize: "14px",
 };
 
 const desktopSecondaryButtonStyle: CSSProperties = {
   ...secondaryButtonStyle,
-  minHeight: "40px",
-  fontSize: "12px",
+  minHeight: "48px",
+  fontSize: "14px",
 };
 
 const desktopPreviewPanelStyle: CSSProperties = {
   ...previewPanelStyle,
   width: "100%",
-  padding: "16px",
-  borderRadius: "24px",
+  padding: 0,
+  borderRadius: 0,
   gap: "12px",
 };
 
 const desktopPreviewChapterCardStyle: CSSProperties = {
   ...previewChapterCardStyle,
-  padding: "14px",
-  borderRadius: "20px",
+  padding: "12px",
+  borderRadius: "18px",
 };

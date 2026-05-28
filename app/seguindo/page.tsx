@@ -139,6 +139,21 @@ function normalizarTexto(texto: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function formatarGeneroSeguindo(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTexto(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Não informado";
+}
+
 function criarSlugBase(titulo: string) {
   const slug = normalizarTexto(titulo)
     .replace(/[^a-z0-9\s-]/g, "")
@@ -199,6 +214,7 @@ function textoBuscaObra(obra: ObraLocal) {
       obra.titulo,
       obra.autor,
       obra.genero,
+      formatarGeneroSeguindo(obra.genero),
       obra.formato,
       obra.classificacaoIndicativa,
       obra.sinopse,
@@ -1185,6 +1201,7 @@ export default function SeguindoPage() {
           autor.nome,
           autor.obras.map((obra) => obra.titulo).join(" "),
           autor.obras.map((obra) => obra.genero).join(" "),
+          autor.obras.map((obra) => formatarGeneroSeguindo(obra.genero)).join(" "),
           autor.obras.map((obra) => obra.tags.join(" ")).join(" "),
         ].join(" ")
       );
@@ -1561,7 +1578,7 @@ export default function SeguindoPage() {
                             </span>
 
                             <span style={genreStyle}>
-                              {obra.genero || "Sem gênero"}
+                              {formatarGeneroSeguindo(obra.genero)}
                             </span>
 
                             {mostrarClassificacao(obra) && (
@@ -1756,7 +1773,7 @@ const pageStyle: CSSProperties = {
 const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 24px))",
   margin: "0 auto",
-  padding: "18px 0 calc(100px + env(safe-area-inset-bottom))",
+  padding: "18px 0 calc(28px + env(safe-area-inset-bottom))",
   maxWidth: "100%",
   minWidth: 0,
   overflow: "hidden",
@@ -1766,7 +1783,7 @@ const containerStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1220px, calc(100% - 64px))",
-  padding: "24px 0 96px",
+  padding: "24px 0 36px",
   overflow: "visible"
 };
 
@@ -2891,4 +2908,3 @@ const exploreButtonStyle: CSSProperties = {
   boxShadow: "0 14px 30px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
   ...safeTextStyle
 };
-

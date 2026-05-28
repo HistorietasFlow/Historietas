@@ -49,20 +49,8 @@ type ObraLocal = {
   link: string;
 };
 
-type AvaliacoesObras = {
-  [obraId: string]: number;
-};
 
-type ReviewObra = {
-  id: string;
-  texto: string;
-  nota: number;
-  criadoEm: string;
-};
 
-type ReviewsObras = {
-  [obraId: string]: ReviewObra[];
-};
 
 type ObraSupabaseRow = {
   id: string;
@@ -102,20 +90,7 @@ type CapituloSupabaseRow = {
 
 type OrdemCapitulos = "crescente" | "decrescente";
 
-type FiltroCapitulos =
-  | "todos"
-  | "nao-lidos"
-  | "lidos"
-  | "salvos"
-  | "curtidos"
-  | "comentados";
-
 const STORAGE_KEY = "historietas-obras";
-const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
-const RATING_STORAGE_KEY = "historietas-avaliacoes-obras";
-const REVIEW_STORAGE_KEY = "historietas-reviews-obras";
-const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
-const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 
@@ -135,6 +110,21 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function formatarGeneroMinhaObra(genero: string) {
+  const generoLimpo = genero.trim();
+  const generoNormalizado = normalizarTexto(generoLimpo);
+
+  if (generoNormalizado === "fantasia sombria") {
+    return "Fantasia";
+  }
+
+  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
+    return "Ficção";
+  }
+
+  return generoLimpo || "Não informado";
 }
 
 function normalizarCapitulo(
@@ -336,7 +326,7 @@ function criarCoverStyle(capa: string): CSSProperties {
   return {
     ...coverStyle,
     background: "var(--historietas-input-bg, #18181B)",
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%), url(${capa})`,
+    backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -350,7 +340,7 @@ function criarDesktopCoverStyle(capa: string): CSSProperties {
   return {
     ...desktopCoverStyle,
     background: "var(--historietas-input-bg, #18181B)",
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.82) 100%), url(${capa})`,
+    backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -376,29 +366,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
-function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const capituloRegistrado = obra.ultimoCapituloLidoId
-    ? obra.capitulos.find(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
-      )
-    : null;
-
-  if (capituloRegistrado) {
-    return capituloRegistrado;
-  }
-
-  const capitulosAtivos = obra.capitulos.filter((capitulo) => {
-    return (
-      capitulo.lido ||
-      capitulo.salvo ||
-      capitulo.curtiu ||
-      Boolean(capitulo.comentario.trim())
-    );
-  });
-
-  return capitulosAtivos[capitulosAtivos.length - 1] || null;
-}
-
 function contarPalavrasTexto(texto: string) {
   const palavras = texto.trim().split(/\s+/).filter(Boolean);
 
@@ -413,43 +380,6 @@ function calcularTempoLeituraMinutos(totalPalavras: number) {
   return Math.max(1, Math.ceil(totalPalavras / 220));
 }
 
-function formatarNota(nota: number) {
-  if (!nota) {
-    return "0";
-  }
-
-  return Number.isInteger(nota)
-    ? String(nota)
-    : nota.toFixed(1).replace(".", ",");
-}
-
-function obterPreenchimentoEstrela(notaAtual: number, estrela: number) {
-  if (notaAtual >= estrela) {
-    return 100;
-  }
-
-  if (notaAtual >= estrela - 0.5) {
-    return 50;
-  }
-
-  return 0;
-}
-
-function normalizarListaIds(valor: unknown): string[] {
-  return Array.isArray(valor)
-    ? Array.from(
-        new Set(
-          valor
-            .filter(
-              (id): id is string =>
-                typeof id === "string" && Boolean(id.trim())
-            )
-            .map((id) => id.trim())
-        )
-      )
-    : [];
-}
-
 function obterChavesObra(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
   return Array.from(
     new Set(
@@ -460,28 +390,6 @@ function obterChavesObra(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
         .map((chave) => chave.trim())
     )
   );
-}
-
-function listaIncluiObra(lista: string[], obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
-  const valores = new Set(lista.map((item) => item.trim()).filter(Boolean));
-
-  return obterChavesObra(obra).some((chave) => valores.has(chave));
-}
-
-function adicionarObraNaLista(
-  lista: string[],
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
-) {
-  return Array.from(new Set([...lista, ...obterChavesObra(obra)]));
-}
-
-function removerObraDaLista(
-  lista: string[],
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
-) {
-  const chaves = new Set(obterChavesObra(obra));
-
-  return lista.filter((item) => !chaves.has(item));
 }
 
 function carregarBackupArquivosObras() {
@@ -728,45 +636,12 @@ async function carregarObraSupabase(
   );
 }
 
-async function carregarIdsTabelaUsuario(
-  tabela: "seguindo_obras" | "favoritos" | "concluidas",
-  userId: string
-) {
-  const { data, error } = await supabase
-    .from(tabela)
-    .select("obra_id")
-    .eq("user_id", userId);
-
-  if (error || !Array.isArray(data)) {
-    return [];
-  }
-
-  return data
-    .map((item) => {
-      if (!item || typeof item !== "object" || !("obra_id" in item)) {
-        return "";
-      }
-
-      return typeof item.obra_id === "string" ? item.obra_id : "";
-    })
-    .filter(Boolean);
-}
-
 export default function MinhaObraPage() {
   const [obraId, setObraId] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
-  const [obrasSeguidas, setObrasSeguidas] = useState<string[]>([]);
-  const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
-  const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
-  const [avaliacoesObras, setAvaliacoesObras] = useState<AvaliacoesObras>({});
-  const [reviewsObras, setReviewsObras] = useState<ReviewsObras>({});
-  const [reviewTexto, setReviewTexto] = useState("");
-  const [reviewNota, setReviewNota] = useState(0);
   const [buscaCapitulo, setBuscaCapitulo] = useState("");
   const [ordemCapitulos, setOrdemCapitulos] =
     useState<OrdemCapitulos>("crescente");
-  const [filtroCapitulos, setFiltroCapitulos] =
-    useState<FiltroCapitulos>("todos");
   const [carregando, setCarregando] = useState(true);
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -820,92 +695,6 @@ export default function MinhaObraPage() {
               )
           : [];
 
-        const obrasSeguidasTexto = localStorage.getItem(FOLLOW_STORAGE_KEY);
-        const obrasSeguidasJson = obrasSeguidasTexto
-          ? JSON.parse(obrasSeguidasTexto)
-          : [];
-
-        let obrasSeguidasNormalizadas = normalizarListaIds(obrasSeguidasJson);
-
-        const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
-        const obrasFavoritasJson = obrasFavoritasTexto
-          ? JSON.parse(obrasFavoritasTexto)
-          : [];
-
-        let obrasFavoritasNormalizadas = normalizarListaIds(obrasFavoritasJson);
-
-        const obrasConcluidasTexto = localStorage.getItem(COMPLETED_STORAGE_KEY);
-        const obrasConcluidasJson = obrasConcluidasTexto
-          ? JSON.parse(obrasConcluidasTexto)
-          : [];
-
-        let obrasConcluidasNormalizadas = normalizarListaIds(obrasConcluidasJson);
-
-        const avaliacoesTexto = localStorage.getItem(RATING_STORAGE_KEY);
-        const avaliacoesJson = avaliacoesTexto ? JSON.parse(avaliacoesTexto) : {};
-
-        const avaliacoesNormalizadas: AvaliacoesObras =
-          avaliacoesJson &&
-          typeof avaliacoesJson === "object" &&
-          !Array.isArray(avaliacoesJson)
-            ? Object.entries(avaliacoesJson).reduce<AvaliacoesObras>(
-                (resultado, [id, nota]) => {
-                  if (
-                    typeof id === "string" &&
-                    typeof nota === "number" &&
-                    nota >= 0.5 &&
-                    nota <= 5
-                  ) {
-                    resultado[id] = nota;
-                  }
-
-                  return resultado;
-                },
-                {}
-              )
-            : {};
-
-        const reviewsTexto = localStorage.getItem(REVIEW_STORAGE_KEY);
-        const reviewsJson = reviewsTexto ? JSON.parse(reviewsTexto) : {};
-
-        const reviewsNormalizadas: ReviewsObras =
-          reviewsJson &&
-          typeof reviewsJson === "object" &&
-          !Array.isArray(reviewsJson)
-            ? Object.entries(reviewsJson).reduce<ReviewsObras>(
-                (resultado, [idObra, reviews]) => {
-                  if (typeof idObra !== "string" || !Array.isArray(reviews)) {
-                    return resultado;
-                  }
-
-                  const reviewsValidas = reviews
-                    .filter((review): review is ReviewObra => {
-                      return (
-                        review &&
-                        typeof review === "object" &&
-                        typeof review.id === "string" &&
-                        typeof review.texto === "string" &&
-                        typeof review.nota === "number" &&
-                        review.nota >= 0.5 &&
-                        review.nota <= 5 &&
-                        typeof review.criadoEm === "string"
-                      );
-                    })
-                    .map((review) => ({
-                      id: review.id,
-                      texto: review.texto,
-                      nota: review.nota,
-                      criadoEm: review.criadoEm,
-                    }));
-
-                  resultado[idObra] = reviewsValidas;
-
-                  return resultado;
-                },
-                {}
-              )
-            : {};
-
         if (obraIdParam) {
           const obraLocal =
             obrasNormalizadas.find((obra) => obra.id === obraIdParam) || null;
@@ -919,63 +708,21 @@ export default function MinhaObraPage() {
           }
         }
 
-        const { data: dadosUsuario } = await supabase.auth.getUser();
-
-        if (dadosUsuario.user) {
-          const [seguidasSupabase, favoritasSupabase, concluidasSupabase] =
-            await Promise.all([
-              carregarIdsTabelaUsuario("seguindo_obras", dadosUsuario.user.id),
-              carregarIdsTabelaUsuario("favoritos", dadosUsuario.user.id),
-              carregarIdsTabelaUsuario("concluidas", dadosUsuario.user.id),
-            ]);
-
-          obrasSeguidasNormalizadas = Array.from(
-            new Set([...obrasSeguidasNormalizadas, ...seguidasSupabase])
-          );
-          obrasFavoritasNormalizadas = Array.from(
-            new Set([...obrasFavoritasNormalizadas, ...favoritasSupabase])
-          );
-          obrasConcluidasNormalizadas = Array.from(
-            new Set([...obrasConcluidasNormalizadas, ...concluidasSupabase])
-          );
-        }
 
         sincronizarBackupArquivosObras(obrasNormalizadas);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
-        localStorage.setItem(
-          FOLLOW_STORAGE_KEY,
-          JSON.stringify(obrasSeguidasNormalizadas)
-        );
-        localStorage.setItem(
-          FAVORITES_STORAGE_KEY,
-          JSON.stringify(obrasFavoritasNormalizadas)
-        );
-        localStorage.setItem(
-          COMPLETED_STORAGE_KEY,
-          JSON.stringify(obrasConcluidasNormalizadas)
-        );
 
         if (cancelado) {
           return;
         }
 
         setObras(obrasNormalizadas);
-        setObrasSeguidas(obrasSeguidasNormalizadas);
-        setObrasFavoritas(obrasFavoritasNormalizadas);
-        setObrasConcluidas(obrasConcluidasNormalizadas);
-        setAvaliacoesObras(avaliacoesNormalizadas);
-        setReviewsObras(reviewsNormalizadas);
       } catch {
         if (cancelado) {
           return;
         }
 
         setObras([]);
-        setObrasSeguidas([]);
-        setObrasFavoritas([]);
-        setObrasConcluidas([]);
-        setAvaliacoesObras({});
-        setReviewsObras({});
       } finally {
         if (!cancelado) {
           setCarregando(false);
@@ -994,25 +741,11 @@ export default function MinhaObraPage() {
     return obras.find((obra) => obra.id === obraId) || null;
   }, [obras, obraId]);
 
-  const seguindoObra = obraAtual ? listaIncluiObra(obrasSeguidas, obraAtual) : false;
-  const obraFavorita = obraAtual ? listaIncluiObra(obrasFavoritas, obraAtual) : false;
-  const obraConcluida = obraAtual
-    ? listaIncluiObra(obrasConcluidas, obraAtual)
-    : false;
-  const notaUsuario = obraAtual ? avaliacoesObras[obraAtual.id] || 0 : 0;
-  const reviewsDaObra = obraAtual ? reviewsObras[obraAtual.id] || [] : [];
-  const notaMediaReviews =
-    reviewsDaObra.length > 0
-      ? Number(
-          (
-            reviewsDaObra.reduce((total, review) => total + review.nota, 0) /
-            reviewsDaObra.length
-          ).toFixed(1)
-        )
-      : 0;
-  const notaMedia = notaMediaReviews || notaUsuario;
   const classificacaoIndicativa =
     obraAtual?.classificacaoIndicativa?.trim() || "Não informada";
+  const generoObraFormatado = obraAtual
+    ? formatarGeneroMinhaObra(obraAtual.genero)
+    : "Não informado";
   const arquivoObra = obraAtual?.arquivoObra || null;
   const arquivoObraTipoTexto = arquivoObra
     ? obterTipoArquivoTexto(arquivoObra)
@@ -1021,13 +754,6 @@ export default function MinhaObraPage() {
     ? formatarTamanhoArquivo(arquivoObra.tamanho)
     : "";
 
-  useEffect(() => {
-    if (!obraAtual) {
-      return;
-    }
-
-    setReviewNota(notaUsuario);
-  }, [obraAtual?.id, notaUsuario]);
 
   const totais = useMemo(() => {
     if (!obraAtual) {
@@ -1035,9 +761,7 @@ export default function MinhaObraPage() {
         totalCurtidas: 0,
         totalComentarios: 0,
         totalSalvos: 0,
-        totalLidos: 0,
         totalPalavras: 0,
-        tempoLeituraMinutos: 0,
       };
     }
 
@@ -1053,77 +777,12 @@ export default function MinhaObraPage() {
       ).length,
       totalSalvos: obraAtual.capitulos.filter((capitulo) => capitulo.salvo)
         .length,
-      totalLidos: obraAtual.capitulos.filter((capitulo) => capitulo.lido)
-        .length,
       totalPalavras,
-      tempoLeituraMinutos: calcularTempoLeituraMinutos(totalPalavras),
     };
   }, [obraAtual]);
 
-  const primeiroCapitulo = useMemo(() => {
-    if (!obraAtual || obraAtual.capitulos.length === 0) {
-      return null;
-    }
 
-    return obraAtual.capitulos[0];
-  }, [obraAtual]);
 
-  const ultimoCapitulo = useMemo(() => {
-    if (!obraAtual || obraAtual.capitulos.length === 0) {
-      return null;
-    }
-
-    return obraAtual.capitulos[obraAtual.capitulos.length - 1];
-  }, [obraAtual]);
-
-  const capituloParaContinuar = obraAtual
-    ? encontrarCapituloParaContinuar(obraAtual)
-    : null;
-
-  const progressoLeitura = obraAtual
-    ? calcularProgressoLeitura(obraAtual.capitulos)
-    : 0;
-
-  const filtrosCapitulos = useMemo(() => {
-    if (!obraAtual) {
-      return [];
-    }
-
-    return [
-      {
-        id: "todos" as const,
-        titulo: "Todos",
-        total: obraAtual.capitulos.length,
-      },
-      {
-        id: "nao-lidos" as const,
-        titulo: "Não lidos",
-        total: obraAtual.capitulos.filter((capitulo) => !capitulo.lido).length,
-      },
-      {
-        id: "lidos" as const,
-        titulo: "Lidos",
-        total: obraAtual.capitulos.filter((capitulo) => capitulo.lido).length,
-      },
-      {
-        id: "salvos" as const,
-        titulo: "Salvos",
-        total: obraAtual.capitulos.filter((capitulo) => capitulo.salvo).length,
-      },
-      {
-        id: "curtidos" as const,
-        titulo: "Curtidos",
-        total: obraAtual.capitulos.filter((capitulo) => capitulo.curtiu).length,
-      },
-      {
-        id: "comentados" as const,
-        titulo: "Comentados",
-        total: obraAtual.capitulos.filter((capitulo) =>
-          capitulo.comentario.trim()
-        ).length,
-      },
-    ];
-  }, [obraAtual]);
 
   const capitulosFiltrados = useMemo(() => {
     if (!obraAtual) {
@@ -1132,37 +791,16 @@ export default function MinhaObraPage() {
 
     const termo = buscaCapitulo.trim().toLowerCase();
 
-    const capitulosComIndice = obraAtual.capitulos.map((capitulo, index) => ({
+    const capitulosComIndice: Array<{
+      capitulo: CapituloLocal;
+      index: number;
+    }> = obraAtual.capitulos.map((capitulo, index) => ({
       capitulo,
       index,
     }));
 
-    const capitulosPorFiltro = capitulosComIndice.filter(({ capitulo }) => {
-      if (filtroCapitulos === "nao-lidos") {
-        return !capitulo.lido;
-      }
-
-      if (filtroCapitulos === "lidos") {
-        return capitulo.lido;
-      }
-
-      if (filtroCapitulos === "salvos") {
-        return capitulo.salvo;
-      }
-
-      if (filtroCapitulos === "curtidos") {
-        return capitulo.curtiu;
-      }
-
-      if (filtroCapitulos === "comentados") {
-        return Boolean(capitulo.comentario.trim());
-      }
-
-      return true;
-    });
-
     const capitulosEncontrados = termo
-      ? capitulosPorFiltro.filter(({ capitulo, index }) => {
+      ? capitulosComIndice.filter(({ capitulo, index }) => {
           return (
             capitulo.titulo.toLowerCase().includes(termo) ||
             capitulo.texto.toLowerCase().includes(termo) ||
@@ -1170,14 +808,14 @@ export default function MinhaObraPage() {
             String(index + 1).includes(termo)
           );
         })
-      : capitulosPorFiltro;
+      : capitulosComIndice;
 
     if (ordemCapitulos === "decrescente") {
       return [...capitulosEncontrados].reverse();
     }
 
     return capitulosEncontrados;
-  }, [obraAtual, buscaCapitulo, ordemCapitulos, filtroCapitulos]);
+  }, [obraAtual, buscaCapitulo, ordemCapitulos]);
 
   function salvarObras(novasObras: ObraLocal[]) {
     const obrasNormalizadas = novasObras.map((obra, index) =>
@@ -1187,138 +825,6 @@ export default function MinhaObraPage() {
     sincronizarBackupArquivosObras(obrasNormalizadas);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
     setObras(obrasNormalizadas);
-  }
-
-  async function alternarSeguirObra() {
-    if (!obraAtual) return;
-
-    const novasObrasSeguidas = seguindoObra
-      ? removerObraDaLista(obrasSeguidas, obraAtual)
-      : adicionarObraNaLista(obrasSeguidas, obraAtual);
-
-    localStorage.setItem(
-      FOLLOW_STORAGE_KEY,
-      JSON.stringify(novasObrasSeguidas)
-    );
-
-    setObrasSeguidas(novasObrasSeguidas);
-
-    try {
-      const { data: dadosUsuario } = await supabase.auth.getUser();
-
-      if (!dadosUsuario.user) {
-        return;
-      }
-
-      if (seguindoObra) {
-        await supabase
-          .from("seguindo_obras")
-          .delete()
-          .eq("user_id", dadosUsuario.user.id)
-          .eq("obra_id", obraAtual.id);
-        return;
-      }
-
-      await supabase.from("seguindo_obras").upsert(
-        {
-          user_id: dadosUsuario.user.id,
-          obra_id: obraAtual.id,
-        },
-        {
-          onConflict: "user_id,obra_id",
-        }
-      );
-    } catch {
-      // Mantém o localStorage como fallback nesta fase da migração.
-    }
-  }
-
-  async function alternarFavorito() {
-    if (!obraAtual) return;
-
-    const novasObrasFavoritas = obraFavorita
-      ? removerObraDaLista(obrasFavoritas, obraAtual)
-      : adicionarObraNaLista(obrasFavoritas, obraAtual);
-
-    localStorage.setItem(
-      FAVORITES_STORAGE_KEY,
-      JSON.stringify(novasObrasFavoritas)
-    );
-
-    setObrasFavoritas(novasObrasFavoritas);
-
-    try {
-      const { data: dadosUsuario } = await supabase.auth.getUser();
-
-      if (!dadosUsuario.user) {
-        return;
-      }
-
-      if (obraFavorita) {
-        await supabase
-          .from("favoritos")
-          .delete()
-          .eq("user_id", dadosUsuario.user.id)
-          .eq("obra_id", obraAtual.id);
-        return;
-      }
-
-      await supabase.from("favoritos").upsert(
-        {
-          user_id: dadosUsuario.user.id,
-          obra_id: obraAtual.id,
-        },
-        {
-          onConflict: "user_id,obra_id",
-        }
-      );
-    } catch {
-      // Mantém o localStorage como fallback nesta fase da migração.
-    }
-  }
-
-  async function alternarConcluido() {
-    if (!obraAtual) return;
-
-    const novasObrasConcluidas = obraConcluida
-      ? removerObraDaLista(obrasConcluidas, obraAtual)
-      : adicionarObraNaLista(obrasConcluidas, obraAtual);
-
-    localStorage.setItem(
-      COMPLETED_STORAGE_KEY,
-      JSON.stringify(novasObrasConcluidas)
-    );
-
-    setObrasConcluidas(novasObrasConcluidas);
-
-    try {
-      const { data: dadosUsuario } = await supabase.auth.getUser();
-
-      if (!dadosUsuario.user) {
-        return;
-      }
-
-      if (obraConcluida) {
-        await supabase
-          .from("concluidas")
-          .delete()
-          .eq("user_id", dadosUsuario.user.id)
-          .eq("obra_id", obraAtual.id);
-        return;
-      }
-
-      await supabase.from("concluidas").upsert(
-        {
-          user_id: dadosUsuario.user.id,
-          obra_id: obraAtual.id,
-        },
-        {
-          onConflict: "user_id,obra_id",
-        }
-      );
-    } catch {
-      // Mantém o localStorage como fallback nesta fase da migração.
-    }
   }
 
   async function copiarLinkPublico() {
@@ -1365,93 +871,8 @@ export default function MinhaObraPage() {
     document.body.removeChild(campoTemporario);
   }
 
-  function alternarNotaPorEstrela(estrela: number) {
-    const meiaEstrela = estrela - 0.5;
-    const estrelaCompleta = estrela;
 
-    if (reviewNota === 0) {
-      setReviewNota(meiaEstrela);
-      return;
-    }
 
-    if (reviewNota === meiaEstrela) {
-      setReviewNota(estrelaCompleta);
-      return;
-    }
-
-    if (reviewNota === estrelaCompleta) {
-      setReviewNota(0);
-      return;
-    }
-
-    setReviewNota(meiaEstrela);
-  }
-
-  function salvarAvaliacaoOuReview() {
-    if (!obraAtual) return;
-
-    const textoLimpo = reviewTexto.trim();
-
-    if (reviewNota < 0.5 || reviewNota > 5) {
-      window.alert("Escolha uma nota de 0,5 a 5 estrelas.");
-      return;
-    }
-
-    if (textoLimpo.length > 0 && textoLimpo.length < 3) {
-      window.alert("Escreva uma review com pelo menos 3 caracteres ou deixe o comentário vazio para salvar só a nota.");
-      return;
-    }
-
-    const novasAvaliacoes = {
-      ...avaliacoesObras,
-      [obraAtual.id]: reviewNota,
-    };
-
-    localStorage.setItem(RATING_STORAGE_KEY, JSON.stringify(novasAvaliacoes));
-    setAvaliacoesObras(novasAvaliacoes);
-
-    if (!textoLimpo) {
-      return;
-    }
-
-    const novaReview: ReviewObra = {
-      id: `review-${Date.now()}`,
-      texto: textoLimpo,
-      nota: reviewNota,
-      criadoEm: new Date().toISOString(),
-    };
-
-    const novasReviews = {
-      ...reviewsObras,
-      [obraAtual.id]: [novaReview, ...reviewsDaObra],
-    };
-
-    localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(novasReviews));
-    setReviewsObras(novasReviews);
-    setReviewTexto("");
-  }
-
-  function excluirReview(reviewId: string) {
-    if (!obraAtual) return;
-
-    const confirmar = window.confirm(
-      "Tem certeza que deseja excluir esta review?"
-    );
-
-    if (!confirmar) return;
-
-    const novasReviewsDaObra = reviewsDaObra.filter(
-      (review) => review.id !== reviewId
-    );
-
-    const novasReviews = {
-      ...reviewsObras,
-      [obraAtual.id]: novasReviewsDaObra,
-    };
-
-    localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(novasReviews));
-    setReviewsObras(novasReviews);
-  }
 
   async function excluirCapitulo(capituloId: string, tituloCapitulo: string) {
     const confirmar = window.confirm(
@@ -1538,7 +959,6 @@ export default function MinhaObraPage() {
               <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
 
-            <span style={pagePillStyle}>Minha obra</span>
           </header>
 
           <div style={emptyBoxStyle}>
@@ -1565,18 +985,6 @@ export default function MinhaObraPage() {
     obraAtual.autor
   )}`;
 
-  const primeiroCapituloHref = primeiroCapitulo
-    ? `/ler-capitulo?obraId=${obraAtual.id}&capituloId=${primeiroCapitulo.id}`
-    : "";
-
-  const capituloPrincipal =
-    capituloParaContinuar ||
-    obraAtual.capitulos.find((capitulo) => !capitulo.lido) ||
-    primeiroCapitulo;
-
-  const leituraPrincipalHref = capituloPrincipal
-    ? `/ler-capitulo?obraId=${obraAtual.id}&capituloId=${capituloPrincipal.id}`
-    : "";
   const verArquivoHref = `/ver-arquivo?obraId=${encodeURIComponent(obraAtual.id)}`;
 
   return (
@@ -1589,14 +997,13 @@ export default function MinhaObraPage() {
             <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <span style={pagePillStyle}>Minha obra</span>
         </header>
 
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
           <div style={isDesktop ? criarDesktopCoverStyle(obraAtual.capa) : criarCoverStyle(obraAtual.capa)}>
             <div style={coverGlowStyle} />
 
-            <span style={coverGenreStyle}>{obraAtual.genero}</span>
+            <span style={coverGenreStyle}>{classificacaoIndicativa}</span>
 
             <div style={coverInfoStyle}>
               <strong style={coverNumberStyle}>
@@ -1613,6 +1020,8 @@ export default function MinhaObraPage() {
             <div style={isDesktop ? desktopTopBadgesStyle : topBadgesStyle}>
               <span style={badgeStyle}>{obraAtual.formato}</span>
 
+              <span style={genreBadgeStyle}>{generoObraFormatado}</span>
+
               <span style={classificationBadgeStyle}>
                 {classificacaoIndicativa}
               </span>
@@ -1625,19 +1034,15 @@ export default function MinhaObraPage() {
                 {obraAtual.publicado ? "Publicado" : "Rascunho"}
               </span>
 
-              {seguindoObra && <span style={followingBadgeStyle}>Seguindo</span>}
-
-              {obraFavorita && (
-                <span style={favoriteBadgeStyle}>★ Favorita</span>
-              )}
-
-              {obraConcluida && (
-                <span style={completedBadgeStyle}>✓ Concluída</span>
-              )}
-
               {arquivoObra && (
                 <span style={fileBadgeStyle}>Arquivo anexado</span>
               )}
+
+              {obraAtual.tags.slice(0, 1).map((tag, index) => (
+                <span key={`${obraAtual.id}-top-tag-${tag}-${index}`} style={tagStyle}>
+                  {tag}
+                </span>
+              ))}
             </div>
 
             <h1 style={isDesktop ? desktopTitleStyle : titleStyle}>{obraAtual.titulo}</h1>
@@ -1647,68 +1052,6 @@ export default function MinhaObraPage() {
             </Link>
 
             <p style={isDesktop ? desktopSinopseStyle : sinopseStyle}>{obraAtual.sinopse}</p>
-
-            <div style={tagListStyle}>
-              {obraAtual.tags.slice(0, 6).map((tag, index) => (
-                <span key={`${obraAtual.id}-${tag}-${index}`} style={tagStyle}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            {progressoLeitura > 0 && (
-              <div style={progressTrackStyle}>
-                <div
-                  style={{
-                    ...progressBarStyle,
-                    width: `${progressoLeitura}%`,
-                  }}
-                />
-              </div>
-            )}
-
-            <div style={isDesktop ? desktopHeroActionsGridStyle : heroActionsGridStyle}>
-              {capituloPrincipal ? (
-                <Link href={leituraPrincipalHref} style={orangeActionStyle}>
-                  {capituloParaContinuar ? "Continuar leitura" : "Começar leitura"}
-                </Link>
-              ) : (
-                <Link href={adicionarCapituloHref} style={orangeActionStyle}>
-                  + Primeiro capítulo
-                </Link>
-              )}
-
-              <button
-                type="button"
-                onClick={alternarSeguirObra}
-                style={seguindoObra ? followingActionStyle : followActionStyle}
-              >
-                {seguindoObra ? "✓ Seguindo" : "+ Seguir"}
-              </button>
-
-              <button
-                type="button"
-                onClick={alternarFavorito}
-                style={
-                  obraFavorita ? favoriteActionActiveStyle : favoriteActionStyle
-                }
-              >
-                {obraFavorita ? "★ Favorita" : "Favoritar"}
-              </button>
-
-              <button
-                type="button"
-                onClick={alternarConcluido}
-                style={
-                  obraConcluida
-                    ? completedActionActiveStyle
-                    : completedActionStyle
-                }
-              >
-                {obraConcluida ? "✓ Concluída" : "Concluir"}
-              </button>
-            </div>
-
             <div style={isDesktop ? desktopAuthorActionsStyle : authorActionsStyle}>
               <Link href={editarObraHref} style={secondaryActionStyle}>
                 Editar obra
@@ -1727,7 +1070,7 @@ export default function MinhaObraPage() {
               </button>
 
               <Link href={adicionarCapituloHref} style={primaryActionStyle}>
-                + Capítulo
+                Adicionar capítulo
               </Link>
             </div>
           </div>
@@ -1755,68 +1098,10 @@ export default function MinhaObraPage() {
           </div>
 
           <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totais.totalLidos}</strong>
-            <span style={statLabelStyle}>lidos</span>
-          </div>
-
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>
-              {notaMedia > 0 ? `${formatarNota(notaMedia)}/5` : "—"}
-            </strong>
-            <span style={statLabelStyle}>avaliação</span>
-          </div>
-
-          <div style={statCardStyle}>
             <strong style={statNumberStyle}>{totais.totalPalavras}</strong>
             <span style={statLabelStyle}>palavras</span>
           </div>
-
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>
-              {totais.tempoLeituraMinutos > 0
-                ? `${totais.tempoLeituraMinutos} min`
-                : "—"}
-            </strong>
-            <span style={statLabelStyle}>leitura</span>
-          </div>
         </section>
-
-        <section style={isDesktop ? desktopReadingPlanBoxStyle : readingPlanBoxStyle}>
-          <div style={sectionHeaderStyle}>
-            <div>
-              <span style={sectionMiniTitleStyle}>PRÓXIMA AÇÃO</span>
-              <h2 style={sectionTitleStyle}>Leitura da obra</h2>
-            </div>
-
-            <span style={readingPlanBadgeStyle}>{progressoLeitura}% lido</span>
-          </div>
-
-          <p style={readingPlanTextStyle}>
-            {capituloPrincipal
-              ? `Próximo foco: ${capituloPrincipal.titulo}.`
-              : "Essa obra ainda não tem capítulos. Comece criando o primeiro capítulo."}
-            {ultimoCapitulo ? ` Último capítulo cadastrado: ${ultimoCapitulo.titulo}.` : ""}
-          </p>
-
-          <div style={isDesktop ? desktopReadingPlanActionsStyle : readingPlanActionsStyle}>
-            {capituloPrincipal ? (
-              <Link href={leituraPrincipalHref} style={primaryActionStyle}>
-                {capituloParaContinuar ? "Continuar leitura" : "Começar leitura"}
-              </Link>
-            ) : (
-              <Link href={adicionarCapituloHref} style={primaryActionStyle}>
-                Criar primeiro capítulo
-              </Link>
-            )}
-
-            {primeiroCapituloHref && (
-              <Link href={primeiroCapituloHref} style={secondaryActionStyle}>
-                Abrir capítulo 1
-              </Link>
-            )}
-          </div>
-        </section>
-
         {arquivoObra && (
           <section style={isDesktop ? desktopArquivoObraBoxStyle : arquivoObraBoxStyle}>
             <div style={sectionHeaderStyle}>
@@ -1882,161 +1167,12 @@ export default function MinhaObraPage() {
             </div>
           </section>
         )}
-
-        <section style={isDesktop ? desktopInfoObraBoxStyle : infoObraBoxStyle}>
-          <div style={sectionHeaderStyle}>
-            <div>
-              <span style={sectionMiniTitleStyle}>DETALHES</span>
-              <h2 style={sectionTitleStyle}>Informações principais</h2>
-            </div>
-          </div>
-
-          <div style={isDesktop ? desktopInfoObraGridStyle : infoObraGridStyle}>
-            <div style={infoObraCardStyle}>
-              <strong style={infoObraValueStyle}>{classificacaoIndicativa}</strong>
-              <span style={infoObraLabelStyle}>classificação</span>
-            </div>
-
-            <div style={infoObraCardStyle}>
-              <strong style={infoObraValueStyle}>{obraAtual.genero}</strong>
-              <span style={infoObraLabelStyle}>gênero</span>
-            </div>
-
-            <div style={infoObraCardStyle}>
-              <strong style={infoObraValueStyle}>{obraAtual.formato}</strong>
-              <span style={infoObraLabelStyle}>formato</span>
-            </div>
-
-            <div style={infoObraCardStyle}>
-              <strong style={infoObraValueStyle}>
-                {obraAtual.publicado ? "Publicado" : "Rascunho"}
-              </strong>
-              <span style={infoObraLabelStyle}>status</span>
-            </div>
-          </div>
-        </section>
-
-        <section style={isDesktop ? desktopReviewBoxStyle : reviewBoxStyle}>
-          <div style={sectionHeaderStyle}>
-            <div>
-              <span style={sectionMiniTitleStyle}>AVALIAÇÃO E REVIEWS</span>
-              <h2 style={sectionTitleStyle}>Avalie ou escreva uma review</h2>
-            </div>
-
-            <span style={ratingBadgeStyle}>
-              {notaMedia > 0 ? `${formatarNota(notaMedia)}/5` : "Sem nota"} • {reviewsDaObra.length} {reviewsDaObra.length === 1 ? "review" : "reviews"}
-            </span>
-          </div>
-
-          <div style={isDesktop ? desktopReviewInfoRowStyle : reviewInfoRowStyle}>
-            <p style={reviewHelpTextStyle}>
-              Toque uma vez na estrela para meia nota, toque de novo para completar. O comentário é opcional.
-            </p>
-
-            <span style={userRatingBadgeStyle}>
-              Sua nota: {reviewNota > 0 ? `${formatarNota(reviewNota)}/5` : "sem nota"}
-            </span>
-          </div>
-
-          <div style={starsRowStyle}>
-            {[1, 2, 3, 4, 5].map((estrela) => {
-              const preenchimento = obterPreenchimentoEstrela(
-                reviewNota,
-                estrela
-              );
-
-              return (
-                <button
-                  key={estrela}
-                  type="button"
-                  onClick={() => alternarNotaPorEstrela(estrela)}
-                  style={
-                    preenchimento > 0
-                      ? starButtonActiveStyle
-                      : starButtonStyle
-                  }
-                  aria-label={`Selecionar ${formatarNota(
-                    preenchimento === 100 ? estrela : estrela - 0.5
-                  )} estrela${estrela === 1 ? "" : "s"}`}
-                >
-                  <span style={starIconBoxStyle}>
-                    <span style={starEmptyIconStyle}>★</span>
-                    <span
-                      style={{
-                        ...starFilledIconStyle,
-                        width: `${preenchimento}%`,
-                      }}
-                    >
-                      ★
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-
-            {reviewNota > 0 && (
-              <button
-                type="button"
-                onClick={() => setReviewNota(0)}
-                style={clearRatingButtonStyle}
-              >
-                Limpar nota
-              </button>
-            )}
-          </div>
-
-          <textarea
-            value={reviewTexto}
-            onChange={(event) => setReviewTexto(event.target.value)}
-            placeholder="Comentário opcional. Pode deixar vazio para salvar só sua nota..."
-            style={isDesktop ? desktopReviewTextareaStyle : reviewTextareaStyle}
-          />
-
-          <button
-            type="button"
-            onClick={salvarAvaliacaoOuReview}
-            style={isDesktop ? desktopReviewButtonStyle : reviewButtonStyle}
-          >
-            {reviewTexto.trim() ? "Salvar review" : "Salvar avaliação"}
-          </button>
-
-          {reviewsDaObra.length > 0 && (
-            <div style={reviewsListStyle}>
-              {reviewsDaObra.map((review) => (
-                <article key={review.id} style={reviewCardStyle}>
-                  <div style={reviewTopStyle}>
-                    <span style={reviewBadgeStyle}>⭐ {formatarNota(review.nota)}/5</span>
-
-                    <span style={reviewDateStyle}>
-                      {formatarData(review.criadoEm)}
-                    </span>
-                  </div>
-
-                  <p style={reviewTextStyle}>{review.texto}</p>
-
-                  <button
-                    type="button"
-                    onClick={() => excluirReview(review.id)}
-                    style={reviewDeleteButtonStyle}
-                  >
-                    Excluir
-                  </button>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
         <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
           <div style={sectionHeaderStyle}>
             <div>
-              <span style={sectionMiniTitleStyle}>CAPÍTULOS</span>
-              <h2 style={sectionTitleStyle}>Lista de capítulos</h2>
+              <h2 style={sectionTitleStyle}>Capítulos</h2>
             </div>
 
-            <Link href={adicionarCapituloHref} style={smallHeaderButtonStyle}>
-              + Capítulo
-            </Link>
           </div>
 
           {obraAtual.capitulos.length > 0 && (
@@ -2073,27 +1209,6 @@ export default function MinhaObraPage() {
                   Último → 1
                 </button>
               </div>
-
-              <div style={isDesktop ? desktopChapterFilterGridStyle : chapterFilterGridStyle}>
-                {filtrosCapitulos.map((filtro) => {
-                  const filtroAtivo = filtroCapitulos === filtro.id;
-
-                  return (
-                    <button
-                      key={filtro.id}
-                      type="button"
-                      onClick={() => setFiltroCapitulos(filtro.id)}
-                      style={
-                        filtroAtivo
-                          ? chapterFilterButtonActiveStyle
-                          : chapterFilterButtonStyle
-                      }
-                    >
-                      {filtro.titulo} ({filtro.total})
-                    </button>
-                  );
-                })}
-              </div>
             </div>
           )}
 
@@ -2115,14 +1230,6 @@ export default function MinhaObraPage() {
                         <span style={chapterBadgeStyle}>
                           Capítulo {index + 1}
                         </span>
-
-                        {capitulo.lido && (
-                          <span style={chapterReadStatusStyle}>✓ Lido</span>
-                        )}
-
-                        {capitulo.salvo && (
-                          <span style={chapterMetaBadgeStyle}>Salvo</span>
-                        )}
                       </div>
 
                       <h3 style={chapterTitleStyle}>{capitulo.titulo}</h3>
@@ -2130,17 +1237,9 @@ export default function MinhaObraPage() {
                       <div style={chapterStatsStyle}>
                         <span>{totalPalavrasCapitulo} palavras</span>
                         <span>{tempoCapituloMinutos} min</span>
-                        <span>{capitulo.curtiu ? "♥ curtido" : "sem curtida"}</span>
-                        <span>{capitulo.comentario.trim() ? "comentado" : "sem comentário"}</span>
                       </div>
 
                       <p style={chapterTextStyle}>{capitulo.texto}</p>
-
-                      {capitulo.comentario.trim() && (
-                        <p style={commentTextStyle}>
-                          Comentário: {capitulo.comentario}
-                        </p>
-                      )}
 
                       <div style={chapterActionsStyle}>
                         <Link href={lerCapituloHref} style={readButtonStyle}>
@@ -2177,7 +1276,6 @@ export default function MinhaObraPage() {
                   type="button"
                   onClick={() => {
                     setBuscaCapitulo("");
-                    setFiltroCapitulos("todos");
                   }}
                   style={clearSearchButtonStyle}
                 >
@@ -2231,10 +1329,10 @@ const pageStyle: CSSProperties = {
 };
 
 const containerStyle: CSSProperties = {
-  width: "min(860px, calc(100% - 32px))",
+  width: "min(900px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 64px",
+  padding: "14px 0 18px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2289,74 +1387,61 @@ const logoTextStyle: CSSProperties = {
   textShadow: "0 0 26px color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 24%, transparent)",
 };
 
-const pagePillStyle: CSSProperties = {
-  flex: "0 0 auto",
-  maxWidth: "48%",
-  minHeight: "34px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 12px",
-  borderRadius: "999px",
-  background: "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
-  color: "#F5F3FF",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  textAlign: "center",
-  boxShadow: "0 10px 28px rgba(0,0,0,0.18)",
-  ...safeTextStyle,
-};
 
 
 
 
 const heroStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "14px",
-  padding: "14px",
-  borderRadius: "28px",
+  gridTemplateColumns: "minmax(100px, 0.34fr) minmax(0, 1fr)",
+  alignItems: "start",
+  gap: "9px",
+  padding: "8px",
+  borderRadius: "20px",
   background:
-    "radial-gradient(circle at 82% 8%, color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent), transparent 34%), radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 26%, transparent), transparent 38%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-bg-mid, #12081F) 82%, var(--historietas-secondary, #7C3AED) 18%) 0%, color-mix(in srgb, var(--historietas-bg-start, #0B0614) 88%, black 12%) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #FBBF24) 20%, transparent)",
-  boxShadow: "0 18px 48px rgba(0,0,0,0.30), 0 0 34px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 11%, transparent), inset 0 1px 0 rgba(255,255,255,0.06)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.93)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, rgba(255,255,255,0.07)))",
+  boxShadow: "none",
   minWidth: 0,
+  maxWidth: "100%",
   overflow: "hidden",
   boxSizing: "border-box",
 };
 
 const coverStyle: CSSProperties = {
-  minHeight: "212px",
-  borderRadius: "22px",
+  width: "100%",
+  minHeight: "184px",
+  height: "184px",
+  borderRadius: "15px",
   position: "relative",
   overflow: "hidden",
   background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 58%, transparent), transparent 40%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
+    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent), transparent 38%), linear-gradient(135deg, var(--historietas-surface, #18181B) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
+  boxShadow: "none",
   minWidth: 0,
+  maxWidth: "100%",
+  alignSelf: "start",
+  boxSizing: "border-box",
 };
 
 const coverGlowStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  background:
-    "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.78) 100%)",
+  display: "none",
 };
 
 const coverGenreStyle: CSSProperties = {
   position: "absolute",
-  top: "10px",
-  left: "10px",
-  maxWidth: "calc(100% - 20px)",
+  top: "8px",
+  right: "8px",
+  width: "fit-content",
+  maxWidth: "calc(100% - 16px)",
   padding: "5px 8px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 88%, transparent)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 78%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 38%, transparent)",
+  color: "#FFFFFF",
   fontSize: "9px",
+  lineHeight: 1.1,
   fontWeight: 950,
   textAlign: "center",
   ...safeTextStyle,
@@ -2364,46 +1449,63 @@ const coverGenreStyle: CSSProperties = {
 
 const coverInfoStyle: CSSProperties = {
   position: "absolute",
-  left: "12px",
-  right: "12px",
-  bottom: "12px",
+  left: "8px",
+  right: "8px",
+  bottom: "10px",
   display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "space-between",
-  gap: "9px",
+  alignItems: "baseline",
+  justifyContent: "center",
+  gap: "6px",
   minWidth: 0,
 };
 
 const coverNumberStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "46px",
-  lineHeight: 1,
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  textShadow: "none",
+  fontSize: "31px",
+  lineHeight: 0.85,
   fontWeight: 950,
   letterSpacing: "-0.08em",
-};
-
-const coverTextStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #E4E4E7)",
-  fontSize: "10px",
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  textAlign: "right",
+  flex: "0 0 auto",
   ...safeTextStyle,
 };
 
+const coverTextStyle: CSSProperties = {
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  textShadow: "none",
+  fontSize: "10px",
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.052em",
+  textAlign: "left",
+  whiteSpace: "nowrap",
+  overflowWrap: "normal",
+  wordBreak: "normal",
+  flex: "0 1 auto",
+  minWidth: 0,
+};
+
 const contentStyle: CSSProperties = {
-  display: "grid",
-  gap: "11px",
   minWidth: 0,
   maxWidth: "100%",
+  display: "grid",
+  alignContent: "start",
+  justifyItems: "stretch",
+  textAlign: "left",
+  gap: "6px",
+  width: "100%",
 };
 
 const topBadgesStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
+  justifyContent: "flex-start",
+  alignItems: "center",
   gap: "5px",
   minWidth: 0,
+  maxWidth: "100%",
 };
 
 const badgeStyle: CSSProperties = {
@@ -2414,7 +1516,8 @@ const badgeStyle: CSSProperties = {
   background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "9px",
+  fontSize: "8.8px",
+  lineHeight: 1.1,
   fontWeight: 950,
   ...safeTextStyle,
 };
@@ -2440,196 +1543,131 @@ const classificationBadgeStyle: CSSProperties = {
   color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
 };
 
-const followingBadgeStyle: CSSProperties = {
+const genreBadgeStyle: CSSProperties = {
   ...badgeStyle,
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.26)",
-  color: "#86EFAC",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 22%, transparent)",
+  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
 };
 
-const favoriteBadgeStyle: CSSProperties = {
-  ...badgeStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-};
 
-const completedBadgeStyle: CSSProperties = {
-  ...badgeStyle,
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.26)",
-  color: "#86EFAC",
-};
+
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(36px, 10vw, 58px)",
-  lineHeight: 1.14,
-  paddingBottom: "0.10em",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "clamp(27px, 7.4vw, 40px)",
+  lineHeight: 0.98,
   fontWeight: 950,
-  letterSpacing: "-0.075em",
+  letterSpacing: "-0.068em",
   maxWidth: "100%",
-  background: "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 42%, var(--historietas-accent, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  textAlign: "left",
   ...safeTextStyle,
 };
 
 const authorLinkStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  margin: 0,
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "13px",
+  fontSize: "13.5px",
+  lineHeight: 1.1,
   fontWeight: 950,
   textDecoration: "none",
-  borderBottom: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
+  textAlign: "left",
+  borderBottom: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
   ...safeTextStyle,
 };
 
 const sinopseStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.55,
+  fontSize: "11.5px",
+  lineHeight: 1.42,
   fontWeight: 650,
   maxWidth: "100%",
+  textAlign: "left",
   display: "-webkit-box",
-  WebkitLineClamp: 4,
+  WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
   ...safeTextStyle,
 };
 
-const tagListStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
 const tagStyle: CSSProperties = {
   maxWidth: "100%",
-  padding: "5px 8px",
+  padding: "5px 7px",
   borderRadius: "999px",
   background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, transparent)",
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 22%, transparent)",
   color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
-  fontSize: "10px",
+  fontSize: "9px",
+  lineHeight: 1.1,
   fontWeight: 900,
   ...safeTextStyle,
 };
 
-const progressTrackStyle: CSSProperties = {
-  width: "100%",
-  height: "5px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  overflow: "hidden",
-};
 
-const progressBarStyle: CSSProperties = {
-  height: "100%",
-  borderRadius: "999px",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-};
 
-const heroActionsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
-  minWidth: 0,
-};
 
 const authorActionsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
+  gap: "7px",
+  width: "100%",
   minWidth: 0,
+  marginTop: "2px",
 };
 
 const statsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(112px, 1fr))",
-  gap: "8px",
-  marginTop: "12px",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "6px",
+  marginTop: "10px",
   minWidth: 0,
 };
 
 const statCardStyle: CSSProperties = {
-  borderRadius: "17px",
-  background: "linear-gradient(135deg, rgba(31,22,48,0.68) 0%, rgba(18,12,30,0.82) 100%)",
-  border: "1px solid rgba(255,255,255,0.075)",
-  padding: "10px 11px",
+  borderRadius: "13px",
+  background: "linear-gradient(135deg, var(--historietas-surface, rgba(31,22,48,0.48)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.66)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
+  padding: "6px 3px",
+  minHeight: "48px",
   display: "grid",
+  alignContent: "center",
+  justifyItems: "center",
   gap: "2px",
+  textAlign: "center",
   minWidth: 0,
   overflow: "hidden",
-  boxShadow: "0 8px 22px rgba(0,0,0,0.13), inset 0 1px 0 rgba(255,255,255,0.045)",
+  boxShadow: "none",
 };
 
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "19px",
+  fontSize: "17px",
   lineHeight: 1,
   fontWeight: 950,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  lineHeight: 1.18,
+  fontSize: "7.6px",
+  lineHeight: 1.05,
   fontWeight: 850,
-  ...safeTextStyle,
+  textTransform: "uppercase",
+  letterSpacing: "0.025em",
+  textAlign: "center",
+  whiteSpace: "nowrap",
+  overflowWrap: "normal",
+  wordBreak: "normal",
 };
 
-const readingPlanBoxStyle: CSSProperties = {
-  marginTop: "14px",
-  display: "grid",
-  gap: "10px",
-  padding: "14px",
-  borderRadius: "23px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.90)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid rgba(255,255,255,0.085)",
-  boxShadow: "0 12px 30px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.04)",
-  minWidth: 0,
-  overflow: "hidden",
-};
 
-const readingPlanBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "7px 10px",
-  borderRadius: "999px",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const readingPlanTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.58,
-  fontWeight: 700,
-  ...safeTextStyle,
-};
 
-const readingPlanActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(148px, 1fr))",
-  gap: "8px",
-  minWidth: 0,
-};
 
 const sectionStyle: CSSProperties = {
   marginTop: "14px",
@@ -2638,12 +1676,13 @@ const sectionStyle: CSSProperties = {
 
 const sectionHeaderStyle: CSSProperties = {
   display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
+  alignItems: "center",
+  justifyContent: "center",
   gap: "10px",
   flexWrap: "wrap",
-  marginBottom: "10px",
+  marginBottom: "9px",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const sectionMiniTitleStyle: CSSProperties = {
@@ -2652,330 +1691,77 @@ const sectionMiniTitleStyle: CSSProperties = {
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.08em",
-  marginBottom: "5px",
+  marginBottom: "4px",
   maxWidth: "100%",
+  textAlign: "center",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "24px",
-  lineHeight: 1.18,
-  paddingBottom: "0.08em",
+  lineHeight: 1.1,
+  paddingBottom: "0.06em",
   fontWeight: 950,
   letterSpacing: "-0.05em",
   maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const smallHeaderButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  padding: "0 11px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  ...safeTextStyle,
-};
-
-const infoObraBoxStyle: CSSProperties = {
-  marginTop: "14px",
-  display: "grid",
-  gap: "10px",
-  padding: "14px",
-  borderRadius: "23px",
-  background: "linear-gradient(135deg, color-mix(in srgb, var(--historietas-bg-mid, #12081F) 88%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, var(--historietas-bg-mid, #12081F)) 100%)",
-  border: "1px solid rgba(255,255,255,0.085)",
-  boxShadow: "0 12px 30px rgba(0,0,0,0.16)",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
-const infoObraGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "7px",
-  minWidth: 0,
-};
-
-const infoObraCardStyle: CSSProperties = {
-  display: "grid",
-  gap: "2px",
-  padding: "8px",
-  borderRadius: "14px",
-  background: "rgba(255,255,255,0.05)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
-const infoObraValueStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "14px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const infoObraLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "9px",
-  fontWeight: 850,
-  ...safeTextStyle,
-};
-
-const reviewBoxStyle: CSSProperties = {
-  marginTop: "14px",
-  display: "grid",
-  gap: "10px",
-  padding: "14px",
-  borderRadius: "23px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-bg-mid, #12081F) 88%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, var(--historietas-bg-mid, #12081F)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  boxShadow: "0 12px 30px rgba(0,0,0,0.16)",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
-const ratingBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const starsRowStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
-};
-
-const starButtonStyle: CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "12px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  cursor: "pointer",
-  fontSize: "17px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-};
-
-const starButtonActiveStyle: CSSProperties = {
-  ...starButtonStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
-};
-
-const starIconBoxStyle: CSSProperties = {
-  position: "relative",
-  width: "22px",
-  height: "22px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-};
-
-const starEmptyIconStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.22)",
-  fontSize: "21px",
-  lineHeight: 1,
-};
-
-const starFilledIconStyle: CSSProperties = {
-  position: "absolute",
-  left: 0,
-  top: 0,
-  height: "100%",
-  overflow: "hidden",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "21px",
-  lineHeight: 1,
-  whiteSpace: "nowrap",
-};
-
-const clearRatingButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "rgba(255,255,255,0.05)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 900,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  ...safeTextStyle,
-};
-
-const reviewHelpTextStyle: CSSProperties = {
-  margin: "-2px 0 0",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.45,
-  fontWeight: 750,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const reviewInfoRowStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  minWidth: 0,
-};
-
-const userRatingBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 28%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
-  fontSize: "10px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const reviewTextareaStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "96px",
-  resize: "vertical",
-  borderRadius: "16px",
-  border: "1px solid var(--historietas-border-soft, #3F3F46)",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  padding: "12px",
-  outline: "none",
-  fontSize: "13px",
-  lineHeight: 1.5,
-  fontWeight: 700,
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
-const reviewButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
   textAlign: "center",
-  padding: "0 12px",
   ...safeTextStyle,
 };
 
-const reviewsListStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-};
 
-const reviewCardStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  padding: "9px",
-  borderRadius: "16px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
-  minWidth: 0,
-  overflow: "hidden",
-};
 
-const reviewTopStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
 
-const reviewBadgeStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const reviewDateStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 850,
-  ...safeTextStyle,
-};
 
-const reviewTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #E4E4E7)",
-  fontSize: "12px",
-  lineHeight: 1.5,
-  fontWeight: 700,
-  ...safeTextStyle,
-};
 
-const reviewDeleteButtonStyle: CSSProperties = {
-  width: "fit-content",
-  minHeight: "28px",
-  padding: "0 9px",
-  borderRadius: "999px",
-  border: "1px solid rgba(239,68,68,0.16)",
-  background: "rgba(239,68,68,0.06)",
-  color: "#FCA5A5",
-  fontSize: "10px",
-  fontWeight: 900,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  ...safeTextStyle,
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const chapterToolsStyle: CSSProperties = {
   display: "grid",
-  gap: "6px",
+  gap: "7px",
   marginBottom: "9px",
-  padding: "8px",
-  borderRadius: "16px",
-  background: "color-mix(in srgb, var(--historietas-bg-mid, #12081F) 58%, transparent)",
-  border: "1px solid rgba(255,255,255,0.055)",
+  padding: "0",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
 };
 
 const chapterSearchInputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "34px",
+  minHeight: "38px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, #3F3F46)",
   background: "var(--historietas-input-bg, #18181B)",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  padding: "0 11px",
+  padding: "0 12px",
   outline: "none",
-  fontSize: "11px",
+  fontSize: "12px",
   fontWeight: 800,
   fontFamily: "inherit",
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2987,12 +1773,6 @@ const chapterOrderGridStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const chapterFilterGridStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "4px",
-  minWidth: 0,
-};
 
 const chapterOrderButtonStyle: CSSProperties = {
   minHeight: "29px",
@@ -3015,26 +1795,7 @@ const chapterOrderButtonActiveStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
 };
 
-const chapterFilterButtonStyle: CSSProperties = {
-  minHeight: "26px",
-  padding: "0 7px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "rgba(255,255,255,0.04)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 850,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  ...safeTextStyle,
-};
 
-const chapterFilterButtonActiveStyle: CSSProperties = {
-  ...chapterFilterButtonStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 34%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
-};
 
 const chapterListStyle: CSSProperties = {
   display: "grid",
@@ -3044,13 +1805,13 @@ const chapterListStyle: CSSProperties = {
 
 const chapterCardStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
-  padding: "11px",
-  borderRadius: "19px",
+  gap: "7px",
+  padding: "10px",
+  borderRadius: "18px",
   background:
-    "linear-gradient(135deg, rgba(33,24,50,0.92) 0%, rgba(18,12,30,0.98) 100%)",
-  border: "1px solid rgba(255,255,255,0.075)",
-  boxShadow: "0 9px 24px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.035)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.78)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 9%, var(--historietas-border-soft, rgba(255,255,255,0.065)))",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -3075,81 +1836,59 @@ const chapterBadgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const chapterReadStatusStyle: CSSProperties = {
-  ...chapterBadgeStyle,
-  background: "rgba(34,197,94,0.12)",
-  border: "1px solid rgba(34,197,94,0.24)",
-  color: "#86EFAC",
-};
 
-const chapterMetaBadgeStyle: CSSProperties = {
-  ...chapterBadgeStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-};
 
 const chapterTitleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "19px",
-  lineHeight: 1.12,
-  paddingBottom: "0.04em",
+  fontSize: "20px",
+  lineHeight: 1.15,
   fontWeight: 950,
-  letterSpacing: "-0.05em",
-  maxWidth: "100%",
+  letterSpacing: "-0.045em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const chapterStatsStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "4px",
+  justifyContent: "center",
+  gap: "5px",
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "9px",
-  lineHeight: 1.25,
-  fontWeight: 850,
-  minWidth: 0,
+  fontSize: "10px",
+  fontWeight: 800,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const chapterTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.35,
+  fontSize: "12px",
+  lineHeight: 1.52,
   fontWeight: 650,
-  maxWidth: "100%",
+  textAlign: "center",
   display: "-webkit-box",
-  WebkitLineClamp: 1,
+  WebkitLineClamp: 3,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
   ...safeTextStyle,
 };
 
-const commentTextStyle: CSSProperties = {
-  margin: 0,
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 45%, white)",
-  fontSize: "10px",
-  lineHeight: 1.3,
-  fontWeight: 750,
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
 
 const chapterActionsStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1.3fr) repeat(2, minmax(0, 0.85fr))",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "6px",
   minWidth: 0,
+  alignItems: "stretch",
 };
 
 const readButtonStyle: CSSProperties = {
-  minHeight: "32px",
+  minHeight: "34px",
+  width: "100%",
   borderRadius: "999px",
+  border: "none",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -3159,15 +1898,20 @@ const readButtonStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
+  padding: "0 8px",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  boxSizing: "border-box",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const editButtonStyle: CSSProperties = {
-  minHeight: "32px",
+  minHeight: "34px",
+  width: "100%",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent)",
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 22%, transparent)",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent)",
   color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
   textDecoration: "none",
   fontSize: "10px",
@@ -3176,29 +1920,40 @@ const editButtonStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
+  padding: "0 8px",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  boxSizing: "border-box",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const deleteButtonStyle: CSSProperties = {
-  minHeight: "32px",
+  minHeight: "34px",
+  width: "100%",
   borderRadius: "999px",
   border: "1px solid rgba(239,68,68,0.16)",
   background: "rgba(239,68,68,0.06)",
   color: "#FCA5A5",
   fontSize: "10px",
   fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
+  padding: "0 8px",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  boxSizing: "border-box",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const orangeActionStyle: CSSProperties = {
-  minHeight: "42px",
+  minHeight: "39px",
   borderRadius: "999px",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, var(--historietas-accent, #F97316)) 100%)",
+  border: "none",
+  background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
@@ -3207,84 +1962,122 @@ const orangeActionStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 11px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  cursor: "pointer",
+  padding: "0 10px",
   fontFamily: "inherit",
+  cursor: "pointer",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
-const followActionStyle: CSSProperties = {
-  ...orangeActionStyle,
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.24)",
-  color: "#86EFAC",
-};
 
-const followingActionStyle: CSSProperties = {
-  ...followActionStyle,
-  background: "rgba(34, 197, 94, 0.18)",
-};
 
-const favoriteActionStyle: CSSProperties = {
-  ...orangeActionStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 8%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-};
 
-const favoriteActionActiveStyle: CSSProperties = {
-  ...favoriteActionStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-};
 
-const completedActionStyle: CSSProperties = {
-  ...orangeActionStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-};
 
-const completedActionActiveStyle: CSSProperties = {
-  ...completedActionStyle,
-  background: "rgba(34,197,94,0.14)",
-  border: "1px solid rgba(34,197,94,0.24)",
-  color: "#86EFAC",
-};
 
 const primaryActionStyle: CSSProperties = {
-  ...orangeActionStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  minHeight: "35px",
+  borderRadius: "999px",
+  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "10px",
+  lineHeight: 1.05,
+  fontWeight: 900,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 7px",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const secondaryActionStyle: CSSProperties = {
-  ...orangeActionStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 24%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
+  minHeight: "35px",
+  borderRadius: "999px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  textDecoration: "none",
+  fontSize: "10px",
+  lineHeight: 1.05,
+  fontWeight: 900,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 7px",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const publicPageActionStyle: CSSProperties = {
-  ...orangeActionStyle,
+  minHeight: "35px",
+  borderRadius: "999px",
   background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
+  textDecoration: "none",
+  fontSize: "10px",
+  lineHeight: 1.05,
+  fontWeight: 900,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 7px",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const copyLinkActionStyle: CSSProperties = {
-  ...orangeActionStyle,
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-text-primary, #E4E4E7)",
+  minHeight: "35px",
+  borderRadius: "999px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  textDecoration: "none",
+  fontSize: "10px",
+  lineHeight: 1.05,
+  fontWeight: 900,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 7px",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const copiedLinkActionStyle: CSSProperties = {
-  ...copyLinkActionStyle,
-  background: "rgba(34,197,94,0.14)",
-  border: "1px solid rgba(34,197,94,0.28)",
+  minHeight: "35px",
+  borderRadius: "999px",
+  background: "rgba(34,197,94,0.12)",
+  border: "1px solid rgba(34,197,94,0.24)",
   color: "#86EFAC",
+  textDecoration: "none",
+  fontSize: "10px",
+  lineHeight: 1.05,
+  fontWeight: 900,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 7px",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const fileBadgeStyle: CSSProperties = {
@@ -3295,15 +2088,15 @@ const fileBadgeStyle: CSSProperties = {
 };
 
 const arquivoObraBoxStyle: CSSProperties = {
-  marginTop: "14px",
+  marginTop: "12px",
   display: "grid",
-  gap: "10px",
-  padding: "12px",
-  borderRadius: "21px",
+  gap: "8px",
+  padding: "10px",
+  borderRadius: "18px",
   background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, var(--historietas-bg-mid, #12081F)) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, var(--historietas-bg-mid, #12081F)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.20)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.64)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.78)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 10%, var(--historietas-border-soft, rgba(255,255,255,0.06)))",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -3324,11 +2117,11 @@ const arquivoObraTypeBadgeStyle: CSSProperties = {
 const arquivoObraCardStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "10px",
-  padding: "10px",
-  borderRadius: "18px",
+  gap: "9px",
+  padding: "9px",
+  borderRadius: "17px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -3477,13 +2270,15 @@ const clearSearchButtonStyle: CSSProperties = {
 };
 
 const emptyBoxStyle: CSSProperties = {
-  marginTop: "18px",
-  borderRadius: "24px",
-  background: "rgba(31,31,35,0.96)",
-  border: "1px solid var(--historietas-border-soft, #2D2D32)",
-  padding: "20px",
+  marginTop: "14px",
+  borderRadius: "22px",
+  background: "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.84)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.94)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  padding: "18px",
   display: "grid",
-  gap: "12px",
+  justifyItems: "center",
+  textAlign: "center",
+  gap: "10px",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -3519,7 +2314,7 @@ const emptyButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 78px",
+  padding: "26px 0 30px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -3531,71 +2326,71 @@ const desktopTopStyle: CSSProperties = {
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
-  gridTemplateColumns: "minmax(230px, 300px) minmax(0, 1fr)",
-  gap: "20px",
-  padding: "18px",
-  borderRadius: "30px",
-  alignItems: "center",
+  gridTemplateColumns: "minmax(214px, 0.34fr) minmax(0, 1fr)",
+  alignItems: "start",
+  gap: "16px",
+  padding: "12px",
+  borderRadius: "26px",
 };
 
 const desktopCoverStyle: CSSProperties = {
   ...coverStyle,
-  minHeight: "330px",
-  height: "100%",
-  borderRadius: "24px",
+  minHeight: "268px",
+  height: "268px",
+  borderRadius: "20px",
 };
 
 const desktopContentStyle: CSSProperties = {
   ...contentStyle,
-  alignContent: "center",
-  gap: "12px",
-  padding: "8px 4px 8px 0",
+  gap: "9px",
+  alignContent: "start",
+  justifyItems: "stretch",
+  width: "100%",
+  padding: "2px 2px 2px 0",
+  textAlign: "left",
 };
 
 const desktopTopBadgesStyle: CSSProperties = {
   ...topBadgesStyle,
-  gap: "7px",
+  justifyContent: "flex-start",
 };
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
-  fontSize: "clamp(44px, 4.8vw, 68px)",
-  lineHeight: 1.14,
-  maxWidth: "760px",
+  fontSize: "clamp(42px, 4.6vw, 62px)",
+  maxWidth: "100%",
+  textAlign: "left",
 };
 
 const desktopSinopseStyle: CSSProperties = {
   ...sinopseStyle,
-  fontSize: "14px",
-  lineHeight: 1.6,
-  WebkitLineClamp: 3,
   maxWidth: "760px",
+  fontSize: "14px",
+  lineHeight: 1.52,
+  WebkitLineClamp: 3,
+  textAlign: "left",
 };
 
-const desktopHeroActionsGridStyle: CSSProperties = {
-  ...heroActionsGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "8px",
-};
 
 const desktopAuthorActionsStyle: CSSProperties = {
   ...authorActionsStyle,
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: "8px",
+  width: "100%",
 };
 
 const desktopStatsGridStyle: CSSProperties = {
   ...statsGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "10px",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "8px",
   marginTop: "12px",
 };
 
 const desktopArquivoObraBoxStyle: CSSProperties = {
   ...arquivoObraBoxStyle,
-  marginTop: "16px",
-  padding: "16px",
-  borderRadius: "24px",
+  marginTop: "14px",
+  padding: "13px",
+  borderRadius: "22px",
 };
 
 const desktopArquivoObraCardStyle: CSSProperties = {
@@ -3617,59 +2412,17 @@ const desktopArquivoObraActionsStyle: CSSProperties = {
   alignSelf: "center",
 };
 
-const desktopInfoObraBoxStyle: CSSProperties = {
-  ...infoObraBoxStyle,
-  marginTop: "16px",
-  padding: "16px",
-  borderRadius: "24px",
-};
 
-const desktopInfoObraGridStyle: CSSProperties = {
-  ...infoObraGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "10px",
-};
 
-const desktopReviewBoxStyle: CSSProperties = {
-  ...reviewBoxStyle,
-  marginTop: "16px",
-  padding: "16px",
-  borderRadius: "24px",
-};
 
-const desktopReviewInfoRowStyle: CSSProperties = {
-  ...reviewInfoRowStyle,
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  alignItems: "center",
-};
 
-const desktopReviewTextareaStyle: CSSProperties = {
-  ...reviewTextareaStyle,
-  minHeight: "110px",
-};
 
-const desktopReviewButtonStyle: CSSProperties = {
-  ...reviewButtonStyle,
-  width: "220px",
-  justifySelf: "start",
-};
 
-const desktopReadingPlanBoxStyle: CSSProperties = {
-  ...readingPlanBoxStyle,
-  padding: "16px",
-  borderRadius: "24px",
-};
 
-const desktopReadingPlanActionsStyle: CSSProperties = {
-  ...readingPlanActionsStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 220px))",
-  justifyContent: "start",
-  gap: "10px",
-};
 
 const desktopSectionStyle: CSSProperties = {
   ...sectionStyle,
-  marginTop: "18px",
+  marginTop: "16px",
 };
 
 const desktopChapterToolsStyle: CSSProperties = {
@@ -3689,16 +2442,9 @@ const desktopChapterOrderGridStyle: CSSProperties = {
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
 };
 
-const desktopChapterFilterGridStyle: CSSProperties = {
-  ...chapterFilterGridStyle,
-  display: "grid",
-  gridColumn: "1 / -1",
-  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-};
 
 const desktopChapterListStyle: CSSProperties = {
   ...chapterListStyle,
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "12px",
 };
-

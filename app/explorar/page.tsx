@@ -365,15 +365,34 @@ const THEME_STORAGE_KEY = "historietas-tema-visual";
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
 const categorias = [
-  "Fantasia",
-  "Romance",
-  "Terror",
   "Ação",
-  "Sci-fi",
-  "Drama",
   "Aventura",
   "Comédia",
+  "Drama",
+  "Fantasia",
+  "Ficção",
+  "Mistério",
+  "Romance",
+  "Suspense",
+  "Terror",
   "Sobrenatural",
+  "Histórico",
+  "Biografia",
+];
+
+const formatosBase = [
+  "Webnovel",
+  "Light novel",
+  "Fanfic",
+  "Mangá",
+  "Webtoon",
+  "Conto",
+  "Crônica",
+  "Roteiro",
+  "História Original",
+  "Poesia",
+  "Novel",
+  "Livro",
 ];
 
 function obterTemaVisualExplorarSeguro(valor: unknown): TemaVisualExplorar {
@@ -571,6 +590,14 @@ function categoriaCombinaComGenero(categoria: string, genero: string) {
 
   if (!categoriaNormalizada || !generoNormalizado) {
     return false;
+  }
+
+  if (categoriaNormalizada === "ficcao") {
+    return (
+      generoNormalizado.includes("ficcao") ||
+      generoNormalizado.includes("sci-fi") ||
+      generoNormalizado.includes("sci fi")
+    );
   }
 
   return generoNormalizado.includes(categoriaNormalizada);
@@ -1233,7 +1260,7 @@ function obterTemaCategoria(categoria: string) {
     };
   }
 
-  if (categoriaNormalizada === "sci-fi" || categoriaNormalizada === "sci fi") {
+  if (categoriaNormalizada === "ficcao" || categoriaNormalizada === "sci-fi" || categoriaNormalizada === "sci fi") {
     return {
       accent: "#38BDF8",
       activeBackground: "linear-gradient(135deg, #0369A1 0%, #38BDF8 100%)",
@@ -1361,7 +1388,7 @@ function obterDecoracoesCategoria(categoria: string) {
     return ["✦", "✧", "◇", "☾", "✶"];
   }
 
-  if (categoriaNormalizada === "sci-fi" || categoriaNormalizada === "sci fi") {
+  if (categoriaNormalizada === "ficcao" || categoriaNormalizada === "sci-fi" || categoriaNormalizada === "sci fi") {
     return ["⌁", "◇", "＋", "◌", "⌬"];
   }
 
@@ -1420,9 +1447,6 @@ export default function ExplorarPage() {
   const [busca, setBusca] = useState("");
   const [filtroFormato, setFiltroFormato] = useState("todos");
   const [filtroClassificacao, setFiltroClassificacao] = useState("todos");
-  const [filtroStatus, setFiltroStatus] = useState("todos");
-  const [filtroPublicacao, setFiltroPublicacao] = useState("todos");
-  const [filtroCapa, setFiltroCapa] = useState("todos");
   const [filtroCapitulos, setFiltroCapitulos] = useState("todos");
   const [filtroColecao, setFiltroColecao] =
     useState<FiltroColecaoExplorar>("todos");
@@ -1542,11 +1566,13 @@ export default function ExplorarPage() {
   const termoBusca = normalizarTexto(busca);
 
   const formatosDisponiveis = useMemo(() => {
-    const formatos = obrasLocais
+    const formatosLocais = obrasLocais
       .map((obra) => obra.formato)
       .filter((formato) => formato && formato !== "Não informado");
 
-    return Array.from(new Set(formatos)).sort((a, b) => a.localeCompare(b));
+    return Array.from(new Set([...formatosBase, ...formatosLocais])).sort(
+      (a, b) => a.localeCompare(b)
+    );
   }, [obrasLocais]);
 
   const classificacoesDisponiveis = useMemo(() => {
@@ -1579,26 +1605,7 @@ export default function ExplorarPage() {
           ? true
           : obra.classificacaoIndicativa === filtroClassificacao;
 
-      const passaStatus =
-        filtroStatus === "todos"
-          ? true
-          : filtroStatus === "disponivel"
-            ? obra.publicado
-            : !obra.publicado;
-
-      const passaPublicacao =
-        filtroPublicacao === "todos"
-          ? true
-          : filtroPublicacao === "publicado"
-            ? obra.publicado
-            : !obra.publicado;
-
-      const passaCapa =
-        filtroCapa === "todos"
-          ? true
-          : filtroCapa === "com-capa"
-            ? Boolean(obra.capa)
-            : !obra.capa;
+      const passaPublicacao = obra.publicado;
 
       const passaCapitulos =
         filtroCapitulos === "todos"
@@ -1640,9 +1647,7 @@ export default function ExplorarPage() {
         passaCategoria &&
         passaFormato &&
         passaClassificacao &&
-        passaStatus &&
         passaPublicacao &&
-        passaCapa &&
         passaCapitulos &&
         passaColecao &&
         passaBusca
@@ -1655,9 +1660,6 @@ export default function ExplorarPage() {
     categoriaSelecionada,
     filtroFormato,
     filtroClassificacao,
-    filtroStatus,
-    filtroPublicacao,
-    filtroCapa,
     filtroCapitulos,
     filtroColecao,
     termoBusca,
@@ -1679,26 +1681,7 @@ export default function ExplorarPage() {
           ? true
           : obra.classificacaoIndicativa === filtroClassificacao;
 
-      const passaStatus =
-        filtroStatus === "todos"
-          ? true
-          : filtroStatus === "disponivel"
-            ? obra.disponivel
-            : !obra.disponivel;
-
-      const passaPublicacao =
-        filtroPublicacao === "todos"
-          ? true
-          : filtroPublicacao === "publicado"
-            ? obra.disponivel
-            : false;
-
-      const passaCapa =
-        filtroCapa === "todos"
-          ? true
-          : filtroCapa === "com-capa"
-            ? false
-            : true;
+      const passaPublicacao = obra.disponivel;
 
       const passaCapitulos =
         filtroCapitulos === "todos"
@@ -1725,9 +1708,7 @@ export default function ExplorarPage() {
         passaCategoria &&
         passaFormato &&
         passaClassificacao &&
-        passaStatus &&
         passaPublicacao &&
-        passaCapa &&
         passaCapitulos &&
         passaColecao &&
         passaBusca
@@ -1739,9 +1720,6 @@ export default function ExplorarPage() {
     categoriaSelecionada,
     filtroFormato,
     filtroClassificacao,
-    filtroStatus,
-    filtroPublicacao,
-    filtroCapa,
     filtroCapitulos,
     filtroColecao,
     termoBusca,
@@ -1768,9 +1746,6 @@ export default function ExplorarPage() {
       termoBusca ||
       filtroFormato !== "todos" ||
       filtroClassificacao !== "todos" ||
-      filtroStatus !== "todos" ||
-      filtroPublicacao !== "todos" ||
-      filtroCapa !== "todos" ||
       filtroCapitulos !== "todos" ||
       filtroColecao !== "todos" ||
       ordenacao !== "relevancia"
@@ -1779,9 +1754,6 @@ export default function ExplorarPage() {
   const totalFiltrosAvancadosAtivos = [
     filtroFormato !== "todos",
     filtroClassificacao !== "todos",
-    filtroStatus !== "todos",
-    filtroPublicacao !== "todos",
-    filtroCapa !== "todos",
     filtroCapitulos !== "todos",
     ordenacao !== "relevancia",
   ].filter(Boolean).length;
@@ -1920,9 +1892,6 @@ export default function ExplorarPage() {
     setBusca("");
     setFiltroFormato("todos");
     setFiltroClassificacao("todos");
-    setFiltroStatus("todos");
-    setFiltroPublicacao("todos");
-    setFiltroCapa("todos");
     setFiltroCapitulos("todos");
     setFiltroColecao("todos");
     setOrdenacao("relevancia");
@@ -2132,48 +2101,6 @@ export default function ExplorarPage() {
                     {classificacao}
                   </option>
                 ))}
-              </select>
-            </div>
-
-            <div style={criarFieldBoxStyle(temaPagina, categoriaAtiva)}>
-              <label style={criarSearchLabelStyle(categoriaAtiva)}>Status</label>
-
-              <select
-                value={filtroStatus}
-                onChange={(event) => setFiltroStatus(event.target.value)}
-                style={criarSelectStyle(temaPagina, categoriaAtiva)}
-              >
-                <option value="todos">Todos</option>
-                <option value="disponivel">Disponível</option>
-                <option value="em-breve">Em breve / rascunho</option>
-              </select>
-            </div>
-
-            <div style={criarFieldBoxStyle(temaPagina, categoriaAtiva)}>
-              <label style={criarSearchLabelStyle(categoriaAtiva)}>Publicação</label>
-
-              <select
-                value={filtroPublicacao}
-                onChange={(event) => setFiltroPublicacao(event.target.value)}
-                style={criarSelectStyle(temaPagina, categoriaAtiva)}
-              >
-                <option value="todos">Todos</option>
-                <option value="publicado">Publicado</option>
-                <option value="rascunho">Rascunho</option>
-              </select>
-            </div>
-
-            <div style={criarFieldBoxStyle(temaPagina, categoriaAtiva)}>
-              <label style={criarSearchLabelStyle(categoriaAtiva)}>Capa</label>
-
-              <select
-                value={filtroCapa}
-                onChange={(event) => setFiltroCapa(event.target.value)}
-                style={criarSelectStyle(temaPagina, categoriaAtiva)}
-              >
-                <option value="todos">Com ou sem capa</option>
-                <option value="com-capa">Com capa</option>
-                <option value="sem-capa">Sem capa</option>
               </select>
             </div>
 
@@ -3019,7 +2946,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(88px + env(safe-area-inset-bottom))",
+  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -4004,7 +3931,7 @@ const desktopCardPrimaryActionStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1220px, calc(100% - 64px))",
-  padding: "26px 0 96px",
+  padding: "26px 0 40px",
 };
 
 const desktopTopStyle: CSSProperties = {

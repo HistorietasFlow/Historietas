@@ -1536,14 +1536,6 @@ export default function LerCapituloPage() {
             <Link href={perfilAutorHref} style={statusLinkBadgeStyle}>
               por {obraAtual.autor}
             </Link>
-
-            {capituloAtual.salvo && <span style={statusBadgeStyle}>Salvo</span>}
-
-            {capituloAtual.curtiu && <span style={statusBadgeStyle}>Curtido</span>}
-
-            {capituloAtual.comentario.trim() && (
-              <span style={statusBadgeStyle}>Comentado</span>
-            )}
           </div>
         </section>
 
@@ -1560,10 +1552,7 @@ export default function LerCapituloPage() {
             }
           >
             <div style={settingsHeaderStyle}>
-              <div>
-                <span style={miniTitleStyle}>AJUSTES</span>
-                <h2 style={settingsTitleStyle}>Leitura</h2>
-              </div>
+              <h2 style={settingsTitleStyle}>Ajustes de leitura</h2>
             </div>
 
             <select
@@ -1750,10 +1739,7 @@ export default function LerCapituloPage() {
             }
           >
             <div style={commentHeaderStyle}>
-              <div>
-                <span style={miniTitleStyle}>COMENTÁRIO</span>
-                <h2 style={commentTitleStyle}>Comentário do capítulo</h2>
-              </div>
+              <h2 style={commentTitleStyle}>Comentário</h2>
 
               {capituloAtual.comentario.trim() && (
                 <button
@@ -1989,7 +1975,7 @@ const containerStyle: CSSProperties = {
   width: "min(760px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 104px",
+  padding: "12px 0 calc(66px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1999,23 +1985,23 @@ const topStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "10px",
-  flexWrap: "wrap",
-  marginBottom: "12px",
+  flexWrap: "nowrap",
+  marginBottom: "10px",
   minWidth: 0,
 };
 
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "23px",
   fontWeight: 950,
   letterSpacing: "-0.055em",
   display: "flex",
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "100%",
-  overflow: "visible",
+  maxWidth: "calc(100% - 104px)",
+  overflow: "hidden",
   ...safeTextStyle,
 };
 
@@ -2127,8 +2113,11 @@ const settingsButtonStyle: CSSProperties = {
 const topSingleSettingsButtonStyle: CSSProperties = {
   ...settingsButtonStyle,
   flex: "0 0 auto",
-  minWidth: "92px",
-  maxWidth: "132px",
+  minWidth: "88px",
+  maxWidth: "116px",
+  minHeight: "34px",
+  padding: "0 11px",
+  fontSize: "11px",
 };
 
 const focusTopSingleSettingsButtonStyle: CSSProperties = {
@@ -2141,13 +2130,13 @@ const focusTopSingleSettingsButtonStyle: CSSProperties = {
 
 const chapterHeaderStyle: CSSProperties = {
   display: "grid",
-  gap: "7px",
-  padding: "13px",
-  borderRadius: "22px",
+  gap: "6px",
+  padding: "12px",
+  borderRadius: "20px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(24,14,39,0.94)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.96)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 11%, var(--historietas-border-soft, transparent))",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(24,14,39,0.92)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.96)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-border-soft, transparent))",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2156,45 +2145,49 @@ const chapterHeaderStyle: CSSProperties = {
 
 const focusChapterHeaderStyle: CSSProperties = {
   ...chapterHeaderStyle,
-  background: "linear-gradient(135deg, rgba(9,9,11,0.96) 0%, rgba(3,3,6,0.98) 100%)",
-  border: "1px solid rgba(255,255,255,0.055)",
-  boxShadow: "0 18px 48px rgba(0,0,0,0.32)",
+  background: "rgba(9,9,11,0.74)",
+  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const miniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  fontSize: "9px",
   fontWeight: 950,
-  letterSpacing: "0.09em",
+  letterSpacing: "0.07em",
   textTransform: "uppercase",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const titleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "clamp(30px, 8.4vw, 48px)",
-  lineHeight: 0.98,
+  fontSize: "clamp(28px, 8vw, 42px)",
+  lineHeight: 1.02,
   fontWeight: 950,
-  letterSpacing: "-0.065em",
+  letterSpacing: "-0.055em",
+  textAlign: "center",
   maxWidth: "100%",
   ...safeTextStyle,
 };
 
 const metaStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #CFCBD8)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
-  lineHeight: 1.5,
-  fontWeight: 760,
+  lineHeight: 1.35,
+  fontWeight: 750,
+  textAlign: "center",
   maxWidth: "100%",
   ...safeTextStyle,
 };
 
 const statusRowStyle: CSSProperties = {
   display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   flexWrap: "wrap",
-  gap: "4px",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -2202,31 +2195,28 @@ const statusRowStyle: CSSProperties = {
 const statusBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 7px",
+  padding: "5px 8px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
-  color: "var(--historietas-text-secondary, #D7D3DE)",
-  fontSize: "8.5px",
-  fontWeight: 900,
+  background: "rgba(255,255,255,0.045)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "9px",
+  fontWeight: 850,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const statusLinkBadgeStyle: CSSProperties = {
   ...statusBadgeStyle,
+  color: "var(--historietas-accent, #FDBA74)",
   textDecoration: "none",
-  background:
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent)",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
 };
 
 const chapterHeroTopStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
+  justifyContent: "center",
+  gap: "7px",
   flexWrap: "wrap",
   minWidth: 0,
   maxWidth: "100%",
@@ -2237,13 +2227,12 @@ const readingProgressBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "5px 8px",
   borderRadius: "999px",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
   fontSize: "9px",
-  fontWeight: 950,
+  fontWeight: 900,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2296,13 +2285,14 @@ const readingStatLabelStyle: CSSProperties = {
 };
 
 const settingsPanelStyle: CSSProperties = {
-  marginTop: "10px",
   display: "grid",
   gap: "8px",
-  padding: "11px",
+  marginTop: "10px",
+  padding: "10px",
   borderRadius: "18px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 7%, var(--historietas-surface, rgba(18,12,30,0.72)))",
+  background: "var(--historietas-surface, rgba(18,12,30,0.72))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2311,57 +2301,54 @@ const settingsPanelStyle: CSSProperties = {
 
 const focusSettingsPanelStyle: CSSProperties = {
   ...settingsPanelStyle,
-  background: "rgba(6,6,9,0.94)",
-  border: "1px solid rgba(255,255,255,0.055)",
-  boxShadow: "0 16px 36px rgba(0,0,0,0.28)",
+  background: "rgba(9,9,11,0.78)",
+  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const settingsHeaderStyle: CSSProperties = {
   display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
+  alignItems: "center",
+  justifyContent: "center",
   gap: "8px",
-  flexWrap: "wrap",
   minWidth: 0,
   maxWidth: "100%",
+  textAlign: "center",
 };
 
 const settingsTitleStyle: CSSProperties = {
-  margin: "3px 0 0",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "20px",
+  margin: 0,
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "18px",
   lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "-0.05em",
+  letterSpacing: "-0.035em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const chapterSelectStyle: CSSProperties = {
   width: "100%",
-  minHeight: "38px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  minHeight: "40px",
+  borderRadius: "14px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   background: "var(--historietas-input-bg, #18181B)",
   color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 12px",
+  padding: "0 11px",
   outline: "none",
   fontSize: "12px",
   fontWeight: 850,
   fontFamily: "inherit",
   boxSizing: "border-box",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
+  textAlign: "center",
 };
 
 const fontScaleBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
-  padding: "10px",
-  borderRadius: "16px",
+  gap: "7px",
+  padding: "8px",
+  borderRadius: "14px",
   background: "rgba(255,255,255,0.035)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2369,8 +2356,8 @@ const fontScaleBoxStyle: CSSProperties = {
 
 const focusFontScaleBoxStyle: CSSProperties = {
   ...fontScaleBoxStyle,
-  background: "rgba(255,255,255,0.022)",
-  border: "1px solid rgba(255,255,255,0.05)",
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const fontScaleHeaderStyle: CSSProperties = {
@@ -2378,7 +2365,6 @@ const fontScaleHeaderStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "8px",
-  flexWrap: "wrap",
   minWidth: 0,
 };
 
@@ -2407,9 +2393,8 @@ const fontScaleValueStyle: CSSProperties = {
 const fontScaleGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-  gap: "6px",
+  gap: "5px",
   minWidth: 0,
-  maxWidth: "100%",
 };
 
 const desktopFontScaleGridStyle: CSSProperties = {
@@ -2418,77 +2403,62 @@ const desktopFontScaleGridStyle: CSSProperties = {
 };
 
 const fontScaleButtonStyle: CSSProperties = {
-  minHeight: "34px",
+  minHeight: "30px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.085))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "11px",
-  fontWeight: 950,
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(255,255,255,0.045)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10px",
+  fontWeight: 900,
   cursor: "pointer",
   fontFamily: "inherit",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
   textAlign: "center",
-  padding: "0 8px",
-  minWidth: 0,
-  boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const focusFontScaleButtonStyle: CSSProperties = {
   ...fontScaleButtonStyle,
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.045)",
   color: "#D4D4D8",
 };
 
 const fontScaleButtonActiveStyle: CSSProperties = {
   ...fontScaleButtonStyle,
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-  border: "1px solid rgba(255,255,255,0.16)",
+  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
   color: "#FFFFFF",
-  boxShadow: "none",
 };
 
 const settingsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(116px, 1fr))",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
-  boxSizing: "border-box",
 };
 
 const settingsActionStyle: CSSProperties = {
-  minHeight: "34px",
+  minHeight: "36px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.085)",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(255,255,255,0.045)",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
   fontSize: "10px",
   fontWeight: 900,
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
   padding: "0 8px",
-  textDecoration: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
+  lineHeight: 1.05,
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const settingsActionActiveStyle: CSSProperties = {
   ...settingsActionStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 45%, white)",
+  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
+  color: "#FFFFFF",
 };
 
 const focusMutedSettingsActionStyle: CSSProperties = {
@@ -2507,9 +2477,10 @@ const focusActionActiveStyle: CSSProperties = {
 
 const settingsLinkStyle: CSSProperties = {
   ...settingsActionStyle,
-  color: "var(--historietas-accent, #FDBA74)",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textDecoration: "none",
 };
 
 const focusSettingsLinkStyle: CSSProperties = {
@@ -2520,12 +2491,12 @@ const focusSettingsLinkStyle: CSSProperties = {
 };
 
 const textCardStyle: CSSProperties = {
-  marginTop: "12px",
-  borderRadius: "20px",
-  background: "linear-gradient(180deg, var(--historietas-surface, rgba(18,12,30,0.78)) 0%, var(--historietas-surface-strong, rgba(10,7,17,0.90)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
-  padding: "22px 16px",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  marginTop: "10px",
+  padding: "14px 12px",
+  borderRadius: "18px",
+  background: "var(--historietas-surface, rgba(18,12,30,0.54))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2534,10 +2505,8 @@ const textCardStyle: CSSProperties = {
 
 const focusTextCardStyle: CSSProperties = {
   ...textCardStyle,
-  background: "linear-gradient(180deg, #050506 0%, #030305 100%)",
-  border: "1px solid rgba(255,255,255,0.075)",
-  boxShadow: "none",
-  color: "#F4F4F5",
+  background: "rgba(3,3,6,0.52)",
+  border: "1px solid rgba(255,255,255,0.055)",
 };
 
 const chapterTextStyle: CSSProperties = {
@@ -2545,17 +2514,15 @@ const chapterTextStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #F4F4F5)",
   fontSize: "17px",
   lineHeight: 1.9,
-  fontWeight: 470,
+  fontWeight: 550,
   whiteSpace: "pre-wrap",
-  letterSpacing: "0.003em",
-  maxWidth: "100%",
   overflowWrap: "break-word",
   wordBreak: "break-word",
-  ...safeTextStyle,
+  textAlign: "left",
 };
 
 const readerActionsStyle: CSSProperties = {
-  marginTop: "8px",
+  marginTop: "10px",
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "6px",
@@ -2565,52 +2532,45 @@ const readerActionsStyle: CSSProperties = {
 };
 
 const actionButtonStyle: CSSProperties = {
-  minHeight: "36px",
+  minHeight: "38px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(255,255,255,0.045)",
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
   fontSize: "10.5px",
   fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
   padding: "0 8px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
+  lineHeight: 1.05,
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const activeActionButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent)",
+  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
 const activeSaveButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 45%, white)",
+  background: "color-mix(in srgb, #22C55E 12%, transparent)",
+  border: "1px solid color-mix(in srgb, #22C55E 24%, transparent)",
+  color: "#86EFAC",
 };
 
 const activeCommentButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
 };
 
 const focusReaderActionsStyle: CSSProperties = {
   ...readerActionsStyle,
-  opacity: 0.84,
 };
 
 const focusActionButtonStyle: CSSProperties = {
@@ -2646,10 +2606,11 @@ const commentBoxStyle: CSSProperties = {
   marginTop: "10px",
   display: "grid",
   gap: "8px",
-  padding: "11px",
+  padding: "10px",
   borderRadius: "18px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 7%, var(--historietas-surface, rgba(18,12,30,0.74)))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+  background: "var(--historietas-surface, rgba(18,12,30,0.66))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2658,27 +2619,26 @@ const commentBoxStyle: CSSProperties = {
 
 const focusCommentBoxStyle: CSSProperties = {
   ...commentBoxStyle,
-  background: "rgba(6,6,9,0.92)",
-  border: "1px solid rgba(255,255,255,0.055)",
+  background: "rgba(9,9,11,0.72)",
+  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const commentHeaderStyle: CSSProperties = {
   display: "flex",
+  alignItems: "center",
   justifyContent: "space-between",
-  alignItems: "flex-start",
   gap: "8px",
-  flexWrap: "wrap",
   minWidth: 0,
   maxWidth: "100%",
 };
 
 const commentTitleStyle: CSSProperties = {
-  margin: "4px 0 0",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "21px",
+  margin: 0,
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "18px",
   lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "-0.05em",
+  letterSpacing: "-0.035em",
   ...safeTextStyle,
 };
 
@@ -2701,41 +2661,31 @@ const commentFormStyle: CSSProperties = {
 const commentInputStyle: CSSProperties = {
   width: "100%",
   minHeight: "92px",
-  resize: "vertical",
-  borderRadius: "16px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  borderRadius: "14px",
+  border: "1px solid var(--historietas-border-soft, #3F3F46)",
   background: "var(--historietas-input-bg, #18181B)",
   color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "11px",
+  padding: "10px",
   outline: "none",
-  fontSize: "12px",
-  lineHeight: 1.5,
-  fontWeight: 700,
+  fontSize: "13px",
+  lineHeight: 1.55,
+  fontWeight: 650,
+  resize: "vertical",
   fontFamily: "inherit",
   boxSizing: "border-box",
-  minWidth: 0,
-  maxWidth: "100%",
-  ...safeTextStyle,
 };
 
 const commentButtonStyle: CSSProperties = {
-  minHeight: "36px",
+  minHeight: "40px",
   borderRadius: "999px",
   border: "none",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
-  fontSize: "11px",
+  fontSize: "12px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 11px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
+  boxShadow: "none",
 };
 
 const focusCommentButtonStyle: CSSProperties = {
@@ -2764,55 +2714,50 @@ const deleteCommentButtonStyle: CSSProperties = {
 };
 
 const chapterNavigationStyle: CSSProperties = {
-  marginTop: "12px",
+  marginTop: "10px",
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "7px",
   minWidth: 0,
   maxWidth: "100%",
-  boxSizing: "border-box",
 };
 
 const chapterNavButtonStyle: CSSProperties = {
-  minHeight: "40px",
+  minHeight: "42px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.05))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.085))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(255,255,255,0.045)",
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
   textDecoration: "none",
   fontSize: "11px",
-  fontWeight: 920,
+  fontWeight: 900,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  textAlign: "center",
   cursor: "pointer",
   fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
+  padding: "0 8px",
   boxSizing: "border-box",
-  whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const chapterNavButtonPrimaryStyle: CSSProperties = {
   ...chapterNavButtonStyle,
   background: "var(--historietas-accent, #F97316)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
   color: "#FFFFFF",
 };
 
 const chapterNavDisabledStyle: CSSProperties = {
   ...chapterNavButtonStyle,
-  color: "#71717A",
-  background: "rgba(255,255,255,0.035)",
+  opacity: 0.55,
+  cursor: "default",
 };
 
 const focusChapterNavigationStyle: CSSProperties = {
   ...chapterNavigationStyle,
-  opacity: 0.86,
 };
 
 const focusChapterNavButtonStyle: CSSProperties = {
@@ -2916,14 +2861,14 @@ const emptyButtonStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(920px, calc(100% - 64px))",
-  padding: "22px 0 92px",
+  width: "min(980px, calc(100% - 64px))",
+  padding: "22px 0 24px",
 };
 
 const desktopTopStyle: CSSProperties = {
   ...topStyle,
   flexWrap: "nowrap",
-  marginBottom: "16px",
+  marginBottom: "14px",
 };
 
 const desktopBackButtonStyle: CSSProperties = {
@@ -2950,105 +2895,89 @@ const desktopFocusSettingsButtonStyle: CSSProperties = {
 
 const desktopChapterHeaderStyle: CSSProperties = {
   ...chapterHeaderStyle,
-  padding: "22px 28px",
-  borderRadius: "26px",
-  gap: "9px",
+  gap: "8px",
+  padding: "16px 22px",
+  borderRadius: "24px",
 };
 
 const desktopFocusChapterHeaderStyle: CSSProperties = {
-  ...focusChapterHeaderStyle,
-  padding: "22px 28px",
-  borderRadius: "26px",
-  gap: "9px",
+  ...desktopChapterHeaderStyle,
+  background: "rgba(9,9,11,0.76)",
+  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const desktopSettingsPanelStyle: CSSProperties = {
   ...settingsPanelStyle,
-  marginTop: "12px",
-  padding: "14px",
-  borderRadius: "22px",
+  padding: "12px",
+  borderRadius: "20px",
+  gap: "9px",
 };
 
 const desktopFocusSettingsPanelStyle: CSSProperties = {
-  ...focusSettingsPanelStyle,
-  marginTop: "12px",
-  padding: "14px",
-  borderRadius: "22px",
+  ...desktopSettingsPanelStyle,
+  background: "rgba(9,9,11,0.78)",
+  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const desktopChapterSelectStyle: CSSProperties = {
   ...chapterSelectStyle,
   minHeight: "42px",
-  fontSize: "13px",
 };
 
 const desktopSettingsGridStyle: CSSProperties = {
   ...settingsGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "8px",
 };
 
 const desktopTextCardStyle: CSSProperties = {
   ...textCardStyle,
-  marginTop: "14px",
-  padding: "40px 52px",
-  borderRadius: "26px",
+  marginTop: "12px",
+  padding: "24px 28px",
+  borderRadius: "22px",
 };
 
 const desktopFocusTextCardStyle: CSSProperties = {
-  ...focusTextCardStyle,
-  marginTop: "14px",
-  padding: "42px 56px",
-  borderRadius: "26px",
+  ...desktopTextCardStyle,
+  background: "rgba(3,3,6,0.52)",
+  border: "1px solid rgba(255,255,255,0.055)",
 };
 
 const desktopChapterTextStyle: CSSProperties = {
   ...chapterTextStyle,
-  fontSize: "18.5px",
-  lineHeight: 1.96,
-  fontWeight: 480,
+  fontSize: "19px",
+  lineHeight: 1.94,
 };
 
 const desktopReaderActionsStyle: CSSProperties = {
   ...readerActionsStyle,
   marginTop: "12px",
-  gridTemplateColumns: "repeat(3, 136px)",
-  justifyContent: "center",
   gap: "8px",
 };
 
 const desktopFocusReaderActionsStyle: CSSProperties = {
-  ...focusReaderActionsStyle,
-  marginTop: "12px",
-  gridTemplateColumns: "repeat(3, 136px)",
-  justifyContent: "center",
-  gap: "8px",
+  ...desktopReaderActionsStyle,
 };
 
 const desktopCommentBoxStyle: CSSProperties = {
   ...commentBoxStyle,
-  marginTop: "16px",
-  padding: "16px",
-  borderRadius: "24px",
+  marginTop: "12px",
+  padding: "12px",
+  borderRadius: "20px",
 };
 
 const desktopFocusCommentBoxStyle: CSSProperties = {
-  ...focusCommentBoxStyle,
-  marginTop: "16px",
-  padding: "16px",
-  borderRadius: "24px",
+  ...desktopCommentBoxStyle,
+  background: "rgba(9,9,11,0.72)",
+  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const desktopChapterNavigationStyle: CSSProperties = {
   ...chapterNavigationStyle,
-  marginTop: "14px",
-  gridTemplateColumns: "repeat(2, minmax(170px, 1fr))",
-  gap: "9px",
+  marginTop: "12px",
+  gap: "8px",
 };
 
 const desktopFocusChapterNavigationStyle: CSSProperties = {
-  ...focusChapterNavigationStyle,
-  marginTop: "14px",
-  gridTemplateColumns: "repeat(2, minmax(170px, 1fr))",
-  gap: "9px",
+  ...desktopChapterNavigationStyle,
 };
