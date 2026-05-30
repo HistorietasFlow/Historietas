@@ -685,7 +685,7 @@ export default function ConfiguracoesPage() {
 
     salvarTemaVisual(temaVisual);
     aplicarTemaVisual(temaVisual);
-    setMensagem(`Tema ${TEMAS_VISUAIS[temaVisual].nome} aplicado neste navegador.`);
+    setMensagem(`Tema ${TEMAS_VISUAIS[temaVisual].nome} aplicado.`);
 
     window.setTimeout(() => {
       setMensagem("");
@@ -694,7 +694,7 @@ export default function ConfiguracoesPage() {
 
   function salvar() {
     salvarPreferencias(preferencias);
-    setMensagem("Configurações salvas neste navegador.");
+    setMensagem("Configurações salvas.");
 
     window.setTimeout(() => {
       setMensagem("");
@@ -714,9 +714,9 @@ export default function ConfiguracoesPage() {
   async function copiarBackup() {
     try {
       await copiarTexto(criarBackupLocal());
-      setMensagem("Backup copiado para a área de transferência.");
+      setMensagem("Dados copiados para a área de transferência.");
     } catch {
-      setMensagem("Não consegui copiar o backup neste navegador.");
+      setMensagem("Não consegui copiar os dados agora.");
     }
 
     window.setTimeout(() => {
@@ -754,8 +754,8 @@ export default function ConfiguracoesPage() {
             <h1 className="historietas-config-hero-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Configurações</h1>
 
             <p style={descriptionStyle}>
-              Ajuste detalhes do seu perfil local, preferências de leitura e
-              faça backup dos dados salvos neste navegador.
+              Ajuste dados da conta, preferências de leitura e
+              mantenha uma cópia dos seus dados.
             </p>
 
             <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
@@ -775,7 +775,7 @@ export default function ConfiguracoesPage() {
         {adminLiberado && isDesktop && (
           <section style={sectionStyle}>
             <div style={sectionHeaderStyle}>
-              <h2 style={accentSectionTitleStyle}>Admin</h2>
+              <h2 style={accentSectionTitleStyle}>Moderação</h2>
             </div>
 
             <div style={desktopAdminAccessCardStyle}>
@@ -788,7 +788,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               <Link href="/admin/comunidade" style={adminAccessLinkStyle}>
-                Abrir admin
+                Abrir moderação
               </Link>
             </div>
           </section>
@@ -921,7 +921,7 @@ export default function ConfiguracoesPage() {
 
         <section style={sectionStyle}>
           <div style={sectionHeaderStyle}>
-            <h2 style={accentSectionTitleStyle}>Dados locais</h2>
+            <h2 style={accentSectionTitleStyle}>Resumo da conta</h2>
           </div>
 
           <div style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
@@ -937,12 +937,12 @@ export default function ConfiguracoesPage() {
 
             <div style={statCardStyle}>
               <strong style={statNumberStyle}>{resumo.lancamentos}</strong>
-              <span style={statLabelStyle}>lançamentos salvos</span>
+              <span style={statLabelStyle}>avisos ativos</span>
             </div>
 
             <div style={statCardStyle}>
               <strong style={statNumberStyle}>{resumo.favoritas}</strong>
-              <span style={statLabelStyle}>favoritas</span>
+              <span style={statLabelStyle}>na lista</span>
             </div>
 
             <div style={statCardStyle}>
@@ -978,7 +978,7 @@ export default function ConfiguracoesPage() {
               onClick={copiarBackup}
               style={secondaryButtonStyle}
             >
-              Copiar backup local
+              Copiar dados
             </button>
 
             <button
@@ -1798,4 +1798,3 @@ const desktopActionsStyle: CSSProperties = {
   padding: "14px",
   borderRadius: "26px",
 };
-

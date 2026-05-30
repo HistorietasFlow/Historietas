@@ -894,7 +894,7 @@ export default function MinhaObraPage() {
 
         if (error) {
           window.alert(
-            `Não consegui excluir o capítulo no Supabase: ${error.message}`
+            "Não consegui excluir o capítulo agora. Tente novamente."
           );
           return;
         }
@@ -1048,7 +1048,7 @@ export default function MinhaObraPage() {
             <h1 style={isDesktop ? desktopTitleStyle : titleStyle}>{obraAtual.titulo}</h1>
 
             <Link href={perfilAutorHref} style={authorLinkStyle}>
-              por {obraAtual.autor}
+              Por {obraAtual.autor}
             </Link>
 
             <p style={isDesktop ? desktopSinopseStyle : sinopseStyle}>{obraAtual.sinopse}</p>
@@ -1094,7 +1094,7 @@ export default function MinhaObraPage() {
 
           <div style={statCardStyle}>
             <strong style={statNumberStyle}>{totais.totalSalvos}</strong>
-            <span style={statLabelStyle}>salvos</span>
+            <span style={statLabelStyle}>cap. salvos</span>
           </div>
 
           <div style={statCardStyle}>

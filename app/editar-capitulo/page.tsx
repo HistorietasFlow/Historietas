@@ -819,7 +819,7 @@ export default function EditarCapituloPage() {
 
     if (arquivo.size > MAX_TEXT_FILE_SIZE_BYTES) {
       setArquivoImportadoErro(
-        "Esse arquivo é grande demais para o modo local. Use um arquivo de até 700 KB."
+        "Esse arquivo é grande demais. Use um arquivo de até 700 KB."
       );
       return;
     }
@@ -1042,7 +1042,7 @@ export default function EditarCapituloPage() {
               <h2 style={successTitleStyle}>✓ Capítulo atualizado</h2>
 
               <p style={successTextStyle}>
-                As alterações foram salvas sem apagar curtida, comentário, salvo ou arquivo anexado da obra.
+                As alterações foram salvas sem apagar interações, comentários ou dados da obra.
               </p>
             </div>
 
@@ -1089,7 +1089,7 @@ export default function EditarCapituloPage() {
 
               <div style={isDesktop ? desktopImportBoxStyle : importBoxStyle}>
                 <div style={importInfoStyle}>
-                  <strong style={importTitleStyle}>Importar nova versão</strong>
+                  <strong style={importTitleStyle}>Importar versão revisada</strong>
 
                   <span style={isDesktop ? desktopImportTextStyle : importTextStyle}>
                     Envie um arquivo .txt ou .md para substituir o texto atual.
@@ -1149,7 +1149,7 @@ export default function EditarCapituloPage() {
                   }
                 >
                   {estatisticasCapitulo.textoValido
-                    ? "Texto ok"
+                    ? "Texto pronto"
                     : `${Math.max(
                         20 - estatisticasCapitulo.caracteresValidos,
                         0
@@ -1187,7 +1187,7 @@ export default function EditarCapituloPage() {
 
           <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
             <div style={previewHeaderStyle}>
-              <h2 style={previewTitleStyle}>PRÉVIA</h2>
+              <h2 style={previewTitleStyle}>PRÉVIA DO CAPÍTULO</h2>
             </div>
 
             <article style={isDesktop ? desktopPreviewChapterCardStyle : previewChapterCardStyle}>
@@ -2072,4 +2072,3 @@ const desktopPreviewChapterTextStyle: CSSProperties = {
   fontSize: "13px",
   lineHeight: 1.6,
 };
-

@@ -1447,7 +1447,7 @@ export default function PerfilAutorPage() {
             <h1 style={emptyTitleStyle}>Autor não encontrado</h1>
 
             <p style={emptyTextStyle}>
-              Não encontrei nenhuma obra salva para o autor{" "}
+              Não encontrei nenhuma obra para o autor{" "}
               <strong style={safeTextStyle}>{autorSelecionado}</strong>.
             </p>
 
@@ -1476,7 +1476,7 @@ export default function PerfilAutorPage() {
             <h1 style={emptyTitleStyle}>Nenhum autor encontrado</h1>
 
             <p style={emptyTextStyle}>
-              Crie uma obra primeiro. Depois o perfil do autor aparecerá aqui.
+              Publique uma obra primeiro. Depois o perfil do autor aparecerá aqui.
             </p>
 
             <Link href="/publicar" style={emptyButtonStyle}>
@@ -1503,7 +1503,7 @@ export default function PerfilAutorPage() {
             onClick={alternarSeguirAutor}
             style={seguindoAutor ? headerFollowingButtonStyle : headerFollowButtonStyle}
           >
-            {seguindoAutor ? "Seguindo Autor" : "Seguir Autor"}
+            {seguindoAutor ? "Seguindo" : "Seguir autor"}
           </button>
         </header>
 
@@ -1611,24 +1611,24 @@ export default function PerfilAutorPage() {
             }
           >
             <Link href={comunidadeAutorHref} style={authorCommunityCardStyle}>
-              <strong style={authorCommunityCardTitleStyle}>POSTS</strong>
-              <span style={authorCommunityCardTextStyle}>Publicações</span>
+              <strong style={authorCommunityCardNumberStyle}>0</strong>
+              <span style={authorCommunityCardTitleStyle}>POSTS</span>
             </Link>
 
             <Link
               href={comunidadeAutorTeoriasHref}
               style={authorCommunityCardStyle}
             >
-              <strong style={authorCommunityCardTitleStyle}>TEORIAS</strong>
-              <span style={authorCommunityCardTextStyle}>Discussões</span>
+              <strong style={authorCommunityCardNumberStyle}>0</strong>
+              <span style={authorCommunityCardTitleStyle}>TEORIAS</span>
             </Link>
 
             <Link
               href={comunidadeAutorReviewsHref}
               style={authorCommunityCardStyle}
             >
-              <strong style={authorCommunityCardTitleStyle}>REVIEWS</strong>
-              <span style={authorCommunityCardTextStyle}>Opiniões</span>
+              <strong style={authorCommunityCardNumberStyle}>0</strong>
+              <span style={authorCommunityCardTitleStyle}>REVIEWS</span>
             </Link>
           </div>
 
@@ -1687,7 +1687,7 @@ export default function PerfilAutorPage() {
 
             <p style={sectionFilterTextStyle}>
               {obrasDoPerfilFiltradas.length} de {perfilParaMostrar.obras.length}{" "}
-              {perfilParaMostrar.obras.length === 1 ? "obra" : "obras"} • {obrasFavoritasPerfil} favoritas • {obrasConcluidasPerfil} concluídas
+              {perfilParaMostrar.obras.length === 1 ? "obra" : "obras"} • {obrasFavoritasPerfil} na lista • {obrasConcluidasPerfil} concluídas
             </p>
           </div>
 
@@ -1767,10 +1767,6 @@ export default function PerfilAutorPage() {
                   <article key={obra.id} style={workCardAtualStyle}>
                     <Link href={obraHref} style={coverLinkStyle}>
                       <div style={isDesktop ? criarCoverStyleDesktop(obra.capa) : criarCoverStyle(obra.capa)}>
-                        {!obra.capa && (
-                          <span style={noCoverBadgeStyle}>Sem capa</span>
-                        )}
-
                         <div style={coverBottomStyle}>
                           <strong style={coverNumberStyle}>
                             {obra.capitulos.length}
@@ -1810,7 +1806,7 @@ export default function PerfilAutorPage() {
                         )}
 
                         {obraFavorita && (
-                          <span style={favoriteBadgeStyle}>Favorita</span>
+                          <span style={favoriteBadgeStyle}>Na lista</span>
                         )}
 
                         {obraConcluida && (
@@ -1866,7 +1862,7 @@ export default function PerfilAutorPage() {
                               : smallButtonStyle
                           }
                         >
-                          {obraFavorita ? "★ Favorita" : "☆ Favoritar"}
+                          {obraFavorita ? "★ Na lista" : "☆ Adicionar à lista"}
                         </button>
 
                         <button
@@ -2286,8 +2282,17 @@ const authorCommunityCardStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const authorCommunityCardTitleStyle: CSSProperties = {
+const authorCommunityCardNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "18px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const authorCommunityCardTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2308,8 +2313,12 @@ const authorCommunityCardTextStyle: CSSProperties = {
 };
 
 const authorCommunityStatNumberStyle: CSSProperties = {
-  ...authorCommunityCardTitleStyle,
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "14.5px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textAlign: "center",
+  ...safeTextStyle,
 };
 
 const authorCommunityStatTextStyle: CSSProperties = {
@@ -2552,22 +2561,6 @@ const genreBadgeStyle: CSSProperties = {
   background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, transparent)",
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "8px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const noCoverBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "8px",
-  left: "8px",
-  width: "fit-content",
-  maxWidth: "calc(100% - 16px)",
-  padding: "4px 6px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.09)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "#FFFFFF",
   fontSize: "8px",
   fontWeight: 950,
   ...safeTextStyle,

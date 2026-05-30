@@ -899,7 +899,7 @@ export default function VerArquivoPage() {
             <span style={miniTitleStyle}>OBRA NÃO ENCONTRADA</span>
             <h1 style={emptyTitleStyle}>Não encontrei essa obra.</h1>
             <p style={emptyTextStyle}>
-              Volte para a obra e tente abrir o arquivo novamente. A página também tenta buscar o arquivo no Supabase.
+              Volte para a obra e tente abrir o arquivo novamente.
             </p>
             <Link href="/minhas-obras" style={primaryLinkButtonStyle}>
               Ir para Minhas Obras
@@ -926,7 +926,7 @@ export default function VerArquivoPage() {
             <span style={miniTitleStyle}>SEM ARQUIVO</span>
             <h1 style={emptyTitleStyle}>Essa obra não tem arquivo anexado.</h1>
             <p style={emptyTextStyle}>
-              O autor pode adicionar um PDF, imagem, TXT ou MD pela tela de editar obra.
+              O autor pode adicionar um arquivo pela tela de edição da obra.
             </p>
             <Link href={voltarHref} style={primaryLinkButtonStyle}>
               Voltar para a obra
@@ -1010,7 +1010,7 @@ export default function VerArquivoPage() {
                 onClick={abrirArquivoEmNovaAba}
                 style={primaryActionButtonStyle}
               >
-                Abrir em nova aba
+                Ver em tela cheia
               </button>
 
               <a
@@ -1022,7 +1022,7 @@ export default function VerArquivoPage() {
               </a>
 
               <Link href={obraPublicaHref} style={ghostActionStyle}>
-                Abrir obra
+                Voltar para obra
               </Link>
             </div>
           </div>
@@ -1075,7 +1075,7 @@ export default function VerArquivoPage() {
                   onClick={abrirArquivoEmNovaAba}
                   style={primaryActionButtonStyle}
                 >
-                  Abrir em nova aba
+                  Ver em tela cheia
                 </button>
 
                 <a

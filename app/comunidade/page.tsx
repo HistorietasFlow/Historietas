@@ -2419,6 +2419,12 @@ export default function ComunidadePage() {
                   <span style={compactCommunitySummarySeparatorStyle}>•</span>
                   {totalCurtidas === 1 ? "1 curtida" : `${totalCurtidas} curtidas`}
                 </span>
+                <span style={compactCommunitySummaryItemStyle}>
+                  <span style={compactCommunitySummarySeparatorStyle}>•</span>
+                  {totalPostsSalvos === 1
+                    ? "1 post salvo"
+                    : `${totalPostsSalvos} posts salvos`}
+                </span>
               </p>
 
               <input
@@ -2500,7 +2506,7 @@ export default function ComunidadePage() {
                         : exploreLikeQuickFilterButtonStyle
                   }
                 >
-                  Salvos
+                  Posts salvos
                 </button>
               </div>
 
@@ -2584,7 +2590,7 @@ export default function ComunidadePage() {
                   </div>
 
                   <div style={exploreLikeFieldBoxStyle}>
-                    <label style={exploreLikeSearchLabelStyle}>Salvos</label>
+                    <label style={exploreLikeSearchLabelStyle}>Posts salvos</label>
 
                     <select
                       value={mostrarApenasSalvos ? "salvos" : "todos"}
@@ -2594,7 +2600,7 @@ export default function ComunidadePage() {
                       style={exploreLikeSelectStyle}
                     >
                       <option value="todos">Todos</option>
-                      <option value="salvos">Somente salvos</option>
+                      <option value="salvos">Somente posts salvos</option>
                     </select>
                   </div>
                 </div>

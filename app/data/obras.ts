@@ -64,7 +64,7 @@ export const obras: Obra[] = [
     link: "/obra/night-code",
     disponivel: false,
     slug: "night-code",
-    formato: "Light novel",
+    formato: "Light Novel",
     sinopse:
       "Em uma metrópole controlada por códigos secretos, um jovem programador encontra uma falha capaz de revelar a verdade por trás do sistema.",
     tags: ["Sci-fi"],

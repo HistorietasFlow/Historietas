@@ -9,6 +9,35 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 
 type ModoAuth = "entrar" | "criar";
 
+function formatarErroAuth(mensagem: string) {
+  const mensagemNormalizada = mensagem.toLowerCase();
+
+  if (
+    mensagemNormalizada.includes("invalid login credentials") ||
+    mensagemNormalizada.includes("invalid credentials")
+  ) {
+    return "E-mail ou senha incorretos.";
+  }
+
+  if (mensagemNormalizada.includes("email not confirmed")) {
+    return "Confirme seu e-mail antes de entrar.";
+  }
+
+  if (mensagemNormalizada.includes("user already registered")) {
+    return "Já existe uma conta com este e-mail.";
+  }
+
+  if (mensagemNormalizada.includes("password")) {
+    return "A senha não atende aos requisitos necessários.";
+  }
+
+  if (mensagemNormalizada.includes("email")) {
+    return "Verifique o e-mail informado.";
+  }
+
+  return "Não foi possível concluir agora. Confira os dados e tente novamente.";
+}
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -107,7 +136,7 @@ export default function LoginPage() {
         });
 
         if (error) {
-          setErro(error.message);
+          setErro(formatarErroAuth(error.message));
           return;
         }
 
@@ -119,7 +148,7 @@ export default function LoginPage() {
         }
 
         setMensagem(
-          "Conta criada. Se o Supabase pedir confirmação, confirme pelo e-mail antes de entrar."
+          "Conta criada. Se for necessário, confirme pelo e-mail antes de entrar."
         );
         setModo("entrar");
         return;
@@ -131,7 +160,7 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setErro(error.message);
+        setErro(formatarErroAuth(error.message));
         return;
       }
 
@@ -139,7 +168,7 @@ export default function LoginPage() {
         await salvarProfile(data.user.id, nome);
       }
 
-      setMensagem("Login realizado. Redirecionando...");
+      setMensagem("Entrada realizada. Redirecionando...");
       router.push("/painel-autor");
     } catch {
       setErro("Não foi possível concluir agora. Tente novamente.");
@@ -158,7 +187,7 @@ export default function LoginPage() {
             <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <span style={topBadgeStyle}>LOGIN</span>
+          <span style={topBadgeStyle}>CONTA</span>
         </header>
 
         <section style={heroStyle}>
@@ -267,7 +296,7 @@ export default function LoginPage() {
                   }}
                 >
                   {carregando
-                    ? "Carregando..."
+                    ? "Aguarde..."
                     : criandoConta
                     ? "Criar conta"
                     : "Entrar"}
@@ -275,8 +304,8 @@ export default function LoginPage() {
               </form>
 
               <p style={helperTextStyle}>
-                Login conectado ao Supabase. Se o perfil não puder ser salvo,
-                o acesso continua funcionando normalmente.
+                Use seu e-mail e senha para acessar sua conta. Se estiver criando
+                uma conta nova, confirme seus dados antes de continuar.
               </p>
             </div>
           </div>

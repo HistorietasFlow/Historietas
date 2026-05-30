@@ -89,7 +89,7 @@ export default function RootLayout({
 
           <Link href="/comunidade" className="historietas-bottom-nav-item">
             <span className="historietas-bottom-nav-icon">C</span>
-            <span className="historietas-bottom-nav-label">Comun.</span>
+            <span className="historietas-bottom-nav-label">Comunidade</span>
           </Link>
 
           <AdminBottomNavItem />
@@ -141,11 +141,7 @@ export default function RootLayout({
                   radial-gradient(circle at 84% 0%, rgba(124, 58, 237, 0.24), transparent 38%),
                   linear-gradient(180deg, rgba(18, 8, 31, 0.98) 0%, rgba(11, 6, 20, 0.98) 100%)
                 );
-                box-shadow: var(
-                  --historietas-bottom-nav-shadow,
-                  0 14px 34px rgba(0, 0, 0, 0.42),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.07)
-                );
+                box-shadow: var(--historietas-bottom-nav-shadow, none);
                 overflow-x: auto;
                 overflow-y: hidden;
                 scroll-snap-type: x proximity;
@@ -195,14 +191,13 @@ export default function RootLayout({
                 background: transparent;
                 -webkit-tap-highlight-color: transparent;
                 transition:
-                  transform 120ms ease,
                   background 120ms ease,
                   border-color 120ms ease,
                   color 120ms ease;
               }
 
               .historietas-bottom-nav-item:active {
-                transform: scale(0.96);
+                transform: none;
               }
 
               .historietas-bottom-nav-item:hover {

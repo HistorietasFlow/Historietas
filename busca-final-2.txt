@@ -1,0 +1,380 @@
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:28: observacaoAdmin: string;
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:143: export default function AdminComunidadePage() {
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:146: const [ehAdmin, setEhAdmin] = useState(false);
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:179: setEhAdmin(false);
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:186: const { data: adminResposta, error: adminErro } =
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:187: await supabase.rpc("usuario_e_admin");
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:189: if (adminErro) {
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:190: throw adminErro;
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:193: const adminConfirmado = adminResposta === true;
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:197: setEhAdmin(adminConfirmado);
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:200: if (adminConfirmado) {
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:278: "id, alvo_tipo, alvo_id, denunciante_id, motivo, detalhe, status, observacao_admin, analisado_por, analisado_em, criado_em"
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:296: observacaoAdmin: String(denuncia.observacao_admin || ""),
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:397: proximasObservacoes[denuncia.id] = denuncia.observacaoAdmin;
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:409: if (!usuarioId || !ehAdmin) {
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:410: setErro("Apenas administradores podem atualizar denúncias.");
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:432: observacao_admin: observacaoAtual.slice(0, 800),
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:448: observacaoAdmin: observacaoAtual.slice(0, 800),
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:465: if (!usuarioId || !ehAdmin) {
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:466: setErro("Apenas administradores podem remover conteúdo denunciado.");
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:515: observacao_admin: observacaoFinal.slice(0, 800),
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:537: observacaoAdmin: observacaoFinal.slice(0, 800),
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:567: <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:572: Conferindo acesso administrativo e denúncias da Comunidade.
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:583: <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:589: Entre com uma conta administrativa para revisar denúncias.
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:603: if (!ehAdmin) {
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:606: <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:610: <h1 style={titleStyle}>Você não é administrador</h1>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:613: contas com permissão administrativa.
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:629: <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:642: <div className="admin-comunidade-header-actions" style={headerActionsStyle}>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:658: <section className="admin-comunidade-stats" style={statsGridStyle}>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:751: <div className="admin-comunidade-report-header" style={reportHeaderStyle}>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:776: <div className="admin-comunidade-report-body" style={reportBodyStyle}>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:845: <label style={adminNoteStyle}>
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:924: const adminComunidadePageCss = `
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:926: .admin-comunidade-header-actions {
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:930: .admin-comunidade-report-header {
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:934: .admin-comunidade-report-body {
+C:\Users\Jhona\historietas\app\admin\comunidade\page.tsx:1479: const adminNoteStyle: CSSProperties = {
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:118: const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:809: obrasFavoritasLocais: string[],
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:836: favoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:851: favoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:928: favoritas: Array.from(
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:929: new Set([...obrasFavoritasLocais, ...Array.from(favoritosSupabase)])
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:940: favoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1054: const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1093: let obrasFavoritasNormalizadas: string[] = [];
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1119: const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1120: const obrasFavoritasJson = obrasFavoritasTexto
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1121: ? JSON.parse(obrasFavoritasTexto)
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1124: obrasFavoritasNormalizadas = Array.isArray(obrasFavoritasJson)
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1125: ? obrasFavoritasJson.filter(
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1143: obrasFavoritasNormalizadas = [];
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1149: obrasFavoritasNormalizadas,
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1154: obrasFavoritasNormalizadas = bibliotecaSupabase.favoritas;
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1180: JSON.stringify(obrasFavoritasNormalizadas)
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1189: setObrasFavoritas(obrasFavoritasNormalizadas);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1266: const obrasFavoritasLista = useMemo(() => {
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1267: return obras.filter((obra) => colecaoTemObra(obrasFavoritas, obra));
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1268: }, [obras, obrasFavoritas]);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1319: favoritos: obrasFavoritasLista.length,
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1332: obrasFavoritasLista,
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1412: const vaiFavoritar = !colecaoTemObra(obrasFavoritas, obra);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1413: const novasObrasFavoritas = vaiFavoritar
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1414: ? [...removerObraDaColecao(obrasFavoritas, obra), obra.id]
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1415: : removerObraDaColecao(obrasFavoritas, obra);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1417: void sincronizarColecaoObraSupabase("favoritos", obra.id, vaiFavoritar);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1421: JSON.stringify(novasObrasFavoritas)
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1424: setObrasFavoritas(novasObrasFavoritas);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1629: Por {item.obra.autor}
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1655: colecaoTemObra(obrasFavoritas, item.obra)
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1660: {colecaoTemObra(obrasFavoritas, item.obra)
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1720: const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1772: Por {obra.autor}
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1810: obraFavorita
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1815: {obraFavorita ? "Na lista" : "Adicionar à lista"}
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1870: const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1938: Por {obra.autor}
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1971: obraFavorita
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:1976: {obraFavorita ? "Na lista" : "Adicionar à lista"}
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:2001: {obrasFavoritasLista.length === 0 ? (
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:2016: {obrasFavoritasLista.map((obra) => {
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:2070: Por {obra.autor}
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:2157: const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:2205: Por {obra.autor}
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:2243: obraFavorita
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:2248: {obraFavorita ? "Na lista" : "Adicionar à lista"}
+C:\Users\Jhona\historietas\app\components\Card.tsx:159: <p style={authorStyle}>Por {autor}</p>
+C:\Users\Jhona\historietas\app\comunidade\page.tsx:2994: Por {obra.autor}
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:37: favoritas: number;
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:303: "historietas-obras-favoritas",
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:324: favoritas: 0,
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:498: favoritas: contarItens("historietas-obras-favoritas"),
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:601: const [adminLiberado, setAdminLiberado] = useState(false);
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:631: async function verificarAdmin() {
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:638: setAdminLiberado(false);
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:644: const { data, error } = await supabase.rpc("usuario_e_admin");
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:647: setAdminLiberado(!error && data === true);
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:651: setAdminLiberado(false);
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:656: verificarAdmin();
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:661: verificarAdmin();
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:775: {adminLiberado && isDesktop && (
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:778: <h2 style={accentSectionTitleStyle}>Admin</h2>
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:781: <div style={desktopAdminAccessCardStyle}>
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:782: <div style={adminAccessTextStyle}>
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:783: <strong style={adminAccessTitleStyle}>Área de moderação</strong>
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:784: <span style={adminAccessDescriptionStyle}>
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:790: <Link href="/admin/comunidade" style={adminAccessLinkStyle}>
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:791: Abrir admin
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:944: <strong style={statNumberStyle}>{resumo.favoritas}</strong>
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:1326: const desktopAdminAccessCardStyle: CSSProperties = {
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:1341: const adminAccessTextStyle: CSSProperties = {
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:1347: const adminAccessTitleStyle: CSSProperties = {
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:1356: const adminAccessDescriptionStyle: CSSProperties = {
+C:\Users\Jhona\historietas\app\configuracoes\page.tsx:1364: const adminAccessLinkStyle: CSSProperties = {
+C:\Users\Jhona\historietas\app\editar-obra\page.tsx:2126: Por {autor.trim() || "Autor não informado"}
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:157: | "favoritas"
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:161: const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1026: obrasFavoritas: string[],
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1033: if (filtro === "favoritas") {
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1034: return Boolean(obra.storageId) && obrasFavoritas.includes(obra.storageId);
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1086: const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1139: const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1140: const obrasFavoritasJson = obrasFavoritasTexto
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1141: ? JSON.parse(obrasFavoritasTexto)
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1144: const obrasFavoritasNormalizadas: string[] = Array.isArray(
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1145: obrasFavoritasJson
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1147: ? obrasFavoritasJson.filter(
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1181: setObrasFavoritas(obrasFavoritasNormalizadas);
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1197: setObrasFavoritas([]);
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1375: obrasFavoritas,
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1380: }, [ranking, termoBuscaRanking, filtroRanking, obrasFavoritas, obrasConcluidas]);
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1429: const novasObrasFavoritas = obrasFavoritas.includes(obraId)
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1430: ? obrasFavoritas.filter((id) => id !== obraId)
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1431: : [...obrasFavoritas, obraId];
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1435: JSON.stringify(novasObrasFavoritas)
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1438: setObrasFavoritas(novasObrasFavoritas);
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1528: { id: "favoritas", titulo: "Favoritas" },
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1553: obrasFavoritas={obrasFavoritas}
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1565: obrasFavoritas={obrasFavoritas}
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1573: titulo="Favoritas do Público"
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1577: obrasFavoritas={obrasFavoritas}
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1589: obrasFavoritas={obrasFavoritas}
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1601: obrasFavoritas={obrasFavoritas}
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1613: obrasFavoritas={obrasFavoritas}
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1625: obrasFavoritas={obrasFavoritas}
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1815: obrasFavoritas,
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1825: obrasFavoritas: string[];
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1904: favorita={
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1905: obra.storageId ? obrasFavoritas.includes(obra.storageId) : false
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1941: favorita,
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:1948: favorita: boolean;
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:2011: <p style={authorStyle}>Por {obra.autor}</p>
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:2023: {(mostrarStatusRanking || favorita || concluida) && (
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:2033: {favorita && <span style={favoriteBadgeStyle}>? Favorita</span>}
+C:\Users\Jhona\historietas\app\em-breve\page.tsx:379: <span style={relatedAuthorStyle}>Por {obra.autor}</span>
+C:\Users\Jhona\historietas\app\explorar\page.tsx:99: | "favoritas"
+C:\Users\Jhona\historietas\app\explorar\page.tsx:361: const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1444: const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1511: const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1512: const obrasFavoritasJson = obrasFavoritasTexto
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1513: ? JSON.parse(obrasFavoritasTexto)
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1516: const obrasFavoritasNormalizadas: string[] = Array.isArray(
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1517: obrasFavoritasJson
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1519: ? obrasFavoritasJson.filter(
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1539: setObrasFavoritas(obrasFavoritasNormalizadas);
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1553: setObrasFavoritas([]);
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1620: : filtroColecao === "favoritas"
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1621: ? obrasFavoritas.includes(obra.id)
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1667: obrasFavoritas,
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1732: const totalFavoritasResultado = obrasLocaisFiltradas.filter((obra) =>
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1733: obrasFavoritas.includes(obra.id)
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1863: totalFavoritasResultado > 0
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1864: ? `${totalFavoritasResultado} ${
+C:\Users\Jhona\historietas\app\explorar\page.tsx:1865: totalFavoritasResultado === 1 ? "favorita" : "favoritas"
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2019: onClick={() => setFiltroColecao("favoritas")}
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2021: filtroColecao === "favoritas"
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2028: Favoritas
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2172: favorita={obrasFavoritas.includes(obra.id)}
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2262: <p style={authorStyle}>Por {obra.autor}</p>
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2312: favorita,
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2318: favorita: boolean;
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2338: {!obra.capa && <span style={noCoverBadgeStyle}>Sem capa</span>}
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2356: {favorita && <span style={favoriteBadgeStyle}>?</span>}
+C:\Users\Jhona\historietas\app\explorar\page.tsx:2363: Por {obra.autor}
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:118: const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:984: const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1074: let obrasFavoritasNormalizadas = carregarListaIdsStorage(
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1100: const [favoritasSupabase, concluidasSupabase] = await Promise.all([
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1105: obrasFavoritasNormalizadas = Array.from(
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1106: new Set([...obrasFavoritasNormalizadas, ...favoritasSupabase])
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1134: JSON.stringify(obrasFavoritasNormalizadas)
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1143: setObrasFavoritas(obrasFavoritasNormalizadas);
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1149: setObrasFavoritas([]);
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1205: const obraFavorita = obraAtual ? obrasFavoritas.includes(obraAtual.id) : false;
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1437: const novoStatusFavorito = !obraFavorita;
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1438: const novasObrasFavoritas = obraFavorita
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1439: ? obrasFavoritas.filter((id) => id !== obraAtual.id)
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1440: : [...obrasFavoritas, obraAtual.id];
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1444: JSON.stringify(novasObrasFavoritas)
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1447: setObrasFavoritas(novasObrasFavoritas);
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1643: Por {obraAtual.autor}
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1742: obraFavorita
+C:\Users\Jhona\historietas\app\ler-capitulo\page.tsx:1749: {obraFavorita ? "? Na lista" : "+ Adicionar à lista"}
+C:\Users\Jhona\historietas\app\minha-obra\page.tsx:1051: Por {obraAtual.autor}
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:56: | "favoritas"
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:104: const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:479: const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:520: const obrasFavoritasNormalizadas = carregarListaIdsStorage(
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:529: setObrasFavoritas(obrasFavoritasNormalizadas);
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:604: setObrasFavoritas([]);
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:654: const totalFavoritas = obras.filter((obra) =>
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:655: obrasFavoritas.includes(obra.id)
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:676: totalFavoritas,
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:681: }, [obras, obrasFavoritas, obrasConcluidas]);
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:699: if (filtro === "favoritas" && !obrasFavoritas.includes(obra.id)) {
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:761: }, [obras, obrasFavoritas, obrasConcluidas, busca, filtro, ordenacao]);
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:809: `Tem certeza que deseja excluir a obra "${tituloObra}"? Todos os capítulos, curtidas, comentários e itens salvos dessa obra serão apagados. Essa ação não pode ser desfeita.`
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:817: const novasObrasFavoritas = obrasFavoritas.filter((id) => id !== obraId);
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:825: JSON.stringify(novasObrasFavoritas)
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:833: setObrasFavoritas(novasObrasFavoritas);
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:953: <option value="favoritas">Na lista</option>
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:1024: const obraFavorita = obrasFavoritas.includes(obra.id);
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:1094: {obraFavorita && (
+C:\Users\Jhona\historietas\app\minhas-obras\page.tsx:1106: Por {obra.autor}
+C:\Users\Jhona\historietas\app\notificacoes\page.tsx:956: "id, alvo_tipo, alvo_id, status, observacao_admin, analisado_em, criado_em"
+C:\Users\Jhona\historietas\app\notificacoes\page.tsx:981: const observacaoAdmin = pegarTexto(registro.observacao_admin);
+C:\Users\Jhona\historietas\app\notificacoes\page.tsx:993: mensagem: observacaoAdmin
+C:\Users\Jhona\historietas\app\notificacoes\page.tsx:994: ? `A moderação atualizou sua denúncia: ${observacaoAdmin}`
+C:\Users\Jhona\historietas\app\obra\[slug]\page.tsx:2152: <span style={authorInlineStyle}>Por {obra.autor}</span>
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:128: const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:866: obrasFavoritasLocais: string[],
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:876: favoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:891: favoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:906: favoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:976: favoritas: Array.from(
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:977: new Set([...obrasFavoritasLocais, ...Array.from(favoritosSupabase)])
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:988: favoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:996: const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1134: const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1135: const obrasFavoritasJson: unknown = obrasFavoritasTexto
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1136: ? JSON.parse(obrasFavoritasTexto)
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1138: const obrasFavoritasNormalizadas = normalizarListaIds(
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1139: obrasFavoritasJson
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1163: setObrasFavoritas(obrasFavoritasNormalizadas);
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1170: obrasFavoritasNormalizadas,
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1186: JSON.stringify(dadosSupabase.favoritas)
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1194: setObrasFavoritas(dadosSupabase.favoritas);
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1202: setObrasFavoritas([]);
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1299: obrasFavoritas,
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1780: obrasFavoritas={obrasFavoritas}
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1792: obrasFavoritas,
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1797: obrasFavoritas: string[];
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1816: favoritada={obrasFavoritas.includes(obra.id)}
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1828: favoritada,
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1833: favoritada: boolean;
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1884: {favoritada && <span style={favoriteBadgeStyle}>Na lista</span>}
+C:\Users\Jhona\historietas\app\painel-autor\page.tsx:1892: <p style={authorStyle}>Por {obra.autor}</p>
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:72: const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:792: const [favoritas, concluidas, autoresSeguidos, interacoes] = await Promise.all([
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:801: favoritas,
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:880: const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:926: let obrasFavoritasNormalizadas: string[] = [];
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:957: const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:958: const obrasFavoritasJson = obrasFavoritasTexto
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:959: ? JSON.parse(obrasFavoritasTexto)
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:962: obrasFavoritasNormalizadas = Array.isArray(obrasFavoritasJson)
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:963: ? obrasFavoritasJson.filter(
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:981: obrasFavoritasNormalizadas = [];
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:991: obrasFavoritasNormalizadas = Array.from(
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:992: new Set([...obrasFavoritasNormalizadas, ...estadoUsuarioSupabase.favoritas])
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1021: JSON.stringify(obrasFavoritasNormalizadas)
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1037: setObrasFavoritas(obrasFavoritasNormalizadas);
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1136: const obrasFavoritasPerfil = perfilParaMostrar
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1137: ? perfilParaMostrar.obras.filter((obra) => obrasFavoritas.includes(obra.id)).length
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1394: const proximoEstadoFavorito = !obrasFavoritas.includes(obraId);
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1396: const novasObrasFavoritas = proximoEstadoFavorito
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1397: ? Array.from(new Set([...obrasFavoritas, obraId]))
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1398: : obrasFavoritas.filter((id) => id !== obraId);
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1402: JSON.stringify(novasObrasFavoritas)
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1405: setObrasFavoritas(novasObrasFavoritas);
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1690: {perfilParaMostrar.obras.length === 1 ? "obra" : "obras"} • {obrasFavoritasPerfil} na lista • {obrasConcluidasPerfil} concluídas
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1757: const obraFavorita = obrasFavoritas.includes(obra.id);
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1808: {obraFavorita && (
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1860: obraFavorita
+C:\Users\Jhona\historietas\app\perfil-autor\page.tsx:1865: {obraFavorita ? "? Na lista" : "? Adicionar à lista"}
+C:\Users\Jhona\historietas\app\publicar\page.tsx:1769: Por {autor.trim() || "Autor não informado"}
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:58: totalFavoritas: number;
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:118: | "favoritas"
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:126: const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:689: obrasFavoritasLocais: string[],
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:714: obrasFavoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:730: obrasFavoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:756: favoritasBanco,
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:789: const favoritasSupabase = criarSetObrasPorRegistro(favoritasBanco);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:829: obrasFavoritas: Array.from(
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:830: new Set([...obrasFavoritasLocais, ...Array.from(favoritasSupabase)])
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:842: obrasFavoritas: obrasFavoritasLocais,
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:882: const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:927: let favoritasNormalizadas: string[] = [];
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:959: const favoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:960: const favoritasJson = favoritasTexto ? JSON.parse(favoritasTexto) : [];
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:962: favoritasNormalizadas = Array.isArray(favoritasJson)
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:964: favoritasJson.filter((id): id is string => typeof id === "string")
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:982: favoritasNormalizadas = [];
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:990: setObrasFavoritas(favoritasNormalizadas);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:998: favoritasNormalizadas,
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1006: favoritasNormalizadas = normalizarListaTexto(dadosSupabase.obrasFavoritas);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1017: JSON.stringify(favoritasNormalizadas)
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1027: setObrasFavoritas(favoritasNormalizadas);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1096: const totalFavoritas = obrasDoAutor.filter((obra) =>
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1097: obraEstaNaLista(obra, obrasFavoritas)
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1135: totalFavoritas,
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1144: }, [obras, autoresSeguidos, obrasFavoritas, obrasConcluidas]);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1160: (filtro === "favoritas" && obraEstaNaLista(obra, obrasFavoritas)) ||
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1189: obrasFavoritas,
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1215: (filtro === "favoritas" && autor.totalFavoritas > 0) ||
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1282: const obraVaiFicarFavorita = !obraEstaNaLista(obra, obrasFavoritas);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1283: const novasObrasFavoritas = obraVaiFicarFavorita
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1284: ? adicionarObraNaLista(obra, obrasFavoritas)
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1285: : removerObraDaLista(obra, obrasFavoritas);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1289: JSON.stringify(novasObrasFavoritas)
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1292: setObrasFavoritas(novasObrasFavoritas);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1296: obraVaiFicarFavorita
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1440: onClick={() => setFiltro("favoritas")}
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1442: filtro === "favoritas" ? quickFilterActiveStyle : quickFilterStyle
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1545: const obraFavorita = obraEstaNaLista(obra, obrasFavoritas);
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1586: {obraFavorita && (
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1600: Por {obra.autor}
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1647: obraFavorita
+C:\Users\Jhona\historietas\app\seguindo\page.tsx:1652: {obraFavorita ? "Na lista" : "Adicionar à lista"}
+C:\Users\Jhona\historietas\app\layout.tsx:3: import AdminBottomNavItem from "../components/AdminBottomNavItem";
+C:\Users\Jhona\historietas\app\layout.tsx:95: <AdminBottomNavItem />
+C:\Users\Jhona\historietas\app\page.tsx:357: const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+C:\Users\Jhona\historietas\app\page.tsx:907: function criarFavoritosNormalizadosHome(obrasFavoritas: string[]) {
+C:\Users\Jhona\historietas\app\page.tsx:909: obrasFavoritas
+C:\Users\Jhona\historietas\app\page.tsx:915: function obraLocalEstaNaMinhaLista(obra: ObraLocal, obrasFavoritas: string[]) {
+C:\Users\Jhona\historietas\app\page.tsx:916: const favoritosNormalizados = criarFavoritosNormalizadosHome(obrasFavoritas);
+C:\Users\Jhona\historietas\app\page.tsx:926: function obraCatalogoEstaNaMinhaLista(obra: Obra, obrasFavoritas: string[]) {
+C:\Users\Jhona\historietas\app\page.tsx:927: const favoritosNormalizados = criarFavoritosNormalizadosHome(obrasFavoritas);
+C:\Users\Jhona\historietas\app\page.tsx:1591: const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
+C:\Users\Jhona\historietas\app\page.tsx:1641: const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
+C:\Users\Jhona\historietas\app\page.tsx:1642: const obrasFavoritasJson = obrasFavoritasTexto
+C:\Users\Jhona\historietas\app\page.tsx:1643: ? JSON.parse(obrasFavoritasTexto)
+C:\Users\Jhona\historietas\app\page.tsx:1646: const obrasFavoritasNormalizadas: string[] = Array.isArray(
+C:\Users\Jhona\historietas\app\page.tsx:1647: obrasFavoritasJson
+C:\Users\Jhona\historietas\app\page.tsx:1649: ? obrasFavoritasJson.filter(
+C:\Users\Jhona\historietas\app\page.tsx:1669: JSON.stringify(obrasFavoritasNormalizadas)
+C:\Users\Jhona\historietas\app\page.tsx:1687: setObrasFavoritas(obrasFavoritasNormalizadas);
+C:\Users\Jhona\historietas\app\page.tsx:1703: setObrasFavoritas([]);
+C:\Users\Jhona\historietas\app\page.tsx:1766: heroFavoritoId && obrasFavoritas.includes(heroFavoritoId)
+C:\Users\Jhona\historietas\app\page.tsx:1774: setObrasFavoritas((favoritosAtuais) => {
+C:\Users\Jhona\historietas\app\page.tsx:1820: obraLocalEstaNaMinhaLista(obra, obrasFavoritas) &&
+C:\Users\Jhona\historietas\app\page.tsx:1834: }, [obrasPublicadas, obrasFavoritas, termoBusca]);
+C:\Users\Jhona\historietas\app\page.tsx:1840: obraCatalogoEstaNaMinhaLista(obra, obrasFavoritas) &&
+C:\Users\Jhona\historietas\app\page.tsx:1845: }, [obrasFavoritas, termoBusca]);
+C:\Users\Jhona\historietas\app\page.tsx:1940: const totalFavoritas = obrasPublicadas.filter((obra) => {
+C:\Users\Jhona\historietas\app\page.tsx:1941: return obrasFavoritas.includes(obra.id);
+C:\Users\Jhona\historietas\app\page.tsx:1952: totalFavoritas,
+C:\Users\Jhona\historietas\app\page.tsx:1955: }, [obrasPublicadas, obrasFavoritas, obrasConcluidas]);
+C:\Users\Jhona\historietas\app\page.tsx:2499: ? "obra salva"
+C:\Users\Jhona\historietas\app\page.tsx:2605: subtitle="Favoritas da comunidade nesta fase."
+C:\Users\Jhona\historietas\app\page.tsx:2913: {!obra.capa && <span style={noCoverBadgeStyle}>Sem capa</span>}
+C:\Users\Jhona\historietas\app\page.tsx:2929: Por {obra.autor}
+C:\Users\Jhona\historietas\app\page.tsx:3100: <p style={authorStyle}>Por {obra.autor}</p>
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:7: export default function AdminBottomNavItem() {
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:8: const [mostrarAdmin, setMostrarAdmin] = useState(false);
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:13: async function verificarAdmin() {
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:20: setMostrarAdmin(false);
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:26: const { data, error } = await supabase.rpc("usuario_e_admin");
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:30: setMostrarAdmin(false);
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:37: setMostrarAdmin(data === true);
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:41: setMostrarAdmin(false);
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:46: verificarAdmin();
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:51: verificarAdmin();
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:60: if (!mostrarAdmin) {
+C:\Users\Jhona\historietas\components\AdminBottomNavItem.tsx:65: <Link href="/admin/comunidade" className="historietas-bottom-nav-item">

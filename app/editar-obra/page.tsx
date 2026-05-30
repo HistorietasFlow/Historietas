@@ -1272,7 +1272,7 @@ export default function EditarObraPage() {
 
     if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_OBRA) {
       setArquivoObraErro(
-        "O arquivo completo precisa ter no máximo 2 MB nesta primeira versão."
+        "O arquivo completo precisa ter no máximo 2 MB."
       );
       event.target.value = "";
       return;
@@ -1588,7 +1588,7 @@ export default function EditarObraPage() {
             <h1 style={emptyTitleStyle}>Obra não encontrada</h1>
 
             <p style={emptyTextStyle}>
-              Não encontrei essa obra salva no navegador.
+              Não encontrei essa obra na sua biblioteca.
             </p>
 
             <Link href="/minhas-obras" style={emptyButtonStyle}>
@@ -1622,7 +1622,7 @@ export default function EditarObraPage() {
 
           <div style={isDesktop ? desktopProgressBoxStyle : progressBoxStyle}>
             <div style={progressTopStyle}>
-              <span style={progressLabelStyle}>Cadastro</span>
+              <span style={progressLabelStyle}>Progresso</span>
 
               <strong style={progressNumberStyle}>{progresso}%</strong>
             </div>
@@ -1692,7 +1692,7 @@ export default function EditarObraPage() {
                     {!capa && (
                       <>
                         <span style={coverPlaceholderIconStyle}>+</span>
-                        <span style={coverPlaceholderTextStyle}>Sem capa</span>
+                        <span style={coverPlaceholderTextStyle}>Adicionar capa</span>
                       </>
                     )}
                   </div>
@@ -1801,7 +1801,7 @@ export default function EditarObraPage() {
                 <div style={fieldStatsBoxStyle}>
                   <span style={fieldStatItemStyle}>{arquivoObraTipoTexto}</span>
                   <span style={fieldStatItemStyle}>{arquivoObraTamanhoTexto}</span>
-                  <span style={fieldStatOkStyle}>arquivo salvo junto da obra</span>
+                  <span style={fieldStatOkStyle}>arquivo anexado à obra</span>
                 </div>
               )}
             </div>
@@ -2064,7 +2064,7 @@ export default function EditarObraPage() {
 
           <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
             <div style={previewHeaderStyle}>
-              <span style={previewMiniTitleStyle}>PRÉVIA</span>
+              <span style={previewMiniTitleStyle}>PRÉVIA DA OBRA</span>
 
               <h2 style={previewTitleStyle}>Como vai aparecer</h2>
             </div>
@@ -2076,8 +2076,6 @@ export default function EditarObraPage() {
                 <span style={previewGenreStyle}>
                   {generoFinal || "Gênero"}
                 </span>
-
-                {!capa && <span style={previewNoCoverStyle}>Sem capa</span>}
 
                 <div style={previewCoverBottomStyle}>
                   <strong style={previewCoverNumberStyle}>
@@ -2125,7 +2123,7 @@ export default function EditarObraPage() {
                 </h3>
 
                 <p style={previewAuthorStyle}>
-                  por {autor.trim() || "Autor não informado"}
+                  Por {autor.trim() || "Autor não informado"}
                 </p>
 
                 <p style={previewSinopseStyle}>
@@ -2952,22 +2950,6 @@ const previewGenreStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const previewNoCoverStyle: CSSProperties = {
-  position: "absolute",
-  inset: "50px 12px auto 12px",
-  minHeight: "92px",
-  borderRadius: "16px",
-  border: "1px dashed rgba(255,255,255,0.18)",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const previewCoverBottomStyle: CSSProperties = {
   position: "absolute",

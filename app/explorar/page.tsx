@@ -1861,9 +1861,7 @@ export default function ExplorarPage() {
       : "",
     totalLendoResultado > 0 ? `${totalLendoResultado} em leitura` : "",
     totalFavoritasResultado > 0
-      ? `${totalFavoritasResultado} ${
-          totalFavoritasResultado === 1 ? "favorita" : "favoritas"
-        }`
+      ? `${totalFavoritasResultado} na lista`
       : "",
     totalConcluidasResultado > 0
       ? `${totalConcluidasResultado} ${
@@ -2025,7 +2023,7 @@ export default function ExplorarPage() {
                     : criarQuickFilterInactiveStyle(temaPagina, false, categoriaAtiva)
               }
             >
-              Favoritas
+              Na lista
             </button>
 
             <button
@@ -2335,7 +2333,7 @@ function ObraPublicadaCard({
   return (
     <article style={isDesktop ? criarDesktopPublishedCardTemaStyle(tema) : criarPublishedCardTemaStyle(tema)}>
       <Link href={paginaPublicaHref} style={isDesktop ? criarDesktopPublishedCoverStyle(obra.capa, tema) : criarPublishedCoverStyle(obra.capa, tema)}>
-        {!obra.capa && <span style={noCoverBadgeStyle}>Sem capa</span>}
+        {!obra.capa && <span style={noCoverBadgeStyle}>Capa pendente</span>}
       </Link>
 
       <div style={isDesktop ? desktopPublishedInfoStyle : publishedInfoStyle}>

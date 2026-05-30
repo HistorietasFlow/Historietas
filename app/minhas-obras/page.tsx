@@ -544,7 +544,7 @@ export default function MinhasObrasPage() {
           .order("criada_em", { ascending: false });
 
         if (erroObras) {
-          console.warn("Não consegui carregar obras do Supabase:", erroObras.message);
+          console.warn("Não consegui carregar obras remotas:", erroObras.message);
           return;
         }
 
@@ -562,7 +562,7 @@ export default function MinhasObrasPage() {
 
           if (erroCapitulos) {
             console.warn(
-              "Não consegui carregar capítulos do Supabase:",
+              "Não consegui carregar capítulos remotos:",
               erroCapitulos.message
             );
           } else {
@@ -806,7 +806,7 @@ export default function MinhasObrasPage() {
 
   async function excluirObra(obraId: string, tituloObra: string) {
     const confirmar = window.confirm(
-      `Tem certeza que deseja excluir a obra "${tituloObra}"? Todos os capítulos, curtidas, comentários e salvos dessa obra serão apagados. Essa ação não pode ser desfeita.`
+      `Tem certeza que deseja excluir a obra "${tituloObra}"? Todos os capítulos, curtidas, comentários e itens salvos dessa obra serão apagados. Essa ação não pode ser desfeita.`
     );
 
     if (!confirmar) {
@@ -847,7 +847,7 @@ export default function MinhasObrasPage() {
         .eq("user_id", dadosUsuario.user.id);
 
       if (error) {
-        console.warn("Não consegui excluir no Supabase:", error.message);
+        console.warn("Não consegui concluir a exclusão remota:", error.message);
       }
     } catch {
       // A exclusão local já aconteceu. O banco será ajustado depois, se necessário.
@@ -950,7 +950,7 @@ export default function MinhasObrasPage() {
                   <option value="todas">Todas</option>
                   <option value="publicadas">Publicadas</option>
                   <option value="rascunhos">Rascunhos</option>
-                  <option value="favoritas">Favoritas</option>
+                  <option value="favoritas">Na lista</option>
                   <option value="concluidas">Concluídas</option>
                   <option value="em-leitura">Em leitura</option>
                 </select>
@@ -997,8 +997,8 @@ export default function MinhasObrasPage() {
               <h3 style={emptyTitleStyle}>Nenhuma obra criada ainda</h3>
 
               <p style={emptyTextStyle}>
-                Crie sua primeira obra na página Publicar. Ela será salva no
-                Supabase e também ficará com backup neste navegador.
+                Publique sua primeira obra pela página Publicar. Ela aparecerá
+                aqui para edição, capítulos e acompanhamento.
               </p>
 
               <Link href="/publicar" style={emptyButtonStyle}>
@@ -1052,7 +1052,7 @@ export default function MinhasObrasPage() {
                       <div style={coverGlowStyle} />
 
                       {!obra.capa && (
-                        <span style={noCoverBadgeStyle}>Sem capa</span>
+                        <span style={noCoverBadgeStyle}>Capa pendente</span>
                       )}
 
                       {mostrarClassificacao(obra) && (
@@ -1259,7 +1259,6 @@ export default function MinhasObrasPage() {
           )}
         </section>
 
-        {/* Bloco técnico removido do visual final. A sincronização com Supabase continua funcionando normalmente. */}
       </section>
     </main>
   );

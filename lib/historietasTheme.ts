@@ -59,9 +59,9 @@ const temaBaseEscuro = {
   titleFrom: "#FFFFFF",
   titleMid: "#F5F3FF",
   titleTo: "#FDBA74",
-  heroShadow: "0 18px 48px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.06)",
-  cardShadow: "0 14px 36px rgba(0,0,0,0.20)",
-  logoShadow: "0 0 26px rgba(139,92,246,0.24)",
+  heroShadow: "none",
+  cardShadow: "none",
+  logoShadow: "none",
   secondaryButtonText: "#DDD6FE",
   dangerSurface: "rgba(239,68,68,0.105)",
   dangerButtonText: "#FCA5A5",
@@ -495,10 +495,7 @@ function aplicarVariaveisDaBarraInferior(
           : `radial-gradient(circle at 16% 0%, color-mix(in srgb, ${tema.accent} 18%, transparent), transparent 34%), radial-gradient(circle at 84% 0%, color-mix(in srgb, ${tema.secondary} 22%, transparent), transparent 38%), linear-gradient(180deg, ${surfaceStrong} 0%, ${tema.bgStart} 100%)`
   );
   raiz.style.setProperty("--historietas-bottom-nav-border", isBranco ? "#DADCE0" : borderSoft);
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-shadow",
-    isBranco || isEscuro || isFoco ? "none" : "0 14px 34px rgba(0,0,0,0.34)"
-  );
+  raiz.style.setProperty("--historietas-bottom-nav-shadow", "none");
   raiz.style.setProperty("--historietas-bottom-nav-text", isBranco ? "#5F6368" : textSecondary);
   raiz.style.setProperty("--historietas-bottom-nav-hover-bg", isBranco ? "#F1F3F4" : activeSurface);
   raiz.style.setProperty("--historietas-bottom-nav-hover-text", isBranco ? "#202124" : textPrimary);

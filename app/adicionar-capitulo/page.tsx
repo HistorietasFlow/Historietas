@@ -867,7 +867,7 @@ export default function AdicionarCapituloPage() {
 
     if (arquivo.size > MAX_TEXT_FILE_SIZE_BYTES) {
       setArquivoImportadoErro(
-        "Esse arquivo é grande demais para o modo local. Use um arquivo de até 700 KB."
+        "Esse arquivo é grande demais. Use um arquivo de até 700 KB."
       );
       return;
     }
@@ -1145,7 +1145,7 @@ export default function AdicionarCapituloPage() {
 
               <div style={isDesktop ? desktopImportBoxStyle : importBoxStyle}>
                 <div style={importInfoStyle}>
-                  <strong style={importTitleStyle}>Importar história pronta</strong>
+                  <strong style={importTitleStyle}>Importar capítulo pronto</strong>
 
                   <span style={isDesktop ? desktopImportTextStyle : importTextStyle}>
                     Envie um arquivo .txt ou .md. O conteúdo entra direto no
@@ -1206,7 +1206,7 @@ export default function AdicionarCapituloPage() {
                   }
                 >
                   {estatisticasCapitulo.textoValido
-                    ? "Texto ok"
+                    ? "Texto pronto"
                     : `${Math.max(
                         20 - estatisticasCapitulo.caracteresValidos,
                         0
@@ -1222,12 +1222,12 @@ export default function AdicionarCapituloPage() {
                 </strong>
 
                 <span style={successTextStyle}>
-                  O capítulo foi salvo sem apagar capítulos anteriores nem o arquivo anexado.
+                  O capítulo foi salvo sem apagar os capítulos anteriores.
                 </span>
 
                 {notificacaoCriada && (
                   <span style={notificationCreatedStyle}>
-                    🔔 Notificação criada.
+                    Notificação criada.
                   </span>
                 )}
 
@@ -1266,9 +1266,9 @@ export default function AdicionarCapituloPage() {
               {mostrarPreviaCapitulo ? (
                 <>
                   <div style={previewHeaderStyle}>
-                    <span style={previewMiniTitleStyle}>PRÉVIA</span>
+                    <span style={previewMiniTitleStyle}>PRÉVIA DO CAPÍTULO</span>
 
-                    <h2 style={previewTitleStyle}>Como vai aparecer</h2>
+                    <h2 style={previewTitleStyle}>Como o capítulo vai aparecer</h2>
                   </div>
 
                   <article style={isDesktop ? desktopPreviewChapterCardStyle : previewChapterCardStyle}>
@@ -1298,7 +1298,7 @@ export default function AdicionarCapituloPage() {
 
               {obraAtual.capitulos.length > 0 && (
                 <section style={recentBoxStyle}>
-                  <span style={recentMiniTitleStyle}>CAPÍTULOS EXISTENTES</span>
+                  <span style={recentMiniTitleStyle}>CAPÍTULOS DA OBRA</span>
 
                   <div style={recentListStyle}>
                     {obraAtual.capitulos.slice(-3).map((capitulo, index) => {

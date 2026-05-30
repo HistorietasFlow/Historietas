@@ -177,8 +177,8 @@ export default function EmBrevePage() {
 
     setMensagemSalva(
       novasObrasSalvas.includes(tituloNormalizado)
-        ? "Lançamento salvo. Você poderá receber aviso quando sair."
-        : "Lançamento removido dos salvos."
+        ? "Aviso ativado. Você poderá receber aviso quando for liberada."
+        : "Aviso de lançamento removido."
     );
   }
 
@@ -283,7 +283,7 @@ export default function EmBrevePage() {
                   style={obraAtualSalva ? savedButtonStyle : notifyButtonStyle}
                   aria-pressed={obraAtualSalva}
                 >
-                  {obraAtualSalva ? "✓ Aviso ativado" : "Avise-me quando lançar"}
+                  {obraAtualSalva ? "✓ Aviso ativado" : "Avisar lançamento"}
                 </button>
               )}
             </div>
@@ -313,7 +313,7 @@ export default function EmBrevePage() {
             <strong style={summaryNumberStyle}>
               {outrasObrasEmBreve.length}
             </strong>
-            <span style={summaryLabelStyle}>sugestões abaixo</span>
+            <span style={summaryLabelStyle}>obras sugeridas</span>
           </div>
         </section>
 
@@ -376,7 +376,7 @@ export default function EmBrevePage() {
                         <span style={relatedSideBadgeStyle}>EM BREVE</span>
                       </div>
 
-                      <span style={relatedAuthorStyle}>por {obra.autor}</span>
+                      <span style={relatedAuthorStyle}>Por {obra.autor}</span>
 
                       <div
                         style={
@@ -391,8 +391,8 @@ export default function EmBrevePage() {
 
                         <span style={relatedReleaseTextStyle}>
                           {obraSalva
-                            ? "Você será avisado quando sair."
-                            : "Abra a página da obra ou salve o lançamento."}
+                            ? "Você será avisado quando for liberada."
+                            : "Abra a página da obra ou ative o aviso."}
                         </span>
                       </div>
 
@@ -421,7 +421,7 @@ export default function EmBrevePage() {
                           }
                           aria-pressed={obraSalva}
                         >
-                          {obraSalva ? "✓ Salvo" : "Salvar"}
+                          {obraSalva ? "✓ Aviso ativo" : "Avisar"}
                         </button>
                       </div>
                     </div>
@@ -433,7 +433,7 @@ export default function EmBrevePage() {
         )}
 
         <section style={desktopLayout ? desktopInfoBoxStyle : infoBoxStyle}>
-          <h2 style={infoTitleStyle}>Como funciona?</h2>
+          <h2 style={infoTitleStyle}>Sobre o aviso</h2>
 
           <p style={infoTextStyle}>
             Quando a história for liberada, ela sai desta tela de Em Breve e

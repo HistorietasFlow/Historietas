@@ -564,7 +564,7 @@ export default function AdminComunidadePage() {
   if (carregando) {
     return (
       <main style={pageThemeStyle}>
-        <style>{historietasThemeCss}</style>
+        <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
         <section style={containerStyle}>
           <div style={loadingCardStyle}>
             <strong style={loadingTitleStyle}>Carregando moderação...</strong>
@@ -580,7 +580,7 @@ export default function AdminComunidadePage() {
   if (!usuarioId) {
     return (
       <main style={pageThemeStyle}>
-        <style>{historietasThemeCss}</style>
+        <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
         <section style={containerStyle}>
           <section style={accessCardStyle}>
             <span style={miniTitleStyle}>ÁREA RESTRITA</span>
@@ -603,14 +603,14 @@ export default function AdminComunidadePage() {
   if (!ehAdmin) {
     return (
       <main style={pageThemeStyle}>
-        <style>{historietasThemeCss}</style>
+        <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
         <section style={containerStyle}>
           <section style={accessCardStyle}>
             <span style={miniTitleStyle}>ACESSO NEGADO</span>
             <h1 style={titleStyle}>Você não é administrador</h1>
             <p style={descriptionStyle}>
               Esta área exibe denúncias da Comunidade e só pode ser acessada por
-              contas marcadas como admin no Supabase.
+              contas com permissão administrativa.
             </p>
 
             {erro && <span style={errorStyle}>{erro}</span>}
@@ -626,12 +626,12 @@ export default function AdminComunidadePage() {
 
   return (
     <main style={pageThemeStyle}>
-      <style>{historietasThemeCss}</style>
+      <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
 
       <section style={containerStyle}>
         <header style={headerStyle}>
           <div style={headerTextStyle}>
-            <span style={miniTitleStyle}>ADMIN</span>
+            <span style={miniTitleStyle}>MODERAÇÃO</span>
             <h1 style={titleStyle}>Moderação da Comunidade</h1>
             <p style={descriptionStyle}>
               Revise denúncias enviadas por leitores e acompanhe o status de
@@ -639,7 +639,7 @@ export default function AdminComunidadePage() {
             </p>
           </div>
 
-          <div style={headerActionsStyle}>
+          <div className="admin-comunidade-header-actions" style={headerActionsStyle}>
             <Link href="/comunidade" style={secondaryLinkStyle}>
               Ver Comunidade
             </Link>
@@ -655,7 +655,7 @@ export default function AdminComunidadePage() {
           </div>
         </header>
 
-        <section style={statsGridStyle}>
+        <section className="admin-comunidade-stats" style={statsGridStyle}>
           <div style={statCardStyle}>
             <strong style={statNumberStyle}>{denuncias.length}</strong>
             <span style={statLabelStyle}>total</span>
@@ -748,7 +748,7 @@ export default function AdminComunidadePage() {
 
               return (
                 <article key={denuncia.id} style={reportCardStyle}>
-                  <div style={reportHeaderStyle}>
+                  <div className="admin-comunidade-report-header" style={reportHeaderStyle}>
                     <div style={reportTitleWrapStyle}>
                       <span
                         style={{
@@ -773,7 +773,7 @@ export default function AdminComunidadePage() {
                     <span style={statusPillStyle}>{STATUS_LABEL[denuncia.status]}</span>
                   </div>
 
-                  <div style={reportBodyStyle}>
+                  <div className="admin-comunidade-report-body" style={reportBodyStyle}>
                     <section style={contentBoxStyle}>
                       <span style={boxLabelStyle}>Conteúdo denunciado</span>
                       <p style={reportedTextStyle}>{denuncia.alvoResumo}</p>
@@ -843,7 +843,7 @@ export default function AdminComunidadePage() {
                     </section>
 
                     <label style={adminNoteStyle}>
-                      <span style={boxLabelStyle}>Observação admin</span>
+                      <span style={boxLabelStyle}>Observação interna</span>
 
                       <textarea
                         value={observacao}
@@ -920,6 +920,23 @@ export default function AdminComunidadePage() {
   );
 }
 
+
+const adminComunidadePageCss = `
+  @media (max-width: 760px) {
+    .admin-comunidade-header-actions {
+      grid-template-columns: 1fr !important;
+    }
+
+    .admin-comunidade-report-header {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .admin-comunidade-report-body {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+`;
+
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -937,37 +954,46 @@ const pageStyle: CSSProperties = {
 };
 
 const containerStyle: CSSProperties = {
-  width: "min(1180px, calc(100% - 24px))",
+  width: "min(1180px, calc(100% - 28px))",
   margin: "0 auto",
-  padding: "18px 0 calc(28px + env(safe-area-inset-bottom))",
+  padding: "20px 0 calc(36px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
 
 const headerStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: "18px",
-  marginBottom: "18px",
-  flexWrap: "wrap",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  gap: "16px",
+  marginBottom: "16px",
+  padding: "20px 16px",
+  borderRadius: "28px",
+  background:
+    "radial-gradient(circle at 14% 0%, var(--historietas-glow-secondary, rgba(249,115,22,0.18)), transparent 34%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.92)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.98)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
+  overflow: "hidden",
 };
 
 const headerTextStyle: CSSProperties = {
   display: "grid",
+  justifyItems: "center",
   gap: "8px",
   minWidth: 0,
-  maxWidth: "760px",
+  maxWidth: "780px",
+  margin: "0 auto",
+  textAlign: "center",
 };
 
 const headerActionsStyle: CSSProperties = {
-  display: "flex",
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 180px))",
   alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "10px",
-  flexWrap: "wrap",
+  justifyContent: "center",
+  gap: "8px",
   minWidth: 0,
+  width: "100%",
 };
 
 const miniTitleStyle: CSSProperties = {
@@ -981,26 +1007,28 @@ const miniTitleStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(34px, 7vw, 72px)",
-  lineHeight: 0.96,
+  fontSize: "clamp(34px, 7vw, 64px)",
+  lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.075em",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 48%, var(--historietas-accent, #FDBA74) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  paddingBottom: "4px",
+  paddingBottom: "5px",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const descriptionStyle: CSSProperties = {
-  margin: 0,
+  margin: "0 auto",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
-  lineHeight: 1.55,
+  fontSize: "13px",
+  lineHeight: 1.5,
   fontWeight: 750,
-  maxWidth: "720px",
+  maxWidth: "680px",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -1010,10 +1038,10 @@ const loadingCardStyle: CSSProperties = {
   alignContent: "center",
   justifyItems: "center",
   gap: "8px",
-  padding: "28px",
+  padding: "28px 18px",
   borderRadius: "28px",
   background:
-    "linear-gradient(135deg, rgba(31,16,52,0.92), rgba(12,7,23,0.97))",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.92)), var(--historietas-surface-strong, rgba(12,7,23,0.97)))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   textAlign: "center",
 };
@@ -1037,10 +1065,10 @@ const accessCardStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
   gap: "12px",
-  padding: "28px",
+  padding: "28px 18px",
   borderRadius: "30px",
   background:
-    "linear-gradient(135deg, rgba(31,16,52,0.94), rgba(12,7,23,0.98))",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.94)), var(--historietas-surface-strong, rgba(12,7,23,0.98)))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   textAlign: "center",
 };
@@ -1058,21 +1086,25 @@ const primaryLinkStyle: CSSProperties = {
   border: "none",
   fontSize: "13px",
   fontWeight: 950,
+  boxSizing: "border-box",
+  textAlign: "center",
 };
 
 const secondaryLinkStyle: CSSProperties = {
-  minHeight: "40px",
+  minHeight: "42px",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   padding: "0 15px",
   borderRadius: "999px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
   textDecoration: "none",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   fontSize: "12px",
   fontWeight: 950,
+  boxSizing: "border-box",
+  textAlign: "center",
 };
 
 const secondaryButtonStyle: CSSProperties = {
@@ -1082,46 +1114,59 @@ const secondaryButtonStyle: CSSProperties = {
 
 const statsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "10px",
   marginBottom: "14px",
+  minWidth: 0,
 };
 
 const statCardStyle: CSSProperties = {
   display: "grid",
-  gap: "4px",
-  padding: "14px",
+  justifyItems: "center",
+  alignContent: "center",
+  gap: "3px",
+  minHeight: "82px",
+  padding: "12px 8px",
   borderRadius: "20px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
+  background: "var(--historietas-surface, rgba(255,255,255,0.055))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  textAlign: "center",
+  minWidth: 0,
+  overflow: "hidden",
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "28px",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.05em",
+  textAlign: "center",
+  ...safeTextStyle,
 };
 
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 900,
+  fontSize: "10px",
+  lineHeight: 1.12,
+  fontWeight: 950,
   textTransform: "uppercase",
-  letterSpacing: "0.08em",
+  letterSpacing: "0.06em",
+  textAlign: "center",
+  ...safeTextStyle,
 };
 
 const toolsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr)",
-  gap: "10px",
-  padding: "12px",
+  gap: "12px",
+  padding: "14px",
   borderRadius: "24px",
   background:
-    "linear-gradient(135deg, rgba(31,16,52,0.82), rgba(12,7,23,0.95))",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.82)), var(--historietas-surface-strong, rgba(12,7,23,0.95)))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
   marginBottom: "12px",
+  minWidth: 0,
 };
 
 const searchBoxStyle: CSSProperties = {
@@ -1136,24 +1181,28 @@ const toolLabelStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "0.095em",
   textTransform: "uppercase",
+  textAlign: "center",
+  ...safeTextStyle,
 };
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "42px",
+  minHeight: "44px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   outline: "none",
-  borderRadius: "16px",
-  background: "rgba(255,255,255,0.055)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  padding: "0 13px",
+  borderRadius: "999px",
+  background: "var(--historietas-input-bg, rgba(255,255,255,0.055))",
+  color: "var(--historietas-input-text, var(--historietas-text-primary, #FFFFFF))",
+  padding: "0 14px",
   boxSizing: "border-box",
   fontSize: "13px",
   fontWeight: 800,
+  textAlign: "center",
 };
 
 const statusFilterWrapStyle: CSSProperties = {
   display: "grid",
+  justifyItems: "center",
   gap: "8px",
   minWidth: 0,
 };
@@ -1161,6 +1210,7 @@ const statusFilterWrapStyle: CSSProperties = {
 const filterButtonsStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
+  justifyContent: "center",
   gap: "8px",
   minWidth: 0,
 };
@@ -1170,19 +1220,19 @@ const filterButtonStyle: CSSProperties = {
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "rgba(255,255,255,0.045)",
+  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
+  boxShadow: "none",
 };
 
 const activeFilterButtonStyle: CSSProperties = {
   ...filterButtonStyle,
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316), var(--historietas-secondary, #7C3AED))",
+  background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
-  border: "1px solid rgba(255,255,255,0.18)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 52%, transparent)",
 };
 
 const feedbackWrapStyle: CSSProperties = {
@@ -1218,20 +1268,22 @@ const successStyle: CSSProperties = {
 const summaryStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "center",
   gap: "10px",
   flexWrap: "wrap",
   margin: "0 0 12px",
   padding: "12px",
   borderRadius: "20px",
-  background: "rgba(255,255,255,0.045)",
+  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  textAlign: "center",
 };
 
 const summaryTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "14px",
   fontWeight: 950,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -1249,7 +1301,7 @@ const clearButtonStyle: CSSProperties = {
 
 const listStyle: CSSProperties = {
   display: "grid",
-  gap: "12px",
+  gap: "14px",
   minWidth: 0,
 };
 
@@ -1259,17 +1311,17 @@ const reportCardStyle: CSSProperties = {
   padding: "14px",
   borderRadius: "26px",
   background:
-    "linear-gradient(135deg, rgba(31,16,52,0.9), rgba(12,7,23,0.97))",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.9)), var(--historietas-surface-strong, rgba(12,7,23,0.97)))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   minWidth: 0,
+  overflow: "hidden",
 };
 
 const reportHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  alignItems: "start",
   gap: "10px",
-  flexWrap: "wrap",
   minWidth: 0,
 };
 
@@ -1310,6 +1362,7 @@ const reportTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "15px",
   fontWeight: 950,
+  ...safeTextStyle,
 };
 
 const reportDateStyle: CSSProperties = {
@@ -1325,16 +1378,19 @@ const statusPillStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 10px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "10px",
   fontWeight: 950,
+  whiteSpace: "nowrap",
 };
 
 const reportBodyStyle: CSSProperties = {
   display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "10px",
+  minWidth: 0,
 };
 
 const contentBoxStyle: CSSProperties = {
@@ -1342,9 +1398,10 @@ const contentBoxStyle: CSSProperties = {
   gap: "8px",
   padding: "12px",
   borderRadius: "20px",
-  background: "rgba(255,255,255,0.045)",
+  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
+  alignContent: "start",
 };
 
 const boxLabelStyle: CSSProperties = {
@@ -1361,13 +1418,15 @@ const reportedTextStyle: CSSProperties = {
   fontSize: "14px",
   lineHeight: 1.5,
   fontWeight: 800,
+  minHeight: "42px",
   ...safeTextStyle,
 };
 
 const metaGridStyle: CSSProperties = {
   display: "flex",
-  gap: "8px",
+  gap: "7px",
   flexWrap: "wrap",
+  minWidth: 0,
 };
 
 const metaItemStyle: CSSProperties = {
@@ -1388,8 +1447,9 @@ const spoilerMetaItemStyle: CSSProperties = {
 
 const reasonGridStyle: CSSProperties = {
   display: "flex",
-  gap: "8px",
+  gap: "7px",
   flexWrap: "wrap",
+  minWidth: 0,
 };
 
 const reasonItemStyle: CSSProperties = {
@@ -1420,6 +1480,7 @@ const adminNoteStyle: CSSProperties = {
   display: "grid",
   gap: "8px",
   minWidth: 0,
+  gridColumn: "1 / -1",
 };
 
 const textareaStyle: CSSProperties = {
@@ -1427,8 +1488,8 @@ const textareaStyle: CSSProperties = {
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   outline: "none",
   borderRadius: "18px",
-  background: "rgba(255,255,255,0.055)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "var(--historietas-input-bg, rgba(255,255,255,0.055))",
+  color: "var(--historietas-input-text, var(--historietas-text-primary, #FFFFFF))",
   padding: "12px",
   boxSizing: "border-box",
   fontSize: "13px",
@@ -1440,6 +1501,7 @@ const textareaStyle: CSSProperties = {
 
 const reportActionsStyle: CSSProperties = {
   display: "flex",
+  justifyContent: "center",
   gap: "8px",
   flexWrap: "wrap",
   minWidth: 0,
@@ -1450,17 +1512,18 @@ const statusButtonStyle: CSSProperties = {
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "rgba(255,255,255,0.055)",
+  background: "var(--historietas-surface, rgba(255,255,255,0.055))",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
+  boxShadow: "none",
 };
 
 const activeStatusButtonStyle: CSSProperties = {
   ...statusButtonStyle,
-  background: "rgba(249,115,22,0.16)",
-  border: "1px solid rgba(249,115,22,0.28)",
+  background: "var(--historietas-active-surface, rgba(249,115,22,0.16))",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
   cursor: "default",
 };
@@ -1470,11 +1533,12 @@ const dangerButtonStyle: CSSProperties = {
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(248,113,113,0.30)",
-  background: "rgba(248,113,113,0.12)",
-  color: "#FCA5A5",
+  background: "var(--historietas-danger-surface, rgba(248,113,113,0.12))",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
+  boxShadow: "none",
 };
 
 const analysisMetaStyle: CSSProperties = {
@@ -1487,9 +1551,9 @@ const emptyStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
   gap: "8px",
-  padding: "28px",
+  padding: "28px 16px",
   borderRadius: "26px",
-  background: "rgba(255,255,255,0.045)",
+  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   textAlign: "center",
 };

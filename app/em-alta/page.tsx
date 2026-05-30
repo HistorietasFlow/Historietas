@@ -1525,7 +1525,7 @@ export default function EmAltaPage() {
             {[
               { id: "todos", titulo: "Todos" },
               { id: "publicadas", titulo: "Publicadas" },
-              { id: "favoritas", titulo: "Favoritas" },
+              { id: "favoritas", titulo: "Na lista" },
               { id: "concluidas", titulo: "Concluídas" },
             ].map((filtro) => (
               <button
@@ -1570,7 +1570,7 @@ export default function EmAltaPage() {
         />
 
         <RankingSection
-          titulo="Favoritas do Público"
+          titulo="Preferidas do Público"
           descricao="As obras que mais receberam curtidas e reações positivas."
           obras={rankingMaisCurtidas}
           tipo="curtidas"
@@ -2030,7 +2030,7 @@ function RankingCard({
               </span>
             )}
 
-            {favorita && <span style={favoriteBadgeStyle}>★ Favorita</span>}
+            {favorita && <span style={favoriteBadgeStyle}>★ Na lista</span>}
 
             {concluida && <span style={completedBadgeStyle}>✓ Concluída</span>}
           </div>

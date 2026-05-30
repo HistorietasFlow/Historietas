@@ -195,7 +195,7 @@ async function criarSlugUnicoSupabase(
       .maybeSingle();
 
     if (error) {
-      throw new Error(`Não consegui verificar o slug da obra: ${error.message}`);
+      throw new Error(`Não consegui preparar o endereço da obra: ${error.message}`);
     }
 
     if (!data) {
@@ -824,7 +824,7 @@ export default function PublicarPage() {
 
     if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_OBRA) {
       setArquivoObraErro(
-        "O arquivo completo precisa ter no máximo 2 MB nesta primeira versão."
+        "O arquivo completo precisa ter no máximo 2 MB."
       );
       event.target.value = "";
       return;
@@ -885,7 +885,7 @@ export default function PublicarPage() {
     }
 
     if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_TEXTO) {
-      setArquivoCapituloErro("O arquivo precisa ter no máximo 900 KB por enquanto.");
+      setArquivoCapituloErro("O arquivo precisa ter no máximo 900 KB.");
       event.target.value = "";
       return;
     }
@@ -1102,7 +1102,7 @@ export default function PublicarPage() {
       });
 
       if (erroObra) {
-        throw new Error(`Não consegui salvar a obra no Supabase: ${erroObra.message}`);
+        throw new Error(`Não consegui salvar a obra agora: ${erroObra.message}`);
       }
 
       if (capitulosIniciais.length > 0) {
@@ -1167,7 +1167,7 @@ export default function PublicarPage() {
       const mensagem =
         erroDesconhecido instanceof Error &&
         erroDesconhecido.name === "QuotaExceededError"
-          ? "O navegador recusou salvar dados locais porque o armazenamento está cheio. A capa e o arquivo foram enviados para o Supabase; limpe obras antigas salvas localmente e tente novamente."
+          ? "O navegador recusou salvar dados locais porque o armazenamento está cheio. A capa e o arquivo já foram enviados; limpe obras antigas salvas localmente e tente novamente."
           : erroDesconhecido instanceof Error
           ? erroDesconhecido.message
           : "Não consegui salvar a obra agora. Tente novamente.";
@@ -1207,7 +1207,7 @@ export default function PublicarPage() {
 
           <div style={isDesktop ? desktopProgressBoxStyle : progressBoxStyle}>
             <div style={progressTopStyle}>
-              <span style={progressLabelStyle}>Cadastro</span>
+              <span style={progressLabelStyle}>Progresso</span>
               <strong style={progressNumberStyle}>{progresso}%</strong>
             </div>
 
@@ -1221,7 +1221,7 @@ export default function PublicarPage() {
           <form onSubmit={salvarObra} style={isDesktop ? desktopFormPanelStyle : formPanelStyle}>
             {erro && (
               <div style={isDesktop ? desktopFullWidthErrorBoxStyle : errorBoxStyle}>
-                <strong style={safeTextStyle}>Corrige isso:</strong>
+                <strong style={safeTextStyle}>Ajuste necessário:</strong>
                 <span style={safeTextStyle}>{erro}</span>
               </div>
             )}
@@ -1253,7 +1253,7 @@ export default function PublicarPage() {
                   ) : (
                     <div style={coverPlaceholderStyle}>
                       <span style={coverPlaceholderIconStyle}>+</span>
-                      <span style={coverPlaceholderTextStyle}>Sem capa</span>
+                      <span style={coverPlaceholderTextStyle}>Adicionar capa</span>
                     </div>
                   )}
                 </div>
@@ -1616,7 +1616,7 @@ export default function PublicarPage() {
                 <div style={chapterImportStatsStyle}>
                   <span style={inlineStatStyle}>{arquivoObraTipoTexto}</span>
                   <span style={inlineStatStyle}>{arquivoObraTamanhoTexto}</span>
-                  <span style={inlineStatStyle}>salvo junto da obra</span>
+                  <span style={inlineStatStyle}>anexado à obra</span>
                 </div>
               )}
             </div>
@@ -1710,7 +1710,7 @@ export default function PublicarPage() {
 
           <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
             <div style={previewHeaderStyle}>
-              <span style={previewMiniTitleStyle}>PRÉVIA</span>
+              <span style={previewMiniTitleStyle}>PRÉVIA DA OBRA</span>
             </div>
 
             {previewTemConteudo ? (
@@ -1750,7 +1750,7 @@ export default function PublicarPage() {
 
                     {arquivoObra && (
                       <span style={previewImportedBadgeStyle}>
-                        arquivo anexado
+                        Arquivo anexado
                       </span>
                     )}
 

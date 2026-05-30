@@ -2157,7 +2157,7 @@ export default function ObraDinamicaPage() {
             <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
               {obraDisponivel ? (
                 <Link href="#capitulos" style={primaryLinkButtonStyle}>
-                  Começar leitura
+                  Ler capítulos
                 </Link>
               ) : (
                 <button
@@ -2210,7 +2210,7 @@ export default function ObraDinamicaPage() {
             />
             <CommunityItem
               numero={formatarNumeroCompacto(metricasComunidadeObra.interacoes)}
-              rotulo="interações"
+              rotulo="posts"
               href={criarLinkComunidadeObra(obra.titulo)}
             />
           </div>
@@ -2371,7 +2371,7 @@ function ArquivoObraPublico({
         <div style={{ minWidth: 0 }}>
           <span style={miniTitleStyle}>ARQUIVO DA OBRA</span>
 
-          <h2 style={fileTitleStyle}>Material anexado</h2>
+          <h2 style={fileTitleStyle}>Arquivo anexado</h2>
         </div>
 
         <span style={fileTypeBadgeStyle}>{tipoArquivo}</span>
@@ -2404,7 +2404,7 @@ function ArquivoObraPublico({
           <strong style={fileNameTitleStyle}>{arquivo.nome}</strong>
 
           <span style={fileMetaStyle}>
-            {tipoArquivo} • {tamanhoArquivo} • Enviado em {dataArquivo}
+            {tipoArquivo} • {tamanhoArquivo} • Adicionado em {dataArquivo}
           </span>
         </div>
       </div>

@@ -2494,11 +2494,7 @@ export default function Home() {
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
             <SectionHeader
               title="Minha lista"
-              subtitle={`${totalMinhaListaHome} ${
-                totalMinhaListaHome === 1
-                  ? "obra salva"
-                  : "obras salvas"
-              } para acessar rápido.`}
+              subtitle={`${totalMinhaListaHome} na lista para acessar rápido.`}
             />
 
             <CarouselRow isDesktop={isDesktop}>
@@ -2602,7 +2598,7 @@ export default function Home() {
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
             <SectionHeader
               title="Mais curtidas"
-              subtitle="Favoritas da comunidade nesta fase."
+              subtitle="Na lista da comunidade nesta fase."
             />
 
             <CarouselRow isDesktop={isDesktop}>
@@ -2910,7 +2906,7 @@ function MobileObraLocalCard({
   return (
     <article style={isDesktop ? desktopPublishedCardStyle : publishedCardStyle}>
       <Link href={verObraHref} style={capaStyle}>
-        {!obra.capa && <span style={noCoverBadgeStyle}>Sem capa</span>}
+        {!obra.capa && <span style={noCoverBadgeStyle}>Capa pendente</span>}
       </Link>
 
       <div style={publishedInfoStyle}>

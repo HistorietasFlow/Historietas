@@ -67,13 +67,13 @@ export default function Card({ obra }: CardProps) {
     borderRadius: "22px",
     overflow: "hidden",
     background:
-      "linear-gradient(180deg, rgba(39,39,42,1) 0%, rgba(31,31,35,1) 100%)",
-    border: isHovered ? "1px solid #7C3AED" : "1px solid #2D2D32",
-    boxShadow: isHovered
-      ? "0 22px 60px rgba(124, 58, 237, 0.28)"
-      : "0 18px 45px rgba(0, 0, 0, 0.35)",
-    transform: isHovered ? "translateY(-8px) scale(1.02)" : "translateY(0)",
-    transition: "all 220ms ease",
+      "linear-gradient(180deg, var(--historietas-surface, rgba(39,39,42,1)) 0%, var(--historietas-surface-strong, rgba(31,31,35,1)) 100%)",
+    border: isHovered
+      ? "1px solid var(--historietas-accent, #F97316)"
+      : "1px solid var(--historietas-border-soft, #2D2D32)",
+    boxShadow: "none",
+    transform: "none",
+    transition: "border-color 180ms ease, background 180ms ease",
   };
 
   const coverStyle: CSSProperties = {
@@ -111,7 +111,7 @@ export default function Card({ obra }: CardProps) {
     color: "#FFFFFF",
     fontWeight: 800,
     fontSize: "14px",
-    boxShadow: "0 14px 35px rgba(249, 115, 22, 0.35)",
+    boxShadow: "none",
     textAlign: "center",
     maxWidth: "100%",
     ...safeTextStyle,
@@ -145,7 +145,7 @@ export default function Card({ obra }: CardProps) {
         )}
 
         <div style={coverTextBoxStyle}>
-          <p style={coverKickerStyle}>Historietas Original</p>
+          <p style={coverKickerStyle}>Obra em destaque</p>
 
           <h3 style={coverTitleStyle}>{titulo}</h3>
         </div>
@@ -156,7 +156,7 @@ export default function Card({ obra }: CardProps) {
       </div>
 
       <div style={contentStyle}>
-        <p style={authorStyle}>por {autor}</p>
+        <p style={authorStyle}>Por {autor}</p>
 
         <div style={statsStyle}>
           <span style={safeTextStyle}>👁 {obra.views || 0}</span>
@@ -205,7 +205,7 @@ const genreBadgeStyle: CSSProperties = {
   maxWidth: "calc(100% - 28px)",
   padding: "7px 10px",
   borderRadius: "999px",
-  background: "rgba(124, 58, 237, 0.95)",
+  background: "var(--historietas-secondary, rgba(124, 58, 237, 0.95))",
   color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 800,
@@ -235,7 +235,7 @@ const classificationBadgeStyle: CSSProperties = {
   maxWidth: "calc(100% - 28px)",
   padding: "7px 10px",
   borderRadius: "999px",
-  background: "rgba(124, 58, 237, 0.88)",
+  background: "var(--historietas-secondary, rgba(124, 58, 237, 0.88))",
   border: "1px solid rgba(139, 92, 246, 0.42)",
   color: "#FFFFFF",
   fontSize: "12px",
@@ -253,7 +253,7 @@ const coverTextBoxStyle: CSSProperties = {
 
 const coverKickerStyle: CSSProperties = {
   margin: "0 0 8px",
-  color: "#A1A1AA",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "13px",
   fontWeight: 700,
   textTransform: "uppercase",
@@ -280,7 +280,7 @@ const contentStyle: CSSProperties = {
 
 const authorStyle: CSSProperties = {
   margin: "0 0 8px",
-  color: "#B3B3B3",
+  color: "var(--historietas-text-secondary, #B3B3B3)",
   fontSize: "14px",
   fontWeight: 600,
   maxWidth: "100%",

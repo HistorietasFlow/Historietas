@@ -63,8 +63,8 @@ export default function AdminBottomNavItem() {
 
   return (
     <Link href="/admin/comunidade" className="historietas-bottom-nav-item">
-      <span className="historietas-bottom-nav-icon">A</span>
-      <span className="historietas-bottom-nav-label">Admin</span>
+      <span className="historietas-bottom-nav-icon">M</span>
+      <span className="historietas-bottom-nav-label">Moderação</span>
     </Link>
   );
 }

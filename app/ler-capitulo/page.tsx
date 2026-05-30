@@ -1567,7 +1567,7 @@ export default function LerCapituloPage() {
   );
   const statusLeituraTexto = capituloAtual.lido
     ? `Lido em ${formatarData(capituloAtual.lidoEm)}`
-    : "Ainda não marcado como lido";
+    : "Leitura em andamento";
 
   return (
     <main style={modoFoco ? focusPageStyle : pageThemeStyle}>
@@ -1640,7 +1640,7 @@ export default function LerCapituloPage() {
             <span style={statusBadgeStyle}>{statusLeituraTexto}</span>
 
             <Link href={perfilAutorHref} style={statusLinkBadgeStyle}>
-              por {obraAtual.autor}
+              Por {obraAtual.autor}
             </Link>
           </div>
         </section>
@@ -1720,7 +1720,7 @@ export default function LerCapituloPage() {
                     : settingsActionStyle
                 }
               >
-                {mostrarLinhaProgresso ? "Linha ativa" : "Linha no topo"}
+                {mostrarLinhaProgresso ? "Barra ativa" : "Barra de progresso"}
               </button>
 
               <button
@@ -1746,7 +1746,7 @@ export default function LerCapituloPage() {
                     : settingsActionStyle
                 }
               >
-                {obraFavorita ? "Favorita" : "Favoritar obra"}
+                {obraFavorita ? "✓ Na lista" : "+ Adicionar à lista"}
               </button>
 
               <button
@@ -1812,7 +1812,7 @@ export default function LerCapituloPage() {
                 : actionButtonStyle
             }
           >
-            {capituloAtual.salvo ? "✓ Salvo" : "+ Salvar"}
+            {capituloAtual.salvo ? "✓ Capítulo salvo" : "+ Salvar capítulo"}
           </button>
 
           <button
