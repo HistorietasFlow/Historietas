@@ -1235,20 +1235,6 @@ export default function PerfilAutorPage() {
   const descriptionAtualStyle = isDesktop
     ? desktopDescriptionStyle
     : descriptionStyle;
-  const statsBoxAtualStyle = isDesktop ? desktopStatsBoxStyle : statsBoxStyle;
-  const statCardAtualStyle = isDesktop ? desktopStatCardStyle : statCardStyle;
-  const authorsBoxAtualStyle = isDesktop
-    ? desktopAuthorsBoxStyle
-    : authorsBoxStyle;
-  const authorsListAtualStyle = isDesktop
-    ? desktopAuthorsListStyle
-    : authorsListStyle;
-  const authorButtonAtualStyle = isDesktop
-    ? desktopAuthorButtonStyle
-    : authorButtonStyle;
-  const activeAuthorButtonAtualStyle = isDesktop
-    ? desktopActiveAuthorButtonStyle
-    : activeAuthorButtonStyle;
   const sectionHeaderAtualStyle = isDesktop
     ? desktopSectionHeaderStyle
     : sectionHeaderStyle;
@@ -1281,6 +1267,16 @@ export default function PerfilAutorPage() {
   const bioTextareaAtualStyle = isDesktop
     ? desktopBioTextareaStyle
     : bioTextareaStyle;
+  const comunidadeAutorBusca = encodeURIComponent(perfilParaMostrar?.nome || "");
+  const comunidadeAutorHref = comunidadeAutorBusca
+    ? `/comunidade?busca=${comunidadeAutorBusca}`
+    : "/comunidade";
+  const comunidadeAutorTeoriasHref = comunidadeAutorBusca
+    ? `${comunidadeAutorHref}&tipo=Teoria`
+    : "/comunidade?tipo=Teoria";
+  const comunidadeAutorReviewsHref = comunidadeAutorBusca
+    ? `${comunidadeAutorHref}&tipo=Review`
+    : "/comunidade?tipo=Review";
 
   function limparFiltrosObras() {
     setBuscaObras("");
@@ -1598,67 +1594,92 @@ export default function PerfilAutorPage() {
           )}
 </section>
 
-        <section style={statsBoxAtualStyle}>
-          <div style={statCardAtualStyle}>
-            <strong style={statNumberStyle}>
-              {perfilParaMostrar.obras.length}
-            </strong>
-            <span style={statLabelStyle}>obras</span>
+        <section
+          style={
+            isDesktop
+              ? desktopAuthorCommunityBoxStyle
+              : authorCommunityBoxStyle
+          }
+        >
+          <span style={miniTitleStyle}>COMUNIDADE DO AUTOR</span>
+
+          <div
+            style={
+              isDesktop
+                ? desktopAuthorCommunityGridStyle
+                : authorCommunityGridStyle
+            }
+          >
+            <Link href={comunidadeAutorHref} style={authorCommunityCardStyle}>
+              <strong style={authorCommunityCardTitleStyle}>POSTS</strong>
+              <span style={authorCommunityCardTextStyle}>Publicações</span>
+            </Link>
+
+            <Link
+              href={comunidadeAutorTeoriasHref}
+              style={authorCommunityCardStyle}
+            >
+              <strong style={authorCommunityCardTitleStyle}>TEORIAS</strong>
+              <span style={authorCommunityCardTextStyle}>Discussões</span>
+            </Link>
+
+            <Link
+              href={comunidadeAutorReviewsHref}
+              style={authorCommunityCardStyle}
+            >
+              <strong style={authorCommunityCardTitleStyle}>REVIEWS</strong>
+              <span style={authorCommunityCardTextStyle}>Opiniões</span>
+            </Link>
           </div>
 
-          <div style={statCardAtualStyle}>
-            <strong style={statNumberStyle}>
-              {perfilParaMostrar.totalCapitulos}
-            </strong>
-            <span style={statLabelStyle}>capítulos</span>
-          </div>
+          <div style={authorCommunityDividerStyle} />
 
-          <div style={statCardAtualStyle}>
-            <strong style={statNumberStyle}>{seguidoresTotal}</strong>
-            <span style={statLabelStyle}>seguidores</span>
-          </div>
+          <div
+            style={
+              isDesktop
+                ? desktopAuthorCommunityStatsGridStyle
+                : authorCommunityStatsGridStyle
+            }
+          >
+            <div style={authorCommunityCardStyle}>
+              <strong style={authorCommunityStatNumberStyle}>
+                {perfilParaMostrar.obras.length}
+              </strong>
+              <span style={authorCommunityStatTextStyle}>obras</span>
+            </div>
 
-          <div style={statCardAtualStyle}>
-            <strong style={statNumberStyle}>
-              {perfilParaMostrar.totalCurtidas}
-            </strong>
-            <span style={statLabelStyle}>curtidas</span>
-          </div>
+            <div style={authorCommunityCardStyle}>
+              <strong style={authorCommunityStatNumberStyle}>
+                {perfilParaMostrar.totalCapitulos}
+              </strong>
+              <span style={authorCommunityStatTextStyle}>capítulos</span>
+            </div>
 
-          <div style={statCardAtualStyle}>
-            <strong style={statNumberStyle}>
-              {perfilParaMostrar.totalComentarios}
-            </strong>
-            <span style={statLabelStyle}>comentários</span>
-          </div>
+            <div style={authorCommunityCardStyle}>
+              <strong style={authorCommunityStatNumberStyle}>{seguidoresTotal}</strong>
+              <span style={authorCommunityStatTextStyle}>seguidores</span>
+            </div>
 
-          <div style={statCardAtualStyle}>
-            <strong style={statNumberStyle}>{obrasConcluidasPerfil}</strong>
-            <span style={statLabelStyle}>concluídas</span>
+            <div style={authorCommunityCardStyle}>
+              <strong style={authorCommunityStatNumberStyle}>
+                {perfilParaMostrar.totalCurtidas}
+              </strong>
+              <span style={authorCommunityStatTextStyle}>curtidas</span>
+            </div>
+
+            <div style={authorCommunityCardStyle}>
+              <strong style={authorCommunityStatNumberStyle}>
+                {perfilParaMostrar.totalComentarios}
+              </strong>
+              <span style={authorCommunityStatTextStyle}>comentários</span>
+            </div>
+
+            <div style={authorCommunityCardStyle}>
+              <strong style={authorCommunityStatNumberStyle}>{obrasConcluidasPerfil}</strong>
+              <span style={authorCommunityStatTextStyle}>concluídas</span>
+            </div>
           </div>
         </section>
-
-        {perfisAutores.length > 1 && (
-          <section style={authorsBoxAtualStyle}>
-            <span style={miniTitleStyle}>AUTORES</span>
-
-            <div style={authorsListAtualStyle}>
-              {perfisAutores.map((perfil) => (
-                <Link
-                  key={perfil.nome}
-                  href={`/perfil-autor?autor=${encodeURIComponent(perfil.nome)}`}
-                  style={
-                    perfil.nome === perfilParaMostrar.nome
-                      ? activeAuthorButtonAtualStyle
-                      : authorButtonAtualStyle
-                  }
-                >
-                  {perfil.nome}
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
 
         <section style={sectionStyle}>
           <div style={sectionHeaderAtualStyle}>
@@ -2212,6 +2233,90 @@ const statLabelStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const authorCommunityBoxStyle: CSSProperties = {
+  marginTop: "12px",
+  padding: 0,
+  display: "grid",
+  justifyItems: "center",
+  gap: "8px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  textAlign: "center",
+};
+
+const authorCommunityGridStyle: CSSProperties = {
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "5px",
+  minWidth: 0,
+};
+
+const authorCommunityStatsGridStyle: CSSProperties = {
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "5px",
+  minWidth: 0,
+};
+
+const authorCommunityDividerStyle: CSSProperties = {
+  width: "100%",
+  height: "1px",
+  margin: "2px 0",
+  background:
+    "linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent) 50%, transparent 100%)",
+};
+
+const authorCommunityCardStyle: CSSProperties = {
+  minHeight: "54px",
+  padding: "7px 4px",
+  borderRadius: "15px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "grid",
+  justifyItems: "center",
+  alignContent: "center",
+  gap: "3px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+const authorCommunityCardTitleStyle: CSSProperties = {
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "12px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "0.055em",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const authorCommunityCardTextStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "8.5px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.035em",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const authorCommunityStatNumberStyle: CSSProperties = {
+  ...authorCommunityCardTitleStyle,
+  fontSize: "14.5px",
+};
+
+const authorCommunityStatTextStyle: CSSProperties = {
+  ...authorCommunityCardTextStyle,
+  fontSize: "9.5px",
+};
+
 const authorsBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "12px",
@@ -2280,10 +2385,10 @@ const sectionHeaderStyle: CSSProperties = {
 const miniTitleStyle: CSSProperties = {
   display: "inline-flex",
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  fontSize: "13px",
   fontWeight: 950,
-  letterSpacing: "0.08em",
-  marginBottom: "6px",
+  letterSpacing: "0.09em",
+  marginBottom: "4px",
   maxWidth: "100%",
   ...safeTextStyle,
 };
@@ -2784,6 +2889,22 @@ const desktopStatCardStyle: CSSProperties = {
   minHeight: "82px",
   padding: "12px",
   borderRadius: "18px",
+};
+
+const desktopAuthorCommunityBoxStyle: CSSProperties = {
+  ...authorCommunityBoxStyle,
+  marginTop: "14px",
+  gap: "9px",
+};
+
+const desktopAuthorCommunityGridStyle: CSSProperties = {
+  ...authorCommunityGridStyle,
+  gap: "8px",
+};
+
+const desktopAuthorCommunityStatsGridStyle: CSSProperties = {
+  ...authorCommunityStatsGridStyle,
+  gap: "8px",
 };
 
 const desktopAuthorsBoxStyle: CSSProperties = {

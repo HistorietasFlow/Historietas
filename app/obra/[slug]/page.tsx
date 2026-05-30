@@ -820,6 +820,18 @@ function criarLinkAviso(titulo: string, capitulo?: string) {
   return `/em-breve?obra=${obra}`;
 }
 
+function criarLinkComunidadeObra(titulo: string, tipo?: "Teoria" | "Review") {
+  const params = new URLSearchParams();
+
+  params.set("busca", titulo);
+
+  if (tipo) {
+    params.set("tipo", tipo);
+  }
+
+  return `/comunidade?${params.toString()}`;
+}
+
 export default function ObraDinamicaPage() {
   const router = useRouter();
   const params = useParams<{ slug?: string | string[] }>();
@@ -1259,9 +1271,21 @@ export default function ObraDinamicaPage() {
           </div>
 
           <div style={communityGridStyle}>
-            <CommunityItem numero="27" rotulo="teorias" />
-            <CommunityItem numero="64" rotulo="reviews" />
-            <CommunityItem numero="1.1K" rotulo="favoritos" />
+            <CommunityItem
+              numero="27"
+              rotulo="teorias"
+              href={criarLinkComunidadeObra(obra.titulo, "Teoria")}
+            />
+            <CommunityItem
+              numero="64"
+              rotulo="reviews"
+              href={criarLinkComunidadeObra(obra.titulo, "Review")}
+            />
+            <CommunityItem
+              numero="1.1K"
+              rotulo="interações"
+              href={criarLinkComunidadeObra(obra.titulo)}
+            />
           </div>
         </section>
 
@@ -1445,12 +1469,24 @@ function MetricCard({ numero, rotulo }: { numero: string; rotulo: string }) {
   );
 }
 
-function CommunityItem({ numero, rotulo }: { numero: string; rotulo: string }) {
+function CommunityItem({
+  numero,
+  rotulo,
+  href,
+}: {
+  numero: string;
+  rotulo: string;
+  href: string;
+}) {
   return (
-    <div style={communityItemStyle}>
+    <Link
+      href={href}
+      style={communityItemStyle}
+      aria-label={`Abrir ${rotulo} desta obra na Comunidade`}
+    >
       <strong style={communityNumberStyle}>{numero}</strong>
       <span style={communityLabelStyle}>{rotulo}</span>
-    </div>
+    </Link>
   );
 }
 
@@ -2203,6 +2239,9 @@ const communityItemStyle: CSSProperties = {
   justifyItems: "center",
   textAlign: "center",
   minWidth: 0,
+  color: "inherit",
+  textDecoration: "none",
+  cursor: "pointer",
 };
 
 const communityNumberStyle: CSSProperties = {

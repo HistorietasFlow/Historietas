@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
+import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 
 type TemaVisual =
@@ -597,6 +598,7 @@ export default function ConfiguracoesPage() {
   const [mensagem, setMensagem] = useState("");
   const [resumoAtualizadoEm, setResumoAtualizadoEm] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
+  const [adminLiberado, setAdminLiberado] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -621,6 +623,48 @@ export default function ConfiguracoesPage() {
     aplicarTemaVisual(preferenciasCarregadas.temaVisual);
     setResumo(criarResumoLocal());
     setResumoAtualizadoEm(new Date().toLocaleTimeString("pt-BR"));
+  }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function verificarAdmin() {
+      try {
+        const { data: sessaoResposta } = await supabase.auth.getSession();
+        const user = sessaoResposta.session?.user || null;
+
+        if (!user) {
+          if (!cancelado) {
+            setAdminLiberado(false);
+          }
+
+          return;
+        }
+
+        const { data, error } = await supabase.rpc("usuario_e_admin");
+
+        if (!cancelado) {
+          setAdminLiberado(!error && data === true);
+        }
+      } catch {
+        if (!cancelado) {
+          setAdminLiberado(false);
+        }
+      }
+    }
+
+    verificarAdmin();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      verificarAdmin();
+    });
+
+    return () => {
+      cancelado = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   function atualizarPreferencia<K extends keyof PreferenciasConta>(
@@ -727,6 +771,28 @@ export default function ConfiguracoesPage() {
         </section>
 
         {mensagem && <span style={messageStyle}>{mensagem}</span>}
+
+        {adminLiberado && isDesktop && (
+          <section style={sectionStyle}>
+            <div style={sectionHeaderStyle}>
+              <h2 style={accentSectionTitleStyle}>Admin</h2>
+            </div>
+
+            <div style={desktopAdminAccessCardStyle}>
+              <div style={adminAccessTextStyle}>
+                <strong style={adminAccessTitleStyle}>Área de moderação</strong>
+                <span style={adminAccessDescriptionStyle}>
+                  Acesse as denúncias da Comunidade e revise conteúdos enviados
+                  para análise.
+                </span>
+              </div>
+
+              <Link href="/admin/comunidade" style={adminAccessLinkStyle}>
+                Abrir admin
+              </Link>
+            </div>
+          </section>
+        )}
 
         <section style={sectionStyle}>
           <div style={sectionHeaderStyle}>
@@ -1255,6 +1321,49 @@ const secondaryLinkStyle: CSSProperties = {
   border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 40%, transparent)",
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
   boxShadow: "none",
+};
+
+const desktopAdminAccessCardStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) 180px",
+  alignItems: "center",
+  gap: "16px",
+  padding: "18px",
+  borderRadius: "26px",
+  background:
+    "linear-gradient(135deg, var(--historietas-active-surface, rgba(124,58,237,0.18)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  boxShadow: "var(--historietas-card-shadow, none)",
+  minWidth: 0,
+};
+
+const adminAccessTextStyle: CSSProperties = {
+  display: "grid",
+  gap: "5px",
+  minWidth: 0,
+};
+
+const adminAccessTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "18px",
+  lineHeight: 1.05,
+  fontWeight: 950,
+  letterSpacing: "-0.045em",
+  ...safeTextStyle,
+};
+
+const adminAccessDescriptionStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12px",
+  lineHeight: 1.45,
+  fontWeight: 750,
+  ...safeTextStyle,
+};
+
+const adminAccessLinkStyle: CSSProperties = {
+  ...primaryLinkStyle,
+  minHeight: "42px",
 };
 
 const messageStyle: CSSProperties = {

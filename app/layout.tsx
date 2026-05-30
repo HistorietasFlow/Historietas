@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import AdminBottomNavItem from "../components/AdminBottomNavItem";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
@@ -85,6 +86,13 @@ export default function RootLayout({
             <span className="historietas-bottom-nav-icon">♡</span>
             <span className="historietas-bottom-nav-label">Seguindo</span>
           </Link>
+
+          <Link href="/comunidade" className="historietas-bottom-nav-item">
+            <span className="historietas-bottom-nav-icon">C</span>
+            <span className="historietas-bottom-nav-label">Comun.</span>
+          </Link>
+
+          <AdminBottomNavItem />
 
           <Link href="/notificacoes" className="historietas-bottom-nav-item">
             <span className="historietas-bottom-nav-icon">N</span>

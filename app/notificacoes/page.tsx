@@ -46,17 +46,22 @@ type NotificacaoLocal = {
   link: string;
   titulo: string;
   mensagem: string;
-  tipo: "novo-capitulo";
+  tipo:
+    | "novo-capitulo"
+    | "comentario-comunidade"
+    | "denuncia-comunidade"
+    | "moderacao-comunidade";
   lida: boolean;
   criadaEm: string;
 };
 
-type FiltroNotificacao = "todas" | "nao-lidas" | "lidas" | "com-obra" | "sem-obra";
+type FiltroNotificacao = "todas" | "nao-lidas" | "lidas" | "capitulos" | "comunidade" | "com-obra" | "sem-obra";
 type OrdenacaoNotificacao = "recentes" | "antigas" | "obra" | "capitulo";
 
 const CHAVE_OBRAS = "historietas-obras";
 const CHAVE_NOTIFICACOES = "historietas-notificacoes";
 const CHAVE_OBRAS_SEGUIDAS = "historietas-obras-seguidas";
+const CHAVE_NOTIFICACOES_APAGADAS = "historietas-notificacoes-apagadas";
 
 function normalizarTexto(texto: string) {
   return texto
@@ -205,6 +210,18 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
   };
 }
 
+function normalizarTipoNotificacao(valor: unknown): NotificacaoLocal["tipo"] {
+  if (
+    valor === "comentario-comunidade" ||
+    valor === "denuncia-comunidade" ||
+    valor === "moderacao-comunidade"
+  ) {
+    return valor;
+  }
+
+  return "novo-capitulo";
+}
+
 function normalizarNotificacao(
   notificacao: Partial<NotificacaoLocal>,
   index: number
@@ -232,7 +249,7 @@ function normalizarNotificacao(
       typeof notificacao.mensagem === "string" && notificacao.mensagem.trim()
         ? notificacao.mensagem
         : "Uma obra recebeu uma atualização.",
-    tipo: "novo-capitulo",
+    tipo: normalizarTipoNotificacao(notificacaoBruta.tipo),
     lida: notificacaoBruta.lida === true,
     criadaEm:
       typeof notificacao.criadaEm === "string" && notificacao.criadaEm.trim()
@@ -302,6 +319,61 @@ function salvarNotificacoes(notificacoes: NotificacaoLocal[]) {
   localStorage.setItem(CHAVE_NOTIFICACOES, JSON.stringify(notificacoes));
 }
 
+function criarChaveNotificacoesApagadas(usuarioId: string) {
+  return `${CHAVE_NOTIFICACOES_APAGADAS}-${usuarioId || "anon"}`;
+}
+
+function carregarIdsNotificacoesApagadas(usuarioId: string) {
+  if (typeof window === "undefined") {
+    return new Set<string>();
+  }
+
+  try {
+    const texto = localStorage.getItem(criarChaveNotificacoesApagadas(usuarioId));
+    const json: unknown = texto ? JSON.parse(texto) : [];
+
+    if (!Array.isArray(json)) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      json.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
+    );
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function registrarNotificacoesApagadas(usuarioId: string, ids: string[]) {
+  if (typeof window === "undefined" || ids.length === 0) {
+    return;
+  }
+
+  const chave = criarChaveNotificacoesApagadas(usuarioId);
+  const idsAtuais = carregarIdsNotificacoesApagadas(usuarioId);
+
+  ids.forEach((id) => {
+    if (id.trim()) {
+      idsAtuais.add(id);
+    }
+  });
+
+  localStorage.setItem(chave, JSON.stringify(Array.from(idsAtuais).slice(-500)));
+}
+
+function filtrarNotificacoesApagadas(
+  notificacoesParaFiltrar: NotificacaoLocal[],
+  idsApagados: Set<string>
+) {
+  if (idsApagados.size === 0) {
+    return notificacoesParaFiltrar;
+  }
+
+  return notificacoesParaFiltrar.filter(
+    (notificacao) => !idsApagados.has(notificacao.id)
+  );
+}
+
 function linkDiretoValido(link: string) {
   return link.startsWith("/") || link.startsWith("http://") || link.startsWith("https://");
 }
@@ -319,7 +391,101 @@ function montarLinkNotificacao(notificacao: NotificacaoLocal) {
     )}&capituloId=${encodeURIComponent(notificacao.capituloId)}`;
   }
 
-  return "/biblioteca";
+  return notificacao.tipo === "novo-capitulo" ? "/biblioteca" : "/comunidade";
+}
+
+function notificacaoEhComunidade(notificacao: NotificacaoLocal) {
+  return notificacao.tipo !== "novo-capitulo";
+}
+
+function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
+  if (notificacao.tipo === "comentario-comunidade") {
+    return "Comentário em publicação";
+  }
+
+  if (notificacao.tipo === "denuncia-comunidade") {
+    return "Denúncia analisada";
+  }
+
+  if (notificacao.tipo === "moderacao-comunidade") {
+    return "Moderação";
+  }
+
+  return "Capítulo";
+}
+
+function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
+  return notificacaoEhComunidade(notificacao) ? "Abrir Comunidade" : "Abrir capítulo";
+}
+
+function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
+  if (lida) {
+    return "✓";
+  }
+
+  if (notificacao.tipo === "comentario-comunidade") {
+    return "💬";
+  }
+
+  if (
+    notificacao.tipo === "denuncia-comunidade" ||
+    notificacao.tipo === "moderacao-comunidade"
+  ) {
+    return "!";
+  }
+
+  return "!";
+}
+
+function obterTituloExibicaoNotificacao(notificacao: NotificacaoLocal) {
+  if (!notificacaoEhComunidade(notificacao)) {
+    return notificacao.titulo;
+  }
+
+  const tituloSemNovo =
+    notificacao.titulo.replace(/^Novo\s+/i, "").trim() || notificacao.titulo;
+
+  if (notificacao.tipo === "comentario-comunidade") {
+    return tituloSemNovo.replace(/\bna publicação\b/i, "da publicação");
+  }
+
+  return tituloSemNovo;
+}
+
+function extrairAutorComentarioComunidade(notificacao: NotificacaoLocal) {
+  if (notificacao.tipo !== "comentario-comunidade") {
+    return "Comunidade";
+  }
+
+  const match = /^(.+?)\s+comentou\b/i.exec(notificacao.mensagem.trim());
+
+  return match?.[1]?.trim() || "Leitor";
+}
+
+function extrairTextoComentarioComunidade(notificacao: NotificacaoLocal) {
+  if (notificacao.tipo !== "comentario-comunidade") {
+    return notificacao.mensagem;
+  }
+
+  const mensagem = notificacao.mensagem.trim();
+  const marcadorComentario = '": ';
+  const indiceMarcador = mensagem.indexOf(marcadorComentario);
+
+  if (indiceMarcador >= 0) {
+    const comentario = mensagem.slice(indiceMarcador + marcadorComentario.length).trim();
+
+    return comentario || "Comentou na sua publicação.";
+  }
+
+  const indiceDoisPontos = mensagem.indexOf(": ");
+
+  if (indiceDoisPontos >= 0) {
+    const comentario = mensagem.slice(indiceDoisPontos + 2).trim();
+
+    return comentario || "Comentou na sua publicação.";
+  }
+
+  return "Comentou na sua publicação.";
 }
 
 
@@ -705,6 +871,146 @@ function criarNotificacoesDeCapitulos(
   return notificacoesCriadas.sort((a, b) => dataNotificacao(b) - dataNotificacao(a));
 }
 
+async function carregarNotificacoesComunidadeSupabase(
+  userId: string,
+  notificacoesLidasIds: string[]
+): Promise<NotificacaoLocal[]> {
+  const idsLidos = new Set(notificacoesLidasIds);
+  const notificacoesComunidade: NotificacaoLocal[] = [];
+
+  try {
+    const { data: postsData } = await supabase
+      .from("comunidade_posts")
+      .select("id, texto, autor_id, autor_nome, criado_em")
+      .eq("autor_id", userId);
+
+    const posts = Array.isArray(postsData) ? postsData : [];
+    const postIds = posts
+      .map((post) => pegarTexto((post as Record<string, unknown>).id))
+      .filter(Boolean);
+
+    const postsPorId = new Map(
+      posts.map((post) => {
+        const registro = post as Record<string, unknown>;
+
+        return [
+          pegarTexto(registro.id),
+          {
+            texto: pegarTexto(registro.texto, "sua publicação"),
+            autorNome: pegarTexto(registro.autor_nome, "Você"),
+          },
+        ];
+      })
+    );
+
+    if (postIds.length > 0) {
+      const { data: comentariosData } = await supabase
+        .from("comunidade_comentarios")
+        .select("id, post_id, autor_id, autor_nome, texto, criado_em")
+        .in("post_id", postIds)
+        .neq("autor_id", userId)
+        .order("criado_em", { ascending: false });
+
+      if (Array.isArray(comentariosData)) {
+        comentariosData.forEach((comentario) => {
+          const registro = comentario as Record<string, unknown>;
+          const comentarioId = pegarTexto(registro.id);
+          const postId = pegarTexto(registro.post_id);
+
+          if (!comentarioId || !postId) {
+            return;
+          }
+
+          const id = `comunidade-comentario-${comentarioId}`;
+          const autorNome = pegarTexto(registro.autor_nome, "Alguém");
+          const textoComentario = pegarTexto(registro.texto);
+          const post = postsPorId.get(postId);
+          const trechoPost = post?.texto
+            ? post.texto.slice(0, 90)
+            : "uma publicação sua";
+
+          notificacoesComunidade.push({
+            id,
+            obraId: "",
+            capituloId: "",
+            link: `/comunidade?post=${encodeURIComponent(postId)}`,
+            titulo: "Novo comentário na Comunidade",
+            mensagem: `${autorNome} comentou em "${trechoPost}${
+              trechoPost.length >= 90 ? "..." : ""
+            }"${textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."}`,
+            tipo: "comentario-comunidade",
+            lida: idsLidos.has(id),
+            criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
+          });
+        });
+      }
+    }
+  } catch {
+    // A página continua com notificações locais e de capítulos se a Comunidade falhar.
+  }
+
+  try {
+    const { data: denunciasData } = await supabase
+      .from("comunidade_denuncias")
+      .select(
+        "id, alvo_tipo, alvo_id, status, observacao_admin, analisado_em, criado_em"
+      )
+      .eq("denunciante_id", userId)
+      .in("status", ["em_analise", "resolvida", "rejeitada"])
+      .order("criado_em", { ascending: false });
+
+    if (Array.isArray(denunciasData)) {
+      denunciasData.forEach((denuncia) => {
+        const registro = denuncia as Record<string, unknown>;
+        const denunciaId = pegarTexto(registro.id);
+        const status = pegarTexto(registro.status, "em_analise");
+
+        if (!denunciaId) {
+          return;
+        }
+
+        const id = `comunidade-denuncia-${denunciaId}-${status}`;
+        const statusTexto =
+          status === "resolvida"
+            ? "resolvida"
+            : status === "rejeitada"
+              ? "rejeitada"
+              : "em análise";
+        const alvoTipo = pegarTexto(registro.alvo_tipo, "conteúdo");
+        const alvoId = pegarTexto(registro.alvo_id);
+        const observacaoAdmin = pegarTexto(registro.observacao_admin);
+        const link =
+          alvoTipo === "post" && alvoId
+            ? `/comunidade?post=${encodeURIComponent(alvoId)}`
+            : "/comunidade";
+
+        notificacoesComunidade.push({
+          id,
+          obraId: "",
+          capituloId: "",
+          link,
+          titulo: `Denúncia ${statusTexto}`,
+          mensagem: observacaoAdmin
+            ? `A moderação atualizou sua denúncia: ${observacaoAdmin}`
+            : `A moderação marcou sua denúncia como ${statusTexto}.`,
+          tipo: "denuncia-comunidade",
+          lida: idsLidos.has(id),
+          criadaEm: pegarTexto(
+            registro.analisado_em ?? registro.criado_em,
+            new Date().toISOString()
+          ),
+        });
+      });
+    }
+  } catch {
+    // Denúncias continuam opcionais para não bloquear as notificações.
+  }
+
+  return notificacoesComunidade.sort(
+    (a, b) => dataNotificacao(b) - dataNotificacao(a)
+  );
+}
+
 async function sincronizarNotificacaoLidaSupabase(
   notificacao: NotificacaoLocal,
   lida: boolean
@@ -765,6 +1071,7 @@ export default function NotificacoesPage() {
   const [ordenacao, setOrdenacao] = useState<OrdenacaoNotificacao>("recentes");
   const [isDesktop, setIsDesktop] = useState(false);
   const [carregando, setCarregando] = useState(true);
+  const [usuarioNotificacoesId, setUsuarioNotificacoesId] = useState("anon");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -799,6 +1106,11 @@ export default function NotificacoesPage() {
       const notificacoesLocais = carregarNotificacoes();
       const obrasSupabase = await carregarObrasPublicadasSupabase();
       const estadoSupabase = await carregarEstadoSupabaseNotificacoes();
+      const usuarioAtualId = estadoSupabase?.userId || "anon";
+      const idsNotificacoesApagadas = carregarIdsNotificacoesApagadas(usuarioAtualId);
+      const notificacoesLocaisFiltradas = notificacoesLocais.filter(
+        (notificacao) => !notificacaoEhComunidade(notificacao)
+      );
       const obrasMescladas = mesclarObrasPorIdSlug(obrasLocais, obrasSupabase);
       const obrasSeguidasLocais = lerIdsLocalStorage(CHAVE_OBRAS_SEGUIDAS);
       const obrasSeguidasIds = Array.from(
@@ -807,14 +1119,23 @@ export default function NotificacoesPage() {
           ...(estadoSupabase?.obrasSeguidasIds || []),
         ])
       );
-      const notificacoesSupabase = criarNotificacoesDeCapitulos(
+      const notificacoesCapitulosSupabase = criarNotificacoesDeCapitulos(
         obrasMescladas,
         obrasSeguidasIds,
         estadoSupabase?.notificacoesLidasIds || []
       );
-      const notificacoesMescladas = mesclarNotificacoes(
-        notificacoesLocais,
-        notificacoesSupabase
+      const notificacoesComunidadeSupabase = estadoSupabase?.userId
+        ? await carregarNotificacoesComunidadeSupabase(
+            estadoSupabase.userId,
+            estadoSupabase.notificacoesLidasIds
+          )
+        : [];
+      const notificacoesMescladas = filtrarNotificacoesApagadas(
+        mesclarNotificacoes(notificacoesLocaisFiltradas, [
+          ...notificacoesCapitulosSupabase,
+          ...notificacoesComunidadeSupabase,
+        ]),
+        idsNotificacoesApagadas
       );
 
       try {
@@ -828,6 +1149,7 @@ export default function NotificacoesPage() {
         return;
       }
 
+      setUsuarioNotificacoesId(usuarioAtualId);
       setObras(obrasMescladas);
       setNotificacoes(notificacoesMescladas);
       setCarregando(false);
@@ -851,10 +1173,12 @@ export default function NotificacoesPage() {
   }, [notificacoes]);
 
   const totalLidas = Math.max(totalNotificacoes - totalNaoLidas, 0);
-  const totalComObra = notificacoes.filter((notificacao) =>
-    obrasPorId.has(notificacao.obraId)
+  const totalCapitulos = notificacoes.filter(
+    (notificacao) => notificacao.tipo === "novo-capitulo"
   ).length;
-  const totalSemObra = Math.max(totalNotificacoes - totalComObra, 0);
+  const totalComunidade = notificacoes.filter((notificacao) =>
+    notificacaoEhComunidade(notificacao)
+  ).length;
   const ultimaNotificacao = notificacoes[0]
     ? formatarData(notificacoes[0].criadaEm)
     : "Sem registros";
@@ -871,6 +1195,8 @@ export default function NotificacoesPage() {
         filtro === "todas" ||
         (filtro === "nao-lidas" && !notificacao.lida) ||
         (filtro === "lidas" && notificacao.lida) ||
+        (filtro === "capitulos" && notificacao.tipo === "novo-capitulo") ||
+        (filtro === "comunidade" && notificacaoEhComunidade(notificacao)) ||
         (filtro === "com-obra" && Boolean(obra)) ||
         (filtro === "sem-obra" && !obra);
 
@@ -1038,6 +1364,10 @@ export default function NotificacoesPage() {
       return notificacao.id !== id;
     });
 
+    if (notificacaoAtual) {
+      registrarNotificacoesApagadas(usuarioNotificacoesId, [notificacaoAtual.id]);
+    }
+
     atualizarNotificacoes(novasNotificacoes);
 
     if (notificacaoAtual) {
@@ -1048,6 +1378,10 @@ export default function NotificacoesPage() {
   function limparTodas() {
     const notificacoesParaApagar = [...notificacoes];
 
+    registrarNotificacoesApagadas(
+      usuarioNotificacoesId,
+      notificacoesParaApagar.map((notificacao) => notificacao.id)
+    );
     atualizarNotificacoes([]);
     notificacoesParaApagar.forEach((notificacao) => {
       void apagarNotificacaoSupabase(notificacao);
@@ -1060,6 +1394,10 @@ export default function NotificacoesPage() {
       (notificacao) => !notificacao.lida
     );
 
+    registrarNotificacoesApagadas(
+      usuarioNotificacoesId,
+      notificacoesLidas.map((notificacao) => notificacao.id)
+    );
     atualizarNotificacoes(novasNotificacoes);
     notificacoesLidas.forEach((notificacao) => {
       void apagarNotificacaoSupabase(notificacao);
@@ -1098,7 +1436,7 @@ export default function NotificacoesPage() {
           <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Notificações</h1>
 
           <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            Acompanhe novos capítulos das obras seguidas e mantenha sua leitura organizada.
+            Acompanhe novos capítulos, comentários da Comunidade e atualizações de moderação.
           </p>
 
         </section>
@@ -1119,14 +1457,14 @@ export default function NotificacoesPage() {
             <span style={statLabelStyle}>Lidas</span>
           </div>
 
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totalComObra}</strong>
-            <span style={statLabelStyle}>Com obra</span>
+          <div style={chapterStatCardStyle}>
+            <strong style={statNumberStyle}>{totalCapitulos}</strong>
+            <span style={statLabelStyle}>Capítulos</span>
           </div>
 
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totalSemObra}</strong>
-            <span style={statLabelStyle}>Sem obra</span>
+          <div style={communityStatCardStyle}>
+            <strong style={statNumberStyle}>{totalComunidade}</strong>
+            <span style={statLabelStyle}>Comunidade</span>
           </div>
 
           <div style={statCardStyle}>
@@ -1153,7 +1491,7 @@ export default function NotificacoesPage() {
               <input
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
-                placeholder="Buscar por obra, capítulo ou mensagem..."
+                placeholder="Buscar por obra, capítulo, comunidade ou mensagem..."
                 style={isDesktop ? desktopSearchInputStyle : searchInputStyle}
                 type="text"
               />
@@ -1197,26 +1535,26 @@ export default function NotificacoesPage() {
 
                 <button
                   type="button"
-                  onClick={() => setFiltro("com-obra")}
+                  onClick={() => setFiltro("capitulos")}
                   style={
-                    filtro === "com-obra"
+                    filtro === "capitulos"
                       ? quickFilterActiveStyle
                       : quickFilterStyle
                   }
                 >
-                  Com obra
+                  Capítulos
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setFiltro("sem-obra")}
+                  onClick={() => setFiltro("comunidade")}
                   style={
-                    filtro === "sem-obra"
-                      ? quickFilterActiveStyle
+                    filtro === "comunidade"
+                      ? communityQuickFilterActiveStyle
                       : quickFilterStyle
                   }
                 >
-                  Sem obra
+                  Comunidade
                 </button>
               </div>
 
@@ -1293,7 +1631,7 @@ export default function NotificacoesPage() {
             <h2 style={emptyTitleStyle}>Nenhuma notificação</h2>
 
             <p style={emptyTextStyle}>
-              Quando uma obra seguida receber capítulo novo, o aviso aparece aqui.
+              Quando uma obra seguida receber capítulo novo ou a Comunidade tiver novidades para você, o aviso aparece aqui.
             </p>
 
             <Link href="/seguindo" style={emptyButtonStyle}>
@@ -1323,77 +1661,139 @@ export default function NotificacoesPage() {
                 notificacao.capituloId
               );
 
+              const ehComunidade = notificacaoEhComunidade(notificacao);
               const tituloObra = obra?.titulo || "Obra não encontrada";
-              const tituloCapitulo =
-                capitulo?.titulo || "Capítulo não encontrado";
+              const tituloCapitulo = capitulo?.titulo || "Capítulo não encontrado";
+              const tituloExibicao = obterTituloExibicaoNotificacao(notificacao);
+              const autorComentarioComunidade =
+                extrairAutorComentarioComunidade(notificacao);
+              const textoComentarioComunidade =
+                extrairTextoComentarioComunidade(notificacao);
 
               const linkCapitulo = montarLinkNotificacao(notificacao);
+              const labelAcaoPrincipal = obterAcaoPrincipalNotificacao(notificacao);
+
+              const cardVisualStyle = notificacao.lida
+                ? ehComunidade
+                  ? isDesktop
+                    ? desktopReadCommunityCardStyle
+                    : readCommunityCardStyle
+                  : isDesktop
+                    ? desktopReadCardStyle
+                    : readCardStyle
+                : ehComunidade
+                  ? isDesktop
+                    ? desktopCommunityCardStyle
+                    : communityCardStyle
+                  : isDesktop
+                    ? desktopCardStyle
+                    : cardStyle;
+
+              const iconVisualStyle = notificacao.lida
+                ? readNotificationIconStyle
+                : ehComunidade
+                  ? communityNotificationIconStyle
+                  : notificationIconStyle;
 
               return (
-                <article
-                  key={notificacao.id}
-                  style={
-                    notificacao.lida
-                      ? isDesktop
-                        ? desktopReadCardStyle
-                        : readCardStyle
-                      : isDesktop
-                        ? desktopCardStyle
-                        : cardStyle
-                  }
-                >
+                <article key={notificacao.id} style={cardVisualStyle}>
                   <div style={cardHeaderStyle}>
-                    <div
-                      style={
-                        notificacao.lida
-                          ? readNotificationIconStyle
-                          : notificationIconStyle
-                      }
-                      aria-hidden="true"
-                    >
-                      {notificacao.lida ? "✓" : "!"}
+                    <div style={iconVisualStyle} aria-hidden="true">
+                      {obterIconeNotificacao(notificacao, notificacao.lida)}
                     </div>
 
                     <div style={cardHeaderTextStyle}>
                       <h2 style={notificationTitleStyle}>
-                        {notificacao.titulo}
+                        {tituloExibicao}
                       </h2>
 
-                      <p style={notificationMessageStyle}>
-                        {notificacao.mensagem}
-                      </p>
+                      {ehComunidade && (
+                        <span style={communityDateTextStyle}>
+                          DATA: {formatarData(notificacao.criadaEm)}
+                        </span>
+                      )}
+
+                      {!ehComunidade && (
+                        <p style={notificationMessageStyle}>
+                          {notificacao.mensagem}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div style={isDesktop ? desktopMetaGridStyle : metaGridStyle}>
-                    <div style={metaBoxStyle}>
-                      <span style={metaLabelStyle}>Data</span>
-                      <strong style={metaValueStyle}>
-                        {formatarData(notificacao.criadaEm)}
-                      </strong>
-                    </div>
+                  <div
+                    style={
+                      ehComunidade
+                        ? isDesktop
+                          ? desktopCommunityMetaGridStyle
+                          : communityMetaGridStyle
+                        : isDesktop
+                          ? desktopMetaGridStyle
+                          : metaGridStyle
+                    }
+                  >
+                    {ehComunidade ? (
+                      <div style={communityCommentBoxStyle}>
+                        <span style={metaLabelStyle}>
+                          {notificacao.tipo === "comentario-comunidade"
+                            ? `Comentário de ${autorComentarioComunidade}`
+                            : "Atualização"}
+                        </span>
 
-                    <div style={metaBoxStyle}>
-                      <span style={metaLabelStyle}>Obra</span>
-                      <strong style={metaValueStyle}>{tituloObra}</strong>
-                    </div>
+                        {notificacao.tipo !== "comentario-comunidade" && (
+                          <strong style={metaValueStyle}>
+                            {obterDetalheNotificacao(notificacao)}
+                          </strong>
+                        )}
 
-                    <div style={metaBoxStyle}>
-                      <span style={metaLabelStyle}>Capítulo</span>
-                      <strong style={metaValueStyle}>{tituloCapitulo}</strong>
-                    </div>
+                        <p style={communityCommentTextStyle}>
+                          {notificacao.tipo === "comentario-comunidade"
+                            ? textoComentarioComunidade
+                            : notificacao.mensagem}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={metaBoxStyle}>
+                          <span style={metaLabelStyle}>Data</span>
+                          <strong style={metaValueStyle}>
+                            {formatarData(notificacao.criadaEm)}
+                          </strong>
+                        </div>
+
+                        <div style={metaBoxStyle}>
+                          <span style={metaLabelStyle}>Obra</span>
+                          <strong style={metaValueStyle}>{tituloObra}</strong>
+                        </div>
+
+                        <div style={metaBoxStyle}>
+                          <span style={metaLabelStyle}>Capítulo</span>
+                          <strong style={metaValueStyle}>{tituloCapitulo}</strong>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  <div style={isDesktop ? desktopCardActionsStyle : cardActionsStyle}>
+                  <div
+                    style={
+                      ehComunidade
+                        ? isDesktop
+                          ? desktopCommunityCardActionsStyle
+                          : communityCardActionsStyle
+                        : isDesktop
+                          ? desktopCardActionsStyle
+                          : cardActionsStyle
+                    }
+                  >
                     <Link
                       href={linkCapitulo}
                       style={openChapterLinkStyle}
                       onClick={() => abrirNotificacao(notificacao.id)}
                     >
-                      Abrir capítulo
+                      {labelAcaoPrincipal}
                     </Link>
 
-                    {obra && (
+                    {obra && !ehComunidade && (
                       <Link
                         href={`/obra/${obra.slug || criarSlugBase(obra.titulo)}`}
                         style={secondaryLinkButtonStyle}
@@ -1621,6 +2021,18 @@ const readStatCardStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+const chapterStatCardStyle: CSSProperties = {
+  ...statCardStyle,
+  background:
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, var(--historietas-surface, rgba(255,255,255,0.060))), var(--historietas-surface-strong, rgba(255,255,255,0.034)))",
+};
+
+const communityStatCardStyle: CSSProperties = {
+  ...statCardStyle,
+  background:
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, var(--historietas-surface, rgba(255,255,255,0.060))), var(--historietas-surface-strong, rgba(255,255,255,0.034)))",
+};
+
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "9px",
@@ -1769,6 +2181,14 @@ const quickFilterActiveStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+const communityQuickFilterActiveStyle: CSSProperties = {
+  ...quickFilterStyle,
+  background: "var(--historietas-secondary, #7C3AED)",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 62%, transparent)",
+  color: "#FFFFFF",
+  boxShadow: "none",
+};
+
 const filterFooterStyle: CSSProperties = {
   display: "grid",
   gap: "7px",
@@ -1876,6 +2296,21 @@ const readCardStyle: CSSProperties = {
   boxShadow: "var(--historietas-card-shadow, none)",
 };
 
+const communityCardStyle: CSSProperties = {
+  ...cardStyle,
+  background:
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 15%, var(--historietas-surface, rgba(31,16,52,0.90))), var(--historietas-surface-strong, rgba(18,12,30,0.96)))",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, var(--historietas-border-soft, transparent))",
+};
+
+const readCommunityCardStyle: CSSProperties = {
+  ...communityCardStyle,
+  background:
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 9%, var(--historietas-surface, rgba(31,16,52,0.66))), var(--historietas-surface-strong, rgba(18,12,30,0.78)))",
+  border: "1px solid rgba(34,197,94,0.12)",
+};
+
 const cardHeaderStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "52px minmax(0, 1fr)",
@@ -1909,12 +2344,66 @@ const readNotificationIconStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+const communityNotificationIconStyle: CSSProperties = {
+  ...notificationIconStyle,
+  background:
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, transparent), color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent))",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, transparent)",
+};
+
 const cardHeaderTextStyle: CSSProperties = {
   display: "grid",
   gap: "5px",
   paddingTop: "6px",
   minWidth: 0,
   maxWidth: "100%",
+};
+
+const notificationOriginRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+  flexWrap: "wrap",
+  minWidth: 0,
+};
+
+const chapterOriginBadgeStyle: CSSProperties = {
+  minHeight: "22px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0 8px",
+  borderRadius: "999px",
+  background: "rgba(249,115,22,0.12)",
+  border: "1px solid rgba(249,115,22,0.20)",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "9px",
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.055em",
+};
+
+const communityOriginBadgeStyle: CSSProperties = {
+  ...chapterOriginBadgeStyle,
+  background: "rgba(124,58,237,0.16)",
+  border: "1px solid rgba(124,58,237,0.26)",
+  color: "#DDD6FE",
+};
+
+const notificationKindBadgeStyle: CSSProperties = {
+  minHeight: "22px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0 8px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.045)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "9px",
+  fontWeight: 900,
+  ...safeTextStyle,
 };
 
 const notificationTitleStyle: CSSProperties = {
@@ -1924,6 +2413,16 @@ const notificationTitleStyle: CSSProperties = {
   lineHeight: 1.12,
   fontWeight: 950,
   letterSpacing: "0.055em",
+  textTransform: "uppercase",
+  ...safeTextStyle,
+};
+
+const communityDateTextStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "0.045em",
   textTransform: "uppercase",
   ...safeTextStyle,
 };
@@ -1944,6 +2443,11 @@ const metaGridStyle: CSSProperties = {
   marginTop: "8px",
   minWidth: 0,
   maxWidth: "100%",
+};
+
+const communityMetaGridStyle: CSSProperties = {
+  ...metaGridStyle,
+  gridTemplateColumns: "1fr",
 };
 
 const metaBoxStyle: CSSProperties = {
@@ -1975,6 +2479,20 @@ const metaValueStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const communityCommentBoxStyle: CSSProperties = {
+  ...metaBoxStyle,
+  gap: "4px",
+};
+
+const communityCommentTextStyle: CSSProperties = {
+  margin: "1px 0 0",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11.5px",
+  lineHeight: 1.42,
+  fontWeight: 720,
+  ...safeTextStyle,
+};
+
 const cardActionsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))",
@@ -1982,6 +2500,11 @@ const cardActionsStyle: CSSProperties = {
   marginTop: "8px",
   minWidth: 0,
   maxWidth: "100%",
+};
+
+const communityCardActionsStyle: CSSProperties = {
+  ...cardActionsStyle,
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
 };
 
 const openChapterLinkStyle: CSSProperties = {
@@ -2159,8 +2682,26 @@ const desktopReadCardStyle: CSSProperties = {
   borderRadius: "24px",
 };
 
+const desktopCommunityCardStyle: CSSProperties = {
+  ...communityCardStyle,
+  padding: "14px",
+  borderRadius: "24px",
+};
+
+const desktopReadCommunityCardStyle: CSSProperties = {
+  ...readCommunityCardStyle,
+  padding: "14px",
+  borderRadius: "24px",
+};
+
 const desktopMetaGridStyle: CSSProperties = {
   ...metaGridStyle,
+  gridTemplateColumns: "1fr",
+  gap: "8px",
+};
+
+const desktopCommunityMetaGridStyle: CSSProperties = {
+  ...communityMetaGridStyle,
   gridTemplateColumns: "1fr",
   gap: "8px",
 };
@@ -2169,6 +2710,11 @@ const desktopCardActionsStyle: CSSProperties = {
   ...cardActionsStyle,
   gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
   gap: "8px",
+};
+
+const desktopCommunityCardActionsStyle: CSSProperties = {
+  ...desktopCardActionsStyle,
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
 };
 
 const desktopEmptyStyle: CSSProperties = {
