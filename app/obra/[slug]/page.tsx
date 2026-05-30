@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { obras } from "../../data/obras";
@@ -10,6 +10,9 @@ import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historiet
 
 const SAVED_RELEASES_STORAGE_KEY = "historietas-lancamentos-salvos";
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
+const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
+const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
+const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
 const LOCAL_WORKS_STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 
@@ -75,6 +78,7 @@ type SupabaseObraRow = {
   arquivo_tipo: string | null;
   arquivo_tamanho: number | null;
   arquivo_categoria: string | null;
+  visualizacoes: number | null;
   publicado: boolean | null;
   slug: string | null;
   link: string | null;
@@ -92,6 +96,12 @@ type SupabaseCapituloRow = {
   publicado: boolean | null;
   criado_em: string | null;
   atualizado_em: string | null;
+};
+
+type SupabaseComunidadePostRow = {
+  id: string;
+  tipo_publicacao: string | null;
+  obra_relacionada: string | null;
 };
 
 type CapituloDinamico = {
@@ -125,6 +135,56 @@ type ObraDinamica = {
   capitulos: CapituloDinamico[];
 };
 
+type MetricasObraPublica = {
+  visualizacoes: number;
+  curtidas: number;
+  comentarios: number;
+  seguidores: number;
+  curtidaAtiva: boolean;
+  carregado: boolean;
+};
+
+type MetricasComunidadeObra = {
+  teorias: number;
+  reviews: number;
+  interacoes: number;
+  carregado: boolean;
+};
+
+type AvaliacaoObraPublica = {
+  media: number;
+  total: number;
+  minhaNota: number;
+  carregado: boolean;
+  salvando: boolean;
+};
+
+const NOTAS_AVALIACAO_OBRA = [1, 2, 3, 4, 5] as const;
+
+const metricasObraVazias: MetricasObraPublica = {
+  visualizacoes: 0,
+  curtidas: 0,
+  comentarios: 0,
+  seguidores: 0,
+  curtidaAtiva: false,
+  carregado: false,
+};
+
+const metricasComunidadeObraVazias: MetricasComunidadeObra = {
+  teorias: 0,
+  reviews: 0,
+  interacoes: 0,
+  carregado: false,
+};
+
+const avaliacaoObraVazia: AvaliacaoObraPublica = {
+  media: 0,
+  total: 0,
+  minhaNota: 0,
+  carregado: false,
+  salvando: false,
+};
+
 type CapituloModelo = {
   numero: string;
   titulo: string;
@@ -146,17 +206,6 @@ const capitulosModelo: CapituloModelo[] = [
     numero: "03",
     titulo: "Próximo passo",
     descricao: "A história avança para uma nova fase.",
-  },
-];
-
-const comentariosModelo = [
-  {
-    autor: "Luna",
-    texto: "A premissa chamou atenção. Quero acompanhar os próximos capítulos.",
-  },
-  {
-    autor: "Kai",
-    texto: "Gostei da proposta e da vibe dessa obra.",
   },
 ];
 
@@ -832,6 +881,240 @@ function criarLinkComunidadeObra(titulo: string, tipo?: "Teoria" | "Review") {
   return `/comunidade?${params.toString()}`;
 }
 
+function normalizarObraRelacionadaComunidade(valor: string) {
+  return normalizarTexto(valor).replace(/\s+/g, " ");
+}
+
+function postComunidadePertenceAObra(post: SupabaseComunidadePostRow, titulo: string) {
+  const obraPost = normalizarObraRelacionadaComunidade(post.obra_relacionada || "");
+  const obraTitulo = normalizarObraRelacionadaComunidade(titulo);
+
+  if (!obraPost || !obraTitulo) {
+    return false;
+  }
+
+  return (
+    obraPost === obraTitulo ||
+    obraPost.includes(obraTitulo) ||
+    obraTitulo.includes(obraPost)
+  );
+}
+
+function obterNumeroMetrica(valor: string) {
+  const valorNormalizado = valor.trim().toLowerCase().replace(",", ".");
+
+  if (!valorNormalizado) {
+    return 0;
+  }
+
+  const multiplicador = valorNormalizado.endsWith("k") ? 1000 : 1;
+  const numero = Number.parseFloat(valorNormalizado.replace(/[^0-9.]/g, ""));
+
+  return Number.isFinite(numero) ? Math.round(numero * multiplicador) : 0;
+}
+
+function obterNumeroSeguro(valor: unknown, fallback = 0) {
+  return typeof valor === "number" && Number.isFinite(valor) ? valor : fallback;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function formatarNumeroCompacto(valor: number) {
+  if (!Number.isFinite(valor) || valor <= 0) {
+    return "0";
+  }
+
+  if (valor >= 1000) {
+    const valorCompacto = valor / 1000;
+    const texto =
+      valorCompacto >= 10
+        ? Math.round(valorCompacto).toString()
+        : valorCompacto.toFixed(1).replace(".0", "");
+
+    return `${texto}K`;
+  }
+
+  return String(valor);
+}
+
+function criarMetricasBaseObra(obra: ObraDinamica | null): MetricasObraPublica {
+  if (!obra) {
+    return metricasObraVazias;
+  }
+
+  return {
+    visualizacoes: obterNumeroMetrica(obra.views),
+    curtidas: obterNumeroMetrica(obra.likes),
+    comentarios: obterNumeroMetrica(obra.comentarios),
+    seguidores: 0,
+    curtidaAtiva: false,
+    carregado: false,
+  };
+}
+
+function obterChaveAvaliacaoObra(obra: ObraDinamica) {
+  return obra.id || obra.slug || normalizarTexto(obra.titulo);
+}
+
+function carregarAvaliacoesLocais() {
+  try {
+    const avaliacoesTexto = localStorage.getItem(RATED_WORKS_STORAGE_KEY);
+    const avaliacoesJson: unknown = avaliacoesTexto
+      ? JSON.parse(avaliacoesTexto)
+      : {};
+
+    if (
+      !avaliacoesJson ||
+      typeof avaliacoesJson !== "object" ||
+      Array.isArray(avaliacoesJson)
+    ) {
+      return {};
+    }
+
+    return avaliacoesJson as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function obterAvaliacaoLocal(obra: ObraDinamica) {
+  const chaveAvaliacao = obterChaveAvaliacaoObra(obra);
+  const avaliacoesLocais = carregarAvaliacoesLocais();
+  const nota = Number(avaliacoesLocais[chaveAvaliacao]);
+
+  return Number.isFinite(nota) && nota >= 0.5 && nota <= 5
+    ? Math.round(nota * 2) / 2
+    : 0;
+}
+
+function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number) {
+  try {
+    const chaveAvaliacao = obterChaveAvaliacaoObra(obra);
+
+    if (!chaveAvaliacao) {
+      return;
+    }
+
+    const avaliacoesLocais = carregarAvaliacoesLocais();
+
+    if (nota <= 0) {
+      delete avaliacoesLocais[chaveAvaliacao];
+    } else {
+      avaliacoesLocais[chaveAvaliacao] = nota;
+    }
+
+    localStorage.setItem(
+      RATED_WORKS_STORAGE_KEY,
+      JSON.stringify(avaliacoesLocais)
+    );
+  } catch {
+    // Avaliação local é fallback e não deve travar a página.
+  }
+}
+
+function formatarMediaAvaliacao(media: number) {
+  if (!Number.isFinite(media) || media <= 0) {
+    return "0.0";
+  }
+
+  return media.toFixed(1);
+}
+
+function formatarTotalAvaliacoes(total: number) {
+  if (total <= 0) {
+    return "avaliações";
+  }
+
+  return total === 1 ? "1 avaliação" : `${total} avaliações`;
+}
+
+function formatarEstrelasAvaliacao(valor: number) {
+  const notaArredondada = Math.max(0, Math.min(5, Math.round(valor * 2) / 2));
+
+  return Array.from({ length: 5 }, (_, index) => {
+    const valorEstrela = index + 1;
+
+    if (notaArredondada >= valorEstrela) {
+      return "★";
+    }
+
+    if (notaArredondada >= valorEstrela - 0.5) {
+      return "⯨";
+    }
+
+    return "☆";
+  }).join("");
+}
+
+function obterProximaNotaAvaliacao(estrela: number, notaAtual: number) {
+  const meiaNota = estrela - 0.5;
+  const notaNormalizada = Math.round(notaAtual * 2) / 2;
+
+  if (notaNormalizada === meiaNota) {
+    return estrela;
+  }
+
+  if (notaNormalizada === estrela) {
+    return 0;
+  }
+
+  return meiaNota;
+}
+
+function obterPreenchimentoEstrela(estrela: number, notaAtual: number) {
+  const notaNormalizada = Math.max(0, Math.min(5, Math.round(notaAtual * 2) / 2));
+
+  if (notaNormalizada >= estrela) {
+    return "100%";
+  }
+
+  if (notaNormalizada >= estrela - 0.5) {
+    return "50%";
+  }
+
+  return "0%";
+}
+
+function calcularProximaAvaliacao(
+  avaliacaoAtual: AvaliacaoObraPublica,
+  novaNota: number
+): AvaliacaoObraPublica {
+  const notaAnterior = avaliacaoAtual.minhaNota;
+  const totalAtual = avaliacaoAtual.total;
+  const somaAtual = avaliacaoAtual.media * totalAtual;
+
+  if (novaNota <= 0) {
+    const totalNovo = notaAnterior > 0 ? Math.max(0, totalAtual - 1) : totalAtual;
+    const somaNova = notaAnterior > 0 ? somaAtual - notaAnterior : somaAtual;
+
+    return {
+      ...avaliacaoAtual,
+      media: totalNovo > 0 ? somaNova / totalNovo : 0,
+      total: totalNovo,
+      minhaNota: 0,
+      carregado: true,
+      salvando: true,
+    };
+  }
+
+  const totalNovo = notaAnterior > 0 ? totalAtual : totalAtual + 1;
+  const somaNova =
+    notaAnterior > 0 ? somaAtual - notaAnterior + novaNota : somaAtual + novaNota;
+
+  return {
+    ...avaliacaoAtual,
+    media: totalNovo > 0 ? somaNova / totalNovo : 0,
+    total: totalNovo,
+    minhaNota: novaNota,
+    carregado: true,
+    salvando: true,
+  };
+}
+
 export default function ObraDinamicaPage() {
   const router = useRouter();
   const params = useParams<{ slug?: string | string[] }>();
@@ -850,10 +1133,17 @@ export default function ObraDinamicaPage() {
   const [carregandoObras, setCarregandoObras] = useState(true);
   const [avisoAtivado, setAvisoAtivado] = useState(false);
   const [obraSeguida, setObraSeguida] = useState(false);
+  const [metricasObra, setMetricasObra] =
+    useState<MetricasObraPublica>(metricasObraVazias);
+  const [metricasComunidadeObra, setMetricasComunidadeObra] =
+    useState<MetricasComunidadeObra>(metricasComunidadeObraVazias);
+  const [avaliacaoObra, setAvaliacaoObra] =
+    useState<AvaliacaoObraPublica>(avaliacaoObraVazia);
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const visualizacaoRegistradaRef = useRef("");
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1003,6 +1293,413 @@ export default function ObraDinamicaPage() {
     }
   }, [obraNormalizada]);
 
+  useEffect(() => {
+    if (!obra) {
+      setMetricasObra(metricasObraVazias);
+      return;
+    }
+
+    const obraAtual = obra;
+    const obraId = obraAtual.id;
+    const metricasBase = criarMetricasBaseObra(obraAtual);
+    const chaveMetricaObra =
+      obraId || obraAtual.slug || obraNormalizada || normalizarTexto(obraAtual.titulo);
+    let visualizacoesLocais = metricasBase.visualizacoes;
+    let curtidaLocalAtiva = false;
+    let seguindoLocalAtivo = false;
+
+    try {
+      const visualizacoesTexto = localStorage.getItem(VIEWED_WORKS_STORAGE_KEY);
+      const visualizacoesJson: unknown = visualizacoesTexto
+        ? JSON.parse(visualizacoesTexto)
+        : {};
+      const visualizacoesPorObra =
+        visualizacoesJson && typeof visualizacoesJson === "object" && !Array.isArray(visualizacoesJson)
+          ? (visualizacoesJson as Record<string, unknown>)
+          : {};
+      const visualizacoesAtuais = obterNumeroSeguro(
+        visualizacoesPorObra[chaveMetricaObra],
+        metricasBase.visualizacoes
+      );
+      const jaRegistrouVisualizacao =
+        visualizacaoRegistradaRef.current === chaveMetricaObra;
+      const proximasVisualizacoes = jaRegistrouVisualizacao
+        ? visualizacoesAtuais
+        : visualizacoesAtuais + 1;
+
+      if (!jaRegistrouVisualizacao) {
+        localStorage.setItem(
+          VIEWED_WORKS_STORAGE_KEY,
+          JSON.stringify({
+            ...visualizacoesPorObra,
+            [chaveMetricaObra]: proximasVisualizacoes,
+          })
+        );
+        visualizacaoRegistradaRef.current = chaveMetricaObra;
+      }
+
+      visualizacoesLocais = Math.max(
+        metricasBase.visualizacoes,
+        proximasVisualizacoes
+      );
+    } catch {
+      visualizacoesLocais = metricasBase.visualizacoes;
+    }
+
+    try {
+      const curtidasTexto = localStorage.getItem(LIKED_WORKS_STORAGE_KEY);
+      const curtidasJson: unknown = curtidasTexto ? JSON.parse(curtidasTexto) : [];
+      const obrasCurtidas = Array.isArray(curtidasJson)
+        ? curtidasJson.filter(
+            (titulo): titulo is string =>
+              typeof titulo === "string" && Boolean(titulo.trim())
+          )
+        : [];
+
+      curtidaLocalAtiva = obrasCurtidas.includes(obraNormalizada);
+    } catch {
+      curtidaLocalAtiva = false;
+    }
+
+    try {
+      const seguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
+      const seguidasJson: unknown = seguidasTexto ? JSON.parse(seguidasTexto) : [];
+      const obrasSeguidas = Array.isArray(seguidasJson)
+        ? seguidasJson.filter(
+            (titulo): titulo is string =>
+              typeof titulo === "string" && Boolean(titulo.trim())
+          )
+        : [];
+
+      seguindoLocalAtivo = obrasSeguidas.includes(obraNormalizada);
+    } catch {
+      seguindoLocalAtivo = false;
+    }
+
+    setObraSeguida(seguindoLocalAtivo);
+    setMetricasObra({
+      ...metricasBase,
+      visualizacoes: visualizacoesLocais,
+      curtidaAtiva: curtidaLocalAtiva,
+      curtidas: metricasBase.curtidas + (curtidaLocalAtiva ? 1 : 0),
+      seguidores: seguindoLocalAtivo ? 1 : metricasBase.seguidores,
+      carregado: true,
+    });
+
+    if (obraAtual.origem !== "local" || !obraId || !idObraSupabaseValido(obraId)) {
+      return;
+    }
+
+    let cancelado = false;
+
+    async function carregarMetricasReaisObra() {
+      try {
+        const { data: usuarioData } = await supabase.auth.getUser();
+        const userId = usuarioData.user?.id || "";
+
+        const { data: obraMetricas } = await supabase
+          .from("obras")
+          .select("visualizacoes")
+          .eq("id", obraId)
+          .maybeSingle();
+
+        let visualizacoes = obterNumeroSeguro(
+          (obraMetricas as { visualizacoes?: number } | null)?.visualizacoes,
+          metricasBase.visualizacoes
+        );
+
+        const chaveVisualizacao = `supabase-${obraId}`;
+        const jaContouVisualizacao =
+          visualizacaoRegistradaRef.current === chaveVisualizacao;
+
+        if (!jaContouVisualizacao) {
+          const proximaVisualizacao = visualizacoes + 1;
+
+          const { error: erroRpc } = await supabase.rpc(
+            "incrementar_visualizacao_obra",
+            { obra_id_param: obraId }
+          );
+
+          if (erroRpc) {
+            await supabase
+              .from("obras")
+              .update({ visualizacoes: proximaVisualizacao })
+              .eq("id", obraId);
+          }
+
+          visualizacaoRegistradaRef.current = chaveVisualizacao;
+          visualizacoes = proximaVisualizacao;
+        }
+
+        const [{ count: totalCurtidas }, { count: totalSeguidores }] =
+          await Promise.all([
+            supabase
+              .from("obra_curtidas")
+              .select("id", { count: "exact", head: true })
+              .eq("obra_id", obraId),
+            supabase
+              .from("seguindo_obras")
+              .select("id", { count: "exact", head: true })
+              .eq("obra_id", obraId),
+          ]);
+
+        let totalComentarios = metricasBase.comentarios;
+        const idsCapitulos = capitulosDaObra
+          .map((capitulo) => capitulo.id)
+          .filter((capituloId) => capituloId && !capituloId.startsWith("modelo-"));
+
+        if (idsCapitulos.length > 0) {
+          const { count: comentariosCount } = await supabase
+            .from("comentarios_capitulos")
+            .select("id", { count: "exact", head: true })
+            .in("capitulo_id", idsCapitulos);
+
+          totalComentarios = comentariosCount ?? totalComentarios;
+        }
+
+        let curtidaAtiva = false;
+        let seguindoAtivo = false;
+
+        try {
+          const obrasSeguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
+          const obrasSeguidasJson: unknown = obrasSeguidasTexto
+            ? JSON.parse(obrasSeguidasTexto)
+            : [];
+          const obrasSeguidas = Array.isArray(obrasSeguidasJson)
+            ? obrasSeguidasJson.filter(
+                (titulo): titulo is string =>
+                  typeof titulo === "string" && Boolean(titulo.trim())
+              )
+            : [];
+
+          seguindoAtivo = obrasSeguidas.includes(obraNormalizada);
+        } catch {
+          seguindoAtivo = false;
+        }
+
+        if (userId) {
+          const [{ data: curtidaUsuario }, { data: seguidorUsuario }] =
+            await Promise.all([
+              supabase
+                .from("obra_curtidas")
+                .select("id")
+                .eq("obra_id", obraId)
+                .eq("user_id", userId)
+                .maybeSingle(),
+              supabase
+                .from("seguindo_obras")
+                .select("id")
+                .eq("obra_id", obraId)
+                .eq("user_id", userId)
+                .maybeSingle(),
+            ]);
+
+          curtidaAtiva = Boolean(curtidaUsuario);
+          seguindoAtivo = Boolean(seguidorUsuario) || seguindoAtivo;
+        }
+
+        if (cancelado) {
+          return;
+        }
+
+        setObraSeguida(seguindoAtivo);
+        setMetricasObra({
+          visualizacoes,
+          curtidas: totalCurtidas ?? metricasBase.curtidas,
+          comentarios: totalComentarios,
+          seguidores: totalSeguidores ?? metricasBase.seguidores,
+          curtidaAtiva,
+          carregado: true,
+        });
+      } catch {
+        if (!cancelado) {
+          setMetricasObra((metricasAtuais) => ({
+            ...metricasAtuais,
+            carregado: true,
+          }));
+        }
+      }
+    }
+
+    void carregarMetricasReaisObra();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obra, capitulosDaObra, obraNormalizada]);
+
+  useEffect(() => {
+    if (!obra) {
+      setMetricasComunidadeObra(metricasComunidadeObraVazias);
+      return;
+    }
+
+    let cancelado = false;
+    const tituloObra = obra.titulo;
+
+    async function carregarMetricasComunidadeObra() {
+      try {
+        const { data: postsData, error: erroPosts } = await supabase
+          .from("comunidade_posts")
+          .select("id, tipo_publicacao, obra_relacionada")
+          .not("obra_relacionada", "is", null);
+
+        if (erroPosts || !Array.isArray(postsData)) {
+          throw erroPosts;
+        }
+
+        const postsRelacionados = (postsData as SupabaseComunidadePostRow[]).filter(
+          (post) => postComunidadePertenceAObra(post, tituloObra)
+        );
+        const postIds = postsRelacionados.map((post) => post.id).filter(Boolean);
+
+        let totalComentariosComunidade = 0;
+        let totalCurtidasComunidade = 0;
+
+        if (postIds.length > 0) {
+          const [{ count: comentariosCount }, { count: curtidasCount }] =
+            await Promise.all([
+              supabase
+                .from("comunidade_comentarios")
+                .select("id", { count: "exact", head: true })
+                .in("post_id", postIds),
+              supabase
+                .from("comunidade_curtidas")
+                .select("post_id", { count: "exact", head: true })
+                .in("post_id", postIds),
+            ]);
+
+          totalComentariosComunidade = comentariosCount ?? 0;
+          totalCurtidasComunidade = curtidasCount ?? 0;
+        }
+
+        if (cancelado) {
+          return;
+        }
+
+        setMetricasComunidadeObra({
+          teorias: postsRelacionados.filter(
+            (post) => post.tipo_publicacao === "Teoria"
+          ).length,
+          reviews: postsRelacionados.filter(
+            (post) => post.tipo_publicacao === "Review"
+          ).length,
+          interacoes:
+            postsRelacionados.length +
+            totalComentariosComunidade +
+            totalCurtidasComunidade,
+          carregado: true,
+        });
+      } catch {
+        if (!cancelado) {
+          setMetricasComunidadeObra({
+            ...metricasComunidadeObraVazias,
+            carregado: true,
+          });
+        }
+      }
+    }
+
+    void carregarMetricasComunidadeObra();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obra?.titulo]);
+
+  useEffect(() => {
+    if (!obra) {
+      setAvaliacaoObra(avaliacaoObraVazia);
+      return;
+    }
+
+    const obraAtual = obra;
+    const notaLocal = obterAvaliacaoLocal(obraAtual);
+
+    setAvaliacaoObra({
+      media: notaLocal > 0 ? notaLocal : 0,
+      total: notaLocal > 0 ? 1 : 0,
+      minhaNota: notaLocal,
+      carregado: true,
+      salvando: false,
+    });
+
+    if (!obraAtual.id || !idObraSupabaseValido(obraAtual.id)) {
+      return;
+    }
+
+    let cancelado = false;
+
+    async function carregarAvaliacaoRealObra() {
+      try {
+        const { data: usuarioData } = await supabase.auth.getUser();
+        const userId = usuarioData.user?.id || "";
+
+        const { data: avaliacoesData, error: erroAvaliacoes } = await supabase
+          .from("obra_avaliacoes")
+          .select("nota")
+          .eq("obra_id", obraAtual.id);
+
+        if (erroAvaliacoes || !Array.isArray(avaliacoesData)) {
+          return;
+        }
+
+        const notas = avaliacoesData
+          .map((avaliacao) => Number((avaliacao as { nota?: unknown }).nota))
+          .filter((nota) => Number.isFinite(nota) && nota >= 0.5 && nota <= 5);
+        const total = notas.length;
+        const media =
+          total > 0
+            ? notas.reduce((soma, nota) => soma + nota, 0) / total
+            : 0;
+        let minhaNota = notaLocal;
+
+        if (userId) {
+          const { data: minhaAvaliacao } = await supabase
+            .from("obra_avaliacoes")
+            .select("nota")
+            .eq("obra_id", obraAtual.id)
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          const notaUsuario = Number(
+            (minhaAvaliacao as { nota?: unknown } | null)?.nota
+          );
+
+          if (Number.isFinite(notaUsuario) && notaUsuario >= 0.5 && notaUsuario <= 5) {
+            minhaNota = Math.round(notaUsuario * 2) / 2;
+          }
+        }
+
+        if (cancelado) {
+          return;
+        }
+
+        setAvaliacaoObra({
+          media,
+          total,
+          minhaNota,
+          carregado: true,
+          salvando: false,
+        });
+      } catch {
+        if (!cancelado) {
+          setAvaliacaoObra((avaliacaoAtual) => ({
+            ...avaliacaoAtual,
+            carregado: true,
+            salvando: false,
+          }));
+        }
+      }
+    }
+
+    void carregarAvaliacaoRealObra();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obra?.id, obra?.slug, obraNormalizada]);
+
   function alternarAviso() {
     if (!obraNormalizada) {
       return;
@@ -1043,10 +1740,12 @@ export default function ObraDinamicaPage() {
     }
   }
 
-  function alternarSeguirObra() {
+  async function alternarSeguirObra() {
     if (!obraNormalizada) {
       return;
     }
+
+    const seguindo = !obraSeguida;
 
     try {
       const obrasSeguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
@@ -1061,21 +1760,241 @@ export default function ObraDinamicaPage() {
           )
         : [];
 
-      const novasObrasSeguidas = obrasSeguidas.includes(obraNormalizada)
-        ? obrasSeguidas.filter((titulo) => titulo !== obraNormalizada)
-        : Array.from(new Set([...obrasSeguidas, obraNormalizada]));
+      const novasObrasSeguidas = seguindo
+        ? Array.from(new Set([...obrasSeguidas, obraNormalizada]))
+        : obrasSeguidas.filter((titulo) => titulo !== obraNormalizada);
 
       localStorage.setItem(
         FOLLOWED_WORKS_STORAGE_KEY,
         JSON.stringify(novasObrasSeguidas)
       );
 
-      const seguindo = novasObrasSeguidas.includes(obraNormalizada);
-
       setObraSeguida(seguindo);
+      setMetricasObra((metricasAtuais) => ({
+        ...metricasAtuais,
+        seguidores: Math.max(
+          0,
+          metricasAtuais.seguidores + (seguindo ? 1 : -1)
+        ),
+      }));
+      setMensagemAcao("");
+
+      if (!obra || obra.origem !== "local" || !obra.id || !idObraSupabaseValido(obra.id)) {
+        return;
+      }
+
+      const obraId = obra.id;
+      const { data: usuarioData } = await supabase.auth.getUser();
+      const userId = usuarioData.user?.id || "";
+
+      if (!userId) {
+        return;
+      }
+
+      const resposta = seguindo
+        ? await supabase.from("seguindo_obras").upsert(
+            {
+              obra_id: obraId,
+              user_id: userId,
+            },
+            { onConflict: "obra_id,user_id" }
+          )
+        : await supabase
+            .from("seguindo_obras")
+            .delete()
+            .eq("obra_id", obraId)
+            .eq("user_id", userId);
+
+      if (resposta.error) {
+        throw resposta.error;
+      }
+    } catch {
+      setObraSeguida(!seguindo);
+      setMetricasObra((metricasAtuais) => ({
+        ...metricasAtuais,
+        seguidores: Math.max(
+          0,
+          metricasAtuais.seguidores + (seguindo ? -1 : 1)
+        ),
+      }));
+      setMensagemAcao("Não foi possível salvar agora.");
+    }
+  }
+
+  async function alternarCurtidaObra() {
+    if (!obraNormalizada) {
+      return;
+    }
+
+    const proximaCurtidaAtiva = !metricasObra.curtidaAtiva;
+
+    setMetricasObra((metricasAtuais) => ({
+      ...metricasAtuais,
+      curtidaAtiva: proximaCurtidaAtiva,
+      curtidas: Math.max(
+        0,
+        metricasAtuais.curtidas + (proximaCurtidaAtiva ? 1 : -1)
+      ),
+    }));
+    setMensagemAcao("");
+
+    if (!obra || obra.origem !== "local" || !obra.id || !idObraSupabaseValido(obra.id)) {
+      try {
+        const curtidasTexto = localStorage.getItem(LIKED_WORKS_STORAGE_KEY);
+        const curtidasJson: unknown = curtidasTexto ? JSON.parse(curtidasTexto) : [];
+        const obrasCurtidas = Array.isArray(curtidasJson)
+          ? curtidasJson.filter(
+              (titulo): titulo is string =>
+                typeof titulo === "string" && Boolean(titulo.trim())
+            )
+          : [];
+
+        const novasObrasCurtidas = proximaCurtidaAtiva
+          ? Array.from(new Set([...obrasCurtidas, obraNormalizada]))
+          : obrasCurtidas.filter((titulo) => titulo !== obraNormalizada);
+
+        localStorage.setItem(
+          LIKED_WORKS_STORAGE_KEY,
+          JSON.stringify(novasObrasCurtidas)
+        );
+      } catch {
+        setMetricasObra((metricasAtuais) => ({
+          ...metricasAtuais,
+          curtidaAtiva: !proximaCurtidaAtiva,
+          curtidas: Math.max(
+            0,
+            metricasAtuais.curtidas + (proximaCurtidaAtiva ? -1 : 1)
+          ),
+        }));
+        setMensagemAcao("Não foi possível salvar a curtida agora.");
+      }
+
+      return;
+    }
+
+    const obraId = obra.id;
+
+    try {
+      const { data: usuarioData } = await supabase.auth.getUser();
+      const userId = usuarioData.user?.id || "";
+
+      if (!userId) {
+        setMetricasObra((metricasAtuais) => ({
+          ...metricasAtuais,
+          curtidaAtiva: !proximaCurtidaAtiva,
+          curtidas: Math.max(
+            0,
+            metricasAtuais.curtidas + (proximaCurtidaAtiva ? -1 : 1)
+          ),
+        }));
+        setMensagemAcao("Entre na sua conta para curtir esta obra.");
+        return;
+      }
+
+      const resposta = proximaCurtidaAtiva
+        ? await supabase.from("obra_curtidas").upsert(
+            {
+              obra_id: obraId,
+              user_id: userId,
+            },
+            { onConflict: "obra_id,user_id" }
+          )
+        : await supabase
+            .from("obra_curtidas")
+            .delete()
+            .eq("obra_id", obraId)
+            .eq("user_id", userId);
+
+      if (resposta.error) {
+        throw resposta.error;
+      }
+
+      setMensagemAcao(
+        proximaCurtidaAtiva ? "Obra curtida." : "Curtida removida."
+      );
+    } catch {
+      setMetricasObra((metricasAtuais) => ({
+        ...metricasAtuais,
+        curtidaAtiva: !proximaCurtidaAtiva,
+        curtidas: Math.max(
+          0,
+          metricasAtuais.curtidas + (proximaCurtidaAtiva ? -1 : 1)
+        ),
+      }));
+      setMensagemAcao("Não foi possível salvar a curtida agora.");
+    }
+  }
+
+  async function avaliarObra(nota: number) {
+    if (!obra || nota < 0 || nota > 5) {
+      return;
+    }
+
+    const notaNormalizada = nota <= 0 ? 0 : Math.round(nota * 2) / 2;
+
+    const avaliacaoAnterior = avaliacaoObra;
+    const proximaAvaliacao = calcularProximaAvaliacao(
+      avaliacaoObra,
+      notaNormalizada
+    );
+
+    setAvaliacaoObra(proximaAvaliacao);
+    setMensagemAcao("");
+    salvarAvaliacaoLocal(obra, notaNormalizada);
+
+    if (!obra.id || !idObraSupabaseValido(obra.id)) {
+      setAvaliacaoObra((avaliacaoAtual) => ({
+        ...avaliacaoAtual,
+        salvando: false,
+      }));
+      return;
+    }
+
+    try {
+      const { data: usuarioData } = await supabase.auth.getUser();
+      const userId = usuarioData.user?.id || "";
+
+      if (!userId) {
+        setAvaliacaoObra((avaliacaoAtual) => ({
+          ...avaliacaoAtual,
+          salvando: false,
+        }));
+        return;
+      }
+
+      const resposta =
+        notaNormalizada > 0
+          ? await supabase.from("obra_avaliacoes").upsert(
+              {
+                obra_id: obra.id,
+                user_id: userId,
+                nota: notaNormalizada,
+                atualizado_em: new Date().toISOString(),
+              },
+              { onConflict: "obra_id,user_id" }
+            )
+          : await supabase
+              .from("obra_avaliacoes")
+              .delete()
+              .eq("obra_id", obra.id)
+              .eq("user_id", userId);
+
+      if (resposta.error) {
+        throw resposta.error;
+      }
+
+      setAvaliacaoObra((avaliacaoAtual) => ({
+        ...avaliacaoAtual,
+        salvando: false,
+      }));
       setMensagemAcao("");
     } catch {
-      setMensagemAcao("Não foi possível salvar agora.");
+      setAvaliacaoObra({
+        ...avaliacaoAnterior,
+        carregado: true,
+        salvando: false,
+      });
+      setMensagemAcao("");
     }
   }
 
@@ -1174,10 +2093,36 @@ export default function ObraDinamicaPage() {
           </Link>
 
           <div style={ratingSummaryStyle}>
-            <strong style={ratingNumberStyle}>4.8</strong>
-            <span style={ratingStarsStyle}>★★★★★</span>
+            <strong style={ratingNumberStyle}>
+              {formatarMediaAvaliacao(avaliacaoObra.media)}
+            </strong>
+            <span
+              style={ratingStarsStyle}
+              aria-label={`Média ${formatarMediaAvaliacao(avaliacaoObra.media)} de 5`}
+            >
+              {NOTAS_AVALIACAO_OBRA.map((estrela) => (
+                <span
+                  key={`media-obra-${estrela}`}
+                  style={ratingTopStarVisualStyle}
+                  aria-hidden="true"
+                >
+                  <span style={ratingTopStarBaseStyle}>★</span>
+                  <span
+                    style={{
+                      ...ratingTopStarFillStyle,
+                      width: obterPreenchimentoEstrela(
+                        estrela,
+                        avaliacaoObra.media
+                      ),
+                    }}
+                  >
+                    ★
+                  </span>
+                </span>
+              ))}
+            </span>
             <span style={ratingTotalStyle}>
-              {obraDisponivel ? "126 avaliações" : "126 interações"}
+              {formatarTotalAvaliacoes(avaliacaoObra.total)}
             </span>
           </div>
         </header>
@@ -1272,17 +2217,17 @@ export default function ObraDinamicaPage() {
 
           <div style={communityGridStyle}>
             <CommunityItem
-              numero="27"
+              numero={formatarNumeroCompacto(metricasComunidadeObra.teorias)}
               rotulo="teorias"
               href={criarLinkComunidadeObra(obra.titulo, "Teoria")}
             />
             <CommunityItem
-              numero="64"
+              numero={formatarNumeroCompacto(metricasComunidadeObra.reviews)}
               rotulo="reviews"
               href={criarLinkComunidadeObra(obra.titulo, "Review")}
             />
             <CommunityItem
-              numero="1.1K"
+              numero={formatarNumeroCompacto(metricasComunidadeObra.interacoes)}
               rotulo="interações"
               href={criarLinkComunidadeObra(obra.titulo)}
             />
@@ -1290,13 +2235,72 @@ export default function ObraDinamicaPage() {
         </section>
 
         <section style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
-          <MetricCard numero={obra.views} rotulo="visualizações" />
-          <MetricCard numero={obra.likes} rotulo="curtidas" />
-          <MetricCard numero={obra.comentarios} rotulo="comentários" />
           <MetricCard
-            numero={obraDisponivel ? "890" : "Novo"}
-            rotulo={obraDisponivel ? "seguidores" : "lançamento"}
+            numero={formatarNumeroCompacto(metricasObra.visualizacoes)}
+            rotulo="visualizações"
           />
+          <MetricCard
+            numero={formatarNumeroCompacto(metricasObra.curtidas)}
+            rotulo="curtidas"
+            ativo={metricasObra.curtidaAtiva}
+            onClick={alternarCurtidaObra}
+          />
+          <MetricCard
+            numero={formatarNumeroCompacto(metricasObra.comentarios)}
+            rotulo="comentários"
+          />
+          <MetricCard
+            numero={formatarNumeroCompacto(metricasObra.seguidores)}
+            rotulo="seguidores"
+          />
+        </section>
+
+        <section style={isDesktop ? desktopWorkRatingBoxStyle : workRatingBoxStyle}>
+          <div style={workRatingHeaderStyle}>
+            <span style={workRatingTitleStyle}>AVALIE ESTA OBRA</span>
+          </div>
+
+          <div style={workRatingStarsRowStyle}>
+            {NOTAS_AVALIACAO_OBRA.map((estrela) => {
+              const preenchimentoEstrela = obterPreenchimentoEstrela(
+                estrela,
+                avaliacaoObra.minhaNota
+              );
+              const proximaNota = obterProximaNotaAvaliacao(
+                estrela,
+                avaliacaoObra.minhaNota
+              );
+
+              return (
+                <button
+                  key={`avaliacao-obra-${estrela}`}
+                  type="button"
+                  onClick={() => avaliarObra(proximaNota)}
+                  disabled={avaliacaoObra.salvando}
+                  style={
+                    preenchimentoEstrela === "0%"
+                      ? workRatingStarButtonStyle
+                      : workRatingStarActiveStyle
+                  }
+                  aria-label={`Avaliar com ${proximaNota
+                    .toString()
+                    .replace(".", ",")} estrela${proximaNota === 1 ? "" : "s"}`}
+                >
+                  <span style={workRatingStarVisualStyle} aria-hidden="true">
+                    <span style={workRatingStarBaseStyle}>★</span>
+                    <span
+                      style={{
+                        ...workRatingStarFillStyle,
+                        width: preenchimentoEstrela,
+                      }}
+                    >
+                      ★
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         <section id="capitulos" style={chaptersSectionStyle}>
@@ -1357,26 +2361,6 @@ export default function ObraDinamicaPage() {
         {obra.arquivoObra && (
           <ArquivoObraPublico arquivo={obra.arquivoObra} slug={obra.slug} isDesktop={isDesktop} />
         )}
-
-
-
-        <section style={isDesktop ? desktopReviewBoxStyle : reviewBoxStyle}>
-          <div style={reviewTopStyle}>
-            <div style={{ minWidth: 0 }}>
-              <h2 style={accentSectionTitleStyle}>COMENTÁRIOS DOS LEITORES</h2>
-            </div>
-
-          </div>
-
-          <div style={isDesktop ? desktopCommentsGridStyle : commentsGridStyle}>
-            {comentariosModelo.map((comentario) => (
-              <article key={comentario.autor} style={commentCardStyle}>
-                <strong style={commentAuthorStyle}>{comentario.autor}</strong>
-                <p style={commentTextStyle}>{comentario.texto}</p>
-              </article>
-            ))}
-          </div>
-        </section>
 
 
 
@@ -1460,12 +2444,37 @@ function ArquivoObraPublico({
   );
 }
 
-function MetricCard({ numero, rotulo }: { numero: string; rotulo: string }) {
+function MetricCard({
+  numero,
+  rotulo,
+  ativo = false,
+  onClick,
+}: {
+  numero: string;
+  rotulo: string;
+  ativo?: boolean;
+  onClick?: () => void;
+}) {
+  const cardStyle = ativo ? activeStatCardStyle : statCardStyle;
+
+  if (!onClick) {
+    return (
+      <div style={cardStyle}>
+        <strong style={statNumberStyle}>{numero}</strong>
+        <span style={statLabelStyle}>{rotulo}</span>
+      </div>
+    );
+  }
+
   return (
-    <div style={statCardStyle}>
+    <button
+      type="button"
+      onClick={onClick}
+      style={ativo ? activeStatButtonStyle : statButtonStyle}
+    >
       <strong style={statNumberStyle}>{numero}</strong>
       <span style={statLabelStyle}>{rotulo}</span>
-    </div>
+    </button>
   );
 }
 
@@ -1953,6 +2962,26 @@ const statCardStyle: CSSProperties = {
   textAlign: "center",
 };
 
+const activeStatCardStyle: CSSProperties = {
+  ...statCardStyle,
+  background: "rgba(34, 197, 94, 0.12)",
+  border: "1px solid rgba(34, 197, 94, 0.26)",
+};
+
+const statButtonStyle: CSSProperties = {
+  ...statCardStyle,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  color: "inherit",
+};
+
+const activeStatButtonStyle: CSSProperties = {
+  ...activeStatCardStyle,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  color: "inherit",
+};
+
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "clamp(16px, 4.6vw, 21px)",
@@ -2185,6 +3214,97 @@ const fileSecondaryButtonStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
 };
 
+const workRatingBoxStyle: CSSProperties = {
+  marginTop: "10px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+  boxSizing: "border-box",
+};
+
+const desktopWorkRatingBoxStyle: CSSProperties = {
+  ...workRatingBoxStyle,
+  marginTop: "12px",
+};
+
+const workRatingHeaderStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
+  gap: "4px",
+  minWidth: 0,
+  textAlign: "center",
+};
+
+const workRatingTitleStyle: CSSProperties = {
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "10px",
+  fontWeight: 950,
+  letterSpacing: "0.075em",
+  maxWidth: "100%",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const workRatingStarsRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const workRatingStarButtonStyle: CSSProperties = {
+  minHeight: "34px",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
+  color: "rgba(251, 191, 36, 0.34)",
+  fontSize: "22px",
+  fontWeight: 950,
+  lineHeight: 1,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  boxShadow: "none",
+  padding: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const workRatingStarActiveStyle: CSSProperties = {
+  ...workRatingStarButtonStyle,
+  border: "1px solid rgba(251, 191, 36, 0.38)",
+  background: "rgba(251, 191, 36, 0.12)",
+  color: "#FBBF24",
+};
+
+const workRatingStarVisualStyle: CSSProperties = {
+  position: "relative",
+  width: "1em",
+  height: "1em",
+  display: "inline-block",
+  lineHeight: 1,
+};
+
+const workRatingStarBaseStyle: CSSProperties = {
+  color: "rgba(251, 191, 36, 0.34)",
+  position: "absolute",
+  inset: 0,
+  lineHeight: 1,
+};
+
+const workRatingStarFillStyle: CSSProperties = {
+  color: "#FBBF24",
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  lineHeight: 1,
+};
+
 const communityBoxStyle: CSSProperties = {
   marginTop: "10px",
   padding: 0,
@@ -2291,7 +3411,7 @@ const ratingSummaryStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
   alignContent: "center",
-  gap: 0,
+  rowGap: "1px",
   padding: 0,
   borderRadius: 0,
   background: "transparent",
@@ -2309,16 +3429,48 @@ const ratingNumberStyle: CSSProperties = {
 };
 
 const ratingStarsStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
   color: "#FBBF24",
   fontSize: "12px",
+  lineHeight: 1,
   letterSpacing: "-0.02em",
-  marginTop: "-7px",
+  marginTop: "-4px",
+  marginBottom: "1px",
   ...safeTextStyle,
+};
+
+const ratingTopStarVisualStyle: CSSProperties = {
+  position: "relative",
+  width: "1em",
+  height: "1em",
+  display: "inline-block",
+  lineHeight: 1,
+  flex: "0 0 auto",
+};
+
+const ratingTopStarBaseStyle: CSSProperties = {
+  color: "rgba(251, 191, 36, 0.34)",
+  position: "absolute",
+  inset: 0,
+  lineHeight: 1,
+};
+
+const ratingTopStarFillStyle: CSSProperties = {
+  color: "#FBBF24",
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  lineHeight: 1,
 };
 
 const ratingTotalStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "9px",
+  lineHeight: 1.1,
   fontWeight: 900,
   textTransform: "uppercase",
   textAlign: "right",

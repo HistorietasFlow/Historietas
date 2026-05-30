@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -118,6 +118,7 @@ const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
+const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const READER_PREFERENCES_STORAGE_KEY = "historietas-preferencias-leitura";
 
 function normalizarTexto(texto: string) {
@@ -450,6 +451,93 @@ function carregarListaIdsStorage(chave: string): string[] {
   } catch {
     localStorage.setItem(chave, JSON.stringify([]));
     return [];
+  }
+}
+
+function obterNumeroSeguro(valor: unknown, fallback = 0) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return valor;
+  }
+
+  if (typeof valor === "string") {
+    const numero = Number(valor);
+
+    return Number.isFinite(numero) ? numero : fallback;
+  }
+
+  return fallback;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function incrementarVisualizacaoObraLocal(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
+  try {
+    const chaveObra = obra.id || obra.slug || normalizarTexto(obra.titulo);
+
+    if (!chaveObra) {
+      return;
+    }
+
+    const visualizacoesTexto = localStorage.getItem(VIEWED_WORKS_STORAGE_KEY);
+    const visualizacoesJson: unknown = visualizacoesTexto
+      ? JSON.parse(visualizacoesTexto)
+      : {};
+    const visualizacoesPorObra =
+      visualizacoesJson &&
+      typeof visualizacoesJson === "object" &&
+      !Array.isArray(visualizacoesJson)
+        ? (visualizacoesJson as Record<string, unknown>)
+        : {};
+    const visualizacoesAtuais = obterNumeroSeguro(visualizacoesPorObra[chaveObra], 0);
+
+    localStorage.setItem(
+      VIEWED_WORKS_STORAGE_KEY,
+      JSON.stringify({
+        ...visualizacoesPorObra,
+        [chaveObra]: visualizacoesAtuais + 1,
+      })
+    );
+  } catch {
+    // Visualização local é fallback e não deve travar a leitura.
+  }
+}
+
+async function incrementarVisualizacaoObraSupabase(obraId: string) {
+  if (!idObraSupabaseValido(obraId)) {
+    return;
+  }
+
+  try {
+    const { error: erroRpc } = await supabase.rpc(
+      "incrementar_visualizacao_obra",
+      { obra_id_param: obraId }
+    );
+
+    if (!erroRpc) {
+      return;
+    }
+
+    const { data: obraAtual } = await supabase
+      .from("obras")
+      .select("visualizacoes")
+      .eq("id", obraId)
+      .maybeSingle();
+
+    const visualizacoesAtuais = obterNumeroSeguro(
+      (obraAtual as { visualizacoes?: unknown } | null)?.visualizacoes,
+      0
+    );
+
+    await supabase
+      .from("obras")
+      .update({ visualizacoes: visualizacoesAtuais + 1 })
+      .eq("id", obraId);
+  } catch {
+    // A leitura continua mesmo se a contagem remota falhar.
   }
 }
 
@@ -907,6 +995,7 @@ export default function LerCapituloPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
   const { temaVisual, pageThemeStyle, aplicarTemaVisual } = useHistorietasTheme(pageStyle);
+  const visualizacaoObraRegistradaRef = useRef("");
 
   useEffect(() => {
     const preferencias = carregarPreferenciasLeitura();
@@ -1122,6 +1211,23 @@ export default function LerCapituloPage() {
   const progressoLeitura = obraAtual
     ? calcularProgressoLeitura(obraAtual.capitulos)
     : 0;
+
+  useEffect(() => {
+    if (!obraAtual) {
+      return;
+    }
+
+    const chaveVisualizacao =
+      obraAtual.id || obraAtual.slug || normalizarTexto(obraAtual.titulo);
+
+    if (!chaveVisualizacao || visualizacaoObraRegistradaRef.current === chaveVisualizacao) {
+      return;
+    }
+
+    visualizacaoObraRegistradaRef.current = chaveVisualizacao;
+    incrementarVisualizacaoObraLocal(obraAtual);
+    void incrementarVisualizacaoObraSupabase(obraAtual.id);
+  }, [obraAtual?.id, obraAtual?.slug, obraAtual?.titulo]);
 
   useEffect(() => {
     setComentarioDigitado(capituloAtual?.comentario || "");
