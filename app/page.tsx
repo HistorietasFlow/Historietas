@@ -904,6 +904,107 @@ function obterIdentificadorFavoritoHome(obra: Obra) {
   );
 }
 
+function criarFavoritosNormalizadosHome(obrasFavoritas: string[]) {
+  return new Set(
+    obrasFavoritas
+      .map((favorito) => favorito.trim())
+      .filter(Boolean)
+  );
+}
+
+function obraLocalEstaNaMinhaLista(obra: ObraLocal, obrasFavoritas: string[]) {
+  const favoritosNormalizados = criarFavoritosNormalizadosHome(obrasFavoritas);
+
+  return [
+    obra.id,
+    obra.slug,
+    criarSlugBase(obra.titulo),
+    normalizarTexto(obra.titulo),
+  ].some((identificador) => favoritosNormalizados.has(identificador));
+}
+
+function obraCatalogoEstaNaMinhaLista(obra: Obra, obrasFavoritas: string[]) {
+  const favoritosNormalizados = criarFavoritosNormalizadosHome(obrasFavoritas);
+  const obraComIdentificador = obra as Obra & {
+    id?: string;
+    slug?: string;
+  };
+
+  return [
+    obraComIdentificador.id?.trim() || "",
+    obraComIdentificador.slug?.trim() || "",
+    criarSlugBase(obra.titulo),
+    normalizarTexto(obra.titulo),
+  ].some((identificador) => Boolean(identificador) && favoritosNormalizados.has(identificador));
+}
+
+function obraCatalogoCombinaBuscaHome(obra: Obra, termoBusca: string) {
+  if (!termoBusca) {
+    return true;
+  }
+
+  const textoObra = normalizarTexto(
+    [
+      obra.titulo,
+      obra.autor,
+      obra.genero,
+      formatarGeneroHome(obra.genero),
+      obra.classificacaoIndicativa,
+      obra.status,
+    ].join(" ")
+  );
+
+  return textoObra.includes(termoBusca);
+}
+
+function obterTemasRecomendacaoObra(obra: ObraLocal) {
+  return Array.from(
+    new Set(
+      [
+        obra.genero,
+        formatarGeneroHome(obra.genero),
+        obra.formato,
+        ...obra.tags,
+      ]
+        .map((tema) => normalizarTexto(tema))
+        .filter((tema) => tema && tema !== "sem tags" && tema !== "nao informado")
+    )
+  );
+}
+
+function obterTemasRecomendacaoObraCatalogo(obra: Obra) {
+  return Array.from(
+    new Set(
+      [
+        obra.genero,
+        formatarGeneroHome(obra.genero),
+        obra.status,
+        obra.classificacaoIndicativa,
+      ]
+        .map((tema) => normalizarTexto(tema))
+        .filter((tema) => tema && tema !== "nao informado")
+    )
+  );
+}
+
+function obraCombinaComTemasRecomendados(obra: ObraLocal, temas: Set<string>) {
+  if (temas.size === 0) {
+    return false;
+  }
+
+  return obterTemasRecomendacaoObra(obra).some((tema) => temas.has(tema));
+}
+
+function obraCatalogoCombinaComTemasRecomendados(obra: Obra, temas: Set<string>) {
+  if (temas.size === 0) {
+    return false;
+  }
+
+  return obterTemasRecomendacaoObraCatalogo(obra).some((tema) =>
+    temas.has(tema)
+  );
+}
+
 function criarHeroPosterStyle(obra: Obra): CSSProperties {
   const imagemObra = obterImagemObraCatalogo(obra);
 
@@ -1712,6 +1813,121 @@ export default function Home() {
       .slice(0, 5);
   }, [obrasPublicadas, termoBusca]);
 
+  const obrasMinhaLista = useMemo(() => {
+    return obrasPublicadas
+      .filter((obra) => {
+        return (
+          obraLocalEstaNaMinhaLista(obra, obrasFavoritas) &&
+          obraLocalCombinaBusca(obra, termoBusca)
+        );
+      })
+      .sort((obraA, obraB) => {
+        const dataA = new Date(obraA.ultimaLeituraEm || obraA.criadaEm).getTime();
+        const dataB = new Date(obraB.ultimaLeituraEm || obraB.criadaEm).getTime();
+
+        return (
+          (Number.isNaN(dataB) ? 0 : dataB) -
+          (Number.isNaN(dataA) ? 0 : dataA)
+        );
+      })
+      .slice(0, 12);
+  }, [obrasPublicadas, obrasFavoritas, termoBusca]);
+
+  const obrasCatalogoMinhaLista = useMemo(() => {
+    return obras
+      .filter((obra) => {
+        return (
+          obraCatalogoEstaNaMinhaLista(obra, obrasFavoritas) &&
+          obraCatalogoCombinaBuscaHome(obra, termoBusca)
+        );
+      })
+      .slice(0, 12);
+  }, [obrasFavoritas, termoBusca]);
+
+  const temasRecomendadosUsuario = useMemo(() => {
+    const temas = new Set<string>();
+
+    [...obrasParaContinuar, ...obrasMinhaLista].forEach((obra) => {
+      obterTemasRecomendacaoObra(obra).forEach((tema) => {
+        temas.add(tema);
+      });
+    });
+
+    obrasCatalogoMinhaLista.forEach((obra) => {
+      obterTemasRecomendacaoObraCatalogo(obra).forEach((tema) => {
+        temas.add(tema);
+      });
+    });
+
+    return temas;
+  }, [obrasCatalogoMinhaLista, obrasMinhaLista, obrasParaContinuar]);
+
+  const obrasRecomendadas = useMemo(() => {
+    const obrasJaPriorizadas = new Set(
+      [...obrasParaContinuar, ...obrasMinhaLista].map((obra) => obra.id)
+    );
+
+    return obrasPublicadas
+      .filter((obra) => {
+        return (
+          !obrasJaPriorizadas.has(obra.id) &&
+          obraCombinaComTemasRecomendados(obra, temasRecomendadosUsuario) &&
+          obraLocalCombinaBusca(obra, termoBusca)
+        );
+      })
+      .sort((obraA, obraB) => {
+        const afinidadeA = obterTemasRecomendacaoObra(obraA).filter((tema) =>
+          temasRecomendadosUsuario.has(tema)
+        ).length;
+        const afinidadeB = obterTemasRecomendacaoObra(obraB).filter((tema) =>
+          temasRecomendadosUsuario.has(tema)
+        ).length;
+
+        return (
+          afinidadeB - afinidadeA ||
+          obterTempoUltimoCapitulo(obraB) - obterTempoUltimoCapitulo(obraA)
+        );
+      })
+      .slice(0, 12);
+  }, [
+    obrasMinhaLista,
+    obrasParaContinuar,
+    obrasPublicadas,
+    temasRecomendadosUsuario,
+    termoBusca,
+  ]);
+
+  const obrasCatalogoRecomendadas = useMemo(() => {
+    const titulosMinhaLista = new Set(
+      obrasCatalogoMinhaLista.map((obra) => normalizarTexto(obra.titulo))
+    );
+
+    const recomendadasPorTema = obras.filter((obra) => {
+      return (
+        !titulosMinhaLista.has(normalizarTexto(obra.titulo)) &&
+        obraCatalogoCombinaBuscaHome(obra, termoBusca) &&
+        obraCatalogoCombinaComTemasRecomendados(obra, temasRecomendadosUsuario)
+      );
+    });
+
+    const baseRecomendacoes =
+      recomendadasPorTema.length > 0
+        ? recomendadasPorTema
+        : obras.filter((obra) => {
+            return (
+              !titulosMinhaLista.has(normalizarTexto(obra.titulo)) &&
+              obraCatalogoCombinaBuscaHome(obra, termoBusca)
+            );
+          });
+
+    return baseRecomendacoes.slice(0, 12);
+  }, [obrasCatalogoMinhaLista, temasRecomendadosUsuario, termoBusca]);
+
+  const totalMinhaListaHome =
+    obrasMinhaLista.length + obrasCatalogoMinhaLista.length;
+  const totalRecomendacoesHome =
+    obrasRecomendadas.length + obrasCatalogoRecomendadas.length;
+
   const resumoInicio = useMemo(() => {
     const totalCapitulosPublicados = obrasPublicadas.reduce((total, obra) => {
       return total + obra.capitulos.length;
@@ -2274,6 +2490,70 @@ export default function Home() {
           </section>
         )}
 
+        {totalMinhaListaHome > 0 && (
+          <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
+            <SectionHeader
+              title="Minha lista"
+              subtitle={`${totalMinhaListaHome} ${
+                totalMinhaListaHome === 1
+                  ? "obra salva"
+                  : "obras salvas"
+              } para acessar rápido.`}
+            />
+
+            <CarouselRow isDesktop={isDesktop}>
+              {obrasMinhaLista.map((obra) => (
+                <MobileObraLocalCard
+                  key={`minha-lista-${obra.id}`}
+                  obra={obra}
+                  tipo="catalogo"
+                  isDesktop={isDesktop}
+                />
+              ))}
+
+              {obrasCatalogoMinhaLista.map((obra) => (
+                <MobileObraCard
+                  key={`minha-lista-catalogo-${obra.titulo}`}
+                  obra={obra}
+                  isDesktop={isDesktop}
+                />
+              ))}
+            </CarouselRow>
+          </section>
+        )}
+
+        {totalRecomendacoesHome > 0 && (
+          <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
+            <SectionHeader
+              title="Recomendações para você"
+              subtitle={
+                temasRecomendadosUsuario.size > 0
+                  ? "Obras parecidas com o que você lê ou salvou."
+                  : "Sugestões para começar sua próxima leitura."
+              }
+            />
+
+            <CarouselRow isDesktop={isDesktop}>
+              {obrasRecomendadas.map((obra) => (
+                <MobileObraLocalCard
+                  key={`recomendadas-${obra.id}`}
+                  obra={obra}
+                  tipo="catalogo"
+                  isDesktop={isDesktop}
+                />
+              ))}
+
+              {obrasCatalogoRecomendadas.map((obra) => (
+                <MobileObraCard
+                  key={`recomendadas-catalogo-${obra.titulo}`}
+                  obra={obra}
+                  isDesktop={isDesktop}
+                />
+              ))}
+            </CarouselRow>
+          </section>
+        )}
+
         {obrasPublicadasFiltradas.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
             <SectionHeader
@@ -2310,7 +2590,7 @@ export default function Home() {
                 <MobileObraLocalCard
                   key={`novos-capitulos-${obra.id}`}
                   obra={obra}
-                  tipo="catalogo"
+                  tipo="novo-capitulo"
                   isDesktop={isDesktop}
                 />
               ))}
@@ -2557,7 +2837,7 @@ function MobileObraLocalCard({
   isDesktop,
 }: {
   obra: ObraLocal;
-  tipo: "continuar" | "catalogo";
+  tipo: "continuar" | "catalogo" | "novo-capitulo";
   isDesktop?: boolean;
 }) {
   const totalCurtidas = obra.capitulos.filter((capitulo) => capitulo.curtiu)
@@ -2573,17 +2853,56 @@ function MobileObraLocalCard({
   );
   const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
   const capituloParaContinuar = encontrarCapituloParaContinuar(obra);
+  const ultimoCapituloPublicado =
+    obra.capitulos.length > 0 ? obra.capitulos[obra.capitulos.length - 1] : null;
   const slugObra = obra.slug || criarSlugBase(obra.titulo);
   const verObraHref = obra.link?.trim() || `/obra/${slugObra}`;
   const continuarLeituraHref = capituloParaContinuar
     ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capituloParaContinuar.id}`
     : verObraHref;
+  const ultimoCapituloHref = ultimoCapituloPublicado
+    ? `/ler-capitulo?obraId=${obra.id}&capituloId=${ultimoCapituloPublicado.id}`
+    : verObraHref;
   const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
     obra.autor
   )}`;
 
-  const actionHref = tipo === "continuar" ? continuarLeituraHref : verObraHref;
-  const actionLabel = tipo === "continuar" ? "Continuar leitura" : "Ver obra";
+  const actionHref =
+    tipo === "continuar"
+      ? continuarLeituraHref
+      : tipo === "novo-capitulo"
+      ? ultimoCapituloHref
+      : verObraHref;
+  const numeroCapituloContinuar = capituloParaContinuar
+    ? Math.max(
+        1,
+        obra.capitulos.findIndex(
+          (capitulo) => capitulo.id === capituloParaContinuar.id
+        ) + 1
+      )
+    : 0;
+  const numeroUltimoCapitulo = ultimoCapituloPublicado
+    ? Math.max(
+        1,
+        obra.capitulos.findIndex(
+          (capitulo) => capitulo.id === ultimoCapituloPublicado.id
+        ) + 1
+      )
+    : 0;
+  const actionLabel =
+    tipo === "continuar"
+      ? "Continuar"
+      : tipo === "novo-capitulo"
+      ? "Ler agora"
+      : "Ver obra";
+  const actionSubLabel =
+    tipo === "continuar"
+      ? numeroCapituloContinuar > 0
+        ? `Leitura Cap. ${String(numeroCapituloContinuar).padStart(2, "0")}`
+        : "Leitura"
+      : tipo === "novo-capitulo" && numeroUltimoCapitulo > 0
+      ? `Cap. ${String(numeroUltimoCapitulo).padStart(2, "0")}`
+      : "";
   const capaStyle = isDesktop
     ? { ...criarMobileCoverStyle(obra.capa), ...desktopCoverPlaceholderStyle }
     : criarMobileCoverStyle(obra.capa);
@@ -2609,6 +2928,13 @@ function MobileObraLocalCard({
         <Link href={perfilAutorHref} style={authorLinkStyle}>
           Por {obra.autor}
         </Link>
+
+        {tipo === "novo-capitulo" && ultimoCapituloPublicado && (
+          <Link href={ultimoCapituloHref} style={latestChapterInfoStyle}>
+            Novo: Cap. {String(numeroUltimoCapitulo).padStart(2, "0")} •{" "}
+            {ultimoCapituloPublicado.titulo}
+          </Link>
+        )}
 
         <div style={cardStatsStyle}>
           <span style={cardStatItemStyle}>
@@ -2660,7 +2986,14 @@ function MobileObraLocalCard({
             href={actionHref}
             style={isDesktop ? desktopCardPrimaryActionStyle : mobileCardPrimaryActionStyle}
           >
-            {actionLabel}
+            {actionSubLabel ? (
+              <span style={continueActionTextWrapStyle}>
+                <span style={continueActionMainTextStyle}>{actionLabel}</span>
+                <span style={continueActionSubTextStyle}>{actionSubLabel}</span>
+              </span>
+            ) : (
+              actionLabel
+            )}
           </Link>
         </div>
       </div>
@@ -4585,6 +4918,21 @@ const authorLinkStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const latestChapterInfoStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "11px",
+  lineHeight: 1.2,
+  fontWeight: 900,
+  textDecoration: "none",
+  display: "-webkit-box",
+  WebkitLineClamp: 1,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
 const cardStatsStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
@@ -4714,6 +5062,34 @@ const readNowStyle: CSSProperties = {
   justifyContent: "center",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+const continueActionTextWrapStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
+  alignItems: "center",
+  gap: "1px",
+  lineHeight: 1.05,
+  textAlign: "center",
+  minWidth: 0,
+  ...safeTextStyle,
+};
+
+const continueActionMainTextStyle: CSSProperties = {
+  display: "block",
+  fontSize: "11px",
+  lineHeight: 1.05,
+  fontWeight: 950,
+  ...safeTextStyle,
+};
+
+const continueActionSubTextStyle: CSSProperties = {
+  display: "block",
+  fontSize: "10px",
+  lineHeight: 1.05,
+  fontWeight: 900,
+  opacity: 0.96,
   ...safeTextStyle,
 };
 

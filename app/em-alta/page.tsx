@@ -52,6 +52,9 @@ type ObraLocal = {
   totalComentariosRanking?: number;
   totalSalvosRanking?: number;
   totalViewsRanking?: number;
+  totalSeguidoresRanking?: number;
+  totalAvaliacoesRanking?: number;
+  mediaAvaliacoesRanking?: number;
 };
 
 type SupabaseObraRow = {
@@ -71,6 +74,7 @@ type SupabaseObraRow = {
   arquivo_tipo: string | null;
   arquivo_tamanho: number | null;
   arquivo_categoria: string | null;
+  visualizacoes: number | null;
   publicado: boolean | null;
   slug: string | null;
   link: string | null;
@@ -92,6 +96,20 @@ type SupabaseCapituloRow = {
 
 type SupabaseInteracaoCapituloRow = {
   capitulo_id: string | null;
+};
+
+type SupabaseInteracaoObraRow = {
+  obra_id: string | null;
+};
+
+type SupabaseAvaliacaoObraRow = {
+  obra_id: string | null;
+  nota: number | null;
+};
+
+type AvaliacaoRankingObra = {
+  total: number;
+  media: number;
 };
 
 type ObraRanking = {
@@ -118,6 +136,8 @@ type ObraRanking = {
   comentarios: number;
   salvos: number;
   views: number;
+  avaliacoes: number;
+  mediaAvaliacao: number;
   pontuacao: number;
   criadaEmTimestamp: number;
 };
@@ -140,6 +160,8 @@ type FiltroEmAlta =
 const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
+const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
+const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
 
 function normalizarTexto(texto: string) {
   return texto
@@ -207,6 +229,92 @@ function formatarNumero(numero: number) {
   }
 
   return numero.toLocaleString("pt-BR");
+}
+
+function formatarMediaRanking(media: number) {
+  if (!Number.isFinite(media) || media <= 0) {
+    return "0.0";
+  }
+
+  return media.toFixed(1);
+}
+
+function normalizarVisualizacoesRanking(valor: unknown) {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
+    return {};
+  }
+
+  return Object.entries(valor as Record<string, unknown>).reduce<Record<string, number>>(
+    (visualizacoesNormalizadas, [chave, total]) => {
+      const chaveLimpa = chave.trim();
+      const totalNumerico = typeof total === "number" && Number.isFinite(total) ? total : 0;
+
+      if (chaveLimpa && totalNumerico > 0) {
+        visualizacoesNormalizadas[chaveLimpa] = Math.round(totalNumerico);
+      }
+
+      return visualizacoesNormalizadas;
+    },
+    {}
+  );
+}
+
+function obterVisualizacoesRegistradasObra(
+  obra: ObraLocal,
+  visualizacoesRegistradas: Record<string, number>
+) {
+  const chavesObra = [
+    obra.id,
+    obra.slug,
+    criarSlugBase(obra.titulo),
+    normalizarTexto(obra.titulo),
+  ];
+
+  return chavesObra.reduce((maiorTotal, chave) => {
+    const total = visualizacoesRegistradas[chave] || 0;
+
+    return Math.max(maiorTotal, total);
+  }, 0);
+}
+
+function normalizarAvaliacoesLocaisRanking(valor: unknown) {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
+    return {};
+  }
+
+  return Object.entries(valor as Record<string, unknown>).reduce<Record<string, number>>(
+    (avaliacoesNormalizadas, [chave, nota]) => {
+      const chaveLimpa = chave.trim();
+      const notaNumerica = typeof nota === "number" && Number.isFinite(nota)
+        ? Math.round(nota * 2) / 2
+        : 0;
+
+      if (chaveLimpa && notaNumerica >= 0.5 && notaNumerica <= 5) {
+        avaliacoesNormalizadas[chaveLimpa] = notaNumerica;
+      }
+
+      return avaliacoesNormalizadas;
+    },
+    {}
+  );
+}
+
+function obterAvaliacaoLocalRanking(
+  obra: ObraLocal,
+  avaliacoesLocais: Record<string, number>
+) {
+  const chavesObra = [
+    obra.id,
+    obra.slug,
+    criarSlugBase(obra.titulo),
+    normalizarTexto(obra.titulo),
+  ];
+
+  return chavesObra.reduce((maiorNota, chave) => {
+    const nota = avaliacoesLocais[chave] || 0;
+
+    return Math.max(maiorNota, nota);
+  }, 0);
 }
 
 function formatarDataRanking(timestamp: number) {
@@ -334,6 +442,102 @@ function contarPorCapitulo(linhas: SupabaseInteracaoCapituloRow[]) {
   }, {});
 }
 
+function contarPorObra(linhas: SupabaseInteracaoObraRow[]) {
+  return linhas.reduce<Record<string, number>>((contagem, linha) => {
+    const obraId = linha.obra_id?.trim();
+
+    if (!obraId) {
+      return contagem;
+    }
+
+    contagem[obraId] = (contagem[obraId] || 0) + 1;
+
+    return contagem;
+  }, {});
+}
+
+function calcularAvaliacoesPorObra(linhas: SupabaseAvaliacaoObraRow[]) {
+  const somaPorObra: Record<string, number> = {};
+  const totalPorObra: Record<string, number> = {};
+
+  linhas.forEach((linha) => {
+    const obraId = linha.obra_id?.trim();
+    const nota = typeof linha.nota === "number" && Number.isFinite(linha.nota)
+      ? linha.nota
+      : 0;
+
+    if (!obraId || nota <= 0) {
+      return;
+    }
+
+    somaPorObra[obraId] = (somaPorObra[obraId] || 0) + nota;
+    totalPorObra[obraId] = (totalPorObra[obraId] || 0) + 1;
+  });
+
+  return Object.entries(totalPorObra).reduce<Record<string, AvaliacaoRankingObra>>(
+    (avaliacoes, [obraId, total]) => {
+      const soma = somaPorObra[obraId] || 0;
+
+      avaliacoes[obraId] = {
+        total,
+        media: total > 0 ? soma / total : 0,
+      };
+
+      return avaliacoes;
+    },
+    {}
+  );
+}
+
+async function buscarContagemInteracoesObras(
+  tabela: "obra_curtidas" | "seguindo_obras",
+  obraIds: string[]
+) {
+  if (obraIds.length === 0) {
+    return {};
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(tabela)
+      .select("obra_id")
+      .in("obra_id", obraIds);
+
+    if (error) {
+      console.warn(`Não consegui carregar ${tabela}:`, error.message);
+      return {};
+    }
+
+    return contarPorObra((data || []) as SupabaseInteracaoObraRow[]);
+  } catch (error) {
+    console.warn(`Não consegui acessar ${tabela} agora:`, error);
+    return {};
+  }
+}
+
+async function buscarAvaliacoesObras(obraIds: string[]) {
+  if (obraIds.length === 0) {
+    return {};
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("obra_avaliacoes")
+      .select("obra_id, nota")
+      .in("obra_id", obraIds);
+
+    if (error) {
+      console.warn("Não consegui carregar obra_avaliacoes:", error.message);
+      return {};
+    }
+
+    return calcularAvaliacoesPorObra((data || []) as SupabaseAvaliacaoObraRow[]);
+  } catch (error) {
+    console.warn("Não consegui acessar obra_avaliacoes agora:", error);
+    return {};
+  }
+}
+
 async function buscarContagemInteracoesCapitulos(
   tabela: "curtidas_capitulos" | "salvos_capitulos" | "comentarios_capitulos",
   capituloIds: string[]
@@ -376,7 +580,10 @@ function converterObraSupabaseParaLocal(
   index: number,
   curtidasPorCapitulo: Record<string, number>,
   salvosPorCapitulo: Record<string, number>,
-  comentariosPorCapitulo: Record<string, number>
+  comentariosPorCapitulo: Record<string, number>,
+  curtidasPorObra: Record<string, number>,
+  seguidoresPorObra: Record<string, number>,
+  avaliacoesPorObra: Record<string, AvaliacaoRankingObra>
 ): ObraLocal {
   const capitulosLocaisPorId = new Map(
     (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
@@ -416,6 +623,9 @@ function converterObraSupabaseParaLocal(
   const slug = obra.slug?.trim() || obraLocal?.slug || criarSlugBase(titulo || `obra-${index + 1}`);
   const arquivoUrl = obra.arquivo_url?.trim() || "";
   const arquivoTipo = normalizarTipoArquivoSupabase(obra.arquivo_categoria);
+  const totalCurtidasObra = curtidasPorObra[obra.id] || 0;
+  const totalSeguidoresObra = seguidoresPorObra[obra.id] || 0;
+  const avaliacaoObra = avaliacoesPorObra[obra.id] || { total: 0, media: 0 };
 
   return {
     id: obra.id || obraLocal?.id || `obra-${index + 1}`,
@@ -457,7 +667,8 @@ function converterObraSupabaseParaLocal(
       : obraLocal?.arquivoObra || null,
     totalCurtidasRanking: Math.max(
       obraLocal?.totalCurtidasRanking || 0,
-      somarContagensCapitulos(capitulos, curtidasPorCapitulo)
+      somarContagensCapitulos(capitulos, curtidasPorCapitulo),
+      totalCurtidasObra
     ),
     totalComentariosRanking: Math.max(
       obraLocal?.totalComentariosRanking || 0,
@@ -465,9 +676,27 @@ function converterObraSupabaseParaLocal(
     ),
     totalSalvosRanking: Math.max(
       obraLocal?.totalSalvosRanking || 0,
-      somarContagensCapitulos(capitulos, salvosPorCapitulo)
+      somarContagensCapitulos(capitulos, salvosPorCapitulo),
+      totalSeguidoresObra
     ),
-    totalViewsRanking: obraLocal?.totalViewsRanking || 0,
+    totalViewsRanking: Math.max(
+      obraLocal?.totalViewsRanking || 0,
+      typeof obra.visualizacoes === "number" && Number.isFinite(obra.visualizacoes)
+        ? obra.visualizacoes
+        : 0
+    ),
+    totalSeguidoresRanking: Math.max(
+      obraLocal?.totalSeguidoresRanking || 0,
+      totalSeguidoresObra
+    ),
+    totalAvaliacoesRanking: Math.max(
+      obraLocal?.totalAvaliacoesRanking || 0,
+      avaliacaoObra.total
+    ),
+    mediaAvaliacoesRanking: Math.max(
+      obraLocal?.mediaAvaliacoesRanking || 0,
+      avaliacaoObra.media
+    ),
   };
 }
 
@@ -508,12 +737,21 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
       : ((capitulosBanco || []) as SupabaseCapituloRow[]);
     const capituloIds = capitulosSupabase.map((capitulo) => capitulo.id).filter(Boolean);
 
-    const [curtidasPorCapitulo, salvosPorCapitulo, comentariosPorCapitulo] =
-      await Promise.all([
-        buscarContagemInteracoesCapitulos("curtidas_capitulos", capituloIds),
-        buscarContagemInteracoesCapitulos("salvos_capitulos", capituloIds),
-        buscarContagemInteracoesCapitulos("comentarios_capitulos", capituloIds),
-      ]);
+    const [
+      curtidasPorCapitulo,
+      salvosPorCapitulo,
+      comentariosPorCapitulo,
+      curtidasPorObra,
+      seguidoresPorObra,
+      avaliacoesPorObra,
+    ] = await Promise.all([
+      buscarContagemInteracoesCapitulos("curtidas_capitulos", capituloIds),
+      buscarContagemInteracoesCapitulos("salvos_capitulos", capituloIds),
+      buscarContagemInteracoesCapitulos("comentarios_capitulos", capituloIds),
+      buscarContagemInteracoesObras("obra_curtidas", obraIds),
+      buscarContagemInteracoesObras("seguindo_obras", obraIds),
+      buscarAvaliacoesObras(obraIds),
+    ]);
 
     const capitulosPorObra = capitulosSupabase.reduce<Record<string, SupabaseCapituloRow[]>>(
       (grupos, capitulo) => {
@@ -542,7 +780,10 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
         index,
         curtidasPorCapitulo,
         salvosPorCapitulo,
-        comentariosPorCapitulo
+        comentariosPorCapitulo,
+        curtidasPorObra,
+        seguidoresPorObra,
+        avaliacoesPorObra
       );
     });
 
@@ -646,6 +887,21 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
     totalViewsRanking:
       typeof obra.totalViewsRanking === "number" && Number.isFinite(obra.totalViewsRanking)
         ? obra.totalViewsRanking
+        : 0,
+    totalSeguidoresRanking:
+      typeof obra.totalSeguidoresRanking === "number" &&
+      Number.isFinite(obra.totalSeguidoresRanking)
+        ? obra.totalSeguidoresRanking
+        : 0,
+    totalAvaliacoesRanking:
+      typeof obra.totalAvaliacoesRanking === "number" &&
+      Number.isFinite(obra.totalAvaliacoesRanking)
+        ? obra.totalAvaliacoesRanking
+        : 0,
+    mediaAvaliacoesRanking:
+      typeof obra.mediaAvaliacoesRanking === "number" &&
+      Number.isFinite(obra.mediaAvaliacoesRanking)
+        ? obra.mediaAvaliacoesRanking
         : 0,
   };
 }
@@ -829,6 +1085,12 @@ export default function EmAltaPage() {
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
+  const [visualizacoesRegistradas, setVisualizacoesRegistradas] = useState<
+    Record<string, number>
+  >({});
+  const [avaliacoesLocaisRegistradas, setAvaliacoesLocaisRegistradas] = useState<
+    Record<string, number>
+  >({});
   const [buscaRanking, setBuscaRanking] = useState("");
   const [filtroRanking, setFiltroRanking] = useState<FiltroEmAlta>("todos");
   const [isDesktop, setIsDesktop] = useState(false);
@@ -900,10 +1162,26 @@ export default function EmAltaPage() {
             )
           : [];
 
+        const visualizacoesTexto = localStorage.getItem(VIEWED_WORKS_STORAGE_KEY);
+        const visualizacoesJson = visualizacoesTexto
+          ? JSON.parse(visualizacoesTexto)
+          : {};
+        const visualizacoesNormalizadas =
+          normalizarVisualizacoesRanking(visualizacoesJson);
+
+        const avaliacoesLocaisTexto = localStorage.getItem(RATED_WORKS_STORAGE_KEY);
+        const avaliacoesLocaisJson = avaliacoesLocaisTexto
+          ? JSON.parse(avaliacoesLocaisTexto)
+          : {};
+        const avaliacoesLocaisNormalizadas =
+          normalizarAvaliacoesLocaisRanking(avaliacoesLocaisJson);
+
         if (!cancelado) {
           setObrasLocais(obrasNormalizadas);
           setObrasFavoritas(obrasFavoritasNormalizadas);
           setObrasConcluidas(obrasConcluidasNormalizadas);
+          setVisualizacoesRegistradas(visualizacoesNormalizadas);
+          setAvaliacoesLocaisRegistradas(avaliacoesLocaisNormalizadas);
         }
 
         const obrasComSupabase = await carregarObrasSupabasePublicadas(
@@ -918,6 +1196,8 @@ export default function EmAltaPage() {
           setObrasLocais([]);
           setObrasFavoritas([]);
           setObrasConcluidas([]);
+          setVisualizacoesRegistradas({});
+          setAvaliacoesLocaisRegistradas({});
         }
       }
     }
@@ -963,6 +1243,8 @@ export default function EmAltaPage() {
         comentarios,
         salvos: 0,
         views,
+        avaliacoes: 0,
+        mediaAvaliacao: 0,
         pontuacao: views + curtidas * 3 + comentarios * 5,
         criadaEmTimestamp: 0,
       };
@@ -993,12 +1275,34 @@ export default function EmAltaPage() {
         );
         const totalSalvos = Math.max(
           totalSalvosLocais,
-          obra.totalSalvosRanking || 0
+          obra.totalSalvosRanking || 0,
+          obra.totalSeguidoresRanking || 0
+        );
+        const avaliacaoLocalObra = obterAvaliacaoLocalRanking(
+          obra,
+          avaliacoesLocaisRegistradas
+        );
+        const totalAvaliacoes = Math.max(
+          0,
+          obra.totalAvaliacoesRanking || 0,
+          avaliacaoLocalObra > 0 ? 1 : 0
+        );
+        const mediaAvaliacoes = Math.max(
+          0,
+          Math.min(
+            5,
+            Math.max(obra.mediaAvaliacoesRanking || 0, avaliacaoLocalObra)
+          )
         );
 
+        const visualizacoesRegistradasObra = obterVisualizacoesRegistradasObra(
+          obra,
+          visualizacoesRegistradas
+        );
         const capitulosLidos = Math.max(
           calcularCapitulosLidos(obra.capitulos),
-          obra.totalViewsRanking || 0
+          obra.totalViewsRanking || 0,
+          visualizacoesRegistradasObra
         );
         const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
         const capituloParaContinuar = encontrarCapituloParaContinuar(obra);
@@ -1021,7 +1325,9 @@ export default function EmAltaPage() {
           totalCurtidas * 5 +
           totalComentarios * 8 +
           totalSalvos * 4 +
-          capitulosLidos * 3;
+          capitulosLidos * 3 +
+          totalAvaliacoes * 6 +
+          Math.round(mediaAvaliacoes * 10);
 
         return {
           id: `local-${obra.id}`,
@@ -1047,13 +1353,15 @@ export default function EmAltaPage() {
           comentarios: totalComentarios,
           salvos: totalSalvos,
           views: capitulosLidos,
+          avaliacoes: totalAvaliacoes,
+          mediaAvaliacao: mediaAvaliacoes,
           pontuacao,
           criadaEmTimestamp: dataValida,
         };
       });
 
-    return [...obrasFixasRanking, ...obrasLocaisRanking];
-  }, [obrasLocais]);
+    return obrasLocaisRanking.length > 0 ? obrasLocaisRanking : obrasFixasRanking;
+  }, [avaliacoesLocaisRegistradas, obrasLocais, visualizacoesRegistradas]);
 
   const termoBuscaRanking = normalizarTexto(buscaRanking);
 
@@ -1110,7 +1418,7 @@ export default function EmAltaPage() {
     (obra) => obra.tipo === "local"
   ).length;
 
-  const resumoFiltroCompacto = `${totalResultadosFiltrados} resultados • ${totalPublicadasFiltradas} publicadas locais`;
+  const resumoFiltroCompacto = `${totalResultadosFiltrados} resultados • ${totalPublicadasFiltradas} publicadas`;
 
   function limparFiltrosRanking() {
     setBuscaRanking("");
@@ -1181,8 +1489,8 @@ export default function EmAltaPage() {
           <h1 className="historietas-em-alta-hero-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Histórias mais populares</h1>
 
           <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            Rankings das obras que estão dominando leituras, curtidas,
-            comentários e favoritos na Historietas.
+            Rankings das obras que estão dominando visualizações, curtidas,
+            comentários e seguidores na Historietas.
           </p>
         </section>
 
@@ -1274,7 +1582,7 @@ export default function EmAltaPage() {
         />
 
         <RankingSection
-          titulo="Vozes da Comunidade"
+          titulo="Mais Comentadas"
           descricao="As histórias que mais puxaram conversa entre os leitores."
           obras={rankingMaisComentadas}
           tipo="comentadas"
@@ -1286,8 +1594,8 @@ export default function EmAltaPage() {
         />
 
         <RankingSection
-          titulo="Tesouros Guardados"
-          descricao="Obras guardadas pelos leitores para acompanhar depois."
+          titulo="Mais Seguidas"
+          descricao="Obras que mais leitores decidiram acompanhar."
           obras={rankingMaisSalvas}
           tipo="salvas"
           obrasFavoritas={obrasFavoritas}
@@ -1417,8 +1725,8 @@ function obterTemaRanking(tipo: TipoRanking) {
 
   if (tipo === "salvas") {
     return {
-      icone: "🔖",
-      label: "Coleção",
+      icone: "👥",
+      label: "Seguidores",
       titleColor: "#FFFFFF",
       accent: "#34D399",
       border: "rgba(52,211,153,0.42)",
@@ -1525,9 +1833,11 @@ function RankingSection({
 
   const tema = obterTemaRanking(tipo);
   const carrosselRef = useRef<HTMLDivElement | null>(null);
-  const obrasEmOrdemDeSuspense = obras
-    .map((obra, index) => ({ obra, posicao: index + 1 }))
-    .reverse();
+  const obrasComPosicao = obras.map((obra, index) => ({
+    obra,
+    posicao: index + 1,
+  }));
+  const obrasEmOrdem = [...obrasComPosicao].reverse();
 
   function rolarCarrossel(direcao: "esquerda" | "direita") {
     const carrossel = carrosselRef.current;
@@ -1585,7 +1895,7 @@ function RankingSection({
             style={isDesktop ? desktopCarouselStyle : carouselStyle}
             aria-label={`${titulo} em carrossel`}
           >
-            {obrasEmOrdemDeSuspense.map(({ obra, posicao }) => (
+            {obrasEmOrdem.map(({ obra, posicao }) => (
               <RankingCard
                 key={`${tipo}-${obra.id}`}
                 obra={obra}
@@ -1644,18 +1954,20 @@ function RankingCard({
     obra.classificacaoIndicativa &&
     obra.classificacaoIndicativa !== "Não informada";
   const temaPosicao = obterTemaPosicao(posicao);
+  const mostrarStatusRanking = normalizarTexto(obra.status) !== "publicado";
+  const mostrarAvaliacaoRanking = obra.avaliacoes > 0 && obra.mediaAvaliacao > 0;
 
   const destaque =
     tipo === "geral"
       ? `${formatarNumero(obra.pontuacao)} pts`
       : tipo === "lidas"
-      ? `${formatarNumero(obra.views)} leituras`
+      ? `${formatarNumero(obra.views)} visualizações`
       : tipo === "curtidas"
       ? `${formatarNumero(obra.curtidas)} curtidas`
       : tipo === "comentadas"
       ? `${formatarNumero(obra.comentarios)} comentários`
       : tipo === "salvas"
-      ? `${formatarNumero(obra.salvos)} salvos`
+      ? `${formatarNumero(obra.salvos)} seguidores`
       : tipo === "recentes"
       ? formatarDataRanking(obra.criadaEmTimestamp)
       : `${formatarNumero(obra.capitulos)} capítulos`;
@@ -1688,9 +2000,7 @@ function RankingCard({
           {temaPosicao.simbolo} {temaPosicao.nome}
         </span>
 
-        {obra.tipo === "local" && !obra.capa && (
-          <span style={noCoverBadgeStyle}>Sem capa</span>
-        )}
+        {null}
       </div>
 
       <div style={isDesktop ? desktopCardContentStyle : cardContentStyle}>
@@ -1710,17 +2020,21 @@ function RankingCard({
           )}
         </div>
 
-        <div style={statusRowStyle}>
-          <span
-            style={obra.tipo === "local" ? publishedStatusStyle : statusStyle}
-          >
-            {obra.status}
-          </span>
+        {(mostrarStatusRanking || favorita || concluida) && (
+          <div style={statusRowStyle}>
+            {mostrarStatusRanking && (
+              <span
+                style={obra.tipo === "local" ? publishedStatusStyle : statusStyle}
+              >
+                {obra.status}
+              </span>
+            )}
 
-          {favorita && <span style={favoriteBadgeStyle}>★ Favorita</span>}
+            {favorita && <span style={favoriteBadgeStyle}>★ Favorita</span>}
 
-          {concluida && <span style={completedBadgeStyle}>✓ Concluída</span>}
-        </div>
+            {concluida && <span style={completedBadgeStyle}>✓ Concluída</span>}
+          </div>
+        )}
 
         <span style={criarHighlightRankingStyle(posicao)}>{destaque}</span>
 
@@ -1731,30 +2045,21 @@ function RankingCard({
             <span style={heartMetricIconStyle}>♥</span>
             {formatarNumero(obra.curtidas)}
           </span>
+
+          {mostrarAvaliacaoRanking && (
+            <span style={statsItemStyle}>
+              ⭐ {formatarMediaRanking(obra.mediaAvaliacao)}
+            </span>
+          )}
         </div>
 
         <div style={statsStyle}>
           <span style={statsItemStyle}>💬 {formatarNumero(obra.comentarios)}</span>
 
-          <span style={statsItemStyle}>🔖 {formatarNumero(obra.salvos)}</span>
+          <span style={statsItemStyle}>👥 {formatarNumero(obra.salvos)}</span>
 
           <span style={statsItemStyle}>📚 {formatarNumero(obra.capitulos)}</span>
         </div>
-
-        {obra.tipo === "local" && obra.capitulos > 0 && (
-          <div style={progressCompactStyle}>
-            <div style={progressTrackStyle}>
-              <div
-                style={{
-                  ...progressBarStyle,
-                  width: `${obra.progressoLeitura}%`,
-                }}
-              />
-            </div>
-
-            <span style={progressTextStyle}>{obra.progressoLeitura}% lido</span>
-          </div>
-        )}
 
         <span style={criarReadRankingStyle(posicao, obra.disponivel)}>
           {obra.disponivel ? "Abrir obra →" : "Ver detalhes →"}
@@ -2086,7 +2391,7 @@ const containerStyle: CSSProperties = {
   width: "min(820px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 24px",
+  padding: "14px 0 116px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2449,24 +2754,6 @@ const desktopCoverStyle: CSSProperties = {
   borderRadius: "17px",
 };
 
-const noCoverBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "42px",
-  left: "8px",
-  right: "8px",
-  maxWidth: "calc(100% - 16px)",
-  padding: "6px 8px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.1)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#D4D4D8",
-  fontSize: "10px",
-  fontWeight: 950,
-  textAlign: "center",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
 const cardContentStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "100%",
@@ -2633,10 +2920,11 @@ const authorStyle: CSSProperties = {
 };
 
 const statsStyle: CSSProperties = {
-  display: "flex",
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   alignItems: "center",
-  gap: "8px",
-  flexWrap: "wrap",
+  columnGap: "8px",
+  rowGap: "4px",
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",
   fontWeight: 850,
@@ -2646,9 +2934,11 @@ const statsStyle: CSSProperties = {
 const statsItemStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
+  justifyContent: "flex-start",
   gap: "4px",
   lineHeight: 1,
   minHeight: "16px",
+  minWidth: 0,
   whiteSpace: "nowrap",
   ...safeTextStyle,
 };

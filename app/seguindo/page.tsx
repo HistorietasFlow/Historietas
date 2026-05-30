@@ -1442,7 +1442,7 @@ export default function SeguindoPage() {
                   filtro === "favoritas" ? quickFilterActiveStyle : quickFilterStyle
                 }
               >
-                Favoritas
+                Minha lista
               </button>
 
               <button
@@ -1551,11 +1551,7 @@ export default function SeguindoPage() {
                           <div style={overlayStyle} />
 
                           <div style={coverContentStyle}>
-                            <div style={coverTopBadgesStyle}>
-                              {!obra.capa && (
-                                <span style={noCoverBadgeStyle}>Sem capa</span>
-                              )}
-                            </div>
+                            <div style={coverTopBadgesStyle} />
 
                             <div style={coverBottomStyle}>
                               <strong style={chapterNumberStyle}>
@@ -1588,7 +1584,7 @@ export default function SeguindoPage() {
                             )}
 
                             {obraFavorita && (
-                              <span style={favoriteBadgeStyle}>★ Favorita</span>
+                              <span style={favoriteBadgeStyle}>★ Na lista</span>
                             )}
 
                           </div>
@@ -1653,7 +1649,7 @@ export default function SeguindoPage() {
                                     : favoriteActionStyle
                                 }
                               >
-                                {obraFavorita ? "Favorita" : "Favoritar"}
+                                {obraFavorita ? "Na lista" : "Adicionar à lista"}
                               </button>
 
                               <button
@@ -2412,19 +2408,6 @@ const genreStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "9px",
   fontWeight: 900,
-  ...safeTextStyle,
-};
-
-const noCoverBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.1))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 950,
   ...safeTextStyle,
 };
 

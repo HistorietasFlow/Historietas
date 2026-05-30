@@ -1678,7 +1678,7 @@ export default function PainelAutorPage() {
           <div style={statCardStyle}>
             <strong style={statNumberStyle}>{totalSalvos}</strong>
             <span style={statLabelStyle}>
-              {totalSalvos === 1 ? "salvo" : "salvos"}
+              {totalSalvos === 1 ? "capítulo salvo" : "capítulos salvos"}
             </span>
           </div>
         </section>
@@ -1881,7 +1881,7 @@ function ObraPainelCard({
             <span style={fileAttachedBadgeStyle}>Arquivo anexado</span>
           )}
 
-          {favoritada && <span style={favoriteBadgeStyle}>Favorita</span>}
+          {favoritada && <span style={favoriteBadgeStyle}>Na lista</span>}
 
           {concluida && <span style={completedBadgeStyle}>Concluída</span>}
 
@@ -1909,7 +1909,7 @@ function ObraPainelCard({
 
           <div style={metricItemStyle}>
             <strong style={metricNumberStyle}>{obra.totalSalvos}</strong>
-            <span style={metricLabelStyle}>salvos</span>
+            <span style={metricLabelStyle}>cap. salvos</span>
           </div>
         </div>
 

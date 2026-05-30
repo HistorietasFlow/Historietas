@@ -54,6 +54,12 @@ type PostComunidade = {
   comentarios: ComentarioComunidade[];
 };
 
+type ObraRelacionadaSugestao = {
+  id: string;
+  titulo: string;
+  autor: string;
+};
+
 type AlvoDenunciaComunidade = "post" | "comentario";
 
 type OrdenacaoComunidade = "Recentes" | "Em alta" | "Mais comentadas";
@@ -91,8 +97,6 @@ const AVISO_FIXADO_COMUNIDADE =
 const DESAFIO_SEMANA_COMUNIDADE = {
   titulo: "Desafio da semana",
   pergunta: "Qual obra da Historietas merece mais leitores agora?",
-  apoio:
-    "Publique uma recomendação curta, escolha o tipo certo e marque spoiler quando comentar cenas importantes.",
 };
 
 type FigurinhaComentario = {
@@ -192,59 +196,6 @@ function obterFigurinhaPorTexto(texto: string) {
   );
 }
 
-const POSTS_EXEMPLO: PostComunidade[] = [
-  {
-    id: "post-exemplo-1",
-    autorId: "historietas",
-    autorNome: "Historietas",
-    categoria: "Discussão",
-    tipoPublicacao: "Discussão",
-    temSpoiler: false,
-    texto:
-      "Qual tipo de história prende vocês logo no primeiro capítulo: mistério, fantasia, romance ou ação?",
-    obraRelacionada: "",
-    criadoEm: "2026-01-01T12:00:00.000Z",
-    curtidas: [],
-    comentarios: [],
-  },
-  {
-    id: "post-exemplo-2",
-    autorId: "historietas",
-    autorNome: "Historietas",
-    categoria: "Divulgação",
-    tipoPublicacao: "Divulgação",
-    temSpoiler: false,
-    texto:
-      "Autores podem usar a Comunidade para apresentar suas obras, pedir opinião de leitores e conversar sobre novos capítulos.",
-    obraRelacionada: "",
-    criadoEm: "2026-01-01T12:10:00.000Z",
-    curtidas: [],
-    comentarios: [],
-  },
-  {
-    id: "post-exemplo-3",
-    autorId: "historietas",
-    autorNome: "Historietas",
-    categoria: "Recomendações",
-    tipoPublicacao: "Pedido de indicação",
-    temSpoiler: false,
-    texto:
-      "Recomende uma obra com clima sombrio, personagens marcantes ou mundo bem construído.",
-    obraRelacionada: "",
-    criadoEm: "2026-01-01T12:20:00.000Z",
-    curtidas: [],
-    comentarios: [],
-  },
-];
-
-function criarIdComunidade(prefixo: string) {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `${prefixo}-${crypto.randomUUID()}`;
-  }
-
-  return `${prefixo}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
 function obterNomeUsuario(email: string, nomeProfile = "") {
   const nomeLimpo = nomeProfile.trim();
 
@@ -291,6 +242,20 @@ function normalizarTextoBusca(valor: string) {
     .trim();
 }
 
+function criarSlugObraRelacionada(titulo: string) {
+  const slug = normalizarTextoBusca(titulo)
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return slug || "obra";
+}
+
+function criarLinkObraRelacionada(titulo: string) {
+  return `/obra/${criarSlugObraRelacionada(titulo)}`;
+}
+
 function obterTipoPublicacaoPorParametro(valor: string) {
   const valorNormalizado = normalizarTextoBusca(valor);
 
@@ -303,6 +268,70 @@ function obterTipoPublicacaoPorParametro(valor: string) {
       (tipo) => normalizarTextoBusca(tipo) === valorNormalizado
     ) || null
   );
+}
+
+function normalizarSugestaoObraLocal(valor: unknown, index: number) {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
+    return null;
+  }
+
+  const obra = valor as Record<string, unknown>;
+  const titulo =
+    typeof obra.titulo === "string" && obra.titulo.trim()
+      ? obra.titulo.trim()
+      : "";
+
+  if (!titulo || obra.publicado !== true) {
+    return null;
+  }
+
+  const autor =
+    typeof obra.autor === "string" && obra.autor.trim()
+      ? obra.autor.trim()
+      : "Autor não informado";
+
+  const id =
+    typeof obra.id === "string" && obra.id.trim()
+      ? obra.id.trim()
+      : `obra-local-${index}`;
+
+  return {
+    id,
+    titulo,
+    autor,
+  } satisfies ObraRelacionadaSugestao;
+}
+
+function carregarSugestoesObrasLocais() {
+  try {
+    const obrasTexto = window.localStorage.getItem("historietas-obras");
+    const obrasJson: unknown = obrasTexto ? JSON.parse(obrasTexto) : [];
+
+    if (!Array.isArray(obrasJson)) {
+      return [];
+    }
+
+    return obrasJson
+      .map((obra, index) => normalizarSugestaoObraLocal(obra, index))
+      .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
+  } catch {
+    return [];
+  }
+}
+
+function removerSugestoesObrasDuplicadas(obrasBase: ObraRelacionadaSugestao[]) {
+  const titulosRegistrados = new Set<string>();
+
+  return obrasBase.filter((obra) => {
+    const chaveTitulo = normalizarTextoBusca(obra.titulo);
+
+    if (!chaveTitulo || titulosRegistrados.has(chaveTitulo)) {
+      return false;
+    }
+
+    titulosRegistrados.add(chaveTitulo);
+    return true;
+  });
 }
 
 function obterPontuacaoPost(post: PostComunidade) {
@@ -363,6 +392,13 @@ async function copiarTextoComFallback(texto: string) {
     }
   }
 }
+
+type SupabaseObraPublicaRow = {
+  id: string;
+  titulo: string | null;
+  autor: string | null;
+  publicado: boolean | null;
+};
 
 type SupabasePostRow = {
   id: string;
@@ -478,10 +514,6 @@ function mapearPostsSupabase(
   return postsSupabase.map((post) =>
     mapearPostSupabase(post, comentariosPorPost, curtidasPorPost)
   );
-}
-
-function ehPostExemplo(postId: string) {
-  return postId.startsWith("post-exemplo-");
 }
 
 function formatarErroSupabase(acao: string, erro: unknown) {
@@ -1156,6 +1188,11 @@ export default function ComunidadePage() {
   const [carregandoFeed, setCarregandoFeed] = useState(true);
   const [erro, setErro] = useState("");
   const [comentariosPostId, setComentariosPostId] = useState<string | null>(null);
+  const [obraRelacionadaBusca, setObraRelacionadaBusca] = useState("");
+  const [obrasRelacionadasSugestoes, setObrasRelacionadasSugestoes] = useState<
+    ObraRelacionadaSugestao[]
+  >([]);
+  const [sugestoesObrasAbertas, setSugestoesObrasAbertas] = useState(false);
   const textoPostRef = useRef<HTMLTextAreaElement | null>(null);
   const obraRelacionadaRef = useRef<HTMLInputElement | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
@@ -1286,6 +1323,67 @@ export default function ComunidadePage() {
   }, []);
 
   useEffect(() => {
+    let cancelado = false;
+
+    async function carregarObrasRelacionadas() {
+      const obrasLocais = carregarSugestoesObrasLocais();
+
+      try {
+        const { data, error } = await supabase
+          .from("obras")
+          .select("id, titulo, autor, publicado")
+          .eq("publicado", true)
+          .order("criada_em", { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        const obrasSupabase = ((data || []) as SupabaseObraPublicaRow[])
+          .map((obra, index) => {
+            const titulo = obra.titulo?.trim() || "";
+
+            if (!titulo) {
+              return null;
+            }
+
+            return {
+              id: obra.id || `obra-supabase-${index}`,
+              titulo,
+              autor: obra.autor?.trim() || "Autor não informado",
+            } satisfies ObraRelacionadaSugestao;
+          })
+          .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
+
+        if (!cancelado) {
+          setObrasRelacionadasSugestoes(
+            removerSugestoesObrasDuplicadas([...obrasSupabase, ...obrasLocais])
+          );
+        }
+      } catch {
+        if (!cancelado) {
+          setObrasRelacionadasSugestoes(
+            removerSugestoesObrasDuplicadas(obrasLocais)
+          );
+        }
+      }
+    }
+
+    void carregarObrasRelacionadas();
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!composerAberto) {
+      setSugestoesObrasAbertas(false);
+      setObraRelacionadaBusca("");
+    }
+  }, [composerAberto]);
+
+  useEffect(() => {
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
@@ -1409,6 +1507,22 @@ export default function ComunidadePage() {
 
     return posts.find((post) => post.id === comentariosPostId) || null;
   }, [comentariosPostId, posts]);
+
+  const sugestoesObrasRelacionadasVisiveis = useMemo(() => {
+    const buscaNormalizada = normalizarTextoBusca(obraRelacionadaBusca);
+
+    if (!buscaNormalizada) {
+      return [];
+    }
+
+    return obrasRelacionadasSugestoes
+      .filter((obra) => {
+        const tituloObra = normalizarTextoBusca(obra.titulo);
+
+        return tituloObra.startsWith(buscaNormalizada);
+      })
+      .slice(0, 8);
+  }, [obraRelacionadaBusca, obrasRelacionadasSugestoes]);
 
   useEffect(() => {
     if (!comentariosPostId) {
@@ -1708,6 +1822,16 @@ export default function ComunidadePage() {
     return false;
   }
 
+  function selecionarObraRelacionada(titulo: string) {
+    setObraRelacionadaBusca(titulo);
+    setSugestoesObrasAbertas(false);
+
+    if (obraRelacionadaRef.current) {
+      obraRelacionadaRef.current.value = titulo;
+      obraRelacionadaRef.current.focus();
+    }
+  }
+
   async function publicarPost(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1774,6 +1898,8 @@ export default function ComunidadePage() {
         obraRelacionadaRef.current.value = "";
       }
 
+      setObraRelacionadaBusca("");
+      setSugestoesObrasAbertas(false);
       setCategoriaPost("Geral");
       setTipoPublicacaoPost("Discussão");
       setTemSpoilerPost(false);
@@ -2549,7 +2675,12 @@ export default function ComunidadePage() {
                         <span style={postTypeBadgeStyle}>{post.tipoPublicacao}</span>
 
                         {post.obraRelacionada && (
-                          <span style={obraBadgeStyle}>Obra: {post.obraRelacionada}</span>
+                          <Link
+                            href={criarLinkObraRelacionada(post.obraRelacionada)}
+                            style={obraBadgeStyle}
+                          >
+                            Obra: {post.obraRelacionada}
+                          </Link>
                         )}
                       </div>
 
@@ -2808,16 +2939,59 @@ export default function ComunidadePage() {
                 <label style={fieldStyle}>
                   <span style={labelStyle}>Obra relacionada</span>
 
-                  <input
-                    ref={obraRelacionadaRef}
-                    disabled={publicandoPost}
-                    placeholder="Opcional: nome da obra"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    maxLength={90}
-                    style={inputStyle}
-                  />
+                  <div style={relatedWorkSearchWrapStyle}>
+                    <input
+                      ref={obraRelacionadaRef}
+                      disabled={publicandoPost}
+                      value={obraRelacionadaBusca}
+                      onChange={(event) => {
+                        const valorDigitado = event.target.value;
+
+                        setObraRelacionadaBusca(valorDigitado);
+                        setSugestoesObrasAbertas(Boolean(valorDigitado.trim()));
+                      }}
+                      onFocus={() => {
+                        setSugestoesObrasAbertas(
+                          Boolean(obraRelacionadaBusca.trim())
+                        );
+                      }}
+                      onBlur={() => {
+                        window.setTimeout(() => {
+                          setSugestoesObrasAbertas(false);
+                        }, 120);
+                      }}
+                      placeholder="Opcional: nome da obra"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      maxLength={90}
+                      style={inputStyle}
+                    />
+
+                    {sugestoesObrasAbertas &&
+                      sugestoesObrasRelacionadasVisiveis.length > 0 && (
+                        <div style={relatedWorkSuggestionsStyle}>
+                          {sugestoesObrasRelacionadasVisiveis.map((obra) => (
+                            <button
+                              key={obra.id}
+                              type="button"
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                selecionarObraRelacionada(obra.titulo);
+                              }}
+                              style={relatedWorkSuggestionButtonStyle}
+                            >
+                              <strong style={relatedWorkSuggestionTitleStyle}>
+                                {obra.titulo}
+                              </strong>
+                              <span style={relatedWorkSuggestionAuthorStyle}>
+                                Por {obra.autor}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                  </div>
                 </label>
               </div>
 
@@ -3537,6 +3711,62 @@ const inputStyle: CSSProperties = {
   fontFamily: "inherit",
   boxSizing: "border-box",
   minWidth: 0,
+};
+
+const relatedWorkSearchWrapStyle: CSSProperties = {
+  position: "relative",
+  minWidth: 0,
+  zIndex: 4,
+};
+
+const relatedWorkSuggestionsStyle: CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 5px)",
+  left: 0,
+  right: 0,
+  zIndex: 18,
+  display: "grid",
+  gap: "4px",
+  padding: "6px",
+  borderRadius: "16px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
+  background: "var(--historietas-surface-strong, rgba(12,7,23,0.98))",
+  boxShadow: "none",
+  maxHeight: "172px",
+  overflowY: "auto",
+  WebkitOverflowScrolling: "touch",
+};
+
+const relatedWorkSuggestionButtonStyle: CSSProperties = {
+  minHeight: "40px",
+  display: "grid",
+  gap: "2px",
+  justifyItems: "start",
+  padding: "7px 9px",
+  borderRadius: "12px",
+  border: "1px solid transparent",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  textAlign: "left",
+  minWidth: 0,
+};
+
+const relatedWorkSuggestionTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "12px",
+  lineHeight: 1.15,
+  fontWeight: 950,
+  ...safeTextStyle,
+};
+
+const relatedWorkSuggestionAuthorStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  lineHeight: 1.15,
+  fontWeight: 800,
+  ...safeTextStyle,
 };
 
 const selectStyle: CSSProperties = {
@@ -4837,6 +5067,10 @@ const obraBadgeStyle: CSSProperties = {
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
   fontSize: "11px",
   fontWeight: 900,
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  minWidth: 0,
   ...safeTextStyle,
 };
 

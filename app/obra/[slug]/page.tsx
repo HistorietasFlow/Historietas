@@ -1032,24 +1032,6 @@ function formatarTotalAvaliacoes(total: number) {
   return total === 1 ? "1 avaliação" : `${total} avaliações`;
 }
 
-function formatarEstrelasAvaliacao(valor: number) {
-  const notaArredondada = Math.max(0, Math.min(5, Math.round(valor * 2) / 2));
-
-  return Array.from({ length: 5 }, (_, index) => {
-    const valorEstrela = index + 1;
-
-    if (notaArredondada >= valorEstrela) {
-      return "★";
-    }
-
-    if (notaArredondada >= valorEstrela - 0.5) {
-      return "⯨";
-    }
-
-    return "☆";
-  }).join("");
-}
-
 function obterProximaNotaAvaliacao(estrela: number, notaAtual: number) {
   const meiaNota = estrela - 0.5;
   const notaNormalizada = Math.round(notaAtual * 2) / 2;

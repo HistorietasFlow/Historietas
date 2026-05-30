@@ -55,7 +55,7 @@ type NotificacaoLocal = {
   criadaEm: string;
 };
 
-type FiltroNotificacao = "todas" | "nao-lidas" | "lidas" | "capitulos" | "comunidade" | "com-obra" | "sem-obra";
+type FiltroNotificacao = "todas" | "nao-lidas" | "lidas" | "capitulos" | "comunidade";
 type OrdenacaoNotificacao = "recentes" | "antigas" | "obra" | "capitulo";
 
 const CHAVE_OBRAS = "historietas-obras";
@@ -1196,9 +1196,7 @@ export default function NotificacoesPage() {
         (filtro === "nao-lidas" && !notificacao.lida) ||
         (filtro === "lidas" && notificacao.lida) ||
         (filtro === "capitulos" && notificacao.tipo === "novo-capitulo") ||
-        (filtro === "comunidade" && notificacaoEhComunidade(notificacao)) ||
-        (filtro === "com-obra" && Boolean(obra)) ||
-        (filtro === "sem-obra" && !obra);
+        (filtro === "comunidade" && notificacaoEhComunidade(notificacao));
 
       const textoBusca = normalizarTexto(
         [
@@ -1518,7 +1516,7 @@ export default function NotificacoesPage() {
                       : quickFilterStyle
                   }
                 >
-                  Não lidas
+                  Novas
                 </button>
 
                 <button
@@ -1808,7 +1806,7 @@ export default function NotificacoesPage() {
                         onClick={() => marcarComoNaoLida(notificacao.id)}
                         style={secondaryButtonStyle}
                       >
-                        Marcar não lida
+                        Marcar como nova
                       </button>
                     ) : (
                       <button

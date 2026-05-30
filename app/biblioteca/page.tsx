@@ -1351,7 +1351,7 @@ export default function BibliotecaPage() {
     },
     {
       id: "favoritos" as const,
-      titulo: "Favoritos",
+      titulo: "Minha lista",
       total: totais.favoritos,
     },
     {
@@ -1599,9 +1599,6 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(item.obra.capa, isDesktop)}
                           aria-label={`Abrir ${item.obra.titulo}`}
                         >
-                          {!item.obra.capa && (
-                            <span style={bookNoCoverStyle}>Sem capa</span>
-                          )}
                         </Link>
 
                         <div style={isDesktop ? desktopSavedBookInfoStyle : savedBookInfoStyle}>
@@ -1661,8 +1658,8 @@ export default function BibliotecaPage() {
                           }
                         >
                           {colecaoTemObra(obrasFavoritas, item.obra)
-                            ? "Favorita"
-                            : "Favoritar"}
+                            ? "Na lista"
+                            : "Adicionar à lista"}
                         </button>
 
                         <button
@@ -1744,9 +1741,6 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(obra.capa, isDesktop)}
                           aria-label={`Abrir ${obra.titulo}`}
                         >
-                          {!obra.capa && (
-                            <span style={bookNoCoverStyle}>Sem capa</span>
-                          )}
                         </Link>
 
                         <div style={isDesktop ? desktopSavedBookInfoStyle : savedBookInfoStyle}>
@@ -1818,7 +1812,7 @@ export default function BibliotecaPage() {
                               : favoriteButtonStyle
                           }
                         >
-                          {obraFavorita ? "Favorita" : "Favoritar"}
+                          {obraFavorita ? "Na lista" : "Adicionar à lista"}
                         </button>
 
                         <button
@@ -1917,9 +1911,6 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(obra.capa, isDesktop)}
                           aria-label={`Abrir ${obra.titulo}`}
                         >
-                          {!obra.capa && (
-                            <span style={bookNoCoverStyle}>Sem capa</span>
-                          )}
                         </Link>
 
                         <div style={isDesktop ? desktopSavedBookInfoStyle : savedBookInfoStyle}>
@@ -1982,7 +1973,7 @@ export default function BibliotecaPage() {
                               : favoriteButtonStyle
                           }
                         >
-                          {obraFavorita ? "Favorita" : "Favoritar"}
+                          {obraFavorita ? "Na lista" : "Adicionar à lista"}
                         </button>
 
                         <button
@@ -2009,10 +2000,10 @@ export default function BibliotecaPage() {
           <>
             {obrasFavoritasLista.length === 0 ? (
               <section style={emptyBoxStyle}>
-                <h2 style={emptyTitleStyle}>Nenhuma obra favorita ainda</h2>
+                <h2 style={emptyTitleStyle}>Nenhuma obra na sua lista ainda</h2>
 
                 <p style={emptyTextStyle}>
-                  Use o botão Favoritar obra nos cards da Biblioteca para
+                  Use o botão Adicionar à lista nos cards da Biblioteca para
                   guardar suas histórias preferidas aqui.
                 </p>
 
@@ -2048,14 +2039,11 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(obra.capa, isDesktop)}
                           aria-label={`Abrir ${obra.titulo}`}
                         >
-                          {!obra.capa && (
-                            <span style={bookNoCoverStyle}>Sem capa</span>
-                          )}
                         </Link>
 
                         <div style={isDesktop ? desktopSavedBookInfoStyle : savedBookInfoStyle}>
                           <div style={cardTopStyle}>
-                            <span style={favoriteBadgeStyle}>★ Favorita</span>
+                            <span style={favoriteBadgeStyle}>★ Na lista</span>
 
                             <span style={chapterBadgeStyle}>
                               {obra.capitulos.length}{" "}
@@ -2120,7 +2108,7 @@ export default function BibliotecaPage() {
                           onClick={() => alternarFavorito(obra)}
                           style={favoriteActiveButtonStyle}
                         >
-                          Remover favorito
+                          Remover da lista
                         </button>
 
                         <button
@@ -2186,9 +2174,6 @@ export default function BibliotecaPage() {
                           style={criarBookCoverStyle(obra.capa, isDesktop)}
                           aria-label={`Abrir ${obra.titulo}`}
                         >
-                          {!obra.capa && (
-                            <span style={bookNoCoverStyle}>Sem capa</span>
-                          )}
                         </Link>
 
                         <div style={isDesktop ? desktopSavedBookInfoStyle : savedBookInfoStyle}>
@@ -2260,7 +2245,7 @@ export default function BibliotecaPage() {
                               : favoriteButtonStyle
                           }
                         >
-                          {obraFavorita ? "Favorita" : "Favoritar"}
+                          {obraFavorita ? "Na lista" : "Adicionar à lista"}
                         </button>
 
                         <button
@@ -2278,18 +2263,6 @@ export default function BibliotecaPage() {
             )}
           </>
         )}
-
-        <section style={isDesktop ? desktopInfoBoxStyle : infoBoxStyle}>
-          <h2 style={infoTitleStyle}>Biblioteca integrada</h2>
-
-          <p style={infoTextStyle}>
-            Remover da Biblioteca não apaga o capítulo. Ele só deixa de aparecer
-            nos seus salvos. A aba Seguindo agora reconhece obra por ID, slug e
-            título normalizado, então fica compatível com a página pública da
-            obra e com o Supabase. Favoritos, concluídos, salvos e progresso
-            continuam com backup local.
-          </p>
-        </section>
       </section>
     </main>
   );
@@ -2680,21 +2653,6 @@ const bookCoverStyle: CSSProperties = {
 };
 
 
-const bookNoCoverStyle: CSSProperties = {
-  position: "absolute",
-  top: "8px",
-  left: "8px",
-  right: "8px",
-  padding: "6px 7px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.1))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const cardTopStyle: CSSProperties = {
   display: "flex",
