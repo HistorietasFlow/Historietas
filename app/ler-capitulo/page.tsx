@@ -1746,7 +1746,7 @@ export default function LerCapituloPage() {
                     : settingsActionStyle
                 }
               >
-                {obraFavorita ? "✓ Na lista" : "+ Adicionar à lista"}
+                {obraFavorita ? "✓ Na lista" : "Adicionar à lista"}
               </button>
 
               <button
@@ -1760,7 +1760,7 @@ export default function LerCapituloPage() {
                     : settingsActionStyle
                 }
               >
-                {obraConcluida ? "Concluída" : "Concluir obra"}
+                {obraConcluida ? "Concluída" : "Concluir"}
               </button>
             </div>
           </section>
@@ -1812,7 +1812,7 @@ export default function LerCapituloPage() {
                 : actionButtonStyle
             }
           >
-            {capituloAtual.salvo ? "✓ Capítulo salvo" : "+ Salvar capítulo"}
+            {capituloAtual.salvo ? "✓ Salvo" : "Salvar capítulo"}
           </button>
 
           <button

@@ -415,7 +415,7 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
 }
 
 function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
-  return notificacaoEhComunidade(notificacao) ? "Abrir Comunidade" : "Abrir capítulo";
+  return notificacaoEhComunidade(notificacao) ? "Abrir comunidade" : "Abrir capítulo";
 }
 
 function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
@@ -431,7 +431,7 @@ function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
     notificacao.tipo === "denuncia-comunidade" ||
     notificacao.tipo === "moderacao-comunidade"
   ) {
-    return "!";
+    return "N";
   }
 
   return "!";
@@ -1598,7 +1598,7 @@ export default function NotificacoesPage() {
                 style={secondaryButtonStyle}
                 disabled={notificacoesFiltradas.length === 0}
               >
-                Marcar filtradas
+                Marcar filtradas como lidas
               </button>
 
               <button
@@ -1624,7 +1624,7 @@ export default function NotificacoesPage() {
 
         {notificacoes.length === 0 ? (
           <section style={isDesktop ? desktopEmptyStyle : emptyStyle}>
-            <span style={emptyIconStyle}>🔔</span>
+            <span style={emptyIconStyle}>N</span>
 
             <h2 style={emptyTitleStyle}>Nenhuma notificação</h2>
 
@@ -1638,7 +1638,7 @@ export default function NotificacoesPage() {
           </section>
         ) : notificacoesFiltradas.length === 0 ? (
           <section style={isDesktop ? desktopEmptyStyle : emptyStyle}>
-            <span style={emptyIconStyle}>⌕</span>
+            <span style={emptyIconStyle}>N</span>
 
             <h2 style={emptyTitleStyle}>Nada encontrado</h2>
 

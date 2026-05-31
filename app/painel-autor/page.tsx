@@ -1514,7 +1514,7 @@ export default function PainelAutorPage() {
 
             {usuarioLogado && (
               <div style={accountNoticeStyle}>
-                <span style={accountNoticeLabelStyle}>CONTA CONECTADA</span>
+                <span style={accountNoticeLabelStyle}>CONTA</span>
 
                 <strong style={accountNoticeNameStyle}>{nomeConta}</strong>
 
@@ -1936,7 +1936,7 @@ function ObraPainelCard({
           </Link>
 
           <Link href={capituloHref} style={chapterButtonStyle}>
-            + Capítulo
+            Adicionar capítulo
           </Link>
 
         </div>

@@ -1465,7 +1465,7 @@ export default function BibliotecaPage() {
 
             <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
               Continue leituras, encontre capítulos salvos, acompanhe obras
-              seguidas e organize favoritos sem transformar a página em painel.
+              seguidas e organize sua lista sem transformar a página em painel.
             </p>
           </div>
         </section>
@@ -2004,7 +2004,7 @@ export default function BibliotecaPage() {
 
                 <p style={emptyTextStyle}>
                   Use o botão Adicionar à lista nos cards da Biblioteca para
-                  guardar suas histórias preferidas aqui.
+                  guardar histórias na sua lista.
                 </p>
 
                 <Link href="/explorar" style={isDesktop ? desktopEmptyButtonStyle : emptyButtonStyle}>
@@ -2138,7 +2138,7 @@ export default function BibliotecaPage() {
                 <h2 style={emptyTitleStyle}>Nenhuma obra concluída ainda</h2>
 
                 <p style={emptyTextStyle}>
-                  Use o botão Marcar concluída nos cards da Biblioteca quando
+                  Use o botão Concluir nos cards da Biblioteca quando
                   terminar uma obra.
                 </p>
 

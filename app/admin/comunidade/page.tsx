@@ -407,7 +407,7 @@ export default function AdminComunidadePage() {
     novoStatus: StatusDenuncia
   ) {
     if (!usuarioId || !ehAdmin) {
-      setErro("Apenas administradores podem atualizar denúncias.");
+      setErro("Apenas moderadores podem atualizar denúncias.");
       return;
     }
 
@@ -463,7 +463,7 @@ export default function AdminComunidadePage() {
 
   async function removerConteudoDenunciado(denuncia: DenunciaComContexto) {
     if (!usuarioId || !ehAdmin) {
-      setErro("Apenas administradores podem remover conteúdo denunciado.");
+      setErro("Apenas moderadores podem remover conteúdo denunciado.");
       return;
     }
 
@@ -567,9 +567,9 @@ export default function AdminComunidadePage() {
         <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
         <section style={containerStyle}>
           <div style={loadingCardStyle}>
-            <strong style={loadingTitleStyle}>Carregando moderação...</strong>
+            <strong style={loadingTitleStyle}>Abrindo moderação...</strong>
             <span style={loadingTextStyle}>
-              Conferindo acesso administrativo e denúncias da Comunidade.
+              Conferindo permissão de moderação e denúncias da Comunidade.
             </span>
           </div>
         </section>
@@ -586,7 +586,7 @@ export default function AdminComunidadePage() {
             <span style={miniTitleStyle}>ÁREA RESTRITA</span>
             <h1 style={titleStyle}>Moderação da Comunidade</h1>
             <p style={descriptionStyle}>
-              Entre com uma conta administrativa para revisar denúncias.
+              Entre com uma conta com permissão de moderação para revisar denúncias.
             </p>
 
             {erro && <span style={errorStyle}>{erro}</span>}
@@ -607,10 +607,10 @@ export default function AdminComunidadePage() {
         <section style={containerStyle}>
           <section style={accessCardStyle}>
             <span style={miniTitleStyle}>ACESSO NEGADO</span>
-            <h1 style={titleStyle}>Você não é administrador</h1>
+            <h1 style={titleStyle}>Acesso de moderação necessário</h1>
             <p style={descriptionStyle}>
               Esta área exibe denúncias da Comunidade e só pode ser acessada por
-              contas com permissão administrativa.
+              contas com permissão de moderação.
             </p>
 
             {erro && <span style={errorStyle}>{erro}</span>}

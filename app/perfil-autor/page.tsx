@@ -1862,7 +1862,7 @@ export default function PerfilAutorPage() {
                               : smallButtonStyle
                           }
                         >
-                          {obraFavorita ? "★ Na lista" : "☆ Adicionar à lista"}
+                          {obraFavorita ? "Na lista" : "Adicionar à lista"}
                         </button>
 
                         <button
@@ -1874,7 +1874,7 @@ export default function PerfilAutorPage() {
                               : smallButtonStyle
                           }
                         >
-                          {obraConcluida ? "✓ Concluída" : "Concluir"}
+                          {obraConcluida ? "Concluída" : "Concluir"}
                         </button>
                       </div>
                     </div>

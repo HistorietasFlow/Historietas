@@ -1584,7 +1584,7 @@ export default function SeguindoPage() {
                             )}
 
                             {obraFavorita && (
-                              <span style={favoriteBadgeStyle}>★ Na lista</span>
+                              <span style={favoriteBadgeStyle}>Na lista</span>
                             )}
 
                           </div>
