@@ -2043,7 +2043,7 @@ export default function BibliotecaPage() {
 
                         <div style={isDesktop ? desktopSavedBookInfoStyle : savedBookInfoStyle}>
                           <div style={cardTopStyle}>
-                            <span style={favoriteBadgeStyle}>★ Na lista</span>
+                            <span style={favoriteBadgeStyle}>Na lista</span>
 
                             <span style={chapterBadgeStyle}>
                               {obra.capitulos.length}{" "}
@@ -2178,7 +2178,7 @@ export default function BibliotecaPage() {
 
                         <div style={isDesktop ? desktopSavedBookInfoStyle : savedBookInfoStyle}>
                           <div style={cardTopStyle}>
-                            <span style={completedBadgeStyle}>✓ Concluída</span>
+                            <span style={completedBadgeStyle}>Concluída</span>
 
                             <span style={chapterBadgeStyle}>
                               {obra.capitulos.length}{" "}

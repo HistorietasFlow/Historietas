@@ -1,0 +1,6 @@
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:2046: <span style={favoriteBadgeStyle}>? Na lista</span>
+C:\Users\Jhona\historietas\app\biblioteca\page.tsx:2181: <span style={completedBadgeStyle}>? Concluída</span>
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:2033: {favorita && <span style={favoriteBadgeStyle}>? Na lista</span>}
+C:\Users\Jhona\historietas\app\em-alta\page.tsx:2035: {concluida && <span style={completedBadgeStyle}>? Concluída</span>}
+C:\Users\Jhona\historietas\app\notificacoes\page.tsx:418: return notificacaoEhComunidade(notificacao) ? "Abrir comunidade" : "Abrir capítulo";
+C:\Users\Jhona\historietas\app\notificacoes\page.tsx:1601: Marcar filtradas como lidas

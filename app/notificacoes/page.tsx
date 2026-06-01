@@ -415,7 +415,7 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
 }
 
 function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
-  return notificacaoEhComunidade(notificacao) ? "Abrir comunidade" : "Abrir capítulo";
+  return notificacaoEhComunidade(notificacao) ? "Ver comunidade" : "Ver capítulo";
 }
 
 function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
@@ -1598,7 +1598,7 @@ export default function NotificacoesPage() {
                 style={secondaryButtonStyle}
                 disabled={notificacoesFiltradas.length === 0}
               >
-                Marcar filtradas como lidas
+                Marcar seleção
               </button>
 
               <button

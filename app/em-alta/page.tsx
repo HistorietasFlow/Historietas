@@ -2030,9 +2030,9 @@ function RankingCard({
               </span>
             )}
 
-            {favorita && <span style={favoriteBadgeStyle}>★ Na lista</span>}
+            {favorita && <span style={favoriteBadgeStyle}>Na lista</span>}
 
-            {concluida && <span style={completedBadgeStyle}>✓ Concluída</span>}
+            {concluida && <span style={completedBadgeStyle}>Concluída</span>}
           </div>
         )}
 
