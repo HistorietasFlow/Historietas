@@ -1793,12 +1793,6 @@ export default function ExplorarPage() {
 
     raiz.dataset.historietasExplorarCategoriaAtiva = "true";
     document.body.dataset.historietasExplorarCategoriaAtiva = "true";
-    raiz.style.setProperty("--historietas-bg-start", "#030308");
-    raiz.style.setProperty("--historietas-bg-mid", "#050512");
-    raiz.style.setProperty("--historietas-bg-end", "#030308");
-    document.body.style.background = temaCategoria.pageBackground;
-    raiz.style.background = temaCategoria.pageBackground;
-
     raiz.style.setProperty("--historietas-accent", temaCategoria.accent);
     raiz.style.setProperty("--historietas-text-primary", "#FFFFFF");
     raiz.style.setProperty("--historietas-text-secondary", "#E5E7EB");
@@ -1898,8 +1892,12 @@ export default function ExplorarPage() {
   }
 
   return (
-    <main style={{ ...pageStyle, background: temaPagina.pageBackground }}>
+    <main style={pageStyle}>
       <style>{themePageCss}</style>
+
+      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+
+      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : mobileTopStyle}>
@@ -2929,18 +2927,49 @@ const safeTextStyle: CSSProperties = {
   wordBreak: "break-word",
 };
 
+const mobileTopWaterFadeStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(340px, 48vh)",
+  pointerEvents: "none",
+  zIndex: 0,
+  background:
+    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+};
+
+const desktopTopWaterFadeStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(620px, 68vh)",
+  pointerEvents: "none",
+  zIndex: 0,
+  background:
+    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+};
+
 const pageStyle: CSSProperties = {
+  position: "relative",
   minHeight: "100vh",
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
   background:
-    "radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, transparent), transparent 30%), radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent), transparent 24%), radial-gradient(circle at 50% 105%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent), transparent 32%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 36%, #170A28 62%, var(--historietas-bg-end, #17101B) 100%)",
+    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
 const containerStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",

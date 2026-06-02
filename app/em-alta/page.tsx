@@ -1041,27 +1041,6 @@ function obraRankingPassaFiltro(
   return true;
 }
 
-function criarDecoracaoEmAltaStyle(index: number): CSSProperties {
-  const posicoes: CSSProperties[] = [
-    { top: "8%", right: "8%", fontSize: "48px", transform: "rotate(-12deg)" },
-    { top: "45%", right: "14%", fontSize: "28px", transform: "rotate(16deg)" },
-    { bottom: "12%", right: "7%", fontSize: "36px", transform: "rotate(8deg)" },
-    { top: "18%", left: "8%", fontSize: "22px", transform: "rotate(14deg)" },
-    { bottom: "18%", left: "18%", fontSize: "26px", transform: "rotate(-10deg)" },
-  ];
-
-  return {
-    position: "absolute",
-    color: "var(--historietas-accent, #FDBA74)",
-    opacity: 0.105,
-    lineHeight: 1,
-    fontWeight: 950,
-    filter: "drop-shadow(0 0 22px color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent))",
-    userSelect: "none",
-    ...posicoes[index % posicoes.length],
-  };
-}
-
 function criarDecoracaoPaginaStyle(index: number): CSSProperties {
   const posicoes: CSSProperties[] = [
     { top: "32%", right: "-18px", fontSize: "72px", transform: "rotate(-14deg)" },
@@ -1463,36 +1442,26 @@ export default function EmAltaPage() {
         ))}
       </div>
 
+      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+
+      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-em-alta-logo-text" style={logoTextStyle}>istorietas</span>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span style={isDesktop ? desktopHeaderTitleMarkStyle : headerTitleMarkStyle}>H</span>
+            <span
+              className="historietas-em-alta-hero-title"
+              style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
+            >
+              istórias mais populares
+            </span>
           </Link>
-
         </header>
-
-        <section style={isDesktop ? desktopHeroStyle : heroStyle}>
-          <div style={heroDecorationLayerStyle} aria-hidden="true">
-            {["👑", "✦", "◆", "↑"].map((decoracao, index) => (
-              <span
-                key={`hero-${decoracao}-${index}`}
-                style={criarDecoracaoEmAltaStyle(index)}
-              >
-                {decoracao}
-              </span>
-            ))}
-          </div>
-
-          <div style={heroPremiumShineStyle} aria-hidden="true" />
-
-          <h1 className="historietas-em-alta-hero-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Histórias mais populares</h1>
-
-          <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            Rankings das obras que estão dominando visualizações, curtidas,
-            comentários e seguidores na Historietas.
-          </p>
-        </section>
 
         <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
           <div style={isDesktop ? desktopFilterHeaderStyle : filterHeaderStyle}>
@@ -2352,25 +2321,35 @@ const pageDecorationLayerStyle: CSSProperties = {
   zIndex: 0,
 };
 
-const heroDecorationLayerStyle: CSSProperties = {
+const mobileTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
-  inset: 0,
-  overflow: "hidden",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
+  background:
+    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
 };
 
-const heroPremiumShineStyle: CSSProperties = {
+const desktopTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
-  left: "12%",
-  right: "12%",
-  top: "14px",
-  height: "1px",
-  background:
-    "linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 42%, transparent) 45%, color-mix(in srgb, var(--historietas-secondary, #C4B5FD) 28%, transparent) 70%, transparent 100%)",
-  filter: "none",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(620px, 68vh)",
+  pointerEvents: "none",
   zIndex: 0,
+  background:
+    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
 };
+
+
 
 
 const pageStyle: CSSProperties = {
@@ -2380,7 +2359,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   background:
-    "radial-gradient(circle at 10% -6%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent), transparent 30%), radial-gradient(circle at 92% 10%, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent), transparent 25%), radial-gradient(circle at 50% 104%, color-mix(in srgb, var(--historietas-accent, #F97316) 13%, transparent), transparent 34%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 28%, var(--historietas-bg-end, #180B2D) 56%, #14091F 78%, var(--historietas-bg-end, #17101B) 100%)",
+    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -2411,67 +2390,11 @@ const topStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const desktopTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "14px",
-};
 
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  ...safeTextStyle,
-};
 
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-  color: "#FFFFFF",
-  fontSize: "17px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  flex: "0 0 auto",
-};
 
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 24%, transparent))",
-};
 
-const heroStyle: CSSProperties = {
-  position: "relative",
-  borderRadius: "30px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  background:
-    "radial-gradient(circle at 12% -4%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)), transparent 30%), radial-gradient(circle at 18% 42%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 52%, transparent)), transparent 35%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.99)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  padding: "24px 16px",
-  boxShadow: "var(--historietas-hero-shadow, none)",
-  minWidth: 0,
-  overflow: "hidden",
-  textAlign: "center",
-};
 
-const desktopHeroStyle: CSSProperties = {
-  ...heroStyle,
-  padding: "30px 40px",
-  textAlign: "center",
-  borderRadius: "32px",
-};
 
 const titleStyle: CSSProperties = {
   position: "relative",
@@ -2499,26 +2422,77 @@ const desktopTitleStyle: CSSProperties = {
   textAlign: "center",
 };
 
-const descriptionStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: "8px auto 0",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.5,
-  fontWeight: 700,
-  maxWidth: "540px",
+const titleHeaderStyle: CSSProperties = {
+  ...topStyle,
+  justifyContent: "center",
+  marginTop: "4px",
+  marginBottom: "18px",
   textAlign: "center",
-  ...safeTextStyle,
 };
 
-const desktopDescriptionStyle: CSSProperties = {
-  ...descriptionStyle,
-  margin: "10px auto 0",
-  maxWidth: "620px",
-  textAlign: "center",
-  fontSize: "14px",
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginTop: "6px",
+  marginBottom: "22px",
 };
+
+const headerTitleLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "3px",
+  width: "fit-content",
+  maxWidth: "100%",
+  minWidth: 0,
+};
+
+const desktopHeaderTitleLinkStyle: CSSProperties = {
+  ...headerTitleLinkStyle,
+  gap: "4px",
+};
+
+const headerTitleMarkStyle: CSSProperties = {
+  width: "clamp(36px, 8vw, 48px)",
+  height: "clamp(36px, 8vw, 48px)",
+  borderRadius: "clamp(12px, 2.6vw, 16px)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  color: "#FFFFFF",
+  fontSize: "clamp(18px, 4.3vw, 24px)",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
+  flex: "0 0 auto",
+  boxShadow: "none",
+};
+
+const desktopHeaderTitleMarkStyle: CSSProperties = {
+  ...headerTitleMarkStyle,
+  width: "clamp(44px, 4.4vw, 58px)",
+  height: "clamp(44px, 4.4vw, 58px)",
+  borderRadius: "18px",
+  fontSize: "clamp(22px, 2.2vw, 30px)",
+};
+
+const headerTitleTextStyle: CSSProperties = {
+  ...titleStyle,
+  margin: 0,
+  maxWidth: "calc(100vw - 86px)",
+  textAlign: "left",
+};
+
+const desktopHeaderTitleTextStyle: CSSProperties = {
+  ...desktopTitleStyle,
+  margin: 0,
+  maxWidth: "calc(100vw - 132px)",
+  textAlign: "left",
+};
+
+
 
 const filterSummaryTextStyle: CSSProperties = {
   margin: "6px 0 0",

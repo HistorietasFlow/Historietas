@@ -60,6 +60,7 @@ type DenunciaComContexto = DenunciaComunidade & {
   alvoResumo: string;
   alvoAutor: string;
   alvoData: string;
+  alvoPostId: string;
   alvoCategoria?: string;
   alvoTipoPublicacao?: string;
   alvoTemSpoiler?: boolean;
@@ -140,6 +141,27 @@ function criarMensagemErro(acao: string, erro: unknown) {
   return detalhes ? `${acao}: ${detalhes}` : `${acao}: erro desconhecido.`;
 }
 
+function criarDecoracaoHeroStyle(index: number): CSSProperties {
+  const posicoes: CSSProperties[] = [
+    { top: "8%", right: "8%", fontSize: "42px", transform: "rotate(-12deg)" },
+    { top: "48%", right: "15%", fontSize: "28px", transform: "rotate(16deg)" },
+    { bottom: "12%", right: "6%", fontSize: "34px", transform: "rotate(8deg)" },
+    { top: "16%", left: "8%", fontSize: "22px", transform: "rotate(14deg)" },
+  ];
+
+  return {
+    position: "absolute",
+    color: "var(--historietas-accent, #FDBA74)",
+    opacity: 0.13,
+    lineHeight: 1,
+    fontWeight: 950,
+    filter:
+      "drop-shadow(0 0 18px color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent))",
+    userSelect: "none",
+    ...posicoes[index % posicoes.length],
+  };
+}
+
 export default function AdminComunidadePage() {
   const [carregando, setCarregando] = useState(true);
   const [usuarioId, setUsuarioId] = useState("");
@@ -153,7 +175,32 @@ export default function AdminComunidadePage() {
   const [busca, setBusca] = useState("");
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [observacoes, setObservacoes] = useState<Record<string, string>>({});
+  const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+    const atualizarModoDesktop = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
+
+    atualizarModoDesktop();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", atualizarModoDesktop);
+
+      return () => {
+        mediaQuery.removeEventListener("change", atualizarModoDesktop);
+      };
+    }
+
+    mediaQuery.addListener(atualizarModoDesktop);
+
+    return () => {
+      mediaQuery.removeListener(atualizarModoDesktop);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -242,6 +289,7 @@ export default function AdminComunidadePage() {
           denuncia.alvoTipo,
           denuncia.alvoResumo,
           denuncia.alvoAutor,
+          denuncia.alvoPostId,
           denuncia.alvoCategoria || "",
           denuncia.alvoTipoPublicacao || "",
           denuncia.alvoTemSpoiler ? "spoiler contem spoiler" : "",
@@ -369,6 +417,7 @@ export default function AdminComunidadePage() {
           alvoResumo: post?.texto || "Publicação não encontrada ou removida.",
           alvoAutor: post?.autor_nome || "Autor não encontrado",
           alvoData: post?.criado_em || "",
+          alvoPostId: post?.id || denuncia.alvoId,
           alvoCategoria: post?.categoria || "",
           alvoTipoPublicacao: post?.tipo_publicacao || "Discussão",
           alvoTemSpoiler: Boolean(post?.tem_spoiler),
@@ -385,6 +434,7 @@ export default function AdminComunidadePage() {
           comentario?.texto || "Comentário não encontrado ou removido.",
         alvoAutor: comentario?.autor_nome || "Autor não encontrado",
         alvoData: comentario?.criado_em || "",
+        alvoPostId: comentario?.post_id || "",
       };
     });
 
@@ -565,7 +615,11 @@ export default function AdminComunidadePage() {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
-        <section style={containerStyle}>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <div style={loadingCardStyle}>
             <strong style={loadingTitleStyle}>Abrindo moderação...</strong>
             <span style={loadingTextStyle}>
@@ -581,7 +635,11 @@ export default function AdminComunidadePage() {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
-        <section style={containerStyle}>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <section style={accessCardStyle}>
             <span style={miniTitleStyle}>ÁREA RESTRITA</span>
             <h1 style={titleStyle}>Moderação da Comunidade</h1>
@@ -604,7 +662,11 @@ export default function AdminComunidadePage() {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
-        <section style={containerStyle}>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <section style={accessCardStyle}>
             <span style={miniTitleStyle}>ACESSO NEGADO</span>
             <h1 style={titleStyle}>Acesso de moderação necessário</h1>
@@ -628,32 +690,57 @@ export default function AdminComunidadePage() {
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${adminComunidadePageCss}`}</style>
 
-      <section style={containerStyle}>
-        <header style={headerStyle}>
-          <div style={headerTextStyle}>
-            <span style={miniTitleStyle}>MODERAÇÃO</span>
-            <h1 style={titleStyle}>Moderação da Comunidade</h1>
-            <p style={descriptionStyle}>
-              Revise denúncias enviadas por leitores e acompanhe o status de
-              análise dos conteúdos sinalizados.
-            </p>
-          </div>
+      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
-          <div className="admin-comunidade-header-actions" style={headerActionsStyle}>
-            <Link href="/comunidade" style={secondaryLinkStyle}>
-              Ver Comunidade
+      <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+        <header style={isDesktop ? desktopTopStyle : mobileTopStyle}>
+          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
+            <span style={logoMarkStyle}>H</span>
+            <span className="historietas-admin-comunidade-logo-text" style={logoTextStyle}>
+              istorietas
+            </span>
+          </Link>
+
+          <div style={isDesktop ? desktopTopActionsStyle : topActionsStyle}>
+            <Link href="/comunidade" style={isDesktop ? desktopTopButtonStyle : topButtonStyle}>
+              Comunidade
             </Link>
 
             <button
               type="button"
               onClick={() => carregarDenuncias()}
               disabled={Boolean(acaoEmAndamento)}
-              style={secondaryButtonStyle}
+              style={isDesktop ? desktopTopButtonStyle : topButtonStyle}
             >
               Atualizar
             </button>
           </div>
         </header>
+
+        <section style={isDesktop ? desktopHeroStyle : mobileHeroStyle}>
+          <div style={heroDecorationLayerStyle} aria-hidden="true">
+            {["✦", "◇", "⚑", "✧"].map((decoracao, index) => (
+              <span
+                key={`admin-hero-${decoracao}-${index}`}
+                style={criarDecoracaoHeroStyle(index)}
+              >
+                {decoracao}
+              </span>
+            ))}
+          </div>
+
+          <span style={miniTitleStyle}>MODERAÇÃO</span>
+
+          <h1 className="historietas-admin-comunidade-hero-title" style={isDesktop ? desktopTitleStyle : titleStyle}>
+            Moderação da Comunidade
+          </h1>
+
+          <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
+            Revise denúncias enviadas por leitores e acompanhe o status de
+            análise dos conteúdos sinalizados.
+          </p>
+        </section>
 
         <section className="admin-comunidade-stats" style={statsGridStyle}>
           <div style={statCardStyle}>
@@ -778,6 +865,17 @@ export default function AdminComunidadePage() {
                       <span style={boxLabelStyle}>Conteúdo denunciado</span>
                       <p style={reportedTextStyle}>{denuncia.alvoResumo}</p>
 
+                      {denuncia.alvoPostId && (
+                        <Link
+                          href={`/comunidade?post=${encodeURIComponent(
+                            denuncia.alvoPostId
+                          )}`}
+                          style={openReportedContentLinkStyle}
+                        >
+                          Abrir publicação na Comunidade
+                        </Link>
+                      )}
+
                       <div style={metaGridStyle}>
                         <span style={metaItemStyle}>
                           Autor: <strong>{denuncia.alvoAutor}</strong>
@@ -863,6 +961,21 @@ export default function AdminComunidadePage() {
                   </div>
 
                   <div style={reportActionsStyle}>
+                    {denuncia.status === "pendente" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          atualizarStatusDenuncia(denuncia.id, "em_analise")
+                        }
+                        disabled={acaoAtiva}
+                        style={analysisButtonStyle}
+                      >
+                        {acaoEmAndamento === `${denuncia.id}-em_analise`
+                          ? "Assumindo..."
+                          : "Assumir análise"}
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => removerConteudoDenunciado(denuncia)}
@@ -943,23 +1056,214 @@ const safeTextStyle: CSSProperties = {
 };
 
 const pageStyle: CSSProperties = {
+  position: "relative",
   minHeight: "100vh",
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
   background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-primary, rgba(124,58,237,0.22)), transparent 32%), radial-gradient(circle at 88% 8%, var(--historietas-glow-secondary, rgba(249,115,22,0.13)), transparent 28%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 44%, var(--historietas-bg-end, #17101B) 100%)",
+    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
 const containerStyle: CSSProperties = {
-  width: "min(1180px, calc(100% - 28px))",
+  position: "relative",
+  zIndex: 1,
+  width: "min(900px, calc(100% - 28px))",
+  maxWidth: "100%",
   margin: "0 auto",
-  padding: "20px 0 calc(36px + env(safe-area-inset-bottom))",
+  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
+
+const desktopContainerStyle: CSSProperties = {
+  ...containerStyle,
+  width: "min(1220px, calc(100% - 64px))",
+  padding: "26px 0 40px",
+};
+
+const mobileTopWaterFadeStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(340px, 48vh)",
+  pointerEvents: "none",
+  zIndex: 0,
+  background:
+    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+};
+
+const desktopTopWaterFadeStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(620px, 68vh)",
+  pointerEvents: "none",
+  zIndex: 0,
+  background:
+    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+};
+
+const topStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  marginBottom: "18px",
+  padding: "2px 0",
+  minWidth: 0,
+};
+
+const mobileTopStyle: CSSProperties = {
+  ...topStyle,
+  marginBottom: "12px",
+  padding: "0",
+};
+
+const desktopTopStyle: CSSProperties = {
+  ...topStyle,
+  marginBottom: "16px",
+};
+
+const topActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "8px",
+  flex: "0 0 auto",
+};
+
+const desktopTopActionsStyle: CSSProperties = {
+  ...topActionsStyle,
+  gap: "10px",
+};
+
+const logoStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "25px",
+  fontWeight: 950,
+  letterSpacing: "-0.06em",
+  display: "flex",
+  alignItems: "center",
+  gap: "4px",
+  minWidth: 0,
+  maxWidth: "calc(100% - 174px)",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
+const logoMarkStyle: CSSProperties = {
+  width: "36px",
+  height: "36px",
+  borderRadius: "14px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background:
+    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  color: "#FFFFFF",
+  fontSize: "17px",
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
+  boxShadow:
+    "0 0 22px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.22)",
+  flex: "0 0 auto",
+};
+
+const logoTextStyle: CSSProperties = {
+  marginLeft: "-1px",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #DDD6FE) 40%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  textShadow:
+    "var(--historietas-logo-shadow, 0 0 28px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent))",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const topButtonStyle: CSSProperties = {
+  minHeight: "38px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0 13px",
+  borderRadius: "999px",
+  background:
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent) 100%)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, rgba(255,255,255,0.08))",
+  color: "var(--historietas-accent, #FDBA74)",
+  textDecoration: "none",
+  fontSize: "12px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  boxShadow: "none",
+  ...safeTextStyle,
+};
+
+const desktopTopButtonStyle: CSSProperties = {
+  ...topButtonStyle,
+  minHeight: "42px",
+  padding: "0 18px",
+  background:
+    "linear-gradient(135deg, rgba(249,115,22,0.16) 0%, rgba(124,58,237,0.13) 100%)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, rgba(255,255,255,0.10))",
+  color: "var(--historietas-accent, #FFD6A8)",
+};
+
+const heroStyle: CSSProperties = {
+  position: "relative",
+  borderRadius: "30px",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.08))",
+  background:
+    "radial-gradient(circle at 18% 0%, rgba(124,58,237,0.42), transparent 32%), radial-gradient(circle at 90% 45%, rgba(249,115,22,0.12), transparent 28%), linear-gradient(135deg, rgba(26,13,43,0.98) 0%, rgba(12,7,23,0.98) 100%)",
+  padding: "18px",
+  boxShadow:
+    "var(--historietas-hero-shadow, 0 26px 70px rgba(0,0,0,0.36), 0 0 46px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent), inset 0 1px 0 rgba(255,255,255,0.08))",
+  minWidth: 0,
+  overflow: "hidden",
+  display: "grid",
+  justifyItems: "center",
+  textAlign: "center",
+};
+
+const mobileHeroStyle: CSSProperties = {
+  ...heroStyle,
+  borderRadius: "28px",
+};
+
+const desktopHeroStyle: CSSProperties = {
+  ...heroStyle,
+  padding: "20px 28px",
+  borderRadius: "32px",
+  minHeight: "138px",
+  display: "grid",
+  alignContent: "center",
+};
+
+const heroDecorationLayerStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  pointerEvents: "none",
+  zIndex: 0,
+};
+
 
 const headerStyle: CSSProperties = {
   display: "grid",
@@ -1006,30 +1310,51 @@ const miniTitleStyle: CSSProperties = {
 };
 
 const titleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "clamp(34px, 7vw, 64px)",
-  lineHeight: 1,
+  position: "relative",
+  zIndex: 1,
+  margin: "8px auto 0",
+  fontSize: "clamp(34px, 10vw, 60px)",
+  lineHeight: 0.92,
   fontWeight: 950,
-  letterSpacing: "-0.075em",
+  letterSpacing: "-0.085em",
+  maxWidth: "100%",
+  textAlign: "center",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 44%, var(--historietas-accent, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  paddingBottom: "5px",
+  textShadow: "0 18px 42px rgba(0,0,0,0.22)",
+  ...safeTextStyle,
+};
+
+const desktopTitleStyle: CSSProperties = {
+  ...titleStyle,
+  margin: "0 auto",
+  fontSize: "clamp(46px, 4.7vw, 72px)",
+  lineHeight: 0.94,
+  maxWidth: "760px",
+};
+
+const descriptionStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  margin: "10px auto 0",
+  color: "var(--historietas-text-secondary, #E4E4E7)",
+  fontSize: "13px",
+  lineHeight: 1.62,
+  fontWeight: 650,
+  maxWidth: "620px",
   textAlign: "center",
   ...safeTextStyle,
 };
 
-const descriptionStyle: CSSProperties = {
-  margin: "0 auto",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.5,
-  fontWeight: 750,
+const desktopDescriptionStyle: CSSProperties = {
+  ...descriptionStyle,
+  margin: "10px auto 0",
+  fontSize: "15px",
+  lineHeight: 1.62,
   maxWidth: "680px",
-  textAlign: "center",
-  ...safeTextStyle,
 };
 
 const loadingCardStyle: CSSProperties = {
@@ -1422,6 +1747,24 @@ const reportedTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const openReportedContentLinkStyle: CSSProperties = {
+  width: "fit-content",
+  minHeight: "32px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0 11px",
+  borderRadius: "999px",
+  background: "rgba(249,115,22,0.10)",
+  border: "1px solid rgba(249,115,22,0.20)",
+  color: "var(--historietas-accent, #FDBA74)",
+  textDecoration: "none",
+  fontSize: "11px",
+  fontWeight: 950,
+  boxShadow: "none",
+  ...safeTextStyle,
+};
+
 const metaGridStyle: CSSProperties = {
   display: "flex",
   gap: "7px",
@@ -1526,6 +1869,19 @@ const activeStatusButtonStyle: CSSProperties = {
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
   cursor: "default",
+};
+
+const analysisButtonStyle: CSSProperties = {
+  minHeight: "36px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  background: "rgba(249,115,22,0.10)",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "11px",
+  fontWeight: 950,
+  cursor: "pointer",
+  boxShadow: "none",
 };
 
 const dangerButtonStyle: CSSProperties = {

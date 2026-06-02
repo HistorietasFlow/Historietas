@@ -544,6 +544,45 @@ function criarPreviewCoverStyle(capa: string): CSSProperties {
   };
 }
 
+function criarDecoracaoPaginaStyle(index: number): CSSProperties {
+  const posicoes: CSSProperties[] = [
+    { top: "32%", right: "-18px", fontSize: "72px", transform: "rotate(-14deg)" },
+    { top: "64%", left: "-16px", fontSize: "58px", transform: "rotate(12deg)" },
+    { bottom: "8%", right: "10%", fontSize: "52px", transform: "rotate(8deg)" },
+  ];
+
+  return {
+    position: "absolute",
+    color: "var(--historietas-accent, #FDBA74)",
+    opacity: 0.045,
+    lineHeight: 1,
+    fontWeight: 950,
+    filter: "blur(0.2px) drop-shadow(0 0 24px color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent))",
+    userSelect: "none",
+    ...posicoes[index % posicoes.length],
+  };
+}
+
+function criarDecoracaoPublicarStyle(index: number): CSSProperties {
+  const posicoes: CSSProperties[] = [
+    { top: "8%", right: "8%", fontSize: "42px", transform: "rotate(-12deg)" },
+    { top: "45%", right: "14%", fontSize: "28px", transform: "rotate(16deg)" },
+    { bottom: "12%", right: "7%", fontSize: "34px", transform: "rotate(8deg)" },
+    { top: "18%", left: "8%", fontSize: "22px", transform: "rotate(14deg)" },
+  ];
+
+  return {
+    position: "absolute",
+    color: "var(--historietas-accent, #FDBA74)",
+    opacity: 0.105,
+    lineHeight: 1,
+    fontWeight: 950,
+    filter: "drop-shadow(0 0 18px color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent))",
+    userSelect: "none",
+    ...posicoes[index % posicoes.length],
+  };
+}
+
 export default function PublicarPage() {
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
@@ -1183,7 +1222,18 @@ export default function PublicarPage() {
 
   return (
     <main style={pageThemeStyle}>
-      <style>{historietasThemeCss}</style>
+      <style>{`${historietasThemeCss}${publicarPageCss}`}</style>
+
+      <div style={pageDecorationLayerStyle} aria-hidden="true">
+        {["✦", "◇", "+"].map((decoracao, index) => (
+          <span key={`${decoracao}-${index}`} style={criarDecoracaoPaginaStyle(index)}>
+            {decoracao}
+          </span>
+        ))}
+      </div>
+
+      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
@@ -1195,8 +1245,18 @@ export default function PublicarPage() {
         </header>
 
         <section style={isDesktop ? desktopHeroBoxStyle : heroBoxStyle}>
-          <span style={heroGlowOrbStyle} aria-hidden="true" />
-          <span style={heroStarStyle} aria-hidden="true">✦</span>
+          <div style={heroDecorationLayerStyle} aria-hidden="true">
+            {["✦", "+", "◇", "↗"].map((decoracao, index) => (
+              <span
+                key={`hero-${decoracao}-${index}`}
+                style={criarDecoracaoPublicarStyle(index)}
+              >
+                {decoracao}
+              </span>
+            ))}
+          </div>
+
+          <div style={heroPremiumShineStyle} aria-hidden="true" />
 
           <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Nova história</h1>
 
@@ -1815,23 +1875,111 @@ export default function PublicarPage() {
   );
 }
 
+const publicarPageCss = `
+  html[data-historietas-tema-visual] nav a[href="/publicar"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] {
+    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
+    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
+    color: var(--historietas-accent, #F97316) !important;
+  }
+
+  html[data-historietas-tema-visual="branco"] .historietas-theme-logo-text,
+  html[data-historietas-tema-visual="branco"] .historietas-theme-title {
+    background: none !important;
+    color: #1A73E8 !important;
+    -webkit-text-fill-color: #1A73E8 !important;
+    text-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="branco"] input::placeholder,
+  html[data-historietas-tema-visual="branco"] textarea::placeholder {
+    color: #80868B !important;
+  }
+
+  html[data-historietas-tema-visual="branco"] input,
+  html[data-historietas-tema-visual="branco"] textarea,
+  html[data-historietas-tema-visual="branco"] select {
+    color: #202124 !important;
+  }
+`;
+
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
 };
 
+const pageDecorationLayerStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  pointerEvents: "none",
+  zIndex: 0,
+};
+
+const mobileTopWaterFadeStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(340px, 48vh)",
+  pointerEvents: "none",
+  zIndex: 0,
+  background:
+    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+};
+
+const desktopTopWaterFadeStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(620px, 68vh)",
+  pointerEvents: "none",
+  zIndex: 0,
+  background:
+    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+};
+
+const heroDecorationLayerStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  pointerEvents: "none",
+  zIndex: 0,
+};
+
+const heroPremiumShineStyle: CSSProperties = {
+  position: "absolute",
+  left: "12%",
+  right: "12%",
+  top: "14px",
+  height: "1px",
+  background:
+    "linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 42%, transparent) 45%, color-mix(in srgb, var(--historietas-secondary, #C4B5FD) 28%, transparent) 70%, transparent 100%)",
+  filter: "none",
+  zIndex: 0,
+};
+
 const pageStyle: CSSProperties = {
+  position: "relative",
   minHeight: "100vh",
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
   background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-primary, rgba(124,58,237,0.30)), transparent 31%), radial-gradient(circle at 88% 14%, var(--historietas-glow-secondary, rgba(249,115,22,0.14)), transparent 24%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 42%, var(--historietas-bg-end, #17101B) 100%)",
+    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
 const containerStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
   width: "min(900px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
@@ -1844,18 +1992,17 @@ const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: "10px",
+  gap: "12px",
   marginBottom: "14px",
-  flexWrap: "wrap",
   minWidth: 0,
 };
 
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "25px",
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: "-0.06em",
   display: "flex",
   alignItems: "center",
   gap: "4px",
@@ -1866,8 +2013,8 @@ const logoStyle: CSSProperties = {
 };
 
 const logoMarkStyle: CSSProperties = {
-  width: "31px",
-  height: "31px",
+  width: "34px",
+  height: "34px",
   borderRadius: "12px",
   display: "flex",
   alignItems: "center",
@@ -1888,7 +2035,7 @@ const logoTextStyle: CSSProperties = {
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
+  textShadow: "var(--historietas-logo-shadow, 0 0 26px color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 24%, transparent))",
 };
 
 
@@ -1900,11 +2047,11 @@ const heroBoxStyle: CSSProperties = {
   justifyItems: "center",
   textAlign: "center",
   gap: "10px",
-  padding: "22px 16px 18px",
-  borderRadius: "28px",
+  padding: "24px 16px",
+  borderRadius: "30px",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
   background:
-    "radial-gradient(circle at 16% 8%, var(--historietas-glow-primary, rgba(124,58,237,0.24)), transparent 32%), radial-gradient(circle at 88% 18%, var(--historietas-glow-secondary, rgba(249,115,22,0.12)), transparent 28%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.94)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+    "radial-gradient(circle at 12% -4%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)), transparent 30%), radial-gradient(circle at 18% 42%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 52%, transparent)), transparent 35%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.99)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
   boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
@@ -1912,49 +2059,36 @@ const heroBoxStyle: CSSProperties = {
   overflow: "hidden",
 };
 
-const heroGlowOrbStyle: CSSProperties = {
-  display: "none",
-};
-
-const heroStarStyle: CSSProperties = {
-  position: "absolute",
-  right: "22px",
-  top: "22px",
-  color: "color-mix(in srgb, var(--historietas-accent, #F97316) 72%, #FFFFFF)",
-  fontSize: "30px",
-  fontWeight: 950,
-  opacity: 0.14,
-  transform: "rotate(10deg)",
-  pointerEvents: "none",
-};
-
 
 const titleStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   margin: 0,
-  fontSize: "clamp(38px, 10vw, 54px)",
-  lineHeight: 0.94,
+  fontSize: "clamp(30px, 8vw, 46px)",
+  lineHeight: 1.04,
   fontWeight: 950,
-  letterSpacing: "-0.08em",
+  letterSpacing: "-0.074em",
   maxWidth: "100%",
+  textAlign: "center",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 45%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
+  textShadow: "none",
   ...safeTextStyle,
 };
 
 const descriptionStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  margin: 0,
+  margin: "8px auto 0",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
-  lineHeight: 1.55,
+  lineHeight: 1.5,
   fontWeight: 700,
-  maxWidth: "680px",
+  maxWidth: "540px",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2842,14 +2976,13 @@ const desktopContainerStyle: CSSProperties = {
 
 const desktopTopStyle: CSSProperties = {
   ...topStyle,
-  flexWrap: "nowrap",
-  marginBottom: "16px",
+  marginBottom: "14px",
 };
 
 const desktopHeroBoxStyle: CSSProperties = {
   ...heroBoxStyle,
-  padding: "28px 34px 24px",
-  borderRadius: "30px",
+  padding: "30px 40px",
+  borderRadius: "32px",
   gap: "12px",
 };
 
@@ -2857,16 +2990,19 @@ const desktopHeroBoxStyle: CSSProperties = {
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
-  fontSize: "clamp(50px, 5.4vw, 78px)",
-  maxWidth: "880px",
+  fontSize: "clamp(38px, 4.4vw, 58px)",
+  maxWidth: "760px",
+  margin: "0 auto",
+  textAlign: "center",
 };
 
 
 const desktopDescriptionStyle: CSSProperties = {
   ...descriptionStyle,
-  fontSize: "15px",
-  lineHeight: 1.6,
-  maxWidth: "720px",
+  margin: "10px auto 0",
+  maxWidth: "620px",
+  textAlign: "center",
+  fontSize: "14px",
 };
 
 

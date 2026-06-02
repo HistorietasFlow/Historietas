@@ -110,6 +110,7 @@ type AbaBiblioteca =
   | "salvos"
   | "seguindo"
   | "lendo-agora"
+  | "historico"
   | "favoritos"
   | "concluidos";
 
@@ -1048,6 +1049,46 @@ async function removerCapituloSalvoSupabase(obraId: string, capituloId: string) 
 }
 
 
+
+function criarDecoracaoPaginaStyle(index: number): CSSProperties {
+  const posicoes: CSSProperties[] = [
+    { top: "32%", right: "-18px", fontSize: "72px", transform: "rotate(-14deg)" },
+    { top: "64%", left: "-16px", fontSize: "58px", transform: "rotate(12deg)" },
+    { bottom: "8%", right: "10%", fontSize: "52px", transform: "rotate(8deg)" },
+  ];
+
+  return {
+    position: "absolute",
+    color: "var(--historietas-accent, #FDBA74)",
+    opacity: 0.045,
+    lineHeight: 1,
+    fontWeight: 950,
+    filter: "blur(0.2px) drop-shadow(0 0 24px color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent))",
+    userSelect: "none",
+    ...posicoes[index % posicoes.length],
+  };
+}
+
+function criarDecoracaoBibliotecaStyle(index: number): CSSProperties {
+  const posicoes: CSSProperties[] = [
+    { top: "8%", right: "8%", fontSize: "42px", transform: "rotate(-12deg)" },
+    { top: "45%", right: "14%", fontSize: "28px", transform: "rotate(16deg)" },
+    { bottom: "12%", right: "7%", fontSize: "34px", transform: "rotate(8deg)" },
+    { top: "18%", left: "8%", fontSize: "22px", transform: "rotate(14deg)" },
+  ];
+
+  return {
+    position: "absolute",
+    color: "var(--historietas-accent, #FDBA74)",
+    opacity: 0.105,
+    lineHeight: 1,
+    fontWeight: 950,
+    filter: "drop-shadow(0 0 18px color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent))",
+    userSelect: "none",
+    ...posicoes[index % posicoes.length],
+  };
+}
+
 export default function BibliotecaPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasSeguidas, setObrasSeguidas] = useState<string[]>([]);
@@ -1263,6 +1304,38 @@ export default function BibliotecaPage() {
       .slice(0, 3);
   }, [obrasLendoAgora]);
 
+  const obrasHistoricoLeitura = useMemo<ObraContinuarLeitura[]>(() => {
+    return obrasLendoAgora
+      .map((obra) => {
+        const capitulo = encontrarCapituloParaContinuar(obra);
+
+        if (!capitulo) {
+          return null;
+        }
+
+        const numeroCapitulo =
+          obra.capitulos.findIndex((item) => item.id === capitulo.id) + 1;
+        const ultimaAtividade =
+          obra.ultimaLeituraEm || capitulo.lidoEm || capitulo.criadoEm;
+        const capitulosLidos = obra.capitulos.filter((item) => item.lido).length;
+
+        return {
+          obra,
+          capitulo,
+          numeroCapitulo,
+          ultimaAtividade,
+          tempoAtividade: Math.max(
+            obterTempoData(ultimaAtividade),
+            obterUltimaAtividadeDaObra(obra)
+          ),
+          progressoLeitura: calcularProgressoLeitura(obra.capitulos),
+          capitulosLidos,
+        };
+      })
+      .filter((item): item is ObraContinuarLeitura => Boolean(item))
+      .sort((itemA, itemB) => itemB.tempoAtividade - itemA.tempoAtividade);
+  }, [obrasLendoAgora]);
+
   const obrasFavoritasLista = useMemo(() => {
     return obras.filter((obra) => colecaoTemObra(obrasFavoritas, obra));
   }, [obras, obrasFavoritas]);
@@ -1316,6 +1389,7 @@ export default function BibliotecaPage() {
       obrasSeguidas: obrasSeguidasLista.length,
       lendoAgora: obrasLendoAgora.length,
       continuarLeitura: obrasContinuarLeitura.length,
+      historico: obrasHistoricoLeitura.length,
       favoritos: obrasFavoritasLista.length,
       concluidos: obrasConcluidasLista.length,
       comClassificacao: obras.filter((obra) => mostrarClassificacao(obra))
@@ -1329,6 +1403,7 @@ export default function BibliotecaPage() {
     obrasSeguidasLista,
     obrasLendoAgora,
     obrasContinuarLeitura,
+    obrasHistoricoLeitura,
     obrasFavoritasLista,
     obrasConcluidasLista,
   ]);
@@ -1348,6 +1423,11 @@ export default function BibliotecaPage() {
       id: "lendo-agora" as const,
       titulo: "Lendo agora",
       total: totais.lendoAgora,
+    },
+    {
+      id: "historico" as const,
+      titulo: "Histórico",
+      total: totais.historico,
     },
     {
       id: "favoritos" as const,
@@ -1449,6 +1529,17 @@ export default function BibliotecaPage() {
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${bibliotecaPageCss}`}</style>
 
+      <div style={pageDecorationLayerStyle} aria-hidden="true">
+        {["✦", "◇", "▣"].map((decoracao, index) => (
+          <span key={`${decoracao}-${index}`} style={criarDecoracaoPaginaStyle(index)}>
+            {decoracao}
+          </span>
+        ))}
+      </div>
+
+      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
           <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
@@ -1458,14 +1549,25 @@ export default function BibliotecaPage() {
         </header>
 
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
-          <div style={heroGlowStyle} />
+          <div style={heroDecorationLayerStyle} aria-hidden="true">
+            {["✦", "▣", "◇", "→"].map((decoracao, index) => (
+              <span
+                key={`hero-${decoracao}-${index}`}
+                style={criarDecoracaoBibliotecaStyle(index)}
+              >
+                {decoracao}
+              </span>
+            ))}
+          </div>
+
+          <div style={heroPremiumShineStyle} aria-hidden="true" />
 
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
             <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Biblioteca</h1>
 
             <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-              Continue leituras, encontre capítulos salvos, acompanhe obras
-              seguidas e organize sua lista sem transformar a página em painel.
+              Continue leituras, acompanhe seu histórico, encontre capítulos
+              salvos e organize sua lista sem transformar a página em painel.
             </p>
           </div>
         </section>
@@ -1996,6 +2098,124 @@ export default function BibliotecaPage() {
           </>
         )}
 
+        {abaSelecionada === "historico" && (
+          <>
+            {obrasHistoricoLeitura.length === 0 ? (
+              <section style={emptyBoxStyle}>
+                <h2 style={emptyTitleStyle}>Nenhum histórico ainda</h2>
+
+                <p style={emptyTextStyle}>
+                  Abra capítulos no leitor para criar seu histórico de leitura.
+                </p>
+
+                <Link href="/explorar" style={isDesktop ? desktopEmptyButtonStyle : emptyButtonStyle}>
+                  Explorar obras
+                </Link>
+              </section>
+            ) : (
+              <section style={isDesktop ? desktopSavedGridStyle : savedGridStyle}>
+                {obrasHistoricoLeitura.map((item) => {
+                  const obra = item.obra;
+                  const obraHref =
+                    obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+                  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
+                    obra.autor
+                  )}`;
+                  const continuarHref = `/ler-capitulo?obraId=${obra.id}&capituloId=${item.capitulo.id}`;
+                  const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
+                  const obraConcluida = colecaoTemObra(obrasConcluidas, obra);
+
+                  return (
+                    <article key={`historico-${obra.id}`} style={isDesktop ? desktopSavedCardStyle : savedCardStyle}>
+                      <div style={isDesktop ? desktopSavedBookHeaderStyle : savedBookHeaderStyle}>
+                        <Link
+                          href={obraHref}
+                          style={criarBookCoverStyle(obra.capa, isDesktop)}
+                          aria-label={`Abrir ${obra.titulo}`}
+                        >
+                        </Link>
+
+                        <div style={isDesktop ? desktopSavedBookInfoStyle : savedBookInfoStyle}>
+                          <div style={cardTopStyle}>
+                            <span style={readingBadgeStyle}>Histórico</span>
+
+                            <span style={chapterBadgeStyle}>
+                              CAPÍTULO {item.numeroCapitulo}
+                            </span>
+
+                            {item.progressoLeitura > 0 && (
+                              <span style={readBadgeStyle}>
+                                {item.progressoLeitura}% lido
+                              </span>
+                            )}
+                          </div>
+
+                          <h2 style={chapterTitleStyle}>{obra.titulo}</h2>
+
+                          <p style={bookInfoStyle}>
+                            Último acesso: {formatarData(item.ultimaAtividade)} •{" "}
+                            {item.capitulosLidos}{" "}
+                            {item.capitulosLidos === 1 ? "capítulo lido" : "capítulos lidos"}
+                          </p>
+
+                          <Link href={perfilAutorHref} style={authorLinkStyle}>
+                            Por {obra.autor}
+                          </Link>
+                        </div>
+                      </div>
+
+                      <div style={readingProgressTrackStyle}>
+                        <div
+                          style={{
+                            ...readingProgressBarStyle,
+                            width: `${item.progressoLeitura}%`,
+                          }}
+                        />
+                      </div>
+
+                      <div style={isDesktop ? desktopPrimaryActionsStyle : primaryActionsStyle}>
+                        <Link href={continuarHref} style={primaryActionStyle}>
+                          Continuar leitura
+                        </Link>
+
+                        <Link href={obraHref} style={secondaryActionStyle}>
+                          Ver obra
+                        </Link>
+                      </div>
+
+                      <div style={isDesktop ? desktopSecondaryActionsRowStyle : secondaryActionsRowStyle}>
+                        <button
+                          type="button"
+                          onClick={() => alternarFavorito(obra)}
+                          style={
+                            obraFavorita
+                              ? favoriteActiveButtonStyle
+                              : favoriteButtonStyle
+                          }
+                        >
+                          {obraFavorita ? "Na lista" : "Adicionar à lista"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => alternarConcluido(obra)}
+                          style={
+                            obraConcluida
+                              ? completedActiveButtonStyle
+                              : completedButtonStyle
+                          }
+                        >
+                          {obraConcluida ? "Concluída" : "Concluir"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </section>
+            )}
+          </>
+        )}
+
         {abaSelecionada === "favoritos" && (
           <>
             {obrasFavoritasLista.length === 0 ? (
@@ -2292,6 +2512,63 @@ const safeTextStyle: CSSProperties = {
   wordBreak: "break-word",
 };
 
+
+const pageDecorationLayerStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  pointerEvents: "none",
+  zIndex: 0,
+};
+
+const mobileTopWaterFadeStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(340px, 48vh)",
+  pointerEvents: "none",
+  zIndex: 0,
+  background:
+    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+};
+
+const desktopTopWaterFadeStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  height: "min(620px, 68vh)",
+  pointerEvents: "none",
+  zIndex: 0,
+  background:
+    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
+  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+};
+
+const heroDecorationLayerStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  pointerEvents: "none",
+  zIndex: 0,
+};
+
+const heroPremiumShineStyle: CSSProperties = {
+  position: "absolute",
+  left: "12%",
+  right: "12%",
+  top: "14px",
+  height: "1px",
+  background:
+    "linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 42%, transparent) 45%, color-mix(in srgb, var(--historietas-secondary, #C4B5FD) 28%, transparent) 70%, transparent 100%)",
+  filter: "none",
+  zIndex: 0,
+};
+
 const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100vh",
@@ -2299,7 +2576,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   background:
-    "radial-gradient(circle at 12% -6%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 40%, transparent), transparent 31%), radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 25%), radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent), transparent 36%), radial-gradient(circle at 6% 72%, rgba(236,72,153,0.10), transparent 25%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 34%, var(--historietas-bg-end, #180B2D) 66%, #0B0614 100%)",
+    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
   isolation: "isolate",
@@ -2337,9 +2614,9 @@ const topStyle: CSSProperties = {
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "25px",
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: "-0.06em",
   display: "flex",
   alignItems: "center",
   gap: "4px",
@@ -2377,22 +2654,20 @@ const logoTextStyle: CSSProperties = {
 const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
-  borderRadius: "28px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.08))",
+  borderRadius: "30px",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
   background:
-    "radial-gradient(circle at 8% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)), transparent 32%), radial-gradient(circle at 88% 18%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 44%, transparent)), transparent 34%), linear-gradient(135deg, var(--historietas-surface, rgba(32,14,53,0.96)) 0%, var(--historietas-surface-strong, rgba(13,7,25,0.99)) 100%)",
+    "radial-gradient(circle at 12% -4%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)), transparent 30%), radial-gradient(circle at 18% 42%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 52%, transparent)), transparent 35%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.99)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
   boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
-};
-
-const heroGlowStyle: CSSProperties = {
-  display: "none",
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  padding: "20px 16px",
+  padding: "24px 16px",
   display: "grid",
   gap: "8px",
   minWidth: 0,
@@ -2433,7 +2708,7 @@ const descriptionStyle: CSSProperties = {
 const summaryBoxStyle: CSSProperties = {
   marginTop: "12px",
   display: "grid",
-  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
@@ -3115,13 +3390,13 @@ const desktopTopStyle: CSSProperties = {
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
-  borderRadius: "28px",
+  borderRadius: "32px",
   maxWidth: "100%",
 };
 
 const desktopHeroContentStyle: CSSProperties = {
   ...heroContentStyle,
-  padding: "24px 30px",
+  padding: "30px 40px",
   textAlign: "center",
   justifyItems: "center",
   margin: "0 auto",
@@ -3152,7 +3427,7 @@ const desktopDescriptionStyle: CSSProperties = {
 
 const desktopSummaryBoxStyle: CSSProperties = {
   ...summaryBoxStyle,
-  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "10px",
   marginTop: "12px",
 };

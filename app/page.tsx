@@ -2211,6 +2211,10 @@ export default function Home() {
                 Explorar
               </Link>
 
+              <Link href="/busca" style={globalSearchLinkStyle}>
+                Busca Global
+              </Link>
+
               <Link href="/em-alta" style={linkStyle}>
                 Em Alta
               </Link>
@@ -2251,6 +2255,10 @@ export default function Home() {
                 placeholder="Buscar obras, autor, gênero..."
                 style={inputStyle}
               />
+
+              <Link href="/busca" style={mobileGlobalSearchLinkStyle}>
+                Abrir Busca Global
+              </Link>
             </div>
           )}
         </div>
@@ -3666,9 +3674,40 @@ const activeLinkStyle: CSSProperties = {
   boxShadow: "var(--historietas-card-shadow, none)",
 };
 
+const globalSearchLinkStyle: CSSProperties = {
+  ...linkStyle,
+  color: "var(--historietas-accent, #FDBA74)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  background:
+    "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-surface, rgba(255,255,255,0.055)))",
+  boxShadow: "none",
+};
+
+const mobileGlobalSearchLinkStyle: CSSProperties = {
+  minHeight: "38px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "999px",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
+  background:
+    "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
+  color: "var(--historietas-accent, #FDBA74)",
+  textDecoration: "none",
+  fontSize: "12px",
+  fontWeight: 950,
+  boxSizing: "border-box",
+  boxShadow: "none",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
 const searchAreaStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
+  gap: "8px",
   maxWidth: "100%",
   boxSizing: "border-box",
   minWidth: 0,
