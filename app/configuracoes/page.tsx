@@ -18,8 +18,13 @@ type TemaVisual =
   | "scifi"
   | "drama"
   | "aventura"
+  | "misterio"
+  | "suspense"
   | "sobrenatural"
-  | "comedia";
+  | "historico"
+  | "biografia"
+  | "comedia"
+  | "pixel";
 
 type PreferenciasConta = {
   nomeExibicao: string;
@@ -244,15 +249,51 @@ const TEMAS_VISUAIS: Record<
   },
   aventura: {
     nome: "Aventura",
-    descricao: "Dourado e sombra épica para jornadas e descobertas.",
+    descricao: "Deserto cinematográfico, ruínas e jornadas de exploração.",
     icone: "⌖",
-    accent: "#FBBF24",
-    secondary: "#B45309",
-    bgStart: "#100B06",
-    bgMid: "#181020",
-    bgEnd: "#17101F",
-    glowPrimary: "rgba(251,191,36,0.24)",
-    glowSecondary: "rgba(180,83,9,0.20)",
+    accent: "#EAB308",
+    secondary: "#92400E",
+    bgStart: "#0D0803",
+    bgMid: "#171006",
+    bgEnd: "#1F1308",
+    glowPrimary: "rgba(234,179,8,0.18)",
+    glowSecondary: "rgba(146,64,14,0.20)",
+    titleTo: "#FDE68A",
+    activeSurface: "rgba(234,179,8,0.15)",
+    secondarySurface: "rgba(146,64,14,0.20)",
+    secondaryButtonText: "#FDE68A",
+  },
+  misterio: {
+    nome: "Mistério",
+    descricao: "Azul investigativo e índigo para segredos e pistas ocultas.",
+    icone: "?",
+    accent: "#818CF8",
+    secondary: "#312E81",
+    bgStart: "#060817",
+    bgMid: "#0B1026",
+    bgEnd: "#10112A",
+    glowPrimary: "rgba(129,140,248,0.26)",
+    glowSecondary: "rgba(49,46,129,0.24)",
+    titleTo: "#C7D2FE",
+    activeSurface: "rgba(129,140,248,0.16)",
+    secondarySurface: "rgba(49,46,129,0.22)",
+    secondaryButtonText: "#C7D2FE",
+  },
+  suspense: {
+    nome: "Suspense",
+    descricao: "Verde ácido escuro e oliva para tensão e alerta constante.",
+    icone: "!",
+    accent: "#A3E635",
+    secondary: "#365314",
+    bgStart: "#070B05",
+    bgMid: "#101607",
+    bgEnd: "#11140A",
+    glowPrimary: "rgba(163,230,53,0.18)",
+    glowSecondary: "rgba(54,83,20,0.24)",
+    titleTo: "#D9F99D",
+    activeSurface: "rgba(163,230,53,0.14)",
+    secondarySurface: "rgba(54,83,20,0.24)",
+    secondaryButtonText: "#D9F99D",
   },
   sobrenatural: {
     nome: "Sobrenatural",
@@ -266,6 +307,38 @@ const TEMAS_VISUAIS: Record<
     glowPrimary: "rgba(52,211,153,0.24)",
     glowSecondary: "rgba(6,95,70,0.22)",
   },
+  historico: {
+    nome: "Histórico",
+    descricao: "Marrom antigo e cobre escuro para épocas, arquivos e memória.",
+    icone: "⌛",
+    accent: "#D97706",
+    secondary: "#78350F",
+    bgStart: "#110805",
+    bgMid: "#1A0F08",
+    bgEnd: "#17100A",
+    glowPrimary: "rgba(217,119,6,0.22)",
+    glowSecondary: "rgba(120,53,15,0.25)",
+    titleTo: "#FDBA74",
+    activeSurface: "rgba(217,119,6,0.16)",
+    secondarySurface: "rgba(120,53,15,0.22)",
+    secondaryButtonText: "#FED7AA",
+  },
+  biografia: {
+    nome: "Biografia",
+    descricao: "Azul aço e grafite para perfis, memória real e documento.",
+    icone: "B",
+    accent: "#60A5FA",
+    secondary: "#334155",
+    bgStart: "#06101F",
+    bgMid: "#0B1728",
+    bgEnd: "#101827",
+    glowPrimary: "rgba(96,165,250,0.22)",
+    glowSecondary: "rgba(51,65,85,0.28)",
+    titleTo: "#BFDBFE",
+    activeSurface: "rgba(96,165,250,0.15)",
+    secondarySurface: "rgba(51,65,85,0.24)",
+    secondaryButtonText: "#BFDBFE",
+  },
   comedia: {
     nome: "Comédia",
     descricao: "Amarelo vibrante e coral para histórias leves e divertidas.",
@@ -277,6 +350,36 @@ const TEMAS_VISUAIS: Record<
     bgEnd: "#1A1014",
     glowPrimary: "rgba(250,204,21,0.24)",
     glowSecondary: "rgba(251,113,133,0.18)",
+  },
+  pixel: {
+    nome: "Pixel",
+    descricao: "Interface retrô em estilo arcade/RPG, com bordas secas e grid pixelado.",
+    icone: "▣",
+    accent: "#22C55E",
+    secondary: "#38BDF8",
+    bgStart: "#030703",
+    bgMid: "#061106",
+    bgEnd: "#020402",
+    glowPrimary: "rgba(34,197,94,0.16)",
+    glowSecondary: "rgba(56,189,248,0.12)",
+    textPrimary: "#ECFDF5",
+    textSecondary: "#BBF7D0",
+    surface: "#07120A",
+    surfaceStrong: "#030803",
+    borderSoft: "rgba(34,197,94,0.34)",
+    inputBg: "#020602",
+    inputText: "#ECFDF5",
+    titleFrom: "#ECFDF5",
+    titleMid: "#BBF7D0",
+    titleTo: "#86EFAC",
+    heroShadow: "none",
+    cardShadow: "none",
+    logoShadow: "none",
+    activeSurface: "rgba(34,197,94,0.18)",
+    secondarySurface: "rgba(56,189,248,0.12)",
+    secondaryButtonText: "#BAE6FD",
+    dangerSurface: "rgba(239,68,68,0.14)",
+    dangerButtonText: "#FCA5A5",
   },
 };
 
@@ -292,8 +395,13 @@ const ORDEM_TEMAS_VISUAIS: TemaVisual[] = [
   "scifi",
   "drama",
   "aventura",
+  "misterio",
+  "suspense",
   "sobrenatural",
+  "historico",
+  "biografia",
   "comedia",
+  "pixel",
 ];
 
 const CHAVES_RESUMO = [
@@ -685,26 +793,11 @@ export default function ConfiguracoesPage() {
 
     salvarTemaVisual(temaVisual);
     aplicarTemaVisual(temaVisual);
-    setMensagem(`Tema ${TEMAS_VISUAIS[temaVisual].nome} aplicado.`);
-
-    window.setTimeout(() => {
-      setMensagem("");
-    }, 1900);
   }
 
   function salvar() {
     salvarPreferencias(preferencias);
     setMensagem("Configurações salvas.");
-
-    window.setTimeout(() => {
-      setMensagem("");
-    }, 2200);
-  }
-
-  function restaurarPadrao() {
-    setPreferencias(preferenciasPadrao);
-    salvarPreferencias(preferenciasPadrao);
-    setMensagem("Preferências restauradas para o padrão.");
 
     window.setTimeout(() => {
       setMensagem("");
@@ -769,36 +862,20 @@ export default function ConfiguracoesPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-config-logo-text" style={logoTextStyle}>istorietas</span>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopTitleHomeLinkStyle : titleHomeLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span
+              className="historietas-config-hero-title"
+              style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
+            >
+              CONFIGURAÇÕES
+            </span>
           </Link>
-
         </header>
-
-        <section style={isDesktop ? desktopHeroStyle : heroStyle}>
-          <div style={heroGlowStyle} />
-
-          <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <h1 className="historietas-config-hero-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Configurações</h1>
-
-            <p style={descriptionStyle}>
-              Ajuste dados da conta, preferências de leitura e
-              mantenha uma cópia dos seus dados.
-            </p>
-
-            <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
-              <Link href="/painel-autor" style={primaryLinkStyle}>
-                Ir para o Painel
-              </Link>
-
-              <Link href="/notificacoes" style={secondaryLinkStyle}>
-                Ver notificações
-              </Link>
-            </div>
-          </div>
-        </section>
 
         {mensagem && <span style={messageStyle}>{mensagem}</span>}
 
@@ -862,99 +939,10 @@ export default function ConfiguracoesPage() {
 
         <section style={sectionStyle}>
           <div style={sectionHeaderStyle}>
-            <h2 style={accentSectionTitleStyle}>Preferências</h2>
-          </div>
-
-          <div style={isDesktop ? desktopSettingsGridStyle : settingsGridStyle}>
-            <button
-              type="button"
-              onClick={() =>
-                atualizarPreferencia(
-                  "receberAvisos",
-                  !preferencias.receberAvisos
-                )
-              }
-              style={
-                preferencias.receberAvisos
-                  ? isDesktop
-                    ? desktopPreferenceActiveStyle
-                    : preferenceActiveStyle
-                  : isDesktop
-                  ? desktopPreferenceStyle
-                  : preferenceStyle
-              }
-            >
-              <span style={preferenceIconStyle}>🔔</span>
-              <strong style={preferenceTitleStyle}>Avisos ativos</strong>
-              <span style={preferenceTextStyle}>
-                {preferencias.receberAvisos
-                  ? "Você quer receber avisos locais de novidades."
-                  : "Avisos locais desativados nesta conta."}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                atualizarPreferencia(
-                  "leituraConfortavel",
-                  !preferencias.leituraConfortavel
-                )
-              }
-              style={
-                preferencias.leituraConfortavel
-                  ? isDesktop
-                    ? desktopPreferenceActiveStyle
-                    : preferenceActiveStyle
-                  : isDesktop
-                  ? desktopPreferenceStyle
-                  : preferenceStyle
-              }
-            >
-              <span style={preferenceIconStyle}>📖</span>
-              <strong style={preferenceTitleStyle}>Leitura confortável</strong>
-              <span style={preferenceTextStyle}>
-                {preferencias.leituraConfortavel
-                  ? "Priorizar espaçamento e legibilidade."
-                  : "Usar leitura mais compacta futuramente."}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                atualizarPreferencia(
-                  "reduzirEfeitos",
-                  !preferencias.reduzirEfeitos
-                )
-              }
-              style={
-                preferencias.reduzirEfeitos
-                  ? isDesktop
-                    ? desktopPreferenceActiveStyle
-                    : preferenceActiveStyle
-                  : isDesktop
-                  ? desktopPreferenceStyle
-                  : preferenceStyle
-              }
-            >
-              <span style={preferenceIconStyle}>✨</span>
-              <strong style={preferenceTitleStyle}>Reduzir efeitos</strong>
-              <span style={preferenceTextStyle}>
-                {preferencias.reduzirEfeitos
-                  ? "Preferência para menos brilho/animação."
-                  : "Visual premium completo ativo."}
-              </span>
-            </button>
-          </div>
-        </section>
-
-        <section style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
             <h2 style={accentSectionTitleStyle}>Resumo da conta</h2>
           </div>
 
-          <div style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
+          <div className="configuracoes-carousel" style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
             <div style={statCardStyle}>
               <strong style={statNumberStyle}>{resumo.obras}</strong>
               <span style={statLabelStyle}>obras criadas</span>
@@ -998,7 +986,7 @@ export default function ConfiguracoesPage() {
             <h2 style={accentSectionTitleStyle}>Ações</h2>
           </div>
 
-          <div style={isDesktop ? desktopActionsStyle : actionsStyle}>
+          <div className="configuracoes-carousel" style={isDesktop ? desktopActionsStyle : actionsStyle}>
             <button type="button" onClick={salvar} style={primaryButtonStyle}>
               Salvar configurações
             </button>
@@ -1026,14 +1014,6 @@ export default function ConfiguracoesPage() {
             >
               Atualizar resumo
             </button>
-
-            <button
-              type="button"
-              onClick={restaurarPadrao}
-              style={dangerButtonStyle}
-            >
-              Restaurar preferências
-            </button>
           </div>
         </section>
 
@@ -1042,7 +1022,7 @@ export default function ConfiguracoesPage() {
             <h2 style={accentSectionTitleStyle}>Tema visual</h2>
           </div>
 
-          <div style={isDesktop ? desktopThemeGridStyle : themeGridStyle}>
+          <div className="configuracoes-carousel" style={isDesktop ? desktopThemeGridStyle : themeGridStyle}>
             {ORDEM_TEMAS_VISUAIS.map((temaVisual) => {
               const tema = TEMAS_VISUAIS[temaVisual];
               const temaAtivo = preferencias.temaVisual === temaVisual;
@@ -1093,6 +1073,16 @@ const configuracoesPageCss = `
   html[data-historietas-tema-visual] body {
     background: var(--historietas-bg-start, #0B0614) !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
+  }
+
+
+  .configuracoes-carousel {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .configuracoes-carousel::-webkit-scrollbar {
+    display: none;
   }
 
   html[data-historietas-tema-visual] nav,
@@ -1246,7 +1236,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 32px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 44px",
+  padding: "14px 0 0",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1301,6 +1291,74 @@ const logoTextStyle: CSSProperties = {
   textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139, 92, 246, 0.24))",
   overflow: "visible",
   whiteSpace: "nowrap",
+};
+
+
+const titleHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "12px",
+  flexWrap: "nowrap",
+  width: "100%",
+  margin: "0 auto 14px",
+  padding: 0,
+  minWidth: 0,
+  textAlign: "center",
+};
+
+const titleHomeLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  width: "fit-content",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+const pageTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  margin: 0,
+  marginLeft: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textAlign: "center",
+  textShadow: "none",
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginBottom: "18px",
+};
+
+const desktopTitleHomeLinkStyle: CSSProperties = {
+  ...titleHomeLinkStyle,
+};
+
+const desktopPageTitleTextStyle: CSSProperties = {
+  ...pageTitleTextStyle,
 };
 
 const heroStyle: CSSProperties = {
@@ -1535,17 +1593,29 @@ const settingsGridStyle: CSSProperties = {
 };
 
 const themeGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  display: "flex",
   gap: "8px",
   minWidth: 0,
+  width: "calc(100% + 32px)",
+  maxWidth: "calc(100% + 32px)",
+  margin: "0 -16px",
+  overflowX: "auto",
+  overflowY: "hidden",
+  padding: "0 16px",
+  boxSizing: "border-box",
+  scrollSnapType: "x proximity",
+  scrollPaddingLeft: "16px",
+  scrollPaddingRight: "16px",
 };
 
 const themeOptionStyle: CSSProperties = {
   position: "relative",
-  minHeight: "82px",
-  borderRadius: "18px",
-  padding: "8px 4px",
+  flex: "0 0 88px",
+  width: "88px",
+  minHeight: "74px",
+  borderRadius: "16px",
+  padding: "7px 4px",
+  scrollSnapAlign: "start",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   background: "var(--historietas-surface, rgba(18,12,30,0.82))",
   color: "var(--historietas-text-primary, #FFFFFF)",
@@ -1572,14 +1642,14 @@ const themeOptionActiveStyle: CSSProperties = {
 };
 
 const themePreviewStyle: CSSProperties = {
-  width: "38px",
-  height: "38px",
-  borderRadius: "14px",
+  width: "32px",
+  height: "32px",
+  borderRadius: "12px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   color: "#FFFFFF",
-  fontSize: "18px",
+  fontSize: "16px",
   fontWeight: 950,
   flex: "0 0 auto",
 };
@@ -1666,20 +1736,32 @@ const preferenceTextStyle: CSSProperties = {
 };
 
 const statsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "8px",
+  display: "flex",
+  gap: "7px",
   minWidth: 0,
+  width: "calc(100% + 32px)",
+  maxWidth: "calc(100% + 32px)",
+  margin: "0 -16px",
+  overflowX: "auto",
+  overflowY: "hidden",
+  padding: "0 16px",
+  boxSizing: "border-box",
+  scrollSnapType: "x proximity",
+  scrollPaddingLeft: "16px",
+  scrollPaddingRight: "16px",
 };
 
 const statCardStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
   alignContent: "center",
-  gap: "2px",
-  minHeight: "66px",
-  padding: "8px 4px",
-  borderRadius: "15px",
+  gap: "1px",
+  flex: "0 0 78px",
+  width: "78px",
+  minHeight: "46px",
+  padding: "5px 4px",
+  borderRadius: "13px",
+  scrollSnapAlign: "start",
   background: "var(--historietas-surface, rgba(255,255,255,0.055))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   boxShadow: "none",
@@ -1690,7 +1772,7 @@ const statCardStyle: CSSProperties = {
 
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "22px",
+  fontSize: "17px",
   lineHeight: 1,
   fontWeight: 950,
   textAlign: "center",
@@ -1699,7 +1781,7 @@ const statNumberStyle: CSSProperties = {
 
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8px",
+  fontSize: "7px",
   lineHeight: 1.1,
   fontWeight: 950,
   textTransform: "uppercase",
@@ -1718,24 +1800,31 @@ const lastUpdateStyle: CSSProperties = {
 };
 
 const actionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
-  padding: "12px",
-  borderRadius: "24px",
+  display: "flex",
+  gap: "7px",
+  padding: "10px 16px",
+  borderRadius: "22px",
   background:
     "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.90)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
-  overflow: "hidden",
+  width: "calc(100% + 32px)",
+  maxWidth: "calc(100% + 32px)",
+  margin: "0 -16px",
+  overflowX: "auto",
+  overflowY: "hidden",
   boxSizing: "border-box",
+  scrollSnapType: "x proximity",
+  scrollPaddingLeft: "16px",
+  scrollPaddingRight: "16px",
 };
 
 const buttonBaseStyle: CSSProperties = {
-  minHeight: "40px",
+  minHeight: "34px",
   borderRadius: "999px",
-  padding: "0 12px",
-  fontSize: "11.5px",
+  padding: "0 10px",
+  fontSize: "10.5px",
+  flex: "0 0 132px",
   lineHeight: 1.12,
   fontWeight: 950,
   cursor: "pointer",
@@ -1745,8 +1834,9 @@ const buttonBaseStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  width: "100%",
+  width: "132px",
   boxShadow: "none",
+  scrollSnapAlign: "start",
   ...safeTextStyle,
 };
 
@@ -1778,7 +1868,7 @@ const dangerButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 56px))",
-  padding: "24px 0 52px",
+  padding: "18px 0 8px",
 };
 
 const desktopHeroStyle: CSSProperties = {
@@ -1821,20 +1911,29 @@ const desktopAccountCardStyle: CSSProperties = {
 
 const desktopThemeGridStyle: CSSProperties = {
   ...themeGridStyle,
-  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-  gap: "12px",
+  gap: "10px",
+  width: "100%",
+  maxWidth: "100%",
+  margin: 0,
+  padding: "0 1px 0",
+  scrollPaddingLeft: "0px",
+  scrollPaddingRight: "0px",
 };
 
 const desktopThemeOptionStyle: CSSProperties = {
   ...themeOptionStyle,
-  minHeight: "104px",
-  padding: "12px 8px",
+  flex: "0 0 98px",
+  width: "98px",
+  minHeight: "82px",
+  padding: "8px 6px",
 };
 
 const desktopThemeOptionActiveStyle: CSSProperties = {
   ...themeOptionActiveStyle,
-  minHeight: "104px",
-  padding: "12px 8px",
+  flex: "0 0 98px",
+  width: "98px",
+  minHeight: "82px",
+  padding: "8px 6px",
 };
 
 const desktopSettingsGridStyle: CSSProperties = {
@@ -1857,14 +1956,23 @@ const desktopPreferenceActiveStyle: CSSProperties = {
 
 const desktopStatsGridStyle: CSSProperties = {
   ...statsGridStyle,
-  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-  gap: "10px",
+  gap: "8px",
+  width: "100%",
+  maxWidth: "100%",
+  margin: 0,
+  padding: "0 1px 0",
+  scrollPaddingLeft: "0px",
+  scrollPaddingRight: "0px",
 };
 
 const desktopActionsStyle: CSSProperties = {
   ...actionsStyle,
-  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-  gap: "10px",
-  padding: "14px",
-  borderRadius: "26px",
+  gap: "8px",
+  padding: "11px",
+  borderRadius: "24px",
+  width: "100%",
+  maxWidth: "100%",
+  margin: 0,
+  scrollPaddingLeft: "0px",
+  scrollPaddingRight: "0px",
 };

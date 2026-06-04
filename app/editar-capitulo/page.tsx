@@ -760,6 +760,8 @@ export default function EditarCapituloPage() {
     );
   }, [obraAtual, capituloAtual]);
 
+  const capituloLabel = `AnimesFlow Cap. ${String(numeroCapitulo || 1).padStart(2, "0")}`;
+
   const minhaObraHref = obraAtual
     ? `/minha-obra?obraId=${obraAtual.id}`
     : "/minhas-obras";
@@ -1028,13 +1030,20 @@ export default function EditarCapituloPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <section style={isDesktop ? desktopHeroBoxStyle : heroBoxStyle}>
-          <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Editar capítulo</h1>
-
-          <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            {obraAtual.titulo} • Capítulo {numeroCapitulo}
-          </p>
-        </section>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span
+              className="historietas-theme-title"
+              style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
+            >
+              EDITAR CAPÍTULO
+            </span>
+          </Link>
+        </header>
 
         {erro && (
           <section style={errorBoxStyle}>
@@ -1069,7 +1078,7 @@ export default function EditarCapituloPage() {
         <section style={isDesktop ? desktopMainGridStyle : mainGridStyle}>
           <form onSubmit={salvarEdicao} style={isDesktop ? desktopFormStyle : formStyle}>
             <div style={isDesktop ? desktopFormHeaderStyle : formHeaderStyle}>
-              <span style={formMiniTitleStyle}>CAPÍTULO {numeroCapitulo}</span>
+              <span style={formMiniTitleStyle}>{capituloLabel}</span>
 
               <h2 style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>Título do capítulo</h2>
             </div>
@@ -1136,34 +1145,6 @@ export default function EditarCapituloPage() {
                 style={isDesktop ? desktopTextareaStyle : textareaStyle}
               />
 
-              <div style={inlineStatsBoxStyle}>
-                <span style={inlineStatsItemStyle}>
-                  {estatisticasCapitulo.palavras} palavras
-                </span>
-
-                <span style={inlineStatsItemStyle}>
-                  {estatisticasCapitulo.caracteres} caracteres
-                </span>
-
-                <span style={inlineStatsItemStyle}>
-                  {estatisticasCapitulo.minutosLeitura} min
-                </span>
-
-                <span
-                  style={
-                    estatisticasCapitulo.textoValido
-                      ? inlineStatsReadyStyle
-                      : inlineStatsWarningStyle
-                  }
-                >
-                  {estatisticasCapitulo.textoValido
-                    ? "Texto pronto"
-                    : `${Math.max(
-                        20 - estatisticasCapitulo.caracteresValidos,
-                        0
-                      )} faltando`}
-                </span>
-              </div>
             </div>
 
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
@@ -1199,26 +1180,9 @@ export default function EditarCapituloPage() {
             </div>
 
             <article style={isDesktop ? desktopPreviewChapterCardStyle : previewChapterCardStyle}>
-              <div style={previewChapterTopStyle}>
-                <span style={previewChapterBadgeStyle}>
-                  CAPÍTULO {numeroCapitulo}
-                </span>
-
-              </div>
-
               <h3 style={isDesktop ? desktopPreviewChapterTitleStyle : previewChapterTitleStyle}>{tituloPreview}</h3>
 
               <p style={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}>{textoPreview}</p>
-
-              <div style={previewStatsStyle}>
-                <span style={safeTextStyle}>
-                  {estatisticasCapitulo.palavras} palavras
-                </span>
-
-                <span style={safeTextStyle}>
-                  {estatisticasCapitulo.minutosLeitura} min
-                </span>
-              </div>
 
             </article>
           </aside>
@@ -1290,12 +1254,78 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 calc(82px + env(safe-area-inset-bottom))",
+  padding: "14px 0 0",
   boxSizing: "border-box",
   minWidth: 0,
 };
 
 
+
+
+
+const titleHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "12px",
+  flexWrap: "nowrap",
+  marginBottom: "14px",
+  minWidth: 0,
+  padding: 0,
+  textAlign: "center",
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginBottom: "18px",
+};
+
+const headerTitleLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+const desktopHeaderTitleLinkStyle: CSSProperties = {
+  ...headerTitleLinkStyle,
+};
+
+const headerTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  margin: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  textAlign: "center",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+};
+
+const desktopHeaderTitleTextStyle: CSSProperties = {
+  ...headerTitleTextStyle,
+};
 
 
 
@@ -1557,7 +1587,7 @@ const inputStyle: CSSProperties = {
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  minHeight: "210px",
+  minHeight: "96px",
   resize: "vertical",
   borderRadius: "17px",
   border: "1px solid var(--historietas-border-soft, #3F3F46)",
@@ -1676,41 +1706,9 @@ const hiddenFileInputStyle: CSSProperties = {
   display: "none",
 };
 
-const inlineStatsBoxStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  justifyContent: "center",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const inlineStatsItemStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 8px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
 
-const inlineStatsReadyStyle: CSSProperties = {
-  ...inlineStatsItemStyle,
-  background: "rgba(34, 197, 94, 0.14)",
-  border: "1px solid color-mix(in srgb, #22C55E 30%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
-};
 
-const inlineStatsWarningStyle: CSSProperties = {
-  ...inlineStatsItemStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, var(--historietas-border-soft, transparent))",
-  color: "var(--historietas-accent, #FDBA74)",
-};
 
 const buttonAreaStyle: CSSProperties = {
   display: "grid",
@@ -1842,29 +1840,8 @@ const previewChapterCardStyle: CSSProperties = {
   overflow: "hidden",
 };
 
-const previewChapterTopStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const previewChapterBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 8px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
+
 
 
 const previewChapterTitleStyle: CSSProperties = {
@@ -1895,17 +1872,6 @@ const previewChapterTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const previewStatsStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 850,
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
 
 
@@ -1965,7 +1931,7 @@ const emptyButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 34px",
+  padding: "18px 0 8px",
 };
 
 
@@ -2051,7 +2017,7 @@ const desktopImportButtonStyle: CSSProperties = {
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "250px",
+  minHeight: "108px",
   fontSize: "14px",
   lineHeight: 1.65,
 };

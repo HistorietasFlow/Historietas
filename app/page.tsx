@@ -98,6 +98,15 @@ type AutorHome = {
   href: string;
 };
 
+type ResultadoBuscaHome = {
+  id: string;
+  titulo: string;
+  autor: string;
+  detalhe: string;
+  href: string;
+  origem: "Obra" | "Catálogo";
+};
+
 type TemaVisualHome =
   | "branco"
   | "escuro"
@@ -111,7 +120,11 @@ type TemaVisualHome =
   | "drama"
   | "aventura"
   | "sobrenatural"
-  | "comedia";
+  | "comedia"
+  | "misterio"
+  | "suspense"
+  | "historico"
+  | "biografia";
 
 type TemaVisualHomeConfig = {
   accent: string;
@@ -313,17 +326,17 @@ const TEMAS_VISUAIS_HOME: Record<TemaVisualHome, TemaVisualHomeConfig> = {
     secondaryButtonText: "#E9D5FF",
   },
   aventura: {
-    accent: "#FBBF24",
-    secondary: "#B45309",
-    bgStart: "#100B06",
-    bgMid: "#181020",
-    bgEnd: "#17101F",
-    glowPrimary: "rgba(251,191,36,0.24)",
-    glowSecondary: "rgba(180,83,9,0.20)",
+    accent: "#EAB308",
+    secondary: "#92400E",
+    bgStart: "#0D0803",
+    bgMid: "#171006",
+    bgEnd: "#1F1308",
+    glowPrimary: "rgba(234,179,8,0.18)",
+    glowSecondary: "rgba(146,64,14,0.20)",
     titleTo: "#FDE68A",
-    activeSurface: "rgba(251,191,36,0.16)",
-    secondarySurface: "rgba(180,83,9,0.18)",
-    secondaryButtonText: "#FEF3C7",
+    activeSurface: "rgba(234,179,8,0.15)",
+    secondarySurface: "rgba(146,64,14,0.20)",
+    secondaryButtonText: "#FDE68A",
   },
   sobrenatural: {
     accent: "#34D399",
@@ -350,6 +363,58 @@ const TEMAS_VISUAIS_HOME: Record<TemaVisualHome, TemaVisualHomeConfig> = {
     activeSurface: "rgba(250,204,21,0.16)",
     secondarySurface: "rgba(251,113,133,0.16)",
     secondaryButtonText: "#FEF9C3",
+  },
+  misterio: {
+    accent: "#818CF8",
+    secondary: "#312E81",
+    bgStart: "#060817",
+    bgMid: "#0B1026",
+    bgEnd: "#10112A",
+    glowPrimary: "rgba(129,140,248,0.26)",
+    glowSecondary: "rgba(49,46,129,0.24)",
+    titleTo: "#C7D2FE",
+    activeSurface: "rgba(129,140,248,0.16)",
+    secondarySurface: "rgba(49,46,129,0.22)",
+    secondaryButtonText: "#C7D2FE",
+  },
+  suspense: {
+    accent: "#A3E635",
+    secondary: "#365314",
+    bgStart: "#070B05",
+    bgMid: "#101607",
+    bgEnd: "#11140A",
+    glowPrimary: "rgba(163,230,53,0.18)",
+    glowSecondary: "rgba(54,83,20,0.24)",
+    titleTo: "#D9F99D",
+    activeSurface: "rgba(163,230,53,0.14)",
+    secondarySurface: "rgba(54,83,20,0.24)",
+    secondaryButtonText: "#D9F99D",
+  },
+  historico: {
+    accent: "#D97706",
+    secondary: "#78350F",
+    bgStart: "#110805",
+    bgMid: "#1A0F08",
+    bgEnd: "#17100A",
+    glowPrimary: "rgba(217,119,6,0.22)",
+    glowSecondary: "rgba(120,53,15,0.25)",
+    titleTo: "#FDBA74",
+    activeSurface: "rgba(217,119,6,0.16)",
+    secondarySurface: "rgba(120,53,15,0.22)",
+    secondaryButtonText: "#FED7AA",
+  },
+  biografia: {
+    accent: "#60A5FA",
+    secondary: "#334155",
+    bgStart: "#06101F",
+    bgMid: "#0B1728",
+    bgEnd: "#101827",
+    glowPrimary: "rgba(96,165,250,0.22)",
+    glowSecondary: "rgba(51,65,85,0.28)",
+    titleTo: "#BFDBFE",
+    activeSurface: "rgba(96,165,250,0.15)",
+    secondarySurface: "rgba(51,65,85,0.24)",
+    secondaryButtonText: "#BFDBFE",
   },
 };
 
@@ -1721,6 +1786,170 @@ export default function Home() {
     return obrasLocais.filter((obra) => obra.publicado);
   }, [obrasLocais]);
 
+  const sugestoesBuscaHome = useMemo<ResultadoBuscaHome[]>(() => {
+    if (!termoBusca) {
+      return [];
+    }
+
+    const resultados: Array<ResultadoBuscaHome & { score: number; ordem: number }> = [];
+    const chavesRegistradas = new Set<string>();
+
+    function calcularScoreBusca(
+      titulo: string,
+      autor: string,
+      genero: string,
+      tagsBusca: string[],
+      textoCompleto: string
+    ) {
+      const tituloNormalizado = normalizarTexto(titulo);
+      const autorNormalizado = normalizarTexto(autor);
+      const generoNormalizado = normalizarTexto(genero);
+      const tagsNormalizadas = tagsBusca.map((tag) => normalizarTexto(tag));
+
+      if (tituloNormalizado.startsWith(termoBusca)) {
+        return 0;
+      }
+
+      if (tituloNormalizado.includes(termoBusca)) {
+        return 1;
+      }
+
+      if (autorNormalizado.startsWith(termoBusca)) {
+        return 2;
+      }
+
+      if (
+        generoNormalizado.startsWith(termoBusca) ||
+        tagsNormalizadas.some((tag) => tag.startsWith(termoBusca))
+      ) {
+        return 3;
+      }
+
+      return textoCompleto.includes(termoBusca) ? 4 : -1;
+    }
+
+    function registrarResultado(
+      resultado: ResultadoBuscaHome,
+      score: number,
+      ordem: number
+    ) {
+      if (score < 0) {
+        return;
+      }
+
+      const chave = `${normalizarTexto(resultado.titulo)}:${normalizarTexto(
+        resultado.autor
+      )}`;
+
+      if (chavesRegistradas.has(chave)) {
+        return;
+      }
+
+      chavesRegistradas.add(chave);
+      resultados.push({ ...resultado, score, ordem });
+    }
+
+    obrasPublicadas.forEach((obra, index) => {
+      const tagsObra = obra.tags || [];
+      const generoObra = formatarGeneroHome(obra.genero);
+      const textoCompleto = normalizarTexto(
+        [
+          obra.titulo,
+          obra.autor,
+          obra.genero,
+          generoObra,
+          obra.formato,
+          obra.classificacaoIndicativa,
+          obra.sinopse,
+          ...tagsObra,
+          ...obra.capitulos.map((capitulo) => capitulo.titulo),
+        ].join(" ")
+      );
+      const score = calcularScoreBusca(
+        obra.titulo,
+        obra.autor,
+        generoObra,
+        tagsObra,
+        textoCompleto
+      );
+
+      registrarResultado(
+        {
+          id: obra.id,
+          titulo: obra.titulo,
+          autor: obra.autor,
+          detalhe: `${generoObra} · ${obra.capitulos.length} ${
+            obra.capitulos.length === 1 ? "capítulo" : "capítulos"
+          }`,
+          href: obra.link || `/obra/${obra.slug}`,
+          origem: "Obra",
+        },
+        score,
+        index
+      );
+    });
+
+    obras.forEach((obra, index) => {
+      const obraCatalogo = obra as Obra & {
+        id?: string;
+        tags?: string[];
+        sinopse?: string;
+      };
+      const tagsObra = Array.isArray(obraCatalogo.tags)
+        ? obraCatalogo.tags.filter(
+            (tag): tag is string => typeof tag === "string" && Boolean(tag.trim())
+          )
+        : [];
+      const generoObra = formatarGeneroHome(obra.genero);
+      const textoCompleto = normalizarTexto(
+        [
+          obra.titulo,
+          obra.autor,
+          obra.genero,
+          generoObra,
+          obra.classificacaoIndicativa,
+          obra.status,
+          obraCatalogo.sinopse || "",
+          ...tagsObra,
+        ].join(" ")
+      );
+      const score = calcularScoreBusca(
+        obra.titulo,
+        obra.autor,
+        generoObra,
+        tagsObra,
+        textoCompleto
+      );
+
+      registrarResultado(
+        {
+          id: obraCatalogo.id || criarSlugBase(obra.titulo),
+          titulo: obra.titulo,
+          autor: obra.autor,
+          detalhe: `${generoObra} · ${obra.status}`,
+          href: criarHrefObraCatalogoHome(obra),
+          origem: "Catálogo",
+        },
+        score + 0.25,
+        obrasPublicadas.length + index
+      );
+    });
+
+    return resultados
+      .sort((resultadoA, resultadoB) => {
+        return resultadoA.score - resultadoB.score || resultadoA.ordem - resultadoB.ordem;
+      })
+      .slice(0, 8)
+      .map((resultado) => ({
+        id: resultado.id,
+        titulo: resultado.titulo,
+        autor: resultado.autor,
+        detalhe: resultado.detalhe,
+        href: resultado.href,
+        origem: resultado.origem,
+      }));
+  }, [obrasPublicadas, termoBusca]);
+
   const obrasHero = useMemo(() => {
     const obrasLocaisParaHero = obrasPublicadas
       .filter((obra) => obraLocalCombinaBusca(obra, termoBusca))
@@ -2134,6 +2363,48 @@ export default function Home() {
     return obrasFiltradas.filter((obra) => !obra.disponivel);
   }, [obrasFiltradas]);
 
+  function renderSugestoesBuscaHome(modo: "desktop" | "mobile") {
+    if (!termoBusca || sugestoesBuscaHome.length === 0) {
+      return null;
+    }
+
+    return (
+      <div
+        style={
+          modo === "desktop"
+            ? searchSuggestionsPanelStyle
+            : mobileSearchSuggestionsPanelStyle
+        }
+        aria-label="Sugestões de busca"
+      >
+        {sugestoesBuscaHome.map((resultado) => (
+          <Link
+            key={`${modo}-${resultado.origem}-${resultado.id}`}
+            href={resultado.href}
+            onClick={() => {
+              if (modo === "mobile") {
+                setBuscaMobileAberta(false);
+              }
+            }}
+            style={searchSuggestionItemStyle}
+          >
+            <span style={searchSuggestionContentStyle}>
+              <strong style={searchSuggestionTitleStyle}>
+                {resultado.titulo}
+              </strong>
+
+              <span style={searchSuggestionMetaStyle}>
+                {resultado.autor} · {resultado.detalhe}
+              </span>
+            </span>
+
+            <span style={searchSuggestionBadgeStyle}>{resultado.origem}</span>
+          </Link>
+        ))}
+      </div>
+    );
+  }
+
   if (!heroObra) {
     return <main style={emptyPageStyle}>Nenhuma obra cadastrada.</main>;
   }
@@ -2211,10 +2482,6 @@ export default function Home() {
                 Explorar
               </Link>
 
-              <Link href="/busca" style={globalSearchLinkStyle}>
-                Busca Global
-              </Link>
-
               <Link href="/em-alta" style={linkStyle}>
                 Em Alta
               </Link>
@@ -2243,6 +2510,8 @@ export default function Home() {
                   placeholder="Buscar obras, autor, gênero..."
                   style={inputStyle}
                 />
+
+                {renderSugestoesBuscaHome("desktop")}
               </div>
             </nav>
           )}
@@ -2256,9 +2525,7 @@ export default function Home() {
                 style={inputStyle}
               />
 
-              <Link href="/busca" style={mobileGlobalSearchLinkStyle}>
-                Abrir Busca Global
-              </Link>
+              {renderSugestoesBuscaHome("mobile")}
             </div>
           )}
         </div>
@@ -2913,9 +3180,7 @@ function MobileObraLocalCard({
 
   return (
     <article style={isDesktop ? desktopPublishedCardStyle : publishedCardStyle}>
-      <Link href={verObraHref} style={capaStyle}>
-        {!obra.capa && <span style={noCoverBadgeStyle}>Capa pendente</span>}
-      </Link>
+      <Link href={verObraHref} style={capaStyle} />
 
       <div style={publishedInfoStyle}>
         <div style={cardTopRowStyle}>
@@ -3645,6 +3910,8 @@ const desktopMenuStyle: CSSProperties = {
 };
 
 const desktopInlineSearchAreaStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 30,
   flex: "1 1 320px",
   minWidth: "280px",
   maxWidth: "430px",
@@ -3674,37 +3941,9 @@ const activeLinkStyle: CSSProperties = {
   boxShadow: "var(--historietas-card-shadow, none)",
 };
 
-const globalSearchLinkStyle: CSSProperties = {
-  ...linkStyle,
-  color: "var(--historietas-accent, #FDBA74)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-surface, rgba(255,255,255,0.055)))",
-  boxShadow: "none",
-};
-
-const mobileGlobalSearchLinkStyle: CSSProperties = {
-  minHeight: "38px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "999px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  boxSizing: "border-box",
-  boxShadow: "none",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
 const searchAreaStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 30,
   display: "grid",
   gridTemplateColumns: "1fr",
   gap: "8px",
@@ -3730,6 +3969,90 @@ const inputStyle: CSSProperties = {
   maxWidth: "100%",
   minWidth: 0,
   boxShadow: "none",
+};
+
+const searchSuggestionsPanelStyle: CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 8px)",
+  left: 0,
+  right: 0,
+  zIndex: 60,
+  display: "grid",
+  gap: "7px",
+  padding: "8px",
+  borderRadius: "18px",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  background:
+    "linear-gradient(180deg, var(--historietas-surface-strong, rgba(14,8,28,0.98)) 0%, var(--historietas-surface, rgba(18,12,30,0.96)) 100%)",
+  boxSizing: "border-box",
+  maxHeight: "320px",
+  overflowY: "auto",
+  boxShadow: "none",
+};
+
+const mobileSearchSuggestionsPanelStyle: CSSProperties = {
+  ...searchSuggestionsPanelStyle,
+  position: "relative",
+  top: "auto",
+  left: "auto",
+  right: "auto",
+  zIndex: 1,
+  maxHeight: "280px",
+};
+
+const searchSuggestionItemStyle: CSSProperties = {
+  minHeight: "58px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  padding: "10px 11px",
+  borderRadius: "14px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background:
+    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 11%, transparent)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  boxSizing: "border-box",
+};
+
+const searchSuggestionContentStyle: CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  minWidth: 0,
+};
+
+const searchSuggestionTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "13px",
+  fontWeight: 950,
+  lineHeight: 1.15,
+  ...safeTextStyle,
+};
+
+const searchSuggestionMetaStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  fontWeight: 750,
+  lineHeight: 1.25,
+  ...safeTextStyle,
+};
+
+const searchSuggestionBadgeStyle: CSSProperties = {
+  flex: "0 0 auto",
+  borderRadius: "999px",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
+  color: "var(--historietas-accent, #FDBA74)",
+  background:
+    "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
+  padding: "6px 8px",
+  fontSize: "10px",
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+  whiteSpace: "nowrap",
 };
 
 const heroStyle: CSSProperties = {
@@ -4459,15 +4782,17 @@ const sectionTitleStyle: CSSProperties = {
 const storyListStyle: CSSProperties = {
   display: "flex",
   gap: "14px",
-  maxWidth: "100%",
+  width: "calc(100% + 24px)",
+  maxWidth: "calc(100% + 24px)",
   minWidth: 0,
   boxSizing: "border-box",
   overflowX: "auto",
   overflowY: "hidden",
-  padding: "2px 2px 18px",
-  margin: "0 -2px",
+  padding: "2px 12px 8px",
+  margin: "0 -12px",
   scrollSnapType: "x mandatory",
-  scrollPaddingLeft: "2px",
+  scrollPaddingLeft: "12px",
+  scrollPaddingRight: "12px",
   scrollbarWidth: "none",
   msOverflowStyle: "none",
 };
@@ -4484,6 +4809,7 @@ const desktopStoryListStyle: CSSProperties = {
   ...storyListStyle,
   gap: "18px",
   width: "100%",
+  maxWidth: "100%",
   padding: "6px 0 20px",
   margin: 0,
   scrollPaddingLeft: "0px",
@@ -4549,13 +4875,14 @@ const desktopCarouselArrowIconStyle: CSSProperties = {
 const authorListStyle: CSSProperties = {
   ...storyListStyle,
   gap: "12px",
-  padding: "2px 2px 16px",
+  padding: "2px 12px 8px",
 };
 
 const desktopAuthorListStyle: CSSProperties = {
   ...authorListStyle,
   gap: "16px",
   width: "100%",
+  maxWidth: "100%",
   padding: "6px 0 18px",
   margin: 0,
   scrollPaddingLeft: "0px",
@@ -4589,8 +4916,7 @@ const authorCardStyle: CSSProperties = {
   textDecoration: "none",
   display: "grid",
   gap: "10px",
-  boxShadow:
-    "var(--historietas-card-shadow, 0 18px 42px rgba(0,0,0,0.30))",
+  boxShadow: "none",
   boxSizing: "border-box",
   overflow: "hidden",
 };
@@ -4792,8 +5118,7 @@ const publishedCardStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "88vw",
   overflow: "hidden",
-  boxShadow:
-    "var(--historietas-card-shadow, 0 12px 28px rgba(0,0,0,0.22))",
+  boxShadow: "none",
   boxSizing: "border-box",
 };
 
@@ -4806,8 +5131,7 @@ const desktopPublishedCardStyle: CSSProperties = {
   gap: "15px",
   padding: "13px",
   borderRadius: "24px",
-  boxShadow:
-    "var(--historietas-card-shadow, 0 14px 34px rgba(0,0,0,0.24))",
+  boxShadow: "none",
 };
 
 const coverPlaceholderStyle: CSSProperties = {
@@ -4831,24 +5155,6 @@ const desktopCoverPlaceholderStyle: CSSProperties = {
   borderRadius: "18px",
 };
 
-const noCoverBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  left: "8px",
-  right: "8px",
-  transform: "translateY(-50%)",
-  maxWidth: "calc(100% - 16px)",
-  padding: "6px 8px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.1))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 950,
-  textAlign: "center",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const publishedInfoStyle: CSSProperties = {
   minWidth: 0,
@@ -5206,8 +5512,7 @@ const obraCardStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "88vw",
   overflow: "hidden",
-  boxShadow:
-    "var(--historietas-card-shadow, 0 12px 28px rgba(0,0,0,0.22))",
+  boxShadow: "none",
   boxSizing: "border-box",
 };
 
@@ -5220,8 +5525,7 @@ const desktopObraCardStyle: CSSProperties = {
   gap: "15px",
   padding: "13px",
   borderRadius: "24px",
-  boxShadow:
-    "var(--historietas-card-shadow, 0 14px 34px rgba(0,0,0,0.24))",
+  boxShadow: "none",
 };
 
 const obraCardSoonStyle: CSSProperties = {

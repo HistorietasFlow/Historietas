@@ -1085,33 +1085,20 @@ export default function AdicionarCapituloPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span
+              className="historietas-theme-title"
+              style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
+            >
+              ADICIONAR CAPÍTULO
+            </span>
           </Link>
-
         </header>
-
-        <section style={isDesktop ? desktopHeroBoxStyle : heroBoxStyle}>
-          <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Adicionar capítulo</h1>
-
-          <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            {obraAtual.titulo} • Capítulo {numeroNovoCapitulo}
-          </p>
-
-          <div style={isDesktop ? desktopProgressBoxStyle : progressBoxStyle}>
-            <div style={progressTopStyle}>
-              <span style={progressLabelStyle}>Progresso</span>
-
-              <strong style={progressNumberStyle}>{progresso}%</strong>
-            </div>
-
-            <div style={progressTrackStyle}>
-              <div style={{ ...progressFillStyle, width: `${progresso}%` }} />
-            </div>
-          </div>
-        </section>
 
         {erro && (
           <section style={errorBoxStyle}>
@@ -1255,6 +1242,10 @@ export default function AdicionarCapituloPage() {
             )}
 
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
+              <Link href={minhaObraHref} style={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}>
+                Cancelar
+              </Link>
+
               <button
                 type="submit"
                 style={processando ? (isDesktop ? desktopDisabledButtonStyle : disabledButtonStyle) : (isDesktop ? desktopPrimaryButtonStyle : primaryButtonStyle)}
@@ -1262,10 +1253,18 @@ export default function AdicionarCapituloPage() {
               >
                 {processando ? "Salvando..." : "Criar capítulo"}
               </button>
+            </div>
 
-              <Link href={minhaObraHref} style={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}>
-                Cancelar
-              </Link>
+            <div style={isDesktop ? desktopProgressBoxStyle : progressBoxStyle}>
+              <div style={progressTopStyle}>
+                <span style={progressLabelStyle}>Progresso</span>
+
+                <strong style={progressNumberStyle}>{progresso}%</strong>
+              </div>
+
+              <div style={progressTrackStyle}>
+                <div style={{ ...progressFillStyle, width: `${progresso}%` }} />
+              </div>
             </div>
           </form>
 
@@ -1460,6 +1459,70 @@ const logoTextStyle: CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+};
+
+const titleHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "12px",
+  flexWrap: "nowrap",
+  marginBottom: "14px",
+  minWidth: 0,
+  padding: 0,
+  textAlign: "center",
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginBottom: "18px",
+};
+
+const headerTitleLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+const desktopHeaderTitleLinkStyle: CSSProperties = {
+  ...headerTitleLinkStyle,
+};
+
+const headerTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  margin: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  textAlign: "center",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+};
+
+const desktopHeaderTitleTextStyle: CSSProperties = {
+  ...headerTitleTextStyle,
 };
 
 
@@ -2255,7 +2318,7 @@ const emptyButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 34px",
+  padding: "26px 0 34px",
 };
 
 const desktopTopStyle: CSSProperties = {

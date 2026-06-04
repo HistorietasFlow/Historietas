@@ -435,18 +435,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
-function formatarTamanhoArquivo(tamanho: number) {
-  if (!Number.isFinite(tamanho) || tamanho <= 0) {
-    return "0 KB";
-  }
-
-  if (tamanho >= 1024 * 1024) {
-    return `${(tamanho / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  return `${Math.max(1, Math.round(tamanho / 1024))} KB`;
-}
-
 function identificarCategoriaArquivo(arquivo: File): ArquivoObraLocal["categoria"] {
   const nome = arquivo.name.toLowerCase();
 
@@ -624,22 +612,6 @@ function restaurarArquivoObraComBackup(
   };
 }
 
-function obterTipoArquivoTexto(arquivo: ArquivoObraLocal) {
-  if (arquivo.categoria === "imagem") {
-    return "Imagem";
-  }
-
-  if (arquivo.categoria === "documento") {
-    return "PDF";
-  }
-
-  if (arquivo.categoria === "texto") {
-    return "Texto";
-  }
-
-  return "Arquivo";
-}
-
 function normalizarCapitulo(
   capitulo: Partial<CapituloLocal>,
   index: number
@@ -755,7 +727,7 @@ function criarMiniCoverStyle(capa: string): CSSProperties {
     ...coverPlaceholderStyle,
     border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
     background: "var(--historietas-input-bg, #18181B)",
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.72) 100%), url(${capa})`,
+    backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -768,7 +740,7 @@ function criarPreviewCoverStyle(capa: string): CSSProperties {
 
   return {
     ...previewCoverStyle,
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.82) 100%), url(${capa})`,
+    backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -781,7 +753,7 @@ function criarDesktopPreviewCoverStyle(capa: string): CSSProperties {
 
   return {
     ...desktopPreviewCoverStyle,
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.82) 100%), url(${capa})`,
+    backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -1036,8 +1008,6 @@ export default function EditarObraPage() {
   }, [tags]);
 
   const tagsPreview = tagsTratadas.length > 0 ? tagsTratadas : ["sem tags"];
-  const totalTagsSelecionadas = tagsTratadas.length;
-  const limiteTagsAtingido = totalTagsSelecionadas >= LIMITE_TAGS_OBRA;
   const formatoEhPersonalizado = formato === OUTRO_FORMATO_VALUE;
   const generoEhPersonalizado = genero === OUTRO_GENERO_VALUE;
   const formatoFinal = formatoEhPersonalizado
@@ -1095,50 +1065,7 @@ export default function EditarObraPage() {
     sinopse,
   ]);
 
-  const totalPalavrasSinopse = useMemo(() => contarPalavras(sinopse), [sinopse]);
-  const totalCaracteresSinopse = sinopse.length;
-  const arquivoObraTipoTexto = arquivoObra
-    ? obterTipoArquivoTexto(arquivoObra)
-    : "Arquivo";
-  const arquivoObraTamanhoTexto = arquivoObra
-    ? formatarTamanhoArquivo(arquivoObra.tamanho)
-    : "0 KB";
-
-  const alteracoesPendentes = useMemo(() => {
-    if (!obraAtual) {
-      return false;
-    }
-
-    return (
-      titulo !== obraAtual.titulo ||
-      autor !== obraAtual.autor ||
-      generoFinal !== obraAtual.genero ||
-      formatoFinal !== obraAtual.formato ||
-      classificacaoIndicativa !== obraAtual.classificacaoIndicativa ||
-      sinopse !== obraAtual.sinopse ||
-      tagsTratadas.join(", ") !== obraAtual.tags.slice(0, LIMITE_TAGS_OBRA).join(", ") ||
-      capa !== obraAtual.capa ||
-      capaNome !== obraAtual.capaNome ||
-      JSON.stringify(arquivoObra || null) !==
-        JSON.stringify(obraAtual.arquivoObra || null)
-    );
-  }, [
-    obraAtual,
-    titulo,
-    autor,
-    generoFinal,
-    formatoFinal,
-    classificacaoIndicativa,
-    sinopse,
-    tagsTratadas,
-    capa,
-    capaNome,
-    arquivoObra,
-  ]);
-
   const minhaObraHref = `/minha-obra?obraId=${obraId}`;
-  const adicionarCapituloHref = `/adicionar-capitulo?obraId=${obraId}`;
-
   function marcarAlteracao() {
     if (salvou) {
       setSalvou(false);
@@ -1319,12 +1246,6 @@ export default function EditarObraPage() {
     }
   }
 
-  function tagEstaSelecionada(tag: string) {
-    return tagsTratadas.some((tagAtual) => {
-      return normalizarTexto(tagAtual) === normalizarTexto(tag);
-    });
-  }
-
   function atualizarTagPersonalizada(valor: string) {
     const textoLimpo = limparTextoPersonalizado(
       valor,
@@ -1346,6 +1267,10 @@ export default function EditarObraPage() {
 
   function adicionarTagSelecionada(tag: string) {
     if (!tag) {
+      setUsarTagPersonalizada(false);
+      setTagPersonalizada("");
+      setTags("");
+      marcarAlteracao();
       return;
     }
 
@@ -1364,29 +1289,9 @@ export default function EditarObraPage() {
       return;
     }
 
-    if (tagEstaSelecionada(tag) || limiteTagsAtingido) {
-      return;
-    }
-
     setUsarTagPersonalizada(false);
     setTagPersonalizada("");
     setTags(tag);
-    marcarAlteracao();
-  }
-
-  function removerTagSelecionada(tag: string) {
-    const tagNormalizada = normalizarTexto(tag);
-    const novasTags = tagsTratadas.filter((tagAtual) => {
-      return normalizarTexto(tagAtual) !== tagNormalizada;
-    });
-
-    setTags(novasTags.join(", "));
-
-    if (usarTagPersonalizada) {
-      setUsarTagPersonalizada(false);
-      setTagPersonalizada("");
-    }
-
     marcarAlteracao();
   }
 
@@ -1579,13 +1484,19 @@ export default function EditarObraPage() {
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <header style={isDesktop ? desktopTopStyle : topStyle}>
-            <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-              <span style={logoMarkStyle}>H</span>
-              <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+          <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+            <Link
+              href="/"
+              style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
+              aria-label="Voltar para a Home"
+            >
+              <span
+                className="historietas-theme-title"
+                style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
+              >
+                EDITAR OBRA
+              </span>
             </Link>
-
-            <span style={pagePillStyle}>Editor da obra</span>
           </header>
 
           <div style={emptyBoxStyle}>
@@ -1610,34 +1521,20 @@ export default function EditarObraPage() {
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span
+              className="historietas-theme-title"
+              style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
+            >
+              EDITAR OBRA
+            </span>
           </Link>
-
-          <span style={pagePillStyle}>Editor da obra</span>
         </header>
-
-        <section style={isDesktop ? desktopHeroBoxStyle : heroBoxStyle}>
-          <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Editar obra</h1>
-
-          <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            {titulo.trim() || "Obra sem título"} • {obraAtual?.capitulos.length || 0} capítulos
-          </p>
-
-          <div style={isDesktop ? desktopProgressBoxStyle : progressBoxStyle}>
-            <div style={progressTopStyle}>
-              <span style={progressLabelStyle}>Progresso</span>
-
-              <strong style={progressNumberStyle}>{progresso}%</strong>
-            </div>
-
-            <div style={progressTrackStyle}>
-              <div style={{ ...progressFillStyle, width: `${progresso}%` }} />
-            </div>
-          </div>
-        </section>
 
         {erro && (
           <section style={errorBoxStyle}>
@@ -1671,16 +1568,8 @@ export default function EditarObraPage() {
 
         <section style={isDesktop ? desktopMainGridStyle : mainGridStyle}>
           <form onSubmit={salvarEdicao} style={isDesktop ? desktopFormStyle : formStyle}>
-            <div style={isDesktop ? desktopFormHeaderStyle : formHeaderStyle}>
-              <span style={formMiniTitleStyle}>
-                {alteracoesPendentes ? "ALTERAÇÕES PENDENTES" : "DADOS DA OBRA"}
-              </span>
-
-              <h2 style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>Informações principais</h2>
-            </div>
-
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Capa da obra</label>
+              <label style={formCoverTitleStyle}>Capa da obra</label>
 
               <input
                 ref={capaInputRef}
@@ -1693,7 +1582,6 @@ export default function EditarObraPage() {
               <div style={isDesktop ? desktopCoverUploadBoxStyle : coverUploadBoxStyle}>
                 <div style={coverUploadPreviewStyle}>
                   <div style={criarMiniCoverStyle(capa)}>
-                    {capa && <div style={previewCoverGlowStyle} />}
 
                     {!capa && (
                       <>
@@ -1711,7 +1599,6 @@ export default function EditarObraPage() {
 
                   <span style={hintStyle}>Imagem vertical. Máximo: 2 MB.</span>
 
-                  {capaNome && <span style={fileNameStyle}>{capaNome}</span>}
 
                   {capaErro && <span style={coverErrorStyle}>{capaErro}</span>}
 
@@ -1750,31 +1637,21 @@ export default function EditarObraPage() {
               />
 
               <div style={isDesktop ? desktopFileUploadBoxStyle : fileUploadBoxStyle}>
-                <div style={fileIconBoxStyle}>
-                  {arquivoObra?.categoria === "imagem" ? (
-                    <img
-                      src={arquivoObra.conteudo}
-                      alt={arquivoObra.nome}
-                      style={filePreviewImageStyle}
-                    />
-                  ) : (
-                    <span style={fileIconStyle}>▣</span>
-                  )}
+                <div style={fileUploadIconBoxStyle}>
+                  <span style={fileUploadIconStyle}>▣</span>
                 </div>
 
-                <div style={coverUploadContentStyle}>
+                <div style={fileUploadContentStyle}>
                   <strong style={coverUploadTitleStyle}>
-                    {arquivoObra ? "Arquivo atual da obra" : "Anexar arquivo da obra"}
+                    {arquivoObra ? "Arquivo atual" : "Enviar PDF, texto ou imagem"}
                   </strong>
 
                   <span style={hintStyle}>
-                    Opcional. Troque ou remova PDF, TXT, MD ou imagem. Máximo: 2 MB.
+                    Opcional. Anexe PDF, texto, imagem ou página de mangá.
                   </span>
 
                   {arquivoObra && (
-                    <span style={fileNameStyle}>
-                      {arquivoObra.nome} • {arquivoObraTipoTexto} • {arquivoObraTamanhoTexto}
-                    </span>
+                    <span style={fileNameStyle}>{arquivoObra.nome}</span>
                   )}
 
                   {arquivoObraErro && (
@@ -1803,13 +1680,6 @@ export default function EditarObraPage() {
                 </div>
               </div>
 
-              {arquivoObra && (
-                <div style={fieldStatsBoxStyle}>
-                  <span style={fieldStatItemStyle}>{arquivoObraTipoTexto}</span>
-                  <span style={fieldStatItemStyle}>{arquivoObraTamanhoTexto}</span>
-                  <span style={fieldStatOkStyle}>arquivo anexado à obra</span>
-                </div>
-              )}
             </div>
 
             <div style={fieldGroupStyle}>
@@ -1942,24 +1812,19 @@ export default function EditarObraPage() {
               <label style={labelStyle}>Tag</label>
 
               <select
-                value=""
+                value={usarTagPersonalizada ? OUTRA_TAG_VALUE : tagsTratadas[0] || ""}
                 onChange={(event) => {
                   adicionarTagSelecionada(event.target.value);
                 }}
                 style={inputStyle}
-                disabled={limiteTagsAtingido && !usarTagPersonalizada}
               >
-                <option value="">
-                  {limiteTagsAtingido ? "Tag escolhida" : "Escolha uma tag"}
-                </option>
+                <option value="">Escolha uma tag</option>
 
-                {OPCOES_TAGS_OBRA.filter((tag) => !tagEstaSelecionada(tag)).map(
-                  (tag) => (
-                    <option key={tag} value={tag}>
-                      {tag}
-                    </option>
-                  )
-                )}
+                {OPCOES_TAGS_OBRA.map((tag) => (
+                  <option key={tag} value={tag}>
+                    {tag}
+                  </option>
+                ))}
 
                 <option value={OUTRA_TAG_VALUE}>Outra tag</option>
               </select>
@@ -1975,21 +1840,6 @@ export default function EditarObraPage() {
                 />
               )}
 
-              {tagsTratadas.length > 0 && (
-                <div style={tagPreviewBoxStyle}>
-                  {tagsTratadas.map((tag, index) => (
-                    <button
-                      key={`edit-tag-${tag}-${index}`}
-                      type="button"
-                      onClick={() => removerTagSelecionada(tag)}
-                      style={selectedTagButtonStyle}
-                      aria-label={`Remover tag ${tag}`}
-                    >
-                      {tag} ×
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div style={fieldGroupStyle}>
@@ -2025,28 +1875,6 @@ export default function EditarObraPage() {
                 placeholder="Escreva a sinopse da obra"
                 style={isDesktop ? desktopTextareaStyle : textareaStyle}
               />
-
-              <div style={fieldStatsBoxStyle}>
-                <span style={fieldStatItemStyle}>
-                  {totalCaracteresSinopse} caracteres
-                </span>
-
-                <span style={fieldStatItemStyle}>
-                  {totalPalavrasSinopse} palavras
-                </span>
-
-                <span
-                  style={
-                    contarLetrasNumeros(sinopse.trim()) >= 20
-                      ? fieldStatOkStyle
-                      : fieldStatWarningStyle
-                  }
-                >
-                  {contarLetrasNumeros(sinopse.trim()) >= 20
-                    ? "Sinopse ok"
-                    : "Sinopse curta"}
-                </span>
-              </div>
             </div>
 
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
@@ -2066,22 +1894,28 @@ export default function EditarObraPage() {
                 Cancelar
               </Link>
             </div>
+
+            <div style={isDesktop ? desktopProgressBoxStyle : progressBoxStyle}>
+              <div style={progressTopStyle}>
+                <span style={progressLabelStyle}>Progresso</span>
+
+                <strong style={progressNumberStyle}>{progresso}%</strong>
+              </div>
+
+              <div style={progressTrackStyle}>
+                <div style={{ ...progressFillStyle, width: `${progresso}%` }} />
+              </div>
+            </div>
           </form>
 
           <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
             <div style={previewHeaderStyle}>
               <span style={previewMiniTitleStyle}>PRÉVIA DA OBRA</span>
-
-              <h2 style={previewTitleStyle}>Como vai aparecer</h2>
             </div>
 
             <div style={isDesktop ? desktopPreviewBodyStyle : previewBodyStyle}>
               <div style={isDesktop ? criarDesktopPreviewCoverStyle(capa) : criarPreviewCoverStyle(capa)}>
-                <div style={previewCoverGlowStyle} />
 
-                <span style={previewGenreStyle}>
-                  {generoFinal || "Gênero"}
-                </span>
 
                 <div style={previewCoverBottomStyle}>
                   <strong style={previewCoverNumberStyle}>
@@ -2102,6 +1936,23 @@ export default function EditarObraPage() {
                     {formatoFinal || "Formato"}
                   </span>
 
+                  <span style={previewBadgeStyle}>
+                    {generoFinal || "Gênero"}
+                  </span>
+
+                  {tagsPreview.slice(0, 1).map((tag, index) => (
+                    <span key={`${tag}-preview-badge-${index}`} style={previewBadgeStyle}>
+                      {tag}
+                    </span>
+                  ))}
+
+                  <span style={previewRatingBadgeStyle}>
+                    {classificacaoIndicativa === "Não informada" ||
+                    classificacaoIndicativa === "Não informado"
+                      ? "Livre"
+                      : classificacaoIndicativa || "Livre"}
+                  </span>
+
                   <span
                     style={
                       obraAtual?.publicado
@@ -2110,13 +1961,6 @@ export default function EditarObraPage() {
                     }
                   >
                     {obraAtual?.publicado ? "Publicado" : "Rascunho"}
-                  </span>
-
-                  <span style={previewRatingBadgeStyle}>
-                    {classificacaoIndicativa === "Não informada" ||
-                    classificacaoIndicativa === "Não informado"
-                      ? "Livre"
-                      : classificacaoIndicativa || "Livre"}
                   </span>
 
                   {arquivoObra && (
@@ -2135,26 +1979,6 @@ export default function EditarObraPage() {
                 <p style={previewSinopseStyle}>
                   {sinopse.trim() || "Nenhuma sinopse informada."}
                 </p>
-
-                {arquivoObra && (
-                  <div style={previewFileBoxStyle}>
-                    <span style={previewFileMiniStyle}>ARQUIVO DA OBRA</span>
-
-                    <strong style={previewFileTitleStyle}>{arquivoObra.nome}</strong>
-
-                    <span style={previewFileTextStyle}>
-                      {arquivoObraTipoTexto} • {arquivoObraTamanhoTexto}
-                    </span>
-                  </div>
-                )}
-
-                <div style={previewTagsStyle}>
-                  {tagsPreview.slice(0, 1).map((tag, index) => (
-                    <span key={`${tag}-${index}`} style={previewTagStyle}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
           </aside>
@@ -2234,7 +2058,7 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 32px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(100px + env(safe-area-inset-bottom))",
+  padding: "14px 0 calc(20px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2311,6 +2135,82 @@ const pagePillStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const titleHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "12px",
+  flexWrap: "nowrap",
+  width: "100%",
+  margin: "0 auto 14px",
+  padding: 0,
+  minWidth: 0,
+  textAlign: "center",
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginBottom: "18px",
+};
+
+const headerTitleLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  width: "fit-content",
+  maxWidth: "100%",
+  minWidth: 0,
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+const desktopHeaderTitleLinkStyle: CSSProperties = {
+  ...headerTitleLinkStyle,
+};
+
+const headerTitleMarkStyle: CSSProperties = {
+  display: "none",
+};
+
+const desktopHeaderTitleMarkStyle: CSSProperties = {
+  ...headerTitleMarkStyle,
+};
+
+const headerTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  margin: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  textAlign: "center",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+  ...safeTextStyle,
+};
+
+const desktopHeaderTitleTextStyle: CSSProperties = {
+  ...headerTitleTextStyle,
+};
+
+
 const heroBoxStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
@@ -2384,7 +2284,7 @@ const progressLabelStyle: CSSProperties = {
 
 const progressNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "13px",
+  fontSize: "11px",
   fontWeight: 950,
   ...safeTextStyle,
 };
@@ -2476,7 +2376,7 @@ const successPrimaryButtonStyle: CSSProperties = {
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "13px",
+  fontSize: "11px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
@@ -2494,7 +2394,7 @@ const successSecondaryButtonStyle: CSSProperties = {
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
   textDecoration: "none",
-  fontSize: "13px",
+  fontSize: "11px",
   fontWeight: 900,
   display: "flex",
   alignItems: "center",
@@ -2526,8 +2426,10 @@ const formStyle: CSSProperties = {
 
 const formHeaderStyle: CSSProperties = {
   display: "grid",
-  gap: "7px",
+  justifyItems: "center",
+  gap: "4px",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const formMiniTitleStyle: CSSProperties = {
@@ -2538,14 +2440,15 @@ const formMiniTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const formTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "26px",
-  lineHeight: 1.14,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  paddingBottom: "1px",
-  ...safeTextStyle,
+const formCoverTitleStyle: CSSProperties = {
+  ...formMiniTitleStyle,
+  display: "block",
+  width: "100%",
+  fontSize: "16px",
+  lineHeight: 1.12,
+  letterSpacing: "0.01em",
+  textAlign: "center",
+  textTransform: "none",
 };
 
 const fieldGroupStyle: CSSProperties = {
@@ -2591,36 +2494,36 @@ const coverUploadPreviewStyle: CSSProperties = {
 
 const fileUploadBoxStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "80px minmax(0, 1fr)",
-  gap: "10px",
+  gridTemplateColumns: "minmax(52px, 58px) minmax(0, 1fr)",
+  gap: "12px",
   alignItems: "stretch",
-  padding: "9px",
-  borderRadius: "18px",
+  padding: "10px",
+  borderRadius: "21px",
   background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, rgba(255,255,255,0.08))",
+    "color-mix(in srgb, var(--historietas-surface, rgba(18,12,30,0.86)) 78%, transparent)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
   overflow: "hidden",
 };
 
-const fileIconBoxStyle: CSSProperties = {
-  minHeight: "92px",
-  borderRadius: "15px",
-  position: "relative",
-  overflow: "hidden",
-  background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 46%, transparent), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
+const fileUploadIconBoxStyle: CSSProperties = {
+  minHeight: "82px",
+  borderRadius: "18px",
+  background: "var(--historietas-surface, rgba(18,12,30,0.88))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
-const fileIconStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
+const fileUploadIconStyle: CSSProperties = {
+  width: "31px",
+  height: "31px",
   borderRadius: "999px",
   background:
     "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
@@ -2630,13 +2533,15 @@ const fileIconStyle: CSSProperties = {
   justifyContent: "center",
   fontSize: "18px",
   fontWeight: 950,
+  boxShadow: "none",
 };
 
-const filePreviewImageStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-  display: "block",
+const fileUploadContentStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "center",
+  gap: "7px",
+  minWidth: 0,
+  maxWidth: "100%",
 };
 
 const coverPlaceholderStyle: CSSProperties = {
@@ -2763,7 +2668,7 @@ const inputStyle: CSSProperties = {
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  minHeight: "118px",
+  minHeight: "84px",
   resize: "vertical",
   borderRadius: "18px",
   border: "1px solid var(--historietas-border-soft, #3F3F46)",
@@ -2788,87 +2693,27 @@ const hintStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const fieldStatsBoxStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
-};
-
-const fieldStatItemStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 8px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
-
-const fieldStatOkStyle: CSSProperties = {
-  ...fieldStatItemStyle,
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
-};
-
-const fieldStatWarningStyle: CSSProperties = {
-  ...fieldStatItemStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 25%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-};
-
-const tagPreviewBoxStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const selectedTagButtonStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  minHeight: "32px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 58%, transparent)",
-  color: "#FFFFFF",
-  fontSize: "10.5px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  textAlign: "center",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
-
 const buttonAreaStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "9px",
+  gridTemplateColumns: "minmax(0, 1.35fr) minmax(0, 0.85fr) minmax(0, 0.85fr)",
+  gap: "6px",
   marginTop: "2px",
   minWidth: 0,
 };
 
 const saveButtonStyle: CSSProperties = {
-  minHeight: "48px",
+  minHeight: "40px",
   borderRadius: "999px",
   border: "none",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
-  fontSize: "13px",
+  fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 6px",
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
@@ -2881,201 +2726,178 @@ const disabledButtonStyle: CSSProperties = {
 };
 
 const secondaryButtonStyle: CSSProperties = {
-  minHeight: "46px",
+  minHeight: "40px",
   borderRadius: "999px",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "13px",
+  fontSize: "11px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 6px",
   boxShadow: "none",
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
 const cancelButtonStyle: CSSProperties = {
-  minHeight: "46px",
+  minHeight: "40px",
   borderRadius: "999px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
   textDecoration: "none",
-  fontSize: "13px",
+  fontSize: "11px",
   fontWeight: 900,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 6px",
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
 const previewPanelStyle: CSSProperties = {
   display: "grid",
   gap: "12px",
-  background:
-    "linear-gradient(180deg, var(--historietas-surface, rgba(25,13,43,0.94)) 0%, var(--historietas-surface-strong, rgba(12,7,22,0.96)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  borderRadius: "24px",
-  padding: "14px",
+  padding: 0,
+  background: "transparent",
+  border: "none",
+  borderRadius: 0,
+  boxShadow: "none",
   minWidth: 0,
-  overflow: "hidden",
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const previewHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
+  display: "grid",
+  gap: "4px",
+  justifyItems: "center",
+  textAlign: "center",
   minWidth: 0,
-  flexWrap: "wrap",
 };
 
 const previewMiniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  fontSize: "19px",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "0.08em",
-  ...safeTextStyle,
-};
-
-const previewTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "24px",
-  lineHeight: 1.18,
-  fontWeight: 950,
-  letterSpacing: "-0.045em",
-  paddingBottom: "1px",
+  letterSpacing: "-0.035em",
+  textAlign: "center",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
 const previewCoverStyle: CSSProperties = {
-  minHeight: "226px",
-  borderRadius: "20px",
+  width: "100%",
+  minHeight: "164px",
+  height: "164px",
+  maxHeight: "164px",
+  maxWidth: "100%",
+  alignSelf: "start",
+  borderRadius: "14px",
   position: "relative",
   overflow: "hidden",
   background:
-    "radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent), transparent 34%), radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent), transparent 42%), linear-gradient(145deg, #18111F 0%, #0B0614 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
+    "radial-gradient(circle at top left, var(--historietas-glow-secondary, rgba(249,115,22,0.44)), transparent 34%), radial-gradient(circle at bottom right, var(--historietas-glow-primary, rgba(124,58,237,0.66)), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
   minWidth: 0,
   boxSizing: "border-box",
+  flex: "0 0 auto",
 };
-
-const previewCoverGlowStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  background:
-    "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.72) 100%)",
-};
-
-const previewGenreStyle: CSSProperties = {
-  position: "absolute",
-  top: "10px",
-  left: "10px",
-  maxWidth: "calc(100% - 20px)",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "rgba(15,10,26,0.74)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "#FFFFFF",
-  fontSize: "10px",
-  fontWeight: 950,
-  textAlign: "left",
-  ...safeTextStyle,
-};
-
 
 const previewCoverBottomStyle: CSSProperties = {
   position: "absolute",
-  left: "12px",
-  right: "12px",
-  bottom: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "9px",
-  padding: "9px 10px",
-  borderRadius: "16px",
-  background: "rgba(8,5,14,0.68)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  left: "9px",
+  right: "9px",
+  bottom: "9px",
+  display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr)",
+  alignItems: "end",
+  gap: "5px",
   minWidth: 0,
-  boxSizing: "border-box",
+  maxWidth: "100%",
 };
 
 const previewCoverNumberStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "30px",
-  lineHeight: 1,
+  lineHeight: 0.88,
   fontWeight: 950,
-  letterSpacing: "-0.065em",
+  letterSpacing: "-0.07em",
+  textShadow: "0 1px 10px rgba(0,0,0,0.34)",
   ...safeTextStyle,
 };
 
 const previewCoverTextStyle: CSSProperties = {
   color: "#FFFFFF",
-  fontSize: "10px",
+  fontSize: "8.5px",
+  lineHeight: 1,
   fontWeight: 950,
+  letterSpacing: "0.055em",
+  textAlign: "left",
   textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  textAlign: "right",
+  textShadow: "0 1px 10px rgba(0,0,0,0.34)",
   ...safeTextStyle,
 };
 
 const previewBodyStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "12px",
+  gridTemplateColumns: "minmax(104px, 0.36fr) minmax(0, 1fr)",
+  alignItems: "start",
+  gap: "8px",
+  padding: "8px",
+  borderRadius: "20px",
+  background:
+    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 13%, var(--historietas-border-soft, rgba(255,255,255,0.07)))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
   maxWidth: "100%",
-  padding: "10px",
-  borderRadius: "22px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.085))",
-  boxSizing: "border-box",
   overflow: "hidden",
+  boxSizing: "border-box",
 };
 
 const previewContentStyle: CSSProperties = {
   display: "grid",
   alignContent: "start",
-  gap: "9px",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
-  padding: "2px",
-  boxSizing: "border-box",
 };
 
 const previewBadgesStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "6px",
+  gap: "4px",
+  rowGap: "4px",
   minWidth: 0,
-  alignItems: "center",
+  maxWidth: "100%",
 };
 
 const previewBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "6px 8px",
+  padding: "4px 6px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.065))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-text-primary, #E4E4E7)",
-  fontSize: "10px",
-  lineHeight: 1.1,
+  color: "var(--historietas-secondary-button-text, #E4E4E7)",
+  fontSize: "9px",
   fontWeight: 950,
   ...safeTextStyle,
 };
 
 const previewRatingBadgeStyle: CSSProperties = {
   ...previewBadgeStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 26%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 36%, #FFFFFF)",
+  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, var(--historietas-surface, transparent))",
+  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, var(--historietas-border-soft, transparent))",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
 };
 
 const previewDraftBadgeStyle: CSSProperties = {
@@ -3100,100 +2922,44 @@ const previewFileBadgeStyle: CSSProperties = {
 };
 
 const previewObraTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "clamp(24px, 4.8vw, 34px)",
-  lineHeight: 1.16,
+  margin: "0",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "22px",
+  lineHeight: 1.02,
   fontWeight: 950,
-  letterSpacing: "-0.05em",
+  letterSpacing: "-0.06em",
   maxWidth: "100%",
-  paddingBottom: "2px",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 58%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  textDecoration: "none",
+  borderBottom: "none",
   ...safeTextStyle,
 };
 
 const previewAuthorStyle: CSSProperties = {
-  margin: "-3px 0 0",
-  color: "var(--historietas-secondary-button-text, #C4B5FD)",
-  fontSize: "12px",
-  lineHeight: 1.4,
-  fontWeight: 900,
+  width: "fit-content",
   maxWidth: "100%",
+  margin: "-1px 0 0",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "12.5px",
+  fontWeight: 900,
+  textDecoration: "none",
+  borderBottom: "none",
   ...safeTextStyle,
 };
 
 const previewSinopseStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.62,
+  fontSize: "11px",
+  lineHeight: 1.38,
   fontWeight: 650,
   whiteSpace: "pre-wrap",
   maxWidth: "100%",
   display: "-webkit-box",
-  WebkitLineClamp: 4,
+  WebkitLineClamp: 3,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
-  ...safeTextStyle,
-};
-
-const previewFileBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "4px",
-  padding: "9px 10px",
-  borderRadius: "15px",
-  background: "rgba(34,197,94,0.09)",
-  border: "1px solid rgba(34,197,94,0.18)",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-};
-
-const previewFileMiniStyle: CSSProperties = {
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
-  fontSize: "9px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  ...safeTextStyle,
-};
-
-const previewFileTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14px",
-  lineHeight: 1.2,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const previewFileTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const previewTagsStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-  marginTop: "1px",
-};
-
-const previewTagStyle: CSSProperties = {
-  maxWidth: "100%",
-  padding: "6px 8px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 36%, #FFFFFF)",
-  fontSize: "10px",
-  fontWeight: 900,
+  overflowWrap: "break-word",
+  wordBreak: "break-word",
   ...safeTextStyle,
 };
 
@@ -3245,7 +3011,7 @@ const emptyButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 96px",
+  padding: "18px 0 20px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -3300,11 +3066,6 @@ const desktopFormHeaderStyle: CSSProperties = {
   gap: "5px",
 };
 
-const desktopFormTitleStyle: CSSProperties = {
-  ...formTitleStyle,
-  fontSize: "28px",
-};
-
 const desktopCoverUploadBoxStyle: CSSProperties = {
   ...coverUploadBoxStyle,
   gridTemplateColumns: "90px minmax(0, 1fr)",
@@ -3314,9 +3075,14 @@ const desktopCoverUploadBoxStyle: CSSProperties = {
 
 const desktopFileUploadBoxStyle: CSSProperties = {
   ...fileUploadBoxStyle,
-  gridTemplateColumns: "90px minmax(0, 1fr)",
-  padding: "10px",
-  gap: "12px",
+  gridTemplateColumns: "76px minmax(0, 1fr)",
+  padding: "14px",
+  gap: "14px",
+  borderRadius: "22px",
+  background:
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 15%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent) 100%)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
 };
 
 const desktopDoubleFieldStyle: CSSProperties = {
@@ -3327,71 +3093,68 @@ const desktopDoubleFieldStyle: CSSProperties = {
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "140px",
+  minHeight: "98px",
 };
 
 const desktopButtonAreaStyle: CSSProperties = {
   ...buttonAreaStyle,
-  gridTemplateColumns: "190px 140px 130px",
+  gridTemplateColumns: "170px 112px 104px",
   justifyContent: "start",
-  gap: "10px",
+  gap: "8px",
 };
 
 const desktopSaveButtonStyle: CSSProperties = {
   ...saveButtonStyle,
-  minHeight: "44px",
-  fontSize: "12px",
+  minHeight: "40px",
+  fontSize: "11px",
 };
 
 const desktopDisabledButtonStyle: CSSProperties = {
   ...disabledButtonStyle,
-  minHeight: "44px",
-  fontSize: "12px",
+  minHeight: "40px",
+  fontSize: "11px",
 };
 
 const desktopSecondaryButtonStyle: CSSProperties = {
   ...secondaryButtonStyle,
-  minHeight: "44px",
-  fontSize: "12px",
+  minHeight: "40px",
+  fontSize: "11px",
 };
 
 const desktopCancelButtonStyle: CSSProperties = {
   ...cancelButtonStyle,
-  minHeight: "44px",
-  fontSize: "12px",
+  minHeight: "40px",
+  fontSize: "11px",
 };
 
 const desktopPreviewPanelStyle: CSSProperties = {
   ...previewPanelStyle,
   width: "100%",
-  margin: "0",
-  padding: "16px",
-  borderRadius: "24px",
-  gap: "12px",
+  margin: 0,
 };
 
 const desktopPreviewBodyStyle: CSSProperties = {
   ...previewBodyStyle,
-  gridTemplateColumns: "176px minmax(0, 1fr)",
-  gap: "16px",
-  alignItems: "stretch",
-  padding: "12px",
+  gridTemplateColumns: "138px minmax(0, 1fr)",
+  gap: "12px",
+  padding: "10px",
   borderRadius: "22px",
 };
 
 const desktopPreviewContentStyle: CSSProperties = {
   ...previewContentStyle,
   alignSelf: "stretch",
-  alignContent: "center",
-  gap: "9px",
-  padding: "4px 6px 4px 0",
+  alignContent: "start",
+  gap: "6px",
+  padding: 0,
   boxSizing: "border-box",
 };
 
 const desktopPreviewCoverStyle: CSSProperties = {
   ...previewCoverStyle,
-  width: "176px",
-  minHeight: "244px",
-  height: "244px",
-  borderRadius: "20px",
+  width: "100%",
+  minHeight: "164px",
+  height: "164px",
+  maxHeight: "164px",
+  borderRadius: "16px",
 };

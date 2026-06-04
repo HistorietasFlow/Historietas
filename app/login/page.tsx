@@ -215,8 +215,6 @@ export default function LoginPage() {
             <span style={logoMarkStyle}>H</span>
             <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
-
-          <span style={topBadgeStyle}>CONTA</span>
         </header>
 
         <section style={heroStyle}>
@@ -224,8 +222,6 @@ export default function LoginPage() {
 
           <div style={heroContentStyle}>
             <div style={introStyle}>
-              <span style={miniTitleStyle}>CONTA DO AUTOR</span>
-
               <h1 className="historietas-theme-title" style={titleStyle}>
                 {criandoConta ? "Criar conta" : "Entrar na plataforma"}
               </h1>
@@ -235,12 +231,6 @@ export default function LoginPage() {
                 acompanhar obras e continuar construindo sua biblioteca na
                 Historietas.
               </p>
-
-              <div style={benefitsGridStyle} aria-label="Benefícios da conta">
-                <span style={benefitPillStyle}>Publicar obras</span>
-                <span style={benefitPillStyle}>Salvar progresso</span>
-                <span style={benefitPillStyle}>Acompanhar leitores</span>
-              </div>
             </div>
 
             <div style={formPanelStyle}>
@@ -396,7 +386,7 @@ const containerStyle: CSSProperties = {
   width: "min(1120px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "clamp(12px, 2vw, 22px) 0 24px",
+  padding: "clamp(12px, 2vw, 22px) 0 16px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -404,7 +394,7 @@ const containerStyle: CSSProperties = {
 const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "center",
   gap: "10px",
   marginBottom: "10px",
   minWidth: 0,
@@ -420,7 +410,7 @@ const logoStyle: CSSProperties = {
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "calc(100% - 120px)",
+  maxWidth: "100%",
   overflow: "visible",
   ...safeTextStyle,
 };
@@ -451,24 +441,6 @@ const logoTextStyle: CSSProperties = {
   textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
 };
 
-const topBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "8px 12px",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, rgba(255,255,255,0.08))",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.095em",
-  whiteSpace: "nowrap",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
 const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
@@ -492,27 +464,23 @@ const heroGlowStyle: CSSProperties = {
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  padding: "clamp(14px, 3.2vw, 34px)",
+  padding: "clamp(18px, 3.4vw, 38px) clamp(18px, 3.4vw, 38px) clamp(8px, 1.35vw, 16px)",
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 350px), 1fr))",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  justifyItems: "center",
   alignItems: "center",
-  gap: "clamp(14px, 3vw, 30px)",
+  gap: "clamp(14px, 2.8vw, 26px)",
   minWidth: 0,
 };
 
 const introStyle: CSSProperties = {
   display: "grid",
+  justifyItems: "center",
   gap: "10px",
+  width: "100%",
+  maxWidth: "760px",
+  textAlign: "center",
   minWidth: 0,
-};
-
-const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.095em",
-  textTransform: "uppercase",
-  ...safeTextStyle,
 };
 
 const titleStyle: CSSProperties = {
@@ -521,13 +489,16 @@ const titleStyle: CSSProperties = {
   lineHeight: 1.02,
   fontWeight: 950,
   letterSpacing: "-0.08em",
-  maxWidth: "720px",
+  maxWidth: "760px",
+  textAlign: "center",
   background:
     "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
   paddingBottom: "3px",
+  marginLeft: "auto",
+  marginRight: "auto",
   ...safeTextStyle,
 };
 
@@ -538,27 +509,7 @@ const descriptionStyle: CSSProperties = {
   lineHeight: 1.54,
   fontWeight: 650,
   maxWidth: "620px",
-  ...safeTextStyle,
-};
-
-const benefitsGridStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "7px",
-  marginTop: "2px",
-  minWidth: 0,
-};
-
-const benefitPillStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "7px 10px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.065))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.095))",
-  color: "var(--historietas-text-primary, #E4E4E7)",
-  fontSize: "11px",
-  fontWeight: 900,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -568,12 +519,11 @@ const formPanelStyle: CSSProperties = {
   width: "100%",
   maxWidth: "440px",
   justifySelf: "center",
-  padding: "clamp(12px, 2.4vw, 18px)",
-  borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, var(--historietas-secondary-surface, rgba(255,255,255,0.075)) 0%, var(--historietas-surface, rgba(255,255,255,0.045)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  boxShadow: "none",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -582,10 +532,10 @@ const tabsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "6px",
-  padding: "5px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(0,0,0,0.16))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
 };
 

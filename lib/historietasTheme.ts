@@ -18,7 +18,12 @@ export type TemaVisualHistorietas =
   | "drama"
   | "aventura"
   | "sobrenatural"
-  | "comedia";
+  | "comedia"
+  | "misterio"
+  | "suspense"
+  | "historico"
+  | "biografia"
+  | "pixel";
 
 export type TemaVisualHistorietasConfig = {
   accent: string;
@@ -243,16 +248,16 @@ export const TEMAS_VISUAIS_HISTORIETAS: Record<
   },
   aventura: {
     ...temaBaseEscuro,
-    accent: "#FBBF24",
-    secondary: "#B45309",
-    bgStart: "#100B06",
-    bgMid: "#181020",
-    bgEnd: "#17101F",
-    glowPrimary: "rgba(251,191,36,0.24)",
-    glowSecondary: "rgba(180,83,9,0.20)",
+    accent: "#EAB308",
+    secondary: "#92400E",
+    bgStart: "#0D0803",
+    bgMid: "#171006",
+    bgEnd: "#1F1308",
+    glowPrimary: "rgba(234,179,8,0.18)",
+    glowSecondary: "rgba(146,64,14,0.20)",
     titleTo: "#FDE68A",
-    activeSurface: "rgba(251,191,36,0.16)",
-    secondarySurface: "rgba(180,83,9,0.18)",
+    activeSurface: "rgba(234,179,8,0.16)",
+    secondarySurface: "rgba(146,64,14,0.18)",
     secondaryButtonText: "#FEF3C7",
   },
   sobrenatural: {
@@ -282,6 +287,90 @@ export const TEMAS_VISUAIS_HISTORIETAS: Record<
     activeSurface: "rgba(250,204,21,0.16)",
     secondarySurface: "rgba(251,113,133,0.16)",
     secondaryButtonText: "#FEF9C3",
+  },
+  misterio: {
+    ...temaBaseEscuro,
+    accent: "#3B82F6",
+    secondary: "#0F172A",
+    bgStart: "#030712",
+    bgMid: "#07111F",
+    bgEnd: "#0B1020",
+    glowPrimary: "rgba(59,130,246,0.22)",
+    glowSecondary: "rgba(15,23,42,0.30)",
+    titleTo: "#93C5FD",
+    activeSurface: "rgba(59,130,246,0.15)",
+    secondarySurface: "rgba(15,23,42,0.28)",
+    secondaryButtonText: "#BFDBFE",
+  },
+  suspense: {
+    ...temaBaseEscuro,
+    accent: "#A3E635",
+    secondary: "#365314",
+    bgStart: "#070B05",
+    bgMid: "#101607",
+    bgEnd: "#11140A",
+    glowPrimary: "rgba(163,230,53,0.18)",
+    glowSecondary: "rgba(54,83,20,0.24)",
+    titleTo: "#D9F99D",
+    activeSurface: "rgba(163,230,53,0.14)",
+    secondarySurface: "rgba(54,83,20,0.24)",
+    secondaryButtonText: "#D9F99D",
+  },
+  historico: {
+    ...temaBaseEscuro,
+    accent: "#D6A15D",
+    secondary: "#78350F",
+    bgStart: "#0C0704",
+    bgMid: "#151008",
+    bgEnd: "#18110A",
+    glowPrimary: "rgba(214,161,93,0.18)",
+    glowSecondary: "rgba(120,53,15,0.22)",
+    titleTo: "#F5D6A0",
+    activeSurface: "rgba(214,161,93,0.14)",
+    secondarySurface: "rgba(120,53,15,0.22)",
+    secondaryButtonText: "#FDE68A",
+  },
+  biografia: {
+    ...temaBaseEscuro,
+    accent: "#94A3B8",
+    secondary: "#334155",
+    bgStart: "#05080D",
+    bgMid: "#0B111C",
+    bgEnd: "#101827",
+    glowPrimary: "rgba(148,163,184,0.18)",
+    glowSecondary: "rgba(51,65,85,0.26)",
+    titleTo: "#CBD5E1",
+    activeSurface: "rgba(148,163,184,0.14)",
+    secondarySurface: "rgba(51,65,85,0.24)",
+    secondaryButtonText: "#E2E8F0",
+  },
+  pixel: {
+    ...temaBaseEscuro,
+    accent: "#22C55E",
+    secondary: "#38BDF8",
+    bgStart: "#030703",
+    bgMid: "#061106",
+    bgEnd: "#020402",
+    glowPrimary: "rgba(34,197,94,0.16)",
+    glowSecondary: "rgba(56,189,248,0.12)",
+    textPrimary: "#ECFDF5",
+    textSecondary: "#BBF7D0",
+    surface: "#07120A",
+    surfaceStrong: "#030803",
+    borderSoft: "rgba(34,197,94,0.34)",
+    inputBg: "#020602",
+    inputText: "#ECFDF5",
+    titleFrom: "#ECFDF5",
+    titleMid: "#BBF7D0",
+    titleTo: "#86EFAC",
+    heroShadow: "none",
+    cardShadow: "none",
+    logoShadow: "none",
+    activeSurface: "rgba(34,197,94,0.18)",
+    secondarySurface: "rgba(56,189,248,0.12)",
+    secondaryButtonText: "#BAE6FD",
+    dangerSurface: "rgba(239,68,68,0.14)",
+    dangerButtonText: "#FCA5A5",
   },
 };
 
@@ -378,6 +467,82 @@ export const historietasThemeCss = `
     --historietas-secondary-surface: rgba(124,58,237,0.12);
     --historietas-danger-surface: rgba(239,68,68,0.12);
   }
+
+  html[data-historietas-tema-visual="pixel"] {
+    --historietas-bg-start: #030703;
+    --historietas-bg-mid: #061106;
+    --historietas-bg-end: #020402;
+    --historietas-accent: #22C55E;
+    --historietas-secondary: #38BDF8;
+    --historietas-text-primary: #ECFDF5;
+    --historietas-text-secondary: #BBF7D0;
+    --historietas-surface: #07120A;
+    --historietas-surface-strong: #030803;
+    --historietas-border-soft: rgba(34,197,94,0.34);
+    --historietas-input-bg: #020602;
+    --historietas-input-text: #ECFDF5;
+    --historietas-title-from: #ECFDF5;
+    --historietas-title-mid: #BBF7D0;
+    --historietas-title-to: #86EFAC;
+    --historietas-active-surface: rgba(34,197,94,0.18);
+    --historietas-secondary-surface: rgba(56,189,248,0.12);
+    --historietas-secondary-button-text: #BAE6FD;
+    --historietas-pixel-border: #22C55E;
+    --historietas-pixel-grid: rgba(34,197,94,0.055);
+  }
+
+  html[data-historietas-tema-visual="pixel"] body {
+    background:
+      repeating-linear-gradient(0deg, transparent 0 7px, var(--historietas-pixel-grid) 7px 8px),
+      repeating-linear-gradient(90deg, transparent 0 7px, var(--historietas-pixel-grid) 7px 8px),
+      linear-gradient(180deg, #030703 0%, #061106 54%, #020402 100%) !important;
+  }
+
+  html[data-historietas-tema-visual="pixel"] main {
+    background:
+      radial-gradient(circle at 18% 0%, rgba(34,197,94,0.10), transparent 28%),
+      radial-gradient(circle at 86% 20%, rgba(56,189,248,0.08), transparent 26%),
+      repeating-linear-gradient(0deg, transparent 0 7px, rgba(34,197,94,0.045) 7px 8px),
+      repeating-linear-gradient(90deg, transparent 0 7px, rgba(56,189,248,0.030) 7px 8px),
+      linear-gradient(180deg, #030703 0%, #061106 54%, #020402 100%) !important;
+  }
+
+  html[data-historietas-tema-visual="pixel"] button,
+  html[data-historietas-tema-visual="pixel"] input,
+  html[data-historietas-tema-visual="pixel"] textarea,
+  html[data-historietas-tema-visual="pixel"] select,
+  html[data-historietas-tema-visual="pixel"] a,
+  html[data-historietas-tema-visual="pixel"] [style*="border-radius"] {
+    border-radius: 3px !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="pixel"] button,
+  html[data-historietas-tema-visual="pixel"] input,
+  html[data-historietas-tema-visual="pixel"] textarea,
+  html[data-historietas-tema-visual="pixel"] select {
+    border-color: color-mix(in srgb, var(--historietas-pixel-border) 52%, rgba(255,255,255,0.10)) !important;
+    background-color: var(--historietas-input-bg, #020602) !important;
+    image-rendering: pixelated;
+  }
+
+  html[data-historietas-tema-visual="pixel"] img,
+  html[data-historietas-tema-visual="pixel"] canvas,
+  html[data-historietas-tema-visual="pixel"] video,
+  html[data-historietas-tema-visual="pixel"] [style*="background-image"] {
+    image-rendering: pixelated;
+  }
+
+  html[data-historietas-tema-visual="pixel"] .historietas-theme-logo-text,
+  html[data-historietas-tema-visual="pixel"] .historietas-theme-title {
+    background: none !important;
+    color: #86EFAC !important;
+    -webkit-text-fill-color: #86EFAC !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase;
+  }
+
 `;
 
 export function obterTemaVisualSeguro(valor: unknown): TemaVisualHistorietas {
@@ -422,7 +587,9 @@ export function aplicarTemaVisual(temaVisual: TemaVisualHistorietas) {
       ? "#FFFFFF"
       : temaVisual === "escuro"
         ? "#000000"
-        : tema.bgStart;
+        : temaVisual === "pixel"
+          ? "#030703"
+          : tema.bgStart;
 
   document.body.style.background = fundoDocumento;
   raiz.style.background = fundoDocumento;
@@ -475,6 +642,7 @@ function aplicarVariaveisDaBarraInferior(
   const isBranco = temaVisual === "branco";
   const isEscuro = temaVisual === "escuro";
   const isFoco = temaVisual === "foco";
+  const isPixel = temaVisual === "pixel";
   const surface = tema.surface || "rgba(18,12,30,0.82)";
   const surfaceStrong = tema.surfaceStrong || "rgba(18,12,30,0.98)";
   const borderSoft = tema.borderSoft || "rgba(255,255,255,0.08)";
@@ -492,7 +660,9 @@ function aplicarVariaveisDaBarraInferior(
         ? "#050505"
         : isFoco
           ? "#050506"
-          : `radial-gradient(circle at 16% 0%, color-mix(in srgb, ${tema.accent} 18%, transparent), transparent 34%), radial-gradient(circle at 84% 0%, color-mix(in srgb, ${tema.secondary} 22%, transparent), transparent 38%), linear-gradient(180deg, ${surfaceStrong} 0%, ${tema.bgStart} 100%)`
+          : isPixel
+            ? "repeating-linear-gradient(0deg, transparent 0 7px, rgba(34,197,94,0.055) 7px 8px), linear-gradient(180deg, #07120A 0%, #030803 100%)"
+            : `radial-gradient(circle at 16% 0%, color-mix(in srgb, ${tema.accent} 18%, transparent), transparent 34%), radial-gradient(circle at 84% 0%, color-mix(in srgb, ${tema.secondary} 22%, transparent), transparent 38%), linear-gradient(180deg, ${surfaceStrong} 0%, ${tema.bgStart} 100%)`
   );
   raiz.style.setProperty("--historietas-bottom-nav-border", isBranco ? "#DADCE0" : borderSoft);
   raiz.style.setProperty("--historietas-bottom-nav-shadow", "none");
@@ -527,7 +697,9 @@ export function criarPageThemeStyle(
         ? "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 58%, #F8F9FA 100%)"
         : temaVisual === "escuro"
           ? "linear-gradient(180deg, #000000 0%, #000000 100%)"
-          : pageStyle.background,
+          : temaVisual === "pixel"
+            ? "radial-gradient(circle at 18% 0%, rgba(34,197,94,0.10), transparent 28%), radial-gradient(circle at 86% 20%, rgba(56,189,248,0.08), transparent 26%), repeating-linear-gradient(0deg, transparent 0 7px, rgba(34,197,94,0.045) 7px 8px), repeating-linear-gradient(90deg, transparent 0 7px, rgba(56,189,248,0.030) 7px 8px), linear-gradient(180deg, #030703 0%, #061106 54%, #020402 100%)"
+            : pageStyle.background,
   };
 }
 

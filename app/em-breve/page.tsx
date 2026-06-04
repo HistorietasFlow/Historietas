@@ -64,9 +64,7 @@ function criarLinkObra(titulo: string) {
 
 export default function EmBrevePage() {
   const [nomeObra, setNomeObra] = useState("");
-  const [nomeCapitulo, setNomeCapitulo] = useState("");
   const [obrasSalvas, setObrasSalvas] = useState<string[]>([]);
-  const [mensagemSalva, setMensagemSalva] = useState("");
   const [desktopLayout, setDesktopLayout] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -89,7 +87,6 @@ export default function EmBrevePage() {
     const parametros = new URLSearchParams(window.location.search);
 
     setNomeObra(pegarParametro(parametros.get("obra")));
-    setNomeCapitulo(pegarParametro(parametros.get("capitulo")));
 
     try {
       const salvasTexto = localStorage.getItem(SAVED_RELEASES_STORAGE_KEY);
@@ -116,11 +113,6 @@ export default function EmBrevePage() {
 
   const obraCatalogo = nomeObra ? encontrarObraPorTitulo(nomeObra) : null;
 
-  const classificacaoIndicativa =
-    obraCatalogo?.classificacaoIndicativa || "Não informada";
-
-  const mostrarClassificacao = classificacaoIndicativa !== "Não informada";
-
   const obrasEmBreve = obras.filter((obra) => !obra.disponivel);
 
   const outrasObrasEmBreve = obrasEmBreve
@@ -132,30 +124,6 @@ export default function EmBrevePage() {
       return obra.titulo !== obraCatalogo.titulo;
     })
     .slice(0, 4);
-
-  const tituloPagina = nomeObra
-    ? `${nomeObra} chega em breve`
-    : "Obra em breve";
-
-  const descricaoPagina =
-    "Essa história está em preparação e ainda não foi liberada para leitura.";
-
-  const tituloParaSalvar = obraCatalogo?.titulo || nomeObra;
-
-  const obraAtualSalva = tituloParaSalvar
-    ? obrasSalvas.includes(normalizarTexto(tituloParaSalvar))
-    : false;
-
-  const usarHeroDesktopComDestaque =
-    desktopLayout && Boolean(nomeObra || nomeCapitulo);
-
-  const heroActionsStyle = desktopLayout
-    ? tituloParaSalvar
-      ? desktopActionsThreeColumnsStyle
-      : desktopActionsStyle
-    : tituloParaSalvar
-      ? actionsThreeColumnsStyle
-      : actionsStyle;
 
   function salvarLancamento(titulo: string) {
     const tituloNormalizado = normalizarTexto(titulo);
@@ -174,12 +142,6 @@ export default function EmBrevePage() {
     );
 
     setObrasSalvas(novasObrasSalvas);
-
-    setMensagemSalva(
-      novasObrasSalvas.includes(tituloNormalizado)
-        ? "Aviso ativado. Você poderá receber aviso quando for liberada."
-        : "Aviso de lançamento removido."
-    );
   }
 
   return (
@@ -190,136 +152,20 @@ export default function EmBrevePage() {
       {!desktopLayout && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={desktopLayout ? desktopContainerStyle : containerStyle}>
-        <header style={desktopLayout ? desktopTopStyle : topStyle}>
+        <header style={desktopLayout ? desktopTitleHeaderStyle : titleHeaderStyle}>
           <Link
             href="/"
-            style={desktopLayout ? desktopLogoStyle : logoStyle}
+            style={desktopLayout ? desktopTitleLinkStyle : titleLinkStyle}
             aria-label="Voltar para a Home"
           >
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+            <span
+              className="historietas-theme-logo-text"
+              style={desktopLayout ? desktopTitleTextStyle : titleTextStyle}
+            >
+              OBRAS EM BREVE
+            </span>
           </Link>
-
         </header>
-
-        <section style={desktopLayout ? desktopHeroStyle : heroStyle}>
-          <div style={heroGlowStyle} />
-
-          <div
-            style={
-              desktopLayout
-                ? usarHeroDesktopComDestaque
-                  ? desktopHeroContentWithReleaseStyle
-                  : desktopHeroContentStyle
-                : heroContentStyle
-            }
-          >
-            {(obraCatalogo || mostrarClassificacao) && (
-              <div style={desktopLayout ? desktopBadgeRowStyle : badgeRowStyle}>
-                {obraCatalogo && (
-                  <span style={genreBadgeStyle}>{obraCatalogo.genero}</span>
-                )}
-
-                {mostrarClassificacao && (
-                  <span style={classificationBadgeStyle}>
-                    {classificacaoIndicativa}
-                  </span>
-                )}
-              </div>
-            )}
-
-            <h1 className="historietas-theme-title" style={desktopLayout ? desktopTitleStyle : titleStyle}>{tituloPagina}</h1>
-
-            <p style={desktopLayout ? desktopDescriptionStyle : descriptionStyle}>{descricaoPagina}</p>
-
-            {(nomeObra || nomeCapitulo) && (
-              <div
-                style={
-                  usarHeroDesktopComDestaque
-                    ? desktopReleaseBoxStyle
-                    : releaseBoxStyle
-                }
-              >
-                <div style={releaseIconStyle}>⏳</div>
-
-                <div style={releaseContentStyle}>
-                  <span style={releaseLabelStyle}>
-                    {nomeCapitulo
-                      ? "CAPÍTULO EM PREPARAÇÃO"
-                      : "LANÇAMENTO FUTURO"}
-                  </span>
-
-                  <strong style={releaseNameStyle}>{nomeObra || "Obra"}</strong>
-
-                  <p style={releaseTextStyle}>
-                    {nomeCapitulo
-                      ? `O capítulo ${nomeCapitulo} ainda não foi liberado para leitura.`
-                      : "Essa obra ainda não tem capítulos liberados para leitura."}
-                  </p>
-
-                  {obraCatalogo && (
-                    <div style={releaseMetaStyle}>
-                      <span>{obraCatalogo.autor}</span>
-                      <span>{obraCatalogo.genero}</span>
-
-                      {mostrarClassificacao && (
-                        <span>{classificacaoIndicativa}</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div style={heroActionsStyle}>
-              <Link href="/explorar" style={primaryButtonStyle}>
-                Voltar para Explorar
-              </Link>
-
-              <Link href="/explorar" style={secondaryButtonStyle}>
-                Procurar outras histórias
-              </Link>
-
-              {tituloParaSalvar && (
-                <button
-                  type="button"
-                  onClick={() => salvarLancamento(tituloParaSalvar)}
-                  style={obraAtualSalva ? savedButtonStyle : notifyButtonStyle}
-                  aria-pressed={obraAtualSalva}
-                >
-                  {obraAtualSalva ? "✓ Aviso ativado" : "Avisar lançamento"}
-                </button>
-              )}
-            </div>
-
-            {mensagemSalva && (
-              <span
-                style={
-                  desktopLayout ? desktopSavedMessageStyle : savedMessageStyle
-                }
-              >
-                {mensagemSalva}
-              </span>
-            )}
-          </div>
-        </section>
-
-        <section
-          style={desktopLayout ? desktopSummaryGridStyle : summaryGridStyle}
-          aria-label="Resumo de lançamentos"
-        >
-          <div style={desktopLayout ? desktopSummaryCardStyle : summaryCardStyle}>
-            <strong style={summaryNumberStyle}>{obrasEmBreve.length}</strong>
-            <span style={summaryLabelStyle}>lançamentos futuros</span>
-          </div>
-
-          <div style={desktopLayout ? desktopSummaryCardStyle : summaryCardStyle}>
-            <strong style={summaryNumberStyle}>
-              {outrasObrasEmBreve.length}
-            </strong>
-            <span style={summaryLabelStyle}>obras sugeridas</span>
-          </div>
-        </section>
 
         {outrasObrasEmBreve.length > 0 && (
           <section
@@ -327,10 +173,6 @@ export default function EmBrevePage() {
               desktopLayout ? desktopRelatedSectionStyle : relatedSectionStyle
             }
           >
-            <div style={sectionHeaderStyle}>
-              <h2 style={releaseSectionTitleStyle}>LANÇAMENTOS</h2>
-            </div>
-
             <div style={desktopLayout ? desktopRelatedGridStyle : relatedGridStyle}>
               {outrasObrasEmBreve.map((obra) => {
                 const obraSalva = obrasSalvas.includes(
@@ -582,6 +424,75 @@ const logoTextStyle: CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+};
+
+const titleHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "12px",
+  flexWrap: "nowrap",
+  marginTop: "4px",
+  marginBottom: "14px",
+  padding: 0,
+  minWidth: 0,
+  maxWidth: "100%",
+  textAlign: "center",
+  boxSizing: "border-box",
+};
+
+const titleLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+
+const titleTextStyle: CSSProperties = {
+  display: "inline-block",
+  marginLeft: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginTop: "6px",
+  marginBottom: "18px",
+};
+
+const desktopTitleLinkStyle: CSSProperties = {
+  ...titleLinkStyle,
+};
+
+
+const desktopTitleTextStyle: CSSProperties = {
+  ...titleTextStyle,
 };
 
 const heroStyle: CSSProperties = {

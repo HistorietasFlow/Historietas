@@ -113,9 +113,25 @@ export default function RootLayout({
         <style
           dangerouslySetInnerHTML={{
             __html: `
+              html,
+              body {
+                width: 100%;
+                max-width: 100vw;
+                min-height: 100%;
+                margin: 0;
+                overflow-x: hidden;
+                background: #0B0614;
+              }
+
+              *,
+              *::before,
+              *::after {
+                box-sizing: border-box;
+              }
+
               .historietas-app-shell {
                 width: 100%;
-                max-width: 100%;
+                max-width: 100vw;
                 min-height: 100vh;
                 overflow-x: hidden;
               }
@@ -125,7 +141,8 @@ export default function RootLayout({
                 left: 50%;
                 bottom: max(10px, env(safe-area-inset-bottom));
                 z-index: 80;
-                width: min(450px, calc(100% - 18px));
+                width: min(450px, calc(100vw - 18px));
+                max-width: calc(100vw - 18px);
                 min-height: 66px;
                 transform: translateX(-50%);
                 display: none;
@@ -264,7 +281,8 @@ export default function RootLayout({
 
               @media (max-width: 360px) {
                 .historietas-bottom-nav {
-                  width: min(450px, calc(100% - 12px));
+                  width: min(450px, calc(100vw - 12px));
+                  max-width: calc(100vw - 12px);
                   bottom: max(6px, env(safe-area-inset-bottom));
                   padding: 6px;
                   border-radius: 22px;

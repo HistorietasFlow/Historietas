@@ -1429,66 +1429,20 @@ export default function NotificacoesPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : mobileTopStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopTitleHomeLinkStyle : titleHomeLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span
+              className="historietas-theme-title"
+              style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
+            >
+              NOTIFICAÇÕES
+            </span>
           </Link>
-
-          <div style={isDesktop ? desktopTopActionsStyle : topActionsStyle}>
-            <Link href="/em-breve" style={isDesktop ? desktopSoonTopButtonStyle : soonTopButtonStyle}>
-              Em breve
-            </Link>
-          </div>
         </header>
-
-        <section style={isDesktop ? desktopHeroStyle : mobileHeroStyle}>
-          <div style={heroDecorationLayerStyle} aria-hidden="true">
-            <span style={heroSparkTopStyle}>✦</span>
-            <span style={heroSparkMiddleStyle}>◌</span>
-            <span style={heroSparkBottomStyle}>✧</span>
-          </div>
-
-          <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>
-            Notificações
-          </h1>
-
-          <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            Acompanhe novos capítulos, comentários da Comunidade e atualizações de moderação.
-          </p>
-        </section>
-
-        <section style={isDesktop ? desktopStatsGridStyle : statsGridStyle} aria-label="Resumo das notificações">
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totalNotificacoes}</strong>
-            <span style={statLabelStyle}>Total</span>
-          </div>
-
-          <div style={unreadStatCardStyle}>
-            <strong style={statNumberStyle}>{totalNaoLidas}</strong>
-            <span style={statLabelStyle}>Novas</span>
-          </div>
-
-          <div style={readStatCardStyle}>
-            <strong style={statNumberStyle}>{totalLidas}</strong>
-            <span style={statLabelStyle}>Lidas</span>
-          </div>
-
-          <div style={chapterStatCardStyle}>
-            <strong style={statNumberStyle}>{totalCapitulos}</strong>
-            <span style={statLabelStyle}>Capítulos</span>
-          </div>
-
-          <div style={communityStatCardStyle}>
-            <strong style={statNumberStyle}>{totalComunidade}</strong>
-            <span style={statLabelStyle}>Comunidade</span>
-          </div>
-
-          <div style={statCardStyle}>
-            <strong style={smallStatTextStyle}>{ultimaNotificacao}</strong>
-            <span style={statLabelStyle}>Última</span>
-          </div>
-        </section>
 
         {totalNotificacoes > 0 && (
           <>
@@ -1600,6 +1554,42 @@ export default function NotificacoesPage() {
                 )}
               </div>
             </section>
+
+        <section
+              className="notificacoes-stats-carousel"
+              style={isDesktop ? desktopStatsGridStyle : statsGridStyle}
+              aria-label="Resumo das notificações"
+            >
+          <div style={statCardStyle}>
+            <strong style={statNumberStyle}>{totalNotificacoes}</strong>
+            <span style={statLabelStyle}>Total</span>
+          </div>
+
+          <div style={unreadStatCardStyle}>
+            <strong style={statNumberStyle}>{totalNaoLidas}</strong>
+            <span style={statLabelStyle}>Novas</span>
+          </div>
+
+          <div style={readStatCardStyle}>
+            <strong style={statNumberStyle}>{totalLidas}</strong>
+            <span style={statLabelStyle}>Lidas</span>
+          </div>
+
+          <div style={chapterStatCardStyle}>
+            <strong style={statNumberStyle}>{totalCapitulos}</strong>
+            <span style={statLabelStyle}>Capítulos</span>
+          </div>
+
+          <div style={communityStatCardStyle}>
+            <strong style={statNumberStyle}>{totalComunidade}</strong>
+            <span style={statLabelStyle}>Comunidade</span>
+          </div>
+
+          <div style={statCardStyle}>
+            <strong style={smallStatTextStyle}>{ultimaNotificacao}</strong>
+            <span style={statLabelStyle}>Última</span>
+          </div>
+        </section>
 
             <section style={isDesktop ? desktopActionBarStyle : actionBarStyle} aria-label="Ações gerais">
               <button
@@ -1871,6 +1861,15 @@ const notificacoesPageCss = `
     color: #5F6368 !important;
     cursor: not-allowed !important;
   }
+
+  .notificacoes-stats-carousel {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .notificacoes-stats-carousel::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 const safeTextStyle: CSSProperties = {
@@ -1993,6 +1992,72 @@ const logoTextStyle: CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+};
+
+const titleHeaderStyle: CSSProperties = {
+  ...topStyle,
+  justifyContent: "center",
+  gap: "12px",
+  flexWrap: "nowrap",
+  marginTop: "4px",
+  marginBottom: "14px",
+  padding: 0,
+  textAlign: "center",
+};
+
+const titleHomeLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  width: "fit-content",
+  maxWidth: "100%",
+  minWidth: 0,
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+const pageTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  margin: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textAlign: "center",
+  textShadow: "none",
+  ...safeTextStyle,
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginTop: "6px",
+  marginBottom: "18px",
+};
+
+const desktopTitleHomeLinkStyle: CSSProperties = {
+  ...titleHomeLinkStyle,
+};
+
+const desktopPageTitleTextStyle: CSSProperties = {
+  ...pageTitleTextStyle,
 };
 
 const topActionsStyle: CSSProperties = {
@@ -2130,13 +2195,20 @@ const descriptionStyle: CSSProperties = {
 };
 
 const statsGridStyle: CSSProperties = {
-  marginTop: "12px",
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))",
+  marginTop: "10px",
+  display: "flex",
+  alignItems: "stretch",
   gap: "7px",
   minWidth: 0,
-  maxWidth: "100%",
+  width: "calc(100% + 28px)",
+  maxWidth: "calc(100% + 28px)",
+  marginLeft: "-14px",
+  marginRight: "-14px",
+  overflowX: "auto",
+  overflowY: "hidden",
+  padding: "0 14px",
   boxSizing: "border-box",
+  scrollSnapType: "x proximity",
 };
 
 const statCardStyle: CSSProperties = {
@@ -2144,15 +2216,16 @@ const statCardStyle: CSSProperties = {
   justifyItems: "center",
   alignContent: "center",
   textAlign: "center",
-  gap: "3px",
-  borderRadius: "16px",
-  padding: "8px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(255,255,255,0.060)), var(--historietas-surface-strong, rgba(255,255,255,0.034)))",
+  gap: "2px",
+  borderRadius: "14px",
+  padding: "6px 7px",
+  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
-  minWidth: 0,
-  maxWidth: "100%",
+  boxShadow: "none",
+  flex: "0 0 86px",
+  minWidth: "86px",
+  minHeight: "50px",
+  maxWidth: "86px",
   overflow: "hidden",
   boxSizing: "border-box",
 };
@@ -2173,28 +2246,28 @@ const readStatCardStyle: CSSProperties = {
 
 const chapterStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, var(--historietas-surface, rgba(255,255,255,0.060))), var(--historietas-surface-strong, rgba(255,255,255,0.034)))",
+  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
+  boxShadow: "none",
 };
 
 const communityStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, var(--historietas-surface, rgba(255,255,255,0.060))), var(--historietas-surface-strong, rgba(255,255,255,0.034)))",
+  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
+  boxShadow: "none",
 };
 
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "9px",
+  fontSize: "8.5px",
   fontWeight: 950,
   textTransform: "uppercase",
-  letterSpacing: "0.06em",
+  letterSpacing: "0.055em",
   ...safeTextStyle,
 };
 
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "21px",
+  fontSize: "18px",
   lineHeight: 1,
   fontWeight: 950,
   ...safeTextStyle,
@@ -2202,8 +2275,8 @@ const statNumberStyle: CSSProperties = {
 
 const smallStatTextStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "12px",
-  lineHeight: 1.12,
+  fontSize: "10px",
+  lineHeight: 1.1,
   fontWeight: 950,
   ...safeTextStyle,
 };
@@ -2767,9 +2840,13 @@ const desktopDescriptionStyle: CSSProperties = {
 
 const desktopStatsGridStyle: CSSProperties = {
   ...statsGridStyle,
-  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-  gap: "12px",
-  marginTop: "16px",
+  gap: "8px",
+  marginTop: "12px",
+  width: "100%",
+  maxWidth: "100%",
+  marginLeft: 0,
+  marginRight: 0,
+  padding: 0,
 };
 
 const desktopFilterBoxStyle: CSSProperties = {

@@ -910,79 +910,20 @@ export default function MinhasObrasPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopTitleHomeLinkStyle : titleHomeLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span
+              className="historietas-theme-title"
+              style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
+            >
+              MINHAS OBRAS
+            </span>
           </Link>
         </header>
-
-        <section style={isDesktop ? desktopHeroStyle : heroStyle}>
-          <div style={heroDecorationLayerStyle} aria-hidden="true">
-            {["✦", "▣", "◇", "→"].map((decoracao, index) => (
-              <span
-                key={`hero-${decoracao}-${index}`}
-                style={criarDecoracaoMinhasObrasStyle(index)}
-              >
-                {decoracao}
-              </span>
-            ))}
-          </div>
-
-          <div style={heroPremiumShineStyle} aria-hidden="true" />
-
-          <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Minhas Obras</h1>
-
-            <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-              Acompanhe rascunhos, capítulos e publicações em um painel limpo
-              para continuar criando.
-            </p>
-
-            <div style={heroActionsStyle}>
-              <Link href="/publicar" style={heroPrimaryButtonStyle}>
-                + Criar nova obra
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section style={isDesktop ? desktopStatsBoxStyle : statsBoxStyle}>
-          <div style={isDesktop ? desktopStatCardStyle : statCardStyle}>
-            <strong style={statNumberStyle}>{obras.length}</strong>
-            <span style={statLabelStyle}>
-              {obras.length === 1 ? "obra criada" : "obras criadas"}
-            </span>
-          </div>
-
-          <div style={isDesktop ? desktopStatCardStyle : statCardStyle}>
-            <strong style={statNumberStyle}>{totais.totalPublicadas}</strong>
-            <span style={statLabelStyle}>
-              {totais.totalPublicadas === 1 ? "publicada" : "publicadas"}
-            </span>
-          </div>
-
-          <div style={isDesktop ? desktopStatCardStyle : statCardStyle}>
-            <strong style={statNumberStyle}>{totais.totalRascunhos}</strong>
-            <span style={statLabelStyle}>
-              {totais.totalRascunhos === 1 ? "rascunho" : "rascunhos"}
-            </span>
-          </div>
-
-          <div style={isDesktop ? desktopStatCardStyle : statCardStyle}>
-            <strong style={statNumberStyle}>{totais.totalCapitulos}</strong>
-            <span style={statLabelStyle}>
-              {totais.totalCapitulos === 1 ? "capítulo" : "capítulos"}
-            </span>
-          </div>
-
-          <div style={isDesktop ? desktopStatCardStyle : wideStatCardStyle}>
-            <strong style={statNumberStyle}>{totais.totalComArquivo}</strong>
-            <span style={statLabelStyle}>
-              {totais.totalComArquivo === 1 ? "arquivo anexado" : "arquivos anexados"}
-            </span>
-          </div>
-        </section>
 
         {obras.length > 0 && (
           <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
@@ -1040,6 +981,45 @@ export default function MinhasObrasPage() {
                 Mostrando {obrasFiltradas.length} de {obras.length} obras
               </span>
 
+            </div>
+          </section>
+        )}
+
+        {obras.length > 0 && (
+          <section style={isDesktop ? desktopStatsBoxStyle : statsBoxStyle}>
+            <div style={isDesktop ? desktopStatCardStyle : statCardStyle}>
+              <strong style={statNumberStyle}>{obras.length}</strong>
+              <span style={statLabelStyle}>
+                {obras.length === 1 ? "obra criada" : "obras criadas"}
+              </span>
+            </div>
+
+            <div style={isDesktop ? desktopStatCardStyle : statCardStyle}>
+              <strong style={statNumberStyle}>{totais.totalPublicadas}</strong>
+              <span style={statLabelStyle}>
+                {totais.totalPublicadas === 1 ? "publicada" : "publicadas"}
+              </span>
+            </div>
+
+            <div style={isDesktop ? desktopStatCardStyle : statCardStyle}>
+              <strong style={statNumberStyle}>{totais.totalRascunhos}</strong>
+              <span style={statLabelStyle}>
+                {totais.totalRascunhos === 1 ? "rascunho" : "rascunhos"}
+              </span>
+            </div>
+
+            <div style={isDesktop ? desktopStatCardStyle : statCardStyle}>
+              <strong style={statNumberStyle}>{totais.totalCapitulos}</strong>
+              <span style={statLabelStyle}>
+                {totais.totalCapitulos === 1 ? "capítulo" : "capítulos"}
+              </span>
+            </div>
+
+            <div style={isDesktop ? desktopStatCardStyle : wideStatCardStyle}>
+              <strong style={statNumberStyle}>{totais.totalComArquivo}</strong>
+              <span style={statLabelStyle}>
+                {totais.totalComArquivo === 1 ? "arquivo anexado" : "arquivos anexados"}
+              </span>
             </div>
           </section>
         )}
@@ -1112,9 +1092,6 @@ export default function MinhasObrasPage() {
                     <div style={criarCoverStyle(obra.capa, isDesktop)}>
                       <div style={coverGlowStyle} />
 
-                      {!obra.capa && (
-                        <span style={noCoverBadgeStyle}>Capa pendente</span>
-                      )}
 
                       {mostrarClassificacao(obra) && (
                         <span style={coverClassificationBadgeStyle}>
@@ -1397,7 +1374,7 @@ const containerStyle: CSSProperties = {
   width: "min(840px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 20px",
+  padding: "14px 0 20px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1457,6 +1434,111 @@ const logoTextStyle: CSSProperties = {
   backgroundClip: "text",
   color: "transparent",
   textShadow: "var(--historietas-logo-shadow, 0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent))",
+};
+
+const titleHeaderStyle: CSSProperties = {
+  ...topStyle,
+  justifyContent: "center",
+  marginTop: 0,
+  marginBottom: "14px",
+  padding: 0,
+  textAlign: "center",
+};
+
+const titleHomeLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  width: "fit-content",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+const titleLogoMarkStyle: CSSProperties = {
+  width: "clamp(36px, 8vw, 48px)",
+  height: "clamp(36px, 8vw, 48px)",
+  borderRadius: "clamp(12px, 2.6vw, 16px)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  color: "#FFFFFF",
+  fontSize: "clamp(18px, 4.3vw, 24px)",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
+  flex: "0 0 auto",
+  boxShadow: "none",
+};
+
+const desktopTitleLogoMarkStyle: CSSProperties = {
+  ...titleLogoMarkStyle,
+  width: "clamp(44px, 4.4vw, 58px)",
+  height: "clamp(44px, 4.4vw, 58px)",
+  borderRadius: "18px",
+  fontSize: "clamp(22px, 2.2vw, 30px)",
+};
+
+const pageTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  margin: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginTop: 0,
+  marginBottom: "18px",
+};
+
+const desktopTitleHomeLinkStyle: CSSProperties = {
+  ...titleHomeLinkStyle,
+  gap: "1px",
+};
+
+const desktopPageTitleTextStyle: CSSProperties = {
+  ...pageTitleTextStyle,
+  fontSize: "23px",
+  lineHeight: 1.08,
+  letterSpacing: "-0.055em",
+  maxWidth: "100%",
+};
+
+const topCreateActionStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  marginTop: "-6px",
+  marginBottom: "12px",
+  minWidth: 0,
+};
+
+const desktopTopCreateActionStyle: CSSProperties = {
+  ...topCreateActionStyle,
+  marginTop: "-8px",
+  marginBottom: "14px",
 };
 
 const heroStyle: CSSProperties = {
@@ -1936,6 +2018,7 @@ const statusRowStyle: CSSProperties = {
   flexWrap: "wrap",
   gap: "5px",
   rowGap: "5px",
+  marginTop: "4px",
   minWidth: 0,
 };
 
@@ -2004,7 +2087,6 @@ const authorLinkStyle: CSSProperties = {
   fontSize: "13px",
   fontWeight: 900,
   textDecoration: "none",
-  borderBottom: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
   whiteSpace: "normal",
   ...safeTextStyle,
 };
@@ -2352,7 +2434,7 @@ const deleteActionStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 32px",
+  padding: "26px 0 32px",
 };
 
 const desktopTopStyle: CSSProperties = {

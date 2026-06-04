@@ -19,6 +19,7 @@ type CategoriaComunidade =
 type TipoPublicacaoComunidade =
   | "Discussão"
   | "Teoria"
+  | "Enquete"
   | "Pedido de indicação"
   | "Divulgação"
   | "Review"
@@ -93,6 +94,7 @@ const ORDENACOES_COMUNIDADE: OrdenacaoComunidade[] = [
 const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
   "Discussão",
   "Teoria",
+  "Enquete",
   "Pedido de indicação",
   "Divulgação",
   "Review",
@@ -110,6 +112,11 @@ const DESAFIO_SEMANA_COMUNIDADE = {
   titulo: "Desafio da semana",
   pergunta: "Qual obra da Historietas merece mais leitores agora?",
 };
+
+const MIN_OPCOES_ENQUETE = 2;
+const MAX_OPCOES_ENQUETE = 4;
+const MODELO_ENQUETE_COMUNIDADE =
+  "Enquete: qual opção você escolheria?\nOpção 1:\nOpção 2:";
 
 type FigurinhaComentario = {
   id: string;
@@ -353,14 +360,31 @@ function obterLinhasTexto(texto: string) {
     .filter(Boolean);
 }
 
+function obterTodasOpcoesEnquete(texto: string) {
+  return obterLinhasTexto(texto)
+    .map((linha) => {
+      const match = /^(?:opção|opcao|alternativa)\s*\d*\s*[:\-]\s*(.+)$/i.exec(linha);
+
+      return match?.[1]?.trim() || "";
+    })
+    .filter(Boolean);
+}
+
 function postEhEnquete(post: Pick<PostComunidade, "texto">) {
   const linhas = obterLinhasTexto(post.texto);
   const primeiraLinha = linhas[0] || "";
-  const totalOpcoes = linhas.filter((linha) => {
-    return /^(?:opção|opcao|alternativa)\s*\d*\s*[:\-]\s*.+$/i.test(linha);
-  }).length;
+  const totalOpcoes = obterTodasOpcoesEnquete(post.texto).length;
 
-  return /^enquete\s*[:\-]/i.test(primeiraLinha) && totalOpcoes >= 2;
+  return (
+    /^enquete\s*[:\-]/i.test(primeiraLinha) &&
+    totalOpcoes >= MIN_OPCOES_ENQUETE
+  );
+}
+
+function obterTipoVisualPublicacao(
+  post: Pick<PostComunidade, "texto" | "tipoPublicacao">
+): TipoPublicacaoComunidade {
+  return postEhEnquete(post) ? "Enquete" : post.tipoPublicacao;
 }
 
 function obterPerguntaEnquete(texto: string) {
@@ -374,16 +398,9 @@ function obterPerguntaEnquete(texto: string) {
 }
 
 function obterOpcoesEnquete(texto: string) {
-  const opcoes = obterLinhasTexto(texto)
-    .map((linha) => {
-      const match = /^(?:opção|opcao|alternativa)\s*\d*\s*[:\-]\s*(.+)$/i.exec(linha);
+  const opcoes = obterTodasOpcoesEnquete(texto).slice(0, MAX_OPCOES_ENQUETE);
 
-      return match?.[1]?.trim() || "";
-    })
-    .filter(Boolean)
-    .slice(0, 4);
-
-  return opcoes.length >= 2 ? opcoes : [];
+  return opcoes.length >= MIN_OPCOES_ENQUETE ? opcoes : [];
 }
 
 function carregarVotosEnquetesLocais() {
@@ -1354,13 +1371,13 @@ export default function ComunidadePage() {
   >(null);
   const [postRemovendoId, setPostRemovendoId] = useState<string | null>(null);
   const [postFixandoId, setPostFixandoId] = useState<string | null>(null);
+  const [postMenuAbertoId, setPostMenuAbertoId] = useState<string | null>(null);
   const [denunciaEnviandoId, setDenunciaEnviandoId] = useState<string | null>(
     null
   );
   const [carregandoFeed, setCarregandoFeed] = useState(true);
   const [erro, setErro] = useState("");
   const [comentariosPostId, setComentariosPostId] = useState<string | null>(null);
-  const [publicacaoDestacadaId, setPublicacaoDestacadaId] = useState<string | null>(null);
   const [obraRelacionadaBusca, setObraRelacionadaBusca] = useState("");
   const [obrasRelacionadasSugestoes, setObrasRelacionadasSugestoes] = useState<
     ObraRelacionadaSugestao[]
@@ -1669,7 +1686,6 @@ export default function ComunidadePage() {
 
     if (postIdUrl && posts.some((post) => post.id === postIdUrl)) {
       comentarioUrlAplicadoRef.current = true;
-      setPublicacaoDestacadaId(postIdUrl);
       setComentariosPostId(postIdUrl);
     }
   }, [comentariosPostId, posts]);
@@ -1683,9 +1699,10 @@ export default function ComunidadePage() {
     const postsFiltrados = posts.filter((post) => {
       const categoriaCombina =
         categoriaAtiva === "Todos" || post.categoria === categoriaAtiva;
+      const tipoVisualPublicacao = obterTipoVisualPublicacao(post);
       const tipoPublicacaoCombina =
         tipoPublicacaoAtiva === "Todos" ||
-        post.tipoPublicacao === tipoPublicacaoAtiva;
+        tipoVisualPublicacao === tipoPublicacaoAtiva;
 
       if (!categoriaCombina || !tipoPublicacaoCombina) {
         return false;
@@ -1700,7 +1717,13 @@ export default function ComunidadePage() {
       }
 
       const textoBuscaPost = normalizarTextoBusca(
-        [post.texto, post.autorNome, post.categoria, post.tipoPublicacao, post.obraRelacionada]
+        [
+          post.texto,
+          post.autorNome,
+          post.categoria,
+          obterTipoVisualPublicacao(post),
+          post.obraRelacionada,
+        ]
           .filter(Boolean)
           .join(" ")
       );
@@ -1760,14 +1783,6 @@ export default function ComunidadePage() {
 
     return posts.find((post) => post.id === comentariosPostId) || null;
   }, [comentariosPostId, posts]);
-
-  const publicacaoDestacada = useMemo(() => {
-    if (!publicacaoDestacadaId) {
-      return null;
-    }
-
-    return posts.find((post) => post.id === publicacaoDestacadaId) || null;
-  }, [posts, publicacaoDestacadaId]);
 
   const sugestoesObrasRelacionadasVisiveis = useMemo(() => {
     const buscaNormalizada = normalizarTextoBusca(obraRelacionadaBusca);
@@ -1894,17 +1909,11 @@ export default function ComunidadePage() {
     }, 2600);
   }
 
-  function verFeedEmAlta() {
-    setCategoriaAtiva("Todos");
-    setTermoBusca("");
-    setMostrarApenasSalvos(false);
-    setOrdenacaoAtiva("Em alta");
-  }
 
   function prepararEnqueteComunidade() {
     setErro("");
     setCategoriaPost("Discussão");
-    setTipoPublicacaoPost("Discussão");
+    setTipoPublicacaoPost("Enquete");
     setTemSpoilerPost(false);
     setComposerAberto(true);
 
@@ -1913,8 +1922,34 @@ export default function ComunidadePage() {
         return;
       }
 
-      textoPostRef.current.value =
-        "Enquete: qual opção você escolheria?\nOpção 1: primeira opção\nOpção 2: segunda opção";
+      textoPostRef.current.value = MODELO_ENQUETE_COMUNIDADE;
+      textoPostRef.current.focus();
+      textoPostRef.current.setSelectionRange(
+        textoPostRef.current.value.length,
+        textoPostRef.current.value.length
+      );
+    }, 0);
+  }
+
+  function selecionarTipoPublicacaoPost(tipo: TipoPublicacaoComunidade) {
+    setTipoPublicacaoPost(tipo);
+
+    if (tipo !== "Enquete") {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (!textoPostRef.current) {
+        return;
+      }
+
+      const textoAtual = textoPostRef.current.value.trim();
+
+      if (textoAtual && !/^enquete\s*[:\-]/i.test(textoAtual)) {
+        return;
+      }
+
+      textoPostRef.current.value = MODELO_ENQUETE_COMUNIDADE;
       textoPostRef.current.focus();
       textoPostRef.current.setSelectionRange(
         textoPostRef.current.value.length,
@@ -2227,13 +2262,38 @@ export default function ComunidadePage() {
         return;
       }
 
+      const linhasPost = obterLinhasTexto(textoLimpo);
+      const primeiraLinhaPost = linhasPost[0] || "";
+      const publicacaoEhEnquete =
+        tipoPublicacaoPost === "Enquete" || /^enquete\s*[:\-]/i.test(primeiraLinhaPost);
+
+      if (publicacaoEhEnquete) {
+        const perguntaEnquete = obterPerguntaEnquete(textoLimpo);
+        const opcoesEnquete = obterTodasOpcoesEnquete(textoLimpo);
+
+        if (!/^enquete\s*[:\-]/i.test(primeiraLinhaPost) || !perguntaEnquete.trim()) {
+          setErro("Escreva a pergunta da enquete na primeira linha.");
+          return;
+        }
+
+        if (opcoesEnquete.length < MIN_OPCOES_ENQUETE) {
+          setErro("A enquete precisa ter pelo menos 2 opções preenchidas.");
+          return;
+        }
+
+        if (opcoesEnquete.length > MAX_OPCOES_ENQUETE) {
+          setErro("A enquete pode ter no máximo 4 opções.");
+          return;
+        }
+      }
+
       const { data, error } = await supabase
         .from("comunidade_posts")
         .insert({
           autor_id: usuario.id,
           autor_nome: usuario.nome,
           categoria: categoriaPost,
-          tipo_publicacao: tipoPublicacaoPost,
+          tipo_publicacao: publicacaoEhEnquete ? "Discussão" : tipoPublicacaoPost,
           tem_spoiler: temSpoilerPost,
           texto: textoLimpo.slice(0, 700),
           obra_relacionada: obraLimpa.slice(0, 90),
@@ -2346,9 +2406,10 @@ export default function ComunidadePage() {
     }
   }
 
-  function abrirPublicacao(postId: string) {
+  function abrirComentarios(postId: string) {
     setErro("");
-    setPublicacaoDestacadaId(postId);
+    comentarioUrlAplicadoRef.current = true;
+    setComentariosPostId(postId);
 
     try {
       const url = new URL(window.location.href);
@@ -2357,29 +2418,8 @@ export default function ComunidadePage() {
       url.hash = "";
       window.history.replaceState(null, "", url.toString());
     } catch {
-      // Se o navegador bloquear a URL, o destaque continua funcionando em estado local.
+      // Se o navegador bloquear a URL, os comentários continuam abrindo em estado local.
     }
-  }
-
-  function fecharPublicacaoDestacada() {
-    setPublicacaoDestacadaId(null);
-
-    try {
-      const url = new URL(window.location.href);
-      url.pathname = "/comunidade";
-      url.search = "";
-      url.hash = "";
-      window.history.replaceState(null, "", url.toString());
-    } catch {
-      // Mantém a navegação atual se a URL não puder ser alterada.
-    }
-  }
-
-  function abrirComentarios(postId: string) {
-    setErro("");
-    comentarioUrlAplicadoRef.current = true;
-    abrirPublicacao(postId);
-    setComentariosPostId(postId);
   }
 
   function fecharComentarios() {
@@ -2763,337 +2803,82 @@ export default function ComunidadePage() {
       )}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <section style={titleSectionStyle}>
+        <section style={isDesktop ? desktopTitleSectionStyle : titleSectionStyle}>
           <h1 style={isDesktop ? communityTitleStyle : mobileCommunityTitleStyle}>
-            <span style={titleGroupStyle}>
-              <span style={titleMarkStyle}>C</span>
-              <span style={titleWordStyle}>omunidade</span>
-            </span>
+            <span style={titleWordStyle}>COMUNIDADE</span>
 
             <span style={titleGroupStyle}>
-              <span style={titleMarkStyle}>H</span>
-              <span style={titleWordStyle}>istorietas</span>
+              <span style={isDesktop ? desktopTitleMarkStyle : titleMarkStyle}>H</span>
+              <span style={titleWordStyle}>ISTORIETAS</span>
             </span>
           </h1>
 
-          <div style={titleUserAreaStyle}>
-            {usuario ? (
-              <span style={titleUserChipStyle}>
-                <span style={titleUserIconStyle}>
-                  {usuario.nome.slice(0, 1).toUpperCase()}
-                </span>
-                <span style={titleUserNameStyle}>{usuario.nome}</span>
-              </span>
-            ) : !carregandoUsuario ? (
-              <Link href="/login" style={titleLoginButtonStyle}>
-                Entrar
-              </Link>
-            ) : null}
-          </div>
         </section>
 
         <section style={isDesktop ? desktopLayoutStyle : layoutStyle}>
           <section style={feedColumnStyle}>
-            {publicacaoDestacada && (
-              <section style={isDesktop ? desktopFocusedPostStyle : focusedPostStyle}>
-                <div style={focusedPostHeaderStyle}>
-                  <div style={focusedPostTitleBoxStyle}>
-                    <span style={miniTitleStyle}>
-                      {publicacaoDestacada.fixado ? "PUBLICAÇÃO FIXADA" : "PUBLICAÇÃO ABERTA"}
-                    </span>
-
-                    <h2 style={focusedPostTitleStyle}>
-                      {publicacaoDestacada.tipoPublicacao}
-                    </h2>
+            <section style={isDesktop ? publishChallengeDesktopStyle : publishChallengeStyle}>
+              <div style={publishChallengeComposerAreaStyle}>
+                <div style={composerHeaderStyle}>
+                  <div style={composerTitleWrapStyle}>
+                    <h2 style={publishTitleStyle}>Publicar</h2>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={fecharPublicacaoDestacada}
-                    style={focusedPostCloseButtonStyle}
-                  >
-                    Fechar
-                  </button>
                 </div>
 
-                <article style={focusedPostCardStyle}>
-                  <div style={focusedPostAuthorRowStyle}>
-                    <div style={focusedPostAvatarStyle}>
-                      {publicacaoDestacada.autorNome.slice(0, 1).toUpperCase()}
-                    </div>
+                {carregandoUsuario ? (
+                  <div style={authLoadingStyle}>Carregando sua conta...</div>
+                ) : usuario ? (
+                  <div style={compactComposerStyle}>
+                    <div style={compactComposerActionsStyle}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setErro("");
+                          setComposerAberto(true);
+                        }}
+                        style={compactComposerButtonStyle}
+                      >
+                        Criar nova publicação
+                      </button>
 
-                    <div style={focusedPostAuthorInfoStyle}>
-                      <strong style={focusedPostAuthorNameStyle}>
-                        {publicacaoDestacada.autorNome}
-                      </strong>
-
-                      <span style={focusedPostMetaStyle}>
-                        {publicacaoDestacada.categoria} • {formatarDataComunidade(publicacaoDestacada.criadoEm)}
-                      </span>
                     </div>
                   </div>
+                ) : (
+                  <div style={visitorComposerStyle}>
+                    {erro && <span style={errorStyle}>{erro}</span>}
 
-                  {publicacaoDestacada.obraRelacionada && (
-                    <Link
-                      href={criarLinkObraRelacionada(publicacaoDestacada.obraRelacionada)}
-                      style={focusedPostWorkLinkStyle}
-                    >
-                      Obra relacionada: {publicacaoDestacada.obraRelacionada}
+                    <Link href="/login" style={primaryLinkButtonStyle}>
+                      Entrar para participar
                     </Link>
-                  )}
-
-                  {publicacaoDestacada.temSpoiler &&
-                  !spoilersReveladosIds.includes(publicacaoDestacada.id) ? (
-                    <div style={focusedSpoilerBoxStyle}>
-                      <strong style={spoilerHiddenTitleStyle}>
-                        Conteúdo com spoiler oculto
-                      </strong>
-
-                      <span style={spoilerHiddenTextStyle}>
-                        Esta publicação pode revelar eventos, capítulos ou detalhes importantes.
-                        Revele somente se quiser ver o conteúdo completo.
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => alternarSpoilerRevelado(publicacaoDestacada.id)}
-                        style={spoilerRevealButtonStyle}
-                      >
-                        Revelar conteúdo
-                      </button>
-                    </div>
-                  ) : (
-                    postEhEnquete(publicacaoDestacada) ? (
-                      <div style={focusedPollBoxStyle}>
-                        <strong style={focusedPollQuestionStyle}>
-                          {obterPerguntaEnquete(publicacaoDestacada.texto)}
-                        </strong>
-
-                        <div style={focusedPollOptionsStyle}>
-                          {obterOpcoesEnquete(publicacaoDestacada.texto).map((opcao) => {
-                            const votoAtual =
-                              votosEnquetes[publicacaoDestacada.id] || "";
-                            const selecionada = votoAtual === opcao;
-                            const totalVotos = calcularTotalVotosEnquete(
-                              resultadosEnquetes,
-                              publicacaoDestacada.id
-                            );
-                            const porcentagem = calcularPorcentagemOpcaoEnquete(
-                              resultadosEnquetes,
-                              publicacaoDestacada.id,
-                              opcao
-                            );
-                            const larguraResultado =
-                              totalVotos > 0
-                                ? `${porcentagem}%`
-                                : selecionada
-                                  ? "100%"
-                                  : "0%";
-
-                            return (
-                              <button
-                                key={opcao}
-                                type="button"
-                                onClick={() =>
-                                  votarEnquete(publicacaoDestacada.id, opcao)
-                                }
-                                disabled={Boolean(votoAtual) || votandoEnqueteId === publicacaoDestacada.id}
-                                style={
-                                  selecionada
-                                    ? focusedPollOptionSelectedStyle
-                                    : focusedPollOptionStyle
-                                }
-                              >
-                                <span
-                                  style={{
-                                    ...focusedPollResultBarStyle,
-                                    width: larguraResultado,
-                                  }}
-                                />
-
-                                <span style={focusedPollOptionTextStyle}>
-                                  {opcao}
-                                </span>
-
-                                <span style={focusedPollStatusStyle}>
-                                  {selecionada
-                                    ? `Seu voto · ${totalVotos > 0 ? porcentagem : 100}%`
-                                    : totalVotos > 0
-                                      ? `${porcentagem}%`
-                                      : "Votar"}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <p style={focusedPostTextStyle}>
-                        {publicacaoDestacada.texto}
-                      </p>
-                    )
-                  )}
-
-                  {publicacaoDestacada.temSpoiler &&
-                    spoilersReveladosIds.includes(publicacaoDestacada.id) && (
-                      <button
-                        type="button"
-                        onClick={() => alternarSpoilerRevelado(publicacaoDestacada.id)}
-                        style={focusedPostSmallButtonStyle}
-                      >
-                        Ocultar conteúdo com spoiler
-                      </button>
-                    )}
-
-                  <div style={focusedPostStatsStyle}>
-                    {publicacaoDestacada.fixado && <span>Fixado</span>}
-                    <span>{publicacaoDestacada.curtidas.length} curtidas</span>
-                    <span>{publicacaoDestacada.comentarios.length} comentários</span>
-                    <span>{publicacaoDestacada.temSpoiler ? "Com spoiler" : "Sem spoiler"}</span>
                   </div>
-
-                  <div style={focusedPostActionsStyle}>
-                    <button
-                      type="button"
-                      onClick={() => alternarCurtida(publicacaoDestacada.id)}
-                      disabled={postCurtindoId === publicacaoDestacada.id}
-                      style={focusedPostPrimaryButtonStyle}
-                    >
-                      {usuario && publicacaoDestacada.curtidas.includes(usuario.id)
-                        ? "Curtido"
-                        : "Curtir"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setComentariosPostId(publicacaoDestacada.id)}
-                      style={focusedPostSecondaryButtonStyle}
-                    >
-                      Comentários
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => compartilharPublicacao(publicacaoDestacada)}
-                      disabled={postCompartilhandoId === publicacaoDestacada.id}
-                      style={focusedPostSecondaryButtonStyle}
-                    >
-                      Compartilhar
-                    </button>
-
-                    {usuarioEhAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => alternarFixadoPost(publicacaoDestacada)}
-                        disabled={postFixandoId === publicacaoDestacada.id}
-                        style={
-                          publicacaoDestacada.fixado
-                            ? focusedPostPinnedButtonStyle
-                            : focusedPostSecondaryButtonStyle
-                        }
-                      >
-                        {postFixandoId === publicacaoDestacada.id
-                          ? "Atualizando..."
-                          : publicacaoDestacada.fixado
-                            ? "Desfixar"
-                            : "Fixar"}
-                      </button>
-                    )}
-
-                    {usuario && usuario.id !== publicacaoDestacada.autorId && (
-                      <button
-                        type="button"
-                        onClick={() => denunciarConteudo("post", publicacaoDestacada.id)}
-                        disabled={denunciaEnviandoId === obterChaveDenuncia("post", publicacaoDestacada.id)}
-                        style={focusedPostDangerButtonStyle}
-                      >
-                        Denunciar
-                      </button>
-                    )}
-                  </div>
-                </article>
-              </section>
-            )}
-
-            <section style={composerStyle}>
-              <div style={composerHeaderStyle}>
-                <div style={composerTitleWrapStyle}>
-                  <h2 style={publishTitleStyle}>
-                    {usuario ? "Publicar" : "Entre para participar"}
-                  </h2>
-                </div>
-
-                {!usuario && !carregandoUsuario && (
-                  <Link href="/login" style={loginButtonStyle}>
-                    Entrar
-                  </Link>
                 )}
               </div>
 
-              {carregandoUsuario ? (
-                <div style={authLoadingStyle}>Carregando sua conta...</div>
-              ) : usuario ? (
-                <div style={compactComposerStyle}>
-                  <div style={compactComposerActionsStyle}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setErro("");
-                        setComposerAberto(true);
-                      }}
-                      style={compactComposerButtonStyle}
-                    >
-                      Escreva uma publicação...
-                    </button>
+              <div style={isDesktop ? mergedWeeklyChallengeDesktopStyle : mergedWeeklyChallengeStyle}>
+                <div style={weeklyChallengeTextStyle}>
+                  <span style={weeklyChallengeKickerStyle}>
+                    {DESAFIO_SEMANA_COMUNIDADE.titulo}
+                  </span>
 
-                    <button
-                      type="button"
-                      onClick={prepararEnqueteComunidade}
-                      style={compactComposerPollButtonStyle}
-                    >
-                      Enquete
-                    </button>
-                  </div>
+                  <strong style={weeklyChallengeTitleStyle}>
+                    {DESAFIO_SEMANA_COMUNIDADE.pergunta}
+                  </strong>
+
                 </div>
-              ) : (
-                <div style={visitorComposerStyle}>
-                  <p style={visitorComposerTextStyle}>
-                    Você pode ler tudo. Para publicar, curtir ou comentar, entre na sua conta.
-                  </p>
 
-                  {erro && <span style={errorStyle}>{erro}</span>}
-
-                  <Link href="/login" style={primaryLinkButtonStyle}>
-                    Entrar para participar
-                  </Link>
-                </div>
-              )}
+                <button
+                  type="button"
+                  onClick={responderDesafioSemana}
+                  style={isDesktop ? weeklyChallengeButtonDesktopStyle : weeklyChallengeButtonStyle}
+                >
+                  Responder desafio
+                </button>
+              </div>
             </section>
 
             {usuario && erro && !composerAberto && (
               <span style={communityErrorNoticeStyle}>{erro}</span>
             )}
-
-            <section style={isDesktop ? weeklyChallengeDesktopStyle : weeklyChallengeStyle}>
-              <div style={weeklyChallengeTextStyle}>
-                <span style={weeklyChallengeKickerStyle}>
-                  {DESAFIO_SEMANA_COMUNIDADE.titulo}
-                </span>
-
-                <strong style={weeklyChallengeTitleStyle}>
-                  {DESAFIO_SEMANA_COMUNIDADE.pergunta}
-                </strong>
-
-              </div>
-
-              <button
-                type="button"
-                onClick={responderDesafioSemana}
-                style={isDesktop ? weeklyChallengeButtonDesktopStyle : weeklyChallengeButtonStyle}
-              >
-                Responder desafio
-              </button>
-            </section>
 
             <section
               style={
@@ -3318,9 +3103,11 @@ export default function ComunidadePage() {
 
             <section style={feedSummaryStyle}>
               <div style={feedSummaryTextWrapStyle}>
-                <span style={miniTitleStyle}>PUBLICAÇÕES DA COMUNIDADE</span>
+                <span style={feedSummaryMiniTitleLargeStyle}>
+                  PUBLICAÇÕES DA COMUNIDADE
+                </span>
 
-                <strong style={feedSummaryTitleStyle}>
+                <strong style={feedSummaryCountSmallStyle}>
                   {totalPublicacoesVisiveis === 1
                     ? "1 publicação encontrada"
                     : `${totalPublicacoesVisiveis} publicações encontradas`}
@@ -3369,31 +3156,177 @@ export default function ComunidadePage() {
                         <div style={postMetaStyle}>
                           <strong style={postAuthorStyle}>{post.autorNome}</strong>
                           <span style={postSubMetaStyle}>
-                            {post.tipoPublicacao} · {post.categoria} · {formatarDataComunidade(post.criadoEm)}
+                            {formatarDataComunidade(post.criadoEm)}
+                            {post.fixado && (
+                              <>
+                                {" "}
+                                <span style={postBadgeSeparatorStyle}>·</span>
+                                {" "}
+                                <span style={pinnedPostBadgeStyle}>Fixado</span>
+                              </>
+                            )}
                           </span>
                         </div>
 
+                        <div style={postOptionsWrapStyle}>
+                          {postMenuAbertoId === post.id && (
+                            <button
+                              type="button"
+                              aria-label="Fechar opções da publicação"
+                              onClick={() => setPostMenuAbertoId(null)}
+                              style={postOptionsBackdropStyle}
+                            />
+                          )}
+
+                          <button
+                            type="button"
+                            aria-label="Abrir opções da publicação"
+                            aria-haspopup="menu"
+                            aria-expanded={postMenuAbertoId === post.id}
+                            onClick={() =>
+                              setPostMenuAbertoId((postIdAtual) =>
+                                postIdAtual === post.id ? null : post.id
+                              )
+                            }
+                            style={
+                              postMenuAbertoId === post.id
+                                ? postOptionsButtonActiveStyle
+                                : postOptionsButtonStyle
+                            }
+                          >
+                            ⋮
+                          </button>
+
+                          {postMenuAbertoId === post.id && (
+                            <div role="menu" style={postOptionsMenuStyle}>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setPostMenuAbertoId(null);
+                                  alternarPostSalvo(post.id);
+                                }}
+                                disabled={postSalvando}
+                                style={{
+                                  ...postOptionsMenuItemStyle,
+                                  opacity: postSalvando ? 0.58 : 1,
+                                  cursor: postSalvando ? "not-allowed" : "pointer",
+                                }}
+                              >
+                                {postSalvando
+                                  ? "Salvando..."
+                                  : postSalvo
+                                    ? "Remover dos salvos"
+                                    : "Salvar publicação"}
+                              </button>
+
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setPostMenuAbertoId(null);
+                                  compartilharPublicacao(post);
+                                }}
+                                disabled={postCompartilhando}
+                                style={{
+                                  ...postOptionsMenuItemStyle,
+                                  opacity: postCompartilhando ? 0.58 : 1,
+                                  cursor: postCompartilhando ? "not-allowed" : "pointer",
+                                }}
+                              >
+                                {postCompartilhando ? "Copiando..." : "Copiar link"}
+                              </button>
+
+                              {usuarioEhAdmin && (
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setPostMenuAbertoId(null);
+                                    alternarFixadoPost(post);
+                                  }}
+                                  disabled={postFixando}
+                                  style={{
+                                    ...postOptionsMenuItemStyle,
+                                    opacity: postFixando ? 0.58 : 1,
+                                    cursor: postFixando ? "not-allowed" : "pointer",
+                                  }}
+                                >
+                                  {postFixando
+                                    ? "Atualizando..."
+                                    : post.fixado
+                                      ? "Desfixar publicação"
+                                      : "Fixar publicação"}
+                                </button>
+                              )}
+
+                              {podeRemover && (
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setPostMenuAbertoId(null);
+                                    removerPost(post.id);
+                                  }}
+                                  disabled={postRemovendo}
+                                  style={{
+                                    ...postOptionsMenuDangerItemStyle,
+                                    opacity: postRemovendo ? 0.58 : 1,
+                                    cursor: postRemovendo ? "not-allowed" : "pointer",
+                                  }}
+                                >
+                                  {postRemovendo ? "Removendo..." : "Remover publicação"}
+                                </button>
+                              )}
+
+                              {podeDenunciarPost && (
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setPostMenuAbertoId(null);
+                                    denunciarConteudo("post", post.id);
+                                  }}
+                                  disabled={postDenunciando}
+                                  style={{
+                                    ...postOptionsMenuDangerItemStyle,
+                                    opacity: postDenunciando ? 0.58 : 1,
+                                    cursor: postDenunciando ? "not-allowed" : "pointer",
+                                  }}
+                                >
+                                  {postDenunciando ? "Enviando..." : "Denunciar"}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div style={postBadgesRowStyle}>
-                        {post.fixado && (
-                          <span style={pinnedPostBadgeStyle}>Fixado</span>
-                        )}
-
-                        <span style={postTypeBadgeStyle}>{post.tipoPublicacao}</span>
-
-                        {post.temSpoiler && (
-                          <span style={spoilerBadgeStyle}>Spoiler</span>
-                        )}
-
                         {post.obraRelacionada && (
-                          <Link
-                            href={criarLinkObraRelacionada(post.obraRelacionada)}
-                            style={obraBadgeStyle}
-                          >
-                            Obra: {post.obraRelacionada}
-                          </Link>
+                          <>
+                            <Link
+                              href={criarLinkObraRelacionada(post.obraRelacionada)}
+                              style={obraBadgeStyle}
+                            >
+                              {post.obraRelacionada}
+                            </Link>
+
+                            <span style={postBadgeSeparatorStyle}>·</span>
+                          </>
                         )}
+
+                        <span
+                          style={
+                            postEhEnquete(post)
+                              ? pollPostInlineQuestionStyle
+                              : postTypeBadgeStyle
+                          }
+                        >
+                          {postEhEnquete(post)
+                            ? obterPerguntaEnquete(post.texto)
+                            : obterTipoVisualPublicacao(post)}
+                        </span>
                       </div>
 
                       {ocultarTextoSpoiler ? (
@@ -3401,28 +3334,11 @@ export default function ComunidadePage() {
                           <strong style={spoilerHiddenTitleStyle}>
                             Conteúdo com spoiler oculto
                           </strong>
-
-                          <span style={spoilerHiddenTextStyle}>
-                            Este post pode revelar eventos, capítulos ou detalhes importantes.
-                            Revele somente se quiser ver o conteúdo completo.
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => alternarSpoilerRevelado(post.id)}
-                            style={spoilerRevealButtonStyle}
-                          >
-                            Revelar conteúdo
-                          </button>
                         </div>
                       ) : (
                         <>
                           {postEhEnquete(post) ? (
                             <div style={pollPostBoxStyle}>
-                              <strong style={pollPostQuestionStyle}>
-                                {obterPerguntaEnquete(post.texto)}
-                              </strong>
-
                               <div style={pollPostOptionsStyle}>
                                 {obterOpcoesEnquete(post.texto).map((opcao) => {
                                   const votoAtual = votosEnquetes[post.id] || "";
@@ -3481,16 +3397,6 @@ export default function ComunidadePage() {
                           ) : (
                             <p style={postTextStyle}>{post.texto}</p>
                           )}
-
-                          {post.temSpoiler && (
-                            <button
-                              type="button"
-                              onClick={() => alternarSpoilerRevelado(post.id)}
-                              style={spoilerHideButtonStyle}
-                            >
-                              Ocultar conteúdo com spoiler
-                            </button>
-                          )}
                         </>
                       )}
 
@@ -3518,85 +3424,14 @@ export default function ComunidadePage() {
                           💬 {post.comentarios.length}
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => alternarPostSalvo(post.id)}
-                          disabled={postSalvando}
-                          style={{
-                            ...(postSalvo ? savedActionButtonStyle : actionButtonStyle),
-                            opacity: postSalvando ? 0.58 : 1,
-                            cursor: postSalvando ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          {postSalvando ? "☆ ..." : postSalvo ? "★" : "☆"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => compartilharPublicacao(post)}
-                          disabled={postCompartilhando}
-                          style={{
-                            ...actionButtonStyle,
-                            opacity: postCompartilhando ? 0.58 : 1,
-                            cursor: postCompartilhando ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          {postCompartilhando ? "⧉ ..." : "⧉ Copiar link"}
-                        </button>
-
-                        {usuarioEhAdmin && (
+                        {post.temSpoiler && (
                           <button
                             type="button"
-                            onClick={() => alternarFixadoPost(post)}
-                            disabled={postFixando}
-                            style={{
-                              ...(post.fixado ? pinnedActionButtonStyle : actionButtonStyle),
-                              opacity: postFixando ? 0.58 : 1,
-                              cursor: postFixando ? "not-allowed" : "pointer",
-                            }}
+                            onClick={() => alternarSpoilerRevelado(post.id)}
+                            style={actionButtonStyle}
                           >
-                            {postFixando
-                              ? "Atualizando..."
-                              : post.fixado
-                                ? "Desfixar"
-                                : "Fixar"}
+                            {ocultarTextoSpoiler ? "REVELAR" : "OCULTAR"}
                           </button>
-                        )}
-
-                        {podeRemover && (
-                          <button
-                            type="button"
-                            onClick={() => removerPost(post.id)}
-                            disabled={postRemovendo}
-                            style={{
-                              ...removeActionButtonStyle,
-                              opacity: postRemovendo ? 0.58 : 1,
-                              cursor: postRemovendo ? "not-allowed" : "pointer",
-                            }}
-                          >
-                            {postRemovendo ? "Removendo..." : "Remover"}
-                          </button>
-                        )}
-
-                        {podeDenunciarPost && (
-                          <button
-                            type="button"
-                            onClick={() => denunciarConteudo("post", post.id)}
-                            disabled={postDenunciando}
-                            style={{
-                              ...reportActionButtonStyle,
-                              opacity: postDenunciando ? 0.58 : 1,
-                              cursor: postDenunciando ? "not-allowed" : "pointer",
-                            }}
-                          >
-                            {postDenunciando ? "Enviando..." : "Denunciar"}
-                          </button>
-                        )}
-
-                        {!usuario && (
-                          <Link href="/login" style={smallLoginLinkStyle}>
-                            Entrar para participar
-                          </Link>
                         )}
                       </div>
                     </article>
@@ -3654,14 +3489,6 @@ export default function ComunidadePage() {
                 <strong style={pinnedTitleStyle}>Aviso da Comunidade</strong>
                 <p style={pinnedTextStyle}>{AVISO_FIXADO_COMUNIDADE}</p>
               </div>
-
-              <button
-                type="button"
-                onClick={verFeedEmAlta}
-                style={isDesktop ? pinnedButtonDesktopStyle : pinnedButtonStyle}
-              >
-                Ver em alta
-              </button>
             </section>
           </section>
 
@@ -3721,7 +3548,7 @@ export default function ComunidadePage() {
                     disabled={publicandoPost}
                     value={tipoPublicacaoPost}
                     onChange={(event) =>
-                      setTipoPublicacaoPost(
+                      selecionarTipoPublicacaoPost(
                         event.target.value as TipoPublicacaoComunidade
                       )
                     }
@@ -3978,74 +3805,95 @@ const desktopTopWaterFadeStyle: CSSProperties = {
 };
 
 const titleSectionStyle: CSSProperties = {
-  margin: "8px 0 16px",
+  margin: "0 0 14px",
   minWidth: 0,
   textAlign: "center",
+  overflow: "visible",
+};
+
+const desktopTitleSectionStyle: CSSProperties = {
+  ...titleSectionStyle,
+  marginTop: 0,
+  marginBottom: "18px",
 };
 
 const communityTitleStyle: CSSProperties = {
   margin: "0 auto",
-  fontSize: "clamp(40px, 8.8vw, 82px)",
-  lineHeight: 0.98,
+  fontSize: "23px",
+  lineHeight: 1.08,
   fontWeight: 950,
   letterSpacing: "-0.055em",
-  maxWidth: "760px",
+  wordSpacing: "0.11em",
+  maxWidth: "100%",
   color: "transparent",
-  paddingBottom: "4px",
+  padding: 0,
   textAlign: "center",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   flexWrap: "wrap",
-  columnGap: "22px",
-  rowGap: "8px",
+  columnGap: "8px",
+  rowGap: "4px",
+  overflow: "visible",
   ...safeTextStyle,
 };
 
 const mobileCommunityTitleStyle: CSSProperties = {
   ...communityTitleStyle,
-  fontSize: "clamp(27px, 8.5vw, 40px)",
-  lineHeight: 0.98,
+  fontSize: "23px",
+  lineHeight: 1.08,
   letterSpacing: "-0.055em",
-  paddingBottom: "2px",
-  columnGap: "12px",
-  rowGap: "6px",
+  maxWidth: "100%",
+  columnGap: "7px",
+  rowGap: "4px",
 };
 
 const titleGroupStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "1px",
+  gap: "2px",
   minWidth: 0,
+  overflow: "visible",
 };
 
 const titleWordStyle: CSSProperties = {
   display: "inline-block",
   background:
-    "linear-gradient(135deg, #F5F3FF 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 38%, #FFFFFF) 42%, var(--historietas-accent, #FDBA74) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, none)",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+  lineHeight: 1.08,
+  paddingRight: "0.08em",
+  paddingBottom: "0.04em",
+  overflow: "visible",
 };
 
 const titleMarkStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  width: "1.42em",
-  height: "1.42em",
-  borderRadius: "0.5em",
+  width: "1.12em",
+  height: "1.12em",
+  borderRadius: "0.32em",
   background:
     "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
   color: "#FFFFFF",
-  fontSize: "0.7em",
+  fontSize: "1em",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: 0,
   lineHeight: 1,
+  textAlign: "center",
   flex: "0 0 auto",
-  transform: "translateY(-0.02em)",
+  boxShadow: "none",
+  transform: "none",
+};
+
+const desktopTitleMarkStyle: CSSProperties = {
+  ...titleMarkStyle,
 };
 
 const titleUserAreaStyle: CSSProperties = {
@@ -4177,21 +4025,6 @@ const topLinkStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
-const loginButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 12px",
-  borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
-  border: "none",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-  whiteSpace: "nowrap",
-};
 
 const userBadgeStyle: CSSProperties = {
   minHeight: "34px",
@@ -4506,7 +4339,7 @@ const focusedPostMetaStyle: CSSProperties = {
 const focusedPostWorkLinkStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 900,
@@ -4524,46 +4357,21 @@ const focusedPostTextStyle: CSSProperties = {
 };
 
 const focusedSpoilerBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  padding: "13px",
-  borderRadius: "20px",
+  width: "fit-content",
+  maxWidth: "100%",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "9px 13px",
+  borderRadius: "999px",
   background:
-    "linear-gradient(135deg, rgba(127,29,29,0.20), rgba(0,0,0,0.20))",
+    "linear-gradient(135deg, rgba(127,29,29,0.18), rgba(0,0,0,0.16))",
   border: "1px solid rgba(248,113,113,0.22)",
   minWidth: 0,
   boxShadow: "none",
 };
 
-const focusedSpoilerButtonStyle: CSSProperties = {
-  minHeight: "44px",
-  borderRadius: "16px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  padding: "0 12px",
-  fontSize: "12px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const focusedPostSmallButtonStyle: CSSProperties = {
-  width: "fit-content",
-  minHeight: "32px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.075))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  padding: "0 10px",
-  fontSize: "11px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxShadow: "none",
-};
 
 const focusedPostStatsStyle: CSSProperties = {
   display: "flex",
@@ -4620,26 +4428,11 @@ const focusedPostDangerButtonStyle: CSSProperties = {
 };
 
 const compactComposerActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  gap: "8px",
+  display: "flex",
+  justifyContent: "center",
   alignItems: "center",
+  gap: "8px",
   minWidth: 0,
-};
-
-const compactComposerPollButtonStyle: CSSProperties = {
-  minHeight: "42px",
-  borderRadius: "17px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "12px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  padding: "0 12px",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...safeTextStyle,
 };
 
 const postComposerHeaderToolsStyle: CSSProperties = {
@@ -4652,12 +4445,11 @@ const postComposerHeaderToolsStyle: CSSProperties = {
 };
 
 const pollTemplateButtonStyle: CSSProperties = {
-  minHeight: "28px",
-  borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
+  minHeight: "auto",
+  border: "none",
+  background: "transparent",
   color: "var(--historietas-accent, #FDBA74)",
-  padding: "0 9px",
+  padding: 0,
   fontSize: "10px",
   fontWeight: 950,
   fontFamily: "inherit",
@@ -4670,14 +4462,14 @@ const pollPostBoxStyle: CSSProperties = {
   display: "grid",
   gap: "8px",
   marginTop: "2px",
-  padding: "10px",
-  borderRadius: "16px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const pollPostQuestionStyle: CSSProperties = {
@@ -4716,13 +4508,15 @@ const pollPostOptionStyle: CSSProperties = {
 
 const pollPostOptionSelectedStyle: CSSProperties = {
   ...pollPostOptionStyle,
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
+  border: "1px solid rgba(56,189,248,0.62)",
+  background: "linear-gradient(135deg, #2563EB 0%, #38BDF8 100%)",
+  color: "#FFFFFF",
 };
 
 const pollPostResultBarStyle: CSSProperties = {
   position: "absolute",
   inset: "0 auto 0 0",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
+  background: "rgba(56,189,248,0.22)",
   pointerEvents: "none",
 };
 
@@ -4737,7 +4531,7 @@ const pollPostOptionTextStyle: CSSProperties = {
 const pollPostStatusStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "inherit",
   fontSize: "10px",
   fontWeight: 950,
   whiteSpace: "nowrap",
@@ -4746,8 +4540,8 @@ const pollPostStatusStyle: CSSProperties = {
 const focusedPollBoxStyle: CSSProperties = {
   ...pollPostBoxStyle,
   gap: "9px",
-  padding: "11px",
-  borderRadius: "18px",
+  padding: 0,
+  borderRadius: 0,
 };
 
 const focusedPollQuestionStyle: CSSProperties = {
@@ -4768,7 +4562,9 @@ const focusedPollOptionStyle: CSSProperties = {
 
 const focusedPollOptionSelectedStyle: CSSProperties = {
   ...focusedPollOptionStyle,
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
+  border: "1px solid rgba(56,189,248,0.62)",
+  background: "linear-gradient(135deg, #2563EB 0%, #38BDF8 100%)",
+  color: "#FFFFFF",
 };
 
 const focusedPollResultBarStyle: CSSProperties = {
@@ -4781,18 +4577,6 @@ const focusedPollOptionTextStyle: CSSProperties = {
 
 const focusedPollStatusStyle: CSSProperties = {
   ...pollPostStatusStyle,
-};
-
-const composerStyle: CSSProperties = {
-  display: "grid",
-  gap: "9px",
-  padding: "12px",
-  borderRadius: "21px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.90)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
-  minWidth: 0,
 };
 
 const composerHeaderStyle: CSSProperties = {
@@ -4864,17 +4648,19 @@ const compactComposerStyle: CSSProperties = {
 };
 
 const compactComposerButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "42px",
-  borderRadius: "17px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  fontWeight: 850,
+  width: "fit-content",
+  minWidth: "164px",
+  maxWidth: "100%",
+  minHeight: "38px",
+  borderRadius: "999px",
+  border: "none",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  fontSize: "11.5px",
+  fontWeight: 950,
   fontFamily: "inherit",
-  textAlign: "left",
-  padding: "0 13px",
+  textAlign: "center",
+  padding: "0 15px",
   cursor: "pointer",
   boxShadow: "none",
   ...safeTextStyle,
@@ -4884,15 +4670,6 @@ const visitorComposerStyle: CSSProperties = {
   display: "grid",
   gap: "9px",
   minWidth: 0,
-};
-
-const visitorComposerTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12.5px",
-  lineHeight: 1.42,
-  fontWeight: 750,
-  ...safeTextStyle,
 };
 
 const fieldStyle: CSSProperties = {
@@ -5195,6 +4972,10 @@ const primaryButtonStyle: CSSProperties = {
 
 const primaryLinkButtonStyle: CSSProperties = {
   ...primaryButtonStyle,
+  width: "fit-content",
+  minWidth: "176px",
+  maxWidth: "100%",
+  justifySelf: "center",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -5273,7 +5054,7 @@ const pinnedNoticeStyle: CSSProperties = {
 
 const pinnedNoticeDesktopStyle: CSSProperties = {
   ...pinnedNoticeStyle,
-  gridTemplateColumns: "42px minmax(0, 1fr) auto",
+  gridTemplateColumns: "42px minmax(0, 1fr)",
   gap: "13px",
   padding: "14px 15px",
   borderRadius: "26px",
@@ -5315,27 +5096,6 @@ const pinnedTextStyle: CSSProperties = {
   lineHeight: 1.5,
   fontWeight: 760,
   ...safeTextStyle,
-};
-
-const pinnedButtonStyle: CSSProperties = {
-  gridColumn: "1 / -1",
-  minHeight: "36px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.065))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  padding: "0 12px",
-};
-
-const pinnedButtonDesktopStyle: CSSProperties = {
-  ...pinnedButtonStyle,
-  gridColumn: "auto",
-  minWidth: "116px",
-  minHeight: "38px",
 };
 
 const weeklyChallengeStyle: CSSProperties = {
@@ -5409,6 +5169,40 @@ const weeklyChallengeButtonDesktopStyle: CSSProperties = {
   ...weeklyChallengeButtonStyle,
   minWidth: "150px",
   justifySelf: "center",
+};
+
+
+const publishChallengeStyle: CSSProperties = {
+  display: "grid",
+  gap: "12px",
+  padding: 0,
+  background: "transparent",
+  border: "none",
+  boxShadow: "none",
+  minWidth: 0,
+};
+
+const publishChallengeDesktopStyle: CSSProperties = {
+  ...publishChallengeStyle,
+  gap: "14px",
+};
+
+const publishChallengeComposerAreaStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  minWidth: 0,
+};
+
+const mergedWeeklyChallengeStyle: CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  minWidth: 0,
+  justifyItems: "center",
+};
+
+const mergedWeeklyChallengeDesktopStyle: CSSProperties = {
+  ...mergedWeeklyChallengeStyle,
+  gap: "11px",
 };
 
 
@@ -5963,6 +5757,21 @@ const feedSummaryTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const feedSummaryMiniTitleLargeStyle: CSSProperties = {
+  ...miniTitleStyle,
+  fontSize: "clamp(18px, 5vw, 26px)",
+  lineHeight: 1,
+  letterSpacing: "-0.045em",
+  textAlign: "center",
+};
+
+const feedSummaryCountSmallStyle: CSSProperties = {
+  ...feedSummaryTitleStyle,
+  fontSize: "10px",
+  lineHeight: 1.2,
+  letterSpacing: "0.095em",
+};
+
 const feedSummaryTextStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
@@ -6197,6 +6006,7 @@ const postCardStyle: CSSProperties = {
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
   boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
+  overflow: "visible",
 };
 
 const postCardDesktopStyle: CSSProperties = {
@@ -6212,6 +6022,7 @@ const postHeaderStyle: CSSProperties = {
   alignItems: "center",
   gap: "10px",
   minWidth: 0,
+  overflow: "visible",
 };
 
 const authorAvatarStyle: CSSProperties = {
@@ -6261,21 +6072,14 @@ const removeButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-const removeActionButtonStyle: CSSProperties = {
-  ...removeButtonStyle,
-  minHeight: "34px",
-  fontSize: "11px",
-  padding: "0 12px",
-};
-
 const obraBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "var(--historietas-active-surface, rgba(124,58,237,0.18))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "11px",
   fontWeight: 900,
   textDecoration: "none",
@@ -6293,40 +6097,47 @@ const postBadgesRowStyle: CSSProperties = {
   minWidth: 0,
 };
 
+const postBadgeSeparatorStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "11px",
+  fontWeight: 900,
+  lineHeight: 1,
+};
+
 const postTypeBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, rgba(255,255,255,0.035))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, var(--historietas-border-soft, transparent))",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "11px",
   fontWeight: 950,
   ...safeTextStyle,
 };
 
+const pollPostInlineQuestionStyle: CSSProperties = {
+  ...postTypeBadgeStyle,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+};
+
 const pinnedPostBadgeStyle: CSSProperties = {
   ...postTypeBadgeStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 24%, rgba(255,255,255,0.035))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 36%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
-const spoilerBadgeStyle: CSSProperties = {
-  ...postTypeBadgeStyle,
-  background: "rgba(248,113,113,0.12)",
-  border: "1px solid rgba(248,113,113,0.24)",
-  color: "#FCA5A5",
-};
 
 const spoilerHiddenBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  padding: "12px",
-  borderRadius: "18px",
+  width: "fit-content",
+  maxWidth: "100%",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "8px 12px",
+  borderRadius: "999px",
   background:
-    "linear-gradient(135deg, rgba(127,29,29,0.20), rgba(0,0,0,0.20))",
+    "linear-gradient(135deg, rgba(127,29,29,0.18), rgba(0,0,0,0.16))",
   border: "1px solid rgba(248,113,113,0.22)",
   minWidth: 0,
   boxShadow: "none",
@@ -6339,35 +6150,7 @@ const spoilerHiddenTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const spoilerHiddenTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.45,
-  fontWeight: 760,
-  ...safeTextStyle,
-};
 
-const spoilerRevealButtonStyle: CSSProperties = {
-  width: "fit-content",
-  minHeight: "34px",
-  borderRadius: "999px",
-  border: "1px solid rgba(248,113,113,0.28)",
-  background: "rgba(248,113,113,0.12)",
-  color: "#FCA5A5",
-  fontSize: "11px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  padding: "0 12px",
-  textAlign: "center",
-  boxShadow: "none",
-};
-
-const spoilerHideButtonStyle: CSSProperties = {
-  ...spoilerRevealButtonStyle,
-  minHeight: "30px",
-  background: "rgba(255,255,255,0.045)",
-};
 
 const postTextStyle: CSSProperties = {
   margin: 0,
@@ -6377,6 +6160,103 @@ const postTextStyle: CSSProperties = {
   fontWeight: 720,
   whiteSpace: "pre-wrap",
   ...safeTextStyle,
+};
+
+const postOptionsWrapStyle: CSSProperties = {
+  position: "relative",
+  display: "flex",
+  justifyContent: "flex-end",
+  alignItems: "center",
+  flex: "0 0 24px",
+  width: "24px",
+  minWidth: "24px",
+  overflow: "visible",
+  zIndex: 40,
+};
+
+const postOptionsButtonStyle: CSSProperties = {
+  width: "24px",
+  height: "30px",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "24px",
+  fontWeight: 950,
+  letterSpacing: 0,
+  lineHeight: 1,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  padding: 0,
+  position: "relative",
+  zIndex: 44,
+  boxShadow: "none",
+};
+
+const postOptionsButtonActiveStyle: CSSProperties = {
+  ...postOptionsButtonStyle,
+};
+
+const postOptionsBackdropStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  border: "none",
+  background: "transparent",
+  padding: 0,
+  cursor: "default",
+  zIndex: 41,
+};
+
+const postOptionsMenuStyle: CSSProperties = {
+  position: "absolute",
+  top: "34px",
+  left: "auto",
+  right: 0,
+  transform: "translateX(-10px)",
+  width: "196px",
+  maxWidth: "calc(100vw - 36px)",
+  boxSizing: "border-box",
+  display: "grid",
+  gap: "1px",
+  padding: "5px",
+  borderRadius: "13px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(12,8,20,0.98)",
+  overflow: "visible",
+  zIndex: 45,
+  boxShadow: "none",
+};
+
+const postOptionsMenuItemStyle: CSSProperties = {
+  minHeight: "30px",
+  width: "100%",
+  border: "none",
+  borderRadius: "9px",
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  textAlign: "left",
+  fontFamily: "inherit",
+  fontSize: "11.5px",
+  fontWeight: 850,
+  padding: "0 9px",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  overflowWrap: "normal",
+  wordBreak: "normal",
+  textOverflow: "clip",
+  cursor: "pointer",
+  boxShadow: "none",
+};
+
+const postOptionsMenuDangerItemStyle: CSSProperties = {
+  ...postOptionsMenuItemStyle,
+  color: "#FB7185",
 };
 
 const postActionsStyle: CSSProperties = {
@@ -6418,37 +6298,6 @@ const likedActionButtonStyle: CSSProperties = {
   border:
     "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, var(--historietas-border-soft, transparent))",
   color: "var(--historietas-accent, #FDBA74)",
-};
-
-const pinnedActionButtonStyle: CSSProperties = {
-  ...actionButtonStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-};
-
-const savedActionButtonStyle: CSSProperties = {
-  ...actionButtonStyle,
-  background: "var(--historietas-active-surface, rgba(124,58,237,0.22))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent)",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-};
-
-const reportActionButtonStyle: CSSProperties = {
-  ...actionButtonStyle,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-};
-
-const smallLoginLinkStyle: CSSProperties = {
-  minHeight: "34px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "999px",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "12px",
-  fontWeight: 950,
-  textDecoration: "none",
 };
 
 const commentsBoxStyle: CSSProperties = {

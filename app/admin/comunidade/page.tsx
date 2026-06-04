@@ -17,6 +17,8 @@ type StatusDenuncia =
   | "resolvida"
   | "rejeitada";
 
+type StatusFiltroDenuncia = StatusDenuncia | "todas" | "arquivadas";
+
 type DenunciaComunidade = {
   id: string;
   alvoTipo: TipoAlvoDenuncia;
@@ -81,6 +83,9 @@ const STATUS_LABEL: Record<StatusDenuncia, string> = {
   rejeitada: "Rejeitada",
 };
 
+const ARCHIVED_REPORTS_STORAGE_KEY =
+  "historietas-denuncias-comunidade-arquivadas";
+
 function normalizarTexto(valor: string) {
   return valor
     .toLowerCase()
@@ -115,6 +120,38 @@ function normalizarStatus(valor: unknown): StatusDenuncia {
 
 function normalizarTipoAlvo(valor: unknown): TipoAlvoDenuncia {
   return valor === "comentario" ? "comentario" : "post";
+}
+
+function carregarDenunciasArquivadas() {
+  try {
+    const texto = localStorage.getItem(ARCHIVED_REPORTS_STORAGE_KEY);
+    const json = texto ? JSON.parse(texto) : [];
+
+    return Array.isArray(json)
+      ? json.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function salvarDenunciasArquivadas(ids: string[]) {
+  try {
+    localStorage.setItem(ARCHIVED_REPORTS_STORAGE_KEY, JSON.stringify(ids));
+  } catch {
+    // Mantém o painel funcionando mesmo se o navegador bloquear o armazenamento local.
+  }
+}
+
+function conteudoDenunciadoIndisponivel(denuncia: DenunciaComContexto) {
+  const resumo = normalizarTexto(denuncia.alvoResumo);
+
+  return (
+    resumo.includes("conteudo removido pela moderacao") ||
+    resumo.includes("publicacao nao encontrada ou removida") ||
+    resumo.includes("comentario nao encontrado ou removido") ||
+    resumo.includes("nao encontrada ou removida")
+  );
 }
 
 function criarMensagemErro(acao: string, erro: unknown) {
@@ -169,12 +206,14 @@ export default function AdminComunidadePage() {
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [denuncias, setDenuncias] = useState<DenunciaComContexto[]>([]);
-  const [statusFiltro, setStatusFiltro] = useState<StatusDenuncia | "todas">(
-    "pendente"
+  const [statusFiltro, setStatusFiltro] = useState<StatusFiltroDenuncia>(
+    "todas"
   );
   const [busca, setBusca] = useState("");
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [observacoes, setObservacoes] = useState<Record<string, string>>({});
+  const [denunciasArquivadas, setDenunciasArquivadas] = useState<string[]>([]);
+  const [menuDenunciaAbertoId, setMenuDenunciaAbertoId] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -200,6 +239,10 @@ export default function AdminComunidadePage() {
     return () => {
       mediaQuery.removeListener(atualizarModoDesktop);
     };
+  }, []);
+
+  useEffect(() => {
+    setDenunciasArquivadas(carregarDenunciasArquivadas());
   }, []);
 
   useEffect(() => {
@@ -265,15 +308,35 @@ export default function AdminComunidadePage() {
     };
   }, []);
 
+  const denunciasArquivadasSet = useMemo(() => {
+    return new Set(denunciasArquivadas);
+  }, [denunciasArquivadas]);
+
+  const denunciasAtivas = useMemo(() => {
+    return denuncias.filter((denuncia) => !denunciasArquivadasSet.has(denuncia.id));
+  }, [denuncias, denunciasArquivadasSet]);
+
   const denunciasFiltradas = useMemo(() => {
     const buscaNormalizada = normalizarTexto(busca);
 
     return denuncias.filter((denuncia) => {
-      const statusCombina =
-        statusFiltro === "todas" || denuncia.status === statusFiltro;
+      const arquivada = denunciasArquivadasSet.has(denuncia.id);
 
-      if (!statusCombina) {
-        return false;
+      if (statusFiltro === "arquivadas") {
+        if (!arquivada) {
+          return false;
+        }
+      } else {
+        if (arquivada) {
+          return false;
+        }
+
+        const statusCombina =
+          statusFiltro === "todas" || denuncia.status === statusFiltro;
+
+        if (!statusCombina) {
+          return false;
+        }
       }
 
       if (!buscaNormalizada) {
@@ -294,26 +357,31 @@ export default function AdminComunidadePage() {
           denuncia.alvoTipoPublicacao || "",
           denuncia.alvoTemSpoiler ? "spoiler contem spoiler" : "",
           denuncia.alvoObra || "",
+          arquivada ? "arquivada ocultada painel" : "",
         ].join(" ")
       );
 
       return conteudoBusca.includes(buscaNormalizada);
     });
-  }, [busca, denuncias, statusFiltro]);
+  }, [busca, denuncias, denunciasArquivadasSet, statusFiltro]);
 
-  const totalPendentes = denuncias.filter(
+  useEffect(() => {
+    setMenuDenunciaAbertoId("");
+  }, [busca, statusFiltro]);
+
+  const totalPendentes = denunciasAtivas.filter(
     (denuncia) => denuncia.status === "pendente"
   ).length;
 
-  const totalEmAnalise = denuncias.filter(
+  const totalEmAnalise = denunciasAtivas.filter(
     (denuncia) => denuncia.status === "em_analise"
   ).length;
 
-  const totalResolvidas = denuncias.filter(
+  const totalResolvidas = denunciasAtivas.filter(
     (denuncia) => denuncia.status === "resolvida"
   ).length;
 
-  const totalRejeitadas = denuncias.filter(
+  const totalRejeitadas = denunciasAtivas.filter(
     (denuncia) => denuncia.status === "rejeitada"
   ).length;
 
@@ -606,6 +674,37 @@ export default function AdminComunidadePage() {
     setAcaoEmAndamento("");
   }
 
+  function arquivarDenuncia(denunciaId: string) {
+    setMenuDenunciaAbertoId("");
+    setDenunciasArquivadas((denunciasArquivadasAtuais) => {
+      if (denunciasArquivadasAtuais.includes(denunciaId)) {
+        return denunciasArquivadasAtuais;
+      }
+
+      const proximasDenunciasArquivadas = [
+        ...denunciasArquivadasAtuais,
+        denunciaId,
+      ];
+
+      salvarDenunciasArquivadas(proximasDenunciasArquivadas);
+      return proximasDenunciasArquivadas;
+    });
+    setSucesso("Denúncia arquivada e ocultada do painel principal.");
+  }
+
+  function restaurarDenunciaArquivada(denunciaId: string) {
+    setMenuDenunciaAbertoId("");
+    setDenunciasArquivadas((denunciasArquivadasAtuais) => {
+      const proximasDenunciasArquivadas = denunciasArquivadasAtuais.filter(
+        (id) => id !== denunciaId
+      );
+
+      salvarDenunciasArquivadas(proximasDenunciasArquivadas);
+      return proximasDenunciasArquivadas;
+    });
+    setSucesso("Denúncia restaurada para o painel principal.");
+  }
+
   function limparFiltros() {
     setStatusFiltro("todas");
     setBusca("");
@@ -694,57 +793,39 @@ export default function AdminComunidadePage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : mobileTopStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-admin-comunidade-logo-text" style={logoTextStyle}>
-              istorietas
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopTitleHomeLinkStyle : titleHomeLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span
+              className="historietas-theme-title"
+              style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
+            >
+              MODERAÇÃO
             </span>
           </Link>
-
-          <div style={isDesktop ? desktopTopActionsStyle : topActionsStyle}>
-            <Link href="/comunidade" style={isDesktop ? desktopTopButtonStyle : topButtonStyle}>
-              Comunidade
-            </Link>
-
-            <button
-              type="button"
-              onClick={() => carregarDenuncias()}
-              disabled={Boolean(acaoEmAndamento)}
-              style={isDesktop ? desktopTopButtonStyle : topButtonStyle}
-            >
-              Atualizar
-            </button>
-          </div>
         </header>
 
-        <section style={isDesktop ? desktopHeroStyle : mobileHeroStyle}>
-          <div style={heroDecorationLayerStyle} aria-hidden="true">
-            {["✦", "◇", "⚑", "✧"].map((decoracao, index) => (
-              <span
-                key={`admin-hero-${decoracao}-${index}`}
-                style={criarDecoracaoHeroStyle(index)}
-              >
-                {decoracao}
-              </span>
-            ))}
-          </div>
-
-          <span style={miniTitleStyle}>MODERAÇÃO</span>
-
-          <h1 className="historietas-admin-comunidade-hero-title" style={isDesktop ? desktopTitleStyle : titleStyle}>
-            Moderação da Comunidade
-          </h1>
-
-          <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            Revise denúncias enviadas por leitores e acompanhe o status de
-            análise dos conteúdos sinalizados.
-          </p>
-        </section>
+        <section style={toolsStyle}>
+          <label style={searchBoxStyle}>
+            <span style={toolLabelStyle}>Buscar denúncias</span>
+            <input
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+              placeholder="Buscar por motivo, autor, texto, tipo, spoiler ou denunciante..."
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={100}
+              style={inputStyle}
+            />
+          </label>
 
         <section className="admin-comunidade-stats" style={statsGridStyle}>
           <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{denuncias.length}</strong>
+            <strong style={statNumberStyle}>{denunciasAtivas.length}</strong>
             <span style={statLabelStyle}>total</span>
           </div>
 
@@ -769,26 +850,11 @@ export default function AdminComunidadePage() {
           </div>
         </section>
 
-        <section style={toolsStyle}>
-          <label style={searchBoxStyle}>
-            <span style={toolLabelStyle}>Buscar denúncias</span>
-            <input
-              value={busca}
-              onChange={(event) => setBusca(event.target.value)}
-              placeholder="Buscar por motivo, autor, texto, tipo, spoiler ou denunciante..."
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              maxLength={100}
-              style={inputStyle}
-            />
-          </label>
-
           <div style={statusFilterWrapStyle}>
             <span style={toolLabelStyle}>Status</span>
 
-            <div style={filterButtonsStyle}>
-              {(["todas", ...STATUS_DENUNCIAS] as const).map((status) => (
+            <div className="admin-comunidade-filter-buttons" style={filterButtonsStyle}>
+              {(["todas", ...STATUS_DENUNCIAS, "arquivadas"] as const).map((status) => (
                 <button
                   key={status}
                   type="button"
@@ -799,10 +865,20 @@ export default function AdminComunidadePage() {
                       : filterButtonStyle
                   }
                 >
-                  {status === "todas" ? "Todas" : STATUS_LABEL[status]}
+                  {status === "todas"
+                    ? "Todas"
+                    : status === "arquivadas"
+                      ? "Arquivadas"
+                      : STATUS_LABEL[status]}
                 </button>
               ))}
             </div>
+
+            {(busca || statusFiltro !== "todas") && (
+              <button type="button" onClick={limparFiltros} style={clearButtonStyle}>
+                Limpar filtros
+              </button>
+            )}
           </div>
         </section>
 
@@ -819,12 +895,6 @@ export default function AdminComunidadePage() {
               ? "1 denúncia encontrada"
               : `${denunciasFiltradas.length} denúncias encontradas`}
           </strong>
-
-          {(busca || statusFiltro !== "todas") && (
-            <button type="button" onClick={limparFiltros} style={clearButtonStyle}>
-              Limpar filtros
-            </button>
-          )}
         </section>
 
         <section style={listStyle}>
@@ -832,51 +902,208 @@ export default function AdminComunidadePage() {
             denunciasFiltradas.map((denuncia) => {
               const acaoAtiva = acaoEmAndamento.startsWith(denuncia.id);
               const observacao = observacoes[denuncia.id] || "";
+              const menuAberto = menuDenunciaAbertoId === denuncia.id;
+              const denunciaArquivada = denunciasArquivadasSet.has(denuncia.id);
+              const conteudoIndisponivel =
+                conteudoDenunciadoIndisponivel(denuncia);
+              const denunciaResolvidaComConteudoIndisponivel =
+                denuncia.status === "resolvida" && conteudoIndisponivel;
 
               return (
                 <article key={denuncia.id} style={reportCardStyle}>
                   <div className="admin-comunidade-report-header" style={reportHeaderStyle}>
                     <div style={reportTitleWrapStyle}>
-                      <span
-                        style={{
-                          ...targetBadgeStyle,
-                          ...(denuncia.alvoTipo === "post"
-                            ? postTargetBadgeStyle
-                            : commentTargetBadgeStyle),
-                        }}
-                      >
-                        {denuncia.alvoTipo === "post" ? "Publicação" : "Comentário"}
-                      </span>
+                      <div style={reportMetaLineStyle}>
+                        <span
+                          style={{
+                            ...targetBadgeStyle,
+                            ...(denuncia.alvoTipo === "post"
+                              ? postTargetBadgeStyle
+                              : commentTargetBadgeStyle),
+                          }}
+                        >
+                          {denuncia.alvoTipo === "post" ? "Publicação" : "Comentário"}
+                        </span>
 
-                      <strong style={reportTitleStyle}>
-                        {STATUS_LABEL[denuncia.status]}
-                      </strong>
+                        <span style={reportDotStyle}>•</span>
 
-                      <span style={reportDateStyle}>
-                        Denunciado em {formatarData(denuncia.criadoEm)}
-                      </span>
+                        <span style={reportDateStyle}>
+                          Denunciado em {formatarData(denuncia.criadoEm)}
+                        </span>
+
+                        <span style={reportDotStyle}>•</span>
+
+                        <span style={statusInlineStyle}>
+                          {STATUS_LABEL[denuncia.status]}
+                        </span>
+
+                        {denunciaArquivada && (
+                          <>
+                            <span style={reportDotStyle}>•</span>
+                            <span style={archivedInlineStyle}>Arquivada</span>
+                          </>
+                        )}
+                      </div>
+
+                      <strong style={reportTitleStyle}>{denuncia.motivo}</strong>
                     </div>
 
-                    <span style={statusPillStyle}>{STATUS_LABEL[denuncia.status]}</span>
+                    <div style={reportHeaderRightStyle}>
+                      <div style={reportMenuWrapStyle}>
+                        <button
+                          type="button"
+                          aria-label={
+                            menuAberto
+                              ? "Fechar ações da denúncia"
+                              : "Abrir ações da denúncia"
+                          }
+                          aria-expanded={menuAberto}
+                          onClick={() =>
+                            setMenuDenunciaAbertoId((denunciaAbertaId) =>
+                              denunciaAbertaId === denuncia.id ? "" : denuncia.id
+                            )
+                          }
+                          disabled={acaoAtiva}
+                          style={{
+                            ...reportMenuButtonStyle,
+                            opacity: acaoAtiva ? 0.58 : 1,
+                            cursor: acaoAtiva ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          ⋯
+                        </button>
+
+                        {menuAberto && (
+                          <div style={reportMenuStyle}>
+                            {denuncia.alvoPostId && (
+                              <Link
+                                href={`/comunidade?post=${encodeURIComponent(
+                                  denuncia.alvoPostId
+                                )}`}
+                                onClick={() => setMenuDenunciaAbertoId("")}
+                                style={reportMenuItemLinkStyle}
+                              >
+                                Abrir publicação na Comunidade
+                              </Link>
+                            )}
+
+                            {denunciaArquivada ? (
+                              <button
+                                type="button"
+                                onClick={() => restaurarDenunciaArquivada(denuncia.id)}
+                                style={reportMenuItemStyle}
+                              >
+                                Restaurar para o painel
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => arquivarDenuncia(denuncia.id)}
+                                style={reportMenuItemStyle}
+                              >
+                                Arquivar denúncia
+                              </button>
+                            )}
+
+                            {denuncia.status === "pendente" && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMenuDenunciaAbertoId("");
+                                  void atualizarStatusDenuncia(
+                                    denuncia.id,
+                                    "em_analise"
+                                  );
+                                }}
+                                disabled={acaoAtiva}
+                                style={reportMenuItemStyle}
+                              >
+                                {acaoEmAndamento === `${denuncia.id}-em_analise`
+                                  ? "Assumindo..."
+                                  : "Assumir análise"}
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuDenunciaAbertoId("");
+                                void removerConteudoDenunciado(denuncia);
+                              }}
+                              disabled={
+                                acaoAtiva ||
+                                conteudoIndisponivel
+                              }
+                              style={reportMenuDangerItemStyle}
+                            >
+                              {acaoEmAndamento ===
+                              `${denuncia.id}-remover-conteudo`
+                                ? "Removendo..."
+                                : denuncia.alvoTipo === "post"
+                                  ? "Remover publicação"
+                                  : "Remover comentário"}
+                            </button>
+
+                            <div style={reportMenuDividerStyle} />
+
+                            {STATUS_DENUNCIAS.map((status) => (
+                              <button
+                                key={status}
+                                type="button"
+                                onClick={() => {
+                                  setMenuDenunciaAbertoId("");
+                                  void atualizarStatusDenuncia(
+                                    denuncia.id,
+                                    status
+                                  );
+                                }}
+                                disabled={acaoAtiva || denuncia.status === status}
+                                style={
+                                  denuncia.status === status
+                                    ? reportMenuItemActiveStyle
+                                    : reportMenuItemStyle
+                                }
+                              >
+                                {acaoEmAndamento === `${denuncia.id}-${status}`
+                                  ? "Salvando..."
+                                  : `Marcar como ${STATUS_LABEL[
+                                      status
+                                    ].toLowerCase()}`}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="admin-comunidade-report-body" style={reportBodyStyle}>
                     <section style={contentBoxStyle}>
-                      <span style={boxLabelStyle}>Conteúdo denunciado</span>
-                      <p style={reportedTextStyle}>{denuncia.alvoResumo}</p>
+                      <div style={sectionHeaderLineStyle}>
+                        <span style={boxLabelStyle}>Conteúdo denunciado</span>
+                        <span style={sectionHintStyle}>
+                          {conteudoIndisponivel
+                            ? "Indisponível"
+                            : denuncia.alvoTipo === "post"
+                              ? "Publicação"
+                              : "Comentário"}
+                        </span>
+                      </div>
 
-                      {denuncia.alvoPostId && (
-                        <Link
-                          href={`/comunidade?post=${encodeURIComponent(
-                            denuncia.alvoPostId
-                          )}`}
-                          style={openReportedContentLinkStyle}
-                        >
-                          Abrir publicação na Comunidade
-                        </Link>
-                      )}
+                      <p
+                        style={
+                          denunciaResolvidaComConteudoIndisponivel
+                            ? reportedTextCompactStyle
+                            : reportedTextStyle
+                        }
+                      >
+                        {conteudoIndisponivel
+                          ? "Conteúdo removido ou indisponível."
+                          : denuncia.alvoResumo}
+                      </p>
 
-                      <div style={metaGridStyle}>
+                      {!conteudoIndisponivel && (
+                        <div style={metaGridStyle}>
                         <span style={metaItemStyle}>
                           Autor: <strong>{denuncia.alvoAutor}</strong>
                         </span>
@@ -912,22 +1139,22 @@ export default function AdminComunidadePage() {
                           </span>
                         )}
 
-                        {denuncia.alvoObra && (
-                          <span style={metaItemStyle}>
-                            Obra: <strong>{denuncia.alvoObra}</strong>
-                          </span>
-                        )}
-                      </div>
+                          {denuncia.alvoObra && (
+                            <span style={metaItemStyle}>
+                              Obra: <strong>{denuncia.alvoObra}</strong>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </section>
 
                     <section style={contentBoxStyle}>
-                      <span style={boxLabelStyle}>Denúncia</span>
+                      <div style={sectionHeaderLineStyle}>
+                        <span style={boxLabelStyle}>Denúncia</span>
+                        <span style={sectionHintStyle}>Registro interno</span>
+                      </div>
 
                       <div style={reasonGridStyle}>
-                        <span style={reasonItemStyle}>
-                          Motivo: <strong>{denuncia.motivo}</strong>
-                        </span>
-
                         <span style={reasonItemStyle}>
                           Denunciante: <strong>{denuncia.denuncianteNome}</strong>
                         </span>
@@ -941,7 +1168,12 @@ export default function AdminComunidadePage() {
                     </section>
 
                     <label style={adminNoteStyle}>
-                      <span style={boxLabelStyle}>Observação interna</span>
+                      <div style={sectionHeaderLineStyle}>
+                        <span style={boxLabelStyle}>Observação interna</span>
+                        {!denunciaResolvidaComConteudoIndisponivel && (
+                          <span style={sectionHintStyle}>Até 800 caracteres</span>
+                        )}
+                      </div>
 
                       <textarea
                         value={observacao}
@@ -954,61 +1186,14 @@ export default function AdminComunidadePage() {
                         disabled={acaoAtiva}
                         placeholder="Ex.: conteúdo analisado, ação tomada, manter observação interna..."
                         maxLength={800}
-                        rows={3}
-                        style={textareaStyle}
+                        rows={denunciaResolvidaComConteudoIndisponivel ? 1 : 2}
+                        style={
+                          denunciaResolvidaComConteudoIndisponivel
+                            ? compactTextareaStyle
+                            : textareaStyle
+                        }
                       />
                     </label>
-                  </div>
-
-                  <div style={reportActionsStyle}>
-                    {denuncia.status === "pendente" && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          atualizarStatusDenuncia(denuncia.id, "em_analise")
-                        }
-                        disabled={acaoAtiva}
-                        style={analysisButtonStyle}
-                      >
-                        {acaoEmAndamento === `${denuncia.id}-em_analise`
-                          ? "Assumindo..."
-                          : "Assumir análise"}
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => removerConteudoDenunciado(denuncia)}
-                      disabled={
-                        acaoAtiva ||
-                        denuncia.alvoResumo.startsWith("Conteúdo removido pela moderação.")
-                      }
-                      style={dangerButtonStyle}
-                    >
-                      {acaoEmAndamento === `${denuncia.id}-remover-conteudo`
-                        ? "Removendo..."
-                        : denuncia.alvoTipo === "post"
-                          ? "Remover publicação"
-                          : "Remover comentário"}
-                    </button>
-
-                    {STATUS_DENUNCIAS.map((status) => (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => atualizarStatusDenuncia(denuncia.id, status)}
-                        disabled={acaoAtiva || denuncia.status === status}
-                        style={
-                          denuncia.status === status
-                            ? activeStatusButtonStyle
-                            : statusButtonStyle
-                        }
-                      >
-                        {acaoEmAndamento === `${denuncia.id}-${status}`
-                          ? "Salvando..."
-                          : STATUS_LABEL[status]}
-                      </button>
-                    ))}
                   </div>
 
                   {denuncia.analisadoEm && (
@@ -1035,13 +1220,25 @@ export default function AdminComunidadePage() {
 
 
 const adminComunidadePageCss = `
+  .admin-comunidade-filter-buttons {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .admin-comunidade-filter-buttons::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
   @media (max-width: 760px) {
     .admin-comunidade-header-actions {
       grid-template-columns: 1fr !important;
     }
 
     .admin-comunidade-report-header {
-      grid-template-columns: minmax(0, 1fr) !important;
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      align-items: start !important;
     }
 
     .admin-comunidade-report-body {
@@ -1073,7 +1270,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
+  padding: "14px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1081,8 +1278,74 @@ const containerStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1220px, calc(100% - 64px))",
-  padding: "26px 0 40px",
+  padding: "18px 0 40px",
 };
+
+const titleHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "12px",
+  flexWrap: "nowrap",
+  width: "100%",
+  margin: "0 auto 14px",
+  padding: 0,
+  minWidth: 0,
+  textAlign: "center",
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginBottom: "18px",
+};
+
+const titleHomeLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+const desktopTitleHomeLinkStyle: CSSProperties = {
+  ...titleHomeLinkStyle,
+};
+
+const pageTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  margin: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  textAlign: "center",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+};
+
+const desktopPageTitleTextStyle: CSSProperties = {
+  ...pageTitleTextStyle,
+};
+
 
 const mobileTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
@@ -1439,9 +1702,9 @@ const secondaryButtonStyle: CSSProperties = {
 
 const statsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "10px",
-  marginBottom: "14px",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "6px",
+  margin: "0",
   minWidth: 0,
 };
 
@@ -1449,12 +1712,12 @@ const statCardStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
   alignContent: "center",
-  gap: "3px",
-  minHeight: "82px",
-  padding: "12px 8px",
-  borderRadius: "20px",
-  background: "var(--historietas-surface, rgba(255,255,255,0.055))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  gap: "2px",
+  minHeight: "54px",
+  padding: "7px 3px",
+  borderRadius: "15px",
+  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   textAlign: "center",
   minWidth: 0,
   overflow: "hidden",
@@ -1462,7 +1725,7 @@ const statCardStyle: CSSProperties = {
 
 const statNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "28px",
+  fontSize: "20px",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.05em",
@@ -1472,11 +1735,11 @@ const statNumberStyle: CSSProperties = {
 
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  lineHeight: 1.12,
+  fontSize: "7.4px",
+  lineHeight: 1.06,
   fontWeight: 950,
   textTransform: "uppercase",
-  letterSpacing: "0.06em",
+  letterSpacing: "0.035em",
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -1484,13 +1747,13 @@ const statLabelStyle: CSSProperties = {
 const toolsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr)",
-  gap: "12px",
-  padding: "14px",
+  gap: "10px",
+  padding: "12px",
   borderRadius: "24px",
   background:
     "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.82)), var(--historietas-surface-strong, rgba(12,7,23,0.95)))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  marginBottom: "12px",
+  marginBottom: "10px",
   minWidth: 0,
 };
 
@@ -1533,24 +1796,36 @@ const statusFilterWrapStyle: CSSProperties = {
 };
 
 const filterButtonsStyle: CSSProperties = {
+  width: "calc(100% + 24px)",
+  maxWidth: "calc(100% + 24px)",
+  marginLeft: "-12px",
+  marginRight: "-12px",
   display: "flex",
-  flexWrap: "wrap",
-  justifyContent: "center",
-  gap: "8px",
+  flexWrap: "nowrap",
+  justifyContent: "flex-start",
+  gap: "7px",
   minWidth: 0,
+  overflowX: "auto",
+  overflowY: "hidden",
+  padding: "0 12px",
+  boxSizing: "border-box",
+  scrollSnapType: "x proximity",
+  WebkitOverflowScrolling: "touch",
 };
 
 const filterButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 12px",
+  flex: "0 0 auto",
+  minHeight: "34px",
+  padding: "0 13px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   background: "var(--historietas-surface, rgba(255,255,255,0.045))",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
+  fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",
   boxShadow: "none",
+  scrollSnapAlign: "center",
 };
 
 const activeFilterButtonStyle: CSSProperties = {
@@ -1596,11 +1871,11 @@ const summaryStyle: CSSProperties = {
   justifyContent: "center",
   gap: "10px",
   flexWrap: "wrap",
-  margin: "0 0 12px",
-  padding: "12px",
-  borderRadius: "20px",
-  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  margin: "0 0 10px",
+  padding: "0",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   textAlign: "center",
 };
 
@@ -1613,33 +1888,35 @@ const summaryTitleStyle: CSSProperties = {
 };
 
 const clearButtonStyle: CSSProperties = {
-  minHeight: "34px",
+  minHeight: "32px",
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(249,115,22,0.20)",
   background: "rgba(249,115,22,0.10)",
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
+  fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",
+  boxShadow: "none",
 };
 
 const listStyle: CSSProperties = {
   display: "grid",
-  gap: "14px",
+  gap: "10px",
   minWidth: 0,
 };
 
 const reportCardStyle: CSSProperties = {
+  position: "relative",
   display: "grid",
   gap: "12px",
   padding: "14px",
-  borderRadius: "26px",
+  borderRadius: "22px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.9)), var(--historietas-surface-strong, rgba(12,7,23,0.97)))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.82)), var(--historietas-surface-strong, rgba(12,7,23,0.96)))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.085))",
   minWidth: 0,
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const reportHeaderStyle: CSSProperties = {
@@ -1651,130 +1928,255 @@ const reportHeaderStyle: CSSProperties = {
 };
 
 const reportTitleWrapStyle: CSSProperties = {
+  display: "grid",
+  gap: "5px",
+  alignContent: "start",
+  justifyItems: "start",
+  minWidth: 0,
+};
+
+const reportMetaLineStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "8px",
+  gap: "6px",
   flexWrap: "wrap",
   minWidth: 0,
 };
 
+const reportDotStyle: CSSProperties = {
+  color: "var(--historietas-text-muted, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 950,
+  lineHeight: 1,
+};
+
 const targetBadgeStyle: CSSProperties = {
-  minHeight: "28px",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: "0 10px",
-  borderRadius: "999px",
-  fontSize: "10px",
+  fontSize: "9px",
   fontWeight: 950,
   textTransform: "uppercase",
-  letterSpacing: "0.08em",
+  letterSpacing: "0.07em",
 };
 
 const postTargetBadgeStyle: CSSProperties = {
-  background: "rgba(124,58,237,0.20)",
   color: "#DDD6FE",
-  border: "1px solid rgba(124,58,237,0.26)",
 };
 
 const commentTargetBadgeStyle: CSSProperties = {
-  background: "rgba(249,115,22,0.14)",
   color: "#FDBA74",
-  border: "1px solid rgba(249,115,22,0.22)",
 };
 
 const reportTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "15px",
+  lineHeight: 1.24,
   fontWeight: 950,
   ...safeTextStyle,
 };
 
 const reportDateStyle: CSSProperties = {
   color: "var(--historietas-text-muted, #A1A1AA)",
-  fontSize: "11px",
+  fontSize: "10.5px",
+  lineHeight: 1.2,
   fontWeight: 800,
 };
 
-const statusPillStyle: CSSProperties = {
-  minHeight: "28px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 10px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+const statusInlineStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  fontSize: "10.5px",
+  lineHeight: 1.2,
   fontWeight: 950,
   whiteSpace: "nowrap",
 };
 
+const archivedInlineStyle: CSSProperties = {
+  color: "var(--historietas-text-muted, #A1A1AA)",
+  fontSize: "10.5px",
+  lineHeight: 1.2,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+};
+
+const reportHeaderRightStyle: CSSProperties = {
+  position: "relative",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const reportMenuWrapStyle: CSSProperties = {
+  position: "relative",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+};
+
+const reportMenuButtonStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "var(--historietas-surface, rgba(255,255,255,0.055))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "19px",
+  lineHeight: 1,
+  fontWeight: 950,
+  cursor: "pointer",
+  boxShadow: "none",
+};
+
+const reportMenuStyle: CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 8px)",
+  right: 0,
+  zIndex: 30,
+  width: "244px",
+  minWidth: "220px",
+  maxWidth: "calc(100vw - 44px)",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "stretch",
+  gap: "5px",
+  padding: "8px",
+  borderRadius: "18px",
+  background:
+    "linear-gradient(135deg, var(--historietas-surface-strong, rgba(12,7,23,0.98)), var(--historietas-surface, rgba(31,16,52,0.96)))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  boxSizing: "border-box",
+};
+
+const reportMenuItemStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  minHeight: "34px",
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  padding: "0 10px",
+  borderRadius: "12px",
+  border: "1px solid transparent",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  lineHeight: 1.2,
+  fontWeight: 900,
+  fontFamily: "inherit",
+  textAlign: "left",
+  whiteSpace: "nowrap",
+  wordBreak: "normal",
+  overflowWrap: "normal",
+  cursor: "pointer",
+  boxShadow: "none",
+};
+
+const reportMenuItemLinkStyle: CSSProperties = {
+  ...reportMenuItemStyle,
+  textDecoration: "none",
+  boxSizing: "border-box",
+};
+
+const reportMenuItemActiveStyle: CSSProperties = {
+  ...reportMenuItemStyle,
+  background: "var(--historietas-active-surface, rgba(249,115,22,0.16))",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  color: "var(--historietas-accent, #FDBA74)",
+  cursor: "default",
+};
+
+const reportMenuDangerItemStyle: CSSProperties = {
+  ...reportMenuItemStyle,
+  background: "var(--historietas-danger-surface, rgba(248,113,113,0.12))",
+  border: "1px solid rgba(248,113,113,0.22)",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
+};
+
+const reportMenuDividerStyle: CSSProperties = {
+  height: "1px",
+  margin: "2px 0",
+  background: "var(--historietas-border-soft, rgba(255,255,255,0.08))",
+};
+
 const reportBodyStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "10px",
+  gridTemplateColumns: "minmax(0, 1.08fr) minmax(260px, 0.92fr)",
+  gap: "12px 18px",
   minWidth: 0,
+  paddingTop: "10px",
+  borderTop: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
 };
 
 const contentBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
-  padding: "12px",
-  borderRadius: "20px",
-  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  gap: "9px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   alignContent: "start",
 };
 
+const sectionHeaderLineStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+  flexWrap: "wrap",
+  minWidth: 0,
+};
+
+const sectionHintStyle: CSSProperties = {
+  color: "var(--historietas-text-muted, #A1A1AA)",
+  fontSize: "9.8px",
+  fontWeight: 850,
+  ...safeTextStyle,
+};
+
 const boxLabelStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  fontSize: "9.8px",
   fontWeight: 950,
-  letterSpacing: "0.08em",
+  letterSpacing: "0.105em",
   textTransform: "uppercase",
 };
 
 const reportedTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14px",
-  lineHeight: 1.5,
+  fontSize: "13.2px",
+  lineHeight: 1.48,
   fontWeight: 800,
-  minHeight: "42px",
+  maxHeight: "118px",
+  overflowY: "auto",
+  paddingRight: "2px",
   ...safeTextStyle,
 };
 
-const openReportedContentLinkStyle: CSSProperties = {
-  width: "fit-content",
-  minHeight: "32px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 11px",
-  borderRadius: "999px",
-  background: "rgba(249,115,22,0.10)",
-  border: "1px solid rgba(249,115,22,0.20)",
-  color: "var(--historietas-accent, #FDBA74)",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-  boxShadow: "none",
-  ...safeTextStyle,
+const reportedTextCompactStyle: CSSProperties = {
+  ...reportedTextStyle,
+  maxHeight: "none",
+  overflowY: "visible",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const metaGridStyle: CSSProperties = {
-  display: "flex",
-  gap: "7px",
-  flexWrap: "wrap",
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+  gap: "4px 12px",
   minWidth: 0,
 };
 
 const metaItemStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
+  fontSize: "10.5px",
+  lineHeight: 1.35,
   fontWeight: 750,
   ...safeTextStyle,
 };
@@ -1782,25 +2184,19 @@ const metaItemStyle: CSSProperties = {
 const spoilerMetaItemStyle: CSSProperties = {
   ...metaItemStyle,
   color: "#FDBA74",
-  padding: "4px 8px",
-  borderRadius: "999px",
-  background: "rgba(249,115,22,0.10)",
-  border: "1px solid rgba(249,115,22,0.18)",
 };
 
 const reasonGridStyle: CSSProperties = {
-  display: "flex",
-  gap: "7px",
-  flexWrap: "wrap",
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gap: "4px 12px",
   minWidth: 0,
 };
 
 const reasonItemStyle: CSSProperties = {
-  padding: "7px 9px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.055)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
+  fontSize: "10.5px",
+  lineHeight: 1.35,
   fontWeight: 800,
   ...safeTextStyle,
 };
@@ -1808,9 +2204,12 @@ const reasonItemStyle: CSSProperties = {
 const detailTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
+  fontSize: "12.5px",
   lineHeight: 1.45,
   fontWeight: 750,
+  maxHeight: "92px",
+  overflowY: "auto",
+  paddingRight: "2px",
   ...safeTextStyle,
 };
 
@@ -1821,43 +2220,52 @@ const mutedTextStyle: CSSProperties = {
 
 const adminNoteStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
+  gap: "7px",
   minWidth: 0,
   gridColumn: "1 / -1",
+  paddingTop: "10px",
+  borderTop: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
 };
 
 const textareaStyle: CSSProperties = {
   width: "100%",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   outline: "none",
-  borderRadius: "18px",
+  borderRadius: "14px",
   background: "var(--historietas-input-bg, rgba(255,255,255,0.055))",
   color: "var(--historietas-input-text, var(--historietas-text-primary, #FFFFFF))",
-  padding: "12px",
+  padding: "9px 10px",
   boxSizing: "border-box",
-  fontSize: "13px",
-  lineHeight: 1.45,
+  fontSize: "12.5px",
+  lineHeight: 1.4,
   fontWeight: 800,
   resize: "vertical",
-  minHeight: "92px",
+  minHeight: "58px",
+};
+
+const compactTextareaStyle: CSSProperties = {
+  ...textareaStyle,
+  minHeight: "44px",
+  resize: "none",
 };
 
 const reportActionsStyle: CSSProperties = {
   display: "flex",
-  justifyContent: "center",
-  gap: "8px",
+  justifyContent: "flex-start",
+  gap: "6px",
   flexWrap: "wrap",
   minWidth: 0,
+  paddingTop: "2px",
 };
 
 const statusButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 12px",
+  minHeight: "32px",
+  padding: "0 10px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   background: "var(--historietas-surface, rgba(255,255,255,0.055))",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
+  fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",
   boxShadow: "none",
@@ -1872,26 +2280,26 @@ const activeStatusButtonStyle: CSSProperties = {
 };
 
 const analysisButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 12px",
+  minHeight: "32px",
+  padding: "0 10px",
   borderRadius: "999px",
   border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
   background: "rgba(249,115,22,0.10)",
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
+  fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",
   boxShadow: "none",
 };
 
 const dangerButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 12px",
+  minHeight: "32px",
+  padding: "0 10px",
   borderRadius: "999px",
   border: "1px solid rgba(248,113,113,0.30)",
   background: "var(--historietas-danger-surface, rgba(248,113,113,0.12))",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
-  fontSize: "11px",
+  fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",
   boxShadow: "none",
@@ -1899,8 +2307,10 @@ const dangerButtonStyle: CSSProperties = {
 
 const analysisMetaStyle: CSSProperties = {
   color: "var(--historietas-text-muted, #A1A1AA)",
-  fontSize: "11px",
+  fontSize: "10.5px",
   fontWeight: 800,
+  textAlign: "right",
+  ...safeTextStyle,
 };
 
 const emptyStyle: CSSProperties = {

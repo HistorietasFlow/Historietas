@@ -2189,7 +2189,7 @@ function criarCardRankingStyle(
     ...(disponivel ? (isDesktop ? desktopCardStyle : cardStyle) : (isDesktop ? desktopCardSoonStyle : cardSoonStyle)),
     background: temaPosicao.cardBackground,
     border: `1px solid ${temaPosicao.border}`,
-    boxShadow: temaPosicao.shadow,
+    boxShadow: "none",
     outline: `1px solid ${temaPosicao.border}`,
     outlineOffset: "-2px",
   };
@@ -2547,12 +2547,21 @@ const sectionTitleStyle: CSSProperties = {
 const carouselShellStyle: CSSProperties = {
   position: "relative",
   minWidth: 0,
-  maxWidth: "100%",
+  width: "calc(100% + 28px)",
+  maxWidth: "calc(100% + 28px)",
+  marginLeft: "-14px",
+  marginRight: "-14px",
+  overflow: "hidden",
   boxSizing: "border-box",
 };
 
 const desktopCarouselShellStyle: CSSProperties = {
   ...carouselShellStyle,
+  width: "100%",
+  maxWidth: "100%",
+  marginLeft: 0,
+  marginRight: 0,
+  overflow: "visible",
   marginTop: "0",
 };
 
@@ -2566,8 +2575,7 @@ const carouselArrowButtonStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.16)",
   background: "rgba(11,6,20,0.86)",
   color: "#FFFFFF",
-  boxShadow: "0 12px 28px rgba(0,0,0,0.34), 0 0 18px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
-  backdropFilter: "blur(8px)",
+  boxShadow: "none",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -2607,20 +2615,23 @@ const carouselStyle: CSSProperties = {
   gap: "14px",
   overflowX: "auto",
   overflowY: "hidden",
-  padding: "1px 2px 12px",
+  padding: "1px 14px 4px",
   scrollSnapType: "x mandatory",
-  scrollPaddingLeft: "2px",
+  scrollPaddingLeft: "14px",
+  scrollPaddingRight: "14px",
   scrollbarWidth: "none",
   overscrollBehaviorX: "contain",
   minWidth: 0,
+  maxWidth: "100%",
 };
 
 const desktopCarouselStyle: CSSProperties = {
   ...carouselStyle,
   gridAutoColumns: "minmax(380px, 420px)",
   gap: "16px",
-  padding: "2px 4px 14px",
+  padding: "2px 4px 6px",
   scrollPaddingLeft: "4px",
+  scrollPaddingRight: "4px",
 };
 
 const sectionHeaderContentStyle: CSSProperties = {
@@ -2668,7 +2679,7 @@ const cardStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  boxShadow: "none",
   boxSizing: "border-box",
   cursor: "pointer",
   scrollSnapAlign: "start",

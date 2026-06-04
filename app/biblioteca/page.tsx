@@ -1525,6 +1525,46 @@ export default function BibliotecaPage() {
     setFiltroObra("todas");
   }
 
+  const cardsBiblioteca = (
+    <section
+      className="biblioteca-summary-carousel"
+      style={isDesktop ? desktopSummaryBoxStyle : summaryBoxStyle}
+      aria-label="Atalhos da Biblioteca"
+    >
+      {abas.map((aba) => {
+        const ativa = abaAtiva === aba.id;
+
+        return (
+          <button
+            key={aba.id}
+            type="button"
+            onClick={() => setAbaAtiva((abaAtual) => (abaAtual === aba.id ? "" : aba.id))}
+            style={
+              ativa
+                ? isDesktop
+                  ? desktopSummaryItemActiveStyle
+                  : summaryItemActiveStyle
+                : isDesktop
+                  ? desktopSummaryItemStyle
+                  : summaryItemStyle
+            }
+          >
+            <strong style={ativa ? summaryNumberActiveStyle : summaryNumberStyle}>
+              {aba.total}
+            </strong>
+
+            <span style={ativa ? summaryLabelActiveStyle : summaryLabelStyle}>
+              {aba.titulo}
+            </span>
+          </button>
+        );
+      })}
+    </section>
+  );
+
+  const mostrarCardsAbaixoDoFiltro =
+    abaSelecionada === "salvos" && capitulosSalvos.length > 0;
+
   return (
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${bibliotecaPageCss}`}</style>
@@ -1541,70 +1581,22 @@ export default function BibliotecaPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopTitleHomeLinkStyle : titleHomeLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span
+              className="historietas-theme-title"
+              style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
+            >
+              BIBLIOTECA
+            </span>
           </Link>
         </header>
 
-        <section style={isDesktop ? desktopHeroStyle : heroStyle}>
-          <div style={heroDecorationLayerStyle} aria-hidden="true">
-            {["✦", "▣", "◇", "→"].map((decoracao, index) => (
-              <span
-                key={`hero-${decoracao}-${index}`}
-                style={criarDecoracaoBibliotecaStyle(index)}
-              >
-                {decoracao}
-              </span>
-            ))}
-          </div>
-
-          <div style={heroPremiumShineStyle} aria-hidden="true" />
-
-          <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Biblioteca</h1>
-
-            <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-              Continue leituras, acompanhe seu histórico, encontre capítulos
-              salvos e organize sua lista sem transformar a página em painel.
-            </p>
-          </div>
-        </section>
-
-        <section
-          style={isDesktop ? desktopSummaryBoxStyle : summaryBoxStyle}
-          aria-label="Atalhos da Biblioteca"
-        >
-          {abas.map((aba) => {
-            const ativa = abaAtiva === aba.id;
-
-            return (
-              <button
-                key={aba.id}
-                type="button"
-                onClick={() => setAbaAtiva((abaAtual) => (abaAtual === aba.id ? "" : aba.id))}
-                style={
-                  ativa
-                    ? isDesktop
-                      ? desktopSummaryItemActiveStyle
-                      : summaryItemActiveStyle
-                    : isDesktop
-                      ? desktopSummaryItemStyle
-                      : summaryItemStyle
-                }
-              >
-                <strong style={ativa ? summaryNumberActiveStyle : summaryNumberStyle}>
-                  {aba.total}
-                </strong>
-
-                <span style={ativa ? summaryLabelActiveStyle : summaryLabelStyle}>
-                  {aba.titulo}
-                </span>
-              </button>
-            );
-          })}
-        </section>
+        {!mostrarCardsAbaixoDoFiltro && cardsBiblioteca}
 
         {abaSelecionada === "salvos" && capitulosSalvos.length > 0 && (
           <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
@@ -1638,6 +1630,8 @@ export default function BibliotecaPage() {
                 </select>
               </div>
             </div>
+
+            {cardsBiblioteca}
 
             <div style={isDesktop ? desktopFilterFooterStyle : filterFooterStyle}>
               <span style={filterInfoStyle}>
@@ -1730,14 +1724,14 @@ export default function BibliotecaPage() {
                           <Link href={perfilAutorHref} style={authorLinkStyle}>
                             Por {item.obra.autor}
                           </Link>
+
+                          {item.capitulo.comentario.trim() && (
+                            <p style={commentTextStyle}>
+                              Comentário: {item.capitulo.comentario}
+                            </p>
+                          )}
                         </div>
                       </div>
-
-                      {item.capitulo.comentario.trim() && (
-                        <p style={commentTextStyle}>
-                          Comentário: {item.capitulo.comentario}
-                        </p>
-                      )}
 
                       <div style={isDesktop ? desktopPrimaryActionsStyle : primaryActionsStyle}>
                         <Link href={lerHref} style={primaryActionStyle}>
@@ -2505,6 +2499,17 @@ const bibliotecaPageCss = `
     color: #FFFFFF !important;
     box-shadow: var(--historietas-bottom-nav-main-shadow, none) !important;
   }
+
+  .biblioteca-summary-carousel {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .biblioteca-summary-carousel::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
 `;
 
 const safeTextStyle: CSSProperties = {
@@ -2651,6 +2656,71 @@ const logoTextStyle: CSSProperties = {
 };
 
 
+const titleHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "12px",
+  flexWrap: "nowrap",
+  margin: "0 auto 14px",
+  padding: 0,
+  minWidth: 0,
+  textAlign: "center",
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginBottom: "18px",
+};
+
+const titleHomeLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+const desktopTitleHomeLinkStyle: CSSProperties = {
+  ...titleHomeLinkStyle,
+};
+
+const pageTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  marginLeft: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.04,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textAlign: "center",
+  textShadow: "none",
+};
+
+const desktopPageTitleTextStyle: CSSProperties = {
+  ...pageTitleTextStyle,
+};
+
+
 const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
@@ -2677,7 +2747,7 @@ const heroContentStyle: CSSProperties = {
 const titleStyle: CSSProperties = {
   margin: 0,
   fontSize: "clamp(36px, 9.4vw, 58px)",
-  lineHeight: 1.08,
+  lineHeight: 1.04,
   fontWeight: 950,
   letterSpacing: "-0.072em",
   maxWidth: "100%",
@@ -2706,24 +2776,34 @@ const descriptionStyle: CSSProperties = {
 };
 
 const summaryBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  marginTop: "8px",
+  marginLeft: "-12px",
+  marginRight: "-12px",
+  display: "flex",
+  alignItems: "stretch",
+  justifyContent: "flex-start",
   gap: "5px",
+  width: "calc(100% + 24px)",
   minWidth: 0,
-  maxWidth: "100%",
+  maxWidth: "calc(100% + 24px)",
+  overflowX: "auto",
+  overflowY: "hidden",
+  padding: "0 12px",
+  scrollSnapType: "x proximity",
   boxSizing: "border-box",
 };
 
 const summaryItemStyle: CSSProperties = {
-  borderRadius: "15px",
+  flex: "0 0 84px",
+  scrollSnapAlign: "start",
+  borderRadius: "11px",
   background:
     "linear-gradient(145deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 11%, var(--historietas-surface, rgba(255,255,255,0.06))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.82)) 100%)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.085))",
-  padding: "8px 3px",
-  minHeight: "58px",
+  padding: "4px 4px",
+  minHeight: "46px",
   display: "grid",
-  gap: "2px",
+  gap: "1px",
   alignContent: "center",
   justifyItems: "center",
   minWidth: 0,
@@ -2745,7 +2825,7 @@ const summaryItemActiveStyle: CSSProperties = {
 
 const summaryNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "18px",
+  fontSize: "16px",
   fontWeight: 950,
   lineHeight: 1,
   textAlign: "center",
@@ -2759,9 +2839,11 @@ const summaryNumberActiveStyle: CSSProperties = {
 
 const summaryLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8.5px",
-  lineHeight: 1.08,
-  fontWeight: 850,
+  fontSize: "7.2px",
+  lineHeight: 1.02,
+  fontWeight: 950,
+  letterSpacing: "0.02em",
+  textTransform: "uppercase",
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -3072,7 +3154,6 @@ const authorLinkStyle: CSSProperties = {
   fontSize: "12px",
   fontWeight: 900,
   textDecoration: "none",
-  borderBottom: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
   whiteSpace: "normal",
   ...safeTextStyle,
 };
@@ -3409,7 +3490,7 @@ const desktopHeroContentStyle: CSSProperties = {
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
   fontSize: "46px",
-  lineHeight: 1.08,
+  lineHeight: 1.04,
   letterSpacing: "-0.065em",
   paddingBottom: "4px",
   textAlign: "center",
@@ -3427,23 +3508,30 @@ const desktopDescriptionStyle: CSSProperties = {
 
 const desktopSummaryBoxStyle: CSSProperties = {
   ...summaryBoxStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "10px",
-  marginTop: "12px",
+  justifyContent: "center",
+  gap: "6px",
+  marginTop: "8px",
+  marginLeft: 0,
+  marginRight: 0,
+  width: "100%",
+  maxWidth: "100%",
+  padding: 0,
 };
 
 const desktopSummaryItemStyle: CSSProperties = {
   ...summaryItemStyle,
-  borderRadius: "18px",
-  padding: "12px 13px",
-  minHeight: "74px",
+  flex: "0 0 92px",
+  borderRadius: "12px",
+  padding: "4px 5px",
+  minHeight: "48px",
 };
 
 const desktopSummaryItemActiveStyle: CSSProperties = {
   ...summaryItemActiveStyle,
-  borderRadius: "18px",
-  padding: "12px 13px",
-  minHeight: "74px",
+  flex: "0 0 92px",
+  borderRadius: "12px",
+  padding: "4px 5px",
+  minHeight: "48px",
 };
 
 const desktopFilterBoxStyle: CSSProperties = {
@@ -3494,7 +3582,7 @@ const desktopBookCoverStyle: CSSProperties = {
   ...bookCoverStyle,
   minHeight: "124px",
   maxHeight: "134px",
-  borderRadius: "16px",
+  borderRadius: "13px",
 };
 
 const desktopPrimaryActionsStyle: CSSProperties = {

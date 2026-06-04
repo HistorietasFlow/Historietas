@@ -963,8 +963,7 @@ export default function MinhaObraPage() {
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <header style={isDesktop ? desktopTopStyle : topStyle}>
             <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-              <span style={logoMarkStyle}>H</span>
-              <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+              <span style={logoTextStyle}>MINHA OBRA</span>
             </Link>
 
           </header>
@@ -1005,8 +1004,7 @@ export default function MinhaObraPage() {
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
           <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+            <span style={logoTextStyle}>MINHA OBRA</span>
           </Link>
 
         </header>
@@ -1034,9 +1032,11 @@ export default function MinhaObraPage() {
 
               <span style={genreBadgeStyle}>{generoObraFormatado}</span>
 
-              <span style={classificationBadgeStyle}>
-                {classificacaoIndicativa}
-              </span>
+              {obraAtual.tags.slice(0, 1).map((tag, index) => (
+                <span key={`${obraAtual.id}-top-tag-${tag}-${index}`} style={tagStyle}>
+                  {tag}
+                </span>
+              ))}
 
               <span
                 style={
@@ -1045,16 +1045,6 @@ export default function MinhaObraPage() {
               >
                 {obraAtual.publicado ? "Publicado" : "Rascunho"}
               </span>
-
-              {arquivoObra && (
-                <span style={fileBadgeStyle}>Arquivo anexado</span>
-              )}
-
-              {obraAtual.tags.slice(0, 1).map((tag, index) => (
-                <span key={`${obraAtual.id}-top-tag-${tag}-${index}`} style={tagStyle}>
-                  {tag}
-                </span>
-              ))}
             </div>
 
             <h1 style={isDesktop ? desktopTitleStyle : titleStyle}>{obraAtual.titulo}</h1>
@@ -1116,15 +1106,8 @@ export default function MinhaObraPage() {
         </section>
         {arquivoObra && (
           <section style={isDesktop ? desktopArquivoObraBoxStyle : arquivoObraBoxStyle}>
-            <div style={sectionHeaderStyle}>
-              <div>
-                <span style={sectionMiniTitleStyle}>ARQUIVO DA OBRA</span>
-                <h2 style={sectionTitleStyle}>Material anexado</h2>
-              </div>
-
-              <span style={arquivoObraTypeBadgeStyle}>
-                {arquivoObraTipoTexto}
-              </span>
+            <div style={arquivoObraHeaderStyle}>
+              <h2 style={arquivoObraSectionTitleStyle}>ARQUIVO DA OBRA</h2>
             </div>
 
             <div style={isDesktop ? desktopArquivoObraCardStyle : arquivoObraCardStyle}>
@@ -1384,7 +1367,7 @@ const containerStyle: CSSProperties = {
 const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "center",
   gap: "12px",
   flexWrap: "nowrap",
   marginBottom: "14px",
@@ -1394,12 +1377,12 @@ const topStyle: CSSProperties = {
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "23px",
   fontWeight: 950,
   letterSpacing: "-0.055em",
   display: "flex",
   alignItems: "center",
-  gap: "4px",
+  gap: "1px",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "visible",
@@ -1407,28 +1390,25 @@ const logoStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-  color: "#FFFFFF",
-  fontSize: "17px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  flex: "0 0 auto",
-};
-
 const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background: "linear-gradient(135deg, #F5F3FF 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 45%, white) 42%, var(--historietas-accent, #FDBA74) 100%)",
+  display: "inline-block",
+  marginLeft: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "0 0 26px color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 24%, transparent)",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
 };
 
 
@@ -1580,12 +1560,6 @@ const draftBadgeStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
-const classificationBadgeStyle: CSSProperties = {
-  ...badgeStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 26%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
-};
 
 const genreBadgeStyle: CSSProperties = {
   ...badgeStyle,
@@ -1618,7 +1592,7 @@ const authorLinkStyle: CSSProperties = {
   fontWeight: 950,
   textDecoration: "none",
   textAlign: "left",
-  borderBottom: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
+  borderBottom: "none",
   ...safeTextStyle,
 };
 
@@ -1729,18 +1703,6 @@ const sectionHeaderStyle: CSSProperties = {
   textAlign: "center",
 };
 
-const sectionMiniTitleStyle: CSSProperties = {
-  display: "inline-flex",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  marginBottom: "4px",
-  maxWidth: "100%",
-  textAlign: "center",
-  textTransform: "uppercase",
-  ...safeTextStyle,
-};
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
@@ -2124,37 +2086,39 @@ const copiedLinkActionStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const fileBadgeStyle: CSSProperties = {
-  ...badgeStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 30%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
-};
 
 const arquivoObraBoxStyle: CSSProperties = {
   marginTop: "12px",
   display: "grid",
   gap: "8px",
-  padding: "10px",
-  borderRadius: "18px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.64)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.78)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 10%, var(--historietas-border-soft, rgba(255,255,255,0.06)))",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   boxShadow: "none",
   minWidth: 0,
-  overflow: "hidden",
+  overflow: "visible",
 };
 
-const arquivoObraTypeBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)",
+const arquivoObraHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  marginBottom: "2px",
+  minWidth: 0,
+  textAlign: "center",
+};
+
+const arquivoObraSectionTitleStyle: CSSProperties = {
+  margin: 0,
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  fontSize: "24px",
+  lineHeight: 1.1,
+  paddingBottom: "0.06em",
   fontWeight: 950,
+  letterSpacing: "-0.05em",
+  maxWidth: "100%",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2433,8 +2397,8 @@ const desktopStatsGridStyle: CSSProperties = {
 const desktopArquivoObraBoxStyle: CSSProperties = {
   ...arquivoObraBoxStyle,
   marginTop: "14px",
-  padding: "13px",
-  borderRadius: "22px",
+  padding: 0,
+  borderRadius: 0,
 };
 
 const desktopArquivoObraCardStyle: CSSProperties = {

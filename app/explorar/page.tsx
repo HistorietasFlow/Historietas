@@ -113,7 +113,11 @@ type TemaVisualExplorar =
   | "scifi"
   | "drama"
   | "aventura"
+  | "misterio"
+  | "suspense"
   | "sobrenatural"
+  | "historico"
+  | "biografia"
   | "comedia";
 
 type TemaVisualExplorarConfig = {
@@ -316,17 +320,43 @@ const TEMAS_VISUAIS_EXPLORAR: Record<TemaVisualExplorar, TemaVisualExplorarConfi
     secondaryButtonText: "#E9D5FF",
   },
   aventura: {
-    accent: "#FBBF24",
-    secondary: "#B45309",
-    bgStart: "#100B06",
-    bgMid: "#181020",
-    bgEnd: "#17101F",
-    glowPrimary: "rgba(251,191,36,0.24)",
-    glowSecondary: "rgba(180,83,9,0.20)",
+    accent: "#EAB308",
+    secondary: "#92400E",
+    bgStart: "#0D0803",
+    bgMid: "#171006",
+    bgEnd: "#1F1308",
+    glowPrimary: "rgba(234,179,8,0.18)",
+    glowSecondary: "rgba(146,64,14,0.20)",
     titleTo: "#FDE68A",
-    activeSurface: "rgba(251,191,36,0.16)",
-    secondarySurface: "rgba(180,83,9,0.18)",
-    secondaryButtonText: "#FEF3C7",
+    activeSurface: "rgba(234,179,8,0.15)",
+    secondarySurface: "rgba(146,64,14,0.20)",
+    secondaryButtonText: "#FDE68A",
+  },
+  misterio: {
+    accent: "#818CF8",
+    secondary: "#312E81",
+    bgStart: "#060817",
+    bgMid: "#0B1026",
+    bgEnd: "#10112A",
+    glowPrimary: "rgba(129,140,248,0.26)",
+    glowSecondary: "rgba(49,46,129,0.24)",
+    titleTo: "#C7D2FE",
+    activeSurface: "rgba(129,140,248,0.16)",
+    secondarySurface: "rgba(49,46,129,0.22)",
+    secondaryButtonText: "#C7D2FE",
+  },
+  suspense: {
+    accent: "#A3E635",
+    secondary: "#365314",
+    bgStart: "#070B05",
+    bgMid: "#101607",
+    bgEnd: "#11140A",
+    glowPrimary: "rgba(163,230,53,0.18)",
+    glowSecondary: "rgba(54,83,20,0.24)",
+    titleTo: "#D9F99D",
+    activeSurface: "rgba(163,230,53,0.14)",
+    secondarySurface: "rgba(54,83,20,0.24)",
+    secondaryButtonText: "#D9F99D",
   },
   sobrenatural: {
     accent: "#34D399",
@@ -340,6 +370,32 @@ const TEMAS_VISUAIS_EXPLORAR: Record<TemaVisualExplorar, TemaVisualExplorarConfi
     activeSurface: "rgba(52,211,153,0.16)",
     secondarySurface: "rgba(6,95,70,0.20)",
     secondaryButtonText: "#D1FAE5",
+  },
+  historico: {
+    accent: "#D97706",
+    secondary: "#78350F",
+    bgStart: "#110805",
+    bgMid: "#1A0F08",
+    bgEnd: "#17100A",
+    glowPrimary: "rgba(217,119,6,0.22)",
+    glowSecondary: "rgba(120,53,15,0.25)",
+    titleTo: "#FDBA74",
+    activeSurface: "rgba(217,119,6,0.16)",
+    secondarySurface: "rgba(120,53,15,0.22)",
+    secondaryButtonText: "#FED7AA",
+  },
+  biografia: {
+    accent: "#60A5FA",
+    secondary: "#334155",
+    bgStart: "#06101F",
+    bgMid: "#0B1728",
+    bgEnd: "#101827",
+    glowPrimary: "rgba(96,165,250,0.22)",
+    glowSecondary: "rgba(51,65,85,0.28)",
+    titleTo: "#BFDBFE",
+    activeSurface: "rgba(96,165,250,0.15)",
+    secondarySurface: "rgba(51,65,85,0.24)",
+    secondaryButtonText: "#BFDBFE",
   },
   comedia: {
     accent: "#FACC15",
@@ -1213,120 +1269,156 @@ function criarPublishedCoverStyle(
   };
 }
 
-function obterTemaCategoria(categoria: string) {
-  const categoriaNormalizada = normalizarTexto(categoria);
+type TemaCategoriaExplorar = {
+  accent: string;
+  secondary: string;
+  bgStart: string;
+  bgMid: string;
+  bgEnd: string;
+  glowPrimary: string;
+  glowSecondary: string;
+  titleTo: string;
+  activeSurface: string;
+  secondarySurface: string;
+  secondaryButtonText: string;
+  pageBackground: string;
+  heroBackground: string;
+  activeBackground: string;
+};
 
-  if (categoriaNormalizada === "fantasia") {
-    return {
-      accent: "#A78BFA",
-      activeBackground: "linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)",
-      pageBackground:
-        "radial-gradient(circle at 18% 0%, rgba(124,58,237,0.36), transparent 30%), radial-gradient(circle at 90% 20%, rgba(167,139,250,0.16), transparent 24%), radial-gradient(circle at 50% 100%, rgba(249,115,22,0.08), transparent 30%), linear-gradient(180deg, #10071F 0%, #180B2D 42%, #1B1030 75%, #17101F 100%)",
-      heroBackground:
-        "radial-gradient(circle at 16% 0%, rgba(167,139,250,0.46), transparent 32%), radial-gradient(circle at 90% 45%, rgba(124,58,237,0.22), transparent 30%), linear-gradient(135deg, rgba(27,13,48,0.98) 0%, rgba(12,7,23,0.98) 100%)",
-    };
-  }
-
-  if (categoriaNormalizada === "romance") {
-    return {
-      accent: "#F472B6",
-      activeBackground: "linear-gradient(135deg, #BE185D 0%, #F472B6 100%)",
-      pageBackground:
-        "radial-gradient(circle at 18% 0%, rgba(244,114,182,0.30), transparent 30%), radial-gradient(circle at 90% 20%, rgba(124,58,237,0.18), transparent 24%), radial-gradient(circle at 50% 100%, rgba(249,115,22,0.08), transparent 30%), linear-gradient(180deg, #120718 0%, #1D0A23 42%, #21102D 75%, #17101F 100%)",
-      heroBackground:
-        "radial-gradient(circle at 16% 0%, rgba(244,114,182,0.42), transparent 32%), radial-gradient(circle at 90% 45%, rgba(190,24,93,0.20), transparent 30%), linear-gradient(135deg, rgba(34,13,40,0.98) 0%, rgba(12,7,23,0.98) 100%)",
-    };
-  }
-
-  if (categoriaNormalizada === "terror") {
-    return {
-      accent: "#FB7185",
-      activeBackground: "linear-gradient(135deg, #7F1D1D 0%, #FB7185 100%)",
-      pageBackground:
-        "radial-gradient(circle at 18% 0%, rgba(127,29,29,0.34), transparent 30%), radial-gradient(circle at 90% 20%, rgba(124,58,237,0.12), transparent 24%), radial-gradient(circle at 50% 100%, rgba(249,115,22,0.08), transparent 30%), linear-gradient(180deg, #0B060B 0%, #16080D 42%, #1B0E1E 75%, #161016 100%)",
-      heroBackground:
-        "radial-gradient(circle at 16% 0%, rgba(127,29,29,0.44), transparent 32%), radial-gradient(circle at 90% 45%, rgba(251,113,133,0.16), transparent 30%), linear-gradient(135deg, rgba(30,10,16,0.98) 0%, rgba(9,7,13,0.98) 100%)",
-    };
-  }
-
-  if (categoriaNormalizada === "acao") {
-    return {
-      accent: "#F97316",
-      activeBackground: "linear-gradient(135deg, #EA580C 0%, #F97316 100%)",
-      pageBackground:
-        "radial-gradient(circle at 18% 0%, rgba(249,115,22,0.22), transparent 30%), radial-gradient(circle at 90% 20%, rgba(124,58,237,0.18), transparent 24%), radial-gradient(circle at 50% 100%, rgba(249,115,22,0.09), transparent 30%), linear-gradient(180deg, #100712 0%, #170A22 42%, #1A0D2B 75%, #1A1217 100%)",
-      heroBackground:
-        "radial-gradient(circle at 16% 0%, rgba(249,115,22,0.28), transparent 32%), radial-gradient(circle at 90% 45%, rgba(124,58,237,0.20), transparent 30%), linear-gradient(135deg, rgba(27,13,33,0.98) 0%, rgba(12,7,23,0.98) 100%)",
-    };
-  }
-
-  if (categoriaNormalizada === "ficcao" || categoriaNormalizada === "sci-fi" || categoriaNormalizada === "sci fi") {
-    return {
-      accent: "#38BDF8",
-      activeBackground: "linear-gradient(135deg, #0369A1 0%, #38BDF8 100%)",
-      pageBackground:
-        "radial-gradient(circle at 18% 0%, rgba(56,189,248,0.24), transparent 30%), radial-gradient(circle at 90% 20%, rgba(124,58,237,0.18), transparent 24%), radial-gradient(circle at 50% 100%, rgba(249,115,22,0.06), transparent 30%), linear-gradient(180deg, #06111F 0%, #091B2D 42%, #11172E 75%, #11111F 100%)",
-      heroBackground:
-        "radial-gradient(circle at 16% 0%, rgba(56,189,248,0.30), transparent 32%), radial-gradient(circle at 90% 45%, rgba(124,58,237,0.20), transparent 30%), linear-gradient(135deg, rgba(9,27,45,0.98) 0%, rgba(8,7,23,0.98) 100%)",
-    };
-  }
-
-  if (categoriaNormalizada === "drama") {
-    return {
-      accent: "#C084FC",
-      activeBackground: "linear-gradient(135deg, #581C87 0%, #C084FC 100%)",
-      pageBackground:
-        "radial-gradient(circle at 18% 0%, rgba(192,132,252,0.24), transparent 30%), radial-gradient(circle at 90% 20%, rgba(249,115,22,0.08), transparent 24%), radial-gradient(circle at 50% 100%, rgba(249,115,22,0.07), transparent 30%), linear-gradient(180deg, #0E0718 0%, #160A24 42%, #1B1029 75%, #17101F 100%)",
-      heroBackground:
-        "radial-gradient(circle at 16% 0%, rgba(192,132,252,0.30), transparent 32%), radial-gradient(circle at 90% 45%, rgba(88,28,135,0.22), transparent 30%), linear-gradient(135deg, rgba(24,13,39,0.98) 0%, rgba(12,7,23,0.98) 100%)",
-    };
-  }
-
-  if (categoriaNormalizada === "aventura") {
-    return {
-      accent: "#FBBF24",
-      activeBackground: "linear-gradient(135deg, #B45309 0%, #FBBF24 100%)",
-      pageBackground:
-        "radial-gradient(circle at 18% 0%, rgba(251,191,36,0.18), transparent 30%), radial-gradient(circle at 90% 20%, rgba(124,58,237,0.18), transparent 24%), radial-gradient(circle at 50% 100%, rgba(249,115,22,0.08), transparent 30%), linear-gradient(180deg, #100B06 0%, #181020 42%, #1B1129 75%, #17101F 100%)",
-      heroBackground:
-        "radial-gradient(circle at 16% 0%, rgba(251,191,36,0.24), transparent 32%), radial-gradient(circle at 90% 45%, rgba(124,58,237,0.20), transparent 30%), linear-gradient(135deg, rgba(31,20,12,0.98) 0%, rgba(12,7,23,0.98) 100%)",
-    };
-  }
-
-  if (categoriaNormalizada === "comedia") {
-    return {
-      accent: "#FDE047",
-      activeBackground: "linear-gradient(135deg, #CA8A04 0%, #FDE047 100%)",
-      pageBackground:
-        "radial-gradient(circle at 18% 0%, rgba(253,224,71,0.22), transparent 30%), radial-gradient(circle at 90% 20%, rgba(249,115,22,0.16), transparent 24%), radial-gradient(circle at 50% 100%, rgba(124,58,237,0.08), transparent 30%), linear-gradient(180deg, #100D05 0%, #18120A 42%, #1B1328 75%, #17101F 100%)",
-      heroBackground:
-        "radial-gradient(circle at 16% 0%, rgba(253,224,71,0.28), transparent 32%), radial-gradient(circle at 90% 45%, rgba(249,115,22,0.18), transparent 30%), linear-gradient(135deg, rgba(31,23,10,0.98) 0%, rgba(12,7,23,0.98) 100%)",
-    };
-  }
-
-  if (categoriaNormalizada === "sobrenatural") {
-    return {
-      accent: "#34D399",
-      activeBackground: "linear-gradient(135deg, #065F46 0%, #34D399 100%)",
-      pageBackground:
-        "radial-gradient(circle at 18% 0%, rgba(52,211,153,0.20), transparent 30%), radial-gradient(circle at 90% 20%, rgba(124,58,237,0.18), transparent 24%), radial-gradient(circle at 50% 100%, rgba(249,115,22,0.06), transparent 30%), linear-gradient(180deg, #06120D 0%, #0B1D1C 42%, #12172B 75%, #10171A 100%)",
-      heroBackground:
-        "radial-gradient(circle at 16% 0%, rgba(52,211,153,0.24), transparent 32%), radial-gradient(circle at 90% 45%, rgba(124,58,237,0.18), transparent 30%), linear-gradient(135deg, rgba(8,30,22,0.98) 0%, rgba(12,7,23,0.98) 100%)",
-    };
-  }
+function criarTemaCategoriaExplorar(
+  tema: Pick<
+    TemaVisualExplorarConfig,
+    | "accent"
+    | "secondary"
+    | "bgStart"
+    | "bgMid"
+    | "bgEnd"
+    | "glowPrimary"
+    | "glowSecondary"
+    | "titleTo"
+    | "activeSurface"
+    | "secondarySurface"
+    | "secondaryButtonText"
+  >
+): TemaCategoriaExplorar {
+  const titleTo = tema.titleTo || tema.accent;
+  const activeSurface =
+    tema.activeSurface ||
+    `color-mix(in srgb, ${tema.accent} 22%, rgba(12,7,23,0.92))`;
+  const secondarySurface =
+    tema.secondarySurface ||
+    `color-mix(in srgb, ${tema.secondary} 18%, rgba(255,255,255,0.035))`;
+  const secondaryButtonText = tema.secondaryButtonText || titleTo;
 
   return {
-    accent: "#F97316",
-    activeBackground: "linear-gradient(135deg, #7C3AED 0%, #F97316 100%)",
-    pageBackground:
-      "radial-gradient(circle at 14% 0%, rgba(124,58,237,0.22), transparent 28%), radial-gradient(circle at 86% 18%, rgba(91,33,182,0.14), transparent 22%), radial-gradient(circle at 50% 100%, rgba(249,115,22,0.10), transparent 28%), linear-gradient(180deg, #0D0618 0%, #12081F 26%, #170A28 52%, #1A0D2B 72%, #1B1026 86%, #1A1217 100%)",
-    heroBackground:
-      "radial-gradient(circle at 18% 0%, rgba(124,58,237,0.42), transparent 32%), radial-gradient(circle at 90% 45%, rgba(249,115,22,0.12), transparent 28%), linear-gradient(135deg, rgba(26,13,43,0.98) 0%, rgba(12,7,23,0.98) 100%)",
+    accent: tema.accent,
+    secondary: tema.secondary,
+    bgStart: tema.bgStart,
+    bgMid: tema.bgMid,
+    bgEnd: tema.bgEnd,
+    glowPrimary: tema.glowPrimary,
+    glowSecondary: tema.glowSecondary,
+    titleTo,
+    activeSurface,
+    secondarySurface,
+    secondaryButtonText,
+    activeBackground: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
+    pageBackground: `radial-gradient(circle at 18% 0%, ${tema.glowPrimary}, transparent 30%), radial-gradient(circle at 90% 20%, ${tema.glowSecondary}, transparent 24%), radial-gradient(circle at 50% 100%, color-mix(in srgb, ${tema.accent} 9%, transparent), transparent 30%), linear-gradient(180deg, ${tema.bgStart} 0%, ${tema.bgMid} 44%, ${tema.bgEnd} 100%)`,
+    heroBackground: `radial-gradient(circle at 16% 0%, ${tema.glowPrimary}, transparent 32%), radial-gradient(circle at 90% 45%, ${tema.glowSecondary}, transparent 30%), linear-gradient(135deg, color-mix(in srgb, ${tema.bgMid} 82%, rgba(255,255,255,0.04)) 0%, color-mix(in srgb, ${tema.bgStart} 92%, #000000) 100%)`,
   };
 }
 
+const TEMAS_CATEGORIAS_EXPLORAR: Record<string, TemaCategoriaExplorar> = {
+  acao: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.acao),
+  aventura: criarTemaCategoriaExplorar({
+    accent: "#EAB308",
+    secondary: "#92400E",
+    bgStart: "#0D0803",
+    bgMid: "#171006",
+    bgEnd: "#1F1308",
+    glowPrimary: "rgba(234,179,8,0.18)",
+    glowSecondary: "rgba(146,64,14,0.20)",
+    titleTo: "#FDE68A",
+    activeSurface: "rgba(234,179,8,0.15)",
+    secondarySurface: "rgba(146,64,14,0.20)",
+    secondaryButtonText: "#FDE68A",
+  }),
+  comedia: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.comedia),
+  drama: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.drama),
+  fantasia: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.fantasia),
+  ficcao: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.scifi),
+  "sci-fi": criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.scifi),
+  "sci fi": criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.scifi),
+  scifi: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.scifi),
+  romance: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.romance),
+  terror: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.terror),
+  sobrenatural: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.sobrenatural),
+  misterio: criarTemaCategoriaExplorar({
+    accent: "#818CF8",
+    secondary: "#312E81",
+    bgStart: "#060817",
+    bgMid: "#0B1026",
+    bgEnd: "#10112A",
+    glowPrimary: "rgba(129,140,248,0.26)",
+    glowSecondary: "rgba(49,46,129,0.24)",
+    titleTo: "#C7D2FE",
+    activeSurface: "rgba(129,140,248,0.16)",
+    secondarySurface: "rgba(49,46,129,0.22)",
+    secondaryButtonText: "#C7D2FE",
+  }),
+  suspense: criarTemaCategoriaExplorar({
+    accent: "#A3E635",
+    secondary: "#365314",
+    bgStart: "#070B05",
+    bgMid: "#101607",
+    bgEnd: "#11140A",
+    glowPrimary: "rgba(163,230,53,0.18)",
+    glowSecondary: "rgba(54,83,20,0.24)",
+    titleTo: "#D9F99D",
+    activeSurface: "rgba(163,230,53,0.14)",
+    secondarySurface: "rgba(54,83,20,0.24)",
+    secondaryButtonText: "#D9F99D",
+  }),
+  historico: criarTemaCategoriaExplorar({
+    accent: "#D97706",
+    secondary: "#78350F",
+    bgStart: "#110805",
+    bgMid: "#1A0F08",
+    bgEnd: "#17100A",
+    glowPrimary: "rgba(217,119,6,0.22)",
+    glowSecondary: "rgba(120,53,15,0.25)",
+    titleTo: "#FDBA74",
+    activeSurface: "rgba(217,119,6,0.16)",
+    secondarySurface: "rgba(120,53,15,0.22)",
+    secondaryButtonText: "#FED7AA",
+  }),
+  biografia: criarTemaCategoriaExplorar({
+    accent: "#60A5FA",
+    secondary: "#334155",
+    bgStart: "#06101F",
+    bgMid: "#0B1728",
+    bgEnd: "#101827",
+    glowPrimary: "rgba(96,165,250,0.22)",
+    glowSecondary: "rgba(51,65,85,0.28)",
+    titleTo: "#BFDBFE",
+    activeSurface: "rgba(96,165,250,0.15)",
+    secondarySurface: "rgba(51,65,85,0.24)",
+    secondaryButtonText: "#BFDBFE",
+  }),
+};
+
+function obterTemaCategoria(categoria: string) {
+  const categoriaNormalizada = normalizarTexto(categoria);
+
+  return (
+    TEMAS_CATEGORIAS_EXPLORAR[categoriaNormalizada] ||
+    criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.original)
+  );
+}
+
 function criarTemaPaginaVisualExplorar(
-  temaVisual: TemaVisualExplorar,
+  _temaVisual: TemaVisualExplorar,
   tema: TemaVisualExplorarConfig,
   temaCategoria: ReturnType<typeof obterTemaCategoria>,
   categoriaSelecionada: string
@@ -1335,42 +1427,7 @@ function criarTemaPaginaVisualExplorar(
     return temaCategoria;
   }
 
-  if (temaVisual === "original") {
-    return temaCategoria;
-  }
-
-  const isBranco = temaVisual === "branco";
-  const isEscuro = temaVisual === "escuro";
-  const surface = tema.surface || "rgba(18,12,30,0.82)";
-  const surfaceStrong = tema.surfaceStrong || "rgba(18,12,30,0.98)";
-
-  if (isBranco) {
-    return {
-      accent: tema.accent,
-      activeBackground: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
-      pageBackground:
-        "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 56%, #F8F9FA 100%)",
-      heroBackground:
-        "linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 54%, #EEF3FE 100%)",
-    };
-  }
-
-  if (isEscuro) {
-    return {
-      accent: tema.accent,
-      activeBackground: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
-      pageBackground: "linear-gradient(180deg, #000000 0%, #000000 100%)",
-      heroBackground:
-        "linear-gradient(135deg, #050505 0%, #000000 58%, #050505 100%)",
-    };
-  }
-
-  return {
-    accent: tema.accent,
-    activeBackground: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
-    pageBackground: `radial-gradient(circle at 18% 0%, ${tema.glowPrimary}, transparent 30%), radial-gradient(circle at 90% 20%, ${tema.glowSecondary}, transparent 24%), linear-gradient(180deg, ${tema.bgStart} 0%, ${tema.bgMid} 44%, ${tema.bgEnd} 100%)`,
-    heroBackground: `radial-gradient(circle at 16% 0%, ${tema.glowPrimary}, transparent 32%), radial-gradient(circle at 90% 45%, ${tema.glowSecondary}, transparent 30%), linear-gradient(135deg, ${surface} 0%, ${surfaceStrong} 100%)`,
-  };
+  return criarTemaCategoriaExplorar(tema);
 }
 
 function obterDecoracoesCategoria(categoria: string) {
@@ -1793,7 +1850,18 @@ export default function ExplorarPage() {
 
     raiz.dataset.historietasExplorarCategoriaAtiva = "true";
     document.body.dataset.historietasExplorarCategoriaAtiva = "true";
+    raiz.style.background = temaCategoria.pageBackground;
+    document.body.style.background = temaCategoria.pageBackground;
     raiz.style.setProperty("--historietas-accent", temaCategoria.accent);
+    raiz.style.setProperty("--historietas-secondary", temaCategoria.secondary);
+    raiz.style.setProperty("--historietas-bg-start", temaCategoria.bgStart);
+    raiz.style.setProperty("--historietas-bg-mid", temaCategoria.bgMid);
+    raiz.style.setProperty("--historietas-bg-end", temaCategoria.bgEnd);
+    raiz.style.setProperty("--historietas-glow-primary", temaCategoria.glowPrimary);
+    raiz.style.setProperty("--historietas-glow-secondary", temaCategoria.glowSecondary);
+    raiz.style.setProperty("--historietas-title-from", "#FFFFFF");
+    raiz.style.setProperty("--historietas-title-mid", "#F5F3FF");
+    raiz.style.setProperty("--historietas-title-to", temaCategoria.titleTo);
     raiz.style.setProperty("--historietas-text-primary", "#FFFFFF");
     raiz.style.setProperty("--historietas-text-secondary", "#E5E7EB");
     raiz.style.setProperty("--historietas-input-bg", "rgba(5,5,12,0.72)");
@@ -1892,87 +1960,72 @@ export default function ExplorarPage() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main style={criarExplorarPageStyle(temaPagina)}>
       <style>{themePageCss}</style>
 
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+      {isDesktop && (
+        <div style={criarExplorarTopWaterFadeStyle(temaPagina, true)} aria-hidden="true" />
+      )}
 
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+      {!isDesktop && (
+        <div style={criarExplorarTopWaterFadeStyle(temaPagina, false)} aria-hidden="true" />
+      )}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : mobileTopStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-explorar-logo-text" style={logoTextStyle}>istorietas</span>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopPageTitleLinkStyle : pageTitleLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span className="historietas-explorar-logo-text" style={pageTitleTextStyle}>
+              EXPLORAR HISTÓRIAS
+            </span>
           </Link>
 
-          <div style={isDesktop ? desktopTopActionsStyle : topActionsStyle}>
-            <Link href="/em-breve" style={isDesktop ? desktopSoonTopButtonStyle : soonTopButtonStyle}>
-              Em breve
-            </Link>
-          </div>
         </header>
 
-        <section style={{ ...(isDesktop ? desktopHeroStyle : mobileHeroStyle), background: temaPagina.heroBackground }}>
-          <div style={heroDecorationLayerStyle} aria-hidden="true">
-            {decoracoesTema.map((decoracao, index) => (
-              <span
-                key={`${decoracao}-${index}`}
-                style={criarDecoracaoTemaStyle(index, temaPagina)}
-              >
-                {decoracao}
+        <section style={isDesktop ? criarDesktopSearchBoxStyle(temaPagina, categoriaAtiva) : criarSearchBoxStyle(temaPagina, categoriaAtiva)}>
+          <p
+            style={{
+              ...criarCompactSummaryStyle(temaPagina, isDesktop, categoriaAtiva),
+              margin: 0,
+            }}
+          >
+            {resumoItens.map((item, index) => (
+              <span key={item} style={compactSummaryItemStyle}>
+                {index > 0 && <span style={compactSummarySeparatorStyle}>•</span>}
+                {item}
               </span>
             ))}
-          </div>
-
-
-          <h1 className="historietas-explorar-hero-title" style={isDesktop ? desktopTitleStyle : titleStyle}>
-            {categoriaSelecionada
-              ? `${categoriaSelecionada}`
-              : "Explorar histórias"}
-          </h1>
-
-          <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            Descubra histórias, mangás, fanfics e obras autorais por gênero,
-            estilo de leitura e momento da sua biblioteca.
           </p>
-        </section>
 
-        <section style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
-          <button
-            type="button"
-            onClick={() => selecionarCategoria("")}
-            style={!categoriaSelecionada ? criarActiveCategoryStyle(temaPagina) : categoryStyle}
-          >
-            Todas
-          </button>
 
-          {categorias.map((categoria) => (
+
+          <section className="explorar-carousel" style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
             <button
-              key={categoria}
               type="button"
-              onClick={() => selecionarCategoria(categoria)}
-              style={
-                categoriaSelecionada === categoria
-                  ? criarActiveCategoryStyle(temaPagina)
-                  : categoryStyle
-              }
+              onClick={() => selecionarCategoria("")}
+              style={!categoriaSelecionada ? criarActiveCategoryStyle(temaPagina) : categoryStyle}
             >
-              {categoria}
+              Todas
             </button>
-          ))}
-        </section>
 
-        <p style={criarCompactSummaryStyle(temaPagina, isDesktop, categoriaAtiva)}>
-          {resumoItens.map((item, index) => (
-            <span key={item} style={compactSummaryItemStyle}>
-              {index > 0 && <span style={compactSummarySeparatorStyle}>•</span>}
-              {item}
-            </span>
-          ))}
-        </p>
-
-        <section style={isDesktop ? criarDesktopSearchBoxStyle(temaPagina, categoriaAtiva) : criarSearchBoxStyle(temaPagina, categoriaAtiva)}>
+            {categorias.map((categoria) => (
+              <button
+                key={categoria}
+                type="button"
+                onClick={() => selecionarCategoria(categoria)}
+                style={
+                  categoriaSelecionada === categoria
+                    ? criarActiveCategoryStyle(temaPagina)
+                    : categoryStyle
+                }
+              >
+                {categoria}
+              </button>
+            ))}
+          </section>
           <input
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
@@ -1981,7 +2034,14 @@ export default function ExplorarPage() {
             type="text"
           />
 
-          <div style={isDesktop ? desktopQuickFiltersStyle : quickFiltersStyle}>
+          <div className="explorar-carousel" style={isDesktop ? desktopQuickFiltersStyle : quickFiltersStyle}>
+            <Link
+              href="/em-breve"
+              style={criarSoonQuickFilterLinkStyle(temaPagina, isDesktop, categoriaAtiva)}
+            >
+              Em breve
+            </Link>
+
             <button
               type="button"
               onClick={() => setFiltroColecao("todos")}
@@ -2420,7 +2480,7 @@ function criarActiveCategoryStyle(tema: ReturnType<typeof obterTemaCategoria>): 
   return {
     ...activeCategoryStyle,
     background: tema.activeBackground,
-    boxShadow: `0 12px 32px ${tema.accent}2E`,
+    boxShadow: "none",
   };
 }
 
@@ -2515,6 +2575,20 @@ function criarQuickFilterInactiveStyle(
   };
 }
 
+function criarSoonQuickFilterLinkStyle(
+  tema: ReturnType<typeof obterTemaCategoria>,
+  isDesktop = false,
+  categoriaAtiva = false
+): CSSProperties {
+  return {
+    ...criarQuickFilterInactiveStyle(tema, isDesktop, categoriaAtiva),
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textDecoration: "none",
+  };
+}
+
 function criarFieldBoxStyle(
   tema: ReturnType<typeof obterTemaCategoria>,
   categoriaAtiva: boolean
@@ -2570,10 +2644,7 @@ function criarCompactSummaryStyle(
 
   return {
     ...baseStyle,
-    background: `linear-gradient(135deg, color-mix(in srgb, ${tema.accent} 14%, rgba(5,5,12,0.80)) 0%, rgba(3,3,8,0.86) 100%)`,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 30%, rgba(255,255,255,0.10))`,
-    color: "#FFFFFF",
-    boxShadow: "none",
+    color: `color-mix(in srgb, ${tema.accent} 82%, var(--historietas-text-primary, #FFFFFF))`,
   };
 }
 
@@ -2769,6 +2840,17 @@ const themePageCss = `
   html[data-historietas-tema-visual] body {
     background: var(--historietas-bg-start, #0B0614) !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
+  }
+
+  .explorar-carousel {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .explorar-carousel::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
   }
 
   html[data-historietas-tema-visual] nav,
@@ -2967,6 +3049,26 @@ const pageStyle: CSSProperties = {
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
+function criarExplorarPageStyle(
+  tema: ReturnType<typeof obterTemaCategoria>
+): CSSProperties {
+  return {
+    ...pageStyle,
+    background: tema.pageBackground,
+    color: "#FFFFFF",
+  };
+}
+
+function criarExplorarTopWaterFadeStyle(
+  tema: ReturnType<typeof obterTemaCategoria>,
+  desktop: boolean
+): CSSProperties {
+  return {
+    ...(desktop ? desktopTopWaterFadeStyle : mobileTopWaterFadeStyle),
+    background: tema.pageBackground,
+  };
+}
+
 const containerStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
@@ -3098,6 +3200,80 @@ const desktopSoonTopButtonStyle: CSSProperties = {
   color: "var(--historietas-accent, #FFD6A8)",
 };
 
+const titleHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  marginTop: "4px",
+  marginBottom: "18px",
+  padding: 0,
+  minWidth: 0,
+  maxWidth: "100%",
+  textAlign: "center",
+  boxSizing: "border-box",
+};
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginTop: "6px",
+  marginBottom: "22px",
+};
+const pageTitleLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  width: "fit-content",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "visible",
+  textAlign: "center",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+const desktopPageTitleLinkStyle: CSSProperties = {
+  ...pageTitleLinkStyle,
+};
+const pageTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  marginLeft: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+};
+const soonTitleButtonStyle: CSSProperties = {
+  ...soonTopButtonStyle,
+  justifySelf: "center",
+  minHeight: "36px",
+  padding: "0 16px",
+  fontSize: "12px",
+};
+
+const desktopSoonTitleButtonStyle: CSSProperties = {
+  ...desktopSoonTopButtonStyle,
+  justifySelf: "center",
+  minHeight: "40px",
+  padding: "0 22px",
+  fontSize: "13px",
+};
+
 const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "30px",
@@ -3191,9 +3367,15 @@ const categoriesStyle: CSSProperties = {
   display: "flex",
   gap: "9px",
   overflowX: "auto",
-  padding: "18px 0 6px",
-  maxWidth: "100%",
+  overflowY: "hidden",
+  marginLeft: "-12px",
+  marginRight: "-12px",
+  padding: "7px 12px 6px",
+  maxWidth: "calc(100% + 24px)",
   scrollbarWidth: "none",
+  msOverflowStyle: "none",
+  boxSizing: "border-box",
+  scrollSnapType: "x proximity",
 };
 
 const categoryStyle: CSSProperties = {
@@ -3210,7 +3392,7 @@ const categoryStyle: CSSProperties = {
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -3219,31 +3401,29 @@ const activeCategoryStyle: CSSProperties = {
   background: "linear-gradient(135deg, #7C3AED 0%, #F97316 100%)",
   border: "1px solid rgba(255,255,255,0.18)",
   color: "#FFFFFF",
-  boxShadow: "0 12px 32px rgba(124, 58, 237, 0.22)",
+  boxShadow: "none",
 };
 
 const compactSummaryStyle: CSSProperties = {
-  margin: "12px 0 0",
-  padding: "12px 16px",
-  borderRadius: "20px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, var(--historietas-surface, rgba(255,255,255,0.06))) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, var(--historietas-surface-strong, rgba(255,255,255,0.04))) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, var(--historietas-border-soft, rgba(255,255,255,0.10)))",
-  color: "var(--historietas-text-primary, #F1E9FF)",
+  margin: "0 auto 2px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12.5px",
-  fontWeight: 860,
-  lineHeight: 1.5,
+  fontWeight: 820,
+  lineHeight: 1.45,
   textAlign: "center",
   display: "flex",
   flexWrap: "wrap",
   alignItems: "center",
   justifyContent: "center",
   gap: "4px 8px",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07)",
-  letterSpacing: "-0.015em",
+  boxShadow: "none",
+  letterSpacing: "-0.01em",
   ...safeTextStyle,
 };
-
 const compactSummaryItemStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
@@ -3306,9 +3486,15 @@ const quickFiltersStyle: CSSProperties = {
   display: "flex",
   gap: "8px",
   overflowX: "auto",
-  paddingBottom: "2px",
-  maxWidth: "100%",
+  overflowY: "hidden",
+  marginLeft: "-12px",
+  marginRight: "-12px",
+  padding: "0 12px 2px",
+  maxWidth: "calc(100% + 24px)",
   scrollbarWidth: "none",
+  msOverflowStyle: "none",
+  boxSizing: "border-box",
+  scrollSnapType: "x proximity",
 };
 
 const quickFilterButtonStyle: CSSProperties = {
@@ -3325,7 +3511,7 @@ const quickFilterButtonStyle: CSSProperties = {
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
-  boxShadow: "0 7px 16px rgba(0,0,0,0.09)",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -3343,7 +3529,7 @@ const quickFilterActiveStyle: CSSProperties = {
   background: "rgba(124,58,237,0.28)",
   border: "1px solid rgba(139,92,246,0.34)",
   color: "#FFFFFF",
-  boxShadow: "0 12px 28px rgba(124,58,237,0.18)",
+  boxShadow: "none",
 };
 
 const desktopQuickFilterActiveStyle: CSSProperties = {
@@ -4001,27 +4187,32 @@ const desktopCategoriesStyle: CSSProperties = {
   flexWrap: "wrap",
   overflowX: "visible",
   justifyContent: "center",
-  padding: "18px 0 8px",
+  marginLeft: 0,
+  marginRight: 0,
+  padding: "7px 0 8px",
+  maxWidth: "100%",
 };
 
 const desktopCompactSummaryStyle: CSSProperties = {
   ...compactSummaryStyle,
-  margin: "12px auto 0",
-  padding: "11px 18px",
+  margin: "0 auto 2px",
+  padding: 0,
   fontSize: "13px",
-  lineHeight: 1.55,
+  lineHeight: 1.5,
   width: "fit-content",
   maxWidth: "100%",
   textAlign: "center",
   opacity: 1,
 };
-
 const desktopQuickFiltersStyle: CSSProperties = {
   ...quickFiltersStyle,
   flexWrap: "wrap",
   overflowX: "visible",
-  paddingBottom: 0,
+  marginLeft: 0,
+  marginRight: 0,
+  padding: 0,
   gap: "8px",
+  maxWidth: "100%",
   minWidth: 0,
   scrollbarWidth: "none",
 };

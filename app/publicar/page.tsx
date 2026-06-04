@@ -544,6 +544,19 @@ function criarPreviewCoverStyle(capa: string): CSSProperties {
   };
 }
 
+function criarCoverUploadIconBoxStyle(capaAtual: string): CSSProperties {
+  if (!capaAtual) {
+    return chapterImportIconBoxStyle;
+  }
+
+  return {
+    ...chapterImportIconBoxStyle,
+    backgroundImage: `url(${capaAtual})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
+
 function criarDecoracaoPaginaStyle(index: number): CSSProperties {
   const posicoes: CSSProperties[] = [
     { top: "32%", right: "-18px", fontSize: "72px", transform: "rotate(-14deg)" },
@@ -1236,46 +1249,20 @@ export default function PublicarPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+          <Link
+            href="/"
+            style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
+            aria-label="Voltar para a Home"
+          >
+            <span
+              className="historietas-theme-title"
+              style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
+            >
+              NOVA HISTÓRIA
+            </span>
           </Link>
-
         </header>
-
-        <section style={isDesktop ? desktopHeroBoxStyle : heroBoxStyle}>
-          <div style={heroDecorationLayerStyle} aria-hidden="true">
-            {["✦", "+", "◇", "↗"].map((decoracao, index) => (
-              <span
-                key={`hero-${decoracao}-${index}`}
-                style={criarDecoracaoPublicarStyle(index)}
-              >
-                {decoracao}
-              </span>
-            ))}
-          </div>
-
-          <div style={heroPremiumShineStyle} aria-hidden="true" />
-
-          <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>Nova história</h1>
-
-          <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-            Crie a base da sua obra. Depois você adiciona os capítulos e pode
-            editar tudo no Painel do Autor.
-          </p>
-
-          <div style={isDesktop ? desktopProgressBoxStyle : progressBoxStyle}>
-            <div style={progressTopStyle}>
-              <span style={progressLabelStyle}>Progresso</span>
-              <strong style={progressNumberStyle}>{progresso}%</strong>
-            </div>
-
-            <div style={progressTrackStyle}>
-              <div style={{ ...progressFillStyle, width: `${progresso}%` }} />
-            </div>
-          </div>
-        </section>
 
         <section style={isDesktop ? desktopMainGridSingleStyle : mainGridStyle}>
           <form onSubmit={salvarObra} style={isDesktop ? desktopFormPanelStyle : formPanelStyle}>
@@ -1288,14 +1275,9 @@ export default function PublicarPage() {
 
             <div style={isDesktop ? desktopFormSectionHeaderStyle : formSectionHeaderStyle}>
               <strong style={formSectionTitleStyle}>Capa da obra</strong>
-              <span style={formSectionTextStyle}>
-                Comece pela capa. Ela é o primeiro impacto da sua obra no catálogo.
-              </span>
             </div>
 
-            <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>Capa da obra</label>
-
+            <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
               <input
                 ref={capaInputRef}
                 type="file"
@@ -1304,22 +1286,13 @@ export default function PublicarPage() {
                 style={hiddenInputStyle}
               />
 
-              <div style={isDesktop ? desktopCoverUploadBoxStyle : coverUploadBoxStyle}>
-                <div style={coverUploadPreviewStyle}>
-                  {capa ? (
-                    <div style={criarPreviewCoverStyle(capa)}>
-                      <div style={previewCoverGlowStyle} />
-                    </div>
-                  ) : (
-                    <div style={coverPlaceholderStyle}>
-                      <span style={coverPlaceholderIconStyle}>+</span>
-                      <span style={coverPlaceholderTextStyle}>Adicionar capa</span>
-                    </div>
-                  )}
+              <div style={isDesktop ? desktopChapterImportBoxStyle : chapterImportBoxStyle}>
+                <div style={criarCoverUploadIconBoxStyle(capa)}>
+                  {!capa && <span style={chapterImportIconStyle}>+</span>}
                 </div>
 
-                <div style={isDesktop ? desktopCoverUploadContentStyle : coverUploadContentStyle}>
-                  <strong style={coverUploadTitleStyle}>
+                <div style={isDesktop ? desktopChapterImportContentStyle : chapterImportContentStyle}>
+                  <strong style={chapterImportTitleStyle}>
                     {capa ? "Capa selecionada" : "Adicionar capa"}
                   </strong>
 
@@ -1337,7 +1310,7 @@ export default function PublicarPage() {
                       onClick={() => capaInputRef.current?.click()}
                       style={isDesktop ? desktopCoverButtonStyle : coverButtonStyle}
                     >
-                      {capa ? "Trocar" : "Escolher"}
+                      Escolher imagem
                     </button>
 
                     {capa && (
@@ -1356,9 +1329,6 @@ export default function PublicarPage() {
 
             <div style={isDesktop ? desktopFormSectionHeaderStyle : formSectionHeaderStyle}>
               <strong style={formSectionTitleStyle}>Dados principais</strong>
-              <span style={formSectionTextStyle}>
-                Preencha as informações que ajudam o leitor a entender o tom da história.
-              </span>
             </div>
 
             <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
@@ -1607,9 +1577,6 @@ export default function PublicarPage() {
 
             <div style={isDesktop ? desktopFormSectionHeaderStyle : formSectionHeaderStyle}>
               <strong style={formSectionTitleStyle}>Arquivos e conteúdo inicial</strong>
-              <span style={formSectionTextStyle}>
-                Anexe materiais extras ou importe um primeiro capítulo sem sair da publicação.
-              </span>
             </div>
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
@@ -1754,6 +1721,10 @@ export default function PublicarPage() {
             </div>
 
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
+              <Link href="/" style={secondaryButtonStyle}>
+                Cancelar
+              </Link>
+
               <button
                 type="submit"
                 style={processando ? disabledButtonStyle : primaryButtonStyle}
@@ -1761,10 +1732,23 @@ export default function PublicarPage() {
               >
                 {processando ? "Salvando..." : "Criar obra"}
               </button>
+            </div>
 
-              <Link href="/" style={secondaryButtonStyle}>
-                Cancelar
-              </Link>
+            <div
+              style={
+                isDesktop
+                  ? { ...desktopProgressBoxStyle, gridColumn: "1 / -1", width: "100%" }
+                  : { ...progressBoxStyle, width: "100%" }
+              }
+            >
+              <div style={progressTopStyle}>
+                <span style={progressLabelStyle}>Progresso</span>
+                <strong style={progressNumberStyle}>{progresso}%</strong>
+              </div>
+
+              <div style={progressTrackStyle}>
+                <div style={{ ...progressFillStyle, width: `${progresso}%` }} />
+              </div>
             </div>
           </form>
 
@@ -1983,7 +1967,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 18px",
+  padding: "14px 0 18px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2038,6 +2022,74 @@ const logoTextStyle: CSSProperties = {
   textShadow: "var(--historietas-logo-shadow, 0 0 26px color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 24%, transparent))",
 };
 
+const titleHeaderStyle: CSSProperties = {
+  ...topStyle,
+  justifyContent: "center",
+  flexWrap: "nowrap",
+  marginTop: 0,
+  marginBottom: "14px",
+  textAlign: "center",
+};
+
+const desktopTitleHeaderStyle: CSSProperties = {
+  ...titleHeaderStyle,
+  marginBottom: "18px",
+};
+
+const headerTitleLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "23px",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "visible",
+  flex: "0 1 auto",
+  ...safeTextStyle,
+};
+
+const desktopHeaderTitleLinkStyle: CSSProperties = {
+  ...headerTitleLinkStyle,
+};
+
+const headerTitleMarkStyle: CSSProperties = {
+  display: "none",
+};
+
+const desktopHeaderTitleMarkStyle: CSSProperties = {
+  ...headerTitleMarkStyle,
+};
+
+const headerTitleTextStyle: CSSProperties = {
+  display: "inline-block",
+  marginLeft: 0,
+  paddingRight: "0.2em",
+  paddingBottom: "0.04em",
+  whiteSpace: "nowrap",
+  overflow: "visible",
+  fontSize: "23px",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  wordSpacing: "0.11em",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+};
+
+const desktopHeaderTitleTextStyle: CSSProperties = {
+  ...headerTitleTextStyle,
+};
+
 
 
 
@@ -2065,9 +2117,9 @@ const titleStyle: CSSProperties = {
   zIndex: 1,
   margin: 0,
   fontSize: "clamp(30px, 8vw, 46px)",
-  lineHeight: 1.04,
+  lineHeight: 1.12,
   fontWeight: 950,
-  letterSpacing: "-0.074em",
+  letterSpacing: "-0.052em",
   maxWidth: "100%",
   textAlign: "center",
   background:
@@ -2076,7 +2128,9 @@ const titleStyle: CSSProperties = {
   backgroundClip: "text",
   color: "transparent",
   textShadow: "none",
-  ...safeTextStyle,
+  overflow: "visible",
+  wordBreak: "normal",
+  overflowWrap: "normal",
 };
 
 const descriptionStyle: CSSProperties = {
@@ -2145,6 +2199,24 @@ const progressFillStyle: CSSProperties = {
   background:
     "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
   transition: "width 0.2s ease",
+};
+
+const previewProgressBoxStyle: CSSProperties = {
+  ...progressBoxStyle,
+  gridColumn: "1 / -1",
+  width: "100%",
+  padding: "8px 10px",
+  borderRadius: "16px",
+  background:
+    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, rgba(18,12,30,0.88)) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.90)) 100%)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+};
+
+const desktopPreviewProgressBoxStyle: CSSProperties = {
+  ...previewProgressBoxStyle,
+  padding: "9px 12px",
+  borderRadius: "17px",
 };
 
 const mainGridStyle: CSSProperties = {
@@ -2971,7 +3043,7 @@ const miniCounterWarningStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1220px, calc(100% - 64px))",
-  padding: "24px 0 28px",
+  padding: "26px 0 28px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -3143,7 +3215,7 @@ const desktopFullWidthArquivoObraContentStyle: CSSProperties = {
 const desktopButtonAreaStyle: CSSProperties = {
   ...buttonAreaStyle,
   gridColumn: "1 / -1",
-  gridTemplateColumns: "minmax(190px, 260px) minmax(150px, 190px)",
+  gridTemplateColumns: "minmax(150px, 190px) minmax(190px, 260px)",
   justifyContent: "start",
   gap: "10px",
 };
