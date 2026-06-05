@@ -22,6 +22,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -157,6 +158,10 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId
+        : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -535,6 +540,7 @@ function normalizarObraSupabase(row: SupabaseObraRow, index: number): ObraLocal 
     id: pegarTexto(row.id, `supabase-${index + 1}`),
     titulo,
     autor: pegarTexto(row.autor ?? row.nome_autor ?? row.autor_nome, "Autor não informado"),
+    autorId: pegarTexto(row.user_id ?? row.userId ?? row.autor_id ?? row.autorId, ""),
     genero: pegarTexto(row.genero, "Não informado"),
     formato: pegarTexto(row.formato, "Não informado"),
     classificacaoIndicativa: pegarTexto(
@@ -589,6 +595,7 @@ function mesclarObrasPorIdSlug(obrasBase: ObraLocal[], obrasNovas: ObraLocal[]) 
     mapa.set(chave, {
       ...existente,
       ...obra,
+      autorId: obra.autorId || existente.autorId || "",
       capitulos: obra.capitulos.length > 0 ? obra.capitulos : existente.capitulos,
       capa: obra.capa || existente.capa,
       capaNome: obra.capaNome || existente.capaNome,

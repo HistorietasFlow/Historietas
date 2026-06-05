@@ -33,6 +33,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -152,6 +153,24 @@ function formatarGeneroBiblioteca(genero: string) {
   return generoLimpo || "Não informado";
 }
 
+function criarPerfilAutorHrefBiblioteca(
+  obra: Pick<ObraLocal, "autor" | "autorId">
+) {
+  const params = new URLSearchParams();
+  const autor = obra.autor.trim();
+
+  if (autor) {
+    params.set("autor", autor);
+  }
+
+  if (obra.autorId?.trim()) {
+    params.set("autorId", obra.autorId.trim());
+  }
+
+  return `/perfil-autor?${params.toString()}`;
+}
+
+
 function obterImagemObraCatalogoBiblioteca(obra: ObraCatalogo) {
   const obraComImagem = obra as ObraCatalogo & {
     capa?: string;
@@ -194,6 +213,7 @@ function criarObraCatalogoBiblioteca(
     id: obraComCamposExtras.id?.trim() || slug,
     titulo,
     autor: obra.autor.trim() || "Autor não informado",
+    autorId: "",
     genero: formatarGeneroBiblioteca(obra.genero),
     formato: obraComCamposExtras.formato?.trim() || "História",
     classificacaoIndicativa:
@@ -369,6 +389,10 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -733,6 +757,7 @@ function converterObraSupabaseParaLocal({
     id: obraBanco.id || obraLocal?.id || `obra-${index + 1}`,
     titulo: tituloObra,
     autor: obraBanco.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obraBanco.user_id?.trim() || obraLocal?.autorId || "",
     genero: obraBanco.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obraBanco.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -1680,9 +1705,7 @@ export default function BibliotecaPage() {
                   const obraHref =
                     item.obra.link ||
                     `/obra/${item.obra.slug || criarSlugBase(item.obra.titulo)}`;
-                  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-                    item.obra.autor
-                  )}`;
+                  const perfilAutorHref = criarPerfilAutorHrefBiblioteca(item.obra);
 
                   return (
                     <article
@@ -1810,9 +1833,7 @@ export default function BibliotecaPage() {
                 {obrasSeguidasLista.map((obra) => {
                   const obraHref =
                     obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-                    obra.autor
-                  )}`;
+                  const perfilAutorHref = criarPerfilAutorHrefBiblioteca(obra);
                   const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
                   const obraConcluida = colecaoTemObra(obrasConcluidas, obra);
                   const capituloParaContinuar =
@@ -1960,9 +1981,7 @@ export default function BibliotecaPage() {
                 {obrasLendoAgora.map((obra) => {
                   const obraHref =
                     obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-                    obra.autor
-                  )}`;
+                  const perfilAutorHref = criarPerfilAutorHrefBiblioteca(obra);
                   const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
                   const obraConcluida = colecaoTemObra(obrasConcluidas, obra);
 
@@ -2112,9 +2131,7 @@ export default function BibliotecaPage() {
                   const obra = item.obra;
                   const obraHref =
                     obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-                    obra.autor
-                  )}`;
+                  const perfilAutorHref = criarPerfilAutorHrefBiblioteca(obra);
                   const continuarHref = `/ler-capitulo?obraId=${obra.id}&capituloId=${item.capitulo.id}`;
                   const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
                   const obraConcluida = colecaoTemObra(obrasConcluidas, obra);
@@ -2230,9 +2247,7 @@ export default function BibliotecaPage() {
                 {obrasFavoritasLista.map((obra) => {
                   const obraHref =
                     obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-                    obra.autor
-                  )}`;
+                  const perfilAutorHref = criarPerfilAutorHrefBiblioteca(obra);
                   const obraConcluida = colecaoTemObra(obrasConcluidas, obra);
                   const capituloParaContinuar =
                     encontrarCapituloParaContinuar(obra);
@@ -2365,9 +2380,7 @@ export default function BibliotecaPage() {
                 {obrasConcluidasLista.map((obra) => {
                   const obraHref =
                     obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-                    obra.autor
-                  )}`;
+                  const perfilAutorHref = criarPerfilAutorHrefBiblioteca(obra);
                   const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
                   const capituloParaContinuar =
                     encontrarCapituloParaContinuar(obra);

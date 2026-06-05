@@ -31,6 +31,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -220,6 +221,10 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
         : `obra-${index + 1}`,
     titulo: obra.titulo || "Obra sem título",
     autor: obra.autor || "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     genero: obra.genero || "Não informado",
     formato: obra.formato || "Não informado",
     classificacaoIndicativa:
@@ -646,6 +651,7 @@ function mesclarObraSupabaseComLocal(
     titulo: tituloObra,
     autor:
       obraSupabase.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obraSupabase.user_id || obraLocal?.autorId || "",
     genero:
       obraSupabase.genero?.trim() || obraLocal?.genero || "Não informado",
     formato:
@@ -975,6 +981,20 @@ async function salvarRegistroObraSupabase(
   } catch {
     // Mantém localStorage como fallback.
   }
+}
+
+function criarPerfilAutorHref(autor: string, autorId?: string) {
+  const autorLimpo = autor.trim() || "Autor não informado";
+  const autorIdLimpo = typeof autorId === "string" ? autorId.trim() : "";
+  const params = new URLSearchParams({
+    autor: autorLimpo,
+  });
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+  }
+
+  return `/perfil-autor?${params.toString()}`;
 }
 
 export default function LerCapituloPage() {
@@ -1565,7 +1585,7 @@ export default function LerCapituloPage() {
 
   const voltarHref = `/obra/${obraAtual.slug || criarSlugBase(obraAtual.titulo)}`;
   const editarHref = `/editar-capitulo?obraId=${obraAtual.id}&capituloId=${capituloAtual.id}`;
-  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(obraAtual.autor)}`;
+  const perfilAutorHref = criarPerfilAutorHref(obraAtual.autor, obraAtual.autorId);
   const progressoCapitulo = Math.round(
     (numeroCapitulo / Math.max(obraAtual.capitulos.length, 1)) * 100
   );

@@ -23,6 +23,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -88,6 +89,7 @@ type PerfisAutoresSalvos = Record<string, PerfilAutorSalvo>;
 type AutorHome = {
   chave: string;
   nome: string;
+  autorId: string;
   avatar: string;
   bio: string;
   totalObras: number;
@@ -124,7 +126,8 @@ type TemaVisualHome =
   | "misterio"
   | "suspense"
   | "historico"
-  | "biografia";
+  | "biografia"
+  | "pixel";
 
 type TemaVisualHomeConfig = {
   accent: string;
@@ -415,6 +418,33 @@ const TEMAS_VISUAIS_HOME: Record<TemaVisualHome, TemaVisualHomeConfig> = {
     activeSurface: "rgba(96,165,250,0.15)",
     secondarySurface: "rgba(51,65,85,0.24)",
     secondaryButtonText: "#BFDBFE",
+  },
+  pixel: {
+    accent: "#F97316",
+    secondary: "#7C3AED",
+    bgStart: "#070311",
+    bgMid: "#12081F",
+    bgEnd: "#1A0B2E",
+    glowPrimary: "rgba(249,115,22,0.22)",
+    glowSecondary: "rgba(124,58,237,0.30)",
+    textPrimary: "#FFFFFF",
+    textSecondary: "#D4D4D8",
+    surface: "rgba(24,12,42,0.88)",
+    surfaceStrong: "rgba(11,6,20,0.98)",
+    borderSoft: "rgba(255,255,255,0.10)",
+    inputBg: "rgba(255,255,255,0.055)",
+    inputText: "#FFFFFF",
+    titleFrom: "#FFFFFF",
+    titleMid: "#F5F3FF",
+    titleTo: "#FDBA74",
+    heroShadow: "none",
+    cardShadow: "none",
+    logoShadow: "none",
+    activeSurface: "rgba(249,115,22,0.16)",
+    secondarySurface: "rgba(124,58,237,0.16)",
+    secondaryButtonText: "#DDD6FE",
+    dangerSurface: "rgba(248,113,113,0.12)",
+    dangerButtonText: "#FCA5A5",
   },
 };
 
@@ -1288,8 +1318,27 @@ function criarBioAutorPadrao(nomeAutor: string, generos: string[]) {
   return `Autor de ${generoPrincipal.toLowerCase()} na Historietas.`;
 }
 
+function criarHrefPerfilAutorHome(nomeAutor: string, autorId = "") {
+  const nomeAutorLimpo = nomeAutor.trim();
+  const autorIdLimpo = autorId.trim();
+  const parametros = new URLSearchParams();
+
+  if (nomeAutorLimpo) {
+    parametros.set("autor", nomeAutorLimpo);
+  }
+
+  if (autorIdLimpo) {
+    parametros.set("autorId", autorIdLimpo);
+  }
+
+  const query = parametros.toString();
+
+  return query ? `/perfil-autor?${query}` : "/perfil-autor";
+}
+
 function criarAutorHome(
   nomeAutor: string,
+  autorId: string,
   generos: string[],
   totalObras: number,
   totalCapitulos: number,
@@ -1308,8 +1357,9 @@ function criarAutorHome(
   const bioPerfil = perfil?.bio.trim() || "";
 
   return {
-    chave: normalizarChaveAutor(nomeAutor),
+    chave: autorId.trim() || normalizarChaveAutor(nomeAutor),
     nome: nomeAutor.trim() || "Autor não informado",
+    autorId: autorId.trim(),
     avatar: perfil?.avatar.trim() || "",
     bio: bioPerfil || criarBioAutorPadrao(nomeAutor, generosUnicos),
     totalObras,
@@ -1317,7 +1367,7 @@ function criarAutorHome(
     totalCurtidas,
     totalComentarios,
     generos: generosUnicos.slice(0, 2),
-    href: `/perfil-autor?autor=${encodeURIComponent(nomeAutor)}`,
+    href: criarHrefPerfilAutorHome(nomeAutor, autorId),
   };
 }
 
@@ -1384,6 +1434,12 @@ function normalizarObraHome(
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : typeof obra.user_id === "string" && obra.user_id.trim()
+          ? obra.user_id.trim()
+          : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -1535,6 +1591,7 @@ function normalizarObraSupabaseHome(
     id: obra.id || obraLocal?.id || `obra-${index + 1}`,
     titulo: tituloObra,
     autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
     genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -2249,6 +2306,7 @@ export default function Home() {
       string,
       {
         nome: string;
+        autorId: string;
         generos: string[];
         totalObras: number;
         totalCapitulos: number;
@@ -2259,13 +2317,15 @@ export default function Home() {
 
     function registrarAutor(
       nomeAutor: string,
+      autorId: string,
       genero: string,
       capitulos = 0,
       curtidas = 0,
       comentarios = 0
     ) {
       const nomeLimpo = nomeAutor.trim() || "Autor não informado";
-      const chave = normalizarChaveAutor(nomeLimpo);
+      const autorIdLimpo = autorId.trim();
+      const chave = autorIdLimpo || normalizarChaveAutor(nomeLimpo);
       const autorRegistrado = autoresMap.get(chave);
 
       if (autorRegistrado) {
@@ -2283,6 +2343,7 @@ export default function Home() {
 
       autoresMap.set(chave, {
         nome: nomeLimpo,
+        autorId: autorIdLimpo,
         generos: genero.trim() ? [genero.trim()] : [],
         totalObras: 1,
         totalCapitulos: capitulos,
@@ -2296,6 +2357,7 @@ export default function Home() {
       .forEach((obra) => {
         registrarAutor(
           obra.autor,
+          obra.autorId || "",
           obra.genero,
           obra.capitulos.length,
           contarCurtidasObraLocal(obra),
@@ -2304,13 +2366,14 @@ export default function Home() {
       });
 
     obrasFiltradas.forEach((obra) => {
-      registrarAutor(obra.autor, obra.genero);
+      registrarAutor(obra.autor, "", obra.genero);
     });
 
     return Array.from(autoresMap.values())
       .map((autor) =>
         criarAutorHome(
           autor.nome,
+          autor.autorId,
           autor.generos,
           autor.totalObras,
           autor.totalCapitulos,
@@ -3134,9 +3197,7 @@ function MobileObraLocalCard({
   const ultimoCapituloHref = ultimoCapituloPublicado
     ? `/ler-capitulo?obraId=${obra.id}&capituloId=${ultimoCapituloPublicado.id}`
     : verObraHref;
-  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-    obra.autor
-  )}`;
+  const perfilAutorHref = criarHrefPerfilAutorHome(obra.autor, obra.autorId || "");
 
   const actionHref =
     tipo === "continuar"
@@ -4801,7 +4862,7 @@ const desktopCarouselShellStyle: CSSProperties = {
   position: "relative",
   width: "100%",
   maxWidth: "100%",
-  overflow: "hidden",
+  overflow: "visible",
   boxSizing: "border-box",
 };
 

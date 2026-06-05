@@ -31,6 +31,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -121,6 +122,20 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarPerfilAutorHref(autor: string, autorId?: string) {
+  const params = new URLSearchParams();
+  const autorLimpo = autor.trim() || "Autor não informado";
+  const autorIdLimpo = autorId?.trim() || "";
+
+  params.set("autor", autorLimpo);
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+  }
+
+  return `/perfil-autor?${params.toString()}`;
 }
 
 function formatarGeneroMinhasObras(genero: string) {
@@ -219,6 +234,10 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
         : `obra-${index + 1}`,
     titulo: obra.titulo || "Obra sem título",
     autor: obra.autor || "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     genero: obra.genero || "Não informado",
     formato: obra.formato || "Não informado",
     classificacaoIndicativa:
@@ -339,6 +358,7 @@ function normalizarObraSupabase(
     id: obra.id || obraLocal?.id || `obra-${index + 1}`,
     titulo: tituloObra,
     autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
     genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -1079,9 +1099,10 @@ export default function MinhasObrasPage() {
                 const verArquivoHref = `/ver-arquivo?obraId=${obra.id}`;
                 const paginaPublicaHref =
                   obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-                  obra.autor
-                )}`;
+                const perfilAutorHref = criarPerfilAutorHref(
+                  obra.autor,
+                  obra.autorId
+                );
 
                 const capituloDestaqueHref = capituloDestaque
                   ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capituloDestaque.id}`

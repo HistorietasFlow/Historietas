@@ -2,6 +2,7 @@ export type ObraStatus = "Em andamento" | "Pausado" | "Completo";
 
 export type Obra = {
   titulo: string;
+  autorId?: string;
   autor: string;
   genero: string;
   classificacaoIndicativa: string;

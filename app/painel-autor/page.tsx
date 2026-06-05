@@ -31,6 +31,7 @@ type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
 type ObraLocal = {
   id: string;
+  autorId?: string;
   titulo: string;
   autor: string;
   genero: string;
@@ -480,6 +481,10 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
       typeof obra.id === "string" && obra.id.trim()
         ? obra.id
         : `obra-${obraIndex + 1}`,
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     titulo:
       typeof obra.titulo === "string" && obra.titulo.trim()
         ? obra.titulo
@@ -784,6 +789,7 @@ function converterObraSupabaseParaLocalPainel({
 
   return {
     id: obraBanco.id || obraLocal?.id || `obra-${index + 1}`,
+    autorId: obraBanco.user_id?.trim() || obraLocal?.autorId || "",
     titulo: tituloObra,
     autor: obraBanco.autor?.trim() || obraLocal?.autor || "Autor não informado",
     genero: obraBanco.genero?.trim() || obraLocal?.genero || "Não informado",
@@ -1790,6 +1796,17 @@ export default function PainelAutorPage() {
   );
 }
 
+function criarPerfilAutorHref(autor: string, autorId?: string) {
+  const autorLimpo = autor.trim() || "Autor não informado";
+  const autorIdLimpo = autorId?.trim() || "";
+  const autorParametro = `autor=${encodeURIComponent(autorLimpo)}`;
+  const autorIdParametro = autorIdLimpo
+    ? `&autorId=${encodeURIComponent(autorIdLimpo)}`
+    : "";
+
+  return `/perfil-autor?${autorParametro}${autorIdParametro}`;
+}
+
 function PainelSecao({
   obras,
   obrasFavoritas,
@@ -1841,6 +1858,7 @@ function ObraPainelCard({
   const editarHref = `/editar-obra?obraId=${obra.id}`;
   const capituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
   const paginaPublicaHref = `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+  const perfilAutorHref = criarPerfilAutorHref(obra.autor, obra.autorId);
   const progressoVisual = Math.min(100, Math.max(0, obra.progressoLeitura));
 
   return (
@@ -1893,7 +1911,9 @@ function ObraPainelCard({
 
         <h3 style={workTitleStyle}>{obra.titulo}</h3>
 
-        <p style={authorStyle}>Por {obra.autor}</p>
+        <Link href={perfilAutorHref} style={authorStyle}>
+          Por {obra.autor}
+        </Link>
 
         <div style={isDesktop ? desktopMetricGridStyle : metricGridStyle}>
           <div style={metricItemStyle}>
@@ -2989,6 +3009,8 @@ const workTitleStyle: CSSProperties = {
 
 const authorStyle: CSSProperties = {
   margin: 0,
+  display: "inline-flex",
+  textDecoration: "none",
   color: themeTextAccent,
   fontSize: "11px",
   fontWeight: 900,

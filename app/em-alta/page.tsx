@@ -32,6 +32,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -118,6 +119,7 @@ type ObraRanking = {
   tipo: "fixa" | "local";
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -189,6 +191,25 @@ function criarLinkEmBreve(titulo: string) {
   }
 
   return `/em-breve?obra=${encodeURIComponent(tituloLimpo)}`;
+}
+
+function criarLinkPerfilAutorRanking(nomeAutor: string, autorId?: string) {
+  const params = new URLSearchParams();
+  const nomeAutorLimpo = nomeAutor.trim();
+
+  if (nomeAutorLimpo) {
+    params.set("autor", nomeAutorLimpo);
+  }
+
+  const autorIdLimpo = autorId?.trim();
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+  }
+
+  const query = params.toString();
+
+  return query ? `/perfil-autor?${query}` : "/perfil-autor";
 }
 
 
@@ -631,6 +652,7 @@ function converterObraSupabaseParaLocal(
     id: obra.id || obraLocal?.id || `obra-${index + 1}`,
     titulo,
     autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
     genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -836,6 +858,10 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -1200,6 +1226,7 @@ export default function EmAltaPage() {
         tipo: "fixa",
         titulo: obra.titulo,
         autor: obra.autor,
+        autorId: "",
         genero: obra.genero,
         formato: "Catálogo",
         classificacaoIndicativa:
@@ -1314,6 +1341,7 @@ export default function EmAltaPage() {
           tipo: "local",
           titulo: obra.titulo,
           autor: obra.autor,
+          autorId: obra.autorId || "",
           genero: obra.genero,
           formato: obra.formato,
           classificacaoIndicativa: obra.classificacaoIndicativa,
@@ -1977,7 +2005,19 @@ function RankingCard({
           <h3 style={criarCardTitleRankingStyle(posicao)}>{obra.titulo}</h3>
         </div>
 
-        <p style={authorStyle}>Por {obra.autor}</p>
+        <Link
+          href={criarLinkPerfilAutorRanking(obra.autor, obra.autorId)}
+          style={authorLinkStyle}
+          aria-label={`Abrir perfil de ${obra.autor}`}
+          onClick={(event) => {
+            event.stopPropagation();
+          }}
+          onKeyDown={(event) => {
+            event.stopPropagation();
+          }}
+        >
+          Por {obra.autor}
+        </Link>
 
         <div style={cardMetaRowStyle}>
           <span style={formatBadgeStyle}>{formatarGeneroCard(obra.genero)}</span>
@@ -2902,6 +2942,12 @@ const authorStyle: CSSProperties = {
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
   ...safeTextStyle,
+};
+
+const authorLinkStyle: CSSProperties = {
+  ...authorStyle,
+  textDecoration: "none",
+  cursor: "pointer",
 };
 
 const statsStyle: CSSProperties = {

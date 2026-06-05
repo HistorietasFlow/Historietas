@@ -31,6 +31,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -388,6 +389,14 @@ function normalizarObraSalva(obra: ObraSalva, obraIndex: number): ObraLocal {
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : typeof obra.user_id === "string" && obra.user_id.trim()
+        ? obra.user_id.trim()
+        : typeof obra.userId === "string" && obra.userId.trim()
+        ? obra.userId.trim()
+        : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -1183,6 +1192,7 @@ export default function PublicarPage() {
         id: obraId,
         titulo: titulo.trim(),
         autor: autor.trim(),
+        autorId: userId,
         genero: generoFinal,
         formato: formatoFinal,
         classificacaoIndicativa: classificacaoIndicativa.trim(),

@@ -43,6 +43,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -63,7 +64,7 @@ type ObraLocal = {
 
 type SupabaseObraRow = {
   id: string;
-  user_id: string;
+  user_id: string | null;
   titulo: string | null;
   autor: string | null;
   genero: string | null;
@@ -118,6 +119,7 @@ type ObraDinamica = {
   origem: "catalogo" | "local";
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -483,6 +485,14 @@ function normalizarObraLocal(
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : typeof obra.user_id === "string" && obra.user_id.trim()
+          ? obra.user_id.trim()
+          : typeof obra.userId === "string" && obra.userId.trim()
+            ? obra.userId.trim()
+            : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -638,6 +648,7 @@ function normalizarObraSupabase(
     id: obra.id || obraLocal?.id || `obra-${index + 1}`,
     titulo: tituloObra,
     autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
     genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -771,6 +782,7 @@ function converterObraCatalogoParaDinamica(
     origem: "catalogo",
     titulo: obra.titulo,
     autor: obra.autor,
+    autorId: "",
     genero: obra.genero,
     formato: obra.formato,
     classificacaoIndicativa: obra.classificacaoIndicativa,
@@ -804,6 +816,7 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
     origem: "local",
     titulo: obra.titulo,
     autor: obra.autor,
+    autorId: obra.autorId || "",
     genero: obra.genero,
     formato: obra.formato,
     classificacaoIndicativa: obra.classificacaoIndicativa,
@@ -867,6 +880,20 @@ function criarLinkAviso(titulo: string, capitulo?: string) {
   }
 
   return `/em-breve?obra=${obra}`;
+}
+
+function criarLinkPerfilAutor(autor: string, autorId?: string) {
+  const params = new URLSearchParams();
+  const autorLimpo = autor.trim() || "Autor não informado";
+  const autorIdLimpo = autorId?.trim() || "";
+
+  params.set("autor", autorLimpo);
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+  }
+
+  return `/perfil-autor?${params.toString()}`;
 }
 
 function criarLinkComunidadeObra(titulo: string, tipo?: "Teoria" | "Review") {
@@ -2161,7 +2188,13 @@ export default function ObraDinamicaPage() {
             <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>{obra.titulo}</h1>
 
             <div style={isDesktop ? desktopInfoRowStyle : infoRowStyle}>
-              <span style={authorInlineStyle}>Por {obra.autor}</span>
+              <Link
+                href={criarLinkPerfilAutor(obra.autor, obra.autorId)}
+                style={authorInlineStyle}
+                aria-label={`Abrir perfil do autor ${obra.autor}`}
+              >
+                Por {obra.autor}
+              </Link>
             </div>
 
             <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>{obra.sinopse}</p>
@@ -2771,6 +2804,8 @@ const authorInlineStyle: CSSProperties = {
   background: "transparent",
   border: "none",
   color: "var(--historietas-accent, #FDBA74)",
+  textDecoration: "none",
+  cursor: "pointer",
   fontSize: "10.5px",
   lineHeight: 1.15,
   fontWeight: 950,

@@ -32,6 +32,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -640,6 +641,24 @@ function criarSlugBase(titulo: string) {
   return slug || "obra";
 }
 
+function criarPerfilAutorHrefExplorar(autor: string, autorId?: string) {
+  const parametros = new URLSearchParams();
+  const autorLimpo = autor.trim();
+  const autorIdLimpo = autorId?.trim() || "";
+
+  if (autorLimpo) {
+    parametros.set("autor", autorLimpo);
+  }
+
+  if (autorIdLimpo) {
+    parametros.set("autorId", autorIdLimpo);
+  }
+
+  const query = parametros.toString();
+
+  return query ? `/perfil-autor?${query}` : "/perfil-autor";
+}
+
 function categoriaCombinaComGenero(categoria: string, genero: string) {
   const categoriaNormalizada = normalizarTexto(categoria);
   const generoNormalizado = normalizarTexto(genero);
@@ -932,6 +951,10 @@ function normalizarObra(
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -1050,6 +1073,7 @@ function normalizarObraSupabase(
     id: obra.id || obraLocal?.id || `obra-${index + 1}`,
     titulo: tituloObra,
     autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
     genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -2384,9 +2408,10 @@ function ObraPublicadaCard({
     obra.link && obra.link.trim()
       ? obra.link
       : `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-    obra.autor
-  )}`;
+  const perfilAutorHref = criarPerfilAutorHrefExplorar(
+    obra.autor,
+    obra.autorId
+  );
 
   return (
     <article style={isDesktop ? criarDesktopPublishedCardTemaStyle(tema) : criarPublishedCardTemaStyle(tema)}>

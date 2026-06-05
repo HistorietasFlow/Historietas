@@ -31,6 +31,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -394,6 +395,7 @@ function normalizarObraSupabase(
     id: obraSupabase.id || obraLocal?.id || `obra-${index + 1}`,
     titulo: tituloObra,
     autor: obraSupabase.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obraSupabase.user_id?.trim() || obraLocal?.autorId || "",
     genero: obraSupabase.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obraSupabase.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -662,6 +664,10 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero

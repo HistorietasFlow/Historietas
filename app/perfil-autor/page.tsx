@@ -30,6 +30,7 @@ type ArquivoObraLocal = {
 type ObraLocal = {
   id: string;
   titulo: string;
+  autorId: string;
   autor: string;
   genero: string;
   formato: string;
@@ -56,6 +57,7 @@ type ObraSalva = Partial<ObraLocal> & {
 } & Record<string, unknown>;
 
 type AutorPerfil = {
+  autorId: string;
   nome: string;
   obras: ObraLocal[];
   totalCapitulos: number;
@@ -85,6 +87,10 @@ type PerfisAutoresSalvos = Record<string, PerfilAutorSalvo>;
 
 function normalizarNomeAutor(nome: string) {
   return nome.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function criarChaveAutorPerfil(autorId: string, nomeAutor: string) {
+  return autorId.trim().toLowerCase() || normalizarNomeAutor(nomeAutor);
 }
 
 function normalizarTexto(texto: string) {
@@ -225,6 +231,14 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
       typeof obra.titulo === "string" && obra.titulo.trim()
         ? obra.titulo
         : "Obra sem título",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : typeof obra.user_id === "string" && obra.user_id.trim()
+          ? obra.user_id.trim()
+          : typeof obra.autor_id === "string" && obra.autor_id.trim()
+            ? obra.autor_id.trim()
+            : "",
     autor:
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
@@ -474,6 +488,7 @@ function normalizarObraSupabase(row: SupabaseObraRow, index: number): ObraLocal 
   return {
     id: pegarTexto(row.id, `supabase-${index + 1}`),
     titulo,
+    autorId: pegarTexto(row.user_id ?? row.autor_id ?? row.autorId, ""),
     autor: pegarTexto(row.autor ?? row.nome_autor ?? row.autor_nome, "Autor não informado"),
     genero: pegarTexto(row.genero, "Não informado"),
     formato: pegarTexto(row.formato, "Não informado"),
@@ -876,6 +891,7 @@ async function sincronizarAutorSeguidoSupabase(autor: string, ativo: boolean) {
 export default function PerfilAutorPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [autorSelecionado, setAutorSelecionado] = useState("");
+  const [autorIdSelecionado, setAutorIdSelecionado] = useState("");
   const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
@@ -913,12 +929,15 @@ export default function PerfilAutorPage() {
     async function carregarPerfilAutor() {
       const params = new URLSearchParams(window.location.search);
       const autorParam = params.get("autor") || "";
+      const autorIdParam =
+        params.get("autorId") || params.get("id") || params.get("userId") || "";
       const modoEdicaoPerfil =
         params.get("editar") === "1" ||
         params.get("modo") === "editar" ||
         params.get("dono") === "1";
 
       setAutorSelecionado(autorParam.trim());
+      setAutorIdSelecionado(autorIdParam.trim());
       setPodeEditarPerfil(modoEdicaoPerfil);
 
       let obrasNormalizadas: ObraLocal[] = [];
@@ -1048,22 +1067,25 @@ export default function PerfilAutorPage() {
   }, []);
 
   const perfisAutores = useMemo<AutorPerfil[]>(() => {
-    const mapa = new Map<string, { nome: string; obras: ObraLocal[] }>();
+    const mapa = new Map<string, { autorId: string; nome: string; obras: ObraLocal[] }>();
 
     obras.forEach((obra) => {
       const nomeAutor = obra.autor.trim() || "Autor não informado";
-      const chaveAutor = normalizarNomeAutor(nomeAutor);
+      const autorId = obra.autorId.trim();
+      const chaveAutor = criarChaveAutorPerfil(autorId, nomeAutor);
       const autorExistente = mapa.get(chaveAutor);
 
       if (autorExistente) {
         mapa.set(chaveAutor, {
           ...autorExistente,
+          autorId: autorExistente.autorId || autorId,
           obras: [...autorExistente.obras, obra],
         });
         return;
       }
 
       mapa.set(chaveAutor, {
+        autorId,
         nome: nomeAutor,
         obras: [obra],
       });
@@ -1093,6 +1115,7 @@ export default function PerfilAutorPage() {
         }, 0);
 
         return {
+          autorId: grupoAutor.autorId,
           nome: grupoAutor.nome,
           obras: obrasDoAutor,
           totalCapitulos,
@@ -1105,8 +1128,20 @@ export default function PerfilAutorPage() {
   }, [obras]);
 
   const perfilAtual = useMemo(() => {
-    if (!autorSelecionado) {
+    if (!autorSelecionado && !autorIdSelecionado) {
       return null;
+    }
+
+    const autorIdNormalizado = autorIdSelecionado.trim().toLowerCase();
+
+    if (autorIdNormalizado) {
+      const perfilPorId = perfisAutores.find(
+        (perfil) => perfil.autorId.trim().toLowerCase() === autorIdNormalizado
+      );
+
+      if (perfilPorId) {
+        return perfilPorId;
+      }
     }
 
     const autorNormalizado = normalizarNomeAutor(autorSelecionado);
@@ -1116,21 +1151,28 @@ export default function PerfilAutorPage() {
         (perfil) => normalizarNomeAutor(perfil.nome) === autorNormalizado
       ) || null
     );
-  }, [perfisAutores, autorSelecionado]);
+  }, [perfisAutores, autorSelecionado, autorIdSelecionado]);
 
-  const autorNaoEncontrado = Boolean(autorSelecionado && !perfilAtual);
+  const autorNaoEncontrado = Boolean(
+    (autorSelecionado || autorIdSelecionado) && !perfilAtual
+  );
 
-  const perfilParaMostrar = autorSelecionado
+  const perfilParaMostrar = autorSelecionado || autorIdSelecionado
     ? perfilAtual
     : perfisAutores[0] || null;
 
+  const autorChavePerfil = perfilParaMostrar
+    ? criarChaveAutorPerfil(perfilParaMostrar.autorId, perfilParaMostrar.nome)
+    : "";
   const autorNormalizadoParaSeguir = perfilParaMostrar
     ? normalizarNomeAutor(perfilParaMostrar.nome)
     : "";
 
-  const seguindoAutor = autorNormalizadoParaSeguir
-    ? autoresSeguidos.includes(autorNormalizadoParaSeguir)
-    : false;
+  const seguindoAutor = Boolean(
+    autorChavePerfil &&
+      (autoresSeguidos.includes(autorChavePerfil) ||
+        autoresSeguidos.includes(autorNormalizadoParaSeguir))
+  );
 
   const seguidoresTotal = seguindoAutor ? 1 : 0;
   const obrasFavoritasPerfil = perfilParaMostrar
@@ -1139,8 +1181,9 @@ export default function PerfilAutorPage() {
   const obrasConcluidasPerfil = perfilParaMostrar
     ? perfilParaMostrar.obras.filter((obra) => obrasConcluidas.includes(obra.id)).length
     : 0;
-  const perfilSalvoAutor = autorNormalizadoParaSeguir
-    ? perfisAutoresSalvos[autorNormalizadoParaSeguir] || {
+  const perfilSalvoAutor = autorChavePerfil
+    ? perfisAutoresSalvos[autorChavePerfil] ||
+      perfisAutoresSalvos[autorNormalizadoParaSeguir] || {
         avatar: "",
         avatarNome: "",
         bio: "",
@@ -1285,13 +1328,13 @@ export default function PerfilAutorPage() {
   }
 
   function salvarPerfilAutor(novoPerfil: PerfilAutorSalvo) {
-    if (!autorNormalizadoParaSeguir) {
+    if (!autorChavePerfil) {
       return;
     }
 
     const novosPerfis = {
       ...perfisAutoresSalvos,
-      [autorNormalizadoParaSeguir]: {
+      [autorChavePerfil]: {
         avatar: novoPerfil.avatar,
         avatarNome: novoPerfil.avatarNome,
         bio: novoPerfil.bio.slice(0, BIO_MAX_LENGTH),
@@ -1375,11 +1418,18 @@ export default function PerfilAutorPage() {
     }
 
     const autorNormalizado = normalizarNomeAutor(perfilParaMostrar.nome);
+    const autorChaveSeguir = criarChaveAutorPerfil(
+      perfilParaMostrar.autorId,
+      perfilParaMostrar.nome
+    );
     const proximoEstadoSeguindo = !seguindoAutor;
+    const autoresSeguidosSemAutorAtual = autoresSeguidos.filter((autor) => {
+      return autor !== autorChaveSeguir && autor !== autorNormalizado;
+    });
 
     const novosAutoresSeguidos = proximoEstadoSeguindo
-      ? Array.from(new Set([...autoresSeguidos, autorNormalizado]))
-      : autoresSeguidos.filter((autor) => autor !== autorNormalizado);
+      ? Array.from(new Set([...autoresSeguidosSemAutorAtual, autorChaveSeguir]))
+      : autoresSeguidosSemAutorAtual;
 
     localStorage.setItem(
       AUTHOR_FOLLOW_STORAGE_KEY,
@@ -1454,7 +1504,7 @@ export default function PerfilAutorPage() {
 
             <p style={emptyTextStyle}>
               Não encontrei nenhuma obra para o autor{" "}
-              <strong style={safeTextStyle}>{autorSelecionado}</strong>.
+              <strong style={safeTextStyle}>{autorSelecionado || autorIdSelecionado}</strong>.
             </p>
 
             <Link href="/explorar" style={emptyButtonStyle}>

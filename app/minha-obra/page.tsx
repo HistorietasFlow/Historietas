@@ -31,6 +31,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -110,6 +111,20 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarPerfilAutorHref(autor: string, autorId?: string) {
+  const params = new URLSearchParams();
+  const autorLimpo = autor.trim();
+  const autorIdLimpo = autorId?.trim() || "";
+
+  params.set("autor", autorLimpo || "Autor não informado");
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+  }
+
+  return `/perfil-autor?${params.toString()}`;
 }
 
 function formatarGeneroMinhaObra(genero: string) {
@@ -236,6 +251,10 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
         : `obra-${index + 1}`,
     titulo: obra.titulo || "Obra sem título",
     autor: obra.autor || "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     genero: obra.genero || "Não informado",
     formato: obra.formato || "Não informado",
     classificacaoIndicativa:
@@ -556,6 +575,7 @@ function mesclarObraSupabaseComLocal(
     id: obraSupabase.id,
     titulo: obraSupabase.titulo?.trim() || obraLocal?.titulo || "Obra sem título",
     autor: obraSupabase.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obraSupabase.user_id?.trim() || obraLocal?.autorId || "",
     genero: obraSupabase.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obraSupabase.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -988,9 +1008,10 @@ export default function MinhaObraPage() {
   const editarObraHref = `/editar-obra?obraId=${obraAtual.id}`;
   const paginaPublicaHref =
     obraAtual.link || `/obra/${obraAtual.slug || criarSlugBase(obraAtual.titulo)}`;
-  const perfilAutorHref = `/perfil-autor?autor=${encodeURIComponent(
-    obraAtual.autor
-  )}`;
+  const perfilAutorHref = criarPerfilAutorHref(
+    obraAtual.autor,
+    obraAtual.autorId
+  );
 
   const verArquivoHref = `/ver-arquivo?obraId=${encodeURIComponent(obraAtual.id)}`;
 

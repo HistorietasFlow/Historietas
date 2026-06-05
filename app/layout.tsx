@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import Script from "next/script";
 import AdminBottomNavItem from "../components/AdminBottomNavItem";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
@@ -49,7 +50,11 @@ export default function RootLayout({
           data-mobile-nav="true"
           aria-label="Navegação inferior"
         >
-          <Link href="/" className="historietas-bottom-nav-item">
+          <Link
+            href="/"
+            className="historietas-bottom-nav-item"
+            data-nav-exact="true"
+          >
             <span className="historietas-bottom-nav-icon">⌂</span>
             <span className="historietas-bottom-nav-label">Início</span>
           </Link>
@@ -109,6 +114,79 @@ export default function RootLayout({
             <span className="historietas-bottom-nav-label">Painel</span>
           </Link>
         </nav>
+
+        <Script
+          id="historietas-bottom-nav-active"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (() => {
+                const nav = document.querySelector('[data-bottom-nav="true"]');
+
+                if (!nav) {
+                  return;
+                }
+
+                function aplicarItemAtivo(pathname) {
+                  const caminhoAtual = pathname || window.location.pathname || "/";
+                  const links = nav.querySelectorAll('.historietas-bottom-nav-item[href]');
+
+                  links.forEach((link) => {
+                    const href = link.getAttribute("href") || "/";
+                    const url = new URL(href, window.location.origin);
+                    const caminhoLink = url.pathname || "/";
+                    const exigeExato = caminhoLink === "/" || link.dataset.navExact === "true";
+                    const itemAtivo = exigeExato
+                      ? caminhoAtual === caminhoLink
+                      : caminhoAtual === caminhoLink || caminhoAtual.startsWith(caminhoLink + "/");
+
+                    link.classList.toggle("historietas-bottom-nav-item-active", itemAtivo);
+
+                    if (itemAtivo) {
+                      link.setAttribute("aria-current", "page");
+                    } else {
+                      link.removeAttribute("aria-current");
+                    }
+                  });
+                }
+
+                aplicarItemAtivo(window.location.pathname);
+
+                if ("MutationObserver" in window) {
+                  const observador = new MutationObserver(() => {
+                    aplicarItemAtivo(window.location.pathname);
+                  });
+
+                  observador.observe(nav, { childList: true, subtree: true });
+                }
+
+                nav.addEventListener("click", (event) => {
+                  const alvo = event.target;
+
+                  if (!(alvo instanceof Element)) {
+                    return;
+                  }
+
+                  const link = alvo.closest('.historietas-bottom-nav-item[href]');
+
+                  if (!link) {
+                    return;
+                  }
+
+                  const href = link.getAttribute("href") || "/";
+                  const url = new URL(href, window.location.origin);
+
+                  window.setTimeout(() => aplicarItemAtivo(url.pathname), 40);
+                  window.setTimeout(() => aplicarItemAtivo(window.location.pathname), 180);
+                });
+
+                window.addEventListener("popstate", () => {
+                  aplicarItemAtivo(window.location.pathname);
+                });
+              })();
+            `,
+          }}
+        />
 
         <style
           dangerouslySetInnerHTML={{
@@ -221,6 +299,28 @@ export default function RootLayout({
                 color: var(--historietas-bottom-nav-hover-text, #ffffff);
                 border-color: var(--historietas-bottom-nav-border, rgba(255, 255, 255, 0.10));
                 background: var(--historietas-bottom-nav-hover-bg, rgba(255, 255, 255, 0.055));
+              }
+
+              .historietas-bottom-nav-item[aria-current="page"],
+              .historietas-bottom-nav-item-active {
+                color: var(--historietas-bottom-nav-hover-text, #ffffff);
+                border-color: var(--historietas-bottom-nav-border, rgba(255, 255, 255, 0.10));
+                background: var(--historietas-bottom-nav-hover-bg, rgba(255, 255, 255, 0.055));
+              }
+
+              .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+              .historietas-bottom-nav-item-active .historietas-bottom-nav-icon {
+                color: #ffffff;
+                background: var(
+                  --historietas-bottom-nav-main-bg,
+                  linear-gradient(135deg, #f97316 0%, #7c3aed 100%)
+                );
+                border-color: var(--historietas-bottom-nav-main-border, rgba(249, 115, 22, 0.55));
+              }
+
+              .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-label,
+              .historietas-bottom-nav-item-active .historietas-bottom-nav-label {
+                color: var(--historietas-bottom-nav-hover-text, #ffffff);
               }
 
               .historietas-bottom-nav-main {

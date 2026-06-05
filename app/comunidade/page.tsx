@@ -62,6 +62,9 @@ type ObraRelacionadaSugestao = {
   id: string;
   titulo: string;
   autor: string;
+  autorId: string;
+  slug: string;
+  link: string;
 };
 
 type AlvoDenunciaComunidade = "post" | "comentario";
@@ -104,6 +107,7 @@ const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
 
 const CHAVE_POSTS_SALVOS_COMUNIDADE = "historietas:comunidade:posts-salvos";
 const CHAVE_VOTOS_ENQUETES_COMUNIDADE = "historietas:comunidade:votos-enquetes";
+const POSTS_COMUNIDADE_POR_PAGINA = 50;
 
 const AVISO_FIXADO_COMUNIDADE =
   "Use este espaço para falar sobre obras, pedir recomendações, divulgar capítulos e conversar com outros leitores sem spam e sem spoiler fora de aviso.";
@@ -271,7 +275,23 @@ function criarSlugObraRelacionada(titulo: string) {
   return slug || "obra";
 }
 
-function criarLinkObraRelacionada(titulo: string) {
+function criarLinkObraRelacionada(
+  titulo: string,
+  sugestoesObras: ObraRelacionadaSugestao[] = []
+) {
+  const tituloNormalizado = normalizarTextoBusca(titulo);
+  const obraRelacionada = sugestoesObras.find((obra) => {
+    return normalizarTextoBusca(obra.titulo) === tituloNormalizado;
+  });
+
+  if (obraRelacionada?.link?.trim()) {
+    return obraRelacionada.link.trim();
+  }
+
+  if (obraRelacionada?.slug?.trim()) {
+    return `/obra/${obraRelacionada.slug.trim()}`;
+  }
+
   return `/obra/${criarSlugObraRelacionada(titulo)}`;
 }
 
@@ -314,10 +334,30 @@ function normalizarSugestaoObraLocal(valor: unknown, index: number) {
       ? obra.id.trim()
       : `obra-local-${index}`;
 
+  const autorId =
+    typeof obra.autorId === "string" && obra.autorId.trim()
+      ? obra.autorId.trim()
+      : typeof obra.user_id === "string" && obra.user_id.trim()
+        ? obra.user_id.trim()
+        : "";
+
+  const slug =
+    typeof obra.slug === "string" && obra.slug.trim()
+      ? obra.slug.trim()
+      : criarSlugObraRelacionada(titulo);
+
+  const link =
+    typeof obra.link === "string" && obra.link.trim()
+      ? obra.link.trim()
+      : `/obra/${slug}`;
+
   return {
     id,
     titulo,
     autor,
+    autorId,
+    slug,
+    link,
   } satisfies ObraRelacionadaSugestao;
 }
 
@@ -572,9 +612,12 @@ async function copiarTextoComFallback(texto: string) {
 
 type SupabaseObraPublicaRow = {
   id: string;
+  user_id: string | null;
   titulo: string | null;
   autor: string | null;
   publicado: boolean | null;
+  slug: string | null;
+  link: string | null;
 };
 
 type SupabasePostRow = {
@@ -1376,6 +1419,9 @@ export default function ComunidadePage() {
     null
   );
   const [carregandoFeed, setCarregandoFeed] = useState(true);
+  const [paginaFeedComunidade, setPaginaFeedComunidade] = useState(0);
+  const [temMaisPostsComunidade, setTemMaisPostsComunidade] = useState(false);
+  const [carregandoMaisPostsComunidade, setCarregandoMaisPostsComunidade] = useState(false);
   const [erro, setErro] = useState("");
   const [comentariosPostId, setComentariosPostId] = useState<string | null>(null);
   const [obraRelacionadaBusca, setObraRelacionadaBusca] = useState("");
@@ -1586,7 +1632,7 @@ export default function ComunidadePage() {
       try {
         const { data, error } = await supabase
           .from("obras")
-          .select("id, titulo, autor, publicado")
+          .select("id, user_id, titulo, autor, publicado, slug, link")
           .eq("publicado", true)
           .order("criada_em", { ascending: false });
 
@@ -1602,10 +1648,15 @@ export default function ComunidadePage() {
               return null;
             }
 
+            const slug = obra.slug?.trim() || criarSlugObraRelacionada(titulo);
+
             return {
               id: obra.id || `obra-supabase-${index}`,
               titulo,
               autor: obra.autor?.trim() || "Autor não informado",
+              autorId: obra.user_id?.trim() || "",
+              slug,
+              link: obra.link?.trim() || `/obra/${slug}`,
             } satisfies ObraRelacionadaSugestao;
           })
           .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
@@ -2154,39 +2205,63 @@ export default function ComunidadePage() {
     }
   }
 
-  async function carregarPostsComunidade(mostrarCarregamento = false) {
-    if (mostrarCarregamento) {
+  async function carregarPostsComunidade(
+    mostrarCarregamento = false,
+    pagina = 0
+  ) {
+    const carregandoPaginaInicial = mostrarCarregamento;
+    const carregandoPaginaSeguinte = pagina > 0;
+
+    if (carregandoPaginaInicial) {
       setCarregandoFeed(true);
     }
 
+    if (carregandoPaginaSeguinte) {
+      setCarregandoMaisPostsComunidade(true);
+    }
+
+    const inicio = pagina * POSTS_COMUNIDADE_POR_PAGINA;
+    const fim = inicio + POSTS_COMUNIDADE_POR_PAGINA - 1;
+
     try {
-      const [
-        postsResposta,
-        comentariosResposta,
-        curtidasResposta,
-        comentarioCurtidasResposta,
-      ] = await Promise.all([
-          supabase
-            .from("comunidade_posts")
-            .select(
-              "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por"
-            )
-            .order("criado_em", { ascending: false }),
-          supabase
-            .from("comunidade_comentarios")
-            .select("id, post_id, autor_id, autor_nome, texto, criado_em")
-            .order("criado_em", { ascending: true }),
-          supabase
-            .from("comunidade_curtidas")
-            .select("post_id, usuario_id"),
-          supabase
-            .from("comunidade_comentario_curtidas")
-            .select("comentario_id, usuario_id"),
-        ]);
+      const postsResposta = await supabase
+        .from("comunidade_posts")
+        .select(
+          "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por"
+        )
+        .order("criado_em", { ascending: false })
+        .range(inicio, fim);
 
       if (postsResposta.error) {
         throw postsResposta.error;
       }
+
+      const postsPagina = (postsResposta.data || []) as SupabasePostRow[];
+      const postIds = postsPagina
+        .map((post) => post.id)
+        .filter((postId): postId is string => Boolean(postId));
+
+      if (postIds.length === 0) {
+        if (pagina === 0) {
+          setPosts([]);
+        }
+
+        setTemMaisPostsComunidade(false);
+        setPaginaFeedComunidade(pagina);
+        return;
+      }
+
+      const [comentariosResposta, curtidasResposta] = await Promise.all([
+        supabase
+          .from("comunidade_comentarios")
+          .select("id, post_id, autor_id, autor_nome, texto, criado_em")
+          .in("post_id", postIds)
+          .order("criado_em", { ascending: true }),
+        supabase
+          .from("comunidade_curtidas")
+          .select("post_id, usuario_id")
+          .in("post_id", postIds),
+      ]);
 
       if (comentariosResposta.error) {
         throw comentariosResposta.error;
@@ -2196,27 +2271,77 @@ export default function ComunidadePage() {
         throw curtidasResposta.error;
       }
 
+      const comentariosSupabase =
+        (comentariosResposta.data || []) as SupabaseComentarioRow[];
+      const comentarioIds = comentariosSupabase
+        .map((comentario) => comentario.id)
+        .filter((comentarioId): comentarioId is string => Boolean(comentarioId));
+
+      const comentarioCurtidasResposta =
+        comentarioIds.length > 0
+          ? await supabase
+              .from("comunidade_comentario_curtidas")
+              .select("comentario_id, usuario_id")
+              .in("comentario_id", comentarioIds)
+          : { data: [], error: null };
+
       if (comentarioCurtidasResposta.error) {
         throw comentarioCurtidasResposta.error;
       }
 
       const postsSupabase = mapearPostsSupabase(
-        (postsResposta.data || []) as SupabasePostRow[],
-        (comentariosResposta.data || []) as SupabaseComentarioRow[],
+        postsPagina,
+        comentariosSupabase,
         (curtidasResposta.data || []) as SupabaseCurtidaRow[],
         (comentarioCurtidasResposta.data || []) as SupabaseComentarioCurtidaRow[]
       );
 
-      setPosts(postsSupabase);
+      setPosts((postsAtuais) => {
+        if (pagina === 0) {
+          return postsSupabase;
+        }
+
+        const postsPorId = new Map(
+          postsAtuais.map((postAtual) => [postAtual.id, postAtual])
+        );
+
+        postsSupabase.forEach((post) => {
+          postsPorId.set(post.id, post);
+        });
+
+        return Array.from(postsPorId.values());
+      });
+
+      setTemMaisPostsComunidade(
+        postsPagina.length === POSTS_COMUNIDADE_POR_PAGINA
+      );
+      setPaginaFeedComunidade(pagina);
     } catch (error) {
       setErro(formatarErroSupabase("Erro ao carregar Comunidade", error));
-      setPosts([]);
+
+      if (pagina === 0) {
+        setPosts([]);
+        setTemMaisPostsComunidade(false);
+      }
     } finally {
-      if (mostrarCarregamento) {
+      if (carregandoPaginaInicial) {
         setCarregandoFeed(false);
+      }
+
+      if (carregandoPaginaSeguinte) {
+        setCarregandoMaisPostsComunidade(false);
       }
     }
   }
+
+  async function carregarMaisPostsComunidade() {
+    if (carregandoFeed || carregandoMaisPostsComunidade || !temMaisPostsComunidade) {
+      return;
+    }
+
+    await carregarPostsComunidade(false, paginaFeedComunidade + 1);
+  }
+
 
   function exigirLogin() {
     if (usuario) {
@@ -3306,7 +3431,10 @@ export default function ComunidadePage() {
                         {post.obraRelacionada && (
                           <>
                             <Link
-                              href={criarLinkObraRelacionada(post.obraRelacionada)}
+                              href={criarLinkObraRelacionada(
+                                post.obraRelacionada,
+                                obrasRelacionadasSugestoes
+                              )}
                               style={obraBadgeStyle}
                             >
                               {post.obraRelacionada}
@@ -3481,6 +3609,27 @@ export default function ComunidadePage() {
                 </article>
               )}
             </section>
+
+            {!carregandoFeed && postsVisiveis.length > 0 && temMaisPostsComunidade && (
+              <section style={loadMorePostsWrapStyle}>
+                <button
+                  type="button"
+                  onClick={carregarMaisPostsComunidade}
+                  disabled={carregandoMaisPostsComunidade}
+                  style={{
+                    ...loadMorePostsButtonStyle,
+                    opacity: carregandoMaisPostsComunidade ? 0.58 : 1,
+                    cursor: carregandoMaisPostsComunidade
+                      ? "not-allowed"
+                      : "pointer",
+                  }}
+                >
+                  {carregandoMaisPostsComunidade
+                    ? "Carregando..."
+                    : "Carregar mais publicações"}
+                </button>
+              </section>
+            )}
 
             <section style={isDesktop ? pinnedNoticeDesktopStyle : pinnedNoticeStyle}>
               <div style={pinnedIconStyle}>!</div>
@@ -5947,6 +6096,31 @@ const postsListStyle: CSSProperties = {
   display: "grid",
   gap: "12px",
   minWidth: 0,
+};
+
+const loadMorePostsWrapStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  margin: "2px 0 4px",
+  minWidth: 0,
+};
+
+const loadMorePostsButtonStyle: CSSProperties = {
+  minHeight: "38px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0 16px",
+  borderRadius: "999px",
+  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  background: "rgba(249,115,22,0.10)",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "11.5px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  textAlign: "center",
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const emptyFeedStyle: CSSProperties = {

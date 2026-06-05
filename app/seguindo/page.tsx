@@ -22,6 +22,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -48,6 +49,7 @@ type ObraSalva = Partial<ObraLocal> & {
 type AutorSeguido = {
   chave: string;
   nome: string;
+  autorId: string;
   obras: ObraLocal[];
   totalCapitulos: number;
   totalPublicadas: number;
@@ -162,6 +164,20 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarHrefPerfilAutorSeguindo(nomeAutor: string, autorId?: string) {
+  const params = new URLSearchParams();
+  const nomeAutorLimpo = nomeAutor.trim() || "Autor não informado";
+  const autorIdLimpo = autorId?.trim() || "";
+
+  params.set("autor", nomeAutorLimpo);
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+  }
+
+  return `/perfil-autor?${params.toString()}`;
 }
 
 function normalizarListaTexto(lista: string[]) {
@@ -367,6 +383,10 @@ function normalizarObraSalva(obra: ObraSalva, obraIndex: number): ObraLocal {
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -628,6 +648,7 @@ function converterObraSupabaseParaLocal({
     id: obraBanco.id || obraLocal?.id || `obra-${index + 1}`,
     titulo: tituloObra,
     autor: obraBanco.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obraBanco.user_id?.trim() || obraLocal?.autorId || "",
     genero: obraBanco.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obraBanco.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -1125,6 +1146,9 @@ export default function SeguindoPage() {
         return {
           chave,
           nome: grupoAutor.nome,
+          autorId:
+            obrasDoAutor.find((obra) => Boolean(obra.autorId?.trim()))
+              ?.autorId?.trim() || "",
           obras: obrasDoAutor,
           totalCapitulos,
           totalPublicadas: obrasDoAutor.filter((obra) => obra.publicado).length,
@@ -1595,9 +1619,10 @@ export default function SeguindoPage() {
                           <h3 style={cardTitleStyle}>{obra.titulo}</h3>
 
                           <Link
-                            href={`/perfil-autor?autor=${encodeURIComponent(
-                              obra.autor
-                            )}`}
+                            href={criarHrefPerfilAutorSeguindo(
+                              obra.autor,
+                              obra.autorId
+                            )}
                             style={authorLinkStyle}
                           >
                             Por {obra.autor}
@@ -1722,9 +1747,10 @@ export default function SeguindoPage() {
                         <div style={actionsStyle}>
                           <div style={isDesktop ? desktopAuthorActionsGridStyle : authorActionsGridStyle}>
                             <Link
-                              href={`/perfil-autor?autor=${encodeURIComponent(
-                                autor.nome
-                              )}`}
+                              href={criarHrefPerfilAutorSeguindo(
+                                autor.nome,
+                                autor.autorId
+                              )}
                               style={readButtonStyle}
                             >
                               Abrir perfil
