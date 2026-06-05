@@ -1,19 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabasePublishableKey =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
-if (!supabaseUrl) {
-  throw new Error(
-    "NEXT_PUBLIC_SUPABASE_URL não foi encontrada nas variáveis de ambiente."
+const supabaseUrlFinal =
+  supabaseUrl || "https://historietas-env-nao-configurada.supabase.co";
+
+const supabasePublishableKeyFinal =
+  supabasePublishableKey || "historietas-env-nao-configurada";
+
+if ((!supabaseUrl || !supabasePublishableKey) && process.env.NODE_ENV !== "production") {
+  console.error(
+    "Supabase não configurado. Verifique NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY no .env.local."
   );
 }
 
-if (!supabasePublishableKey) {
-  throw new Error(
-    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY não foi encontrada nas variáveis de ambiente."
-  );
-}
-
-export const supabase = createClient(supabaseUrl, supabasePublishableKey);
+export const supabase = createClient(
+  supabaseUrlFinal,
+  supabasePublishableKeyFinal
+);
