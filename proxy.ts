@@ -5,8 +5,11 @@ const rotasProtegidas = [
   "/publicar",
   "/painel-autor",
   "/minhas-obras",
+  "/minha-obra",
   "/editar-obra",
+  "/editar-capitulo",
   "/adicionar-capitulo",
+  "/ver-arquivo",
   "/biblioteca",
   "/seguindo",
   "/notificacoes",
@@ -131,10 +134,7 @@ export async function proxy(request: NextRequest) {
     const redirectTo = request.nextUrl.searchParams.get("redirectTo");
 
     return NextResponse.redirect(
-      criarRedirectSeguro(
-        request,
-        obterRedirectToSeguro(redirectTo, "/")
-      )
+      criarRedirectSeguro(request, obterRedirectToSeguro(redirectTo, "/"))
     );
   }
 
@@ -146,8 +146,11 @@ export const config = {
     "/publicar/:path*",
     "/painel-autor/:path*",
     "/minhas-obras/:path*",
+    "/minha-obra/:path*",
     "/editar-obra/:path*",
+    "/editar-capitulo/:path*",
     "/adicionar-capitulo/:path*",
+    "/ver-arquivo/:path*",
     "/biblioteca/:path*",
     "/seguindo/:path*",
     "/notificacoes/:path*",
