@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../../lib/supabase/client";
@@ -27,6 +28,7 @@ type DenunciaComunidade = {
   motivo: string;
   detalhe: string;
   status: StatusDenuncia;
+  arquivada: boolean;
   observacaoAdmin: string;
   analisadoPor: string | null;
   analisadoEm: string | null;
@@ -83,8 +85,6 @@ const STATUS_LABEL: Record<StatusDenuncia, string> = {
   rejeitada: "Rejeitada",
 };
 
-const ARCHIVED_REPORTS_STORAGE_KEY =
-  "historietas-denuncias-comunidade-arquivadas";
 
 function normalizarTexto(valor: string) {
   return valor
@@ -92,6 +92,22 @@ function normalizarTexto(valor: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
+}
+
+function criarLoginHrefAdminModeracao() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/admin";
+  const destinoSeguro =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/admin";
+  const params = new URLSearchParams({
+    redirectTo: destinoSeguro,
+  });
+
+  return `/login?${params.toString()}`;
 }
 
 function formatarData(dataIso: string | null) {
@@ -122,26 +138,6 @@ function normalizarTipoAlvo(valor: unknown): TipoAlvoDenuncia {
   return valor === "comentario" ? "comentario" : "post";
 }
 
-function carregarDenunciasArquivadas() {
-  try {
-    const texto = localStorage.getItem(ARCHIVED_REPORTS_STORAGE_KEY);
-    const json = texto ? JSON.parse(texto) : [];
-
-    return Array.isArray(json)
-      ? json.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function salvarDenunciasArquivadas(ids: string[]) {
-  try {
-    localStorage.setItem(ARCHIVED_REPORTS_STORAGE_KEY, JSON.stringify(ids));
-  } catch {
-    // Mantém o painel funcionando mesmo se o navegador bloquear o armazenamento local.
-  }
-}
 
 function conteudoDenunciadoIndisponivel(denuncia: DenunciaComContexto) {
   const resumo = normalizarTexto(denuncia.alvoResumo);
@@ -212,9 +208,9 @@ export default function AdminComunidadePage() {
   const [busca, setBusca] = useState("");
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [observacoes, setObservacoes] = useState<Record<string, string>>({});
-  const [denunciasArquivadas, setDenunciasArquivadas] = useState<string[]>([]);
   const [menuDenunciaAbertoId, setMenuDenunciaAbertoId] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
+  const router = useRouter();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -241,9 +237,6 @@ export default function AdminComunidadePage() {
     };
   }, []);
 
-  useEffect(() => {
-    setDenunciasArquivadas(carregarDenunciasArquivadas());
-  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -268,6 +261,7 @@ export default function AdminComunidadePage() {
             setUsuarioId("");
             setEhAdmin(false);
             setDenuncias([]);
+            router.replace(criarLoginHrefAdminModeracao());
           }
 
           return;
@@ -306,21 +300,17 @@ export default function AdminComunidadePage() {
     return () => {
       cancelado = true;
     };
-  }, []);
-
-  const denunciasArquivadasSet = useMemo(() => {
-    return new Set(denunciasArquivadas);
-  }, [denunciasArquivadas]);
+  }, [router]);
 
   const denunciasAtivas = useMemo(() => {
-    return denuncias.filter((denuncia) => !denunciasArquivadasSet.has(denuncia.id));
-  }, [denuncias, denunciasArquivadasSet]);
+    return denuncias.filter((denuncia) => !denuncia.arquivada);
+  }, [denuncias]);
 
   const denunciasFiltradas = useMemo(() => {
     const buscaNormalizada = normalizarTexto(busca);
 
     return denuncias.filter((denuncia) => {
-      const arquivada = denunciasArquivadasSet.has(denuncia.id);
+      const arquivada = denuncia.arquivada;
 
       if (statusFiltro === "arquivadas") {
         if (!arquivada) {
@@ -363,7 +353,7 @@ export default function AdminComunidadePage() {
 
       return conteudoBusca.includes(buscaNormalizada);
     });
-  }, [busca, denuncias, denunciasArquivadasSet, statusFiltro]);
+  }, [busca, denuncias, statusFiltro]);
 
   useEffect(() => {
     setMenuDenunciaAbertoId("");
@@ -391,7 +381,7 @@ export default function AdminComunidadePage() {
     const { data: denunciasResposta, error: denunciasErro } = await supabase
       .from("comunidade_denuncias")
       .select(
-        "id, alvo_tipo, alvo_id, denunciante_id, motivo, detalhe, status, observacao_admin, analisado_por, analisado_em, criado_em"
+        "id, alvo_tipo, alvo_id, denunciante_id, motivo, detalhe, status, arquivada, observacao_admin, analisado_por, analisado_em, criado_em"
       )
       .order("criado_em", { ascending: false });
 
@@ -409,6 +399,7 @@ export default function AdminComunidadePage() {
       motivo: String(denuncia.motivo || "Conteúdo inadequado"),
       detalhe: String(denuncia.detalhe || ""),
       status: normalizarStatus(denuncia.status),
+      arquivada: Boolean(denuncia.arquivada),
       observacaoAdmin: String(denuncia.observacao_admin || ""),
       analisadoPor: denuncia.analisado_por
         ? String(denuncia.analisado_por)
@@ -674,35 +665,96 @@ export default function AdminComunidadePage() {
     setAcaoEmAndamento("");
   }
 
-  function arquivarDenuncia(denunciaId: string) {
+  async function arquivarDenuncia(denunciaId: string) {
+    if (!usuarioId || !ehAdmin) {
+      setErro("Apenas moderadores podem arquivar denúncias.");
+      return;
+    }
+
+    if (acaoEmAndamento) {
+      return;
+    }
+
+    const chaveAcao = `${denunciaId}-arquivar`;
+
     setMenuDenunciaAbertoId("");
-    setDenunciasArquivadas((denunciasArquivadasAtuais) => {
-      if (denunciasArquivadasAtuais.includes(denunciaId)) {
-        return denunciasArquivadasAtuais;
+    setAcaoEmAndamento(chaveAcao);
+    setErro("");
+    setSucesso("");
+
+    try {
+      const { error } = await supabase
+        .from("comunidade_denuncias")
+        .update({ arquivada: true })
+        .eq("id", denunciaId);
+
+      if (error) {
+        throw error;
       }
 
-      const proximasDenunciasArquivadas = [
-        ...denunciasArquivadasAtuais,
-        denunciaId,
-      ];
-
-      salvarDenunciasArquivadas(proximasDenunciasArquivadas);
-      return proximasDenunciasArquivadas;
-    });
-    setSucesso("Denúncia arquivada e ocultada do painel principal.");
-  }
-
-  function restaurarDenunciaArquivada(denunciaId: string) {
-    setMenuDenunciaAbertoId("");
-    setDenunciasArquivadas((denunciasArquivadasAtuais) => {
-      const proximasDenunciasArquivadas = denunciasArquivadasAtuais.filter(
-        (id) => id !== denunciaId
+      setDenuncias((denunciasAtuais) =>
+        denunciasAtuais.map((denuncia) =>
+          denuncia.id === denunciaId
+            ? {
+                ...denuncia,
+                arquivada: true,
+              }
+            : denuncia
+        )
       );
 
-      salvarDenunciasArquivadas(proximasDenunciasArquivadas);
-      return proximasDenunciasArquivadas;
-    });
-    setSucesso("Denúncia restaurada para o painel principal.");
+      setSucesso("Denúncia arquivada e ocultada do painel principal.");
+    } catch (error) {
+      setErro(criarMensagemErro("Erro ao arquivar denúncia", error));
+    } finally {
+      setAcaoEmAndamento("");
+    }
+  }
+
+  async function restaurarDenunciaArquivada(denunciaId: string) {
+    if (!usuarioId || !ehAdmin) {
+      setErro("Apenas moderadores podem restaurar denúncias.");
+      return;
+    }
+
+    if (acaoEmAndamento) {
+      return;
+    }
+
+    const chaveAcao = `${denunciaId}-restaurar`;
+
+    setMenuDenunciaAbertoId("");
+    setAcaoEmAndamento(chaveAcao);
+    setErro("");
+    setSucesso("");
+
+    try {
+      const { error } = await supabase
+        .from("comunidade_denuncias")
+        .update({ arquivada: false })
+        .eq("id", denunciaId);
+
+      if (error) {
+        throw error;
+      }
+
+      setDenuncias((denunciasAtuais) =>
+        denunciasAtuais.map((denuncia) =>
+          denuncia.id === denunciaId
+            ? {
+                ...denuncia,
+                arquivada: false,
+              }
+            : denuncia
+        )
+      );
+
+      setSucesso("Denúncia restaurada para o painel principal.");
+    } catch (error) {
+      setErro(criarMensagemErro("Erro ao restaurar denúncia", error));
+    } finally {
+      setAcaoEmAndamento("");
+    }
   }
 
   function limparFiltros() {
@@ -748,7 +800,7 @@ export default function AdminComunidadePage() {
 
             {erro && <span style={errorStyle}>{erro}</span>}
 
-            <Link href="/login" style={primaryLinkStyle}>
+            <Link href={criarLoginHrefAdminModeracao()} style={primaryLinkStyle}>
               Entrar
             </Link>
           </section>
@@ -903,7 +955,7 @@ export default function AdminComunidadePage() {
               const acaoAtiva = acaoEmAndamento.startsWith(denuncia.id);
               const observacao = observacoes[denuncia.id] || "";
               const menuAberto = menuDenunciaAbertoId === denuncia.id;
-              const denunciaArquivada = denunciasArquivadasSet.has(denuncia.id);
+              const denunciaArquivada = denuncia.arquivada;
               const conteudoIndisponivel =
                 conteudoDenunciadoIndisponivel(denuncia);
               const denunciaResolvidaComConteudoIndisponivel =
@@ -990,7 +1042,8 @@ export default function AdminComunidadePage() {
                             {denunciaArquivada ? (
                               <button
                                 type="button"
-                                onClick={() => restaurarDenunciaArquivada(denuncia.id)}
+                                onClick={() => void restaurarDenunciaArquivada(denuncia.id)}
+                                disabled={acaoAtiva}
                                 style={reportMenuItemStyle}
                               >
                                 Restaurar para o painel
@@ -998,7 +1051,8 @@ export default function AdminComunidadePage() {
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => arquivarDenuncia(denuncia.id)}
+                                onClick={() => void arquivarDenuncia(denuncia.id)}
+                                disabled={acaoAtiva}
                                 style={reportMenuItemStyle}
                               >
                                 Arquivar denúncia

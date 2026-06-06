@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -111,6 +112,18 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefMinhaObra(obraId?: string) {
+  const obraIdLimpo = obraId?.trim() || "";
+  const redirectTo = obraIdLimpo
+    ? `/minha-obra?obraId=${encodeURIComponent(obraIdLimpo)}`
+    : "/minha-obra";
+  const params = new URLSearchParams({
+    redirectTo,
+  });
+
+  return `/login?${params.toString()}`;
 }
 
 function criarPerfilAutorHref(autor: string, autorId?: string) {
@@ -411,6 +424,31 @@ function obterChavesObra(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
   );
 }
 
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapituloMinhaObra(
+  obra: Pick<ObraLocal, "id" | "publicado" | "slug" | "titulo">,
+  capituloId: string,
+  numeroCapitulo: number
+) {
+  if (obra.publicado && idObraSupabaseValido(obra.id)) {
+    const slugObra = obra.slug || criarSlugBase(obra.titulo);
+
+    return `/obra/${encodeURIComponent(slugObra)}/capitulo/${numeroCapitulo}`;
+  }
+
+  const params = new URLSearchParams({
+    obraId: obra.id,
+    capituloId,
+  });
+
+  return `/ler-capitulo?${params.toString()}`;
+}
+
 function carregarBackupArquivosObras() {
   if (typeof window === "undefined") {
     return {} as Record<string, ArquivoObraLocal>;
@@ -623,12 +661,14 @@ function mesclarObraSupabaseComLocal(
 
 async function carregarObraSupabase(
   obraId: string,
+  userId: string,
   obraLocal?: ObraLocal | null
 ) {
   const { data: obraSupabase, error: erroObra } = await supabase
     .from("obras")
     .select("*")
     .eq("id", obraId)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (erroObra || !obraSupabase) {
@@ -657,12 +697,15 @@ async function carregarObraSupabase(
 }
 
 export default function MinhaObraPage() {
+  const router = useRouter();
+
   const [obraId, setObraId] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [buscaCapitulo, setBuscaCapitulo] = useState("");
   const [ordemCapitulos, setOrdemCapitulos] =
     useState<OrdemCapitulos>("crescente");
   const [carregando, setCarregando] = useState(true);
+  const [redirecionandoLogin, setRedirecionandoLogin] = useState(false);
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -701,6 +744,24 @@ export default function MinhaObraPage() {
       setObraId(obraIdParam);
 
       try {
+        const { data: dadosUsuario, error: erroUsuario } =
+          await supabase.auth.getUser();
+
+        if (erroUsuario || !dadosUsuario.user) {
+          if (!cancelado) {
+            setRedirecionandoLogin(true);
+            router.replace(criarLoginHrefMinhaObra(obraIdParam));
+          }
+
+          return;
+        }
+
+        const userId = dadosUsuario.user.id;
+
+        if (!cancelado) {
+          setRedirecionandoLogin(false);
+        }
+
         const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
         const obrasSalvasJson = obrasSalvasTexto
           ? JSON.parse(obrasSalvasTexto)
@@ -715,10 +776,20 @@ export default function MinhaObraPage() {
               )
           : [];
 
+        obrasNormalizadas = obrasNormalizadas.filter((obra) => {
+          const autorId = obra.autorId?.trim() || "";
+
+          return !autorId || autorId === userId;
+        });
+
         if (obraIdParam) {
           const obraLocal =
             obrasNormalizadas.find((obra) => obra.id === obraIdParam) || null;
-          const obraSupabase = await carregarObraSupabase(obraIdParam, obraLocal);
+          const obraSupabase = await carregarObraSupabase(
+            obraIdParam,
+            userId,
+            obraLocal
+          );
 
           if (obraSupabase) {
             obrasNormalizadas = [
@@ -755,7 +826,7 @@ export default function MinhaObraPage() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [router]);
 
   const obraAtual = useMemo(() => {
     return obras.find((obra) => obra.id === obraId) || null;
@@ -904,20 +975,24 @@ export default function MinhaObraPage() {
     try {
       const { data: dadosUsuario } = await supabase.auth.getUser();
 
-      if (dadosUsuario.user) {
-        const { error } = await supabase
-          .from("capitulos")
-          .delete()
-          .eq("id", capituloId)
-          .eq("obra_id", obraId)
-          .eq("user_id", dadosUsuario.user.id);
+      if (!dadosUsuario.user) {
+        setRedirecionandoLogin(true);
+        router.replace(criarLoginHrefMinhaObra(obraId));
+        return;
+      }
 
-        if (error) {
-          window.alert(
-            "Não consegui excluir o capítulo agora. Tente novamente."
-          );
-          return;
-        }
+      const { error } = await supabase
+        .from("capitulos")
+        .delete()
+        .eq("id", capituloId)
+        .eq("obra_id", obraId)
+        .eq("user_id", dadosUsuario.user.id);
+
+      if (error) {
+        window.alert(
+          "Não consegui excluir o capítulo agora. Tente novamente."
+        );
+        return;
       }
     } catch {
       window.alert("Não consegui excluir o capítulo agora. Tente novamente.");
@@ -959,7 +1034,7 @@ export default function MinhaObraPage() {
     salvarObras(novasObras);
   }
 
-  if (carregando) {
+  if (carregando || redirecionandoLogin) {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${minhaObraPageCss}`}</style>
@@ -967,7 +1042,17 @@ export default function MinhaObraPage() {
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
-        <section style={isDesktop ? desktopContainerStyle : containerStyle} />
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <div style={emptyBoxStyle}>
+            <h1 style={emptyTitleStyle}>
+              {redirecionandoLogin ? "Redirecionando..." : "Verificando acesso..."}
+            </h1>
+
+            <p style={emptyTextStyle}>
+              Conferindo sua conta antes de abrir esta área do autor.
+            </p>
+          </div>
+        </section>
       </main>
     );
   }
@@ -1232,7 +1317,12 @@ export default function MinhaObraPage() {
             capitulosFiltrados.length > 0 ? (
               <div style={isDesktop ? desktopChapterListStyle : chapterListStyle}>
                 {capitulosFiltrados.map(({ capitulo, index }) => {
-                  const lerCapituloHref = `/ler-capitulo?obraId=${obraAtual.id}&capituloId=${capitulo.id}`;
+                  const numeroCapitulo = index + 1;
+                  const lerCapituloHref = criarHrefLeituraCapituloMinhaObra(
+                    obraAtual,
+                    capitulo.id,
+                    numeroCapitulo
+                  );
                   const editarCapituloHref = `/editar-capitulo?obraId=${obraAtual.id}&capituloId=${capitulo.id}`;
 
                   const totalPalavrasCapitulo = contarPalavrasTexto(capitulo.texto);

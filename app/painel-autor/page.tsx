@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -222,6 +223,14 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefPainelAutor() {
+  const params = new URLSearchParams({
+    redirectTo: "/painel-autor",
+  });
+
+  return `/login?${params.toString()}`;
 }
 
 function formatarGeneroPainelAutor(genero: string) {
@@ -998,6 +1007,8 @@ async function carregarPainelAutorSupabase(
 }
 
 export default function PainelAutorPage() {
+  const router = useRouter();
+
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
@@ -1010,6 +1021,7 @@ export default function PainelAutorPage() {
   const [filtro, setFiltro] = useState<FiltroPainel>("todas");
   const [ordenacao, setOrdenacao] = useState<OrdenacaoPainel>("pontuacao");
   const [isDesktop, setIsDesktop] = useState(false);
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [emailUsuarioLogado, setEmailUsuarioLogado] = useState("");
   const [nomeUsuarioLogado, setNomeUsuarioLogado] = useState("");
   const [verificandoUsuario, setVerificandoUsuario] = useState(true);
@@ -1045,6 +1057,7 @@ export default function PainelAutorPage() {
         }
 
         if (!usuario) {
+          setUsuarioIdLogado("");
           setEmailUsuarioLogado("");
           setNomeUsuarioLogado("");
           setVerificandoUsuario(false);
@@ -1056,6 +1069,8 @@ export default function PainelAutorPage() {
             ? usuario.user_metadata.nome.trim()
             : "";
 
+        setUsuarioIdLogado(usuario.id);
+        setUsuarioIdLogado(usuario.id);
         setEmailUsuarioLogado(usuario.email || "");
         setNomeUsuarioLogado(nomeMetadata);
         setVerificandoUsuario(false);
@@ -1075,6 +1090,7 @@ export default function PainelAutorPage() {
         }
       } catch {
         if (componenteAtivo) {
+          setUsuarioIdLogado("");
           setEmailUsuarioLogado("");
           setNomeUsuarioLogado("");
           setVerificandoUsuario(false);
@@ -1093,6 +1109,7 @@ export default function PainelAutorPage() {
         }
 
         if (!usuario) {
+          setUsuarioIdLogado("");
           setEmailUsuarioLogado("");
           setNomeUsuarioLogado("");
           setVerificandoUsuario(false);
@@ -1104,6 +1121,7 @@ export default function PainelAutorPage() {
             ? usuario.user_metadata.nome.trim()
             : "";
 
+        setUsuarioIdLogado(usuario.id);
         setEmailUsuarioLogado(usuario.email || "");
         setNomeUsuarioLogado(nomeMetadata);
         setVerificandoUsuario(false);
@@ -1115,6 +1133,12 @@ export default function PainelAutorPage() {
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!verificandoUsuario && !usuarioIdLogado) {
+      router.replace(criarLoginHrefPainelAutor());
+    }
+  }, [router, usuarioIdLogado, verificandoUsuario]);
 
   useEffect(() => {
     let componenteAtivo = true;
@@ -1459,7 +1483,7 @@ export default function PainelAutorPage() {
     setOrdenacao("pontuacao");
   }
 
-  const usuarioLogado = Boolean(emailUsuarioLogado);
+  const usuarioLogado = Boolean(usuarioIdLogado);
   const nomeConta =
     nomeUsuarioLogado.trim() ||
     emailUsuarioLogado.split("@")[0] ||
@@ -1470,12 +1494,39 @@ export default function PainelAutorPage() {
 
     try {
       await supabase.auth.signOut();
+      setUsuarioIdLogado("");
       setEmailUsuarioLogado("");
       setNomeUsuarioLogado("");
-      window.location.href = "/login";
+      router.replace("/login");
+      router.refresh();
     } catch {
       setSaindoDaConta(false);
     }
+  }
+
+  if (verificandoUsuario || !usuarioLogado) {
+    return (
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${painelAutorPageCss}`}</style>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <section style={emptyBoxStyle}>
+            <h2 style={emptyTitleStyle}>
+              {verificandoUsuario ? "Verificando acesso..." : "Redirecionando para login..."}
+            </h2>
+
+            <p style={emptyTextStyle}>
+              {verificandoUsuario
+                ? "Conferindo sua sessão antes de abrir o Painel do Autor."
+                : "Entre com sua conta para gerenciar suas obras."}
+            </p>
+          </section>
+        </section>
+      </main>
+    );
   }
 
 
@@ -1504,7 +1555,7 @@ export default function PainelAutorPage() {
                 {saindoDaConta ? "Saindo..." : "Sair"}
               </button>
             ) : (
-              <Link href="/login" style={topButtonStyle}>
+              <Link href={criarLoginHrefPainelAutor()} style={topButtonStyle}>
                 {verificandoUsuario ? "Verificando..." : "Entrar"}
               </Link>
             )}

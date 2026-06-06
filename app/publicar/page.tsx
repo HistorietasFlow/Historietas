@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -225,6 +226,14 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefPublicar() {
+  const params = new URLSearchParams({
+    redirectTo: "/publicar",
+  });
+
+  return `/login?${params.toString()}`;
 }
 
 function criarSlugUnico(titulo: string, obrasExistentes: ObraLocal[]) {
@@ -606,6 +615,8 @@ function criarDecoracaoPublicarStyle(index: number): CSSProperties {
 }
 
 export default function PublicarPage() {
+  const router = useRouter();
+
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
   const [genero, setGenero] = useState("");
@@ -630,8 +641,40 @@ export default function PublicarPage() {
   const [arquivoCapituloErro, setArquivoCapituloErro] = useState("");
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
+  const [verificandoAutenticacao, setVerificandoAutenticacao] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function verificarAutenticacaoPublicacao() {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+
+        if (cancelado) {
+          return;
+        }
+
+        if (error || !data.user) {
+          router.replace(criarLoginHrefPublicar());
+          return;
+        }
+
+        setVerificandoAutenticacao(false);
+      } catch {
+        if (!cancelado) {
+          router.replace(criarLoginHrefPublicar());
+        }
+      }
+    }
+
+    verificarAutenticacaoPublicacao();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [router]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1221,7 +1264,8 @@ export default function PublicarPage() {
 
       salvarObrasLocalmente(novasObras);
 
-      window.location.href = "/minhas-obras";
+      router.replace("/minhas-obras");
+      router.refresh();
     } catch (erroDesconhecido) {
       jaSalvouRef.current = false;
       setProcessando(false);
@@ -1241,6 +1285,26 @@ export default function PublicarPage() {
         behavior: "smooth",
       });
     }
+  }
+
+  if (verificandoAutenticacao) {
+    return (
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${publicarPageCss}`}</style>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <section style={authLoadingCardStyle}>
+            <strong style={authLoadingTitleStyle}>Verificando acesso...</strong>
+            <span style={authLoadingTextStyle}>
+              Conferindo sua conta antes de abrir a publicação.
+            </span>
+          </section>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -1901,6 +1965,38 @@ const publicarPageCss = `
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
+};
+
+const authLoadingCardStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  width: "min(560px, 100%)",
+  margin: "40px auto 0",
+  display: "grid",
+  justifyItems: "center",
+  gap: "8px",
+  padding: "24px 16px",
+  borderRadius: "26px",
+  background:
+    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.92)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.98)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  textAlign: "center",
+  boxSizing: "border-box",
+};
+
+const authLoadingTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "18px",
+  fontWeight: 950,
+  ...safeTextStyle,
+};
+
+const authLoadingTextStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
+  lineHeight: 1.5,
+  fontWeight: 750,
+  ...safeTextStyle,
 };
 
 const pageDecorationLayerStyle: CSSProperties = {

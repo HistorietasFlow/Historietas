@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -138,6 +139,28 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefLeitor(obraId?: string, capituloId?: string) {
+  const obraIdLimpo = obraId?.trim() || "";
+  const capituloIdLimpo = capituloId?.trim() || "";
+  const paramsLeitor = new URLSearchParams();
+
+  if (obraIdLimpo) {
+    paramsLeitor.set("obraId", obraIdLimpo);
+  }
+
+  if (capituloIdLimpo) {
+    paramsLeitor.set("capituloId", capituloIdLimpo);
+  }
+
+  const queryLeitor = paramsLeitor.toString();
+  const redirectTo = queryLeitor ? `/ler-capitulo?${queryLeitor}` : "/ler-capitulo";
+  const paramsLogin = new URLSearchParams({
+    redirectTo,
+  });
+
+  return `/login?${paramsLogin.toString()}`;
 }
 
 function normalizarCapitulo(
@@ -477,6 +500,31 @@ function idObraSupabaseValido(id: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     id
   );
+}
+
+function criarHrefLeituraCapituloLeitor(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado" | "capitulos">,
+  capituloId: string
+) {
+  const indiceCapitulo = obra.capitulos.findIndex(
+    (capitulo) => capitulo.id === capituloId
+  );
+  const numeroCapitulo = indiceCapitulo >= 0 ? indiceCapitulo + 1 : 1;
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capituloId)}`;
 }
 
 function incrementarVisualizacaoObraLocal(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
@@ -998,6 +1046,7 @@ function criarPerfilAutorHref(autor: string, autorId?: string) {
 }
 
 export default function LerCapituloPage() {
+  const router = useRouter();
   const [obraId, setObraId] = useState("");
   const [capituloId, setCapituloId] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -1006,6 +1055,8 @@ export default function LerCapituloPage() {
   const [carregando, setCarregando] = useState(true);
   const [comentarioDigitado, setComentarioDigitado] = useState("");
   const [comentarioStatus, setComentarioStatus] = useState("");
+  const [mensagemAcao, setMensagemAcao] = useState("");
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(5);
   const [modoFoco, setModoFoco] = useState(false);
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
@@ -1016,6 +1067,39 @@ export default function LerCapituloPage() {
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
   const { temaVisual, pageThemeStyle, aplicarTemaVisual } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarUsuarioLogado() {
+      try {
+        const { data } = await supabase.auth.getUser();
+
+        if (!cancelado) {
+          setUsuarioIdLogado(data.user?.id || "");
+        }
+      } catch {
+        if (!cancelado) {
+          setUsuarioIdLogado("");
+        }
+      }
+    }
+
+    void carregarUsuarioLogado();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelado) {
+        setUsuarioIdLogado(session?.user?.id || "");
+      }
+    });
+
+    return () => {
+      cancelado = true;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const preferencias = carregarPreferenciasLeitura();
@@ -1252,8 +1336,11 @@ export default function LerCapituloPage() {
   useEffect(() => {
     setComentarioDigitado(capituloAtual?.comentario || "");
     setComentarioStatus("");
-    setMostrarComentario(Boolean(capituloAtual?.comentario.trim()));
-  }, [capituloAtual?.id]);
+    setMensagemAcao("");
+    setMostrarComentario(
+      Boolean(usuarioIdLogado && capituloAtual?.comentario.trim())
+    );
+  }, [capituloAtual?.id, usuarioIdLogado]);
 
   useEffect(() => {
     function atualizarProgressoRolagem() {
@@ -1280,7 +1367,7 @@ export default function LerCapituloPage() {
   }, [capituloAtual?.id]);
 
   useEffect(() => {
-    if (!obraAtual || !capituloAtual) {
+    if (!usuarioIdLogado || !obraAtual || !capituloAtual) {
       return;
     }
 
@@ -1328,7 +1415,51 @@ export default function LerCapituloPage() {
         true
       );
     }
-  }, [obraAtual?.id, capituloAtual?.id]);
+  }, [usuarioIdLogado, obraAtual?.id, capituloAtual?.id]);
+
+  async function obterUsuarioLogadoIdAtual() {
+    if (usuarioIdLogado) {
+      return usuarioIdLogado;
+    }
+
+    try {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id || "";
+
+      setUsuarioIdLogado(userId);
+
+      return userId;
+    } catch {
+      setUsuarioIdLogado("");
+      return "";
+    }
+  }
+
+  async function exigirLogin(mensagem: string) {
+    const userId = await obterUsuarioLogadoIdAtual();
+
+    if (userId) {
+      setMensagemAcao("");
+      return true;
+    }
+
+    setMensagemAcao(mensagem);
+    router.push(criarLoginHrefLeitor(obraId, capituloId));
+    return false;
+  }
+
+  async function alternarComentarioVisivel() {
+    if (mostrarComentario) {
+      setMostrarComentario(false);
+      return;
+    }
+
+    if (!(await exigirLogin("Entre na sua conta para comentar este capítulo."))) {
+      return;
+    }
+
+    setMostrarComentario(true);
+  }
 
   function salvarObras(novasObras: ObraLocal[]) {
     const obrasNormalizadas = novasObras.map((obra, index) =>
@@ -1377,6 +1508,10 @@ export default function LerCapituloPage() {
       return;
     }
 
+    if (!(await exigirLogin("Entre na sua conta para curtir este capítulo."))) {
+      return;
+    }
+
     const novoStatusCurtida = !capituloAtual.curtiu;
 
     atualizarCapitulo({
@@ -1395,6 +1530,10 @@ export default function LerCapituloPage() {
       return;
     }
 
+    if (!(await exigirLogin("Entre na sua conta para salvar este capítulo."))) {
+      return;
+    }
+
     const novoStatusSalvo = !capituloAtual.salvo;
 
     atualizarCapitulo({
@@ -1410,6 +1549,10 @@ export default function LerCapituloPage() {
 
   async function alternarLidoManual() {
     if (!obraAtual || !capituloAtual) {
+      return;
+    }
+
+    if (!(await exigirLogin("Entre na sua conta para marcar progresso de leitura."))) {
       return;
     }
 
@@ -1454,6 +1597,10 @@ export default function LerCapituloPage() {
       return;
     }
 
+    if (!(await exigirLogin("Entre na sua conta para adicionar esta obra à lista."))) {
+      return;
+    }
+
     const novoStatusFavorito = !obraFavorita;
     const novasObrasFavoritas = obraFavorita
       ? obrasFavoritas.filter((id) => id !== obraAtual.id)
@@ -1470,6 +1617,10 @@ export default function LerCapituloPage() {
 
   async function alternarConcluido() {
     if (!obraAtual) {
+      return;
+    }
+
+    if (!(await exigirLogin("Entre na sua conta para marcar esta obra como concluída."))) {
       return;
     }
 
@@ -1490,6 +1641,10 @@ export default function LerCapituloPage() {
   async function salvarComentario(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!(await exigirLogin("Entre na sua conta para comentar este capítulo."))) {
+      return;
+    }
+
     const textoLimpo = comentarioDigitado.trim();
 
     atualizarCapitulo({
@@ -1508,6 +1663,10 @@ export default function LerCapituloPage() {
 
   async function apagarComentario() {
     if (!capituloAtual || !capituloAtual.comentario.trim()) {
+      return;
+    }
+
+    if (!(await exigirLogin("Entre na sua conta para apagar seu comentário."))) {
       return;
     }
 
@@ -1540,7 +1699,7 @@ export default function LerCapituloPage() {
     window.history.pushState(
       null,
       "",
-      `/ler-capitulo?obraId=${obraAtual.id}&capituloId=${novoCapituloId}`
+      criarHrefLeituraCapituloLeitor(obraAtual, novoCapituloId)
     );
 
     window.scrollTo({
@@ -1848,7 +2007,7 @@ export default function LerCapituloPage() {
 
           <button
             type="button"
-            onClick={() => setMostrarComentario((valorAtual) => !valorAtual)}
+            onClick={() => void alternarComentarioVisivel()}
             style={
               modoFoco
                 ? mostrarComentario || capituloAtual.comentario.trim()
@@ -1862,6 +2021,8 @@ export default function LerCapituloPage() {
             {capituloAtual.comentario.trim() ? "💬 Comentado" : "Comentar"}
           </button>
         </section>
+
+        {mensagemAcao && <p style={commentStatusStyle}>{mensagemAcao}</p>}
 
         {mostrarComentario && (
           <section

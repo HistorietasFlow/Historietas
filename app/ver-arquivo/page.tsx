@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -33,6 +34,7 @@ type ObraLocal = {
   id: string;
   titulo: string;
   autor: string;
+  autorId?: string;
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
@@ -116,6 +118,36 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefVerArquivo(
+  obraId?: string,
+  slug?: string,
+  telaCheia = false
+) {
+  const obraIdLimpo = obraId?.trim() || "";
+  const slugLimpo = slug?.trim() || "";
+  const paramsArquivo = new URLSearchParams();
+
+  if (obraIdLimpo) {
+    paramsArquivo.set("obraId", obraIdLimpo);
+  }
+
+  if (slugLimpo) {
+    paramsArquivo.set("slug", slugLimpo);
+  }
+
+  if (telaCheia) {
+    paramsArquivo.set("tela", "cheia");
+  }
+
+  const queryArquivo = paramsArquivo.toString();
+  const redirectTo = queryArquivo ? `/ver-arquivo?${queryArquivo}` : "/ver-arquivo";
+  const paramsLogin = new URLSearchParams({
+    redirectTo,
+  });
+
+  return `/login?${paramsLogin.toString()}`;
 }
 
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
@@ -268,6 +300,10 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
         : "Autor não informado",
+    autorId:
+      typeof obra.autorId === "string" && obra.autorId.trim()
+        ? obra.autorId.trim()
+        : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -494,6 +530,7 @@ function normalizarObraSupabase(
     id: obra.id || obraLocal?.id || `obra-${index + 1}`,
     titulo: tituloObra,
     autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
     genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -538,16 +575,27 @@ function normalizarObraSupabase(
 async function carregarObraSupabaseComFallback(
   obraIdBusca: string,
   slugBusca: string,
-  obrasLocais: ObraLocal[]
+  obrasLocais: ObraLocal[],
+  userId: string
 ) {
-  if (!obraIdBusca && !slugBusca) {
+  if ((!obraIdBusca && !slugBusca) || !userId) {
     return obrasLocais;
   }
 
   try {
     const resultadoObra = obraIdBusca
-      ? await supabase.from("obras").select("*").eq("id", obraIdBusca).limit(1)
-      : await supabase.from("obras").select("*").eq("slug", slugBusca).limit(1);
+      ? await supabase
+          .from("obras")
+          .select("*")
+          .eq("id", obraIdBusca)
+          .eq("user_id", userId)
+          .limit(1)
+      : await supabase
+          .from("obras")
+          .select("*")
+          .eq("slug", slugBusca)
+          .eq("user_id", userId)
+          .limit(1);
 
     if (resultadoObra.error) {
       console.warn(
@@ -568,6 +616,7 @@ async function carregarObraSupabaseComFallback(
       .from("capitulos")
       .select("*")
       .eq("obra_id", obraBanco.id)
+      .eq("user_id", userId)
       .order("ordem", { ascending: true });
 
     const capitulosBanco = erroCapitulos
@@ -700,6 +749,9 @@ function extrairTextoDeDataUrl(conteudo: string) {
 
 
 export default function VerArquivoPage() {
+  const router = useRouter();
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const [redirecionandoLogin, setRedirecionandoLogin] = useState(false);
   const [obraIdBusca, setObraIdBusca] = useState("");
   const [slugBusca, setSlugBusca] = useState("");
   const [telaCheia, setTelaCheia] = useState(false);
@@ -772,7 +824,30 @@ export default function VerArquivoPage() {
       setTelaCheia(telaCheiaParam);
 
       try {
-        const obrasLocais = carregarObrasLocais();
+        const { data: dadosUsuario, error: erroUsuario } =
+          await supabase.auth.getUser();
+
+        if (erroUsuario || !dadosUsuario.user) {
+          if (!cancelado) {
+            setRedirecionandoLogin(true);
+            router.replace(
+              criarLoginHrefVerArquivo(obraIdParam, slugParam, telaCheiaParam)
+            );
+          }
+
+          return;
+        }
+
+        const userId = dadosUsuario.user.id;
+
+        if (!cancelado) {
+          setUsuarioIdLogado(userId);
+          setRedirecionandoLogin(false);
+        }
+
+        const obrasLocais = carregarObrasLocais().filter((obra) => {
+          return !obra.autorId || obra.autorId === userId;
+        });
 
         if (!cancelado) {
           setObras(obrasLocais);
@@ -781,11 +856,16 @@ export default function VerArquivoPage() {
         const obrasAtualizadas = await carregarObraSupabaseComFallback(
           obraIdParam,
           slugParam,
-          obrasLocais
+          obrasLocais,
+          userId
         );
 
         if (!cancelado) {
-          setObras(obrasAtualizadas);
+          setObras(
+            obrasAtualizadas.filter((obra) => {
+              return !obra.autorId || obra.autorId === userId;
+            })
+          );
         }
       } catch {
         if (!cancelado) {
@@ -803,7 +883,7 @@ export default function VerArquivoPage() {
     return () => {
       cancelado = true;
     };
-  }, [urlBusca]);
+  }, [router, urlBusca]);
 
   const obraAtual = useMemo(() => {
     if (!obraIdBusca && !slugBusca) {
@@ -813,14 +893,17 @@ export default function VerArquivoPage() {
     return (
       obras.find((obra) => {
         const slugObra = obra.slug || criarSlugBase(obra.titulo);
+        const obraPertenceAoUsuario =
+          !obra.autorId || obra.autorId === usuarioIdLogado;
 
         return (
-          (obraIdBusca && obra.id === obraIdBusca) ||
-          (slugBusca && slugObra === slugBusca)
+          obraPertenceAoUsuario &&
+          ((obraIdBusca && obra.id === obraIdBusca) ||
+            (slugBusca && slugObra === slugBusca))
         );
       }) || null
     );
-  }, [obras, obraIdBusca, slugBusca]);
+  }, [obras, obraIdBusca, slugBusca, usuarioIdLogado]);
 
   const arquivo = obraAtual?.arquivoObra || null;
 
@@ -874,7 +957,7 @@ export default function VerArquivoPage() {
     }
   }
 
-  if (carregando) {
+  if (carregando || redirecionandoLogin) {
     return (
       <main style={pageThemeStyle}>
         <style>{historietasThemeCss}</style>
@@ -882,7 +965,15 @@ export default function VerArquivoPage() {
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
-        <section style={isDesktop ? desktopContainerStyle : containerStyle} />
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <section style={emptyBoxStyle}>
+            <span style={miniTitleStyle}>VERIFICANDO ACESSO</span>
+            <h1 style={emptyTitleStyle}>Verificando acesso...</h1>
+            <p style={emptyTextStyle}>
+              Aguarde enquanto confirmamos se você pode abrir este arquivo.
+            </p>
+          </section>
+        </section>
       </main>
     );
   }

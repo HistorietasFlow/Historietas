@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useEffect, useMemo, useState } from "react";
@@ -125,6 +126,58 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefEditarCapitulo(obraId?: string, capituloId?: string) {
+  const obraIdLimpo = obraId?.trim() || "";
+  const capituloIdLimpo = capituloId?.trim() || "";
+  const paramsEditor = new URLSearchParams();
+
+  if (obraIdLimpo) {
+    paramsEditor.set("obraId", obraIdLimpo);
+  }
+
+  if (capituloIdLimpo) {
+    paramsEditor.set("capituloId", capituloIdLimpo);
+  }
+
+  const queryEditor = paramsEditor.toString();
+  const redirectTo = queryEditor
+    ? `/editar-capitulo?${queryEditor}`
+    : "/editar-capitulo";
+  const paramsLogin = new URLSearchParams({
+    redirectTo,
+  });
+
+  return `/login?${paramsLogin.toString()}`;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapitulo(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capituloId: string,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capituloId)}`;
 }
 
 function criarChavesObra(obra: Pick<ObraLocal, "id" | "titulo" | "slug">) {
@@ -579,14 +632,24 @@ function atualizarNotificacoesDoCapituloEditado(
         return notificacao;
       }
 
+      const indiceCapitulo = obra.capitulos.findIndex(
+        (capitulo) => capitulo.id === capituloId
+      );
+      const numeroCapitulo = indiceCapitulo >= 0 ? indiceCapitulo + 1 : 1;
+      const hrefCapitulo = criarHrefLeituraCapitulo(
+        obra,
+        capituloId,
+        numeroCapitulo
+      );
+
       return {
         ...registro,
         obraTitulo: obra.titulo,
         autor: obra.autor,
         capituloTitulo: `Capítulo: ${tituloCapitulo}`,
         mensagem: `${tituloCapitulo} foi atualizado em ${obra.titulo}.`,
-        link: `/ler-capitulo?obraId=${encodeURIComponent(obra.id)}&capituloId=${encodeURIComponent(capituloId)}`,
-        href: `/ler-capitulo?obraId=${encodeURIComponent(obra.id)}&capituloId=${encodeURIComponent(capituloId)}`,
+        link: hrefCapitulo,
+        href: hrefCapitulo,
       };
     });
 
@@ -600,10 +663,13 @@ function atualizarNotificacoesDoCapituloEditado(
 }
 
 export default function EditarCapituloPage() {
+  const router = useRouter();
   const [obraId, setObraId] = useState("");
   const [capituloId, setCapituloId] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [verificandoAcesso, setVerificandoAcesso] = useState(true);
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [salvou, setSalvou] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
@@ -651,7 +717,33 @@ export default function EditarCapituloPage() {
       setCapituloId(capituloIdParam);
 
       try {
-        const obrasLocais = carregarObrasLocaisNormalizadas();
+        const { data: dadosUsuario, error: erroUsuario } =
+          await supabase.auth.getUser();
+        const userId = dadosUsuario.user?.id || "";
+
+        if (erroUsuario || !userId) {
+          if (!cancelado) {
+            setUsuarioIdLogado("");
+            setVerificandoAcesso(false);
+            setCarregando(false);
+          }
+
+          router.replace(
+            criarLoginHrefEditarCapitulo(obraIdParam, capituloIdParam)
+          );
+          return;
+        }
+
+        if (!cancelado) {
+          setUsuarioIdLogado(userId);
+          setVerificandoAcesso(false);
+        }
+
+        const obrasLocais = carregarObrasLocaisNormalizadas().filter((obra) => {
+          const autorId = obra.autorId?.trim() || "";
+
+          return !autorId || autorId === userId;
+        });
         let obrasAtualizadas = obrasLocais;
         const obraLocal = obrasLocais.find((obra) => obra.id === obraIdParam);
         const capituloLocal =
@@ -659,7 +751,7 @@ export default function EditarCapituloPage() {
             (capitulo) => capitulo.id === capituloIdParam
           ) || null;
 
-        if (capituloLocal) {
+        if (capituloLocal && !cancelado) {
           setTitulo(capituloLocal.titulo);
           setTexto(capituloLocal.texto);
         }
@@ -670,6 +762,7 @@ export default function EditarCapituloPage() {
               .from("obras")
               .select("*")
               .eq("id", obraIdParam)
+              .eq("user_id", userId)
               .maybeSingle();
 
           if (erroObraSupabase) {
@@ -682,6 +775,7 @@ export default function EditarCapituloPage() {
                 .from("capitulos")
                 .select("*")
                 .eq("obra_id", obraIdParam)
+                .eq("user_id", userId)
                 .order("ordem", { ascending: true });
 
             if (erroCapitulosSupabase) {
@@ -712,7 +806,7 @@ export default function EditarCapituloPage() {
                 (capitulo) => capitulo.id === capituloIdParam
               ) || null;
 
-            if (capituloSupabase) {
+            if (capituloSupabase && !cancelado) {
               setTitulo(capituloSupabase.titulo);
               setTexto(capituloSupabase.texto);
             }
@@ -725,6 +819,7 @@ export default function EditarCapituloPage() {
       } catch {
         if (!cancelado) {
           setObras([]);
+          setVerificandoAcesso(false);
         }
       } finally {
         if (!cancelado) {
@@ -738,7 +833,7 @@ export default function EditarCapituloPage() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [router]);
 
   const obraAtual = useMemo(() => {
     return obras.find((obra) => obra.id === obraId) || null;
@@ -774,7 +869,11 @@ export default function EditarCapituloPage() {
 
   const lerCapituloHref =
     obraAtual && capituloAtual
-      ? `/ler-capitulo?obraId=${obraAtual.id}&capituloId=${capituloAtual.id}`
+      ? criarHrefLeituraCapitulo(
+          obraAtual,
+          capituloAtual.id,
+          numeroCapitulo || 1
+        )
       : "/minhas-obras";
 
   const estatisticasCapitulo = useMemo(() => {
@@ -888,6 +987,19 @@ export default function EditarCapituloPage() {
       return;
     }
 
+    if (!usuarioIdLogado) {
+      router.replace(criarLoginHrefEditarCapitulo(obraId, capituloId));
+      return;
+    }
+
+    const autorIdObra = obraAtual.autorId?.trim() || "";
+
+    if (autorIdObra && autorIdObra !== usuarioIdLogado) {
+      setErro("Você não tem permissão para editar este capítulo.");
+      setSalvou(false);
+      return;
+    }
+
     const erroValidacao = validarCapitulo();
 
     if (erroValidacao) {
@@ -951,8 +1063,15 @@ export default function EditarCapituloPage() {
       );
 
       try {
-        const { data: dadosUsuario } = await supabase.auth.getUser();
-        let atualizarCapituloQuery = supabase
+        const { data: dadosUsuario, error: erroUsuario } =
+          await supabase.auth.getUser();
+        const userId = dadosUsuario.user?.id || usuarioIdLogado;
+
+        if (erroUsuario || !userId) {
+          throw new Error("Usuário não autenticado.");
+        }
+
+        const { error: erroSupabase } = await supabase
           .from("capitulos")
           .update({
             titulo: tituloFinal,
@@ -960,16 +1079,8 @@ export default function EditarCapituloPage() {
             atualizado_em: new Date().toISOString(),
           })
           .eq("id", capituloId)
-          .eq("obra_id", obraId);
-
-        if (dadosUsuario.user?.id) {
-          atualizarCapituloQuery = atualizarCapituloQuery.eq(
-            "user_id",
-            dadosUsuario.user.id
-          );
-        }
-
-        const { error: erroSupabase } = await atualizarCapituloQuery;
+          .eq("obra_id", obraId)
+          .eq("user_id", userId);
 
         if (erroSupabase) {
           console.warn(
@@ -999,8 +1110,25 @@ export default function EditarCapituloPage() {
     }
   }
 
-  if (carregando) {
-    return null;
+  if (carregando || verificandoAcesso) {
+    return (
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${editarCapituloPageCss}`}</style>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <div style={emptyBoxStyle}>
+            <h1 style={emptyTitleStyle}>Verificando acesso...</h1>
+
+            <p style={emptyTextStyle}>
+              Confirmando sua conta antes de abrir o editor do capítulo.
+            </p>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   if (!obraAtual || !capituloAtual) {

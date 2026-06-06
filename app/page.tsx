@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Children, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { obras } from "./data/obras";
@@ -691,6 +692,50 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefHome() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/";
+  const destinoSeguro =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/";
+  const params = new URLSearchParams({
+    redirectTo: destinoSeguro,
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapituloHome(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capitulo: CapituloLocal,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
 function criarHrefObraCatalogoHome(obra: Obra) {
@@ -1708,6 +1753,7 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[]) {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [busca, setBusca] = useState("");
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
@@ -1717,9 +1763,53 @@ export default function Home() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [avisoLogin, setAvisoLogin] = useState("");
 
   useEffect(() => {
     aplicarTemaVisualHome(carregarTemaVisualHomeSalvo());
+  }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarUsuarioHome() {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const logado = Boolean(data.user);
+
+        if (!cancelado) {
+          setUsuarioLogado(logado);
+
+          if (logado) {
+            setAvisoLogin("");
+          }
+        }
+      } catch {
+        if (!cancelado) {
+          setUsuarioLogado(false);
+        }
+      }
+    }
+
+    void carregarUsuarioHome();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_evento, session) => {
+      const logado = Boolean(session?.user);
+
+      setUsuarioLogado(logado);
+
+      if (logado) {
+        setAvisoLogin("");
+      }
+    });
+
+    return () => {
+      cancelado = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -1842,6 +1932,8 @@ export default function Home() {
   const obrasPublicadas = useMemo(() => {
     return obrasLocais.filter((obra) => obra.publicado);
   }, [obrasLocais]);
+
+  const homeSemObrasReais = !termoBusca && obrasPublicadas.length === 0;
 
   const sugestoesBuscaHome = useMemo<ResultadoBuscaHome[]>(() => {
     if (!termoBusca) {
@@ -2049,11 +2141,39 @@ export default function Home() {
   const heroTemImagem = Boolean(heroObra && obterImagemObraCatalogo(heroObra));
   const heroFavoritoId = heroObra ? obterIdentificadorFavoritoHome(heroObra) : "";
   const heroEstaSalvo = Boolean(
-    heroFavoritoId && obrasFavoritas.includes(heroFavoritoId)
+    usuarioLogado && heroFavoritoId && obrasFavoritas.includes(heroFavoritoId)
   );
 
-  function alternarHeroFavorito() {
+  async function exigirLoginHome(mensagem: string) {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const logado = Boolean(data.user);
+
+      setUsuarioLogado(logado);
+
+      if (logado) {
+        setAvisoLogin("");
+        return true;
+      }
+    } catch {
+      setUsuarioLogado(false);
+    }
+
+    setAvisoLogin(mensagem);
+    router.push(criarLoginHrefHome());
+    return false;
+  }
+
+  async function alternarHeroFavorito() {
     if (!heroFavoritoId) {
+      return;
+    }
+
+    const podeSalvar = await exigirLoginHome(
+      "Entre na sua conta para salvar obras na sua lista."
+    );
+
+    if (!podeSalvar) {
       return;
     }
 
@@ -2086,6 +2206,10 @@ export default function Home() {
   }, [obrasPublicadas, termoBusca]);
 
   const obrasParaContinuar = useMemo(() => {
+    if (!usuarioLogado) {
+      return [];
+    }
+
     return obrasPublicadas
       .filter((obra) => {
         return (
@@ -2097,9 +2221,13 @@ export default function Home() {
         return obterTempoUltimaLeitura(obraB) - obterTempoUltimaLeitura(obraA);
       })
       .slice(0, 5);
-  }, [obrasPublicadas, termoBusca]);
+  }, [obrasPublicadas, termoBusca, usuarioLogado]);
 
   const obrasMinhaLista = useMemo(() => {
+    if (!usuarioLogado) {
+      return [];
+    }
+
     return obrasPublicadas
       .filter((obra) => {
         return (
@@ -2117,9 +2245,13 @@ export default function Home() {
         );
       })
       .slice(0, 12);
-  }, [obrasPublicadas, obrasFavoritas, termoBusca]);
+  }, [obrasPublicadas, obrasFavoritas, termoBusca, usuarioLogado]);
 
   const obrasCatalogoMinhaLista = useMemo(() => {
+    if (!usuarioLogado) {
+      return [];
+    }
+
     return obras
       .filter((obra) => {
         return (
@@ -2128,7 +2260,7 @@ export default function Home() {
         );
       })
       .slice(0, 12);
-  }, [obrasFavoritas, termoBusca]);
+  }, [obrasFavoritas, termoBusca, usuarioLogado]);
 
   const temasRecomendadosUsuario = useMemo(() => {
     const temas = new Set<string>();
@@ -2219,17 +2351,23 @@ export default function Home() {
       return total + obra.capitulos.length;
     }, 0);
 
-    const totalEmLeitura = obrasPublicadas.filter((obra) => {
-      return Boolean(encontrarCapituloParaContinuar(obra));
-    }).length;
+    const totalEmLeitura = usuarioLogado
+      ? obrasPublicadas.filter((obra) => {
+          return Boolean(encontrarCapituloParaContinuar(obra));
+        }).length
+      : 0;
 
-    const totalFavoritas = obrasPublicadas.filter((obra) => {
-      return obrasFavoritas.includes(obra.id);
-    }).length;
+    const totalFavoritas = usuarioLogado
+      ? obrasPublicadas.filter((obra) => {
+          return obrasFavoritas.includes(obra.id);
+        }).length
+      : 0;
 
-    const totalConcluidas = obrasPublicadas.filter((obra) => {
-      return obrasConcluidas.includes(obra.id);
-    }).length;
+    const totalConcluidas = usuarioLogado
+      ? obrasPublicadas.filter((obra) => {
+          return obrasConcluidas.includes(obra.id);
+        }).length
+      : 0;
 
     return {
       totalPublicadas: obrasPublicadas.length,
@@ -2238,7 +2376,7 @@ export default function Home() {
       totalFavoritas,
       totalConcluidas,
     };
-  }, [obrasPublicadas, obrasFavoritas, obrasConcluidas]);
+  }, [obrasPublicadas, obrasFavoritas, obrasConcluidas, usuarioLogado]);
 
   const obrasFiltradas = useMemo(() => {
     if (!termoBusca) {
@@ -2666,6 +2804,8 @@ export default function Home() {
                   </button>
                 </div>
 
+                {avisoLogin && <p style={heroLoginNoticeStyle}>{avisoLogin}</p>}
+
                 <div style={desktopHeroFooterStyle}>
                   <div style={desktopHeroStatsStyle}>
                     <span style={desktopHeroStatItemStyle}>
@@ -2736,6 +2876,8 @@ export default function Home() {
                 </button>
               </div>
 
+              {avisoLogin && <p style={heroLoginNoticeStyle}>{avisoLogin}</p>}
+
               <div style={mobileHeroFooterStyle}>
                 <div style={mobileHeroStatsStyle}>
                   <span style={mobileHeroStatItemStyle}>
@@ -2803,10 +2945,12 @@ export default function Home() {
           </div>
 
           <div style={summaryItemStyle}>
-            <strong style={summaryNumberStyle}>{notificacoesNaoLidas}</strong>
+            <strong style={summaryNumberStyle}>{usuarioLogado ? notificacoesNaoLidas : 0}</strong>
             <span style={summaryLabelStyle}>avisos</span>
           </div>
         </section>
+
+        {homeSemObrasReais && <HomeEmptyState isDesktop={isDesktop} />}
 
         {obrasParaContinuar.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
@@ -3191,20 +3335,6 @@ function MobileObraLocalCard({
     obra.capitulos.length > 0 ? obra.capitulos[obra.capitulos.length - 1] : null;
   const slugObra = obra.slug || criarSlugBase(obra.titulo);
   const verObraHref = obra.link?.trim() || `/obra/${slugObra}`;
-  const continuarLeituraHref = capituloParaContinuar
-    ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capituloParaContinuar.id}`
-    : verObraHref;
-  const ultimoCapituloHref = ultimoCapituloPublicado
-    ? `/ler-capitulo?obraId=${obra.id}&capituloId=${ultimoCapituloPublicado.id}`
-    : verObraHref;
-  const perfilAutorHref = criarHrefPerfilAutorHome(obra.autor, obra.autorId || "");
-
-  const actionHref =
-    tipo === "continuar"
-      ? continuarLeituraHref
-      : tipo === "novo-capitulo"
-      ? ultimoCapituloHref
-      : verObraHref;
   const numeroCapituloContinuar = capituloParaContinuar
     ? Math.max(
         1,
@@ -3221,6 +3351,28 @@ function MobileObraLocalCard({
         ) + 1
       )
     : 0;
+  const continuarLeituraHref = capituloParaContinuar
+    ? criarHrefLeituraCapituloHome(
+        obra,
+        capituloParaContinuar,
+        numeroCapituloContinuar || 1
+      )
+    : verObraHref;
+  const ultimoCapituloHref = ultimoCapituloPublicado
+    ? criarHrefLeituraCapituloHome(
+        obra,
+        ultimoCapituloPublicado,
+        numeroUltimoCapitulo || 1
+      )
+    : verObraHref;
+  const perfilAutorHref = criarHrefPerfilAutorHome(obra.autor, obra.autorId || "");
+
+  const actionHref =
+    tipo === "continuar"
+      ? continuarLeituraHref
+      : tipo === "novo-capitulo"
+      ? ultimoCapituloHref
+      : verObraHref;
   const actionLabel =
     tipo === "continuar"
       ? "Continuar"
@@ -3492,6 +3644,35 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
     >
       {conteudoCard}
     </Link>
+  );
+}
+
+function HomeEmptyState({ isDesktop }: { isDesktop: boolean }) {
+  return (
+    <section
+      style={isDesktop ? desktopHomeEmptyStateStyle : homeEmptyStateStyle}
+      aria-label="Comece na Historietas"
+    >
+      <span style={homeEmptyKickerStyle}>COMECE SUA BIBLIOTECA</span>
+
+      <h2 style={homeEmptyTitleStyle}>Publique ou descubra sua primeira obra</h2>
+
+      <p style={homeEmptyTextStyle}>
+        Ainda não há obras publicadas pela sua conta. Quando você publicar,
+        salvar ou continuar leituras, a Home passa a mostrar recomendações,
+        capítulos recentes, autores e progresso de leitura.
+      </p>
+
+      <div style={isDesktop ? desktopHomeEmptyActionsStyle : homeEmptyActionsStyle}>
+        <Link href="/publicar" style={homeEmptyPrimaryButtonStyle}>
+          Publicar obra
+        </Link>
+
+        <Link href="/explorar" style={homeEmptySecondaryButtonStyle}>
+          Explorar catálogo
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -4481,6 +4662,16 @@ const savedHeroButtonStyle: CSSProperties = {
   border:
     "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, rgba(255,255,255,0.12))",
   color: "var(--historietas-accent, #FDBA74)",
+};
+
+const heroLoginNoticeStyle: CSSProperties = {
+  margin: "2px 0 0",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "13px",
+  fontWeight: 800,
+  lineHeight: 1.35,
+  maxWidth: "100%",
+  ...safeTextStyle,
 };
 
 const heroDotsStyle: CSSProperties = {
@@ -5707,6 +5898,103 @@ const soonLabelStyle: CSSProperties = {
   boxSizing: "border-box",
   whiteSpace: "normal",
   ...safeTextStyle,
+};
+
+const homeEmptyStateStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
+  gap: "10px",
+  padding: "18px 14px",
+  borderRadius: "24px",
+  background:
+    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.82)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.98)) 100%)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  boxShadow: "none",
+  textAlign: "center",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const desktopHomeEmptyStateStyle: CSSProperties = {
+  ...homeEmptyStateStyle,
+  width: "min(760px, 100%)",
+  margin: "0 auto",
+  padding: "24px",
+  borderRadius: "28px",
+};
+
+const homeEmptyKickerStyle: CSSProperties = {
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "11px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  ...safeTextStyle,
+};
+
+const homeEmptyTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "clamp(24px, 6.2vw, 36px)",
+  lineHeight: 1.04,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  maxWidth: "560px",
+  ...safeTextStyle,
+};
+
+const homeEmptyTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
+  lineHeight: 1.55,
+  fontWeight: 700,
+  maxWidth: "620px",
+  ...safeTextStyle,
+};
+
+const homeEmptyActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "8px",
+  width: "min(100%, 360px)",
+  marginTop: "4px",
+  boxSizing: "border-box",
+};
+
+const desktopHomeEmptyActionsStyle: CSSProperties = {
+  ...homeEmptyActionsStyle,
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  width: "min(100%, 430px)",
+};
+
+const homeEmptyPrimaryButtonStyle: CSSProperties = {
+  minHeight: "42px",
+  borderRadius: "999px",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "13px",
+  fontWeight: 950,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  padding: "0 14px",
+  boxSizing: "border-box",
+  boxShadow: "none",
+  ...safeTextStyle,
+};
+
+const homeEmptySecondaryButtonStyle: CSSProperties = {
+  ...homeEmptyPrimaryButtonStyle,
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
 };
 
 const emptyBoxStyle: CSSProperties = {

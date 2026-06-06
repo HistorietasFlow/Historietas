@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { obras as obrasCatalogo } from "../data/obras";
@@ -136,6 +137,42 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefBiblioteca() {
+  const params = new URLSearchParams({
+    redirectTo: "/biblioteca",
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapituloBiblioteca(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capitulo: Pick<CapituloLocal, "id">,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
 function formatarGeneroBiblioteca(genero: string) {
@@ -1115,6 +1152,7 @@ function criarDecoracaoBibliotecaStyle(index: number): CSSProperties {
 }
 
 export default function BibliotecaPage() {
+  const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasSeguidas, setObrasSeguidas] = useState<string[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
@@ -1123,6 +1161,7 @@ export default function BibliotecaPage() {
   const [filtroObra, setFiltroObra] = useState("todas");
   const [abaAtiva, setAbaAtiva] = useState<AbaBiblioteca | "">("salvos");
   const [isDesktop, setIsDesktop] = useState(false);
+  const [carregandoAcesso, setCarregandoAcesso] = useState(true);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -1150,8 +1189,43 @@ export default function BibliotecaPage() {
   }, []);
 
   useEffect(() => {
-    void carregarObras();
-  }, []);
+    let componenteAtivo = true;
+
+    async function verificarAcessoECarregar() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!componenteAtivo) {
+          return;
+        }
+
+        if (!user) {
+          router.replace(criarLoginHrefBiblioteca());
+          return;
+        }
+
+        await carregarObras();
+      } catch {
+        if (componenteAtivo) {
+          router.replace(criarLoginHrefBiblioteca());
+        }
+
+        return;
+      }
+
+      if (componenteAtivo) {
+        setCarregandoAcesso(false);
+      }
+    }
+
+    void verificarAcessoECarregar();
+
+    return () => {
+      componenteAtivo = false;
+    };
+  }, [router]);
 
   async function carregarObras() {
     let obrasNormalizadas: ObraLocal[] = [];
@@ -1550,6 +1624,27 @@ export default function BibliotecaPage() {
     setFiltroObra("todas");
   }
 
+  if (carregandoAcesso) {
+    return (
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${bibliotecaPageCss}`}</style>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <section style={emptyBoxStyle}>
+            <h2 style={emptyTitleStyle}>Verificando acesso...</h2>
+
+            <p style={emptyTextStyle}>
+              Aguarde enquanto confirmamos sua sessão.
+            </p>
+          </section>
+        </section>
+      </main>
+    );
+  }
+
   const cardsBiblioteca = (
     <section
       className="biblioteca-summary-carousel"
@@ -1701,7 +1796,11 @@ export default function BibliotecaPage() {
             ) : (
               <section style={isDesktop ? desktopSavedGridStyle : savedGridStyle}>
                 {capitulosFiltrados.map((item) => {
-                  const lerHref = `/ler-capitulo?obraId=${item.obra.id}&capituloId=${item.capitulo.id}`;
+                  const lerHref = criarHrefLeituraCapituloBiblioteca(
+                    item.obra,
+                    item.capitulo,
+                    item.numeroCapitulo
+                  );
                   const obraHref =
                     item.obra.link ||
                     `/obra/${item.obra.slug || criarSlugBase(item.obra.titulo)}`;
@@ -1840,8 +1939,17 @@ export default function BibliotecaPage() {
                     encontrarCapituloParaContinuar(obra);
                   const capituloInicial =
                     capituloParaContinuar || obra.capitulos[0] || null;
+                  const capituloInicialNumero = capituloInicial
+                    ? obra.capitulos.findIndex(
+                        (capitulo) => capitulo.id === capituloInicial.id
+                      ) + 1
+                    : 0;
                   const capituloInicialHref = capituloInicial
-                    ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capituloInicial.id}`
+                    ? criarHrefLeituraCapituloBiblioteca(
+                        obra,
+                        capituloInicial,
+                        capituloInicialNumero || 1
+                      )
                     : "";
                   const capitulosLidos = obra.capitulos.filter(
                     (capitulo) => capitulo.lido
@@ -2002,7 +2110,11 @@ export default function BibliotecaPage() {
                     : 0;
 
                   const continuarHref = ultimoCapituloAtivo
-                    ? `/ler-capitulo?obraId=${obra.id}&capituloId=${ultimoCapituloAtivo.id}`
+                    ? criarHrefLeituraCapituloBiblioteca(
+                        obra,
+                        ultimoCapituloAtivo,
+                        ultimoCapituloIndex || 1
+                      )
                     : "";
 
                   const capitulosLidos = obra.capitulos.filter(
@@ -2132,7 +2244,11 @@ export default function BibliotecaPage() {
                   const obraHref =
                     obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
                   const perfilAutorHref = criarPerfilAutorHrefBiblioteca(obra);
-                  const continuarHref = `/ler-capitulo?obraId=${obra.id}&capituloId=${item.capitulo.id}`;
+                  const continuarHref = criarHrefLeituraCapituloBiblioteca(
+                    obra,
+                    item.capitulo,
+                    item.numeroCapitulo
+                  );
                   const obraFavorita = colecaoTemObra(obrasFavoritas, obra);
                   const obraConcluida = colecaoTemObra(obrasConcluidas, obra);
 
@@ -2253,8 +2369,17 @@ export default function BibliotecaPage() {
                     encontrarCapituloParaContinuar(obra);
                   const capituloInicial =
                     capituloParaContinuar || obra.capitulos[0] || null;
+                  const capituloInicialNumero = capituloInicial
+                    ? obra.capitulos.findIndex(
+                        (capitulo) => capitulo.id === capituloInicial.id
+                      ) + 1
+                    : 0;
                   const capituloInicialHref = capituloInicial
-                    ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capituloInicial.id}`
+                    ? criarHrefLeituraCapituloBiblioteca(
+                        obra,
+                        capituloInicial,
+                        capituloInicialNumero || 1
+                      )
                     : "";
                   const progressoLeitura = calcularProgressoLeitura(
                     obra.capitulos
@@ -2386,8 +2511,17 @@ export default function BibliotecaPage() {
                     encontrarCapituloParaContinuar(obra);
                   const capituloInicial =
                     capituloParaContinuar || obra.capitulos[0] || null;
+                  const capituloInicialNumero = capituloInicial
+                    ? obra.capitulos.findIndex(
+                        (capitulo) => capitulo.id === capituloInicial.id
+                      ) + 1
+                    : 0;
                   const capituloInicialHref = capituloInicial
-                    ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capituloInicial.id}`
+                    ? criarHrefLeituraCapituloBiblioteca(
+                        obra,
+                        capituloInicial,
+                        capituloInicialNumero || 1
+                      )
                     : "";
                   const progressoLeitura = calcularProgressoLeitura(
                     obra.capitulos

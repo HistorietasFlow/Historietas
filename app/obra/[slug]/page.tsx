@@ -229,6 +229,22 @@ function criarSlugBase(titulo: string) {
   return slug || "obra";
 }
 
+function criarLoginHrefObraPublica() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/obra";
+  const destinoSeguro =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/obra";
+  const params = new URLSearchParams({
+    redirectTo: destinoSeguro,
+  });
+
+  return `/login?${params.toString()}`;
+}
+
 function formatarGeneroObraPublica(genero: string) {
   const generoLimpo = genero.trim();
   const generoNormalizado = normalizarTexto(generoLimpo);
@@ -839,7 +855,9 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
       titulo: capitulo.titulo,
       descricao: criarResumoCapitulo(capitulo.texto),
       href: obraDisponivel
-        ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capitulo.id}`
+        ? `/obra/${encodeURIComponent(
+            obra.slug || criarSlugBase(obra.titulo)
+          )}/capitulo/${index + 1}`
         : criarLinkAviso(obra.titulo, capitulo.titulo),
       disponivel: obraDisponivel,
     })),
@@ -1709,8 +1727,35 @@ export default function ObraDinamicaPage() {
     };
   }, [obra?.id, obra?.slug, obraNormalizada]);
 
-  function alternarAviso() {
+  async function obterUsuarioLogadoParaAcao(mensagem: string) {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id || "";
+
+      if (!userId) {
+        setMensagemAcao(mensagem);
+        router.push(criarLoginHrefObraPublica());
+        return "";
+      }
+
+      return userId;
+    } catch {
+      setMensagemAcao(mensagem);
+      router.push(criarLoginHrefObraPublica());
+      return "";
+    }
+  }
+
+  async function alternarAviso() {
     if (!obraNormalizada) {
+      return;
+    }
+
+    const userId = await obterUsuarioLogadoParaAcao(
+      "Entre na sua conta para ativar aviso desta obra."
+    );
+
+    if (!userId) {
       return;
     }
 
@@ -1754,6 +1799,14 @@ export default function ObraDinamicaPage() {
       return;
     }
 
+    const userId = await obterUsuarioLogadoParaAcao(
+      "Entre na sua conta para seguir esta obra."
+    );
+
+    if (!userId) {
+      return;
+    }
+
     const seguindo = !obraSeguida;
 
     try {
@@ -1793,12 +1846,6 @@ export default function ObraDinamicaPage() {
       }
 
       const obraId = obra.id;
-      const { data: usuarioData } = await supabase.auth.getUser();
-      const userId = usuarioData.user?.id || "";
-
-      if (!userId) {
-        return;
-      }
 
       const resposta = seguindo
         ? await supabase.from("seguindo_obras").upsert(
@@ -1832,6 +1879,14 @@ export default function ObraDinamicaPage() {
 
   async function alternarCurtidaObra() {
     if (!obraNormalizada) {
+      return;
+    }
+
+    const userId = await obterUsuarioLogadoParaAcao(
+      "Entre na sua conta para curtir esta obra."
+    );
+
+    if (!userId) {
       return;
     }
 
@@ -1884,22 +1939,6 @@ export default function ObraDinamicaPage() {
     const obraId = obra.id;
 
     try {
-      const { data: usuarioData } = await supabase.auth.getUser();
-      const userId = usuarioData.user?.id || "";
-
-      if (!userId) {
-        setMetricasObra((metricasAtuais) => ({
-          ...metricasAtuais,
-          curtidaAtiva: !proximaCurtidaAtiva,
-          curtidas: Math.max(
-            0,
-            metricasAtuais.curtidas + (proximaCurtidaAtiva ? -1 : 1)
-          ),
-        }));
-        setMensagemAcao("Entre na sua conta para curtir esta obra.");
-        return;
-      }
-
       const resposta = proximaCurtidaAtiva
         ? await supabase.from("obra_curtidas").upsert(
             {
@@ -1939,6 +1978,14 @@ export default function ObraDinamicaPage() {
       return;
     }
 
+    const userId = await obterUsuarioLogadoParaAcao(
+      "Entre na sua conta para avaliar esta obra."
+    );
+
+    if (!userId) {
+      return;
+    }
+
     const notaNormalizada = nota <= 0 ? 0 : Math.round(nota * 2) / 2;
 
     const avaliacaoAnterior = avaliacaoObra;
@@ -1960,17 +2007,6 @@ export default function ObraDinamicaPage() {
     }
 
     try {
-      const { data: usuarioData } = await supabase.auth.getUser();
-      const userId = usuarioData.user?.id || "";
-
-      if (!userId) {
-        setAvaliacaoObra((avaliacaoAtual) => ({
-          ...avaliacaoAtual,
-          salvando: false,
-        }));
-        return;
-      }
-
       const resposta =
         notaNormalizada > 0
           ? await supabase.from("obra_avaliacoes").upsert(

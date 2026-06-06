@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -229,6 +230,42 @@ function obterNomeUsuario(email: string, nomeProfile = "") {
   const nomeEmail = email.trim().split("@")[0];
 
   return nomeEmail || "Usuário";
+}
+
+function criarLoginHrefComunidade() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/comunidade";
+  const destinoSeguro =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/comunidade";
+  const params = new URLSearchParams({
+    redirectTo: destinoSeguro,
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+async function obterNomeSeguroUsuarioComunidade(usuario: UsuarioComunidade) {
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("user_id", usuario.id)
+      .maybeSingle();
+
+    const nomeProfile =
+      typeof data?.nome === "string" && data.nome.trim() ? data.nome : "";
+
+    return obterNomeUsuario(usuario.email, nomeProfile || usuario.nome).slice(
+      0,
+      80
+    );
+  } catch {
+    return obterNomeUsuario(usuario.email, usuario.nome).slice(0, 80);
+  }
 }
 
 function formatarDataComunidade(dataIso: string) {
@@ -1380,6 +1417,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
 });
 
 export default function ComunidadePage() {
+  const router = useRouter();
   const [usuario, setUsuario] = useState<UsuarioComunidade | null>(null);
   const [usuarioEhAdmin, setUsuarioEhAdmin] = useState(false);
   const [carregandoUsuario, setCarregandoUsuario] = useState(true);
@@ -1962,6 +2000,10 @@ export default function ComunidadePage() {
 
 
   function prepararEnqueteComunidade() {
+    if (!exigirLogin()) {
+      return;
+    }
+
     setErro("");
     setCategoriaPost("Discussão");
     setTipoPublicacaoPost("Enquete");
@@ -2105,6 +2147,10 @@ export default function ComunidadePage() {
   }
 
   function responderDesafioSemana() {
+    if (!exigirLogin()) {
+      return;
+    }
+
     setErro("");
     setCategoriaPost("Recomendações");
     setTipoPublicacaoPost("Pedido de indicação");
@@ -2128,9 +2174,15 @@ export default function ComunidadePage() {
       return;
     }
 
-    setPostSalvandoId(postId);
+    setErro("");
 
     try {
+      if (!exigirLogin()) {
+        return;
+      }
+
+      setPostSalvandoId(postId);
+
       const postJaSalvo = postsSalvosIds.includes(postId);
       const postsSalvosAtualizados = postJaSalvo
         ? postsSalvosIds.filter((postSalvoId) => postSalvoId !== postId)
@@ -2349,6 +2401,7 @@ export default function ComunidadePage() {
     }
 
     setErro("Entre na sua conta para participar da Comunidade.");
+    router.push(criarLoginHrefComunidade());
     return false;
   }
 
@@ -2412,11 +2465,13 @@ export default function ComunidadePage() {
         }
       }
 
+      const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
+
       const { data, error } = await supabase
         .from("comunidade_posts")
         .insert({
           autor_id: usuario.id,
-          autor_nome: usuario.nome,
+          autor_nome: autorNomeSeguro,
           categoria: categoriaPost,
           tipo_publicacao: publicacaoEhEnquete ? "Discussão" : tipoPublicacaoPost,
           tem_spoiler: temSpoilerPost,
@@ -2572,12 +2627,14 @@ export default function ComunidadePage() {
         return false;
       }
 
+      const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
+
       const { data, error } = await supabase
         .from("comunidade_comentarios")
         .insert({
           post_id: postId,
           autor_id: usuario.id,
-          autor_nome: usuario.nome,
+          autor_nome: autorNomeSeguro,
           texto: textoComentario.slice(0, 420),
         })
         .select("id, post_id, autor_id, autor_nome, texto, criado_em")
@@ -2870,7 +2927,7 @@ export default function ComunidadePage() {
     setErro("");
 
     try {
-      if (!usuario) {
+      if (!exigirLogin() || !usuario) {
         return;
       }
 
@@ -2972,7 +3029,7 @@ export default function ComunidadePage() {
                   <div style={visitorComposerStyle}>
                     {erro && <span style={errorStyle}>{erro}</span>}
 
-                    <Link href="/login" style={primaryLinkButtonStyle}>
+                    <Link href={criarLoginHrefComunidade()} style={primaryLinkButtonStyle}>
                       Entrar para participar
                     </Link>
                   </div>
@@ -3602,7 +3659,7 @@ export default function ComunidadePage() {
                       Criar primeira publicação
                     </button>
                   ) : (
-                    <Link href="/login" style={emptyFeedButtonStyle}>
+                    <Link href={criarLoginHrefComunidade()} style={emptyFeedButtonStyle}>
                       Entrar para participar
                     </Link>
                   )}

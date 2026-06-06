@@ -183,6 +183,50 @@ function criarSlugBase(titulo: string) {
   return slug || "obra";
 }
 
+function criarLoginHrefEmAlta() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/em-alta";
+  const destinoSeguro =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/em-alta";
+  const params = new URLSearchParams({
+    redirectTo: destinoSeguro,
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapitulo(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capitulo: CapituloLocal,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
+}
+
 function criarLinkEmBreve(titulo: string) {
   const tituloLimpo = titulo.trim();
 
@@ -1087,6 +1131,7 @@ function criarDecoracaoPaginaStyle(index: number): CSSProperties {
 }
 
 export default function EmAltaPage() {
+  const router = useRouter();
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
@@ -1099,6 +1144,8 @@ export default function EmAltaPage() {
   const [buscaRanking, setBuscaRanking] = useState("");
   const [filtroRanking, setFiltroRanking] = useState<FiltroEmAlta>("todos");
   const [isDesktop, setIsDesktop] = useState(false);
+  const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [mensagemLogin, setMensagemLogin] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -1122,6 +1169,30 @@ export default function EmAltaPage() {
 
     return () => {
       mediaQuery.removeListener(atualizarModoDesktop);
+    };
+  }, []);
+
+  useEffect(() => {
+    let ativo = true;
+
+    async function verificarUsuarioLogado() {
+      try {
+        const { data } = await supabase.auth.getUser();
+
+        if (ativo) {
+          setUsuarioLogado(Boolean(data.user));
+        }
+      } catch {
+        if (ativo) {
+          setUsuarioLogado(false);
+        }
+      }
+    }
+
+    void verificarUsuarioLogado();
+
+    return () => {
+      ativo = false;
     };
   }, []);
 
@@ -1315,8 +1386,21 @@ export default function EmAltaPage() {
         const ultimoCapituloLidoTitulo = capituloParaContinuar
           ? capituloParaContinuar.titulo
           : "";
+        const indiceCapituloParaContinuar = capituloParaContinuar
+          ? obra.capitulos.findIndex(
+              (capitulo) => capitulo.id === capituloParaContinuar.id
+            )
+          : -1;
+        const numeroCapituloParaContinuar =
+          indiceCapituloParaContinuar >= 0
+            ? indiceCapituloParaContinuar + 1
+            : 1;
         const ultimoCapituloLidoHref = capituloParaContinuar
-          ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capituloParaContinuar.id}`
+          ? criarHrefLeituraCapitulo(
+              obra,
+              capituloParaContinuar,
+              numeroCapituloParaContinuar
+            )
           : "";
         const ultimaLeituraEm =
           obra.ultimaLeituraEm || capituloParaContinuar?.lidoEm || "";
@@ -1371,6 +1455,8 @@ export default function EmAltaPage() {
   }, [avaliacoesLocaisRegistradas, obrasLocais, visualizacoesRegistradas]);
 
   const termoBuscaRanking = normalizarTexto(buscaRanking);
+  const obrasFavoritasProtegidas = usuarioLogado ? obrasFavoritas : [];
+  const obrasConcluidasProtegidas = usuarioLogado ? obrasConcluidas : [];
 
   const rankingFiltrado = useMemo(() => {
     return ranking.filter((obra) => {
@@ -1379,12 +1465,18 @@ export default function EmAltaPage() {
         obraRankingPassaFiltro(
           obra,
           filtroRanking,
-          obrasFavoritas,
-          obrasConcluidas
+          obrasFavoritasProtegidas,
+          obrasConcluidasProtegidas
         )
       );
     });
-  }, [ranking, termoBuscaRanking, filtroRanking, obrasFavoritas, obrasConcluidas]);
+  }, [
+    ranking,
+    termoBuscaRanking,
+    filtroRanking,
+    obrasFavoritasProtegidas,
+    obrasConcluidasProtegidas,
+  ]);
 
   const filtrosAtivos = Boolean(buscaRanking.trim() || filtroRanking !== "todos");
 
@@ -1430,9 +1522,56 @@ export default function EmAltaPage() {
   function limparFiltrosRanking() {
     setBuscaRanking("");
     setFiltroRanking("todos");
+    setMensagemLogin("");
   }
 
-  function alternarFavorito(obraId: string) {
+  function filtroRankingExigeLogin(filtro: FiltroEmAlta) {
+    return filtro === "favoritas" || filtro === "concluidas";
+  }
+
+  function avisarLoginRanking() {
+    setMensagemLogin("Entre na sua conta para usar filtros e ações pessoais do ranking.");
+    router.push(criarLoginHrefEmAlta());
+  }
+
+  async function usuarioTemSessaoAtiva() {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const logado = Boolean(data.user);
+
+      setUsuarioLogado(logado);
+
+      return logado;
+    } catch {
+      setUsuarioLogado(false);
+
+      return false;
+    }
+  }
+
+  async function selecionarFiltroRanking(proximoFiltro: FiltroEmAlta) {
+    if (filtroRankingExigeLogin(proximoFiltro)) {
+      const logado = await usuarioTemSessaoAtiva();
+
+      if (!logado) {
+        setFiltroRanking("todos");
+        avisarLoginRanking();
+        return;
+      }
+    }
+
+    setFiltroRanking(proximoFiltro);
+    setMensagemLogin("");
+  }
+
+  async function alternarFavorito(obraId: string) {
+    const logado = await usuarioTemSessaoAtiva();
+
+    if (!logado) {
+      avisarLoginRanking();
+      return;
+    }
+
     const novasObrasFavoritas = obrasFavoritas.includes(obraId)
       ? obrasFavoritas.filter((id) => id !== obraId)
       : [...obrasFavoritas, obraId];
@@ -1443,9 +1582,17 @@ export default function EmAltaPage() {
     );
 
     setObrasFavoritas(novasObrasFavoritas);
+    setMensagemLogin("");
   }
 
-  function alternarConcluido(obraId: string) {
+  async function alternarConcluido(obraId: string) {
+    const logado = await usuarioTemSessaoAtiva();
+
+    if (!logado) {
+      avisarLoginRanking();
+      return;
+    }
+
     const novasObrasConcluidas = obrasConcluidas.includes(obraId)
       ? obrasConcluidas.filter((id) => id !== obraId)
       : [...obrasConcluidas, obraId];
@@ -1456,6 +1603,7 @@ export default function EmAltaPage() {
     );
 
     setObrasConcluidas(novasObrasConcluidas);
+    setMensagemLogin("");
   }
 
   return (
@@ -1528,7 +1676,7 @@ export default function EmAltaPage() {
               <button
                 key={filtro.id}
                 type="button"
-                onClick={() => setFiltroRanking(filtro.id as FiltroEmAlta)}
+                onClick={() => void selecionarFiltroRanking(filtro.id as FiltroEmAlta)}
                 style={
                   filtroRanking === filtro.id
                     ? quickFilterActiveStyle
@@ -1540,6 +1688,16 @@ export default function EmAltaPage() {
             ))}
           </div>
 
+          {mensagemLogin && (
+            <div style={loginNoticeStyle}>
+              <span>{mensagemLogin}</span>
+
+              <Link href={criarLoginHrefEmAlta()} style={loginNoticeLinkStyle}>
+                Entrar
+              </Link>
+            </div>
+          )}
+
         </section>
 
         <RankingSection
@@ -1547,8 +1705,8 @@ export default function EmAltaPage() {
           descricao=""
           obras={rankingGeral}
           tipo="geral"
-          obrasFavoritas={obrasFavoritas}
-          obrasConcluidas={obrasConcluidas}
+          obrasFavoritas={obrasFavoritasProtegidas}
+          obrasConcluidas={obrasConcluidasProtegidas}
           onAlternarFavorito={alternarFavorito}
           onAlternarConcluido={alternarConcluido}
           isDesktop={isDesktop}
@@ -1559,8 +1717,8 @@ export default function EmAltaPage() {
           descricao="As histórias que mais chamaram atenção dos leitores."
           obras={rankingMaisLidas}
           tipo="lidas"
-          obrasFavoritas={obrasFavoritas}
-          obrasConcluidas={obrasConcluidas}
+          obrasFavoritas={obrasFavoritasProtegidas}
+          obrasConcluidas={obrasConcluidasProtegidas}
           onAlternarFavorito={alternarFavorito}
           onAlternarConcluido={alternarConcluido}
           isDesktop={isDesktop}
@@ -1571,8 +1729,8 @@ export default function EmAltaPage() {
           descricao="As obras que mais receberam curtidas e reações positivas."
           obras={rankingMaisCurtidas}
           tipo="curtidas"
-          obrasFavoritas={obrasFavoritas}
-          obrasConcluidas={obrasConcluidas}
+          obrasFavoritas={obrasFavoritasProtegidas}
+          obrasConcluidas={obrasConcluidasProtegidas}
           onAlternarFavorito={alternarFavorito}
           onAlternarConcluido={alternarConcluido}
           isDesktop={isDesktop}
@@ -1583,8 +1741,8 @@ export default function EmAltaPage() {
           descricao="As histórias que mais puxaram conversa entre os leitores."
           obras={rankingMaisComentadas}
           tipo="comentadas"
-          obrasFavoritas={obrasFavoritas}
-          obrasConcluidas={obrasConcluidas}
+          obrasFavoritas={obrasFavoritasProtegidas}
+          obrasConcluidas={obrasConcluidasProtegidas}
           onAlternarFavorito={alternarFavorito}
           onAlternarConcluido={alternarConcluido}
           isDesktop={isDesktop}
@@ -1595,8 +1753,8 @@ export default function EmAltaPage() {
           descricao="Obras que mais leitores decidiram acompanhar."
           obras={rankingMaisSalvas}
           tipo="salvas"
-          obrasFavoritas={obrasFavoritas}
-          obrasConcluidas={obrasConcluidas}
+          obrasFavoritas={obrasFavoritasProtegidas}
+          obrasConcluidas={obrasConcluidasProtegidas}
           onAlternarFavorito={alternarFavorito}
           onAlternarConcluido={alternarConcluido}
           isDesktop={isDesktop}
@@ -1607,8 +1765,8 @@ export default function EmAltaPage() {
           descricao="Publicações recentes começando a aparecer no radar."
           obras={rankingMaisRecentes}
           tipo="recentes"
-          obrasFavoritas={obrasFavoritas}
-          obrasConcluidas={obrasConcluidas}
+          obrasFavoritas={obrasFavoritasProtegidas}
+          obrasConcluidas={obrasConcluidasProtegidas}
           onAlternarFavorito={alternarFavorito}
           onAlternarConcluido={alternarConcluido}
           isDesktop={isDesktop}
@@ -1619,8 +1777,8 @@ export default function EmAltaPage() {
           descricao="Histórias com mais capítulos e conteúdo publicado."
           obras={rankingMaisCapitulos}
           tipo="capitulos"
-          obrasFavoritas={obrasFavoritas}
-          obrasConcluidas={obrasConcluidas}
+          obrasFavoritas={obrasFavoritasProtegidas}
+          obrasConcluidas={obrasConcluidasProtegidas}
           onAlternarFavorito={alternarFavorito}
           onAlternarConcluido={alternarConcluido}
           isDesktop={isDesktop}
@@ -3173,6 +3331,32 @@ const quickFilterActiveStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.18)",
   color: "#FFFFFF",
   boxShadow: "none",
+};
+
+const loginNoticeStyle: CSSProperties = {
+  gridColumn: "1 / -1",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+  minHeight: "38px",
+  padding: "9px 12px",
+  borderRadius: "18px",
+  background: "rgba(249, 115, 22, 0.10)",
+  border: "1px solid rgba(249, 115, 22, 0.24)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "12px",
+  fontWeight: 850,
+  textAlign: "center",
+  boxSizing: "border-box",
+  ...safeTextStyle,
+};
+
+const loginNoticeLinkStyle: CSSProperties = {
+  color: "var(--historietas-accent, #FDBA74)",
+  fontWeight: 950,
+  textDecoration: "none",
 };
 
 const emptyBoxStyle: CSSProperties = {

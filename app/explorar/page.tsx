@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { obras } from "../data/obras";
@@ -639,6 +640,22 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefExplorar() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/explorar";
+  const destinoSeguro =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/explorar";
+  const params = new URLSearchParams({
+    redirectTo: destinoSeguro,
+  });
+
+  return `/login?${params.toString()}`;
 }
 
 function criarPerfilAutorHrefExplorar(autor: string, autorId?: string) {
@@ -1521,6 +1538,7 @@ function criarDecoracaoTemaStyle(
 }
 
 export default function ExplorarPage() {
+  const router = useRouter();
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
@@ -1535,12 +1553,52 @@ export default function ExplorarPage() {
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [temaVisual, setTemaVisual] = useState<TemaVisualExplorar>("original");
+  const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [mensagemLogin, setMensagemLogin] = useState("");
 
   useEffect(() => {
     const temaSalvo = carregarTemaVisualExplorarSalvo();
 
     setTemaVisual(temaSalvo);
     aplicarTemaVisualExplorar(temaSalvo);
+  }, []);
+
+  useEffect(() => {
+    let componenteAtivo = true;
+
+    async function verificarUsuarioLogado() {
+      try {
+        const { data } = await supabase.auth.getUser();
+
+        if (componenteAtivo) {
+          setUsuarioLogado(Boolean(data.user));
+        }
+      } catch {
+        if (componenteAtivo) {
+          setUsuarioLogado(false);
+        }
+      }
+    }
+
+    void verificarUsuarioLogado();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUsuarioLogado(Boolean(session?.user));
+
+      if (session?.user) {
+        setMensagemLogin("");
+        return;
+      }
+
+      setFiltroColecao("todos");
+    });
+
+    return () => {
+      componenteAtivo = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -1696,7 +1754,7 @@ export default function ExplorarPage() {
             : obra.capitulos.length === 0;
 
       const passaColecao =
-        filtroColecao === "todos"
+        !usuarioLogado || filtroColecao === "todos"
           ? true
           : filtroColecao === "favoritas"
             ? obrasFavoritas.includes(obra.id)
@@ -1743,6 +1801,7 @@ export default function ExplorarPage() {
     filtroClassificacao,
     filtroCapitulos,
     filtroColecao,
+    usuarioLogado,
     termoBusca,
     ordenacao,
     obrasFavoritas,
@@ -1771,7 +1830,7 @@ export default function ExplorarPage() {
             ? false
             : true;
 
-      const passaColecao = filtroColecao === "todos";
+      const passaColecao = !usuarioLogado || filtroColecao === "todos";
 
       const textoBusca = normalizarTexto(
         [
@@ -1803,6 +1862,7 @@ export default function ExplorarPage() {
     filtroClassificacao,
     filtroCapitulos,
     filtroColecao,
+    usuarioLogado,
     termoBusca,
     ordenacao,
   ]);
@@ -1810,17 +1870,17 @@ export default function ExplorarPage() {
   const totalResultados =
     obrasLocaisFiltradas.length + obrasFixasFiltradas.length;
 
-  const totalFavoritasResultado = obrasLocaisFiltradas.filter((obra) =>
-    obrasFavoritas.includes(obra.id)
-  ).length;
+  const totalFavoritasResultado = usuarioLogado
+    ? obrasLocaisFiltradas.filter((obra) => obrasFavoritas.includes(obra.id)).length
+    : 0;
 
-  const totalConcluidasResultado = obrasLocaisFiltradas.filter((obra) =>
-    obrasConcluidas.includes(obra.id)
-  ).length;
+  const totalConcluidasResultado = usuarioLogado
+    ? obrasLocaisFiltradas.filter((obra) => obrasConcluidas.includes(obra.id)).length
+    : 0;
 
-  const totalLendoResultado = obrasLocaisFiltradas.filter((obra) =>
-    obraTemAtividadeLeitura(obra)
-  ).length;
+  const totalLendoResultado = usuarioLogado
+    ? obrasLocaisFiltradas.filter((obra) => obraTemAtividadeLeitura(obra)).length
+    : 0;
 
   const filtrosAtivos = Boolean(
     categoriaSelecionada ||
@@ -1828,7 +1888,7 @@ export default function ExplorarPage() {
       filtroFormato !== "todos" ||
       filtroClassificacao !== "todos" ||
       filtroCapitulos !== "todos" ||
-      filtroColecao !== "todos" ||
+      (usuarioLogado && filtroColecao !== "todos") ||
       ordenacao !== "relevancia"
   );
 
@@ -1971,6 +2031,24 @@ export default function ExplorarPage() {
     atualizarUrl(categoria);
   }
 
+  function selecionarFiltroColecao(filtro: FiltroColecaoExplorar) {
+    if (filtro === "todos") {
+      setMensagemLogin("");
+      setFiltroColecao("todos");
+      return;
+    }
+
+    if (!usuarioLogado) {
+      setMensagemLogin("Entre na sua conta para usar filtros pessoais.");
+      setFiltroColecao("todos");
+      router.push(criarLoginHrefExplorar());
+      return;
+    }
+
+    setMensagemLogin("");
+    setFiltroColecao(filtro);
+  }
+
   function limparFiltros() {
     setCategoriaSelecionada("");
     setBusca("");
@@ -1979,6 +2057,7 @@ export default function ExplorarPage() {
     setFiltroCapitulos("todos");
     setFiltroColecao("todos");
     setOrdenacao("relevancia");
+    setMensagemLogin("");
     setMostrarFiltrosAvancados(false);
     window.history.pushState(null, "", "/explorar");
   }
@@ -2068,7 +2147,7 @@ export default function ExplorarPage() {
 
             <button
               type="button"
-              onClick={() => setFiltroColecao("todos")}
+              onClick={() => selecionarFiltroColecao("todos")}
               style={
                 filtroColecao === "todos"
                   ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
@@ -2082,7 +2161,7 @@ export default function ExplorarPage() {
 
             <button
               type="button"
-              onClick={() => setFiltroColecao("lendo")}
+              onClick={() => selecionarFiltroColecao("lendo")}
               style={
                 filtroColecao === "lendo"
                   ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
@@ -2096,7 +2175,7 @@ export default function ExplorarPage() {
 
             <button
               type="button"
-              onClick={() => setFiltroColecao("favoritas")}
+              onClick={() => selecionarFiltroColecao("favoritas")}
               style={
                 filtroColecao === "favoritas"
                   ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
@@ -2110,7 +2189,7 @@ export default function ExplorarPage() {
 
             <button
               type="button"
-              onClick={() => setFiltroColecao("concluidas")}
+              onClick={() => selecionarFiltroColecao("concluidas")}
               style={
                 filtroColecao === "concluidas"
                   ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
@@ -2124,7 +2203,7 @@ export default function ExplorarPage() {
 
             <button
               type="button"
-              onClick={() => setFiltroColecao("sem-leitura")}
+              onClick={() => selecionarFiltroColecao("sem-leitura")}
               style={
                 filtroColecao === "sem-leitura"
                   ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
@@ -2136,6 +2215,10 @@ export default function ExplorarPage() {
               Sem leitura
             </button>
           </div>
+
+          {mensagemLogin && (
+            <span style={loginNoticeStyle}>{mensagemLogin}</span>
+          )}
 
           <button
             type="button"
@@ -2249,8 +2332,8 @@ export default function ExplorarPage() {
                 <ObraPublicadaCard
                   key={obra.id}
                   obra={obra}
-                  favorita={obrasFavoritas.includes(obra.id)}
-                  concluida={obrasConcluidas.includes(obra.id)}
+                  favorita={usuarioLogado && obrasFavoritas.includes(obra.id)}
+                  concluida={usuarioLogado && obrasConcluidas.includes(obra.id)}
                   tema={temaPagina}
                   isDesktop={isDesktop}
                 />
@@ -3458,6 +3541,17 @@ const compactSummaryItemStyle: CSSProperties = {
 
 const compactSummarySeparatorStyle: CSSProperties = {
   opacity: 0.9,
+};
+
+const loginNoticeStyle: CSSProperties = {
+  display: "block",
+  margin: "-2px auto 0",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "11.5px",
+  fontWeight: 850,
+  lineHeight: 1.35,
+  textAlign: "center",
+  ...safeTextStyle,
 };
 
 const searchBoxStyle: CSSProperties = {

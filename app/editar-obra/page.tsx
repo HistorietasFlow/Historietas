@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -255,6 +256,18 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefEditarObra(obraId?: string) {
+  const obraIdLimpo = obraId?.trim() || "";
+  const redirectTo = obraIdLimpo
+    ? `/editar-obra?obraId=${encodeURIComponent(obraIdLimpo)}`
+    : "/editar-obra";
+  const params = new URLSearchParams({
+    redirectTo,
+  });
+
+  return `/login?${params.toString()}`;
 }
 
 
@@ -614,6 +627,10 @@ function restaurarArquivoObraComBackup(
   };
 }
 
+function usuarioPodeEditarObraLocal(obra: ObraLocal, userId: string) {
+  return !obra.autorId || obra.autorId === userId;
+}
+
 function normalizarCapitulo(
   capitulo: Partial<CapituloLocal>,
   index: number
@@ -766,6 +783,7 @@ function criarDesktopPreviewCoverStyle(capa: string): CSSProperties {
 }
 
 export default function EditarObraPage() {
+  const router = useRouter();
   const [obraId, setObraId] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -881,58 +899,72 @@ export default function EditarObraPage() {
       let obrasNormalizadas: ObraLocal[] = [];
 
       try {
-        const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
-        const obrasSalvasJson = obrasSalvasTexto
-          ? JSON.parse(obrasSalvasTexto)
-          : [];
-
-        const backupArquivosObras = carregarBackupArquivosObras();
-
-        obrasNormalizadas = Array.isArray(obrasSalvasJson)
-          ? obrasSalvasJson
-              .map((obra, index) =>
-                normalizarObra(obra as Partial<ObraLocal>, index)
-              )
-              .map((obra) =>
-                restaurarArquivoObraComBackup(obra, backupArquivosObras)
-              )
-          : [];
-
-        sincronizarBackupArquivosObras(obrasNormalizadas);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
-
-        const obraLocal = obrasNormalizadas.find(
-          (obra) => obra.id === obraIdParam
-        );
-
-        if (!cancelado) {
-          setObras(obrasNormalizadas);
-
-          if (obraLocal) {
-            aplicarObraNoFormulario(obraLocal);
-          }
-        }
-      } catch {
-        obrasNormalizadas = [];
-
-        if (!cancelado) {
-          setObras([]);
-        }
-      }
-
-      try {
         const { data: dadosUsuario, error: erroUsuario } =
           await supabase.auth.getUser();
 
-        if (erroUsuario || !dadosUsuario.user || !obraIdParam) {
+        const userId = dadosUsuario.user?.id || "";
+
+        if (erroUsuario || !userId) {
+          if (!cancelado) {
+            router.replace(criarLoginHrefEditarObra(obraIdParam));
+          }
+
           return;
+        }
+
+        if (!obraIdParam) {
+          return;
+        }
+
+        try {
+          const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
+          const obrasSalvasJson = obrasSalvasTexto
+            ? JSON.parse(obrasSalvasTexto)
+            : [];
+
+          const backupArquivosObras = carregarBackupArquivosObras();
+
+          obrasNormalizadas = Array.isArray(obrasSalvasJson)
+            ? obrasSalvasJson
+                .map((obra, index) =>
+                  normalizarObra(obra as Partial<ObraLocal>, index)
+                )
+                .map((obra) =>
+                  restaurarArquivoObraComBackup(obra, backupArquivosObras)
+                )
+            : [];
+
+          sincronizarBackupArquivosObras(obrasNormalizadas);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+
+          const obrasAutorizadas = obrasNormalizadas.filter((obra) =>
+            usuarioPodeEditarObraLocal(obra, userId)
+          );
+
+          const obraLocal = obrasAutorizadas.find(
+            (obra) => obra.id === obraIdParam
+          );
+
+          if (!cancelado) {
+            setObras(obrasAutorizadas);
+
+            if (obraLocal) {
+              aplicarObraNoFormulario(obraLocal);
+            }
+          }
+        } catch {
+          obrasNormalizadas = [];
+
+          if (!cancelado) {
+            setObras([]);
+          }
         }
 
         const { data: obraSupabase, error: erroObraSupabase } = await supabase
           .from("obras")
           .select("*")
           .eq("id", obraIdParam)
-          .eq("user_id", dadosUsuario.user.id)
+          .eq("user_id", userId)
           .maybeSingle();
 
         if (erroObraSupabase) {
@@ -961,7 +993,11 @@ export default function EditarObraPage() {
           );
         }
 
-        const obraLocal = obrasNormalizadas.find(
+        const obrasAutorizadas = obrasNormalizadas.filter((obra) =>
+          usuarioPodeEditarObraLocal(obra, userId)
+        );
+
+        const obraLocal = obrasAutorizadas.find(
           (obra) => obra.id === obraIdParam
         );
         const obraNormalizadaSupabase = normalizarObraSupabase(
@@ -975,7 +1011,7 @@ export default function EditarObraPage() {
 
         const obrasAtualizadas = [
           obraNormalizadaSupabase,
-          ...obrasNormalizadas.filter((obra) => obra.id !== obraIdParam),
+          ...obrasAutorizadas.filter((obra) => obra.id !== obraIdParam),
         ];
 
         sincronizarBackupArquivosObras(obrasAtualizadas);
@@ -999,7 +1035,7 @@ export default function EditarObraPage() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [router]);
 
   const obraAtual = useMemo(() => {
     return obras.find((obra) => obra.id === obraId) || null;
@@ -1335,8 +1371,25 @@ export default function EditarObraPage() {
     const agora = new Date().toISOString();
 
     try {
+      const { data: dadosUsuario, error: erroUsuario } =
+        await supabase.auth.getUser();
+
+      const userId = dadosUsuario.user?.id || "";
+
+      if (erroUsuario || !userId || !obraId) {
+        setErro("Entre na sua conta antes de editar a obra.");
+        router.replace(criarLoginHrefEditarObra(obraId));
+        return;
+      }
+
       const backupArquivosObras = carregarBackupArquivosObras();
       const obraLocalAtual = obras.find((obra) => obra.id === obraId) || null;
+
+      if (obraLocalAtual?.autorId && obraLocalAtual.autorId !== userId) {
+        setErro("Você não tem permissão para editar esta obra.");
+        setSalvou(false);
+        return;
+      }
 
       let capaFinal = capa;
       let capaNomeFinal = capaNome;
@@ -1352,63 +1405,56 @@ export default function EditarObraPage() {
             null;
 
       try {
-        const { data: dadosUsuario, error: erroUsuario } =
-          await supabase.auth.getUser();
+        if (capaArquivo) {
+          capaFinal = await enviarArquivoStorage("capas-obras", userId, capaArquivo);
+          capaNomeFinal = capaArquivo.name;
+        }
 
-        if (!erroUsuario && dadosUsuario.user && obraId) {
-          const userId = dadosUsuario.user.id;
+        if (arquivoObraArquivo && arquivoObra) {
+          const arquivoUrl = await enviarArquivoStorage(
+            "arquivos-obras",
+            userId,
+            arquivoObraArquivo
+          );
 
-          if (capaArquivo) {
-            capaFinal = await enviarArquivoStorage("capas-obras", userId, capaArquivo);
-            capaNomeFinal = capaArquivo.name;
-          }
+          arquivoObraFinal = {
+            ...arquivoObra,
+            nome: arquivoObraArquivo.name,
+            tipo: arquivoObraArquivo.type || arquivoObra.tipo,
+            tamanho: arquivoObraArquivo.size,
+            conteudo: arquivoUrl,
+            categoria: identificarCategoriaArquivo(arquivoObraArquivo),
+            criadoEm: arquivoObra.criadoEm || agora,
+          };
+        }
 
-          if (arquivoObraArquivo && arquivoObra) {
-            const arquivoUrl = await enviarArquivoStorage(
-              "arquivos-obras",
-              userId,
-              arquivoObraArquivo
-            );
+        const { error: erroAtualizarObra } = await supabase
+          .from("obras")
+          .update({
+            titulo: tituloFinal,
+            autor: autorFinal,
+            genero: generoFinalSalvo,
+            formato: formatoFinalSalvo,
+            classificacao_indicativa: classificacaoFinal,
+            sinopse: sinopseFinal,
+            tags: tagsFinais,
+            capa_url: capaFinal,
+            capa_nome: capaNomeFinal,
+            arquivo_url: arquivoObraFinal?.conteudo || "",
+            arquivo_nome: arquivoObraFinal?.nome || "",
+            arquivo_tipo: arquivoObraFinal?.tipo || "",
+            arquivo_tamanho: arquivoObraFinal?.tamanho || 0,
+            arquivo_categoria: arquivoObraFinal?.categoria || "outro",
+            atualizado_em: agora,
+          })
+          .eq("id", obraId)
+          .eq("user_id", userId);
 
-            arquivoObraFinal = {
-              ...arquivoObra,
-              nome: arquivoObraArquivo.name,
-              tipo: arquivoObraArquivo.type || arquivoObra.tipo,
-              tamanho: arquivoObraArquivo.size,
-              conteudo: arquivoUrl,
-              categoria: identificarCategoriaArquivo(arquivoObraArquivo),
-              criadoEm: arquivoObra.criadoEm || agora,
-            };
-          }
-
-          const { error: erroAtualizarObra } = await supabase
-            .from("obras")
-            .update({
-              titulo: tituloFinal,
-              autor: autorFinal,
-              genero: generoFinalSalvo,
-              formato: formatoFinalSalvo,
-              classificacao_indicativa: classificacaoFinal,
-              sinopse: sinopseFinal,
-              tags: tagsFinais,
-              capa_url: capaFinal,
-              capa_nome: capaNomeFinal,
-              arquivo_url: arquivoObraFinal?.conteudo || "",
-              arquivo_nome: arquivoObraFinal?.nome || "",
-              arquivo_tipo: arquivoObraFinal?.tipo || "",
-              arquivo_tamanho: arquivoObraFinal?.tamanho || 0,
-              arquivo_categoria: arquivoObraFinal?.categoria || "outro",
-              atualizado_em: agora,
-            })
-            .eq("id", obraId)
-            .eq("user_id", userId);
-
-          if (erroAtualizarObra) {
-            console.warn(
-              "A obra foi salva no navegador, mas não atualizou no Supabase:",
-              erroAtualizarObra.message
-            );
-          }
+        if (erroAtualizarObra) {
+          console.warn(
+            "A obra foi salva no navegador, mas não atualizou no Supabase:",
+            erroAtualizarObra.message
+          );
         }
       } catch (erroSupabase) {
         console.warn(
@@ -1478,7 +1524,15 @@ export default function EditarObraPage() {
         <style>{`${historietasThemeCss}${editarObraPageCss}`}</style>
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-        <section style={isDesktop ? desktopContainerStyle : containerStyle} />
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <div style={emptyBoxStyle}>
+            <h1 style={emptyTitleStyle}>Verificando acesso...</h1>
+
+            <p style={emptyTextStyle}>
+              Confirmando sua conta antes de abrir a edição da obra.
+            </p>
+          </div>
+        </section>
       </main>
     );
   }

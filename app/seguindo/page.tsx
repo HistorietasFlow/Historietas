@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -164,6 +165,42 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefSeguindo() {
+  const params = new URLSearchParams({
+    redirectTo: "/seguindo",
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapitulo(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capitulo: CapituloLocal,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
 function criarHrefPerfilAutorSeguindo(nomeAutor: string, autorId?: string) {
@@ -897,6 +934,7 @@ async function sincronizarObraUsuarioSupabase(
 }
 
 export default function SeguindoPage() {
+  const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasSeguidas, setObrasSeguidas] = useState<string[]>([]);
   const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
@@ -909,6 +947,8 @@ export default function SeguindoPage() {
   const [ordenacao, setOrdenacao] =
     useState<OrdenacaoSeguindo>("recentes");
   const [isDesktop, setIsDesktop] = useState(false);
+  const [verificandoAcesso, setVerificandoAcesso] = useState(true);
+  const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -936,8 +976,43 @@ export default function SeguindoPage() {
   }, []);
 
   useEffect(() => {
+    let cancelado = false;
+
+    async function verificarAcesso() {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data.user?.id || "";
+
+        if (!userId) {
+          router.replace(criarLoginHrefSeguindo());
+          return;
+        }
+
+        if (!cancelado) {
+          setUsuarioLogadoId(userId);
+          setVerificandoAcesso(false);
+        }
+      } catch {
+        if (!cancelado) {
+          router.replace(criarLoginHrefSeguindo());
+        }
+      }
+    }
+
+    void verificarAcesso();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (!usuarioLogadoId) {
+      return;
+    }
+
     void carregarDadosSeguindo();
-  }, []);
+  }, [usuarioLogadoId]);
 
   async function carregarDadosSeguindo() {
     setCarregando(true);
@@ -1340,6 +1415,28 @@ export default function SeguindoPage() {
     );
   }
 
+  if (verificandoAcesso) {
+    return (
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${seguindoPageCss}`}</style>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <div style={emptyBoxStyle}>
+            <h2 style={emptyTitleStyle}>Verificando acesso...</h2>
+
+            <p style={emptyTextStyle}>
+              Aguarde enquanto confirmamos sua sessão.
+            </p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${seguindoPageCss}`}</style>
@@ -1561,8 +1658,21 @@ export default function SeguindoPage() {
                     const primeiroCapitulo = obra.capitulos[0] || null;
                     const capituloDeLeitura =
                       capituloParaContinuar || primeiroCapitulo;
+                    const indiceCapituloDeLeitura = capituloDeLeitura
+                      ? obra.capitulos.findIndex(
+                          (capitulo) => capitulo.id === capituloDeLeitura.id
+                        )
+                      : -1;
+                    const numeroCapituloDeLeitura =
+                      indiceCapituloDeLeitura >= 0
+                        ? indiceCapituloDeLeitura + 1
+                        : 1;
                     const leituraHref = capituloDeLeitura
-                      ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capituloDeLeitura.id}`
+                      ? criarHrefLeituraCapitulo(
+                          obra,
+                          capituloDeLeitura,
+                          numeroCapituloDeLeitura
+                        )
                       : "";
 
                     const progressoLeitura = calcularProgressoLeitura(

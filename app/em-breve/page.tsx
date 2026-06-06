@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { obras } from "../data/obras";
+import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 
 const SAVED_RELEASES_STORAGE_KEY = "historietas-lancamentos-salvos";
@@ -32,6 +34,22 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefEmBreve() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/em-breve";
+  const destinoSeguro =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/em-breve";
+  const params = new URLSearchParams({
+    redirectTo: destinoSeguro,
+  });
+
+  return `/login?${params.toString()}`;
 }
 
 function encontrarObraPorTitulo(titulo: string) {
@@ -63,8 +81,10 @@ function criarLinkObra(titulo: string) {
 }
 
 export default function EmBrevePage() {
+  const router = useRouter();
   const [nomeObra, setNomeObra] = useState("");
   const [obrasSalvas, setObrasSalvas] = useState<string[]>([]);
+  const [avisoAcesso, setAvisoAcesso] = useState("");
   const [desktopLayout, setDesktopLayout] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -84,31 +104,56 @@ export default function EmBrevePage() {
   }, []);
 
   useEffect(() => {
-    const parametros = new URLSearchParams(window.location.search);
+    let componenteAtivo = true;
 
-    setNomeObra(pegarParametro(parametros.get("obra")));
+    async function carregarLancamentosSalvos() {
+      const parametros = new URLSearchParams(window.location.search);
 
-    try {
-      const salvasTexto = localStorage.getItem(SAVED_RELEASES_STORAGE_KEY);
-      const salvasJson: unknown = salvasTexto ? JSON.parse(salvasTexto) : [];
+      setNomeObra(pegarParametro(parametros.get("obra")));
 
-      const salvasNormalizadas = Array.isArray(salvasJson)
-        ? salvasJson.filter(
-            (obra): obra is string =>
-              typeof obra === "string" && Boolean(obra.trim())
-          )
-        : [];
+      try {
+        const { data } = await supabase.auth.getUser();
 
-      localStorage.setItem(
-        SAVED_RELEASES_STORAGE_KEY,
-        JSON.stringify(salvasNormalizadas)
-      );
+        if (!data.user) {
+          if (componenteAtivo) {
+            setObrasSalvas([]);
+          }
 
-      setObrasSalvas(salvasNormalizadas);
-    } catch {
-      localStorage.setItem(SAVED_RELEASES_STORAGE_KEY, JSON.stringify([]));
-      setObrasSalvas([]);
+          return;
+        }
+
+        const salvasTexto = localStorage.getItem(SAVED_RELEASES_STORAGE_KEY);
+        const salvasJson: unknown = salvasTexto ? JSON.parse(salvasTexto) : [];
+
+        const salvasNormalizadas = Array.isArray(salvasJson)
+          ? salvasJson.filter(
+              (obra): obra is string =>
+                typeof obra === "string" && Boolean(obra.trim())
+            )
+          : [];
+
+        localStorage.setItem(
+          SAVED_RELEASES_STORAGE_KEY,
+          JSON.stringify(salvasNormalizadas)
+        );
+
+        if (componenteAtivo) {
+          setObrasSalvas(salvasNormalizadas);
+        }
+      } catch {
+        localStorage.setItem(SAVED_RELEASES_STORAGE_KEY, JSON.stringify([]));
+
+        if (componenteAtivo) {
+          setObrasSalvas([]);
+        }
+      }
     }
+
+    void carregarLancamentosSalvos();
+
+    return () => {
+      componenteAtivo = false;
+    };
   }, []);
 
   const obraCatalogo = nomeObra ? encontrarObraPorTitulo(nomeObra) : null;
@@ -125,10 +170,26 @@ export default function EmBrevePage() {
     })
     .slice(0, 4);
 
-  function salvarLancamento(titulo: string) {
+  async function salvarLancamento(titulo: string) {
     const tituloNormalizado = normalizarTexto(titulo);
 
     if (!tituloNormalizado) {
+      return;
+    }
+
+    setAvisoAcesso("");
+
+    try {
+      const { data } = await supabase.auth.getUser();
+
+      if (!data.user) {
+        setAvisoAcesso("Entre na sua conta para ativar aviso de lançamento.");
+        router.push(criarLoginHrefEmBreve());
+        return;
+      }
+    } catch {
+      setAvisoAcesso("Não consegui confirmar sua conta agora. Tente novamente.");
+      router.push(criarLoginHrefEmBreve());
       return;
     }
 
@@ -173,6 +234,8 @@ export default function EmBrevePage() {
               desktopLayout ? desktopRelatedSectionStyle : relatedSectionStyle
             }
           >
+            {avisoAcesso && <p style={accessMessageStyle}>{avisoAcesso}</p>}
+
             <div style={desktopLayout ? desktopRelatedGridStyle : relatedGridStyle}>
               {outrasObrasEmBreve.map((obra) => {
                 const obraSalva = obrasSalvas.includes(
@@ -776,6 +839,17 @@ const savedMessageStyle: CSSProperties = {
   fontSize: "11px",
   lineHeight: 1.4,
   fontWeight: 800,
+  textAlign: "center",
+  maxWidth: "100%",
+  ...safeTextStyle,
+};
+
+const accessMessageStyle: CSSProperties = {
+  margin: "0 auto 10px",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "12px",
+  lineHeight: 1.4,
+  fontWeight: 850,
   textAlign: "center",
   maxWidth: "100%",
   ...safeTextStyle,

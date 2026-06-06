@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -122,6 +123,42 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefMinhasObras() {
+  const params = new URLSearchParams({
+    redirectTo: "/minhas-obras",
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapitulo(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capitulo: CapituloLocal,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
 function criarPerfilAutorHref(autor: string, autorId?: string) {
@@ -535,6 +572,8 @@ function criarDecoracaoMinhasObrasStyle(index: number): CSSProperties {
 }
 
 export default function MinhasObrasPage() {
+  const router = useRouter();
+
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
@@ -544,6 +583,8 @@ export default function MinhasObrasPage() {
     useState<OrdenacaoMinhasObras>("recentes");
   const [obraComLinkCopiado, setObraComLinkCopiado] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
+  const [verificandoAcesso, setVerificandoAcesso] = useState(true);
+  const [usuarioAutenticado, setUsuarioAutenticado] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
 
@@ -572,6 +613,46 @@ export default function MinhasObrasPage() {
   }, []);
 
   useEffect(() => {
+    let cancelado = false;
+
+    async function verificarAcesso() {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+
+        if (cancelado) {
+          return;
+        }
+
+        if (error || !data.user) {
+          setUsuarioAutenticado(false);
+          setVerificandoAcesso(false);
+          router.replace(criarLoginHrefMinhasObras());
+          return;
+        }
+
+        setUsuarioAutenticado(true);
+        setVerificandoAcesso(false);
+      } catch {
+        if (!cancelado) {
+          setUsuarioAutenticado(false);
+          setVerificandoAcesso(false);
+          router.replace(criarLoginHrefMinhasObras());
+        }
+      }
+    }
+
+    void verificarAcesso();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (!usuarioAutenticado) {
+      return;
+    }
+
     let cancelado = false;
 
     async function carregarObras() {
@@ -672,7 +753,7 @@ export default function MinhasObrasPage() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [usuarioAutenticado]);
 
   const totais = useMemo(() => {
     const totalCapitulos = obras.reduce(
@@ -873,32 +954,33 @@ export default function MinhasObrasPage() {
       return;
     }
 
-    const novasObras = obras.filter((obra) => obra.id !== obraId);
-    const novasObrasFavoritas = obrasFavoritas.filter((id) => id !== obraId);
-    const novasObrasConcluidas = obrasConcluidas.filter((id) => id !== obraId);
-
-    removerReferenciasDaObraExcluida(obraId);
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(novasObras));
-    localStorage.setItem(
-      FAVORITES_STORAGE_KEY,
-      JSON.stringify(novasObrasFavoritas)
-    );
-    localStorage.setItem(
-      COMPLETED_STORAGE_KEY,
-      JSON.stringify(novasObrasConcluidas)
-    );
-
-    setObras(novasObras);
-    setObrasFavoritas(novasObrasFavoritas);
-    setObrasConcluidas(novasObrasConcluidas);
-
     try {
       const { data: dadosUsuario } = await supabase.auth.getUser();
 
       if (!dadosUsuario.user) {
+        router.replace(criarLoginHrefMinhasObras());
         return;
       }
+
+      const novasObras = obras.filter((obra) => obra.id !== obraId);
+      const novasObrasFavoritas = obrasFavoritas.filter((id) => id !== obraId);
+      const novasObrasConcluidas = obrasConcluidas.filter((id) => id !== obraId);
+
+      removerReferenciasDaObraExcluida(obraId);
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(novasObras));
+      localStorage.setItem(
+        FAVORITES_STORAGE_KEY,
+        JSON.stringify(novasObrasFavoritas)
+      );
+      localStorage.setItem(
+        COMPLETED_STORAGE_KEY,
+        JSON.stringify(novasObrasConcluidas)
+      );
+
+      setObras(novasObras);
+      setObrasFavoritas(novasObrasFavoritas);
+      setObrasConcluidas(novasObrasConcluidas);
 
       const { error } = await supabase
         .from("obras")
@@ -910,8 +992,29 @@ export default function MinhasObrasPage() {
         console.warn("Não consegui concluir a exclusão remota:", error.message);
       }
     } catch {
-      // A exclusão local já aconteceu. O banco será ajustado depois, se necessário.
+      router.replace(criarLoginHrefMinhasObras());
     }
+  }
+
+  if (verificandoAcesso || !usuarioAutenticado) {
+    return (
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${minhasObrasPageCss}`}</style>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <section style={emptyBoxStyle}>
+            <h3 style={emptyTitleStyle}>Verificando acesso...</h3>
+
+            <p style={emptyTextStyle}>
+              Conferindo sua sessão antes de carregar suas obras.
+            </p>
+          </section>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -1104,8 +1207,19 @@ export default function MinhasObrasPage() {
                   obra.autorId
                 );
 
+                const indiceCapituloDestaque = capituloDestaque
+                  ? obra.capitulos.findIndex(
+                      (capitulo) => capitulo.id === capituloDestaque.id
+                    )
+                  : -1;
+                const numeroCapituloDestaque =
+                  indiceCapituloDestaque >= 0 ? indiceCapituloDestaque + 1 : 1;
                 const capituloDestaqueHref = capituloDestaque
-                  ? `/ler-capitulo?obraId=${obra.id}&capituloId=${capituloDestaque.id}`
+                  ? criarHrefLeituraCapitulo(
+                      obra,
+                      capituloDestaque,
+                      numeroCapituloDestaque
+                    )
                   : "";
 
                 return (

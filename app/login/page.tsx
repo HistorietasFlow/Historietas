@@ -38,6 +38,34 @@ function formatarErroAuth(mensagem: string) {
   return "Não foi possível concluir agora. Confira os dados e tente novamente.";
 }
 
+function obterRedirectToSeguro(valor: string | null, fallback: string) {
+  const destino = typeof valor === "string" ? valor.trim() : "";
+
+  if (!destino) {
+    return fallback;
+  }
+
+  if (!destino.startsWith("/") || destino.startsWith("//")) {
+    return fallback;
+  }
+
+  if (destino === "/login" || destino.startsWith("/login?")) {
+    return fallback;
+  }
+
+  return destino;
+}
+
+function obterRedirectToAtual(fallback: string) {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  return obterRedirectToSeguro(params.get("redirectTo"), fallback);
+}
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -52,6 +80,29 @@ export default function LoginPage() {
   const criandoConta = modo === "criar";
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+
+  useEffect(() => {
+    let componenteAtivo = true;
+
+    async function redirecionarUsuarioJaLogado() {
+      try {
+        const { data } = await supabase.auth.getUser();
+
+        if (componenteAtivo && data.user) {
+          router.replace(obterRedirectToAtual("/"));
+          router.refresh();
+        }
+      } catch {
+        // A página de login deve continuar acessível se a verificação falhar.
+      }
+    }
+
+    void redirecionarUsuarioJaLogado();
+
+    return () => {
+      componenteAtivo = false;
+    };
+  }, [router]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -168,7 +219,8 @@ export default function LoginPage() {
         if (data.user && data.session) {
           await salvarProfile(data.user.id, nome);
           setMensagem("Conta criada com sucesso. Redirecionando...");
-          router.push("/painel-autor");
+          router.replace(obterRedirectToAtual("/painel-autor"));
+          router.refresh();
           return;
         }
 
@@ -194,7 +246,8 @@ export default function LoginPage() {
       }
 
       setMensagem("Entrada realizada. Redirecionando...");
-      router.push("/painel-autor");
+      router.replace(obterRedirectToAtual("/painel-autor"));
+      router.refresh();
     } catch {
       setErro("Não foi possível concluir agora. Tente novamente.");
     } finally {

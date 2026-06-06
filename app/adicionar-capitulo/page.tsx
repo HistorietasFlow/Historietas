@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ChangeEvent, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -152,6 +153,46 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefAdicionarCapitulo(obraId?: string) {
+  const obraIdLimpo = obraId?.trim() || "";
+  const redirectTo = obraIdLimpo
+    ? `/adicionar-capitulo?obraId=${encodeURIComponent(obraIdLimpo)}`
+    : "/adicionar-capitulo";
+  const params = new URLSearchParams({
+    redirectTo,
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapitulo(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capitulo: Pick<CapituloLocal, "id">,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
 function calcularEstatisticasCapitulo(
@@ -653,7 +694,7 @@ function criarNotificacaoNovoCapitulo(
     autor: obra.autor,
     capituloId: capitulo.id,
     capituloTitulo: `Capítulo ${numeroCapitulo}: ${capitulo.titulo}`,
-    href: `/ler-capitulo?obraId=${obra.id}&capituloId=${capitulo.id}`,
+    href: criarHrefLeituraCapitulo(obra, capitulo, numeroCapitulo),
     lida: false,
     criadaEm,
     obraPublicada: obra.publicado,
@@ -694,7 +735,10 @@ function salvarNotificacaoInterna(notificacao: NotificacaoLocal) {
 }
 
 export default function AdicionarCapituloPage() {
+  const router = useRouter();
+
   const [obraId, setObraId] = useState("");
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [titulo, setTitulo] = useState("");
@@ -736,28 +780,46 @@ export default function AdicionarCapituloPage() {
   }, []);
 
   useEffect(() => {
+    let cancelado = false;
+
     const params = new URLSearchParams(window.location.search);
     const obraIdParam = params.get("obraId") || "";
 
     setObraId(obraIdParam);
 
     async function carregarDados() {
-      let obrasLocais: ObraLocal[] = [];
-
-      try {
-        obrasLocais = carregarObrasLocais();
-      } catch {
-        obrasLocais = [];
-      }
-
-      let obrasFinais = obrasLocais;
-
       try {
         const {
           data: { user },
+          error: erroUsuario,
         } = await supabase.auth.getUser();
 
-        if (user) {
+        if (cancelado) {
+          return;
+        }
+
+        if (erroUsuario || !user) {
+          setUsuarioIdLogado("");
+          setCarregando(false);
+          router.replace(criarLoginHrefAdicionarCapitulo(obraIdParam));
+          return;
+        }
+
+        setUsuarioIdLogado(user.id);
+
+        let obrasLocais: ObraLocal[] = [];
+
+        try {
+          obrasLocais = carregarObrasLocais().filter((obra) => {
+            return !obra.autorId || obra.autorId === user.id;
+          });
+        } catch {
+          obrasLocais = [];
+        }
+
+        let obrasFinais = obrasLocais;
+
+        try {
           const { data, error } = await supabase
             .from("obras")
             .select("*, capitulos (*)")
@@ -781,17 +843,34 @@ export default function AdicionarCapituloPage() {
             sincronizarBackupArquivosObras(obrasFinais);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasFinais));
           }
+        } catch {
+          // Se o Supabase falhar, mantém somente as obras locais do usuário logado.
         }
-      } catch {
-        // Se o Supabase falhar, mantém o backup local funcionando.
-      }
 
-      setObras(obrasFinais);
-      setCarregando(false);
+        if (cancelado) {
+          return;
+        }
+
+        setObras(obrasFinais);
+        setCarregando(false);
+      } catch {
+        if (cancelado) {
+          return;
+        }
+
+        setUsuarioIdLogado("");
+        setObras([]);
+        setCarregando(false);
+        router.replace(criarLoginHrefAdicionarCapitulo(obraIdParam));
+      }
     }
 
     carregarDados();
-  }, []);
+
+    return () => {
+      cancelado = true;
+    };
+  }, [router]);
 
   const obraAtual = useMemo(() => {
     return obras.find((obra) => obra.id === obraId) || null;
@@ -952,53 +1031,73 @@ export default function AdicionarCapituloPage() {
     setProcessando(true);
     setErro("");
 
-    const criadoEm = new Date().toISOString();
-    const tituloFinal = titulo.trim() || `Capítulo ${obraAtual.capitulos.length + 1}`;
-    const textoFinal = texto.trim();
-
-    let novoCapitulo: CapituloLocal = {
-      id: criarId(),
-      titulo: tituloFinal,
-      texto: textoFinal,
-      curtiu: false,
-      salvo: false,
-      comentario: "",
-      criadoEm,
-      lido: false,
-      lidoEm: "",
-    };
-
     try {
+      const {
+        data: { user },
+        error: erroUsuario,
+      } = await supabase.auth.getUser();
+
+      if (erroUsuario || !user) {
+        setProcessando(false);
+        router.replace(criarLoginHrefAdicionarCapitulo(obraAtual.id || obraId));
+        return;
+      }
+
+      if (obraAtual.autorId && obraAtual.autorId !== user.id) {
+        setProcessando(false);
+        setErro("Você não tem permissão para adicionar capítulo nesta obra.");
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+
+        return;
+      }
+
+      const criadoEm = new Date().toISOString();
+      const tituloFinal =
+        titulo.trim() || `Capítulo ${obraAtual.capitulos.length + 1}`;
+      const textoFinal = texto.trim();
+
+      let novoCapitulo: CapituloLocal = {
+        id: criarId(),
+        titulo: tituloFinal,
+        texto: textoFinal,
+        curtiu: false,
+        salvo: false,
+        comentario: "",
+        criadoEm,
+        lido: false,
+        lidoEm: "",
+      };
+
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+          .from("capitulos")
+          .insert({
+            obra_id: obraAtual.id,
+            user_id: user.id,
+            titulo: tituloFinal,
+            texto: textoFinal,
+            ordem: obraAtual.capitulos.length + 1,
+            publicado: true,
+          })
+          .select("id, criado_em")
+          .single();
 
-        if (user) {
-          const { data, error } = await supabase
-            .from("capitulos")
-            .insert({
-              obra_id: obraAtual.id,
-              user_id: user.id,
-              titulo: tituloFinal,
-              texto: textoFinal,
-              ordem: obraAtual.capitulos.length + 1,
-              publicado: true,
-            })
-            .select("id, criado_em")
-            .single();
-
-          if (!error && data?.id) {
-            novoCapitulo = {
-              ...novoCapitulo,
-              id: data.id,
-              criadoEm:
-                typeof data.criado_em === "string" ? data.criado_em : criadoEm,
-            };
-          }
+        if (error) {
+          console.warn("Não consegui salvar capítulo no Supabase:", error.message);
+        } else if (data?.id) {
+          novoCapitulo = {
+            ...novoCapitulo,
+            id: data.id,
+            criadoEm:
+              typeof data.criado_em === "string" ? data.criado_em : criadoEm,
+          };
         }
       } catch {
-        // Se o Supabase falhar, mantém o salvamento local como backup.
+        // Se o Supabase falhar, mantém o salvamento local como backup do autor logado.
       }
 
       const novaNotificacao = criarNotificacaoNovoCapitulo(
@@ -1017,6 +1116,7 @@ export default function AdicionarCapituloPage() {
 
         return {
           ...obra,
+          autorId: obra.autorId || usuarioIdLogado || user.id,
           capitulos: capitulosAtualizados,
           progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
         };
@@ -1047,7 +1147,24 @@ export default function AdicionarCapituloPage() {
   }
 
   if (carregando) {
-    return null;
+    return (
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${adicionarCapituloPageCss}`}</style>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <div style={emptyBoxStyle}>
+            <h1 style={emptyTitleStyle}>Verificando acesso...</h1>
+
+            <p style={emptyTextStyle}>
+              Aguarde enquanto confirmamos sua conta.
+            </p>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   if (!obraAtual) {
@@ -1077,7 +1194,11 @@ export default function AdicionarCapituloPage() {
 
   const minhaObraHref = `/minha-obra?obraId=${obraAtual.id}`;
   const capituloCriadoHref = capituloCriado
-    ? `/ler-capitulo?obraId=${obraAtual.id}&capituloId=${capituloCriado.id}`
+    ? criarHrefLeituraCapitulo(
+        obraAtual,
+        capituloCriado,
+        obraAtual.capitulos.length
+      )
     : "";
 
   const mostrarPainelLateral =

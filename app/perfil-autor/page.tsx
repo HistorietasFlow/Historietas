@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -93,6 +94,22 @@ function criarChaveAutorPerfil(autorId: string, nomeAutor: string) {
   return autorId.trim().toLowerCase() || normalizarNomeAutor(nomeAutor);
 }
 
+function criarLoginHrefPerfilAutor() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/perfil-autor";
+  const destinoSeguro =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/perfil-autor";
+  const params = new URLSearchParams({
+    redirectTo: destinoSeguro,
+  });
+
+  return `/login?${params.toString()}`;
+}
+
 function normalizarTexto(texto: string) {
   return texto
     .trim()
@@ -109,6 +126,34 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapituloPerfilAutor(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capitulo: Pick<CapituloLocal, "id">,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
 function formatarGeneroPerfilAutor(genero: string) {
@@ -889,6 +934,7 @@ async function sincronizarAutorSeguidoSupabase(autor: string, ativo: boolean) {
 }
 
 export default function PerfilAutorPage() {
+  const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [autorSelecionado, setAutorSelecionado] = useState("");
   const [autorIdSelecionado, setAutorIdSelecionado] = useState("");
@@ -898,6 +944,7 @@ export default function PerfilAutorPage() {
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
   const [avatarErro, setAvatarErro] = useState("");
+  const [mensagemAcao, setMensagemAcao] = useState("");
   const [podeEditarPerfil, setPodeEditarPerfil] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [buscaObras, setBuscaObras] = useState("");
@@ -1321,6 +1368,21 @@ export default function PerfilAutorPage() {
     ? `${comunidadeAutorHref}&tipo=Review`
     : "/comunidade?tipo=Review";
 
+  async function usuarioEstaLogado() {
+    try {
+      const { data } = await supabase.auth.getUser();
+
+      return Boolean(data.user);
+    } catch {
+      return false;
+    }
+  }
+
+  function avisarLoginNecessario(mensagem: string) {
+    setMensagemAcao(mensagem);
+    router.push(criarLoginHrefPerfilAutor());
+  }
+
   function limparFiltrosObras() {
     setBuscaObras("");
     setFiltroObras("todas");
@@ -1412,8 +1474,17 @@ export default function PerfilAutorPage() {
     }
   }
 
-  function alternarSeguirAutor() {
+  async function alternarSeguirAutor() {
     if (!perfilParaMostrar) {
+      return;
+    }
+
+    setMensagemAcao("");
+
+    const logado = await usuarioEstaLogado();
+
+    if (!logado) {
+      avisarLoginNecessario("Entre na sua conta para seguir autores.");
       return;
     }
 
@@ -1440,7 +1511,16 @@ export default function PerfilAutorPage() {
     void sincronizarAutorSeguidoSupabase(autorNormalizado, proximoEstadoSeguindo);
   }
 
-  function alternarFavoritoObra(obraId: string) {
+  async function alternarFavoritoObra(obraId: string) {
+    setMensagemAcao("");
+
+    const logado = await usuarioEstaLogado();
+
+    if (!logado) {
+      avisarLoginNecessario("Entre na sua conta para adicionar obras à lista.");
+      return;
+    }
+
     const proximoEstadoFavorito = !obrasFavoritas.includes(obraId);
 
     const novasObrasFavoritas = proximoEstadoFavorito
@@ -1456,7 +1536,16 @@ export default function PerfilAutorPage() {
     void sincronizarTabelaUsuario("favoritos", "obra_id", obraId, proximoEstadoFavorito);
   }
 
-  function alternarConcluidoObra(obraId: string) {
+  async function alternarConcluidoObra(obraId: string) {
+    setMensagemAcao("");
+
+    const logado = await usuarioEstaLogado();
+
+    if (!logado) {
+      avisarLoginNecessario("Entre na sua conta para concluir obras.");
+      return;
+    }
+
     const proximoEstadoConcluido = !obrasConcluidas.includes(obraId);
 
     const novasObrasConcluidas = proximoEstadoConcluido
@@ -1562,12 +1651,14 @@ export default function PerfilAutorPage() {
 
           <button
             type="button"
-            onClick={alternarSeguirAutor}
+            onClick={() => void alternarSeguirAutor()}
             style={seguindoAutor ? headerFollowingButtonStyle : headerFollowButtonStyle}
           >
             {seguindoAutor ? "Seguindo" : "Seguir autor"}
           </button>
         </header>
+
+        {mensagemAcao && <span style={actionMessageStyle}>{mensagemAcao}</span>}
 
         <section style={heroAtualStyle}>
           <div style={authorTopRowAtualStyle}>
@@ -1813,8 +1904,17 @@ export default function PerfilAutorPage() {
                   encontrarCapituloParaContinuar(obra) ||
                   obra.capitulos[obra.capitulos.length - 1] ||
                   null;
+                const numeroUltimoCapitulo = ultimoCapitulo
+                  ? obra.capitulos.findIndex(
+                      (capitulo) => capitulo.id === ultimoCapitulo.id
+                    ) + 1
+                  : 0;
                 const capituloHref = ultimoCapitulo
-                  ? `/ler-capitulo?obraId=${obra.id}&capituloId=${ultimoCapitulo.id}`
+                  ? criarHrefLeituraCapituloPerfilAutor(
+                      obra,
+                      ultimoCapitulo,
+                      numeroUltimoCapitulo || 1
+                    )
                   : "";
                 const obraFavorita = obrasFavoritas.includes(obra.id);
                 const obraConcluida = obrasConcluidas.includes(obra.id);
@@ -1917,7 +2017,7 @@ export default function PerfilAutorPage() {
 
                         <button
                           type="button"
-                          onClick={() => alternarFavoritoObra(obra.id)}
+                          onClick={() => void alternarFavoritoObra(obra.id)}
                           style={
                             obraFavorita
                               ? smallButtonActiveStyle
@@ -1929,7 +2029,7 @@ export default function PerfilAutorPage() {
 
                         <button
                           type="button"
-                          onClick={() => alternarConcluidoObra(obra.id)}
+                          onClick={() => void alternarConcluidoObra(obra.id)}
                           style={
                             obraConcluida
                               ? smallButtonActiveStyle
@@ -2210,6 +2310,20 @@ const avatarErrorStyle: CSSProperties = {
   color: "#FCA5A5",
   fontSize: "10px",
   fontWeight: 800,
+  ...safeTextStyle,
+};
+
+const actionMessageStyle: CSSProperties = {
+  display: "block",
+  margin: "0 0 12px",
+  padding: "10px 12px",
+  borderRadius: "16px",
+  background: "rgba(249,115,22,0.10)",
+  border: "1px solid rgba(249,115,22,0.22)",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "12px",
+  fontWeight: 850,
+  textAlign: "center",
   ...safeTextStyle,
 };
 

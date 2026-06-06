@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useEffect, useMemo, useState } from "react";
@@ -80,6 +81,42 @@ function criarSlugBase(titulo: string) {
     .replace(/^-|-$/g, "");
 
   return slug || "obra";
+}
+
+function criarLoginHrefNotificacoes() {
+  const params = new URLSearchParams({
+    redirectTo: "/notificacoes",
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+function idObraSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefLeituraCapitulo(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capituloId: string,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capituloId)}`;
 }
 
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
@@ -383,7 +420,28 @@ function linkDiretoValido(link: string) {
   return link.startsWith("/") || link.startsWith("http://") || link.startsWith("https://");
 }
 
-function montarLinkNotificacao(notificacao: NotificacaoLocal) {
+function montarLinkNotificacao(
+  notificacao: NotificacaoLocal,
+  obra?: ObraLocal | null
+) {
+  if (
+    notificacao.tipo === "novo-capitulo" &&
+    obra &&
+    notificacao.obraId &&
+    notificacao.capituloId
+  ) {
+    const indiceCapitulo = obra.capitulos.findIndex(
+      (capitulo) => capitulo.id === notificacao.capituloId
+    );
+    const numeroCapitulo = indiceCapitulo >= 0 ? indiceCapitulo + 1 : 1;
+
+    return criarHrefLeituraCapitulo(
+      obra,
+      notificacao.capituloId,
+      numeroCapitulo
+    );
+  }
+
   const linkDireto = notificacao.link.trim();
 
   if (linkDireto && linkDiretoValido(linkDireto)) {
@@ -856,16 +914,14 @@ function criarNotificacoesDeCapitulos(
       return;
     }
 
-    obra.capitulos.forEach((capitulo) => {
+    obra.capitulos.forEach((capitulo, index) => {
       const id = `capitulo-${obra.id}-${capitulo.id}`;
 
       notificacoesCriadas.push({
         id,
         obraId: obra.id,
         capituloId: capitulo.id,
-        link: `/ler-capitulo?obraId=${encodeURIComponent(obra.id)}&capituloId=${encodeURIComponent(
-          capitulo.id
-        )}`,
+        link: criarHrefLeituraCapitulo(obra, capitulo.id, index + 1),
         titulo: "Novo capítulo publicado",
         mensagem: `${capitulo.titulo} chegou em ${obra.titulo}.`,
         tipo: "novo-capitulo",
@@ -1071,6 +1127,7 @@ async function apagarNotificacaoSupabase(notificacao: NotificacaoLocal) {
 }
 
 export default function NotificacoesPage() {
+  const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [notificacoes, setNotificacoes] = useState<NotificacaoLocal[]>([]);
   const [busca, setBusca] = useState("");
@@ -1109,57 +1166,83 @@ export default function NotificacoesPage() {
     let componenteAtivo = true;
 
     async function carregarDados() {
-      const obrasLocais = carregarObras();
-      const notificacoesLocais = carregarNotificacoes();
-      const obrasSupabase = await carregarObrasPublicadasSupabase();
-      const estadoSupabase = await carregarEstadoSupabaseNotificacoes();
-      const usuarioAtualId = estadoSupabase?.userId || "anon";
-      const idsNotificacoesApagadas = carregarIdsNotificacoesApagadas(usuarioAtualId);
-      const notificacoesLocaisFiltradas = notificacoesLocais.filter(
-        (notificacao) => !notificacaoEhComunidade(notificacao)
-      );
-      const obrasMescladas = mesclarObrasPorIdSlug(obrasLocais, obrasSupabase);
-      const obrasSeguidasLocais = lerIdsLocalStorage(CHAVE_OBRAS_SEGUIDAS);
-      const obrasSeguidasIds = Array.from(
-        new Set([
-          ...obrasSeguidasLocais,
-          ...(estadoSupabase?.obrasSeguidasIds || []),
-        ])
-      );
-      const notificacoesCapitulosSupabase = criarNotificacoesDeCapitulos(
-        obrasMescladas,
-        obrasSeguidasIds,
-        estadoSupabase?.notificacoesLidasIds || []
-      );
-      const notificacoesComunidadeSupabase = estadoSupabase?.userId
-        ? await carregarNotificacoesComunidadeSupabase(
-            estadoSupabase.userId,
-            estadoSupabase.notificacoesLidasIds
-          )
-        : [];
-      const notificacoesMescladas = filtrarNotificacoesApagadas(
-        mesclarNotificacoes(notificacoesLocaisFiltradas, [
-          ...notificacoesCapitulosSupabase,
-          ...notificacoesComunidadeSupabase,
-        ]),
-        idsNotificacoesApagadas
-      );
+      let manterCarregando = false;
 
       try {
-        localStorage.setItem(CHAVE_OBRAS, JSON.stringify(obrasMescladas));
-        salvarNotificacoes(notificacoesMescladas);
+        const { data: dadosUsuario, error: erroUsuario } =
+          await supabase.auth.getUser();
+
+        if (!componenteAtivo) {
+          return;
+        }
+
+        if (erroUsuario || !dadosUsuario.user) {
+          manterCarregando = true;
+          router.replace(criarLoginHrefNotificacoes());
+          return;
+        }
+
+        const usuarioAtualId = dadosUsuario.user.id;
+        const obrasLocais = carregarObras();
+        const notificacoesLocais = carregarNotificacoes();
+        const obrasSupabase = await carregarObrasPublicadasSupabase();
+        const estadoSupabase = await carregarEstadoSupabaseNotificacoes();
+        const idsNotificacoesApagadas =
+          carregarIdsNotificacoesApagadas(usuarioAtualId);
+        const notificacoesLocaisFiltradas = notificacoesLocais.filter(
+          (notificacao) => !notificacaoEhComunidade(notificacao)
+        );
+        const obrasMescladas = mesclarObrasPorIdSlug(obrasLocais, obrasSupabase);
+        const obrasSeguidasLocais = lerIdsLocalStorage(CHAVE_OBRAS_SEGUIDAS);
+        const obrasSeguidasIds = Array.from(
+          new Set([
+            ...obrasSeguidasLocais,
+            ...(estadoSupabase?.obrasSeguidasIds || []),
+          ])
+        );
+        const notificacoesLidasIds = estadoSupabase?.notificacoesLidasIds || [];
+        const notificacoesCapitulosSupabase = criarNotificacoesDeCapitulos(
+          obrasMescladas,
+          obrasSeguidasIds,
+          notificacoesLidasIds
+        );
+        const notificacoesComunidadeSupabase =
+          await carregarNotificacoesComunidadeSupabase(
+            usuarioAtualId,
+            notificacoesLidasIds
+          );
+        const notificacoesMescladas = filtrarNotificacoesApagadas(
+          mesclarNotificacoes(notificacoesLocaisFiltradas, [
+            ...notificacoesCapitulosSupabase,
+            ...notificacoesComunidadeSupabase,
+          ]),
+          idsNotificacoesApagadas
+        );
+
+        try {
+          localStorage.setItem(CHAVE_OBRAS, JSON.stringify(obrasMescladas));
+          salvarNotificacoes(notificacoesMescladas);
+        } catch {
+          // Se o navegador bloquear localStorage, a página continua com o estado em memória.
+        }
+
+        if (!componenteAtivo) {
+          return;
+        }
+
+        setUsuarioNotificacoesId(usuarioAtualId);
+        setObras(obrasMescladas);
+        setNotificacoes(notificacoesMescladas);
       } catch {
-        // Se o navegador bloquear localStorage, a página continua com o estado em memória.
+        if (componenteAtivo) {
+          manterCarregando = true;
+          router.replace(criarLoginHrefNotificacoes());
+        }
+      } finally {
+        if (componenteAtivo && !manterCarregando) {
+          setCarregando(false);
+        }
       }
-
-      if (!componenteAtivo) {
-        return;
-      }
-
-      setUsuarioNotificacoesId(usuarioAtualId);
-      setObras(obrasMescladas);
-      setNotificacoes(notificacoesMescladas);
-      setCarregando(false);
     }
 
     void carregarDados();
@@ -1167,7 +1250,7 @@ export default function NotificacoesPage() {
     return () => {
       componenteAtivo = false;
     };
-  }, []);
+  }, [router]);
 
   const obrasPorId = useMemo(() => {
     return new Map(obras.map((obra) => [obra.id, obra]));
@@ -1423,7 +1506,17 @@ export default function NotificacoesPage() {
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
-        <section style={isDesktop ? desktopContainerStyle : containerStyle} />
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <section style={isDesktop ? desktopEmptyStyle : emptyStyle}>
+            <span style={emptyIconStyle}>N</span>
+
+            <h2 style={emptyTitleStyle}>Verificando acesso...</h2>
+
+            <p style={emptyTextStyle}>
+              Aguarde enquanto confirmamos sua sessão.
+            </p>
+          </section>
+        </section>
       </main>
     );
   }
@@ -1684,7 +1777,7 @@ export default function NotificacoesPage() {
               const textoComentarioComunidade =
                 extrairTextoComentarioComunidade(notificacao);
 
-              const linkCapitulo = montarLinkNotificacao(notificacao);
+              const linkCapitulo = montarLinkNotificacao(notificacao, obra);
               const labelAcaoPrincipal = obterAcaoPrincipalNotificacao(notificacao);
 
               const cardVisualStyle = notificacao.lida

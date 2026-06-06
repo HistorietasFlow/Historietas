@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -699,7 +700,17 @@ async function copiarTexto(texto: string) {
   document.body.removeChild(campoTemporario);
 }
 
+function criarLoginHrefConfiguracoes() {
+  const params = new URLSearchParams({
+    redirectTo: "/configuracoes",
+  });
+
+  return `/login?${params.toString()}`;
+}
+
 export default function ConfiguracoesPage() {
+  const router = useRouter();
+  const [verificandoAcesso, setVerificandoAcesso] = useState(true);
   const [preferencias, setPreferencias] =
     useState<PreferenciasConta>(preferenciasPadrao);
   const [resumo, setResumo] = useState<ResumoLocal>(resumoPadrao);
@@ -708,6 +719,37 @@ export default function ConfiguracoesPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [adminLiberado, setAdminLiberado] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function verificarAcesso() {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+
+        if (cancelado) {
+          return;
+        }
+
+        if (error || !data.user) {
+          router.replace(criarLoginHrefConfiguracoes());
+          return;
+        }
+
+        setVerificandoAcesso(false);
+      } catch {
+        if (!cancelado) {
+          router.replace(criarLoginHrefConfiguracoes());
+        }
+      }
+    }
+
+    verificarAcesso();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [router]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 900px)");
@@ -725,15 +767,23 @@ export default function ConfiguracoesPage() {
   }, []);
 
   useEffect(() => {
+    if (verificandoAcesso) {
+      return;
+    }
+
     const preferenciasCarregadas = carregarPreferencias();
 
     setPreferencias(preferenciasCarregadas);
     aplicarTemaVisual(preferenciasCarregadas.temaVisual);
     setResumo(criarResumoLocal());
     setResumoAtualizadoEm(new Date().toLocaleTimeString("pt-BR"));
-  }, []);
+  }, [verificandoAcesso]);
 
   useEffect(() => {
+    if (verificandoAcesso) {
+      return;
+    }
+
     let cancelado = false;
 
     async function verificarAdmin() {
@@ -773,7 +823,7 @@ export default function ConfiguracoesPage() {
       cancelado = true;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [verificandoAcesso]);
 
   function atualizarPreferencia<K extends keyof PreferenciasConta>(
     campo: K,
@@ -852,6 +902,35 @@ export default function ConfiguracoesPage() {
     window.setTimeout(() => {
       setMensagem("");
     }, 1600);
+  }
+
+  async function sairDaConta() {
+    setMensagem("Saindo da conta...");
+
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      router.replace("/login");
+      router.refresh();
+    }
+  }
+
+  if (verificandoAcesso) {
+    return (
+      <main style={pageThemeStyle}>
+        <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
+
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <div style={emptyAccessBoxStyle}>
+            <h1 style={emptyAccessTitleStyle}>Verificando acesso...</h1>
+            <p style={emptyAccessTextStyle}>Aguarde enquanto confirmo sua conta.</p>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -1013,6 +1092,10 @@ export default function ConfiguracoesPage() {
               style={secondaryButtonStyle}
             >
               Atualizar resumo
+            </button>
+
+            <button type="button" onClick={sairDaConta} style={dangerButtonStyle}>
+              Sair da conta
             </button>
           </div>
         </section>
@@ -1506,6 +1589,41 @@ const messageStyle: CSSProperties = {
   fontSize: "12px",
   fontWeight: 850,
   textAlign: "center",
+  ...safeTextStyle,
+};
+
+const emptyAccessBoxStyle: CSSProperties = {
+  marginTop: "24px",
+  borderRadius: "26px",
+  background:
+    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  padding: "22px",
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "hidden",
+  textAlign: "center",
+};
+
+const emptyAccessTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "28px",
+  lineHeight: 1.05,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  ...safeTextStyle,
+};
+
+const emptyAccessTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
+  lineHeight: 1.55,
+  fontWeight: 750,
   ...safeTextStyle,
 };
 
