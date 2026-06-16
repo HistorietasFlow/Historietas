@@ -106,6 +106,22 @@ type RegistroProgressoLeitura = {
   progresso?: unknown;
 };
 
+type PerfilComentarioLeitor = {
+  userId: string;
+  nome: string;
+  avatar: string;
+};
+
+type ComentarioCapituloPublico = {
+  id: string;
+  userId: string;
+  nome: string;
+  avatar: string;
+  texto: string;
+  criadoEm: string;
+  meuComentario: boolean;
+};
+
 type TamanhoFonte = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 type PreferenciasLeitura = {
@@ -754,9 +770,75 @@ function carregarObrasLocaisNormalizadas() {
   return obrasNormalizadas;
 }
 
+function obterAutorIdSeguro(obra: Pick<ObraLocal, "autorId">) {
+  return typeof obra.autorId === "string" ? obra.autorId.trim() : "";
+}
+
+function usuarioPodeAbrirObraNoLeitor(obra: ObraLocal, userId: string) {
+  const autorId = obterAutorIdSeguro(obra);
+
+  return obra.publicado || !autorId || Boolean(userId && autorId === userId);
+}
+
+function usuarioPodePersistirObraNoStorage(obra: ObraLocal, userId: string) {
+  const autorId = obterAutorIdSeguro(obra);
+
+  return !autorId || Boolean(userId && autorId === userId);
+}
+
+function salvarObrasPreservandoContas(
+  obrasAtualizadas: ObraLocal[],
+  userId: string
+) {
+  try {
+    const obrasAtuais = carregarObrasLocaisNormalizadas();
+    const obrasAtualizadasPorId = new Map(
+      obrasAtualizadas.map((obra, index) => [
+        obra.id,
+        normalizarObra(obra, index),
+      ])
+    );
+    const idsPersistidos = new Set<string>();
+
+    const obrasMescladas = obrasAtuais.map((obraAtual, index) => {
+      const obraNormalizada = normalizarObra(obraAtual, index);
+      const obraAtualizada = obrasAtualizadasPorId.get(obraNormalizada.id);
+
+      idsPersistidos.add(obraNormalizada.id);
+
+      if (!obraAtualizada) {
+        return obraNormalizada;
+      }
+
+      return usuarioPodePersistirObraNoStorage(obraAtualizada, userId)
+        ? obraAtualizada
+        : obraNormalizada;
+    });
+
+    obrasAtualizadas.forEach((obra, index) => {
+      const obraNormalizada = normalizarObra(obra, index);
+
+      if (
+        idsPersistidos.has(obraNormalizada.id) ||
+        !usuarioPodePersistirObraNoStorage(obraNormalizada, userId)
+      ) {
+        return;
+      }
+
+      obrasMescladas.unshift(obraNormalizada);
+      idsPersistidos.add(obraNormalizada.id);
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasMescladas));
+  } catch {
+    // A leitura deve continuar mesmo se o armazenamento local estiver indisponível.
+  }
+}
+
 async function carregarObraSupabase(
   obraId: string,
-  obraLocal?: ObraLocal | null
+  obraLocal?: ObraLocal | null,
+  userId = ""
 ) {
   const { data: obraSupabase, error: erroObra } = await supabase
     .from("obras")
@@ -768,14 +850,29 @@ async function carregarObraSupabase(
     return null;
   }
 
-  const { data: capitulosSupabase, error: erroCapitulos } = await supabase
+  const obraBanco = obraSupabase as ObraSupabaseRow;
+  const autorId = obraBanco.user_id?.trim() || "";
+  const usuarioEhDono = Boolean(userId && autorId === userId);
+
+  if (!obraBanco.publicado && !usuarioEhDono) {
+    return null;
+  }
+
+  let capitulosQuery = supabase
     .from("capitulos")
     .select("*")
     .eq("obra_id", obraId)
     .order("ordem", { ascending: true });
 
+  if (!usuarioEhDono) {
+    capitulosQuery = capitulosQuery.eq("publicado", true);
+  }
+
+  const { data: capitulosSupabase, error: erroCapitulos } =
+    await capitulosQuery;
+
   return mesclarObraSupabaseComLocal(
-    obraSupabase as ObraSupabaseRow,
+    obraBanco,
     erroCapitulos ? [] : ((capitulosSupabase || []) as CapituloSupabaseRow[]),
     obraLocal
   );
@@ -895,6 +992,7 @@ async function aplicarInteracoesCapitulosSupabase(
   };
 }
 
+
 async function salvarProgressoLeituraSupabase(
   obra: ObraLocal,
   capituloId: string,
@@ -902,28 +1000,112 @@ async function salvarProgressoLeituraSupabase(
 ) {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
+    const userId = dadosUsuario.user?.id || "";
 
-    if (!dadosUsuario.user) {
-      return;
+    if (!userId || !idObraSupabaseValido(obra.id)) {
+      return false;
     }
 
-    await supabase.from("progresso_leitura").upsert(
-      {
-        user_id: dadosUsuario.user.id,
-        obra_id: obra.id,
-        capitulo_id: capituloId,
-        progresso: calcularProgressoLeitura(obra.capitulos),
-        lido,
-        atualizado_em: new Date().toISOString(),
-      },
-      {
+    const payload = {
+      user_id: userId,
+      obra_id: obra.id,
+      capitulo_id: capituloId,
+      progresso: calcularProgressoLeitura(obra.capitulos),
+      lido,
+      atualizado_em: new Date().toISOString(),
+    };
+
+    const { error: erroUpsert } = await supabase
+      .from("progresso_leitura")
+      .upsert(payload, {
         onConflict: "user_id,obra_id",
-      }
-    );
-  } catch {
-    // Mantém localStorage como fallback.
+      });
+
+    if (!erroUpsert) {
+      return true;
+    }
+
+    const { error: erroDelete } = await supabase
+      .from("progresso_leitura")
+      .delete()
+      .eq("user_id", userId)
+      .eq("obra_id", obra.id);
+
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
+    const { error: erroInsert } = await supabase
+      .from("progresso_leitura")
+      .insert(payload);
+
+    if (erroInsert) {
+      throw erroInsert;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn("Não consegui salvar progresso de leitura no Supabase:", error);
+    return false;
   }
 }
+
+
+type TipoAtividadeDiarioLeitor =
+  | "comecou_ler"
+  | "leu_capitulo"
+  | "concluiu_obra"
+  | "favoritou_obra"
+  | "salvou_obra";
+
+type VisibilidadeDiarioLeitor = "publico" | "parcial" | "privado";
+
+async function registrarAtividadeDiarioLeitor({
+  userId,
+  tipo,
+  obra,
+  capituloId,
+  visibilidade,
+  texto,
+  metadata = {},
+}: {
+  userId: string;
+  tipo: TipoAtividadeDiarioLeitor;
+  obra: ObraLocal;
+  capituloId?: string;
+  visibilidade: VisibilidadeDiarioLeitor;
+  texto?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  if (!userId || !idObraSupabaseValido(obra.id)) {
+    return;
+  }
+
+  const capituloIdSeguro = capituloId && idObraSupabaseValido(capituloId)
+    ? capituloId
+    : null;
+
+  try {
+    await supabase.from("diario_atividades").insert({
+      user_id: userId,
+      tipo,
+      obra_id: obra.id,
+      capitulo_id: capituloIdSeguro,
+      texto: texto?.trim() || null,
+      visibilidade,
+      metadata: {
+        obra_titulo: obra.titulo,
+        obra_slug: obra.slug,
+        autor: obra.autor,
+        capitulo_id_original: capituloId || "",
+        ...metadata,
+      },
+    });
+  } catch {
+    // O Diário é camada social. A leitura nunca deve travar se o log falhar.
+  }
+}
+
 
 async function salvarRegistroCapituloSupabase(
   tabela: "curtidas_capitulos" | "salvos_capitulos",
@@ -932,33 +1114,55 @@ async function salvarRegistroCapituloSupabase(
 ) {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
+    const userId = dadosUsuario.user?.id || "";
 
-    if (!dadosUsuario.user) {
-      return;
+    if (!userId || !capituloId.trim()) {
+      return false;
+    }
+
+    const { error: erroDelete } = await supabase
+      .from(tabela)
+      .delete()
+      .eq("user_id", userId)
+      .eq("capitulo_id", capituloId);
+
+    if (erroDelete) {
+      throw erroDelete;
     }
 
     if (!ativo) {
-      await supabase
-        .from(tabela)
-        .delete()
-        .eq("user_id", dadosUsuario.user.id)
-        .eq("capitulo_id", capituloId);
-      return;
+      return true;
     }
 
-    await supabase.from(tabela).upsert(
-      {
-        user_id: dadosUsuario.user.id,
-        capitulo_id: capituloId,
-      },
-      {
-        onConflict: "user_id,capitulo_id",
-      }
-    );
-  } catch {
-    // Mantém localStorage como fallback.
+    const payloadBase = {
+      user_id: userId,
+      capitulo_id: capituloId,
+    };
+
+    const { error: erroComVisibilidade } = await supabase.from(tabela).insert({
+      ...payloadBase,
+      visibilidade: "publico",
+    });
+
+    if (!erroComVisibilidade) {
+      return true;
+    }
+
+    const { error: erroSemVisibilidade } = await supabase
+      .from(tabela)
+      .insert(payloadBase);
+
+    if (erroSemVisibilidade) {
+      throw erroSemVisibilidade;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn(`Não consegui salvar registro em ${tabela}:`, error);
+    return false;
   }
 }
+
 
 async function salvarComentarioCapituloSupabase(
   capituloId: string,
@@ -966,35 +1170,59 @@ async function salvarComentarioCapituloSupabase(
 ) {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
+    const userId = dadosUsuario.user?.id || "";
+    const comentarioLimpo = comentario.trim();
 
-    if (!dadosUsuario.user) {
-      return;
+    if (!userId || !capituloId.trim()) {
+      return false;
     }
 
-    if (!comentario.trim()) {
-      await supabase
-        .from("comentarios_capitulos")
-        .delete()
-        .eq("user_id", dadosUsuario.user.id)
-        .eq("capitulo_id", capituloId);
-      return;
+    const { error: erroDelete } = await supabase
+      .from("comentarios_capitulos")
+      .delete()
+      .eq("user_id", userId)
+      .eq("capitulo_id", capituloId);
+
+    if (erroDelete) {
+      throw erroDelete;
     }
 
-    await supabase.from("comentarios_capitulos").upsert(
-      {
-        user_id: dadosUsuario.user.id,
-        capitulo_id: capituloId,
-        comentario: comentario.trim(),
+    if (!comentarioLimpo) {
+      return true;
+    }
+
+    const payloadBase = {
+      user_id: userId,
+      capitulo_id: capituloId,
+      comentario: comentarioLimpo,
+    };
+
+    const { error: erroComAtualizacao } = await supabase
+      .from("comentarios_capitulos")
+      .insert({
+        ...payloadBase,
         atualizado_em: new Date().toISOString(),
-      },
-      {
-        onConflict: "user_id,capitulo_id",
-      }
-    );
-  } catch {
-    // Mantém localStorage como fallback.
+      });
+
+    if (!erroComAtualizacao) {
+      return true;
+    }
+
+    const { error: erroSemAtualizacao } = await supabase
+      .from("comentarios_capitulos")
+      .insert(payloadBase);
+
+    if (erroSemAtualizacao) {
+      throw erroSemAtualizacao;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn("Não consegui salvar comentário do capítulo no Supabase:", error);
+    return false;
   }
 }
+
 
 async function salvarRegistroObraSupabase(
   tabela: "favoritos" | "concluidas",
@@ -1003,31 +1231,52 @@ async function salvarRegistroObraSupabase(
 ) {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
+    const userId = dadosUsuario.user?.id || "";
 
-    if (!dadosUsuario.user) {
-      return;
+    if (!userId || !idObraSupabaseValido(obraId)) {
+      return false;
+    }
+
+    const { error: erroDelete } = await supabase
+      .from(tabela)
+      .delete()
+      .eq("user_id", userId)
+      .eq("obra_id", obraId);
+
+    if (erroDelete) {
+      throw erroDelete;
     }
 
     if (!ativo) {
-      await supabase
-        .from(tabela)
-        .delete()
-        .eq("user_id", dadosUsuario.user.id)
-        .eq("obra_id", obraId);
-      return;
+      return true;
     }
 
-    await supabase.from(tabela).upsert(
-      {
-        user_id: dadosUsuario.user.id,
-        obra_id: obraId,
-      },
-      {
-        onConflict: "user_id,obra_id",
-      }
-    );
-  } catch {
-    // Mantém localStorage como fallback.
+    const payloadBase = {
+      user_id: userId,
+      obra_id: obraId,
+    };
+
+    const { error: erroComVisibilidade } = await supabase.from(tabela).insert({
+      ...payloadBase,
+      visibilidade: "publico",
+    });
+
+    if (!erroComVisibilidade) {
+      return true;
+    }
+
+    const { error: erroSemVisibilidade } = await supabase
+      .from(tabela)
+      .insert(payloadBase);
+
+    if (erroSemVisibilidade) {
+      throw erroSemVisibilidade;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn(`Não consegui salvar registro em ${tabela}:`, error);
+    return false;
   }
 }
 
@@ -1045,6 +1294,228 @@ function criarPerfilAutorHref(autor: string, autorId?: string) {
   return `/perfil-autor?${params.toString()}`;
 }
 
+function obterTextoRegistroLeitor(
+  registro: Record<string, unknown> | null | undefined,
+  chave: string,
+) {
+  const valor = registro?.[chave];
+
+  if (typeof valor === "string") {
+    return valor.trim();
+  }
+
+  if (typeof valor === "number" || typeof valor === "boolean") {
+    return String(valor);
+  }
+
+  return "";
+}
+
+function obterNomeProfileLeitor(profile: Record<string, unknown> | undefined) {
+  if (!profile) {
+    return "";
+  }
+
+  return (
+    obterTextoRegistroLeitor(profile, "nome") ||
+    obterTextoRegistroLeitor(profile, "nome_usuario") ||
+    obterTextoRegistroLeitor(profile, "username") ||
+    obterTextoRegistroLeitor(profile, "display_name") ||
+    obterTextoRegistroLeitor(profile, "apelido")
+  );
+}
+
+function obterAvatarProfileLeitor(profile: Record<string, unknown> | undefined) {
+  if (!profile) {
+    return "";
+  }
+
+  return (
+    obterTextoRegistroLeitor(profile, "avatar_url") ||
+    obterTextoRegistroLeitor(profile, "avatar") ||
+    obterTextoRegistroLeitor(profile, "foto_url") ||
+    obterTextoRegistroLeitor(profile, "imagem_url") ||
+    obterTextoRegistroLeitor(profile, "photo_url")
+  );
+}
+
+function criarHrefPerfilUsuarioLeitor(userId: string, nome: string) {
+  const params = new URLSearchParams();
+  const userIdLimpo = userId.trim();
+  const nomeLimpo = nome.trim() || "Usuário";
+
+  if (userIdLimpo) {
+    params.set("userId", userIdLimpo);
+    params.set("autorId", userIdLimpo);
+  }
+
+  params.set("autor", nomeLimpo);
+
+  return `/perfil-autor?${params.toString()}`;
+}
+
+function criarAvatarComentarioStyle(avatar: string): CSSProperties {
+  const avatarLimpo = avatar.trim();
+
+  if (!avatarLimpo) {
+    return commentProfileAvatarStyle;
+  }
+
+  return {
+    ...commentProfileAvatarStyle,
+    backgroundImage: `url(${avatarLimpo})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    color: "transparent",
+    WebkitTextFillColor: "transparent",
+  };
+}
+
+async function carregarProfilesPorUsuariosLeitor(userIds: string[]) {
+  const idsValidos = Array.from(
+    new Set(
+      userIds
+        .map((userId) => userId.trim())
+        .filter((userId) => Boolean(userId))
+    )
+  );
+  const profilesPorUsuario = new Map<string, Record<string, unknown>>();
+
+  if (idsValidos.length === 0) {
+    return profilesPorUsuario;
+  }
+
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("user_id", idsValidos);
+
+    if (Array.isArray(data)) {
+      (data as Record<string, unknown>[]).forEach((profile) => {
+        const profileUserId = obterTextoRegistroLeitor(profile, "user_id");
+
+        if (profileUserId) {
+          profilesPorUsuario.set(profileUserId, profile);
+        }
+      });
+    }
+  } catch {
+    // Bases antigas podem usar id como chave do profile. O fallback vem abaixo.
+  }
+
+  const idsSemProfile = idsValidos.filter(
+    (userId) => !profilesPorUsuario.has(userId)
+  );
+
+  if (idsSemProfile.length > 0) {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", idsSemProfile);
+
+      if (Array.isArray(data)) {
+        (data as Record<string, unknown>[]).forEach((profile) => {
+          const profileUserId =
+            obterTextoRegistroLeitor(profile, "user_id") ||
+            obterTextoRegistroLeitor(profile, "id");
+
+          if (profileUserId) {
+            profilesPorUsuario.set(profileUserId, profile);
+          }
+        });
+      }
+    } catch {
+      // Profiles é complementar; comentários continuam com fallback.
+    }
+  }
+
+  return profilesPorUsuario;
+}
+
+async function carregarPerfilComentarioLeitor(userId: string) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return { userId: "", nome: "Usuário", avatar: "" } satisfies PerfilComentarioLeitor;
+  }
+
+  const profilesPorUsuario = await carregarProfilesPorUsuariosLeitor([userIdLimpo]);
+  const profile = profilesPorUsuario.get(userIdLimpo);
+  const nome = obterNomeProfileLeitor(profile) || "Usuário";
+
+  return {
+    userId: userIdLimpo,
+    nome: nome.slice(0, 80),
+    avatar: obterAvatarProfileLeitor(profile),
+  } satisfies PerfilComentarioLeitor;
+}
+
+async function carregarComentariosCapituloSupabase(
+  capituloId: string,
+  usuarioLogadoId: string,
+): Promise<ComentarioCapituloPublico[]> {
+  const capituloIdLimpo = capituloId.trim();
+
+  if (!capituloIdLimpo) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("comentarios_capitulos")
+      .select("*")
+      .eq("capitulo_id", capituloIdLimpo)
+      .order("atualizado_em", { ascending: false });
+
+    if (error || !Array.isArray(data)) {
+      return [];
+    }
+
+    const registros = (data as Record<string, unknown>[]).filter(
+      (registro) => Boolean(obterTextoRegistroLeitor(registro, "comentario"))
+    );
+    const usuariosIds = registros
+      .map((registro) => obterTextoRegistroLeitor(registro, "user_id"))
+      .filter(Boolean);
+    const profilesPorUsuario = await carregarProfilesPorUsuariosLeitor(usuariosIds);
+
+    return registros
+      .map((registro, index) => {
+        const userId = obterTextoRegistroLeitor(registro, "user_id");
+        const profile = profilesPorUsuario.get(userId);
+        const nome = obterNomeProfileLeitor(profile) || "Usuário";
+        const texto = obterTextoRegistroLeitor(registro, "comentario");
+
+        if (!userId || !texto) {
+          return null;
+        }
+
+        return {
+          id:
+            obterTextoRegistroLeitor(registro, "id") ||
+            `${capituloIdLimpo}-${userId}-${index}`,
+          userId,
+          nome: nome.slice(0, 80),
+          avatar: obterAvatarProfileLeitor(profile),
+          texto: texto.slice(0, 420),
+          criadoEm:
+            obterTextoRegistroLeitor(registro, "atualizado_em") ||
+            obterTextoRegistroLeitor(registro, "created_at") ||
+            obterTextoRegistroLeitor(registro, "criado_em"),
+          meuComentario: Boolean(usuarioLogadoId && usuarioLogadoId === userId),
+        } satisfies ComentarioCapituloPublico;
+      })
+      .filter(
+        (comentario): comentario is ComentarioCapituloPublico =>
+          Boolean(comentario)
+      );
+  } catch {
+    return [];
+  }
+}
+
 export default function LerCapituloPage() {
   const router = useRouter();
   const [obraId, setObraId] = useState("");
@@ -1055,6 +1526,14 @@ export default function LerCapituloPage() {
   const [carregando, setCarregando] = useState(true);
   const [comentarioDigitado, setComentarioDigitado] = useState("");
   const [comentarioStatus, setComentarioStatus] = useState("");
+  const [comentariosCapitulo, setComentariosCapitulo] = useState<ComentarioCapituloPublico[]>([]);
+  const [comentariosCarregando, setComentariosCarregando] = useState(false);
+  const [perfilComentarioLeitor, setPerfilComentarioLeitor] =
+    useState<PerfilComentarioLeitor>({
+      userId: "",
+      nome: "Usuário",
+      avatar: "",
+    });
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(5);
@@ -1100,6 +1579,33 @@ export default function LerCapituloPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarPerfilComentario() {
+      if (!usuarioIdLogado) {
+        setPerfilComentarioLeitor({
+          userId: "",
+          nome: "Usuário",
+          avatar: "",
+        });
+        return;
+      }
+
+      const perfil = await carregarPerfilComentarioLeitor(usuarioIdLogado);
+
+      if (!cancelado) {
+        setPerfilComentarioLeitor(perfil);
+      }
+    }
+
+    void carregarPerfilComentario();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [usuarioIdLogado]);
 
   useEffect(() => {
     const preferencias = carregarPreferenciasLeitura();
@@ -1173,7 +1679,12 @@ export default function LerCapituloPage() {
       setCapituloId(capituloIdParam);
 
       try {
-        const obrasLocais = carregarObrasLocaisNormalizadas();
+        const { data: dadosUsuario } = await supabase.auth.getUser();
+        const userId = dadosUsuario.user?.id || "";
+        const obrasLocaisTodas = carregarObrasLocaisNormalizadas();
+        const obrasLocais = obrasLocaisTodas.filter((obra) =>
+          usuarioPodeAbrirObraNoLeitor(obra, userId)
+        );
         let obrasAtualizadas = obrasLocais;
         let obrasFavoritasNormalizadas = carregarListaIdsStorage(
           FAVORITES_STORAGE_KEY
@@ -1187,18 +1698,17 @@ export default function LerCapituloPage() {
             obrasLocais.find((obra) => obra.id === obraIdParam) || null;
           const obraSupabase = await carregarObraSupabase(
             obraIdParam,
-            obraLocal
+            obraLocal,
+            userId
           );
 
-          if (obraSupabase) {
+          if (obraSupabase && usuarioPodeAbrirObraNoLeitor(obraSupabase, userId)) {
             obrasAtualizadas = [
               obraSupabase,
               ...obrasLocais.filter((obra) => obra.id !== obraSupabase.id),
             ];
           }
         }
-
-        const { data: dadosUsuario } = await supabase.auth.getUser();
 
         if (dadosUsuario.user) {
           const [favoritasSupabase, concluidasSupabase] = await Promise.all([
@@ -1232,7 +1742,7 @@ export default function LerCapituloPage() {
           }
         }
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasAtualizadas));
+        salvarObrasPreservandoContas(obrasAtualizadas, userId);
         localStorage.setItem(
           FAVORITES_STORAGE_KEY,
           JSON.stringify(obrasFavoritasNormalizadas)
@@ -1277,6 +1787,35 @@ export default function LerCapituloPage() {
       null
     );
   }, [obraAtual, capituloId]);
+
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarComentariosCapitulo() {
+      if (!capituloAtual?.id) {
+        setComentariosCapitulo([]);
+        return;
+      }
+
+      setComentariosCarregando(true);
+      const comentarios = await carregarComentariosCapituloSupabase(
+        capituloAtual.id,
+        usuarioIdLogado,
+      );
+
+      if (!cancelado) {
+        setComentariosCapitulo(comentarios);
+        setComentariosCarregando(false);
+      }
+    }
+
+    void carregarComentariosCapitulo();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [capituloAtual?.id, usuarioIdLogado]);
 
   const indiceCapitulo = useMemo(() => {
     if (!obraAtual || !capituloAtual) {
@@ -1372,6 +1911,7 @@ export default function LerCapituloPage() {
     }
 
     const agora = new Date().toISOString();
+    const capituloJaLido = capituloAtual.lido;
     let obraAtualizadaParaSupabase: ObraLocal | null = null;
 
     const novasObras = obras.map((obra, obraIndex) => {
@@ -1404,16 +1944,35 @@ export default function LerCapituloPage() {
       return obraAtualizadaParaSupabase;
     });
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(novasObras));
+    salvarObrasPreservandoContas(novasObras, usuarioIdLogado);
     marcarNotificacaoCapituloComoLida(obraAtual.id, capituloAtual.id);
     setObras(novasObras);
 
     if (obraAtualizadaParaSupabase) {
+      const obraAtualizadaDiario = obraAtualizadaParaSupabase as ObraLocal;
+
       void salvarProgressoLeituraSupabase(
-        obraAtualizadaParaSupabase,
+        obraAtualizadaDiario,
         capituloAtual.id,
         true
       );
+
+      if (!capituloJaLido) {
+        void registrarAtividadeDiarioLeitor({
+          userId: usuarioIdLogado,
+          tipo: "leu_capitulo",
+          obra: obraAtualizadaDiario,
+          capituloId: capituloAtual.id,
+          visibilidade: "privado",
+          texto: `Leu ${capituloAtual.titulo}`,
+          metadata: {
+            capitulo_titulo: capituloAtual.titulo,
+            capitulo_numero: numeroCapitulo,
+            progresso_obra: obraAtualizadaDiario.progressoLeitura,
+            origem: "abertura_capitulo",
+          },
+        });
+      }
     }
   }, [usuarioIdLogado, obraAtual?.id, capituloAtual?.id]);
 
@@ -1448,6 +2007,22 @@ export default function LerCapituloPage() {
     return false;
   }
 
+  async function recarregarComentariosCapituloAtual() {
+    if (!capituloAtual?.id) {
+      setComentariosCapitulo([]);
+      return;
+    }
+
+    setComentariosCarregando(true);
+    const comentarios = await carregarComentariosCapituloSupabase(
+      capituloAtual.id,
+      usuarioIdLogado,
+    );
+
+    setComentariosCapitulo(comentarios);
+    setComentariosCarregando(false);
+  }
+
   async function alternarComentarioVisivel() {
     if (mostrarComentario) {
       setMostrarComentario(false);
@@ -1466,7 +2041,7 @@ export default function LerCapituloPage() {
       normalizarObra(obra, index)
     );
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+    salvarObrasPreservandoContas(obrasNormalizadas, usuarioIdLogado);
     setObras(obrasNormalizadas);
   }
 
@@ -1518,10 +2093,16 @@ export default function LerCapituloPage() {
       curtiu: novoStatusCurtida,
     });
 
-    await salvarRegistroCapituloSupabase(
+    const curtidaSalva = await salvarRegistroCapituloSupabase(
       "curtidas_capitulos",
       capituloAtual.id,
       novoStatusCurtida
+    );
+
+    setMensagemAcao(
+      curtidaSalva
+        ? ""
+        : "A curtida ficou salva no aparelho, mas não foi sincronizada agora."
     );
   }
 
@@ -1540,11 +2121,35 @@ export default function LerCapituloPage() {
       salvo: novoStatusSalvo,
     });
 
-    await salvarRegistroCapituloSupabase(
+    const salvoSincronizado = await salvarRegistroCapituloSupabase(
       "salvos_capitulos",
       capituloAtual.id,
       novoStatusSalvo
     );
+
+    setMensagemAcao(
+      salvoSincronizado
+        ? ""
+        : "O capítulo ficou salvo no aparelho, mas não foi sincronizado agora."
+    );
+
+    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
+
+    if (novoStatusSalvo && obraAtual && userIdAtual) {
+      void registrarAtividadeDiarioLeitor({
+        userId: userIdAtual,
+        tipo: "salvou_obra",
+        obra: obraAtual,
+        capituloId: capituloAtual.id,
+        visibilidade: "privado",
+        texto: `Salvou ${capituloAtual.titulo}`,
+        metadata: {
+          capitulo_titulo: capituloAtual.titulo,
+          capitulo_numero: numeroCapitulo,
+          origem: "salvar_capitulo",
+        },
+      });
+    }
   }
 
   async function alternarLidoManual() {
@@ -1585,11 +2190,36 @@ export default function LerCapituloPage() {
       lidoEm: novoStatusLido ? new Date().toISOString() : "",
     });
 
-    await salvarProgressoLeituraSupabase(
+    const progressoSincronizado = await salvarProgressoLeituraSupabase(
       obraAtualizada,
       capituloAtual.id,
       novoStatusLido
     );
+
+    setMensagemAcao(
+      progressoSincronizado
+        ? ""
+        : "O progresso ficou salvo no aparelho, mas não foi sincronizado agora."
+    );
+
+    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
+
+    if (novoStatusLido && userIdAtual) {
+      void registrarAtividadeDiarioLeitor({
+        userId: userIdAtual,
+        tipo: "leu_capitulo",
+        obra: obraAtualizada,
+        capituloId: capituloAtual.id,
+        visibilidade: "privado",
+        texto: `Leu ${capituloAtual.titulo}`,
+        metadata: {
+          capitulo_titulo: capituloAtual.titulo,
+          capitulo_numero: numeroCapitulo,
+          progresso_obra: calcularProgressoLeitura(obraAtualizada.capitulos),
+          origem: "marcar_lido_manual",
+        },
+      });
+    }
   }
 
   async function alternarFavorito() {
@@ -1612,7 +2242,32 @@ export default function LerCapituloPage() {
     );
 
     setObrasFavoritas(novasObrasFavoritas);
-    await salvarRegistroObraSupabase("favoritos", obraAtual.id, novoStatusFavorito);
+    const favoritoSincronizado = await salvarRegistroObraSupabase(
+      "favoritos",
+      obraAtual.id,
+      novoStatusFavorito
+    );
+
+    setMensagemAcao(
+      favoritoSincronizado
+        ? ""
+        : "A lista ficou salva no aparelho, mas não foi sincronizada agora."
+    );
+
+    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
+
+    if (novoStatusFavorito && userIdAtual) {
+      void registrarAtividadeDiarioLeitor({
+        userId: userIdAtual,
+        tipo: "favoritou_obra",
+        obra: obraAtual,
+        visibilidade: "parcial",
+        texto: `Adicionou ${obraAtual.titulo} à lista`,
+        metadata: {
+          origem: "adicionar_lista_leitor",
+        },
+      });
+    }
   }
 
   async function alternarConcluido() {
@@ -1635,7 +2290,34 @@ export default function LerCapituloPage() {
     );
 
     setObrasConcluidas(novasObrasConcluidas);
-    await salvarRegistroObraSupabase("concluidas", obraAtual.id, novoStatusConcluido);
+    const concluidoSincronizado = await salvarRegistroObraSupabase(
+      "concluidas",
+      obraAtual.id,
+      novoStatusConcluido
+    );
+
+    setMensagemAcao(
+      concluidoSincronizado
+        ? ""
+        : "A conclusão ficou salva no aparelho, mas não foi sincronizada agora."
+    );
+
+    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
+
+    if (novoStatusConcluido && userIdAtual) {
+      void registrarAtividadeDiarioLeitor({
+        userId: userIdAtual,
+        tipo: "concluiu_obra",
+        obra: obraAtual,
+        visibilidade: "parcial",
+        texto: `Concluiu ${obraAtual.titulo}`,
+        metadata: {
+          total_capitulos: obraAtual.capitulos.length,
+          progresso_obra: 100,
+          origem: "concluir_obra_leitor",
+        },
+      });
+    }
   }
 
   async function salvarComentario(event: FormEvent<HTMLFormElement>) {
@@ -1651,12 +2333,24 @@ export default function LerCapituloPage() {
       comentario: textoLimpo,
     });
 
+    let comentarioSincronizado = true;
+
     if (capituloAtual) {
-      await salvarComentarioCapituloSupabase(capituloAtual.id, textoLimpo);
+      comentarioSincronizado = await salvarComentarioCapituloSupabase(
+        capituloAtual.id,
+        textoLimpo
+      );
+      await recarregarComentariosCapituloAtual();
     }
 
     setComentarioStatus(
-      textoLimpo ? "Comentário salvo." : "Comentário removido."
+      textoLimpo
+        ? comentarioSincronizado
+          ? "Comentário salvo."
+          : "Comentário salvo no aparelho, mas não sincronizado agora."
+        : comentarioSincronizado
+          ? "Comentário removido."
+          : "Comentário removido do aparelho, mas não sincronizado agora."
     );
     setMostrarComentario(Boolean(textoLimpo));
   }
@@ -1682,10 +2376,18 @@ export default function LerCapituloPage() {
       comentario: "",
     });
 
-    await salvarComentarioCapituloSupabase(capituloAtual.id, "");
+    const comentarioSincronizado = await salvarComentarioCapituloSupabase(
+      capituloAtual.id,
+      ""
+    );
+    await recarregarComentariosCapituloAtual();
 
     setComentarioDigitado("");
-    setComentarioStatus("Comentário apagado.");
+    setComentarioStatus(
+      comentarioSincronizado
+        ? "Comentário apagado."
+        : "Comentário apagado do aparelho, mas não sincronizado agora."
+    );
     setMostrarComentario(false);
   }
 
@@ -2054,6 +2756,79 @@ export default function LerCapituloPage() {
               <p style={commentStatusStyle}>{comentarioStatus}</p>
             )}
 
+            <div style={commentProfileRowStyle}>
+              <Link
+                href={criarHrefPerfilUsuarioLeitor(
+                  perfilComentarioLeitor.userId || usuarioIdLogado,
+                  perfilComentarioLeitor.nome,
+                )}
+                style={criarAvatarComentarioStyle(perfilComentarioLeitor.avatar)}
+                aria-label={`Abrir perfil de ${perfilComentarioLeitor.nome}`}
+              >
+                {perfilComentarioLeitor.nome.slice(0, 1).toUpperCase()}
+              </Link>
+
+              <div style={commentProfileTextStyle}>
+                <Link
+                  href={criarHrefPerfilUsuarioLeitor(
+                    perfilComentarioLeitor.userId || usuarioIdLogado,
+                    perfilComentarioLeitor.nome,
+                  )}
+                  style={commentProfileNameStyle}
+                >
+                  {perfilComentarioLeitor.nome}
+                </Link>
+                <span style={commentProfileCaptionStyle}>Comentando com seu perfil público</span>
+              </div>
+            </div>
+
+            {comentariosCapitulo.length > 0 && (
+              <section style={commentListStyle} aria-label="Comentários do capítulo">
+                <div style={commentListHeaderStyle}>
+                  <strong style={commentListTitleStyle}>Comentários do capítulo</strong>
+                  <span style={commentListCountStyle}>{comentariosCapitulo.length}</span>
+                </div>
+
+                {comentariosCapitulo.slice(0, 6).map((comentarioPublico) => (
+                  <article key={comentarioPublico.id} style={commentPublicItemStyle}>
+                    <Link
+                      href={criarHrefPerfilUsuarioLeitor(
+                        comentarioPublico.userId,
+                        comentarioPublico.nome,
+                      )}
+                      style={criarAvatarComentarioStyle(comentarioPublico.avatar)}
+                      aria-label={`Abrir perfil de ${comentarioPublico.nome}`}
+                    >
+                      {comentarioPublico.nome.slice(0, 1).toUpperCase()}
+                    </Link>
+
+                    <div style={commentPublicContentStyle}>
+                      <div style={commentPublicTopStyle}>
+                        <Link
+                          href={criarHrefPerfilUsuarioLeitor(
+                            comentarioPublico.userId,
+                            comentarioPublico.nome,
+                          )}
+                          style={commentPublicNameStyle}
+                        >
+                          {comentarioPublico.nome}
+                        </Link>
+                        {comentarioPublico.meuComentario && (
+                          <span style={commentMineBadgeStyle}>Seu comentário</span>
+                        )}
+                      </div>
+
+                      <p style={commentPublicTextStyle}>{comentarioPublico.texto}</p>
+                    </div>
+                  </article>
+                ))}
+              </section>
+            )}
+
+            {comentariosCarregando && (
+              <p style={commentStatusStyle}>Carregando comentários...</p>
+            )}
+
             <form onSubmit={salvarComentario} style={commentFormStyle}>
               <textarea
                 value={comentarioDigitado}
@@ -2101,7 +2876,7 @@ export default function LerCapituloPage() {
               Próximo capítulo →
             </button>
           ) : (
-            <Link href={voltarHref} style={modoFoco ? focusChapterNavButtonPrimaryStyle : chapterNavButtonPrimaryStyle}>
+            <Link href={voltarHref} style={modoFoco ? focusReturnToWorkButtonStyle : returnToWorkButtonStyle}>
               Voltar para obra
             </Link>
           )}
@@ -2112,6 +2887,35 @@ export default function LerCapituloPage() {
 }
 
 const leitorPageCss = `
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual] nav,
+  html[data-historietas-tema-visual] [data-bottom-nav],
+  html[data-historietas-tema-visual] [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  }
+
+  html[data-historietas-tema-visual] input::placeholder,
+  html[data-historietas-tema-visual] textarea::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual] select,
+  html[data-historietas-tema-visual] textarea {
+    color: #FFFFFF !important;
+  }
+
   html[data-historietas-tema-visual="branco"] button:disabled {
     opacity: 1 !important;
     background: #F1F3F4 !important;
@@ -2231,8 +3035,9 @@ const focusBottomNavigationCss = `
 
 
 const safeTextStyle: CSSProperties = {
-  overflowWrap: "break-word",
-  wordBreak: "normal",
+  minWidth: 0,
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
 };
 
 const mobileTopWaterFadeStyle: CSSProperties = {
@@ -2243,10 +3048,8 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(520px, 72vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -2257,27 +3060,25 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
   position: "relative",
   width: "100%",
-  minHeight: "100svh",
+  minHeight: "100vh",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   boxSizing: "border-box",
+  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
 const focusPageStyle: CSSProperties = {
   ...pageStyle,
-  background: "linear-gradient(180deg, #050506 0%, #030305 58%, #020203 100%)",
+  background: "#050506",
   color: "#F4F4F5",
 };
 
@@ -2288,23 +3089,23 @@ const fixedReadingProgressOuterStyle: CSSProperties = {
   right: 0,
   zIndex: 50,
   height: "4px",
-  background: "rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
 };
 
 const fixedReadingProgressInnerStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "var(--historietas-accent, #F97316)",
   transition: "width 0.16s ease",
 };
 
 const containerStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  width: "min(760px, calc(100% - 24px))",
+  width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "12px 0 calc(66px + env(safe-area-inset-bottom))",
+  padding: "18px 0 calc(28px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2313,24 +3114,25 @@ const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: "10px",
+  gap: "12px",
   flexWrap: "nowrap",
-  marginBottom: "10px",
+  marginBottom: "14px",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "23px",
+  fontSize: "25px",
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: 0,
   display: "flex",
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "calc(100% - 104px)",
-  overflow: "hidden",
+  maxWidth: "min(100%, calc(100% - 96px))",
   ...safeTextStyle,
 };
 
@@ -2341,24 +3143,24 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "17px",
+  fontSize: "19px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: 0,
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 44%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 24px rgba(124,58,237,0.22))",
+  textShadow: "none",
 };
 
 const topActionsStyle: CSSProperties = {
@@ -2382,9 +3184,9 @@ const topMiniButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -2396,6 +3198,7 @@ const topMiniButtonStyle: CSSProperties = {
   boxSizing: "border-box",
   textAlign: "center",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2403,9 +3206,9 @@ const backButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -2417,6 +3220,7 @@ const backButtonStyle: CSSProperties = {
   boxSizing: "border-box",
   textAlign: "center",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2424,8 +3228,8 @@ const settingsButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 25%, var(--historietas-border-soft, transparent))",
+  background: "#04000A",
+  border: "1px solid rgba(249,115,22,0.30)",
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "12px",
   fontWeight: 950,
@@ -2436,6 +3240,11 @@ const settingsButtonStyle: CSSProperties = {
   boxSizing: "border-box",
   textAlign: "center",
   whiteSpace: "normal",
+  boxShadow: "none",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
   ...safeTextStyle,
 };
 
@@ -2451,20 +3260,23 @@ const topSingleSettingsButtonStyle: CSSProperties = {
 
 const focusTopSingleSettingsButtonStyle: CSSProperties = {
   ...topSingleSettingsButtonStyle,
-  background: "rgba(255,255,255,0.055)",
+  background: "#050506",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#F4F4F5",
   boxShadow: "none",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const chapterHeaderStyle: CSSProperties = {
   display: "grid",
-  gap: "6px",
-  padding: "12px",
-  borderRadius: "20px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(24,14,39,0.92)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.96)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-border-soft, transparent))",
+  gap: "8px",
+  padding: "14px",
+  borderRadius: "28px",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -2482,7 +3294,7 @@ const miniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "9px",
   fontWeight: 950,
-  letterSpacing: "0.07em",
+  letterSpacing: "0.08em",
   textTransform: "uppercase",
   textAlign: "center",
   ...safeTextStyle,
@@ -2490,13 +3302,18 @@ const miniTitleStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "clamp(28px, 8vw, 42px)",
   lineHeight: 1.02,
   fontWeight: 950,
   letterSpacing: "-0.055em",
   textAlign: "center",
   maxWidth: "100%",
+  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2526,8 +3343,8 @@ const statusBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "5px 8px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  background: "rgba(4,0,10,0.72)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 850,
@@ -2554,14 +3371,15 @@ const chapterHeroTopStyle: CSSProperties = {
 const readingProgressBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "#DDD6FE",
   fontSize: "9px",
   fontWeight: 900,
   textAlign: "center",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2587,9 +3405,8 @@ const readingStatCardStyle: CSSProperties = {
   gap: "3px",
   padding: "10px",
   borderRadius: "16px",
-  background:
-    "linear-gradient(135deg, var(--historietas-secondary-surface, rgba(255,255,255,0.058)) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, var(--historietas-surface, transparent)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
@@ -2618,9 +3435,9 @@ const settingsPanelStyle: CSSProperties = {
   gap: "8px",
   marginTop: "10px",
   padding: "10px",
-  borderRadius: "18px",
-  background: "var(--historietas-surface, rgba(18,12,30,0.72))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+  borderRadius: "20px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -2659,9 +3476,9 @@ const chapterSelectStyle: CSSProperties = {
   width: "100%",
   minHeight: "40px",
   borderRadius: "14px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 11px",
   outline: "none",
   fontSize: "12px",
@@ -2674,19 +3491,21 @@ const chapterSelectStyle: CSSProperties = {
 const fontScaleBoxStyle: CSSProperties = {
   display: "grid",
   gap: "7px",
-  padding: "8px",
-  borderRadius: "14px",
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const focusFontScaleBoxStyle: CSSProperties = {
   ...fontScaleBoxStyle,
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  background: "transparent",
+  border: "none",
+  boxShadow: "none",
 };
 
 const fontScaleHeaderStyle: CSSProperties = {
@@ -2709,13 +3528,14 @@ const fontScaleLabelStyle: CSSProperties = {
 const fontScaleValueStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "10px",
   fontWeight: 950,
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2734,7 +3554,7 @@ const desktopFontScaleGridStyle: CSSProperties = {
 const fontScaleButtonStyle: CSSProperties = {
   minHeight: "30px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  border: "1px solid rgba(255,255,255,0.08)",
   background: "rgba(255,255,255,0.045)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
@@ -2753,9 +3573,14 @@ const focusFontScaleButtonStyle: CSSProperties = {
 
 const fontScaleButtonActiveStyle: CSSProperties = {
   ...fontScaleButtonStyle,
-  background: "var(--historietas-accent, #F97316)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
-  color: "#FFFFFF",
+  background: "#04000A",
+  border: "1px solid rgba(249,115,22,0.30)",
+  color: "var(--historietas-accent, #FDBA74)",
+  boxShadow: "none",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const settingsGridStyle: CSSProperties = {
@@ -2769,9 +3594,9 @@ const settingsGridStyle: CSSProperties = {
 const settingsActionStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  border: "1px solid rgba(255,255,255,0.08)",
   background: "rgba(255,255,255,0.045)",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  color: "#DDD6FE",
   fontSize: "10px",
   fontWeight: 900,
   cursor: "pointer",
@@ -2786,7 +3611,7 @@ const settingsActionStyle: CSSProperties = {
 const settingsActionActiveStyle: CSSProperties = {
   ...settingsActionStyle,
   background: "var(--historietas-accent, #F97316)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
+  border: "1px solid rgba(249,115,22,0.34)",
   color: "#FFFFFF",
 };
 
@@ -2799,8 +3624,8 @@ const focusMutedSettingsActionStyle: CSSProperties = {
 
 const focusActionActiveStyle: CSSProperties = {
   ...settingsActionStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
+  background: "rgba(249,115,22,0.12)",
+  border: "1px solid rgba(249,115,22,0.24)",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
@@ -2822,9 +3647,9 @@ const focusSettingsLinkStyle: CSSProperties = {
 const textCardStyle: CSSProperties = {
   marginTop: "10px",
   padding: "14px 12px",
-  borderRadius: "18px",
-  background: "var(--historietas-surface, rgba(18,12,30,0.54))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
+  borderRadius: "20px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -2863,9 +3688,9 @@ const readerActionsStyle: CSSProperties = {
 const actionButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  border: "1px solid rgba(255,255,255,0.08)",
   background: "rgba(255,255,255,0.045)",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  color: "#DDD6FE",
   fontSize: "10.5px",
   fontWeight: 900,
   cursor: "pointer",
@@ -2879,23 +3704,23 @@ const actionButtonStyle: CSSProperties = {
 
 const activeActionButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)",
+  background: "rgba(249,115,22,0.12)",
+  border: "1px solid rgba(249,115,22,0.24)",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
 const activeSaveButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "color-mix(in srgb, #22C55E 12%, transparent)",
-  border: "1px solid color-mix(in srgb, #22C55E 24%, transparent)",
+  background: "rgba(34,197,94,0.12)",
+  border: "1px solid rgba(34,197,94,0.24)",
   color: "#86EFAC",
 };
 
 const activeCommentButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(124,58,237,0.18)",
+  border: "1px solid rgba(124,58,237,0.30)",
+  color: "#DDD6FE",
 };
 
 const focusReaderActionsStyle: CSSProperties = {
@@ -2936,9 +3761,9 @@ const commentBoxStyle: CSSProperties = {
   display: "grid",
   gap: "8px",
   padding: "10px",
-  borderRadius: "18px",
-  background: "var(--historietas-surface, rgba(18,12,30,0.66))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  borderRadius: "20px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -2979,6 +3804,136 @@ const commentStatusStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const commentProfileRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "9px",
+  minWidth: 0,
+};
+
+const commentProfileAvatarStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  flex: "0 0 auto",
+  display: "grid",
+  placeItems: "center",
+  borderRadius: "999px",
+  background:
+    "linear-gradient(135deg, rgba(249,115,22,0.92), rgba(124,58,237,0.82))",
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 950,
+  textDecoration: "none",
+  boxShadow: "none",
+};
+
+const commentProfileTextStyle: CSSProperties = {
+  display: "grid",
+  gap: "2px",
+  minWidth: 0,
+};
+
+const commentProfileNameStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 950,
+  textDecoration: "none",
+  ...safeTextStyle,
+};
+
+const commentProfileCaptionStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 750,
+  ...safeTextStyle,
+};
+
+const commentListStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  padding: "9px",
+  borderRadius: "16px",
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid rgba(255,255,255,0.055)",
+  minWidth: 0,
+};
+
+const commentListHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+};
+
+const commentListTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 950,
+  ...safeTextStyle,
+};
+
+const commentListCountStyle: CSSProperties = {
+  minWidth: "24px",
+  height: "24px",
+  display: "grid",
+  placeItems: "center",
+  borderRadius: "999px",
+  background: "rgba(249,115,22,0.14)",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "11px",
+  fontWeight: 950,
+};
+
+const commentPublicItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr)",
+  gap: "9px",
+  minWidth: 0,
+};
+
+const commentPublicContentStyle: CSSProperties = {
+  display: "grid",
+  gap: "3px",
+  minWidth: 0,
+};
+
+const commentPublicTopStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+  flexWrap: "wrap",
+  minWidth: 0,
+};
+
+const commentPublicNameStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 950,
+  textDecoration: "none",
+  ...safeTextStyle,
+};
+
+const commentMineBadgeStyle: CSSProperties = {
+  padding: "3px 7px",
+  borderRadius: "999px",
+  background: "rgba(34,197,94,0.09)",
+  border: "1px solid rgba(34,197,94,0.13)",
+  color: "#86EFAC",
+  fontSize: "9px",
+  fontWeight: 900,
+  ...safeTextStyle,
+};
+
+const commentPublicTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12px",
+  lineHeight: 1.45,
+  fontWeight: 650,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
 const commentFormStyle: CSSProperties = {
   display: "grid",
   gap: "7px",
@@ -2991,9 +3946,9 @@ const commentInputStyle: CSSProperties = {
   width: "100%",
   minHeight: "92px",
   borderRadius: "14px",
-  border: "1px solid var(--historietas-border-soft, #3F3F46)",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "10px",
   outline: "none",
   fontSize: "13px",
@@ -3007,7 +3962,7 @@ const commentInputStyle: CSSProperties = {
 const commentButtonStyle: CSSProperties = {
   minHeight: "40px",
   borderRadius: "999px",
-  border: "none",
+  border: "1px solid rgba(249,115,22,0.34)",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   fontSize: "12px",
@@ -3054,9 +4009,9 @@ const chapterNavigationStyle: CSSProperties = {
 const chapterNavButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  border: "1px solid rgba(255,255,255,0.08)",
   background: "rgba(255,255,255,0.045)",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  color: "#DDD6FE",
   textDecoration: "none",
   fontSize: "11px",
   fontWeight: 900,
@@ -3075,8 +4030,20 @@ const chapterNavButtonStyle: CSSProperties = {
 const chapterNavButtonPrimaryStyle: CSSProperties = {
   ...chapterNavButtonStyle,
   background: "var(--historietas-accent, #F97316)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
+  border: "1px solid rgba(249,115,22,0.34)",
   color: "#FFFFFF",
+};
+
+const returnToWorkButtonStyle: CSSProperties = {
+  ...chapterNavButtonStyle,
+  background: "#04000A",
+  border: "1px solid rgba(249,115,22,0.30)",
+  color: "var(--historietas-accent, #FDBA74)",
+  boxShadow: "none",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const chapterNavDisabledStyle: CSSProperties = {
@@ -3104,6 +4071,18 @@ const focusChapterNavButtonPrimaryStyle: CSSProperties = {
   color: "#FDBA74",
 };
 
+const focusReturnToWorkButtonStyle: CSSProperties = {
+  ...focusChapterNavButtonStyle,
+  background: "#050506",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#F4F4F5",
+  boxShadow: "none",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+};
+
 const focusChapterNavDisabledStyle: CSSProperties = {
   ...focusChapterNavButtonStyle,
   color: "#52525B",
@@ -3114,15 +4093,15 @@ const readerFooterBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "12px",
   borderRadius: "20px",
-  background:
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, rgba(18,12,30,0.78))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   display: "grid",
   gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const readerFooterTextStyle: CSSProperties = {
@@ -3137,8 +4116,8 @@ const readerFooterTextStyle: CSSProperties = {
 const emptyBoxStyle: CSSProperties = {
   marginTop: "18px",
   borderRadius: "24px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, var(--historietas-surface, rgba(18,12,30,0.82)))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   padding: "20px",
   display: "grid",
   gap: "10px",
@@ -3146,6 +4125,7 @@ const emptyBoxStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const emptyTitleStyle: CSSProperties = {
@@ -3185,13 +4165,14 @@ const emptyButtonStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(980px, calc(100% - 64px))",
-  padding: "22px 0 24px",
+  padding: "22px 0 34px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -3216,17 +4197,21 @@ const desktopSettingsButtonStyle: CSSProperties = {
 
 const desktopFocusSettingsButtonStyle: CSSProperties = {
   ...desktopSettingsButtonStyle,
-  background: "rgba(255,255,255,0.035)",
+  background: "#050506",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   boxShadow: "none",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const desktopChapterHeaderStyle: CSSProperties = {
   ...chapterHeaderStyle,
   gap: "8px",
-  padding: "16px 22px",
-  borderRadius: "24px",
+  padding: "18px 22px",
+  borderRadius: "30px",
 };
 
 const desktopFocusChapterHeaderStyle: CSSProperties = {
@@ -3238,7 +4223,7 @@ const desktopFocusChapterHeaderStyle: CSSProperties = {
 const desktopSettingsPanelStyle: CSSProperties = {
   ...settingsPanelStyle,
   padding: "12px",
-  borderRadius: "20px",
+  borderRadius: "22px",
   gap: "9px",
 };
 
@@ -3292,7 +4277,7 @@ const desktopCommentBoxStyle: CSSProperties = {
   ...commentBoxStyle,
   marginTop: "12px",
   padding: "12px",
-  borderRadius: "20px",
+  borderRadius: "22px",
 };
 
 const desktopFocusCommentBoxStyle: CSSProperties = {

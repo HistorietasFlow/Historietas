@@ -170,11 +170,11 @@ const TEMAS_VISUAIS: Record<
     icone: "✦",
     accent: "#F97316",
     secondary: "#7C3AED",
-    bgStart: "#0B0614",
-    bgMid: "#12081F",
-    bgEnd: "#17101B",
-    glowPrimary: "rgba(124,58,237,0.32)",
-    glowSecondary: "rgba(249,115,22,0.16)",
+    bgStart: "#070212",
+    bgMid: "#070212",
+    bgEnd: "#070212",
+    glowPrimary: "transparent",
+    glowSecondary: "transparent",
   },
   fantasia: {
     nome: "Fantasia",
@@ -474,6 +474,7 @@ function aplicarTemaVisual(temaVisual: TemaVisual) {
 
   const tema = TEMAS_VISUAIS[temaVisual];
   const raiz = document.documentElement;
+  const isBranco = temaVisual === "branco";
 
   raiz.style.setProperty("--historietas-accent", tema.accent);
   raiz.style.setProperty("--historietas-secondary", tema.secondary);
@@ -484,102 +485,39 @@ function aplicarTemaVisual(temaVisual: TemaVisual) {
   raiz.style.setProperty("--historietas-glow-secondary", tema.glowSecondary);
   raiz.style.setProperty("--historietas-text-primary", tema.textPrimary || "#FFFFFF");
   raiz.style.setProperty("--historietas-text-secondary", tema.textSecondary || "#D4D4D8");
-  raiz.style.setProperty("--historietas-surface", tema.surface || "rgba(18,12,30,0.82)");
-  raiz.style.setProperty("--historietas-surface-strong", tema.surfaceStrong || "rgba(18,12,30,0.98)");
+  raiz.style.setProperty("--historietas-surface", tema.surface || "rgba(4,0,10,0.72)");
+  raiz.style.setProperty("--historietas-surface-strong", tema.surfaceStrong || "#04000A");
   raiz.style.setProperty("--historietas-border-soft", tema.borderSoft || "rgba(255,255,255,0.08)");
-  raiz.style.setProperty("--historietas-input-bg", tema.inputBg || "#18181B");
+  raiz.style.setProperty("--historietas-input-bg", tema.inputBg || "#04000A");
   raiz.style.setProperty("--historietas-input-text", tema.inputText || "#FFFFFF");
   raiz.style.setProperty("--historietas-title-from", tema.titleFrom || "#FFFFFF");
   raiz.style.setProperty("--historietas-title-mid", tema.titleMid || "#F5F3FF");
   raiz.style.setProperty("--historietas-title-to", tema.titleTo || "#FDBA74");
-  raiz.style.setProperty("--historietas-hero-shadow", tema.heroShadow || "0 18px 48px rgba(0,0,0,0.32), 0 0 36px rgba(124,58,237,0.12)");
-  raiz.style.setProperty("--historietas-card-shadow", tema.cardShadow || "0 14px 36px rgba(0,0,0,0.20)");
-  raiz.style.setProperty("--historietas-logo-shadow", tema.logoShadow || "0 0 26px rgba(139, 92, 246, 0.24)");
-  raiz.style.setProperty("--historietas-active-surface", tema.activeSurface || "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))");
-  raiz.style.setProperty("--historietas-secondary-surface", tema.secondarySurface || "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(255,255,255,0.035))");
+  raiz.style.setProperty("--historietas-hero-shadow", tema.heroShadow || "none");
+  raiz.style.setProperty("--historietas-card-shadow", tema.cardShadow || "none");
+  raiz.style.setProperty("--historietas-logo-shadow", tema.logoShadow || "none");
+  raiz.style.setProperty("--historietas-active-surface", tema.activeSurface || "rgba(59,7,100,0.54)");
+  raiz.style.setProperty("--historietas-secondary-surface", tema.secondarySurface || "rgba(255,255,255,0.06)");
   raiz.style.setProperty("--historietas-secondary-button-text", tema.secondaryButtonText || "#DDD6FE");
-  raiz.style.setProperty("--historietas-danger-surface", tema.dangerSurface || "rgba(239, 68, 68, 0.105)");
+  raiz.style.setProperty("--historietas-danger-surface", tema.dangerSurface || "rgba(239,68,68,0.10)");
   raiz.style.setProperty("--historietas-danger-button-text", tema.dangerButtonText || "#FCA5A5");
 
-  const surface = tema.surface || "rgba(18,12,30,0.82)";
-  const surfaceStrong = tema.surfaceStrong || "rgba(18,12,30,0.98)";
-  const borderSoft = tema.borderSoft || "rgba(255,255,255,0.08)";
-  const textPrimary = tema.textPrimary || "#FFFFFF";
-  const textSecondary = tema.textSecondary || "#D4D4D8";
-  const activeSurface =
-    tema.activeSurface ||
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))";
-
-  const isBranco = temaVisual === "branco";
-  const isEscuro = temaVisual === "escuro";
-  const isFoco = temaVisual === "foco";
-
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-bg",
-    isBranco
-      ? "#FFFFFF"
-      : isEscuro
-      ? "#050505"
-      : isFoco
-      ? "#050506"
-      : `radial-gradient(circle at 16% 0%, color-mix(in srgb, ${tema.accent} 18%, transparent), transparent 34%), radial-gradient(circle at 84% 0%, color-mix(in srgb, ${tema.secondary} 22%, transparent), transparent 38%), linear-gradient(180deg, ${surfaceStrong} 0%, ${tema.bgStart} 100%)`
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-border",
-    isBranco ? "#DADCE0" : borderSoft
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-shadow",
-    isBranco || isEscuro || isFoco
-      ? "none"
-      : "0 14px 34px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06)"
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-text",
-    isBranco ? "#5F6368" : textSecondary
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-hover-bg",
-    isBranco ? "#F1F3F4" : activeSurface
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-hover-text",
-    isBranco ? "#202124" : textPrimary
-  );
-  raiz.style.setProperty("--historietas-bottom-nav-icon-text", tema.accent);
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-icon-bg",
-    isBranco ? "#F1F3F4" : surface
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-icon-border",
-    isBranco ? "#E0E3E7" : borderSoft
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-bg",
-    isBranco
-      ? tema.accent
-      : `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-border",
-    isBranco ? tema.accent : `color-mix(in srgb, ${tema.accent} 55%, transparent)`
-  );
+  raiz.style.setProperty("--historietas-bottom-nav-bg", isBranco ? "#FFFFFF" : "#04000A");
+  raiz.style.setProperty("--historietas-bottom-nav-border", isBranco ? "#DADCE0" : "rgba(59,7,100,0.52)");
+  raiz.style.setProperty("--historietas-bottom-nav-shadow", "none");
+  raiz.style.setProperty("--historietas-bottom-nav-text", isBranco ? "#5F6368" : "#9980D8");
+  raiz.style.setProperty("--historietas-bottom-nav-hover-bg", isBranco ? "#F1F3F4" : "rgba(59,7,100,0.20)");
+  raiz.style.setProperty("--historietas-bottom-nav-hover-text", isBranco ? "#202124" : "#FFFFFF");
+  raiz.style.setProperty("--historietas-bottom-nav-icon-text", isBranco ? tema.accent : "#AD95EA");
+  raiz.style.setProperty("--historietas-bottom-nav-icon-bg", isBranco ? "#F1F3F4" : "rgba(59,7,100,0.28)");
+  raiz.style.setProperty("--historietas-bottom-nav-icon-border", isBranco ? "#E0E3E7" : "rgba(76,29,149,0.34)");
+  raiz.style.setProperty("--historietas-bottom-nav-main-bg", isBranco ? tema.accent : "#08030F");
+  raiz.style.setProperty("--historietas-bottom-nav-main-border", isBranco ? tema.accent : "rgba(255,255,255,0.10)");
   raiz.style.setProperty("--historietas-bottom-nav-main-shadow", "none");
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-icon-bg",
-    "rgba(255,255,255,0.16)"
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-icon-border",
-    "rgba(255,255,255,0.18)"
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-shine",
-    isBranco || isEscuro || isFoco
-      ? "none"
-      : "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)"
-  );
+  raiz.style.setProperty("--historietas-bottom-nav-main-icon-bg", isBranco ? "rgba(255,255,255,0.16)" : "#04000A");
+  raiz.style.setProperty("--historietas-bottom-nav-main-icon-border", isBranco ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.10)");
+  raiz.style.setProperty("--historietas-bottom-nav-shine", "none");
+
   raiz.dataset.historietasTemaVisual = temaVisual;
   document.body.dataset.historietasTemaVisual = temaVisual;
 }
@@ -1153,11 +1091,19 @@ export default function ConfiguracoesPage() {
 }
 
 const configuracoesPageCss = `
-  html[data-historietas-tema-visual] body {
-    background: var(--historietas-bg-start, #0B0614) !important;
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
   }
 
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
 
   .configuracoes-carousel {
     scrollbar-width: none;
@@ -1170,100 +1116,35 @@ const configuracoesPageCss = `
 
   html[data-historietas-tema-visual] nav,
   html[data-historietas-tema-visual] [data-bottom-nav],
-  html[data-historietas-tema-visual] [data-mobile-nav],
-  html[data-historietas-tema-visual] nav:has(a[href="/publicar"]),
-  html[data-historietas-tema-visual] div:has(> a[href="/publicar"]):has(> a[href="/biblioteca"]) {
-    background: var(--historietas-bottom-nav-bg, var(--historietas-surface-strong, rgba(18,8,31,0.98))) !important;
-    border-color: var(--historietas-bottom-nav-border, var(--historietas-border-soft, rgba(255,255,255,0.12))) !important;
-    box-shadow: var(--historietas-bottom-nav-shadow, none) !important;
-    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
-  }
-
-  html[data-historietas-tema-visual] nav::before,
-  html[data-historietas-tema-visual] [data-bottom-nav]::before,
-  html[data-historietas-tema-visual] [data-mobile-nav]::before {
-    background: var(--historietas-bottom-nav-shine, none) !important;
-  }
-
-  html[data-historietas-tema-visual] nav a,
-  html[data-historietas-tema-visual] [data-bottom-nav] a,
-  html[data-historietas-tema-visual] [data-mobile-nav] a,
-  html[data-historietas-tema-visual] nav button,
-  html[data-historietas-tema-visual] [data-bottom-nav] button,
-  html[data-historietas-tema-visual] [data-mobile-nav] button {
-    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
-    box-shadow: none !important;
-  }
-
-  html[data-historietas-tema-visual] nav a:hover,
-  html[data-historietas-tema-visual] [data-bottom-nav] a:hover,
-  html[data-historietas-tema-visual] [data-mobile-nav] a:hover,
-  html[data-historietas-tema-visual] nav button:hover,
-  html[data-historietas-tema-visual] [data-bottom-nav] button:hover,
-  html[data-historietas-tema-visual] [data-mobile-nav] button:hover {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(255,255,255,0.055))) !important;
-    border-color: var(--historietas-bottom-nav-border, var(--historietas-border-soft, rgba(255,255,255,0.10))) !important;
-    color: var(--historietas-bottom-nav-hover-text, var(--historietas-text-primary, #FFFFFF)) !important;
+  html[data-historietas-tema-visual] [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
   }
 
   html[data-historietas-tema-visual] nav a[href="/configuracoes"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/configuracoes"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/configuracoes"] {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
-    color: var(--historietas-accent, #F97316) !important;
-  }
-
-  html[data-historietas-tema-visual] nav a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] {
-    background: var(--historietas-bottom-nav-main-bg, linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)) !important;
-    border-color: var(--historietas-bottom-nav-main-border, color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)) !important;
-    box-shadow: var(--historietas-bottom-nav-main-shadow, none) !important;
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] nav .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-icon {
-    color: var(--historietas-bottom-nav-icon-text, var(--historietas-accent, #F97316)) !important;
-    background: var(--historietas-bottom-nav-icon-bg, var(--historietas-surface, rgba(255,255,255,0.045))) !important;
-    border-color: var(--historietas-bottom-nav-icon-border, var(--historietas-border-soft, rgba(255,255,255,0.055))) !important;
-  }
-
-  html[data-historietas-tema-visual] nav a[href="/publicar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] .historietas-bottom-nav-icon {
+  html[data-historietas-tema-visual] nav a[href="/configuracoes"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/configuracoes"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/configuracoes"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
-    background: var(--historietas-bottom-nav-main-icon-bg, rgba(255,255,255,0.16)) !important;
-    border-color: var(--historietas-bottom-nav-main-icon-border, rgba(255,255,255,0.18)) !important;
+    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
   }
 
-  html[data-historietas-tema-visual="branco"] .historietas-config-logo-text,
-  html[data-historietas-tema-visual="branco"] .historietas-config-hero-title {
-    background: none !important;
-    color: #1A73E8 !important;
-    -webkit-text-fill-color: #1A73E8 !important;
-    text-shadow: none !important;
+  html[data-historietas-tema-visual] input::placeholder,
+  html[data-historietas-tema-visual] textarea::placeholder {
+    color: rgba(212,212,216,0.68) !important;
   }
 
-  html[data-historietas-tema-visual="branco"] input,
-  html[data-historietas-tema-visual="branco"] textarea,
-  html[data-historietas-tema-visual="branco"] select {
-    color: #202124 !important;
-  }
-
-  html[data-historietas-tema-visual="escuro"] {
-    --historietas-bg-start: #000000;
-    --historietas-bg-mid: #000000;
-    --historietas-bg-end: #000000;
-    --historietas-accent: #F97316;
-    --historietas-secondary: #7C3AED;
-    --historietas-glow-primary: rgba(249,115,22,0.030);
-    --historietas-glow-secondary: rgba(124,58,237,0.030);
-    --historietas-active-surface: rgba(124,58,237,0.14);
-    --historietas-secondary-surface: rgba(124,58,237,0.12);
-    --historietas-danger-surface: rgba(239,68,68,0.12);
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea,
+  html[data-historietas-tema-visual] select {
+    color: #FFFFFF !important;
   }
 `;
 
@@ -1277,13 +1158,13 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   top: 0,
   left: 0,
   right: 0,
-  height: "min(520px, 72vh)",
+  height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -1294,10 +1175,10 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
@@ -1307,10 +1188,10 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+  isolation: "isolate",
 };
 
 const containerStyle: CSSProperties = {
@@ -1319,7 +1200,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 32px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 0",
+  padding: "14px 0 22px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1355,8 +1236,8 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
@@ -1367,11 +1248,11 @@ const logoMarkStyle: CSSProperties = {
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #C4B5FD) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139, 92, 246, 0.24))",
+  textShadow: "none",
   overflow: "visible",
   whiteSpace: "nowrap",
 };
@@ -1421,12 +1302,9 @@ const pageTitleTextStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
+  background: "none",
+  color: "var(--historietas-accent, #F97316)",
+  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
   textAlign: "center",
   textShadow: "none",
 };
@@ -1447,21 +1325,15 @@ const desktopPageTitleTextStyle: CSSProperties = {
 const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "28px",
-  border: "1px solid var(--historietas-border-soft, rgba(251,191,36,0.16))",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.98)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  boxShadow:
-    "var(--historietas-hero-shadow, 0 18px 48px rgba(0,0,0,0.32), 0 0 36px rgba(124,58,237,0.12))",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  boxShadow: "none",
   overflow: "hidden",
   minWidth: 0,
 };
 
 const heroGlowStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  background:
-    "radial-gradient(circle at 18% 14%, var(--historietas-glow-secondary, rgba(249,115,22,0.28)), transparent 32%), radial-gradient(circle at 82% 14%, var(--historietas-glow-primary, rgba(124,58,237,0.52)), transparent 38%)",
-  pointerEvents: "none",
+  display: "none",
 };
 
 const heroContentStyle: CSSProperties = {
@@ -1477,16 +1349,16 @@ const heroContentStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(36px, 9.4vw, 60px)",
-  lineHeight: 1.1,
+  fontSize: "clamp(34px, 8.8vw, 54px)",
+  lineHeight: 1.08,
   fontWeight: 950,
-  letterSpacing: "-0.08em",
+  letterSpacing: "-0.07em",
   maxWidth: "100%",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  color: "var(--historietas-accent, #F97316)",
+  background: "none",
+  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
+  textShadow: "none",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -1512,7 +1384,8 @@ const heroActionsStyle: CSSProperties = {
 const primaryLinkStyle: CSSProperties = {
   minHeight: "44px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "13px",
@@ -1528,9 +1401,9 @@ const primaryLinkStyle: CSSProperties = {
 
 const secondaryLinkStyle: CSSProperties = {
   ...primaryLinkStyle,
-  background: "var(--historietas-secondary-surface, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 40%, transparent)",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   boxShadow: "none",
 };
 
@@ -1541,11 +1414,9 @@ const desktopAdminAccessCardStyle: CSSProperties = {
   gap: "16px",
   padding: "18px",
   borderRadius: "26px",
-  background:
-    "linear-gradient(135deg, var(--historietas-active-surface, rgba(124,58,237,0.18)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
@@ -1573,38 +1444,45 @@ const adminAccessDescriptionStyle: CSSProperties = {
 };
 
 const adminAccessLinkStyle: CSSProperties = {
-  ...primaryLinkStyle,
-  minHeight: "42px",
+  minHeight: "38px",
+  borderRadius: "999px",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  fontSize: "12px",
+  fontWeight: 950,
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const messageStyle: CSSProperties = {
-  display: "block",
-  marginTop: "12px",
-  padding: "9px 12px",
-  borderRadius: "16px",
-  background:
-    "linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(18,12,30,0.92) 100%)",
-  border: "1px solid rgba(34, 197, 94, 0.24)",
+  margin: "10px auto 0",
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "8px 10px",
+  borderRadius: "999px",
+  background: "rgba(34,197,94,0.12)",
+  border: "1px solid rgba(34,197,94,0.24)",
   color: "#86EFAC",
-  fontSize: "12px",
-  fontWeight: 850,
+  fontSize: "11px",
+  fontWeight: 900,
   textAlign: "center",
   ...safeTextStyle,
 };
 
 const emptyAccessBoxStyle: CSSProperties = {
-  marginTop: "24px",
-  borderRadius: "26px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  padding: "22px",
+  minHeight: "100vh",
   display: "grid",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
+  alignContent: "center",
+  justifyItems: "center",
+  gap: "10px",
+  padding: "24px",
+  background: "#070212",
   textAlign: "center",
 };
 
@@ -1628,8 +1506,10 @@ const emptyAccessTextStyle: CSSProperties = {
 };
 
 const sectionStyle: CSSProperties = {
-  marginTop: "20px",
+  marginTop: "14px",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const sectionHeaderStyle: CSSProperties = {
@@ -1637,75 +1517,78 @@ const sectionHeaderStyle: CSSProperties = {
   justifyItems: "center",
   gap: "4px",
   marginBottom: "10px",
-  minWidth: 0,
   textAlign: "center",
 };
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FFFFFF",
-  fontSize: "clamp(24px, 7vw, 34px)",
-  lineHeight: 1,
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "clamp(24px, 5vw, 30px)",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "-0.06em",
+  letterSpacing: "-0.055em",
+  maxWidth: "100%",
   textAlign: "center",
   ...safeTextStyle,
 };
 
 const accentSectionTitleStyle: CSSProperties = {
   ...sectionTitleStyle,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
 };
 
 const cardStyle: CSSProperties = {
   display: "grid",
   gap: "12px",
   padding: "14px",
-  borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, 0 14px 36px rgba(0,0,0,0.20))",
+  borderRadius: "22px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
   overflow: "hidden",
 };
 
 const fieldStyle: CSSProperties = {
   display: "grid",
-  gap: "7px",
+  gap: "6px",
   minWidth: 0,
-  textAlign: "center",
 };
 
 const labelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "12px",
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "11px",
+  lineHeight: 1,
   fontWeight: 950,
-  textAlign: "center",
   textTransform: "uppercase",
-  letterSpacing: "0.035em",
+  letterSpacing: "0.04em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "44px",
+  minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 14px",
   outline: "none",
   fontSize: "13px",
-  fontWeight: 750,
+  fontWeight: 800,
   fontFamily: "inherit",
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
+  boxShadow: "none",
 };
 
 const settingsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 210px), 1fr))",
+  gridTemplateColumns: "1fr",
   gap: "10px",
   minWidth: 0,
 };
@@ -1727,15 +1610,13 @@ const themeGridStyle: CSSProperties = {
 };
 
 const themeOptionStyle: CSSProperties = {
-  position: "relative",
-  flex: "0 0 88px",
-  width: "88px",
-  minHeight: "74px",
-  borderRadius: "16px",
-  padding: "7px 4px",
-  scrollSnapAlign: "start",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface, rgba(18,12,30,0.82))",
+  flex: "0 0 86px",
+  width: "86px",
+  minHeight: "78px",
+  padding: "8px 6px",
+  borderRadius: "18px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(4, 0, 10, 0.72)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr)",
@@ -1752,10 +1633,8 @@ const themeOptionStyle: CSSProperties = {
 
 const themeOptionActiveStyle: CSSProperties = {
   ...themeOptionStyle,
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 46%, transparent)",
-  background:
-    "linear-gradient(135deg, var(--historietas-active-surface, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
+  border: "1px solid rgba(249,115,22,0.34)",
+  background: "rgba(8, 3, 15, 0.92)",
   boxShadow: "none",
 };
 
@@ -1770,6 +1649,7 @@ const themePreviewStyle: CSSProperties = {
   fontSize: "16px",
   fontWeight: 950,
   flex: "0 0 auto",
+  border: "1px solid rgba(255,255,255,0.12)",
 };
 
 const themeTextBoxStyle: CSSProperties = {
@@ -1795,8 +1675,8 @@ const preferenceStyle: CSSProperties = {
   minHeight: "78px",
   borderRadius: "17px",
   padding: "8px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface, rgba(18,12,30,0.82))",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(4, 0, 10, 0.72)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   display: "grid",
   gridTemplateColumns: "40px minmax(0, 1fr)",
@@ -1813,9 +1693,8 @@ const preferenceStyle: CSSProperties = {
 
 const preferenceActiveStyle: CSSProperties = {
   ...preferenceStyle,
-  border: "1px solid rgba(249, 115, 22, 0.30)",
-  background:
-    "linear-gradient(135deg, var(--historietas-active-surface, rgba(249,115,22,0.16)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
+  border: "1px solid rgba(249,115,22,0.30)",
+  background: "rgba(8, 3, 15, 0.92)",
   boxShadow: "none",
 };
 
@@ -1823,8 +1702,9 @@ const preferenceIconStyle: CSSProperties = {
   width: "40px",
   height: "40px",
   borderRadius: "15px",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1880,8 +1760,8 @@ const statCardStyle: CSSProperties = {
   padding: "5px 4px",
   borderRadius: "13px",
   scrollSnapAlign: "start",
-  background: "var(--historietas-surface, rgba(255,255,255,0.055))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
@@ -1922,9 +1802,8 @@ const actionsStyle: CSSProperties = {
   gap: "7px",
   padding: "10px 16px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.90)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   width: "calc(100% + 32px)",
   maxWidth: "calc(100% + 32px)",
@@ -1960,18 +1839,17 @@ const buttonBaseStyle: CSSProperties = {
 
 const primaryButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 52%, transparent)",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 74%, #FFFFFF) 100%)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   boxShadow: "none",
 };
 
 const secondaryButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 36%, rgba(255,255,255,0.08))",
-  background: "var(--historietas-secondary-surface, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(255,255,255,0.035)))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   boxShadow: "none",
 };
 
@@ -1986,14 +1864,13 @@ const dangerButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 56px))",
-  padding: "18px 0 8px",
+  padding: "18px 0 28px",
 };
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
   borderRadius: "32px",
-  boxShadow:
-    "var(--historietas-hero-shadow, 0 24px 62px rgba(0,0,0,0.34), 0 0 42px var(--historietas-glow-primary, rgba(124,58,237,0.14)))",
+  boxShadow: "none",
 };
 
 const desktopHeroContentStyle: CSSProperties = {

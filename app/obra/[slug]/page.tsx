@@ -8,13 +8,15 @@ import { obras } from "../../data/obras";
 import { supabase } from "../../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
 
-const SAVED_RELEASES_STORAGE_KEY = "historietas-lancamentos-salvos";
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
 const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
+const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const LOCAL_WORKS_STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
+const VERSAO_INTERACOES_OBRA_PUBLICA = "fix-interacoes-obra-2026-06-16-0022";
 
 type CapituloLocal = {
   id: string;
@@ -135,6 +137,13 @@ type ObraDinamica = {
   capa: string;
   arquivoObra: ArquivoObraLocal | null;
   capitulos: CapituloDinamico[];
+};
+
+type PerfilPublicoObra = {
+  userId: string;
+  nome: string;
+  avatar: string;
+  bio: string;
 };
 
 type MetricasObraPublica = {
@@ -579,14 +588,13 @@ function carregarObrasLocaisComBackup() {
         )
     : [];
 
+  const obrasPublicasLocais = obrasNormalizadas.filter((obraLocal) => {
+    return obraLocal.publicado && obraLocal.capitulos.length > 0;
+  });
+
   sincronizarBackupArquivosObras(obrasNormalizadas);
 
-  localStorage.setItem(
-    LOCAL_WORKS_STORAGE_KEY,
-    JSON.stringify(obrasNormalizadas)
-  );
-
-  return obrasNormalizadas;
+  return obrasPublicasLocais;
 }
 
 function normalizarCategoriaArquivoSupabase(
@@ -724,6 +732,7 @@ async function carregarObraSupabasePorSlug(
       .from("obras")
       .select("*")
       .eq("slug", slugLimpo)
+      .eq("publicado", true)
       .limit(1);
 
     if (erroObra) {
@@ -744,6 +753,7 @@ async function carregarObraSupabasePorSlug(
       .from("capitulos")
       .select("*")
       .eq("obra_id", obraBanco.id)
+      .eq("publicado", true)
       .order("ordem", { ascending: true });
 
     if (erroCapitulos) {
@@ -769,6 +779,7 @@ async function carregarObraSupabasePorSlug(
     const obraJaExiste = obrasLocais.some(
       (obraLocalAtual) => obraLocalAtual.id === obraNormalizada.id
     );
+
     const obrasAtualizadas = obraJaExiste
       ? obrasLocais.map((obraLocalAtual) =>
           obraLocalAtual.id === obraNormalizada.id
@@ -777,10 +788,6 @@ async function carregarObraSupabasePorSlug(
         )
       : [obraNormalizada, ...obrasLocais];
 
-    localStorage.setItem(
-      LOCAL_WORKS_STORAGE_KEY,
-      JSON.stringify(obrasAtualizadas)
-    );
     sincronizarBackupArquivosObras(obrasAtualizadas);
 
     return obrasAtualizadas;
@@ -909,9 +916,124 @@ function criarLinkPerfilAutor(autor: string, autorId?: string) {
 
   if (autorIdLimpo) {
     params.set("autorId", autorIdLimpo);
+    params.set("userId", autorIdLimpo);
   }
 
   return `/perfil-autor?${params.toString()}`;
+}
+
+function obterTextoPerfilObra(registro: Record<string, unknown>, chave: string) {
+  const valor = registro[chave];
+
+  return typeof valor === "string" && valor.trim() ? valor.trim() : "";
+}
+
+function obterNomePerfilObra(profile: Record<string, unknown> | null, fallback: string) {
+  if (!profile) {
+    return fallback.trim() || "Autor não informado";
+  }
+
+  return (
+    obterTextoPerfilObra(profile, "nome") ||
+    obterTextoPerfilObra(profile, "nome_usuario") ||
+    obterTextoPerfilObra(profile, "username") ||
+    obterTextoPerfilObra(profile, "display_name") ||
+    obterTextoPerfilObra(profile, "apelido") ||
+    fallback.trim() ||
+    "Autor não informado"
+  );
+}
+
+function obterAvatarPerfilObra(profile: Record<string, unknown> | null) {
+  if (!profile) {
+    return "";
+  }
+
+  return (
+    obterTextoPerfilObra(profile, "avatar_url") ||
+    obterTextoPerfilObra(profile, "avatar") ||
+    obterTextoPerfilObra(profile, "foto_url") ||
+    obterTextoPerfilObra(profile, "imagem_url") ||
+    obterTextoPerfilObra(profile, "photo_url")
+  );
+}
+
+function obterBioPerfilObra(profile: Record<string, unknown> | null) {
+  if (!profile) {
+    return "";
+  }
+
+  return (
+    obterTextoPerfilObra(profile, "bio") ||
+    obterTextoPerfilObra(profile, "sobre_bio") ||
+    obterTextoPerfilObra(profile, "sobre") ||
+    obterTextoPerfilObra(profile, "descricao")
+  );
+}
+
+function normalizarPerfilPublicoObra(
+  profile: Record<string, unknown> | null,
+  userIdFallback: string,
+  nomeFallback: string
+): PerfilPublicoObra {
+  return {
+    userId:
+      obterTextoPerfilObra(profile || {}, "user_id") ||
+      obterTextoPerfilObra(profile || {}, "id") ||
+      userIdFallback.trim(),
+    nome: obterNomePerfilObra(profile, nomeFallback).slice(0, 80),
+    avatar: obterAvatarPerfilObra(profile),
+    bio: obterBioPerfilObra(profile).slice(0, 160),
+  };
+}
+
+async function carregarPerfilPublicoObra(
+  userId: string,
+  nomeFallback: string
+): Promise<PerfilPublicoObra | null> {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo || !idObraSupabaseValido(userIdLimpo)) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
+
+    if (!error && data && typeof data === "object" && !Array.isArray(data)) {
+      return normalizarPerfilPublicoObra(
+        data as Record<string, unknown>,
+        userIdLimpo,
+        nomeFallback
+      );
+    }
+  } catch {
+    // Bases antigas podem usar id no lugar de user_id.
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userIdLimpo)
+      .maybeSingle();
+
+    if (!error && data && typeof data === "object" && !Array.isArray(data)) {
+      return normalizarPerfilPublicoObra(
+        data as Record<string, unknown>,
+        userIdLimpo,
+        nomeFallback
+      );
+    }
+  } catch {
+    // Profiles é camada social complementar; a página deve continuar abrindo.
+  }
+
+  return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback);
 }
 
 function criarLinkComunidadeObra(titulo: string, tipo?: "Teoria" | "Review") {
@@ -1003,6 +1125,146 @@ function criarMetricasBaseObra(obra: ObraDinamica | null): MetricasObraPublica {
 
 function obterChaveAvaliacaoObra(obra: ObraDinamica) {
   return obra.id || obra.slug || normalizarTexto(obra.titulo);
+}
+
+function obterChavesInteracaoObraPublica(obra: ObraDinamica) {
+  return Array.from(
+    new Set(
+      [
+        obra.id,
+        obra.slug,
+        obra.link,
+        criarSlugBase(obra.titulo),
+        normalizarTexto(obra.titulo),
+      ]
+        .map((chave) => chave.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function carregarListaLocalObraPublica(chaveStorage: string) {
+  try {
+    const texto = localStorage.getItem(chaveStorage);
+    const json: unknown = texto ? JSON.parse(texto) : [];
+
+    return Array.isArray(json)
+      ? json.filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
+      : [];
+  } catch {
+    return [] as string[];
+  }
+}
+
+function obraEstaEmListaLocalObraPublica(obra: ObraDinamica, chaveStorage: string) {
+  const chavesObra = new Set(obterChavesInteracaoObraPublica(obra));
+
+  return carregarListaLocalObraPublica(chaveStorage).some((item) =>
+    chavesObra.has(item.trim())
+  );
+}
+
+function salvarListaLocalObraPublica(
+  obra: ObraDinamica,
+  chaveStorage: string,
+  ativo: boolean
+) {
+  const listaAtual = carregarListaLocalObraPublica(chaveStorage);
+  const chavesObra = obterChavesInteracaoObraPublica(obra);
+  const chavesSet = new Set(chavesObra);
+  const listaSemObra = listaAtual.filter((item) => !chavesSet.has(item.trim()));
+  const proximaLista = ativo
+    ? Array.from(new Set([...listaSemObra, ...chavesObra]))
+    : listaSemObra;
+
+  localStorage.setItem(chaveStorage, JSON.stringify(proximaLista));
+
+  return proximaLista;
+}
+
+async function salvarRegistroObraPublicaSupabase(
+  tabela: "favoritos" | "concluidas",
+  userId: string,
+  obraId: string,
+  ativo: boolean
+) {
+  if (!userId || !obraId || !idObraSupabaseValido(obraId)) {
+    return;
+  }
+
+  const { error: erroDelete } = await supabase
+    .from(tabela)
+    .delete()
+    .eq("user_id", userId)
+    .eq("obra_id", obraId);
+
+  if (erroDelete) {
+    throw erroDelete;
+  }
+
+  if (!ativo) {
+    return;
+  }
+
+  const { error: erroInsert } = await supabase.from(tabela).insert({
+    user_id: userId,
+    obra_id: obraId,
+    visibilidade: "publico",
+  });
+
+  if (erroInsert) {
+    throw erroInsert;
+  }
+}
+
+async function salvarCurtidaObraPublicaSupabase(
+  userId: string,
+  obraId: string,
+  ativo: boolean
+) {
+  if (!userId || !obraId || !idObraSupabaseValido(obraId)) {
+    return;
+  }
+
+  const { error: erroDelete } = await supabase
+    .from("obra_curtidas")
+    .delete()
+    .eq("obra_id", obraId)
+    .eq("user_id", userId);
+
+  if (erroDelete) {
+    throw erroDelete;
+  }
+
+  if (!ativo) {
+    return;
+  }
+
+  const tentativas: Array<Record<string, string>> = [
+    {
+      obra_id: obraId,
+      user_id: userId,
+      visibilidade: "publico",
+    },
+    {
+      obra_id: obraId,
+      user_id: userId,
+    },
+  ];
+
+  let ultimoErro: unknown = null;
+
+  for (const payload of tentativas) {
+    const { error } = await supabase.from("obra_curtidas").insert(payload);
+
+    if (!error) {
+      return;
+    }
+
+    ultimoErro = error;
+  }
+
+  throw ultimoErro || new Error("Não foi possível salvar a curtida da obra.");
 }
 
 function carregarAvaliacoesLocais() {
@@ -1124,7 +1386,7 @@ function calcularProximaAvaliacao(
       total: totalNovo,
       minhaNota: 0,
       carregado: true,
-      salvando: true,
+      salvando: false,
     };
   }
 
@@ -1138,8 +1400,77 @@ function calcularProximaAvaliacao(
     total: totalNovo,
     minhaNota: novaNota,
     carregado: true,
-    salvando: true,
+    salvando: false,
   };
+}
+
+type DiarioAtividadeObraTipo =
+  | "salvou_obra"
+  | "favoritou_obra"
+  | "concluiu_obra"
+  | "avaliou_obra";
+
+type DiarioAtividadeObraVisibilidade = "publico" | "parcial" | "privado";
+
+async function registrarAtividadeDiarioObra({
+  userId,
+  obra,
+  tipo,
+  nota,
+  texto,
+  visibilidade,
+}: {
+  userId: string;
+  obra: ObraDinamica;
+  tipo: DiarioAtividadeObraTipo;
+  nota?: number;
+  texto?: string;
+  visibilidade: DiarioAtividadeObraVisibilidade;
+}) {
+  if (!userId || !obra.id || !idObraSupabaseValido(obra.id)) {
+    return;
+  }
+
+  const notaNormalizada =
+    typeof nota === "number" && Number.isFinite(nota) && nota > 0
+      ? Math.round(nota * 2) / 2
+      : null;
+  const payloadBase = {
+    user_id: userId,
+    tipo,
+    obra_id: obra.id,
+    texto: texto?.trim() || null,
+    visibilidade,
+    metadata: {
+      origem: "obra_publica",
+      titulo: obra.titulo,
+      slug: obra.slug,
+      autor: obra.autor,
+      genero: obra.genero,
+      formato: obra.formato,
+    },
+  };
+
+  try {
+    const { error } = await supabase.from("diario_atividades").insert({
+      ...payloadBase,
+      nota: notaNormalizada,
+    });
+
+    if (!error) {
+      return;
+    }
+
+    const { error: erroFallback } = await supabase
+      .from("diario_atividades")
+      .insert(payloadBase);
+
+    if (erroFallback) {
+      console.warn("Não consegui registrar atividade do Diário da obra:", erroFallback.message);
+    }
+  } catch (error) {
+    console.warn("Não consegui acessar diario_atividades na obra:", error);
+  }
 }
 
 export default function ObraDinamicaPage() {
@@ -1158,14 +1489,17 @@ export default function ObraDinamicaPage() {
 
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [carregandoObras, setCarregandoObras] = useState(true);
-  const [avisoAtivado, setAvisoAtivado] = useState(false);
   const [obraSeguida, setObraSeguida] = useState(false);
+  const [obraFavoritada, setObraFavoritada] = useState(false);
+  const [obraConcluida, setObraConcluida] = useState(false);
   const [metricasObra, setMetricasObra] =
     useState<MetricasObraPublica>(metricasObraVazias);
   const [metricasComunidadeObra, setMetricasComunidadeObra] =
     useState<MetricasComunidadeObra>(metricasComunidadeObraVazias);
   const [avaliacaoObra, setAvaliacaoObra] =
     useState<AvaliacaoObraPublica>(avaliacaoObraVazia);
+  const [perfilAutorObra, setPerfilAutorObra] =
+    useState<PerfilPublicoObra | null>(null);
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -1249,10 +1583,38 @@ export default function ObraDinamicaPage() {
     return obraCatalogo ? converterObraCatalogoParaDinamica(obraCatalogo) : null;
   }, [slug, obrasLocais]);
 
-  const obraNormalizada = obra ? normalizarTexto(obra.titulo) : "";
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarPerfilAutorDaObra() {
+      if (!obra?.autorId) {
+        setPerfilAutorObra(null);
+        return;
+      }
+
+      const perfilAutor = await carregarPerfilPublicoObra(
+        obra.autorId,
+        obra.autor
+      );
+
+      if (!cancelado) {
+        setPerfilAutorObra(perfilAutor);
+      }
+    }
+
+    void carregarPerfilAutorDaObra();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obra?.autorId, obra?.autor]);
+
+  const obraNormalizada = obra ? normalizarTexto(obra.titulo) : ""; 
   const generoObraFormatado = obra
     ? formatarGeneroObraPublica(obra.genero)
     : "Não informado";
+  const autorObraNome = perfilAutorObra?.nome || obra?.autor || "Autor não informado";
+  const autorObraId = perfilAutorObra?.userId || obra?.autorId || "";
   const obraDisponivel = Boolean(obra?.disponivel);
 
   useEffect(() => {
@@ -1288,21 +1650,9 @@ export default function ObraDinamicaPage() {
     }
 
     try {
-      const lancamentosTexto = localStorage.getItem(SAVED_RELEASES_STORAGE_KEY);
-      const lancamentosJson: unknown = lancamentosTexto
-        ? JSON.parse(lancamentosTexto)
-        : [];
-
       const obrasSeguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
       const obrasSeguidasJson: unknown = obrasSeguidasTexto
         ? JSON.parse(obrasSeguidasTexto)
-        : [];
-
-      const lancamentosSalvos = Array.isArray(lancamentosJson)
-        ? lancamentosJson.filter(
-            (titulo): titulo is string =>
-              typeof titulo === "string" && Boolean(titulo.trim())
-          )
         : [];
 
       const obrasSeguidas = Array.isArray(obrasSeguidasJson)
@@ -1312,13 +1662,70 @@ export default function ObraDinamicaPage() {
           )
         : [];
 
-      setAvisoAtivado(lancamentosSalvos.includes(obraNormalizada));
       setObraSeguida(obrasSeguidas.includes(obraNormalizada));
     } catch {
-      setAvisoAtivado(false);
       setObraSeguida(false);
     }
   }, [obraNormalizada]);
+
+  useEffect(() => {
+    if (!obra) {
+      setObraFavoritada(false);
+      setObraConcluida(false);
+      return;
+    }
+
+    let cancelado = false;
+    const obraAtual = obra;
+
+    setObraFavoritada(obraEstaEmListaLocalObraPublica(obraAtual, FAVORITES_STORAGE_KEY));
+    setObraConcluida(obraEstaEmListaLocalObraPublica(obraAtual, COMPLETED_STORAGE_KEY));
+
+    if (!obraAtual.id || !idObraSupabaseValido(obraAtual.id)) {
+      return;
+    }
+
+    async function carregarEstadoSocialObra() {
+      try {
+        const { data: usuarioData } = await supabase.auth.getUser();
+        const userId = usuarioData.user?.id || "";
+
+        if (!userId) {
+          return;
+        }
+
+        const [{ data: favoritoData }, { data: concluidaData }] = await Promise.all([
+          supabase
+            .from("favoritos")
+            .select("obra_id")
+            .eq("user_id", userId)
+            .eq("obra_id", obraAtual.id)
+            .maybeSingle(),
+          supabase
+            .from("concluidas")
+            .select("obra_id")
+            .eq("user_id", userId)
+            .eq("obra_id", obraAtual.id)
+            .maybeSingle(),
+        ]);
+
+        if (cancelado) {
+          return;
+        }
+
+        setObraFavoritada(Boolean(favoritoData));
+        setObraConcluida(Boolean(concluidaData));
+      } catch {
+        // Mantém o estado local como fallback.
+      }
+    }
+
+    void carregarEstadoSocialObra();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obra?.id, obra?.slug, obraNormalizada]);
 
   useEffect(() => {
     if (!obra) {
@@ -1746,54 +2153,6 @@ export default function ObraDinamicaPage() {
     }
   }
 
-  async function alternarAviso() {
-    if (!obraNormalizada) {
-      return;
-    }
-
-    const userId = await obterUsuarioLogadoParaAcao(
-      "Entre na sua conta para ativar aviso desta obra."
-    );
-
-    if (!userId) {
-      return;
-    }
-
-    try {
-      const lancamentosTexto = localStorage.getItem(SAVED_RELEASES_STORAGE_KEY);
-      const lancamentosJson: unknown = lancamentosTexto
-        ? JSON.parse(lancamentosTexto)
-        : [];
-
-      const lancamentosSalvos = Array.isArray(lancamentosJson)
-        ? lancamentosJson.filter(
-            (titulo): titulo is string =>
-              typeof titulo === "string" && Boolean(titulo.trim())
-          )
-        : [];
-
-      const novosLancamentos = lancamentosSalvos.includes(obraNormalizada)
-        ? lancamentosSalvos.filter((titulo) => titulo !== obraNormalizada)
-        : Array.from(new Set([...lancamentosSalvos, obraNormalizada]));
-
-      localStorage.setItem(
-        SAVED_RELEASES_STORAGE_KEY,
-        JSON.stringify(novosLancamentos)
-      );
-
-      const ativado = novosLancamentos.includes(obraNormalizada);
-
-      setAvisoAtivado(ativado);
-      setMensagemAcao(
-        ativado
-          ? "Aviso ativado para novidades da obra."
-          : "Aviso removido."
-      );
-    } catch {
-      setMensagemAcao("Não foi possível salvar agora.");
-    }
-  }
-
   async function alternarSeguirObra() {
     if (!obraNormalizada) {
       return;
@@ -1808,6 +2167,8 @@ export default function ObraDinamicaPage() {
     }
 
     const seguindo = !obraSeguida;
+    const obraAtual = obra;
+    const seguidoresDelta = seguindo ? 1 : -1;
 
     try {
       const obrasSeguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
@@ -1822,9 +2183,20 @@ export default function ObraDinamicaPage() {
           )
         : [];
 
+      const chavesObraAtual = Array.from(
+        new Set(
+          [
+            obraNormalizada,
+            obraAtual?.id || "",
+            obraAtual?.slug || "",
+            obraAtual?.link || "",
+          ].filter((chave) => Boolean(chave.trim()))
+        )
+      );
+
       const novasObrasSeguidas = seguindo
-        ? Array.from(new Set([...obrasSeguidas, obraNormalizada]))
-        : obrasSeguidas.filter((titulo) => titulo !== obraNormalizada);
+        ? Array.from(new Set([...obrasSeguidas, ...chavesObraAtual]))
+        : obrasSeguidas.filter((titulo) => !chavesObraAtual.includes(titulo));
 
       localStorage.setItem(
         FOLLOWED_WORKS_STORAGE_KEY,
@@ -1834,44 +2206,91 @@ export default function ObraDinamicaPage() {
       setObraSeguida(seguindo);
       setMetricasObra((metricasAtuais) => ({
         ...metricasAtuais,
-        seguidores: Math.max(
-          0,
-          metricasAtuais.seguidores + (seguindo ? 1 : -1)
-        ),
+        seguidores: Math.max(0, metricasAtuais.seguidores + seguidoresDelta),
       }));
       setMensagemAcao("");
 
-      if (!obra || obra.origem !== "local" || !obra.id || !idObraSupabaseValido(obra.id)) {
+      if (
+        !obraAtual ||
+        obraAtual.origem !== "local" ||
+        !obraAtual.id ||
+        !idObraSupabaseValido(obraAtual.id)
+      ) {
         return;
       }
 
-      const obraId = obra.id;
+      const obraId = obraAtual.id;
 
-      const resposta = seguindo
-        ? await supabase.from("seguindo_obras").upsert(
-            {
-              obra_id: obraId,
-              user_id: userId,
-            },
-            { onConflict: "obra_id,user_id" }
-          )
-        : await supabase
-            .from("seguindo_obras")
-            .delete()
-            .eq("obra_id", obraId)
-            .eq("user_id", userId);
+      const removerResposta = await supabase
+        .from("seguindo_obras")
+        .delete()
+        .eq("obra_id", obraId)
+        .eq("user_id", userId);
 
-      if (resposta.error) {
-        throw resposta.error;
+      if (removerResposta.error) {
+        throw removerResposta.error;
       }
-    } catch {
+
+      if (seguindo) {
+        const inserirResposta = await supabase.from("seguindo_obras").insert({
+          obra_id: obraId,
+          user_id: userId,
+        });
+
+        if (inserirResposta.error) {
+          throw inserirResposta.error;
+        }
+
+        await registrarAtividadeDiarioObra({
+          userId,
+          obra: obraAtual,
+          tipo: "salvou_obra",
+          visibilidade: "privado",
+          texto: `Adicionou ${obraAtual.titulo} para acompanhar.`,
+        });
+      }
+    } catch (error) {
+      console.warn("Não consegui salvar seguimento da obra:", error);
+
+      try {
+        const obrasSeguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
+        const obrasSeguidasJson: unknown = obrasSeguidasTexto
+          ? JSON.parse(obrasSeguidasTexto)
+          : [];
+        const obrasSeguidas = Array.isArray(obrasSeguidasJson)
+          ? obrasSeguidasJson.filter(
+              (titulo): titulo is string =>
+                typeof titulo === "string" && Boolean(titulo.trim())
+            )
+          : [];
+
+        const chavesObraAtual = Array.from(
+          new Set(
+            [
+              obraNormalizada,
+              obraAtual?.id || "",
+              obraAtual?.slug || "",
+              obraAtual?.link || "",
+            ].filter((chave) => Boolean(chave.trim()))
+          )
+        );
+
+        const obrasSeguidasRestauradas = seguindo
+          ? obrasSeguidas.filter((titulo) => !chavesObraAtual.includes(titulo))
+          : Array.from(new Set([...obrasSeguidas, ...chavesObraAtual]));
+
+        localStorage.setItem(
+          FOLLOWED_WORKS_STORAGE_KEY,
+          JSON.stringify(obrasSeguidasRestauradas)
+        );
+      } catch {
+        // O rollback local não deve travar a mensagem de erro.
+      }
+
       setObraSeguida(!seguindo);
       setMetricasObra((metricasAtuais) => ({
         ...metricasAtuais,
-        seguidores: Math.max(
-          0,
-          metricasAtuais.seguidores + (seguindo ? -1 : 1)
-        ),
+        seguidores: Math.max(0, metricasAtuais.seguidores - seguidoresDelta),
       }));
       setMensagemAcao("Não foi possível salvar agora.");
     }
@@ -1939,22 +2358,20 @@ export default function ObraDinamicaPage() {
     const obraId = obra.id;
 
     try {
-      const resposta = proximaCurtidaAtiva
-        ? await supabase.from("obra_curtidas").upsert(
-            {
-              obra_id: obraId,
-              user_id: userId,
-            },
-            { onConflict: "obra_id,user_id" }
-          )
-        : await supabase
-            .from("obra_curtidas")
-            .delete()
-            .eq("obra_id", obraId)
-            .eq("user_id", userId);
+      await salvarCurtidaObraPublicaSupabase(
+        userId,
+        obraId,
+        proximaCurtidaAtiva
+      );
 
-      if (resposta.error) {
-        throw resposta.error;
+      if (proximaCurtidaAtiva) {
+        await registrarAtividadeDiarioObra({
+          userId,
+          obra,
+          tipo: "favoritou_obra",
+          visibilidade: "parcial",
+          texto: `Curtiu ${obra.titulo}.`,
+        });
       }
 
       setMensagemAcao(
@@ -1973,6 +2390,108 @@ export default function ObraDinamicaPage() {
     }
   }
 
+  async function alternarFavoritoObra() {
+    if (!obra) {
+      return;
+    }
+
+    const userId = await obterUsuarioLogadoParaAcao(
+      "Entre na sua conta para salvar esta obra."
+    );
+
+    if (!userId) {
+      return;
+    }
+
+    const proximoFavorito = !obraFavoritada;
+    const favoritoAnterior = obraFavoritada;
+
+    setObraFavoritada(proximoFavorito);
+    salvarListaLocalObraPublica(obra, FAVORITES_STORAGE_KEY, proximoFavorito);
+    setMensagemAcao("");
+
+    try {
+      if (obra.id && idObraSupabaseValido(obra.id)) {
+        await salvarRegistroObraPublicaSupabase(
+          "favoritos",
+          userId,
+          obra.id,
+          proximoFavorito
+        );
+      }
+
+      if (proximoFavorito) {
+        await registrarAtividadeDiarioObra({
+          userId,
+          obra,
+          tipo: "favoritou_obra",
+          visibilidade: "parcial",
+          texto: `Adicionou ${obra.titulo} à lista.`,
+        });
+      }
+
+      setMensagemAcao(
+        proximoFavorito ? "Obra salva na lista." : "Obra removida da lista."
+      );
+    } catch (error) {
+      console.warn("Não consegui salvar favorito da obra:", error);
+      setObraFavoritada(favoritoAnterior);
+      salvarListaLocalObraPublica(obra, FAVORITES_STORAGE_KEY, favoritoAnterior);
+      setMensagemAcao("Não foi possível salvar na lista agora.");
+    }
+  }
+
+  async function alternarConcluirObra() {
+    if (!obra) {
+      return;
+    }
+
+    const userId = await obterUsuarioLogadoParaAcao(
+      "Entre na sua conta para marcar esta obra como concluída."
+    );
+
+    if (!userId) {
+      return;
+    }
+
+    const proximaConcluida = !obraConcluida;
+    const concluidaAnterior = obraConcluida;
+
+    setObraConcluida(proximaConcluida);
+    salvarListaLocalObraPublica(obra, COMPLETED_STORAGE_KEY, proximaConcluida);
+    setMensagemAcao("");
+
+    try {
+      if (obra.id && idObraSupabaseValido(obra.id)) {
+        await salvarRegistroObraPublicaSupabase(
+          "concluidas",
+          userId,
+          obra.id,
+          proximaConcluida
+        );
+      }
+
+      if (proximaConcluida) {
+        await registrarAtividadeDiarioObra({
+          userId,
+          obra,
+          tipo: "concluiu_obra",
+          visibilidade: "parcial",
+          texto: `Concluiu ${obra.titulo}.`,
+        });
+      }
+
+      setMensagemAcao(
+        proximaConcluida ? "Obra marcada como concluída." : "Obra removida das concluídas."
+      );
+    } catch (error) {
+      console.warn("Não consegui salvar conclusão da obra:", error);
+      setObraConcluida(concluidaAnterior);
+      salvarListaLocalObraPublica(obra, COMPLETED_STORAGE_KEY, concluidaAnterior);
+      setMensagemAcao("Não foi possível marcar como concluída agora.");
+    }
+  }
+
   async function avaliarObra(nota: number) {
     if (!obra || nota < 0 || nota > 5) {
       return;
@@ -1988,7 +2507,6 @@ export default function ObraDinamicaPage() {
 
     const notaNormalizada = nota <= 0 ? 0 : Math.round(nota * 2) / 2;
 
-    const avaliacaoAnterior = avaliacaoObra;
     const proximaAvaliacao = calcularProximaAvaliacao(
       avaliacaoObra,
       notaNormalizada
@@ -2028,17 +2546,28 @@ export default function ObraDinamicaPage() {
         throw resposta.error;
       }
 
+      if (notaNormalizada > 0) {
+        await registrarAtividadeDiarioObra({
+          userId,
+          obra,
+          tipo: "avaliou_obra",
+          nota: notaNormalizada,
+          visibilidade: "publico",
+          texto: `Avaliou ${obra.titulo} com ${notaNormalizada.toFixed(1).replace(".", ",")} estrelas.`,
+        });
+      }
+
       setAvaliacaoObra((avaliacaoAtual) => ({
         ...avaliacaoAtual,
         salvando: false,
       }));
       setMensagemAcao("");
     } catch {
-      setAvaliacaoObra({
-        ...avaliacaoAnterior,
+      setAvaliacaoObra((avaliacaoAtual) => ({
+        ...avaliacaoAtual,
         carregado: true,
         salvando: false,
-      });
+      }));
       setMensagemAcao("");
     }
   }
@@ -2100,9 +2629,9 @@ export default function ObraDinamicaPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <header style={isDesktop ? desktopTopStyle : topStyle}>
-            <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
+            <Link href="/" style={logoStyle} aria-label="Historietas">
               <span style={logoMarkStyle}>H</span>
-              <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+              <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
           </header>
 
@@ -2144,9 +2673,9 @@ export default function ObraDinamicaPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
+          <Link href="/" style={logoStyle} aria-label="Historietas">
             <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+            <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
           <div style={ratingSummaryStyle}>
@@ -2225,37 +2754,40 @@ export default function ObraDinamicaPage() {
 
             <div style={isDesktop ? desktopInfoRowStyle : infoRowStyle}>
               <Link
-                href={criarLinkPerfilAutor(obra.autor, obra.autorId)}
+                href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
                 style={authorInlineStyle}
-                aria-label={`Abrir perfil do autor ${obra.autor}`}
+                aria-label={`Abrir perfil do autor ${autorObraNome}`}
+                title={perfilAutorObra?.bio || undefined}
               >
-                Por {obra.autor}
+                Por {autorObraNome}
               </Link>
             </div>
 
             <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>{obra.sinopse}</p>
 
             <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
-              {obraDisponivel ? (
-                <Link href="#capitulos" style={primaryLinkButtonStyle}>
-                  Ler capítulos
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={alternarAviso}
-                  style={avisoAtivado ? savedButtonStyle : primaryButtonStyle}
-                >
-                  {avisoAtivado ? "✓ Aviso ativo" : "Avisar lançamento"}
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={alternarSeguirObra}
                 style={obraSeguida ? followedButtonStyle : secondaryButtonStyle}
               >
                 {obraSeguida ? "✓ Seguindo" : "Seguir obra"}
+              </button>
+
+              <button
+                type="button"
+                onClick={alternarFavoritoObra}
+                style={obraFavoritada ? followedButtonStyle : secondaryButtonStyle}
+              >
+                {obraFavoritada ? "✓ Na lista" : "Salvar"}
+              </button>
+
+              <button
+                type="button"
+                onClick={alternarConcluirObra}
+                style={obraConcluida ? followedButtonStyle : copyLinkButtonStyle}
+              >
+                {obraConcluida ? "✓ Concluída" : "Concluir"}
               </button>
 
               <button
@@ -2338,7 +2870,7 @@ export default function ObraDinamicaPage() {
                 <button
                   key={`avaliacao-obra-${estrela}`}
                   type="button"
-                  onClick={() => avaliarObra(proximaNota)}
+                  onClick={() => void avaliarObra(proximaNota)}
                   disabled={avaliacaoObra.salvando}
                   style={
                     preenchimentoEstrela === "0%"
@@ -2563,21 +3095,22 @@ function CommunityItem({
 }
 
 const obraPageCss = `
-  html[data-historietas-tema-visual] nav a[href="/explorar"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/explorar"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/explorar"] {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
-    color: var(--historietas-accent, #F97316) !important;
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] {
-    background: var(--historietas-bottom-nav-main-bg, linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)) !important;
-    border-color: var(--historietas-bottom-nav-main-border, color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)) !important;
-    color: #FFFFFF !important;
-    box-shadow: var(--historietas-bottom-nav-main-shadow, none) !important;
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual="branco"] .historietas-home-logo-text,
+  html[data-historietas-tema-visual="branco"] .historietas-theme-title {
+    background: none !important;
+    color: #1A73E8 !important;
+    -webkit-text-fill-color: #1A73E8 !important;
+    text-shadow: none !important;
   }
 `;
 
@@ -2591,13 +3124,11 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   top: 0,
   left: 0,
   right: 0,
-  height: "min(520px, 72vh)",
+  height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -2608,10 +3139,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
@@ -2619,10 +3148,9 @@ const pageStyle: CSSProperties = {
   minHeight: "100vh",
   width: "100%",
   maxWidth: "100vw",
-  overflowX: "hidden",
+  overflowX: "clip",
   boxSizing: "border-box",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "var(--historietas-bg-start, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -2641,7 +3169,7 @@ const containerStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "22px 0 22px",
+  padding: "22px 0 24px",
 };
 
 
@@ -2664,15 +3192,14 @@ const desktopTopStyle: CSSProperties = {
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "23px",
+  fontSize: "25px",
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: 0,
   display: "flex",
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "calc(100% - 108px)",
-  overflow: "hidden",
+  maxWidth: "min(100%, calc(100% - 96px))",
   ...safeTextStyle,
 };
 
@@ -2683,23 +3210,24 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "17px",
+  fontSize: "19px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: 0,
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
+  textShadow: "none",
 };
 
 
@@ -2713,10 +3241,9 @@ const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
   borderRadius: "22px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, transparent))",
+  border: "1px solid rgba(255,255,255,0.08)",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.94)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.98)) 100%)",
+    "linear-gradient(135deg, #08030F 0%, #04000A 58%, #020006 100%)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -2750,9 +3277,10 @@ const coverArtStyle: CSSProperties = {
   borderRadius: "17px",
   position: "relative",
   overflow: "hidden",
-  background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 56%, transparent), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  backgroundImage: "linear-gradient(145deg, #08030F 0%, #04000A 58%, #020006 100%)",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -2766,8 +3294,7 @@ const coverTopBadgeStyle: CSSProperties = {
   maxWidth: "calc(100% - 16px)",
   padding: "5px 7px",
   borderRadius: "999px",
-  background:
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 86%, transparent)",
+  background: "rgba(59, 7, 100, 0.78)",
   color: "#FFFFFF",
   fontSize: "8.8px",
   fontWeight: 950,
@@ -2793,17 +3320,16 @@ const coverTitleStyle: CSSProperties = {
 
 const coverBottomBadgeStyle: CSSProperties = {
   position: "absolute",
+  left: "8px",
   right: "8px",
   bottom: "8px",
-  maxWidth: "calc(100% - 16px)",
-  padding: "5px 7px",
-  borderRadius: "999px",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 86%, transparent)",
+  padding: "7px 8px",
+  borderRadius: "14px",
+  background: "rgba(4, 0, 10, 0.82)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
-  fontSize: "9px",
-  fontWeight: 950,
-  lineHeight: 1.1,
+  display: "grid",
+  gap: "2px",
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -2821,14 +3347,14 @@ const badgeRowStyle: CSSProperties = {
 const infoBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 7px",
+  padding: "5px 7px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-primary, #E4E4E7)",
+  background: "rgba(255,255,255,0.055)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "8.8px",
+  fontWeight: 950,
   lineHeight: 1.1,
-  fontWeight: 900,
   ...safeTextStyle,
 };
 
@@ -2839,7 +3365,7 @@ const authorInlineStyle: CSSProperties = {
   borderRadius: 0,
   background: "transparent",
   border: "none",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   textDecoration: "none",
   cursor: "pointer",
   fontSize: "10.5px",
@@ -2859,20 +3385,16 @@ const statusBadgeStyle: CSSProperties = {
 
 const ratingBadgeStyle: CSSProperties = {
   ...infoBadgeStyle,
-  background:
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, var(--historietas-surface, transparent))",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, var(--historietas-border-soft, transparent))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(124, 58, 237, 0.14)",
+  border: "1px solid rgba(124, 58, 237, 0.26)",
+  color: "#DDD6FE",
 };
 
 const tagBadgeStyle: CSSProperties = {
   ...infoBadgeStyle,
-  background:
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, var(--historietas-surface, transparent))",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, var(--historietas-border-soft, transparent))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(124, 58, 237, 0.12)",
+  border: "1px solid rgba(124, 58, 237, 0.22)",
+  color: "#DDD6FE",
 };
 
 const titleStyle: CSSProperties = {
@@ -2884,11 +3406,11 @@ const titleStyle: CSSProperties = {
   letterSpacing: "-0.07em",
   maxWidth: "100%",
   textAlign: "left",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   ...safeTextStyle,
 };
 
@@ -2931,10 +3453,8 @@ const primaryButtonStyle: CSSProperties = {
   gridColumn: "1 / -1",
   minHeight: "34px",
   borderRadius: "999px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 82%, #111827) 100%)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "10.5px",
@@ -2953,19 +3473,28 @@ const primaryButtonStyle: CSSProperties = {
 
 const primaryLinkButtonStyle: CSSProperties = {
   ...primaryButtonStyle,
+  minHeight: "42px",
+  border: "1px solid rgba(249,115,22,0.30)",
+  background: "#04000A",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "11px",
+  fontWeight: 900,
   textDecoration: "none",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const secondaryButtonStyle: CSSProperties = {
-  minHeight: "34px",
+  minHeight: "42px",
   borderRadius: "999px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
+  border: "1px solid rgba(255,255,255,0.08)",
   background: "var(--historietas-secondary, #7C3AED)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "10.5px",
-  fontWeight: 950,
+  fontSize: "11px",
+  fontWeight: 900,
   cursor: "pointer",
   fontFamily: "inherit",
   display: "flex",
@@ -2975,21 +3504,23 @@ const secondaryButtonStyle: CSSProperties = {
   padding: "0 8px",
   boxShadow: "none",
   boxSizing: "border-box",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
   ...safeTextStyle,
 };
 
 
 const copyLinkButtonStyle: CSSProperties = {
-  minHeight: "34px",
+  minHeight: "42px",
   borderRadius: "999px",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.28)",
+  color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "10.5px",
-  fontWeight: 950,
+  fontSize: "11px",
+  fontWeight: 900,
   cursor: "pointer",
   fontFamily: "inherit",
   display: "flex",
@@ -2999,24 +3530,19 @@ const copyLinkButtonStyle: CSSProperties = {
   padding: "0 8px",
   boxShadow: "none",
   boxSizing: "border-box",
+  textShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
   ...safeTextStyle,
 };
 
 const copiedLinkButtonStyle: CSSProperties = {
   ...copyLinkButtonStyle,
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
-  boxShadow: "0 12px 30px rgba(34, 197, 94, 0.12)",
-};
-
-const savedButtonStyle: CSSProperties = {
-  ...primaryButtonStyle,
-  border: "1px solid rgba(34, 197, 94, 0.30)",
-  background:
-    "linear-gradient(135deg, rgba(34,197,94,0.22) 0%, rgba(22,163,74,0.16) 100%)",
+  background: "rgba(34, 197, 94, 0.12)",
+  border: "1px solid rgba(34, 197, 94, 0.28)",
   color: "#86EFAC",
-  boxShadow: "0 14px 34px rgba(34, 197, 94, 0.14)",
+  boxShadow: "none",
 };
 
 const followedButtonStyle: CSSProperties = {
@@ -3024,7 +3550,7 @@ const followedButtonStyle: CSSProperties = {
   border: "1px solid rgba(34, 197, 94, 0.28)",
   background: "rgba(34, 197, 94, 0.14)",
   color: "#86EFAC",
-  boxShadow: "0 14px 34px rgba(34, 197, 94, 0.12)",
+  boxShadow: "none",
 };
 
 const actionMessageStyle: CSSProperties = {
@@ -3048,8 +3574,8 @@ const statsGridStyle: CSSProperties = {
 
 const statCardStyle: CSSProperties = {
   borderRadius: "14px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.04))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   padding: "7px 5px",
   display: "grid",
   gap: "3px",
@@ -3057,12 +3583,19 @@ const statCardStyle: CSSProperties = {
   overflow: "hidden",
   boxShadow: "none",
   textAlign: "center",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const activeStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.26)",
+  background: "#04140A",
+  border: "1px solid rgba(34, 197, 94, 0.28)",
+  boxShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const statButtonStyle: CSSProperties = {
@@ -3111,10 +3644,11 @@ const miniTitleStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(22px, 6.5vw, 31px)",
-  lineHeight: 1,
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "clamp(24px, 4vw, 30px)",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: "-0.03em",
   maxWidth: "100%",
   textAlign: "center",
   ...safeTextStyle,
@@ -3122,7 +3656,7 @@ const sectionTitleStyle: CSSProperties = {
 
 const accentSectionTitleStyle: CSSProperties = {
   ...sectionTitleStyle,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
   textTransform: "uppercase",
 };
 
@@ -3154,14 +3688,13 @@ const fileBoxStyle: CSSProperties = {
   padding: "15px",
   borderRadius: "22px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.82)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.94)) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+    "linear-gradient(135deg, #08030F 0%, #04000A 58%, #020006 100%)",
+  border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   gap: "11px",
   minWidth: 0,
   overflow: "hidden",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  boxShadow: "none",
 };
 
 const fileHeaderStyle: CSSProperties = {
@@ -3175,7 +3708,7 @@ const fileHeaderStyle: CSSProperties = {
 
 const fileTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "clamp(24px, 7vw, 30px)",
   lineHeight: 1,
   fontWeight: 950,
@@ -3203,8 +3736,8 @@ const fileInfoCardStyle: CSSProperties = {
   alignItems: "center",
   padding: "10px",
   borderRadius: "18px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(255,255,255,0.045)",
+  border: "1px solid rgba(255,255,255,0.08)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -3244,8 +3777,7 @@ const fileIconBoxStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  boxShadow:
-    "0 12px 28px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
+  boxShadow: "none",
 };
 
 const fileInfoTextStyle: CSSProperties = {
@@ -3292,6 +3824,7 @@ const filePrimaryButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
@@ -3301,14 +3834,15 @@ const filePrimaryButtonStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   padding: "0 10px",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const fileSecondaryButtonStyle: CSSProperties = {
   ...filePrimaryButtonStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid rgba(255,255,255,0.11)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
 };
 
 const workRatingBoxStyle: CSSProperties = {
@@ -3356,8 +3890,8 @@ const workRatingStarsRowStyle: CSSProperties = {
 const workRatingStarButtonStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
+  border: "none",
+  background: "transparent",
   color: "rgba(251, 191, 36, 0.34)",
   fontSize: "22px",
   fontWeight: 950,
@@ -3365,6 +3899,9 @@ const workRatingStarButtonStyle: CSSProperties = {
   cursor: "pointer",
   fontFamily: "inherit",
   boxShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
   padding: 0,
   display: "inline-flex",
   alignItems: "center",
@@ -3373,9 +3910,13 @@ const workRatingStarButtonStyle: CSSProperties = {
 
 const workRatingStarActiveStyle: CSSProperties = {
   ...workRatingStarButtonStyle,
-  border: "1px solid rgba(251, 191, 36, 0.38)",
-  background: "rgba(251, 191, 36, 0.12)",
+  border: "none",
+  background: "transparent",
   color: "#FBBF24",
+  boxShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const workRatingStarVisualStyle: CSSProperties = {
@@ -3449,8 +3990,8 @@ const communityGridStyle: CSSProperties = {
 const communityItemStyle: CSSProperties = {
   padding: "8px 6px",
   borderRadius: "14px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.04))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   gap: "3px",
   justifyItems: "center",
@@ -3459,6 +4000,10 @@ const communityItemStyle: CSSProperties = {
   color: "inherit",
   textDecoration: "none",
   cursor: "pointer",
+  boxShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const communityNumberStyle: CSSProperties = {
@@ -3587,8 +4132,8 @@ const commentsGridStyle: CSSProperties = {
 const commentCardStyle: CSSProperties = {
   padding: "9px",
   borderRadius: "15px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.04))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
+  background: "rgba(255,255,255,0.045)",
+  border: "1px solid rgba(255,255,255,0.07)",
   display: "grid",
   gap: "5px",
   minWidth: 0,
@@ -3632,7 +4177,7 @@ const chapterCountBadgeStyle: CSSProperties = {
   borderRadius: 0,
   background: "transparent",
   border: "none",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 950,
   textAlign: "center",
@@ -3649,8 +4194,8 @@ const chapterCardStyle: CSSProperties = {
   padding: "9px",
   borderRadius: "17px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.74)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.88)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+    "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  border: "1px solid rgba(255,255,255,0.07)",
   display: "grid",
   gridTemplateColumns: "38px minmax(0, 1fr)",
   gap: "8px",
@@ -3664,11 +4209,9 @@ const chapterNumberStyle: CSSProperties = {
   width: "38px",
   height: "38px",
   borderRadius: "13px",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "rgba(249, 115, 22, 0.12)",
+  border: "1px solid rgba(249, 115, 22, 0.24)",
+  color: "var(--historietas-accent, #F97316)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -3694,13 +4237,11 @@ const chapterTopLineStyle: CSSProperties = {
 const chapterOrderBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "5px 7px",
-  borderRadius: "999px",
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -3708,9 +4249,9 @@ const chapterOrderBadgeStyle: CSSProperties = {
 
 const chapterStatusBadgeStyle: CSSProperties = {
   ...chapterOrderBadgeStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #E4E4E7)",
+  background: "transparent",
+  border: "none",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const chapterTitleStyle: CSSProperties = {
@@ -3775,11 +4316,11 @@ const desktopHeroContentStyle: CSSProperties = {
 
 const desktopCoverArtStyle: CSSProperties = {
   ...coverArtStyle,
-  gridColumn: "1",
-  gridRow: "1 / span 5",
-  minHeight: "304px",
-  height: "304px",
-  borderRadius: "21px",
+  minHeight: "396px",
+  height: "100%",
+  borderRadius: "22px",
+  gridColumn: "auto",
+  gridRow: "auto",
 };
 
 const desktopBadgeRowStyle: CSSProperties = {
@@ -3790,9 +4331,10 @@ const desktopBadgeRowStyle: CSSProperties = {
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
-  gridColumn: "2",
-  fontSize: "clamp(44px, 5vw, 66px)",
-  lineHeight: 0.94,
+  gridColumn: "auto",
+  fontSize: "clamp(46px, 5.8vw, 78px)",
+  lineHeight: 0.92,
+  letterSpacing: "-0.085em",
   textAlign: "left",
 };
 
@@ -3820,18 +4362,17 @@ const desktopHeroActionsStyle: CSSProperties = {
 
 const desktopStatsGridStyle: CSSProperties = {
   ...statsGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "8px",
-  marginTop: "10px",
+  gap: "10px",
+  marginTop: "14px",
 };
 
 
 
 const desktopFileBoxStyle: CSSProperties = {
   ...fileBoxStyle,
-  padding: "22px",
+  padding: "20px",
   borderRadius: "26px",
-  marginTop: "14px",
+  marginTop: "18px",
 };
 
 const desktopFileInfoCardStyle: CSSProperties = {
@@ -3896,14 +4437,15 @@ const emptyBoxStyle: CSSProperties = {
   padding: "18px",
   borderRadius: "26px",
   background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(33,24,50,0.82)) 0%, rgba(18,12,30,0.94) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+    "linear-gradient(135deg, #08030F 0%, #04000A 58%, #020006 100%)",
+  border: "1px solid rgba(255,255,255,0.08)",
   minWidth: 0,
+  boxShadow: "none",
 };
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "clamp(34px, 10vw, 58px)",
   lineHeight: 0.95,
   fontWeight: 950,

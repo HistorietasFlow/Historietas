@@ -88,6 +88,7 @@ type CapituloSupabaseRow = {
 };
 
 const STORAGE_KEY = "historietas-obras";
+const USER_WORKS_STORAGE_PREFIX = "historietas-obras-usuario";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_ARQUIVO_OBRA = 2 * 1024 * 1024;
@@ -101,32 +102,24 @@ const LIMITE_CARACTERES_TAG_PERSONALIZADA = 10;
 const OPCOES_FORMATO_OBRA = [
   "Webnovel",
   "Light novel",
-  "Fanfic",
-  "Mangá",
-  "Webtoon",
+  "Romance",
   "Conto",
-  "Crônica",
-  "Roteiro",
-  "História Original",
   "Poesia",
-  "Novel",
-  "Livro",
+  "HQ/Mangá",
+  "Fanfic",
 ] as const;
 
 const OPCOES_GENERO_OBRA = [
+  "Fantasia",
+  "Terror",
+  "Ficção",
+  "Romance",
+  "Drama",
   "Ação",
+  "Mistério",
+  "Suspense",
   "Aventura",
   "Comédia",
-  "Drama",
-  "Fantasia",
-  "Ficção",
-  "Mistério",
-  "Romance",
-  "Suspense",
-  "Terror",
-  "Sobrenatural",
-  "Histórico",
-  "Biografia",
 ] as const;
 
 const OPCOES_TAGS_OBRA = [
@@ -155,9 +148,6 @@ const OPCOES_TAGS_OBRA = [
   "Traição",
   "Vingança",
   "Sobrevivência",
-  "Infantil",
-  "Juvenil",
-  "Adulto",
 ] as const;
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
@@ -268,6 +258,76 @@ function criarLoginHrefEditarObra(obraId?: string) {
   });
 
   return `/login?${params.toString()}`;
+}
+
+function obterTextoMetadataUsuarioEdicaoObra(
+  metadata: Record<string, unknown> | null | undefined,
+  chave: string
+) {
+  const valor = metadata?.[chave];
+
+  return typeof valor === "string" ? valor.trim() : "";
+}
+
+function obterNomeProfileEdicaoObra(registro: unknown) {
+  if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+    return "";
+  }
+
+  const profile = registro as Record<string, unknown>;
+  const nome = profile.nome;
+
+  return typeof nome === "string" ? nome.trim() : "";
+}
+
+async function carregarNomeAutorProfileEdicaoObra(
+  userId: string,
+  fallback = ""
+) {
+  const userIdLimpo = userId.trim();
+  const fallbackLimpo = fallback.trim();
+
+  if (!userIdLimpo) {
+    return fallbackLimpo;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
+
+    if (!error) {
+      const nomeProfile = obterNomeProfileEdicaoObra(data);
+
+      if (nomeProfile) {
+        return nomeProfile;
+      }
+    }
+  } catch {
+    // Mantém fallback se a tabela profiles não estiver disponível.
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("id", userIdLimpo)
+      .maybeSingle();
+
+    if (!error) {
+      const nomeProfile = obterNomeProfileEdicaoObra(data);
+
+      if (nomeProfile) {
+        return nomeProfile;
+      }
+    }
+  } catch {
+    // Mantém fallback se o projeto não usa id em profiles.
+  }
+
+  return fallbackLimpo;
 }
 
 
@@ -565,21 +625,23 @@ function carregarBackupArquivosObras(): ArquivosObrasBackup {
 }
 
 function salvarArquivoObraNoBackup(
-  obraId: string,
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">,
   arquivo: ArquivoObraLocal | null
 ) {
-  if (!obraId.trim() || typeof window === "undefined") {
+  if (!obra.id.trim() || typeof window === "undefined") {
     return;
   }
 
   try {
     const backupAtual = carregarBackupArquivosObras();
 
-    if (arquivo) {
-      backupAtual[obraId] = arquivo;
-    } else {
-      delete backupAtual[obraId];
-    }
+    obterChavesBackupArquivoEdicaoObra(obra).forEach((chave) => {
+      if (arquivo) {
+        backupAtual[chave] = arquivo;
+      } else {
+        delete backupAtual[chave];
+      }
+    });
 
     localStorage.setItem(FILE_BACKUP_STORAGE_KEY, JSON.stringify(backupAtual));
   } catch {
@@ -597,7 +659,9 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[]) {
 
     obras.forEach((obra) => {
       if (obra.arquivoObra) {
-        backupAtual[obra.id] = obra.arquivoObra;
+        obterChavesBackupArquivoEdicaoObra(obra).forEach((chave) => {
+          backupAtual[chave] = obra.arquivoObra as ArquivoObraLocal;
+        });
       }
     });
 
@@ -615,7 +679,9 @@ function restaurarArquivoObraComBackup(
     return obra;
   }
 
-  const arquivoBackup = normalizarArquivoObra(backup[obra.id]);
+  const arquivoBackup = obterChavesBackupArquivoEdicaoObra(obra)
+    .map((chave) => normalizarArquivoObra(backup[chave]))
+    .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo));
 
   if (!arquivoBackup) {
     return obra;
@@ -627,8 +693,97 @@ function restaurarArquivoObraComBackup(
   };
 }
 
+function normalizarIdUsuario(valor: string) {
+  return valor.trim().toLowerCase();
+}
+
 function usuarioPodeEditarObraLocal(obra: ObraLocal, userId: string) {
-  return !obra.autorId || obra.autorId === userId;
+  const usuarioAtual = normalizarIdUsuario(userId);
+  const autorIdObra = normalizarIdUsuario(obra.autorId || "");
+
+  return Boolean(usuarioAtual) && (!autorIdObra || autorIdObra === usuarioAtual);
+}
+
+function obraPertenceAOutroUsuario(obra: ObraLocal, userId: string) {
+  const usuarioAtual = normalizarIdUsuario(userId);
+  const autorIdObra = normalizarIdUsuario(obra.autorId || "");
+
+  return Boolean(usuarioAtual && autorIdObra && autorIdObra !== usuarioAtual);
+}
+
+function salvarObrasDoUsuarioPreservandoOutrasContas(
+  obrasDoUsuario: ObraLocal[],
+  userId: string
+) {
+  if (typeof window === "undefined") {
+    return obrasDoUsuario;
+  }
+
+  const obrasDoUsuarioComDono = obrasDoUsuario.map((obra, index) =>
+    normalizarObra(
+      {
+        ...obra,
+        autorId: obra.autorId || userId,
+      },
+      index
+    )
+  );
+
+  try {
+    const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
+    const obrasSalvasJson: unknown = obrasSalvasTexto
+      ? JSON.parse(obrasSalvasTexto)
+      : [];
+
+    const obrasSalvasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
+      ? (obrasSalvasJson as Partial<ObraLocal>[]).map((obra, index) =>
+          normalizarObra(obra, index)
+        )
+      : [];
+
+    const idsAtualizados = new Set(
+      obrasDoUsuarioComDono.map((obra) => obra.id).filter(Boolean)
+    );
+    const slugsAtualizados = new Set(
+      obrasDoUsuarioComDono
+        .map((obra) => obra.slug || criarSlugBase(obra.titulo))
+        .filter(Boolean)
+    );
+
+    const obrasDeOutrasContas = obrasSalvasNormalizadas.filter((obra) => {
+      if (idsAtualizados.has(obra.id)) {
+        return false;
+      }
+
+      const slugObra = obra.slug || criarSlugBase(obra.titulo);
+
+      if (slugsAtualizados.has(slugObra)) {
+        return false;
+      }
+
+      return obraPertenceAOutroUsuario(obra, userId);
+    });
+
+    const obrasPreservadas = [...obrasDoUsuarioComDono, ...obrasDeOutrasContas];
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasPreservadas));
+    localStorage.setItem(
+      criarStorageUsuarioEditarObraKey(userId),
+      JSON.stringify(obrasDoUsuarioComDono),
+    );
+    sincronizarBackupArquivosObras(obrasPreservadas);
+
+    return obrasDoUsuarioComDono;
+  } catch {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasDoUsuarioComDono));
+    localStorage.setItem(
+      criarStorageUsuarioEditarObraKey(userId),
+      JSON.stringify(obrasDoUsuarioComDono),
+    );
+    sincronizarBackupArquivosObras(obrasDoUsuarioComDono);
+
+    return obrasDoUsuarioComDono;
+  }
 }
 
 function normalizarCapitulo(
@@ -741,6 +896,156 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
   };
 }
 
+function criarStorageUsuarioEditarObraKey(userId: string) {
+  return `${USER_WORKS_STORAGE_PREFIX}:${userId.trim()}`;
+}
+
+function obterChavesBackupArquivoEdicaoObra(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">,
+) {
+  return Array.from(
+    new Set(
+      [
+        `id:${obra.id}`,
+        `slug:${obra.slug || criarSlugBase(obra.titulo)}`,
+        `titulo:${normalizarTexto(obra.titulo)}`,
+        obra.link ? `link:${obra.link}` : "",
+      ].filter((chave) => Boolean(chave.trim())),
+    ),
+  );
+}
+
+function obterChaveComparacaoObraEdicaoObra(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
+  return obra.id || obra.slug || criarSlugBase(obra.titulo);
+}
+
+function mesclarListasObrasEdicaoObra(...listas: ObraLocal[][]) {
+  const obrasMescladas: ObraLocal[] = [];
+  const chavesUsadas = new Set<string>();
+
+  listas.forEach((lista) => {
+    lista.forEach((obra) => {
+      const chave = obterChaveComparacaoObraEdicaoObra(obra);
+
+      if (!chave || chavesUsadas.has(chave)) {
+        return;
+      }
+
+      chavesUsadas.add(chave);
+      obrasMescladas.push(obra);
+    });
+  });
+
+  return obrasMescladas;
+}
+
+function carregarObrasLocalStorageEdicaoObra(userId: string) {
+  if (typeof window === "undefined") {
+    return [] as ObraLocal[];
+  }
+
+  const backupArquivosObras = carregarBackupArquivosObras();
+
+  function normalizarLista(valor: unknown) {
+    return Array.isArray(valor)
+      ? valor
+          .map((obra, index) => normalizarObra(obra as Partial<ObraLocal>, index))
+          .map((obra) => restaurarArquivoObraComBackup(obra, backupArquivosObras))
+      : [];
+  }
+
+  let obrasGlobais: ObraLocal[] = [];
+  let obrasDoUsuario: ObraLocal[] = [];
+
+  try {
+    const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
+    const obrasSalvasJson: unknown = obrasSalvasTexto
+      ? JSON.parse(obrasSalvasTexto)
+      : [];
+    obrasGlobais = normalizarLista(obrasSalvasJson);
+  } catch {
+    obrasGlobais = [];
+  }
+
+  try {
+    if (userId.trim()) {
+      const obrasUsuarioTexto = localStorage.getItem(
+        criarStorageUsuarioEditarObraKey(userId),
+      );
+      const obrasUsuarioJson: unknown = obrasUsuarioTexto
+        ? JSON.parse(obrasUsuarioTexto)
+        : [];
+      obrasDoUsuario = normalizarLista(obrasUsuarioJson);
+    }
+  } catch {
+    obrasDoUsuario = [];
+  }
+
+  const obrasMescladas = mesclarListasObrasEdicaoObra(obrasDoUsuario, obrasGlobais);
+
+  sincronizarBackupArquivosObras(obrasMescladas);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasMescladas));
+
+  if (userId.trim()) {
+    localStorage.setItem(
+      criarStorageUsuarioEditarObraKey(userId),
+      JSON.stringify(
+        obrasMescladas.filter((obra) => !obraPertenceAOutroUsuario(obra, userId)),
+      ),
+    );
+  }
+
+  return obrasMescladas;
+}
+
+async function registrarDiarioEdicaoObra({
+  userId,
+  obra,
+  visibilidade,
+  atualizadoEm,
+}: {
+  userId: string;
+  obra: ObraLocal;
+  visibilidade: "publico" | "privado";
+  atualizadoEm: string;
+}) {
+  try {
+    const payload = {
+      user_id: userId,
+      tipo: "editou_obra",
+      obra_id: obra.id,
+      texto: "",
+      visibilidade,
+      metadata: {
+        obra_titulo: obra.titulo,
+        titulo_obra: obra.titulo,
+        formato: obra.formato,
+        genero: obra.genero,
+        href: obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`,
+      },
+      criado_em: atualizadoEm,
+      atualizado_em: atualizadoEm,
+    };
+
+    const { error } = await supabase.from("diario_atividades").insert(payload);
+
+    if (!error) {
+      return;
+    }
+
+    await supabase.from("diario_atividades").insert({
+      user_id: userId,
+      tipo: "editou_obra",
+      obra_id: obra.id,
+      texto: "",
+      visibilidade,
+      criado_em: atualizadoEm,
+    });
+  } catch (error) {
+    console.warn("Não consegui registrar a edição da obra no Diário:", error);
+  }
+}
+
 function criarMiniCoverStyle(capa: string): CSSProperties {
   if (!capa) {
     return coverPlaceholderStyle;
@@ -749,7 +1054,7 @@ function criarMiniCoverStyle(capa: string): CSSProperties {
   return {
     ...coverPlaceholderStyle,
     border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-    background: "var(--historietas-input-bg, #18181B)",
+    background: "#0B0714",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -763,6 +1068,7 @@ function criarPreviewCoverStyle(capa: string): CSSProperties {
 
   return {
     ...previewCoverStyle,
+    background: "#04000A",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -776,6 +1082,7 @@ function criarDesktopPreviewCoverStyle(capa: string): CSSProperties {
 
   return {
     ...desktopPreviewCoverStyle,
+    background: "#04000A",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -794,6 +1101,7 @@ export default function EditarObraPage() {
 
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
+  const [nomeAutorProfile, setNomeAutorProfile] = useState("");
   const [genero, setGenero] = useState("");
   const [generoPersonalizado, setGeneroPersonalizado] = useState("");
   const [formato, setFormato] = useState("");
@@ -845,7 +1153,11 @@ export default function EditarObraPage() {
   useEffect(() => {
     let cancelado = false;
 
-    function aplicarObraNoFormulario(obraAtual: ObraLocal) {
+    function aplicarObraNoFormulario(
+      obraAtual: ObraLocal,
+      nomeAutorProfileAtual = ""
+    ) {
+      const autorProfile = nomeAutorProfileAtual.trim();
       const formatoEditavel = prepararValorEditavel(
         obraAtual.formato,
         OPCOES_FORMATO_OBRA,
@@ -863,7 +1175,7 @@ export default function EditarObraPage() {
 
       setObraEncontrada(true);
       setTitulo(obraAtual.titulo);
-      setAutor(obraAtual.autor);
+      setAutor(autorProfile || obraAtual.autor);
       setGenero(generoEditavel.selecionado);
       setGeneroPersonalizado(generoEditavel.personalizado);
       setFormato(formatoEditavel.selecionado);
@@ -912,30 +1224,28 @@ export default function EditarObraPage() {
           return;
         }
 
+        const metadataUsuario = dadosUsuario.user?.user_metadata as
+          | Record<string, unknown>
+          | undefined;
+        const nomeMetadataUsuario =
+          obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "nome") ||
+          obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "name") ||
+          obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "full_name");
+        const nomeProfileUsuario = await carregarNomeAutorProfileEdicaoObra(
+          userId,
+          nomeMetadataUsuario
+        );
+
+        if (!cancelado) {
+          setNomeAutorProfile(nomeProfileUsuario);
+        }
+
         if (!obraIdParam) {
           return;
         }
 
         try {
-          const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
-          const obrasSalvasJson = obrasSalvasTexto
-            ? JSON.parse(obrasSalvasTexto)
-            : [];
-
-          const backupArquivosObras = carregarBackupArquivosObras();
-
-          obrasNormalizadas = Array.isArray(obrasSalvasJson)
-            ? obrasSalvasJson
-                .map((obra, index) =>
-                  normalizarObra(obra as Partial<ObraLocal>, index)
-                )
-                .map((obra) =>
-                  restaurarArquivoObraComBackup(obra, backupArquivosObras)
-                )
-            : [];
-
-          sincronizarBackupArquivosObras(obrasNormalizadas);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+          obrasNormalizadas = carregarObrasLocalStorageEdicaoObra(userId);
 
           const obrasAutorizadas = obrasNormalizadas.filter((obra) =>
             usuarioPodeEditarObraLocal(obra, userId)
@@ -949,7 +1259,7 @@ export default function EditarObraPage() {
             setObras(obrasAutorizadas);
 
             if (obraLocal) {
-              aplicarObraNoFormulario(obraLocal);
+              aplicarObraNoFormulario(obraLocal, nomeProfileUsuario);
             }
           }
         } catch {
@@ -1008,18 +1318,30 @@ export default function EditarObraPage() {
           obraLocal,
           0
         );
+        const obraSupabaseComAutorProfile = nomeProfileUsuario
+          ? normalizarObra(
+              {
+                ...obraNormalizadaSupabase,
+                autor: nomeProfileUsuario,
+                autorId: obraNormalizadaSupabase.autorId || userId,
+              },
+              0
+            )
+          : obraNormalizadaSupabase;
 
         const obrasAtualizadas = [
-          obraNormalizadaSupabase,
+          obraSupabaseComAutorProfile,
           ...obrasAutorizadas.filter((obra) => obra.id !== obraIdParam),
         ];
 
-        sincronizarBackupArquivosObras(obrasAtualizadas);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasAtualizadas));
+        const obrasAtualizadasDoUsuario =
+          salvarObrasDoUsuarioPreservandoOutrasContas(obrasAtualizadas, userId);
+
+        sincronizarBackupArquivosObras(obrasAtualizadasDoUsuario);
 
         if (!cancelado) {
-          setObras(obrasAtualizadas);
-          aplicarObraNoFormulario(obraNormalizadaSupabase);
+          setObras(obrasAtualizadasDoUsuario);
+          aplicarObraNoFormulario(obraSupabaseComAutorProfile, nomeProfileUsuario);
         }
       } catch (erroSupabase) {
         console.warn("Falha ao carregar dados do Supabase:", erroSupabase);
@@ -1108,6 +1430,8 @@ export default function EditarObraPage() {
   ]);
 
   const minhaObraHref = `/minha-obra?obraId=${obraId}`;
+  const autorProfileAtivo = nomeAutorProfile.trim();
+  const autorPreview = autorProfileAtivo || autor.trim();
   function marcarAlteracao() {
     if (salvou) {
       setSalvou(false);
@@ -1120,7 +1444,7 @@ export default function EditarObraPage() {
 
   function validarFormulario() {
     const tituloLimpo = titulo.trim();
-    const autorLimpo = autor.trim();
+    const autorLimpo = autorProfileAtivo || autor.trim();
     const generoLimpo = generoFinal;
     const formatoLimpo = formatoFinal;
     const classificacaoLimpa = classificacaoIndicativa.trim();
@@ -1362,7 +1686,8 @@ export default function EditarObraPage() {
     setErro("");
 
     const tituloFinal = titulo.trim();
-    const autorFinal = autor.trim();
+    const autorFormularioFinal = autor.trim();
+    let autorFinal = autorProfileAtivo || autorFormularioFinal;
     const generoFinalSalvo = generoFinal;
     const formatoFinalSalvo = formatoFinal;
     const classificacaoFinal = classificacaoIndicativa.trim();
@@ -1381,6 +1706,20 @@ export default function EditarObraPage() {
         router.replace(criarLoginHrefEditarObra(obraId));
         return;
       }
+
+      const metadataUsuario = dadosUsuario.user?.user_metadata as
+        | Record<string, unknown>
+        | undefined;
+      const nomeMetadataUsuario =
+        obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "nome") ||
+        obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "name") ||
+        obterTextoMetadataUsuarioEdicaoObra(metadataUsuario, "full_name");
+      const nomeProfileAtualizado = await carregarNomeAutorProfileEdicaoObra(
+        userId,
+        nomeMetadataUsuario || autorFormularioFinal
+      );
+      autorFinal = nomeProfileAtualizado || autorFinal;
+      setNomeAutorProfile(nomeProfileAtualizado);
 
       const backupArquivosObras = carregarBackupArquivosObras();
       const obraLocalAtual = obras.find((obra) => obra.id === obraId) || null;
@@ -1488,15 +1827,36 @@ export default function EditarObraPage() {
         );
       });
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(novasObras));
+      const novasObrasDoUsuario =
+        salvarObrasDoUsuarioPreservandoOutrasContas(novasObras, userId);
 
       if (arquivoObraRemovidoManualmente) {
-        salvarArquivoObraNoBackup(obraId, null);
+        salvarArquivoObraNoBackup(
+          {
+            id: obraId,
+            slug: obraLocalAtual?.slug || criarSlugBase(tituloFinal),
+            titulo: tituloFinal,
+            link: obraLocalAtual?.link || `/obra/${obraLocalAtual?.slug || criarSlugBase(tituloFinal)}`,
+          },
+          null,
+        );
       } else {
-        sincronizarBackupArquivosObras(novasObras);
+        sincronizarBackupArquivosObras(novasObrasDoUsuario);
       }
 
-      setObras(novasObras);
+      const obraAtualizadaDiario = novasObrasDoUsuario.find((obra) => obra.id === obraId);
+
+      if (obraAtualizadaDiario) {
+        await registrarDiarioEdicaoObra({
+          userId,
+          obra: obraAtualizadaDiario,
+          visibilidade: obraAtualizadaDiario.publicado ? "publico" : "privado",
+          atualizadoEm: agora,
+        });
+      }
+
+      setObras(novasObrasDoUsuario);
+      setAutor(autorFinal);
       setCapa(capaFinal);
       setCapaNome(capaNomeFinal);
       setCapaArquivo(null);
@@ -2033,7 +2393,7 @@ export default function EditarObraPage() {
                 </h3>
 
                 <p style={previewAuthorStyle}>
-                  Por {autor.trim() || "Autor não informado"}
+                  Por {autorPreview || "Autor não informado"}
                 </p>
 
                 <p style={previewSinopseStyle}>
@@ -2049,20 +2409,51 @@ export default function EditarObraPage() {
 }
 
 const editarObraPageCss = `
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual] nav,
+  html[data-historietas-tema-visual] [data-bottom-nav],
+  html[data-historietas-tema-visual] [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  }
+
   html[data-historietas-tema-visual] nav a[href="/minhas-obras"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/minhas-obras"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/minhas-obras"] {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
-    color: var(--historietas-accent, #F97316) !important;
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="branco"] button:disabled {
-    opacity: 1 !important;
-    background: #F1F3F4 !important;
-    border-color: #DADCE0 !important;
-    color: #5F6368 !important;
-    cursor: not-allowed !important;
+  html[data-historietas-tema-visual] nav a[href="/minhas-obras"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/minhas-obras"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/minhas-obras"] .historietas-bottom-nav-icon {
+    color: #FFFFFF !important;
+    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
+  }
+
+  html[data-historietas-tema-visual] input::placeholder,
+  html[data-historietas-tema-visual] textarea::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea,
+  html[data-historietas-tema-visual] select {
+    color: #FFFFFF !important;
   }
 `;
 
@@ -2076,13 +2467,13 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   top: 0,
   left: 0,
   right: 0,
-  height: "min(520px, 72vh)",
+  height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -2093,10 +2484,10 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
@@ -2105,9 +2496,7 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  boxSizing: "border-box",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -2115,10 +2504,10 @@ const pageStyle: CSSProperties = {
 const containerStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  width: "min(860px, calc(100% - 32px))",
+  width: "min(900px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 calc(20px + env(safe-area-inset-bottom))",
+  padding: "14px 0 18px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2127,52 +2516,53 @@ const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: "10px",
+  gap: "12px",
   marginBottom: "14px",
-  flexWrap: "wrap",
   minWidth: 0,
 };
 
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "25px",
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: "-0.06em",
   display: "flex",
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "min(100%, calc(100% - 162px))",
+  maxWidth: "100%",
   overflow: "visible",
   ...safeTextStyle,
 };
 
 const logoMarkStyle: CSSProperties = {
-  width: "31px",
-  height: "31px",
+  width: "34px",
+  height: "34px",
   borderRadius: "12px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "17px",
+  fontSize: "19px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: 0,
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
-  overflow: "visible",
+  textShadow: "none",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 };
 
@@ -2180,8 +2570,8 @@ const pagePillStyle: CSSProperties = {
   minHeight: "36px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 11%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, rgba(255,255,255,0.08))",
+  background: "rgba(249,115,22,0.11)",
+  border: "1px solid rgba(249,115,22,0.24)",
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "11px",
   fontWeight: 950,
@@ -2196,15 +2586,11 @@ const pagePillStyle: CSSProperties = {
 };
 
 const titleHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
+  ...topStyle,
   justifyContent: "center",
-  gap: "12px",
   flexWrap: "nowrap",
-  width: "100%",
-  margin: "0 auto 14px",
-  padding: 0,
-  minWidth: 0,
+  marginTop: 0,
+  marginBottom: "14px",
   textAlign: "center",
 };
 
@@ -2216,16 +2602,15 @@ const desktopTitleHeaderStyle: CSSProperties = {
 const headerTitleLinkStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "23px",
+  fontSize: "25px",
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: 0,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "1px",
-  width: "fit-content",
-  maxWidth: "100%",
+  gap: "4px",
   minWidth: 0,
+  maxWidth: "100%",
   overflow: "visible",
   flex: "0 1 auto",
   ...safeTextStyle,
@@ -2245,25 +2630,23 @@ const desktopHeaderTitleMarkStyle: CSSProperties = {
 
 const headerTitleTextStyle: CSSProperties = {
   display: "inline-block",
-  margin: 0,
+  marginLeft: "-1px",
   paddingRight: "0.2em",
   paddingBottom: "0.04em",
   whiteSpace: "nowrap",
   overflow: "visible",
-  fontSize: "23px",
+  fontSize: "25px",
   lineHeight: 1.08,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
-  wordSpacing: "0.11em",
-  textAlign: "center",
+  letterSpacing: 0,
+  wordSpacing: "normal",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
   WebkitTextFillColor: "transparent",
   textShadow: "none",
-  ...safeTextStyle,
 };
 
 const desktopHeaderTitleTextStyle: CSSProperties = {
@@ -2272,65 +2655,75 @@ const desktopHeaderTitleTextStyle: CSSProperties = {
 
 
 const heroBoxStyle: CSSProperties = {
+  position: "relative",
   display: "grid",
   justifyItems: "center",
   textAlign: "center",
   gap: "10px",
-  padding: "18px 16px",
-  borderRadius: "24px",
-  background:
-    "radial-gradient(circle at 14% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)), transparent 34%), linear-gradient(135deg, var(--historietas-surface, rgba(12,7,23,0.98)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, transparent))",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+  padding: "24px 16px",
+  borderRadius: "30px",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  boxShadow: "none",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
   overflow: "hidden",
 };
 
 const titleStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
   margin: 0,
-  fontSize: "clamp(34px, 9vw, 54px)",
-  lineHeight: 1.08,
+  color: "var(--historietas-accent, #F97316)",
+  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
+  fontSize: "clamp(30px, 8vw, 46px)",
+  lineHeight: 1.12,
   fontWeight: 950,
-  letterSpacing: "-0.06em",
+  letterSpacing: "-0.052em",
   maxWidth: "100%",
-  paddingBottom: "2px",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 45%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  ...safeTextStyle,
+  textAlign: "center",
+  textShadow: "none",
+  overflow: "visible",
+  wordBreak: "normal",
+  overflowWrap: "normal",
 };
 
 const descriptionStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
+  fontSize: "13px",
   lineHeight: 1.55,
-  fontWeight: 750,
-  maxWidth: "620px",
+  fontWeight: 720,
+  maxWidth: "720px",
   textAlign: "center",
   ...safeTextStyle,
 };
 
 const progressBoxStyle: CSSProperties = {
-  width: "100%",
-  maxWidth: "520px",
+  position: "relative",
+  zIndex: 1,
   display: "grid",
-  gap: "6px",
-  padding: "8px",
-  borderRadius: "15px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.048))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
+  gap: "8px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "0",
   minWidth: 0,
-  overflow: "hidden",
+  width: "min(450px, 100%)",
+  maxWidth: "100%",
   boxSizing: "border-box",
+  overflow: "hidden",
+  boxShadow: "none",
 };
 
 const progressTopStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: "12px",
+  gap: "10px",
   flexWrap: "wrap",
   minWidth: 0,
 };
@@ -2344,7 +2737,7 @@ const progressLabelStyle: CSSProperties = {
 
 const progressNumberStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
+  fontSize: "13px",
   fontWeight: 950,
   ...safeTextStyle,
 };
@@ -2353,7 +2746,9 @@ const progressTrackStyle: CSSProperties = {
   height: "7px",
   overflow: "hidden",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.1))",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  maxWidth: "100%",
 };
 
 const progressFillStyle: CSSProperties = {
@@ -2364,21 +2759,23 @@ const progressFillStyle: CSSProperties = {
 };
 
 const errorBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: "14px",
-  borderRadius: "20px",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
-  border: "1px solid color-mix(in srgb, #EF4444 30%, var(--historietas-border-soft, transparent))",
   display: "grid",
-  gap: "7px",
+  gap: "5px",
+  marginTop: "12px",
+  padding: "11px",
+  borderRadius: "16px",
+  background: "rgba(239,68,68,0.075)",
+  border: "1px solid rgba(239,68,68,0.18)",
+  color: "#FCA5A5",
   minWidth: 0,
+  boxSizing: "border-box",
   overflow: "hidden",
 };
 
 const errorTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
-  fontSize: "22px",
+  color: "#FCA5A5",
+  fontSize: "18px",
   fontWeight: 950,
   letterSpacing: "-0.045em",
   ...safeTextStyle,
@@ -2386,29 +2783,32 @@ const errorTitleStyle: CSSProperties = {
 
 const errorTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-danger-button-text, #FECACA)",
-  fontSize: "13px",
-  lineHeight: 1.6,
-  fontWeight: 750,
+  color: "#FECACA",
+  fontSize: "12px",
+  lineHeight: 1.55,
+  fontWeight: 850,
   ...safeTextStyle,
 };
 
 const successBoxStyle: CSSProperties = {
   marginTop: "12px",
-  padding: "14px",
-  borderRadius: "20px",
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
+  padding: "13px",
+  borderRadius: "21px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   display: "grid",
   gap: "12px",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const successTitleStyle: CSSProperties = {
   margin: 0,
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
-  fontSize: "22px",
+  color: "#86EFAC",
+  fontSize: "20px",
   fontWeight: 950,
   letterSpacing: "-0.045em",
   ...safeTextStyle,
@@ -2417,71 +2817,77 @@ const successTitleStyle: CSSProperties = {
 const successTextStyle: CSSProperties = {
   margin: "7px 0 0",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.6,
+  fontSize: "12px",
+  lineHeight: 1.55,
   fontWeight: 700,
   ...safeTextStyle,
 };
 
 const successActionsStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
+  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
+  gap: "9px",
   minWidth: 0,
+  maxWidth: "100%",
 };
 
 const successPrimaryButtonStyle: CSSProperties = {
-  minHeight: "44px",
+  minHeight: "46px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "11px",
+  fontSize: "13px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 11px",
+  padding: "0 12px",
+  lineHeight: 1.15,
   boxShadow: "none",
   ...safeTextStyle,
 };
 
 const successSecondaryButtonStyle: CSSProperties = {
-  minHeight: "44px",
+  minHeight: "46px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   textDecoration: "none",
-  fontSize: "11px",
+  fontSize: "13px",
   fontWeight: 900,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 11px",
+  padding: "0 12px",
+  lineHeight: 1.15,
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const mainGridStyle: CSSProperties = {
-  marginTop: "12px",
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "12px",
+  gap: "14px",
   minWidth: 0,
+  maxWidth: "100%",
 };
 
 const formStyle: CSSProperties = {
   display: "grid",
-  gap: "12px",
-  padding: "12px",
-  borderRadius: "22px",
-  background: "var(--historietas-surface, rgba(18,12,30,0.86))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  gap: "14px",
+  background: "transparent",
+  border: "0",
+  borderRadius: 0,
+  padding: 0,
+  boxShadow: "none",
   minWidth: 0,
-  overflow: "hidden",
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "visible",
 };
 
 const formHeaderStyle: CSSProperties = {
@@ -2501,14 +2907,20 @@ const formMiniTitleStyle: CSSProperties = {
 };
 
 const formCoverTitleStyle: CSSProperties = {
-  ...formMiniTitleStyle,
   display: "block",
   width: "100%",
-  fontSize: "16px",
-  lineHeight: 1.12,
-  letterSpacing: "0.01em",
+  padding: 0,
+  background: "transparent",
+  border: "0",
+  borderRadius: 0,
+  boxShadow: "none",
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "18px",
+  lineHeight: 1.05,
+  fontWeight: 950,
+  letterSpacing: "-0.045em",
   textAlign: "center",
-  textTransform: "none",
+  ...safeTextStyle,
 };
 
 const fieldGroupStyle: CSSProperties = {
@@ -2526,8 +2938,9 @@ const doubleFieldStyle: CSSProperties = {
 
 const labelStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14px",
-  fontWeight: 900,
+  fontSize: "12px",
+  fontWeight: 950,
+  letterSpacing: "-0.01em",
   ...safeTextStyle,
 };
 
@@ -2537,48 +2950,53 @@ const hiddenInputStyle: CSSProperties = {
 
 const coverUploadBoxStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "80px minmax(0, 1fr)",
+  gridTemplateColumns: "minmax(70px, 82px) minmax(0, 1fr)",
   gap: "10px",
   alignItems: "stretch",
-  padding: "9px",
+  padding: "7px",
   borderRadius: "18px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.043))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
-const coverUploadPreviewStyle: CSSProperties = {
-  minWidth: 0,
-};
-
-const fileUploadBoxStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(52px, 58px) minmax(0, 1fr)",
-  gap: "12px",
-  alignItems: "stretch",
-  padding: "10px",
-  borderRadius: "21px",
-  background:
-    "color-mix(in srgb, var(--historietas-surface, rgba(18,12,30,0.86)) 78%, transparent)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
+};
+
+const coverUploadPreviewStyle: CSSProperties = {
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
+const fileUploadBoxStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(56px, 64px) minmax(0, 1fr)",
+  gap: "12px",
+  alignItems: "stretch",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "0",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "visible",
+  boxShadow: "none",
 };
 
 const fileUploadIconBoxStyle: CSSProperties = {
   minHeight: "82px",
   borderRadius: "18px",
-  background: "var(--historietas-surface, rgba(18,12,30,0.88))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const fileUploadIconStyle: CSSProperties = {
@@ -2605,30 +3023,32 @@ const fileUploadContentStyle: CSSProperties = {
 };
 
 const coverPlaceholderStyle: CSSProperties = {
-  minHeight: "112px",
-  borderRadius: "15px",
-  position: "relative",
-  background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 46%, transparent), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
-  border: "1px dashed rgba(255,255,255,0.16)",
+  minHeight: "96px",
+  borderRadius: "16px",
+  background: "#04000A",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   alignContent: "center",
   justifyItems: "center",
   gap: "5px",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const coverPlaceholderIconStyle: CSSProperties = {
-  width: "32px",
-  height: "32px",
+  width: "26px",
+  height: "26px",
   borderRadius: "999px",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "22px",
+  fontSize: "18px",
   fontWeight: 950,
   position: "relative",
   zIndex: 1,
@@ -2647,15 +3067,15 @@ const coverPlaceholderTextStyle: CSSProperties = {
 const coverUploadContentStyle: CSSProperties = {
   display: "grid",
   alignContent: "center",
-  gap: "7px",
+  gap: "5px",
   minWidth: 0,
 };
 
 const coverUploadTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "16px",
+  fontSize: "15px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: "-0.045em",
   ...safeTextStyle,
 };
 
@@ -2681,67 +3101,81 @@ const coverButtonsStyle: CSSProperties = {
 };
 
 const coverButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  padding: "0 11px",
+  flex: "1 1 94px",
+  minHeight: "36px",
+  maxWidth: "100%",
+  padding: "0 12px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
+  textAlign: "center",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
   boxShadow: "none",
   ...safeTextStyle,
 };
 
 const removeCoverButtonStyle: CSSProperties = {
+  flex: "1 1 94px",
   minHeight: "34px",
+  maxWidth: "100%",
   padding: "0 11px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
+  textAlign: "center",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const inputStyle: CSSProperties = {
   width: "100%",
   minHeight: "46px",
-  borderRadius: "16px",
-  border: "1px solid var(--historietas-border-soft, #3F3F46)",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 13px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "0 14px",
   outline: "none",
   fontSize: "13px",
-  fontWeight: 650,
+  fontWeight: 700,
   fontFamily: "inherit",
   boxSizing: "border-box",
   minWidth: 0,
-  ...safeTextStyle,
+  maxWidth: "100%",
+  boxShadow: "none",
 };
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  minHeight: "84px",
-  resize: "vertical",
-  borderRadius: "18px",
-  border: "1px solid var(--historietas-border-soft, #3F3F46)",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "13px",
+  minHeight: "90px",
+  borderRadius: "20px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "14px",
   outline: "none",
   fontSize: "13px",
-  lineHeight: 1.55,
-  fontWeight: 650,
+  fontWeight: 700,
+  lineHeight: 1.58,
+  resize: "vertical",
   fontFamily: "inherit",
   boxSizing: "border-box",
   minWidth: 0,
+  maxWidth: "100%",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2755,70 +3189,69 @@ const hintStyle: CSSProperties = {
 
 const buttonAreaStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1.35fr) minmax(0, 0.85fr) minmax(0, 0.85fr)",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "6px",
   marginTop: "2px",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const saveButtonStyle: CSSProperties = {
-  minHeight: "40px",
+  minHeight: "42px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
-  fontSize: "11px",
+  fontSize: "11.5px",
   fontWeight: 950,
   cursor: "pointer",
+  boxShadow: "none",
   fontFamily: "inherit",
   textAlign: "center",
-  padding: "0 6px",
-  whiteSpace: "nowrap",
+  padding: "0 8px",
+  lineHeight: 1.05,
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
   ...safeTextStyle,
 };
 
 const disabledButtonStyle: CSSProperties = {
   ...saveButtonStyle,
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   color: "var(--historietas-text-secondary, #A1A1AA)",
+  boxShadow: "none",
   cursor: "not-allowed",
 };
 
 const secondaryButtonStyle: CSSProperties = {
-  minHeight: "40px",
+  minHeight: "42px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 6px",
-  boxShadow: "none",
-  whiteSpace: "nowrap",
-  ...safeTextStyle,
-};
-
-const cancelButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  textDecoration: "none",
-  fontSize: "11px",
+  fontSize: "11.5px",
   fontWeight: 900,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
-  whiteSpace: "nowrap",
+  padding: "0 8px",
+  lineHeight: 1.05,
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
+};
+
+const cancelButtonStyle: CSSProperties = {
+  ...secondaryButtonStyle,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
 };
 
 const previewPanelStyle: CSSProperties = {
@@ -2843,7 +3276,7 @@ const previewHeaderStyle: CSSProperties = {
 };
 
 const previewMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "19px",
   lineHeight: 1.05,
   fontWeight: 950,
@@ -2863,11 +3296,15 @@ const previewCoverStyle: CSSProperties = {
   borderRadius: "14px",
   position: "relative",
   overflow: "hidden",
-  background:
-    "radial-gradient(circle at top left, var(--historietas-glow-secondary, rgba(249,115,22,0.44)), transparent 34%), radial-gradient(circle at bottom right, var(--historietas-glow-primary, rgba(124,58,237,0.66)), transparent 38%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
+  background: "#04000A",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  border: "1px solid rgba(255,255,255,0.08)",
   minWidth: 0,
   boxSizing: "border-box",
   flex: "0 0 auto",
+  boxShadow: "none",
 };
 
 const previewCoverBottomStyle: CSSProperties = {
@@ -2912,11 +3349,10 @@ const previewBodyStyle: CSSProperties = {
   gap: "8px",
   padding: "8px",
   borderRadius: "20px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.92)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 13%, var(--historietas-border-soft, rgba(255,255,255,0.07)))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -2945,9 +3381,9 @@ const previewBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 6px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-secondary-button-text, #E4E4E7)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -2955,30 +3391,28 @@ const previewBadgeStyle: CSSProperties = {
 
 const previewRatingBadgeStyle: CSSProperties = {
   ...previewBadgeStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, var(--historietas-border-soft, transparent))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  color: "#DDD6FE",
 };
 
 const previewDraftBadgeStyle: CSSProperties = {
   ...previewBadgeStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
+  background: "rgba(249,115,22,0.12)",
+  border: "1px solid rgba(249,115,22,0.24)",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
 const previewPublishedBadgeStyle: CSSProperties = {
   ...previewBadgeStyle,
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
+  background: "rgba(34,197,94,0.12)",
+  border: "1px solid rgba(34,197,94,0.28)",
+  color: "#86EFAC",
 };
 
 const previewFileBadgeStyle: CSSProperties = {
   ...previewBadgeStyle,
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
+  background: "rgba(34, 197, 94, 0.12)",
+  border: "1px solid rgba(34, 197, 94, 0.22)",
+  color: "#86EFAC",
 };
 
 const previewObraTitleStyle: CSSProperties = {
@@ -2998,7 +3432,7 @@ const previewAuthorStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   margin: "-1px 0 0",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-secondary, #D8C8FF)",
   fontSize: "12.5px",
   fontWeight: 900,
   textDecoration: "none",
@@ -3025,100 +3459,113 @@ const previewSinopseStyle: CSSProperties = {
 
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
-  borderRadius: "26px",
-  background: "var(--historietas-surface, rgba(31,31,35,0.96))",
-  border: "1px solid var(--historietas-border-soft, #2D2D32)",
-  padding: "22px",
+  borderRadius: "24px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  padding: "24px 16px",
   display: "grid",
-  gap: "12px",
+  justifyItems: "center",
+  textAlign: "center",
+  gap: "8px",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "28px",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "22px",
   fontWeight: 950,
-  letterSpacing: "-0.05em",
+  letterSpacing: "-0.045em",
   ...safeTextStyle,
 };
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
-  lineHeight: 1.7,
-  fontWeight: 600,
+  fontSize: "13px",
+  lineHeight: 1.5,
+  fontWeight: 750,
   ...safeTextStyle,
 };
 
 const emptyButtonStyle: CSSProperties = {
-  minHeight: "50px",
+  minHeight: "46px",
+  width: "min(280px, 100%)",
   borderRadius: "999px",
-  background: "var(--historietas-secondary, #7C3AED)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
   padding: "0 12px",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  padding: "18px 0 20px",
+  width: "min(1120px, calc(100% - 48px))",
+  padding: "24px 0 64px",
 };
 
 const desktopTopStyle: CSSProperties = {
   ...topStyle,
-  flexWrap: "nowrap",
-  marginBottom: "16px",
+  marginBottom: "14px",
 };
 
 const desktopHeroBoxStyle: CSSProperties = {
   ...heroBoxStyle,
-  gap: "12px",
-  padding: "24px 30px",
-  borderRadius: "28px",
+  padding: "30px 24px",
+  borderRadius: "30px",
 };
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
-  fontSize: "clamp(42px, 4.5vw, 62px)",
-  lineHeight: 1.08,
+  fontSize: "clamp(38px, 4.4vw, 58px)",
+  maxWidth: "760px",
+  margin: "0 auto",
+  textAlign: "center",
 };
 
 const desktopDescriptionStyle: CSSProperties = {
   ...descriptionStyle,
+  margin: "10px auto 0",
+  maxWidth: "620px",
+  textAlign: "center",
   fontSize: "14px",
-  lineHeight: 1.55,
 };
 
 const desktopProgressBoxStyle: CSSProperties = {
   ...progressBoxStyle,
-  maxWidth: "560px",
-  padding: "11px",
-  borderRadius: "18px",
+  width: "min(520px, 100%)",
+  padding: 0,
+  gridColumn: "1 / -1",
 };
 
 const desktopMainGridStyle: CSSProperties = {
   ...mainGridStyle,
-  gridTemplateColumns: "1fr",
-  alignItems: "stretch",
-  gap: "16px",
-  marginTop: "16px",
+  gridTemplateColumns: "minmax(0, 1.52fr) minmax(340px, 0.88fr)",
+  alignItems: "start",
+  gap: "18px",
 };
 
 const desktopFormStyle: CSSProperties = {
   ...formStyle,
-  padding: "16px",
-  borderRadius: "24px",
-  gap: "13px",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  alignItems: "start",
+  padding: 0,
+  borderRadius: 0,
+  gap: "16px",
+  overflow: "visible",
 };
 
 const desktopFormHeaderStyle: CSSProperties = {
@@ -3128,69 +3575,72 @@ const desktopFormHeaderStyle: CSSProperties = {
 
 const desktopCoverUploadBoxStyle: CSSProperties = {
   ...coverUploadBoxStyle,
-  gridTemplateColumns: "90px minmax(0, 1fr)",
-  padding: "10px",
+  gridTemplateColumns: "84px minmax(0, 1fr)",
   gap: "12px",
+  padding: "8px",
+  borderRadius: "18px",
 };
 
 const desktopFileUploadBoxStyle: CSSProperties = {
   ...fileUploadBoxStyle,
   gridTemplateColumns: "76px minmax(0, 1fr)",
-  padding: "14px",
   gap: "14px",
-  borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 15%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "0",
+  boxShadow: "none",
 };
 
 const desktopDoubleFieldStyle: CSSProperties = {
   ...doubleFieldStyle,
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "12px",
+  gap: "14px",
+  gridColumn: "1 / -1",
 };
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "98px",
+  minHeight: "90px",
 };
 
 const desktopButtonAreaStyle: CSSProperties = {
   ...buttonAreaStyle,
-  gridTemplateColumns: "170px 112px 104px",
-  justifyContent: "start",
+  gridColumn: "1 / -1",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  justifyContent: "stretch",
   gap: "8px",
 };
 
 const desktopSaveButtonStyle: CSSProperties = {
   ...saveButtonStyle,
-  minHeight: "40px",
-  fontSize: "11px",
+  minHeight: "46px",
+  fontSize: "13px",
 };
 
 const desktopDisabledButtonStyle: CSSProperties = {
   ...disabledButtonStyle,
-  minHeight: "40px",
-  fontSize: "11px",
+  minHeight: "50px",
+  fontSize: "14px",
 };
 
 const desktopSecondaryButtonStyle: CSSProperties = {
   ...secondaryButtonStyle,
-  minHeight: "40px",
-  fontSize: "11px",
+  minHeight: "46px",
+  fontSize: "13px",
 };
 
 const desktopCancelButtonStyle: CSSProperties = {
   ...cancelButtonStyle,
-  minHeight: "40px",
-  fontSize: "11px",
+  minHeight: "46px",
+  fontSize: "13px",
 };
 
 const desktopPreviewPanelStyle: CSSProperties = {
   ...previewPanelStyle,
-  width: "100%",
-  margin: 0,
+  position: "sticky",
+  top: "24px",
+  alignSelf: "start",
 };
 
 const desktopPreviewBodyStyle: CSSProperties = {

@@ -155,11 +155,11 @@ export const TEMAS_VISUAIS_HISTORIETAS: Record<
     ...temaBaseEscuro,
     accent: "#F97316",
     secondary: "#7C3AED",
-    bgStart: "#0B0614",
-    bgMid: "#12081F",
-    bgEnd: "#17101B",
-    glowPrimary: "rgba(124,58,237,0.32)",
-    glowSecondary: "rgba(249,115,22,0.16)",
+    bgStart: "#070212",
+    bgMid: "#070212",
+    bgEnd: "#070212",
+    glowPrimary: "transparent",
+    glowSecondary: "transparent",
   },
   fantasia: {
     ...temaBaseEscuro,
@@ -376,8 +376,18 @@ export const TEMAS_VISUAIS_HISTORIETAS: Record<
 
 export const historietasThemeCss = `
   html[data-historietas-tema-visual] body {
-    background: var(--historietas-bg-start, #0B0614) !important;
+    background: var(--historietas-bg-start, #070212) !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
+  }
+
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
   }
 
   html[data-historietas-tema-visual] nav,
@@ -404,30 +414,49 @@ export const historietasThemeCss = `
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"],
-  html[data-historietas-tema-visual] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) a[href="/publicar"] {
-    background: var(--historietas-bottom-nav-main-bg, linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)) !important;
-    border-color: var(--historietas-bottom-nav-main-border, color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)) !important;
-    box-shadow: var(--historietas-bottom-nav-main-shadow, none) !important;
-    color: #FFFFFF !important;
+  html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
   }
 
   html[data-historietas-tema-visual] nav .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-icon {
-    color: var(--historietas-bottom-nav-icon-text, var(--historietas-accent, #F97316)) !important;
+    color: var(--historietas-bottom-nav-icon-text, #DDD6FE) !important;
     background: var(--historietas-bottom-nav-icon-bg, var(--historietas-surface, rgba(255,255,255,0.045))) !important;
     border-color: var(--historietas-bottom-nav-icon-border, var(--historietas-border-soft, rgba(255,255,255,0.055))) !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] .historietas-bottom-nav-icon {
+  html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon {
+    color: var(--historietas-bottom-nav-icon-text, #DDD6FE) !important;
+    background: var(--historietas-bottom-nav-icon-bg, rgba(124,58,237,0.20)) !important;
+    border-color: var(--historietas-bottom-nav-icon-border, rgba(167,139,250,0.30)) !important;
+  }
+
+  html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-item[aria-current="page"],
+  html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-item-active,
+  html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-item[aria-current="page"],
+  html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-item-active {
+    background: var(--historietas-bottom-nav-active-bg, rgba(124,58,237,0.38)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(196,181,253,0.62)) !important;
+    color: var(--historietas-bottom-nav-hover-text, #FFFFFF) !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-item-active .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-item-active .historietas-bottom-nav-icon {
+    background: var(--historietas-bottom-nav-active-icon-bg, #7C3AED) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(221,214,254,0.70)) !important;
     color: #FFFFFF !important;
-    background: var(--historietas-bottom-nav-main-icon-bg, rgba(255,255,255,0.16)) !important;
-    border-color: var(--historietas-bottom-nav-main-icon-border, rgba(255,255,255,0.18)) !important;
   }
 
   html[data-historietas-tema-visual="branco"] .historietas-theme-logo-text,
@@ -640,46 +669,84 @@ function aplicarVariaveisDaBarraInferior(
 ) {
   const raiz = document.documentElement;
   const isBranco = temaVisual === "branco";
-  const isEscuro = temaVisual === "escuro";
-  const isFoco = temaVisual === "foco";
   const isPixel = temaVisual === "pixel";
-  const surface = tema.surface || "rgba(18,12,30,0.82)";
-  const surfaceStrong = tema.surfaceStrong || "rgba(18,12,30,0.98)";
-  const borderSoft = tema.borderSoft || "rgba(255,255,255,0.08)";
-  const textPrimary = tema.textPrimary || "#FFFFFF";
-  const textSecondary = tema.textSecondary || "#D4D4D8";
-  const activeSurface =
-    tema.activeSurface ||
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))";
 
   raiz.style.setProperty(
     "--historietas-bottom-nav-bg",
     isBranco
       ? "#FFFFFF"
-      : isEscuro
-        ? "#050505"
-        : isFoco
-          ? "#050506"
-          : isPixel
-            ? "repeating-linear-gradient(0deg, transparent 0 7px, rgba(34,197,94,0.055) 7px 8px), linear-gradient(180deg, #07120A 0%, #030803 100%)"
-            : `radial-gradient(circle at 16% 0%, color-mix(in srgb, ${tema.accent} 18%, transparent), transparent 34%), radial-gradient(circle at 84% 0%, color-mix(in srgb, ${tema.secondary} 22%, transparent), transparent 38%), linear-gradient(180deg, ${surfaceStrong} 0%, ${tema.bgStart} 100%)`
+      : isPixel
+        ? "repeating-linear-gradient(0deg, transparent 0 7px, rgba(34,197,94,0.055) 7px 8px), linear-gradient(180deg, #07120A 0%, #030803 100%)"
+        : "#10051f"
   );
-  raiz.style.setProperty("--historietas-bottom-nav-border", isBranco ? "#DADCE0" : borderSoft);
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-border",
+    isBranco ? "#DADCE0" : "rgba(124,58,237,0.42)"
+  );
+
   raiz.style.setProperty("--historietas-bottom-nav-shadow", "none");
-  raiz.style.setProperty("--historietas-bottom-nav-text", isBranco ? "#5F6368" : textSecondary);
-  raiz.style.setProperty("--historietas-bottom-nav-hover-bg", isBranco ? "#F1F3F4" : activeSurface);
-  raiz.style.setProperty("--historietas-bottom-nav-hover-text", isBranco ? "#202124" : textPrimary);
-  raiz.style.setProperty("--historietas-bottom-nav-icon-text", tema.accent);
-  raiz.style.setProperty("--historietas-bottom-nav-icon-bg", isBranco ? "#F1F3F4" : surface);
-  raiz.style.setProperty("--historietas-bottom-nav-icon-border", isBranco ? "#E0E3E7" : borderSoft);
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-text",
+    isBranco ? "#5F6368" : "#C4B5FD"
+  );
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-hover-bg",
+    isBranco ? "#F1F3F4" : "rgba(124,58,237,0.18)"
+  );
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-hover-text",
+    isBranco ? "#202124" : "#FFFFFF"
+  );
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-icon-text",
+    isBranco ? "#5F6368" : "#DDD6FE"
+  );
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-icon-bg",
+    isBranco ? "#F1F3F4" : "rgba(124,58,237,0.20)"
+  );
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-icon-border",
+    isBranco ? "#E0E3E7" : "rgba(167,139,250,0.30)"
+  );
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-active-bg",
+    isBranco ? "rgba(26,115,232,0.10)" : "rgba(124,58,237,0.38)"
+  );
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-active-border",
+    isBranco ? "#1A73E8" : "rgba(196,181,253,0.62)"
+  );
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-active-icon-bg",
+    isBranco ? "#1A73E8" : "#7C3AED"
+  );
+
+  raiz.style.setProperty(
+    "--historietas-bottom-nav-active-icon-border",
+    isBranco ? "#1A73E8" : "rgba(221,214,254,0.70)"
+  );
+
   raiz.style.setProperty(
     "--historietas-bottom-nav-main-bg",
-    isBranco ? tema.accent : `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`
+    isBranco ? "#1A73E8" : "#7C3AED"
   );
+
   raiz.style.setProperty(
     "--historietas-bottom-nav-main-border",
-    isBranco ? tema.accent : `color-mix(in srgb, ${tema.accent} 55%, transparent)`
+    isBranco ? "#1A73E8" : "rgba(196,181,253,0.70)"
   );
+
   raiz.style.setProperty("--historietas-bottom-nav-main-shadow", "none");
   raiz.style.setProperty("--historietas-bottom-nav-main-icon-bg", "rgba(255,255,255,0.16)");
   raiz.style.setProperty("--historietas-bottom-nav-main-icon-border", "rgba(255,255,255,0.18)");
@@ -690,6 +757,8 @@ export function criarPageThemeStyle(
   pageStyle: CSSProperties,
   temaVisual: TemaVisualHistorietas
 ): CSSProperties {
+  const tema = TEMAS_VISUAIS_HISTORIETAS[temaVisual];
+
   return {
     ...pageStyle,
     background:
@@ -699,7 +768,9 @@ export function criarPageThemeStyle(
           ? "linear-gradient(180deg, #000000 0%, #000000 100%)"
           : temaVisual === "pixel"
             ? "radial-gradient(circle at 18% 0%, rgba(34,197,94,0.10), transparent 28%), radial-gradient(circle at 86% 20%, rgba(56,189,248,0.08), transparent 26%), repeating-linear-gradient(0deg, transparent 0 7px, rgba(34,197,94,0.045) 7px 8px), repeating-linear-gradient(90deg, transparent 0 7px, rgba(56,189,248,0.030) 7px 8px), linear-gradient(180deg, #030703 0%, #061106 54%, #020402 100%)"
-            : pageStyle.background,
+            : temaVisual === "original"
+              ? tema.bgStart
+              : pageStyle.background,
   };
 }
 

@@ -92,6 +92,13 @@ type SupabaseCapituloRow = {
 
 type RegistroSupabaseGenerico = Record<string, unknown>;
 
+type PerfilAutorBiblioteca = {
+  userId: string;
+  nome: string;
+  avatarUrl: string;
+  bio: string;
+};
+
 type CapituloSalvo = {
   obra: ObraLocal;
   capitulo: CapituloLocal;
@@ -121,6 +128,55 @@ const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 
+function criarStorageKeyUsuarioBiblioteca(chave: string, userId: string) {
+  const usuarioId = userId.trim();
+
+  return usuarioId ? `${chave}:${usuarioId}` : chave;
+}
+
+function normalizarListaIdsBiblioteca(valor: unknown) {
+  return Array.isArray(valor)
+    ? valor.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
+    : [];
+}
+
+function carregarListaIdsUsuarioBiblioteca(chave: string, userId: string) {
+  try {
+    const chaveUsuario = criarStorageKeyUsuarioBiblioteca(chave, userId);
+    const listaUsuarioTexto = localStorage.getItem(chaveUsuario);
+    const listaUsuarioJson: unknown = listaUsuarioTexto
+      ? JSON.parse(listaUsuarioTexto)
+      : [];
+    const listaUsuario = normalizarListaIdsBiblioteca(listaUsuarioJson);
+
+    if (!userId.trim()) {
+      return listaUsuario;
+    }
+
+    const listaLegadaTexto = localStorage.getItem(chave);
+    const listaLegadaJson: unknown = listaLegadaTexto
+      ? JSON.parse(listaLegadaTexto)
+      : [];
+    const listaLegada = normalizarListaIdsBiblioteca(listaLegadaJson);
+
+    return Array.from(new Set([...listaUsuario, ...listaLegada]));
+  } catch {
+    return [] as string[];
+  }
+}
+
+function salvarListaIdsUsuarioBiblioteca(
+  chave: string,
+  userId: string,
+  lista: string[]
+) {
+  const chaveUsuario = criarStorageKeyUsuarioBiblioteca(chave, userId);
+  const listaNormalizada = normalizarListaIdsBiblioteca(lista);
+
+  localStorage.setItem(chaveUsuario, JSON.stringify(listaNormalizada));
+  localStorage.setItem(chave, JSON.stringify(listaNormalizada));
+}
+
 function normalizarTexto(texto: string) {
   return texto
     .trim()
@@ -148,7 +204,7 @@ function criarLoginHrefBiblioteca() {
 }
 
 function idObraSupabaseValido(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
     id
   );
 }
@@ -195,16 +251,20 @@ function criarPerfilAutorHrefBiblioteca(
 ) {
   const params = new URLSearchParams();
   const autor = obra.autor.trim();
+  const autorId = obra.autorId?.trim() || "";
 
   if (autor) {
     params.set("autor", autor);
   }
 
-  if (obra.autorId?.trim()) {
-    params.set("autorId", obra.autorId.trim());
+  if (autorId) {
+    params.set("autorId", autorId);
+    params.set("userId", autorId);
   }
 
-  return `/perfil-autor?${params.toString()}`;
+  const query = params.toString();
+
+  return query ? `/perfil-autor?${query}` : "/perfil-autor";
 }
 
 
@@ -276,15 +336,32 @@ function criarBookCoverStyle(capa: string, isDesktop = false): CSSProperties {
   const baseStyle = isDesktop ? desktopBookCoverStyle : bookCoverStyle;
 
   if (!capa) {
-    return baseStyle;
+    return {
+      ...baseStyle,
+      background: "#04000A",
+      backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    };
   }
 
   return {
     ...baseStyle,
-    background: "#18181B",
+    background: "#04000A",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
+  };
+}
+
+function criarBookCoverActionGridStyle(capa: string, isDesktop = false): CSSProperties {
+  const actionGridStyle = isDesktop
+    ? desktopBookCoverActionGridStyle
+    : bookCoverActionGridStyle;
+
+  return {
+    ...criarBookCoverStyle(capa, isDesktop),
+    ...actionGridStyle,
   };
 }
 
@@ -429,6 +506,12 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
     autorId:
       typeof obra.autorId === "string" && obra.autorId.trim()
         ? obra.autorId.trim()
+        : typeof (obra as Record<string, unknown>).user_id === "string" &&
+          ((obra as Record<string, unknown>).user_id as string).trim()
+        ? ((obra as Record<string, unknown>).user_id as string).trim()
+        : typeof (obra as Record<string, unknown>).userId === "string" &&
+          ((obra as Record<string, unknown>).userId as string).trim()
+        ? ((obra as Record<string, unknown>).userId as string).trim()
         : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
@@ -481,6 +564,106 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
                 )
           }`,
   };
+}
+
+
+function normalizarIdUsuarioBiblioteca(valor: string) {
+  return valor.trim().toLowerCase();
+}
+
+function obterAutorIdObraBiblioteca(obra: Pick<ObraLocal, "autorId">) {
+  return normalizarIdUsuarioBiblioteca(obra.autorId || "");
+}
+
+function obraPertenceAoUsuarioBiblioteca(
+  obra: Pick<ObraLocal, "autorId">,
+  userId: string
+) {
+  const usuarioId = normalizarIdUsuarioBiblioteca(userId);
+  const autorId = obterAutorIdObraBiblioteca(obra);
+
+  return Boolean(usuarioId && autorId && autorId === usuarioId);
+}
+
+function obraSemAutorDefinidoBiblioteca(obra: Pick<ObraLocal, "autorId">) {
+  return !obterAutorIdObraBiblioteca(obra);
+}
+
+function filtrarObrasLocaisBiblioteca(obras: ObraLocal[], userId: string) {
+  const usuarioId = normalizarIdUsuarioBiblioteca(userId);
+
+  return obras.filter((obra) => {
+    const autorId = obterAutorIdObraBiblioteca(obra);
+
+    return !autorId || Boolean(usuarioId && autorId === usuarioId);
+  });
+}
+
+function obraExisteNoStorageBiblioteca(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
+  obrasStorage: ObraLocal[]
+) {
+  const identificadoresObra = new Set(obterIdentificadoresObra(obra));
+
+  return obrasStorage.some((obraStorage) => {
+    return obterIdentificadoresObra(obraStorage).some((identificador) =>
+      identificadoresObra.has(identificador)
+    );
+  });
+}
+
+function carregarObrasStorageBiblioteca() {
+  try {
+    const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
+    const obrasSalvasJson: unknown = obrasSalvasTexto
+      ? JSON.parse(obrasSalvasTexto)
+      : [];
+
+    return Array.isArray(obrasSalvasJson)
+      ? obrasSalvasJson.map((obra, index) =>
+          normalizarObra(obra as Partial<ObraLocal>, index)
+        )
+      : [];
+  } catch {
+    return [] as ObraLocal[];
+  }
+}
+
+function salvarObrasStoragePreservandoContasBiblioteca({
+  obrasStorageAtuais,
+  obrasAtualizadasUsuario,
+  userId,
+}: {
+  obrasStorageAtuais: ObraLocal[];
+  obrasAtualizadasUsuario: ObraLocal[];
+  userId: string;
+}) {
+  const usuarioId = normalizarIdUsuarioBiblioteca(userId);
+  const idsAtualizados = new Set(
+    obrasAtualizadasUsuario.flatMap((obra) => obterIdentificadoresObra(obra))
+  );
+
+  const obrasPreservadas = obrasStorageAtuais.filter((obra) => {
+    const identificadores = obterIdentificadoresObra(obra);
+
+    if (identificadores.some((identificador) => idsAtualizados.has(identificador))) {
+      return false;
+    }
+
+    const autorId = obterAutorIdObraBiblioteca(obra);
+
+    if (!usuarioId || !autorId) {
+      return true;
+    }
+
+    return autorId !== usuarioId;
+  });
+
+  const obrasParaSalvar = [...obrasAtualizadasUsuario, ...obrasPreservadas];
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasParaSalvar));
+
+  return obrasParaSalvar;
 }
 
 function formatarData(dataIso: string) {
@@ -584,6 +767,121 @@ function obterTextoRegistro(registro: RegistroSupabaseGenerico, chave: string) {
   }
 
   return "";
+}
+
+
+function normalizarPerfilAutorBiblioteca(
+  registro: RegistroSupabaseGenerico,
+  userIdFallback = ""
+): PerfilAutorBiblioteca | null {
+  const userId =
+    obterTextoRegistro(registro, "user_id") ||
+    obterTextoRegistro(registro, "id") ||
+    userIdFallback.trim();
+
+  if (!userId) {
+    return null;
+  }
+
+  const nome =
+    obterTextoRegistro(registro, "nome") ||
+    obterTextoRegistro(registro, "nome_usuario") ||
+    obterTextoRegistro(registro, "username") ||
+    obterTextoRegistro(registro, "display_name") ||
+    obterTextoRegistro(registro, "apelido") ||
+    "Autor não informado";
+
+  const avatarUrl =
+    obterTextoRegistro(registro, "avatar_url") ||
+    obterTextoRegistro(registro, "avatar") ||
+    obterTextoRegistro(registro, "foto_url") ||
+    obterTextoRegistro(registro, "imagem_url") ||
+    obterTextoRegistro(registro, "photo_url");
+
+  const bio =
+    obterTextoRegistro(registro, "bio") ||
+    obterTextoRegistro(registro, "sobre_bio") ||
+    obterTextoRegistro(registro, "sobre") ||
+    obterTextoRegistro(registro, "descricao");
+
+  return {
+    userId,
+    nome: nome.slice(0, 80),
+    avatarUrl,
+    bio: bio.slice(0, 120),
+  };
+}
+
+async function carregarPerfisAutoresBiblioteca(userIds: string[]) {
+  const ids = Array.from(
+    new Set(
+      userIds
+        .map((userId) => userId.trim())
+        .filter((userId) => Boolean(userId))
+    )
+  );
+  const perfis = new Map<string, PerfilAutorBiblioteca>();
+
+  if (ids.length === 0) {
+    return perfis;
+  }
+
+  function registrarPerfis(data: unknown) {
+    if (!Array.isArray(data)) {
+      return;
+    }
+
+    data.forEach((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return;
+      }
+
+      const registro = item as RegistroSupabaseGenerico;
+      const perfil = normalizarPerfilAutorBiblioteca(registro);
+
+      if (!perfil) {
+        return;
+      }
+
+      const idRegistro = obterTextoRegistro(registro, "id");
+
+      perfis.set(perfil.userId, perfil);
+
+      if (idRegistro) {
+        perfis.set(idRegistro, perfil);
+      }
+    });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("user_id", ids);
+
+    if (!error) {
+      registrarPerfis(data);
+    }
+  } catch {
+    // Se a coluna user_id não existir em algum ambiente antigo, tenta por id abaixo.
+  }
+
+  if (perfis.size < ids.length) {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", ids);
+
+      if (!error) {
+        registrarPerfis(data);
+      }
+    } catch {
+      // Profiles é camada social. A Biblioteca continua com autor salvo na obra.
+    }
+  }
+
+  return perfis;
 }
 
 function obterIdObraRegistro(registro: RegistroSupabaseGenerico) {
@@ -904,6 +1202,11 @@ async function carregarBibliotecaSupabase(
     const obrasSupabaseBanco = Array.isArray(obrasBanco)
       ? (obrasBanco as SupabaseObraRow[])
       : [];
+    const perfisAutores = await carregarPerfisAutoresBiblioteca(
+      obrasSupabaseBanco
+        .map((obra) => obra.user_id?.trim() || "")
+        .filter(Boolean)
+    );
     const obraIds = obrasSupabaseBanco
       .map((obra) => obra.id)
       .filter((obraId) => Boolean(obraId));
@@ -920,6 +1223,7 @@ async function carregarBibliotecaSupabase(
       .from("capitulos")
       .select("*")
       .in("obra_id", obraIds)
+      .eq("publicado", true)
       .order("ordem", { ascending: true });
 
     if (erroCapitulos) {
@@ -961,19 +1265,28 @@ async function carregarBibliotecaSupabase(
     );
 
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
+      const perfilAutor = perfisAutores.get(obraBanco.user_id?.trim() || "");
+      const obraBancoComPerfil: SupabaseObraRow = perfilAutor?.nome
+        ? {
+            ...obraBanco,
+            autor: perfilAutor.nome,
+          }
+        : obraBanco;
       const obraLocal = obrasLocais.find((obraAtual) => {
         const slugLocal = obraAtual.slug || criarSlugBase(obraAtual.titulo);
-        const slugBanco = obraBanco.slug?.trim() || criarSlugBase(obraBanco.titulo || "");
+        const slugBanco =
+          obraBancoComPerfil.slug?.trim() ||
+          criarSlugBase(obraBancoComPerfil.titulo || "");
 
-        return obraAtual.id === obraBanco.id || slugLocal === slugBanco;
+        return obraAtual.id === obraBancoComPerfil.id || slugLocal === slugBanco;
       });
 
       const capitulosDaObra = capitulosSupabaseBanco.filter(
-        (capitulo) => capitulo.obra_id === obraBanco.id
+        (capitulo) => capitulo.obra_id === obraBancoComPerfil.id
       );
 
       return converterObraSupabaseParaLocal({
-        obraBanco,
+        obraBanco: obraBancoComPerfil,
         capitulosBanco: capitulosDaObra,
         obraLocal,
         capitulosSalvos,
@@ -1029,31 +1342,93 @@ async function carregarObrasSeguidasSupabase(obrasDisponiveis: ObraLocal[]) {
   }
 }
 
+type TipoAtividadeDiarioBiblioteca = "favoritou_obra" | "concluiu_obra";
+
+type VisibilidadeDiarioBiblioteca = "publico" | "parcial" | "privado";
+
+async function registrarAtividadeDiarioBiblioteca({
+  tipo,
+  obra,
+  visibilidade,
+  texto,
+}: {
+  tipo: TipoAtividadeDiarioBiblioteca;
+  obra: ObraLocal;
+  visibilidade: VisibilidadeDiarioBiblioteca;
+  texto: string;
+}) {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id || "";
+
+    if (!userId || !idObraSupabaseValido(obra.id)) {
+      return;
+    }
+
+    await supabase.from("diario_atividades").insert({
+      user_id: userId,
+      tipo,
+      obra_id: obra.id,
+      texto: texto.trim() || null,
+      visibilidade,
+      metadata: {
+        obra_titulo: obra.titulo,
+        obra_slug: obra.slug,
+        autor: obra.autor,
+        origem: "biblioteca",
+      },
+    });
+  } catch {
+    // A Biblioteca não deve travar se o Diário não registrar a atividade.
+  }
+}
+
 async function sincronizarSeguirObraSupabase(obraId: string, ativo: boolean) {
   try {
     const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id;
+    const userId = data.user?.id || "";
 
-    if (!userId || !obraId) {
+    if (!userId || !idObraSupabaseValido(obraId)) {
       return;
     }
 
-    if (ativo) {
-      await supabase.from("seguindo_obras").upsert(
-        {
-          user_id: userId,
-          obra_id: obraId,
-        },
-        { onConflict: "user_id,obra_id" }
-      );
-      return;
-    }
-
-    await supabase
+    const { error: erroDelete } = await supabase
       .from("seguindo_obras")
       .delete()
       .eq("user_id", userId)
       .eq("obra_id", obraId);
+
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
+    if (!ativo) {
+      return;
+    }
+
+    const payloadBase = {
+      user_id: userId,
+      obra_id: obraId,
+    };
+
+    const { error: erroComVisibilidade } = await supabase
+      .from("seguindo_obras")
+      .insert({
+        ...payloadBase,
+        visibilidade: "privado",
+      });
+
+    if (!erroComVisibilidade) {
+      return;
+    }
+
+    const { error: erroSemVisibilidade } = await supabase
+      .from("seguindo_obras")
+      .insert(payloadBase);
+
+    if (erroSemVisibilidade) {
+      throw erroSemVisibilidade;
+    }
   } catch (error) {
     console.warn("Não consegui sincronizar seguindo no Supabase:", error);
   }
@@ -1066,23 +1441,46 @@ async function sincronizarColecaoObraSupabase(
 ) {
   try {
     const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id;
+    const userId = data.user?.id || "";
 
-    if (!userId) {
+    if (!userId || !idObraSupabaseValido(obraId)) {
       return;
     }
 
-    await supabase
+    const { error: erroDelete } = await supabase
       .from(tabela)
       .delete()
       .eq("user_id", userId)
       .eq("obra_id", obraId);
 
-    if (ativo) {
-      await supabase.from(tabela).insert({
-        user_id: userId,
-        obra_id: obraId,
-      });
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
+    if (!ativo) {
+      return;
+    }
+
+    const payloadBase = {
+      user_id: userId,
+      obra_id: obraId,
+    };
+
+    const { error: erroComVisibilidade } = await supabase.from(tabela).insert({
+      ...payloadBase,
+      visibilidade: "parcial",
+    });
+
+    if (!erroComVisibilidade) {
+      return;
+    }
+
+    const { error: erroSemVisibilidade } = await supabase
+      .from(tabela)
+      .insert(payloadBase);
+
+    if (erroSemVisibilidade) {
+      throw erroSemVisibilidade;
     }
   } catch (error) {
     console.warn(`Não consegui sincronizar ${tabela} no Supabase:`, error);
@@ -1094,17 +1492,43 @@ async function removerCapituloSalvoSupabase(obraId: string, capituloId: string) 
     const { data } = await supabase.auth.getUser();
     const userId = data.user?.id || "";
 
-    let query = supabase
+    if (!capituloId.trim()) {
+      return;
+    }
+
+    let queryComObra = supabase
       .from("salvos_capitulos")
       .delete()
-      .eq("obra_id", obraId)
+      .eq("capitulo_id", capituloId);
+
+    if (obraId.trim()) {
+      queryComObra = queryComObra.eq("obra_id", obraId);
+    }
+
+    if (userId) {
+      queryComObra = queryComObra.eq("user_id", userId);
+    }
+
+    const { error: erroComObra } = await queryComObra;
+
+    if (!erroComObra) {
+      return;
+    }
+
+    let querySemObra = supabase
+      .from("salvos_capitulos")
+      .delete()
       .eq("capitulo_id", capituloId);
 
     if (userId) {
-      query = query.eq("user_id", userId);
+      querySemObra = querySemObra.eq("user_id", userId);
     }
 
-    await query;
+    const { error: erroSemObra } = await querySemObra;
+
+    if (erroSemObra) {
+      throw erroSemObra;
+    }
   } catch (error) {
     console.warn("Não consegui remover salvo no Supabase:", error);
   }
@@ -1112,42 +1536,15 @@ async function removerCapituloSalvoSupabase(obraId: string, capituloId: string) 
 
 
 
-function criarDecoracaoPaginaStyle(index: number): CSSProperties {
-  const posicoes: CSSProperties[] = [
-    { top: "32%", right: "-18px", fontSize: "72px", transform: "rotate(-14deg)" },
-    { top: "64%", left: "-16px", fontSize: "58px", transform: "rotate(12deg)" },
-    { bottom: "8%", right: "10%", fontSize: "52px", transform: "rotate(8deg)" },
-  ];
-
+function criarDecoracaoPaginaStyle(_index: number): CSSProperties {
   return {
-    position: "absolute",
-    color: "var(--historietas-accent, #FDBA74)",
-    opacity: 0.045,
-    lineHeight: 1,
-    fontWeight: 950,
-    filter: "blur(0.2px) drop-shadow(0 0 24px color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent))",
-    userSelect: "none",
-    ...posicoes[index % posicoes.length],
+    display: "none",
   };
 }
 
-function criarDecoracaoBibliotecaStyle(index: number): CSSProperties {
-  const posicoes: CSSProperties[] = [
-    { top: "8%", right: "8%", fontSize: "42px", transform: "rotate(-12deg)" },
-    { top: "45%", right: "14%", fontSize: "28px", transform: "rotate(16deg)" },
-    { bottom: "12%", right: "7%", fontSize: "34px", transform: "rotate(8deg)" },
-    { top: "18%", left: "8%", fontSize: "22px", transform: "rotate(14deg)" },
-  ];
-
+function criarDecoracaoBibliotecaStyle(_index: number): CSSProperties {
   return {
-    position: "absolute",
-    color: "var(--historietas-accent, #FDBA74)",
-    opacity: 0.105,
-    lineHeight: 1,
-    fontWeight: 950,
-    filter: "drop-shadow(0 0 18px color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent))",
-    userSelect: "none",
-    ...posicoes[index % posicoes.length],
+    display: "none",
   };
 }
 
@@ -1162,6 +1559,7 @@ export default function BibliotecaPage() {
   const [abaAtiva, setAbaAtiva] = useState<AbaBiblioteca | "">("salvos");
   const [isDesktop, setIsDesktop] = useState(false);
   const [carregandoAcesso, setCarregandoAcesso] = useState(true);
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -1206,7 +1604,8 @@ export default function BibliotecaPage() {
           return;
         }
 
-        await carregarObras();
+        setUsuarioIdLogado(user.id);
+        await carregarObras(user.id);
       } catch {
         if (componenteAtivo) {
           router.replace(criarLoginHrefBiblioteca());
@@ -1227,57 +1626,34 @@ export default function BibliotecaPage() {
     };
   }, [router]);
 
-  async function carregarObras() {
+  async function carregarObras(userIdLogado: string) {
+    let obrasStorageNormalizadas: ObraLocal[] = [];
     let obrasNormalizadas: ObraLocal[] = [];
     let obrasSeguidasNormalizadas: string[] = [];
     let obrasFavoritasNormalizadas: string[] = [];
     let obrasConcluidasNormalizadas: string[] = [];
 
     try {
-      const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
-      const obrasSalvasJson = obrasSalvasTexto
-        ? JSON.parse(obrasSalvasTexto)
-        : [];
+      obrasStorageNormalizadas = carregarObrasStorageBiblioteca();
+      obrasNormalizadas = filtrarObrasLocaisBiblioteca(
+        obrasStorageNormalizadas,
+        userIdLogado
+      );
 
-      const obrasSalvas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-        ? obrasSalvasJson
-        : [];
-
-      obrasNormalizadas = obrasSalvas.map(normalizarObra);
-
-      const obrasSeguidasTexto = localStorage.getItem(FOLLOW_STORAGE_KEY);
-      const obrasSeguidasJson = obrasSeguidasTexto
-        ? JSON.parse(obrasSeguidasTexto)
-        : [];
-
-      obrasSeguidasNormalizadas = Array.isArray(obrasSeguidasJson)
-        ? obrasSeguidasJson.filter(
-            (id): id is string => typeof id === "string"
-          )
-        : [];
-
-      const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
-      const obrasFavoritasJson = obrasFavoritasTexto
-        ? JSON.parse(obrasFavoritasTexto)
-        : [];
-
-      obrasFavoritasNormalizadas = Array.isArray(obrasFavoritasJson)
-        ? obrasFavoritasJson.filter(
-            (id): id is string => typeof id === "string"
-          )
-        : [];
-
-      const obrasConcluidasTexto = localStorage.getItem(COMPLETED_STORAGE_KEY);
-      const obrasConcluidasJson = obrasConcluidasTexto
-        ? JSON.parse(obrasConcluidasTexto)
-        : [];
-
-      obrasConcluidasNormalizadas = Array.isArray(obrasConcluidasJson)
-        ? obrasConcluidasJson.filter(
-            (id): id is string => typeof id === "string"
-          )
-        : [];
+      obrasSeguidasNormalizadas = carregarListaIdsUsuarioBiblioteca(
+        FOLLOW_STORAGE_KEY,
+        userIdLogado
+      );
+      obrasFavoritasNormalizadas = carregarListaIdsUsuarioBiblioteca(
+        FAVORITES_STORAGE_KEY,
+        userIdLogado
+      );
+      obrasConcluidasNormalizadas = carregarListaIdsUsuarioBiblioteca(
+        COMPLETED_STORAGE_KEY,
+        userIdLogado
+      );
     } catch {
+      obrasStorageNormalizadas = [];
       obrasNormalizadas = [];
       obrasSeguidasNormalizadas = [];
       obrasFavoritasNormalizadas = [];
@@ -1290,7 +1666,8 @@ export default function BibliotecaPage() {
       obrasConcluidasNormalizadas
     );
 
-    obrasNormalizadas = bibliotecaSupabase.obras.map(normalizarObra);
+    const obrasBibliotecaNormalizadas = bibliotecaSupabase.obras.map(normalizarObra);
+    obrasNormalizadas = obrasBibliotecaNormalizadas;
     obrasFavoritasNormalizadas = bibliotecaSupabase.favoritas;
     obrasConcluidasNormalizadas = bibliotecaSupabase.concluidas;
 
@@ -1310,18 +1687,34 @@ export default function BibliotecaPage() {
       obrasNormalizadas
     );
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
-    localStorage.setItem(
+    const obrasAtualizadasParaStorage = obrasNormalizadas.filter((obra) => {
+      return (
+        obraPertenceAoUsuarioBiblioteca(obra, userIdLogado) ||
+        (obraSemAutorDefinidoBiblioteca(obra) &&
+          obraExisteNoStorageBiblioteca(obra, obrasStorageNormalizadas))
+      );
+    });
+
+    salvarObrasStoragePreservandoContasBiblioteca({
+      obrasStorageAtuais: obrasStorageNormalizadas,
+      obrasAtualizadasUsuario: obrasAtualizadasParaStorage,
+      userId: userIdLogado,
+    });
+
+    salvarListaIdsUsuarioBiblioteca(
       FOLLOW_STORAGE_KEY,
-      JSON.stringify(obrasSeguidasNormalizadas)
+      userIdLogado,
+      obrasSeguidasNormalizadas
     );
-    localStorage.setItem(
+    salvarListaIdsUsuarioBiblioteca(
       FAVORITES_STORAGE_KEY,
-      JSON.stringify(obrasFavoritasNormalizadas)
+      userIdLogado,
+      obrasFavoritasNormalizadas
     );
-    localStorage.setItem(
+    salvarListaIdsUsuarioBiblioteca(
       COMPLETED_STORAGE_KEY,
-      JSON.stringify(obrasConcluidasNormalizadas)
+      userIdLogado,
+      obrasConcluidasNormalizadas
     );
 
     setObras(obrasParaExibir);
@@ -1569,8 +1962,20 @@ export default function BibliotecaPage() {
     const obrasNormalizadas = novasObras.map((obra, index) =>
       normalizarObra(obra, index)
     );
+    const obrasStorageAtuais = carregarObrasStorageBiblioteca();
+    const obrasAtualizadasParaStorage = obrasNormalizadas.filter((obra) => {
+      return (
+        obraPertenceAoUsuarioBiblioteca(obra, usuarioIdLogado) ||
+        (obraSemAutorDefinidoBiblioteca(obra) &&
+          obraExisteNoStorageBiblioteca(obra, obrasStorageAtuais))
+      );
+    });
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+    salvarObrasStoragePreservandoContasBiblioteca({
+      obrasStorageAtuais,
+      obrasAtualizadasUsuario: obrasAtualizadasParaStorage,
+      userId: usuarioIdLogado,
+    });
     setObras(obrasNormalizadas);
   }
 
@@ -1579,9 +1984,10 @@ export default function BibliotecaPage() {
 
     void sincronizarSeguirObraSupabase(obra.id, false);
 
-    localStorage.setItem(
+    salvarListaIdsUsuarioBiblioteca(
       FOLLOW_STORAGE_KEY,
-      JSON.stringify(novasObrasSeguidas)
+      usuarioIdLogado,
+      novasObrasSeguidas
     );
 
     setObrasSeguidas(novasObrasSeguidas);
@@ -1595,9 +2001,19 @@ export default function BibliotecaPage() {
 
     void sincronizarColecaoObraSupabase("favoritos", obra.id, vaiFavoritar);
 
-    localStorage.setItem(
+    if (vaiFavoritar) {
+      void registrarAtividadeDiarioBiblioteca({
+        tipo: "favoritou_obra",
+        obra,
+        visibilidade: "parcial",
+        texto: `Adicionou ${obra.titulo} à lista`,
+      });
+    }
+
+    salvarListaIdsUsuarioBiblioteca(
       FAVORITES_STORAGE_KEY,
-      JSON.stringify(novasObrasFavoritas)
+      usuarioIdLogado,
+      novasObrasFavoritas
     );
 
     setObrasFavoritas(novasObrasFavoritas);
@@ -1611,9 +2027,19 @@ export default function BibliotecaPage() {
 
     void sincronizarColecaoObraSupabase("concluidas", obra.id, vaiConcluir);
 
-    localStorage.setItem(
+    if (vaiConcluir) {
+      void registrarAtividadeDiarioBiblioteca({
+        tipo: "concluiu_obra",
+        obra,
+        visibilidade: "parcial",
+        texto: `Concluiu ${obra.titulo}`,
+      });
+    }
+
+    salvarListaIdsUsuarioBiblioteca(
       COMPLETED_STORAGE_KEY,
-      JSON.stringify(novasObrasConcluidas)
+      usuarioIdLogado,
+      novasObrasConcluidas
     );
 
     setObrasConcluidas(novasObrasConcluidas);
@@ -1811,15 +2237,15 @@ export default function BibliotecaPage() {
                       key={`${item.obra.id}-${item.capitulo.id}`}
                       style={isDesktop ? desktopSavedCardStyle : savedCardStyle}
                     >
-                      <div style={isDesktop ? desktopSavedBookHeaderStyle : savedBookHeaderStyle}>
+                      <div style={isDesktop ? desktopSavedBookActionGridStyle : savedBookActionGridStyle}>
                         <Link
                           href={obraHref}
-                          style={criarBookCoverStyle(item.obra.capa, isDesktop)}
+                          style={criarBookCoverActionGridStyle(item.obra.capa, isDesktop)}
                           aria-label={`Abrir ${item.obra.titulo}`}
                         >
                         </Link>
 
-                        <div style={isDesktop ? desktopSavedBookInfoStyle : savedBookInfoStyle}>
+                        <div style={isDesktop ? desktopSavedBookInfoActionGridStyle : savedBookInfoActionGridStyle}>
                           <div style={cardTopStyle}>
                             <span style={chapterBadgeStyle}>
                               CAPÍTULO {item.numeroCapitulo}
@@ -1853,14 +2279,12 @@ export default function BibliotecaPage() {
                             </p>
                           )}
                         </div>
-                      </div>
 
-                      <div style={isDesktop ? desktopPrimaryActionsStyle : primaryActionsStyle}>
-                        <Link href={lerHref} style={primaryActionStyle}>
+                        <Link href={lerHref} style={coverActionAboveCompletedStyle}>
                           Ler capítulo
                         </Link>
 
-                        <Link href={obraHref} style={secondaryActionStyle}>
+                        <Link href={obraHref} style={coverActionAboveRemoveStyle}>
                           Ver obra
                         </Link>
                       </div>
@@ -1875,9 +2299,14 @@ export default function BibliotecaPage() {
                               : favoriteButtonStyle
                           }
                         >
-                          {colecaoTemObra(obrasFavoritas, item.obra)
-                            ? "Na lista"
-                            : "Adicionar à lista"}
+                          {colecaoTemObra(obrasFavoritas, item.obra) ? (
+                            "Na lista"
+                          ) : (
+                            <>
+                              Adicionar
+                              <br />à lista
+                            </>
+                          )}
                         </button>
 
                         <button
@@ -2009,21 +2438,21 @@ export default function BibliotecaPage() {
                       </div>
 
                       <div style={isDesktop ? desktopPrimaryActionsStyle : primaryActionsStyle}>
-                        <Link href={obraHref} style={secondaryActionStyle}>
+                        <Link href={obraHref} style={actionAboveRemoveStyle}>
                           Ver obra
                         </Link>
 
                         {capituloInicial ? (
                           <Link
                             href={capituloInicialHref}
-                            style={primaryActionStyle}
+                            style={actionAboveCompletedStyle}
                           >
                             {capituloParaContinuar
                               ? "Continuar leitura"
                               : "Começar leitura"}
                           </Link>
                         ) : (
-                          <span style={disabledActionStyle}>Sem capítulos</span>
+                          <span style={disabledActionAboveCompletedStyle}>Sem capítulos</span>
                         )}
                       </div>
 
@@ -2037,7 +2466,14 @@ export default function BibliotecaPage() {
                               : favoriteButtonStyle
                           }
                         >
-                          {obraFavorita ? "Na lista" : "Adicionar à lista"}
+                          {obraFavorita ? (
+                            "Na lista"
+                          ) : (
+                            <>
+                              Adicionar
+                              <br />à lista
+                            </>
+                          )}
                         </button>
 
                         <button
@@ -2178,14 +2614,14 @@ export default function BibliotecaPage() {
 
                       <div style={isDesktop ? desktopPrimaryActionsStyle : primaryActionsStyle}>
                         {ultimoCapituloAtivo ? (
-                          <Link href={continuarHref} style={primaryActionStyle}>
+                          <Link href={continuarHref} style={actionAboveCompletedStyle}>
                             Continuar leitura
                           </Link>
                         ) : (
-                          <span style={disabledActionStyle}>Sem leitura</span>
+                          <span style={disabledActionAboveCompletedStyle}>Sem leitura</span>
                         )}
 
-                        <Link href={obraHref} style={secondaryActionStyle}>
+                        <Link href={obraHref} style={actionAboveRemoveStyle}>
                           Ver obra
                         </Link>
                       </div>
@@ -2200,7 +2636,14 @@ export default function BibliotecaPage() {
                               : favoriteButtonStyle
                           }
                         >
-                          {obraFavorita ? "Na lista" : "Adicionar à lista"}
+                          {obraFavorita ? (
+                            "Na lista"
+                          ) : (
+                            <>
+                              Adicionar
+                              <br />à lista
+                            </>
+                          )}
                         </button>
 
                         <button
@@ -2301,11 +2744,11 @@ export default function BibliotecaPage() {
                       </div>
 
                       <div style={isDesktop ? desktopPrimaryActionsStyle : primaryActionsStyle}>
-                        <Link href={continuarHref} style={primaryActionStyle}>
+                        <Link href={continuarHref} style={actionAboveCompletedStyle}>
                           Continuar leitura
                         </Link>
 
-                        <Link href={obraHref} style={secondaryActionStyle}>
+                        <Link href={obraHref} style={actionAboveRemoveStyle}>
                           Ver obra
                         </Link>
                       </div>
@@ -2320,7 +2763,14 @@ export default function BibliotecaPage() {
                               : favoriteButtonStyle
                           }
                         >
-                          {obraFavorita ? "Na lista" : "Adicionar à lista"}
+                          {obraFavorita ? (
+                            "Na lista"
+                          ) : (
+                            <>
+                              Adicionar
+                              <br />à lista
+                            </>
+                          )}
                         </button>
 
                         <button
@@ -2438,21 +2888,21 @@ export default function BibliotecaPage() {
                       )}
 
                       <div style={isDesktop ? desktopPrimaryActionsStyle : primaryActionsStyle}>
-                        <Link href={obraHref} style={secondaryActionStyle}>
+                        <Link href={obraHref} style={actionAboveRemoveStyle}>
                           Ver obra
                         </Link>
 
                         {capituloInicial ? (
                           <Link
                             href={capituloInicialHref}
-                            style={primaryActionStyle}
+                            style={actionAboveCompletedStyle}
                           >
                             {capituloParaContinuar
                               ? "Continuar leitura"
                               : "Começar leitura"}
                           </Link>
                         ) : (
-                          <span style={disabledActionStyle}>Sem capítulos</span>
+                          <span style={disabledActionAboveCompletedStyle}>Sem capítulos</span>
                         )}
                       </div>
 
@@ -2580,19 +3030,19 @@ export default function BibliotecaPage() {
                       )}
 
                       <div style={isDesktop ? desktopPrimaryActionsStyle : primaryActionsStyle}>
-                        <Link href={obraHref} style={secondaryActionStyle}>
+                        <Link href={obraHref} style={actionAboveRemoveStyle}>
                           Ver obra
                         </Link>
 
                         {capituloInicial ? (
                           <Link
                             href={capituloInicialHref}
-                            style={primaryActionStyle}
+                            style={actionAboveCompletedStyle}
                           >
                             Reler obra
                           </Link>
                         ) : (
-                          <span style={disabledActionStyle}>Sem capítulos</span>
+                          <span style={disabledActionAboveCompletedStyle}>Sem capítulos</span>
                         )}
                       </div>
 
@@ -2606,7 +3056,14 @@ export default function BibliotecaPage() {
                               : favoriteButtonStyle
                           }
                         >
-                          {obraFavorita ? "Na lista" : "Adicionar à lista"}
+                          {obraFavorita ? (
+                            "Na lista"
+                          ) : (
+                            <>
+                              Adicionar
+                              <br />à lista
+                            </>
+                          )}
                         </button>
 
                         <button
@@ -2630,21 +3087,58 @@ export default function BibliotecaPage() {
 }
 
 const bibliotecaPageCss = `
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual] nav,
+  html[data-historietas-tema-visual] [data-bottom-nav],
+  html[data-historietas-tema-visual] [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  }
+
   html[data-historietas-tema-visual] nav a[href="/biblioteca"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/biblioteca"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/biblioteca"] {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
-    color: var(--historietas-accent, #F97316) !important;
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] {
-    background: var(--historietas-bottom-nav-main-bg, linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)) !important;
-    border-color: var(--historietas-bottom-nav-main-border, color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)) !important;
+  html[data-historietas-tema-visual] nav a[href="/biblioteca"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/biblioteca"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/biblioteca"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
-    box-shadow: var(--historietas-bottom-nav-main-shadow, none) !important;
+    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: var(--historietas-bottom-nav-text, #9980D8) !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual] input::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea,
+  html[data-historietas-tema-visual] select {
+    color: #FFFFFF !important;
   }
 
   .biblioteca-summary-carousel {
@@ -2666,11 +3160,7 @@ const safeTextStyle: CSSProperties = {
 
 
 const pageDecorationLayerStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  pointerEvents: "none",
-  zIndex: 0,
+  display: "none",
 };
 
 const mobileTopWaterFadeStyle: CSSProperties = {
@@ -2681,10 +3171,10 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -2695,30 +3185,18 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 const heroDecorationLayerStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  pointerEvents: "none",
-  zIndex: 0,
+  display: "none",
 };
 
 const heroPremiumShineStyle: CSSProperties = {
-  position: "absolute",
-  left: "12%",
-  right: "12%",
-  top: "14px",
-  height: "1px",
-  background:
-    "linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 42%, transparent) 45%, color-mix(in srgb, var(--historietas-secondary, #C4B5FD) 28%, transparent) 70%, transparent 100%)",
-  filter: "none",
-  zIndex: 0,
+  display: "none",
 };
 
 const pageStyle: CSSProperties = {
@@ -2726,9 +3204,8 @@ const pageStyle: CSSProperties = {
   minHeight: "100vh",
   width: "100%",
   maxWidth: "100vw",
-  overflowX: "hidden",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  overflowX: "clip",
+  background: "var(--historietas-bg-start, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
   isolation: "isolate",
@@ -2785,21 +3262,27 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "17px",
+  fontSize: "19px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: 0,
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  background:
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent))",
+  textShadow: "none",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 
@@ -2853,29 +3336,26 @@ const pageTitleTextStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
+  color: "var(--historietas-accent, #F97316)",
+  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
   textAlign: "center",
   textShadow: "none",
 };
 
 const desktopPageTitleTextStyle: CSSProperties = {
   ...pageTitleTextStyle,
+  fontSize: "34px",
+  letterSpacing: "-0.068em",
 };
 
 
 const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
-  borderRadius: "30px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  background:
-    "radial-gradient(circle at 12% -4%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)), transparent 30%), radial-gradient(circle at 18% 42%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 52%, transparent)), transparent 35%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.99)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+  borderRadius: "28px",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2893,60 +3373,47 @@ const heroContentStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "clamp(36px, 9.4vw, 58px)",
   lineHeight: 1.04,
   fontWeight: 950,
   letterSpacing: "-0.072em",
   maxWidth: "100%",
   paddingBottom: "3px",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
   textShadow: "none",
   ...safeTextStyle,
 };
 
 const descriptionStyle: CSSProperties = {
-  margin: "0 auto",
+  margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
+  fontSize: "14px",
   lineHeight: 1.55,
-  fontWeight: 700,
-  maxWidth: "560px",
-  display: "-webkit-box",
-  WebkitLineClamp: 3,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
+  fontWeight: 720,
+  maxWidth: "680px",
   ...safeTextStyle,
 };
 
 const summaryBoxStyle: CSSProperties = {
-  marginTop: "8px",
-  marginLeft: "-12px",
-  marginRight: "-12px",
   display: "flex",
-  alignItems: "stretch",
-  justifyContent: "flex-start",
-  gap: "5px",
-  width: "calc(100% + 24px)",
-  minWidth: 0,
-  maxWidth: "calc(100% + 24px)",
+  gap: "8px",
   overflowX: "auto",
   overflowY: "hidden",
-  padding: "0 12px",
-  scrollSnapType: "x proximity",
-  boxSizing: "border-box",
+  scrollSnapType: "x mandatory",
+  scrollbarWidth: "none",
+  WebkitOverflowScrolling: "touch",
+  marginTop: "14px",
+  padding: "0 2px 2px",
+  maxWidth: "100%",
+  minWidth: 0,
 };
 
 const summaryItemStyle: CSSProperties = {
   flex: "0 0 84px",
   scrollSnapAlign: "start",
   borderRadius: "11px",
-  background:
-    "linear-gradient(145deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 11%, var(--historietas-surface, rgba(255,255,255,0.06))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.82)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.085))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   padding: "4px 4px",
   minHeight: "46px",
   display: "grid",
@@ -2965,13 +3432,14 @@ const summaryItemStyle: CSSProperties = {
 
 const summaryItemActiveStyle: CSSProperties = {
   ...summaryItemStyle,
-  background:
-    "linear-gradient(135deg, var(--historietas-secondary, #7C3AED) 0%, var(--historietas-accent, #F97316) 100%)",
-  border: "1px solid rgba(255,255,255,0.22)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
+  boxShadow: "none",
 };
 
 const summaryNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#DDD6FE",
   fontSize: "16px",
   fontWeight: 950,
   lineHeight: 1,
@@ -3005,14 +3473,15 @@ const filterBoxStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
   gap: "10px",
-  padding: "13px",
-  borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, var(--historietas-surface, rgba(255,255,255,0.055))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.86)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "0",
+  boxShadow: "none",
   minWidth: 0,
-  overflow: "hidden",
+  overflow: "visible",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const filterGridStyle: CSSProperties = {
@@ -3026,15 +3495,17 @@ const filterGridStyle: CSSProperties = {
 
 const fieldBoxStyle: CSSProperties = {
   display: "grid",
-  justifyItems: "center",
-  gap: "8px",
+  gap: "6px",
   width: "100%",
   minWidth: 0,
-  textAlign: "center",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "0",
 };
 
 const filterLabelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "13px",
   fontWeight: 950,
   letterSpacing: "0.04em",
@@ -3045,38 +3516,38 @@ const filterLabelStyle: CSSProperties = {
 
 const searchInputStyle: CSSProperties = {
   width: "100%",
-  height: "43px",
+  height: "46px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, #3F3F46)",
-  background: "var(--historietas-input-bg, rgba(15,15,18,0.88))",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 15px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "0 16px",
   outline: "none",
-  fontSize: "13px",
-  fontWeight: 750,
+  fontSize: "14px",
+  fontWeight: 720,
   textAlign: "center",
   boxSizing: "border-box",
+  boxShadow: "none",
   minWidth: 0,
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
 };
 
 const selectStyle: CSSProperties = {
   width: "100%",
-  height: "43px",
+  height: "40px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, #3F3F46)",
-  background: "var(--historietas-input-bg, rgba(15,15,18,0.88))",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 15px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "0 12px",
   outline: "none",
-  fontSize: "13px",
-  fontWeight: 850,
+  fontSize: "11.5px",
+  fontWeight: 820,
   textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
   overflow: "hidden",
   textOverflow: "ellipsis",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+  boxShadow: "none",
 };
 
 const filterFooterStyle: CSSProperties = {
@@ -3089,8 +3560,8 @@ const filterFooterStyle: CSSProperties = {
 };
 
 const filterInfoStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "13px",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12px",
   fontWeight: 850,
   textAlign: "center",
   ...safeTextStyle,
@@ -3109,15 +3580,16 @@ const savedCardStyle: CSSProperties = {
   display: "grid",
   gap: "9px",
   padding: "11px",
-  borderRadius: "24px",
-  background:
-    "linear-gradient(145deg, var(--historietas-surface, rgba(33,24,50,0.96)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.99)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  borderRadius: "22px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
   minWidth: 0,
   maxWidth: "100%",
-  boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
+  boxSizing: "border-box",
 };
 
 const savedBookHeaderStyle: CSSProperties = {
@@ -3138,22 +3610,53 @@ const savedBookInfoStyle: CSSProperties = {
   maxWidth: "100%",
 };
 
+const savedBookActionGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateRows: "auto auto",
+  gap: "5px",
+  alignItems: "stretch",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+const savedBookInfoActionGridStyle: CSSProperties = {
+  ...savedBookInfoStyle,
+  gridColumn: "2 / 4",
+  gridRow: "1 / 2",
+};
+
+const bookCoverActionGridStyle: CSSProperties = {
+  gridColumn: "1 / 2",
+  gridRow: "1 / 3",
+  width: "100%",
+  height: "100%",
+  minHeight: 0,
+  maxHeight: "none",
+  aspectRatio: "auto",
+  alignSelf: "stretch",
+};
+
 const bookCoverStyle: CSSProperties = {
-  minHeight: "102px",
-  maxHeight: "116px",
+  minHeight: "116px",
+  maxHeight: "128px",
   height: "100%",
   aspectRatio: "2 / 3",
-  borderRadius: "17px",
+  borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
   textDecoration: "none",
-  background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent), transparent 38%), linear-gradient(145deg, var(--historietas-surface, #20162F) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
+  background: "#04000A",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  border: "1px solid rgba(255,255,255,0.08)",
   display: "block",
   minWidth: 0,
+  maxWidth: "100%",
   boxSizing: "border-box",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  boxShadow: "none",
 };
 
 
@@ -3169,13 +3672,13 @@ const cardTopStyle: CSSProperties = {
 const chapterBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 7px",
+  padding: "5px 8px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "9px",
-  fontWeight: 950,
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "10px",
+  fontWeight: 900,
   whiteSpace: "normal",
   ...safeTextStyle,
 };
@@ -3183,54 +3686,34 @@ const chapterBadgeStyle: CSSProperties = {
 const savedBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 7px",
+  padding: "5px 8px",
   borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.10)",
+  background: "rgba(34, 197, 94, 0.12)",
   border: "1px solid rgba(34, 197, 94, 0.22)",
   color: "#86EFAC",
-  fontSize: "9px",
+  fontSize: "10px",
   fontWeight: 950,
   whiteSpace: "normal",
   ...safeTextStyle,
 };
 
 const readBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.10)",
-  border: "1px solid rgba(34, 197, 94, 0.22)",
-  color: "#86EFAC",
-  fontSize: "9px",
-  fontWeight: 950,
-  whiteSpace: "normal",
-  ...safeTextStyle,
+  ...savedBadgeStyle,
 };
 
 const followedBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.10)",
-  border: "1px solid rgba(34, 197, 94, 0.22)",
-  color: "#86EFAC",
-  fontSize: "9px",
-  fontWeight: 950,
-  whiteSpace: "normal",
-  ...safeTextStyle,
+  ...savedBadgeStyle,
 };
 
 const readingBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 7px",
+  padding: "5px 8px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 11%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 35%, #FFFFFF)",
-  fontSize: "9px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10px",
   fontWeight: 950,
   whiteSpace: "normal",
   ...safeTextStyle,
@@ -3239,13 +3722,13 @@ const readingBadgeStyle: CSSProperties = {
 const favoriteBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 7px",
+  padding: "5px 8px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "9px",
-  fontWeight: 950,
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
+  fontSize: "10px",
+  fontWeight: 900,
   whiteSpace: "normal",
   ...safeTextStyle,
 };
@@ -3253,13 +3736,13 @@ const favoriteBadgeStyle: CSSProperties = {
 const completedBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 7px",
+  padding: "5px 8px",
   borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.10)",
+  background: "rgba(34, 197, 94, 0.12)",
   border: "1px solid rgba(34, 197, 94, 0.22)",
   color: "#86EFAC",
-  fontSize: "9px",
-  fontWeight: 950,
+  fontSize: "10px",
+  fontWeight: 900,
   whiteSpace: "normal",
   ...safeTextStyle,
 };
@@ -3267,10 +3750,10 @@ const completedBadgeStyle: CSSProperties = {
 const chapterTitleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "18px",
-  lineHeight: 1.16,
+  fontSize: "20px",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "-0.045em",
+  letterSpacing: "-0.03em",
   maxWidth: "100%",
   paddingBottom: "2px",
   display: "-webkit-box",
@@ -3297,121 +3780,132 @@ const bookInfoStyle: CSSProperties = {
 const authorLinkStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  color: "var(--historietas-accent, #FDBA74)",
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D8C8FF)",
   fontSize: "12px",
-  fontWeight: 900,
+  fontWeight: 800,
   textDecoration: "none",
+  borderBottom: "0",
   whiteSpace: "normal",
   ...safeTextStyle,
 };
 
 const readingProgressTrackStyle: CSSProperties = {
-  height: "5px",
+  width: "100%",
+  height: "7px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
   overflow: "hidden",
+  boxSizing: "border-box",
 };
 
 const readingProgressBarStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background:
+    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
 };
 
 const commentTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  lineHeight: 1.25,
-  fontWeight: 700,
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12px",
+  lineHeight: 1.45,
+  fontWeight: 720,
   ...safeTextStyle,
 };
 
 const primaryActionsStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(128px, 1fr))",
-  gap: "6px",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  alignItems: "stretch",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
 const primaryActionStyle: CSSProperties = {
-  minHeight: "36px",
+  minHeight: "34px",
+  width: "100%",
+  maxWidth: "100%",
+  padding: "0 12px",
   borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 58%, var(--historietas-secondary, #7C3AED)) 100%)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "11px",
+  fontSize: "13px",
   fontWeight: 950,
-  display: "flex",
+  lineHeight: 1.15,
+  textDecoration: "none",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
   boxShadow: "none",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const secondaryActionStyle: CSSProperties = {
-  minHeight: "36px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(255,255,255,0.035))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 35%, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
+  minHeight: "34px",
+  width: "100%",
   minWidth: 0,
   maxWidth: "100%",
+  padding: "0 12px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
+  fontWeight: 950,
+  lineHeight: 1.15,
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
   boxSizing: "border-box",
   whiteSpace: "normal",
   boxShadow: "none",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const disabledActionStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.04))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-secondary, #71717A)",
-  fontSize: "11px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 9px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
+  ...secondaryActionStyle,
+  opacity: 0.55,
+};
+
+const actionAboveCompletedStyle: CSSProperties = {
+  ...primaryActionStyle,
+  gridColumn: "2 / 3",
+};
+
+const actionAboveRemoveStyle: CSSProperties = {
+  ...secondaryActionStyle,
+  gridColumn: "3 / 4",
+};
+
+const coverActionAboveCompletedStyle: CSSProperties = {
+  ...actionAboveCompletedStyle,
+  gridRow: "2 / 3",
+};
+
+const coverActionAboveRemoveStyle: CSSProperties = {
+  ...actionAboveRemoveStyle,
+  gridRow: "2 / 3",
+};
+
+const disabledActionAboveCompletedStyle: CSSProperties = {
+  ...disabledActionStyle,
+  gridColumn: "2 / 3",
 };
 
 const secondaryActionsRowStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   alignItems: "stretch",
   gap: "5px",
   minWidth: 0,
@@ -3422,17 +3916,16 @@ const secondaryActionsRowStyle: CSSProperties = {
 };
 
 const favoriteButtonStyle: CSSProperties = {
-  flex: "1 1 104px",
-  minHeight: "30px",
-  width: "auto",
+  minHeight: "34px",
+  width: "100%",
   maxWidth: "100%",
-  padding: "0 9px",
+  padding: "0 12px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 920,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
+  fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
@@ -3444,24 +3937,23 @@ const favoriteButtonStyle: CSSProperties = {
 
 const favoriteActiveButtonStyle: CSSProperties = {
   ...favoriteButtonStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
   boxShadow: "none",
 };
 
 const completedButtonStyle: CSSProperties = {
-  flex: "1 1 104px",
-  minHeight: "30px",
-  width: "auto",
+  minHeight: "34px",
+  width: "100%",
   maxWidth: "100%",
-  padding: "0 9px",
+  padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(34,197,94,0.20)",
   background: "rgba(34,197,94,0.085)",
   color: "#86EFAC",
-  fontSize: "10px",
-  fontWeight: 920,
+  fontSize: "13px",
+  fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
@@ -3473,24 +3965,22 @@ const completedButtonStyle: CSSProperties = {
 
 const completedActiveButtonStyle: CSSProperties = {
   ...completedButtonStyle,
-  background: "rgba(34, 197, 94, 0.16)",
-  border: "1px solid rgba(34, 197, 94, 0.30)",
-  color: "#86EFAC",
-  boxShadow: "none",
+  background: "rgba(34,197,94,0.14)",
+  border: "1px solid rgba(34,197,94,0.28)",
+  color: "#BBF7D0",
 };
 
 const removeButtonStyle: CSSProperties = {
-  flex: "1 1 104px",
-  minHeight: "30px",
-  width: "auto",
+  minHeight: "34px",
+  width: "100%",
   maxWidth: "100%",
-  padding: "0 9px",
+  padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(239,68,68,0.18)",
   background: "rgba(239,68,68,0.075)",
   color: "#FCA5A5",
-  fontSize: "10px",
-  fontWeight: 920,
+  fontSize: "13px",
+  fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
@@ -3502,24 +3992,24 @@ const removeButtonStyle: CSSProperties = {
 
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
-  borderRadius: "28px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,31,35,0.98)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, var(--historietas-border-soft, #2D2D32))",
-  padding: "24px",
   display: "grid",
-  gap: "12px",
-  textAlign: "center",
   justifyItems: "center",
+  gap: "10px",
+  padding: "18px 14px",
+  borderRadius: "24px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
+  textAlign: "center",
   minWidth: 0,
   maxWidth: "100%",
-  boxSizing: "border-box",
   overflow: "hidden",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  boxSizing: "border-box",
 };
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
+  color: "var(--historietas-accent, #F97316)",
   textAlign: "center",
   fontSize: "28px",
   fontWeight: 950,
@@ -3538,44 +4028,37 @@ const emptyTextStyle: CSSProperties = {
 };
 
 const emptyButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "48px",
+  minHeight: "42px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-secondary, #7C3AED)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
-  minWidth: 0,
-  maxWidth: "100%",
+  padding: "0 14px",
   boxSizing: "border-box",
-  whiteSpace: "normal",
   boxShadow: "none",
+  border: "1px solid rgba(255,255,255,0.10)",
+  cursor: "pointer",
+  fontFamily: "inherit",
   ...safeTextStyle,
 };
 
 const desktopEmptyButtonStyle: CSSProperties = {
   ...emptyButtonStyle,
   width: "fit-content",
-  minWidth: "220px",
-  maxWidth: "280px",
-  padding: "0 22px",
+  minWidth: "180px",
 };
 
 const infoBoxStyle: CSSProperties = {
   marginTop: "18px",
   textAlign: "center",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 7%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, transparent) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   borderRadius: "22px",
   padding: "14px",
   minWidth: 0,
@@ -3587,20 +4070,20 @@ const infoBoxStyle: CSSProperties = {
 
 const infoTitleStyle: CSSProperties = {
   margin: 0,
-  textAlign: "center",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "16px",
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "18px",
   fontWeight: 950,
+  letterSpacing: "-0.03em",
   ...safeTextStyle,
 };
 
 const infoTextStyle: CSSProperties = {
-  margin: "6px auto 0",
-  textAlign: "center",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.45,
-  fontWeight: 600,
+  margin: "8px auto 0",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
+  lineHeight: 1.55,
+  fontWeight: 720,
+  maxWidth: "640px",
   ...safeTextStyle,
 };
 
@@ -3618,8 +4101,7 @@ const desktopTopStyle: CSSProperties = {
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
-  borderRadius: "32px",
-  maxWidth: "100%",
+  borderRadius: "28px",
 };
 
 const desktopHeroContentStyle: CSSProperties = {
@@ -3656,13 +4138,10 @@ const desktopDescriptionStyle: CSSProperties = {
 const desktopSummaryBoxStyle: CSSProperties = {
   ...summaryBoxStyle,
   justifyContent: "center",
-  gap: "6px",
-  marginTop: "8px",
-  marginLeft: 0,
-  marginRight: 0,
-  width: "100%",
-  maxWidth: "100%",
-  padding: 0,
+  overflowX: "visible",
+  flexWrap: "wrap",
+  gap: "8px",
+  padding: "0",
 };
 
 const desktopSummaryItemStyle: CSSProperties = {
@@ -3683,8 +4162,8 @@ const desktopSummaryItemActiveStyle: CSSProperties = {
 
 const desktopFilterBoxStyle: CSSProperties = {
   ...filterBoxStyle,
-  padding: "14px",
-  gap: "10px",
+  padding: 0,
+  borderRadius: 0,
 };
 
 const desktopFilterGridStyle: CSSProperties = {
@@ -3709,9 +4188,19 @@ const desktopSavedGridStyle: CSSProperties = {
 
 const desktopSavedCardStyle: CSSProperties = {
   ...savedCardStyle,
-  padding: "12px",
+  padding: "14px",
   borderRadius: "22px",
-  gap: "9px",
+  gap: "12px",
+};
+
+const desktopSavedBookActionGridStyle: CSSProperties = {
+  ...savedBookActionGridStyle,
+  gap: "6px",
+};
+
+const desktopSavedBookInfoActionGridStyle: CSSProperties = {
+  ...savedBookInfoActionGridStyle,
+  gap: "5px",
 };
 
 const desktopSavedBookHeaderStyle: CSSProperties = {
@@ -3728,14 +4217,17 @@ const desktopSavedBookInfoStyle: CSSProperties = {
 const desktopBookCoverStyle: CSSProperties = {
   ...bookCoverStyle,
   minHeight: "124px",
-  maxHeight: "134px",
-  borderRadius: "13px",
+  maxHeight: "138px",
+  borderRadius: "16px",
+};
+
+const desktopBookCoverActionGridStyle: CSSProperties = {
+  ...bookCoverActionGridStyle,
 };
 
 const desktopPrimaryActionsStyle: CSSProperties = {
   ...primaryActionsStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "7px",
+  gap: "6px",
 };
 
 const desktopSecondaryActionsRowStyle: CSSProperties = {

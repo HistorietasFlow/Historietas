@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import type { ChangeEvent, CSSProperties } from "react";
+import type { CSSProperties } from "react";
 
 type CapituloLocal = {
   id: string;
@@ -51,6 +51,10 @@ type ObraLocal = {
   progressoLeitura: number;
   slug: string;
   link: string;
+  totalCurtidasPainel?: number;
+  totalComentariosPainel?: number;
+  totalSalvosPainel?: number;
+  totalLidosPainel?: number;
 };
 
 
@@ -88,6 +92,15 @@ type SupabaseCapituloRow = {
   publicado: boolean | null;
   criado_em: string | null;
   atualizado_em: string | null;
+};
+
+type ProfilePainelAutorRow = {
+  id?: string | null;
+  user_id?: string | null;
+  nome?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
+  sobre_bio?: string | null;
 };
 
 type RegistroSupabaseGenerico = Record<string, unknown>;
@@ -130,83 +143,6 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
-const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
-const AVATAR_MAX_SIZE = 2 * 1024 * 1024;
-const BIO_MAX_LENGTH = 160;
-
-type PerfilAutorSalvo = {
-  avatar: string;
-  avatarNome: string;
-  bio: string;
-};
-
-type PerfisAutoresSalvos = Record<string, PerfilAutorSalvo>;
-
-function normalizarNomeAutor(nome: string) {
-  return nome.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function normalizarPerfisAutores(valor: unknown): PerfisAutoresSalvos {
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-    return {};
-  }
-
-  const perfisValidos: PerfisAutoresSalvos = {};
-
-  Object.entries(valor as Record<string, Partial<PerfilAutorSalvo>>).forEach(
-    ([autor, perfil]) => {
-      if (!autor.trim() || !perfil || typeof perfil !== "object") {
-        return;
-      }
-
-      perfisValidos[normalizarNomeAutor(autor)] = {
-        avatar: typeof perfil.avatar === "string" ? perfil.avatar : "",
-        avatarNome:
-          typeof perfil.avatarNome === "string" ? perfil.avatarNome : "",
-        bio:
-          typeof perfil.bio === "string"
-            ? perfil.bio.slice(0, BIO_MAX_LENGTH)
-            : "",
-      };
-    }
-  );
-
-  return perfisValidos;
-}
-
-function carregarPerfisAutores(): PerfisAutoresSalvos {
-  try {
-    const perfisTexto = localStorage.getItem(AUTHOR_PROFILE_STORAGE_KEY);
-    const perfisJson: unknown = perfisTexto ? JSON.parse(perfisTexto) : {};
-    const perfisNormalizados = normalizarPerfisAutores(perfisJson);
-
-    localStorage.setItem(
-      AUTHOR_PROFILE_STORAGE_KEY,
-      JSON.stringify(perfisNormalizados)
-    );
-
-    return perfisNormalizados;
-  } catch {
-    localStorage.setItem(AUTHOR_PROFILE_STORAGE_KEY, JSON.stringify({}));
-    return {};
-  }
-}
-
-function criarBioPadraoAutor(nomeAutor: string, obrasAutor: ObraLocal[]) {
-  const generos = Array.from(
-    new Set(
-      obrasAutor
-        .map((obra) => formatarGeneroPainelAutor(obra.genero))
-        .filter((genero) => genero && genero !== "Não informado")
-    )
-  );
-
-  const generosTexto =
-    generos.length > 0 ? generos.slice(0, 3).join(", ") : "histórias variadas";
-
-  return `${nomeAutor} publica histórias na Historietas, com foco em ${generosTexto}.`;
-}
-
 function normalizarTexto(texto: string) {
   return texto
     .trim()
@@ -312,13 +248,19 @@ function mostrarClassificacao(obra: ObraLocal) {
 
 function criarPainelCoverStyle(capa: string): CSSProperties {
   if (!capa) {
-    return coverStyle;
+    return {
+      ...coverStyle,
+      background: "#04000A",
+      backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    };
   }
 
   return {
     ...coverStyle,
-    background: "#18181B",
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.22) 100%), url(${capa})`,
+    background: "#04000A",
+    backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -327,7 +269,7 @@ function criarPainelCoverStyle(capa: string): CSSProperties {
 function criarPainelCoverDesktopStyle(capa: string): CSSProperties {
   return {
     ...criarPainelCoverStyle(capa),
-    minHeight: "188px",
+    minHeight: "152px",
     height: "100%",
   };
 }
@@ -493,6 +435,10 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
     autorId:
       typeof obra.autorId === "string" && obra.autorId.trim()
         ? obra.autorId.trim()
+        : typeof obra.user_id === "string" && obra.user_id.trim()
+        ? obra.user_id.trim()
+        : typeof obra.userId === "string" && obra.userId.trim()
+        ? obra.userId.trim()
         : "",
     titulo:
       typeof obra.titulo === "string" && obra.titulo.trim()
@@ -560,6 +506,116 @@ function normalizarListaIds(valor: unknown): string[] {
   return Array.isArray(valor)
     ? valor.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
     : [];
+}
+
+function criarStorageKeyUsuarioPainel(chave: string, userId: string) {
+  const usuarioId = userId.trim();
+
+  return usuarioId ? `${chave}:${usuarioId}` : chave;
+}
+
+function carregarListaIdsPainel(chave: string, userId: string) {
+  try {
+    const listaGlobalTexto = localStorage.getItem(chave);
+    const listaUsuarioTexto = localStorage.getItem(
+      criarStorageKeyUsuarioPainel(chave, userId)
+    );
+    const listaGlobalJson: unknown = listaGlobalTexto
+      ? JSON.parse(listaGlobalTexto)
+      : [];
+    const listaUsuarioJson: unknown = listaUsuarioTexto
+      ? JSON.parse(listaUsuarioTexto)
+      : [];
+
+    return Array.from(
+      new Set([
+        ...normalizarListaIds(listaGlobalJson),
+        ...normalizarListaIds(listaUsuarioJson),
+      ])
+    );
+  } catch {
+    return [] as string[];
+  }
+}
+
+function salvarListaIdsUsuarioPainel(
+  chave: string,
+  userId: string,
+  listaUsuario: string[],
+  listaGlobalPreservada: string[] = []
+) {
+  const listaUsuarioNormalizada = normalizarListaIds(listaUsuario);
+  const listaGlobalNormalizada = normalizarListaIds(listaGlobalPreservada);
+  const listaGlobalMesclada = Array.from(
+    new Set([...listaUsuarioNormalizada, ...listaGlobalNormalizada])
+  );
+
+  localStorage.setItem(chave, JSON.stringify(listaGlobalMesclada));
+  localStorage.setItem(
+    criarStorageKeyUsuarioPainel(chave, userId),
+    JSON.stringify(listaUsuarioNormalizada)
+  );
+}
+
+function obterIdentificadoresObraPainel(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
+) {
+  return Array.from(
+    new Set(
+      [
+        obra.id,
+        obra.slug,
+        criarSlugBase(obra.titulo),
+        normalizarTexto(obra.titulo),
+      ]
+        .map((valor) => valor.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function colecaoTemObraPainel(
+  colecao: string[],
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
+) {
+  const itens = new Set(
+    colecao
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+
+  return obterIdentificadoresObraPainel(obra).some((identificador) =>
+    itens.has(identificador)
+  );
+}
+
+function normalizarIdUsuarioPainel(valor: string) {
+  return valor.trim().toLowerCase();
+}
+
+function obraPertenceAoUsuarioPainel(obra: Pick<ObraLocal, "autorId">, userId: string) {
+  const autorIdObra = normalizarIdUsuarioPainel(obra.autorId || "");
+  const usuarioId = normalizarIdUsuarioPainel(userId);
+
+  return Boolean(usuarioId && autorIdObra && autorIdObra === usuarioId);
+}
+
+function filtrarObrasDoUsuarioPainel(obras: ObraLocal[], userId: string) {
+  if (!userId.trim()) {
+    return [] as ObraLocal[];
+  }
+
+  return obras.filter((obra) => obraPertenceAoUsuarioPainel(obra, userId));
+}
+
+function filtrarListaPorObrasDoUsuario(listaIds: string[], obrasUsuario: ObraLocal[]) {
+  return listaIds.filter((id) => {
+    const idLimpo = id.trim();
+
+    return obrasUsuario.some((obra) =>
+      obterIdentificadoresObraPainel(obra).includes(idLimpo)
+    );
+  });
 }
 
 function contarNotificacoesNaoLidas(valor: unknown) {
@@ -653,13 +709,18 @@ function obterTextoComentarioRegistro(registro: RegistroSupabaseGenerico) {
 async function carregarRegistrosObraSupabase(
   tabela: string,
   obraIds: string[],
-  userId?: string
+  userId?: string,
+  capituloIds: string[] = []
 ) {
-  if (obraIds.length === 0) {
+  if (obraIds.length === 0 && capituloIds.length === 0) {
     return [] as RegistroSupabaseGenerico[];
   }
 
-  try {
+  async function tentarPorObraId() {
+    if (obraIds.length === 0) {
+      return null as RegistroSupabaseGenerico[] | null;
+    }
+
     let query = supabase.from(tabela).select("*").in("obra_id", obraIds);
 
     if (userId) {
@@ -669,14 +730,54 @@ async function carregarRegistrosObraSupabase(
     const { data, error } = await query;
 
     if (error) {
-      console.warn(`Não consegui carregar ${tabela} no Painel do Autor:`, error.message);
-      return [] as RegistroSupabaseGenerico[];
+      return null;
     }
 
     return Array.isArray(data) ? (data as RegistroSupabaseGenerico[]) : [];
+  }
+
+  async function tentarPorCapituloId() {
+    if (capituloIds.length === 0) {
+      return null as RegistroSupabaseGenerico[] | null;
+    }
+
+    let query = supabase.from(tabela).select("*").in("capitulo_id", capituloIds);
+
+    if (userId) {
+      query = query.eq("user_id", userId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return null;
+    }
+
+    return Array.isArray(data) ? (data as RegistroSupabaseGenerico[]) : [];
+  }
+
+  try {
+    const porObraId = await tentarPorObraId();
+
+    if (porObraId) {
+      return porObraId;
+    }
+
+    const porCapituloId = await tentarPorCapituloId();
+
+    if (porCapituloId) {
+      return porCapituloId;
+    }
+
+    console.warn(
+      `Não consegui carregar ${tabela} no Painel do Autor por obra_id nem capitulo_id.`
+    );
+
+    return [];
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} no Painel do Autor:`, error);
-    return [] as RegistroSupabaseGenerico[];
+
+    return [];
   }
 }
 
@@ -691,11 +792,17 @@ function criarSetObrasPorRegistro(registros: RegistroSupabaseGenerico[]) {
 function criarSetCapitulosPorRegistro(registros: RegistroSupabaseGenerico[]) {
   return new Set(
     registros
-      .map((registro) => {
+      .flatMap((registro) => {
         const obraId = obterIdObraRegistro(registro);
         const capituloId = obterIdCapituloRegistro(registro);
 
-        return obraId && capituloId ? criarChaveInteracao(obraId, capituloId) : "";
+        if (!capituloId) {
+          return [] as string[];
+        }
+
+        return obraId
+          ? [criarChaveInteracao(obraId, capituloId), capituloId]
+          : [capituloId];
       })
       .filter((chave) => Boolean(chave))
   );
@@ -717,9 +824,14 @@ function criarMapaComentariosPorRegistro(registros: RegistroSupabaseGenerico[]) 
     const comentario = obterTextoComentarioRegistro(registro);
 
     contagem.set(chave, (contagem.get(chave) || 0) + 1);
+    contagem.set(capituloId, (contagem.get(capituloId) || 0) + 1);
 
     if (comentario && !mapa.has(chave)) {
       mapa.set(chave, comentario);
+    }
+
+    if (comentario && !mapa.has(capituloId)) {
+      mapa.set(capituloId, comentario);
     }
   });
 
@@ -730,6 +842,29 @@ function criarMapaComentariosPorRegistro(registros: RegistroSupabaseGenerico[]) 
   });
 
   return mapa;
+}
+
+function contarRegistrosRelacionadosObraPainel(
+  registros: RegistroSupabaseGenerico[],
+  obraId: string,
+  capitulos: SupabaseCapituloRow[]
+) {
+  const obraIdLimpo = obraId.trim();
+  const capituloIds = new Set(
+    capitulos
+      .map((capitulo) => capitulo.id.trim())
+      .filter(Boolean)
+  );
+
+  return registros.filter((registro) => {
+    const obraRegistro = obterIdObraRegistro(registro);
+    const capituloRegistro = obterIdCapituloRegistro(registro);
+
+    return (
+      Boolean(obraIdLimpo && obraRegistro === obraIdLimpo) ||
+      Boolean(capituloRegistro && capituloIds.has(capituloRegistro))
+    );
+  }).length;
 }
 
 function converterObraSupabaseParaLocalPainel({
@@ -758,8 +893,12 @@ function converterObraSupabaseParaLocalPainel({
   const capitulosRemotos = capitulosBanco.map((capitulo, capituloIndex) => {
     const capituloLocal = capitulosLocaisPorId.get(capitulo.id);
     const chaveInteracao = criarChaveInteracao(obraBanco.id, capitulo.id);
-    const comentarioSupabase = comentariosCapitulos.get(chaveInteracao) || "";
-    const lidoSupabase = capitulosLidos.has(chaveInteracao);
+    const comentarioSupabase =
+      comentariosCapitulos.get(chaveInteracao) ||
+      comentariosCapitulos.get(capitulo.id) ||
+      "";
+    const lidoSupabase =
+      capitulosLidos.has(chaveInteracao) || capitulosLidos.has(capitulo.id);
 
     return {
       id: capitulo.id,
@@ -771,8 +910,14 @@ function converterObraSupabaseParaLocalPainel({
         typeof capitulo.texto === "string"
           ? capitulo.texto
           : capituloLocal?.texto || "",
-      curtiu: Boolean(capituloLocal?.curtiu) || capitulosCurtidos.has(chaveInteracao),
-      salvo: Boolean(capituloLocal?.salvo) || capitulosSalvos.has(chaveInteracao),
+      curtiu:
+        Boolean(capituloLocal?.curtiu) ||
+        capitulosCurtidos.has(chaveInteracao) ||
+        capitulosCurtidos.has(capitulo.id),
+      salvo:
+        Boolean(capituloLocal?.salvo) ||
+        capitulosSalvos.has(chaveInteracao) ||
+        capitulosSalvos.has(capitulo.id),
       comentario: comentarioSupabase || capituloLocal?.comentario || "",
       criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
       lido: Boolean(capituloLocal?.lido) || lidoSupabase,
@@ -876,6 +1021,71 @@ function mesclarObrasPainelAutor(
   return obrasMescladas;
 }
 
+function obterNomeProfilePainelAutor(profile: ProfilePainelAutorRow | null | undefined) {
+  return typeof profile?.nome === "string" && profile.nome.trim()
+    ? profile.nome.trim()
+    : "";
+}
+
+async function carregarProfilePainelAutor(userId: string) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return null as ProfilePainelAutorRow | null;
+  }
+
+  try {
+    const camposProfile = "id, user_id, nome, avatar_url, bio, sobre_bio";
+    const { data: profilePorUserId, error: erroUserId } = await supabase
+      .from("profiles")
+      .select(camposProfile)
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
+
+    if (!erroUserId && profilePorUserId) {
+      return profilePorUserId as ProfilePainelAutorRow;
+    }
+
+    const { data: profilePorId, error: erroId } = await supabase
+      .from("profiles")
+      .select(camposProfile)
+      .eq("id", userIdLimpo)
+      .maybeSingle();
+
+    if (!erroId && profilePorId) {
+      return profilePorId as ProfilePainelAutorRow;
+    }
+  } catch {
+    // O perfil público é uma camada social. O painel continua com os dados da obra.
+  }
+
+  return null;
+}
+
+function aplicarNomeProfileNasObrasPainel(
+  obrasParaAtualizar: ObraLocal[],
+  userId: string,
+  nomeProfile: string
+) {
+  const nomeLimpo = nomeProfile.trim();
+
+  if (!nomeLimpo) {
+    return obrasParaAtualizar;
+  }
+
+  return obrasParaAtualizar.map((obra) => {
+    if (!obraPertenceAoUsuarioPainel(obra, userId)) {
+      return obra;
+    }
+
+    return {
+      ...obra,
+      autor: nomeLimpo,
+      autorId: obra.autorId || userId,
+    };
+  });
+}
+
 async function carregarPainelAutorSupabase(
   obrasLocais: ObraLocal[],
   obrasFavoritasLocais: string[],
@@ -887,11 +1097,27 @@ async function carregarPainelAutorSupabase(
 
     if (!userId) {
       return {
-        obras: obrasLocais,
-        favoritas: obrasFavoritasLocais,
-        concluidas: obrasConcluidasLocais,
+        obras: [],
+        favoritas: [],
+        concluidas: [],
       };
     }
+
+    const profileAutor = await carregarProfilePainelAutor(userId);
+    const nomeProfileAutor = obterNomeProfilePainelAutor(profileAutor);
+    const obrasLocaisUsuario = aplicarNomeProfileNasObrasPainel(
+      filtrarObrasDoUsuarioPainel(obrasLocais, userId),
+      userId,
+      nomeProfileAutor
+    );
+    const obrasFavoritasUsuario = filtrarListaPorObrasDoUsuario(
+      obrasFavoritasLocais,
+      obrasLocaisUsuario
+    );
+    const obrasConcluidasUsuario = filtrarListaPorObrasDoUsuario(
+      obrasConcluidasLocais,
+      obrasLocaisUsuario
+    );
 
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
@@ -902,9 +1128,9 @@ async function carregarPainelAutorSupabase(
     if (erroObras) {
       console.warn("Não consegui carregar obras no Painel do Autor:", erroObras.message);
       return {
-        obras: obrasLocais,
-        favoritas: obrasFavoritasLocais,
-        concluidas: obrasConcluidasLocais,
+        obras: obrasLocaisUsuario,
+        favoritas: obrasFavoritasUsuario,
+        concluidas: obrasConcluidasUsuario,
       };
     }
 
@@ -917,9 +1143,9 @@ async function carregarPainelAutorSupabase(
 
     if (obraIds.length === 0) {
       return {
-        obras: obrasLocais,
-        favoritas: obrasFavoritasLocais,
-        concluidas: obrasConcluidasLocais,
+        obras: obrasLocaisUsuario,
+        favoritas: obrasFavoritasUsuario,
+        concluidas: obrasConcluidasUsuario,
       };
     }
 
@@ -939,6 +1165,10 @@ async function carregarPainelAutorSupabase(
       ? (capitulosBanco as SupabaseCapituloRow[])
       : [];
 
+    const capituloIds = capitulosSupabaseBanco
+      .map((capitulo) => capitulo.id)
+      .filter(Boolean);
+
     const [
       favoritosBanco,
       concluidasBanco,
@@ -946,13 +1176,17 @@ async function carregarPainelAutorSupabase(
       curtidasBanco,
       comentariosBanco,
       progressoBanco,
+      curtidasObraBanco,
+      seguidoresObraBanco,
     ] = await Promise.all([
       carregarRegistrosObraSupabase("favoritos", obraIds, userId),
       carregarRegistrosObraSupabase("concluidas", obraIds, userId),
-      carregarRegistrosObraSupabase("salvos_capitulos", obraIds),
-      carregarRegistrosObraSupabase("curtidas_capitulos", obraIds),
-      carregarRegistrosObraSupabase("comentarios_capitulos", obraIds),
-      carregarRegistrosObraSupabase("progresso_leitura", obraIds),
+      carregarRegistrosObraSupabase("salvos_capitulos", obraIds, undefined, capituloIds),
+      carregarRegistrosObraSupabase("curtidas_capitulos", obraIds, undefined, capituloIds),
+      carregarRegistrosObraSupabase("comentarios_capitulos", obraIds, undefined, capituloIds),
+      carregarRegistrosObraSupabase("progresso_leitura", obraIds, undefined, capituloIds),
+      carregarRegistrosObraSupabase("obra_curtidas", obraIds),
+      carregarRegistrosObraSupabase("seguindo_obras", obraIds),
     ]);
 
     const favoritosSupabase = criarSetObrasPorRegistro(favoritosBanco);
@@ -963,7 +1197,7 @@ async function carregarPainelAutorSupabase(
     const comentariosCapitulos = criarMapaComentariosPorRegistro(comentariosBanco);
 
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
-      const obraLocal = obrasLocais.find((obraAtual) => {
+      const obraLocal = obrasLocaisUsuario.find((obraAtual) => {
         const slugLocal = obraAtual.slug || criarSlugBase(obraAtual.titulo);
         const slugBanco = obraBanco.slug?.trim() || criarSlugBase(obraBanco.titulo || "");
 
@@ -974,7 +1208,7 @@ async function carregarPainelAutorSupabase(
         (capitulo) => capitulo.obra_id === obraBanco.id
       );
 
-      return converterObraSupabaseParaLocalPainel({
+      const obraNormalizada = converterObraSupabaseParaLocalPainel({
         obraBanco,
         capitulosBanco: capitulosDaObra,
         obraLocal,
@@ -984,25 +1218,112 @@ async function carregarPainelAutorSupabase(
         comentariosCapitulos,
         index,
       });
+
+      const totalCurtidasCapitulos = contarRegistrosRelacionadosObraPainel(
+        curtidasBanco,
+        obraBanco.id,
+        capitulosDaObra
+      );
+      const totalSalvosCapitulos = contarRegistrosRelacionadosObraPainel(
+        salvosBanco,
+        obraBanco.id,
+        capitulosDaObra
+      );
+      const totalComentariosCapitulos = contarRegistrosRelacionadosObraPainel(
+        comentariosBanco,
+        obraBanco.id,
+        capitulosDaObra
+      );
+      const totalLeiturasCapitulos = contarRegistrosRelacionadosObraPainel(
+        progressoBanco,
+        obraBanco.id,
+        capitulosDaObra
+      );
+      const totalCurtidasObra = contarRegistrosRelacionadosObraPainel(
+        curtidasObraBanco,
+        obraBanco.id,
+        capitulosDaObra
+      );
+      const totalSeguidoresObra = contarRegistrosRelacionadosObraPainel(
+        seguidoresObraBanco,
+        obraBanco.id,
+        capitulosDaObra
+      );
+
+      return {
+        ...obraNormalizada,
+        totalCurtidasPainel: Math.max(
+          calcularCurtidas(obraNormalizada),
+          totalCurtidasCapitulos + totalCurtidasObra
+        ),
+        totalComentariosPainel: Math.max(
+          calcularComentarios(obraNormalizada),
+          totalComentariosCapitulos
+        ),
+        totalSalvosPainel: Math.max(
+          calcularSalvos(obraNormalizada),
+          totalSalvosCapitulos + totalSeguidoresObra
+        ),
+        totalLidosPainel: Math.max(
+          calcularLidos(obraNormalizada),
+          totalLeiturasCapitulos
+        ),
+      };
     });
 
+    const obrasMescladasUsuario = aplicarNomeProfileNasObrasPainel(
+      mesclarObrasPainelAutor(obrasLocaisUsuario, obrasSupabase).filter((obra) =>
+        obraPertenceAoUsuarioPainel(obra, userId)
+      ),
+      userId,
+      nomeProfileAutor
+    );
+    const idsObrasUsuario = new Set(obrasMescladasUsuario.map((obra) => obra.id));
+
     return {
-      obras: mesclarObrasPainelAutor(obrasLocais, obrasSupabase),
+      obras: obrasMescladasUsuario,
       favoritas: Array.from(
-        new Set([...obrasFavoritasLocais, ...Array.from(favoritosSupabase)])
-      ),
+        new Set([...obrasFavoritasUsuario, ...Array.from(favoritosSupabase)])
+      ).filter((id) => idsObrasUsuario.has(id)),
       concluidas: Array.from(
-        new Set([...obrasConcluidasLocais, ...Array.from(concluidasSupabase)])
-      ),
+        new Set([...obrasConcluidasUsuario, ...Array.from(concluidasSupabase)])
+      ).filter((id) => idsObrasUsuario.has(id)),
     };
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Painel do Autor:", error);
 
     return {
-      obras: obrasLocais,
-      favoritas: obrasFavoritasLocais,
-      concluidas: obrasConcluidasLocais,
+      obras: [],
+      favoritas: [],
+      concluidas: [],
     };
+  }
+}
+
+async function carregarNotificacoesNaoLidasPainelSupabase(userId: string) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return 0;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("notificacoes")
+      .select("id")
+      .or(
+        `user_id.eq.${userIdLimpo},destinatario_id.eq.${userIdLimpo},recipient_id.eq.${userIdLimpo}`
+      )
+      .eq("lida", false)
+      .limit(1000);
+
+    if (error) {
+      return 0;
+    }
+
+    return Array.isArray(data) ? data.length : 0;
+  } catch {
+    return 0;
   }
 }
 
@@ -1013,10 +1334,6 @@ export default function PainelAutorPage() {
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
-  const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
-    useState<PerfisAutoresSalvos>({});
-  const [editarPerfilAberto, setEditarPerfilAberto] = useState(false);
-  const [avatarErro, setAvatarErro] = useState("");
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<FiltroPainel>("todas");
   const [ordenacao, setOrdenacao] = useState<OrdenacaoPainel>("pontuacao");
@@ -1027,7 +1344,6 @@ export default function PainelAutorPage() {
   const [verificandoUsuario, setVerificandoUsuario] = useState(true);
   const [saindoDaConta, setSaindoDaConta] = useState(false);
 
-  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
 
@@ -1070,23 +1386,19 @@ export default function PainelAutorPage() {
             : "";
 
         setUsuarioIdLogado(usuario.id);
-        setUsuarioIdLogado(usuario.id);
         setEmailUsuarioLogado(usuario.email || "");
         setNomeUsuarioLogado(nomeMetadata);
         setVerificandoUsuario(false);
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("nome")
-          .eq("user_id", usuario.id)
-          .maybeSingle();
+        const profile = await carregarProfilePainelAutor(usuario.id);
+        const nomeProfile = obterNomeProfilePainelAutor(profile);
 
         if (!componenteAtivo) {
           return;
         }
 
-        if (profile && typeof profile.nome === "string" && profile.nome.trim()) {
-          setNomeUsuarioLogado(profile.nome.trim());
+        if (nomeProfile) {
+          setNomeUsuarioLogado(nomeProfile);
         }
       } catch {
         if (componenteAtivo) {
@@ -1125,6 +1437,15 @@ export default function PainelAutorPage() {
         setEmailUsuarioLogado(usuario.email || "");
         setNomeUsuarioLogado(nomeMetadata);
         setVerificandoUsuario(false);
+
+        void (async () => {
+          const profile = await carregarProfilePainelAutor(usuario.id);
+          const nomeProfile = obterNomeProfilePainelAutor(profile);
+
+          if (componenteAtivo && nomeProfile) {
+            setNomeUsuarioLogado(nomeProfile);
+          }
+        })();
       }
     );
 
@@ -1141,6 +1462,10 @@ export default function PainelAutorPage() {
   }, [router, usuarioIdLogado, verificandoUsuario]);
 
   useEffect(() => {
+    if (verificandoUsuario || !usuarioIdLogado) {
+      return;
+    }
+
     let componenteAtivo = true;
 
     async function carregarDadosPainelAutor() {
@@ -1160,45 +1485,74 @@ export default function PainelAutorPage() {
               )
             )
           : [];
+        const profileAutorPainel = await carregarProfilePainelAutor(usuarioIdLogado);
+        const nomeProfileAutorPainel = obterNomeProfilePainelAutor(profileAutorPainel);
+        const obrasUsuarioLogado = aplicarNomeProfileNasObrasPainel(
+          filtrarObrasDoUsuarioPainel(obrasNormalizadas, usuarioIdLogado),
+          usuarioIdLogado,
+          nomeProfileAutorPainel
+        );
+        const obrasOutrosUsuarios = obrasNormalizadas.filter(
+          (obra) => !obraPertenceAoUsuarioPainel(obra, usuarioIdLogado)
+        );
 
         const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
         const obrasFavoritasJson: unknown = obrasFavoritasTexto
           ? JSON.parse(obrasFavoritasTexto)
           : [];
-        const obrasFavoritasNormalizadas = normalizarListaIds(
-          obrasFavoritasJson
+        const obrasFavoritasNormalizadas = Array.from(
+          new Set([
+            ...normalizarListaIds(obrasFavoritasJson),
+            ...carregarListaIdsPainel(FAVORITES_STORAGE_KEY, usuarioIdLogado),
+          ])
         );
 
         const obrasConcluidasTexto = localStorage.getItem(COMPLETED_STORAGE_KEY);
         const obrasConcluidasJson: unknown = obrasConcluidasTexto
           ? JSON.parse(obrasConcluidasTexto)
           : [];
-        const obrasConcluidasNormalizadas = normalizarListaIds(
-          obrasConcluidasJson
+        const obrasConcluidasNormalizadas = Array.from(
+          new Set([
+            ...normalizarListaIds(obrasConcluidasJson),
+            ...carregarListaIdsPainel(COMPLETED_STORAGE_KEY, usuarioIdLogado),
+          ])
+        );
+
+        const obrasFavoritasUsuario = filtrarListaPorObrasDoUsuario(
+          obrasFavoritasNormalizadas,
+          obrasUsuarioLogado
+        );
+        const obrasConcluidasUsuario = filtrarListaPorObrasDoUsuario(
+          obrasConcluidasNormalizadas,
+          obrasUsuarioLogado
         );
 
         const notificacoesTexto = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
         const notificacoesJson: unknown = notificacoesTexto
           ? JSON.parse(notificacoesTexto)
           : [];
-        const totalNotificacoesNaoLidas = contarNotificacoesNaoLidas(
-          notificacoesJson
+        const totalNotificacoesNaoLidas = Math.max(
+          contarNotificacoesNaoLidas(notificacoesJson),
+          await carregarNotificacoesNaoLidasPainelSupabase(usuarioIdLogado)
         );
 
         if (!componenteAtivo) {
           return;
         }
 
-        setObras(obrasNormalizadas);
-        setObrasFavoritas(obrasFavoritasNormalizadas);
-        setObrasConcluidas(obrasConcluidasNormalizadas);
+        if (nomeProfileAutorPainel) {
+          setNomeUsuarioLogado(nomeProfileAutorPainel);
+        }
+
+        setObras(obrasUsuarioLogado);
+        setObrasFavoritas(obrasFavoritasUsuario);
+        setObrasConcluidas(obrasConcluidasUsuario);
         setNotificacoesNaoLidas(totalNotificacoesNaoLidas);
-        setPerfisAutoresSalvos(carregarPerfisAutores());
 
         const dadosSupabase = await carregarPainelAutorSupabase(
-          obrasNormalizadas,
-          obrasFavoritasNormalizadas,
-          obrasConcluidasNormalizadas
+          obrasUsuarioLogado,
+          obrasFavoritasUsuario,
+          obrasConcluidasUsuario
         );
 
         if (!componenteAtivo) {
@@ -1209,15 +1563,33 @@ export default function PainelAutorPage() {
           normalizarObra(obra as ObraSalva, index)
         );
 
-        sincronizarBackupArquivosObras(obrasFinais);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasFinais));
-        localStorage.setItem(
-          FAVORITES_STORAGE_KEY,
-          JSON.stringify(dadosSupabase.favoritas)
+        const obrasPersistidas = [
+          ...obrasFinais,
+          ...obrasOutrosUsuarios.filter((obraOutroUsuario) =>
+            obrasFinais.every((obraAtual) => obraAtual.id !== obraOutroUsuario.id)
+          ),
+        ];
+        const idsObrasFinais = new Set(obrasFinais.map((obra) => obra.id));
+        const favoritasOutrosUsuarios = obrasFavoritasNormalizadas.filter(
+          (id) => !idsObrasFinais.has(id)
         );
-        localStorage.setItem(
+        const concluidasOutrosUsuarios = obrasConcluidasNormalizadas.filter(
+          (id) => !idsObrasFinais.has(id)
+        );
+
+        sincronizarBackupArquivosObras(obrasFinais);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasPersistidas));
+        salvarListaIdsUsuarioPainel(
+          FAVORITES_STORAGE_KEY,
+          usuarioIdLogado,
+          dadosSupabase.favoritas,
+          favoritasOutrosUsuarios
+        );
+        salvarListaIdsUsuarioPainel(
           COMPLETED_STORAGE_KEY,
-          JSON.stringify(dadosSupabase.concluidas)
+          usuarioIdLogado,
+          dadosSupabase.concluidas,
+          concluidasOutrosUsuarios
         );
 
         setObras(obrasFinais);
@@ -1232,7 +1604,6 @@ export default function PainelAutorPage() {
         setObrasFavoritas([]);
         setObrasConcluidas([]);
         setNotificacoesNaoLidas(0);
-        setPerfisAutoresSalvos({});
       }
     }
 
@@ -1241,15 +1612,27 @@ export default function PainelAutorPage() {
     return () => {
       componenteAtivo = false;
     };
-  }, []);
+  }, [usuarioIdLogado, verificandoUsuario]);
 
   const obrasComMetricas = useMemo<ObraComMetricas[]>(() => {
     return obras
       .map((obra) => {
-        const totalCurtidas = calcularCurtidas(obra);
-        const totalComentarios = calcularComentarios(obra);
-        const totalSalvos = calcularSalvos(obra);
-        const totalLidos = calcularLidos(obra);
+        const totalCurtidas = Math.max(
+          calcularCurtidas(obra),
+          obra.totalCurtidasPainel || 0
+        );
+        const totalComentarios = Math.max(
+          calcularComentarios(obra),
+          obra.totalComentariosPainel || 0
+        );
+        const totalSalvos = Math.max(
+          calcularSalvos(obra),
+          obra.totalSalvosPainel || 0
+        );
+        const totalLidos = Math.max(
+          calcularLidos(obra),
+          obra.totalLidosPainel || 0
+        );
         const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
         const ultimoCapituloLido = encontrarCapituloParaContinuar(obra);
 
@@ -1338,10 +1721,6 @@ export default function PainelAutorPage() {
     0
   );
 
-  const totalArquivos = obrasComMetricas.filter((obra) =>
-    Boolean(obra.arquivoObra)
-  ).length;
-
   const totalCurtidas = obrasComMetricas.reduce(
     (total, obra) => total + obra.totalCurtidas,
     0
@@ -1360,30 +1739,6 @@ export default function PainelAutorPage() {
   const melhorObra = obrasComMetricas[0] || null;
   const autorPrincipal =
     melhorObra?.autor || obrasComMetricas[0]?.autor || obras[0]?.autor || "";
-  const autorPrincipalNormalizado = autorPrincipal
-    ? normalizarNomeAutor(autorPrincipal)
-    : "";
-  const obrasDoAutorPrincipal = autorPrincipalNormalizado
-    ? obras.filter(
-        (obra) => normalizarNomeAutor(obra.autor) === autorPrincipalNormalizado
-      )
-    : [];
-  const perfilAutorSalvo = autorPrincipalNormalizado
-    ? perfisAutoresSalvos[autorPrincipalNormalizado] || {
-        avatar: "",
-        avatarNome: "",
-        bio: "",
-      }
-    : {
-        avatar: "",
-        avatarNome: "",
-        bio: "",
-      };
-  const bioPadraoAutor = autorPrincipal
-    ? criarBioPadraoAutor(autorPrincipal, obrasDoAutorPrincipal)
-    : "Crie uma obra primeiro. Depois você poderá editar a bio do seu perfil.";
-  const bioPerfilAutor = perfilAutorSalvo.bio.trim() || bioPadraoAutor;
-  const caracteresRestantesBio = BIO_MAX_LENGTH - perfilAutorSalvo.bio.length;
 
   const filtrosAtivos =
     Boolean(busca.trim()) || filtro !== "todas" || ordenacao !== "pontuacao";
@@ -1391,91 +1746,6 @@ export default function PainelAutorPage() {
     obrasFiltradas.length === 1
       ? "1 obra encontrada"
       : `${obrasFiltradas.length} obras encontradas`;
-
-  function salvarPerfilAutor(novoPerfil: PerfilAutorSalvo) {
-    if (!autorPrincipalNormalizado) {
-      return;
-    }
-
-    const novosPerfis = {
-      ...perfisAutoresSalvos,
-      [autorPrincipalNormalizado]: {
-        avatar: novoPerfil.avatar,
-        avatarNome: novoPerfil.avatarNome,
-        bio: novoPerfil.bio.slice(0, BIO_MAX_LENGTH),
-      },
-    };
-
-    localStorage.setItem(AUTHOR_PROFILE_STORAGE_KEY, JSON.stringify(novosPerfis));
-    setPerfisAutoresSalvos(novosPerfis);
-  }
-
-  function atualizarBioAutor(novaBio: string) {
-    salvarPerfilAutor({
-      avatar: perfilAutorSalvo.avatar,
-      avatarNome: perfilAutorSalvo.avatarNome,
-      bio: novaBio.slice(0, BIO_MAX_LENGTH),
-    });
-  }
-
-  function selecionarAvatarAutor(event: ChangeEvent<HTMLInputElement>) {
-    const arquivo = event.target.files?.[0];
-
-    setAvatarErro("");
-
-    if (!arquivo) {
-      return;
-    }
-
-    if (!arquivo.type.startsWith("image/")) {
-      setAvatarErro("Escolha uma imagem válida.");
-      event.target.value = "";
-      return;
-    }
-
-    if (arquivo.size > AVATAR_MAX_SIZE) {
-      setAvatarErro("A imagem precisa ter no máximo 2 MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      const resultado = typeof leitor.result === "string" ? leitor.result : "";
-
-      if (!resultado) {
-        setAvatarErro("Não consegui carregar essa imagem.");
-        return;
-      }
-
-      salvarPerfilAutor({
-        avatar: resultado,
-        avatarNome: arquivo.name,
-        bio: perfilAutorSalvo.bio,
-      });
-    };
-
-    leitor.onerror = () => {
-      setAvatarErro("Não consegui carregar essa imagem.");
-    };
-
-    leitor.readAsDataURL(arquivo);
-  }
-
-  function removerAvatarAutor() {
-    salvarPerfilAutor({
-      avatar: "",
-      avatarNome: "",
-      bio: perfilAutorSalvo.bio,
-    });
-
-    setAvatarErro("");
-
-    if (avatarInputRef.current) {
-      avatarInputRef.current.value = "";
-    }
-  }
 
   function limparFiltros() {
     setBusca("");
@@ -1520,7 +1790,7 @@ export default function PainelAutorPage() {
 
             <p style={emptyTextStyle}>
               {verificandoUsuario
-                ? "Conferindo sua sessão antes de abrir o Painel do Autor."
+                ? "Conferindo sua sessão antes de abrir o Estúdio do Autor."
                 : "Entre com sua conta para gerenciar suas obras."}
             </p>
           </section>
@@ -1566,10 +1836,10 @@ export default function PainelAutorPage() {
           <div style={heroGlowStyle} />
 
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <h1 className="historietas-painel-hero-title" style={titleStyle}>Painel do Autor</h1>
+            <h1 className="historietas-painel-hero-title" style={titleStyle}>Estúdio</h1>
 
             <p style={descriptionStyle}>
-              Gerencie suas obras, capítulos e desempenho sem excesso de painel.
+              Gerencie obras, capítulos e desempenho.
             </p>
 
             {usuarioLogado && (
@@ -1587,103 +1857,33 @@ export default function PainelAutorPage() {
             )}
 
             <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
-              <Link href="/minhas-obras" style={heroSecondaryButtonStyle}>
-                Editar obras
-              </Link>
-
               <Link href="/publicar" style={heroPrimaryButtonStyle}>
-                Publicar nova obra
+                Publicar
               </Link>
 
-              <button
-                type="button"
-                onClick={() => setEditarPerfilAberto((aberto) => !aberto)}
-                style={heroProfileButtonStyle}
+              <Link href="/minhas-obras" style={heroSecondaryButtonStyle}>
+                Obras
+              </Link>
+
+              <Link
+                href={criarPerfilUsuarioLogadoPainelHref(nomeConta, usuarioIdLogado)}
+                style={heroSecondaryButtonStyle}
               >
-                {editarPerfilAberto ? "Fechar perfil" : "Editar perfil"}
-              </button>
+                Editar perfil
+              </Link>
+
+              <Link
+                href="/notificacoes"
+                style={isDesktop ? heroSecondaryButtonStyle : heroNotificationButtonStyle}
+              >
+                {notificacoesNaoLidas > 0
+                  ? `${notificacoesNaoLidas} avisos`
+                  : "Avisos"}
+              </Link>
             </div>
           </div>
         </section>
 
-        {editarPerfilAberto && (
-          <section style={isDesktop ? desktopProfileEditorBoxStyle : profileEditorBoxStyle}>
-            <div style={isDesktop ? desktopProfileEditorHeaderStyle : profileEditorHeaderStyle}>
-              <div style={profileAvatarPreviewStyle}>
-                {perfilAutorSalvo.avatar ? (
-                  <img
-                    src={perfilAutorSalvo.avatar}
-                    alt={`Imagem de ${autorPrincipal || "autor"}`}
-                    style={profileAvatarImageStyle}
-                  />
-                ) : (
-                  <span>{autorPrincipal ? autorPrincipal.charAt(0) : "H"}</span>
-                )}
-              </div>
-
-              <div style={profileEditorTextBlockStyle}>
-                <span style={miniTitleStyle}>EDITAR PERFIL</span>
-
-                <h2 style={profileEditorTitleStyle}>
-                  {autorPrincipal || "Perfil do autor"}
-                </h2>
-
-                <p style={profileEditorTextStyle}>
-                  Altere apenas sua foto e sua bio. Isso aparece no perfil
-                  público do autor.
-                </p>
-              </div>
-            </div>
-
-            <input
-              ref={avatarInputRef}
-              type="file"
-              accept="image/*"
-              onChange={selecionarAvatarAutor}
-              style={hiddenInputStyle}
-            />
-
-            <div style={isDesktop ? desktopProfileActionsStyle : profileActionsStyle}>
-              <button
-                type="button"
-                onClick={() => avatarInputRef.current?.click()}
-                style={profilePhotoButtonStyle}
-                disabled={!autorPrincipalNormalizado}
-              >
-                {perfilAutorSalvo.avatar ? "Trocar foto" : "Colocar foto"}
-              </button>
-
-              {perfilAutorSalvo.avatar && (
-                <button
-                  type="button"
-                  onClick={removerAvatarAutor}
-                  style={profileRemoveButtonStyle}
-                >
-                  Remover foto
-                </button>
-              )}
-            </div>
-
-            {avatarErro && <span style={profileErrorStyle}>{avatarErro}</span>}
-
-            <textarea
-              value={perfilAutorSalvo.bio}
-              onChange={(event) => atualizarBioAutor(event.target.value)}
-              placeholder={bioPadraoAutor}
-              maxLength={BIO_MAX_LENGTH}
-              style={profileTextareaStyle}
-              disabled={!autorPrincipalNormalizado}
-            />
-
-            <div style={profileFooterStyle}>
-              <span style={profilePreviewTextStyle}>{bioPerfilAutor}</span>
-
-              <span style={profileCounterStyle}>
-                {caracteresRestantesBio} caracteres
-              </span>
-            </div>
-          </section>
-        )}
 
         <section style={isDesktop ? desktopStatsBoxStyle : statsBoxStyle}>
           <div style={statCardStyle}>
@@ -1714,12 +1914,6 @@ export default function PainelAutorPage() {
             </span>
           </div>
 
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totalArquivos}</strong>
-            <span style={statLabelStyle}>
-              {totalArquivos === 1 ? "arquivo" : "arquivos"}
-            </span>
-          </div>
 
           <div style={statCardStyle}>
             <strong style={statNumberStyle}>{totalCurtidas}</strong>
@@ -1738,7 +1932,7 @@ export default function PainelAutorPage() {
           <div style={statCardStyle}>
             <strong style={statNumberStyle}>{totalSalvos}</strong>
             <span style={statLabelStyle}>
-              {totalSalvos === 1 ? "capítulo salvo" : "capítulos salvos"}
+              {totalSalvos === 1 ? "salvo" : "salvos"}
             </span>
           </div>
         </section>
@@ -1746,10 +1940,10 @@ export default function PainelAutorPage() {
         <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
           <div style={isDesktop ? desktopFilterHeaderStyle : filterHeaderStyle}>
             <div style={isDesktop ? desktopFilterHeaderTextStyle : filterHeaderTextStyle}>
-              <h2 style={filterTitleStyle}>CONTROLE DO PAINEL</h2>
+              <h2 style={filterTitleStyle}>CONTROLE DO ESTÚDIO</h2>
 
               <p style={filterTextStyle}>
-                {textoResultadoFiltro} de {obrasComMetricas.length} no painel.
+                {textoResultadoFiltro} de {obrasComMetricas.length} no estúdio.
               </p>
             </div>
 
@@ -1817,7 +2011,7 @@ export default function PainelAutorPage() {
 
             <p style={emptyTextStyle}>
               Publique sua primeira história para começar a acompanhar seu
-              painel de autor.
+              estúdio de autor.
             </p>
 
             <Link href="/publicar" style={emptyButtonStyle}>
@@ -1847,15 +2041,29 @@ export default function PainelAutorPage() {
   );
 }
 
-function criarPerfilAutorHref(autor: string, autorId?: string) {
+function criarPerfilAutorHref(autor: string, autorId?: string, userId?: string) {
   const autorLimpo = autor.trim() || "Autor não informado";
   const autorIdLimpo = autorId?.trim() || "";
-  const autorParametro = `autor=${encodeURIComponent(autorLimpo)}`;
-  const autorIdParametro = autorIdLimpo
-    ? `&autorId=${encodeURIComponent(autorIdLimpo)}`
-    : "";
+  const userIdLimpo = userId?.trim() || autorIdLimpo;
+  const params = new URLSearchParams();
 
-  return `/perfil-autor?${autorParametro}${autorIdParametro}`;
+  params.set("autor", autorLimpo);
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+  }
+
+  if (userIdLimpo) {
+    params.set("userId", userIdLimpo);
+  }
+
+  return `/perfil-autor?${params.toString()}`;
+}
+
+function criarPerfilUsuarioLogadoPainelHref(nomeConta: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return criarPerfilAutorHref(nomeConta, userIdLimpo, userIdLimpo);
 }
 
 function PainelSecao({
@@ -1876,7 +2084,7 @@ function PainelSecao({
   return (
     <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
       <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-        <h2 style={sectionTitleStyle}>Minhas Obras</h2>
+        <h2 style={sectionTitleStyle}>Obras do Estúdio</h2>
       </div>
 
       <div style={isDesktop ? desktopWorksGridStyle : worksGridStyle}>
@@ -1884,8 +2092,8 @@ function PainelSecao({
           <ObraPainelCard
             key={obra.id}
             obra={obra}
-            favoritada={obrasFavoritas.includes(obra.id)}
-            concluida={obrasConcluidas.includes(obra.id)}
+            favoritada={colecaoTemObraPainel(obrasFavoritas, obra)}
+            concluida={colecaoTemObraPainel(obrasConcluidas, obra)}
             isDesktop={isDesktop}
           />
         ))}
@@ -1908,9 +2116,20 @@ function ObraPainelCard({
   const obraHref = `/minha-obra?obraId=${obra.id}`;
   const editarHref = `/editar-obra?obraId=${obra.id}`;
   const capituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
-  const paginaPublicaHref = `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-  const perfilAutorHref = criarPerfilAutorHref(obra.autor, obra.autorId);
+  const paginaPublicaHref = obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+  const perfilAutorHref = criarPerfilAutorHref(obra.autor, obra.autorId, obra.autorId);
   const progressoVisual = Math.min(100, Math.max(0, obra.progressoLeitura));
+  const statusTexto = obra.publicado ? "Publicado" : "Rascunho";
+  const classificacaoTexto = mostrarClassificacao(obra)
+    ? obra.classificacaoIndicativa
+    : "";
+  const indicadoresTexto = [
+    obra.arquivoObra ? "Arquivo" : "",
+    favoritada ? "Na lista" : "",
+    concluida ? "Concluída" : "",
+  ]
+    .filter(Boolean)
+    .join(" • ");
 
   return (
     <article style={isDesktop ? desktopWorkCardStyle : workCardStyle}>
@@ -1931,33 +2150,16 @@ function ObraPainelCard({
       <div style={isDesktop ? desktopWorkContentStyle : workContentStyle}>
         <div style={statusRowStyle}>
           <span style={obra.publicado ? publishedStatusStyle : draftStatusStyle}>
-            {obra.publicado ? "Publicado" : "Rascunho"}
+            {statusTexto}
           </span>
 
-          <span style={formatBadgeStyle}>{obra.formato}</span>
-
-          <span style={genreBadgeStyle}>{formatarGeneroPainelAutor(obra.genero)}</span>
-
-          {obra.tags.slice(0, 1).map((tag, index) => (
-            <span key={`${obra.id}-painel-tag-${tag}-${index}`} style={tagBadgeStyle}>
-              {tag}
-            </span>
-          ))}
-
-          {mostrarClassificacao(obra) && (
-            <span style={classificationBadgeStyle}>
-              {obra.classificacaoIndicativa}
-            </span>
+          {classificacaoTexto && (
+            <span style={classificationBadgeStyle}>{classificacaoTexto}</span>
           )}
 
-          {obra.arquivoObra && (
-            <span style={fileAttachedBadgeStyle}>Arquivo anexado</span>
+          {indicadoresTexto && (
+            <span style={panelTinyInfoStyle}>{indicadoresTexto}</span>
           )}
-
-          {favoritada && <span style={favoriteBadgeStyle}>Na lista</span>}
-
-          {concluida && <span style={completedBadgeStyle}>Concluída</span>}
-
         </div>
 
         <h3 style={workTitleStyle}>{obra.titulo}</h3>
@@ -1966,25 +2168,30 @@ function ObraPainelCard({
           Por {obra.autor}
         </Link>
 
+        <span style={workMetaLineStyle}>
+          {obra.formato} • {formatarGeneroPainelAutor(obra.genero)}
+          {obra.tags[0] ? ` • ${obra.tags[0]}` : ""}
+        </span>
+
         <div style={isDesktop ? desktopMetricGridStyle : metricGridStyle}>
           <div style={metricItemStyle}>
             <strong style={metricNumberStyle}>{obra.capitulos.length}</strong>
-            <span style={metricLabelStyle}>capítulos</span>
+            <span style={metricLabelStyle}>caps.</span>
           </div>
 
           <div style={metricItemStyle}>
             <strong style={metricNumberStyle}>{obra.totalCurtidas}</strong>
-            <span style={metricLabelStyle}>curtidas</span>
+            <span style={metricLabelStyle}>curt.</span>
           </div>
 
           <div style={metricItemStyle}>
             <strong style={metricNumberStyle}>{obra.totalComentarios}</strong>
-            <span style={metricLabelStyle}>comentários</span>
+            <span style={metricLabelStyle}>coment.</span>
           </div>
 
           <div style={metricItemStyle}>
             <strong style={metricNumberStyle}>{obra.totalSalvos}</strong>
-            <span style={metricLabelStyle}>cap. salvos</span>
+            <span style={metricLabelStyle}>salvos</span>
           </div>
         </div>
 
@@ -2013,22 +2220,22 @@ function ObraPainelCard({
           }
         >
           <Link href={obraHref} style={openButtonStyle}>
-            Ver obra
+            Gerenciar
+          </Link>
+
+          <Link href={editarHref} style={editButtonStyle}>
+            {isDesktop ? "Editar obra" : "Editar"}
+          </Link>
+
+          <Link href={capituloHref} style={chapterButtonStyle}>
+            {isDesktop ? "Adicionar capítulo" : "+ cap."}
           </Link>
 
           {obra.publicado && (
             <Link href={paginaPublicaHref} style={publicPageButtonStyle}>
-              Página pública
+              {isDesktop ? "Página pública" : "Página"}
             </Link>
           )}
-
-          <Link href={editarHref} style={editButtonStyle}>
-            Editar
-          </Link>
-
-          <Link href={capituloHref} style={chapterButtonStyle}>
-            Adicionar capítulo
-          </Link>
 
         </div>
       </div>
@@ -2037,33 +2244,72 @@ function ObraPainelCard({
 }
 
 const painelAutorPageCss = `
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual] nav,
+  html[data-historietas-tema-visual] [data-bottom-nav],
+  html[data-historietas-tema-visual] [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/painel-autor"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"],
   html[data-historietas-tema-visual] nav a[href="/painel"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel"] {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
-    color: var(--historietas-accent, #F97316) !important;
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="branco"] .historietas-painel-logo-text,
-  html[data-historietas-tema-visual="branco"] .historietas-painel-hero-title {
-    background: none !important;
-    color: #1A73E8 !important;
-    -webkit-text-fill-color: #1A73E8 !important;
-    text-shadow: none !important;
+  html[data-historietas-tema-visual] nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] nav a[href="/painel"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel"] .historietas-bottom-nav-icon {
+    color: #FFFFFF !important;
+    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
   }
 
-  html[data-historietas-tema-visual="branco"] input::placeholder,
-  html[data-historietas-tema-visual="branco"] textarea::placeholder {
-    color: #80868B !important;
+  html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: var(--historietas-bottom-nav-text, #9980D8) !important;
+    box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="branco"] button:disabled {
-    opacity: 1 !important;
-    background: #F1F3F4 !important;
-    border-color: #DADCE0 !important;
-    color: #5F6368 !important;
+  html[data-historietas-tema-visual] input::placeholder,
+  html[data-historietas-tema-visual] textarea::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea,
+  html[data-historietas-tema-visual] select {
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] button:disabled {
+    opacity: 0.62 !important;
     cursor: not-allowed !important;
+    box-shadow: none !important;
   }
 `;
 
@@ -2080,10 +2326,10 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -2094,21 +2340,21 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 const themeAccent = "var(--historietas-accent, #F97316)";
 const themeSecondary = "var(--historietas-secondary, #7C3AED)";
-const themeTextAccent = "var(--historietas-text-accent, #FDBA74)";
-const themeGradient = `linear-gradient(135deg, ${themeAccent} 0%, ${themeSecondary} 100%)`;
+const themeTextAccent = "var(--historietas-accent, #F97316)";
+const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)";
 
-const themeAccentSoft = "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)";
-const themeSecondarySoft = "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent)";
-const themeAccentBorder = "color-mix(in srgb, var(--historietas-accent, #F97316) 26%, transparent)";
-const themeSecondaryBorder = "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent)";
+const themeAccentSoft = "rgba(255,255,255,0.06)";
+const themeSecondarySoft = "rgba(255,255,255,0.06)";
+const themeAccentBorder = "rgba(255,255,255,0.08)";
+const themeSecondaryBorder = "rgba(255,255,255,0.08)";
 
 const pageStyle: CSSProperties = {
   position: "relative",
@@ -2116,10 +2362,10 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+  isolation: "isolate",
 };
 
 const containerStyle: CSSProperties = {
@@ -2128,7 +2374,7 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 calc(24px + env(safe-area-inset-bottom))",
+  padding: "10px 0 18px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2139,7 +2385,7 @@ const topStyle: CSSProperties = {
   justifyContent: "space-between",
   gap: "10px",
   flexWrap: "nowrap",
-  marginBottom: "14px",
+  marginBottom: "8px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2148,12 +2394,12 @@ const topStyle: CSSProperties = {
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "22px",
   fontWeight: 950,
   letterSpacing: "-0.055em",
   display: "flex",
   alignItems: "center",
-  gap: "4px",
+  gap: "3px",
   minWidth: 0,
   maxWidth: "min(100%, calc(100% - 78px))",
   overflow: "visible",
@@ -2167,41 +2413,46 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: themeGradient,
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "17px",
+  fontSize: "19px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
-  flex: "0 0 auto",
+  letterSpacing: 0,
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   boxShadow: "none",
+  flex: "0 0 auto",
 };
 
 const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  background:
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent))",
+  WebkitTextFillColor: "transparent",
+  textShadow: "none",
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
 };
 
 const topButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
+  minHeight: "36px",
+  padding: "0 12px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#DDD6FE",
   textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 900,
-  display: "flex",
+  fontSize: "11px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  flex: "0 0 auto",
-  maxWidth: "100%",
   boxSizing: "border-box",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2222,54 +2473,36 @@ const topActionsStyle: CSSProperties = {
 
 
 const signOutButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
-  border: "1px solid color-mix(in srgb, var(--historietas-danger-button-text, #FCA5A5) 28%, var(--historietas-border-soft, transparent))",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
-  fontSize: "13px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  flex: "0 0 auto",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  ...safeTextStyle,
+  ...topButtonStyle,
+  border: "1px solid rgba(239,68,68,0.18)",
+  background: "rgba(239,68,68,0.075)",
+  color: "#FCA5A5",
 };
 
 const accountNoticeStyle: CSSProperties = {
-  width: "min(100%, 520px)",
-  margin: "0 auto",
-  padding: "9px 12px",
+  marginBottom: "10px",
+  padding: "10px 12px",
   borderRadius: "18px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, var(--historietas-surface, rgba(255,255,255,0.045))) 0%, var(--historietas-surface-strong, rgba(255,255,255,0.045)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   display: "grid",
-  gap: "3px",
-  justifyItems: "center",
-  boxSizing: "border-box",
+  gap: "4px",
   minWidth: 0,
-  overflow: "hidden",
+  boxShadow: "none",
 };
 
 const accountNoticeLabelStyle: CSSProperties = {
   color: themeTextAccent,
-  fontSize: "9px",
+  fontSize: "7px",
   fontWeight: 950,
-  letterSpacing: "0.08em",
+  letterSpacing: "0.075em",
   ...safeTextStyle,
 };
 
 const accountNoticeNameStyle: CSSProperties = {
   color: "#FFFFFF",
-  fontSize: "13px",
-  lineHeight: 1.15,
+  fontSize: "11px",
+  lineHeight: 1.1,
   fontWeight: 950,
   maxWidth: "100%",
   ...safeTextStyle,
@@ -2287,11 +2520,10 @@ const accountNoticeEmailStyle: CSSProperties = {
 const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
-  borderRadius: "26px",
-  border: `1px solid ${themeAccentBorder}`,
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, var(--historietas-surface, rgba(12,7,23,0.98))) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+  borderRadius: "30px",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
@@ -2302,290 +2534,85 @@ const heroGlowStyle: CSSProperties = {
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  padding: "20px 15px",
+  padding: "9px 9px",
   display: "grid",
-  gap: "10px",
+  gap: "5px",
   minWidth: 0,
   textAlign: "center",
 };
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(34px, 9vw, 52px)",
-  lineHeight: 1.08,
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "clamp(34px, 9vw, 56px)",
+  lineHeight: 1.02,
   fontWeight: 950,
   letterSpacing: "-0.072em",
   maxWidth: "100%",
   paddingBottom: "3px",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  textAlign: "center",
+  textShadow: "none",
   ...safeTextStyle,
 };
 
 const descriptionStyle: CSSProperties = {
-  margin: "0 auto",
+  margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.48,
-  fontWeight: 700,
-  maxWidth: "560px",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
+  fontSize: "14px",
+  lineHeight: 1.55,
+  fontWeight: 720,
+  maxWidth: "680px",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const heroActionsStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "7px",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
 const heroPrimaryButtonStyle: CSSProperties = {
-  minHeight: "40px",
+  minHeight: "39px",
   borderRadius: "999px",
-  background: themeAccent,
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "10.5px",
+  fontSize: "12px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
+  padding: "0 12px",
   boxSizing: "border-box",
-  whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const heroSecondaryButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  textDecoration: "none",
-  fontSize: "10.5px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const heroProfileButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 10px",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const profileEditorBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: "12px",
-  borderRadius: "21px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 7%, var(--historietas-surface, rgba(18,12,30,0.90)))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  display: "grid",
-  gap: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-const profileEditorHeaderStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(48px, 54px) minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const profileAvatarPreviewStyle: CSSProperties = {
-  width: "100%",
-  maxWidth: "54px",
-  height: "54px",
-  borderRadius: "18px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: themeGradient,
-  color: "#FFFFFF",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "22px",
-  fontWeight: 950,
-  overflow: "hidden",
-  boxShadow: "none",
-  boxSizing: "border-box",
-};
-
-const profileAvatarImageStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-  display: "block",
-};
-
-const profileEditorTextBlockStyle: CSSProperties = {
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const profileEditorTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "22px",
-  lineHeight: 1.14,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  paddingBottom: "1px",
-  ...safeTextStyle,
-};
-
-const profileEditorTextStyle: CSSProperties = {
-  margin: "6px 0 0",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.45,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const hiddenInputStyle: CSSProperties = {
-  display: "none",
-};
-
-const profileActionsStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  alignItems: "stretch",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const profilePhotoButtonStyle: CSSProperties = {
-  flex: "1 1 132px",
-  minHeight: "34px",
-  maxWidth: "100%",
-  padding: "0 12px",
-  borderRadius: "999px",
-  border: `1px solid ${themeSecondaryBorder}`,
-  background: themeSecondarySoft,
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "11px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const profileRemoveButtonStyle: CSSProperties = {
-  ...profilePhotoButtonStyle,
-  border: "1px solid color-mix(in srgb, var(--historietas-danger-button-text, #FCA5A5) 28%, var(--historietas-border-soft, transparent))",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
-};
-
-const profileErrorStyle: CSSProperties = {
-  color: "#FCA5A5",
-  fontSize: "11px",
-  fontWeight: 800,
-  ...safeTextStyle,
-};
-
-const profileTextareaStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "72px",
-  resize: "vertical",
-  borderRadius: "16px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "10px 11px",
-  outline: "none",
-  fontSize: "12px",
-  lineHeight: 1.45,
-  fontWeight: 700,
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  minWidth: 0,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const profileFooterStyle: CSSProperties = {
-  display: "grid",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const profilePreviewTextStyle: CSSProperties = {
+  ...heroPrimaryButtonStyle,
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.45,
-  fontWeight: 700,
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
 };
 
-const profileCounterStyle: CSSProperties = {
-  color: themeTextAccent,
-  fontSize: "10px",
-  fontWeight: 900,
-  textAlign: "right",
-  ...safeTextStyle,
+const heroNotificationButtonStyle: CSSProperties = {
+  ...heroSecondaryButtonStyle,
+  gridColumn: "auto",
+  justifySelf: "stretch",
+  width: "100%",
 };
 
 const statsBoxStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "7px",
-  marginTop: "12px",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "5px",
+  marginTop: "8px",
   alignItems: "stretch",
   minWidth: 0,
   maxWidth: "100%",
@@ -2593,26 +2620,26 @@ const statsBoxStyle: CSSProperties = {
 };
 
 const statCardStyle: CSSProperties = {
-  borderRadius: "15px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 7%, var(--historietas-surface, rgba(31,22,48,0.62))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.78)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
-  boxShadow: "var(--historietas-card-shadow, none)",
-  padding: "8px 6px",
+  flex: "1 1 calc(25% - 5px)",
+  borderRadius: "12px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
+  padding: "6px 4px",
   display: "grid",
-  gap: "3px",
+  gap: "2px",
   alignContent: "center",
   justifyItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  minHeight: "56px",
+  minHeight: "43px",
   minWidth: 0,
   overflow: "hidden",
 };
 
 const statNumberStyle: CSSProperties = {
-  color: themeTextAccent,
-  fontSize: "18px",
+  color: "#DDD6FE",
+  fontSize: "15px",
   lineHeight: 1,
   fontWeight: 950,
   ...safeTextStyle,
@@ -2620,7 +2647,7 @@ const statNumberStyle: CSSProperties = {
 
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "9px",
+  fontSize: "7px",
   lineHeight: 1.15,
   fontWeight: 850,
   textAlign: "center",
@@ -2628,15 +2655,14 @@ const statLabelStyle: CSSProperties = {
 };
 
 const filterBoxStyle: CSSProperties = {
-  marginTop: "12px",
+  marginTop: "6px",
   display: "grid",
-  gap: "8px",
-  padding: "10px 11px",
-  borderRadius: "20px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 7%, var(--historietas-surface, rgba(18,12,30,0.86))) 0%, var(--historietas-surface-strong, rgba(11,6,20,0.92)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  gap: "6px",
+  padding: "8px",
+  borderRadius: "18px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2658,29 +2684,26 @@ const filterHeaderTextStyle: CSSProperties = {
   maxWidth: "100%",
   display: "grid",
   justifyItems: "center",
-  gap: "3px",
+  gap: "2px",
   textAlign: "center",
 };
 
 const filterTitleStyle: CSSProperties = {
   margin: 0,
-  color: themeTextAccent,
-  fontSize: "clamp(18px, 4.8vw, 24px)",
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "16px",
   lineHeight: 1.12,
   fontWeight: 950,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
+  letterSpacing: "-0.04em",
   textAlign: "center",
-  maxWidth: "100%",
-  paddingBottom: 0,
   ...safeTextStyle,
 };
 
 const filterTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.3,
+  fontSize: "7px",
+  lineHeight: 1.12,
   fontWeight: 800,
   maxWidth: "100%",
   textAlign: "center",
@@ -2688,45 +2711,42 @@ const filterTextStyle: CSSProperties = {
 };
 
 const clearFilterButtonStyle: CSSProperties = {
-  flex: "1 1 138px",
-  minHeight: "40px",
-  maxWidth: "100%",
-  padding: "0 14px",
+  minHeight: "34px",
+  padding: "0 10px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  fontSize: "12px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const searchInputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "38px",
-  borderRadius: "15px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-input-bg, rgba(7,5,12,0.78))",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 12px",
+  minHeight: "40px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "0 13px",
   outline: "none",
   fontSize: "12px",
   fontWeight: 750,
-  textAlign: "center",
   fontFamily: "inherit",
+  textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
+  boxShadow: "none",
 };
 
 const filterGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "6px",
+  gap: "4px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2734,17 +2754,20 @@ const filterGridStyle: CSSProperties = {
 
 const fieldBoxStyle: CSSProperties = {
   display: "grid",
-  justifyItems: "center",
   gap: "5px",
   minWidth: 0,
-  textAlign: "center",
+  maxWidth: "100%",
+  padding: "7px",
+  borderRadius: "14px",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.06)",
 };
 
 const filterLabelStyle: CSSProperties = {
-  color: themeTextAccent,
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "10px",
   fontWeight: 950,
-  letterSpacing: "0.09em",
+  letterSpacing: "0.04em",
   textTransform: "uppercase",
   textAlign: "center",
   ...safeTextStyle,
@@ -2752,32 +2775,34 @@ const filterLabelStyle: CSSProperties = {
 
 const selectStyle: CSSProperties = {
   width: "100%",
-  minHeight: "38px",
-  borderRadius: "15px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-input-bg, rgba(7,5,12,0.78))",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  minHeight: "40px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 12px",
   outline: "none",
   fontSize: "12px",
-  fontWeight: 800,
+  fontWeight: 750,
   fontFamily: "inherit",
   textAlign: "center",
+  textAlignLast: "center",
   boxSizing: "border-box",
   minWidth: 0,
+  boxShadow: "none",
 };
 
 
 
 const sectionStyle: CSSProperties = {
-  marginTop: "14px",
+  marginTop: "5px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
 const sectionHeaderStyle: CSSProperties = {
-  marginBottom: "10px",
+  marginBottom: "5px",
   minWidth: 0,
   display: "grid",
   justifyItems: "center",
@@ -2789,7 +2814,7 @@ const miniTitleStyle: CSSProperties = {
   color: themeTextAccent,
   fontSize: "11px",
   fontWeight: 950,
-  letterSpacing: "0.08em",
+  letterSpacing: "0.075em",
   marginBottom: "6px",
   maxWidth: "100%",
   ...safeTextStyle,
@@ -2797,14 +2822,13 @@ const miniTitleStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: themeTextAccent,
-  fontSize: "clamp(26px, 7vw, 34px)",
-  lineHeight: 1.12,
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "28px",
+  lineHeight: 1.08,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
-  textAlign: "center",
+  letterSpacing: "-0.06em",
   maxWidth: "100%",
-  paddingBottom: "1px",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2812,7 +2836,7 @@ const sectionTitleStyle: CSSProperties = {
 const worksGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "10px",
+  gap: "8px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2820,15 +2844,14 @@ const worksGridStyle: CSSProperties = {
 
 const workCardStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "132px minmax(0, 1fr)",
+  gridTemplateColumns: "96px minmax(0, 1fr)",
   alignItems: "stretch",
-  gap: "9px",
-  padding: "9px",
-  borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 7%, var(--historietas-surface, rgba(33,24,50,0.92))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  gap: "8px",
+  padding: "8px",
+  borderRadius: "20px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
   minWidth: 0,
   maxWidth: "100%",
@@ -2848,64 +2871,34 @@ const coverLinkStyle: CSSProperties = {
 
 const coverStyle: CSSProperties = {
   height: "100%",
-  minHeight: "214px",
-  borderRadius: "17px",
+  minHeight: "128px",
+  borderRadius: "14px",
   position: "relative",
   overflow: "hidden",
-  background:
-    "linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
+  background: "#04000A",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  border: "1px solid rgba(255,255,255,0.08)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const coverGlowStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  background:
-    "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.20) 100%)",
+  display: "none",
 };
-
-const genreBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, var(--historietas-surface, transparent))",
-  border: `1px solid ${themeSecondaryBorder}`,
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "9px",
-  fontWeight: 950,
-  textAlign: "center",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const tagBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, var(--historietas-surface, transparent))",
-  border: `1px solid ${themeSecondaryBorder}`,
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "9px",
-  fontWeight: 900,
-  textAlign: "center",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
 
 const coverBottomStyle: CSSProperties = {
   position: "absolute",
-  left: "10px",
-  right: "10px",
-  bottom: "10px",
+  left: "7px",
+  right: "7px",
+  bottom: "7px",
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "flex-start",
-  gap: "7px",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -2914,7 +2907,7 @@ const coverNumberStyle: CSSProperties = {
   WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
   color: "#FFFFFF",
-  fontSize: "34px",
+  fontSize: "20px",
   lineHeight: 0.9,
   fontWeight: 950,
   letterSpacing: "-0.08em",
@@ -2925,7 +2918,7 @@ const coverLabelStyle: CSSProperties = {
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
-  fontSize: "9px",
+  fontSize: "7px",
   lineHeight: 1.02,
   fontWeight: 950,
   textTransform: "uppercase",
@@ -2936,7 +2929,7 @@ const coverLabelStyle: CSSProperties = {
 
 const workContentStyle: CSSProperties = {
   display: "grid",
-  gap: "6px",
+  gap: "4px",
   alignContent: "start",
   minWidth: 0,
   maxWidth: "100%",
@@ -2945,7 +2938,7 @@ const workContentStyle: CSSProperties = {
 const statusRowStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "4px",
+  gap: "5px",
   alignItems: "center",
   minWidth: 0,
 };
@@ -2955,11 +2948,13 @@ const publishedStatusStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
-  fontSize: "9px",
+  background: "rgba(34, 197, 94, 0.12)",
+  border: "1px solid rgba(34, 197, 94, 0.22)",
+  color: "#86EFAC",
+  fontSize: "8px",
   fontWeight: 950,
+  letterSpacing: "0.045em",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
@@ -2968,24 +2963,13 @@ const draftStatusStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: themeAccentSoft,
-  border: `1px solid ${themeAccentBorder}`,
-  color: themeTextAccent,
-  fontSize: "9px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "8px",
   fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const formatBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "9px",
-  fontWeight: 950,
+  letterSpacing: "0.045em",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
@@ -2994,63 +2978,40 @@ const classificationBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "9px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
+  fontSize: "8px",
   fontWeight: 950,
+  letterSpacing: "0.045em",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
-const fileAttachedBadgeStyle: CSSProperties = {
+const panelTinyInfoStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
-  fontSize: "9px",
-  fontWeight: 950,
+  padding: 0,
+  color: "var(--historietas-text-muted, rgba(255,255,255,0.54))",
+  fontSize: "8px",
+  fontWeight: 850,
+  lineHeight: 1.05,
+  display: "-webkit-box",
+  WebkitLineClamp: 1,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
   ...safeTextStyle,
 };
-
-const favoriteBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(249, 115, 22, 0.14)",
-  border: `1px solid ${themeAccentBorder}`,
-  color: themeTextAccent,
-  fontSize: "9px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const completedBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, #3B82F6 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #3B82F6 30%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #1D4ED8 72%, var(--historietas-text-primary, #FFFFFF))",
-  fontSize: "9px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
 
 const workTitleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "20px",
-  lineHeight: 1.08,
+  fontSize: "16px",
+  lineHeight: 1.06,
   fontWeight: 950,
   letterSpacing: "-0.055em",
   maxWidth: "100%",
-  paddingBottom: "2px",
+  paddingBottom: 0,
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
@@ -3062,27 +3023,41 @@ const authorStyle: CSSProperties = {
   margin: 0,
   display: "inline-flex",
   textDecoration: "none",
-  color: themeTextAccent,
-  fontSize: "11px",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10px",
   fontWeight: 900,
+  maxWidth: "100%",
+  ...safeTextStyle,
+};
+
+const workMetaLineStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "9px",
+  lineHeight: 1.15,
+  fontWeight: 850,
+  display: "-webkit-box",
+  WebkitLineClamp: 1,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
   maxWidth: "100%",
   ...safeTextStyle,
 };
 
 const metricGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "3px",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: "2px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
 const metricItemStyle: CSSProperties = {
-  padding: "5px 4px",
-  borderRadius: "10px",
-  background: "var(--historietas-secondary-surface, rgba(15,15,15,0.22))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.05))",
+  padding: "2px 1px",
+  borderRadius: "7px",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.06)",
   display: "grid",
   gap: "1px",
   minWidth: 0,
@@ -3092,8 +3067,8 @@ const metricItemStyle: CSSProperties = {
 };
 
 const metricNumberStyle: CSSProperties = {
-  color: themeTextAccent,
-  fontSize: "14px",
+  color: "#DDD6FE",
+  fontSize: "11px",
   lineHeight: 1,
   fontWeight: 950,
   textAlign: "center",
@@ -3102,10 +3077,11 @@ const metricNumberStyle: CSSProperties = {
 
 const metricLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8px",
-  lineHeight: 1.08,
+  fontSize: "6.5px",
+  lineHeight: 1,
   fontWeight: 850,
   textAlign: "center",
+  letterSpacing: "-0.01em",
   ...safeTextStyle,
 };
 
@@ -3120,7 +3096,7 @@ const progressInlineStyle: CSSProperties = {
 };
 
 const progressValueStyle: CSSProperties = {
-  color: themeTextAccent,
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "11px",
   fontWeight: 950,
   flex: "0 0 auto",
@@ -3128,10 +3104,11 @@ const progressValueStyle: CSSProperties = {
 
 const progressTrackStyle: CSSProperties = {
   width: "100%",
-  height: "7px",
+  height: "6px",
   borderRadius: "999px",
   overflow: "hidden",
-  background: "rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
   minWidth: 0,
 };
 
@@ -3139,13 +3116,14 @@ const progressFillStyle: CSSProperties = {
   height: "100%",
   minWidth: "6px",
   borderRadius: "999px",
-  background: themeGradient,
+  background:
+    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
 };
 
 const actionsGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "5px",
+  gap: "3px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -3153,46 +3131,47 @@ const actionsGridStyle: CSSProperties = {
 
 const publishedActionsGridStyle: CSSProperties = {
   ...actionsGridStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
 };
 
 const openButtonStyle: CSSProperties = {
-  minHeight: "29px",
+  minHeight: "28px",
   borderRadius: "999px",
-  background: themeAccent,
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "10px",
+  fontSize: "8px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
-  lineHeight: 1.15,
+  padding: "0 4px",
+  lineHeight: 1.05,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const publicPageButtonStyle: CSSProperties = {
-  minHeight: "29px",
+  minHeight: "28px",
   borderRadius: "999px",
-  background:
-    "color-mix(in srgb, #22C55E 16%, var(--historietas-surface, rgba(255,255,255,0.08)))",
-  border: "1px solid color-mix(in srgb, #22C55E 30%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #86EFAC 82%, var(--historietas-text-primary, #FFFFFF))",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   textDecoration: "none",
-  fontSize: "10px",
+  fontSize: "8px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
-  lineHeight: 1.15,
+  padding: "0 4px",
+  lineHeight: 1.05,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -3202,45 +3181,50 @@ const publicPageButtonStyle: CSSProperties = {
 };
 
 const editButtonStyle: CSSProperties = {
-  minHeight: "30px",
+  minHeight: "28px",
   borderRadius: "999px",
-  background: themeSecondary,
-  color: "#FFFFFF",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   textDecoration: "none",
-  fontSize: "10px",
+  fontSize: "8px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
-  lineHeight: 1.15,
+  padding: "0 4px",
+  lineHeight: 1.05,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const chapterButtonStyle: CSSProperties = {
-  minHeight: "29px",
+  minHeight: "28px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   textDecoration: "none",
-  fontSize: "10px",
+  fontSize: "8px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
-  lineHeight: 1.15,
+  padding: "0 4px",
+  lineHeight: 1.05,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -3253,53 +3237,37 @@ const desktopContainerStyle: CSSProperties = {
 
 const desktopHeroContentStyle: CSSProperties = {
   ...heroContentStyle,
-  padding: "28px 34px",
-  gap: "14px",
+  padding: "22px 30px",
+  gap: "11px",
   textAlign: "center",
   justifyItems: "center",
 };
 
 const desktopHeroActionsStyle: CSSProperties = {
   ...heroActionsStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 176px))",
+  gridTemplateColumns: "repeat(4, minmax(0, 160px))",
   justifyContent: "center",
   justifySelf: "center",
-  gap: "10px",
-  width: "min(100%, 560px)",
-  maxWidth: "560px",
-};
-
-const desktopProfileEditorBoxStyle: CSSProperties = {
-  ...profileEditorBoxStyle,
-  padding: "18px",
-  borderRadius: "24px",
-};
-
-const desktopProfileEditorHeaderStyle: CSSProperties = {
-  ...profileEditorHeaderStyle,
-  gridTemplateColumns: "72px minmax(0, 1fr)",
-  gap: "14px",
-};
-
-const desktopProfileActionsStyle: CSSProperties = {
-  ...profileActionsStyle,
-  maxWidth: "420px",
+  gap: "8px",
+  width: "min(100%, 680px)",
+  maxWidth: "680px",
 };
 
 const desktopStatsBoxStyle: CSSProperties = {
   ...statsBoxStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  display: "grid",
+  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
   gap: "10px",
-  marginTop: "14px",
+  marginTop: "12px",
 };
 
 const desktopFilterBoxStyle: CSSProperties = {
   ...filterBoxStyle,
   width: "100%",
-  margin: "14px 0 0",
-  padding: "14px",
-  borderRadius: "22px",
-  gap: "12px",
+  margin: "12px 0 0",
+  padding: "12px",
+  borderRadius: "20px",
+  gap: "10px",
 };
 
 const desktopFilterHeaderStyle: CSSProperties = {
@@ -3341,12 +3309,12 @@ const desktopSearchFieldBoxStyle: CSSProperties = {
 
 const desktopSectionStyle: CSSProperties = {
   ...sectionStyle,
-  marginTop: "18px",
+  marginTop: "12px",
 };
 
 const desktopSectionHeaderStyle: CSSProperties = {
   ...sectionHeaderStyle,
-  marginBottom: "12px",
+  marginBottom: "8px",
 };
 
 const desktopWorksGridStyle: CSSProperties = {
@@ -3357,16 +3325,15 @@ const desktopWorksGridStyle: CSSProperties = {
 
 const desktopWorkCardStyle: CSSProperties = {
   ...workCardStyle,
-  gridTemplateColumns: "154px minmax(0, 1fr)",
-  gap: "10px",
-  padding: "10px",
+  gridTemplateColumns: "126px minmax(0, 1fr)",
+  gap: "12px",
+  padding: "12px",
   borderRadius: "22px",
-  alignItems: "stretch",
 };
 
 const desktopWorkContentStyle: CSSProperties = {
   ...workContentStyle,
-  gap: "8px",
+  gap: "6px",
   alignContent: "start",
 };
 
@@ -3389,9 +3356,9 @@ const desktopPublishedCardActionsGridStyle: CSSProperties = {
 
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
-  borderRadius: "26px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 6%, var(--historietas-surface, rgba(31,31,35,0.96)))",
-  border: "1px solid var(--historietas-border-soft, #2D2D32)",
+  borderRadius: "24px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   padding: "22px",
   display: "grid",
   gap: "12px",
@@ -3399,25 +3366,23 @@ const emptyBoxStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const emptyMiniBoxStyle: CSSProperties = {
   marginTop: "18px",
   padding: "18px",
   borderRadius: "20px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, rgba(31,31,35,0.96))",
-  border: "1px solid #2D2D32",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "14px",
   fontWeight: 800,
   lineHeight: 1.6,
   display: "grid",
   gap: "10px",
   minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  ...safeTextStyle,
+  boxShadow: "none",
 };
 
 const emptyMiniTitleStyle: CSSProperties = {
@@ -3453,19 +3418,19 @@ const emptyMiniButtonStyle: CSSProperties = {
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "28px",
-  lineHeight: 1.14,
+  lineHeight: 1.12,
   fontWeight: 950,
   letterSpacing: "-0.05em",
-  maxWidth: "100%",
-  paddingBottom: "2px",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
+  fontSize: "12px",
   lineHeight: 1.7,
   fontWeight: 600,
   maxWidth: "100%",
@@ -3474,21 +3439,19 @@ const emptyTextStyle: CSSProperties = {
 
 const emptyButtonStyle: CSSProperties = {
   width: "100%",
-  minHeight: "50px",
+  minHeight: "42px",
   borderRadius: "999px",
-  background: themeSecondary,
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "14px",
+  fontSize: "12px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
+  padding: "0 14px",
+  boxShadow: "none",
   ...safeTextStyle,
 };

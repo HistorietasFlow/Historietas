@@ -9,6 +9,11 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 
 type ModoAuth = "entrar" | "criar";
 
+const STORAGE_KEY = "historietas-obras";
+const USER_WORKS_STORAGE_PREFIX = "historietas-obras-usuario";
+const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
+
 function formatarErroAuth(mensagem: string) {
   const mensagemNormalizada = mensagem.toLowerCase();
 
@@ -66,6 +71,147 @@ function obterRedirectToAtual(fallback: string) {
   return obterRedirectToSeguro(params.get("redirectTo"), fallback);
 }
 
+function criarStorageUsuarioLoginKey(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function criarStorageObrasUsuarioLoginKey(userId: string) {
+  return `${USER_WORKS_STORAGE_PREFIX}:${userId.trim()}`;
+}
+
+function normalizarListaStringsLogin(valor: unknown) {
+  return Array.isArray(valor)
+    ? valor
+        .filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
+        .map((item) => item.trim())
+    : [];
+}
+
+function lerJsonStorageLogin(chave: string): unknown {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const texto = localStorage.getItem(chave);
+
+    return texto ? JSON.parse(texto) : null;
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageLogin(chave: string, valor: unknown) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem(chave, JSON.stringify(valor));
+  } catch {
+    // localStorage é apoio. O login não deve falhar por causa dele.
+  }
+}
+
+function normalizarObrasStorageLogin(valor: unknown) {
+  return Array.isArray(valor)
+    ? valor.filter((obra): obra is Record<string, unknown> => {
+        return Boolean(obra && typeof obra === "object" && !Array.isArray(obra));
+      })
+    : ([] as Record<string, unknown>[]);
+}
+
+function obterTextoRegistroLogin(registro: Record<string, unknown>, campo: string) {
+  const valor = registro[campo];
+
+  return typeof valor === "string" ? valor.trim() : "";
+}
+
+function obterAutorIdObraLogin(obra: Record<string, unknown>) {
+  return (
+    obterTextoRegistroLogin(obra, "autorId") ||
+    obterTextoRegistroLogin(obra, "user_id") ||
+    obterTextoRegistroLogin(obra, "userId") ||
+    obterTextoRegistroLogin(obra, "autor_id")
+  );
+}
+
+function obraPertenceAoUsuarioLogin(obra: Record<string, unknown>, userId: string) {
+  const userIdLimpo = userId.trim();
+  const autorId = obterAutorIdObraLogin(obra);
+
+  return Boolean(userIdLimpo && autorId && autorId === userIdLimpo);
+}
+
+function criarChaveObraLogin(obra: Record<string, unknown>) {
+  const id = obterTextoRegistroLogin(obra, "id");
+  const slug = obterTextoRegistroLogin(obra, "slug");
+  const titulo = obterTextoRegistroLogin(obra, "titulo");
+
+  return id || slug || titulo.trim().toLowerCase() || JSON.stringify(obra).slice(0, 80);
+}
+
+function mesclarObrasLogin(
+  obrasBase: Record<string, unknown>[],
+  obrasNovas: Record<string, unknown>[],
+) {
+  const mapa = new Map<string, Record<string, unknown>>();
+
+  obrasBase.forEach((obra) => {
+    mapa.set(criarChaveObraLogin(obra), obra);
+  });
+
+  obrasNovas.forEach((obra) => {
+    mapa.set(criarChaveObraLogin(obra), obra);
+  });
+
+  return Array.from(mapa.values());
+}
+
+function sincronizarStorageUsuarioLogin(userId: string) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo || typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const obrasGlobais = normalizarObrasStorageLogin(
+      lerJsonStorageLogin(STORAGE_KEY),
+    );
+    const chaveObrasUsuario = criarStorageObrasUsuarioLoginKey(userIdLimpo);
+    const obrasUsuarioAtuais = normalizarObrasStorageLogin(
+      lerJsonStorageLogin(chaveObrasUsuario),
+    );
+    const obrasDoUsuarioNoGlobal = obrasGlobais.filter((obra) =>
+      obraPertenceAoUsuarioLogin(obra, userIdLimpo),
+    );
+    const obrasUsuarioMescladas = mesclarObrasLogin(
+      obrasUsuarioAtuais,
+      obrasDoUsuarioNoGlobal,
+    );
+
+    if (obrasUsuarioMescladas.length > 0) {
+      salvarJsonStorageLogin(chaveObrasUsuario, obrasUsuarioMescladas);
+    }
+
+    [FAVORITES_STORAGE_KEY, COMPLETED_STORAGE_KEY].forEach((chave) => {
+      const chaveUsuario = criarStorageUsuarioLoginKey(chave, userIdLimpo);
+      const listaGlobal = normalizarListaStringsLogin(lerJsonStorageLogin(chave));
+      const listaUsuario = normalizarListaStringsLogin(
+        lerJsonStorageLogin(chaveUsuario),
+      );
+      const listaMesclada = Array.from(new Set([...listaUsuario, ...listaGlobal]));
+
+      salvarJsonStorageLogin(chaveUsuario, listaMesclada);
+    });
+  } catch {
+    // A sincronização local não pode bloquear autenticação.
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -89,6 +235,14 @@ export default function LoginPage() {
         const { data } = await supabase.auth.getUser();
 
         if (componenteAtivo && data.user) {
+          await salvarProfile(
+            data.user.id,
+            "",
+            data.user.email || "",
+            data.user.user_metadata
+          );
+          sincronizarStorageUsuarioLogin(data.user.id);
+
           router.replace(obterRedirectToAtual("/"));
           router.refresh();
         }
@@ -128,49 +282,167 @@ export default function LoginPage() {
     };
   }, []);
 
-  async function salvarProfile(userId: string, nomeInformado: string) {
+  async function salvarProfile(
+    userId: string,
+    nomeInformado: string,
+    emailInformado = email,
+    userMetadata?: Record<string, unknown> | null
+  ) {
+    const userIdLimpo = userId.trim();
+
+    if (!userIdLimpo) {
+      return;
+    }
+
     const nomeDigitado = nomeInformado.trim();
-    const nomePadrao = email.trim().split("@")[0] || "Usuário";
+    const emailLimpo = emailInformado.trim() || email.trim();
+    const metadata = userMetadata && typeof userMetadata === "object" ? userMetadata : {};
+    const nomeMetadata = [metadata.nome, metadata.name, metadata.full_name]
+      .find((valor): valor is string => typeof valor === "string" && Boolean(valor.trim()))
+      ?.trim() || "";
+    const nomePadrao = emailLimpo.split("@")[0] || "Usuário";
+    const camposProfile = "id, user_id, nome, avatar_url, bio, sobre_bio";
 
     try {
-      const { data: perfilExistente } = await supabase
+      const { data: perfilPorUserId } = await supabase
         .from("profiles")
-        .select("nome")
-        .eq("user_id", userId)
+        .select(camposProfile)
+        .eq("user_id", userIdLimpo)
         .maybeSingle();
+
+      let perfilExistente = perfilPorUserId as
+        | {
+            id?: string | null;
+            user_id?: string | null;
+            nome?: string | null;
+            avatar_url?: string | null;
+            bio?: string | null;
+            sobre_bio?: string | null;
+          }
+        | null;
+
+      if (!perfilExistente) {
+        const { data: perfilPorId } = await supabase
+          .from("profiles")
+          .select(camposProfile)
+          .eq("id", userIdLimpo)
+          .maybeSingle();
+
+        perfilExistente = perfilPorId as typeof perfilExistente;
+      }
 
       const nomeExistente =
         typeof perfilExistente?.nome === "string" && perfilExistente.nome.trim()
           ? perfilExistente.nome.trim()
           : "";
+      const nomeFinal = nomeDigitado || nomeExistente || nomeMetadata || nomePadrao;
+      const avatarFinal =
+        typeof perfilExistente?.avatar_url === "string"
+          ? perfilExistente.avatar_url
+          : "";
+      const bioFinal =
+        typeof perfilExistente?.bio === "string" && perfilExistente.bio.trim()
+          ? perfilExistente.bio.trim()
+          : "Perfil de leitor no Historietas.";
+      const sobreBioFinal =
+        typeof perfilExistente?.sobre_bio === "string" &&
+        perfilExistente.sobre_bio.trim()
+          ? perfilExistente.sobre_bio.trim()
+          : bioFinal;
+      const atualizadoEm = new Date().toISOString();
+      const registroCompleto = {
+        user_id: userIdLimpo,
+        nome: nomeFinal,
+        avatar_url: avatarFinal,
+        bio: bioFinal,
+        sobre_bio: sobreBioFinal,
+        atualizado_em: atualizadoEm,
+      };
+      const registroMinimo = {
+        user_id: userIdLimpo,
+        nome: nomeFinal,
+        atualizado_em: atualizadoEm,
+      };
+      const profileId = perfilExistente?.id?.trim() || "";
+      const profileUserId = perfilExistente?.user_id?.trim() || "";
 
-      const nomeFinal = nomeDigitado || nomeExistente || nomePadrao;
+      if (profileId) {
+        const { error } = await supabase
+          .from("profiles")
+          .update(registroCompleto)
+          .eq("id", profileId);
 
-      const { error } = await supabase.from("profiles").upsert(
-        {
-          user_id: userId,
-          nome: nomeFinal,
-          tipo: "autor",
-          atualizado_em: new Date().toISOString(),
-        },
+        if (!error) {
+          return;
+        }
+
+        const { error: erroMinimo } = await supabase
+          .from("profiles")
+          .update(registroMinimo)
+          .eq("id", profileId);
+
+        if (!erroMinimo) {
+          return;
+        }
+      }
+
+      if (profileUserId) {
+        const { error } = await supabase
+          .from("profiles")
+          .update(registroCompleto)
+          .eq("user_id", profileUserId);
+
+        if (!error) {
+          return;
+        }
+
+        const { error: erroMinimo } = await supabase
+          .from("profiles")
+          .update(registroMinimo)
+          .eq("user_id", profileUserId);
+
+        if (!erroMinimo) {
+          return;
+        }
+      }
+
+      const { error: erroUpsertCompleto } = await supabase.from("profiles").upsert(
+        registroCompleto,
         {
           onConflict: "user_id",
         }
       );
 
-      if (!error) {
+      if (!erroUpsertCompleto) {
         return;
       }
 
-      await supabase.from("profiles").upsert(
+      const { error: erroInsertCompleto } = await supabase
+        .from("profiles")
+        .insert(registroCompleto);
+
+      if (!erroInsertCompleto) {
+        return;
+      }
+
+      const { error: erroUpsertComId } = await supabase.from("profiles").upsert(
         {
-          user_id: userId,
-          nome: nomeFinal,
+          id: userIdLimpo,
+          ...registroCompleto,
         },
         {
-          onConflict: "user_id",
+          onConflict: "id",
         }
       );
+
+      if (!erroUpsertComId) {
+        return;
+      }
+
+      await supabase.from("profiles").insert({
+        user_id: userIdLimpo,
+        nome: nomeFinal,
+      });
     } catch {
       // O login não pode falhar só porque o perfil não salvou.
     }
@@ -207,6 +479,8 @@ export default function LoginPage() {
           options: {
             data: {
               nome: nome.trim(),
+              name: nome.trim(),
+              full_name: nome.trim(),
             },
           },
         });
@@ -216,8 +490,12 @@ export default function LoginPage() {
           return;
         }
 
+        if (data.user) {
+          await salvarProfile(data.user.id, nome, data.user.email || email, data.user.user_metadata);
+          sincronizarStorageUsuarioLogin(data.user.id);
+        }
+
         if (data.user && data.session) {
-          await salvarProfile(data.user.id, nome);
           setMensagem("Conta criada com sucesso. Redirecionando...");
           router.replace(obterRedirectToAtual("/painel-autor"));
           router.refresh();
@@ -242,7 +520,8 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        await salvarProfile(data.user.id, nome);
+        await salvarProfile(data.user.id, nome, data.user.email || email, data.user.user_metadata);
+        sincronizarStorageUsuarioLogin(data.user.id);
       }
 
       setMensagem("Entrada realizada. Redirecionando...");
@@ -257,7 +536,7 @@ export default function LoginPage() {
 
   return (
     <main style={pageThemeStyle}>
-      <style>{historietasThemeCss}</style>
+      <style>{`${historietasThemeCss}${loginPageCss}`}</style>
 
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -387,6 +666,22 @@ export default function LoginPage() {
   );
 }
 
+const loginPageCss = `
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual="original"] input::placeholder {
+    color: rgba(221, 214, 254, 0.62) !important;
+  }
+`;
+
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -400,10 +695,8 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(520px, 72vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -414,10 +707,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
@@ -427,9 +718,8 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "#070212",
+  color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
@@ -454,11 +744,11 @@ const topStyle: CSSProperties = {
 };
 
 const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "25px",
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: 0,
   display: "flex",
   alignItems: "center",
   gap: "4px",
@@ -475,42 +765,41 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "17px",
+  fontSize: "19px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: 0,
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #C4B5FD) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
+  textShadow: "none",
 };
 
 const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
   borderRadius: "28px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
+  border: "1px solid rgba(59, 7, 100, 0.52)",
   background:
-    "radial-gradient(circle at 16% 18%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)), transparent 30%), radial-gradient(circle at 82% 12%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent)), transparent 38%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.98)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+    "linear-gradient(135deg, #070212 0%, #04000A 56%, #020006 100%)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
 const heroGlowStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
-  background:
-    "linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(0,0,0,0.18) 100%)",
+  background: "transparent",
   pointerEvents: "none",
 };
 
@@ -545,7 +834,7 @@ const titleStyle: CSSProperties = {
   maxWidth: "760px",
   textAlign: "center",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 48%, #FDBA74 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -557,7 +846,7 @@ const titleStyle: CSSProperties = {
 
 const descriptionStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "#D4D4D8",
   fontSize: "clamp(12.5px, 2vw, 15px)",
   lineHeight: 1.54,
   fontWeight: 650,
@@ -595,9 +884,9 @@ const tabsStyle: CSSProperties = {
 const tabStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  border: "1px solid transparent",
-  background: "transparent",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  border: "1px solid rgba(59, 7, 100, 0.50)",
+  background: "#04000A",
+  color: "#DDD6FE",
   fontSize: "12px",
   fontWeight: 950,
   cursor: "pointer",
@@ -609,9 +898,8 @@ const tabStyle: CSSProperties = {
 
 const tabActiveStyle: CSSProperties = {
   ...tabStyle,
-  background: "var(--historietas-accent, #F97316)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 58%, transparent)",
+  background: "#F97316",
+  border: "1px solid rgba(249, 115, 22, 0.72)",
   color: "#FFFFFF",
   boxShadow: "none",
 };
@@ -629,7 +917,7 @@ const fieldStyle: CSSProperties = {
 };
 
 const labelStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -639,9 +927,9 @@ const inputStyle: CSSProperties = {
   width: "100%",
   minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
   fontSize: "12.5px",
@@ -654,8 +942,8 @@ const inputStyle: CSSProperties = {
 const primaryButtonStyle: CSSProperties = {
   minHeight: "44px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   fontSize: "13px",
   fontWeight: 950,
@@ -670,9 +958,9 @@ const errorStyle: CSSProperties = {
   display: "block",
   padding: "9px 11px",
   borderRadius: "15px",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
-  border: "1px solid color-mix(in srgb, #EF4444 28%, var(--historietas-border-soft, transparent))",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  background: "rgba(127, 29, 29, 0.20)",
+  border: "1px solid rgba(239, 68, 68, 0.28)",
+  color: "#FCA5A5",
   fontSize: "12px",
   fontWeight: 850,
   textAlign: "center",
@@ -683,9 +971,9 @@ const messageStyle: CSSProperties = {
   display: "block",
   padding: "9px 11px",
   borderRadius: "15px",
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
+  background: "rgba(34, 197, 94, 0.12)",
+  border: "1px solid rgba(34, 197, 94, 0.28)",
+  color: "#BBF7D0",
   fontSize: "12px",
   fontWeight: 850,
   textAlign: "center",
@@ -696,9 +984,9 @@ const helperTextStyle: CSSProperties = {
   margin: 0,
   padding: "9px 10px",
   borderRadius: "16px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
+  background: "rgba(46, 16, 101, 0.28)",
+  border: "1px solid rgba(59, 7, 100, 0.42)",
+  color: "#A78BFA",
   fontSize: "11px",
   lineHeight: 1.45,
   fontWeight: 700,

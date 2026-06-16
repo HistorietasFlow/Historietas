@@ -109,6 +109,7 @@ type SupabaseObraRow = {
 };
 
 const STORAGE_KEY = "historietas-obras";
+const USER_WORKS_STORAGE_PREFIX = "historietas-obras-usuario";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
@@ -165,6 +166,112 @@ function criarLoginHrefAdicionarCapitulo(obraId?: string) {
   });
 
   return `/login?${params.toString()}`;
+}
+
+function obterTextoProfileAdicionarCapitulo(valor: unknown) {
+  return typeof valor === "string" && valor.trim() ? valor.trim() : "";
+}
+
+async function carregarNomeProfileAdicionarCapitulo(userId: string) {
+  const usuarioId = userId.trim();
+
+  if (!usuarioId) {
+    return "";
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, user_id, nome")
+      .eq("user_id", usuarioId)
+      .maybeSingle();
+
+    if (!error && data) {
+      const profile = data as Record<string, unknown>;
+      const nome = obterTextoProfileAdicionarCapitulo(profile.nome);
+
+      if (nome) {
+        return nome;
+      }
+    }
+  } catch {
+    // O perfil é complemento social. A criação do capítulo não deve depender dele.
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, user_id, nome")
+      .eq("id", usuarioId)
+      .maybeSingle();
+
+    if (!error && data) {
+      const profile = data as Record<string, unknown>;
+      const nome = obterTextoProfileAdicionarCapitulo(profile.nome);
+
+      if (nome) {
+        return nome;
+      }
+    }
+  } catch {
+    // Compatibilidade com bases onde profiles.id é o próprio auth.users.id.
+  }
+
+  return "";
+}
+
+function aplicarAutorProfileAdicionarCapitulo(
+  obrasParaAtualizar: ObraLocal[],
+  userId: string,
+  nomeProfile: string
+) {
+  const nomeAutor = nomeProfile.trim();
+  const usuarioId = userId.trim();
+
+  if (!nomeAutor || !usuarioId) {
+    return obrasParaAtualizar;
+  }
+
+  return obrasParaAtualizar.map((obra) => {
+    const autorId = obra.autorId?.trim() || usuarioId;
+
+    if (autorId !== usuarioId) {
+      return obra;
+    }
+
+    return {
+      ...obra,
+      autor: nomeAutor,
+      autorId,
+    };
+  });
+}
+
+async function sincronizarAutorObraProfileAdicionarCapitulo(
+  obraId: string,
+  userId: string,
+  nomeProfile: string
+) {
+  const obraIdLimpo = obraId.trim();
+  const usuarioId = userId.trim();
+  const nomeAutor = nomeProfile.trim();
+
+  if (!obraIdLimpo || !usuarioId || !nomeAutor) {
+    return;
+  }
+
+  try {
+    await supabase
+      .from("obras")
+      .update({
+        autor: nomeAutor,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq("id", obraIdLimpo)
+      .eq("user_id", usuarioId);
+  } catch {
+    // Se a atualização do nome falhar, o capítulo e o backup local continuam funcionando.
+  }
 }
 
 function idObraSupabaseValido(id: string) {
@@ -326,6 +433,22 @@ function carregarBackupArquivosObras(): ArquivosObrasBackup {
   }
 }
 
+function obterChavesBackupArquivoAdicionarCapitulo(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">
+) {
+  return Array.from(
+    new Set(
+      [
+        `id:${obra.id}`,
+        obra.id,
+        `slug:${obra.slug || criarSlugBase(obra.titulo)}`,
+        `titulo:${normalizarTexto(obra.titulo)}`,
+        obra.link ? `link:${obra.link}` : "",
+      ].filter((chave) => Boolean(chave.trim()))
+    )
+  );
+}
+
 function sincronizarBackupArquivosObras(obras: ObraLocal[]) {
   try {
     const backupAtual = carregarBackupArquivosObras();
@@ -334,7 +457,9 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[]) {
       const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
 
       if (arquivoNormalizado) {
-        backupAtual[obra.id] = arquivoNormalizado;
+        obterChavesBackupArquivoAdicionarCapitulo(obra).forEach((chave) => {
+          backupAtual[chave] = arquivoNormalizado;
+        });
       }
     });
 
@@ -352,7 +477,9 @@ function restaurarArquivoObraComBackup(
     return obra;
   }
 
-  const arquivoBackup = normalizarArquivoObra(backup[obra.id]);
+  const arquivoBackup = obterChavesBackupArquivoAdicionarCapitulo(obra)
+    .map((chave) => normalizarArquivoObra(backup[chave]))
+    .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo));
 
   if (!arquivoBackup) {
     return obra;
@@ -392,8 +519,17 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
         : "Autor não informado",
     autorId:
       typeof obra.autorId === "string" && obra.autorId.trim()
-        ? obra.autorId
-        : "",
+        ? obra.autorId.trim()
+        : typeof (obra as Record<string, unknown>).user_id === "string" &&
+          ((obra as Record<string, unknown>).user_id as string).trim()
+          ? ((obra as Record<string, unknown>).user_id as string).trim()
+          : typeof (obra as Record<string, unknown>).userId === "string" &&
+            ((obra as Record<string, unknown>).userId as string).trim()
+            ? ((obra as Record<string, unknown>).userId as string).trim()
+            : typeof (obra as Record<string, unknown>).autor_id === "string" &&
+              ((obra as Record<string, unknown>).autor_id as string).trim()
+              ? ((obra as Record<string, unknown>).autor_id as string).trim()
+              : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -484,7 +620,8 @@ function normalizarCapituloSupabase(
 function normalizarObraSupabase(
   obra: SupabaseObraRow,
   index: number,
-  obraLocal?: ObraLocal
+  obraLocal?: ObraLocal,
+  autorProfile = ""
 ): ObraLocal {
   const capitulosLocaisPorId = new Map(
     (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
@@ -529,7 +666,11 @@ function normalizarObraSupabase(
   return {
     id: obra.id,
     titulo,
-    autor: obra.autor?.trim() || "Autor não informado",
+    autor:
+      autorProfile.trim() ||
+      obra.autor?.trim() ||
+      obraLocal?.autor ||
+      "Autor não informado",
     autorId: obra.user_id || obraLocal?.autorId || "",
     genero: obra.genero?.trim() || "Não informado",
     formato: obra.formato?.trim() || "Não informado",
@@ -614,9 +755,44 @@ function carregarObrasLocais() {
     : [];
 
   sincronizarBackupArquivosObras(obrasNormalizadas);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(obrasNormalizadas.map(prepararObraAdicionarCapituloParaStorage))
+  );
 
   return obrasNormalizadas;
+}
+
+function normalizarUsuarioId(userId: string) {
+  return userId.trim().toLowerCase();
+}
+
+function obraPertenceAoUsuario(obra: ObraLocal, userId: string) {
+  const usuarioIdNormalizado = normalizarUsuarioId(userId);
+  const autorIdNormalizado = normalizarUsuarioId(obra.autorId || "");
+
+  return Boolean(usuarioIdNormalizado && autorIdNormalizado === usuarioIdNormalizado);
+}
+
+function filtrarObrasDoUsuario(obrasParaFiltrar: ObraLocal[], userId: string) {
+  return obrasParaFiltrar.filter((obra) => obraPertenceAoUsuario(obra, userId));
+}
+
+function atualizarObrasLocaisDoUsuario(
+  obrasLocaisAtuais: ObraLocal[],
+  obrasDoUsuario: ObraLocal[],
+  userId: string
+) {
+  const idsObrasDoUsuario = new Set(obrasDoUsuario.map((obra) => obra.id));
+  const outrasObrasLocais = obrasLocaisAtuais.filter((obra) => {
+    if (idsObrasDoUsuario.has(obra.id)) {
+      return false;
+    }
+
+    return !obraPertenceAoUsuario(obra, userId);
+  });
+
+  return [...obrasDoUsuario, ...outrasObrasLocais];
 }
 
 function normalizarNotificacao(
@@ -734,6 +910,143 @@ function salvarNotificacaoInterna(notificacao: NotificacaoLocal) {
   );
 }
 
+function criarStorageUsuarioAdicionarCapituloKey(userId: string) {
+  return `${USER_WORKS_STORAGE_PREFIX}:${userId.trim()}`;
+}
+
+function ehDataUrlAdicionarCapitulo(valor: string) {
+  return valor.startsWith("data:");
+}
+
+function prepararObraAdicionarCapituloParaStorage(obra: ObraLocal): ObraLocal {
+  return {
+    ...obra,
+    capa: ehDataUrlAdicionarCapitulo(obra.capa) ? "" : obra.capa,
+    arquivoObra: obra.arquivoObra
+      ? {
+          ...obra.arquivoObra,
+          conteudo: ehDataUrlAdicionarCapitulo(obra.arquivoObra.conteudo)
+            ? ""
+            : obra.arquivoObra.conteudo,
+        }
+      : null,
+  };
+}
+
+function salvarObrasAdicionarCapituloStorage(
+  obrasParaSalvar: ObraLocal[],
+  userId = ""
+) {
+  const obrasSemArquivosPesados = obrasParaSalvar.map(
+    prepararObraAdicionarCapituloParaStorage
+  );
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasSemArquivosPesados));
+
+  if (userId.trim()) {
+    const obrasDoUsuario = obrasSemArquivosPesados.filter((obra) =>
+      obraPertenceAoUsuario(obra, userId)
+    );
+
+    localStorage.setItem(
+      criarStorageUsuarioAdicionarCapituloKey(userId),
+      JSON.stringify(obrasDoUsuario)
+    );
+  }
+
+  sincronizarBackupArquivosObras(obrasParaSalvar);
+}
+
+async function registrarDiarioNovoCapitulo({
+  userId,
+  obra,
+  capitulo,
+  numeroCapitulo,
+  criadoEm,
+}: {
+  userId: string;
+  obra: ObraLocal;
+  capitulo: CapituloLocal;
+  numeroCapitulo: number;
+  criadoEm: string;
+}) {
+  try {
+    const payload = {
+      user_id: userId,
+      tipo: "publicou_capitulo",
+      obra_id: obra.id,
+      capitulo_id: capitulo.id,
+      texto: "",
+      visibilidade: "publico",
+      metadata: {
+        obra_titulo: obra.titulo,
+        titulo_obra: obra.titulo,
+        capitulo_titulo: capitulo.titulo,
+        numero_capitulo: numeroCapitulo,
+        href: criarHrefLeituraCapitulo(obra, capitulo, numeroCapitulo),
+      },
+      criado_em: criadoEm,
+      atualizado_em: criadoEm,
+    };
+
+    const { error } = await supabase.from("diario_atividades").insert(payload);
+
+    if (!error) {
+      return;
+    }
+
+    await supabase.from("diario_atividades").insert({
+      user_id: userId,
+      tipo: "publicou_capitulo",
+      obra_id: obra.id,
+      capitulo_id: capitulo.id,
+      texto: "",
+      visibilidade: "publico",
+      criado_em: criadoEm,
+    });
+  } catch (error) {
+    console.warn("Não consegui registrar o capítulo no Diário:", error);
+  }
+}
+
+async function registrarNotificacaoNovoCapituloSupabase(
+  notificacao: NotificacaoLocal,
+  autorId: string
+) {
+  try {
+    const criadoEm = notificacao.criadaEm || new Date().toISOString();
+    const payload = {
+      user_id: autorId,
+      autor_id: autorId,
+      tipo: "novo_capitulo",
+      titulo: notificacao.titulo,
+      mensagem: notificacao.mensagem,
+      obra_id: notificacao.obraId,
+      capitulo_id: notificacao.capituloId,
+      href: notificacao.href,
+      lida: false,
+      visibilidade: notificacao.obraPublicada ? "publico" : "privado",
+      metadata: {
+        obra_titulo: notificacao.obraTitulo,
+        autor: notificacao.autor,
+        capitulo_titulo: notificacao.capituloTitulo,
+        capa: notificacao.capa,
+        classificacao_indicativa: notificacao.classificacaoIndicativa,
+      },
+      criado_em: criadoEm,
+      atualizada_em: criadoEm,
+    };
+
+    const { error } = await supabase.from("notificacoes").insert(payload);
+
+    if (error) {
+      console.warn("Não consegui registrar notificação remota:", error.message);
+    }
+  } catch (error) {
+    console.warn("Não consegui acessar notificações remotas:", error);
+  }
+}
+
 export default function AdicionarCapituloPage() {
   const router = useRouter();
 
@@ -807,13 +1120,20 @@ export default function AdicionarCapituloPage() {
 
         setUsuarioIdLogado(user.id);
 
+        const nomeProfileAutor = await carregarNomeProfileAdicionarCapitulo(user.id);
+
+        let todasObrasLocais: ObraLocal[] = [];
         let obrasLocais: ObraLocal[] = [];
 
         try {
-          obrasLocais = carregarObrasLocais().filter((obra) => {
-            return !obra.autorId || obra.autorId === user.id;
-          });
+          todasObrasLocais = carregarObrasLocais();
+          obrasLocais = aplicarAutorProfileAdicionarCapitulo(
+            filtrarObrasDoUsuario(todasObrasLocais, user.id),
+            user.id,
+            nomeProfileAutor
+          );
         } catch {
+          todasObrasLocais = [];
           obrasLocais = [];
         }
 
@@ -835,13 +1155,23 @@ export default function AdicionarCapituloPage() {
               normalizarObraSupabase(
                 obra as SupabaseObraRow,
                 index,
-                obrasLocaisPorId.get((obra as SupabaseObraRow).id)
+                obrasLocaisPorId.get((obra as SupabaseObraRow).id),
+                nomeProfileAutor
               )
             );
 
-            obrasFinais = mesclarObrasComSupabase(obrasLocais, obrasSupabase);
-            sincronizarBackupArquivosObras(obrasFinais);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasFinais));
+            obrasFinais = aplicarAutorProfileAdicionarCapitulo(
+              mesclarObrasComSupabase(obrasLocais, obrasSupabase),
+              user.id,
+              nomeProfileAutor
+            );
+            const obrasLocaisAtualizadas = atualizarObrasLocaisDoUsuario(
+              todasObrasLocais,
+              obrasFinais,
+              user.id
+            );
+
+            salvarObrasAdicionarCapituloStorage(obrasLocaisAtualizadas, user.id);
           }
         } catch {
           // Se o Supabase falhar, mantém somente as obras locais do usuário logado.
@@ -906,8 +1236,26 @@ export default function AdicionarCapituloPage() {
       )
     );
 
-    sincronizarBackupArquivosObras(obrasNormalizadas);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+    if (!usuarioIdLogado) {
+      setObras(obrasNormalizadas);
+      return;
+    }
+
+    let todasObrasLocaisAtuais: ObraLocal[] = [];
+
+    try {
+      todasObrasLocaisAtuais = carregarObrasLocais();
+    } catch {
+      todasObrasLocaisAtuais = [];
+    }
+
+    const obrasLocaisAtualizadas = atualizarObrasLocaisDoUsuario(
+      todasObrasLocaisAtuais,
+      obrasNormalizadas,
+      usuarioIdLogado
+    );
+
+    salvarObrasAdicionarCapituloStorage(obrasLocaisAtualizadas, usuarioIdLogado);
     setObras(obrasNormalizadas);
   }
 
@@ -1055,6 +1403,19 @@ export default function AdicionarCapituloPage() {
         return;
       }
 
+      const nomeProfileAutor = await carregarNomeProfileAdicionarCapitulo(user.id);
+      const obraAtualComAutorProfile: ObraLocal = {
+        ...obraAtual,
+        autor: nomeProfileAutor || obraAtual.autor,
+        autorId: obraAtual.autorId || user.id,
+      };
+
+      void sincronizarAutorObraProfileAdicionarCapitulo(
+        obraAtualComAutorProfile.id,
+        user.id,
+        nomeProfileAutor
+      );
+
       const criadoEm = new Date().toISOString();
       const tituloFinal =
         titulo.trim() || `Capítulo ${obraAtual.capitulos.length + 1}`;
@@ -1101,7 +1462,7 @@ export default function AdicionarCapituloPage() {
       }
 
       const novaNotificacao = criarNotificacaoNovoCapitulo(
-        obraAtual,
+        obraAtualComAutorProfile,
         novoCapitulo,
         obraAtual.capitulos.length + 1,
         novoCapitulo.criadoEm || criadoEm
@@ -1116,6 +1477,7 @@ export default function AdicionarCapituloPage() {
 
         return {
           ...obra,
+          autor: nomeProfileAutor || obra.autor,
           autorId: obra.autorId || usuarioIdLogado || user.id,
           capitulos: capitulosAtualizados,
           progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
@@ -1123,6 +1485,19 @@ export default function AdicionarCapituloPage() {
       });
 
       salvarObras(novasObras);
+
+      void registrarDiarioNovoCapitulo({
+        userId: user.id,
+        obra: obraAtualComAutorProfile,
+        capitulo: novoCapitulo,
+        numeroCapitulo: obraAtual.capitulos.length + 1,
+        criadoEm: novoCapitulo.criadoEm || criadoEm,
+      });
+
+      void registrarNotificacaoNovoCapituloSupabase(
+        novaNotificacao,
+        user.id
+      );
 
       try {
         salvarNotificacaoInterna(novaNotificacao);
@@ -1466,15 +1841,30 @@ export default function AdicionarCapituloPage() {
 }
 
 const adicionarCapituloPageCss = `
-  html[data-historietas-tema-visual] nav a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] {
-    background: var(--historietas-bottom-nav-main-bg, linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)) !important;
-    border-color: var(--historietas-bottom-nav-main-border, color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)) !important;
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual] input::placeholder,
+  html[data-historietas-tema-visual] textarea::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea {
     color: #FFFFFF !important;
-    box-shadow: var(--historietas-bottom-nav-main-shadow, none) !important;
   }
 `;
+
 
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
@@ -1489,10 +1879,8 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(520px, 72vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -1503,10 +1891,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
@@ -1516,19 +1902,18 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "#070212",
+  color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
 const containerStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  width: "min(860px, calc(100% - 24px))",
+  width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 calc(82px + env(safe-area-inset-bottom))",
+  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1567,22 +1952,24 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "17px",
+  fontSize: "19px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: 0,
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  background:
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
+  textShadow: "none",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -1594,7 +1981,8 @@ const titleHeaderStyle: CSSProperties = {
   justifyContent: "center",
   gap: "12px",
   flexWrap: "nowrap",
-  marginBottom: "14px",
+  marginTop: "4px",
+  marginBottom: "18px",
   minWidth: 0,
   padding: 0,
   textAlign: "center",
@@ -1602,7 +1990,8 @@ const titleHeaderStyle: CSSProperties = {
 
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
-  marginBottom: "18px",
+  marginTop: "6px",
+  marginBottom: "22px",
 };
 
 const headerTitleLinkStyle: CSSProperties = {
@@ -1659,12 +2048,11 @@ const heroBoxStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
   textAlign: "center",
-  gap: "7px",
-  padding: "13px 12px",
-  borderRadius: "21px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.96)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, rgba(255,255,255,0.07))",
+  gap: "8px",
+  padding: "18px",
+  borderRadius: "30px",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -1675,16 +2063,15 @@ const heroBoxStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
+  color: "var(--historietas-accent, #F97316)",
+  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
   fontSize: "clamp(28px, 7.4vw, 40px)",
   lineHeight: 1.02,
   fontWeight: 950,
   letterSpacing: "-0.048em",
   maxWidth: "100%",
   textAlign: "center",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 45%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  textShadow: "none",
   ...safeTextStyle,
 };
 
@@ -1701,16 +2088,16 @@ const descriptionStyle: CSSProperties = {
 
 const progressBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "5px",
-  width: "min(360px, 100%)",
-  padding: "6px 7px",
-  borderRadius: "13px",
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  gap: "6px",
+  width: "100%",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const progressTopStyle: CSSProperties = {
@@ -1740,7 +2127,7 @@ const progressTrackStyle: CSSProperties = {
   height: "5px",
   overflow: "hidden",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.10))",
+  background: "rgba(255,255,255,0.10)",
   maxWidth: "100%",
 };
 
@@ -1755,8 +2142,8 @@ const errorBoxStyle: CSSProperties = {
   marginTop: "18px",
   padding: "18px",
   borderRadius: "24px",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
-  border: "1px solid color-mix(in srgb, #EF4444 30%, var(--historietas-border-soft, transparent))",
+  background: "rgba(127,29,29,0.18)",
+  border: "1px solid rgba(239,68,68,0.26)",
   display: "grid",
   gap: "8px",
   minWidth: 0,
@@ -1798,8 +2185,8 @@ const inlineStatsItemStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "6px 8px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 900,
@@ -1808,15 +2195,15 @@ const inlineStatsItemStyle: CSSProperties = {
 
 const inlineStatsReadyStyle: CSSProperties = {
   ...inlineStatsItemStyle,
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
+  background: "rgba(34,197,94,0.12)",
+  border: "1px solid rgba(34,197,94,0.28)",
+  color: "#86EFAC",
 };
 
 const inlineStatsWarningStyle: CSSProperties = {
   ...inlineStatsItemStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  background: "rgba(249,115,22,0.14)",
+  border: "1px solid rgba(249,115,22,0.30)",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
@@ -1832,11 +2219,11 @@ const mainGridStyle: CSSProperties = {
 
 const formPanelStyle: CSSProperties = {
   display: "grid",
-  gap: "10px",
-  background: "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.96)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
-  borderRadius: "20px",
-  padding: "10px",
+  gap: "12px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: "22px",
+  padding: "12px",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -1854,19 +2241,20 @@ const formHeaderStyle: CSSProperties = {
 
 const formMiniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "9.5px",
+  fontSize: "10px",
   fontWeight: 950,
-  letterSpacing: "0.08em",
+  letterSpacing: "0.10em",
   textTransform: "uppercase",
   ...safeTextStyle,
 };
 
 const formTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "24px",
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "26px",
   lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "-0.06em",
+  letterSpacing: "-0.065em",
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -1888,18 +2276,19 @@ const labelStyle: CSSProperties = {
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "42px",
-  borderRadius: "15px",
-  border: "1px solid var(--historietas-border-soft, #3F3F46)",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 12px",
+  minHeight: "46px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "0 16px",
   outline: "none",
-  fontSize: "13px",
-  fontWeight: 650,
+  fontSize: "14px",
+  fontWeight: 720,
   fontFamily: "inherit",
   textAlign: "center",
   boxSizing: "border-box",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   ...safeTextStyle,
@@ -1907,12 +2296,12 @@ const inputStyle: CSSProperties = {
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  minHeight: "210px",
-  borderRadius: "17px",
-  border: "1px solid var(--historietas-border-soft, #3F3F46)",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "12px",
+  minHeight: "110px",
+  borderRadius: "20px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "13px 14px",
   outline: "none",
   fontSize: "14px",
   fontWeight: 650,
@@ -1920,16 +2309,17 @@ const textareaStyle: CSSProperties = {
   resize: "vertical",
   fontFamily: "inherit",
   boxSizing: "border-box",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   ...safeTextStyle,
 };
 
 const hintStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11.5px",
   lineHeight: 1.4,
-  fontWeight: 650,
+  fontWeight: 700,
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -1937,15 +2327,16 @@ const hintStyle: CSSProperties = {
 const importBoxStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "7px",
-  padding: "9px",
-  borderRadius: "16px",
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+  gap: "8px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
+  boxShadow: "none",
 };
 
 const importInfoStyle: CSSProperties = {
@@ -1985,9 +2376,9 @@ const importSuccessStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 9px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
+  background: "rgba(34,197,94,0.12)",
+  border: "1px solid rgba(34,197,94,0.28)",
+  color: "#86EFAC",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -1999,7 +2390,7 @@ const importErrorStyle: CSSProperties = {
   padding: "7px 9px",
   borderRadius: "999px",
   background: "var(--historietas-danger-surface, rgba(239,68,68,0.13))",
-  border: "1px solid color-mix(in srgb, #EF4444 28%, var(--historietas-border-soft, transparent))",
+  border: "1px solid rgba(239,68,68,0.28)",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "11px",
   fontWeight: 900,
@@ -2010,8 +2401,9 @@ const importButtonStyle: CSSProperties = {
   minHeight: "38px",
   width: "100%",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 70%, transparent)",
-  color: "#FFFFFF",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   fontSize: "11px",
   fontWeight: 950,
   display: "flex",
@@ -2035,8 +2427,8 @@ const successBoxStyle: CSSProperties = {
   gap: "10px",
   padding: "16px",
   borderRadius: "22px",
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
+  background: "rgba(34,197,94,0.10)",
+  border: "1px solid rgba(34,197,94,0.24)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2044,7 +2436,7 @@ const successBoxStyle: CSSProperties = {
 };
 
 const successTitleStyle: CSSProperties = {
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
+  color: "#86EFAC",
   fontSize: "16px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -2065,8 +2457,8 @@ const notificationCreatedStyle: CSSProperties = {
   fontWeight: 900,
   padding: "10px 12px",
   borderRadius: "16px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
+  background: "rgba(249,115,22,0.12)",
+  border: "1px solid rgba(249,115,22,0.28)",
   maxWidth: "100%",
   boxSizing: "border-box",
   ...safeTextStyle,
@@ -2105,9 +2497,9 @@ const successPrimaryButtonStyle: CSSProperties = {
 const successSecondaryButtonStyle: CSSProperties = {
   minHeight: "48px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   textDecoration: "none",
   fontSize: "14px",
   fontWeight: 900,
@@ -2158,9 +2550,9 @@ const primaryButtonStyle: CSSProperties = {
 const disabledButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#A1A1AA",
   fontSize: "13px",
   fontWeight: 950,
   cursor: "not-allowed",
@@ -2178,9 +2570,9 @@ const disabledButtonStyle: CSSProperties = {
 const secondaryButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   textDecoration: "none",
   fontSize: "13px",
   fontWeight: 900,
@@ -2241,13 +2633,14 @@ const previewChapterCardStyle: CSSProperties = {
   display: "grid",
   gap: "8px",
   padding: "11px",
-  borderRadius: "18px",
-  background: "var(--historietas-surface, rgba(31,31,35,0.86))",
-  border: "1px solid var(--historietas-border-soft, #2D2D32)",
+  borderRadius: "20px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const previewChapterTopStyle: CSSProperties = {
@@ -2265,8 +2658,8 @@ const previewChapterBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 10px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
+  background: "rgba(249,115,22,0.14)",
+  border: "1px solid rgba(249,115,22,0.28)",
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "11px",
   fontWeight: 950,
@@ -2279,9 +2672,9 @@ const previewChapterStatusStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 10px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-text-primary, #E4E4E7)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#E4E4E7",
   fontSize: "11px",
   fontWeight: 950,
   whiteSpace: "normal",
@@ -2327,16 +2720,15 @@ const previewStatsStyle: CSSProperties = {
 const recentBoxStyle: CSSProperties = {
   display: "grid",
   gap: "8px",
-  padding: "12px",
-  borderRadius: "20px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(18,12,30,0.78)) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, rgba(18,12,30,0.86)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, rgba(255,255,255,0.07)))",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   width: "100%",
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
   boxShadow: "none",
 };
 
@@ -2361,8 +2753,8 @@ const recentItemStyle: CSSProperties = {
   gap: "2px",
   padding: "8px",
   borderRadius: "14px",
-  background: "rgba(15,15,15,0.24)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2391,8 +2783,8 @@ const emptyBoxStyle: CSSProperties = {
   gap: "12px",
   padding: "22px",
   borderRadius: "26px",
-  background: "var(--historietas-surface, rgba(31,31,35,0.96))",
-  border: "1px solid var(--historietas-border-soft, #2D2D32)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2484,8 +2876,8 @@ const desktopDescriptionStyle: CSSProperties = {
 
 const desktopProgressBoxStyle: CSSProperties = {
   ...progressBoxStyle,
-  width: "min(360px, 100%)",
-  padding: "6px 8px",
+  width: "100%",
+  padding: 0,
 };
 
 const desktopMainGridSoloStyle: CSSProperties = {
@@ -2500,9 +2892,9 @@ const desktopMainGridSoloStyle: CSSProperties = {
 const desktopFormPanelStyle: CSSProperties = {
   ...formPanelStyle,
   width: "100%",
-  padding: "14px",
-  borderRadius: "22px",
-  gap: "10px",
+  padding: "16px",
+  borderRadius: "24px",
+  gap: "12px",
 };
 
 const desktopFormHeaderStyle: CSSProperties = {
@@ -2521,11 +2913,11 @@ const desktopImportBoxStyle: CSSProperties = {
   ...importBoxStyle,
   gridTemplateColumns: "minmax(0, 1fr) 128px",
   alignItems: "center",
-  padding: "7px 9px",
+  padding: 0,
   gap: "8px",
-  borderRadius: "14px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.035))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
 };
 
 const desktopImportButtonStyle: CSSProperties = {
@@ -2537,9 +2929,10 @@ const desktopImportButtonStyle: CSSProperties = {
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "250px",
+  minHeight: "125px",
   fontSize: "14px",
   lineHeight: 1.65,
+  textAlign: "left",
 };
 
 const desktopButtonAreaStyle: CSSProperties = {

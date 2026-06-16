@@ -50,11 +50,18 @@ type NotificacaoLocal = {
   mensagem: string;
   tipo:
     | "novo-capitulo"
+    | "comentario-capitulo"
     | "comentario-comunidade"
+    | "review-comunidade"
+    | "atividade-comunidade"
+    | "novo-seguidor"
     | "denuncia-comunidade"
     | "moderacao-comunidade";
   lida: boolean;
   criadaEm: string;
+  autorId?: string;
+  autorNome?: string;
+  autorAvatar?: string;
 };
 
 type FiltroNotificacao = "todas" | "nao-lidas" | "lidas" | "capitulos" | "comunidade";
@@ -254,7 +261,12 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
 
 function normalizarTipoNotificacao(valor: unknown): NotificacaoLocal["tipo"] {
   if (
+    valor === "novo-capitulo" ||
+    valor === "comentario-capitulo" ||
     valor === "comentario-comunidade" ||
+    valor === "review-comunidade" ||
+    valor === "atividade-comunidade" ||
+    valor === "novo-seguidor" ||
     valor === "denuncia-comunidade" ||
     valor === "moderacao-comunidade"
   ) {
@@ -297,6 +309,18 @@ function normalizarNotificacao(
       typeof notificacao.criadaEm === "string" && notificacao.criadaEm.trim()
         ? notificacao.criadaEm
         : new Date().toISOString(),
+    autorId:
+      typeof notificacaoBruta.autorId === "string"
+        ? notificacaoBruta.autorId.trim()
+        : "",
+    autorNome:
+      typeof notificacaoBruta.autorNome === "string"
+        ? notificacaoBruta.autorNome.trim()
+        : "",
+    autorAvatar:
+      typeof notificacaoBruta.autorAvatar === "string"
+        ? notificacaoBruta.autorAvatar.trim()
+        : "",
   };
 }
 
@@ -420,12 +444,35 @@ function linkDiretoValido(link: string) {
   return link.startsWith("/") || link.startsWith("http://") || link.startsWith("https://");
 }
 
+function criarPerfilHrefNotificacao(userId: string, nomeUsuario: string) {
+  const params = new URLSearchParams();
+  const userIdLimpo = userId.trim();
+  const nomeLimpo = nomeUsuario.trim();
+
+  if (userIdLimpo) {
+    params.set("userId", userIdLimpo);
+    params.set("autorId", userIdLimpo);
+  }
+
+  if (nomeLimpo) {
+    params.set("autor", nomeLimpo);
+  }
+
+  const query = params.toString();
+
+  return query ? `/perfil-autor?${query}` : "/perfil-autor";
+}
+
 function montarLinkNotificacao(
   notificacao: NotificacaoLocal,
   obra?: ObraLocal | null
 ) {
+  if (notificacao.tipo === "novo-seguidor" && notificacao.autorId) {
+    return criarPerfilHrefNotificacao(notificacao.autorId, notificacao.autorNome || "Usuário");
+  }
+
   if (
-    notificacao.tipo === "novo-capitulo" &&
+    notificacaoEhCapitulo(notificacao) &&
     obra &&
     notificacao.obraId &&
     notificacao.capituloId
@@ -454,16 +501,35 @@ function montarLinkNotificacao(
     )}&capituloId=${encodeURIComponent(notificacao.capituloId)}`;
   }
 
-  return notificacao.tipo === "novo-capitulo" ? "/biblioteca" : "/comunidade";
+  return notificacaoEhCapitulo(notificacao) ? "/biblioteca" : "/comunidade";
+}
+
+function notificacaoEhCapitulo(notificacao: NotificacaoLocal) {
+  return (
+    notificacao.tipo === "novo-capitulo" ||
+    notificacao.tipo === "comentario-capitulo"
+  );
 }
 
 function notificacaoEhComunidade(notificacao: NotificacaoLocal) {
-  return notificacao.tipo !== "novo-capitulo";
+  return !notificacaoEhCapitulo(notificacao);
 }
 
 function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
   if (notificacao.tipo === "comentario-comunidade") {
     return "Comentário em publicação";
+  }
+
+  if (notificacao.tipo === "review-comunidade") {
+    return "Review publicada";
+  }
+
+  if (notificacao.tipo === "novo-seguidor") {
+    return "Novo seguidor";
+  }
+
+  if (notificacao.tipo === "atividade-comunidade") {
+    return "Atividade da comunidade";
   }
 
   if (notificacao.tipo === "denuncia-comunidade") {
@@ -474,11 +540,25 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
     return "Moderação";
   }
 
+  if (notificacao.tipo === "comentario-capitulo") {
+    return "Comentário em capítulo";
+  }
+
   return "Capítulo";
 }
 
 function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
-  return notificacaoEhComunidade(notificacao) ? "Ver comunidade" : "Ver capítulo";
+  if (notificacao.tipo === "novo-seguidor") {
+    return "Ver perfil";
+  }
+
+  if (notificacaoEhComunidade(notificacao)) {
+    return "Ver comunidade";
+  }
+
+  return notificacao.tipo === "comentario-capitulo"
+    ? "Ver comentário"
+    : "Ver capítulo";
 }
 
 function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
@@ -488,6 +568,18 @@ function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
 
   if (notificacao.tipo === "comentario-comunidade") {
     return "💬";
+  }
+
+  if (notificacao.tipo === "comentario-capitulo") {
+    return "💬";
+  }
+
+  if (notificacao.tipo === "review-comunidade") {
+    return "★";
+  }
+
+  if (notificacao.tipo === "novo-seguidor") {
+    return "+";
   }
 
   if (
@@ -516,6 +608,10 @@ function obterTituloExibicaoNotificacao(notificacao: NotificacaoLocal) {
 }
 
 function extrairAutorComentarioComunidade(notificacao: NotificacaoLocal) {
+  if (notificacao.autorNome?.trim()) {
+    return notificacao.autorNome.trim();
+  }
+
   if (notificacao.tipo !== "comentario-comunidade") {
     return "Comunidade";
   }
@@ -551,6 +647,41 @@ function extrairTextoComentarioComunidade(notificacao: NotificacaoLocal) {
   return "Comentou na sua publicação.";
 }
 
+function obterNomeAutorNotificacao(notificacao: NotificacaoLocal) {
+  return (
+    notificacao.autorNome?.trim() ||
+    (notificacao.tipo === "comentario-comunidade"
+      ? extrairAutorComentarioComunidade(notificacao)
+      : "Usuário")
+  );
+}
+
+function obterInicialNotificacao(notificacao: NotificacaoLocal) {
+  const nome = obterNomeAutorNotificacao(notificacao);
+
+  return nome.slice(0, 1).toUpperCase() || obterIconeNotificacao(notificacao, notificacao.lida);
+}
+
+function criarAvatarNotificacaoStyle(
+  notificacao: NotificacaoLocal,
+  fallbackStyle: CSSProperties
+): CSSProperties {
+  const avatar = notificacao.autorAvatar?.trim() || "";
+
+  if (!avatar) {
+    return fallbackStyle;
+  }
+
+  return {
+    ...fallbackStyle,
+    backgroundImage: `url(${avatar})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    color: "transparent",
+    overflow: "hidden",
+  };
+}
+
 
 type SupabaseObraRow = Record<string, unknown>;
 type SupabaseCapituloRow = Record<string, unknown>;
@@ -559,6 +690,7 @@ type EstadoSupabaseNotificacoes = {
   userId: string;
   obrasSeguidasIds: string[];
   notificacoesLidasIds: string[];
+  notificacoesDiretas: NotificacaoLocal[];
 };
 
 function pegarTexto(valor: unknown, fallback = "") {
@@ -567,6 +699,129 @@ function pegarTexto(valor: unknown, fallback = "") {
 
 function pegarBooleano(valor: unknown, fallback = false) {
   return typeof valor === "boolean" ? valor : fallback;
+}
+
+function obterNumeroSeguro(valor: unknown, fallback = 0) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return valor;
+  }
+
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor);
+
+    return Number.isFinite(numero) ? numero : fallback;
+  }
+
+  return fallback;
+}
+
+type PerfilNotificacao = {
+  userId: string;
+  nome: string;
+  avatar: string;
+};
+
+function normalizarPerfilNotificacao(
+  row: Record<string, unknown>,
+  userIdFallback: string,
+  nomeFallback: string
+): PerfilNotificacao {
+  const userId =
+    pegarTexto(row.user_id) || pegarTexto(row.id) || userIdFallback.trim();
+  const nome =
+    pegarTexto(row.nome) ||
+    pegarTexto(row.nome_usuario) ||
+    pegarTexto(row.username) ||
+    pegarTexto(row.display_name) ||
+    pegarTexto(row.apelido) ||
+    nomeFallback.trim() ||
+    "Usuário";
+  const avatar =
+    pegarTexto(row.avatar_url) ||
+    pegarTexto(row.avatar) ||
+    pegarTexto(row.foto_url) ||
+    pegarTexto(row.imagem_url) ||
+    pegarTexto(row.photo_url);
+
+  return {
+    userId,
+    nome: nome.slice(0, 80),
+    avatar,
+  };
+}
+
+async function carregarPerfisNotificacoes(userIds: string[]) {
+  const ids = Array.from(
+    new Set(userIds.map((id) => id.trim()).filter(Boolean))
+  );
+  const perfis = new Map<string, PerfilNotificacao>();
+
+  if (ids.length === 0) {
+    return perfis;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("user_id", ids);
+
+    if (!error && Array.isArray(data)) {
+      data.forEach((item) => {
+        const row = item as Record<string, unknown>;
+        const perfil = normalizarPerfilNotificacao(row, "", "Usuário");
+
+        if (perfil.userId) {
+          perfis.set(perfil.userId, perfil);
+        }
+      });
+    }
+  } catch {
+    // Se user_id não existir no schema antigo, tenta pelo id abaixo.
+  }
+
+  const idsFaltantes = ids.filter((id) => !perfis.has(id));
+
+  if (idsFaltantes.length > 0) {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", idsFaltantes);
+
+      if (!error && Array.isArray(data)) {
+        data.forEach((item) => {
+          const row = item as Record<string, unknown>;
+          const perfil = normalizarPerfilNotificacao(row, "", "Usuário");
+
+          if (perfil.userId) {
+            perfis.set(perfil.userId, perfil);
+          }
+        });
+      }
+    } catch {
+      // Profiles é complementar; as notificações continuam com nome salvo no registro.
+    }
+  }
+
+  return perfis;
+}
+
+function obterPerfilNotificacao(
+  perfis: Map<string, PerfilNotificacao>,
+  userId: string,
+  nomeFallback: string
+) {
+  const userIdLimpo = userId.trim();
+  const perfil = userIdLimpo ? perfis.get(userIdLimpo) : null;
+
+  return (
+    perfil || {
+      userId: userIdLimpo,
+      nome: nomeFallback.trim() || "Usuário",
+      avatar: "",
+    }
+  );
 }
 
 function pegarTagsSupabase(valor: unknown): string[] {
@@ -816,6 +1071,107 @@ async function carregarIdsTabelaUsuario(
   }
 }
 
+function normalizarNotificacaoSupabase(
+  registro: Record<string, unknown>,
+  index: number
+): NotificacaoLocal | null {
+  const id =
+    pegarTexto(registro.notificacao_id) ||
+    pegarTexto(registro.id) ||
+    `notificacao-supabase-${index + 1}`;
+
+  if (!id.trim()) {
+    return null;
+  }
+
+  const criadaEm =
+    pegarTexto(
+      registro.criado_em ??
+        registro.criada_em ??
+        registro.created_at ??
+        registro.updated_at ??
+        registro.atualizado_em
+    ) || new Date().toISOString();
+  const tipo = normalizarTipoNotificacao(registro.tipo);
+  const titulo = pegarTexto(registro.titulo, obterDetalheNotificacao({
+    id,
+    obraId: "",
+    capituloId: "",
+    link: "",
+    titulo: "Nova notificação",
+    mensagem: "Você recebeu uma nova notificação.",
+    tipo,
+    lida: false,
+    criadaEm,
+  }));
+  const mensagem = pegarTexto(
+    registro.mensagem ?? registro.texto ?? registro.descricao,
+    "Você recebeu uma nova notificação."
+  );
+
+  return normalizarNotificacao(
+    {
+      id,
+      obraId: pegarTexto(registro.obra_id ?? registro.obraId),
+      capituloId: pegarTexto(registro.capitulo_id ?? registro.capituloId),
+      link: pegarTexto(registro.link ?? registro.href),
+      titulo,
+      mensagem,
+      tipo,
+      lida: registro.lida === true,
+      criadaEm,
+      autorId: pegarTexto(
+        registro.autor_id ?? registro.autorId ?? registro.remetente_id
+      ),
+      autorNome: pegarTexto(
+        registro.autor_nome ?? registro.autorNome ?? registro.remetente_nome
+      ),
+      autorAvatar: pegarTexto(
+        registro.autor_avatar ?? registro.autorAvatar ?? registro.remetente_avatar
+      ),
+    },
+    index
+  );
+}
+
+async function carregarNotificacoesDiretasSupabase(
+  userId: string
+): Promise<NotificacaoLocal[]> {
+  if (!userId) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("notificacoes")
+      .select("*")
+      .eq("user_id", userId)
+      .limit(120);
+
+    if (error || !Array.isArray(data)) {
+      return [];
+    }
+
+    return data
+      .map((item, index) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          return null;
+        }
+
+        return normalizarNotificacaoSupabase(
+          item as Record<string, unknown>,
+          index
+        );
+      })
+      .filter(
+        (notificacao): notificacao is NotificacaoLocal => Boolean(notificacao)
+      )
+      .sort((a, b) => dataNotificacao(b) - dataNotificacao(a));
+  } catch {
+    return [];
+  }
+}
+
 async function carregarNotificacoesLidasSupabase(userId: string): Promise<string[]> {
   try {
     const { data, error } = await supabase
@@ -858,15 +1214,21 @@ async function carregarEstadoSupabaseNotificacoes(): Promise<EstadoSupabaseNotif
       return null;
     }
 
-    const [obrasSeguidasIds, notificacoesLidasIds] = await Promise.all([
+    const [
+      obrasSeguidasIds,
+      notificacoesLidasIds,
+      notificacoesDiretas,
+    ] = await Promise.all([
       carregarIdsTabelaUsuario("seguindo_obras", "obra_id", userId),
       carregarNotificacoesLidasSupabase(userId),
+      carregarNotificacoesDiretasSupabase(userId),
     ]);
 
     return {
       userId,
       obrasSeguidasIds,
       notificacoesLidasIds,
+      notificacoesDiretas,
     };
   } catch {
     return null;
@@ -888,7 +1250,7 @@ function criarChavesObraParaNotificacao(obra: ObraLocal) {
 
 function obraEstaNaListaSeguida(obra: ObraLocal, idsSeguidos: Set<string>) {
   if (idsSeguidos.size === 0) {
-    return true;
+    return false;
   }
 
   return criarChavesObraParaNotificacao(obra).some((chave) =>
@@ -896,10 +1258,38 @@ function obraEstaNaListaSeguida(obra: ObraLocal, idsSeguidos: Set<string>) {
   );
 }
 
+function notificacaoCapituloPertenceAObraSeguida(
+  notificacao: NotificacaoLocal,
+  obrasPorId: Map<string, ObraLocal>,
+  idsSeguidos: Set<string>,
+  usuarioAtualId: string
+) {
+  if (!notificacaoEhCapitulo(notificacao)) {
+    return true;
+  }
+
+  if (idsSeguidos.size === 0) {
+    return false;
+  }
+
+  const obra = obrasPorId.get(notificacao.obraId) || null;
+
+  if (!obra) {
+    return idsSeguidos.has(notificacao.obraId);
+  }
+
+  if (usuarioAtualId && obra.autorId && obra.autorId === usuarioAtualId) {
+    return false;
+  }
+
+  return obraEstaNaListaSeguida(obra, idsSeguidos);
+}
+
 function criarNotificacoesDeCapitulos(
   obrasParaCriar: ObraLocal[],
   obrasSeguidasIds: string[],
-  notificacoesLidasIds: string[]
+  notificacoesLidasIds: string[],
+  usuarioAtualId: string
 ) {
   const idsSeguidos = new Set(
     obrasSeguidasIds
@@ -911,6 +1301,10 @@ function criarNotificacoesDeCapitulos(
 
   obrasParaCriar.forEach((obra) => {
     if (!obraEstaNaListaSeguida(obra, idsSeguidos)) {
+      return;
+    }
+
+    if (usuarioAtualId && obra.autorId && obra.autorId === usuarioAtualId) {
       return;
     }
 
@@ -927,6 +1321,9 @@ function criarNotificacoesDeCapitulos(
         tipo: "novo-capitulo",
         lida: idsLidos.has(id),
         criadaEm: capitulo.criadoEm || obra.criadaEm || new Date().toISOString(),
+        autorId: obra.autorId || "",
+        autorNome: obra.autor,
+        autorAvatar: "",
       });
     });
   });
@@ -939,7 +1336,30 @@ async function carregarNotificacoesComunidadeSupabase(
   notificacoesLidasIds: string[]
 ): Promise<NotificacaoLocal[]> {
   const idsLidos = new Set(notificacoesLidasIds);
-  const notificacoesComunidade: NotificacaoLocal[] = [];
+  const notificacoesSociais: NotificacaoLocal[] = [];
+  const userIdsParaProfiles = new Set<string>();
+  const postsPorId = new Map<string, { texto: string; autorNome: string }>();
+  const comentariosComunidade: Record<string, unknown>[] = [];
+  const denunciasComunidade: Record<string, unknown>[] = [];
+  const seguidoresPerfil: Record<string, unknown>[] = [];
+  const comentariosCapitulos: Record<string, unknown>[] = [];
+  const reviewsComunidade: Record<string, unknown>[] = [];
+  const obrasAutor = new Map<
+    string,
+    Pick<ObraLocal, "id" | "titulo" | "slug" | "publicado">
+  >();
+  const capitulosAutor = new Map<
+    string,
+    {
+      id: string;
+      titulo: string;
+      obraId: string;
+      obraTitulo: string;
+      obraSlug: string;
+      obraPublicada: boolean;
+      numero: number;
+    }
+  >();
 
   try {
     const { data: postsData } = await supabase
@@ -952,19 +1372,19 @@ async function carregarNotificacoesComunidadeSupabase(
       .map((post) => pegarTexto((post as Record<string, unknown>).id))
       .filter(Boolean);
 
-    const postsPorId = new Map(
-      posts.map((post) => {
-        const registro = post as Record<string, unknown>;
+    posts.forEach((post) => {
+      const registro = post as Record<string, unknown>;
+      const postId = pegarTexto(registro.id);
 
-        return [
-          pegarTexto(registro.id),
-          {
-            texto: pegarTexto(registro.texto, "sua publicação"),
-            autorNome: pegarTexto(registro.autor_nome, "Você"),
-          },
-        ];
-      })
-    );
+      if (!postId) {
+        return;
+      }
+
+      postsPorId.set(postId, {
+        texto: pegarTexto(registro.texto, "sua publicação"),
+        autorNome: pegarTexto(registro.autor_nome, "Você"),
+      });
+    });
 
     if (postIds.length > 0) {
       const { data: comentariosData } = await supabase
@@ -977,34 +1397,13 @@ async function carregarNotificacoesComunidadeSupabase(
       if (Array.isArray(comentariosData)) {
         comentariosData.forEach((comentario) => {
           const registro = comentario as Record<string, unknown>;
-          const comentarioId = pegarTexto(registro.id);
-          const postId = pegarTexto(registro.post_id);
+          const autorId = pegarTexto(registro.autor_id);
 
-          if (!comentarioId || !postId) {
-            return;
+          comentariosComunidade.push(registro);
+
+          if (autorId) {
+            userIdsParaProfiles.add(autorId);
           }
-
-          const id = `comunidade-comentario-${comentarioId}`;
-          const autorNome = pegarTexto(registro.autor_nome, "Alguém");
-          const textoComentario = pegarTexto(registro.texto);
-          const post = postsPorId.get(postId);
-          const trechoPost = post?.texto
-            ? post.texto.slice(0, 90)
-            : "uma publicação sua";
-
-          notificacoesComunidade.push({
-            id,
-            obraId: "",
-            capituloId: "",
-            link: `/comunidade?post=${encodeURIComponent(postId)}`,
-            titulo: "Novo comentário na Comunidade",
-            mensagem: `${autorNome} comentou em "${trechoPost}${
-              trechoPost.length >= 90 ? "..." : ""
-            }"${textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."}`,
-            tipo: "comentario-comunidade",
-            lida: idsLidos.has(id),
-            criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
-          });
         });
       }
     }
@@ -1024,55 +1423,360 @@ async function carregarNotificacoesComunidadeSupabase(
 
     if (Array.isArray(denunciasData)) {
       denunciasData.forEach((denuncia) => {
-        const registro = denuncia as Record<string, unknown>;
-        const denunciaId = pegarTexto(registro.id);
-        const status = pegarTexto(registro.status, "em_analise");
-
-        if (!denunciaId) {
-          return;
-        }
-
-        const id = `comunidade-denuncia-${denunciaId}-${status}`;
-        const statusTexto =
-          status === "resolvida"
-            ? "resolvida"
-            : status === "rejeitada"
-              ? "rejeitada"
-              : "em análise";
-        const alvoTipo = pegarTexto(registro.alvo_tipo, "conteúdo");
-        const alvoId = pegarTexto(registro.alvo_id);
-        const observacaoAdmin = pegarTexto(registro.observacao_admin);
-        const link =
-          alvoTipo === "post" && alvoId
-            ? `/comunidade?post=${encodeURIComponent(alvoId)}`
-            : "/comunidade";
-
-        notificacoesComunidade.push({
-          id,
-          obraId: "",
-          capituloId: "",
-          link,
-          titulo: `Denúncia ${statusTexto}`,
-          mensagem: observacaoAdmin
-            ? `A moderação atualizou sua denúncia: ${observacaoAdmin}`
-            : `A moderação marcou sua denúncia como ${statusTexto}.`,
-          tipo: "denuncia-comunidade",
-          lida: idsLidos.has(id),
-          criadaEm: pegarTexto(
-            registro.analisado_em ?? registro.criado_em,
-            new Date().toISOString()
-          ),
-        });
+        denunciasComunidade.push(denuncia as Record<string, unknown>);
       });
     }
   } catch {
     // Denúncias continuam opcionais para não bloquear as notificações.
   }
 
-  return notificacoesComunidade.sort(
+  try {
+    const { data: seguidoresData } = await supabase
+      .from("seguindo_usuarios")
+      .select("id, seguidor_id, seguido_id, criado_em")
+      .eq("seguido_id", userId)
+      .order("criado_em", { ascending: false })
+      .limit(60);
+
+    if (Array.isArray(seguidoresData)) {
+      seguidoresData.forEach((seguidor) => {
+        const registro = seguidor as Record<string, unknown>;
+        const seguidorId = pegarTexto(registro.seguidor_id);
+
+        seguidoresPerfil.push(registro);
+
+        if (seguidorId) {
+          userIdsParaProfiles.add(seguidorId);
+        }
+      });
+    }
+  } catch {
+    // Seguir usuário é social; se falhar, as outras notificações continuam.
+  }
+
+  try {
+    const { data: obrasAutorData } = await supabase
+      .from("obras")
+      .select("id, titulo, slug, publicado, user_id")
+      .eq("user_id", userId);
+
+    const obrasAutorRows = Array.isArray(obrasAutorData)
+      ? (obrasAutorData as Record<string, unknown>[])
+      : [];
+
+    obrasAutorRows.forEach((obra, index) => {
+      const obraId = pegarTexto(obra.id, `obra-autor-${index + 1}`);
+      const titulo = pegarTexto(obra.titulo, "Obra sem título");
+      const slug = pegarTexto(obra.slug, criarSlugBase(titulo));
+
+      if (!obraId) {
+        return;
+      }
+
+      obrasAutor.set(obraId, {
+        id: obraId,
+        titulo,
+        slug,
+        publicado: pegarBooleano(obra.publicado, true),
+      });
+    });
+
+    const obraIds = Array.from(obrasAutor.keys());
+
+    if (obraIds.length > 0) {
+      const { data: capitulosData } = await supabase
+        .from("capitulos")
+        .select("id, obra_id, titulo, ordem, publicado, criado_em")
+        .in("obra_id", obraIds)
+        .order("ordem", { ascending: true });
+
+      if (Array.isArray(capitulosData)) {
+        capitulosData.forEach((capitulo, index) => {
+          const registro = capitulo as Record<string, unknown>;
+          const capituloId = pegarTexto(registro.id);
+          const obraId = pegarTexto(registro.obra_id);
+          const obra = obrasAutor.get(obraId);
+
+          if (!capituloId || !obra) {
+            return;
+          }
+
+          capitulosAutor.set(capituloId, {
+            id: capituloId,
+            titulo: pegarTexto(registro.titulo, `Capítulo ${index + 1}`),
+            obraId,
+            obraTitulo: obra.titulo,
+            obraSlug: obra.slug,
+            obraPublicada: obra.publicado,
+            numero: obterNumeroSeguro(registro.ordem, index + 1),
+          });
+        });
+      }
+
+      const capituloIds = Array.from(capitulosAutor.keys());
+
+      if (capituloIds.length > 0) {
+        const { data: comentariosCapitulosData } = await supabase
+          .from("comentarios_capitulos")
+          .select("*")
+          .in("capitulo_id", capituloIds)
+          .neq("user_id", userId)
+          .order("atualizado_em", { ascending: false });
+
+        if (Array.isArray(comentariosCapitulosData)) {
+          comentariosCapitulosData.forEach((comentario) => {
+            const registro = comentario as Record<string, unknown>;
+            const autorId = pegarTexto(registro.user_id);
+
+            comentariosCapitulos.push(registro);
+
+            if (autorId) {
+              userIdsParaProfiles.add(autorId);
+            }
+          });
+        }
+      }
+
+      const { data: reviewsData } = await supabase
+        .from("comunidade_posts")
+        .select("id, autor_id, autor_nome, texto, obra_relacionada, tipo_publicacao, criado_em")
+        .eq("tipo_publicacao", "Review")
+        .neq("autor_id", userId)
+        .order("criado_em", { ascending: false })
+        .limit(80);
+
+      if (Array.isArray(reviewsData)) {
+        reviewsData.forEach((review) => {
+          const registro = review as Record<string, unknown>;
+          const obraRelacionada = normalizarTexto(
+            pegarTexto(registro.obra_relacionada)
+          );
+          const pertenceAoAutor = Array.from(obrasAutor.values()).some((obra) => {
+            const tituloNormalizado = normalizarTexto(obra.titulo);
+
+            return (
+              obraRelacionada &&
+              tituloNormalizado &&
+              (obraRelacionada === tituloNormalizado ||
+                obraRelacionada.includes(tituloNormalizado) ||
+                tituloNormalizado.includes(obraRelacionada))
+            );
+          });
+
+          if (!pertenceAoAutor) {
+            return;
+          }
+
+          const autorId = pegarTexto(registro.autor_id);
+          reviewsComunidade.push(registro);
+
+          if (autorId) {
+            userIdsParaProfiles.add(autorId);
+          }
+        });
+      }
+    }
+  } catch {
+    // Comentários de capítulo/reviews são extras; não bloqueiam a página.
+  }
+
+  const perfis = await carregarPerfisNotificacoes(Array.from(userIdsParaProfiles));
+
+  comentariosComunidade.forEach((registro) => {
+    const comentarioId = pegarTexto(registro.id);
+    const postId = pegarTexto(registro.post_id);
+
+    if (!comentarioId || !postId) {
+      return;
+    }
+
+    const autorId = pegarTexto(registro.autor_id);
+    const perfilAutor = obterPerfilNotificacao(
+      perfis,
+      autorId,
+      pegarTexto(registro.autor_nome, "Alguém")
+    );
+    const id = `comunidade-comentario-${comentarioId}`;
+    const textoComentario = pegarTexto(registro.texto);
+    const post = postsPorId.get(postId);
+    const trechoPost = post?.texto
+      ? post.texto.slice(0, 90)
+      : "uma publicação sua";
+
+    notificacoesSociais.push({
+      id,
+      obraId: "",
+      capituloId: "",
+      link: `/comunidade?post=${encodeURIComponent(postId)}`,
+      titulo: "Novo comentário na Comunidade",
+      mensagem: `${perfilAutor.nome} comentou em "${trechoPost}${
+        trechoPost.length >= 90 ? "..." : ""
+      }"${textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."}`,
+      tipo: "comentario-comunidade",
+      lida: idsLidos.has(id),
+      criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
+      autorId,
+      autorNome: perfilAutor.nome,
+      autorAvatar: perfilAutor.avatar,
+    });
+  });
+
+  seguidoresPerfil.forEach((registro) => {
+    const seguidorId = pegarTexto(registro.seguidor_id);
+
+    if (!seguidorId) {
+      return;
+    }
+
+    const perfilSeguidor = obterPerfilNotificacao(perfis, seguidorId, "Usuário");
+    const id = `novo-seguidor-${pegarTexto(registro.id, seguidorId)}`;
+
+    notificacoesSociais.push({
+      id,
+      obraId: "",
+      capituloId: "",
+      link: criarPerfilHrefNotificacao(seguidorId, perfilSeguidor.nome),
+      titulo: "Novo seguidor",
+      mensagem: `${perfilSeguidor.nome} começou a seguir seu perfil.`,
+      tipo: "novo-seguidor",
+      lida: idsLidos.has(id),
+      criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
+      autorId: seguidorId,
+      autorNome: perfilSeguidor.nome,
+      autorAvatar: perfilSeguidor.avatar,
+    });
+  });
+
+  comentariosCapitulos.forEach((registro) => {
+    const capituloId = pegarTexto(registro.capitulo_id);
+    const capitulo = capitulosAutor.get(capituloId);
+
+    if (!capitulo) {
+      return;
+    }
+
+    const autorId = pegarTexto(registro.user_id);
+    const perfilAutor = obterPerfilNotificacao(perfis, autorId, "Leitor");
+    const comentarioId =
+      pegarTexto(registro.id) ||
+      `${capituloId}-${autorId}-${pegarTexto(registro.atualizado_em ?? registro.criado_em)}`;
+    const id = `capitulo-comentario-${comentarioId}`;
+    const textoComentario = pegarTexto(registro.comentario ?? registro.texto);
+
+    notificacoesSociais.push({
+      id,
+      obraId: capitulo.obraId,
+      capituloId,
+      link: criarHrefLeituraCapitulo(
+        {
+          id: capitulo.obraId,
+          slug: capitulo.obraSlug,
+          titulo: capitulo.obraTitulo,
+          publicado: capitulo.obraPublicada,
+        },
+        capituloId,
+        capitulo.numero
+      ),
+      titulo: "Novo comentário no capítulo",
+      mensagem: `${perfilAutor.nome} comentou em ${capitulo.titulo}${
+        textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."
+      }`,
+      tipo: "comentario-capitulo",
+      lida: idsLidos.has(id),
+      criadaEm: pegarTexto(
+        registro.criado_em ?? registro.atualizado_em,
+        new Date().toISOString()
+      ),
+      autorId,
+      autorNome: perfilAutor.nome,
+      autorAvatar: perfilAutor.avatar,
+    });
+  });
+
+  reviewsComunidade.forEach((registro) => {
+    const postId = pegarTexto(registro.id);
+
+    if (!postId) {
+      return;
+    }
+
+    const autorId = pegarTexto(registro.autor_id);
+    const perfilAutor = obterPerfilNotificacao(
+      perfis,
+      autorId,
+      pegarTexto(registro.autor_nome, "Leitor")
+    );
+    const obraRelacionada = pegarTexto(registro.obra_relacionada, "sua obra");
+    const textoReview = pegarTexto(registro.texto);
+    const id = `comunidade-review-${postId}`;
+
+    notificacoesSociais.push({
+      id,
+      obraId: "",
+      capituloId: "",
+      link: `/comunidade?post=${encodeURIComponent(postId)}`,
+      titulo: "Nova review publicada",
+      mensagem: `${perfilAutor.nome} publicou uma review sobre ${obraRelacionada}${
+        textoReview ? `: ${textoReview.slice(0, 90)}` : "."
+      }`,
+      tipo: "review-comunidade",
+      lida: idsLidos.has(id),
+      criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
+      autorId,
+      autorNome: perfilAutor.nome,
+      autorAvatar: perfilAutor.avatar,
+    });
+  });
+
+  denunciasComunidade.forEach((registro) => {
+    const denunciaId = pegarTexto(registro.id);
+    const status = pegarTexto(registro.status, "em_analise");
+
+    if (!denunciaId) {
+      return;
+    }
+
+    const id = `comunidade-denuncia-${denunciaId}-${status}`;
+    const statusTexto =
+      status === "resolvida"
+        ? "resolvida"
+        : status === "rejeitada"
+          ? "rejeitada"
+          : "em análise";
+    const alvoTipo = pegarTexto(registro.alvo_tipo, "conteúdo");
+    const alvoId = pegarTexto(registro.alvo_id);
+    const observacaoAdmin = pegarTexto(registro.observacao_admin);
+    const link =
+      alvoTipo === "post" && alvoId
+        ? `/comunidade?post=${encodeURIComponent(alvoId)}`
+        : "/comunidade";
+
+    notificacoesSociais.push({
+      id,
+      obraId: "",
+      capituloId: "",
+      link,
+      titulo: `Denúncia ${statusTexto}`,
+      mensagem: observacaoAdmin
+        ? `A moderação atualizou sua denúncia: ${observacaoAdmin}`
+        : `A moderação marcou sua denúncia como ${statusTexto}.`,
+      tipo: "denuncia-comunidade",
+      lida: idsLidos.has(id),
+      criadaEm: pegarTexto(
+        registro.analisado_em ?? registro.criado_em,
+        new Date().toISOString()
+      ),
+      autorId: "",
+      autorNome: "Moderação",
+      autorAvatar: "",
+    });
+  });
+
+  return notificacoesSociais.sort(
     (a, b) => dataNotificacao(b) - dataNotificacao(a)
   );
 }
+
 
 async function sincronizarNotificacaoLidaSupabase(
   notificacao: NotificacaoLocal,
@@ -1086,22 +1790,51 @@ async function sincronizarNotificacaoLidaSupabase(
       return;
     }
 
-    await supabase.from("notificacoes").upsert(
-      {
-        user_id: userId,
-        notificacao_id: notificacao.id,
-        obra_id: notificacao.obraId || null,
-        capitulo_id: notificacao.capituloId || null,
-        titulo: notificacao.titulo,
-        mensagem: notificacao.mensagem,
-        link: montarLinkNotificacao(notificacao),
-        tipo: notificacao.tipo,
-        lida,
-        created_at: notificacao.criadaEm,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,notificacao_id" }
-    );
+    const payloadCompleto = {
+      user_id: userId,
+      notificacao_id: notificacao.id,
+      obra_id: notificacao.obraId || null,
+      capitulo_id: notificacao.capituloId || null,
+      titulo: notificacao.titulo,
+      mensagem: notificacao.mensagem,
+      link: montarLinkNotificacao(notificacao),
+      tipo: notificacao.tipo,
+      lida,
+      created_at: notificacao.criadaEm,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: erroUpsert } = await supabase
+      .from("notificacoes")
+      .upsert(payloadCompleto, { onConflict: "user_id,notificacao_id" });
+
+    if (!erroUpsert) {
+      return;
+    }
+
+    await supabase
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", userId)
+      .eq("notificacao_id", notificacao.id);
+
+    const { error: erroInsertCompleto } = await supabase
+      .from("notificacoes")
+      .insert(payloadCompleto);
+
+    if (!erroInsertCompleto) {
+      return;
+    }
+
+    await supabase.from("notificacoes").insert({
+      user_id: userId,
+      notificacao_id: notificacao.id,
+      titulo: notificacao.titulo,
+      mensagem: notificacao.mensagem,
+      link: montarLinkNotificacao(notificacao),
+      tipo: notificacao.tipo,
+      lida,
+    });
   } catch {
     // Se a tabela não existir ou a permissão falhar, o localStorage mantém funcionando.
   }
@@ -1136,6 +1869,8 @@ export default function NotificacoesPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [usuarioNotificacoesId, setUsuarioNotificacoesId] = useState("anon");
+  const [menuNotificacaoAbertoId, setMenuNotificacaoAbertoId] = useState("");
+  const [menuAcoesGeraisAberto, setMenuAcoesGeraisAberto] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -1189,9 +1924,6 @@ export default function NotificacoesPage() {
         const estadoSupabase = await carregarEstadoSupabaseNotificacoes();
         const idsNotificacoesApagadas =
           carregarIdsNotificacoesApagadas(usuarioAtualId);
-        const notificacoesLocaisFiltradas = notificacoesLocais.filter(
-          (notificacao) => !notificacaoEhComunidade(notificacao)
-        );
         const obrasMescladas = mesclarObrasPorIdSlug(obrasLocais, obrasSupabase);
         const obrasSeguidasLocais = lerIdsLocalStorage(CHAVE_OBRAS_SEGUIDAS);
         const obrasSeguidasIds = Array.from(
@@ -1200,11 +1932,31 @@ export default function NotificacoesPage() {
             ...(estadoSupabase?.obrasSeguidasIds || []),
           ])
         );
+        const idsSeguidos = new Set(
+          obrasSeguidasIds
+            .map((id) => id.trim())
+            .filter((id) => Boolean(id))
+        );
+        const obrasPorIdMescladas = new Map(
+          obrasMescladas.map((obra) => [obra.id, obra])
+        );
+        const notificacoesLocaisFiltradas = notificacoesLocais
+          .filter((notificacao) => !notificacaoEhComunidade(notificacao))
+          .filter((notificacao) =>
+            notificacaoCapituloPertenceAObraSeguida(
+              notificacao,
+              obrasPorIdMescladas,
+              idsSeguidos,
+              usuarioAtualId
+            )
+          );
         const notificacoesLidasIds = estadoSupabase?.notificacoesLidasIds || [];
+        const notificacoesDiretasSupabase = estadoSupabase?.notificacoesDiretas || [];
         const notificacoesCapitulosSupabase = criarNotificacoesDeCapitulos(
           obrasMescladas,
           obrasSeguidasIds,
-          notificacoesLidasIds
+          notificacoesLidasIds,
+          usuarioAtualId
         );
         const notificacoesComunidadeSupabase =
           await carregarNotificacoesComunidadeSupabase(
@@ -1213,6 +1965,7 @@ export default function NotificacoesPage() {
           );
         const notificacoesMescladas = filtrarNotificacoesApagadas(
           mesclarNotificacoes(notificacoesLocaisFiltradas, [
+            ...notificacoesDiretasSupabase,
             ...notificacoesCapitulosSupabase,
             ...notificacoesComunidadeSupabase,
           ]),
@@ -1252,6 +2005,11 @@ export default function NotificacoesPage() {
     };
   }, [router]);
 
+  useEffect(() => {
+    setMenuNotificacaoAbertoId("");
+    setMenuAcoesGeraisAberto(false);
+  }, [busca, filtro, ordenacao]);
+
   const obrasPorId = useMemo(() => {
     return new Map(obras.map((obra) => [obra.id, obra]));
   }, [obras]);
@@ -1263,8 +2021,8 @@ export default function NotificacoesPage() {
   }, [notificacoes]);
 
   const totalLidas = Math.max(totalNotificacoes - totalNaoLidas, 0);
-  const totalCapitulos = notificacoes.filter(
-    (notificacao) => notificacao.tipo === "novo-capitulo"
+  const totalCapitulos = notificacoes.filter((notificacao) =>
+    notificacaoEhCapitulo(notificacao)
   ).length;
   const totalComunidade = notificacoes.filter((notificacao) =>
     notificacaoEhComunidade(notificacao)
@@ -1285,7 +2043,7 @@ export default function NotificacoesPage() {
         filtro === "todas" ||
         (filtro === "nao-lidas" && !notificacao.lida) ||
         (filtro === "lidas" && notificacao.lida) ||
-        (filtro === "capitulos" && notificacao.tipo === "novo-capitulo") ||
+        (filtro === "capitulos" && notificacaoEhCapitulo(notificacao)) ||
         (filtro === "comunidade" && notificacaoEhComunidade(notificacao));
 
       const textoBusca = normalizarTexto(
@@ -1294,6 +2052,7 @@ export default function NotificacoesPage() {
           notificacao.mensagem,
           notificacao.tipo,
           notificacao.link,
+          notificacao.autorNome || "",
           obra?.titulo || "",
           obra?.autor || "",
           obra?.genero || "",
@@ -1492,6 +2251,24 @@ export default function NotificacoesPage() {
     });
   }
 
+  function alternarMenuNotificacao(id: string) {
+    setMenuAcoesGeraisAberto(false);
+    setMenuNotificacaoAbertoId((idAtual) => (idAtual === id ? "" : id));
+  }
+
+  function fecharMenuNotificacao() {
+    setMenuNotificacaoAbertoId("");
+  }
+
+  function alternarMenuAcoesGerais() {
+    setMenuNotificacaoAbertoId("");
+    setMenuAcoesGeraisAberto((abertoAtual) => !abertoAtual);
+  }
+
+  function fecharMenuAcoesGerais() {
+    setMenuAcoesGeraisAberto(false);
+  }
+
   function limparFiltros() {
     setBusca("");
     setFiltro("todas");
@@ -1548,15 +2325,93 @@ export default function NotificacoesPage() {
           <>
             <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
               <div style={isDesktop ? desktopFilterHeaderStyle : filterHeaderStyle}>
-                <div style={isDesktop ? desktopFilterHeaderTitleBoxStyle : filterHeaderTitleBoxStyle}>
-                  <span style={miniTitleStyle}>ORGANIZAR</span>
-
-                  <h2 style={filterTitleStyle}>Buscar e filtrar</h2>
-                </div>
-
                 <span style={filterResultBadgeStyle}>
                   {notificacoesFiltradas.length} de {totalNotificacoes}
                 </span>
+
+                <div style={isDesktop ? desktopFilterHeaderTitleBoxStyle : filterHeaderTitleBoxStyle}>
+                  <span style={miniTitleStyle}>ORGANIZAR</span>
+                </div>
+
+                <div style={filterActionsMenuWrapperStyle}>
+                  <button
+                    type="button"
+                    aria-label="Abrir ações gerais das notificações"
+                    aria-expanded={menuAcoesGeraisAberto}
+                    onClick={alternarMenuAcoesGerais}
+                    style={filterActionsMenuButtonStyle}
+                  >
+                    ⋮
+                  </button>
+
+                  {menuAcoesGeraisAberto && (
+                    <div style={filterActionsMenuDropdownStyle}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          marcarTodasComoLidas();
+                          fecharMenuAcoesGerais();
+                        }}
+                        style={
+                          notificacoes.length === 0
+                            ? filterActionsMenuItemDisabledStyle
+                            : cardMenuItemStyle
+                        }
+                        disabled={notificacoes.length === 0}
+                      >
+                        Marcar todas como lidas
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          marcarFiltradasComoLidas();
+                          fecharMenuAcoesGerais();
+                        }}
+                        style={
+                          notificacoesFiltradas.length === 0
+                            ? filterActionsMenuItemDisabledStyle
+                            : cardMenuItemStyle
+                        }
+                        disabled={notificacoesFiltradas.length === 0}
+                      >
+                        Marcar seleção
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          limparLidas();
+                          fecharMenuAcoesGerais();
+                        }}
+                        style={
+                          totalLidas === 0
+                            ? filterActionsMenuItemDisabledStyle
+                            : cardMenuItemStyle
+                        }
+                        disabled={totalLidas === 0}
+                      >
+                        Apagar lidas
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          limparTodas();
+                          fecharMenuAcoesGerais();
+                        }}
+                        style={
+                          notificacoes.length === 0
+                            ? filterActionsMenuDangerItemDisabledStyle
+                            : cardMenuDangerItemStyle
+                        }
+                        disabled={notificacoes.length === 0}
+                      >
+                        Limpar todos
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <input
@@ -1691,43 +2546,6 @@ export default function NotificacoesPage() {
           </div>
         </section>
 
-            <section style={isDesktop ? desktopActionBarStyle : actionBarStyle} aria-label="Ações gerais">
-              <button
-                type="button"
-                onClick={marcarTodasComoLidas}
-                style={primaryButtonStyle}
-                disabled={notificacoes.length === 0}
-              >
-                Marcar todas como lidas
-              </button>
-
-              <button
-                type="button"
-                onClick={marcarFiltradasComoLidas}
-                style={secondaryButtonStyle}
-                disabled={notificacoesFiltradas.length === 0}
-              >
-                Marcar seleção
-              </button>
-
-              <button
-                type="button"
-                onClick={limparLidas}
-                style={secondaryButtonStyle}
-                disabled={totalLidas === 0}
-              >
-                Apagar lidas
-              </button>
-
-              <button
-                type="button"
-                onClick={limparTodas}
-                style={dangerButtonStyle}
-                disabled={notificacoes.length === 0}
-              >
-                Limpar todas
-              </button>
-            </section>
           </>
         )}
 
@@ -1776,9 +2594,15 @@ export default function NotificacoesPage() {
                 extrairAutorComentarioComunidade(notificacao);
               const textoComentarioComunidade =
                 extrairTextoComentarioComunidade(notificacao);
+              const autorNotificacaoNome = obterNomeAutorNotificacao(notificacao);
+              const autorNotificacaoHref = criarPerfilHrefNotificacao(
+                notificacao.autorId || "",
+                autorNotificacaoNome
+              );
 
               const linkCapitulo = montarLinkNotificacao(notificacao, obra);
               const labelAcaoPrincipal = obterAcaoPrincipalNotificacao(notificacao);
+              const menuEstaAberto = menuNotificacaoAbertoId === notificacao.id;
 
               const cardVisualStyle = notificacao.lida
                 ? ehComunidade
@@ -1800,25 +2624,123 @@ export default function NotificacoesPage() {
                 ? readNotificationIconStyle
                 : ehComunidade
                   ? communityNotificationIconStyle
-                  : notificationIconStyle;
+                  : unreadNotificationIconStyle;
+              const avatarVisualStyle = criarAvatarNotificacaoStyle(
+                notificacao,
+                iconVisualStyle
+              );
 
               return (
                 <article key={notificacao.id} style={cardVisualStyle}>
                   <div style={cardHeaderStyle}>
-                    <div style={iconVisualStyle} aria-hidden="true">
-                      {obterIconeNotificacao(notificacao, notificacao.lida)}
-                    </div>
+                    {notificacao.autorId ? (
+                      <Link
+                        href={autorNotificacaoHref}
+                        aria-label={`Abrir perfil de ${autorNotificacaoNome}`}
+                        style={avatarVisualStyle}
+                      >
+                        {notificacao.autorAvatar?.trim()
+                          ? ""
+                          : obterInicialNotificacao(notificacao)}
+                      </Link>
+                    ) : (
+                      <div style={iconVisualStyle} aria-hidden="true">
+                        {obterIconeNotificacao(notificacao, notificacao.lida)}
+                      </div>
+                    )}
 
                     <div style={cardHeaderTextStyle}>
-                      <h2 style={notificationTitleStyle}>
-                        {tituloExibicao}
-                      </h2>
+                      <div style={notificationTitleRowStyle}>
+                        <h2 style={notificationTitleStyle}>
+                          {tituloExibicao}
+                        </h2>
 
-                      {ehComunidade && (
-                        <span style={communityDateTextStyle}>
-                          DATA: {formatarData(notificacao.criadaEm)}
-                        </span>
-                      )}
+                        <div style={cardMenuWrapperStyle}>
+                          <button
+                            type="button"
+                            aria-label={`Abrir ações de ${tituloExibicao}`}
+                            aria-expanded={menuEstaAberto}
+                            onClick={() => alternarMenuNotificacao(notificacao.id)}
+                            style={cardMenuButtonStyle}
+                          >
+                            ⋮
+                          </button>
+
+                          {menuEstaAberto && (
+                            <div style={cardMenuDropdownStyle}>
+                              <Link
+                                href={linkCapitulo}
+                                style={cardMenuItemStyle}
+                                onClick={() => {
+                                  abrirNotificacao(notificacao.id);
+                                  fecharMenuNotificacao();
+                                }}
+                              >
+                                {labelAcaoPrincipal}
+                              </Link>
+
+                              {notificacao.autorId && (
+                                <Link
+                                  href={autorNotificacaoHref}
+                                  style={cardMenuItemStyle}
+                                  onClick={fecharMenuNotificacao}
+                                >
+                                  Abrir perfil
+                                </Link>
+                              )}
+
+                              {notificacao.lida ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    marcarComoNaoLida(notificacao.id);
+                                    fecharMenuNotificacao();
+                                  }}
+                                  style={cardMenuItemStyle}
+                                >
+                                  Marcar como nova
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    marcarComoLida(notificacao.id);
+                                    fecharMenuNotificacao();
+                                  }}
+                                  style={cardMenuItemStyle}
+                                >
+                                  Marcar como lida
+                                </button>
+                              )}
+
+                              {obra && !ehComunidade && (
+                                <Link
+                                  href={`/obra/${obra.slug || criarSlugBase(obra.titulo)}`}
+                                  style={cardMenuItemStyle}
+                                  onClick={fecharMenuNotificacao}
+                                >
+                                  Abrir obra
+                                </Link>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  apagarNotificacao(notificacao.id);
+                                  fecharMenuNotificacao();
+                                }}
+                                style={cardMenuDangerItemStyle}
+                              >
+                                Apagar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <span style={communityDateTextStyle}>
+                        DATA: {formatarData(notificacao.criadaEm)}
+                      </span>
 
                       {!ehComunidade && (
                         <p style={notificationMessageStyle}>
@@ -1841,16 +2763,25 @@ export default function NotificacoesPage() {
                   >
                     {ehComunidade ? (
                       <div style={communityCommentBoxStyle}>
-                        <span style={metaLabelStyle}>
-                          {notificacao.tipo === "comentario-comunidade"
-                            ? `Comentário de ${autorComentarioComunidade}`
-                            : "Atualização"}
-                        </span>
-
-                        {notificacao.tipo !== "comentario-comunidade" && (
-                          <strong style={metaValueStyle}>
-                            {obterDetalheNotificacao(notificacao)}
-                          </strong>
+                        {notificacao.tipo === "comentario-comunidade" ? (
+                          notificacao.autorId ? (
+                            <Link
+                              href={autorNotificacaoHref}
+                              style={notificationAuthorInlineLinkStyle}
+                            >
+                              Comentário de {autorComentarioComunidade}
+                            </Link>
+                          ) : (
+                            <span style={metaLabelStyle}>
+                              Comentário de {autorComentarioComunidade}
+                            </span>
+                          )
+                        ) : (
+                          <span style={communityInlineStatusStyle}>
+                            <span>Atualização</span>
+                            <span style={communityInlineStatusDotStyle}>•</span>
+                            <span>{obterDetalheNotificacao(notificacao)}</span>
+                          </span>
                         )}
 
                         <p style={communityCommentTextStyle}>
@@ -1861,13 +2792,6 @@ export default function NotificacoesPage() {
                       </div>
                     ) : (
                       <>
-                        <div style={metaBoxStyle}>
-                          <span style={metaLabelStyle}>Data</span>
-                          <strong style={metaValueStyle}>
-                            {formatarData(notificacao.criadaEm)}
-                          </strong>
-                        </div>
-
                         <div style={metaBoxStyle}>
                           <span style={metaLabelStyle}>Obra</span>
                           <strong style={metaValueStyle}>{tituloObra}</strong>
@@ -1881,60 +2805,6 @@ export default function NotificacoesPage() {
                     )}
                   </div>
 
-                  <div
-                    style={
-                      ehComunidade
-                        ? isDesktop
-                          ? desktopCommunityCardActionsStyle
-                          : communityCardActionsStyle
-                        : isDesktop
-                          ? desktopCardActionsStyle
-                          : cardActionsStyle
-                    }
-                  >
-                    <Link
-                      href={linkCapitulo}
-                      style={openChapterLinkStyle}
-                      onClick={() => abrirNotificacao(notificacao.id)}
-                    >
-                      {labelAcaoPrincipal}
-                    </Link>
-
-                    {obra && !ehComunidade && (
-                      <Link
-                        href={`/obra/${obra.slug || criarSlugBase(obra.titulo)}`}
-                        style={secondaryLinkButtonStyle}
-                      >
-                        Abrir obra
-                      </Link>
-                    )}
-
-                    {notificacao.lida ? (
-                      <button
-                        type="button"
-                        onClick={() => marcarComoNaoLida(notificacao.id)}
-                        style={secondaryButtonStyle}
-                      >
-                        Marcar como nova
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => marcarComoLida(notificacao.id)}
-                        style={secondaryButtonStyle}
-                      >
-                        Marcar como lida
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => apagarNotificacao(notificacao.id)}
-                      style={dangerButtonStyle}
-                    >
-                      Apagar
-                    </button>
-                  </div>
                 </article>
               );
             })}
@@ -1946,29 +2816,58 @@ export default function NotificacoesPage() {
 }
 
 const notificacoesPageCss = `
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual] nav,
+  html[data-historietas-tema-visual] [data-bottom-nav],
+  html[data-historietas-tema-visual] [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  }
+
   html[data-historietas-tema-visual] nav a[href="/notificacoes"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/notificacoes"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/notificacoes"] {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
-    color: var(--historietas-accent, #F97316) !important;
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="branco"] button:disabled {
-    opacity: 1 !important;
-    background: #F1F3F4 !important;
-    border-color: #DADCE0 !important;
-    color: #5F6368 !important;
-    cursor: not-allowed !important;
+  html[data-historietas-tema-visual] nav a[href="/notificacoes"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon {
+    color: #FFFFFF !important;
+    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
   }
 
-  .notificacoes-stats-carousel {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+  html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: var(--historietas-bottom-nav-text, #9980D8) !important;
+    box-shadow: none !important;
   }
 
-  .notificacoes-stats-carousel::-webkit-scrollbar {
-    display: none;
+  html[data-historietas-tema-visual] input::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea,
+  html[data-historietas-tema-visual] select {
+    color: #FFFFFF !important;
   }
 `;
 
@@ -1984,13 +2883,11 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   top: 0,
   left: 0,
   right: 0,
-  height: "min(520px, 72vh)",
+  height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -2001,10 +2898,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
@@ -2014,8 +2909,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -2069,26 +2963,24 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
   letterSpacing: "-0.04em",
-  boxShadow:
-    "0 0 22px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.22)",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
   flex: "0 0 auto",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #DDD6FE) 40%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow:
-    "var(--historietas-logo-shadow, 0 0 28px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent))",
+  textShadow: "none",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -2135,12 +3027,8 @@ const pageTitleTextStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
+  color: "var(--historietas-accent, #F97316)",
+  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
   textAlign: "center",
   textShadow: "none",
   ...safeTextStyle,
@@ -2180,11 +3068,9 @@ const soonTopButtonStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 13px",
   borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, rgba(255,255,255,0.08))",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -2198,23 +3084,15 @@ const desktopSoonTopButtonStyle: CSSProperties = {
   ...soonTopButtonStyle,
   minHeight: "42px",
   padding: "0 18px",
-  background:
-    "linear-gradient(135deg, rgba(249,115,22,0.16) 0%, rgba(124,58,237,0.13) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, rgba(255,255,255,0.10))",
-  color: "var(--historietas-accent, #FFD6A8)",
 };
 
 const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "30px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.08))",
-  background:
-    "radial-gradient(circle at 18% 0%, rgba(124,58,237,0.42), transparent 32%), radial-gradient(circle at 90% 45%, rgba(249,115,22,0.12), transparent 28%), linear-gradient(135deg, rgba(26,13,43,0.98) 0%, rgba(12,7,23,0.98) 100%)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
   padding: "18px",
-  boxShadow:
-    "var(--historietas-hero-shadow, 0 26px 70px rgba(0,0,0,0.36), 0 0 46px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent), inset 0 1px 0 rgba(255,255,255,0.08))",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -2225,41 +3103,19 @@ const mobileHeroStyle: CSSProperties = {
 };
 
 const heroDecorationLayerStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  pointerEvents: "none",
-  zIndex: 0,
+  display: "none",
 };
 
 const heroSparkTopStyle: CSSProperties = {
-  position: "absolute",
-  top: "8%",
-  right: "8%",
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "42px",
-  fontWeight: 950,
-  lineHeight: 1,
-  opacity: 0.13,
-  transform: "rotate(-12deg)",
-  userSelect: "none",
+  display: "none",
 };
 
 const heroSparkMiddleStyle: CSSProperties = {
-  ...heroSparkTopStyle,
-  top: "48%",
-  right: "15%",
-  fontSize: "28px",
-  transform: "rotate(16deg)",
+  display: "none",
 };
 
 const heroSparkBottomStyle: CSSProperties = {
-  ...heroSparkTopStyle,
-  top: "auto",
-  right: "6%",
-  bottom: "12%",
-  fontSize: "34px",
-  transform: "rotate(8deg)",
+  display: "none",
 };
 
 const titleStyle: CSSProperties = {
@@ -2272,12 +3128,8 @@ const titleStyle: CSSProperties = {
   letterSpacing: "-0.085em",
   maxWidth: "100%",
   textAlign: "center",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 44%, var(--historietas-accent, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "0 18px 42px rgba(0,0,0,0.22)",
+  color: "var(--historietas-accent, #F97316)",
+  textShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2285,11 +3137,11 @@ const descriptionStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   margin: "10px auto 0",
-  color: "var(--historietas-text-secondary, #E4E4E7)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
-  lineHeight: 1.62,
-  fontWeight: 650,
-  maxWidth: "620px",
+  lineHeight: 1.55,
+  fontWeight: 720,
+  maxWidth: "680px",
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -2319,8 +3171,8 @@ const statCardStyle: CSSProperties = {
   gap: "2px",
   borderRadius: "14px",
   padding: "6px 7px",
-  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   flex: "0 0 86px",
   minWidth: "86px",
@@ -2332,52 +3184,56 @@ const statCardStyle: CSSProperties = {
 
 const unreadStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   boxShadow: "none",
 };
 
 const readStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
 };
 
 const chapterStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
+  background: "rgba(4, 0, 10, 0.72)",
   boxShadow: "none",
 };
 
 const communityStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background: "var(--historietas-surface, rgba(255,255,255,0.060))",
+  background: "rgba(4, 0, 10, 0.72)",
   boxShadow: "none",
 };
 
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8.5px",
+  fontSize: "7.5px",
+  lineHeight: 1.05,
   fontWeight: 950,
+  letterSpacing: "0.02em",
   textTransform: "uppercase",
-  letterSpacing: "0.055em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "18px",
+  color: "#DDD6FE",
+  fontSize: "17px",
   lineHeight: 1,
   fontWeight: 950,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const smallStatTextStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  lineHeight: 1.1,
-  fontWeight: 950,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "8px",
+  lineHeight: 1,
+  fontWeight: 850,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2388,13 +3244,12 @@ const filterBoxStyle: CSSProperties = {
   gap: "10px",
   padding: "12px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.82)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
-  overflow: "hidden",
+  overflow: "visible",
   boxSizing: "border-box",
 };
 
@@ -2402,7 +3257,7 @@ const filterHeaderStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "10px",
+  gap: "8px",
   flexWrap: "wrap",
   minWidth: 0,
   padding: "0 58px",
@@ -2417,41 +3272,39 @@ const filterHeaderTitleBoxStyle: CSSProperties = {
 };
 
 const desktopFilterHeaderTitleBoxStyle: CSSProperties = {
+  width: "100%",
   minWidth: 0,
   display: "grid",
-  justifyItems: "start",
-  textAlign: "left",
+  justifyItems: "center",
+  textAlign: "center",
 };
 
 const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "10px",
+  lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "0.08em",
+  letterSpacing: "0.09em",
+  textTransform: "uppercase",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const filterTitleStyle: CSSProperties = {
-  margin: "4px 0 0",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "22px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  ...safeTextStyle,
+  display: "none",
 };
 
 const filterResultBadgeStyle: CSSProperties = {
   position: "absolute",
   top: "12px",
-  right: "12px",
+  left: "12px",
   width: "fit-content",
   maxWidth: "calc(100% - 24px)",
   padding: "6px 9px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -2461,9 +3314,9 @@ const searchInputStyle: CSSProperties = {
   width: "100%",
   minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
   fontSize: "12px",
@@ -2472,6 +3325,7 @@ const searchInputStyle: CSSProperties = {
   textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
+  boxShadow: "none",
 };
 
 const quickFiltersStyle: CSSProperties = {
@@ -2486,28 +3340,29 @@ const quickFilterStyle: CSSProperties = {
   minHeight: "32px",
   padding: "0 9px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.065))",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const quickFilterActiveStyle: CSSProperties = {
   ...quickFilterStyle,
-  background: "var(--historietas-accent, #F97316)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 60%, transparent)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
 };
 
 const communityQuickFilterActiveStyle: CSSProperties = {
   ...quickFilterStyle,
-  background: "var(--historietas-secondary, #7C3AED)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 62%, transparent)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
 };
@@ -2522,9 +3377,9 @@ const selectStyle: CSSProperties = {
   width: "100%",
   minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
   fontSize: "12px",
@@ -2533,6 +3388,7 @@ const selectStyle: CSSProperties = {
   boxSizing: "border-box",
   minWidth: 0,
   textAlign: "center",
+  boxShadow: "none",
 };
 
 const actionBarStyle: CSSProperties = {
@@ -2545,118 +3401,130 @@ const actionBarStyle: CSSProperties = {
 };
 
 const buttonBaseStyle: CSSProperties = {
-  minHeight: "40px",
+  minHeight: "34px",
   borderRadius: "999px",
-  padding: "0 12px",
+  padding: "0 6px",
   color: "#FFFFFF",
   fontWeight: 900,
-  fontSize: "12px",
+  fontSize: "10.5px",
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
   boxSizing: "border-box",
   maxWidth: "100%",
   WebkitTapHighlightColor: "transparent",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const primaryButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   boxShadow: "none",
 };
 
 const secondaryButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const secondaryLinkButtonStyle: CSSProperties = {
   ...secondaryButtonStyle,
+  textDecoration: "none",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  textDecoration: "none",
+};
+
+const fullWidthSecondaryLinkButtonStyle: CSSProperties = {
+  ...secondaryLinkButtonStyle,
+  gridColumn: "1 / -1",
+  minHeight: "32px",
 };
 
 const dangerButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
-  border: "1px solid color-mix(in srgb, var(--historietas-danger-button-text, #FCA5A5) 28%, var(--historietas-border-soft, transparent))",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.13))",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  border: "1px solid rgba(239,68,68,0.18)",
+  background: "rgba(239,68,68,0.075)",
+  color: "#FCA5A5",
 };
 
 const listStyle: CSSProperties = {
-  marginTop: "12px",
+  marginTop: "9px",
   display: "grid",
-  gap: "10px",
+  gap: "7px",
   minWidth: 0,
   maxWidth: "100%",
 };
 
 const cardStyle: CSSProperties = {
   position: "relative",
-  borderRadius: "22px",
-  padding: "10px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.90)), var(--historietas-surface-strong, rgba(18,12,30,0.96)))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, transparent))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  borderRadius: "18px",
+  padding: "6px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
-  overflow: "hidden",
+  overflow: "visible",
   boxSizing: "border-box",
 };
 
 const readCardStyle: CSSProperties = {
   ...cardStyle,
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.64)), var(--historietas-surface-strong, rgba(18,12,30,0.78)))",
-  border: "1px solid rgba(34,197,94,0.12)",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "rgba(4, 0, 10, 0.52)",
+  border: "1px solid rgba(255,255,255,0.05)",
+  boxShadow: "none",
 };
 
 const communityCardStyle: CSSProperties = {
   ...cardStyle,
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 15%, var(--historietas-surface, rgba(31,16,52,0.90))), var(--historietas-surface-strong, rgba(18,12,30,0.96)))",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, var(--historietas-border-soft, transparent))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
 };
 
 const readCommunityCardStyle: CSSProperties = {
   ...communityCardStyle,
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 9%, var(--historietas-surface, rgba(31,16,52,0.66))), var(--historietas-surface-strong, rgba(18,12,30,0.78)))",
-  border: "1px solid rgba(34,197,94,0.12)",
+  background: "rgba(4, 0, 10, 0.52)",
+  border: "1px solid rgba(255,255,255,0.05)",
+  boxShadow: "none",
 };
 
 const cardHeaderStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "52px minmax(0, 1fr)",
+  gridTemplateColumns: "38px minmax(0, 1fr)",
   alignItems: "start",
-  gap: "10px",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
 };
 
 const notificationIconStyle: CSSProperties = {
-  width: "52px",
-  height: "52px",
-  borderRadius: "18px",
+  width: "38px",
+  height: "38px",
+  borderRadius: "14px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent), color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
-  fontSize: "25px",
+  fontSize: "18px",
   fontWeight: 950,
   boxShadow: "none",
   flex: "0 0 auto",
+};
+
+const unreadNotificationIconStyle: CSSProperties = {
+  ...notificationIconStyle,
+  background: "rgba(127,29,29,0.24)",
+  border: "1px solid rgba(248,113,113,0.36)",
+  color: "#FCA5A5",
+  boxShadow: "none",
 };
 
 const readNotificationIconStyle: CSSProperties = {
@@ -2669,18 +3537,19 @@ const readNotificationIconStyle: CSSProperties = {
 
 const communityNotificationIconStyle: CSSProperties = {
   ...notificationIconStyle,
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, transparent), color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent))",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, transparent)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#DDD6FE",
 };
 
 const cardHeaderTextStyle: CSSProperties = {
   display: "grid",
-  gap: "5px",
-  paddingTop: "6px",
+  gap: "1px",
+  paddingTop: "0",
   minWidth: 0,
   maxWidth: "100%",
+  textAlign: "left",
+  justifyItems: "stretch",
 };
 
 const notificationOriginRowStyle: CSSProperties = {
@@ -2700,7 +3569,7 @@ const chapterOriginBadgeStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(249,115,22,0.12)",
   border: "1px solid rgba(249,115,22,0.20)",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "9px",
   fontWeight: 950,
   textTransform: "uppercase",
@@ -2722,7 +3591,7 @@ const notificationKindBadgeStyle: CSSProperties = {
   padding: "0 8px",
   borderRadius: "999px",
   background: "rgba(255,255,255,0.045)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 900,
@@ -2731,39 +3600,179 @@ const notificationKindBadgeStyle: CSSProperties = {
 
 const notificationTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "clamp(14px, 4.3vw, 18px)",
-  lineHeight: 1.12,
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "16px",
+  lineHeight: 1.02,
   fontWeight: 950,
-  letterSpacing: "0.055em",
-  textTransform: "uppercase",
+  letterSpacing: "-0.055em",
   ...safeTextStyle,
 };
 
-const communityDateTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
+const notificationTitleRowStyle: CSSProperties = {
+  position: "relative",
+  display: "block",
+  paddingRight: "28px",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
+const cardMenuWrapperStyle: CSSProperties = {
+  position: "absolute",
+  top: "-3px",
+  right: 0,
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "flex-end",
+  minWidth: 0,
+  zIndex: 20,
+};
+
+const cardMenuButtonStyle: CSSProperties = {
+  width: "22px",
+  height: "22px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "transparent",
+  border: "none",
+  color: "#FFFFFF",
+  fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "0.045em",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  boxShadow: "none",
+  WebkitTapHighlightColor: "transparent",
+};
+
+const cardMenuDropdownStyle: CSSProperties = {
+  position: "absolute",
+  top: "24px",
+  right: 0,
+  width: "196px",
+  maxWidth: "calc(100vw - 44px)",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  alignItems: "stretch",
+  justifyItems: "stretch",
+  rowGap: "6px",
+  padding: "7px",
+  borderRadius: "15px",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  boxShadow: "0 14px 34px rgba(0,0,0,0.34)",
+  zIndex: 80,
+  boxSizing: "border-box",
+  overflow: "hidden",
+};
+
+const cardMenuItemStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  minHeight: "34px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  padding: "0 12px",
+  margin: 0,
+  borderRadius: "11px",
+  background: "rgba(255,255,255,0.045)",
+  border: "1px solid rgba(255,255,255,0.055)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  fontSize: "12px",
+  lineHeight: 1.1,
+  fontWeight: 900,
+  fontFamily: "inherit",
+  textAlign: "left",
+  cursor: "pointer",
+  boxSizing: "border-box",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  wordBreak: "normal",
+  appearance: "none",
+  WebkitAppearance: "none",
+};
+
+const cardMenuDangerItemStyle: CSSProperties = {
+  ...cardMenuItemStyle,
+  color: "#FCA5A5",
+  background: "rgba(239,68,68,0.075)",
+  border: "1px solid rgba(239,68,68,0.14)",
+};
+
+const filterActionsMenuWrapperStyle: CSSProperties = {
+  position: "absolute",
+  top: "8px",
+  right: "10px",
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "flex-end",
+  minWidth: 0,
+  zIndex: 120,
+};
+
+const filterActionsMenuButtonStyle: CSSProperties = {
+  ...cardMenuButtonStyle,
+  width: "26px",
+  height: "26px",
+};
+
+const filterActionsMenuDropdownStyle: CSSProperties = {
+  ...cardMenuDropdownStyle,
+  top: "30px",
+  right: 0,
+  width: "min(224px, calc(100vw - 56px))",
+  maxWidth: "calc(100vw - 56px)",
+  zIndex: 130,
+};
+
+const filterActionsMenuItemDisabledStyle: CSSProperties = {
+  ...cardMenuItemStyle,
+  opacity: 0.45,
+  cursor: "not-allowed",
+};
+
+const filterActionsMenuDangerItemDisabledStyle: CSSProperties = {
+  ...cardMenuDangerItemStyle,
+  opacity: 0.45,
+  cursor: "not-allowed",
+};
+
+const communityDateTextStyle: CSSProperties = {
+  display: "block",
+  width: "100%",
+  margin: "0",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "9.5px",
+  lineHeight: 1.12,
+  fontWeight: 850,
   textTransform: "uppercase",
+  letterSpacing: "0.04em",
+  textAlign: "left",
+  justifySelf: "stretch",
   ...safeTextStyle,
 };
 
 const notificationMessageStyle: CSSProperties = {
-  margin: 0,
+  width: "100%",
+  margin: "1px 0 0",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11.5px",
-  lineHeight: 1.48,
-  fontWeight: 650,
+  fontSize: "11px",
+  lineHeight: 1.28,
+  fontWeight: 700,
+  textAlign: "left",
+  justifySelf: "stretch",
   ...safeTextStyle,
 };
 
 const metaGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "6px",
-  marginTop: "8px",
+  gap: "4px",
+  marginTop: "4px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -2775,11 +3784,11 @@ const communityMetaGridStyle: CSSProperties = {
 
 const metaBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "3px",
-  borderRadius: "15px",
-  padding: "8px",
-  background: "color-mix(in srgb, var(--historietas-surface, rgba(255,255,255,0.045)) 92%, var(--historietas-bg-end, transparent))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  gap: "2px",
+  borderRadius: "12px",
+  padding: "6px",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -2795,6 +3804,12 @@ const metaLabelStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const notificationAuthorInlineLinkStyle: CSSProperties = {
+  ...metaLabelStyle,
+  color: "#DDD6FE",
+  textDecoration: "none",
+};
+
 const metaValueStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "12px",
@@ -2803,24 +3818,58 @@ const metaValueStyle: CSSProperties = {
 };
 
 const communityCommentBoxStyle: CSSProperties = {
-  ...metaBoxStyle,
-  gap: "4px",
+  display: "grid",
+  gap: "2px",
+  borderRadius: "12px",
+  padding: "6px",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "hidden",
+  boxSizing: "border-box",
+  textAlign: "left",
+};
+
+const communityInlineStatusStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "6px",
+  color: "#FFFFFF",
+  fontSize: "11px",
+  fontWeight: 900,
+  lineHeight: 1.2,
+  textAlign: "left",
+  whiteSpace: "nowrap",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
+
+const communityInlineStatusDotStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.62)",
+  fontSize: "10px",
+  lineHeight: 1,
+  flex: "0 0 auto",
 };
 
 const communityCommentTextStyle: CSSProperties = {
-  margin: "1px 0 0",
+  margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11.5px",
-  lineHeight: 1.42,
+  fontSize: "11px",
+  lineHeight: 1.3,
   fontWeight: 720,
+  textAlign: "left",
   ...safeTextStyle,
 };
 
 const cardActionsStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))",
-  gap: "6px",
-  marginTop: "8px",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "5px",
+  marginTop: "7px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -2831,25 +3880,37 @@ const communityCardActionsStyle: CSSProperties = {
 };
 
 const openChapterLinkStyle: CSSProperties = {
-  ...primaryButtonStyle,
+  minHeight: "34px",
+  borderRadius: "999px",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "10.5px",
+  fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  textDecoration: "none",
+  textAlign: "center",
+  padding: "0 6px",
+  boxSizing: "border-box",
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const emptyStyle: CSSProperties = {
   marginTop: "12px",
   borderRadius: "24px",
   padding: "24px 18px",
-  background: "var(--historietas-surface, rgba(18,12,30,0.82))",
-  border: "1px dashed var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   textAlign: "center",
   display: "grid",
   justifyItems: "center",
   gap: "9px",
   minWidth: 0,
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const emptyIconStyle: CSSProperties = {
@@ -2859,28 +3920,30 @@ const emptyIconStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
   fontSize: "22px",
 };
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "28px",
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "26px",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.055em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "12px",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
   lineHeight: 1.55,
   fontWeight: 700,
-  maxWidth: "320px",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2888,8 +3951,8 @@ const emptyButtonStyle: CSSProperties = {
   minHeight: "42px",
   padding: "0 14px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-secondary, #7C3AED)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
@@ -2899,6 +3962,7 @@ const emptyButtonStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2989,50 +4053,50 @@ const desktopActionBarStyle: CSSProperties = {
 const desktopListStyle: CSSProperties = {
   ...listStyle,
   gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 430px), 1fr))",
-  gap: "14px",
+  gap: "12px",
   alignItems: "stretch",
 };
 
 const desktopCardStyle: CSSProperties = {
   ...cardStyle,
-  padding: "14px",
-  borderRadius: "24px",
+  padding: "8px",
+  borderRadius: "20px",
 };
 
 const desktopReadCardStyle: CSSProperties = {
   ...readCardStyle,
-  padding: "14px",
-  borderRadius: "24px",
+  padding: "8px",
+  borderRadius: "20px",
 };
 
 const desktopCommunityCardStyle: CSSProperties = {
   ...communityCardStyle,
-  padding: "14px",
-  borderRadius: "24px",
+  padding: "8px",
+  borderRadius: "20px",
 };
 
 const desktopReadCommunityCardStyle: CSSProperties = {
   ...readCommunityCardStyle,
-  padding: "14px",
-  borderRadius: "24px",
+  padding: "8px",
+  borderRadius: "20px",
 };
 
 const desktopMetaGridStyle: CSSProperties = {
   ...metaGridStyle,
   gridTemplateColumns: "1fr",
-  gap: "8px",
+  gap: "6px",
 };
 
 const desktopCommunityMetaGridStyle: CSSProperties = {
   ...communityMetaGridStyle,
   gridTemplateColumns: "1fr",
-  gap: "8px",
+  gap: "6px",
 };
 
 const desktopCardActionsStyle: CSSProperties = {
   ...cardActionsStyle,
-  gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-  gap: "8px",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "6px",
 };
 
 const desktopCommunityCardActionsStyle: CSSProperties = {

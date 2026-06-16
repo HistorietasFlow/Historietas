@@ -55,7 +55,8 @@ type ComentarioDenunciado = {
 };
 
 type PerfilModeracao = {
-  user_id: string;
+  id?: string | null;
+  user_id?: string | null;
   nome: string | null;
 };
 
@@ -174,6 +175,162 @@ function criarMensagemErro(acao: string, erro: unknown) {
   return detalhes ? `${acao}: ${detalhes}` : `${acao}: erro desconhecido.`;
 }
 
+function obterNomePerfilModeracao(perfil: PerfilModeracao) {
+  return typeof perfil.nome === "string" && perfil.nome.trim()
+    ? perfil.nome.trim()
+    : "Usuário sem nome";
+}
+
+function criarMapaNomesPerfisModeracao(perfis: PerfilModeracao[]) {
+  const mapa = new Map<string, string>();
+
+  perfis.forEach((perfil) => {
+    const nome = obterNomePerfilModeracao(perfil);
+    const userId = perfil.user_id?.trim() || "";
+    const id = perfil.id?.trim() || "";
+
+    if (userId) {
+      mapa.set(userId, nome);
+    }
+
+    if (id) {
+      mapa.set(id, nome);
+    }
+  });
+
+  return mapa;
+}
+
+function erroOpcionalIgnoravel(erro: unknown) {
+  if (!erro || typeof erro !== "object") {
+    return false;
+  }
+
+  const supabaseErro = erro as { code?: string; message?: string };
+  const codigo = supabaseErro.code || "";
+  const mensagem = (supabaseErro.message || "").toLowerCase();
+
+  return (
+    codigo === "42P01" ||
+    codigo === "42703" ||
+    mensagem.includes("does not exist") ||
+    mensagem.includes("schema cache") ||
+    mensagem.includes("could not find")
+  );
+}
+
+async function apagarRegistrosOpcionais(
+  tabela: string,
+  campo: string,
+  valor: string
+) {
+  if (!valor.trim()) {
+    return;
+  }
+
+  try {
+    const { error } = await supabase.from(tabela).delete().eq(campo, valor);
+
+    if (error && !erroOpcionalIgnoravel(error)) {
+      console.warn(`Não consegui limpar ${tabela}:`, error.message);
+    }
+  } catch {
+    // Tabelas auxiliares podem não existir em algumas versões do banco.
+  }
+}
+
+async function apagarRegistrosOpcionaisEmLista(
+  tabela: string,
+  campo: string,
+  valores: string[]
+) {
+  const valoresValidos = valores.filter((valor) => valor.trim());
+
+  if (valoresValidos.length === 0) {
+    return;
+  }
+
+  try {
+    const { error } = await supabase.from(tabela).delete().in(campo, valoresValidos);
+
+    if (error && !erroOpcionalIgnoravel(error)) {
+      console.warn(`Não consegui limpar ${tabela}:`, error.message);
+    }
+  } catch {
+    // Tabelas auxiliares podem não existir em algumas versões do banco.
+  }
+}
+
+async function buscarIdsComentariosDoPost(postId: string) {
+  const postIdLimpo = postId.trim();
+
+  if (!postIdLimpo) {
+    return [] as string[];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("comunidade_comentarios")
+      .select("id")
+      .eq("post_id", postIdLimpo);
+
+    if (error) {
+      return [] as string[];
+    }
+
+    return (data || [])
+      .map((comentario) => String(comentario.id || ""))
+      .filter(Boolean);
+  } catch {
+    return [] as string[];
+  }
+}
+
+async function removerDependenciasConteudoComunidade(
+  denuncia: Pick<DenunciaComContexto, "alvoTipo" | "alvoId">
+) {
+  const alvoId = denuncia.alvoId.trim();
+
+  if (!alvoId) {
+    return;
+  }
+
+  if (denuncia.alvoTipo === "comentario") {
+    await apagarRegistrosOpcionais(
+      "comunidade_comentario_curtidas",
+      "comentario_id",
+      alvoId
+    );
+    await apagarRegistrosOpcionais(
+      "comunidade_comentarios_salvos",
+      "comentario_id",
+      alvoId
+    );
+    return;
+  }
+
+  const comentariosDoPost = await buscarIdsComentariosDoPost(alvoId);
+
+  await apagarRegistrosOpcionais("comunidade_post_curtidas", "post_id", alvoId);
+  await apagarRegistrosOpcionais("comunidade_post_salvos", "post_id", alvoId);
+  await apagarRegistrosOpcionais("comunidade_salvos", "post_id", alvoId);
+
+  if (comentariosDoPost.length > 0) {
+    await apagarRegistrosOpcionaisEmLista(
+      "comunidade_comentario_curtidas",
+      "comentario_id",
+      comentariosDoPost
+    );
+    await apagarRegistrosOpcionaisEmLista(
+      "comunidade_comentarios_salvos",
+      "comentario_id",
+      comentariosDoPost
+    );
+  }
+
+  await apagarRegistrosOpcionais("comunidade_comentarios", "post_id", alvoId);
+}
+
 function criarDecoracaoHeroStyle(index: number): CSSProperties {
   const posicoes: CSSProperties[] = [
     { top: "8%", right: "8%", fontSize: "42px", transform: "rotate(-12deg)" },
@@ -188,8 +345,7 @@ function criarDecoracaoHeroStyle(index: number): CSSProperties {
     opacity: 0.13,
     lineHeight: 1,
     fontWeight: 950,
-    filter:
-      "drop-shadow(0 0 18px color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent))",
+    filter: "none",
     userSelect: "none",
     ...posicoes[index % posicoes.length],
   };
@@ -420,30 +576,48 @@ export default function AdminComunidadePage() {
       .filter((denuncia) => denuncia.alvoTipo === "comentario")
       .map((denuncia) => denuncia.alvoId);
 
-    const [perfisResposta, postsResposta, comentariosResposta] =
-      await Promise.all([
-        denuncianteIds.length > 0
-          ? supabase.from("profiles").select("user_id, nome").in("user_id", denuncianteIds)
-          : Promise.resolve({ data: [], error: null }),
-        postIds.length > 0
-          ? supabase
-              .from("comunidade_posts")
-              .select(
-                "id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em"
-              )
-              .in("id", postIds)
-          : Promise.resolve({ data: [], error: null }),
-        comentarioIds.length > 0
-          ? supabase
-              .from("comunidade_comentarios")
-              .select("id, post_id, autor_nome, texto, criado_em")
-              .in("id", comentarioIds)
-          : Promise.resolve({ data: [], error: null }),
-      ]);
+    const [
+      perfisPorUserIdResposta,
+      perfisPorIdResposta,
+      postsResposta,
+      comentariosResposta,
+    ] = await Promise.all([
+      denuncianteIds.length > 0
+        ? supabase
+            .from("profiles")
+            .select("id, user_id, nome")
+            .in("user_id", denuncianteIds)
+        : Promise.resolve({ data: [], error: null }),
+      denuncianteIds.length > 0
+        ? supabase
+            .from("profiles")
+            .select("id, user_id, nome")
+            .in("id", denuncianteIds)
+        : Promise.resolve({ data: [], error: null }),
+      postIds.length > 0
+        ? supabase
+            .from("comunidade_posts")
+            .select(
+              "id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em"
+            )
+            .in("id", postIds)
+        : Promise.resolve({ data: [], error: null }),
+      comentarioIds.length > 0
+        ? supabase
+            .from("comunidade_comentarios")
+            .select("id, post_id, autor_nome, texto, criado_em")
+            .in("id", comentarioIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
 
-    const perfis = perfisResposta.error
-      ? []
-      : ((perfisResposta.data || []) as PerfilModeracao[]);
+    const perfis = [
+      ...(perfisPorUserIdResposta.error
+        ? []
+        : ((perfisPorUserIdResposta.data || []) as PerfilModeracao[])),
+      ...(perfisPorIdResposta.error
+        ? []
+        : ((perfisPorIdResposta.data || []) as PerfilModeracao[])),
+    ];
 
     const posts = postsResposta.error
       ? []
@@ -453,12 +627,7 @@ export default function AdminComunidadePage() {
       ? []
       : ((comentariosResposta.data || []) as ComentarioDenunciado[]);
 
-    const perfisPorId = new Map(
-      perfis.map((perfil) => [
-        perfil.user_id,
-        perfil.nome?.trim() || "Usuário sem nome",
-      ])
-    );
+    const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
 
     const postsPorId = new Map(posts.map((post) => [post.id, post]));
     const comentariosPorId = new Map(
@@ -605,6 +774,8 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
+      await removerDependenciasConteudoComunidade(denuncia);
+
       const resultadoRemocao =
         denuncia.alvoTipo === "post"
           ? await supabase.from("comunidade_posts").delete().eq("id", denuncia.alvoId)
@@ -625,7 +796,8 @@ export default function AdminComunidadePage() {
           analisado_por: usuarioId,
           analisado_em: analisadoEm,
         })
-        .eq("id", denuncia.id);
+        .eq("alvo_tipo", denuncia.alvoTipo)
+        .eq("alvo_id", denuncia.alvoId);
 
       if (erroAtualizacao) {
         throw erroAtualizacao;
@@ -639,7 +811,8 @@ export default function AdminComunidadePage() {
 
     setDenuncias((denunciasAtuais) =>
       denunciasAtuais.map((denunciaAtual) =>
-        denunciaAtual.id === denuncia.id
+        denunciaAtual.alvoTipo === denuncia.alvoTipo &&
+        denunciaAtual.alvoId === denuncia.alvoId
           ? {
               ...denunciaAtual,
               status: "resolvida",
@@ -752,6 +925,57 @@ export default function AdminComunidadePage() {
       setSucesso("Denúncia restaurada para o painel principal.");
     } catch (error) {
       setErro(criarMensagemErro("Erro ao restaurar denúncia", error));
+    } finally {
+      setAcaoEmAndamento("");
+    }
+  }
+
+  async function removerDenunciaResolvida(denunciaId: string) {
+    if (!usuarioId || !ehAdmin) {
+      setErro("Apenas moderadores podem remover denúncias resolvidas.");
+      return;
+    }
+
+    if (acaoEmAndamento) {
+      return;
+    }
+
+    const denuncia = denuncias.find((item) => item.id === denunciaId);
+
+    if (!denuncia || denuncia.status !== "resolvida") {
+      setErro("Somente denúncias resolvidas podem ser removidas do painel.");
+      return;
+    }
+
+    const chaveAcao = `${denunciaId}-remover-denuncia`;
+
+    setMenuDenunciaAbertoId("");
+    setAcaoEmAndamento(chaveAcao);
+    setErro("");
+    setSucesso("");
+
+    try {
+      const { error } = await supabase
+        .from("comunidade_denuncias")
+        .delete()
+        .eq("id", denunciaId)
+        .eq("status", "resolvida");
+
+      if (error) {
+        throw error;
+      }
+
+      setDenuncias((denunciasAtuais) =>
+        denunciasAtuais.filter((denunciaAtual) => denunciaAtual.id !== denunciaId)
+      );
+      setObservacoes((observacoesAtuais) => {
+        const proximasObservacoes = { ...observacoesAtuais };
+        delete proximasObservacoes[denunciaId];
+        return proximasObservacoes;
+      });
+      setSucesso("Denúncia resolvida removida do painel.");
+    } catch (error) {
+      setErro(criarMensagemErro("Erro ao remover denúncia resolvida", error));
     } finally {
       setAcaoEmAndamento("");
     }
@@ -1059,6 +1283,19 @@ export default function AdminComunidadePage() {
                               </button>
                             )}
 
+                            {denuncia.status === "resolvida" && (
+                              <button
+                                type="button"
+                                onClick={() => void removerDenunciaResolvida(denuncia.id)}
+                                disabled={acaoAtiva}
+                                style={reportMenuDangerItemStyle}
+                              >
+                                {acaoEmAndamento === `${denuncia.id}-remover-denuncia`
+                                  ? "Removendo..."
+                                  : "Remover do painel"}
+                              </button>
+                            )}
+
                             {denuncia.status === "pendente" && (
                               <button
                                 type="button"
@@ -1274,6 +1511,32 @@ export default function AdminComunidadePage() {
 
 
 const adminComunidadePageCss = `
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual] input::placeholder,
+  html[data-historietas-tema-visual] textarea::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea,
+  html[data-historietas-tema-visual] select {
+    color: #FFFFFF !important;
+  }
+
+
   .admin-comunidade-filter-buttons {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -1312,9 +1575,8 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "#070212",
+  color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
@@ -1324,7 +1586,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 calc(24px + env(safe-area-inset-bottom))",
+  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1332,40 +1594,43 @@ const containerStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1220px, calc(100% - 64px))",
-  padding: "18px 0 40px",
+  padding: "20px 0 42px",
 };
 
 const titleHeaderStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "12px",
-  flexWrap: "nowrap",
-  width: "100%",
-  margin: "0 auto 14px",
+  marginTop: "4px",
+  marginBottom: "18px",
   padding: 0,
   minWidth: 0,
+  maxWidth: "100%",
   textAlign: "center",
+  boxSizing: "border-box",
 };
 
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
-  marginBottom: "18px",
+  marginTop: "6px",
+  marginBottom: "22px",
 };
 
 const titleHomeLinkStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "23px",
   fontWeight: 950,
   letterSpacing: "-0.055em",
-  display: "flex",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   gap: "1px",
+  width: "fit-content",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "visible",
+  textAlign: "center",
   flex: "0 1 auto",
   ...safeTextStyle,
 };
@@ -1376,7 +1641,7 @@ const desktopTitleHomeLinkStyle: CSSProperties = {
 
 const pageTitleTextStyle: CSSProperties = {
   display: "inline-block",
-  margin: 0,
+  marginLeft: 0,
   paddingRight: "0.2em",
   paddingBottom: "0.04em",
   whiteSpace: "nowrap",
@@ -1386,9 +1651,8 @@ const pageTitleTextStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
-  textAlign: "center",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 42%, #FDBA74 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -1409,10 +1673,8 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -1423,10 +1685,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const topStyle: CSSProperties = {
@@ -1491,8 +1751,7 @@ const logoMarkStyle: CSSProperties = {
   fontSize: "17px",
   fontWeight: 950,
   letterSpacing: "-0.04em",
-  boxShadow:
-    "0 0 22px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.22)",
+  boxShadow: "none",
   flex: "0 0 auto",
 };
 
@@ -1503,8 +1762,7 @@ const logoTextStyle: CSSProperties = {
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow:
-    "var(--historietas-logo-shadow, 0 0 28px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent))",
+  textShadow: "none",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -1517,10 +1775,8 @@ const topButtonStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 13px",
   borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, rgba(255,255,255,0.08))",
+  background: "rgba(249,115,22,0.10)",
+  border: "1px solid rgba(249,115,22,0.28)",
   color: "var(--historietas-accent, #FDBA74)",
   textDecoration: "none",
   fontSize: "12px",
@@ -1537,21 +1793,18 @@ const desktopTopButtonStyle: CSSProperties = {
   padding: "0 18px",
   background:
     "linear-gradient(135deg, rgba(249,115,22,0.16) 0%, rgba(124,58,237,0.13) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, rgba(255,255,255,0.10))",
+  border: "1px solid rgba(249,115,22,0.26)",
   color: "var(--historietas-accent, #FFD6A8)",
 };
 
 const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "30px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.08))",
+  border: "1px solid rgba(255,255,255,0.075)",
   background:
-    "radial-gradient(circle at 18% 0%, rgba(124,58,237,0.42), transparent 32%), radial-gradient(circle at 90% 45%, rgba(249,115,22,0.12), transparent 28%), linear-gradient(135deg, rgba(26,13,43,0.98) 0%, rgba(12,7,23,0.98) 100%)",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.92)) 0%, var(--historietas-surface-strong, rgba(8,3,18,0.98)) 100%)",
   padding: "18px",
-  boxShadow:
-    "var(--historietas-hero-shadow, 0 26px 70px rgba(0,0,0,0.36), 0 0 46px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent), inset 0 1px 0 rgba(255,255,255,0.08))",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
   display: "grid",
@@ -1574,11 +1827,7 @@ const desktopHeroStyle: CSSProperties = {
 };
 
 const heroDecorationLayerStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  pointerEvents: "none",
-  zIndex: 0,
+  display: "none",
 };
 
 
@@ -1590,8 +1839,8 @@ const headerStyle: CSSProperties = {
   padding: "20px 16px",
   borderRadius: "28px",
   background:
-    "radial-gradient(circle at 14% 0%, var(--historietas-glow-secondary, rgba(249,115,22,0.18)), transparent 34%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.92)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.98)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(8,3,18,0.98)) 100%)",
+  border: "1px solid rgba(255,255,255,0.075)",
   boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
   overflow: "hidden",
@@ -1682,10 +1931,10 @@ const loadingCardStyle: CSSProperties = {
   gap: "8px",
   padding: "28px 18px",
   borderRadius: "28px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.92)), var(--historietas-surface-strong, rgba(12,7,23,0.97)))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "rgba(4,0,10,0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   textAlign: "center",
+  boxShadow: "none",
 };
 
 const loadingTitleStyle: CSSProperties = {
@@ -1709,10 +1958,10 @@ const accessCardStyle: CSSProperties = {
   gap: "12px",
   padding: "28px 18px",
   borderRadius: "30px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.94)), var(--historietas-surface-strong, rgba(12,7,23,0.98)))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "rgba(4,0,10,0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   textAlign: "center",
+  boxShadow: "none",
 };
 
 const primaryLinkStyle: CSSProperties = {
@@ -1770,15 +2019,16 @@ const statCardStyle: CSSProperties = {
   minHeight: "54px",
   padding: "7px 3px",
   borderRadius: "15px",
-  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  background: "rgba(255,255,255,0.045)",
+  border: "1px solid rgba(255,255,255,0.07)",
   textAlign: "center",
   minWidth: 0,
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FDBA74",
   fontSize: "20px",
   lineHeight: 1,
   fontWeight: 950,
@@ -1788,7 +2038,7 @@ const statNumberStyle: CSSProperties = {
 };
 
 const statLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "#D4D4D8",
   fontSize: "7.4px",
   lineHeight: 1.06,
   fontWeight: 950,
@@ -1803,12 +2053,15 @@ const toolsStyle: CSSProperties = {
   gridTemplateColumns: "minmax(0, 1fr)",
   gap: "10px",
   padding: "12px",
-  borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.82)), var(--historietas-surface-strong, rgba(12,7,23,0.95)))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  borderRadius: "22px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   marginBottom: "10px",
   minWidth: 0,
+  boxShadow: "none",
+  overflow: "hidden",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const searchBoxStyle: CSSProperties = {
@@ -1818,28 +2071,30 @@ const searchBoxStyle: CSSProperties = {
 };
 
 const toolLabelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.095em",
-  textTransform: "uppercase",
+  color: "#D4D4D8",
+  fontSize: "11px",
+  fontWeight: 870,
+  letterSpacing: "0.02em",
+  textTransform: "none",
   textAlign: "center",
   ...safeTextStyle,
 };
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "44px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  minHeight: "46px",
+  border: "1px solid rgba(255,255,255,0.08)",
   outline: "none",
   borderRadius: "999px",
-  background: "var(--historietas-input-bg, rgba(255,255,255,0.055))",
-  color: "var(--historietas-input-text, var(--historietas-text-primary, #FFFFFF))",
-  padding: "0 14px",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "0 16px",
   boxSizing: "border-box",
-  fontSize: "13px",
-  fontWeight: 800,
+  fontSize: "14px",
+  fontWeight: 720,
   textAlign: "center",
+  boxShadow: "none",
+  minWidth: 0,
 };
 
 const statusFilterWrapStyle: CSSProperties = {
@@ -1872,11 +2127,11 @@ const filterButtonStyle: CSSProperties = {
   minHeight: "34px",
   padding: "0 13px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#D4D4D8",
   fontSize: "10.5px",
-  fontWeight: 950,
+  fontWeight: 880,
   cursor: "pointer",
   boxShadow: "none",
   scrollSnapAlign: "center",
@@ -1884,9 +2139,10 @@ const filterButtonStyle: CSSProperties = {
 
 const activeFilterButtonStyle: CSSProperties = {
   ...filterButtonStyle,
-  background: "var(--historietas-accent, #F97316)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 52%, transparent)",
+  boxShadow: "none",
 };
 
 const feedbackWrapStyle: CSSProperties = {
@@ -1920,17 +2176,17 @@ const successStyle: CSSProperties = {
 };
 
 const summaryStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "10px",
-  flexWrap: "wrap",
-  margin: "0 0 10px",
-  padding: "0",
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
+  display: "grid",
+  justifyItems: "center",
+  gap: "4px",
+  padding: "12px",
+  borderRadius: "22px",
+  background: "rgba(4,0,10,0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  color: "#D4D4D8",
   textAlign: "center",
+  marginBottom: "10px",
+  boxShadow: "none",
 };
 
 const summaryTitleStyle: CSSProperties = {
@@ -1942,14 +2198,14 @@ const summaryTitleStyle: CSSProperties = {
 };
 
 const clearButtonStyle: CSSProperties = {
-  minHeight: "32px",
-  padding: "0 12px",
+  minHeight: "34px",
+  padding: "0 13px",
   borderRadius: "999px",
-  border: "1px solid rgba(249,115,22,0.20)",
-  background: "rgba(249,115,22,0.10)",
-  color: "var(--historietas-accent, #FDBA74)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(4,0,10,0.72)",
+  color: "#DDD6FE",
   fontSize: "10.5px",
-  fontWeight: 950,
+  fontWeight: 900,
   cursor: "pointer",
   boxShadow: "none",
 };
@@ -1961,14 +2217,13 @@ const listStyle: CSSProperties = {
 };
 
 const reportCardStyle: CSSProperties = {
-  position: "relative",
   display: "grid",
   gap: "12px",
   padding: "14px",
-  borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.82)), var(--historietas-surface-strong, rgba(12,7,23,0.96)))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.085))",
+  borderRadius: "24px",
+  background: "rgba(4,0,10,0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "visible",
 };
@@ -2139,7 +2394,7 @@ const reportMenuItemActiveStyle: CSSProperties = {
   ...reportMenuItemStyle,
   background: "var(--historietas-active-surface, rgba(249,115,22,0.16))",
   border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+    "1px solid rgba(249,115,22,0.26)",
   color: "var(--historietas-accent, #FDBA74)",
   cursor: "default",
 };
@@ -2328,7 +2583,7 @@ const statusButtonStyle: CSSProperties = {
 const activeStatusButtonStyle: CSSProperties = {
   ...statusButtonStyle,
   background: "var(--historietas-active-surface, rgba(249,115,22,0.16))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent)",
+  border: "1px solid rgba(249,115,22,0.28)",
   color: "var(--historietas-accent, #FDBA74)",
   cursor: "default",
 };
@@ -2337,7 +2592,7 @@ const analysisButtonStyle: CSSProperties = {
   minHeight: "32px",
   padding: "0 10px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  border: "1px solid rgba(249,115,22,0.26)",
   background: "rgba(249,115,22,0.10)",
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "10.5px",

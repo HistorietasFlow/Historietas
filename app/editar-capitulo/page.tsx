@@ -90,6 +90,7 @@ type CapituloSupabaseRow = {
 };
 
 const STORAGE_KEY = "historietas-obras";
+const USER_WORKS_STORAGE_PREFIX = "historietas-obras-usuario";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
@@ -485,6 +486,82 @@ function normalizarCategoriaArquivoSupabase(
   return "outro";
 }
 
+function obterNomeProfileEditarCapitulo(profile: unknown) {
+  if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+    return "";
+  }
+
+  const registro = profile as Record<string, unknown>;
+  const nome = registro.nome;
+
+  return typeof nome === "string" ? nome.trim() : "";
+}
+
+async function carregarNomeProfileEditarCapitulo(userId: string) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return "";
+  }
+
+  try {
+    const { data: profilePorUserId, error: erroPorUserId } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
+
+    if (!erroPorUserId) {
+      const nome = obterNomeProfileEditarCapitulo(profilePorUserId);
+
+      if (nome) {
+        return nome;
+      }
+    }
+
+    const { data: profilePorId, error: erroPorId } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("id", userIdLimpo)
+      .maybeSingle();
+
+    if (!erroPorId) {
+      return obterNomeProfileEditarCapitulo(profilePorId);
+    }
+  } catch (error) {
+    console.warn("Não consegui carregar profiles.nome no Editor de Capítulo:", error);
+  }
+
+  return "";
+}
+
+function aplicarNomeAutorProfileEditarCapitulo(
+  obras: ObraLocal[],
+  userId: string,
+  nomeProfile: string
+) {
+  const usuarioIdLimpo = userId.trim();
+  const nomeProfileLimpo = nomeProfile.trim();
+
+  if (!usuarioIdLimpo || !nomeProfileLimpo) {
+    return obras;
+  }
+
+  return obras.map((obra) => {
+    const autorId = obra.autorId?.trim() || "";
+
+    if (autorId && autorId !== usuarioIdLimpo) {
+      return obra;
+    }
+
+    return {
+      ...obra,
+      autor: nomeProfileLimpo,
+      autorId: autorId || usuarioIdLimpo,
+    };
+  });
+}
+
 function mapearCapituloSupabase(
   capitulo: CapituloSupabaseRow,
   index: number,
@@ -509,7 +586,8 @@ function mapearCapituloSupabase(
 function mapearObraSupabase(
   obra: ObraSupabaseRow,
   capitulosSupabase: CapituloSupabaseRow[],
-  obraLocal?: ObraLocal
+  obraLocal?: ObraLocal,
+  nomeProfileAutor = ""
 ): ObraLocal {
   const capitulosLocais = obraLocal?.capitulos || [];
   const capitulosMapeados = capitulosSupabase.map((capitulo, index) => {
@@ -549,7 +627,11 @@ function mapearObraSupabase(
   return {
     id: obra.id,
     titulo,
-    autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autor:
+      nomeProfileAutor.trim() ||
+      obra.autor?.trim() ||
+      obraLocal?.autor ||
+      "Autor não informado",
     autorId: obra.user_id || obraLocal?.autorId || "",
     genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
@@ -592,6 +674,215 @@ function carregarObrasLocaisNormalizadas() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
 
   return obrasNormalizadas;
+}
+
+function criarStorageUsuarioEditarCapituloKey(userId: string) {
+  return `${USER_WORKS_STORAGE_PREFIX}:${userId.trim()}`;
+}
+
+function obraPertenceAoUsuarioEditarCapitulo(obra: ObraLocal, userId: string) {
+  const usuarioId = userId.trim();
+  const autorId = obra.autorId?.trim() || "";
+
+  return Boolean(usuarioId && autorId === usuarioId);
+}
+
+function salvarObrasEditarCapituloStorage(
+  obrasDoUsuario: ObraLocal[],
+  userId: string
+) {
+  const usuarioId = userId.trim();
+  const obrasDoUsuarioNormalizadas = obrasDoUsuario.map((obra, index) =>
+    normalizarObra(
+      {
+        ...obra,
+        autorId: obra.autorId?.trim() || usuarioId,
+      },
+      index
+    )
+  );
+
+  let todasObrasAtuais: ObraLocal[] = [];
+
+  try {
+    todasObrasAtuais = carregarObrasLocaisNormalizadas();
+  } catch {
+    todasObrasAtuais = [];
+  }
+
+  const idsObrasUsuario = new Set(
+    obrasDoUsuarioNormalizadas.map((obra) => obra.id).filter(Boolean)
+  );
+  const slugsObrasUsuario = new Set(
+    obrasDoUsuarioNormalizadas
+      .map((obra) => obra.slug || criarSlugBase(obra.titulo))
+      .filter(Boolean)
+  );
+
+  const obrasOutrasContas = todasObrasAtuais.filter((obra) => {
+    if (idsObrasUsuario.has(obra.id)) {
+      return false;
+    }
+
+    const slugObra = obra.slug || criarSlugBase(obra.titulo);
+
+    if (slugsObrasUsuario.has(slugObra)) {
+      return false;
+    }
+
+    return !usuarioId || !obraPertenceAoUsuarioEditarCapitulo(obra, usuarioId);
+  });
+
+  const obrasParaSalvar = [...obrasDoUsuarioNormalizadas, ...obrasOutrasContas];
+
+  sincronizarBackupArquivosObras(obrasParaSalvar);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasParaSalvar));
+
+  if (usuarioId) {
+    localStorage.setItem(
+      criarStorageUsuarioEditarCapituloKey(usuarioId),
+      JSON.stringify(obrasDoUsuarioNormalizadas)
+    );
+  }
+
+  return obrasDoUsuarioNormalizadas;
+}
+
+async function registrarDiarioEdicaoCapitulo({
+  userId,
+  obra,
+  capituloId,
+  tituloCapitulo,
+  numeroCapitulo,
+  atualizadoEm,
+}: {
+  userId: string;
+  obra: ObraLocal;
+  capituloId: string;
+  tituloCapitulo: string;
+  numeroCapitulo: number;
+  atualizadoEm: string;
+}) {
+  const usuarioId = userId.trim();
+
+  if (!usuarioId || !obra.id || !capituloId) {
+    return;
+  }
+
+  const hrefCapitulo = criarHrefLeituraCapitulo(
+    obra,
+    capituloId,
+    numeroCapitulo
+  );
+  const visibilidade = obra.publicado ? "publico" : "privado";
+
+  try {
+    const payload = {
+      user_id: usuarioId,
+      tipo: "editou_capitulo",
+      obra_id: obra.id,
+      capitulo_id: capituloId,
+      texto: "",
+      visibilidade,
+      metadata: {
+        obra_titulo: obra.titulo,
+        titulo_obra: obra.titulo,
+        capitulo_titulo: tituloCapitulo,
+        numero_capitulo: numeroCapitulo,
+        href: hrefCapitulo,
+      },
+      criado_em: atualizadoEm,
+      atualizado_em: atualizadoEm,
+    };
+
+    const { error } = await supabase.from("diario_atividades").insert(payload);
+
+    if (!error) {
+      return;
+    }
+
+    await supabase.from("diario_atividades").insert({
+      user_id: usuarioId,
+      tipo: "editou_capitulo",
+      obra_id: obra.id,
+      capitulo_id: capituloId,
+      texto: "",
+      visibilidade,
+      criado_em: atualizadoEm,
+    });
+  } catch (error) {
+    console.warn("Não consegui registrar a edição do capítulo no Diário:", error);
+  }
+}
+
+async function atualizarNotificacaoCapituloSupabase({
+  userId,
+  obra,
+  capituloId,
+  tituloCapitulo,
+  numeroCapitulo,
+  atualizadoEm,
+}: {
+  userId: string;
+  obra: ObraLocal;
+  capituloId: string;
+  tituloCapitulo: string;
+  numeroCapitulo: number;
+  atualizadoEm: string;
+}) {
+  const usuarioId = userId.trim();
+
+  if (!usuarioId || !obra.id || !capituloId) {
+    return;
+  }
+
+  const hrefCapitulo = criarHrefLeituraCapitulo(
+    obra,
+    capituloId,
+    numeroCapitulo
+  );
+
+  try {
+    const payloadCompleto = {
+      titulo: "Capítulo atualizado",
+      mensagem: `${tituloCapitulo} foi atualizado em ${obra.titulo}.`,
+      link: hrefCapitulo,
+      href: hrefCapitulo,
+      lida: false,
+      metadata: {
+        obra_titulo: obra.titulo,
+        autor: obra.autor,
+        capitulo_titulo: tituloCapitulo,
+      },
+      atualizado_em: atualizadoEm,
+      updated_at: atualizadoEm,
+    };
+
+    const { error } = await supabase
+      .from("notificacoes")
+      .update(payloadCompleto)
+      .eq("user_id", usuarioId)
+      .eq("obra_id", obra.id)
+      .eq("capitulo_id", capituloId);
+
+    if (!error) {
+      return;
+    }
+
+    await supabase
+      .from("notificacoes")
+      .update({
+        titulo: "Capítulo atualizado",
+        mensagem: `${tituloCapitulo} foi atualizado em ${obra.titulo}.`,
+        link: hrefCapitulo,
+        lida: false,
+      })
+      .eq("user_id", usuarioId)
+      .eq("obra_id", obra.id)
+      .eq("capitulo_id", capituloId);
+  } catch (error) {
+    console.warn("Não consegui atualizar a notificação remota do capítulo:", error);
+  }
 }
 
 function atualizarNotificacoesDoCapituloEditado(
@@ -646,7 +937,7 @@ function atualizarNotificacoesDoCapituloEditado(
         ...registro,
         obraTitulo: obra.titulo,
         autor: obra.autor,
-        capituloTitulo: `Capítulo: ${tituloCapitulo}`,
+        capituloTitulo: `Capítulo ${numeroCapitulo}: ${tituloCapitulo}`,
         mensagem: `${tituloCapitulo} foi atualizado em ${obra.titulo}.`,
         link: hrefCapitulo,
         href: hrefCapitulo,
@@ -739,11 +1030,16 @@ export default function EditarCapituloPage() {
           setVerificandoAcesso(false);
         }
 
-        const obrasLocais = carregarObrasLocaisNormalizadas().filter((obra) => {
-          const autorId = obra.autorId?.trim() || "";
+        const nomeProfileAutor = await carregarNomeProfileEditarCapitulo(userId);
+        const obrasLocais = aplicarNomeAutorProfileEditarCapitulo(
+          carregarObrasLocaisNormalizadas().filter((obra) => {
+            const autorId = obra.autorId?.trim() || "";
 
-          return !autorId || autorId === userId;
-        });
+            return !autorId || autorId === userId;
+          }),
+          userId,
+          nomeProfileAutor
+        );
         let obrasAtualizadas = obrasLocais;
         const obraLocal = obrasLocais.find((obra) => obra.id === obraIdParam);
         const capituloLocal =
@@ -790,16 +1086,37 @@ export default function EditarCapituloPage() {
               Array.isArray(capitulosSupabase)
                 ? (capitulosSupabase as CapituloSupabaseRow[])
                 : [],
-              obraLocal
+              obraLocal,
+              nomeProfileAutor
             );
 
-            obrasAtualizadas = [
-              obraNormalizadaSupabase,
-              ...obrasLocais.filter((obra) => obra.id !== obraIdParam),
-            ];
+            obrasAtualizadas = aplicarNomeAutorProfileEditarCapitulo(
+              [
+                obraNormalizadaSupabase,
+                ...obrasLocais.filter((obra) => obra.id !== obraIdParam),
+              ],
+              userId,
+              nomeProfileAutor
+            );
 
-            sincronizarBackupArquivosObras(obrasAtualizadas);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasAtualizadas));
+            if (
+              nomeProfileAutor &&
+              obraNormalizadaSupabase.autor !== nomeProfileAutor
+            ) {
+              void supabase
+                .from("obras")
+                .update({
+                  autor: nomeProfileAutor,
+                  atualizado_em: new Date().toISOString(),
+                })
+                .eq("id", obraIdParam)
+                .eq("user_id", userId);
+            }
+
+            obrasAtualizadas = salvarObrasEditarCapituloStorage(
+              obrasAtualizadas,
+              userId
+            );
 
             const capituloSupabase =
               obraNormalizadaSupabase.capitulos.find(
@@ -1021,6 +1338,9 @@ export default function EditarCapituloPage() {
     const textoFinal = texto.trim();
 
     try {
+      const nomeProfileAutor = await carregarNomeProfileEditarCapitulo(usuarioIdLogado);
+      const autorFinalObra = nomeProfileAutor || obraAtual.autor;
+      let obraAtualizadaParaNotificacao: ObraLocal | null = null;
       const novasObras = obras.map((obra, obraIndex) => {
         const obraNormalizada = normalizarObra(obra, obraIndex);
 
@@ -1040,11 +1360,17 @@ export default function EditarCapituloPage() {
           };
         });
 
-        return {
+        const obraAtualizada = {
           ...obraNormalizada,
+          autor: autorFinalObra,
+          autorId: obraNormalizada.autorId || usuarioIdLogado,
           capitulos: capitulosAtualizados,
           progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
         };
+
+        obraAtualizadaParaNotificacao = obraAtualizada;
+
+        return obraAtualizada;
       });
 
       const backupArquivos = carregarBackupArquivosObras();
@@ -1052,12 +1378,21 @@ export default function EditarCapituloPage() {
         restaurarArquivoObraComBackup(normalizarObra(obra, index), backupArquivos)
       );
 
-      sincronizarBackupArquivosObras(novasObrasComBackup);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(novasObrasComBackup));
-      setObras(novasObrasComBackup);
+      const novasObrasDoUsuario = salvarObrasEditarCapituloStorage(
+        novasObrasComBackup,
+        usuarioIdLogado
+      );
+      const obraAtualizadaFinal =
+        novasObrasDoUsuario.find((obra) => obra.id === obraId) ||
+        obraAtualizadaParaNotificacao || {
+          ...obraAtual,
+          autor: autorFinalObra,
+        };
+
+      setObras(novasObrasDoUsuario);
 
       atualizarNotificacoesDoCapituloEditado(
-        obraAtual,
+        obraAtualizadaFinal,
         capituloId,
         tituloFinal
       );
@@ -1071,16 +1406,53 @@ export default function EditarCapituloPage() {
           throw new Error("Usuário não autenticado.");
         }
 
+        const atualizadoEm = new Date().toISOString();
         const { error: erroSupabase } = await supabase
           .from("capitulos")
           .update({
             titulo: tituloFinal,
             texto: textoFinal,
-            atualizado_em: new Date().toISOString(),
+            atualizado_em: atualizadoEm,
           })
           .eq("id", capituloId)
           .eq("obra_id", obraId)
           .eq("user_id", userId);
+
+        if (nomeProfileAutor) {
+          const { error: erroAutorObra } = await supabase
+            .from("obras")
+            .update({
+              autor: nomeProfileAutor,
+              atualizado_em: atualizadoEm,
+            })
+            .eq("id", obraId)
+            .eq("user_id", userId);
+
+          if (erroAutorObra) {
+            console.warn(
+              "O capítulo foi salvo, mas o autor da obra não sincronizou no Supabase:",
+              erroAutorObra.message
+            );
+          }
+        }
+
+        await registrarDiarioEdicaoCapitulo({
+          userId,
+          obra: obraAtualizadaFinal,
+          capituloId,
+          tituloCapitulo: tituloFinal,
+          numeroCapitulo: numeroCapitulo || 1,
+          atualizadoEm,
+        });
+
+        await atualizarNotificacaoCapituloSupabase({
+          userId,
+          obra: obraAtualizadaFinal,
+          capituloId,
+          tituloCapitulo: tituloFinal,
+          numeroCapitulo: numeroCapitulo || 1,
+          atualizadoEm,
+        });
 
         if (erroSupabase) {
           console.warn(
@@ -1327,12 +1699,36 @@ export default function EditarCapituloPage() {
 }
 
 const editarCapituloPageCss = `
-  html[data-historietas-tema-visual="branco"] button:disabled {
-    opacity: 1 !important;
-    background: #F1F3F4 !important;
-    border-color: #DADCE0 !important;
-    color: #5F6368 !important;
-    cursor: not-allowed !important;
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual] input::placeholder,
+  html[data-historietas-tema-visual] textarea::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea {
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/minhas-obras"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/minhas-obras"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/minhas-obras"] {
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
   }
 `;
 
@@ -1349,10 +1745,8 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(520px, 72vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -1363,10 +1757,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
@@ -1376,19 +1768,18 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "#070212",
+  color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
 const containerStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  width: "min(860px, calc(100% - 24px))",
+  width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 0",
+  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1403,7 +1794,8 @@ const titleHeaderStyle: CSSProperties = {
   justifyContent: "center",
   gap: "12px",
   flexWrap: "nowrap",
-  marginBottom: "14px",
+  marginTop: "4px",
+  marginBottom: "18px",
   minWidth: 0,
   padding: 0,
   textAlign: "center",
@@ -1411,7 +1803,8 @@ const titleHeaderStyle: CSSProperties = {
 
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
-  marginBottom: "18px",
+  marginTop: "6px",
+  marginBottom: "22px",
 };
 
 const headerTitleLinkStyle: CSSProperties = {
@@ -1464,15 +1857,15 @@ const desktopHeaderTitleTextStyle: CSSProperties = {
 
 
 const heroBoxStyle: CSSProperties = {
+  position: "relative",
   display: "grid",
   justifyItems: "center",
   textAlign: "center",
-  gap: "6px",
-  padding: "12px",
-  borderRadius: "20px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.96)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, transparent))",
+  gap: "8px",
+  padding: "18px",
+  borderRadius: "30px",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -1483,16 +1876,15 @@ const heroBoxStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
+  color: "var(--historietas-accent, #F97316)",
+  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
   fontSize: "clamp(28px, 7.4vw, 40px)",
   lineHeight: 1.02,
   fontWeight: 950,
   letterSpacing: "-0.048em",
   maxWidth: "100%",
   textAlign: "center",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 45%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  textShadow: "none",
   ...safeTextStyle,
 };
 
@@ -1518,13 +1910,13 @@ const descriptionStyle: CSSProperties = {
 
 
 const errorBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: "14px",
-  borderRadius: "20px",
-  background: "var(--historietas-danger-surface, rgba(239, 68, 68, 0.12))",
-  border: "1px solid rgba(239, 68, 68, 0.30)",
+  marginTop: "18px",
+  padding: "18px",
+  borderRadius: "24px",
+  background: "rgba(127,29,29,0.18)",
+  border: "1px solid rgba(239,68,68,0.26)",
   display: "grid",
-  gap: "7px",
+  gap: "8px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1534,7 +1926,7 @@ const errorBoxStyle: CSSProperties = {
 const errorTitleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-danger-button-text, #FCA5A5)",
-  fontSize: "22px",
+  fontSize: "24px",
   fontWeight: 950,
   letterSpacing: "-0.045em",
   ...safeTextStyle,
@@ -1543,20 +1935,19 @@ const errorTitleStyle: CSSProperties = {
 const errorTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-danger-button-text, #FECACA)",
-  fontSize: "13px",
-  lineHeight: 1.6,
+  fontSize: "14px",
+  lineHeight: 1.7,
   fontWeight: 750,
   ...safeTextStyle,
 };
 
 const successBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: "14px",
-  borderRadius: "20px",
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
   display: "grid",
-  gap: "12px",
+  gap: "10px",
+  padding: "16px",
+  borderRadius: "22px",
+  background: "rgba(34,197,94,0.10)",
+  border: "1px solid rgba(34,197,94,0.24)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1564,45 +1955,42 @@ const successBoxStyle: CSSProperties = {
 };
 
 const successTitleStyle: CSSProperties = {
-  margin: 0,
   color: "#86EFAC",
-  fontSize: "22px",
+  fontSize: "16px",
   fontWeight: 950,
-  letterSpacing: "-0.045em",
   ...safeTextStyle,
 };
 
 const successTextStyle: CSSProperties = {
-  margin: "7px 0 0",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.6,
-  fontWeight: 700,
+  fontWeight: 650,
   ...safeTextStyle,
 };
 
 const successActionsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
-  gap: "8px",
+  gap: "10px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
 const successPrimaryButtonStyle: CSSProperties = {
-  minHeight: "44px",
+  minHeight: "48px",
   borderRadius: "999px",
-  background: "#22C55E",
+  background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "13px",
+  fontSize: "14px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 11px",
+  padding: "0 12px",
   lineHeight: 1.15,
   minWidth: 0,
   maxWidth: "100%",
@@ -1612,19 +2000,19 @@ const successPrimaryButtonStyle: CSSProperties = {
 };
 
 const successSecondaryButtonStyle: CSSProperties = {
-  minHeight: "44px",
+  minHeight: "48px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   textDecoration: "none",
-  fontSize: "13px",
+  fontSize: "14px",
   fontWeight: 900,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 11px",
+  padding: "0 12px",
   lineHeight: 1.15,
   minWidth: 0,
   maxWidth: "100%",
@@ -1645,11 +2033,11 @@ const mainGridStyle: CSSProperties = {
 
 const formStyle: CSSProperties = {
   display: "grid",
-  gap: "10px",
-  padding: "10px",
-  borderRadius: "20px",
-  background: "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.96)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
+  gap: "12px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: "22px",
+  padding: "12px",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -1661,26 +2049,26 @@ const formHeaderStyle: CSSProperties = {
   display: "grid",
   gap: "4px",
   minWidth: 0,
-  justifyItems: "center",
   textAlign: "center",
+  justifyItems: "center",
 };
 
 const formMiniTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "9.5px",
+  fontSize: "10px",
   fontWeight: 950,
-  letterSpacing: "0.08em",
+  letterSpacing: "0.10em",
   textTransform: "uppercase",
-  textAlign: "center",
   ...safeTextStyle,
 };
 
 const formTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "24px",
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "26px",
   lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "-0.06em",
+  letterSpacing: "-0.065em",
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -1702,18 +2090,19 @@ const labelStyle: CSSProperties = {
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "42px",
-  borderRadius: "15px",
-  border: "1px solid var(--historietas-border-soft, #3F3F46)",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 12px",
+  minHeight: "46px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "0 16px",
   outline: "none",
-  fontSize: "13px",
-  fontWeight: 650,
+  fontSize: "14px",
+  fontWeight: 720,
   fontFamily: "inherit",
   textAlign: "center",
   boxSizing: "border-box",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   ...safeTextStyle,
@@ -1721,29 +2110,30 @@ const inputStyle: CSSProperties = {
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  minHeight: "96px",
-  resize: "vertical",
-  borderRadius: "17px",
-  border: "1px solid var(--historietas-border-soft, #3F3F46)",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "12px",
+  minHeight: "110px",
+  borderRadius: "20px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "13px 14px",
   outline: "none",
   fontSize: "14px",
-  lineHeight: 1.65,
   fontWeight: 650,
+  lineHeight: 1.65,
+  resize: "vertical",
   fontFamily: "inherit",
   boxSizing: "border-box",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   ...safeTextStyle,
 };
 
 const hintStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11.5px",
   lineHeight: 1.4,
-  fontWeight: 650,
+  fontWeight: 700,
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -1752,15 +2142,16 @@ const hintStyle: CSSProperties = {
 const importBoxStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "7px",
-  padding: "9px",
-  borderRadius: "16px",
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+  gap: "8px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
+  boxShadow: "none",
 };
 
 const importInfoStyle: CSSProperties = {
@@ -1768,8 +2159,8 @@ const importInfoStyle: CSSProperties = {
   gap: "4px",
   minWidth: 0,
   maxWidth: "100%",
-  justifyItems: "center",
   textAlign: "center",
+  justifyItems: "center",
 };
 
 const importTitleStyle: CSSProperties = {
@@ -1795,9 +2186,9 @@ const importSuccessStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 9px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, #22C55E 28%, var(--historietas-border-soft, transparent))",
-  color: "color-mix(in srgb, #166534 72%, var(--historietas-text-primary, #FFFFFF))",
+  background: "rgba(34,197,94,0.12)",
+  border: "1px solid rgba(34,197,94,0.28)",
+  color: "#86EFAC",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -1808,8 +2199,8 @@ const importErrorStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 9px",
   borderRadius: "999px",
-  background: "rgba(239, 68, 68, 0.13)",
-  border: "1px solid rgba(239, 68, 68, 0.28)",
+  background: "var(--historietas-danger-surface, rgba(239,68,68,0.13))",
+  border: "1px solid rgba(239,68,68,0.28)",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "11px",
   fontWeight: 900,
@@ -1820,8 +2211,9 @@ const importButtonStyle: CSSProperties = {
   minHeight: "38px",
   width: "100%",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 70%, transparent)",
-  color: "#FFFFFF",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   fontSize: "11px",
   fontWeight: 950,
   display: "flex",
@@ -1847,7 +2239,7 @@ const hiddenFileInputStyle: CSSProperties = {
 const buttonAreaStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "7px",
+  gap: "8px",
   marginTop: "2px",
   minWidth: 0,
   maxWidth: "100%",
@@ -1855,19 +2247,19 @@ const buttonAreaStyle: CSSProperties = {
 };
 
 const saveButtonStyle: CSSProperties = {
-  minHeight: "42px",
+  minHeight: "46px",
   borderRadius: "999px",
   border: "none",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
-  fontSize: "11px",
+  fontSize: "13px",
   fontWeight: 950,
   cursor: "pointer",
   boxShadow: "none",
   fontFamily: "inherit",
   textAlign: "center",
-  padding: "0 8px",
-  lineHeight: 1.1,
+  padding: "0 10px",
+  lineHeight: 1.15,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1876,28 +2268,40 @@ const saveButtonStyle: CSSProperties = {
 };
 
 const disabledButtonStyle: CSSProperties = {
-  ...saveButtonStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  boxShadow: "none",
+  minHeight: "46px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#A1A1AA",
+  fontSize: "13px",
+  fontWeight: 950,
   cursor: "not-allowed",
+  fontFamily: "inherit",
+  textAlign: "center",
+  padding: "0 10px",
+  lineHeight: 1.15,
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
+  ...safeTextStyle,
 };
 
 const secondaryButtonStyle: CSSProperties = {
-  minHeight: "42px",
+  minHeight: "46px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary, #7C3AED)",
-  color: "#FFFFFF",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-  boxShadow: "none",
+  fontSize: "13px",
+  fontWeight: 900,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 8px",
-  lineHeight: 1.1,
+  padding: "0 10px",
+  lineHeight: 1.15,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1906,20 +2310,20 @@ const secondaryButtonStyle: CSSProperties = {
 };
 
 const cancelButtonStyle: CSSProperties = {
-  minHeight: "42px",
+  minHeight: "46px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   textDecoration: "none",
-  fontSize: "11px",
+  fontSize: "13px",
   fontWeight: 900,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 8px",
-  lineHeight: 1.1,
+  padding: "0 10px",
+  lineHeight: 1.15,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -1929,7 +2333,7 @@ const cancelButtonStyle: CSSProperties = {
 
 const previewPanelStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
+  gap: "10px",
   background: "transparent",
   border: "none",
   borderRadius: 0,
@@ -1952,7 +2356,6 @@ const previewHeaderStyle: CSSProperties = {
 
 const previewTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
   fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
@@ -1965,13 +2368,14 @@ const previewChapterCardStyle: CSSProperties = {
   display: "grid",
   gap: "8px",
   padding: "11px",
-  borderRadius: "18px",
-  background: "var(--historietas-surface-strong, rgba(31,31,35,0.88))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.065))",
+  borderRadius: "20px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 
@@ -1985,24 +2389,21 @@ const previewChapterTitleStyle: CSSProperties = {
   lineHeight: 1.05,
   fontWeight: 950,
   letterSpacing: "-0.055em",
-  maxWidth: "100%",
   textAlign: "center",
   ...safeTextStyle,
 };
 
 const previewChapterTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #E4E4E7)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
   lineHeight: 1.55,
-  fontWeight: 600,
-  whiteSpace: "pre-wrap",
-  maxHeight: "160px",
+  fontWeight: 650,
+  display: "-webkit-box",
+  WebkitLineClamp: 4,
+  WebkitBoxOrient: "vertical",
   overflow: "hidden",
-  maxWidth: "100%",
   textAlign: "center",
-  overflowWrap: "break-word",
-  wordBreak: "break-word",
   ...safeTextStyle,
 };
 
@@ -2012,12 +2413,12 @@ const previewChapterTextStyle: CSSProperties = {
 
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
-  borderRadius: "26px",
-  background: "var(--historietas-surface, rgba(31,31,35,0.96))",
-  border: "1px solid var(--historietas-border-soft, #2D2D32)",
-  padding: "22px",
   display: "grid",
   gap: "12px",
+  padding: "22px",
+  borderRadius: "26px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2045,7 +2446,7 @@ const emptyButtonStyle: CSSProperties = {
   width: "100%",
   minHeight: "50px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary, #7C3AED)",
+  background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "14px",
@@ -2065,33 +2466,36 @@ const emptyButtonStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "18px 0 8px",
+  padding: "26px 0 34px",
 };
 
 
 
 const desktopHeroBoxStyle: CSSProperties = {
   ...heroBoxStyle,
+  width: "100%",
+  maxWidth: "100%",
+  margin: "0",
   gridTemplateColumns: "1fr",
-  gap: "7px",
-  padding: "14px 22px",
-  borderRadius: "22px",
+  justifyItems: "center",
+  textAlign: "center",
+  gap: "8px",
+  padding: "16px 24px",
+  borderRadius: "24px",
   alignItems: "center",
+  overflow: "hidden",
+  boxShadow: "none",
 };
 
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
-  gridColumn: "auto",
   fontSize: "clamp(38px, 4.4vw, 58px)",
-  letterSpacing: "-0.048em",
 };
 
 const desktopDescriptionStyle: CSSProperties = {
   ...descriptionStyle,
-  gridColumn: "auto",
   fontSize: "13px",
-  lineHeight: 1.35,
   maxWidth: "760px",
 };
 
@@ -2107,9 +2511,10 @@ const desktopMainGridStyle: CSSProperties = {
 
 const desktopFormStyle: CSSProperties = {
   ...formStyle,
-  padding: "14px",
-  borderRadius: "22px",
-  gap: "10px",
+  width: "100%",
+  padding: "16px",
+  borderRadius: "24px",
+  gap: "12px",
 };
 
 const desktopFormHeaderStyle: CSSProperties = {
@@ -2128,11 +2533,11 @@ const desktopImportBoxStyle: CSSProperties = {
   ...importBoxStyle,
   gridTemplateColumns: "minmax(0, 1fr) 128px",
   alignItems: "center",
+  padding: 0,
   gap: "8px",
-  padding: "7px 9px",
-  borderRadius: "14px",
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
 };
 
 const desktopImportTextStyle: CSSProperties = {
@@ -2142,18 +2547,17 @@ const desktopImportTextStyle: CSSProperties = {
 
 const desktopImportButtonStyle: CSSProperties = {
   ...importButtonStyle,
-  width: "128px",
   minHeight: "36px",
-  padding: "0 8px",
   fontSize: "10.5px",
-  boxShadow: "none",
+  padding: "0 8px",
 };
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "108px",
+  minHeight: "125px",
   fontSize: "14px",
   lineHeight: 1.65,
+  textAlign: "left",
 };
 
 const desktopButtonAreaStyle: CSSProperties = {
@@ -2167,7 +2571,6 @@ const desktopSaveButtonStyle: CSSProperties = {
   ...saveButtonStyle,
   minHeight: "48px",
   fontSize: "14px",
-  boxShadow: "none",
 };
 
 const desktopDisabledButtonStyle: CSSProperties = {
@@ -2190,9 +2593,10 @@ const desktopCancelButtonStyle: CSSProperties = {
 
 const desktopPreviewPanelStyle: CSSProperties = {
   ...previewPanelStyle,
+  width: "100%",
   padding: 0,
   borderRadius: 0,
-  gap: "10px",
+  gap: "12px",
 };
 
 const desktopPreviewChapterCardStyle: CSSProperties = {
@@ -2208,7 +2612,6 @@ const desktopPreviewChapterTitleStyle: CSSProperties = {
 
 const desktopPreviewChapterTextStyle: CSSProperties = {
   ...previewChapterTextStyle,
-  maxHeight: "210px",
   fontSize: "13px",
   lineHeight: 1.6,
 };

@@ -66,6 +66,29 @@ type AutorSeguido = {
   progressoMedio: number;
 };
 
+type UsuarioSeguido = {
+  id: string;
+  nome: string;
+  handle: string;
+  bio: string;
+  avatar: string;
+  criadoEm: string;
+};
+
+type AtividadeSeguindo = {
+  id: string;
+  usuarioId: string;
+  usuarioNome: string;
+  usuarioHandle: string;
+  usuarioAvatar: string;
+  tipo: string;
+  tipoRotulo: string;
+  titulo: string;
+  descricao: string;
+  data: string;
+  href: string;
+};
+
 type NotificacaoLocal = {
   id: string;
   obraId: string;
@@ -117,9 +140,12 @@ type FiltroSeguindo =
   | "todos"
   | "obras"
   | "autores"
+  | "usuarios"
   | "em-leitura"
   | "favoritas"
   | "concluidas";
+
+type AbaSeguimentoPagina = "seguidores" | "seguindo";
 
 type OrdenacaoSeguindo = "recentes" | "titulo" | "progresso" | "capitulos";
 
@@ -168,11 +194,45 @@ function criarSlugBase(titulo: string) {
 }
 
 function criarLoginHrefSeguindo() {
+  const redirectTo =
+    typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/seguindo";
+  const destinoSeguro =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/seguindo";
   const params = new URLSearchParams({
-    redirectTo: "/seguindo",
+    redirectTo: destinoSeguro,
   });
 
   return `/login?${params.toString()}`;
+}
+
+function obterParametrosSociaisSeguindoUrl(userIdLogado: string) {
+  if (typeof window === "undefined") {
+    return {
+      aba: "seguindo" as AbaSeguimentoPagina,
+      perfilId: "",
+      perfilNome: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const abaParam = params.get("aba") === "seguidores" ? "seguidores" : "seguindo";
+  const perfilIdParam = (params.get("userId") || params.get("autorId") || "").trim();
+  const perfilNomeParam = (params.get("autor") || params.get("nome") || "").trim();
+  const perfilIdSeguro = idUsuarioSupabaseValido(perfilIdParam)
+    ? perfilIdParam
+    : abaParam === "seguidores"
+      ? userIdLogado
+      : "";
+
+  return {
+    aba: abaParam as AbaSeguimentoPagina,
+    perfilId: perfilIdSeguro,
+    perfilNome: perfilNomeParam,
+  };
 }
 
 function idObraSupabaseValido(id: string) {
@@ -215,6 +275,84 @@ function criarHrefPerfilAutorSeguindo(nomeAutor: string, autorId?: string) {
   }
 
   return `/perfil-autor?${params.toString()}`;
+}
+
+function idUsuarioSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+}
+
+function criarHrefPerfilUsuarioSeguindo(usuario: UsuarioSeguido) {
+  const params = new URLSearchParams();
+
+  params.set("userId", usuario.id);
+  params.set("autorId", usuario.id);
+  params.set("autor", usuario.nome.trim() || "Usuário");
+
+  return `/perfil-autor?${params.toString()}`;
+}
+
+function obterAvatarProfileSeguindo(profile: RegistroSupabaseGenerico | undefined) {
+  if (!profile) {
+    return "";
+  }
+
+  return (
+    obterTextoRegistro(profile, "avatar_url") ||
+    obterTextoRegistro(profile, "avatar") ||
+    obterTextoRegistro(profile, "foto_url") ||
+    obterTextoRegistro(profile, "imagem_url") ||
+    obterTextoRegistro(profile, "photo_url")
+  );
+}
+
+function obterNomeProfileSeguindo(profile: RegistroSupabaseGenerico | undefined) {
+  if (!profile) {
+    return "";
+  }
+
+  return (
+    obterTextoRegistro(profile, "nome") ||
+    obterTextoRegistro(profile, "nome_usuario") ||
+    obterTextoRegistro(profile, "username") ||
+    obterTextoRegistro(profile, "display_name") ||
+    obterTextoRegistro(profile, "apelido")
+  );
+}
+
+function obterBioProfileSeguindo(profile: RegistroSupabaseGenerico | undefined) {
+  if (!profile) {
+    return "";
+  }
+
+  return (
+    obterTextoRegistro(profile, "bio") ||
+    obterTextoRegistro(profile, "sobre_bio") ||
+    obterTextoRegistro(profile, "sobre") ||
+    obterTextoRegistro(profile, "descricao")
+  );
+}
+
+function criarAvatarUsuarioSeguindoStyle(avatar: string): CSSProperties {
+  const avatarLimpo = avatar.trim();
+
+  if (!avatarLimpo) {
+    return {
+      ...authorAvatarStyle,
+      textDecoration: "none",
+    };
+  }
+
+  return {
+    ...authorAvatarStyle,
+    textDecoration: "none",
+    backgroundImage: `url(${avatarLimpo})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    color: "transparent",
+    WebkitTextFillColor: "transparent",
+  };
 }
 
 function normalizarListaTexto(lista: string[]) {
@@ -333,11 +471,18 @@ function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
   const baseStyle = isDesktop ? desktopCoverStyle : coverStyle;
 
   if (!capa) {
-    return baseStyle;
+    return {
+      ...baseStyle,
+      background: "#04000A",
+      backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    };
   }
 
   return {
     ...baseStyle,
+    background: "#04000A",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -903,6 +1048,643 @@ async function carregarSeguindoSupabase(
   }
 }
 
+async function carregarUsuariosSeguidosSupabase(userId: string) {
+  if (!userId) {
+    return [] as UsuarioSeguido[];
+  }
+
+  try {
+    const { data: seguindoData, error: seguindoError } = await supabase
+      .from("seguindo_usuarios")
+      .select("seguido_id, criado_em")
+      .eq("seguidor_id", userId)
+      .order("criado_em", { ascending: false });
+
+    if (seguindoError || !Array.isArray(seguindoData)) {
+      return [] as UsuarioSeguido[];
+    }
+
+    const registrosSeguindo: RegistroSupabaseGenerico[] = seguindoData
+      .map((registro) => registro as RegistroSupabaseGenerico)
+      .filter((registro) =>
+        Boolean(registro) && typeof registro === "object" && !Array.isArray(registro)
+      );
+    const usuariosIds = Array.from(
+      new Set(
+        registrosSeguindo
+          .map((registro) => obterTextoRegistro(registro, "seguido_id"))
+          .filter((id) => idUsuarioSupabaseValido(id) && id !== userId)
+      )
+    );
+
+    if (usuariosIds.length === 0) {
+      return [] as UsuarioSeguido[];
+    }
+
+    const profilesPorUsuario = new Map<string, RegistroSupabaseGenerico>();
+
+    try {
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("user_id", usuariosIds);
+
+      if (Array.isArray(profilesData)) {
+        (profilesData as RegistroSupabaseGenerico[]).forEach((profile) => {
+          const profileUserId = obterTextoRegistro(profile, "user_id");
+
+          if (profileUserId) {
+            profilesPorUsuario.set(profileUserId, profile);
+          }
+        });
+      }
+    } catch {
+      // Algumas bases antigas usam id no lugar de user_id. O fallback vem abaixo.
+    }
+
+    const usuariosSemProfile = usuariosIds.filter(
+      (usuarioId) => !profilesPorUsuario.has(usuarioId)
+    );
+
+    if (usuariosSemProfile.length > 0) {
+      try {
+        const { data: profilesDataPorId } = await supabase
+          .from("profiles")
+          .select("*")
+          .in("id", usuariosSemProfile);
+
+        if (Array.isArray(profilesDataPorId)) {
+          (profilesDataPorId as RegistroSupabaseGenerico[]).forEach((profile) => {
+            const profileUserId =
+              obterTextoRegistro(profile, "user_id") || obterTextoRegistro(profile, "id");
+
+            if (profileUserId) {
+              profilesPorUsuario.set(profileUserId, profile);
+            }
+          });
+        }
+      } catch {
+        // Profiles é complementar; a página segue com nome padrão se falhar.
+      }
+    }
+
+    return registrosSeguindo
+      .map((registro) => {
+        const seguidoId = obterTextoRegistro(registro, "seguido_id");
+
+        if (!idUsuarioSupabaseValido(seguidoId)) {
+          return null;
+        }
+
+        const profile = profilesPorUsuario.get(seguidoId);
+        const nome = obterNomeProfileSeguindo(profile) || "Usuário";
+        const handleBase = normalizarTexto(nome)
+          .replace(/[^a-z0-9]+/g, ".")
+          .replace(/\.+/g, ".")
+          .replace(/^\.|\.$/g, "");
+        const handle = handleBase ? `@${handleBase}` : `@usuario.${seguidoId.slice(0, 4)}`;
+        const bio = obterBioProfileSeguindo(profile) || "Perfil de leitor no Historietas.";
+        const avatar = obterAvatarProfileSeguindo(profile);
+
+        return {
+          id: seguidoId,
+          nome: nome.slice(0, 80),
+          handle,
+          bio: bio.slice(0, 140),
+          avatar,
+          criadoEm: obterTextoRegistro(registro, "criado_em"),
+        } satisfies UsuarioSeguido;
+      })
+      .filter((usuario): usuario is UsuarioSeguido => Boolean(usuario));
+  } catch (error) {
+    console.warn("Não consegui carregar usuários seguidos:", error);
+    return [] as UsuarioSeguido[];
+  }
+}
+
+
+async function carregarUsuariosSeguidoresSupabase(userId: string) {
+  if (!userId) {
+    return [] as UsuarioSeguido[];
+  }
+
+  try {
+    const { data: seguidoresData, error: seguidoresError } = await supabase
+      .from("seguindo_usuarios")
+      .select("seguidor_id, criado_em")
+      .eq("seguido_id", userId)
+      .order("criado_em", { ascending: false });
+
+    if (seguidoresError || !Array.isArray(seguidoresData)) {
+      return [] as UsuarioSeguido[];
+    }
+
+    const registrosSeguidores: RegistroSupabaseGenerico[] = seguidoresData
+      .map((registro) => registro as RegistroSupabaseGenerico)
+      .filter((registro) =>
+        Boolean(registro) && typeof registro === "object" && !Array.isArray(registro)
+      );
+    const usuariosIds = Array.from(
+      new Set(
+        registrosSeguidores
+          .map((registro) => obterTextoRegistro(registro, "seguidor_id"))
+          .filter((id) => idUsuarioSupabaseValido(id) && id !== userId)
+      )
+    );
+
+    if (usuariosIds.length === 0) {
+      return [] as UsuarioSeguido[];
+    }
+
+    const profilesPorUsuario = new Map<string, RegistroSupabaseGenerico>();
+
+    try {
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("user_id", usuariosIds);
+
+      if (Array.isArray(profilesData)) {
+        (profilesData as RegistroSupabaseGenerico[]).forEach((profile) => {
+          const profileUserId = obterTextoRegistro(profile, "user_id");
+
+          if (profileUserId) {
+            profilesPorUsuario.set(profileUserId, profile);
+          }
+        });
+      }
+    } catch {
+      // Algumas bases antigas usam id no lugar de user_id. O fallback vem abaixo.
+    }
+
+    const usuariosSemProfile = usuariosIds.filter(
+      (usuarioId) => !profilesPorUsuario.has(usuarioId)
+    );
+
+    if (usuariosSemProfile.length > 0) {
+      try {
+        const { data: profilesDataPorId } = await supabase
+          .from("profiles")
+          .select("*")
+          .in("id", usuariosSemProfile);
+
+        if (Array.isArray(profilesDataPorId)) {
+          (profilesDataPorId as RegistroSupabaseGenerico[]).forEach((profile) => {
+            const profileUserId =
+              obterTextoRegistro(profile, "user_id") || obterTextoRegistro(profile, "id");
+
+            if (profileUserId) {
+              profilesPorUsuario.set(profileUserId, profile);
+            }
+          });
+        }
+      } catch {
+        // Profiles é complementar; a página segue com nome padrão se falhar.
+      }
+    }
+
+    return registrosSeguidores
+      .map((registro) => {
+        const seguidorId = obterTextoRegistro(registro, "seguidor_id");
+
+        if (!idUsuarioSupabaseValido(seguidorId)) {
+          return null;
+        }
+
+        const profile = profilesPorUsuario.get(seguidorId);
+        const nome = obterNomeProfileSeguindo(profile) || "Usuário";
+        const handleBase = normalizarTexto(nome)
+          .replace(/[^a-z0-9]+/g, ".")
+          .replace(/\.+/g, ".")
+          .replace(/^\.|\.$/g, "");
+        const handle = handleBase ? `@${handleBase}` : `@usuario.${seguidorId.slice(0, 4)}`;
+        const bio = obterBioProfileSeguindo(profile) || "Perfil de leitor no Historietas.";
+        const avatar = obterAvatarProfileSeguindo(profile);
+
+        return {
+          id: seguidorId,
+          nome: nome.slice(0, 80),
+          handle,
+          bio: bio.slice(0, 140),
+          avatar,
+          criadoEm: obterTextoRegistro(registro, "criado_em"),
+        } satisfies UsuarioSeguido;
+      })
+      .filter((usuario): usuario is UsuarioSeguido => Boolean(usuario));
+  } catch (error) {
+    console.warn("Não consegui carregar seguidores:", error);
+    return [] as UsuarioSeguido[];
+  }
+}
+
+
+function obterMetadataAtividadeSeguindo(valor: unknown) {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
+    return {} as RegistroSupabaseGenerico;
+  }
+
+  return valor as RegistroSupabaseGenerico;
+}
+
+function formatarDataAtividadeSeguindo(dataIso: string) {
+  if (!dataIso) {
+    return "Data não informada";
+  }
+
+  const data = new Date(dataIso);
+
+  if (Number.isNaN(data.getTime())) {
+    return "Data não informada";
+  }
+
+  return data.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function obterRotuloAtividadeSeguindo(tipo: string) {
+  if (tipo === "leu_capitulo") {
+    return "Leitura";
+  }
+
+  if (tipo === "comecou_ler") {
+    return "Começou";
+  }
+
+  if (tipo === "concluiu_obra") {
+    return "Concluiu";
+  }
+
+  if (tipo === "avaliou_obra") {
+    return "Avaliou";
+  }
+
+  if (tipo === "favoritou_obra") {
+    return "Favoritou";
+  }
+
+  if (tipo === "salvou_obra") {
+    return "Salvou";
+  }
+
+  if (tipo === "publicou_review") {
+    return "Review";
+  }
+
+  if (tipo === "criou_lista") {
+    return "Lista";
+  }
+
+  return "Diário";
+}
+
+function montarTextoAtividadeSeguindo({
+  tipo,
+  tituloObra,
+  nota,
+}: {
+  tipo: string;
+  tituloObra: string;
+  nota: number;
+}) {
+  if (tipo === "leu_capitulo") {
+    return `leu um capítulo de ${tituloObra}`;
+  }
+
+  if (tipo === "comecou_ler") {
+    return `começou a ler ${tituloObra}`;
+  }
+
+  if (tipo === "concluiu_obra") {
+    return `concluiu ${tituloObra}`;
+  }
+
+  if (tipo === "avaliou_obra") {
+    const notaTexto = Number.isFinite(nota) && nota > 0
+      ? ` com ${nota.toFixed(1).replace(".", ",")} estrelas`
+      : "";
+
+    return `avaliou ${tituloObra}${notaTexto}`;
+  }
+
+  if (tipo === "favoritou_obra") {
+    return `favoritou ${tituloObra}`;
+  }
+
+  if (tipo === "salvou_obra") {
+    return `salvou ${tituloObra}`;
+  }
+
+  if (tipo === "publicou_review") {
+    return `publicou uma review${tituloObra ? ` sobre ${tituloObra}` : ""}`;
+  }
+
+  if (tipo === "criou_lista") {
+    return "criou uma lista de leitura";
+  }
+
+  return tituloObra ? `interagiu com ${tituloObra}` : "registrou uma atividade no Diário";
+}
+
+function obterDataRegistroAtividadeSeguindo(registro: RegistroSupabaseGenerico) {
+  return (
+    obterTextoRegistro(registro, "criado_em") ||
+    obterTextoRegistro(registro, "created_at") ||
+    obterTextoRegistro(registro, "atualizado_em") ||
+    obterTextoRegistro(registro, "updated_at")
+  );
+}
+
+function obterVisibilidadeAtividadeSeguindo(
+  registro: RegistroSupabaseGenerico,
+  fallback: "publico" | "parcial" | "privado",
+) {
+  const visibilidade = obterTextoRegistro(registro, "visibilidade") || fallback;
+
+  if (
+    visibilidade === "publico" ||
+    visibilidade === "parcial" ||
+    visibilidade === "privado"
+  ) {
+    return visibilidade;
+  }
+
+  return fallback;
+}
+
+function registroAtividadeSeguindoPodeAparecer(
+  registro: RegistroSupabaseGenerico,
+  fallback: "publico" | "parcial" | "privado",
+) {
+  const visibilidade = obterVisibilidadeAtividadeSeguindo(registro, fallback);
+
+  return visibilidade === "publico" || visibilidade === "parcial";
+}
+
+function criarAtividadeSeguindoPorDados({
+  id,
+  usuario,
+  tipo,
+  tituloObra,
+  nota,
+  data,
+  href,
+}: {
+  id: string;
+  usuario: UsuarioSeguido;
+  tipo: string;
+  tituloObra: string;
+  nota: number;
+  data: string;
+  href: string;
+}): AtividadeSeguindo {
+  return {
+    id,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    usuarioHandle: usuario.handle,
+    usuarioAvatar: usuario.avatar,
+    tipo,
+    tipoRotulo: obterRotuloAtividadeSeguindo(tipo),
+    titulo: tituloObra,
+    descricao: montarTextoAtividadeSeguindo({
+      tipo,
+      tituloObra,
+      nota,
+    }),
+    data,
+    href,
+  };
+}
+
+function criarAtividadeSeguindoDoDiario({
+  registro,
+  usuariosPorId,
+  obrasPorId,
+}: {
+  registro: RegistroSupabaseGenerico;
+  usuariosPorId: Map<string, UsuarioSeguido>;
+  obrasPorId: Map<string, ObraLocal>;
+}) {
+  if (!registroAtividadeSeguindoPodeAparecer(registro, "privado")) {
+    return null;
+  }
+
+  const atividadeId = obterTextoRegistro(registro, "id");
+  const usuarioId = obterTextoRegistro(registro, "user_id");
+  const usuario = usuariosPorId.get(usuarioId);
+
+  if (!atividadeId || !usuario) {
+    return null;
+  }
+
+  const metadata = obterMetadataAtividadeSeguindo(registro.metadata);
+  const tipo = obterTextoRegistro(registro, "tipo") || "diario";
+  const obraId = obterTextoRegistro(registro, "obra_id");
+  const obra = obraId ? obrasPorId.get(obraId) || null : null;
+  const tituloObra =
+    obra?.titulo ||
+    obterTextoRegistro(metadata, "obra_titulo") ||
+    obterTextoRegistro(metadata, "titulo_obra") ||
+    obterTextoRegistro(metadata, "obra_relacionada") ||
+    "atividade de leitura";
+  const nota = Number(registro.nota ?? metadata.nota ?? metadata.rating ?? 0);
+  const postId = obterTextoRegistro(metadata, "post_id");
+  const href =
+    obra?.link ||
+    (obra?.slug
+      ? `/obra/${obra.slug}`
+      : postId
+        ? `/comunidade?post=${encodeURIComponent(postId)}`
+        : criarHrefPerfilUsuarioSeguindo(usuario));
+
+  return criarAtividadeSeguindoPorDados({
+    id: `diario-${atividadeId}`,
+    usuario,
+    tipo,
+    tituloObra,
+    nota,
+    data: obterDataRegistroAtividadeSeguindo(registro),
+    href,
+  });
+}
+
+function criarAtividadeSeguindoDeObra({
+  registro,
+  usuariosPorId,
+  obrasPorId,
+  tipo,
+  fallbackVisibilidade,
+}: {
+  registro: RegistroSupabaseGenerico;
+  usuariosPorId: Map<string, UsuarioSeguido>;
+  obrasPorId: Map<string, ObraLocal>;
+  tipo: "favoritou_obra" | "concluiu_obra" | "avaliou_obra";
+  fallbackVisibilidade: "publico" | "parcial" | "privado";
+}) {
+  if (!registroAtividadeSeguindoPodeAparecer(registro, fallbackVisibilidade)) {
+    return null;
+  }
+
+  const usuarioId = obterTextoRegistro(registro, "user_id");
+  const usuario = usuariosPorId.get(usuarioId);
+  const obraId = obterIdObraRegistro(registro);
+  const obra = obraId ? obrasPorId.get(obraId) || null : null;
+
+  if (!usuario || !obra) {
+    return null;
+  }
+
+  const nota = Number(registro.nota ?? registro.rating ?? registro.avaliacao ?? 0);
+  const data = obterDataRegistroAtividadeSeguindo(registro) || obra.criadaEm;
+  const registroId = obterTextoRegistro(registro, "id") || `${usuarioId}-${tipo}-${obraId}`;
+
+  return criarAtividadeSeguindoPorDados({
+    id: `${tipo}-${registroId}`,
+    usuario,
+    tipo,
+    tituloObra: obra.titulo,
+    nota,
+    data,
+    href: obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`,
+  });
+}
+
+async function carregarRegistrosAtividadesTabelaSeguindo(
+  tabela: "diario_atividades" | "favoritos" | "concluidas" | "obra_avaliacoes",
+  usuariosIds: string[],
+) {
+  try {
+    const { data, error } = await supabase
+      .from(tabela)
+      .select("*")
+      .in("user_id", usuariosIds);
+
+    if (error || !Array.isArray(data)) {
+      return [] as RegistroSupabaseGenerico[];
+    }
+
+    return data.filter(
+      (registro): registro is RegistroSupabaseGenerico =>
+        Boolean(registro) && typeof registro === "object" && !Array.isArray(registro),
+    );
+  } catch (error) {
+    console.warn(`Não consegui carregar ${tabela} no feed Seguindo:`, error);
+    return [] as RegistroSupabaseGenerico[];
+  }
+}
+
+function ordenarAtividadesSeguindo(itens: AtividadeSeguindo[]) {
+  return [...itens].sort(
+    (atividadeA, atividadeB) =>
+      new Date(atividadeB.data).getTime() - new Date(atividadeA.data).getTime(),
+  );
+}
+
+function deduplicarAtividadesSeguindo(itens: AtividadeSeguindo[]) {
+  const atividadesPorChave = new Map<string, AtividadeSeguindo>();
+
+  ordenarAtividadesSeguindo(itens).forEach((atividade) => {
+    const chave = [
+      atividade.usuarioId,
+      atividade.tipo,
+      normalizarTexto(atividade.titulo),
+      atividade.href,
+    ].join("|");
+
+    if (!atividadesPorChave.has(chave)) {
+      atividadesPorChave.set(chave, atividade);
+    }
+  });
+
+  return ordenarAtividadesSeguindo(Array.from(atividadesPorChave.values()));
+}
+
+async function carregarAtividadesSeguindoSupabase(
+  usuariosSeguidosBase: UsuarioSeguido[],
+  obrasDisponiveis: ObraLocal[],
+  usuarioLogadoId: string,
+) {
+  const usuariosIds = usuariosSeguidosBase
+    .map((usuarioSeguido) => usuarioSeguido.id)
+    .filter((id) => idUsuarioSupabaseValido(id) && id !== usuarioLogadoId);
+
+  if (usuariosIds.length === 0) {
+    return [] as AtividadeSeguindo[];
+  }
+
+  const usuariosPorId = new Map(
+    usuariosSeguidosBase.map((usuarioSeguido) => [usuarioSeguido.id, usuarioSeguido])
+  );
+  const obrasPorId = new Map(
+    obrasDisponiveis
+      .filter((obra) => Boolean(obra.id))
+      .map((obra) => [obra.id, obra])
+  );
+
+  const [diarioAtividades, favoritos, concluidas, avaliacoes] = await Promise.all([
+    carregarRegistrosAtividadesTabelaSeguindo("diario_atividades", usuariosIds),
+    carregarRegistrosAtividadesTabelaSeguindo("favoritos", usuariosIds),
+    carregarRegistrosAtividadesTabelaSeguindo("concluidas", usuariosIds),
+    carregarRegistrosAtividadesTabelaSeguindo("obra_avaliacoes", usuariosIds),
+  ]);
+
+  const atividadesDiario = diarioAtividades
+    .map((registro) =>
+      criarAtividadeSeguindoDoDiario({
+        registro,
+        usuariosPorId,
+        obrasPorId,
+      }),
+    )
+    .filter((atividade): atividade is AtividadeSeguindo => Boolean(atividade));
+
+  const atividadesFavoritos = favoritos
+    .map((registro) =>
+      criarAtividadeSeguindoDeObra({
+        registro,
+        usuariosPorId,
+        obrasPorId,
+        tipo: "favoritou_obra",
+        fallbackVisibilidade: "parcial",
+      }),
+    )
+    .filter((atividade): atividade is AtividadeSeguindo => Boolean(atividade));
+
+  const atividadesConcluidas = concluidas
+    .map((registro) =>
+      criarAtividadeSeguindoDeObra({
+        registro,
+        usuariosPorId,
+        obrasPorId,
+        tipo: "concluiu_obra",
+        fallbackVisibilidade: "parcial",
+      }),
+    )
+    .filter((atividade): atividade is AtividadeSeguindo => Boolean(atividade));
+
+  const atividadesAvaliacoes = avaliacoes
+    .map((registro) =>
+      criarAtividadeSeguindoDeObra({
+        registro,
+        usuariosPorId,
+        obrasPorId,
+        tipo: "avaliou_obra",
+        fallbackVisibilidade: "publico",
+      }),
+    )
+    .filter((atividade): atividade is AtividadeSeguindo => Boolean(atividade));
+
+  return deduplicarAtividadesSeguindo([
+    ...atividadesDiario,
+    ...atividadesFavoritos,
+    ...atividadesConcluidas,
+    ...atividadesAvaliacoes,
+  ]).slice(0, 30);
+}
+
 async function sincronizarObraUsuarioSupabase(
   tabela: "seguindo_obras" | "favoritos" | "concluidas",
   obraId: string,
@@ -923,10 +1705,27 @@ async function sincronizarObraUsuarioSupabase(
       .eq("obra_id", obraId);
 
     if (ativo) {
-      await supabase.from(tabela).insert({
+      const visibilidade = tabela === "seguindo_obras" ? "privado" : "parcial";
+      const payloadBase = {
         user_id: userId,
         obra_id: obraId,
+      };
+      const { error: erroComVisibilidade } = await supabase.from(tabela).insert({
+        ...payloadBase,
+        visibilidade,
       });
+
+      if (!erroComVisibilidade) {
+        return;
+      }
+
+      const { error: erroSemVisibilidade } = await supabase
+        .from(tabela)
+        .insert(payloadBase);
+
+      if (erroSemVisibilidade) {
+        throw erroSemVisibilidade;
+      }
     }
   } catch (error) {
     console.warn(`Não consegui sincronizar ${tabela} no Supabase:`, error);
@@ -938,6 +1737,9 @@ export default function SeguindoPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasSeguidas, setObrasSeguidas] = useState<string[]>([]);
   const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
+  const [usuariosSeguidos, setUsuariosSeguidos] = useState<UsuarioSeguido[]>([]);
+  const [usuariosSeguidores, setUsuariosSeguidores] = useState<UsuarioSeguido[]>([]);
+  const [atividadesSeguindo, setAtividadesSeguindo] = useState<AtividadeSeguindo[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [, setCarregando] = useState(false);
@@ -949,6 +1751,10 @@ export default function SeguindoPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
+  const [abaSeguimento, setAbaSeguimento] =
+    useState<AbaSeguimentoPagina>("seguindo");
+  const [perfilSocialId, setPerfilSocialId] = useState("");
+  const [perfilSocialNome, setPerfilSocialNome] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -988,8 +1794,13 @@ export default function SeguindoPage() {
           return;
         }
 
+        const parametrosSociais = obterParametrosSociaisSeguindoUrl(userId);
+
         if (!cancelado) {
           setUsuarioLogadoId(userId);
+          setAbaSeguimento(parametrosSociais.aba);
+          setPerfilSocialId(parametrosSociais.perfilId);
+          setPerfilSocialNome(parametrosSociais.perfilNome);
           setVerificandoAcesso(false);
         }
       } catch {
@@ -1012,7 +1823,7 @@ export default function SeguindoPage() {
     }
 
     void carregarDadosSeguindo();
-  }, [usuarioLogadoId]);
+  }, [usuarioLogadoId, perfilSocialId]);
 
   async function carregarDadosSeguindo() {
     setCarregando(true);
@@ -1088,15 +1899,29 @@ export default function SeguindoPage() {
     setNotificacoesNaoLidas(totalNotificacoesNaoLidas);
     setCarregando(false);
 
-    const dadosSupabase = await carregarSeguindoSupabase(
-      obrasNormalizadas,
-      seguindoNormalizado,
-      favoritasNormalizadas,
-      concluidasNormalizadas
-    );
+    const perfilIdParaListaSocial = perfilSocialId || usuarioLogadoId;
+    const [
+      dadosSupabase,
+      usuariosSeguidosSupabase,
+      usuariosSeguidoresSupabase,
+    ] = await Promise.all([
+      carregarSeguindoSupabase(
+        obrasNormalizadas,
+        seguindoNormalizado,
+        favoritasNormalizadas,
+        concluidasNormalizadas
+      ),
+      carregarUsuariosSeguidosSupabase(perfilIdParaListaSocial),
+      carregarUsuariosSeguidoresSupabase(perfilIdParaListaSocial),
+    ]);
 
     obrasNormalizadas = dadosSupabase.obras.map((obra, index) =>
       normalizarObraSalva(obra as ObraSalva, index)
+    );
+    const atividadesSeguindoSupabase = await carregarAtividadesSeguindoSupabase(
+      usuariosSeguidosSupabase,
+      obrasNormalizadas,
+      usuarioLogadoId
     );
     seguindoNormalizado = normalizarListaTexto(dadosSupabase.obrasSeguidas);
     favoritasNormalizadas = normalizarListaTexto(dadosSupabase.obrasFavoritas);
@@ -1120,6 +1945,9 @@ export default function SeguindoPage() {
     setObras(obrasNormalizadas);
     setObrasSeguidas(seguindoNormalizado);
     setAutoresSeguidos(autoresNormalizados);
+    setUsuariosSeguidos(usuariosSeguidosSupabase);
+    setUsuariosSeguidores(usuariosSeguidoresSupabase);
+    setAtividadesSeguindo(atividadesSeguindoSupabase);
     setObrasFavoritas(favoritasNormalizadas);
     setObrasConcluidas(concluidasNormalizadas);
     setNotificacoesNaoLidas(totalNotificacoesNaoLidas);
@@ -1127,6 +1955,18 @@ export default function SeguindoPage() {
   }
 
   const termoBusca = normalizarTexto(busca);
+  const visualizandoListaSocialDoPerfil = Boolean(perfilSocialId);
+  const usuariosBaseSocial =
+    visualizandoListaSocialDoPerfil && abaSeguimento === "seguidores"
+      ? usuariosSeguidores
+      : usuariosSeguidos;
+  const tituloListaSocial =
+    abaSeguimento === "seguidores" ? "SEGUIDORES" : "SEGUINDO";
+  const descricaoListaSocial = perfilSocialNome.trim()
+    ? `${tituloListaSocial.toLowerCase()} de ${perfilSocialNome.trim()}`
+    : tituloListaSocial.toLowerCase();
+  const podeRemoverUsuariosDaLista =
+    !visualizandoListaSocialDoPerfil && abaSeguimento === "seguindo";
 
   const obrasSeguidasBase = useMemo(() => {
     return obras.filter((obra) => obraEstaNaLista(obra, obrasSeguidas));
@@ -1243,8 +2083,12 @@ export default function SeguindoPage() {
   }, [obras, autoresSeguidos, obrasFavoritas, obrasConcluidas]);
 
   const obrasFiltradas = useMemo(() => {
+    if (visualizandoListaSocialDoPerfil) {
+      return [] as ObraLocal[];
+    }
+
     const filtradas = obrasSeguidasBase.filter((obra) => {
-      if (filtro === "autores") {
+      if (filtro === "autores" || filtro === "usuarios") {
         return false;
       }
 
@@ -1287,11 +2131,16 @@ export default function SeguindoPage() {
     ordenacao,
     obrasFavoritas,
     obrasConcluidas,
+    visualizandoListaSocialDoPerfil,
   ]);
 
   const autoresFiltrados = useMemo<AutorSeguido[]>(() => {
+    if (visualizandoListaSocialDoPerfil) {
+      return [] as AutorSeguido[];
+    }
+
     const filtrados = autoresBase.filter((autor) => {
-      if (filtro === "obras") {
+      if (filtro === "obras" || filtro === "usuarios") {
         return false;
       }
 
@@ -1330,9 +2179,71 @@ export default function SeguindoPage() {
     });
   }, [autoresBase, termoBusca, filtro, ordenacao]);
 
-  const totalSemFiltros = obrasSeguidasBase.length + autoresBase.length;
+  const usuariosFiltrados = useMemo<UsuarioSeguido[]>(() => {
+    const filtrados = usuariosBaseSocial.filter((usuarioSeguido) => {
+      if (
+        !visualizandoListaSocialDoPerfil &&
+        filtro !== "todos" &&
+        filtro !== "usuarios"
+      ) {
+        return false;
+      }
 
-  const totalSeguindo = obrasFiltradas.length + autoresFiltrados.length;
+      const textoUsuario = normalizarTexto(
+        [usuarioSeguido.nome, usuarioSeguido.handle, usuarioSeguido.bio].join(" ")
+      );
+
+      return termoBusca ? textoUsuario.includes(termoBusca) : true;
+    });
+
+    return [...filtrados].sort((usuarioA, usuarioB) => {
+      if (ordenacao === "titulo") {
+        return usuarioA.nome.localeCompare(usuarioB.nome);
+      }
+
+      return (
+        new Date(usuarioB.criadoEm).getTime() - new Date(usuarioA.criadoEm).getTime()
+      );
+    });
+  }, [usuariosSeguidos, termoBusca, filtro, ordenacao]);
+
+  const atividadesFiltradas = useMemo<AtividadeSeguindo[]>(() => {
+    if (visualizandoListaSocialDoPerfil) {
+      return [] as AtividadeSeguindo[];
+    }
+
+    const filtradas = atividadesSeguindo.filter((atividade) => {
+      if (filtro !== "todos" && filtro !== "usuarios") {
+        return false;
+      }
+
+      const textoAtividade = normalizarTexto(
+        [
+          atividade.usuarioNome,
+          atividade.usuarioHandle,
+          atividade.tipoRotulo,
+          atividade.titulo,
+          atividade.descricao,
+        ].join(" ")
+      );
+
+      return termoBusca ? textoAtividade.includes(termoBusca) : true;
+    });
+
+    return [...filtradas].sort((atividadeA, atividadeB) => {
+      return (
+        new Date(atividadeB.data).getTime() - new Date(atividadeA.data).getTime()
+      );
+    });
+  }, [atividadesSeguindo, termoBusca, filtro]);
+
+  const totalSemFiltros = visualizandoListaSocialDoPerfil
+    ? usuariosBaseSocial.length
+    : obrasSeguidasBase.length + autoresBase.length + usuariosSeguidos.length;
+
+  const totalSeguindo = visualizandoListaSocialDoPerfil
+    ? usuariosFiltrados.length
+    : obrasFiltradas.length + autoresFiltrados.length + usuariosFiltrados.length;
 
   const totalLidosSeguidos = obrasFiltradas.reduce((total, obra) => {
     return total + obra.capitulos.filter((capitulo) => capitulo.lido).length;
@@ -1343,8 +2254,36 @@ export default function SeguindoPage() {
   ).length;
 
   const filtrosAtivos = Boolean(
-    busca.trim() || filtro !== "todos" || ordenacao !== "recentes"
+    busca.trim() ||
+      (!visualizandoListaSocialDoPerfil && filtro !== "todos") ||
+      ordenacao !== "recentes"
   );
+
+  function trocarAbaSeguimento(novaAba: AbaSeguimentoPagina) {
+    setAbaSeguimento(novaAba);
+    setBusca("");
+    setFiltro("usuarios");
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const perfilIdParaUrl = perfilSocialId || usuarioLogadoId;
+
+    params.set("aba", novaAba);
+
+    if (perfilIdParaUrl) {
+      params.set("userId", perfilIdParaUrl);
+      params.set("autorId", perfilIdParaUrl);
+    }
+
+    if (perfilSocialNome.trim()) {
+      params.set("autor", perfilSocialNome.trim());
+    }
+
+    window.history.replaceState(null, "", `/seguindo?${params.toString()}`);
+  }
 
   function limparFiltros() {
     setBusca("");
@@ -1375,6 +2314,31 @@ export default function SeguindoPage() {
     );
 
     setAutoresSeguidos(novosAutoresSeguidos);
+  }
+
+  function deixarDeSeguirUsuario(usuarioId: string) {
+    const usuarioIdLimpo = usuarioId.trim();
+
+    if (!usuarioIdLimpo) {
+      return;
+    }
+
+    setUsuariosSeguidos((usuariosAtuais) =>
+      usuariosAtuais.filter((usuarioSeguido) => usuarioSeguido.id !== usuarioIdLimpo)
+    );
+    setAtividadesSeguindo((atividadesAtuais) =>
+      atividadesAtuais.filter((atividade) => atividade.usuarioId !== usuarioIdLimpo)
+    );
+
+    if (!usuarioLogadoId) {
+      return;
+    }
+
+    void supabase
+      .from("seguindo_usuarios")
+      .delete()
+      .eq("seguidor_id", usuarioLogadoId)
+      .eq("seguido_id", usuarioIdLimpo);
   }
 
   function alternarFavoritoObra(obra: ObraLocal) {
@@ -1478,11 +2442,44 @@ export default function SeguindoPage() {
             <input
               value={busca}
               onChange={(event) => setBusca(event.target.value)}
-              placeholder="Buscar obra, autor, gênero, tag ou classificação..."
+              placeholder={
+                visualizandoListaSocialDoPerfil
+                  ? `Buscar em ${descricaoListaSocial}...`
+                  : "Buscar obra, autor, pessoa, gênero, tag ou classificação..."
+              }
               style={isDesktop ? desktopSearchInputStyle : searchInputStyle}
               type="text"
             />
 
+            {visualizandoListaSocialDoPerfil && (
+              <div style={isDesktop ? desktopQuickFiltersStyle : quickFiltersStyle}>
+                <button
+                  type="button"
+                  onClick={() => trocarAbaSeguimento("seguidores")}
+                  style={
+                    abaSeguimento === "seguidores"
+                      ? quickFilterActiveStyle
+                      : quickFilterStyle
+                  }
+                >
+                  Seguidores
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => trocarAbaSeguimento("seguindo")}
+                  style={
+                    abaSeguimento === "seguindo"
+                      ? quickFilterActiveStyle
+                      : quickFilterStyle
+                  }
+                >
+                  Seguindo
+                </button>
+              </div>
+            )}
+
+            {!visualizandoListaSocialDoPerfil && (
             <div style={isDesktop ? desktopQuickFiltersStyle : quickFiltersStyle}>
               <button
                 type="button"
@@ -1506,6 +2503,14 @@ export default function SeguindoPage() {
                 style={filtro === "autores" ? quickFilterActiveStyle : quickFilterStyle}
               >
                 Autores
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltro("usuarios")}
+                style={filtro === "usuarios" ? quickFilterActiveStyle : quickFilterStyle}
+              >
+                Pessoas
               </button>
 
               <button
@@ -1538,6 +2543,7 @@ export default function SeguindoPage() {
                 Concluídas
               </button>
             </div>
+            )}
 
             <div style={isDesktop ? desktopFilterFooterStyle : filterFooterStyle}>
               <div style={fieldBoxStyle}>
@@ -1568,15 +2574,23 @@ export default function SeguindoPage() {
             >
               <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
                 <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{totalSeguindo}</strong>
-                <span style={summaryLabelStyle}>seguindo</span>
+                <span style={summaryLabelStyle}>
+                  {visualizandoListaSocialDoPerfil
+                    ? abaSeguimento === "seguidores"
+                      ? "seguidores"
+                      : "seguindo"
+                    : "seguindo"}
+                </span>
               </div>
 
+              {!visualizandoListaSocialDoPerfil && (
               <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
                 <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{obrasFiltradas.length}</strong>
                 <span style={summaryLabelStyle}>
                   {obrasFiltradas.length === 1 ? "obra seguida" : "obras seguidas"}
                 </span>
               </div>
+              )}
 
               <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
                 <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{autoresFiltrados.length}</strong>
@@ -1585,6 +2599,20 @@ export default function SeguindoPage() {
                     ? "autor seguido"
                     : "autores seguidos"}
                 </span>
+              </div>
+
+              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
+                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{usuariosFiltrados.length}</strong>
+                <span style={summaryLabelStyle}>
+                  {usuariosFiltrados.length === 1
+                    ? "pessoa seguida"
+                    : "pessoas seguidas"}
+                </span>
+              </div>
+
+              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
+                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{atividadesFiltradas.length}</strong>
+                <span style={summaryLabelStyle}>atividades</span>
               </div>
 
               <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
@@ -1607,11 +2635,20 @@ export default function SeguindoPage() {
 
         {totalSemFiltros === 0 ? (
           <div style={emptyBoxStyle}>
-            <h2 style={emptyTitleStyle}>Você ainda não segue nada</h2>
+            <h2 style={emptyTitleStyle}>
+              {visualizandoListaSocialDoPerfil
+                ? abaSeguimento === "seguidores"
+                  ? "Nenhum seguidor ainda"
+                  : "Nenhum perfil seguido ainda"
+                : "Você ainda não segue nada"}
+            </h2>
 
             <p style={emptyTextStyle}>
-              Entre em uma obra e clique em "Seguir obra", ou entre no perfil de
-              um autor e clique em "Seguir autor".
+              {visualizandoListaSocialDoPerfil
+                ? abaSeguimento === "seguidores"
+                  ? "Quando alguém seguir este perfil, aparecerá aqui."
+                  : "Quando este perfil seguir outras pessoas, elas aparecerão aqui."
+                : 'Entre em uma obra e clique em "Seguir obra", ou entre no perfil de uma pessoa e clique em "Seguir".'}
             </p>
 
             <div style={emptyActionsStyle}>
@@ -1627,7 +2664,9 @@ export default function SeguindoPage() {
                 <h2 style={emptyTitleStyle}>Nada encontrado</h2>
 
                 <p style={emptyTextStyle}>
-                  Nenhuma obra ou autor seguido combina com a busca e os filtros atuais.
+                  {visualizandoListaSocialDoPerfil
+                    ? `Nenhum perfil encontrado em ${descricaoListaSocial}.`
+                    : "Nenhuma obra, autor ou pessoa seguida combina com a busca e os filtros atuais."}
                 </p>
 
                 <button type="button" onClick={limparFiltros} style={exploreButtonStyle}>
@@ -1819,6 +2858,137 @@ export default function SeguindoPage() {
               )}
             </section>
 
+            {atividadesFiltradas.length > 0 && (
+              <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
+                <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
+                  <div style={sectionHeaderTextStyle}>
+                    <h2 style={sectionTitleStyle}>ATIVIDADES RECENTES</h2>
+                  </div>
+
+                  <span style={sectionCounterStyle}>
+                    {atividadesFiltradas.length}
+                  </span>
+                </div>
+
+                <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
+                  {atividadesFiltradas.slice(0, 12).map((atividade) => {
+                    const perfilUsuario = usuariosSeguidos.find(
+                      (usuarioSeguido) => usuarioSeguido.id === atividade.usuarioId
+                    );
+                    const perfilHref = perfilUsuario
+                      ? criarHrefPerfilUsuarioSeguindo(perfilUsuario)
+                      : "/perfil-autor";
+
+                    return (
+                      <article key={atividade.id} style={isDesktop ? desktopAuthorCardStyle : authorCardStyle}>
+                        <Link
+                          href={perfilHref}
+                          style={criarAvatarUsuarioSeguindoStyle(atividade.usuarioAvatar)}
+                          aria-label={`Abrir perfil de ${atividade.usuarioNome}`}
+                        >
+                          {!atividade.usuarioAvatar && atividade.usuarioNome.slice(0, 1).toUpperCase()}
+                        </Link>
+
+                        <div style={authorContentStyle}>
+                          <div style={authorBadgeRowStyle}>
+                            <span style={badgeStyleSmall}>{atividade.tipoRotulo}</span>
+
+                            <span style={readingBadgeStyle}>Diário</span>
+                          </div>
+
+                          <h3 style={authorNameStyle}>{atividade.usuarioNome}</h3>
+
+                          <span style={authorLinkStyle}>{atividade.descricao}</span>
+                          <span style={summaryLabelStyle}>
+                            {formatarDataAtividadeSeguindo(atividade.data)}
+                          </span>
+
+                          <div style={actionsStyle}>
+                            <div style={isDesktop ? desktopAuthorActionsGridStyle : authorActionsGridStyle}>
+                              <Link href={atividade.href} style={readButtonStyle}>
+                                Abrir atividade
+                              </Link>
+
+                              <Link href={perfilHref} style={continueButtonStyle}>
+                                Ver perfil
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {usuariosFiltrados.length > 0 && (
+              <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
+                <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
+                  <div style={sectionHeaderTextStyle}>
+                    <h2 style={sectionTitleStyle}>
+                      {visualizandoListaSocialDoPerfil
+                        ? tituloListaSocial
+                        : "PESSOAS SEGUIDAS"}
+                    </h2>
+                  </div>
+
+                  <span style={sectionCounterStyle}>
+                    {usuariosFiltrados.length}
+                  </span>
+                </div>
+
+                <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
+                  {usuariosFiltrados.map((usuarioSeguido) => (
+                    <article key={usuarioSeguido.id} style={isDesktop ? desktopAuthorCardStyle : authorCardStyle}>
+                      <Link
+                        href={criarHrefPerfilUsuarioSeguindo(usuarioSeguido)}
+                        style={criarAvatarUsuarioSeguindoStyle(usuarioSeguido.avatar)}
+                        aria-label={`Abrir perfil de ${usuarioSeguido.nome}`}
+                      >
+                        {!usuarioSeguido.avatar && usuarioSeguido.nome.slice(0, 1).toUpperCase()}
+                      </Link>
+
+                      <div style={authorContentStyle}>
+                        <div style={authorBadgeRowStyle}>
+                          <span style={badgeStyleSmall}>Perfil</span>
+
+                          <span style={readingBadgeStyle}>Diário</span>
+                        </div>
+
+                        <h3 style={authorNameStyle}>{usuarioSeguido.nome}</h3>
+
+                        <span style={authorLinkStyle}>{usuarioSeguido.handle}</span>
+
+                        <p style={authorBioStyle}>{usuarioSeguido.bio}</p>
+
+                        <div style={actionsStyle}>
+                          <div style={isDesktop ? desktopAuthorActionsGridStyle : authorActionsGridStyle}>
+                            <Link
+                              href={criarHrefPerfilUsuarioSeguindo(usuarioSeguido)}
+                              style={readButtonStyle}
+                            >
+                              Abrir perfil
+                            </Link>
+
+                            {podeRemoverUsuariosDaLista && (
+                              <button
+                                type="button"
+                                onClick={() => deixarDeSeguirUsuario(usuarioSeguido.id)}
+                                style={unfollowButtonStyle}
+                              >
+                                Deixar de seguir
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {autoresFiltrados.length > 0 && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
                 <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
@@ -1894,6 +3064,51 @@ const safeTextStyle: CSSProperties = {
 };
 
 const seguindoPageCss = `
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual] nav,
+  html[data-historietas-tema-visual] [data-bottom-nav],
+  html[data-historietas-tema-visual] [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/seguindo"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/seguindo"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/seguindo"] {
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/seguindo"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/seguindo"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/seguindo"] .historietas-bottom-nav-icon {
+    color: #FFFFFF !important;
+    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
+  }
+
+  html[data-historietas-tema-visual] input::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea,
+  html[data-historietas-tema-visual] select {
+    color: #FFFFFF !important;
+  }
+
   .seguindo-summary-carousel {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -1904,23 +3119,9 @@ const seguindoPageCss = `
   }
 `;
 
-function criarDecoracaoTopoStyle(index: number): CSSProperties {
-  const posicoes: CSSProperties[] = [
-    { top: "8%", right: "8%", fontSize: "42px", transform: "rotate(-12deg)" },
-    { top: "48%", right: "15%", fontSize: "28px", transform: "rotate(16deg)" },
-    { bottom: "12%", right: "6%", fontSize: "34px", transform: "rotate(8deg)" },
-    { top: "16%", left: "8%", fontSize: "22px", transform: "rotate(14deg)" },
-  ];
-
+function criarDecoracaoTopoStyle(_index: number): CSSProperties {
   return {
-    position: "absolute",
-    color: "var(--historietas-accent, #FDBA74)",
-    opacity: 0.13,
-    lineHeight: 1,
-    fontWeight: 950,
-    filter: "drop-shadow(0 0 18px color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent))",
-    userSelect: "none",
-    ...posicoes[index % posicoes.length],
+    display: "none",
   };
 }
 
@@ -1932,10 +3133,10 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -1946,10 +3147,10 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
+  opacity: 0,
 };
 
 
@@ -1959,10 +3160,10 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+  isolation: "isolate",
 };
 
 const containerStyle: CSSProperties = {
@@ -2017,22 +3218,21 @@ const desktopTopActionsStyle: CSSProperties = {
 };
 
 const soonTopButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  padding: "0 13px",
+  minHeight: "36px",
+  padding: "0 12px",
   borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#DDD6FE",
   textDecoration: "none",
-  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "11px",
   fontWeight: 950,
-  letterSpacing: "-0.01em",
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.055) 100%)",
-  border: "1px solid rgba(255,255,255,0.13)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
   boxShadow: "none",
-  whiteSpace: "nowrap",
+  ...safeTextStyle,
 };
 
 const desktopSoonTopButtonStyle: CSSProperties = {
@@ -2059,35 +3259,30 @@ const logoStyle: CSSProperties = {
 };
 
 const logoMarkStyle: CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "14px",
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
   letterSpacing: "-0.04em",
-  boxShadow:
-    "0 0 22px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.22)",
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #DDD6FE) 40%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow:
-    "var(--historietas-logo-shadow, 0 0 28px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent))",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
+  textShadow: "none",
 };
 
 const titleHeaderStyle: CSSProperties = {
@@ -2121,20 +3316,19 @@ const titleHomeLinkStyle: CSSProperties = {
 };
 
 const titleLogoMarkStyle: CSSProperties = {
-  width: "clamp(36px, 8vw, 48px)",
-  height: "clamp(36px, 8vw, 48px)",
-  borderRadius: "clamp(12px, 2.6vw, 16px)",
-  display: "inline-flex",
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "clamp(18px, 4.3vw, 24px)",
-  lineHeight: 1,
+  fontSize: "17px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
-  flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   boxShadow: "none",
+  flex: "0 0 auto",
 };
 
 const desktopTitleLogoMarkStyle: CSSProperties = {
@@ -2147,26 +3341,20 @@ const desktopTitleLogoMarkStyle: CSSProperties = {
 
 const pageTitleTextStyle: CSSProperties = {
   display: "inline-block",
-  margin: 0,
   marginLeft: 0,
   paddingRight: "0.2em",
   paddingBottom: "0.04em",
   whiteSpace: "nowrap",
   overflow: "visible",
   fontSize: "23px",
-  lineHeight: 1.08,
+  lineHeight: 1.04,
   fontWeight: 950,
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
-  maxWidth: "100%",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
+  color: "var(--historietas-accent, #F97316)",
+  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
   textAlign: "center",
   textShadow: "none",
-  ...safeTextStyle,
 };
 
 const desktopTitleHeaderStyle: CSSProperties = {
@@ -2184,14 +3372,15 @@ const desktopPageTitleTextStyle: CSSProperties = {
 
 const heroStyle: CSSProperties = {
   position: "relative",
+  display: "grid",
+  justifyItems: "center",
+  textAlign: "center",
+  gap: "12px",
   borderRadius: "30px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.08))",
-  background:
-    "radial-gradient(circle at 18% 0%, rgba(124,58,237,0.42), transparent 32%), radial-gradient(circle at 90% 45%, rgba(249,115,22,0.12), transparent 28%), linear-gradient(135deg, rgba(26,13,43,0.98) 0%, rgba(12,7,23,0.98) 100%)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
   padding: "18px",
-  boxShadow:
-    "var(--historietas-hero-shadow, 0 26px 70px rgba(0,0,0,0.36), 0 0 46px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent), inset 0 1px 0 rgba(255,255,255,0.08))",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -2202,11 +3391,7 @@ const mobileHeroStyle: CSSProperties = {
 };
 
 const heroDecorationLayerStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  pointerEvents: "none",
-  zIndex: 0,
+  display: "none",
 };
 
 
@@ -2245,12 +3430,9 @@ const titleStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "-0.08em",
   maxWidth: "100%",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #DDD6FE) 44%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  color: "var(--historietas-accent, #F97316)",
   textAlign: "center",
+  textShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2265,13 +3447,12 @@ const desktopTitleStyle: CSSProperties = {
 const descriptionStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  margin: "8px auto 0",
-  color: "var(--historietas-text-secondary, #E4E4E7)",
-  fontSize: "13px",
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "14px",
   lineHeight: 1.55,
-  fontWeight: 760,
-  maxWidth: "620px",
-  textAlign: "center",
+  fontWeight: 720,
+  maxWidth: "680px",
   ...safeTextStyle,
 };
 
@@ -2290,10 +3471,9 @@ const filterBoxStyle: CSSProperties = {
   marginTop: "14px",
   padding: "13px",
   borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(255,255,255,0.075)) 0%, var(--historietas-surface-strong, rgba(255,255,255,0.035)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2350,9 +3530,9 @@ const filterResultBadgeStyle: CSSProperties = {
   maxWidth: "calc(100% - 26px)",
   padding: "8px 11px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-accent, #F97316) 65%, white)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   fontSize: "12px",
   fontWeight: 950,
   boxSizing: "border-box",
@@ -2363,10 +3543,9 @@ const searchInputStyle: CSSProperties = {
   width: "100%",
   minHeight: "43px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, rgba(255,255,255,0.12))",
-  background:
-    "var(--historietas-input-bg, rgba(9,7,17,0.92))",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 15px",
   outline: "none",
   fontSize: "13px",
@@ -2403,10 +3582,9 @@ const quickFilterStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "0 10px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background:
-    "var(--historietas-secondary-surface, rgba(255,255,255,0.075))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
@@ -2420,9 +3598,9 @@ const quickFilterStyle: CSSProperties = {
 
 const quickFilterActiveStyle: CSSProperties = {
   ...quickFilterStyle,
-  background: "linear-gradient(135deg, var(--historietas-secondary, #7C3AED) 0%, var(--historietas-accent, #F97316) 100%)",
-  border: "1px solid rgba(255,255,255,0.20)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
   boxShadow: "none"
 };
 
@@ -2449,10 +3627,9 @@ const selectStyle: CSSProperties = {
   width: "100%",
   minHeight: "43px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, rgba(255,255,255,0.12))",
-  background:
-    "var(--historietas-input-bg, rgba(9,7,17,0.92))",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 15px",
   outline: "none",
   fontSize: "13px",
@@ -2462,16 +3639,16 @@ const selectStyle: CSSProperties = {
   minWidth: 0,
   textAlign: "center",
   textAlignLast: "center",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+  boxShadow: "none"
 };
 
 const clearFilterButtonStyle: CSSProperties = {
   width: "100%",
   minHeight: "50px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "14px",
   fontWeight: 950,
   cursor: "pointer",
@@ -2482,6 +3659,7 @@ const clearFilterButtonStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2523,9 +3701,8 @@ const summaryCardStyle: CSSProperties = {
   flex: "0 0 88px",
   minHeight: "46px",
   borderRadius: "14px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(255,255,255,0.075)) 0%, var(--historietas-surface-strong, rgba(255,255,255,0.032)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   padding: "7px 6px",
   display: "grid",
   alignContent: "center",
@@ -2546,7 +3723,7 @@ const desktopSummaryCardStyle: CSSProperties = {
 };
 
 const summaryNumberStyle: CSSProperties = {
-  color: "color-mix(in srgb, var(--historietas-accent, #F97316) 72%, white)",
+  color: "#DDD6FE",
   fontSize: "17px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2611,7 +3788,7 @@ const desktopSectionHeaderStyle: CSSProperties = {
 
 const miniTitleStyle: CSSProperties = {
   display: "inline-flex",
-  color: "color-mix(in srgb, var(--historietas-accent, #F97316) 65%, white)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "11px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -2631,15 +3808,15 @@ const sectionHeaderTextStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "color-mix(in srgb, var(--historietas-accent, #F97316) 68%, white)",
-  fontSize: "clamp(21px, 5.4vw, 25px)",
-  lineHeight: 1.18,
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "clamp(24px, 6vw, 30px)",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "0.035em",
+  letterSpacing: "-0.03em",
   textAlign: "center",
   paddingBottom: "2px",
   maxWidth: "100%",
-  textTransform: "uppercase",
+  textTransform: "none",
   ...safeTextStyle
 };
 
@@ -2652,12 +3829,13 @@ const sectionCounterStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
   fontWeight: 950,
-  boxShadow: "0 10px 22px color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
+  boxShadow: "none",
   zIndex: 2,
 };
 
@@ -2702,10 +3880,9 @@ const cardStyle: CSSProperties = {
   padding: "10px",
   borderRadius: "22px",
   overflow: "hidden",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(35,24,54,0.96)) 0%, var(--historietas-surface-strong, rgba(17,11,29,0.99)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box"
@@ -2719,7 +3896,7 @@ const desktopCardStyle: CSSProperties = {
   gap: 0,
   padding: 0,
   borderRadius: "24px",
-  boxShadow: "var(--historietas-card-shadow, none)"
+  boxShadow: "none"
 };
 
 const coverStyle: CSSProperties = {
@@ -2731,13 +3908,15 @@ const coverStyle: CSSProperties = {
   alignSelf: "start",
   boxSizing: "border-box",
   borderRadius: "16px",
-  background:
-    "radial-gradient(circle at 24% 18%, color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent), transparent 34%), radial-gradient(circle at 78% 78%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent), transparent 38%), linear-gradient(135deg, var(--historietas-surface, #211536) 0%, var(--historietas-surface-strong, #0F0B18) 100%)",
+  background: "#04000A",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   overflow: "hidden",
+  border: "1px solid rgba(255,255,255,0.08)",
   borderBottom: "none",
   minWidth: 0,
+  boxShadow: "none",
 };
 
 const desktopCoverStyle: CSSProperties = {
@@ -2751,8 +3930,7 @@ const desktopCoverStyle: CSSProperties = {
 const overlayStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
-  background:
-    "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.28) 100%)",
+  background: "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.26) 100%)",
 };
 
 const coverContentStyle: CSSProperties = {
@@ -2779,8 +3957,8 @@ const genreStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "9px",
   fontWeight: 900,
@@ -2849,9 +4027,9 @@ const badgeStyleSmall: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-accent, #F97316) 65%, white)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -2859,8 +4037,8 @@ const badgeStyleSmall: CSSProperties = {
 
 const classificationBadgeStyle: CSSProperties = {
   ...genreStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 60%, rgba(255,255,255,0.08))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 34%, rgba(255,255,255,0.10))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.08)",
 };
 
 const readingBadgeStyle: CSSProperties = {
@@ -2868,9 +4046,9 @@ const readingBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 32%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 40%, white)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -2881,9 +4059,9 @@ const favoriteBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-accent, #F97316) 65%, white)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   fontSize: "9px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -2900,7 +4078,7 @@ const cardTitleStyle: CSSProperties = {
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
-  textShadow: "0 0 22px rgba(255,255,255,0.08)",
+  textShadow: "none",
   ...safeTextStyle
 };
 
@@ -2908,11 +4086,24 @@ const authorLinkStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   margin: 0,
-  color: "color-mix(in srgb, var(--historietas-accent, #F97316) 65%, white)",
+  color: "var(--historietas-text-secondary, #D8C8FF)",
   fontSize: "12px",
   fontWeight: 900,
   textDecoration: "none",
   borderBottom: "none",
+  ...safeTextStyle,
+};
+
+const authorBioStyle: CSSProperties = {
+  margin: 0,
+  color: "rgba(255,255,255,0.72)",
+  fontSize: "12px",
+  lineHeight: 1.35,
+  fontWeight: 750,
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
   ...safeTextStyle,
 };
 
@@ -2929,9 +4120,10 @@ const progressTrackStyle: CSSProperties = {
   width: "100%",
   height: "7px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.09)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
   overflow: "hidden",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+  boxShadow: "none"
 };
 
 const progressPercentStyle: CSSProperties = {
@@ -2947,8 +4139,9 @@ const progressPercentStyle: CSSProperties = {
 const progressBarStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "linear-gradient(90deg, #22C55E 0%, var(--historietas-accent, #F97316) 58%, var(--historietas-secondary, #7C3AED) 100%)",
-  boxShadow: "0 0 16px rgba(249,115,22,0.28)"
+  background:
+    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  boxShadow: "none"
 };
 
 const actionsStyle: CSSProperties = {
@@ -2991,7 +4184,7 @@ const desktopSecondaryActionsRowStyle: CSSProperties = {
 const readButtonStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, #FB923C 100%)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11px",
@@ -3001,7 +4194,7 @@ const readButtonStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   padding: "0 9px",
-  border: "none",
+  border: "1px solid rgba(255,255,255,0.10)",
   cursor: "pointer",
   fontFamily: "inherit",
   lineHeight: 1.15,
@@ -3009,19 +4202,21 @@ const readButtonStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle
 };
 
 const continueButtonStyle: CSSProperties = {
   ...readButtonStyle,
-  background: "linear-gradient(135deg, var(--historietas-secondary, #7C3AED) 0%, #A78BFA 100%)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
 };
 
 const disabledActionStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.04))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #71717A)",
   fontSize: "11px",
   fontWeight: 950,
@@ -3035,15 +4230,16 @@ const disabledActionStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const favoriteActionStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  border: "1px solid rgba(251,191,36,0.24)",
-  background: "color-mix(in srgb, #FBBF24 12%, var(--historietas-surface, transparent))",
-  color: "color-mix(in srgb, #B45309 70%, var(--historietas-text-primary, #FFFFFF))",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
@@ -3054,23 +4250,24 @@ const favoriteActionStyle: CSSProperties = {
   overflowWrap: "normal",
   wordBreak: "normal",
   lineHeight: 1,
+  boxShadow: "none",
   ...safeTextStyle
 };
 
 const favoriteActionActiveStyle: CSSProperties = {
   ...favoriteActionStyle,
-  background: "linear-gradient(135deg, #F59E0B 0%, #F97316 100%)",
-  border: "1px solid rgba(255,255,255,0.16)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  boxShadow: "0 10px 22px rgba(245,158,11,0.22)"
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
+  boxShadow: "none"
 };
 
 const completedActionStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, #22C55E 26%, var(--historietas-border-soft, transparent))",
-  background: "color-mix(in srgb, #22C55E 12%, var(--historietas-surface, transparent))",
-  color: "color-mix(in srgb, #166534 70%, var(--historietas-text-primary, #FFFFFF))",
+  border: "1px solid rgba(34,197,94,0.20)",
+  background: "rgba(34,197,94,0.085)",
+  color: "#86EFAC",
   fontSize: "10px",
   fontWeight: 950,
   cursor: "pointer",
@@ -3080,22 +4277,23 @@ const completedActionStyle: CSSProperties = {
   whiteSpace: "nowrap",
   overflowWrap: "normal",
   wordBreak: "normal",
+  boxShadow: "none",
 };
 
 const completedActionActiveStyle: CSSProperties = {
   ...completedActionStyle,
-  background: "linear-gradient(135deg, #16A34A 0%, #22C55E 100%)",
-  border: "1px solid rgba(255,255,255,0.16)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  boxShadow: "0 10px 22px rgba(34,197,94,0.22)"
+  background: "rgba(34,197,94,0.14)",
+  border: "1px solid rgba(34,197,94,0.28)",
+  color: "#BBF7D0",
+  boxShadow: "none"
 };
 
 const unfollowButtonStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  border: "1px solid rgba(251,113,133,0.28)",
-  background: "var(--historietas-danger-surface, rgba(251,113,133,0.10))",
-  color: "var(--historietas-danger-button-text, #FDA4AF)",
+  border: "1px solid rgba(239,68,68,0.18)",
+  background: "rgba(239,68,68,0.075)",
+  color: "#FCA5A5",
   fontSize: "10px",
   fontWeight: 950,
   cursor: "pointer",
@@ -3103,6 +4301,7 @@ const unfollowButtonStyle: CSSProperties = {
   padding: "0 7px",
   textAlign: "center",
   lineHeight: 1.12,
+  boxShadow: "none",
   ...safeTextStyle
 };
 
@@ -3113,10 +4312,9 @@ const authorCardStyle: CSSProperties = {
   gap: "10px",
   padding: "10px 12px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(32,22,49,0.96)) 0%, var(--historietas-surface-strong, rgba(17,11,29,0.99)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -3128,7 +4326,7 @@ const desktopAuthorCardStyle: CSSProperties = {
   gridTemplateColumns: "84px minmax(0, 1fr)",
   padding: "12px 14px",
   borderRadius: "22px",
-  boxShadow: "var(--historietas-card-shadow, none)"
+  boxShadow: "none"
 };
 
 const authorAvatarStyle: CSSProperties = {
@@ -3138,7 +4336,8 @@ const authorAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-secondary, #7C3AED) 0%, var(--historietas-accent, #F97316) 100%)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
@@ -3194,9 +4393,8 @@ const authorNameStyle: CSSProperties = {
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
   borderRadius: "28px",
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.032) 100%)",
-  border: "1px solid rgba(255,255,255,0.09)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   padding: "24px",
   display: "grid",
   gap: "14px",
@@ -3204,20 +4402,19 @@ const emptyBoxStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
-  boxShadow: "0 18px 44px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.06)"
+  boxShadow: "none"
 };
 
 const emptyMiniBoxStyle: CSSProperties = {
   padding: "16px",
   borderRadius: "20px",
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.032) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "#D4D4D8",
   fontSize: "13px",
   fontWeight: 800,
   lineHeight: 1.45,
-  boxShadow: "0 12px 28px rgba(0,0,0,0.18)",
+  boxShadow: "none",
   ...safeTextStyle
 };
 
@@ -3253,7 +4450,7 @@ const exploreButtonStyle: CSSProperties = {
   width: "100%",
   minHeight: "52px",
   borderRadius: "999px",
-  background: "linear-gradient(135deg, var(--historietas-secondary, #7C3AED) 0%, var(--historietas-accent, #F97316) 100%)",
+  background: "#08030F",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "14px",
@@ -3267,7 +4464,7 @@ const exploreButtonStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
-  border: "none",
-  boxShadow: "0 14px 30px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, transparent)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  boxShadow: "none",
   ...safeTextStyle
 };

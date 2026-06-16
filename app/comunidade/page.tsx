@@ -31,12 +31,14 @@ type UsuarioComunidade = {
   id: string;
   nome: string;
   email: string;
+  avatar: string;
 };
 
 type ComentarioComunidade = {
   id: string;
   autorId: string;
   autorNome: string;
+  autorAvatar: string;
   texto: string;
   criadoEm: string;
   curtidas: string[];
@@ -46,6 +48,7 @@ type PostComunidade = {
   id: string;
   autorId: string;
   autorNome: string;
+  autorAvatar: string;
   categoria: CategoriaComunidade;
   tipoPublicacao: TipoPublicacaoComunidade;
   temSpoiler: boolean;
@@ -67,6 +70,8 @@ type ObraRelacionadaSugestao = {
   slug: string;
   link: string;
 };
+
+type PerfilComunidadeRow = Record<string, unknown>;
 
 type AlvoDenunciaComunidade = "post" | "comentario";
 
@@ -232,6 +237,67 @@ function obterNomeUsuario(email: string, nomeProfile = "") {
   return nomeEmail || "Usuário";
 }
 
+function obterTextoProfileComunidade(
+  profile: PerfilComunidadeRow | undefined,
+  chave: string
+) {
+  if (!profile) {
+    return "";
+  }
+
+  const valor = profile[chave];
+
+  if (typeof valor === "string") {
+    return valor.trim();
+  }
+
+  if (typeof valor === "number" || typeof valor === "boolean") {
+    return String(valor);
+  }
+
+  return "";
+}
+
+function obterNomeProfileComunidade(profile: PerfilComunidadeRow | undefined) {
+  return (
+    obterTextoProfileComunidade(profile, "nome") ||
+    obterTextoProfileComunidade(profile, "nome_usuario") ||
+    obterTextoProfileComunidade(profile, "username") ||
+    obterTextoProfileComunidade(profile, "display_name") ||
+    obterTextoProfileComunidade(profile, "apelido")
+  );
+}
+
+function obterAvatarProfileComunidade(profile: PerfilComunidadeRow | undefined) {
+  return (
+    obterTextoProfileComunidade(profile, "avatar_url") ||
+    obterTextoProfileComunidade(profile, "avatar") ||
+    obterTextoProfileComunidade(profile, "foto_url") ||
+    obterTextoProfileComunidade(profile, "imagem_url") ||
+    obterTextoProfileComunidade(profile, "photo_url")
+  );
+}
+
+function criarAvatarComunidadeStyle(
+  estiloBase: CSSProperties,
+  avatar: string
+): CSSProperties {
+  const avatarLimpo = avatar.trim();
+
+  if (!avatarLimpo) {
+    return estiloBase;
+  }
+
+  return {
+    ...estiloBase,
+    backgroundImage: `url(${avatarLimpo})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    color: "transparent",
+    WebkitTextFillColor: "transparent",
+  };
+}
+
 function criarLoginHrefComunidade() {
   const redirectTo =
     typeof window !== "undefined"
@@ -248,16 +314,33 @@ function criarLoginHrefComunidade() {
   return `/login?${params.toString()}`;
 }
 
+function criarPerfilHrefComunidade(userId: string, nomeUsuario: string) {
+  const params = new URLSearchParams();
+  const userIdLimpo = userId.trim();
+  const nomeLimpo = nomeUsuario.trim();
+
+  if (userIdLimpo) {
+    params.set("userId", userIdLimpo);
+    params.set("autorId", userIdLimpo);
+  }
+
+  if (nomeLimpo) {
+    params.set("autor", nomeLimpo);
+  }
+
+  const query = params.toString();
+
+  return query ? `/perfil-autor?${query}` : "/perfil-autor";
+}
+
+
 async function obterNomeSeguroUsuarioComunidade(usuario: UsuarioComunidade) {
   try {
-    const { data } = await supabase
-      .from("profiles")
-      .select("nome")
-      .eq("user_id", usuario.id)
-      .maybeSingle();
-
-    const nomeProfile =
-      typeof data?.nome === "string" && data.nome.trim() ? data.nome : "";
+    const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios([
+      usuario.id,
+    ]);
+    const profile = profilesPorUsuario.get(usuario.id);
+    const nomeProfile = obterNomeProfileComunidade(profile);
 
     return obterNomeUsuario(usuario.email, nomeProfile || usuario.nome).slice(
       0,
@@ -693,12 +776,18 @@ type SupabaseComentarioCurtidaRow = {
 
 function mapearComentarioSupabase(
   comentario: SupabaseComentarioRow,
-  curtidasPorComentario: Map<string, string[]>
+  curtidasPorComentario: Map<string, string[]>,
+  profilesPorUsuario = new Map<string, PerfilComunidadeRow>()
 ): ComentarioComunidade {
+  const profile = profilesPorUsuario.get(comentario.autor_id);
+  const autorNome =
+    obterNomeProfileComunidade(profile) || comentario.autor_nome?.trim() || "Usuário";
+
   return {
     id: comentario.id,
     autorId: comentario.autor_id,
-    autorNome: comentario.autor_nome?.trim() || "Usuário",
+    autorNome,
+    autorAvatar: obterAvatarProfileComunidade(profile),
     texto: comentario.texto.trim().slice(0, 420),
     criadoEm: comentario.criado_em,
     curtidas: curtidasPorComentario.get(comentario.id) || [],
@@ -708,12 +797,18 @@ function mapearComentarioSupabase(
 function mapearPostSupabase(
   post: SupabasePostRow,
   comentariosPorPost: Map<string, ComentarioComunidade[]>,
-  curtidasPorPost: Map<string, string[]>
+  curtidasPorPost: Map<string, string[]>,
+  profilesPorUsuario = new Map<string, PerfilComunidadeRow>()
 ): PostComunidade {
+  const profile = profilesPorUsuario.get(post.autor_id);
+  const autorNome =
+    obterNomeProfileComunidade(profile) || post.autor_nome?.trim() || "Usuário";
+
   return {
     id: post.id,
     autorId: post.autor_id,
-    autorNome: post.autor_nome?.trim() || "Usuário",
+    autorNome,
+    autorAvatar: obterAvatarProfileComunidade(profile),
     categoria: normalizarCategoria(post.categoria),
     tipoPublicacao: normalizarTipoPublicacao(post.tipo_publicacao),
     temSpoiler: Boolean(post.tem_spoiler),
@@ -732,7 +827,8 @@ function mapearPostsSupabase(
   postsSupabase: SupabasePostRow[],
   comentariosSupabase: SupabaseComentarioRow[],
   curtidasSupabase: SupabaseCurtidaRow[],
-  comentarioCurtidasSupabase: SupabaseComentarioCurtidaRow[]
+  comentarioCurtidasSupabase: SupabaseComentarioCurtidaRow[],
+  profilesPorUsuario = new Map<string, PerfilComunidadeRow>()
 ) {
   const comentariosPorPost = new Map<string, ComentarioComunidade[]>();
   const curtidasPorPost = new Map<string, string[]>();
@@ -752,7 +848,8 @@ function mapearPostsSupabase(
   comentariosSupabase.forEach((comentarioSupabase) => {
     const comentario = mapearComentarioSupabase(
       comentarioSupabase,
-      curtidasPorComentario
+      curtidasPorComentario,
+      profilesPorUsuario
     );
     const comentariosAtuais =
       comentariosPorPost.get(comentarioSupabase.post_id) || [];
@@ -775,7 +872,7 @@ function mapearPostsSupabase(
   });
 
   return postsSupabase.map((post) =>
-    mapearPostSupabase(post, comentariosPorPost, curtidasPorPost)
+    mapearPostSupabase(post, comentariosPorPost, curtidasPorPost, profilesPorUsuario)
   );
 }
 
@@ -803,11 +900,156 @@ function formatarErroSupabase(acao: string, erro: unknown) {
   return detalhes ? `${acao}: ${detalhes}` : `${acao}: erro desconhecido.`;
 }
 
+function idSupabaseValidoComunidade(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id.trim()
+  );
+}
+
+async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
+  const idsValidos = Array.from(
+    new Set(
+      userIds
+        .map((id) => id.trim())
+        .filter((id) => idSupabaseValidoComunidade(id))
+    )
+  );
+  const profilesPorUsuario = new Map<string, PerfilComunidadeRow>();
+
+  if (idsValidos.length === 0) {
+    return profilesPorUsuario;
+  }
+
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("user_id", idsValidos);
+
+    if (Array.isArray(data)) {
+      (data as PerfilComunidadeRow[]).forEach((profile) => {
+        const profileUserId = obterTextoProfileComunidade(profile, "user_id");
+
+        if (profileUserId) {
+          profilesPorUsuario.set(profileUserId, profile);
+        }
+      });
+    }
+  } catch {
+    // Algumas bases antigas usam id no lugar de user_id. O fallback vem abaixo.
+  }
+
+  const idsSemProfile = idsValidos.filter(
+    (userId) => !profilesPorUsuario.has(userId)
+  );
+
+  if (idsSemProfile.length > 0) {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", idsSemProfile);
+
+      if (Array.isArray(data)) {
+        (data as PerfilComunidadeRow[]).forEach((profile) => {
+          const profileUserId =
+            obterTextoProfileComunidade(profile, "user_id") ||
+            obterTextoProfileComunidade(profile, "id");
+
+          if (profileUserId) {
+            profilesPorUsuario.set(profileUserId, profile);
+          }
+        });
+      }
+    } catch {
+      // Profiles é complementar; a Comunidade segue com o nome salvo no post.
+    }
+  }
+
+  return profilesPorUsuario;
+}
+
+function obterObraRelacionadaParaDiario(
+  titulo: string,
+  sugestoesObras: ObraRelacionadaSugestao[]
+) {
+  const tituloNormalizado = normalizarTextoBusca(titulo);
+
+  if (!tituloNormalizado) {
+    return null;
+  }
+
+  return (
+    sugestoesObras.find((obra) => {
+      return normalizarTextoBusca(obra.titulo) === tituloNormalizado;
+    }) || null
+  );
+}
+
+async function registrarReviewComunidadeNoDiario({
+  userId,
+  texto,
+  obraRelacionada,
+  postId,
+  sugestoesObras,
+}: {
+  userId: string;
+  texto: string;
+  obraRelacionada: string;
+  postId: string;
+  sugestoesObras: ObraRelacionadaSugestao[];
+}) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo || !postId.trim()) {
+    return;
+  }
+
+  try {
+    const obraDiario = obterObraRelacionadaParaDiario(
+      obraRelacionada,
+      sugestoesObras
+    );
+    const obraId = obraDiario?.id?.trim() || "";
+    const registroDiario: {
+      user_id: string;
+      tipo: "publicou_review";
+      texto: string;
+      visibilidade: "publico";
+      metadata: {
+        post_id: string;
+        obra_relacionada: string;
+        origem: "comunidade";
+      };
+      obra_id?: string;
+    } = {
+      user_id: userIdLimpo,
+      tipo: "publicou_review",
+      texto: texto.trim().slice(0, 420),
+      visibilidade: "publico",
+      metadata: {
+        post_id: postId,
+        obra_relacionada: obraRelacionada.trim().slice(0, 90),
+        origem: "comunidade",
+      },
+    };
+
+    if (obraId && idSupabaseValidoComunidade(obraId)) {
+      registroDiario.obra_id = obraId;
+    }
+
+    await supabase.from("diario_atividades").insert(registroDiario);
+  } catch {
+    // A publicação na Comunidade não deve falhar se o Diário não registrar.
+  }
+}
+
 type ComentariosSheetProps = {
   post: PostComunidade | null;
   podeComentar: boolean;
   usuarioId: string;
   usuarioNome: string;
+  usuarioAvatar: string;
   erroInteracao: string;
   onFechar: () => void;
   onEnviar: (postId: string, texto: string) => boolean | Promise<boolean>;
@@ -821,6 +1063,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
   podeComentar,
   usuarioId,
   usuarioNome,
+  usuarioAvatar,
   erroInteracao,
   onFechar,
   onEnviar,
@@ -1150,13 +1393,31 @@ const ComentariosSheet = memo(function ComentariosSheet({
 
               return (
               <article key={comentario.id} style={commentItemStyle}>
-                <div style={commentAvatarStyle}>
-                  {comentario.autorNome.slice(0, 1).toUpperCase()}
-                </div>
+                <Link
+                  href={criarPerfilHrefComunidade(
+                    comentario.autorId,
+                    comentario.autorNome
+                  )}
+                  aria-label={`Abrir perfil de ${comentario.autorNome}`}
+                  style={criarAvatarComunidadeStyle(
+                    commentAvatarLinkStyle,
+                    comentario.autorAvatar
+                  )}
+                >
+                  {!comentario.autorAvatar && comentario.autorNome.slice(0, 1).toUpperCase()}
+                </Link>
 
                 <div style={commentContentStyle}>
                   <div style={commentTopLineStyle}>
-                    <strong style={commentAuthorStyle}>{comentario.autorNome}</strong>
+                    <Link
+                      href={criarPerfilHrefComunidade(
+                        comentario.autorId,
+                        comentario.autorNome
+                      )}
+                      style={commentAuthorLinkStyle}
+                    >
+                      {comentario.autorNome}
+                    </Link>
                     <span style={commentTimeStyle}>agora</span>
                   </div>
 
@@ -1347,8 +1608,14 @@ const ComentariosSheet = memo(function ComentariosSheet({
         </section>
 
         <form onSubmit={enviarComentario} style={commentsSheetFormStyle}>
-          <div style={commentsInputAvatarStyle}>
-            {(podeComentar ? usuarioNome : "H").slice(0, 1).toUpperCase()}
+          <div
+            style={criarAvatarComunidadeStyle(
+              commentsInputAvatarStyle,
+              podeComentar ? usuarioAvatar : ""
+            )}
+          >
+            {!(podeComentar && usuarioAvatar) &&
+              (podeComentar ? usuarioNome : "H").slice(0, 1).toUpperCase()}
           </div>
 
           <div style={commentsInputBoxStyle}>
@@ -1612,15 +1879,12 @@ export default function ComunidadePage() {
         let usuarioAdmin = false;
 
         try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("nome")
-            .eq("user_id", user.id)
-            .maybeSingle();
+          const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios([
+            user.id,
+          ]);
+          const profile = profilesPorUsuario.get(user.id);
 
-          if (typeof profile?.nome === "string") {
-            nomeProfile = profile.nome;
-          }
+          nomeProfile = obterNomeProfileComunidade(profile);
         } catch {
           nomeProfile = "";
         }
@@ -1634,10 +1898,16 @@ export default function ComunidadePage() {
 
         if (!cancelado) {
           setUsuarioEhAdmin(usuarioAdmin);
+          const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios([
+            user.id,
+          ]);
+          const profile = profilesPorUsuario.get(user.id);
+
           setUsuario({
             id: user.id,
             email: user.email || "",
             nome: obterNomeUsuario(user.email || "", nomeProfile),
+            avatar: obterAvatarProfileComunidade(profile),
           });
         }
       } finally {
@@ -2341,11 +2611,24 @@ export default function ComunidadePage() {
         throw comentarioCurtidasResposta.error;
       }
 
+      const autoresIdsComunidade = Array.from(
+        new Set(
+          [
+            ...postsPagina.map((post) => post.autor_id),
+            ...comentariosSupabase.map((comentario) => comentario.autor_id),
+          ].filter((id): id is string => idSupabaseValidoComunidade(id || ""))
+        )
+      );
+      const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios(
+        autoresIdsComunidade
+      );
+
       const postsSupabase = mapearPostsSupabase(
         postsPagina,
         comentariosSupabase,
         (curtidasResposta.data || []) as SupabaseCurtidaRow[],
-        (comentarioCurtidasResposta.data || []) as SupabaseComentarioCurtidaRow[]
+        (comentarioCurtidasResposta.data || []) as SupabaseComentarioCurtidaRow[],
+        profilesPorUsuario
       );
 
       setPosts((postsAtuais) => {
@@ -2492,13 +2775,33 @@ export default function ComunidadePage() {
         return;
       }
 
+      const profilesPostNovo = new Map<string, PerfilComunidadeRow>([
+        [
+          usuario.id,
+          {
+            nome: autorNomeSeguro,
+            avatar_url: usuario.avatar,
+          },
+        ],
+      ]);
       const novoPost = mapearPostSupabase(
         data as SupabasePostRow,
         new Map<string, ComentarioComunidade[]>(),
-        new Map<string, string[]>()
+        new Map<string, string[]>(),
+        profilesPostNovo
       );
 
       setPosts((postsAtuais) => [novoPost, ...postsAtuais]);
+
+      if (!publicacaoEhEnquete && tipoPublicacaoPost === "Review") {
+        void registrarReviewComunidadeNoDiario({
+          userId: usuario.id,
+          texto: textoLimpo,
+          obraRelacionada: obraLimpa,
+          postId: novoPost.id,
+          sugestoesObras: obrasRelacionadasSugestoes,
+        });
+      }
 
       if (textoPostRef.current) {
         textoPostRef.current.value = "";
@@ -2539,25 +2842,27 @@ export default function ComunidadePage() {
       const postAtual = posts.find((post) => post.id === postId);
       const jaCurtiu = Boolean(postAtual?.curtidas.includes(usuario.id));
 
-      if (jaCurtiu) {
-        const { error } = await supabase
+      const { error: erroLimparCurtida } = await supabase
+        .from("comunidade_curtidas")
+        .delete()
+        .eq("post_id", postId)
+        .eq("usuario_id", usuario.id);
+
+      if (erroLimparCurtida) {
+        setErro(formatarErroSupabase("Erro ao atualizar curtida", erroLimparCurtida));
+        return;
+      }
+
+      if (!jaCurtiu) {
+        const { error: erroInserirCurtida } = await supabase
           .from("comunidade_curtidas")
-          .delete()
-          .eq("post_id", postId)
-          .eq("usuario_id", usuario.id);
+          .insert({
+            post_id: postId,
+            usuario_id: usuario.id,
+          });
 
-        if (error) {
-          setErro(formatarErroSupabase("Erro ao remover curtida", error));
-          return;
-        }
-      } else {
-        const { error } = await supabase.from("comunidade_curtidas").insert({
-          post_id: postId,
-          usuario_id: usuario.id,
-        });
-
-        if (error) {
-          setErro(formatarErroSupabase("Erro ao curtir", error));
+        if (erroInserirCurtida) {
+          setErro(formatarErroSupabase("Erro ao curtir", erroInserirCurtida));
           return;
         }
       }
@@ -2572,7 +2877,7 @@ export default function ComunidadePage() {
             ...post,
             curtidas: jaCurtiu
               ? post.curtidas.filter((curtidaId) => curtidaId !== usuario.id)
-              : [...post.curtidas, usuario.id],
+              : Array.from(new Set([...post.curtidas, usuario.id])),
           };
         });
       });
@@ -2649,9 +2954,19 @@ export default function ComunidadePage() {
         return false;
       }
 
+      const profilesComentarioNovo = new Map<string, PerfilComunidadeRow>([
+        [
+          usuario.id,
+          {
+            nome: autorNomeSeguro,
+            avatar_url: usuario.avatar,
+          },
+        ],
+      ]);
       const novoComentario = mapearComentarioSupabase(
         data as SupabaseComentarioRow,
-        new Map<string, string[]>()
+        new Map<string, string[]>(),
+        profilesComentarioNovo
       );
 
       setPosts((postsAtuais) =>
@@ -2797,27 +3112,32 @@ export default function ComunidadePage() {
       );
       const jaCurtiu = Boolean(comentarioAtual?.curtidas.includes(usuario.id));
 
-      if (jaCurtiu) {
-        const { error } = await supabase
-          .from("comunidade_comentario_curtidas")
-          .delete()
-          .eq("comentario_id", comentarioId)
-          .eq("usuario_id", usuario.id);
+      const { error: erroLimparCurtida } = await supabase
+        .from("comunidade_comentario_curtidas")
+        .delete()
+        .eq("comentario_id", comentarioId)
+        .eq("usuario_id", usuario.id);
 
-        if (error) {
-          setErro(formatarErroSupabase("Erro ao remover curtida do comentário", error));
-          return;
-        }
-      } else {
-        const { error } = await supabase
+      if (erroLimparCurtida) {
+        setErro(
+          formatarErroSupabase(
+            "Erro ao atualizar curtida do comentário",
+            erroLimparCurtida
+          )
+        );
+        return;
+      }
+
+      if (!jaCurtiu) {
+        const { error: erroInserirCurtida } = await supabase
           .from("comunidade_comentario_curtidas")
           .insert({
             comentario_id: comentarioId,
             usuario_id: usuario.id,
           });
 
-        if (error) {
-          setErro(formatarErroSupabase("Erro ao curtir comentário", error));
+        if (erroInserirCurtida) {
+          setErro(formatarErroSupabase("Erro ao curtir comentário", erroInserirCurtida));
           return;
         }
       }
@@ -2839,7 +3159,7 @@ export default function ComunidadePage() {
                 ...comentario,
                 curtidas: jaCurtiu
                   ? comentario.curtidas.filter((curtidaId) => curtidaId !== usuario.id)
-                  : [...comentario.curtidas, usuario.id],
+                  : Array.from(new Set([...comentario.curtidas, usuario.id])),
               };
             }),
           };
@@ -2935,11 +3255,16 @@ export default function ComunidadePage() {
         return;
       }
 
-      const { error } = await supabase
+      let removerPostQuery = supabase
         .from("comunidade_posts")
         .delete()
-        .eq("id", postId)
-        .eq("autor_id", usuario.id);
+        .eq("id", postId);
+
+      if (!usuarioEhAdmin) {
+        removerPostQuery = removerPostQuery.eq("autor_id", usuario.id);
+      }
+
+      const { error } = await removerPostQuery;
 
       if (error) {
         setErro(formatarErroSupabase("Erro ao remover publicação", error));
@@ -2991,7 +3316,7 @@ export default function ComunidadePage() {
 
             <span style={titleGroupStyle}>
               <span style={isDesktop ? desktopTitleMarkStyle : titleMarkStyle}>H</span>
-              <span style={titleWordStyle}>ISTORIETAS</span>
+              <span className="historietas-home-logo-text" style={titleLogoTextStyle}>ISTORIETAS</span>
             </span>
           </h1>
 
@@ -3314,7 +3639,9 @@ export default function ComunidadePage() {
                     usuario && post.curtidas.includes(usuario.id)
                   );
                   const postSalvo = postsSalvosIds.includes(post.id);
-                  const podeRemover = Boolean(usuario && post.autorId === usuario.id);
+                  const podeRemover = Boolean(
+                    usuario && (post.autorId === usuario.id || usuarioEhAdmin)
+                  );
                   const podeDenunciarPost = Boolean(
                     usuario && post.autorId !== usuario.id
                   );
@@ -3331,12 +3658,30 @@ export default function ComunidadePage() {
                   return (
                     <article key={post.id} style={isDesktop ? postCardDesktopStyle : postCardStyle}>
                       <div style={postHeaderStyle}>
-                        <div style={authorAvatarStyle}>
-                          {post.autorNome.slice(0, 1).toUpperCase()}
-                        </div>
+                        <Link
+                          href={criarPerfilHrefComunidade(
+                            post.autorId,
+                            post.autorNome
+                          )}
+                          aria-label={`Abrir perfil de ${post.autorNome}`}
+                          style={criarAvatarComunidadeStyle(
+                            authorAvatarLinkStyle,
+                            post.autorAvatar
+                          )}
+                        >
+                          {!post.autorAvatar && post.autorNome.slice(0, 1).toUpperCase()}
+                        </Link>
 
                         <div style={postMetaStyle}>
-                          <strong style={postAuthorStyle}>{post.autorNome}</strong>
+                          <Link
+                            href={criarPerfilHrefComunidade(
+                              post.autorId,
+                              post.autorNome
+                            )}
+                            style={postAuthorLinkStyle}
+                          >
+                            {post.autorNome}
+                          </Link>
                           <span style={postSubMetaStyle}>
                             {formatarDataComunidade(post.criadoEm)}
                             {post.fixado && (
@@ -3915,6 +4260,7 @@ export default function ComunidadePage() {
         podeComentar={Boolean(usuario)}
         usuarioId={usuario?.id || ""}
         usuarioNome={usuario?.nome || "Usuário"}
+        usuarioAvatar={usuario?.avatar || ""}
         erroInteracao={erro}
         onFechar={fecharComentarios}
         onEnviar={comentarPost}
@@ -3945,8 +4291,7 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 31%), radial-gradient(circle at 88% 14%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 24%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 42%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -3957,7 +4302,7 @@ const containerStyle: CSSProperties = {
   width: "min(1120px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "10px 0 calc(20px + env(safe-area-inset-bottom))",
+  padding: "8px 0 calc(20px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -3965,7 +4310,7 @@ const containerStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "24px 0 44px",
+  padding: "18px 0 44px",
 };
 
 const topStyle: CSSProperties = {
@@ -3982,18 +4327,72 @@ const desktopTopStyle: CSSProperties = {
   marginBottom: "18px",
 };
 
+
+const mobileNavStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  background: "#070212",
+  borderBottom: "0",
+  boxShadow: "none",
+};
+
+const desktopNavStyle: CSSProperties = {
+  ...mobileNavStyle,
+  background: "#070212",
+  borderBottom: "0",
+  boxShadow: "none",
+};
+
+const navInnerStyle: CSSProperties = {
+  width: "min(820px, calc(100% - 24px))",
+  maxWidth: "100%",
+  margin: "0 auto",
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "12px",
+  padding: "14px 0 8px",
+  boxSizing: "border-box",
+  minWidth: 0,
+};
+
+const desktopNavInnerStyle: CSSProperties = {
+  ...navInnerStyle,
+  width: "min(1240px, calc(100% - 64px))",
+  gridTemplateColumns: "1fr",
+  gridTemplateAreas: '"top"',
+  alignItems: "center",
+  gap: "10px",
+  padding: "12px 0 8px",
+};
+
+const navTopRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "14px",
+  flexWrap: "wrap",
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  minWidth: 0,
+};
+
+const desktopNavTopRowStyle: CSSProperties = {
+  ...navTopRowStyle,
+  gridArea: "top",
+  flexWrap: "nowrap",
+};
+
 const mobileTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
   top: 0,
   left: 0,
   right: 0,
-  height: "min(340px, 48vh)",
+  height: "min(520px, 72vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -4004,10 +4403,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const titleSectionStyle: CSSProperties = {
@@ -4028,8 +4425,8 @@ const communityTitleStyle: CSSProperties = {
   fontSize: "23px",
   lineHeight: 1.08,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
-  wordSpacing: "0.11em",
+  letterSpacing: "-0.035em",
+  wordSpacing: "0.08em",
   maxWidth: "100%",
   color: "transparent",
   padding: 0,
@@ -4065,8 +4462,19 @@ const titleGroupStyle: CSSProperties = {
 
 const titleWordStyle: CSSProperties = {
   display: "inline-block",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  color: "var(--historietas-accent, #F97316)",
+  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
+  textShadow: "none",
+  lineHeight: 1.08,
+  paddingRight: "0.08em",
+  paddingBottom: "0.04em",
+  overflow: "visible",
+};
+
+const titleLogoTextStyle: CSSProperties = {
+  display: "inline-block",
+  marginLeft: "-0.03em",
+  background: "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -4085,8 +4493,7 @@ const titleMarkStyle: CSSProperties = {
   width: "1.12em",
   height: "1.12em",
   borderRadius: "0.32em",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
   fontSize: "1em",
   fontWeight: 950,
@@ -4094,6 +4501,7 @@ const titleMarkStyle: CSSProperties = {
   lineHeight: 1,
   textAlign: "center",
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   boxShadow: "none",
   transform: "none",
 };
@@ -4169,15 +4577,14 @@ const titleLoginButtonStyle: CSSProperties = {
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "25px",
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: 0,
   display: "flex",
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "calc(100% - 98px)",
-  overflow: "visible",
+  maxWidth: "min(100%, calc(100% - 96px))",
   ...safeTextStyle,
 };
 
@@ -4188,23 +4595,23 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "17px",
+  fontSize: "19px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: 0,
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #F5F3FF 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 38%, #FFFFFF) 42%, var(--historietas-accent, #FDBA74) 100%)",
+  background: "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, none)",
+  textShadow: "none",
 };
 
 const topActionsStyle: CSSProperties = {
@@ -4254,11 +4661,9 @@ const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
   borderRadius: "20px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, transparent)",
-  background:
-    "radial-gradient(circle at 16% 18%, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent), transparent 30%), radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent), transparent 38%), linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.98)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.99)) 100%)",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  boxShadow: "none",
   minWidth: 0,
 };
 
@@ -4432,9 +4837,8 @@ const focusedPostStyle: CSSProperties = {
   marginBottom: "14px",
   padding: "12px",
   borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, var(--historietas-surface, rgba(255,255,255,0.075))) 0%, var(--historietas-surface-strong, rgba(255,255,255,0.035)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -4622,8 +5026,8 @@ const focusedPostSecondaryButtonStyle: CSSProperties = {
 const focusedPostPinnedButtonStyle: CSSProperties = {
   ...focusedPostSecondaryButtonStyle,
   color: "var(--historietas-accent, #FDBA74)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.06)",
 };
 
 const focusedPostDangerButtonStyle: CSSProperties = {
@@ -4859,8 +5263,8 @@ const compactComposerButtonStyle: CSSProperties = {
   maxWidth: "100%",
   minHeight: "38px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "#08030F",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -4895,8 +5299,8 @@ const inputStyle: CSSProperties = {
   width: "100%",
   minHeight: "38px",
   borderRadius: "15px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  background: "var(--historietas-input-bg, #18181B)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
   color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 12px",
   outline: "none",
@@ -5163,8 +5567,8 @@ const spoilerComposerCheckActiveStyle: CSSProperties = {
 const primaryButtonStyle: CSSProperties = {
   minHeight: "39px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "#08030F",
   color: "#FFFFFF",
   fontSize: "12.5px",
   fontWeight: 950,
@@ -5191,9 +5595,9 @@ const primaryLinkButtonStyle: CSSProperties = {
 const secondaryButtonStyle: CSSProperties = {
   minHeight: "39px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
   fontWeight: 950,
   fontFamily: "inherit",
@@ -5208,7 +5612,7 @@ const errorStyle: CSSProperties = {
   borderRadius: "15px",
   background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
   border:
-    "1px solid color-mix(in srgb, #EF4444 28%, var(--historietas-border-soft, transparent))",
+    "1px solid rgba(248,113,113,0.24)",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "12px",
   fontWeight: 850,
@@ -5237,7 +5641,7 @@ const communityErrorNoticeStyle: CSSProperties = {
   borderRadius: "16px",
   background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
   border:
-    "1px solid color-mix(in srgb, #EF4444 28%, var(--historietas-border-soft, transparent))",
+    "1px solid rgba(248,113,113,0.24)",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "12px",
   fontWeight: 850,
@@ -5251,10 +5655,9 @@ const pinnedNoticeStyle: CSSProperties = {
   alignItems: "center",
   padding: "12px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 13%, rgba(18,12,30,0.90)) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 9%, rgba(12,7,23,0.98)) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, var(--historietas-border-soft, transparent))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
@@ -5309,10 +5712,9 @@ const weeklyChallengeStyle: CSSProperties = {
   gap: "10px",
   padding: "13px",
   borderRadius: "23px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(18,12,30,0.92)) 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 8%, rgba(12,7,23,0.98)) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, var(--historietas-border-soft, transparent))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
@@ -5360,8 +5762,8 @@ const weeklyChallengeTitleStyle: CSSProperties = {
 const weeklyChallengeButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "#08030F",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -5449,10 +5851,8 @@ const exploreLikeFilterBoxStyle: CSSProperties = {
   gap: "10px",
   padding: "12px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, rgba(255,255,255,0.055)) 0%, rgba(255,255,255,0.045) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, rgba(255,255,255,0.08))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
@@ -5519,15 +5919,15 @@ const exploreLikeQuickFilterButtonStyle: CSSProperties = {
   minHeight: "32px",
   padding: "0 11px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.038))",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10.5px",
   fontWeight: 880,
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
-  boxShadow: "0 7px 16px rgba(0,0,0,0.09)",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -5542,16 +5942,16 @@ const desktopExploreLikeQuickFilterButtonStyle: CSSProperties = {
 
 const exploreLikeQuickFilterActiveStyle: CSSProperties = {
   ...exploreLikeQuickFilterButtonStyle,
-  background: "rgba(124,58,237,0.28)",
-  border: "1px solid rgba(139,92,246,0.34)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.18)",
   color: "#FFFFFF",
-  boxShadow: "0 12px 28px rgba(124,58,237,0.18)",
+  boxShadow: "none",
 };
 
 const desktopExploreLikeQuickFilterActiveStyle: CSSProperties = {
   ...desktopExploreLikeQuickFilterButtonStyle,
-  background: "rgba(124,58,237,0.28)",
-  border: "1px solid rgba(139,92,246,0.34)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.18)",
   color: "#FFFFFF",
   boxShadow: "none",
 };
@@ -5560,9 +5960,9 @@ const exploreLikeToggleFiltersStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
   border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.10))",
+    "1px solid rgba(255,255,255,0.10)",
   background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 8%, rgba(255,255,255,0.045)) 0%, rgba(255,255,255,0.032) 100%)",
+    "rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "11px",
   fontWeight: 900,
@@ -5660,9 +6060,9 @@ const communityToolsStyle: CSSProperties = {
   gap: "10px",
   padding: "12px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 7%, rgba(18,12,30,0.86)) 0%, rgba(10,6,18,0.94) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
@@ -5695,8 +6095,8 @@ const searchInputStyle: CSSProperties = {
   width: "100%",
   height: "44px",
   borderRadius: "16px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  background: "var(--historietas-input-bg, rgba(8,5,15,0.82))",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
   color: "var(--historietas-text-primary, #FFFFFF)",
   outline: "none",
   padding: "0 14px",
@@ -5766,8 +6166,8 @@ const filterResultBadgeStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 10px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "10px",
   fontWeight: 950,
@@ -5810,8 +6210,8 @@ const quickFilterButtonStyle: CSSProperties = {
 
 const quickFilterActiveStyle: CSSProperties = {
   ...quickFilterButtonStyle,
-  background: "var(--historietas-accent, #F97316)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 58%, transparent)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.14)",
   color: "#FFFFFF",
 };
 
@@ -5825,9 +6225,9 @@ const advancedToggleRowStyle: CSSProperties = {
 const advancedToggleButtonStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, var(--historietas-border-soft, transparent))",
-  background: "rgba(249,115,22,0.10)",
-  color: "var(--historietas-accent, #FDBA74)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   padding: "0 14px",
   fontSize: "11px",
   fontWeight: 950,
@@ -5932,7 +6332,7 @@ const sortButtonStyle: CSSProperties = {
 const sortButtonActiveStyle: CSSProperties = {
   ...sortButtonStyle,
   background: "var(--historietas-active-surface, rgba(124,58,237,0.25))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 48%, transparent)",
+  border: "1px solid rgba(255,255,255,0.14)",
   color: "var(--historietas-text-primary, #FFFFFF)",
 };
 
@@ -6038,9 +6438,9 @@ const typeFilterPanelStyle: CSSProperties = {
   gap: "9px",
   padding: "11px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 9%, rgba(18,12,30,0.86)) 0%, rgba(10,6,18,0.94) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
@@ -6097,7 +6497,7 @@ const typeFilterButtonActiveStyle: CSSProperties = {
   ...typeFilterButtonStyle,
   background: "var(--historietas-active-surface, rgba(124,58,237,0.25))",
   border:
-    "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 48%, transparent)",
+    "1px solid rgba(255,255,255,0.14)",
   color: "var(--historietas-text-primary, #FFFFFF)",
 };
 
@@ -6128,9 +6528,8 @@ const filterButtonStyle: CSSProperties = {
 
 const activeFilterButtonStyle: CSSProperties = {
   ...filterButtonStyle,
-  background: "var(--historietas-accent, #F97316)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 58%, transparent)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.14)",
   color: "#FFFFFF",
 };
 
@@ -6142,10 +6541,8 @@ const savedFilterStyle: CSSProperties = {
 
 const savedFilterActiveStyle: CSSProperties = {
   ...savedFilterStyle,
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-surface, transparent))",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, var(--historietas-border-soft, transparent))",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
@@ -6169,9 +6566,9 @@ const loadMorePostsButtonStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 16px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 26%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
-  background: "rgba(249,115,22,0.10)",
-  color: "var(--historietas-accent, #FDBA74)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "#08030F",
+  color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
   fontFamily: "inherit",
@@ -6186,9 +6583,9 @@ const emptyFeedStyle: CSSProperties = {
   gap: "8px",
   padding: "22px 14px",
   borderRadius: "21px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, rgba(18,12,30,0.88)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "none",
   textAlign: "center",
   minWidth: 0,
 };
@@ -6232,10 +6629,9 @@ const postCardStyle: CSSProperties = {
   gap: "11px",
   padding: "14px",
   borderRadius: "23px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, rgba(18,12,30,0.90)) 0%, rgba(10,6,18,0.97) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "visible",
 };
@@ -6270,6 +6666,13 @@ const authorAvatarStyle: CSSProperties = {
   fontWeight: 950,
 };
 
+const authorAvatarLinkStyle: CSSProperties = {
+  ...authorAvatarStyle,
+  textDecoration: "none",
+  cursor: "pointer",
+};
+
+
 const postMetaStyle: CSSProperties = {
   display: "grid",
   gap: "3px",
@@ -6283,6 +6686,13 @@ const postAuthorStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const postAuthorLinkStyle: CSSProperties = {
+  ...postAuthorStyle,
+  textDecoration: "none",
+  cursor: "pointer",
+};
+
+
 const postSubMetaStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
@@ -6293,7 +6703,7 @@ const postSubMetaStyle: CSSProperties = {
 const removeButtonStyle: CSSProperties = {
   minHeight: "30px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, #EF4444 24%, var(--historietas-border-soft, transparent))",
+  border: "1px solid rgba(248,113,113,0.24)",
   background: "var(--historietas-danger-surface, rgba(239,68,68,0.11))",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "10px",
@@ -6524,10 +6934,8 @@ const actionButtonStyle: CSSProperties = {
 
 const likedActionButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-surface, transparent))",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, var(--historietas-border-soft, transparent))",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "var(--historietas-accent, #FDBA74)",
 };
 
@@ -6696,6 +7104,13 @@ const commentAvatarStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
+const commentAvatarLinkStyle: CSSProperties = {
+  ...commentAvatarStyle,
+  textDecoration: "none",
+  cursor: "pointer",
+};
+
+
 const commentContentStyle: CSSProperties = {
   display: "grid",
   gap: "2px",
@@ -6714,6 +7129,13 @@ const commentAuthorStyle: CSSProperties = {
   fontSize: "12px",
   fontWeight: 950,
 };
+
+const commentAuthorLinkStyle: CSSProperties = {
+  ...commentAuthorStyle,
+  textDecoration: "none",
+  cursor: "pointer",
+};
+
 
 const commentTimeStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
@@ -6822,7 +7244,7 @@ const commentsSheetErrorStyle: CSSProperties = {
   borderRadius: "14px",
   background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
   border:
-    "1px solid color-mix(in srgb, #EF4444 28%, var(--historietas-border-soft, transparent))",
+    "1px solid rgba(248,113,113,0.24)",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "11px",
   fontWeight: 850,
@@ -6883,7 +7305,7 @@ const commentsStickerToggleActiveStyle: CSSProperties = {
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
   border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 60%, transparent)",
+    "1px solid rgba(255,255,255,0.14)",
 };
 
 const commentsStickerTrayStyle: CSSProperties = {
@@ -7096,10 +7518,9 @@ const sideCardStyle: CSSProperties = {
   gap: "10px",
   padding: "15px",
   borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 8%, rgba(18,12,30,0.88)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "none",
 };
 
 const rulesListStyle: CSSProperties = {
@@ -7128,7 +7549,7 @@ const sideCategoryButtonStyle: CSSProperties = {
 const sideCategoryButtonActiveStyle: CSSProperties = {
   ...sideCategoryButtonStyle,
   background: "var(--historietas-active-surface, rgba(124,58,237,0.24))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 48%, transparent)",
+  border: "1px solid rgba(255,255,255,0.14)",
   color: "var(--historietas-text-primary, #FFFFFF)",
 };
 

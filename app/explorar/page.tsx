@@ -88,6 +88,12 @@ type SupabaseCapituloRow = {
   atualizado_em: string | null;
 };
 
+type PerfilExplorarRow = {
+  id?: string | null;
+  user_id?: string | null;
+  nome?: string | null;
+};
+
 type OrdenacaoExplorar =
   | "relevancia"
   | "mais-curtidas"
@@ -235,11 +241,11 @@ const TEMAS_VISUAIS_EXPLORAR: Record<TemaVisualExplorar, TemaVisualExplorarConfi
   original: {
     accent: "#F97316",
     secondary: "#7C3AED",
-    bgStart: "#0B0614",
-    bgMid: "#12081F",
-    bgEnd: "#17101B",
-    glowPrimary: "rgba(124,58,237,0.32)",
-    glowSecondary: "rgba(249,115,22,0.16)",
+    bgStart: "#070212",
+    bgMid: "#070212",
+    bgEnd: "#070212",
+    glowPrimary: "transparent",
+    glowSecondary: "transparent",
   },
   fantasia: {
     accent: "#A855F7",
@@ -642,6 +648,79 @@ function criarSlugBase(titulo: string) {
   return slug || "obra";
 }
 
+function criarStorageKeyUsuarioExplorar(chave: string, userId: string) {
+  const usuarioId = userId.trim();
+
+  return usuarioId ? `${chave}:${usuarioId}` : chave;
+}
+
+function normalizarListaIdsExplorar(valor: unknown) {
+  return Array.isArray(valor)
+    ? valor
+        .filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
+        .map((id) => id.trim())
+    : [];
+}
+
+function carregarListaIdsUsuarioExplorar(chave: string, userId: string) {
+  try {
+    const chaveUsuario = criarStorageKeyUsuarioExplorar(chave, userId);
+    const texto = localStorage.getItem(chaveUsuario);
+    const json: unknown = texto ? JSON.parse(texto) : [];
+
+    return normalizarListaIdsExplorar(json);
+  } catch {
+    return [] as string[];
+  }
+}
+
+function salvarListaIdsUsuarioExplorar(
+  chave: string,
+  userId: string,
+  lista: string[]
+) {
+  const listaNormalizada = Array.from(new Set(normalizarListaIdsExplorar(lista)));
+
+  try {
+    localStorage.setItem(chave, JSON.stringify(listaNormalizada));
+
+    if (userId.trim()) {
+      localStorage.setItem(
+        criarStorageKeyUsuarioExplorar(chave, userId),
+        JSON.stringify(listaNormalizada)
+      );
+    }
+  } catch {
+    // localStorage é apoio; a página continua com o estado em memória.
+  }
+}
+
+function obterIdentificadoresObraExplorar(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
+) {
+  return Array.from(
+    new Set(
+      [
+        obra.id,
+        obra.slug,
+        criarSlugBase(obra.titulo),
+        normalizarTexto(obra.titulo),
+      ].filter((valor): valor is string => typeof valor === "string" && Boolean(valor.trim()))
+    )
+  );
+}
+
+function colecaoTemObraExplorar(
+  colecao: string[],
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
+) {
+  const ids = new Set(normalizarListaIdsExplorar(colecao));
+
+  return obterIdentificadoresObraExplorar(obra).some((identificador) =>
+    ids.has(identificador)
+  );
+}
+
 function criarLoginHrefExplorar() {
   const redirectTo =
     typeof window !== "undefined"
@@ -669,11 +748,83 @@ function criarPerfilAutorHrefExplorar(autor: string, autorId?: string) {
 
   if (autorIdLimpo) {
     parametros.set("autorId", autorIdLimpo);
+    parametros.set("userId", autorIdLimpo);
   }
 
   const query = parametros.toString();
 
   return query ? `/perfil-autor?${query}` : "/perfil-autor";
+}
+
+function obterNomeProfileExplorar(profile: PerfilExplorarRow) {
+  return typeof profile.nome === "string" && profile.nome.trim()
+    ? profile.nome.trim()
+    : "";
+}
+
+async function carregarNomesProfilesExplorar(userIds: string[]) {
+  const idsUnicos = Array.from(
+    new Set(userIds.map((id) => id.trim()).filter(Boolean))
+  );
+  const nomesPorUsuario = new Map<string, string>();
+
+  if (idsUnicos.length === 0) {
+    return nomesPorUsuario;
+  }
+
+  try {
+    const filtroIds = idsUnicos.join(",");
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, user_id, nome")
+      .or(`user_id.in.(${filtroIds}),id.in.(${filtroIds})`);
+
+    if (error) {
+      console.warn("Não consegui carregar profiles no Explorar:", error.message);
+      return nomesPorUsuario;
+    }
+
+    ((data || []) as PerfilExplorarRow[]).forEach((profile) => {
+      const nome = obterNomeProfileExplorar(profile);
+
+      if (!nome) {
+        return;
+      }
+
+      [profile.user_id, profile.id].forEach((id) => {
+        if (typeof id === "string" && id.trim()) {
+          nomesPorUsuario.set(id.trim(), nome);
+        }
+      });
+    });
+  } catch (error) {
+    console.warn("Não consegui acessar profiles no Explorar:", error);
+  }
+
+  return nomesPorUsuario;
+}
+
+function aplicarNomesProfilesEmObrasExplorar(
+  obrasParaAtualizar: ObraLocal[],
+  nomesPorUsuario: Map<string, string>
+) {
+  if (nomesPorUsuario.size === 0) {
+    return obrasParaAtualizar;
+  }
+
+  return obrasParaAtualizar.map((obra) => {
+    const autorId = obra.autorId?.trim() || "";
+    const nomeProfile = autorId ? nomesPorUsuario.get(autorId) || "" : "";
+
+    if (!nomeProfile) {
+      return obra;
+    }
+
+    return {
+      ...obra,
+      autor: nomeProfile,
+    };
+  });
 }
 
 function categoriaCombinaComGenero(categoria: string, genero: string) {
@@ -971,7 +1122,13 @@ function normalizarObra(
     autorId:
       typeof obra.autorId === "string" && obra.autorId.trim()
         ? obra.autorId.trim()
-        : "",
+        : typeof obra.user_id === "string" && obra.user_id.trim()
+          ? obra.user_id.trim()
+          : typeof obra.userId === "string" && obra.userId.trim()
+            ? obra.userId.trim()
+            : typeof obra.autor_id === "string" && obra.autor_id.trim()
+              ? obra.autor_id.trim()
+              : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
@@ -1158,6 +1315,57 @@ function mesclarObrasSemDuplicar(
   return obrasMescladas;
 }
 
+async function carregarIdsColecaoUsuarioExplorar(
+  tabela: "favoritos" | "concluidas",
+  userId: string
+) {
+  if (!userId.trim()) {
+    return [] as string[];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(tabela)
+      .select("obra_id")
+      .eq("user_id", userId);
+
+    if (error || !Array.isArray(data)) {
+      if (error) {
+        console.warn(`Não consegui carregar ${tabela} no Explorar:`, error.message);
+      }
+
+      return [] as string[];
+    }
+
+    return data
+      .map((registro) => {
+        if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+          return "";
+        }
+
+        const obraId = (registro as Record<string, unknown>).obra_id;
+
+        return typeof obraId === "string" ? obraId.trim() : "";
+      })
+      .filter(Boolean);
+  } catch (error) {
+    console.warn(`Não consegui acessar ${tabela} no Explorar:`, error);
+    return [] as string[];
+  }
+}
+
+async function carregarColecoesUsuarioExplorar(userId: string) {
+  const [favoritas, concluidas] = await Promise.all([
+    carregarIdsColecaoUsuarioExplorar("favoritos", userId),
+    carregarIdsColecaoUsuarioExplorar("concluidas", userId),
+  ]);
+
+  return {
+    favoritas,
+    concluidas,
+  };
+}
+
 async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[]) {
   try {
     const { data: obrasBanco, error: erroObras } = await supabase
@@ -1178,8 +1386,17 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[]) {
       (obra) => Boolean(obra.id)
     );
 
+    const nomesProfiles = await carregarNomesProfilesExplorar([
+      ...obrasLocais.map((obra) => obra.autorId || ""),
+      ...obrasSupabase.map((obra) => obra.user_id || ""),
+    ]);
+    const obrasLocaisComProfiles = aplicarNomesProfilesEmObrasExplorar(
+      obrasLocais,
+      nomesProfiles
+    );
+
     if (obrasSupabase.length === 0) {
-      return obrasLocais;
+      return obrasLocaisComProfiles;
     }
 
     const idsObras = obrasSupabase.map((obra) => obra.id);
@@ -1215,16 +1432,24 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[]) {
         return obraLocalAtual.id === obraBanco.id || slugLocal === slugBanco;
       });
 
-      return normalizarObraSupabase(
+      const obraNormalizada = normalizarObraSupabase(
         obraBanco,
         capitulosPorObra.get(obraBanco.id) || [],
         obraLocal,
         index
       );
+      const nomeProfile = nomesProfiles.get(obraNormalizada.autorId || "") || "";
+
+      return nomeProfile
+        ? {
+            ...obraNormalizada,
+            autor: nomeProfile,
+          }
+        : obraNormalizada;
     });
 
     const obrasMescladas = mesclarObrasSemDuplicar(
-      obrasLocais,
+      obrasLocaisComProfiles,
       obrasSupabaseNormalizadas
     );
 
@@ -1328,7 +1553,7 @@ type TemaCategoriaExplorar = {
 };
 
 function criarTemaCategoriaExplorar(
-  tema: Pick<
+  _tema: Pick<
     TemaVisualExplorarConfig,
     | "accent"
     | "secondary"
@@ -1343,30 +1568,21 @@ function criarTemaCategoriaExplorar(
     | "secondaryButtonText"
   >
 ): TemaCategoriaExplorar {
-  const titleTo = tema.titleTo || tema.accent;
-  const activeSurface =
-    tema.activeSurface ||
-    `color-mix(in srgb, ${tema.accent} 22%, rgba(12,7,23,0.92))`;
-  const secondarySurface =
-    tema.secondarySurface ||
-    `color-mix(in srgb, ${tema.secondary} 18%, rgba(255,255,255,0.035))`;
-  const secondaryButtonText = tema.secondaryButtonText || titleTo;
-
   return {
-    accent: tema.accent,
-    secondary: tema.secondary,
-    bgStart: tema.bgStart,
-    bgMid: tema.bgMid,
-    bgEnd: tema.bgEnd,
-    glowPrimary: tema.glowPrimary,
-    glowSecondary: tema.glowSecondary,
-    titleTo,
-    activeSurface,
-    secondarySurface,
-    secondaryButtonText,
-    activeBackground: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
-    pageBackground: `radial-gradient(circle at 18% 0%, ${tema.glowPrimary}, transparent 30%), radial-gradient(circle at 90% 20%, ${tema.glowSecondary}, transparent 24%), radial-gradient(circle at 50% 100%, color-mix(in srgb, ${tema.accent} 9%, transparent), transparent 30%), linear-gradient(180deg, ${tema.bgStart} 0%, ${tema.bgMid} 44%, ${tema.bgEnd} 100%)`,
-    heroBackground: `radial-gradient(circle at 16% 0%, ${tema.glowPrimary}, transparent 32%), radial-gradient(circle at 90% 45%, ${tema.glowSecondary}, transparent 30%), linear-gradient(135deg, color-mix(in srgb, ${tema.bgMid} 82%, rgba(255,255,255,0.04)) 0%, color-mix(in srgb, ${tema.bgStart} 92%, #000000) 100%)`,
+    accent: "#A78BFA",
+    secondary: "#4C1D95",
+    bgStart: "#070212",
+    bgMid: "#070212",
+    bgEnd: "#070212",
+    glowPrimary: "transparent",
+    glowSecondary: "transparent",
+    titleTo: "#DDD6FE",
+    activeSurface: "rgba(46, 16, 101, 0.54)",
+    secondarySurface: "rgba(255,255,255,0.06)",
+    secondaryButtonText: "#DDD6FE",
+    activeBackground: "#08030F",
+    pageBackground: "#070212",
+    heroBackground: "#070212",
   };
 }
 
@@ -1514,26 +1730,11 @@ function obterDecoracoesCategoria(categoria: string) {
 }
 
 function criarDecoracaoTemaStyle(
-  index: number,
-  tema: ReturnType<typeof obterTemaCategoria>
+  _index: number,
+  _tema: ReturnType<typeof obterTemaCategoria>
 ): CSSProperties {
-  const posicoes: CSSProperties[] = [
-    { top: "8%", right: "8%", fontSize: "42px", transform: "rotate(-12deg)" },
-    { top: "48%", right: "15%", fontSize: "28px", transform: "rotate(16deg)" },
-    { bottom: "12%", right: "6%", fontSize: "34px", transform: "rotate(8deg)" },
-    { top: "16%", left: "8%", fontSize: "22px", transform: "rotate(14deg)" },
-    { bottom: "16%", left: "18%", fontSize: "26px", transform: "rotate(-10deg)" },
-  ];
-
   return {
-    position: "absolute",
-    color: tema.accent,
-    opacity: 0.13,
-    lineHeight: 1,
-    fontWeight: 950,
-    filter: `drop-shadow(0 0 18px ${tema.accent}55)`,
-    userSelect: "none",
-    ...posicoes[index % posicoes.length],
+    display: "none",
   };
 }
 
@@ -1554,6 +1755,7 @@ export default function ExplorarPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [temaVisual, setTemaVisual] = useState<TemaVisualExplorar>("original");
   const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [mensagemLogin, setMensagemLogin] = useState("");
 
   useEffect(() => {
@@ -1572,10 +1774,12 @@ export default function ExplorarPage() {
 
         if (componenteAtivo) {
           setUsuarioLogado(Boolean(data.user));
+          setUsuarioIdLogado(data.user?.id || "");
         }
       } catch {
         if (componenteAtivo) {
           setUsuarioLogado(false);
+          setUsuarioIdLogado("");
         }
       }
     }
@@ -1586,6 +1790,7 @@ export default function ExplorarPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUsuarioLogado(Boolean(session?.user));
+      setUsuarioIdLogado(session?.user?.id || "");
 
       if (session?.user) {
         setMensagemLogin("");
@@ -1635,6 +1840,20 @@ export default function ExplorarPage() {
       setCategoriaSelecionada(categoriaParam.trim());
 
       try {
+        let userIdAtual = "";
+
+        try {
+          const { data } = await supabase.auth.getUser();
+          userIdAtual = data.user?.id || "";
+        } catch {
+          userIdAtual = "";
+        }
+
+        if (!cancelado) {
+          setUsuarioLogado(Boolean(userIdAtual));
+          setUsuarioIdLogado(userIdAtual);
+        }
+
         const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
         const obrasSalvasJson = obrasSalvasTexto
           ? JSON.parse(obrasSalvasTexto)
@@ -1651,27 +1870,49 @@ export default function ExplorarPage() {
         const obrasFavoritasJson = obrasFavoritasTexto
           ? JSON.parse(obrasFavoritasTexto)
           : [];
-
-        const obrasFavoritasNormalizadas: string[] = Array.isArray(
-          obrasFavoritasJson
-        )
-          ? obrasFavoritasJson.filter(
-              (id): id is string => typeof id === "string"
-            )
+        const favoritasGlobais = normalizarListaIdsExplorar(obrasFavoritasJson);
+        const favoritasDoUsuario = userIdAtual
+          ? carregarListaIdsUsuarioExplorar(FAVORITES_STORAGE_KEY, userIdAtual)
           : [];
 
         const obrasConcluidasTexto = localStorage.getItem(COMPLETED_STORAGE_KEY);
         const obrasConcluidasJson = obrasConcluidasTexto
           ? JSON.parse(obrasConcluidasTexto)
           : [];
-
-        const obrasConcluidasNormalizadas: string[] = Array.isArray(
-          obrasConcluidasJson
-        )
-          ? obrasConcluidasJson.filter(
-              (id): id is string => typeof id === "string"
-            )
+        const concluidasGlobais = normalizarListaIdsExplorar(obrasConcluidasJson);
+        const concluidasDoUsuario = userIdAtual
+          ? carregarListaIdsUsuarioExplorar(COMPLETED_STORAGE_KEY, userIdAtual)
           : [];
+
+        const colecoesSupabase = userIdAtual
+          ? await carregarColecoesUsuarioExplorar(userIdAtual)
+          : { favoritas: [] as string[], concluidas: [] as string[] };
+
+        const obrasFavoritasNormalizadas = Array.from(
+          new Set([
+            ...favoritasGlobais,
+            ...favoritasDoUsuario,
+            ...colecoesSupabase.favoritas,
+          ])
+        );
+        const obrasConcluidasNormalizadas = Array.from(
+          new Set([
+            ...concluidasGlobais,
+            ...concluidasDoUsuario,
+            ...colecoesSupabase.concluidas,
+          ])
+        );
+
+        salvarListaIdsUsuarioExplorar(
+          FAVORITES_STORAGE_KEY,
+          userIdAtual,
+          obrasFavoritasNormalizadas
+        );
+        salvarListaIdsUsuarioExplorar(
+          COMPLETED_STORAGE_KEY,
+          userIdAtual,
+          obrasConcluidasNormalizadas
+        );
 
         if (!cancelado) {
           setObrasLocais(obrasNormalizadas);
@@ -1757,9 +1998,9 @@ export default function ExplorarPage() {
         !usuarioLogado || filtroColecao === "todos"
           ? true
           : filtroColecao === "favoritas"
-            ? obrasFavoritas.includes(obra.id)
+            ? colecaoTemObraExplorar(obrasFavoritas, obra)
             : filtroColecao === "concluidas"
-              ? obrasConcluidas.includes(obra.id)
+              ? colecaoTemObraExplorar(obrasConcluidas, obra)
               : filtroColecao === "lendo"
                 ? obraTemAtividadeLeitura(obra)
                 : !obraTemAtividadeLeitura(obra);
@@ -1871,11 +2112,11 @@ export default function ExplorarPage() {
     obrasLocaisFiltradas.length + obrasFixasFiltradas.length;
 
   const totalFavoritasResultado = usuarioLogado
-    ? obrasLocaisFiltradas.filter((obra) => obrasFavoritas.includes(obra.id)).length
+    ? obrasLocaisFiltradas.filter((obra) => colecaoTemObraExplorar(obrasFavoritas, obra)).length
     : 0;
 
   const totalConcluidasResultado = usuarioLogado
-    ? obrasLocaisFiltradas.filter((obra) => obrasConcluidas.includes(obra.id)).length
+    ? obrasLocaisFiltradas.filter((obra) => colecaoTemObraExplorar(obrasConcluidas, obra)).length
     : 0;
 
   const totalLendoResultado = usuarioLogado
@@ -1934,15 +2175,15 @@ export default function ExplorarPage() {
 
     raiz.dataset.historietasExplorarCategoriaAtiva = "true";
     document.body.dataset.historietasExplorarCategoriaAtiva = "true";
-    raiz.style.background = temaCategoria.pageBackground;
-    document.body.style.background = temaCategoria.pageBackground;
-    raiz.style.setProperty("--historietas-accent", temaCategoria.accent);
-    raiz.style.setProperty("--historietas-secondary", temaCategoria.secondary);
+    raiz.style.background = "#070212";
+    document.body.style.background = "#070212";
+    raiz.style.setProperty("--historietas-accent", "#A78BFA");
+    raiz.style.setProperty("--historietas-secondary", "#4C1D95");
     raiz.style.setProperty("--historietas-bg-start", temaCategoria.bgStart);
     raiz.style.setProperty("--historietas-bg-mid", temaCategoria.bgMid);
     raiz.style.setProperty("--historietas-bg-end", temaCategoria.bgEnd);
-    raiz.style.setProperty("--historietas-glow-primary", temaCategoria.glowPrimary);
-    raiz.style.setProperty("--historietas-glow-secondary", temaCategoria.glowSecondary);
+    raiz.style.setProperty("--historietas-glow-primary", "transparent");
+    raiz.style.setProperty("--historietas-glow-secondary", "transparent");
     raiz.style.setProperty("--historietas-title-from", "#FFFFFF");
     raiz.style.setProperty("--historietas-title-mid", "#F5F3FF");
     raiz.style.setProperty("--historietas-title-to", temaCategoria.titleTo);
@@ -2332,8 +2573,8 @@ export default function ExplorarPage() {
                 <ObraPublicadaCard
                   key={obra.id}
                   obra={obra}
-                  favorita={usuarioLogado && obrasFavoritas.includes(obra.id)}
-                  concluida={usuarioLogado && obrasConcluidas.includes(obra.id)}
+                  favorita={usuarioLogado && colecaoTemObraExplorar(obrasFavoritas, obra)}
+                  concluida={usuarioLogado && colecaoTemObraExplorar(obrasConcluidas, obra)}
                   tema={temaPagina}
                   isDesktop={isDesktop}
                 />
@@ -2389,7 +2630,7 @@ function SectionHeader({
   const titleStyleTema: CSSProperties = {
     ...(isDesktop ? desktopSectionTitleStyle : sectionTitleStyle),
     background: "none",
-    color: tema.accent,
+    color: "var(--historietas-accent, #F97316)",
     textAlign: "center",
   };
 
@@ -2499,7 +2740,7 @@ function ObraPublicadaCard({
   return (
     <article style={isDesktop ? criarDesktopPublishedCardTemaStyle(tema) : criarPublishedCardTemaStyle(tema)}>
       <Link href={paginaPublicaHref} style={isDesktop ? criarDesktopPublishedCoverStyle(obra.capa, tema) : criarPublishedCoverStyle(obra.capa, tema)}>
-        {!obra.capa && <span style={noCoverBadgeStyle}>Capa pendente</span>}
+        {!obra.capa && null}
       </Link>
 
       <div style={isDesktop ? desktopPublishedInfoStyle : publishedInfoStyle}>
@@ -2584,44 +2825,37 @@ function ObraPublicadaCard({
   );
 }
 
-function criarActiveCategoryStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarActiveCategoryStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...activeCategoryStyle,
-    background: tema.activeBackground,
+    background: "#08030F",
+    border: "1px solid rgba(255,255,255,0.10)",
+    color: "#FFFFFF",
     boxShadow: "none",
   };
 }
 
 function criarQuickFilterActiveStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
+  _tema: ReturnType<typeof obterTemaCategoria>,
   isDesktop = false
 ): CSSProperties {
   return {
     ...(isDesktop ? desktopQuickFilterActiveStyle : quickFilterActiveStyle),
-    background: tema.activeBackground,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 44%, rgba(255,255,255,0.14))`,
+    background: "#08030F",
+    border: "1px solid rgba(255,255,255,0.10)",
     color: "#FFFFFF",
     boxShadow: "none",
   };
 }
 
 function criarSearchBoxStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
-  categoriaAtiva = false
+  _tema: ReturnType<typeof obterTemaCategoria>,
+  _categoriaAtiva = false
 ): CSSProperties {
-  if (categoriaAtiva) {
-    return {
-      ...searchBoxStyle,
-      background: `linear-gradient(135deg, color-mix(in srgb, ${tema.accent} 18%, rgba(5,5,12,0.88)) 0%, rgba(3,3,8,0.92) 100%)`,
-      border: `1px solid color-mix(in srgb, ${tema.accent} 34%, rgba(255,255,255,0.10))`,
-      boxShadow: "none",
-    };
-  }
-
   return {
     ...searchBoxStyle,
-    background: `linear-gradient(135deg, color-mix(in srgb, ${tema.accent} 10%, rgba(255,255,255,0.055)) 0%, rgba(255,255,255,0.045) 100%)`,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 26%, rgba(255,255,255,0.08))`,
+    background: "rgba(4, 0, 10, 0.72)",
+    border: "1px solid rgba(255,255,255,0.06)",
     boxShadow: "none",
   };
 }
@@ -2644,43 +2878,19 @@ function criarDesktopSearchBoxStyle(
 }
 
 function criarSearchInputStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
+  _tema: ReturnType<typeof obterTemaCategoria>,
   isDesktop: boolean,
-  categoriaAtiva: boolean
+  _categoriaAtiva: boolean
 ): CSSProperties {
-  const baseStyle = isDesktop ? desktopSearchInputStyle : searchInputStyle;
-
-  if (!categoriaAtiva) {
-    return baseStyle;
-  }
-
-  return {
-    ...baseStyle,
-    background: "rgba(3,3,8,0.72)",
-    border: `1px solid color-mix(in srgb, ${tema.accent} 30%, rgba(255,255,255,0.12))`,
-    color: "#FFFFFF",
-    boxShadow: "none",
-  };
+  return isDesktop ? desktopSearchInputStyle : searchInputStyle;
 }
 
 function criarQuickFilterInactiveStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
+  _tema: ReturnType<typeof obterTemaCategoria>,
   isDesktop = false,
-  categoriaAtiva = false
+  _categoriaAtiva = false
 ): CSSProperties {
-  const baseStyle = isDesktop ? desktopQuickFilterButtonStyle : quickFilterButtonStyle;
-
-  if (!categoriaAtiva) {
-    return baseStyle;
-  }
-
-  return {
-    ...baseStyle,
-    background: `color-mix(in srgb, ${tema.accent} 10%, rgba(5,5,12,0.72))`,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 24%, rgba(255,255,255,0.10))`,
-    color: "#FFFFFF",
-    boxShadow: "none",
-  };
+  return isDesktop ? desktopQuickFilterButtonStyle : quickFilterButtonStyle;
 }
 
 function criarSoonQuickFilterLinkStyle(
@@ -2698,18 +2908,10 @@ function criarSoonQuickFilterLinkStyle(
 }
 
 function criarFieldBoxStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
-  categoriaAtiva: boolean
+  _tema: ReturnType<typeof obterTemaCategoria>,
+  _categoriaAtiva: boolean
 ): CSSProperties {
-  if (!categoriaAtiva) {
-    return fieldBoxStyle;
-  }
-
-  return {
-    ...fieldBoxStyle,
-    background: `color-mix(in srgb, ${tema.accent} 10%, rgba(5,5,12,0.74))`,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 22%, rgba(255,255,255,0.10))`,
-  };
+  return fieldBoxStyle;
 }
 
 function criarSearchLabelStyle(categoriaAtiva: boolean): CSSProperties {
@@ -2724,67 +2926,40 @@ function criarSearchLabelStyle(categoriaAtiva: boolean): CSSProperties {
 }
 
 function criarSelectStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
-  categoriaAtiva: boolean
+  _tema: ReturnType<typeof obterTemaCategoria>,
+  _categoriaAtiva: boolean
 ): CSSProperties {
-  if (!categoriaAtiva) {
-    return selectStyle;
-  }
-
-  return {
-    ...selectStyle,
-    background: "rgba(3,3,8,0.78)",
-    border: `1px solid color-mix(in srgb, ${tema.accent} 28%, rgba(255,255,255,0.12))`,
-    color: "#FFFFFF",
-  };
+  return selectStyle;
 }
 
 function criarCompactSummaryStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
+  _tema: ReturnType<typeof obterTemaCategoria>,
   isDesktop: boolean,
-  categoriaAtiva: boolean
+  _categoriaAtiva: boolean
 ): CSSProperties {
-  const baseStyle = isDesktop ? desktopCompactSummaryStyle : compactSummaryStyle;
-
-  if (!categoriaAtiva) {
-    return baseStyle;
-  }
-
-  return {
-    ...baseStyle,
-    color: `color-mix(in srgb, ${tema.accent} 82%, var(--historietas-text-primary, #FFFFFF))`,
-  };
+  return isDesktop ? desktopCompactSummaryStyle : compactSummaryStyle;
 }
 
 function criarClearFilterButtonStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
-  categoriaAtiva: boolean
+  _tema: ReturnType<typeof obterTemaCategoria>,
+  _categoriaAtiva: boolean
 ): CSSProperties {
-  if (!categoriaAtiva) {
-    return clearFilterButtonStyle;
-  }
-
-  return {
-    ...clearFilterButtonStyle,
-    background: `color-mix(in srgb, ${tema.accent} 16%, rgba(5,5,12,0.78))`,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 32%, rgba(255,255,255,0.10))`,
-    color: "#FFFFFF",
-  };
+  return clearFilterButtonStyle;
 }
 
-function criarFilterInfoBoxStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarFilterInfoBoxStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...filterInfoBoxStyle,
-    background: `color-mix(in srgb, ${tema.accent} 14%, rgba(255,255,255,0.05))`,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 32%, rgba(255,255,255,0.08))`,
+    background: "rgba(4, 0, 10, 0.72)",
+    border: "1px solid rgba(255,255,255,0.06)",
   };
 }
 
 
-function criarCardTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...cardStyle,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 24%, rgba(255,255,255,0.08))`,
+    border: "1px solid rgba(255,255,255,0.06)",
     boxShadow: "none",
   };
 }
@@ -2796,11 +2971,11 @@ function criarCardSoonTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CS
   };
 }
 
-function criarDesktopCardTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarDesktopCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...desktopCardStyle,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 28%, rgba(255,255,255,0.08))`,
-    boxShadow: `0 16px 34px ${tema.accent}14, 0 12px 30px rgba(0,0,0,0.20)`,
+    border: "1px solid rgba(255,255,255,0.06)",
+    boxShadow: "none",
   };
 }
 
@@ -2811,44 +2986,44 @@ function criarDesktopCardSoonTemaStyle(tema: ReturnType<typeof obterTemaCategori
   };
 }
 
-function criarPublishedCardTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...publishedCardStyle,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 24%, rgba(139,92,246,0.14))`,
+    border: "1px solid rgba(255,255,255,0.06)",
     boxShadow: "none",
   };
 }
 
-function criarDesktopPublishedCardTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarDesktopPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...desktopPublishedCardStyle,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 28%, rgba(139,92,246,0.14))`,
-    boxShadow: `0 16px 34px ${tema.accent}14, 0 12px 30px rgba(0,0,0,0.20)`,
+    border: "1px solid rgba(255,255,255,0.06)",
+    boxShadow: "none",
   };
 }
 
-function criarCoverTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...coverStyle,
-    backgroundImage: `radial-gradient(circle at top left, color-mix(in srgb, ${tema.accent} 34%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent), transparent 36%), linear-gradient(135deg, var(--historietas-surface, #18181B) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)`,
+    backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
 }
 
-function criarDesktopCoverTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarDesktopCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...desktopCoverStyle,
-    backgroundImage: `radial-gradient(circle at top left, color-mix(in srgb, ${tema.accent} 34%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent), transparent 36%), linear-gradient(135deg, var(--historietas-surface, #18181B) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)`,
+    backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
 }
 
-function criarPublishedCoverTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarPublishedCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...publishedCoverStyle,
-    backgroundImage: `radial-gradient(circle at top left, color-mix(in srgb, ${tema.accent} 28%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent), transparent 38%), linear-gradient(135deg, var(--historietas-surface, #18181B) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)`,
+    backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -2874,35 +3049,29 @@ function criarDesktopPublishedCoverStyle(
   };
 }
 
-function criarDesktopPublishedCoverTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarDesktopPublishedCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...desktopPublishedCoverStyle,
-    backgroundImage: `radial-gradient(circle at top left, color-mix(in srgb, ${tema.accent} 28%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, transparent), transparent 38%), linear-gradient(135deg, var(--historietas-surface, #18181B) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)`,
+    backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
 }
 
-function criarProgressTrackStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
-  return {
-    ...progressTrackStyle,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 22%, rgba(255,255,255,0.1))`,
-  };
+function criarProgressTrackStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+  return progressTrackStyle;
 }
 
-function criarProgressBarStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
-  return {
-    ...progressBarStyle,
-    background: `linear-gradient(135deg, ${tema.accent} 0%, var(--historietas-secondary, #7C3AED) 100%)`,
-  };
+function criarProgressBarStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+  return progressBarStyle;
 }
 
-function criarReadStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarReadStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...readStyle,
     color: "#FFFFFF",
-    background: `linear-gradient(135deg, ${tema.accent} 0%, var(--historietas-secondary, #7C3AED) 100%)`,
-    border: `1px solid color-mix(in srgb, ${tema.accent} 44%, rgba(255,255,255,0.16))`,
+    background: "#08030F",
+    border: "1px solid rgba(255,255,255,0.10)",
     boxShadow: "none",
   };
 }
@@ -2945,9 +3114,20 @@ function criarToggleFiltrosStyle(
 }
 
 const themePageCss = `
-  html[data-historietas-tema-visual] body {
-    background: var(--historietas-bg-start, #0B0614) !important;
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main,
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main,
+  html[data-historietas-explorar-categoria-ativa="true"],
+  html[data-historietas-explorar-categoria-ativa="true"] body {
+    background: #070212 !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
   }
 
   .explorar-carousel {
@@ -2966,10 +3146,10 @@ const themePageCss = `
   html[data-historietas-tema-visual] [data-mobile-nav],
   html[data-historietas-tema-visual] nav:has(a[href="/publicar"]),
   html[data-historietas-tema-visual] div:has(> a[href="/publicar"]):has(> a[href="/biblioteca"]) {
-    background: var(--historietas-bottom-nav-bg, var(--historietas-surface-strong, rgba(18,8,31,0.98))) !important;
-    border-color: var(--historietas-bottom-nav-border, var(--historietas-border-soft, rgba(255,255,255,0.12))) !important;
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+    border-color: var(--historietas-bottom-nav-border, rgba(59, 7, 100, 0.52)) !important;
     box-shadow: var(--historietas-bottom-nav-shadow, none) !important;
-    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
+    color: var(--historietas-bottom-nav-text, #9980D8) !important;
   }
 
   html[data-historietas-tema-visual] nav::before,
@@ -2984,131 +3164,76 @@ const themePageCss = `
   html[data-historietas-tema-visual] nav button,
   html[data-historietas-tema-visual] [data-bottom-nav] button,
   html[data-historietas-tema-visual] [data-mobile-nav] button {
-    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
+    color: var(--historietas-bottom-nav-text, #9980D8) !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual] nav a:hover,
-  html[data-historietas-tema-visual] [data-bottom-nav] a:hover,
-  html[data-historietas-tema-visual] [data-mobile-nav] a:hover,
-  html[data-historietas-tema-visual] nav button:hover,
-  html[data-historietas-tema-visual] [data-bottom-nav] button:hover,
-  html[data-historietas-tema-visual] [data-mobile-nav] button:hover {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(255,255,255,0.055))) !important;
-    border-color: var(--historietas-bottom-nav-border, var(--historietas-border-soft, rgba(255,255,255,0.10))) !important;
-    color: var(--historietas-bottom-nav-hover-text, var(--historietas-text-primary, #FFFFFF)) !important;
+  @media (hover: hover) and (pointer: fine) {
+    html[data-historietas-tema-visual] nav a:hover,
+    html[data-historietas-tema-visual] [data-bottom-nav] a:hover,
+    html[data-historietas-tema-visual] [data-mobile-nav] a:hover,
+    html[data-historietas-tema-visual] nav button:hover,
+    html[data-historietas-tema-visual] [data-bottom-nav] button:hover,
+    html[data-historietas-tema-visual] [data-mobile-nav] button:hover {
+      background: var(--historietas-bottom-nav-hover-bg, rgba(59, 7, 100, 0.20)) !important;
+      border-color: var(--historietas-bottom-nav-border, rgba(59, 7, 100, 0.52)) !important;
+      color: var(--historietas-bottom-nav-hover-text, #FFFFFF) !important;
+    }
   }
 
   html[data-historietas-tema-visual] nav a[href="/explorar"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/explorar"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/explorar"] {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
-    color: var(--historietas-accent, #F97316) !important;
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] {
-    background: var(--historietas-bottom-nav-main-bg, linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)) !important;
-    border-color: var(--historietas-bottom-nav-main-border, color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)) !important;
-    box-shadow: var(--historietas-bottom-nav-main-shadow, none) !important;
-    color: #FFFFFF !important;
+  html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    color: var(--historietas-bottom-nav-text, #9980D8) !important;
   }
 
   html[data-historietas-tema-visual] nav .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-icon {
-    color: var(--historietas-bottom-nav-icon-text, var(--historietas-accent, #F97316)) !important;
-    background: var(--historietas-bottom-nav-icon-bg, var(--historietas-surface, rgba(255,255,255,0.045))) !important;
-    border-color: var(--historietas-bottom-nav-icon-border, var(--historietas-border-soft, rgba(255,255,255,0.055))) !important;
+    color: var(--historietas-bottom-nav-icon-text, #AD95EA) !important;
+    background: var(--historietas-bottom-nav-icon-bg, rgba(59, 7, 100, 0.28)) !important;
+    border-color: var(--historietas-bottom-nav-icon-border, rgba(76, 29, 149, 0.34)) !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] .historietas-bottom-nav-icon {
+  html[data-historietas-tema-visual] nav a[href="/explorar"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/explorar"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/explorar"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
-    background: var(--historietas-bottom-nav-main-icon-bg, rgba(255,255,255,0.16)) !important;
-    border-color: var(--historietas-bottom-nav-main-icon-border, rgba(255,255,255,0.18)) !important;
+    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
   }
 
-  html[data-historietas-tema-visual="branco"]:not([data-historietas-explorar-categoria-ativa="true"]) .historietas-explorar-logo-text,
-  html[data-historietas-tema-visual="branco"]:not([data-historietas-explorar-categoria-ativa="true"]) .historietas-explorar-hero-title {
-    background: none !important;
-    color: #1A73E8 !important;
-    -webkit-text-fill-color: #1A73E8 !important;
-    text-shadow: none !important;
+  html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon {
+    color: var(--historietas-bottom-nav-icon-text, #AD95EA) !important;
+    background: var(--historietas-bottom-nav-icon-bg, rgba(59, 7, 100, 0.28)) !important;
+    border-color: var(--historietas-bottom-nav-icon-border, rgba(76, 29, 149, 0.34)) !important;
   }
 
-  html[data-historietas-explorar-categoria-ativa="true"],
-  html[data-historietas-explorar-categoria-ativa="true"] body {
-    background-color: #030308 !important;
+  html[data-historietas-tema-visual] input::placeholder {
+    color: rgba(212,212,216,0.68) !important;
   }
 
-  html[data-historietas-explorar-categoria-ativa="true"] .historietas-explorar-logo-text,
-  html[data-historietas-explorar-categoria-ativa="true"] .historietas-explorar-hero-title {
-    background: none !important;
-    color: var(--historietas-accent, #F97316) !important;
-    -webkit-text-fill-color: var(--historietas-accent, #F97316) !important;
-    text-shadow: none !important;
-  }
-
-  html[data-historietas-explorar-categoria-ativa="true"] nav,
-  html[data-historietas-explorar-categoria-ativa="true"] [data-bottom-nav],
-  html[data-historietas-explorar-categoria-ativa="true"] [data-mobile-nav],
-  html[data-historietas-explorar-categoria-ativa="true"] nav:has(a[href="/publicar"]),
-  html[data-historietas-explorar-categoria-ativa="true"] div:has(> a[href="/publicar"]):has(> a[href="/biblioteca"]) {
-    background: var(--historietas-bottom-nav-bg, rgba(3,3,8,0.98)) !important;
-    border-color: var(--historietas-bottom-nav-border, rgba(255,255,255,0.10)) !important;
-    box-shadow: none !important;
-  }
-
-  html[data-historietas-explorar-categoria-ativa="true"] nav a[href="/explorar"],
-  html[data-historietas-explorar-categoria-ativa="true"] [data-bottom-nav] a[href="/explorar"],
-  html[data-historietas-explorar-categoria-ativa="true"] [data-mobile-nav] a[href="/explorar"] {
-    background: var(--historietas-bottom-nav-hover-bg, rgba(255,255,255,0.06)) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 34%, rgba(255,255,255,0.10)) !important;
-    color: var(--historietas-accent, #F97316) !important;
-  }
-
-  html[data-historietas-explorar-categoria-ativa="true"] nav a[href="/publicar"],
-  html[data-historietas-explorar-categoria-ativa="true"] [data-bottom-nav] a[href="/publicar"],
-  html[data-historietas-explorar-categoria-ativa="true"] [data-mobile-nav] a[href="/publicar"] {
-    background: var(--historietas-bottom-nav-main-bg, linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, #7C3AED 100%)) !important;
-    border-color: var(--historietas-bottom-nav-main-border, color-mix(in srgb, var(--historietas-accent, #F97316) 55%, transparent)) !important;
+  html[data-historietas-tema-visual] input,
+  html[data-historietas-tema-visual] textarea,
+  html[data-historietas-tema-visual] select {
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="branco"] input::placeholder {
-    color: #80868B !important;
-  }
-
-  html[data-historietas-tema-visual="branco"] input,
-  html[data-historietas-tema-visual="branco"] textarea,
-  html[data-historietas-tema-visual="branco"] select {
-    color: #202124 !important;
-  }
-
-  html[data-historietas-tema-visual="branco"] article,
-  html[data-historietas-tema-visual="branco"] a[aria-label^="Abrir página da obra"] {
-    color: #202124 !important;
-  }
-
-  html[data-historietas-tema-visual="branco"] button {
+  html[data-historietas-tema-visual] button {
     color: inherit;
-  }
-
-  html[data-historietas-tema-visual="escuro"] {
-    --historietas-bg-start: #000000;
-    --historietas-bg-mid: #000000;
-    --historietas-bg-end: #000000;
-    --historietas-accent: #F97316;
-    --historietas-secondary: #7C3AED;
-    --historietas-glow-primary: rgba(249,115,22,0.030);
-    --historietas-glow-secondary: rgba(124,58,237,0.030);
-    --historietas-active-surface: rgba(124,58,237,0.14);
-    --historietas-secondary-surface: rgba(124,58,237,0.12);
-    --historietas-danger-surface: rgba(239,68,68,0.12);
   }
 `;
 
@@ -3125,10 +3250,8 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -3139,10 +3262,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
@@ -3151,29 +3272,29 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
 function criarExplorarPageStyle(
-  tema: ReturnType<typeof obterTemaCategoria>
+  _tema: ReturnType<typeof obterTemaCategoria>
 ): CSSProperties {
   return {
     ...pageStyle,
-    background: tema.pageBackground,
+    background: "#070212",
     color: "#FFFFFF",
   };
 }
 
 function criarExplorarTopWaterFadeStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
+  _tema: ReturnType<typeof obterTemaCategoria>,
   desktop: boolean
 ): CSSProperties {
   return {
     ...(desktop ? desktopTopWaterFadeStyle : mobileTopWaterFadeStyle),
-    background: tema.pageBackground,
+    background: "transparent",
+    opacity: 0,
   };
 }
 
@@ -3234,26 +3355,24 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
   letterSpacing: "-0.04em",
-  boxShadow:
-    "0 0 22px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.22)",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
   flex: "0 0 auto",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #DDD6FE) 40%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow:
-    "var(--historietas-logo-shadow, 0 0 28px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 22%, transparent))",
+  textShadow: "none",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -3266,22 +3385,21 @@ const backButtonStyle: CSSProperties = {
   minHeight: "40px",
   padding: "0 15px",
   borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.055) 100%)",
-  border: "1px solid rgba(255,255,255,0.13)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
   textAlign: "center",
-  boxShadow: "0 12px 28px rgba(0,0,0,0.18)",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const libraryButtonTopStyle: CSSProperties = {
   ...backButtonStyle,
-  background: "rgba(124,58,237,0.18)",
-  border: "1px solid rgba(139,92,246,0.28)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "#DDD6FE",
 };
 
@@ -3289,23 +3407,15 @@ const soonTopButtonStyle: CSSProperties = {
   ...backButtonStyle,
   minHeight: "38px",
   padding: "0 13px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, rgba(255,255,255,0.08))",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   boxShadow: "none",
 };
 
 const desktopSoonTopButtonStyle: CSSProperties = {
   ...soonTopButtonStyle,
-  minHeight: "42px",
-  padding: "0 18px",
-  background:
-    "linear-gradient(135deg, rgba(249,115,22,0.16) 0%, rgba(124,58,237,0.13) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, rgba(255,255,255,0.10))",
-  color: "var(--historietas-accent, #FFD6A8)",
+  minHeight: "40px",
 };
 
 const titleHeaderStyle: CSSProperties = {
@@ -3385,13 +3495,10 @@ const desktopSoonTitleButtonStyle: CSSProperties = {
 const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "30px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, rgba(255,255,255,0.08))",
-  background:
-    "radial-gradient(circle at 18% 0%, rgba(124,58,237,0.42), transparent 32%), radial-gradient(circle at 90% 45%, rgba(249,115,22,0.12), transparent 28%), linear-gradient(135deg, rgba(26,13,43,0.98) 0%, rgba(12,7,23,0.98) 100%)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
   padding: "18px",
-  boxShadow:
-    "var(--historietas-hero-shadow, 0 26px 70px rgba(0,0,0,0.36), 0 0 46px color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent), inset 0 1px 0 rgba(255,255,255,0.08))",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -3411,16 +3518,13 @@ const badgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "8px 12px",
   borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 18%, rgba(255,255,255,0.04)) 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(255,255,255,0.04)) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 34%, rgba(255,255,255,0.08))",
-  color: "#FDEDD3",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.10em",
-  boxShadow:
-    "0 0 24px color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
+  boxShadow: "none",
   whiteSpace: "normal",
   ...safeTextStyle,
 };
@@ -3432,29 +3536,19 @@ const desktopBadgeStyle: CSSProperties = {
 };
 
 const heroDecorationLayerStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  pointerEvents: "none",
-  zIndex: 0,
+  display: "none",
 };
 
 const titleStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  margin: "8px auto 0",
-  fontSize: "clamp(34px, 10vw, 60px)",
-  lineHeight: 0.92,
+  margin: "12px 0 0",
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "32px",
+  lineHeight: 0.98,
   fontWeight: 950,
-  letterSpacing: "-0.085em",
-  maxWidth: "100%",
+  letterSpacing: "-0.08em",
   textAlign: "center",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 44%, var(--historietas-accent, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "0 18px 42px rgba(0,0,0,0.22)",
   ...safeTextStyle,
 };
 
@@ -3462,12 +3556,12 @@ const descriptionStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   margin: "10px auto 0",
-  color: "var(--historietas-text-secondary, #E4E4E7)",
-  fontSize: "13px",
-  lineHeight: 1.62,
-  fontWeight: 650,
-  maxWidth: "620px",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "14px",
+  lineHeight: 1.55,
+  fontWeight: 720,
   textAlign: "center",
+  maxWidth: "680px",
   ...safeTextStyle,
 };
 
@@ -3491,9 +3585,8 @@ const categoryStyle: CSSProperties = {
   maxWidth: "220px",
   padding: "10px 14px",
   borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(255,255,255,0.082)) 0%, var(--historietas-surface-strong, rgba(255,255,255,0.042)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
   fontWeight: 950,
@@ -3506,8 +3599,8 @@ const categoryStyle: CSSProperties = {
 
 const activeCategoryStyle: CSSProperties = {
   ...categoryStyle,
-  background: "linear-gradient(135deg, #7C3AED 0%, #F97316 100%)",
-  border: "1px solid rgba(255,255,255,0.18)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
 };
@@ -3560,10 +3653,9 @@ const searchBoxStyle: CSSProperties = {
   gap: "10px",
   padding: "12px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(255,255,255,0.062)) 0%, var(--historietas-surface-strong, rgba(255,255,255,0.034)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
   backdropFilter: "none",
@@ -3581,24 +3673,22 @@ const searchInputStyle: CSSProperties = {
   width: "100%",
   height: "46px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  background: "var(--historietas-input-bg, rgba(8,5,18,0.62))",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 16px",
   outline: "none",
   fontSize: "14px",
   fontWeight: 720,
   textAlign: "center",
   boxSizing: "border-box",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.045)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
 const desktopSearchInputStyle: CSSProperties = {
   ...searchInputStyle,
-  height: "42px",
-  fontSize: "14px",
-  padding: "0 15px",
+  textAlign: "left",
 };
 
 const quickFiltersStyle: CSSProperties = {
@@ -3622,8 +3712,8 @@ const quickFilterButtonStyle: CSSProperties = {
   minHeight: "32px",
   padding: "0 11px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.038))",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10.5px",
   fontWeight: 880,
@@ -3645,8 +3735,8 @@ const desktopQuickFilterButtonStyle: CSSProperties = {
 
 const quickFilterActiveStyle: CSSProperties = {
   ...quickFilterButtonStyle,
-  background: "rgba(124,58,237,0.28)",
-  border: "1px solid rgba(139,92,246,0.34)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
 };
@@ -3673,17 +3763,17 @@ const fieldBoxStyle: CSSProperties = {
   minWidth: 0,
   padding: "8px",
   borderRadius: "15px",
-  background: "var(--historietas-surface, rgba(255,255,255,0.03))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.06)",
 };
 
 const selectStyle: CSSProperties = {
   width: "100%",
   height: "40px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  background: "var(--historietas-input-bg, #120B1F)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 12px",
   outline: "none",
   fontSize: "11.5px",
@@ -3698,8 +3788,8 @@ const filterInfoBoxStyle: CSSProperties = {
   marginTop: "0",
   padding: "9px 10px",
   borderRadius: "15px",
-  background: "rgba(124, 58, 237, 0.07)",
-  border: "1px solid rgba(139, 92, 246, 0.14)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   display: "grid",
   gap: "7px",
   minWidth: 0,
@@ -3719,18 +3809,17 @@ const desktopCompactClearFiltersStyle: CSSProperties = {
 };
 
 const clearFilterButtonStyle: CSSProperties = {
-  minHeight: "34px",
+  width: "100%",
+  minHeight: "38px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 900,
-  cursor: "pointer",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#DDD6FE",
+  fontSize: "12px",
+  fontWeight: 950,
   fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 12px",
-  ...safeTextStyle,
+  cursor: "pointer",
+  boxShadow: "none",
 };
 
 const sectionStyle: CSSProperties = {
@@ -3749,6 +3838,7 @@ const sectionHeaderStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "clamp(28px, 7vw, 38px)",
   lineHeight: 1,
   fontWeight: 950,
@@ -3772,15 +3862,15 @@ const publishedCardStyle: CSSProperties = {
   alignItems: "stretch",
   padding: "11px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(145deg, var(--historietas-surface, rgba(26,17,43,0.96)) 0%, var(--historietas-surface-strong, rgba(13,9,25,0.98)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
   boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const cardStyle: CSSProperties = {
@@ -3790,15 +3880,15 @@ const cardStyle: CSSProperties = {
   alignItems: "stretch",
   padding: "11px",
   borderRadius: "22px",
-  background:
-    "linear-gradient(145deg, var(--historietas-surface, rgba(26,17,43,0.96)) 0%, var(--historietas-surface-strong, rgba(13,9,25,0.98)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
   boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const cardSoonStyle: CSSProperties = {
@@ -3811,8 +3901,7 @@ const publishedCoverStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 36%, transparent), transparent 36%), linear-gradient(135deg, var(--historietas-surface, #18181B) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   minWidth: 0,
@@ -3826,8 +3915,7 @@ const coverStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 62%, transparent), transparent 36%), linear-gradient(135deg, #18181B 0%, #0F0F0F 100%)",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   minWidth: 0,
@@ -3842,35 +3930,27 @@ const genreBadgeStyle: CSSProperties = {
   maxWidth: "calc(100% - 16px)",
   padding: "7px 8px",
   borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 92%, rgba(0,0,0,0.18)), color-mix(in srgb, var(--historietas-accent, #F97316) 26%, rgba(0,0,0,0.18)))",
-  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   fontSize: "9px",
   fontWeight: 900,
   textAlign: "center",
   whiteSpace: "normal",
-  boxShadow: "0 10px 22px rgba(0,0,0,0.22)",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const noCoverBadgeStyle: CSSProperties = {
   position: "absolute",
-  top: "50%",
-  left: "8px",
-  right: "8px",
-  transform: "translateY(-50%)",
-  maxWidth: "calc(100% - 16px)",
-  padding: "6px 8px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.1))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 900,
-  textAlign: "center",
-  whiteSpace: "normal",
-  ...safeTextStyle,
+  inset: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "rgba(255,255,255,0.62)",
+  fontSize: "26px",
+  fontWeight: 950,
+  background: "transparent",
 };
 
 const cardContentStyle: CSSProperties = {
@@ -3927,9 +4007,9 @@ const statusStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-surface, transparent))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, var(--historietas-border-soft, transparent))",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 850,
   whiteSpace: "normal",
@@ -3983,8 +4063,8 @@ const formatBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, var(--historietas-surface, rgba(255,255,255,0.08)))",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, var(--historietas-border-soft, rgba(255,255,255,0.12)))",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-primary, #E4E4E7)",
   fontSize: "9px",
   fontWeight: 880,
@@ -3997,8 +4077,8 @@ const classificationBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, var(--historietas-surface, rgba(124,58,237,0.16)))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 35%, var(--historietas-border-soft, rgba(255,255,255,0.12)))",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "9px",
   fontWeight: 900,
@@ -4011,9 +4091,9 @@ const fileStatusBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.24)",
-  color: "#86EFAC",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   fontSize: "9px",
   fontWeight: 900,
   whiteSpace: "normal",
@@ -4025,9 +4105,9 @@ const favoriteBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "rgba(249, 115, 22, 0.12)",
-  border: "1px solid rgba(249, 115, 22, 0.24)",
-  color: "#FDBA74",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   fontSize: "9px",
   fontWeight: 900,
   whiteSpace: "normal",
@@ -4061,11 +4141,11 @@ const authorLinkStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-secondary, #D8C8FF)",
   fontSize: "12px",
   fontWeight: 820,
   textDecoration: "none",
-  borderBottom: "1px solid rgba(249, 115, 22, 0.18)",
+  borderBottom: "0",
   whiteSpace: "normal",
   ...safeTextStyle,
 };
@@ -4122,17 +4202,14 @@ const metricItemStyle: CSSProperties = {
 };
 
 const metricIconStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "16px",
-  minWidth: "16px",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "12px",
   lineHeight: 1,
 };
 
 const heartMetricIconStyle: CSSProperties = {
   ...metricIconStyle,
-  color: "#E11D48",
+  color: "#BE123C",
 };
 
 const progressCompactStyle: CSSProperties = {
@@ -4147,15 +4224,15 @@ const progressTrackStyle: CSSProperties = {
   width: "100%",
   height: "7px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
   overflow: "hidden",
 };
 
 const progressBarStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "linear-gradient(135deg, #F97316 0%, #7C3AED 100%)",
+  background: "linear-gradient(90deg, #F97316 0%, #7C3AED 100%)",
 };
 
 const progressTextStyle: CSSProperties = {
@@ -4173,8 +4250,8 @@ const readStyle: CSSProperties = {
   marginTop: "2px",
   padding: "0 14px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "13px",
   fontWeight: 950,
@@ -4184,18 +4261,15 @@ const readStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   boxSizing: "border-box",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const soonReadStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  marginTop: "2px",
-  color: "#FDBA74",
-  fontSize: "14px",
-  fontWeight: 950,
-  textDecoration: "none",
-  ...safeTextStyle,
+  ...readStyle,
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const cardActionRowStyle: CSSProperties = {
@@ -4215,9 +4289,9 @@ const cardGenreBadgeStyle: CSSProperties = {
   minHeight: "34px",
   padding: "0 10px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, var(--historietas-surface, rgba(255,255,255,0.06)))",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 24%, var(--historietas-border-soft, rgba(255,255,255,0.11)))",
-  color: "var(--historietas-text-primary, #EDE9FE)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "11px",
   fontWeight: 900,
   lineHeight: 1.12,
@@ -4228,7 +4302,6 @@ const cardGenreBadgeStyle: CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   boxSizing: "border-box",
-  ...safeTextStyle,
 };
 
 const cardPrimaryActionStyle: CSSProperties = {
@@ -4245,13 +4318,7 @@ const desktopCardActionRowStyle: CSSProperties = {
 
 const desktopCardGenreBadgeStyle: CSSProperties = {
   ...cardGenreBadgeStyle,
-  flex: "0 1 46%",
   maxWidth: "46%",
-  padding: "0 8px",
-  textAlign: "center",
-  whiteSpace: "normal",
-  overflow: "visible",
-  textOverflow: "clip",
 };
 
 const desktopCardPrimaryActionStyle: CSSProperties = {
@@ -4387,8 +4454,8 @@ const desktopPublishedCardStyle: CSSProperties = {
   borderRadius: "24px",
   alignItems: "stretch",
   minHeight: "178px",
-  background:
-    "linear-gradient(145deg, var(--historietas-surface, rgba(31,20,50,0.98)) 0%, var(--historietas-surface-strong, rgba(13,9,25,0.99)) 100%)",
+  background: "rgba(4, 0, 10, 0.72)",
+  boxShadow: "none",
 };
 
 const desktopCardStyle: CSSProperties = {
@@ -4398,8 +4465,8 @@ const desktopCardStyle: CSSProperties = {
   padding: "14px",
   borderRadius: "24px",
   minHeight: "178px",
-  background:
-    "linear-gradient(145deg, var(--historietas-surface, rgba(31,20,50,0.98)) 0%, var(--historietas-surface-strong, rgba(13,9,25,0.99)) 100%)",
+  background: "rgba(4, 0, 10, 0.72)",
+  boxShadow: "none",
 };
 
 const desktopPublishedCoverStyle: CSSProperties = {
@@ -4430,12 +4497,11 @@ const desktopPublishedTitleStyle: CSSProperties = {
 const emptyBoxStyle: CSSProperties = {
   padding: "28px",
   borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(255,255,255,0.07)) 0%, var(--historietas-surface-strong, rgba(255,255,255,0.04)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontWeight: 850,
-  boxShadow: "0 18px 42px rgba(0,0,0,0.20)",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
   ...safeTextStyle,

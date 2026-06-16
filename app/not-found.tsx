@@ -5,7 +5,7 @@ import { historietasThemeCss } from "../lib/historietasTheme";
 export default function NotFound() {
   return (
     <main style={pageStyle}>
-      <style>{historietasThemeCss}</style>
+      <style>{`${historietasThemeCss}${notFoundPageCss}`}</style>
 
       <div style={topWaterFadeStyle} aria-hidden="true" />
 
@@ -44,6 +44,18 @@ export default function NotFound() {
   );
 }
 
+const notFoundPageCss = `
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+`;
+
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -54,10 +66,9 @@ const pageStyle: CSSProperties = {
   minHeight: "100vh",
   width: "100%",
   maxWidth: "100vw",
-  overflowX: "clip",
+  overflowX: "hidden",
   boxSizing: "border-box",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "var(--historietas-bg-start, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -70,10 +81,8 @@ const topWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const containerStyle: CSSProperties = {
@@ -88,6 +97,7 @@ const containerStyle: CSSProperties = {
   alignContent: "center",
   justifyItems: "center",
   gap: "18px",
+  minWidth: 0,
 };
 
 const logoStyle: CSSProperties = {
@@ -102,23 +112,25 @@ const logoStyle: CSSProperties = {
   gap: "4px",
   minWidth: 0,
   maxWidth: "100%",
+  overflow: "visible",
   ...safeTextStyle,
 };
 
 const logoMarkStyle: CSSProperties = {
-  width: "38px",
-  height: "38px",
-  borderRadius: "13px",
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   background:
     "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
   color: "#FFFFFF",
-  fontSize: "19px",
+  fontSize: "17px",
   fontWeight: 950,
   letterSpacing: "-0.04em",
   flex: "0 0 auto",
+  boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
@@ -129,6 +141,8 @@ const logoTextStyle: CSSProperties = {
   backgroundClip: "text",
   color: "transparent",
   textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
+  overflow: "visible",
+  whiteSpace: "nowrap",
 };
 
 const boxStyle: CSSProperties = {
@@ -140,12 +154,12 @@ const boxStyle: CSSProperties = {
   borderRadius: "26px",
   background:
     "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.98)) 100%)",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 18%, var(--historietas-border-soft, rgba(255,255,255,0.08)))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   boxShadow: "none",
   textAlign: "center",
   boxSizing: "border-box",
   overflow: "hidden",
+  minWidth: 0,
 };
 
 const codeStyle: CSSProperties = {
@@ -190,6 +204,7 @@ const actionsStyle: CSSProperties = {
   gap: "10px",
   marginTop: "4px",
   boxSizing: "border-box",
+  minWidth: 0,
 };
 
 const primaryButtonStyle: CSSProperties = {
@@ -207,6 +222,7 @@ const primaryButtonStyle: CSSProperties = {
   padding: "0 12px",
   boxShadow: "none",
   boxSizing: "border-box",
+  minWidth: 0,
   ...safeTextStyle,
 };
 

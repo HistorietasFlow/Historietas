@@ -97,7 +97,17 @@ type SupabaseCapituloRow = {
   atualizado_em: string | null;
 };
 
+type PerfilAutorArquivoRow = {
+  id?: string | null;
+  user_id?: string | null;
+  nome?: string | null;
+  username?: string | null;
+  display_name?: string | null;
+  apelido?: string | null;
+};
+
 const STORAGE_KEY = "historietas-obras";
+const USER_WORKS_STORAGE_PREFIX = "historietas-obras-usuario";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
@@ -380,10 +390,25 @@ function carregarBackupArquivosObras(): ArquivosObrasBackup {
   }
 }
 
-function obterChavesBackupObra(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
+function criarStorageUsuarioVerArquivoKey(userId: string) {
+  return `${USER_WORKS_STORAGE_PREFIX}:${userId.trim()}`;
+}
+
+function obterChavesBackupObra(obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">) {
+  const slugSeguro = obra.slug || criarSlugBase(obra.titulo);
+
   return Array.from(
     new Set(
-      [obra.id, obra.slug, criarSlugBase(obra.titulo)]
+      [
+        obra.id,
+        obra.slug,
+        criarSlugBase(obra.titulo),
+        normalizarTexto(obra.titulo),
+        `id:${obra.id}`,
+        `slug:${slugSeguro}`,
+        `titulo:${normalizarTexto(obra.titulo)}`,
+        obra.link ? `link:${obra.link}` : "",
+      ]
         .filter((chave): chave is string => typeof chave === "string" && Boolean(chave.trim()))
         .map((chave) => chave.trim())
     )
@@ -436,26 +461,235 @@ function sincronizarBackupArquivosObras(obrasParaSincronizar: ObraLocal[]) {
   }
 }
 
-function carregarObrasLocais() {
-  const obrasTexto = localStorage.getItem(STORAGE_KEY);
-  const obrasJson: unknown = obrasTexto ? JSON.parse(obrasTexto) : [];
+function obraPertenceAoUsuarioLogado(obra: ObraLocal, userId: string) {
+  const autorId = obra.autorId?.trim() || "";
+
+  return !autorId || autorId === userId;
+}
+
+function criarChaveObraLocal(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
+  return obra.id || obra.slug || criarSlugBase(obra.titulo);
+}
+
+function mesclarObrasVerArquivo(...listas: ObraLocal[][]) {
+  const obrasMescladas: ObraLocal[] = [];
+  const chavesUsadas = new Set<string>();
+
+  listas.forEach((lista) => {
+    lista.forEach((obra) => {
+      const chave = criarChaveObraLocal(obra);
+
+      if (!chave || chavesUsadas.has(chave)) {
+        return;
+      }
+
+      chavesUsadas.add(chave);
+      obrasMescladas.push(obra);
+    });
+  });
+
+  return obrasMescladas;
+}
+
+function carregarObrasLocais(userId = "") {
   const backupArquivos = carregarBackupArquivosObras();
 
-  const obrasNormalizadas = Array.isArray(obrasJson)
-    ? (obrasJson as ObraSalva[])
-        .map((obra, index) => normalizarObra(obra, index))
-        .map((obra) => restaurarArquivoObraComBackup(obra, backupArquivos))
-    : [];
+  function normalizarLista(valor: unknown) {
+    return Array.isArray(valor)
+      ? (valor as ObraSalva[])
+          .map((obra, index) => normalizarObra(obra, index))
+          .map((obra) => restaurarArquivoObraComBackup(obra, backupArquivos))
+      : [];
+  }
+
+  let obrasGlobais: ObraLocal[] = [];
+  let obrasUsuario: ObraLocal[] = [];
+
+  try {
+    const obrasTexto = localStorage.getItem(STORAGE_KEY);
+    const obrasJson: unknown = obrasTexto ? JSON.parse(obrasTexto) : [];
+    obrasGlobais = normalizarLista(obrasJson);
+  } catch {
+    obrasGlobais = [];
+  }
+
+  try {
+    if (userId.trim()) {
+      const obrasUsuarioTexto = localStorage.getItem(
+        criarStorageUsuarioVerArquivoKey(userId),
+      );
+      const obrasUsuarioJson: unknown = obrasUsuarioTexto
+        ? JSON.parse(obrasUsuarioTexto)
+        : [];
+      obrasUsuario = normalizarLista(obrasUsuarioJson);
+    }
+  } catch {
+    obrasUsuario = [];
+  }
+
+  const obrasNormalizadas = mesclarObrasVerArquivo(obrasUsuario, obrasGlobais);
 
   sincronizarBackupArquivosObras(obrasNormalizadas);
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+
+    if (userId.trim()) {
+      localStorage.setItem(
+        criarStorageUsuarioVerArquivoKey(userId),
+        JSON.stringify(
+          obrasNormalizadas.filter((obra) => obraPertenceAoUsuarioLogado(obra, userId)),
+        ),
+      );
+    }
   } catch {
     // Se o navegador recusar gravar localmente, ainda assim a página deve exibir o que já foi carregado.
   }
 
   return obrasNormalizadas;
+}
+
+function salvarObrasLocaisPreservandoOutrasContas(
+  obrasDoUsuarioAtual: ObraLocal[],
+  userId: string
+) {
+  const todasObrasAtuais = carregarObrasLocais(userId);
+  const obrasDeOutrasContas = todasObrasAtuais.filter((obra) => {
+    const autorId = obra.autorId?.trim() || "";
+
+    return Boolean(autorId) && autorId !== userId;
+  });
+  const mapaObras = new Map<string, ObraLocal>();
+
+  obrasDeOutrasContas.forEach((obra) => {
+    mapaObras.set(criarChaveObraLocal(obra), obra);
+  });
+
+  obrasDoUsuarioAtual.forEach((obra) => {
+    const obraNormalizada = {
+      ...obra,
+      autorId: obra.autorId?.trim() || userId,
+    };
+
+    mapaObras.set(criarChaveObraLocal(obraNormalizada), obraNormalizada);
+  });
+
+  const obrasMescladas = Array.from(mapaObras.values());
+  const obrasDoUsuario = obrasMescladas.filter((obra) =>
+    obraPertenceAoUsuarioLogado(obra, userId),
+  );
+
+  sincronizarBackupArquivosObras(obrasMescladas);
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasMescladas));
+    localStorage.setItem(
+      criarStorageUsuarioVerArquivoKey(userId),
+      JSON.stringify(obrasDoUsuario),
+    );
+  } catch {
+    // Se o localStorage falhar, a tela continua usando o estado em memória.
+  }
+
+  return obrasMescladas;
+}
+
+function obterNomeProfileVerArquivo(profile: PerfilAutorArquivoRow | null) {
+  const nomesPossiveis = [
+    profile?.nome,
+    profile?.display_name,
+    profile?.username,
+    profile?.apelido,
+  ];
+
+  const nomeEncontrado = nomesPossiveis.find(
+    (nome) => typeof nome === "string" && Boolean(nome.trim())
+  );
+
+  return typeof nomeEncontrado === "string" ? nomeEncontrado.trim() : "";
+}
+
+async function buscarNomeProfileVerArquivo(userId: string) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return "";
+  }
+
+  try {
+    const { data: profilePorUserId, error: erroUserId } = await supabase
+      .from("profiles")
+      .select("id, user_id, nome, username, display_name, apelido")
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
+
+    if (!erroUserId) {
+      const nome = obterNomeProfileVerArquivo(
+        (profilePorUserId || null) as PerfilAutorArquivoRow | null
+      );
+
+      if (nome) {
+        return nome;
+      }
+    }
+  } catch {
+    // Continua no fallback por id.
+  }
+
+  try {
+    const { data: profilePorId, error: erroId } = await supabase
+      .from("profiles")
+      .select("id, user_id, nome, username, display_name, apelido")
+      .eq("id", userIdLimpo)
+      .maybeSingle();
+
+    if (!erroId) {
+      return obterNomeProfileVerArquivo(
+        (profilePorId || null) as PerfilAutorArquivoRow | null
+      );
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function aplicarNomeProfileVerArquivo(obrasParaAtualizar: ObraLocal[], userId: string, nomeProfile: string) {
+  const nomeLimpo = nomeProfile.trim();
+
+  if (!nomeLimpo) {
+    return obrasParaAtualizar;
+  }
+
+  return obrasParaAtualizar.map((obra) => {
+    const autorId = obra.autorId?.trim() || "";
+
+    if (autorId && autorId !== userId) {
+      return obra;
+    }
+
+    return {
+      ...obra,
+      autor: nomeLimpo,
+      autorId: autorId || userId,
+    };
+  });
+}
+
+function criarPerfilAutorHrefVerArquivo(autor: string, autorId?: string) {
+  const params = new URLSearchParams();
+  const autorLimpo = autor.trim();
+  const autorIdLimpo = autorId?.trim() || "";
+
+  params.set("autor", autorLimpo || "Autor não informado");
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+    params.set("userId", autorIdLimpo);
+  }
+
+  return `/perfil-autor?${params.toString()}`;
 }
 
 function normalizarCategoriaArquivoSupabase(
@@ -477,7 +711,8 @@ function normalizarObraSupabase(
   obra: SupabaseObraRow,
   capitulosSupabase: SupabaseCapituloRow[],
   obraLocal: ObraLocal | undefined,
-  index: number
+  index: number,
+  nomeAutorProfile = ""
 ): ObraLocal {
   const capitulosLocaisPorId = new Map(
     (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
@@ -529,7 +764,7 @@ function normalizarObraSupabase(
   return {
     id: obra.id || obraLocal?.id || `obra-${index + 1}`,
     titulo: tituloObra,
-    autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
+    autor: nomeAutorProfile.trim() || obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
     autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
     genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
@@ -576,7 +811,8 @@ async function carregarObraSupabaseComFallback(
   obraIdBusca: string,
   slugBusca: string,
   obrasLocais: ObraLocal[],
-  userId: string
+  userId: string,
+  nomeAutorProfile = ""
 ) {
   if ((!obraIdBusca && !slugBusca) || !userId) {
     return obrasLocais;
@@ -637,11 +873,16 @@ async function carregarObraSupabaseComFallback(
       return obra.id === obraBanco.id || slugLocal === slugBanco;
     });
 
+    const nomeProfileAutor =
+      nomeAutorProfile.trim() ||
+      (await buscarNomeProfileVerArquivo(obraBanco.user_id || userId));
+
     const obraNormalizada = normalizarObraSupabase(
       obraBanco,
       capitulosBanco,
       obraLocal,
-      0
+      0,
+      nomeProfileAutor
     );
 
     const obraJaExiste = obrasLocais.some((obra) => obra.id === obraNormalizada.id);
@@ -651,13 +892,7 @@ async function carregarObraSupabaseComFallback(
         )
       : [obraNormalizada, ...obrasLocais];
 
-    sincronizarBackupArquivosObras(obrasAtualizadas);
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasAtualizadas));
-    } catch {
-      // Evita tela vazia quando o armazenamento local está cheio ou indisponível.
-    }
+    salvarObrasLocaisPreservandoOutrasContas(obrasAtualizadas, userId);
 
     return obrasAtualizadas;
   } catch (error) {
@@ -845,9 +1080,14 @@ export default function VerArquivoPage() {
           setRedirecionandoLogin(false);
         }
 
-        const obrasLocais = carregarObrasLocais().filter((obra) => {
-          return !obra.autorId || obra.autorId === userId;
-        });
+        const nomeProfileAutor = await buscarNomeProfileVerArquivo(userId);
+        const obrasLocais = aplicarNomeProfileVerArquivo(
+          carregarObrasLocais(userId).filter((obra) => {
+            return obraPertenceAoUsuarioLogado(obra, userId);
+          }),
+          userId,
+          nomeProfileAutor
+        );
 
         if (!cancelado) {
           setObras(obrasLocais);
@@ -857,14 +1097,19 @@ export default function VerArquivoPage() {
           obraIdParam,
           slugParam,
           obrasLocais,
-          userId
+          userId,
+          nomeProfileAutor
         );
 
         if (!cancelado) {
           setObras(
-            obrasAtualizadas.filter((obra) => {
-              return !obra.autorId || obra.autorId === userId;
-            })
+            aplicarNomeProfileVerArquivo(
+              obrasAtualizadas.filter((obra) => {
+                return obraPertenceAoUsuarioLogado(obra, userId);
+              }),
+              userId,
+              nomeProfileAutor
+            )
           );
         }
       } catch {
@@ -893,8 +1138,10 @@ export default function VerArquivoPage() {
     return (
       obras.find((obra) => {
         const slugObra = obra.slug || criarSlugBase(obra.titulo);
-        const obraPertenceAoUsuario =
-          !obra.autorId || obra.autorId === usuarioIdLogado;
+        const obraPertenceAoUsuario = obraPertenceAoUsuarioLogado(
+          obra,
+          usuarioIdLogado
+        );
 
         return (
           obraPertenceAoUsuario &&
@@ -923,6 +1170,9 @@ export default function VerArquivoPage() {
   const obraPublicaHref = obraAtual
     ? obraAtual.link || `/obra/${obraAtual.slug || criarSlugBase(obraAtual.titulo)}`
     : "/explorar";
+  const perfilAutorHref = obraAtual
+    ? criarPerfilAutorHrefVerArquivo(obraAtual.autor, obraAtual.autorId)
+    : "/perfil-autor";
   const arquivoTipoVisual = arquivo ? obterTipoVisualArquivo(arquivo) : "Arquivo";
 
   function abrirArquivoEmNovaAba() {
@@ -960,7 +1210,7 @@ export default function VerArquivoPage() {
   if (carregando || redirecionandoLogin) {
     return (
       <main style={pageThemeStyle}>
-        <style>{historietasThemeCss}</style>
+        <style>{`${historietasThemeCss}${verArquivoPageCss}`}</style>
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -981,7 +1231,7 @@ export default function VerArquivoPage() {
   if (!obraAtual) {
     return (
       <main style={pageThemeStyle}>
-        <style>{historietasThemeCss}</style>
+        <style>{`${historietasThemeCss}${verArquivoPageCss}`}</style>
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -1012,7 +1262,7 @@ export default function VerArquivoPage() {
   if (!arquivo) {
     return (
       <main style={pageThemeStyle}>
-        <style>{historietasThemeCss}</style>
+        <style>{`${historietasThemeCss}${verArquivoPageCss}`}</style>
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -1082,7 +1332,7 @@ export default function VerArquivoPage() {
 
   return (
     <main style={pageThemeStyle}>
-      <style>{historietasThemeCss}</style>
+      <style>{`${historietasThemeCss}${verArquivoPageCss}`}</style>
 
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -1101,6 +1351,13 @@ export default function VerArquivoPage() {
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
             <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>{obraAtual.titulo}</h1>
 
+            <Link
+              href={perfilAutorHref}
+              style={isDesktop ? desktopFileAuthorLinkStyle : fileAuthorLinkStyle}
+            >
+              Por {obraAtual.autor}
+            </Link>
+
             <div style={isDesktop ? desktopFileInfoBoxStyle : fileInfoBoxStyle}>
               <div style={fileInfoContentStyle}>
                 <div style={fileMetaGridStyle}>
@@ -1117,7 +1374,7 @@ export default function VerArquivoPage() {
                 onClick={abrirArquivoEmNovaAba}
                 style={primaryActionButtonStyle}
               >
-                Ver em tela cheia
+                Abrir em nova aba
               </button>
 
               <a
@@ -1129,7 +1386,7 @@ export default function VerArquivoPage() {
               </a>
 
               <Link href={obraPublicaHref} style={ghostActionStyle}>
-                Voltar para obra
+                Abrir obra
               </Link>
             </div>
           </div>
@@ -1182,7 +1439,7 @@ export default function VerArquivoPage() {
                   onClick={abrirArquivoEmNovaAba}
                   style={primaryActionButtonStyle}
                 >
-                  Ver em tela cheia
+                  Abrir em nova aba
                 </button>
 
                 <a
@@ -1201,6 +1458,20 @@ export default function VerArquivoPage() {
   );
 }
 
+const verArquivoPageCss = `  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual="original"] iframe {
+    background: #04000A;
+  }`;
+
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -1214,10 +1485,8 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(520px, 72vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -1228,10 +1497,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const fullPageStyle: CSSProperties = {
@@ -1239,7 +1506,7 @@ const fullPageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "#05020A",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -1323,8 +1590,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  background: "var(--historietas-bg-start, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -1335,7 +1601,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "16px 0 calc(18px + env(safe-area-inset-bottom))",
+  padding: "14px 0 calc(18px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1343,9 +1609,9 @@ const containerStyle: CSSProperties = {
 const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "center",
   gap: "10px",
-  marginBottom: "14px",
+  marginBottom: "12px",
   minWidth: 0,
 };
 
@@ -1353,15 +1619,14 @@ const topStyle: CSSProperties = {
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "24px",
+  fontSize: "25px",
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: 0,
   display: "flex",
   alignItems: "center",
   gap: "4px",
   minWidth: 0,
-  maxWidth: "calc(100% - 92px)",
-  overflow: "visible",
+  maxWidth: "min(100%, calc(100% - 96px))",
   ...safeTextStyle,
 };
 
@@ -1372,23 +1637,24 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "17px",
+  fontSize: "19px",
   fontWeight: 950,
-  letterSpacing: "-0.04em",
+  letterSpacing: 0,
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #F5F3FF 0%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 38%, #FFFFFF) 42%, var(--historietas-accent, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, none)",
+  textShadow: "none",
 };
 
 
@@ -1397,20 +1663,14 @@ const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
   borderRadius: "22px",
-  border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  background:
-    "radial-gradient(circle at 16% 18%, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 30%), radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 46%, transparent), transparent 38%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 20%, rgba(31,16,52,0.98)) 0%, rgba(12,7,23,0.99) 100%)",
-  boxShadow: "var(--historietas-hero-shadow, none)",
+  border: "1px solid rgba(255,255,255,0.075)",
+  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  boxShadow: "none",
   minWidth: 0,
 };
 
 const heroGlowStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  background:
-    "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.2) 100%)",
-  pointerEvents: "none",
+  display: "none",
 };
 
 const heroContentStyle: CSSProperties = {
@@ -1427,19 +1687,28 @@ const heroContentStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(31px, 8.6vw, 52px)",
-  lineHeight: 1.16,
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "clamp(28px, 7.5vw, 42px)",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "-0.07em",
+  letterSpacing: "-0.045em",
   maxWidth: "100%",
   textAlign: "center",
-  padding: "3px 0 3px",
+  padding: "2px 0",
   overflow: "visible",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 48%, var(--historietas-accent, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  ...safeTextStyle,
+};
+
+const fileAuthorLinkStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "12.5px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  textDecoration: "none",
+  textAlign: "center",
+  justifySelf: "center",
   ...safeTextStyle,
 };
 
@@ -1485,9 +1754,9 @@ const fileMetaBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "5px 7px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-text-secondary, #E4E4E7)",
+  background: "rgba(255,255,255,0.055)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9.5px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -1498,6 +1767,7 @@ const actionsGridStyle: CSSProperties = {
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "5px",
   marginTop: "2px",
+  width: "100%",
   minWidth: 0,
 };
 
@@ -1547,8 +1817,8 @@ const secondaryActionStyle: CSSProperties = {
 const ghostActionStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "rgba(255,255,255,0.045)",
+  border: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "9.5px",
@@ -1571,10 +1841,9 @@ const viewerShellStyle: CSSProperties = {
 const imageViewerStyle: CSSProperties = {
   padding: "10px",
   borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.90)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "linear-gradient(135deg, rgba(18,12,30,0.90) 0%, rgba(12,7,23,0.96) 100%)",
+  border: "1px solid rgba(255,255,255,0.075)",
+  boxShadow: "none",
   overflow: "hidden",
 };
 
@@ -1592,10 +1861,9 @@ const textViewerStyle: CSSProperties = {
   gap: "10px",
   padding: "14px",
   borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.90)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "linear-gradient(135deg, rgba(18,12,30,0.90) 0%, rgba(12,7,23,0.96) 100%)",
+  border: "1px solid rgba(255,255,255,0.075)",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
 };
@@ -1604,6 +1872,8 @@ const viewerHeaderStyle: CSSProperties = {
   display: "grid",
   gap: "5px",
   minWidth: 0,
+  textAlign: "center",
+  justifyItems: "center",
 };
 
 const miniTitleStyle: CSSProperties = {
@@ -1621,8 +1891,9 @@ const viewerTitleStyle: CSSProperties = {
   fontSize: "24px",
   lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: "-0.045em",
   maxWidth: "100%",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -1633,8 +1904,8 @@ const textContentStyle: CSSProperties = {
   fontSize: "15px",
   lineHeight: 1.78,
   fontFamily: "Georgia, 'Times New Roman', serif",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid rgba(255,255,255,0.065)",
   borderRadius: "18px",
   padding: "14px",
   minWidth: 0,
@@ -1647,9 +1918,9 @@ const pdfViewerStyle: CSSProperties = {
   height: "min(78vh, 760px)",
   minHeight: "520px",
   borderRadius: "24px",
-  background: "rgba(12,7,23,0.96)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.075)",
+  boxShadow: "none",
   overflow: "hidden",
 };
 
@@ -1663,38 +1934,41 @@ const pdfFrameStyle: CSSProperties = {
 
 const genericFileBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "12px",
-  padding: "18px",
+  gap: "10px",
+  padding: "16px",
   borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(18,12,30,0.90)) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "linear-gradient(135deg, rgba(18,12,30,0.90) 0%, rgba(12,7,23,0.96) 100%)",
+  border: "1px solid rgba(255,255,255,0.075)",
+  boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
+  textAlign: "center",
+  justifyItems: "center",
 };
 
 const emptyBoxStyle: CSSProperties = {
   minHeight: "60vh",
   display: "grid",
   alignContent: "center",
+  justifyItems: "center",
+  textAlign: "center",
   gap: "12px",
   padding: "18px",
   borderRadius: "26px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 10%, rgba(33,24,50,0.82)) 0%, rgba(18,12,30,0.94) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "linear-gradient(135deg, rgba(18,12,30,0.90) 0%, rgba(12,7,23,0.96) 100%)",
+  border: "1px solid rgba(255,255,255,0.075)",
   minWidth: 0,
   overflow: "hidden",
 };
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "clamp(34px, 10vw, 58px)",
-  lineHeight: 0.95,
+  color: "var(--historietas-accent, #F97316)",
+  fontSize: "clamp(30px, 8vw, 46px)",
+  lineHeight: 1.02,
   fontWeight: 950,
-  letterSpacing: "-0.08em",
+  letterSpacing: "-0.055em",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -1708,7 +1982,7 @@ const emptyTextStyle: CSSProperties = {
 };
 
 const primaryLinkButtonStyle: CSSProperties = {
-  minHeight: "46px",
+  minHeight: "44px",
   borderRadius: "999px",
   background: "var(--historietas-accent, #F97316)",
   color: "#FFFFFF",
@@ -1720,6 +1994,7 @@ const primaryLinkButtonStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   padding: "0 12px",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -1731,7 +2006,7 @@ const desktopContainerStyle: CSSProperties = {
 
 const desktopTopStyle: CSSProperties = {
   ...topStyle,
-  marginBottom: "16px",
+  marginBottom: "14px",
 };
 
 
@@ -1746,17 +2021,24 @@ const desktopHeroContentStyle: CSSProperties = {
   gridTemplateRows: "auto auto auto",
   alignItems: "center",
   gap: "6px 22px",
-  padding: "16px 18px",
+  padding: "14px 18px",
 };
 
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
   gridColumn: "1",
-  fontSize: "clamp(40px, 4.5vw, 64px)",
-  lineHeight: 1.14,
+  fontSize: "clamp(36px, 4vw, 54px)",
+  lineHeight: 1.08,
   maxWidth: "680px",
   justifySelf: "center",
+};
+
+const desktopFileAuthorLinkStyle: CSSProperties = {
+  ...fileAuthorLinkStyle,
+  gridColumn: "1",
+  gridRow: "2",
+  fontSize: "13.5px",
 };
 
 
@@ -1782,12 +2064,12 @@ const desktopActionsGridStyle: CSSProperties = {
 
 const desktopViewerShellStyle: CSSProperties = {
   ...viewerShellStyle,
-  marginTop: "18px",
+  marginTop: "14px",
 };
 
 const desktopImageViewerStyle: CSSProperties = {
   ...imageViewerStyle,
-  padding: "16px",
+  padding: "14px",
   borderRadius: "28px",
 };
 
@@ -1799,9 +2081,9 @@ const desktopImageStyle: CSSProperties = {
 
 const desktopTextViewerStyle: CSSProperties = {
   ...textViewerStyle,
-  padding: "20px",
+  padding: "18px",
   borderRadius: "28px",
-  gap: "14px",
+  gap: "12px",
 };
 
 const desktopTextContentStyle: CSSProperties = {
@@ -1825,6 +2107,6 @@ const desktopPdfFrameStyle: CSSProperties = {
 
 const desktopGenericFileBoxStyle: CSSProperties = {
   ...genericFileBoxStyle,
-  padding: "24px",
+  padding: "22px",
   borderRadius: "28px",
 };

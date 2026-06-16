@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { obras } from "../data/obras";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 
@@ -108,6 +107,12 @@ type SupabaseAvaliacaoObraRow = {
   nota: number | null;
 };
 
+type SupabaseProfileAutorRankingRow = {
+  id: string | null;
+  user_id: string | null;
+  nome: string | null;
+};
+
 type AvaliacaoRankingObra = {
   total: number;
   media: number;
@@ -116,7 +121,7 @@ type AvaliacaoRankingObra = {
 type ObraRanking = {
   id: string;
   storageId: string;
-  tipo: "fixa" | "local";
+  tipo: "local";
   titulo: string;
   autor: string;
   autorId?: string;
@@ -159,11 +164,257 @@ type FiltroEmAlta =
   | "favoritas"
   | "concluidas";
 
-const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
+
+
+function normalizarListaIdsEmAlta(valor: unknown) {
+  return Array.isArray(valor)
+    ? Array.from(
+        new Set(
+          valor
+            .filter((id): id is string => typeof id === "string")
+            .map((id) => id.trim())
+            .filter(Boolean)
+        )
+      )
+    : [];
+}
+
+function criarStorageKeyUsuarioEmAlta(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function carregarListaIdsLocalEmAlta(chave: string, userId: string) {
+  const listas: string[][] = [];
+
+  try {
+    const textoGlobal = localStorage.getItem(chave);
+    const jsonGlobal: unknown = textoGlobal ? JSON.parse(textoGlobal) : [];
+    listas.push(normalizarListaIdsEmAlta(jsonGlobal));
+  } catch {
+    listas.push([]);
+  }
+
+  if (userId.trim()) {
+    try {
+      const textoUsuario = localStorage.getItem(
+        criarStorageKeyUsuarioEmAlta(chave, userId)
+      );
+      const jsonUsuario: unknown = textoUsuario ? JSON.parse(textoUsuario) : [];
+      listas.push(normalizarListaIdsEmAlta(jsonUsuario));
+    } catch {
+      listas.push([]);
+    }
+  }
+
+  return Array.from(new Set(listas.flat()));
+}
+
+function salvarListaIdsLocalEmAlta(chave: string, userId: string, lista: string[]) {
+  const listaNormalizada = normalizarListaIdsEmAlta(lista);
+
+  localStorage.setItem(chave, JSON.stringify(listaNormalizada));
+
+  if (userId.trim()) {
+    localStorage.setItem(
+      criarStorageKeyUsuarioEmAlta(chave, userId),
+      JSON.stringify(listaNormalizada)
+    );
+  }
+}
+
+async function carregarIdsColecaoUsuarioSupabaseEmAlta(
+  tabela: "favoritos" | "concluidas",
+  userId: string
+) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [] as string[];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(tabela)
+      .select("obra_id")
+      .eq("user_id", userIdLimpo);
+
+    if (error || !Array.isArray(data)) {
+      if (error) {
+        console.warn(`Não consegui carregar ${tabela} no Em Alta:`, error.message);
+      }
+
+      return [] as string[];
+    }
+
+    return normalizarListaIdsEmAlta(
+      data.map((registro) => {
+        if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+          return "";
+        }
+
+        const obraId = (registro as Record<string, unknown>).obra_id;
+
+        return typeof obraId === "string" ? obraId : "";
+      })
+    );
+  } catch (error) {
+    console.warn(`Não consegui acessar ${tabela} no Em Alta:`, error);
+    return [] as string[];
+  }
+}
+
+function obterIdentificadoresObraLocalEmAlta(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
+  return Array.from(
+    new Set(
+      [obra.id, obra.slug, criarSlugBase(obra.titulo), normalizarTexto(obra.titulo)]
+        .map((id) => id.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function obterIdentificadoresRankingObra(obra: Pick<ObraRanking, "storageId" | "titulo" | "href">) {
+  const hrefSlug = obra.href.startsWith("/obra/")
+    ? decodeURIComponent(obra.href.replace("/obra/", "").split(/[?#]/)[0] || "")
+    : "";
+
+  return Array.from(
+    new Set(
+      [
+        obra.storageId,
+        hrefSlug,
+        criarSlugBase(obra.titulo),
+        normalizarTexto(obra.titulo),
+      ]
+        .map((id) => id.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function listaTemRankingObra(
+  obra: Pick<ObraRanking, "storageId" | "titulo" | "href">,
+  lista: string[]
+) {
+  const listaNormalizada = new Set(
+    lista.map((id) => id.trim()).filter(Boolean)
+  );
+
+  return obterIdentificadoresRankingObra(obra).some((id) =>
+    listaNormalizada.has(id)
+  );
+}
+
+function removerRankingObraDaLista(
+  obra: Pick<ObraRanking, "storageId" | "titulo" | "href">,
+  lista: string[]
+) {
+  const idsObra = new Set(obterIdentificadoresRankingObra(obra));
+
+  return normalizarListaIdsEmAlta(lista).filter((id) => !idsObra.has(id));
+}
+
+function adicionarRankingObraNaLista(
+  obra: Pick<ObraRanking, "storageId" | "titulo" | "href">,
+  lista: string[]
+) {
+  return normalizarListaIdsEmAlta([
+    ...removerRankingObraDaLista(obra, lista),
+    obra.storageId,
+  ]);
+}
+
+async function sincronizarColecaoRankingSupabase(
+  tabela: "favoritos" | "concluidas",
+  obra: Pick<ObraRanking, "storageId" | "titulo"> | null,
+  ativo: boolean
+) {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id || "";
+    const obraId = obra?.storageId?.trim() || "";
+
+    if (!userId || !obraId || !idObraSupabaseValido(obraId)) {
+      return;
+    }
+
+    await supabase
+      .from(tabela)
+      .delete()
+      .eq("user_id", userId)
+      .eq("obra_id", obraId);
+
+    if (!ativo) {
+      return;
+    }
+
+    const payloadBase = {
+      user_id: userId,
+      obra_id: obraId,
+    };
+
+    const { error } = await supabase.from(tabela).insert({
+      ...payloadBase,
+      visibilidade: "parcial",
+    });
+
+    if (error) {
+      await supabase.from(tabela).insert(payloadBase);
+    }
+  } catch (error) {
+    console.warn(`Não consegui sincronizar ${tabela} pelo Em Alta:`, error);
+  }
+}
+
+async function registrarColecaoRankingNoDiario(
+  tipo: "favoritou_obra" | "concluiu_obra",
+  obra: Pick<ObraRanking, "storageId" | "titulo"> | null
+) {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const userId = data.user?.id || "";
+    const obraId = obra?.storageId?.trim() || "";
+
+    if (!userId || !obraId || !idObraSupabaseValido(obraId)) {
+      return;
+    }
+
+    const payload = {
+      user_id: userId,
+      obra_id: obraId,
+      tipo,
+      texto:
+        tipo === "favoritou_obra"
+          ? `adicionou ${obra?.titulo || "uma obra"} à lista`
+          : `concluiu ${obra?.titulo || "uma obra"}`,
+      visibilidade: "parcial",
+      metadata: {
+        obra_titulo: obra?.titulo || "",
+        origem: "em-alta",
+      },
+    };
+
+    const { error } = await supabase.from("diario_atividades").insert(payload);
+
+    if (error) {
+      await supabase.from("diario_atividades").insert({
+        user_id: payload.user_id,
+        obra_id: payload.obra_id,
+        tipo: payload.tipo,
+        texto: payload.texto,
+        metadata: payload.metadata,
+      });
+    }
+  } catch {
+    // O ranking não deve falhar por causa do Diário.
+  }
+}
 
 function normalizarTexto(texto: string) {
   return texto
@@ -227,16 +478,6 @@ function criarHrefLeituraCapitulo(
   )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
-function criarLinkEmBreve(titulo: string) {
-  const tituloLimpo = titulo.trim();
-
-  if (!tituloLimpo) {
-    return "/em-breve";
-  }
-
-  return `/em-breve?obra=${encodeURIComponent(tituloLimpo)}`;
-}
-
 function criarLinkPerfilAutorRanking(nomeAutor: string, autorId?: string) {
   const params = new URLSearchParams();
   const nomeAutorLimpo = nomeAutor.trim();
@@ -249,6 +490,7 @@ function criarLinkPerfilAutorRanking(nomeAutor: string, autorId?: string) {
 
   if (autorIdLimpo) {
     params.set("autorId", autorIdLimpo);
+    params.set("userId", autorIdLimpo);
   }
 
   const query = params.toString();
@@ -256,36 +498,73 @@ function criarLinkPerfilAutorRanking(nomeAutor: string, autorId?: string) {
   return query ? `/perfil-autor?${query}` : "/perfil-autor";
 }
 
+function obterNomeProfileAutorRanking(profile?: SupabaseProfileAutorRankingRow | null) {
+  return typeof profile?.nome === "string" && profile.nome.trim()
+    ? profile.nome.trim()
+    : "";
+}
 
-function converterMetrica(valor: unknown) {
-  if (typeof valor === "number" && Number.isFinite(valor)) {
-    return valor;
+function adicionarProfileAutorRankingNoMapa(
+  mapa: Map<string, SupabaseProfileAutorRankingRow>,
+  profile: SupabaseProfileAutorRankingRow
+) {
+  const userId = typeof profile.user_id === "string" ? profile.user_id.trim() : "";
+  const id = typeof profile.id === "string" ? profile.id.trim() : "";
+
+  if (userId) {
+    mapa.set(userId, profile);
   }
 
-  const texto = String(valor ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(",", ".");
+  if (id) {
+    mapa.set(id, profile);
+  }
+}
 
-  if (!texto) {
-    return 0;
+async function carregarProfilesAutoresRanking(userIds: string[]) {
+  const idsUnicos = Array.from(
+    new Set(userIds.map((userId) => userId.trim()).filter(Boolean))
+  );
+  const profilesPorUsuario = new Map<string, SupabaseProfileAutorRankingRow>();
+
+  if (idsUnicos.length === 0) {
+    return profilesPorUsuario;
   }
 
-  const numero = parseFloat(texto.replace(/[^\d.]/g, ""));
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, user_id, nome")
+      .in("user_id", idsUnicos);
 
-  if (!Number.isFinite(numero)) {
-    return 0;
+    if (error) {
+      console.warn("Não consegui carregar profiles por user_id no ranking:", error.message);
+    } else {
+      ((data || []) as SupabaseProfileAutorRankingRow[]).forEach((profile) => {
+        adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
+      });
+    }
+  } catch (error) {
+    console.warn("Não consegui acessar profiles por user_id no ranking:", error);
   }
 
-  if (texto.includes("k")) {
-    return Math.round(numero * 1000);
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, user_id, nome")
+      .in("id", idsUnicos);
+
+    if (error) {
+      console.warn("Não consegui carregar profiles por id no ranking:", error.message);
+    } else {
+      ((data || []) as SupabaseProfileAutorRankingRow[]).forEach((profile) => {
+        adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
+      });
+    }
+  } catch (error) {
+    console.warn("Não consegui acessar profiles por id no ranking:", error);
   }
 
-  if (texto.includes("m")) {
-    return Math.round(numero * 1000000);
-  }
-
-  return Math.round(numero);
+  return profilesPorUsuario;
 }
 
 function formatarNumero(numero: number) {
@@ -417,73 +696,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
 
   return Math.round((calcularCapitulosLidos(capitulos) / capitulos.length) * 100);
 }
-
-function normalizarCapitulo(
-  capitulo: Partial<CapituloLocal>,
-  index: number
-): CapituloLocal {
-  return {
-    id:
-      typeof capitulo.id === "string" && capitulo.id.trim()
-        ? capitulo.id
-        : `capitulo-${index + 1}`,
-    titulo:
-      typeof capitulo.titulo === "string" && capitulo.titulo.trim()
-        ? capitulo.titulo
-        : "Capítulo sem título",
-    texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
-    curtiu: Boolean(capitulo.curtiu),
-    salvo: Boolean(capitulo.salvo),
-    comentario:
-      typeof capitulo.comentario === "string" ? capitulo.comentario : "",
-    criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
-    lido: Boolean(capitulo.lido),
-    lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
-  };
-}
-
-function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-    return null;
-  }
-
-  const arquivo = valor as Partial<ArquivoObraLocal>;
-
-  const nome =
-    typeof arquivo.nome === "string" && arquivo.nome.trim()
-      ? arquivo.nome.trim()
-      : "arquivo-da-obra";
-
-  const tipo =
-    arquivo.tipo === "imagem" ||
-    arquivo.tipo === "documento" ||
-    arquivo.tipo === "texto" ||
-    arquivo.tipo === "outro"
-      ? arquivo.tipo
-      : "outro";
-
-  const tamanho =
-    typeof arquivo.tamanho === "number" && Number.isFinite(arquivo.tamanho)
-      ? arquivo.tamanho
-      : 0;
-
-  const conteudo = typeof arquivo.conteudo === "string" ? arquivo.conteudo : "";
-  const enviadoEm =
-    typeof arquivo.enviadoEm === "string" ? arquivo.enviadoEm : "";
-
-  if (!conteudo) {
-    return null;
-  }
-
-  return {
-    nome,
-    tipo,
-    tamanho,
-    conteudo,
-    enviadoEm,
-  };
-}
-
 
 function normalizarTipoArquivoSupabase(tipo: string | null): ArquivoObraLocal["tipo"] {
   if (tipo === "imagem" || tipo === "documento" || tipo === "texto" || tipo === "outro") {
@@ -648,7 +860,8 @@ function converterObraSupabaseParaLocal(
   comentariosPorCapitulo: Record<string, number>,
   curtidasPorObra: Record<string, number>,
   seguidoresPorObra: Record<string, number>,
-  avaliacoesPorObra: Record<string, AvaliacaoRankingObra>
+  avaliacoesPorObra: Record<string, AvaliacaoRankingObra>,
+  profilesAutores: Map<string, SupabaseProfileAutorRankingRow>
 ): ObraLocal {
   const capitulosLocaisPorId = new Map(
     (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
@@ -691,12 +904,17 @@ function converterObraSupabaseParaLocal(
   const totalCurtidasObra = curtidasPorObra[obra.id] || 0;
   const totalSeguidoresObra = seguidoresPorObra[obra.id] || 0;
   const avaliacaoObra = avaliacoesPorObra[obra.id] || { total: 0, media: 0 };
+  const autorId = obra.user_id?.trim() || obraLocal?.autorId || "";
+  const profileAutor = autorId ? profilesAutores.get(autorId) || null : null;
+  const nomeAutorProfile = obterNomeProfileAutorRanking(profileAutor);
+  const nomeAutor =
+    nomeAutorProfile || obra.autor?.trim() || obraLocal?.autor || "Autor não informado";
 
   return {
     id: obra.id || obraLocal?.id || `obra-${index + 1}`,
     titulo,
-    autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
-    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
+    autor: nomeAutor,
+    autorId,
     genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
     formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
     classificacaoIndicativa:
@@ -777,25 +995,29 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
 
     if (erroObras) {
       console.warn("Não consegui carregar obras publicadas do Supabase:", erroObras.message);
-      return obrasLocais;
+      return [] as ObraLocal[];
     }
 
     const obrasSupabase = (obrasBanco || []) as SupabaseObraRow[];
 
     if (obrasSupabase.length === 0) {
-      return obrasLocais;
+      return [] as ObraLocal[];
     }
 
     const obraIds = obrasSupabase.map((obra) => obra.id).filter(Boolean);
+    const autorIds = obrasSupabase
+      .map((obra) => obra.user_id?.trim() || "")
+      .filter(Boolean);
 
     const { data: capitulosBanco, error: erroCapitulos } = await supabase
       .from("capitulos")
       .select("*")
       .in("obra_id", obraIds)
+      .eq("publicado", true)
       .order("ordem", { ascending: true });
 
     if (erroCapitulos) {
-      console.warn("Não consegui carregar capítulos do ranking:", erroCapitulos.message);
+      console.warn("Não consegui carregar capítulos publicados do ranking:", erroCapitulos.message);
     }
 
     const capitulosSupabase = erroCapitulos
@@ -810,6 +1032,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
       curtidasPorObra,
       seguidoresPorObra,
       avaliacoesPorObra,
+      profilesAutores,
     ] = await Promise.all([
       buscarContagemInteracoesCapitulos("curtidas_capitulos", capituloIds),
       buscarContagemInteracoesCapitulos("salvos_capitulos", capituloIds),
@@ -817,6 +1040,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
       buscarContagemInteracoesObras("obra_curtidas", obraIds),
       buscarContagemInteracoesObras("seguindo_obras", obraIds),
       buscarAvaliacoesObras(obraIds),
+      carregarProfilesAutoresRanking(autorIds),
     ]);
 
     const capitulosPorObra = capitulosSupabase.reduce<Record<string, SupabaseCapituloRow[]>>(
@@ -835,7 +1059,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
     const obrasLocaisPorId = new Map(obrasLocais.map((obra) => [obra.id, obra]));
     const obrasLocaisPorSlug = new Map(obrasLocais.map((obra) => [obra.slug, obra]));
 
-    const obrasSupabaseNormalizadas = obrasSupabase.map((obra, index) => {
+    return obrasSupabase.map((obra, index) => {
       const slug = obra.slug?.trim() || criarSlugBase(obra.titulo || `obra-${index + 1}`);
       const obraLocal = obrasLocaisPorId.get(obra.id) || obrasLocaisPorSlug.get(slug);
 
@@ -849,131 +1073,14 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
         comentariosPorCapitulo,
         curtidasPorObra,
         seguidoresPorObra,
-        avaliacoesPorObra
+        avaliacoesPorObra,
+        profilesAutores
       );
     });
-
-    const idsRemotos = new Set(obrasSupabaseNormalizadas.map((obra) => obra.id));
-    const slugsRemotos = new Set(obrasSupabaseNormalizadas.map((obra) => obra.slug));
-    const obrasLocaisSemDuplicar = obrasLocais.filter((obra) => {
-      return !idsRemotos.has(obra.id) && !slugsRemotos.has(obra.slug);
-    });
-    const obrasAtualizadas = [...obrasSupabaseNormalizadas, ...obrasLocaisSemDuplicar];
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasAtualizadas));
-
-    return obrasAtualizadas;
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Em Alta agora:", error);
-    return obrasLocais;
+    return [] as ObraLocal[];
   }
-}
-
-function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
-  const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
-    ? obra.capitulos.map((capitulo, capituloIndex) =>
-        normalizarCapitulo(capitulo, capituloIndex)
-      )
-    : [];
-
-  const tagsNormalizadas = Array.isArray(obra.tags)
-    ? obra.tags
-        .filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
-        .map((tag) => tag.trim())
-    : [];
-
-  const titulo =
-    typeof obra.titulo === "string" && obra.titulo.trim()
-      ? obra.titulo.trim()
-      : "Obra sem título";
-
-  const slug =
-    typeof obra.slug === "string" && obra.slug.trim()
-      ? obra.slug.trim()
-      : criarSlugBase(titulo || `obra-${index + 1}`);
-
-  return {
-    id:
-      typeof obra.id === "string" && obra.id.trim()
-        ? obra.id
-        : `obra-${index + 1}`,
-    titulo,
-    autor:
-      typeof obra.autor === "string" && obra.autor.trim()
-        ? obra.autor
-        : "Autor não informado",
-    autorId:
-      typeof obra.autorId === "string" && obra.autorId.trim()
-        ? obra.autorId.trim()
-        : "",
-    genero:
-      typeof obra.genero === "string" && obra.genero.trim()
-        ? obra.genero
-        : "Não informado",
-    formato:
-      typeof obra.formato === "string" && obra.formato.trim()
-        ? obra.formato
-        : "Não informado",
-    classificacaoIndicativa:
-      typeof obra.classificacaoIndicativa === "string" &&
-      obra.classificacaoIndicativa.trim()
-        ? obra.classificacaoIndicativa
-        : "Não informada",
-    sinopse:
-      typeof obra.sinopse === "string" && obra.sinopse.trim()
-        ? obra.sinopse
-        : "Nenhuma sinopse informada.",
-    tags: tagsNormalizadas.length > 0 ? tagsNormalizadas : ["sem tags"],
-    capa: typeof obra.capa === "string" ? obra.capa : "",
-    capaNome: typeof obra.capaNome === "string" ? obra.capaNome : "",
-    publicado: Boolean(obra.publicado),
-    capitulos: capitulosNormalizados,
-    criadaEm: typeof obra.criadaEm === "string" ? obra.criadaEm : "",
-    ultimoCapituloLidoId:
-      typeof obra.ultimoCapituloLidoId === "string"
-        ? obra.ultimoCapituloLidoId
-        : "",
-    ultimaLeituraEm:
-      typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
-    progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
-    slug,
-    link:
-      typeof obra.link === "string" && obra.link.trim()
-        ? obra.link
-        : `/obra/${slug}`,
-    arquivoObra: normalizarArquivoObra(obra.arquivoObra),
-    totalCurtidasRanking:
-      typeof obra.totalCurtidasRanking === "number" && Number.isFinite(obra.totalCurtidasRanking)
-        ? obra.totalCurtidasRanking
-        : 0,
-    totalComentariosRanking:
-      typeof obra.totalComentariosRanking === "number" && Number.isFinite(obra.totalComentariosRanking)
-        ? obra.totalComentariosRanking
-        : 0,
-    totalSalvosRanking:
-      typeof obra.totalSalvosRanking === "number" && Number.isFinite(obra.totalSalvosRanking)
-        ? obra.totalSalvosRanking
-        : 0,
-    totalViewsRanking:
-      typeof obra.totalViewsRanking === "number" && Number.isFinite(obra.totalViewsRanking)
-        ? obra.totalViewsRanking
-        : 0,
-    totalSeguidoresRanking:
-      typeof obra.totalSeguidoresRanking === "number" &&
-      Number.isFinite(obra.totalSeguidoresRanking)
-        ? obra.totalSeguidoresRanking
-        : 0,
-    totalAvaliacoesRanking:
-      typeof obra.totalAvaliacoesRanking === "number" &&
-      Number.isFinite(obra.totalAvaliacoesRanking)
-        ? obra.totalAvaliacoesRanking
-        : 0,
-    mediaAvaliacoesRanking:
-      typeof obra.mediaAvaliacoesRanking === "number" &&
-      Number.isFinite(obra.mediaAvaliacoesRanking)
-        ? obra.mediaAvaliacoesRanking
-        : 0,
-  };
 }
 
 function encontrarCapituloParaContinuar(obra: ObraLocal) {
@@ -1002,30 +1109,28 @@ function encontrarCapituloParaContinuar(obra: ObraLocal) {
 function criarRankingCoverStyle(
   capa: string,
   isDesktop = false,
-  posicao = 5
+  _posicao = 5
 ): CSSProperties {
   const baseStyle = isDesktop ? desktopCoverStyle : coverStyle;
-  const temaPosicao = obterTemaPosicao(posicao);
 
   if (!capa) {
     return {
       ...baseStyle,
-      backgroundColor: temaPosicao.deep,
-      backgroundImage: temaPosicao.coverBackground,
-      border: `1px solid ${temaPosicao.border}`,
+      backgroundColor: "#04000A",
+      backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+      border: "1px solid rgba(255,255,255,0.08)",
     };
   }
 
   return {
     ...baseStyle,
-    backgroundColor: temaPosicao.deep,
+    backgroundColor: "#04000A",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
-    border: `1px solid ${temaPosicao.border}`,
+    border: "1px solid rgba(255,255,255,0.08)",
   };
 }
-
 
 function ordenarRanking(lista: ObraRanking[], tipo: TipoRanking) {
   const novaLista = [...lista];
@@ -1101,11 +1206,11 @@ function obraRankingPassaFiltro(
   }
 
   if (filtro === "favoritas") {
-    return Boolean(obra.storageId) && obrasFavoritas.includes(obra.storageId);
+    return listaTemRankingObra(obra, obrasFavoritas);
   }
 
   if (filtro === "concluidas") {
-    return Boolean(obra.storageId) && obrasConcluidas.includes(obra.storageId);
+    return listaTemRankingObra(obra, obrasConcluidas);
   }
 
   return true;
@@ -1120,11 +1225,11 @@ function criarDecoracaoPaginaStyle(index: number): CSSProperties {
 
   return {
     position: "absolute",
-    color: "var(--historietas-accent, #FDBA74)",
-    opacity: 0.045,
+    color: "rgba(139, 92, 246, 0.18)",
+    opacity: 0.035,
     lineHeight: 1,
     fontWeight: 950,
-    filter: "blur(0.2px) drop-shadow(0 0 24px color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent))",
+    filter: "none",
     userSelect: "none",
     ...posicoes[index % posicoes.length],
   };
@@ -1145,6 +1250,7 @@ export default function EmAltaPage() {
   const [filtroRanking, setFiltroRanking] = useState<FiltroEmAlta>("todos");
   const [isDesktop, setIsDesktop] = useState(false);
   const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
   const [mensagemLogin, setMensagemLogin] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -1181,10 +1287,12 @@ export default function EmAltaPage() {
 
         if (ativo) {
           setUsuarioLogado(Boolean(data.user));
+          setUsuarioLogadoId(data.user?.id || "");
         }
       } catch {
         if (ativo) {
           setUsuarioLogado(false);
+          setUsuarioLogadoId("");
         }
       }
     }
@@ -1201,42 +1309,43 @@ export default function EmAltaPage() {
 
     async function carregarRanking() {
       try {
-        const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
-        const obrasSalvasJson = obrasSalvasTexto
-          ? JSON.parse(obrasSalvasTexto)
-          : [];
+        const obrasNormalizadas: ObraLocal[] = [];
+        let userIdAtual = usuarioLogadoId;
 
-        const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-          ? obrasSalvasJson.map((obra, index) => normalizarObra(obra, index))
-          : [];
+        if (!userIdAtual) {
+          try {
+            const { data } = await supabase.auth.getUser();
+            userIdAtual = data.user?.id || "";
+          } catch {
+            userIdAtual = "";
+          }
+        }
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+        const [favoritosSupabase, concluidasSupabase] = await Promise.all([
+          carregarIdsColecaoUsuarioSupabaseEmAlta("favoritos", userIdAtual),
+          carregarIdsColecaoUsuarioSupabaseEmAlta("concluidas", userIdAtual),
+        ]);
 
-        const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
-        const obrasFavoritasJson = obrasFavoritasTexto
-          ? JSON.parse(obrasFavoritasTexto)
-          : [];
+        const obrasFavoritasNormalizadas = normalizarListaIdsEmAlta([
+          ...carregarListaIdsLocalEmAlta(FAVORITES_STORAGE_KEY, userIdAtual),
+          ...favoritosSupabase,
+        ]);
 
-        const obrasFavoritasNormalizadas: string[] = Array.isArray(
-          obrasFavoritasJson
-        )
-          ? obrasFavoritasJson.filter(
-              (id): id is string => typeof id === "string"
-            )
-          : [];
+        const obrasConcluidasNormalizadas = normalizarListaIdsEmAlta([
+          ...carregarListaIdsLocalEmAlta(COMPLETED_STORAGE_KEY, userIdAtual),
+          ...concluidasSupabase,
+        ]);
 
-        const obrasConcluidasTexto = localStorage.getItem(COMPLETED_STORAGE_KEY);
-        const obrasConcluidasJson = obrasConcluidasTexto
-          ? JSON.parse(obrasConcluidasTexto)
-          : [];
-
-        const obrasConcluidasNormalizadas: string[] = Array.isArray(
-          obrasConcluidasJson
-        )
-          ? obrasConcluidasJson.filter(
-              (id): id is string => typeof id === "string"
-            )
-          : [];
+        salvarListaIdsLocalEmAlta(
+          FAVORITES_STORAGE_KEY,
+          userIdAtual,
+          obrasFavoritasNormalizadas
+        );
+        salvarListaIdsLocalEmAlta(
+          COMPLETED_STORAGE_KEY,
+          userIdAtual,
+          obrasConcluidasNormalizadas
+        );
 
         const visualizacoesTexto = localStorage.getItem(VIEWED_WORKS_STORAGE_KEY);
         const visualizacoesJson = visualizacoesTexto
@@ -1253,6 +1362,8 @@ export default function EmAltaPage() {
           normalizarAvaliacoesLocaisRanking(avaliacoesLocaisJson);
 
         if (!cancelado) {
+          setUsuarioLogado(Boolean(userIdAtual));
+          setUsuarioLogadoId(userIdAtual);
           setObrasLocais(obrasNormalizadas);
           setObrasFavoritas(obrasFavoritasNormalizadas);
           setObrasConcluidas(obrasConcluidasNormalizadas);
@@ -1286,48 +1397,7 @@ export default function EmAltaPage() {
   }, []);
 
   const ranking = useMemo<ObraRanking[]>(() => {
-    const obrasFixasRanking: ObraRanking[] = obras.map((obra) => {
-      const views = converterMetrica(obra.views);
-      const curtidas = converterMetrica(obra.likes);
-      const comentarios = converterMetrica(obra.comentarios);
-
-      return {
-        id: `fixa-${obra.titulo}`,
-        storageId: "",
-        tipo: "fixa",
-        titulo: obra.titulo,
-        autor: obra.autor,
-        autorId: "",
-        genero: obra.genero,
-        formato: "Catálogo",
-        classificacaoIndicativa:
-          typeof obra.classificacaoIndicativa === "string" &&
-          obra.classificacaoIndicativa.trim()
-            ? obra.classificacaoIndicativa
-            : "Não informada",
-        status: obra.status,
-        href: obra.disponivel ? obra.link : criarLinkEmBreve(obra.titulo),
-        disponivel: obra.disponivel,
-        capa: "",
-        capaNome: "",
-        capitulos: 0,
-        capitulosLidos: 0,
-        progressoLeitura: 0,
-        ultimoCapituloLidoTitulo: "",
-        ultimoCapituloLidoHref: "",
-        ultimaLeituraEm: "",
-        curtidas,
-        comentarios,
-        salvos: 0,
-        views,
-        avaliacoes: 0,
-        mediaAvaliacao: 0,
-        pontuacao: views + curtidas * 3 + comentarios * 5,
-        criadaEmTimestamp: 0,
-      };
-    });
-
-    const obrasLocaisRanking: ObraRanking[] = obrasLocais
+    return obrasLocais
       .filter((obra) => obra.publicado)
       .map((obra) => {
         const totalCurtidasLocais = obra.capitulos.filter(
@@ -1448,10 +1518,8 @@ export default function EmAltaPage() {
           mediaAvaliacao: mediaAvaliacoes,
           pontuacao,
           criadaEmTimestamp: dataValida,
-        };
+        } satisfies ObraRanking;
       });
-
-    return obrasLocaisRanking.length > 0 ? obrasLocaisRanking : obrasFixasRanking;
   }, [avaliacoesLocaisRegistradas, obrasLocais, visualizacoesRegistradas]);
 
   const termoBuscaRanking = normalizarTexto(buscaRanking);
@@ -1537,13 +1605,16 @@ export default function EmAltaPage() {
   async function usuarioTemSessaoAtiva() {
     try {
       const { data } = await supabase.auth.getUser();
-      const logado = Boolean(data.user);
+      const userId = data.user?.id || "";
+      const logado = Boolean(userId);
 
       setUsuarioLogado(logado);
+      setUsuarioLogadoId(userId);
 
       return logado;
     } catch {
       setUsuarioLogado(false);
+      setUsuarioLogadoId("");
 
       return false;
     }
@@ -1572,17 +1643,40 @@ export default function EmAltaPage() {
       return;
     }
 
-    const novasObrasFavoritas = obrasFavoritas.includes(obraId)
-      ? obrasFavoritas.filter((id) => id !== obraId)
-      : [...obrasFavoritas, obraId];
+    const obraRanking = ranking.find((obra) => {
+      return obra.storageId === obraId || obra.id === obraId;
+    }) || null;
 
-    localStorage.setItem(
+    const obraVaiFicarFavorita = obraRanking
+      ? !listaTemRankingObra(obraRanking, obrasFavoritas)
+      : !obrasFavoritas.includes(obraId);
+
+    const novasObrasFavoritas = obraRanking
+      ? obraVaiFicarFavorita
+        ? adicionarRankingObraNaLista(obraRanking, obrasFavoritas)
+        : removerRankingObraDaLista(obraRanking, obrasFavoritas)
+      : obraVaiFicarFavorita
+        ? normalizarListaIdsEmAlta([...obrasFavoritas, obraId])
+        : obrasFavoritas.filter((id) => id !== obraId);
+
+    salvarListaIdsLocalEmAlta(
       FAVORITES_STORAGE_KEY,
-      JSON.stringify(novasObrasFavoritas)
+      usuarioLogadoId,
+      novasObrasFavoritas
     );
 
     setObrasFavoritas(novasObrasFavoritas);
     setMensagemLogin("");
+
+    void sincronizarColecaoRankingSupabase(
+      "favoritos",
+      obraRanking,
+      obraVaiFicarFavorita
+    );
+
+    if (obraVaiFicarFavorita) {
+      void registrarColecaoRankingNoDiario("favoritou_obra", obraRanking);
+    }
   }
 
   async function alternarConcluido(obraId: string) {
@@ -1593,17 +1687,40 @@ export default function EmAltaPage() {
       return;
     }
 
-    const novasObrasConcluidas = obrasConcluidas.includes(obraId)
-      ? obrasConcluidas.filter((id) => id !== obraId)
-      : [...obrasConcluidas, obraId];
+    const obraRanking = ranking.find((obra) => {
+      return obra.storageId === obraId || obra.id === obraId;
+    }) || null;
 
-    localStorage.setItem(
+    const obraVaiFicarConcluida = obraRanking
+      ? !listaTemRankingObra(obraRanking, obrasConcluidas)
+      : !obrasConcluidas.includes(obraId);
+
+    const novasObrasConcluidas = obraRanking
+      ? obraVaiFicarConcluida
+        ? adicionarRankingObraNaLista(obraRanking, obrasConcluidas)
+        : removerRankingObraDaLista(obraRanking, obrasConcluidas)
+      : obraVaiFicarConcluida
+        ? normalizarListaIdsEmAlta([...obrasConcluidas, obraId])
+        : obrasConcluidas.filter((id) => id !== obraId);
+
+    salvarListaIdsLocalEmAlta(
       COMPLETED_STORAGE_KEY,
-      JSON.stringify(novasObrasConcluidas)
+      usuarioLogadoId,
+      novasObrasConcluidas
     );
 
     setObrasConcluidas(novasObrasConcluidas);
     setMensagemLogin("");
+
+    void sincronizarColecaoRankingSupabase(
+      "concluidas",
+      obraRanking,
+      obraVaiFicarConcluida
+    );
+
+    if (obraVaiFicarConcluida) {
+      void registrarColecaoRankingNoDiario("concluiu_obra", obraRanking);
+    }
   }
 
   return (
@@ -1700,6 +1817,8 @@ export default function EmAltaPage() {
 
         </section>
 
+        {ranking.length > 0 && rankingFiltrado.length > 0 && (
+          <>
         <RankingSection
           titulo="Ranking Mestre"
           descricao=""
@@ -1783,6 +1902,9 @@ export default function EmAltaPage() {
           onAlternarConcluido={alternarConcluido}
           isDesktop={isDesktop}
         />
+
+          </>
+        )}
 
         {ranking.length > 0 && rankingFiltrado.length === 0 && (
           <section style={emptyBoxStyle}>
@@ -2056,14 +2178,8 @@ function RankingSection({
                 obra={obra}
                 posicao={posicao}
                 tipo={tipo}
-                favorita={
-                  obra.storageId ? obrasFavoritas.includes(obra.storageId) : false
-                }
-                concluida={
-                  obra.storageId
-                    ? obrasConcluidas.includes(obra.storageId)
-                    : false
-                }
+                favorita={listaTemRankingObra(obra, obrasFavoritas)}
+                concluida={listaTemRankingObra(obra, obrasConcluidas)}
                 isDesktop={isDesktop}
               />
             ))}
@@ -2110,8 +2226,6 @@ function RankingCard({
     obra.classificacaoIndicativa !== "Não informada";
   const temaPosicao = obterTemaPosicao(posicao);
   const mostrarStatusRanking = normalizarTexto(obra.status) !== "publicado";
-  const mostrarAvaliacaoRanking = obra.avaliacoes > 0 && obra.mediaAvaliacao > 0;
-
   const destaque =
     tipo === "geral"
       ? `${formatarNumero(obra.pontuacao)} pts`
@@ -2213,11 +2327,10 @@ function RankingCard({
             {formatarNumero(obra.curtidas)}
           </span>
 
-          {mostrarAvaliacaoRanking && (
-            <span style={statsItemStyle}>
-              ⭐ {formatarMediaRanking(obra.mediaAvaliacao)}
-            </span>
-          )}
+          <span style={statsItemStyle}>
+            <span style={starMetricIconStyle}>★</span>
+            {formatarMediaRanking(obra.mediaAvaliacao)}
+          </span>
         </div>
 
         <div style={statsStyle}>
@@ -2479,20 +2592,25 @@ function criarReadRankingStyle(posicao: number, disponivel: boolean): CSSPropert
 
 
 const emAltaPageCss = `
+  html[data-historietas-tema-visual] body,
+  html[data-historietas-tema-visual] main {
+    background: #070212 !important;
+  }
+
   html[data-historietas-tema-visual] nav a[href="/em-alta"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"] {
-    background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
-    color: var(--historietas-accent, #F97316) !important;
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="branco"] .historietas-em-alta-logo-text,
-  html[data-historietas-tema-visual="branco"] .historietas-em-alta-hero-title {
-    background: none !important;
-    color: #1A73E8 !important;
-    -webkit-text-fill-color: #1A73E8 !important;
-    text-shadow: none !important;
+  html[data-historietas-tema-visual] nav a[href="/em-alta"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"] .historietas-bottom-nav-icon {
+    color: #FFFFFF !important;
+    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
   }
 
   html[data-historietas-tema-visual="branco"] input::placeholder {
@@ -2527,10 +2645,9 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(340px, 48vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "radial-gradient(ellipse at 8% 74%, var(--historietas-glow-primary, rgba(42,20,76,0.54)) 0%, transparent 62%), radial-gradient(ellipse at 76% 68%, var(--historietas-glow-secondary, rgba(32,13,58,0.36)) 0%, transparent 64%), linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.96)) 42%, transparent 100%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -2541,10 +2658,9 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  WebkitMaskImage: "none",
+  maskImage: "none",
 };
 
 
@@ -2556,8 +2672,8 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+  backgroundColor: "#070212",
+  background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -2658,22 +2774,23 @@ const headerTitleMarkStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
   fontSize: "clamp(18px, 4.3vw, 24px)",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.04em",
   flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   boxShadow: "none",
 };
 
 const desktopHeaderTitleMarkStyle: CSSProperties = {
   ...headerTitleMarkStyle,
-  width: "clamp(44px, 4.4vw, 58px)",
-  height: "clamp(44px, 4.4vw, 58px)",
-  borderRadius: "18px",
-  fontSize: "clamp(22px, 2.2vw, 30px)",
+  width: "50px",
+  height: "50px",
+  borderRadius: "17px",
+  fontSize: "25px",
 };
 
 const headerTitleTextStyle: CSSProperties = {
@@ -2681,24 +2798,35 @@ const headerTitleTextStyle: CSSProperties = {
   margin: 0,
   maxWidth: "calc(100vw - 86px)",
   textAlign: "left",
+  background:
+    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+  textShadow: "none",
 };
 
 const desktopHeaderTitleTextStyle: CSSProperties = {
-  ...desktopTitleStyle,
-  margin: 0,
-  maxWidth: "calc(100vw - 132px)",
-  textAlign: "left",
+  ...headerTitleTextStyle,
+  maxWidth: "760px",
 };
 
 
 
 const filterSummaryTextStyle: CSSProperties = {
-  margin: "6px 0 0",
-  color: "var(--historietas-text-secondary, #B9B4C7)",
+  margin: "0 auto",
+  width: "fit-content",
+  maxWidth: "100%",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
+  lineHeight: 1.35,
   fontWeight: 850,
-  lineHeight: 1.45,
   textAlign: "center",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: "999px",
+  padding: "8px 12px",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -2739,18 +2867,15 @@ const sectionTitleStyle: CSSProperties = {
   maxWidth: "100%",
   textAlign: "center",
   textShadow: "none",
+  color: "var(--historietas-accent, #F97316)",
   ...safeTextStyle,
 };
 
 const carouselShellStyle: CSSProperties = {
   position: "relative",
   minWidth: 0,
-  width: "calc(100% + 28px)",
-  maxWidth: "calc(100% + 28px)",
-  marginLeft: "-14px",
-  marginRight: "-14px",
+  maxWidth: "100%",
   overflow: "hidden",
-  boxSizing: "border-box",
 };
 
 const desktopCarouselShellStyle: CSSProperties = {
@@ -2767,22 +2892,17 @@ const carouselArrowButtonStyle: CSSProperties = {
   position: "absolute",
   top: "50%",
   zIndex: 8,
-  width: "34px",
-  height: "34px",
+  width: "38px",
+  height: "38px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.16)",
-  background: "rgba(11,6,20,0.86)",
-  color: "#FFFFFF",
-  boxShadow: "none",
-  display: "flex",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#DDD6FE",
+  display: "none",
   alignItems: "center",
   justifyContent: "center",
-  padding: 0,
   cursor: "pointer",
-  fontFamily: "inherit",
-  fontSize: "25px",
-  lineHeight: 1,
-  fontWeight: 950,
+  boxShadow: "none",
   transform: "translateY(-50%)",
 };
 
@@ -2809,14 +2929,14 @@ const carouselArrowRightStyle: CSSProperties = {
 const carouselStyle: CSSProperties = {
   display: "grid",
   gridAutoFlow: "column",
-  gridAutoColumns: "318px",
+  gridAutoColumns: "minmax(292px, calc(100vw - 52px))",
   gap: "14px",
   overflowX: "auto",
   overflowY: "hidden",
-  padding: "1px 14px 4px",
+  padding: "1px 2px 4px",
   scrollSnapType: "x mandatory",
-  scrollPaddingLeft: "14px",
-  scrollPaddingRight: "14px",
+  scrollPaddingLeft: "2px",
+  scrollPaddingRight: "2px",
   scrollbarWidth: "none",
   overscrollBehaviorX: "contain",
   minWidth: 0,
@@ -2864,10 +2984,10 @@ const desktopSectionTextBlockStyle: CSSProperties = {
 const cardStyle: CSSProperties = {
   position: "relative",
   display: "grid",
-  gridTemplateColumns: "118px minmax(0, 1fr)",
-  gap: "13px",
-  padding: "12px",
-  paddingRight: "62px",
+  gridTemplateColumns: "112px minmax(0, 1fr)",
+  gap: "12px",
+  padding: "11px",
+  paddingRight: "52px",
   borderRadius: "26px",
   background:
     "radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent), transparent 32%), linear-gradient(135deg, rgba(38, 28, 58, 0.98) 0%, rgba(18, 12, 30, 0.99) 100%)",
@@ -2919,16 +3039,17 @@ const coroaNumberStyle: CSSProperties = {
 
 
 const coverStyle: CSSProperties = {
-  minHeight: "132px",
+  minHeight: "128px",
   borderRadius: "18px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 34%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 72%, transparent), transparent 38%), linear-gradient(135deg, #1F102F 0%, #0F0F0F 100%)",
+  backgroundColor: "#04000A",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   minWidth: 0,
-  boxShadow: "inset 0 -38px 62px rgba(0,0,0,0.52), inset 0 1px 0 rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "none",
 };
 
 const desktopCoverStyle: CSSProperties = {
@@ -3139,6 +3260,13 @@ const heartMetricIconStyle: CSSProperties = {
   alignItems: "center",
 };
 
+const starMetricIconStyle: CSSProperties = {
+  color: "#FBBF24",
+  lineHeight: 1,
+  display: "inline-flex",
+  alignItems: "center",
+};
+
 const progressCompactStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr auto",
@@ -3197,10 +3325,9 @@ const filterBoxStyle: CSSProperties = {
   gap: "10px",
   padding: "13px",
   borderRadius: "24px",
-  background:
-    "linear-gradient(135deg, color-mix(in srgb, var(--historietas-accent, #F97316) 8%, var(--historietas-surface, rgba(255,255,255,0.074))) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.86)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, var(--historietas-border-soft, transparent))",
-  boxShadow: "var(--historietas-card-shadow, none)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   backdropFilter: "none",
   minWidth: 0,
   overflow: "hidden",
@@ -3240,7 +3367,7 @@ const filterHeaderTextStyle: CSSProperties = {
 };
 
 const filterMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
   display: "block",
   fontSize: "10px",
   fontWeight: 950,
@@ -3253,14 +3380,15 @@ const clearFilterButtonStyle: CSSProperties = {
   minHeight: "42px",
   padding: "0 14px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#DDD6FE",
   fontSize: "13px",
   fontWeight: 950,
   cursor: "pointer",
   fontFamily: "inherit",
   textAlign: "center",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -3268,9 +3396,9 @@ const searchInputStyle: CSSProperties = {
   width: "100%",
   height: "46px",
   borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  background: "var(--historietas-input-bg, rgba(12,7,23,0.86))",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "0 15px",
   outline: "none",
   fontSize: "14px",
@@ -3313,8 +3441,8 @@ const quickFilterButtonStyle: CSSProperties = {
   minHeight: "38px",
   maxWidth: "210px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.13))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.075))",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
   fontWeight: 950,
@@ -3322,13 +3450,14 @@ const quickFilterButtonStyle: CSSProperties = {
   fontFamily: "inherit",
   textAlign: "center",
   padding: "0 12px",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const quickFilterActiveStyle: CSSProperties = {
   ...quickFilterButtonStyle,
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-  border: "1px solid rgba(255,255,255,0.18)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
 };
@@ -3343,18 +3472,19 @@ const loginNoticeStyle: CSSProperties = {
   minHeight: "38px",
   padding: "9px 12px",
   borderRadius: "18px",
-  background: "rgba(249, 115, 22, 0.10)",
-  border: "1px solid rgba(249, 115, 22, 0.24)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "12px",
   fontWeight: 850,
   textAlign: "center",
   boxSizing: "border-box",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const loginNoticeLinkStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
   fontWeight: 950,
   textDecoration: "none",
 };
@@ -3363,26 +3493,24 @@ const emptyBoxStyle: CSSProperties = {
   marginTop: "18px",
   padding: "22px",
   borderRadius: "24px",
-  background: "var(--historietas-surface, rgba(31,31,35,0.96))",
-  border: "1px solid var(--historietas-border-soft, #2D2D32)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   display: "grid",
   gap: "12px",
   minWidth: 0,
   overflow: "hidden",
+  boxShadow: "none",
 };
 
 const emptyMiniBoxStyle: CSSProperties = {
-  padding: "18px",
+  padding: "15px",
   borderRadius: "20px",
-  background: "var(--historietas-surface, rgba(31,31,35,0.96))",
-  border: "1px solid var(--historietas-border-soft, #2D2D32)",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "14px",
-  fontWeight: 800,
-  lineHeight: 1.6,
-  minWidth: 0,
-  overflow: "hidden",
-  ...safeTextStyle,
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  display: "grid",
+  gap: "8px",
+  textAlign: "center",
+  boxShadow: "none",
 };
 
 const emptyTitleStyle: CSSProperties = {
@@ -3405,17 +3533,19 @@ const emptyTextStyle: CSSProperties = {
 };
 
 const emptyButtonStyle: CSSProperties = {
-  minHeight: "50px",
+  width: "fit-content",
+  minHeight: "40px",
+  margin: "0 auto",
+  padding: "0 15px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary, #7C3AED)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "14px",
-  fontWeight: 950,
-  display: "flex",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  ...safeTextStyle,
+  fontSize: "13px",
+  fontWeight: 950,
+  border: "1px solid rgba(255,255,255,0.10)",
+  boxShadow: "none",
 };

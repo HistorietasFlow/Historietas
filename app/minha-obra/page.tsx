@@ -92,6 +92,18 @@ type CapituloSupabaseRow = {
 
 type OrdemCapitulos = "crescente" | "decrescente";
 
+type MetricasMinhaObraSupabase = {
+  totalCurtidas: number;
+  totalComentarios: number;
+  totalSalvos: number;
+};
+
+const METRICAS_MINHA_OBRA_ZERADAS: MetricasMinhaObraSupabase = {
+  totalCurtidas: 0,
+  totalComentarios: 0,
+  totalSalvos: 0,
+};
+
 const STORAGE_KEY = "historietas-obras";
 const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
@@ -135,9 +147,101 @@ function criarPerfilAutorHref(autor: string, autorId?: string) {
 
   if (autorIdLimpo) {
     params.set("autorId", autorIdLimpo);
+    params.set("userId", autorIdLimpo);
   }
 
   return `/perfil-autor?${params.toString()}`;
+}
+
+function obterNomeFallbackPerfilMinhaObra(email = "", nomeAtual = "") {
+  const nomeLimpo = nomeAtual.trim();
+
+  if (nomeLimpo && nomeLimpo !== "Autor não informado") {
+    return nomeLimpo;
+  }
+
+  const nomeEmail = email.trim().split("@")[0];
+
+  return nomeEmail || nomeLimpo || "Autor não informado";
+}
+
+async function carregarNomeProfileMinhaObra({
+  userId,
+  email = "",
+  nomeAtual = "",
+}: {
+  userId: string;
+  email?: string;
+  nomeAtual?: string;
+}) {
+  const userIdLimpo = userId.trim();
+  const fallback = obterNomeFallbackPerfilMinhaObra(email, nomeAtual);
+
+  if (!userIdLimpo) {
+    return fallback;
+  }
+
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
+
+    const nomeProfile =
+      typeof data?.nome === "string" && data.nome.trim() ? data.nome.trim() : "";
+
+    if (nomeProfile) {
+      return nomeProfile;
+    }
+  } catch {
+    // Tenta o formato antigo, onde profiles.id era o id do usuário.
+  }
+
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("id", userIdLimpo)
+      .maybeSingle();
+
+    const nomeProfile =
+      typeof data?.nome === "string" && data.nome.trim() ? data.nome.trim() : "";
+
+    if (nomeProfile) {
+      return nomeProfile;
+    }
+  } catch {
+    // O nome salvo na obra continua como fallback.
+  }
+
+  return fallback;
+}
+
+function aplicarNomeProfileNasObrasMinhaObra(
+  obrasParaAtualizar: ObraLocal[],
+  userId: string,
+  nomeProfile: string
+) {
+  const nomeLimpo = nomeProfile.trim();
+
+  if (!userId.trim() || !nomeLimpo) {
+    return obrasParaAtualizar;
+  }
+
+  return obrasParaAtualizar.map((obra, index) => {
+    const obraNormalizada = normalizarObra(obra, index);
+
+    if (!obraPertenceAoUsuarioLogado(obraNormalizada, userId)) {
+      return obraNormalizada;
+    }
+
+    return {
+      ...obraNormalizada,
+      autor: nomeLimpo,
+      autorId: obterAutorIdObra(obraNormalizada) || userId,
+    };
+  });
 }
 
 function formatarGeneroMinhaObra(genero: string) {
@@ -267,6 +371,12 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
     autorId:
       typeof obra.autorId === "string" && obra.autorId.trim()
         ? obra.autorId.trim()
+        : typeof (obra as Record<string, unknown>).user_id === "string" &&
+          ((obra as Record<string, unknown>).user_id as string).trim()
+        ? ((obra as Record<string, unknown>).user_id as string).trim()
+        : typeof (obra as Record<string, unknown>).userId === "string" &&
+          ((obra as Record<string, unknown>).userId as string).trim()
+        ? ((obra as Record<string, unknown>).userId as string).trim()
         : "",
     genero: obra.genero || "Não informado",
     formato: obra.formato || "Não informado",
@@ -357,7 +467,7 @@ function criarCoverStyle(capa: string): CSSProperties {
 
   return {
     ...coverStyle,
-    background: "var(--historietas-input-bg, #18181B)",
+    background: "var(--historietas-input-bg, #04000A)",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -371,7 +481,7 @@ function criarDesktopCoverStyle(capa: string): CSSProperties {
 
   return {
     ...desktopCoverStyle,
-    background: "var(--historietas-input-bg, #18181B)",
+    background: "var(--historietas-input-bg, #04000A)",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -517,6 +627,79 @@ function sincronizarBackupArquivosObras(obrasParaBackup: ObraLocal[]) {
   } catch {
     // O backup é apenas proteção extra. Não deve travar a página.
   }
+}
+
+function obterAutorIdObra(obra: ObraLocal) {
+  return typeof obra.autorId === "string" ? obra.autorId.trim() : "";
+}
+
+function obraPertenceAoUsuarioLogado(obra: ObraLocal, userId: string) {
+  const autorId = obterAutorIdObra(obra);
+
+  return Boolean(userId.trim()) && autorId === userId;
+}
+
+function carregarTodasObrasLocaisNormalizadas() {
+  const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
+  const obrasSalvasJson: unknown = obrasSalvasTexto
+    ? JSON.parse(obrasSalvasTexto)
+    : [];
+
+  const backupArquivosObras = carregarBackupArquivosObras();
+
+  const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
+    ? obrasSalvasJson
+        .map((obra, index) => normalizarObra(obra, index))
+        .map((obra) =>
+          restaurarArquivoObraComBackup(obra, backupArquivosObras)
+        )
+    : [];
+
+  sincronizarBackupArquivosObras(obrasNormalizadas);
+
+  return obrasNormalizadas;
+}
+
+function salvarObrasDoUsuarioPreservandoOutrasContas(
+  obrasDoUsuario: ObraLocal[],
+  userId: string
+) {
+  const obrasUsuarioNormalizadas = obrasDoUsuario.map((obra, index) =>
+    normalizarObra(
+      {
+        ...obra,
+        autorId: obterAutorIdObra(obra) || userId,
+      },
+      index
+    )
+  );
+
+  const idsObrasUsuario = new Set(
+    obrasUsuarioNormalizadas.map((obra) => obra.id).filter(Boolean)
+  );
+
+  let todasObrasAtuais: ObraLocal[] = [];
+
+  try {
+    todasObrasAtuais = carregarTodasObrasLocaisNormalizadas();
+  } catch {
+    todasObrasAtuais = [];
+  }
+
+  const obrasDeOutrasContas = todasObrasAtuais.filter((obra) => {
+    if (idsObrasUsuario.has(obra.id)) {
+      return false;
+    }
+
+    return obterAutorIdObra(obra) !== userId;
+  });
+
+  const obrasParaSalvar = [...obrasUsuarioNormalizadas, ...obrasDeOutrasContas];
+
+  sincronizarBackupArquivosObras(obrasParaSalvar);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasParaSalvar));
+
+  return obrasUsuarioNormalizadas;
 }
 
 function obterCategoriaArquivoSupabase(
@@ -675,31 +858,198 @@ async function carregarObraSupabase(
     return null;
   }
 
+  const obraBanco = obraSupabase as ObraSupabaseRow;
+  const nomeProfile = await carregarNomeProfileMinhaObra({
+    userId,
+    nomeAtual: obraBanco.autor || obraLocal?.autor || "",
+  });
+
   const { data: capitulosSupabase, error: erroCapitulos } = await supabase
     .from("capitulos")
     .select("*")
     .eq("obra_id", obraId)
+    .eq("user_id", userId)
     .order("ordem", { ascending: true });
 
-  if (erroCapitulos) {
-    return mesclarObraSupabaseComLocal(
-      obraSupabase as ObraSupabaseRow,
-      [],
-      obraLocal
-    );
+  const obraMesclada = erroCapitulos
+    ? mesclarObraSupabaseComLocal(obraBanco, [], obraLocal)
+    : mesclarObraSupabaseComLocal(
+        obraBanco,
+        (capitulosSupabase || []) as CapituloSupabaseRow[],
+        obraLocal
+      );
+
+  return {
+    ...obraMesclada,
+    autor: nomeProfile || obraMesclada.autor,
+    autorId: obraMesclada.autorId || userId,
+  };
+}
+
+function normalizarIdsCapitulosMinhaObra(capituloIds: string[]) {
+  return Array.from(
+    new Set(
+      capituloIds
+        .map((capituloId) => capituloId.trim())
+        .filter((capituloId) => Boolean(capituloId))
+    )
+  );
+}
+
+async function contarRegistrosPorObraMinhaObra(tabela: string, obraId: string) {
+  const obraIdLimpo = obraId.trim();
+
+  if (!obraIdLimpo) {
+    return 0;
   }
 
-  return mesclarObraSupabaseComLocal(
-    obraSupabase as ObraSupabaseRow,
-    (capitulosSupabase || []) as CapituloSupabaseRow[],
-    obraLocal
-  );
+  try {
+    const { count, error } = await supabase
+      .from(tabela)
+      .select("id", { count: "exact", head: true })
+      .eq("obra_id", obraIdLimpo);
+
+    if (error) {
+      console.warn(`Não consegui contar ${tabela} por obra:`, error.message);
+      return 0;
+    }
+
+    return typeof count === "number" ? count : 0;
+  } catch (error) {
+    console.warn(`Não consegui acessar ${tabela} por obra:`, error);
+    return 0;
+  }
+}
+
+async function contarRegistrosPorCapitulosMinhaObra(
+  tabela: string,
+  capituloIds: string[]
+) {
+  const ids = normalizarIdsCapitulosMinhaObra(capituloIds);
+
+  if (ids.length === 0) {
+    return 0;
+  }
+
+  try {
+    const { count, error } = await supabase
+      .from(tabela)
+      .select("id", { count: "exact", head: true })
+      .in("capitulo_id", ids);
+
+    if (error) {
+      console.warn(`Não consegui contar ${tabela} por capítulo:`, error.message);
+      return 0;
+    }
+
+    return typeof count === "number" ? count : 0;
+  } catch (error) {
+    console.warn(`Não consegui acessar ${tabela} por capítulo:`, error);
+    return 0;
+  }
+}
+
+async function carregarMetricasMinhaObraSupabase(
+  obraId: string,
+  capituloIds: string[]
+): Promise<MetricasMinhaObraSupabase> {
+  const obraIdLimpo = obraId.trim();
+
+  if (!obraIdLimpo) {
+    return METRICAS_MINHA_OBRA_ZERADAS;
+  }
+
+  const [curtidasObra, curtidasCapitulos, comentariosCapitulos, salvosCapitulos] =
+    await Promise.all([
+      contarRegistrosPorObraMinhaObra("obra_curtidas", obraIdLimpo),
+      contarRegistrosPorCapitulosMinhaObra("curtidas_capitulos", capituloIds),
+      contarRegistrosPorCapitulosMinhaObra("comentarios_capitulos", capituloIds),
+      contarRegistrosPorCapitulosMinhaObra("salvos_capitulos", capituloIds),
+    ]);
+
+  return {
+    totalCurtidas: curtidasObra + curtidasCapitulos,
+    totalComentarios: comentariosCapitulos,
+    totalSalvos: salvosCapitulos,
+  };
+}
+
+async function excluirReferenciasSupabaseMinhaObra(
+  tabela: string,
+  filtros: Array<{ campo: string; valor: string }>
+) {
+  try {
+    const consulta = filtros.reduce((query, filtro) => {
+      return query.eq(filtro.campo, filtro.valor);
+    }, supabase.from(tabela).delete());
+
+    const { error } = await consulta;
+
+    if (error) {
+      console.warn(`Não consegui limpar ${tabela}:`, error.message);
+    }
+  } catch (error) {
+    console.warn(`Não consegui acessar ${tabela} para limpeza:`, error);
+  }
+}
+
+async function limparReferenciasCapituloSupabaseMinhaObra({
+  obraId,
+  capituloId,
+}: {
+  obraId: string;
+  capituloId: string;
+}) {
+  const obraIdLimpo = obraId.trim();
+  const capituloIdLimpo = capituloId.trim();
+
+  if (!capituloIdLimpo) {
+    return;
+  }
+
+  await Promise.all([
+    excluirReferenciasSupabaseMinhaObra("curtidas_capitulos", [
+      { campo: "capitulo_id", valor: capituloIdLimpo },
+    ]),
+    excluirReferenciasSupabaseMinhaObra("salvos_capitulos", [
+      { campo: "capitulo_id", valor: capituloIdLimpo },
+    ]),
+    excluirReferenciasSupabaseMinhaObra("comentarios_capitulos", [
+      { campo: "capitulo_id", valor: capituloIdLimpo },
+    ]),
+    excluirReferenciasSupabaseMinhaObra("diario_atividades", [
+      { campo: "capitulo_id", valor: capituloIdLimpo },
+    ]),
+    excluirReferenciasSupabaseMinhaObra("notificacoes", [
+      { campo: "capitulo_id", valor: capituloIdLimpo },
+    ]),
+  ]);
+
+  if (!obraIdLimpo) {
+    return;
+  }
+
+  try {
+    await supabase
+      .from("progresso_leitura")
+      .update({
+        capitulo_id: null,
+        lido: false,
+        progresso: 0,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq("obra_id", obraIdLimpo)
+      .eq("capitulo_id", capituloIdLimpo);
+  } catch (error) {
+    console.warn("Não consegui limpar progresso do capítulo:", error);
+  }
 }
 
 export default function MinhaObraPage() {
   const router = useRouter();
 
   const [obraId, setObraId] = useState("");
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [buscaCapitulo, setBuscaCapitulo] = useState("");
   const [ordemCapitulos, setOrdemCapitulos] =
@@ -708,6 +1058,8 @@ export default function MinhaObraPage() {
   const [redirecionandoLogin, setRedirecionandoLogin] = useState(false);
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [metricasSupabaseObra, setMetricasSupabaseObra] =
+    useState<MetricasMinhaObraSupabase>(METRICAS_MINHA_OBRA_ZERADAS);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -749,6 +1101,7 @@ export default function MinhaObraPage() {
 
         if (erroUsuario || !dadosUsuario.user) {
           if (!cancelado) {
+            setUsuarioIdLogado("");
             setRedirecionandoLogin(true);
             router.replace(criarLoginHrefMinhaObra(obraIdParam));
           }
@@ -757,30 +1110,24 @@ export default function MinhaObraPage() {
         }
 
         const userId = dadosUsuario.user.id;
+        const nomeProfileUsuario = await carregarNomeProfileMinhaObra({
+          userId,
+          email: dadosUsuario.user.email || "",
+        });
 
         if (!cancelado) {
+          setUsuarioIdLogado(userId);
           setRedirecionandoLogin(false);
         }
 
-        const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
-        const obrasSalvasJson = obrasSalvasTexto
-          ? JSON.parse(obrasSalvasTexto)
-          : [];
-
-        const backupArquivosObras = carregarBackupArquivosObras();
-        let obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-          ? obrasSalvasJson
-              .map((obra, index) => normalizarObra(obra, index))
-              .map((obra) =>
-                restaurarArquivoObraComBackup(obra, backupArquivosObras)
-              )
-          : [];
-
-        obrasNormalizadas = obrasNormalizadas.filter((obra) => {
-          const autorId = obra.autorId?.trim() || "";
-
-          return !autorId || autorId === userId;
-        });
+        const todasObrasNormalizadas = carregarTodasObrasLocaisNormalizadas();
+        let obrasNormalizadas = aplicarNomeProfileNasObrasMinhaObra(
+          todasObrasNormalizadas.filter((obra) =>
+            obraPertenceAoUsuarioLogado(obra, userId)
+          ),
+          userId,
+          nomeProfileUsuario
+        );
 
         if (obraIdParam) {
           const obraLocal =
@@ -800,14 +1147,22 @@ export default function MinhaObraPage() {
         }
 
 
-        sincronizarBackupArquivosObras(obrasNormalizadas);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+        obrasNormalizadas = aplicarNomeProfileNasObrasMinhaObra(
+          obrasNormalizadas,
+          userId,
+          nomeProfileUsuario
+        );
+
+        const obrasDoUsuarioParaTela = salvarObrasDoUsuarioPreservandoOutrasContas(
+          obrasNormalizadas,
+          userId
+        );
 
         if (cancelado) {
           return;
         }
 
-        setObras(obrasNormalizadas);
+        setObras(obrasDoUsuarioParaTela);
       } catch {
         if (cancelado) {
           return;
@@ -831,6 +1186,38 @@ export default function MinhaObraPage() {
   const obraAtual = useMemo(() => {
     return obras.find((obra) => obra.id === obraId) || null;
   }, [obras, obraId]);
+
+  const capitulosIdsObraAtual = useMemo(() => {
+    return obraAtual?.capitulos.map((capitulo) => capitulo.id) || [];
+  }, [obraAtual]);
+
+  const capitulosIdsObraAtualChave = capitulosIdsObraAtual.join("|");
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarMetricasReais() {
+      if (!obraAtual?.id) {
+        setMetricasSupabaseObra(METRICAS_MINHA_OBRA_ZERADAS);
+        return;
+      }
+
+      const metricas = await carregarMetricasMinhaObraSupabase(
+        obraAtual.id,
+        capitulosIdsObraAtual
+      );
+
+      if (!cancelado) {
+        setMetricasSupabaseObra(metricas);
+      }
+    }
+
+    void carregarMetricasReais();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obraAtual?.id, capitulosIdsObraAtualChave]);
 
   const classificacaoIndicativa =
     obraAtual?.classificacaoIndicativa?.trim() || "Não informada";
@@ -860,17 +1247,29 @@ export default function MinhaObraPage() {
       return total + contarPalavrasTexto(capitulo.texto);
     }, 0);
 
+    const totalCurtidasLocais = obraAtual.capitulos.filter(
+      (capitulo) => capitulo.curtiu
+    ).length;
+    const totalComentariosLocais = obraAtual.capitulos.filter((capitulo) =>
+      capitulo.comentario.trim()
+    ).length;
+    const totalSalvosLocais = obraAtual.capitulos.filter(
+      (capitulo) => capitulo.salvo
+    ).length;
+
     return {
-      totalCurtidas: obraAtual.capitulos.filter((capitulo) => capitulo.curtiu)
-        .length,
-      totalComentarios: obraAtual.capitulos.filter((capitulo) =>
-        capitulo.comentario.trim()
-      ).length,
-      totalSalvos: obraAtual.capitulos.filter((capitulo) => capitulo.salvo)
-        .length,
+      totalCurtidas: Math.max(
+        totalCurtidasLocais,
+        metricasSupabaseObra.totalCurtidas
+      ),
+      totalComentarios: Math.max(
+        totalComentariosLocais,
+        metricasSupabaseObra.totalComentarios
+      ),
+      totalSalvos: Math.max(totalSalvosLocais, metricasSupabaseObra.totalSalvos),
       totalPalavras,
     };
-  }, [obraAtual]);
+  }, [metricasSupabaseObra, obraAtual]);
 
 
 
@@ -909,13 +1308,29 @@ export default function MinhaObraPage() {
   }, [obraAtual, buscaCapitulo, ordemCapitulos]);
 
   function salvarObras(novasObras: ObraLocal[]) {
+    const userId = usuarioIdLogado.trim();
+
     const obrasNormalizadas = novasObras.map((obra, index) =>
-      normalizarObra(obra, index)
+      normalizarObra(
+        {
+          ...obra,
+          autorId: obterAutorIdObra(obra) || userId,
+        },
+        index
+      )
     );
 
-    sincronizarBackupArquivosObras(obrasNormalizadas);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
-    setObras(obrasNormalizadas);
+    if (!userId) {
+      setObras(obrasNormalizadas);
+      return;
+    }
+
+    const obrasDoUsuarioParaTela = salvarObrasDoUsuarioPreservandoOutrasContas(
+      obrasNormalizadas,
+      userId
+    );
+
+    setObras(obrasDoUsuarioParaTela);
   }
 
   async function copiarLinkPublico() {
@@ -980,6 +1395,11 @@ export default function MinhaObraPage() {
         router.replace(criarLoginHrefMinhaObra(obraId));
         return;
       }
+
+      await limparReferenciasCapituloSupabaseMinhaObra({
+        obraId,
+        capituloId,
+      });
 
       const { error } = await supabase
         .from("capitulos")
@@ -1301,11 +1721,7 @@ export default function MinhaObraPage() {
                 <button
                   type="button"
                   onClick={() => setOrdemCapitulos("decrescente")}
-                  style={
-                    ordemCapitulos === "decrescente"
-                      ? chapterOrderButtonActiveStyle
-                      : chapterOrderButtonStyle
-                  }
+                  style={chapterOrderButtonRelerStyle}
                 >
                   Último → 1
                 </button>
@@ -1409,11 +1825,35 @@ export default function MinhaObraPage() {
 }
 
 const minhaObraPageCss = `
+  html[data-historietas-tema-visual="original"] {
+    --historietas-bg-start: #070212;
+    --historietas-bg-mid: #070212;
+    --historietas-bg-end: #070212;
+    --historietas-surface: #04000A;
+    --historietas-surface-strong: #020006;
+    --historietas-input-bg: #04000A;
+    --historietas-border-soft: rgba(255,255,255,0.08);
+    --historietas-text-secondary: #D4D4D8;
+    --historietas-accent: #F97316;
+    --historietas-secondary: #7C3AED;
+  }
+
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main {
+    background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+
   html[data-historietas-tema-visual] nav a[href="/minhas-obras"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/minhas-obras"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/minhas-obras"] {
     background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(249,115,22,0.16))) !important;
-    border-color: color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent) !important;
+    border-color: rgba(249,115,22,0.28) !important;
     color: var(--historietas-accent, #F97316) !important;
   }
 `;
@@ -1431,10 +1871,8 @@ const mobileTopWaterFadeStyle: CSSProperties = {
   height: "min(520px, 72vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.94)) 42%, transparent 100%), radial-gradient(ellipse 72% 82% at 18% 44%, var(--historietas-glow-primary, rgba(124,58,237,0.24)) 0%, transparent 76%), radial-gradient(ellipse 48% 62% at 88% 32%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 78%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 76%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const desktopTopWaterFadeStyle: CSSProperties = {
@@ -1445,10 +1883,8 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
-  background:
-    "linear-gradient(180deg, var(--historietas-bg-start, rgba(10,6,18,0.98)) 0%, var(--historietas-bg-mid, rgba(14,7,25,0.96)) 34%, transparent 100%), radial-gradient(ellipse 62% 86% at 19% 52%, var(--historietas-glow-primary, rgba(124,58,237,0.32)) 0%, transparent 76%), radial-gradient(ellipse 38% 62% at 91% 54%, var(--historietas-glow-secondary, rgba(249,115,22,0.10)) 0%, transparent 76%)",
-  WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
-  maskImage: "linear-gradient(180deg, #000 0%, #000 78%, transparent 100%)",
+  background: "transparent",
+  opacity: 0,
 };
 
 const pageStyle: CSSProperties = {
@@ -1459,7 +1895,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   boxSizing: "border-box",
   background:
-    "radial-gradient(circle at 12% 0%, var(--historietas-glow-secondary, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent)), transparent 28%), radial-gradient(circle at 88% 14%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)), transparent 22%), radial-gradient(circle at 50% 100%, var(--historietas-glow-primary, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)), transparent 30%), linear-gradient(180deg, var(--historietas-bg-start, #0B0614) 0%, var(--historietas-bg-mid, #12081F) 38%, var(--historietas-bg-end, #17101B) 100%)",
+    "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -1534,8 +1970,8 @@ const heroStyle: CSSProperties = {
   padding: "8px",
   borderRadius: "20px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(33,24,50,0.93)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.98)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 14%, var(--historietas-border-soft, rgba(255,255,255,0.07)))",
+    "linear-gradient(135deg, #08030F 0%, #04000A 56%, #020006 100%)",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -1551,7 +1987,7 @@ const coverStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
   background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent), transparent 34%), radial-gradient(circle at bottom right, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 28%, transparent), transparent 38%), linear-gradient(135deg, var(--historietas-surface, #18181B) 0%, var(--historietas-surface-strong, #0F0F0F) 100%)",
+    "linear-gradient(145deg, #08030F 0%, #04000A 58%, #020006 100%)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   boxShadow: "none",
   minWidth: 0,
@@ -1572,8 +2008,8 @@ const coverGenreStyle: CSSProperties = {
   maxWidth: "calc(100% - 16px)",
   padding: "5px 8px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 78%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #7C3AED) 38%, transparent)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "9px",
   lineHeight: 1.1,
@@ -1648,9 +2084,9 @@ const badgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "5px 8px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 24%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "rgba(249,115,22,0.10)",
+  border: "1px solid rgba(249,115,22,0.22)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "8.8px",
   lineHeight: 1.1,
   fontWeight: 950,
@@ -1674,9 +2110,9 @@ const draftBadgeStyle: CSSProperties = {
 
 const genreBadgeStyle: CSSProperties = {
   ...badgeStyle,
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 22%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
 };
 
 
@@ -1697,7 +2133,7 @@ const titleStyle: CSSProperties = {
 const authorLinkStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "13.5px",
   lineHeight: 1.1,
   fontWeight: 950,
@@ -1727,9 +2163,9 @@ const tagStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "5px 7px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 12%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 22%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   fontSize: "9px",
   lineHeight: 1.1,
   fontWeight: 900,
@@ -1758,7 +2194,7 @@ const statsGridStyle: CSSProperties = {
 
 const statCardStyle: CSSProperties = {
   borderRadius: "13px",
-  background: "linear-gradient(135deg, var(--historietas-surface, rgba(31,22,48,0.48)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.66)) 100%)",
+  background: "#08030F",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.055))",
   padding: "6px 3px",
   minHeight: "48px",
@@ -1773,7 +2209,7 @@ const statCardStyle: CSSProperties = {
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#DDD6FE",
   fontSize: "17px",
   lineHeight: 1,
   fontWeight: 950,
@@ -1782,7 +2218,7 @@ const statNumberStyle: CSSProperties = {
 };
 
 const statLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
+  color: "#FFFFFF",
   fontSize: "7.6px",
   lineHeight: 1.05,
   fontWeight: 850,
@@ -1817,7 +2253,7 @@ const sectionHeaderStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "24px",
   lineHeight: 1.1,
   paddingBottom: "0.06em",
@@ -1870,9 +2306,9 @@ const chapterSearchInputStyle: CSSProperties = {
   width: "100%",
   minHeight: "38px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, #3F3F46)",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   padding: "0 12px",
   outline: "none",
   fontSize: "12px",
@@ -1881,6 +2317,7 @@ const chapterSearchInputStyle: CSSProperties = {
   textAlign: "center",
   boxSizing: "border-box",
   minWidth: 0,
+  boxShadow: "none",
 };
 
 const chapterOrderGridStyle: CSSProperties = {
@@ -1896,7 +2333,7 @@ const chapterOrderButtonStyle: CSSProperties = {
   padding: "0 8px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
+  background: "rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 900,
@@ -1907,9 +2344,18 @@ const chapterOrderButtonStyle: CSSProperties = {
 
 const chapterOrderButtonActiveStyle: CSSProperties = {
   ...chapterOrderButtonStyle,
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  background: "#04000A",
+  border: "1px solid rgba(249,115,22,0.30)",
   color: "var(--historietas-accent, #FDBA74)",
+  boxShadow: "none",
+};
+
+const chapterOrderButtonRelerStyle: CSSProperties = {
+  ...chapterOrderButtonStyle,
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
+  boxShadow: "none",
 };
 
 
@@ -1926,8 +2372,8 @@ const chapterCardStyle: CSSProperties = {
   padding: "10px",
   borderRadius: "18px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.78)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.92)) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 9%, var(--historietas-border-soft, rgba(255,255,255,0.065)))",
+    "#08030F",
+  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
   overflow: "hidden",
@@ -1943,11 +2389,11 @@ const chapterTopStyle: CSSProperties = {
 const chapterBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "3px 6px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 11%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 22%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "#FFFFFF",
   fontSize: "8px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -1971,7 +2417,7 @@ const chapterStatsStyle: CSSProperties = {
   flexWrap: "wrap",
   justifyContent: "center",
   gap: "5px",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 800,
   textAlign: "center",
@@ -2005,8 +2451,8 @@ const readButtonStyle: CSSProperties = {
   minHeight: "34px",
   width: "100%",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "10px",
@@ -2024,25 +2470,7 @@ const readButtonStyle: CSSProperties = {
 };
 
 const editButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  width: "100%",
-  borderRadius: "999px",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 22%, transparent)",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 16%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
-  textDecoration: "none",
-  fontSize: "10px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 8px",
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxSizing: "border-box",
-  boxShadow: "none",
-  ...safeTextStyle,
+  ...readButtonStyle,
 };
 
 const deleteButtonStyle: CSSProperties = {
@@ -2069,8 +2497,8 @@ const deleteButtonStyle: CSSProperties = {
 const orangeActionStyle: CSSProperties = {
   minHeight: "39px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
@@ -2095,8 +2523,8 @@ const orangeActionStyle: CSSProperties = {
 const primaryActionStyle: CSSProperties = {
   minHeight: "35px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "10px",
@@ -2114,87 +2542,19 @@ const primaryActionStyle: CSSProperties = {
 };
 
 const secondaryActionStyle: CSSProperties = {
-  minHeight: "35px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  textDecoration: "none",
-  fontSize: "10px",
-  lineHeight: 1.05,
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 7px",
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...safeTextStyle,
+  ...primaryActionStyle,
 };
 
 const publicPageActionStyle: CSSProperties = {
-  minHeight: "35px",
-  borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  textDecoration: "none",
-  fontSize: "10px",
-  lineHeight: 1.05,
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 7px",
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...safeTextStyle,
+  ...primaryActionStyle,
 };
 
 const copyLinkActionStyle: CSSProperties = {
-  minHeight: "35px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  textDecoration: "none",
-  fontSize: "10px",
-  lineHeight: 1.05,
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 7px",
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...safeTextStyle,
+  ...primaryActionStyle,
 };
 
 const copiedLinkActionStyle: CSSProperties = {
-  minHeight: "35px",
-  borderRadius: "999px",
-  background: "rgba(34,197,94,0.12)",
-  border: "1px solid rgba(34,197,94,0.24)",
-  color: "#86EFAC",
-  textDecoration: "none",
-  fontSize: "10px",
-  lineHeight: 1.05,
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 7px",
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...safeTextStyle,
+  ...primaryActionStyle,
 };
 
 
@@ -2222,7 +2582,7 @@ const arquivoObraHeaderStyle: CSSProperties = {
 
 const arquivoObraSectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #F97316)",
   fontSize: "24px",
   lineHeight: 1.1,
   paddingBottom: "0.06em",
@@ -2239,7 +2599,7 @@ const arquivoObraCardStyle: CSSProperties = {
   gap: "9px",
   padding: "9px",
   borderRadius: "17px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
+  background: "rgba(255,255,255,0.06)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   minWidth: 0,
   maxWidth: "100%",
@@ -2263,7 +2623,7 @@ const arquivoObraIconStyle: CSSProperties = {
   minHeight: "72px",
   borderRadius: "15px",
   background:
-    "radial-gradient(circle at top left, color-mix(in srgb, var(--historietas-accent, #F97316) 32%, transparent), transparent 36%), linear-gradient(135deg, color-mix(in srgb, var(--historietas-secondary, #7C3AED) 30%, transparent), rgba(18,12,30,0.88))",
+    "linear-gradient(145deg, #08030F 0%, #04000A 58%, #020006 100%)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   display: "flex",
   alignItems: "center",
@@ -2283,7 +2643,7 @@ const arquivoObraPreviewButtonStyle: CSSProperties = {
   minHeight: "72px",
   borderRadius: "15px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-input-bg, #18181B)",
+  background: "var(--historietas-input-bg, #04000A)",
   padding: 0,
   overflow: "hidden",
   cursor: "pointer",
@@ -2348,8 +2708,8 @@ const arquivoObraActionsStyle: CSSProperties = {
 const arquivoObraOpenButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "11px",
@@ -2368,9 +2728,9 @@ const arquivoObraOpenButtonStyle: CSSProperties = {
 const arquivoObraDownloadButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-secondary, #8B5CF6) 24%, transparent)",
-  color: "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 42%, white)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#DDD6FE",
   textDecoration: "none",
   fontSize: "11px",
   fontWeight: 950,
@@ -2391,7 +2751,7 @@ const clearSearchButtonStyle: CSSProperties = {
 const emptyBoxStyle: CSSProperties = {
   marginTop: "14px",
   borderRadius: "22px",
-  background: "linear-gradient(135deg, var(--historietas-surface, rgba(31,16,52,0.84)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.94)) 100%)",
+  background: "#08030F",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
   padding: "18px",
   display: "grid",

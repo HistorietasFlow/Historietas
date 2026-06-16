@@ -1,5 +1,5 @@
 :root {
-  --background: #0f0f0f;
+  --background: #070212;
   --foreground: #ffffff;
   --muted: #a1a1aa;
   --border: #2d2d32;
@@ -56,10 +56,23 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+html[data-historietas-tema-visual="original"],
+html[data-historietas-tema-visual="original"] body,
+html[data-historietas-tema-visual="original"] main,
+html[data-historietas-tema-visual="original"] .historietas-app-shell {
+  background: #070212 !important;
+}
+
+html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  background: transparent !important;
+  opacity: 0 !important;
+}
+
 .historietas-app-shell {
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
+  background: var(--historietas-bg-start, var(--background));
 }
 
 main,
@@ -104,11 +117,7 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-  color: color-mix(
-    in srgb,
-    var(--historietas-text-secondary, rgba(212, 212, 216, 0.62)) 72%,
-    transparent
-  );
+  color: rgba(212, 212, 216, 0.62);
 }
 
 button,
@@ -169,17 +178,49 @@ pre {
 }
 
 ::selection {
-  background: color-mix(
-    in srgb,
-    var(--historietas-secondary, var(--accent-purple)) 45%,
-    transparent
-  );
+  background: rgba(124, 58, 237, 0.45);
   color: #ffffff;
 }
 
 :focus-visible {
-  outline: 2px solid var(--historietas-accent, var(--accent-orange));
+  outline: 2px solid var(--historietas-secondary, var(--accent-purple));
   outline-offset: 3px;
+}
+
+/* Segurança global: o botão Publicar não pode ficar fixado quando não está ativo. */
+html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--historietas-bottom-nav-text, #c4b5fd) !important;
+}
+
+html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon {
+  color: var(--historietas-bottom-nav-icon-text, #ddd6fe) !important;
+  background: var(--historietas-bottom-nav-icon-bg, rgba(124, 58, 237, 0.20)) !important;
+  border-color: var(--historietas-bottom-nav-icon-border, rgba(167, 139, 250, 0.30)) !important;
+}
+
+/* Segurança global: só o item ativo recebe destaque visual. */
+html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-item[aria-current="page"],
+html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-item-active,
+html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-item[aria-current="page"],
+html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-item-active {
+  background: var(--historietas-bottom-nav-active-bg, rgba(124, 58, 237, 0.38)) !important;
+  border-color: var(--historietas-bottom-nav-active-border, rgba(196, 181, 253, 0.62)) !important;
+  color: var(--historietas-bottom-nav-hover-text, #ffffff) !important;
+  box-shadow: none !important;
+}
+
+html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-item-active .historietas-bottom-nav-icon,
+html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-item-active .historietas-bottom-nav-icon {
+  color: #ffffff !important;
+  background: var(--historietas-bottom-nav-active-icon-bg, #7c3aed) !important;
+  border-color: var(--historietas-bottom-nav-active-icon-border, rgba(221, 214, 254, 0.70)) !important;
 }
 
 /* Scrollbar só no desktop. No mobile ela criava as barras visuais nas laterais. */
@@ -190,25 +231,17 @@ pre {
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--historietas-bg-start, #0f0f0f);
+    background: var(--historietas-bg-start, #070212);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: color-mix(
-      in srgb,
-      var(--historietas-text-secondary, #3f3f46) 44%,
-      transparent
-    );
+    background: rgba(161, 161, 170, 0.44);
     border-radius: 999px;
-    border: 2px solid var(--historietas-bg-start, #0f0f0f);
+    border: 2px solid var(--historietas-bg-start, #070212);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: color-mix(
-      in srgb,
-      var(--historietas-text-secondary, #52525b) 62%,
-      transparent
-    );
+    background: rgba(161, 161, 170, 0.62);
   }
 }
 

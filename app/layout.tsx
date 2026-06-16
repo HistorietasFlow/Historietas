@@ -31,7 +31,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#0B0614",
+  themeColor: "#070212",
 };
 
 export default function RootLayout({
@@ -69,10 +69,7 @@ export default function RootLayout({
             <span className="historietas-bottom-nav-label">Em alta</span>
           </Link>
 
-          <Link
-            href="/publicar"
-            className="historietas-bottom-nav-item historietas-bottom-nav-main"
-          >
+          <Link href="/publicar" className="historietas-bottom-nav-item">
             <span className="historietas-bottom-nav-icon">＋</span>
             <span className="historietas-bottom-nav-label">Publicar</span>
           </Link>
@@ -92,27 +89,48 @@ export default function RootLayout({
             <span className="historietas-bottom-nav-label">Seguindo</span>
           </Link>
 
+          <Link href="/perfil-autor" className="historietas-bottom-nav-item">
+            <span className="historietas-bottom-nav-icon" aria-hidden="true">
+              <svg
+                className="historietas-bottom-nav-svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 12.25C14.07 12.25 15.75 10.57 15.75 8.5C15.75 6.43 14.07 4.75 12 4.75C9.93 4.75 8.25 6.43 8.25 8.5C8.25 10.57 9.93 12.25 12 12.25ZM5.75 19.25C6.52 16.72 8.78 15.25 12 15.25C15.22 15.25 17.48 16.72 18.25 19.25"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span className="historietas-bottom-nav-label">Perfil</span>
+          </Link>
+
           <Link href="/comunidade" className="historietas-bottom-nav-item">
-            <span className="historietas-bottom-nav-icon">C</span>
+            <span className="historietas-bottom-nav-icon" aria-hidden="true">
+              <svg
+                className="historietas-bottom-nav-svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M7.5 9.25H16.5M7.5 13H13.2M8.2 18.25H7.85C4.98 18.25 3.25 16.72 3.25 14.06V8.94C3.25 6.28 4.98 4.75 7.85 4.75H16.15C19.02 4.75 20.75 6.28 20.75 8.94V14.06C20.75 16.72 19.02 18.25 16.15 18.25H12.1L8.4 20.65C8.07 20.86 7.62 20.63 7.64 20.24L7.75 18.26"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+
             <span className="historietas-bottom-nav-label">Comunidade</span>
           </Link>
 
           <AdminBottomNavItem />
-
-          <Link href="/notificacoes" className="historietas-bottom-nav-item">
-            <span className="historietas-bottom-nav-icon">N</span>
-            <span className="historietas-bottom-nav-label">Avisos</span>
-          </Link>
-
-          <Link href="/configuracoes" className="historietas-bottom-nav-item">
-            <span className="historietas-bottom-nav-icon">⚙</span>
-            <span className="historietas-bottom-nav-label">Config.</span>
-          </Link>
-
-          <Link href="/painel-autor" className="historietas-bottom-nav-item">
-            <span className="historietas-bottom-nav-icon">◉</span>
-            <span className="historietas-bottom-nav-label">Painel</span>
-          </Link>
         </nav>
 
         <Script
@@ -127,61 +145,165 @@ export default function RootLayout({
                   return;
                 }
 
-                function aplicarItemAtivo(pathname) {
-                  const caminhoAtual = pathname || window.location.pathname || "/";
-                  const links = nav.querySelectorAll('.historietas-bottom-nav-item[href]');
+                let ultimoCaminhoAplicado = "";
+
+                function normalizarCaminho(pathname) {
+                  const caminho = pathname || window.location.pathname || "/";
+
+                  if (caminho.length > 1 && caminho.endsWith("/")) {
+                    return caminho.slice(0, -1);
+                  }
+
+                  return caminho;
+                }
+
+                function resolverCaminhoDoMenu(pathname) {
+                  const caminho = normalizarCaminho(pathname);
+
+                  if (caminho === "/") return "/";
+                  if (caminho === "/explorar" || caminho.startsWith("/explorar/")) return "/explorar";
+                  if (caminho === "/em-alta" || caminho.startsWith("/em-alta/")) return "/em-alta";
+                  if (caminho === "/publicar" || caminho.startsWith("/publicar/")) return "/publicar";
+                  if (caminho === "/biblioteca" || caminho.startsWith("/biblioteca/")) return "/biblioteca";
+                  if (caminho === "/minhas-obras" || caminho.startsWith("/minhas-obras/")) return "/minhas-obras";
+                  if (caminho === "/seguindo" || caminho.startsWith("/seguindo/")) return "/seguindo";
+                  if (caminho === "/comunidade" || caminho.startsWith("/comunidade/")) return "/comunidade";
+                  if (caminho === "/perfil-autor" || caminho.startsWith("/perfil-autor/")) return "/perfil-autor";
+                  if (caminho === "/admin/comunidade" || caminho.startsWith("/admin/comunidade/")) return "/admin/comunidade";
+                  if (caminho === "/notificacoes" || caminho.startsWith("/notificacoes/")) return "/perfil-autor";
+                  if (caminho === "/configuracoes" || caminho.startsWith("/configuracoes/")) return "/perfil-autor";
+                  if (caminho === "/painel-autor" || caminho.startsWith("/painel-autor/")) return "/perfil-autor";
+
+                  if (
+                    caminho === "/minha-obra" ||
+                    caminho.startsWith("/minha-obra/") ||
+                    caminho === "/editar-obra" ||
+                    caminho.startsWith("/editar-obra/") ||
+                    caminho === "/editar-capitulo" ||
+                    caminho.startsWith("/editar-capitulo/") ||
+                    caminho === "/adicionar-capitulo" ||
+                    caminho.startsWith("/adicionar-capitulo/") ||
+                    caminho === "/ver-arquivo" ||
+                    caminho.startsWith("/ver-arquivo/")
+                  ) {
+                    return "/minhas-obras";
+                  }
+
+                  if (
+                    caminho === "/ler-capitulo" ||
+                    caminho.startsWith("/ler-capitulo/")
+                  ) {
+                    return "/biblioteca";
+                  }
+
+                  if (
+                    caminho === "/obra" ||
+                    caminho.startsWith("/obra/")
+                  ) {
+                    return "/explorar";
+                  }
+
+                  return "";
+                }
+
+                function aplicarItemAtivo(pathname, deveCentralizar = true) {
+                  const caminhoAtual = normalizarCaminho(pathname);
+                  const caminhoDoMenu = resolverCaminhoDoMenu(caminhoAtual);
+                  const links = Array.from(
+                    nav.querySelectorAll('.historietas-bottom-nav-item[href]')
+                  );
+
+                  let linkAtivo = null;
 
                   links.forEach((link) => {
+                    link.classList.remove("historietas-bottom-nav-item-active");
+                    link.removeAttribute("aria-current");
+
                     const href = link.getAttribute("href") || "/";
                     const url = new URL(href, window.location.origin);
-                    const caminhoLink = url.pathname || "/";
-                    const exigeExato = caminhoLink === "/" || link.dataset.navExact === "true";
-                    const itemAtivo = exigeExato
-                      ? caminhoAtual === caminhoLink
-                      : caminhoAtual === caminhoLink || caminhoAtual.startsWith(caminhoLink + "/");
+                    const caminhoLink = normalizarCaminho(url.pathname || "/");
 
-                    link.classList.toggle("historietas-bottom-nav-item-active", itemAtivo);
+                    if (caminhoDoMenu && caminhoLink === caminhoDoMenu) {
+                      linkAtivo = link;
+                    }
+                  });
 
-                    if (itemAtivo) {
-                      link.setAttribute("aria-current", "page");
-                    } else {
-                      link.removeAttribute("aria-current");
+                  ultimoCaminhoAplicado = caminhoAtual;
+
+                  if (!linkAtivo) {
+                    return;
+                  }
+
+                  linkAtivo.classList.add("historietas-bottom-nav-item-active");
+                  linkAtivo.setAttribute("aria-current", "page");
+
+                  if (!deveCentralizar) {
+                    return;
+                  }
+
+                  window.requestAnimationFrame(() => {
+                    try {
+                      linkAtivo.scrollIntoView({
+                        behavior: "auto",
+                        block: "nearest",
+                        inline: "center"
+                      });
+                    } catch {
+                      try {
+                        linkAtivo.scrollIntoView(false);
+                      } catch {}
                     }
                   });
                 }
 
-                aplicarItemAtivo(window.location.pathname);
+                function atualizarPorCaminhoAtual(deveCentralizar = true) {
+                  const caminhoAtual = normalizarCaminho(window.location.pathname);
 
-                if ("MutationObserver" in window) {
-                  const observador = new MutationObserver(() => {
-                    aplicarItemAtivo(window.location.pathname);
-                  });
+                  if (caminhoAtual === ultimoCaminhoAplicado) {
+                    return;
+                  }
 
-                  observador.observe(nav, { childList: true, subtree: true });
+                  aplicarItemAtivo(caminhoAtual, deveCentralizar);
                 }
 
-                nav.addEventListener("click", (event) => {
-                  const alvo = event.target;
+                aplicarItemAtivo(window.location.pathname, false);
 
-                  if (!(alvo instanceof Element)) {
-                    return;
-                  }
+                const pushStateOriginal = window.history.pushState;
+                const replaceStateOriginal = window.history.replaceState;
 
-                  const link = alvo.closest('.historietas-bottom-nav-item[href]');
+                window.history.pushState = function historietasPushState() {
+                  const resultado = pushStateOriginal.apply(this, arguments);
 
-                  if (!link) {
-                    return;
-                  }
+                  window.setTimeout(() => atualizarPorCaminhoAtual(false), 90);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 220);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 420);
 
-                  const href = link.getAttribute("href") || "/";
-                  const url = new URL(href, window.location.origin);
+                  return resultado;
+                };
 
-                  window.setTimeout(() => aplicarItemAtivo(url.pathname), 40);
-                  window.setTimeout(() => aplicarItemAtivo(window.location.pathname), 180);
+                window.history.replaceState = function historietasReplaceState() {
+                  const resultado = replaceStateOriginal.apply(this, arguments);
+
+                  window.setTimeout(() => atualizarPorCaminhoAtual(false), 90);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 220);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 420);
+
+                  return resultado;
+                };
+
+                nav.addEventListener("click", () => {
+                  window.setTimeout(() => atualizarPorCaminhoAtual(false), 120);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 280);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 520);
                 });
 
                 window.addEventListener("popstate", () => {
-                  aplicarItemAtivo(window.location.pathname);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(false), 90);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 220);
+                });
+
+                window.addEventListener("pageshow", () => {
+                  atualizarPorCaminhoAtual(false);
                 });
               })();
             `,
@@ -193,12 +315,25 @@ export default function RootLayout({
             __html: `
               html,
               body {
+                --historietas-bottom-nav-bg: #04000A;
+                --historietas-bottom-nav-border: rgba(59, 7, 100, 0.52);
+                --historietas-bottom-nav-text: #9980D8;
+                --historietas-bottom-nav-hover-text: #FFFFFF;
+                --historietas-bottom-nav-hover-bg: rgba(59, 7, 100, 0.20);
+                --historietas-bottom-nav-icon-text: #AD95EA;
+                --historietas-bottom-nav-icon-bg: rgba(59, 7, 100, 0.28);
+                --historietas-bottom-nav-icon-border: rgba(76, 29, 149, 0.34);
+                --historietas-bottom-nav-active-bg: rgba(59, 7, 100, 0.54);
+                --historietas-bottom-nav-active-border: rgba(109, 40, 217, 0.48);
+                --historietas-bottom-nav-active-icon-bg: #3B0764;
+                --historietas-bottom-nav-active-icon-border: rgba(167, 139, 250, 0.46);
+                --historietas-bottom-nav-shadow: 0 18px 42px rgba(0, 0, 0, 0.58);
                 width: 100%;
                 max-width: 100vw;
                 min-height: 100%;
                 margin: 0;
                 overflow-x: hidden;
-                background: #0B0614;
+                background: #070212;
               }
 
               *,
@@ -229,20 +364,22 @@ export default function RootLayout({
                 gap: 5px;
                 padding: 7px;
                 border-radius: 24px;
-                border: 1px solid var(--historietas-bottom-nav-border, rgba(255, 255, 255, 0.12));
-                background: var(
-                  --historietas-bottom-nav-bg,
-                  radial-gradient(circle at 16% 0%, rgba(249, 115, 22, 0.18), transparent 34%),
-                  radial-gradient(circle at 84% 0%, rgba(124, 58, 237, 0.24), transparent 38%),
-                  linear-gradient(180deg, rgba(18, 8, 31, 0.98) 0%, rgba(11, 6, 20, 0.98) 100%)
-                );
-                box-shadow: var(--historietas-bottom-nav-shadow, none);
+                border: 1px solid var(--historietas-bottom-nav-border, rgba(59, 7, 100, 0.52));
+                background: var(--historietas-bottom-nav-bg, #04000A);
+                box-shadow: var(--historietas-bottom-nav-shadow, 0 18px 42px rgba(0, 0, 0, 0.58));
                 overflow-x: auto;
                 overflow-y: hidden;
                 scroll-snap-type: x proximity;
                 scrollbar-width: none;
                 -webkit-overflow-scrolling: touch;
                 overscroll-behavior-x: contain;
+                -webkit-tap-highlight-color: transparent;
+              }
+
+              .historietas-bottom-nav *,
+              .historietas-bottom-nav *::before,
+              .historietas-bottom-nav *::after {
+                -webkit-tap-highlight-color: transparent !important;
               }
 
               .historietas-bottom-nav::-webkit-scrollbar {
@@ -254,22 +391,15 @@ export default function RootLayout({
                 position: absolute;
                 inset: 0;
                 pointer-events: none;
-                background: var(
-                  --historietas-bottom-nav-shine,
-                  linear-gradient(
-                    90deg,
-                    transparent 0%,
-                    rgba(255, 255, 255, 0.05) 50%,
-                    transparent 100%
-                  )
-                );
+                background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.024) 50%, transparent 100%);
               }
 
-              .historietas-bottom-nav-item {
+              .historietas-bottom-nav-item,
+              .historietas-bottom-nav-main {
                 position: relative;
                 z-index: 1;
-                min-width: 64px;
-                flex: 0 0 64px;
+                min-width: 64px !important;
+                flex: 0 0 64px !important;
                 min-height: 50px;
                 scroll-snap-align: center;
                 padding: 6px 3px;
@@ -279,59 +409,58 @@ export default function RootLayout({
                 align-items: center;
                 justify-content: center;
                 gap: 4px;
-                color: var(--historietas-bottom-nav-text, #d4d4d8);
+                color: var(--historietas-bottom-nav-text, #9980D8) !important;
                 text-decoration: none;
                 font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-                border: 1px solid transparent;
-                background: transparent;
-                -webkit-tap-highlight-color: transparent;
+                border: 1px solid transparent !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                outline: none !important;
+                -webkit-tap-highlight-color: transparent !important;
                 transition:
-                  background 120ms ease,
-                  border-color 120ms ease,
-                  color 120ms ease;
+                  background 60ms ease,
+                  border-color 60ms ease,
+                  color 60ms ease;
               }
 
-              .historietas-bottom-nav-item:active {
-                transform: none;
+              .historietas-bottom-nav-item:active,
+              .historietas-bottom-nav-item:focus,
+              .historietas-bottom-nav-item:focus-visible {
+                outline: none !important;
+                box-shadow: none !important;
               }
 
-              .historietas-bottom-nav-item:hover {
-                color: var(--historietas-bottom-nav-hover-text, #ffffff);
-                border-color: var(--historietas-bottom-nav-border, rgba(255, 255, 255, 0.10));
-                background: var(--historietas-bottom-nav-hover-bg, rgba(255, 255, 255, 0.055));
+              .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):active,
+              .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):focus,
+              .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):focus-visible {
+                color: var(--historietas-bottom-nav-text, #9980D8) !important;
+                border-color: transparent !important;
+                background: transparent !important;
+                box-shadow: none !important;
+              }
+
+              .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):active .historietas-bottom-nav-icon,
+              .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):focus .historietas-bottom-nav-icon,
+              .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):focus-visible .historietas-bottom-nav-icon {
+                color: var(--historietas-bottom-nav-icon-text, #AD95EA) !important;
+                background: var(--historietas-bottom-nav-icon-bg, rgba(59, 7, 100, 0.28)) !important;
+                border-color: var(--historietas-bottom-nav-icon-border, rgba(76, 29, 149, 0.34)) !important;
+              }
+
+              @media (hover: hover) and (pointer: fine) {
+                .historietas-bottom-nav-item:hover {
+                  color: var(--historietas-bottom-nav-hover-text, #FFFFFF) !important;
+                  border-color: var(--historietas-bottom-nav-border, rgba(59, 7, 100, 0.52)) !important;
+                  background: var(--historietas-bottom-nav-hover-bg, rgba(59, 7, 100, 0.20)) !important;
+                }
               }
 
               .historietas-bottom-nav-item[aria-current="page"],
               .historietas-bottom-nav-item-active {
-                color: var(--historietas-bottom-nav-hover-text, #ffffff);
-                border-color: var(--historietas-bottom-nav-border, rgba(255, 255, 255, 0.10));
-                background: var(--historietas-bottom-nav-hover-bg, rgba(255, 255, 255, 0.055));
-              }
-
-              .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
-              .historietas-bottom-nav-item-active .historietas-bottom-nav-icon {
-                color: #ffffff;
-                background: var(
-                  --historietas-bottom-nav-main-bg,
-                  linear-gradient(135deg, #f97316 0%, #7c3aed 100%)
-                );
-                border-color: var(--historietas-bottom-nav-main-border, rgba(249, 115, 22, 0.55));
-              }
-
-              .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-label,
-              .historietas-bottom-nav-item-active .historietas-bottom-nav-label {
-                color: var(--historietas-bottom-nav-hover-text, #ffffff);
-              }
-
-              .historietas-bottom-nav-main {
-                flex-basis: 70px;
-                color: #ffffff;
-                border-color: var(--historietas-bottom-nav-main-border, rgba(249, 115, 22, 0.55));
-                background: var(
-                  --historietas-bottom-nav-main-bg,
-                  linear-gradient(135deg, rgba(249, 115, 22, 0.78) 0%, rgba(124, 58, 237, 0.72) 100%)
-                );
-                box-shadow: var(--historietas-bottom-nav-main-shadow, none);
+                color: var(--historietas-bottom-nav-hover-text, #FFFFFF) !important;
+                border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+                background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+                box-shadow: none !important;
               }
 
               .historietas-bottom-nav-icon {
@@ -344,15 +473,16 @@ export default function RootLayout({
                 font-size: 16px;
                 line-height: 1;
                 font-weight: 950;
-                color: var(--historietas-bottom-nav-icon-text, #f97316);
-                background: var(--historietas-bottom-nav-icon-bg, rgba(255, 255, 255, 0.045));
-                border: 1px solid var(--historietas-bottom-nav-icon-border, rgba(255, 255, 255, 0.055));
+                color: var(--historietas-bottom-nav-icon-text, #AD95EA) !important;
+                background: var(--historietas-bottom-nav-icon-bg, rgba(59, 7, 100, 0.28)) !important;
+                border: 1px solid var(--historietas-bottom-nav-icon-border, rgba(76, 29, 149, 0.34)) !important;
               }
 
-              .historietas-bottom-nav-main .historietas-bottom-nav-icon {
-                color: #ffffff;
-                background: var(--historietas-bottom-nav-main-icon-bg, rgba(255, 255, 255, 0.16));
-                border-color: var(--historietas-bottom-nav-main-icon-border, rgba(255, 255, 255, 0.18));
+              .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+              .historietas-bottom-nav-item-active .historietas-bottom-nav-icon {
+                color: #FFFFFF !important;
+                background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
+                border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
               }
 
               .historietas-bottom-nav-label {
@@ -367,6 +497,49 @@ export default function RootLayout({
                 line-height: 1;
                 font-weight: 950;
                 letter-spacing: -0.025em;
+                color: inherit !important;
+              }
+
+              .historietas-bottom-nav-svg {
+                width: 16px;
+                height: 16px;
+                display: block;
+                flex: 0 0 auto;
+              }
+
+              .historietas-bottom-nav-item[href^="/admin"] .historietas-bottom-nav-icon,
+              .historietas-bottom-nav-item[href*="/admin/"] .historietas-bottom-nav-icon {
+                font-size: 0;
+              }
+
+              .historietas-bottom-nav-item[href^="/admin"] .historietas-bottom-nav-icon::before,
+              .historietas-bottom-nav-item[href*="/admin/"] .historietas-bottom-nav-icon::before {
+                content: "";
+                width: 16px;
+                height: 16px;
+                display: block;
+                background: currentColor;
+                -webkit-mask: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5.5 20V5.4C5.5 4.85 5.95 4.4 6.5 4.4H18.1C18.91 4.4 19.38 5.32 18.9 5.97L16.95 8.55C16.69 8.9 16.69 9.38 16.95 9.73L18.9 12.31C19.38 12.96 18.91 13.88 18.1 13.88H6.25M5.5 20H8.25' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+                mask: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5.5 20V5.4C5.5 4.85 5.95 4.4 6.5 4.4H18.1C18.91 4.4 19.38 5.32 18.9 5.97L16.95 8.55C16.69 8.9 16.69 9.38 16.95 9.73L18.9 12.31C19.38 12.96 18.91 13.88 18.1 13.88H6.25M5.5 20H8.25' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+              }
+
+              html[data-historietas-tema-visual] nav.historietas-bottom-nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+              html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+              html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+                min-width: 64px !important;
+                flex: 0 0 64px !important;
+                color: var(--historietas-bottom-nav-text, #9980D8) !important;
+                border-color: transparent !important;
+                background: transparent !important;
+                box-shadow: none !important;
+              }
+
+              html[data-historietas-tema-visual] nav.historietas-bottom-nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+              html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+              html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon {
+                color: var(--historietas-bottom-nav-icon-text, #AD95EA) !important;
+                background: var(--historietas-bottom-nav-icon-bg, rgba(59, 7, 100, 0.28)) !important;
+                border-color: var(--historietas-bottom-nav-icon-border, rgba(76, 29, 149, 0.34)) !important;
               }
 
               @media (max-width: 767px) {
@@ -389,15 +562,12 @@ export default function RootLayout({
                   gap: 3px;
                 }
 
-                .historietas-bottom-nav-item {
-                  min-width: 59px;
-                  flex-basis: 59px;
+                .historietas-bottom-nav-item,
+                .historietas-bottom-nav-main {
+                  min-width: 59px !important;
+                  flex: 0 0 59px !important;
                   min-height: 48px;
                   border-radius: 16px;
-                }
-
-                .historietas-bottom-nav-main {
-                  flex-basis: 64px;
                 }
 
                 .historietas-bottom-nav-label {
