@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import { obras } from "../data/obras";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 
 const SAVED_RELEASES_STORAGE_KEY = "historietas-lancamentos-salvos";
@@ -112,7 +113,7 @@ export default function EmBrevePage() {
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [desktopLayout, setDesktopLayout] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const notificacoesNaoLidas = 0;
+  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     const consultaDesktop = window.matchMedia("(min-width: 900px)");

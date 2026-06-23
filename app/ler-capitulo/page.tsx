@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 
@@ -1532,7 +1533,7 @@ export default function LerCapituloPage() {
     });
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
-  const notificacoesNaoLidas = 0;
+  const { notificacoesNaoLidas } = useNotificacoes();
   const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(5);
   const [modoFoco, setModoFoco] = useState(false);
   const [mostrarAjustes, setMostrarAjustes] = useState(false);

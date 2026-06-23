@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
 import { obras } from "../../data/obras";
 import { supabase } from "../../../lib/supabase/client";
+import { useNotificacoes } from "../../../components/NotificacoesProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
 import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArquivo, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../../lib/utils";
 
@@ -1528,7 +1529,7 @@ export default function ObraDinamicaPage() {
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const notificacoesNaoLidas = 0;
+  const { notificacoesNaoLidas } = useNotificacoes();
   const visualizacaoRegistradaRef = useRef("");
 
   useEffect(() => {

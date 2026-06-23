@@ -8,6 +8,7 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties, ReactNode } from "react";
 
@@ -3218,7 +3219,7 @@ export default function PerfilAutorPage() {
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const notificacoesNaoLidas = 0;
+  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     function atualizarTelaDesktop() {

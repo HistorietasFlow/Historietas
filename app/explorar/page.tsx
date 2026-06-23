@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import { obras } from "../data/obras";
 import type { Obra } from "../data/obras";
 import { supabase } from "../../lib/supabase/client";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 
 type CapituloLocal = {
@@ -1767,7 +1768,7 @@ export default function ExplorarPage() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [mensagemLogin, setMensagemLogin] = useState("");
-  const notificacoesNaoLidas = 0;
+  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     const temaSalvo = carregarTemaVisualExplorarSalvo();

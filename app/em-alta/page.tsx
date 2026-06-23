@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 
 type CapituloLocal = {
@@ -1288,7 +1289,7 @@ export default function EmAltaPage() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const notificacoesNaoLidas = 0;
+  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
