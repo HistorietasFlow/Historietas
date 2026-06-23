@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import { obras } from "../../data/obras";
 import { supabase } from "../../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
+import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArquivo, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../../lib/utils";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -17,6 +18,43 @@ const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const LOCAL_WORKS_STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const VERSAO_INTERACOES_OBRA_PUBLICA = "fix-interacoes-obra-2026-06-16-0022";
+
+function criarStorageKeyUsuarioObraPublica(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function lerStorageUsuarioObraPublica(chave: string, userId: string) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(criarStorageKeyUsuarioObraPublica(chave, userId));
+  } catch {
+    return null;
+  }
+}
+
+function salvarStorageUsuarioObraPublica(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioObraPublica(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage é fallback; a página continua com o estado em memória.
+  }
+}
 
 type CapituloLocal = {
   id: string;
@@ -94,7 +132,7 @@ type SupabaseCapituloRow = {
   obra_id: string;
   user_id: string;
   titulo: string | null;
-  texto: string | null;
+  texto?: string | null;
   ordem: number | null;
   publicado: boolean | null;
   criado_em: string | null;
@@ -220,25 +258,7 @@ const capitulosModelo: CapituloModelo[] = [
   },
 ];
 
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "obra";
-}
-
-function criarLoginHrefObraPublica() {
+async function criarLoginHrefObraPublica() {
   const redirectTo =
     typeof window !== "undefined"
       ? `${window.location.pathname}${window.location.search}`
@@ -277,28 +297,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
 
   return Math.round((capitulosLidos / capitulos.length) * 100);
-}
-
-function formatarTamanhoArquivo(tamanho: number) {
-  if (!Number.isFinite(tamanho) || tamanho <= 0) {
-    return "0 KB";
-  }
-
-  if (tamanho >= 1024 * 1024) {
-    return `${(tamanho / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  return `${Math.max(1, Math.round(tamanho / 1024))} KB`;
-}
-
-function formatarDataArquivo(dataIso: string) {
-  const data = new Date(dataIso);
-
-  if (Number.isNaN(data.getTime())) {
-    return "Data não informada";
-  }
-
-  return data.toLocaleDateString("pt-BR");
 }
 
 function obterRotuloCategoriaArquivo(categoria: ArquivoObraLocal["categoria"]) {
@@ -357,13 +355,13 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
-function carregarBackupArquivosObras(): ArquivosObrasBackup {
-  if (typeof window === "undefined") {
+function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
+  if (typeof window === "undefined" || !userId.trim()) {
     return {};
   }
 
   try {
-    const backupTexto = localStorage.getItem(FILE_BACKUP_STORAGE_KEY);
+    const backupTexto = lerStorageUsuarioObraPublica(FILE_BACKUP_STORAGE_KEY, userId);
     const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
 
     if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
@@ -380,9 +378,10 @@ function carregarBackupArquivosObras(): ArquivosObrasBackup {
       }
     });
 
-    localStorage.setItem(
+    salvarStorageUsuarioObraPublica(
       FILE_BACKUP_STORAGE_KEY,
-      JSON.stringify(backupNormalizado)
+      userId,
+      backupNormalizado
     );
 
     return backupNormalizado;
@@ -401,13 +400,13 @@ function obterChavesBackupObra(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) 
   );
 }
 
-function sincronizarBackupArquivosObras(obrasLocais: ObraLocal[]) {
-  if (typeof window === "undefined") {
+function sincronizarBackupArquivosObras(obrasLocais: ObraLocal[], userId = "") {
+  if (typeof window === "undefined" || !userId.trim()) {
     return;
   }
 
   try {
-    const backupAtual = carregarBackupArquivosObras();
+    const backupAtual = carregarBackupArquivosObras(userId);
 
     obrasLocais.forEach((obraLocal) => {
       if (!obraLocal.arquivoObra) {
@@ -419,7 +418,7 @@ function sincronizarBackupArquivosObras(obrasLocais: ObraLocal[]) {
       });
     });
 
-    localStorage.setItem(FILE_BACKUP_STORAGE_KEY, JSON.stringify(backupAtual));
+    salvarStorageUsuarioObraPublica(FILE_BACKUP_STORAGE_KEY, userId, backupAtual);
   } catch {
     // Backup é apenas proteção extra. Não deve travar a página pública.
   }
@@ -567,13 +566,16 @@ function criarResumoCapitulo(texto: string) {
   return textoLimpo.length > 120 ? `${textoLimpo.slice(0, 120)}...` : textoLimpo;
 }
 
-function carregarObrasLocaisComBackup() {
-  const obrasLocaisTexto = localStorage.getItem(LOCAL_WORKS_STORAGE_KEY);
+function carregarObrasLocaisComBackup(userId = "") {
+  const obrasLocaisTexto = lerStorageUsuarioObraPublica(
+    LOCAL_WORKS_STORAGE_KEY,
+    userId
+  );
   const obrasLocaisJson: unknown = obrasLocaisTexto
     ? JSON.parse(obrasLocaisTexto)
     : [];
 
-  const backupArquivosObras = carregarBackupArquivosObras();
+  const backupArquivosObras = carregarBackupArquivosObras(userId);
 
   const obrasNormalizadas = Array.isArray(obrasLocaisJson)
     ? obrasLocaisJson
@@ -592,7 +594,7 @@ function carregarObrasLocaisComBackup() {
     return obraLocal.publicado && obraLocal.capitulos.length > 0;
   });
 
-  sincronizarBackupArquivosObras(obrasNormalizadas);
+  sincronizarBackupArquivosObras(obrasNormalizadas, userId);
 
   return obrasPublicasLocais;
 }
@@ -631,7 +633,7 @@ function normalizarObraSupabase(
         capitulo.titulo?.trim() ||
         capituloLocal?.titulo ||
         `Capítulo ${capituloIndex + 1}`,
-      texto: capitulo.texto || capituloLocal?.texto || "",
+      texto: capituloLocal?.texto || "",
       curtiu: Boolean(capituloLocal?.curtiu),
       salvo: Boolean(capituloLocal?.salvo),
       comentario: capituloLocal?.comentario || "",
@@ -730,7 +732,9 @@ async function carregarObraSupabasePorSlug(
   try {
     const { data: obrasBanco, error: erroObra } = await supabase
       .from("obras")
-      .select("*")
+      .select(
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em"
+      )
       .eq("slug", slugLimpo)
       .eq("publicado", true)
       .limit(1);
@@ -743,7 +747,7 @@ async function carregarObraSupabasePorSlug(
       return obrasLocais;
     }
 
-    const obraBanco = ((obrasBanco || []) as SupabaseObraRow[])[0] || null;
+    const obraBanco = ((obrasBanco || []) as unknown as SupabaseObraRow[])[0] || null;
 
     if (!obraBanco) {
       return obrasLocais;
@@ -751,10 +755,11 @@ async function carregarObraSupabasePorSlug(
 
     const { data: capitulosBanco, error: erroCapitulos } = await supabase
       .from("capitulos")
-      .select("*")
+      .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
       .eq("obra_id", obraBanco.id)
       .eq("publicado", true)
-      .order("ordem", { ascending: true });
+      .order("ordem", { ascending: true })
+      .limit(200);
 
     if (erroCapitulos) {
       console.warn(
@@ -771,7 +776,7 @@ async function carregarObraSupabasePorSlug(
 
     const obraNormalizada = normalizarObraSupabase(
       obraBanco,
-      erroCapitulos ? [] : ((capitulosBanco || []) as SupabaseCapituloRow[]),
+      erroCapitulos ? [] : ((capitulosBanco || []) as unknown as SupabaseCapituloRow[]),
       obraLocal,
       0
     );
@@ -1000,8 +1005,9 @@ async function carregarPerfilPublicoObra(
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobre,descricao")
       .eq("user_id", userIdLimpo)
+      .limit(1)
       .maybeSingle();
 
     if (!error && data && typeof data === "object" && !Array.isArray(data)) {
@@ -1018,8 +1024,9 @@ async function carregarPerfilPublicoObra(
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobre,descricao")
       .eq("id", userIdLimpo)
+      .limit(1)
       .maybeSingle();
 
     if (!error && data && typeof data === "object" && !Array.isArray(data)) {
@@ -1080,34 +1087,6 @@ function obterNumeroMetrica(valor: string) {
   return Number.isFinite(numero) ? Math.round(numero * multiplicador) : 0;
 }
 
-function obterNumeroSeguro(valor: unknown, fallback = 0) {
-  return typeof valor === "number" && Number.isFinite(valor) ? valor : fallback;
-}
-
-function idObraSupabaseValido(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    id
-  );
-}
-
-function formatarNumeroCompacto(valor: number) {
-  if (!Number.isFinite(valor) || valor <= 0) {
-    return "0";
-  }
-
-  if (valor >= 1000) {
-    const valorCompacto = valor / 1000;
-    const texto =
-      valorCompacto >= 10
-        ? Math.round(valorCompacto).toString()
-        : valorCompacto.toFixed(1).replace(".0", "");
-
-    return `${texto}K`;
-  }
-
-  return String(valor);
-}
-
 function criarMetricasBaseObra(obra: ObraDinamica | null): MetricasObraPublica {
   if (!obra) {
     return metricasObraVazias;
@@ -1143,9 +1122,9 @@ function obterChavesInteracaoObraPublica(obra: ObraDinamica) {
   );
 }
 
-function carregarListaLocalObraPublica(chaveStorage: string) {
+function carregarListaLocalObraPublica(chaveStorage: string, userId = "") {
   try {
-    const texto = localStorage.getItem(chaveStorage);
+    const texto = lerStorageUsuarioObraPublica(chaveStorage, userId);
     const json: unknown = texto ? JSON.parse(texto) : [];
 
     return Array.isArray(json)
@@ -1156,10 +1135,14 @@ function carregarListaLocalObraPublica(chaveStorage: string) {
   }
 }
 
-function obraEstaEmListaLocalObraPublica(obra: ObraDinamica, chaveStorage: string) {
+function obraEstaEmListaLocalObraPublica(
+  obra: ObraDinamica,
+  chaveStorage: string,
+  userId = ""
+) {
   const chavesObra = new Set(obterChavesInteracaoObraPublica(obra));
 
-  return carregarListaLocalObraPublica(chaveStorage).some((item) =>
+  return carregarListaLocalObraPublica(chaveStorage, userId).some((item) =>
     chavesObra.has(item.trim())
   );
 }
@@ -1167,9 +1150,10 @@ function obraEstaEmListaLocalObraPublica(obra: ObraDinamica, chaveStorage: strin
 function salvarListaLocalObraPublica(
   obra: ObraDinamica,
   chaveStorage: string,
-  ativo: boolean
+  ativo: boolean,
+  userId = ""
 ) {
-  const listaAtual = carregarListaLocalObraPublica(chaveStorage);
+  const listaAtual = carregarListaLocalObraPublica(chaveStorage, userId);
   const chavesObra = obterChavesInteracaoObraPublica(obra);
   const chavesSet = new Set(chavesObra);
   const listaSemObra = listaAtual.filter((item) => !chavesSet.has(item.trim()));
@@ -1177,7 +1161,7 @@ function salvarListaLocalObraPublica(
     ? Array.from(new Set([...listaSemObra, ...chavesObra]))
     : listaSemObra;
 
-  localStorage.setItem(chaveStorage, JSON.stringify(proximaLista));
+  salvarStorageUsuarioObraPublica(chaveStorage, userId, proximaLista);
 
   return proximaLista;
 }
@@ -1267,9 +1251,12 @@ async function salvarCurtidaObraPublicaSupabase(
   throw ultimoErro || new Error("Não foi possível salvar a curtida da obra.");
 }
 
-function carregarAvaliacoesLocais() {
+function carregarAvaliacoesLocais(userId = "") {
   try {
-    const avaliacoesTexto = localStorage.getItem(RATED_WORKS_STORAGE_KEY);
+    const avaliacoesTexto = lerStorageUsuarioObraPublica(
+      RATED_WORKS_STORAGE_KEY,
+      userId
+    );
     const avaliacoesJson: unknown = avaliacoesTexto
       ? JSON.parse(avaliacoesTexto)
       : {};
@@ -1288,9 +1275,9 @@ function carregarAvaliacoesLocais() {
   }
 }
 
-function obterAvaliacaoLocal(obra: ObraDinamica) {
+function obterAvaliacaoLocal(obra: ObraDinamica, userId = "") {
   const chaveAvaliacao = obterChaveAvaliacaoObra(obra);
-  const avaliacoesLocais = carregarAvaliacoesLocais();
+  const avaliacoesLocais = carregarAvaliacoesLocais(userId);
   const nota = Number(avaliacoesLocais[chaveAvaliacao]);
 
   return Number.isFinite(nota) && nota >= 0.5 && nota <= 5
@@ -1298,7 +1285,7 @@ function obterAvaliacaoLocal(obra: ObraDinamica) {
     : 0;
 }
 
-function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number) {
+function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
   try {
     const chaveAvaliacao = obterChaveAvaliacaoObra(obra);
 
@@ -1306,7 +1293,7 @@ function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number) {
       return;
     }
 
-    const avaliacoesLocais = carregarAvaliacoesLocais();
+    const avaliacoesLocais = carregarAvaliacoesLocais(userId);
 
     if (nota <= 0) {
       delete avaliacoesLocais[chaveAvaliacao];
@@ -1314,9 +1301,10 @@ function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number) {
       avaliacoesLocais[chaveAvaliacao] = nota;
     }
 
-    localStorage.setItem(
+    salvarStorageUsuarioObraPublica(
       RATED_WORKS_STORAGE_KEY,
-      JSON.stringify(avaliacoesLocais)
+      userId,
+      avaliacoesLocais
     );
   } catch {
     // Avaliação local é fallback e não deve travar a página.
@@ -1412,6 +1400,35 @@ type DiarioAtividadeObraTipo =
 
 type DiarioAtividadeObraVisibilidade = "publico" | "parcial" | "privado";
 
+async function removerAtividadeDiarioObra({
+  userId,
+  obra,
+  tipo,
+}: {
+  userId: string;
+  obra: ObraDinamica;
+  tipo: DiarioAtividadeObraTipo;
+}) {
+  if (!userId || !obra.id || !idObraSupabaseValido(obra.id)) {
+    return;
+  }
+
+  try {
+    const { error } = await supabase
+      .from("diario_atividades")
+      .delete()
+      .eq("user_id", userId)
+      .eq("obra_id", obra.id)
+      .eq("tipo", tipo);
+
+    if (error) {
+      console.warn("Não consegui remover atividade do Diário da obra:", error.message);
+    }
+  } catch (error) {
+    console.warn("Não consegui acessar diario_atividades na obra:", error);
+  }
+}
+
 async function registrarAtividadeDiarioObra({
   userId,
   obra,
@@ -1452,6 +1469,12 @@ async function registrarAtividadeDiarioObra({
   };
 
   try {
+    await removerAtividadeDiarioObra({
+      userId,
+      obra,
+      tipo,
+    });
+
     const { error } = await supabase.from("diario_atividades").insert({
       ...payloadBase,
       nota: notaNormalizada,
@@ -1502,9 +1525,45 @@ export default function ObraDinamicaPage() {
     useState<PerfilPublicoObra | null>(null);
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const notificacoesNaoLidas = 0;
   const visualizacaoRegistradaRef = useRef("");
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarUsuarioLogado() {
+      try {
+        const { data } = await supabase.auth.getUser();
+
+        if (!cancelado) {
+          setUsuarioIdLogado(data.user?.id || "");
+        }
+      } catch {
+        if (!cancelado) {
+          setUsuarioIdLogado("");
+        }
+      }
+    }
+
+    void carregarUsuarioLogado();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelado) {
+        setUsuarioIdLogado(session?.user?.id || "");
+      }
+    });
+
+    return () => {
+      cancelado = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1513,12 +1572,16 @@ export default function ObraDinamicaPage() {
       setIsDesktop(mediaQuery.matches);
     };
 
-    atualizarModoDesktop();
+    const atualizarModoDesktopTimer = window.setTimeout(
+      atualizarModoDesktop,
+      0
+    );
 
     if (typeof mediaQuery.addEventListener === "function") {
       mediaQuery.addEventListener("change", atualizarModoDesktop);
 
       return () => {
+        window.clearTimeout(atualizarModoDesktopTimer);
         mediaQuery.removeEventListener("change", atualizarModoDesktop);
       };
     }
@@ -1526,6 +1589,7 @@ export default function ObraDinamicaPage() {
     mediaQuery.addListener(atualizarModoDesktop);
 
     return () => {
+      window.clearTimeout(atualizarModoDesktopTimer);
       mediaQuery.removeListener(atualizarModoDesktop);
     };
   }, []);
@@ -1534,40 +1598,52 @@ export default function ObraDinamicaPage() {
     let cancelado = false;
 
     async function carregarObraPublica() {
-      setCarregandoObras(true);
+      window.setTimeout(() => {
+        if (!cancelado) {
+          setCarregandoObras(true);
+        }
+      }, 0);
 
       try {
-        const obrasNormalizadas = carregarObrasLocaisComBackup();
+        const obrasNormalizadas = carregarObrasLocaisComBackup(usuarioIdLogado);
 
-        if (!cancelado) {
-          setObrasLocais(obrasNormalizadas);
-        }
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setObrasLocais(obrasNormalizadas);
+          }
+        }, 0);
 
         const obrasComSupabase = await carregarObraSupabasePorSlug(
           slug,
           obrasNormalizadas
         );
 
-        if (!cancelado) {
-          setObrasLocais(obrasComSupabase);
-        }
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setObrasLocais(obrasComSupabase);
+          }
+        }, 0);
       } catch {
-        if (!cancelado) {
-          setObrasLocais([]);
-        }
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setObrasLocais([]);
+          }
+        }, 0);
       } finally {
-        if (!cancelado) {
-          setCarregandoObras(false);
-        }
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setCarregandoObras(false);
+          }
+        }, 0);
       }
     }
 
-    carregarObraPublica();
+    void carregarObraPublica();
 
     return () => {
       cancelado = true;
     };
-  }, [slug]);
+  }, [slug, usuarioIdLogado]);
 
   const obra = useMemo<ObraDinamica | null>(() => {
     const obraLocal = obrasLocais.find((item) => {
@@ -1588,7 +1664,11 @@ export default function ObraDinamicaPage() {
 
     async function carregarPerfilAutorDaObra() {
       if (!obra?.autorId) {
-        setPerfilAutorObra(null);
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setPerfilAutorObra(null);
+          }
+        }, 0);
         return;
       }
 
@@ -1597,9 +1677,11 @@ export default function ObraDinamicaPage() {
         obra.autor
       );
 
-      if (!cancelado) {
-        setPerfilAutorObra(perfilAutor);
-      }
+      window.setTimeout(() => {
+        if (!cancelado) {
+          setPerfilAutorObra(perfilAutor);
+        }
+      }, 0);
     }
 
     void carregarPerfilAutorDaObra();
@@ -1650,7 +1732,10 @@ export default function ObraDinamicaPage() {
     }
 
     try {
-      const obrasSeguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
+      const obrasSeguidasTexto = lerStorageUsuarioObraPublica(
+        FOLLOWED_WORKS_STORAGE_KEY,
+        usuarioIdLogado
+      );
       const obrasSeguidasJson: unknown = obrasSeguidasTexto
         ? JSON.parse(obrasSeguidasTexto)
         : [];
@@ -1661,28 +1746,55 @@ export default function ObraDinamicaPage() {
               typeof titulo === "string" && Boolean(titulo.trim())
           )
         : [];
+      const seguida = obrasSeguidas.includes(obraNormalizada);
 
-      setObraSeguida(obrasSeguidas.includes(obraNormalizada));
+      window.setTimeout(() => {
+        setObraSeguida(seguida);
+      }, 0);
     } catch {
-      setObraSeguida(false);
+      window.setTimeout(() => {
+        setObraSeguida(false);
+      }, 0);
     }
-  }, [obraNormalizada]);
+  }, [obraNormalizada, usuarioIdLogado]);
 
   useEffect(() => {
     if (!obra) {
-      setObraFavoritada(false);
-      setObraConcluida(false);
-      return;
+      const resetColecoesTimer = window.setTimeout(() => {
+        setObraFavoritada(false);
+        setObraConcluida(false);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(resetColecoesTimer);
+      };
     }
 
     let cancelado = false;
     const obraAtual = obra;
+    const estadoFavoritadaLocal = obraEstaEmListaLocalObraPublica(
+      obraAtual,
+      FAVORITES_STORAGE_KEY,
+      usuarioIdLogado
+    );
+    const estadoConcluidaLocal = obraEstaEmListaLocalObraPublica(
+      obraAtual,
+      COMPLETED_STORAGE_KEY,
+      usuarioIdLogado
+    );
 
-    setObraFavoritada(obraEstaEmListaLocalObraPublica(obraAtual, FAVORITES_STORAGE_KEY));
-    setObraConcluida(obraEstaEmListaLocalObraPublica(obraAtual, COMPLETED_STORAGE_KEY));
+    const aplicarEstadoColecoesTimer = window.setTimeout(() => {
+      if (!cancelado) {
+        setObraFavoritada(estadoFavoritadaLocal);
+        setObraConcluida(estadoConcluidaLocal);
+      }
+    }, 0);
 
     if (!obraAtual.id || !idObraSupabaseValido(obraAtual.id)) {
-      return;
+      return () => {
+        cancelado = true;
+        window.clearTimeout(aplicarEstadoColecoesTimer);
+      };
     }
 
     async function carregarEstadoSocialObra() {
@@ -1700,12 +1812,14 @@ export default function ObraDinamicaPage() {
             .select("obra_id")
             .eq("user_id", userId)
             .eq("obra_id", obraAtual.id)
+            .limit(1)
             .maybeSingle(),
           supabase
             .from("concluidas")
             .select("obra_id")
             .eq("user_id", userId)
             .eq("obra_id", obraAtual.id)
+            .limit(1)
             .maybeSingle(),
         ]);
 
@@ -1724,13 +1838,19 @@ export default function ObraDinamicaPage() {
 
     return () => {
       cancelado = true;
+      window.clearTimeout(aplicarEstadoColecoesTimer);
     };
-  }, [obra?.id, obra?.slug, obraNormalizada]);
+  }, [obra?.id, obra?.slug, obraNormalizada, usuarioIdLogado]);
 
   useEffect(() => {
     if (!obra) {
-      setMetricasObra(metricasObraVazias);
-      return;
+      const resetMetricasTimer = window.setTimeout(() => {
+        setMetricasObra(metricasObraVazias);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(resetMetricasTimer);
+      };
     }
 
     const obraAtual = obra;
@@ -1743,12 +1863,17 @@ export default function ObraDinamicaPage() {
     let seguindoLocalAtivo = false;
 
     try {
-      const visualizacoesTexto = localStorage.getItem(VIEWED_WORKS_STORAGE_KEY);
+      const visualizacoesTexto = lerStorageUsuarioObraPublica(
+        VIEWED_WORKS_STORAGE_KEY,
+        usuarioIdLogado
+      );
       const visualizacoesJson: unknown = visualizacoesTexto
         ? JSON.parse(visualizacoesTexto)
         : {};
       const visualizacoesPorObra =
-        visualizacoesJson && typeof visualizacoesJson === "object" && !Array.isArray(visualizacoesJson)
+        visualizacoesJson &&
+        typeof visualizacoesJson === "object" &&
+        !Array.isArray(visualizacoesJson)
           ? (visualizacoesJson as Record<string, unknown>)
           : {};
       const visualizacoesAtuais = obterNumeroSeguro(
@@ -1762,12 +1887,13 @@ export default function ObraDinamicaPage() {
         : visualizacoesAtuais + 1;
 
       if (!jaRegistrouVisualizacao) {
-        localStorage.setItem(
+        salvarStorageUsuarioObraPublica(
           VIEWED_WORKS_STORAGE_KEY,
-          JSON.stringify({
+          usuarioIdLogado,
+          {
             ...visualizacoesPorObra,
             [chaveMetricaObra]: proximasVisualizacoes,
-          })
+          }
         );
         visualizacaoRegistradaRef.current = chaveMetricaObra;
       }
@@ -1781,7 +1907,10 @@ export default function ObraDinamicaPage() {
     }
 
     try {
-      const curtidasTexto = localStorage.getItem(LIKED_WORKS_STORAGE_KEY);
+      const curtidasTexto = lerStorageUsuarioObraPublica(
+        LIKED_WORKS_STORAGE_KEY,
+        usuarioIdLogado
+      );
       const curtidasJson: unknown = curtidasTexto ? JSON.parse(curtidasTexto) : [];
       const obrasCurtidas = Array.isArray(curtidasJson)
         ? curtidasJson.filter(
@@ -1796,7 +1925,10 @@ export default function ObraDinamicaPage() {
     }
 
     try {
-      const seguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
+      const seguidasTexto = lerStorageUsuarioObraPublica(
+        FOLLOWED_WORKS_STORAGE_KEY,
+        usuarioIdLogado
+      );
       const seguidasJson: unknown = seguidasTexto ? JSON.parse(seguidasTexto) : [];
       const obrasSeguidas = Array.isArray(seguidasJson)
         ? seguidasJson.filter(
@@ -1810,18 +1942,22 @@ export default function ObraDinamicaPage() {
       seguindoLocalAtivo = false;
     }
 
-    setObraSeguida(seguindoLocalAtivo);
-    setMetricasObra({
-      ...metricasBase,
-      visualizacoes: visualizacoesLocais,
-      curtidaAtiva: curtidaLocalAtiva,
-      curtidas: metricasBase.curtidas + (curtidaLocalAtiva ? 1 : 0),
-      seguidores: seguindoLocalAtivo ? 1 : metricasBase.seguidores,
-      carregado: true,
-    });
+    const aplicarMetricasLocaisTimer = window.setTimeout(() => {
+      setObraSeguida(seguindoLocalAtivo);
+      setMetricasObra({
+        ...metricasBase,
+        visualizacoes: visualizacoesLocais,
+        curtidaAtiva: curtidaLocalAtiva,
+        curtidas: metricasBase.curtidas + (curtidaLocalAtiva ? 1 : 0),
+        seguidores: seguindoLocalAtivo ? 1 : metricasBase.seguidores,
+        carregado: true,
+      });
+    }, 0);
 
     if (obraAtual.origem !== "local" || !obraId || !idObraSupabaseValido(obraId)) {
-      return;
+      return () => {
+        window.clearTimeout(aplicarMetricasLocaisTimer);
+      };
     }
 
     let cancelado = false;
@@ -1835,6 +1971,7 @@ export default function ObraDinamicaPage() {
           .from("obras")
           .select("visualizacoes")
           .eq("id", obraId)
+          .limit(1)
           .maybeSingle();
 
         let visualizacoes = obterNumeroSeguro(
@@ -1895,7 +2032,10 @@ export default function ObraDinamicaPage() {
         let seguindoAtivo = false;
 
         try {
-          const obrasSeguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
+          const obrasSeguidasTexto = lerStorageUsuarioObraPublica(
+            FOLLOWED_WORKS_STORAGE_KEY,
+            usuarioIdLogado
+          );
           const obrasSeguidasJson: unknown = obrasSeguidasTexto
             ? JSON.parse(obrasSeguidasTexto)
             : [];
@@ -1919,12 +2059,14 @@ export default function ObraDinamicaPage() {
                 .select("id")
                 .eq("obra_id", obraId)
                 .eq("user_id", userId)
+                .limit(1)
                 .maybeSingle(),
               supabase
                 .from("seguindo_obras")
                 .select("id")
                 .eq("obra_id", obraId)
                 .eq("user_id", userId)
+                .limit(1)
                 .maybeSingle(),
             ]);
 
@@ -1959,13 +2101,19 @@ export default function ObraDinamicaPage() {
 
     return () => {
       cancelado = true;
+      window.clearTimeout(aplicarMetricasLocaisTimer);
     };
-  }, [obra, capitulosDaObra, obraNormalizada]);
+  }, [obra, capitulosDaObra, obraNormalizada, usuarioIdLogado]);
 
   useEffect(() => {
     if (!obra) {
-      setMetricasComunidadeObra(metricasComunidadeObraVazias);
-      return;
+      const resetComunidadeTimer = window.setTimeout(() => {
+        setMetricasComunidadeObra(metricasComunidadeObraVazias);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(resetComunidadeTimer);
+      };
     }
 
     let cancelado = false;
@@ -1976,15 +2124,16 @@ export default function ObraDinamicaPage() {
         const { data: postsData, error: erroPosts } = await supabase
           .from("comunidade_posts")
           .select("id, tipo_publicacao, obra_relacionada")
-          .not("obra_relacionada", "is", null);
+          .not("obra_relacionada", "is", null)
+          .limit(200);
 
         if (erroPosts || !Array.isArray(postsData)) {
           throw erroPosts;
         }
 
-        const postsRelacionados = (postsData as SupabaseComunidadePostRow[]).filter(
-          (post) => postComunidadePertenceAObra(post, tituloObra)
-        );
+        const postsRelacionados = (
+          postsData as unknown as SupabaseComunidadePostRow[]
+        ).filter((post) => postComunidadePertenceAObra(post, tituloObra));
         const postIds = postsRelacionados.map((post) => post.id).filter(Boolean);
 
         let totalComentariosComunidade = 0;
@@ -2043,23 +2192,32 @@ export default function ObraDinamicaPage() {
 
   useEffect(() => {
     if (!obra) {
-      setAvaliacaoObra(avaliacaoObraVazia);
-      return;
+      const resetAvaliacaoTimer = window.setTimeout(() => {
+        setAvaliacaoObra(avaliacaoObraVazia);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(resetAvaliacaoTimer);
+      };
     }
 
     const obraAtual = obra;
-    const notaLocal = obterAvaliacaoLocal(obraAtual);
+    const notaLocal = obterAvaliacaoLocal(obraAtual, usuarioIdLogado);
 
-    setAvaliacaoObra({
-      media: notaLocal > 0 ? notaLocal : 0,
-      total: notaLocal > 0 ? 1 : 0,
-      minhaNota: notaLocal,
-      carregado: true,
-      salvando: false,
-    });
+    const aplicarAvaliacaoLocalTimer = window.setTimeout(() => {
+      setAvaliacaoObra({
+        media: notaLocal > 0 ? notaLocal : 0,
+        total: notaLocal > 0 ? 1 : 0,
+        minhaNota: notaLocal,
+        carregado: true,
+        salvando: false,
+      });
+    }, 0);
 
     if (!obraAtual.id || !idObraSupabaseValido(obraAtual.id)) {
-      return;
+      return () => {
+        window.clearTimeout(aplicarAvaliacaoLocalTimer);
+      };
     }
 
     let cancelado = false;
@@ -2072,7 +2230,8 @@ export default function ObraDinamicaPage() {
         const { data: avaliacoesData, error: erroAvaliacoes } = await supabase
           .from("obra_avaliacoes")
           .select("nota")
-          .eq("obra_id", obraAtual.id);
+          .eq("obra_id", obraAtual.id)
+          .limit(1000);
 
         if (erroAvaliacoes || !Array.isArray(avaliacoesData)) {
           return;
@@ -2094,6 +2253,7 @@ export default function ObraDinamicaPage() {
             .select("nota")
             .eq("obra_id", obraAtual.id)
             .eq("user_id", userId)
+            .limit(1)
             .maybeSingle();
 
           const notaUsuario = Number(
@@ -2131,8 +2291,9 @@ export default function ObraDinamicaPage() {
 
     return () => {
       cancelado = true;
+      window.clearTimeout(aplicarAvaliacaoLocalTimer);
     };
-  }, [obra?.id, obra?.slug, obraNormalizada]);
+  }, [obra?.id, obra?.slug, obraNormalizada, usuarioIdLogado]);
 
   async function obterUsuarioLogadoParaAcao(mensagem: string) {
     try {
@@ -2141,14 +2302,14 @@ export default function ObraDinamicaPage() {
 
       if (!userId) {
         setMensagemAcao(mensagem);
-        router.push(criarLoginHrefObraPublica());
+        router.push(await criarLoginHrefObraPublica());
         return "";
       }
 
       return userId;
     } catch {
       setMensagemAcao(mensagem);
-      router.push(criarLoginHrefObraPublica());
+      router.push(await criarLoginHrefObraPublica());
       return "";
     }
   }
@@ -2171,7 +2332,10 @@ export default function ObraDinamicaPage() {
     const seguidoresDelta = seguindo ? 1 : -1;
 
     try {
-      const obrasSeguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
+      const obrasSeguidasTexto = lerStorageUsuarioObraPublica(
+        FOLLOWED_WORKS_STORAGE_KEY,
+        usuarioIdLogado
+      );
       const obrasSeguidasJson: unknown = obrasSeguidasTexto
         ? JSON.parse(obrasSeguidasTexto)
         : [];
@@ -2198,9 +2362,10 @@ export default function ObraDinamicaPage() {
         ? Array.from(new Set([...obrasSeguidas, ...chavesObraAtual]))
         : obrasSeguidas.filter((titulo) => !chavesObraAtual.includes(titulo));
 
-      localStorage.setItem(
+      salvarStorageUsuarioObraPublica(
         FOLLOWED_WORKS_STORAGE_KEY,
-        JSON.stringify(novasObrasSeguidas)
+        userId,
+        novasObrasSeguidas
       );
 
       setObraSeguida(seguindo);
@@ -2248,12 +2413,21 @@ export default function ObraDinamicaPage() {
           visibilidade: "privado",
           texto: `Adicionou ${obraAtual.titulo} para acompanhar.`,
         });
+      } else {
+        await removerAtividadeDiarioObra({
+          userId,
+          obra: obraAtual,
+          tipo: "salvou_obra",
+        });
       }
     } catch (error) {
       console.warn("Não consegui salvar seguimento da obra:", error);
 
       try {
-        const obrasSeguidasTexto = localStorage.getItem(FOLLOWED_WORKS_STORAGE_KEY);
+        const obrasSeguidasTexto = lerStorageUsuarioObraPublica(
+        FOLLOWED_WORKS_STORAGE_KEY,
+        usuarioIdLogado
+      );
         const obrasSeguidasJson: unknown = obrasSeguidasTexto
           ? JSON.parse(obrasSeguidasTexto)
           : [];
@@ -2279,9 +2453,10 @@ export default function ObraDinamicaPage() {
           ? obrasSeguidas.filter((titulo) => !chavesObraAtual.includes(titulo))
           : Array.from(new Set([...obrasSeguidas, ...chavesObraAtual]));
 
-        localStorage.setItem(
+        salvarStorageUsuarioObraPublica(
           FOLLOWED_WORKS_STORAGE_KEY,
-          JSON.stringify(obrasSeguidasRestauradas)
+          userId,
+          obrasSeguidasRestauradas
         );
       } catch {
         // O rollback local não deve travar a mensagem de erro.
@@ -2323,7 +2498,10 @@ export default function ObraDinamicaPage() {
 
     if (!obra || obra.origem !== "local" || !obra.id || !idObraSupabaseValido(obra.id)) {
       try {
-        const curtidasTexto = localStorage.getItem(LIKED_WORKS_STORAGE_KEY);
+        const curtidasTexto = lerStorageUsuarioObraPublica(
+        LIKED_WORKS_STORAGE_KEY,
+        usuarioIdLogado
+      );
         const curtidasJson: unknown = curtidasTexto ? JSON.parse(curtidasTexto) : [];
         const obrasCurtidas = Array.isArray(curtidasJson)
           ? curtidasJson.filter(
@@ -2336,9 +2514,10 @@ export default function ObraDinamicaPage() {
           ? Array.from(new Set([...obrasCurtidas, obraNormalizada]))
           : obrasCurtidas.filter((titulo) => titulo !== obraNormalizada);
 
-        localStorage.setItem(
+        salvarStorageUsuarioObraPublica(
           LIKED_WORKS_STORAGE_KEY,
-          JSON.stringify(novasObrasCurtidas)
+          userId,
+          novasObrasCurtidas
         );
       } catch {
         setMetricasObra((metricasAtuais) => ({
@@ -2363,16 +2542,6 @@ export default function ObraDinamicaPage() {
         obraId,
         proximaCurtidaAtiva
       );
-
-      if (proximaCurtidaAtiva) {
-        await registrarAtividadeDiarioObra({
-          userId,
-          obra,
-          tipo: "favoritou_obra",
-          visibilidade: "parcial",
-          texto: `Curtiu ${obra.titulo}.`,
-        });
-      }
 
       setMensagemAcao(
         proximaCurtidaAtiva ? "Obra curtida." : "Curtida removida."
@@ -2407,7 +2576,12 @@ export default function ObraDinamicaPage() {
     const favoritoAnterior = obraFavoritada;
 
     setObraFavoritada(proximoFavorito);
-    salvarListaLocalObraPublica(obra, FAVORITES_STORAGE_KEY, proximoFavorito);
+    salvarListaLocalObraPublica(
+      obra,
+      FAVORITES_STORAGE_KEY,
+      proximoFavorito,
+      userId
+    );
     setMensagemAcao("");
 
     try {
@@ -2428,6 +2602,12 @@ export default function ObraDinamicaPage() {
           visibilidade: "parcial",
           texto: `Adicionou ${obra.titulo} à lista.`,
         });
+      } else {
+        await removerAtividadeDiarioObra({
+          userId,
+          obra,
+          tipo: "favoritou_obra",
+        });
       }
 
       setMensagemAcao(
@@ -2436,7 +2616,12 @@ export default function ObraDinamicaPage() {
     } catch (error) {
       console.warn("Não consegui salvar favorito da obra:", error);
       setObraFavoritada(favoritoAnterior);
-      salvarListaLocalObraPublica(obra, FAVORITES_STORAGE_KEY, favoritoAnterior);
+      salvarListaLocalObraPublica(
+        obra,
+        FAVORITES_STORAGE_KEY,
+        favoritoAnterior,
+        userId
+      );
       setMensagemAcao("Não foi possível salvar na lista agora.");
     }
   }
@@ -2458,7 +2643,12 @@ export default function ObraDinamicaPage() {
     const concluidaAnterior = obraConcluida;
 
     setObraConcluida(proximaConcluida);
-    salvarListaLocalObraPublica(obra, COMPLETED_STORAGE_KEY, proximaConcluida);
+    salvarListaLocalObraPublica(
+      obra,
+      COMPLETED_STORAGE_KEY,
+      proximaConcluida,
+      userId
+    );
     setMensagemAcao("");
 
     try {
@@ -2479,6 +2669,12 @@ export default function ObraDinamicaPage() {
           visibilidade: "parcial",
           texto: `Concluiu ${obra.titulo}.`,
         });
+      } else {
+        await removerAtividadeDiarioObra({
+          userId,
+          obra,
+          tipo: "concluiu_obra",
+        });
       }
 
       setMensagemAcao(
@@ -2487,7 +2683,12 @@ export default function ObraDinamicaPage() {
     } catch (error) {
       console.warn("Não consegui salvar conclusão da obra:", error);
       setObraConcluida(concluidaAnterior);
-      salvarListaLocalObraPublica(obra, COMPLETED_STORAGE_KEY, concluidaAnterior);
+      salvarListaLocalObraPublica(
+        obra,
+        COMPLETED_STORAGE_KEY,
+        concluidaAnterior,
+        userId
+      );
       setMensagemAcao("Não foi possível marcar como concluída agora.");
     }
   }
@@ -2514,7 +2715,7 @@ export default function ObraDinamicaPage() {
 
     setAvaliacaoObra(proximaAvaliacao);
     setMensagemAcao("");
-    salvarAvaliacaoLocal(obra, notaNormalizada);
+    salvarAvaliacaoLocal(obra, notaNormalizada, userId);
 
     if (!obra.id || !idObraSupabaseValido(obra.id)) {
       setAvaliacaoObra((avaliacaoAtual) => ({
@@ -2554,6 +2755,12 @@ export default function ObraDinamicaPage() {
           nota: notaNormalizada,
           visibilidade: "publico",
           texto: `Avaliou ${obra.titulo} com ${notaNormalizada.toFixed(1).replace(".", ",")} estrelas.`,
+        });
+      } else {
+        await removerAtividadeDiarioObra({
+          userId,
+          obra,
+          tipo: "avaliou_obra",
         });
       }
 
@@ -2608,6 +2815,44 @@ export default function ObraDinamicaPage() {
     document.body.removeChild(campoTemporario);
   }
 
+  const resumoAvaliacaoCabecalho = (
+    <div style={ratingSummaryStyle}>
+      <strong style={ratingNumberStyle}>
+        {formatarMediaAvaliacao(avaliacaoObra.media)}
+      </strong>
+      <span
+        style={ratingStarsStyle}
+        aria-label={`Média ${formatarMediaAvaliacao(
+          avaliacaoObra.media
+        )} de 5`}
+      >
+        {NOTAS_AVALIACAO_OBRA.map((estrela) => (
+          <span
+            key={`media-obra-${estrela}`}
+            style={ratingTopStarVisualStyle}
+            aria-hidden="true"
+          >
+            <span style={ratingTopStarBaseStyle}>★</span>
+            <span
+              style={{
+                ...ratingTopStarFillStyle,
+                width: obterPreenchimentoEstrela(
+                  estrela,
+                  avaliacaoObra.media
+                ),
+              }}
+            >
+              ★
+            </span>
+          </span>
+        ))}
+      </span>
+      <span style={ratingTotalStyle}>
+        {formatarTotalAvaliacoes(avaliacaoObra.total)}
+      </span>
+    </div>
+  );
+
   if (carregandoObras && !obra) {
     return (
       <main style={pageThemeStyle}>
@@ -2633,6 +2878,28 @@ export default function ObraDinamicaPage() {
               <span style={logoMarkStyle}>H</span>
               <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
+
+            {isDesktop ? (
+              <Link
+                href="/notificacoes"
+                style={desktopNotificationButtonStyle}
+                aria-label={
+                  notificacoesNaoLidas > 0
+                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                    : "Notificações"
+                }
+              >
+                N
+
+                {notificacoesNaoLidas > 0 ? (
+                  <span style={desktopNotificationBadgeStyle}>
+                    {notificacoesNaoLidas > 99
+                      ? "99+"
+                      : notificacoesNaoLidas}
+                  </span>
+                ) : null}
+              </Link>
+            ) : null}
           </header>
 
           <section style={emptyBoxStyle}>
@@ -2678,39 +2945,33 @@ export default function ObraDinamicaPage() {
             <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <div style={ratingSummaryStyle}>
-            <strong style={ratingNumberStyle}>
-              {formatarMediaAvaliacao(avaliacaoObra.media)}
-            </strong>
-            <span
-              style={ratingStarsStyle}
-              aria-label={`Média ${formatarMediaAvaliacao(avaliacaoObra.media)} de 5`}
-            >
-              {NOTAS_AVALIACAO_OBRA.map((estrela) => (
-                <span
-                  key={`media-obra-${estrela}`}
-                  style={ratingTopStarVisualStyle}
-                  aria-hidden="true"
-                >
-                  <span style={ratingTopStarBaseStyle}>★</span>
-                  <span
-                    style={{
-                      ...ratingTopStarFillStyle,
-                      width: obterPreenchimentoEstrela(
-                        estrela,
-                        avaliacaoObra.media
-                      ),
-                    }}
-                  >
-                    ★
+          {isDesktop ? (
+            <div style={desktopHeaderRightStyle}>
+              <Link
+                href="/notificacoes"
+                style={desktopNotificationButtonStyle}
+                aria-label={
+                  notificacoesNaoLidas > 0
+                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                    : "Notificações"
+                }
+              >
+                N
+
+                {notificacoesNaoLidas > 0 ? (
+                  <span style={desktopNotificationBadgeStyle}>
+                    {notificacoesNaoLidas > 99
+                      ? "99+"
+                      : notificacoesNaoLidas}
                   </span>
-                </span>
-              ))}
-            </span>
-            <span style={ratingTotalStyle}>
-              {formatarTotalAvaliacoes(avaliacaoObra.total)}
-            </span>
-          </div>
+                ) : null}
+              </Link>
+
+              {resumoAvaliacaoCabecalho}
+            </div>
+          ) : (
+            resumoAvaliacaoCabecalho
+          )}
         </header>
 
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
@@ -2952,11 +3213,9 @@ export default function ObraDinamicaPage() {
         </section>
 
 
-
         {obra.arquivoObra && (
           <ArquivoObraPublico arquivo={obra.arquivoObra} slug={obra.slug} isDesktop={isDesktop} />
         )}
-
 
 
       </section>
@@ -2975,7 +3234,7 @@ function ArquivoObraPublico({
 }) {
   const tipoArquivo = obterRotuloCategoriaArquivo(arquivo.categoria);
   const tamanhoArquivo = formatarTamanhoArquivo(arquivo.tamanho);
-  const dataArquivo = formatarDataArquivo(arquivo.criadoEm);
+  const dataArquivo = formatarData(arquivo.criadoEm);
   const verArquivoHref = `/ver-arquivo?slug=${encodeURIComponent(slug)}`;
 
   return (
@@ -3189,6 +3448,58 @@ const desktopTopStyle: CSSProperties = {
   marginBottom: "14px",
 };
 
+const desktopHeaderRightStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "12px",
+  flex: "0 0 auto",
+  minWidth: 0,
+};
+
+const desktopNotificationButtonStyle: CSSProperties = {
+  position: "relative",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+  zIndex: 2,
+};
+
+const desktopNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
+};
+
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
@@ -3229,12 +3540,6 @@ const logoTextStyle: CSSProperties = {
   color: "transparent",
   textShadow: "none",
 };
-
-
-
-
-
-
 
 
 const heroStyle: CSSProperties = {
@@ -3669,11 +3974,6 @@ const textStyle: CSSProperties = {
   textAlign: "center",
   ...safeTextStyle,
 };
-
-
-
-
-
 
 
 const fileAttachedBadgeStyle: CSSProperties = {
@@ -4120,9 +4420,6 @@ const ratingTotalStyle: CSSProperties = {
 };
 
 
-
-
-
 const commentsGridStyle: CSSProperties = {
   display: "grid",
   gap: "7px",
@@ -4296,11 +4593,6 @@ const chapterButtonStyle: CSSProperties = {
 };
 
 
-
-
-
-
-
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
   borderRadius: "26px",
@@ -4367,7 +4659,6 @@ const desktopStatsGridStyle: CSSProperties = {
 };
 
 
-
 const desktopFileBoxStyle: CSSProperties = {
   ...fileBoxStyle,
   padding: "20px",
@@ -4426,7 +4717,6 @@ const desktopChapterButtonStyle: CSSProperties = {
   gridColumn: "auto",
   minHeight: "37px",
 };
-
 
 
 const emptyBoxStyle: CSSProperties = {

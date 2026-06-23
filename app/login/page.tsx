@@ -10,9 +10,10 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 type ModoAuth = "entrar" | "criar";
 
 const STORAGE_KEY = "historietas-obras";
-const USER_WORKS_STORAGE_PREFIX = "historietas-obras-usuario";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
+const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
+const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
 
 function formatarErroAuth(mensagem: string) {
   const mensagemNormalizada = mensagem.toLowerCase();
@@ -78,7 +79,7 @@ function criarStorageUsuarioLoginKey(chave: string, userId: string) {
 }
 
 function criarStorageObrasUsuarioLoginKey(userId: string) {
-  return `${USER_WORKS_STORAGE_PREFIX}:${userId.trim()}`;
+  return criarStorageUsuarioLoginKey(STORAGE_KEY, userId);
 }
 
 function normalizarListaStringsLogin(valor: unknown) {
@@ -197,15 +198,27 @@ function sincronizarStorageUsuarioLogin(userId: string) {
       salvarJsonStorageLogin(chaveObrasUsuario, obrasUsuarioMescladas);
     }
 
-    [FAVORITES_STORAGE_KEY, COMPLETED_STORAGE_KEY].forEach((chave) => {
+    [
+      FAVORITES_STORAGE_KEY,
+      COMPLETED_STORAGE_KEY,
+      FOLLOW_STORAGE_KEY,
+      AUTHOR_FOLLOW_STORAGE_KEY,
+    ].forEach((chave) => {
       const chaveUsuario = criarStorageUsuarioLoginKey(chave, userIdLimpo);
-      const listaGlobal = normalizarListaStringsLogin(lerJsonStorageLogin(chave));
       const listaUsuario = normalizarListaStringsLogin(
         lerJsonStorageLogin(chaveUsuario),
       );
-      const listaMesclada = Array.from(new Set([...listaUsuario, ...listaGlobal]));
 
-      salvarJsonStorageLogin(chaveUsuario, listaMesclada);
+      if (listaUsuario.length > 0) {
+        salvarJsonStorageLogin(chaveUsuario, listaUsuario);
+        return;
+      }
+
+      const listaGlobalAntiga = normalizarListaStringsLogin(
+        lerJsonStorageLogin(chave),
+      );
+
+      salvarJsonStorageLogin(chaveUsuario, listaGlobalAntiga);
     });
   } catch {
     // A sincronização local não pode bloquear autenticação.
@@ -294,155 +307,74 @@ export default function LoginPage() {
       return;
     }
 
-    const nomeDigitado = nomeInformado.trim();
+    const metadata =
+      userMetadata && typeof userMetadata === "object" ? userMetadata : {};
+    const nomeMetadata =
+      [metadata.nome, metadata.name, metadata.full_name]
+        .find(
+          (valor): valor is string =>
+            typeof valor === "string" && Boolean(valor.trim())
+        )
+        ?.trim() || "";
     const emailLimpo = emailInformado.trim() || email.trim();
-    const metadata = userMetadata && typeof userMetadata === "object" ? userMetadata : {};
-    const nomeMetadata = [metadata.nome, metadata.name, metadata.full_name]
-      .find((valor): valor is string => typeof valor === "string" && Boolean(valor.trim()))
-      ?.trim() || "";
-    const nomePadrao = emailLimpo.split("@")[0] || "Usuário";
-    const camposProfile = "id, user_id, nome, avatar_url, bio, sobre_bio";
+    const nomeFinal =
+      nomeInformado.trim() ||
+      nomeMetadata ||
+      emailLimpo.split("@")[0] ||
+      "Usuário";
+    const agora = new Date().toISOString();
 
     try {
-      const { data: perfilPorUserId } = await supabase
+      const { data: perfilExistente } = await supabase
         .from("profiles")
-        .select(camposProfile)
+        .select("id,user_id,nome,bio,sobre_bio,avatar_url")
         .eq("user_id", userIdLimpo)
         .maybeSingle();
 
-      let perfilExistente = perfilPorUserId as
-        | {
-            id?: string | null;
-            user_id?: string | null;
-            nome?: string | null;
-            avatar_url?: string | null;
-            bio?: string | null;
-            sobre_bio?: string | null;
-          }
-        | null;
-
-      if (!perfilExistente) {
-        const { data: perfilPorId } = await supabase
-          .from("profiles")
-          .select(camposProfile)
-          .eq("id", userIdLimpo)
-          .maybeSingle();
-
-        perfilExistente = perfilPorId as typeof perfilExistente;
-      }
-
-      const nomeExistente =
-        typeof perfilExistente?.nome === "string" && perfilExistente.nome.trim()
-          ? perfilExistente.nome.trim()
-          : "";
-      const nomeFinal = nomeDigitado || nomeExistente || nomeMetadata || nomePadrao;
-      const avatarFinal =
-        typeof perfilExistente?.avatar_url === "string"
-          ? perfilExistente.avatar_url
-          : "";
-      const bioFinal =
-        typeof perfilExistente?.bio === "string" && perfilExistente.bio.trim()
-          ? perfilExistente.bio.trim()
-          : "Perfil de leitor no Historietas.";
-      const sobreBioFinal =
-        typeof perfilExistente?.sobre_bio === "string" &&
-        perfilExistente.sobre_bio.trim()
-          ? perfilExistente.sobre_bio.trim()
-          : bioFinal;
-      const atualizadoEm = new Date().toISOString();
-      const registroCompleto = {
+      const perfilAtual =
+        perfilExistente && typeof perfilExistente === "object"
+          ? (perfilExistente as {
+              id?: string | null;
+              nome?: string | null;
+              bio?: string | null;
+              sobre_bio?: string | null;
+              avatar_url?: string | null;
+            })
+          : null;
+      const perfilPayload = {
         user_id: userIdLimpo,
-        nome: nomeFinal,
-        avatar_url: avatarFinal,
-        bio: bioFinal,
-        sobre_bio: sobreBioFinal,
-        atualizado_em: atualizadoEm,
+        nome: perfilAtual?.nome?.trim() || nomeFinal,
+        bio: perfilAtual?.bio?.trim() || "Perfil de leitor no Historietas.",
+        sobre_bio:
+          perfilAtual?.sobre_bio?.trim() ||
+          perfilAtual?.bio?.trim() ||
+          "Perfil de leitor no Historietas.",
+        avatar_url: perfilAtual?.avatar_url || "",
+        atualizado_em: agora,
       };
-      const registroMinimo = {
-        user_id: userIdLimpo,
-        nome: nomeFinal,
-        atualizado_em: atualizadoEm,
-      };
-      const profileId = perfilExistente?.id?.trim() || "";
-      const profileUserId = perfilExistente?.user_id?.trim() || "";
 
-      if (profileId) {
-        const { error } = await supabase
+      if (perfilAtual?.id) {
+        await supabase
           .from("profiles")
-          .update(registroCompleto)
-          .eq("id", profileId);
+          .update(perfilPayload)
+          .eq("id", perfilAtual.id);
 
-        if (!error) {
-          return;
-        }
-
-        const { error: erroMinimo } = await supabase
-          .from("profiles")
-          .update(registroMinimo)
-          .eq("id", profileId);
-
-        if (!erroMinimo) {
-          return;
-        }
-      }
-
-      if (profileUserId) {
-        const { error } = await supabase
-          .from("profiles")
-          .update(registroCompleto)
-          .eq("user_id", profileUserId);
-
-        if (!error) {
-          return;
-        }
-
-        const { error: erroMinimo } = await supabase
-          .from("profiles")
-          .update(registroMinimo)
-          .eq("user_id", profileUserId);
-
-        if (!erroMinimo) {
-          return;
-        }
-      }
-
-      const { error: erroUpsertCompleto } = await supabase.from("profiles").upsert(
-        registroCompleto,
-        {
-          onConflict: "user_id",
-        }
-      );
-
-      if (!erroUpsertCompleto) {
         return;
       }
 
-      const { error: erroInsertCompleto } = await supabase
-        .from("profiles")
-        .insert(registroCompleto);
-
-      if (!erroInsertCompleto) {
-        return;
-      }
-
-      const { error: erroUpsertComId } = await supabase.from("profiles").upsert(
+      const { error: erroUpsert } = await supabase.from("profiles").upsert(
         {
           id: userIdLimpo,
-          ...registroCompleto,
+          ...perfilPayload,
         },
-        {
-          onConflict: "id",
-        }
+        { onConflict: "id" }
       );
 
-      if (!erroUpsertComId) {
+      if (!erroUpsert) {
         return;
       }
 
-      await supabase.from("profiles").insert({
-        user_id: userIdLimpo,
-        nome: nomeFinal,
-      });
+      await supabase.from("profiles").insert(perfilPayload);
     } catch {
       // O login não pode falhar só porque o perfil não salvou.
     }
@@ -560,7 +492,7 @@ export default function LoginPage() {
 
               <p style={descriptionStyle}>
                 Acesse sua conta para publicar histórias, salvar progresso,
-                acompanhar obras e continuar construindo sua biblioteca na
+                acompanhar obras e continuar construindo seu perfil do autor na
                 Historietas.
               </p>
             </div>

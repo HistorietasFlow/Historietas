@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import AdminBottomNavItem from "../components/AdminBottomNavItem";
+import { NotificacoesProvider } from "../components/NotificacoesProvider";
+import { NotificacoesBottomNavItem } from "../components/NotificacoesBottomNavItem";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
@@ -42,9 +44,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <div className="historietas-app-shell">{children}</div>
+        <NotificacoesProvider>
+          <div className="historietas-app-shell">{children}</div>
 
-        <nav
+          <nav
           className="historietas-bottom-nav"
           data-bottom-nav="true"
           data-mobile-nav="true"
@@ -72,21 +75,6 @@ export default function RootLayout({
           <Link href="/publicar" className="historietas-bottom-nav-item">
             <span className="historietas-bottom-nav-icon">＋</span>
             <span className="historietas-bottom-nav-label">Publicar</span>
-          </Link>
-
-          <Link href="/biblioteca" className="historietas-bottom-nav-item">
-            <span className="historietas-bottom-nav-icon">▣</span>
-            <span className="historietas-bottom-nav-label">Biblioteca</span>
-          </Link>
-
-          <Link href="/minhas-obras" className="historietas-bottom-nav-item">
-            <span className="historietas-bottom-nav-icon">✎</span>
-            <span className="historietas-bottom-nav-label">Obras</span>
-          </Link>
-
-          <Link href="/seguindo" className="historietas-bottom-nav-item">
-            <span className="historietas-bottom-nav-icon">♡</span>
-            <span className="historietas-bottom-nav-label">Seguindo</span>
           </Link>
 
           <Link href="/perfil-autor" className="historietas-bottom-nav-item">
@@ -130,11 +118,13 @@ export default function RootLayout({
             <span className="historietas-bottom-nav-label">Comunidade</span>
           </Link>
 
+          <NotificacoesBottomNavItem />
+
           <AdminBottomNavItem />
         </nav>
 
-        <Script
-          id="historietas-bottom-nav-active"
+          <Script
+            id="historietas-bottom-nav-active"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
@@ -157,26 +147,23 @@ export default function RootLayout({
                   return caminho;
                 }
 
-                function resolverCaminhoDoMenu(pathname) {
+                function resolverCaminhoDoMenu(pathname, search = "") {
                   const caminho = normalizarCaminho(pathname);
+                  const parametros = new URLSearchParams(search || "");
 
                   if (caminho === "/") return "/";
                   if (caminho === "/explorar" || caminho.startsWith("/explorar/")) return "/explorar";
                   if (caminho === "/em-alta" || caminho.startsWith("/em-alta/")) return "/em-alta";
                   if (caminho === "/publicar" || caminho.startsWith("/publicar/")) return "/publicar";
-                  if (caminho === "/biblioteca" || caminho.startsWith("/biblioteca/")) return "/biblioteca";
-                  if (caminho === "/minhas-obras" || caminho.startsWith("/minhas-obras/")) return "/minhas-obras";
-                  if (caminho === "/seguindo" || caminho.startsWith("/seguindo/")) return "/seguindo";
+                  if (caminho === "/seguindo" || caminho.startsWith("/seguindo/")) return "/perfil-autor";
                   if (caminho === "/comunidade" || caminho.startsWith("/comunidade/")) return "/comunidade";
                   if (caminho === "/perfil-autor" || caminho.startsWith("/perfil-autor/")) return "/perfil-autor";
                   if (caminho === "/admin/comunidade" || caminho.startsWith("/admin/comunidade/")) return "/admin/comunidade";
-                  if (caminho === "/notificacoes" || caminho.startsWith("/notificacoes/")) return "/perfil-autor";
+                  if (caminho === "/notificacoes" || caminho.startsWith("/notificacoes/")) return "/notificacoes";
                   if (caminho === "/configuracoes" || caminho.startsWith("/configuracoes/")) return "/perfil-autor";
                   if (caminho === "/painel-autor" || caminho.startsWith("/painel-autor/")) return "/perfil-autor";
 
                   if (
-                    caminho === "/minha-obra" ||
-                    caminho.startsWith("/minha-obra/") ||
                     caminho === "/editar-obra" ||
                     caminho.startsWith("/editar-obra/") ||
                     caminho === "/editar-capitulo" ||
@@ -184,16 +171,18 @@ export default function RootLayout({
                     caminho === "/adicionar-capitulo" ||
                     caminho.startsWith("/adicionar-capitulo/") ||
                     caminho === "/ver-arquivo" ||
-                    caminho.startsWith("/ver-arquivo/")
+                    caminho.startsWith("/ver-arquivo/") ||
+                    caminho === "/configuracoes" ||
+                    caminho.startsWith("/configuracoes/")
                   ) {
-                    return "/minhas-obras";
+                    return "/perfil-autor";
                   }
 
                   if (
                     caminho === "/ler-capitulo" ||
                     caminho.startsWith("/ler-capitulo/")
                   ) {
-                    return "/biblioteca";
+                    return "/perfil-autor";
                   }
 
                   if (
@@ -208,7 +197,8 @@ export default function RootLayout({
 
                 function aplicarItemAtivo(pathname, deveCentralizar = true) {
                   const caminhoAtual = normalizarCaminho(pathname);
-                  const caminhoDoMenu = resolverCaminhoDoMenu(caminhoAtual);
+                  const buscaAtual = window.location.search || "";
+                  const caminhoDoMenu = resolverCaminhoDoMenu(caminhoAtual, buscaAtual);
                   const links = Array.from(
                     nav.querySelectorAll('.historietas-bottom-nav-item[href]')
                   );
@@ -222,13 +212,17 @@ export default function RootLayout({
                     const href = link.getAttribute("href") || "/";
                     const url = new URL(href, window.location.origin);
                     const caminhoLink = normalizarCaminho(url.pathname || "/");
+                    const hrefCompleto = caminhoLink + (url.search || "");
 
-                    if (caminhoDoMenu && caminhoLink === caminhoDoMenu) {
+                    if (
+                      caminhoDoMenu &&
+                      (hrefCompleto === caminhoDoMenu || caminhoLink === caminhoDoMenu)
+                    ) {
                       linkAtivo = link;
                     }
                   });
 
-                  ultimoCaminhoAplicado = caminhoAtual;
+                  ultimoCaminhoAplicado = caminhoAtual + buscaAtual;
 
                   if (!linkAtivo) {
                     return;
@@ -258,8 +252,10 @@ export default function RootLayout({
 
                 function atualizarPorCaminhoAtual(deveCentralizar = true) {
                   const caminhoAtual = normalizarCaminho(window.location.pathname);
+                  const buscaAtual = window.location.search || "";
+                  const assinaturaAtual = caminhoAtual + buscaAtual;
 
-                  if (caminhoAtual === ultimoCaminhoAplicado) {
+                  if (assinaturaAtual === ultimoCaminhoAplicado) {
                     return;
                   }
 
@@ -310,8 +306,8 @@ export default function RootLayout({
           }}
         />
 
-        <style
-          dangerouslySetInnerHTML={{
+          <style
+            dangerouslySetInnerHTML={{
             __html: `
               html,
               body {
@@ -592,7 +588,8 @@ export default function RootLayout({
               }
             `,
           }}
-        />
+          />
+        </NotificacoesProvider>
       </body>
     </html>
   );

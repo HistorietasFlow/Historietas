@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import { formatarData, normalizarTexto } from "../../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../../lib/historietasTheme";
+import { useNotificacoes } from "../../../components/NotificacoesProvider";
 
 type TipoAlvoDenuncia = "post" | "comentario";
 
@@ -86,13 +88,85 @@ const STATUS_LABEL: Record<StatusDenuncia, string> = {
   rejeitada: "Rejeitada",
 };
 
+const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 
-function normalizarTexto(valor: string) {
-  return valor
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
+function criarStorageKeyUsuarioAdminComunidade(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function lerStorageUsuarioAdminComunidade(chave: string, userId = "") {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(
+      criarStorageKeyUsuarioAdminComunidade(chave, userId)
+    );
+  } catch {
+    return null;
+  }
+}
+
+function contarNotificacoesNaoLidasLocaisAdminComunidade(userId = "") {
+  try {
+    const notificacoesTexto = lerStorageUsuarioAdminComunidade(
+      NOTIFICATIONS_STORAGE_KEY,
+      userId
+    );
+    const notificacoesJson: unknown = notificacoesTexto
+      ? JSON.parse(notificacoesTexto)
+      : [];
+
+    if (!Array.isArray(notificacoesJson)) {
+      return 0;
+    }
+
+    return notificacoesJson.filter((notificacao) => {
+      if (
+        !notificacao ||
+        typeof notificacao !== "object" ||
+        Array.isArray(notificacao)
+      ) {
+        return false;
+      }
+
+      return !(notificacao as { lida?: unknown }).lida;
+    }).length;
+  } catch {
+    return 0;
+  }
+}
+
+async function contarNotificacoesNaoLidasSupabaseAdminComunidade(
+  userId: string
+) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return 0;
+  }
+
+  try {
+    const { count, error } = await supabase
+      .from("notificacoes")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .eq("user_id", userIdLimpo)
+      .eq("lida", false);
+
+    if (error) {
+      return 0;
+    }
+
+    return typeof count === "number" ? count : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function criarLoginHrefAdminModeracao() {
@@ -109,24 +183,6 @@ function criarLoginHrefAdminModeracao() {
   });
 
   return `/login?${params.toString()}`;
-}
-
-function formatarData(dataIso: string | null) {
-  if (!dataIso) {
-    return "Não informado";
-  }
-
-  const data = new Date(dataIso);
-
-  if (Number.isNaN(data.getTime())) {
-    return "Não informado";
-  }
-
-  return data.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
 }
 
 function normalizarStatus(valor: unknown): StatusDenuncia {
@@ -272,7 +328,8 @@ async function buscarIdsComentariosDoPost(postId: string) {
     const { data, error } = await supabase
       .from("comunidade_comentarios")
       .select("id")
-      .eq("post_id", postIdLimpo);
+      .eq("post_id", postIdLimpo)
+      .limit(1000);
 
     if (error) {
       return [] as string[];
@@ -331,25 +388,6 @@ async function removerDependenciasConteudoComunidade(
   await apagarRegistrosOpcionais("comunidade_comentarios", "post_id", alvoId);
 }
 
-function criarDecoracaoHeroStyle(index: number): CSSProperties {
-  const posicoes: CSSProperties[] = [
-    { top: "8%", right: "8%", fontSize: "42px", transform: "rotate(-12deg)" },
-    { top: "48%", right: "15%", fontSize: "28px", transform: "rotate(16deg)" },
-    { bottom: "12%", right: "6%", fontSize: "34px", transform: "rotate(8deg)" },
-    { top: "16%", left: "8%", fontSize: "22px", transform: "rotate(14deg)" },
-  ];
-
-  return {
-    position: "absolute",
-    color: "var(--historietas-accent, #FDBA74)",
-    opacity: 0.13,
-    lineHeight: 1,
-    fontWeight: 950,
-    filter: "none",
-    userSelect: "none",
-    ...posicoes[index % posicoes.length],
-  };
-}
 
 export default function AdminComunidadePage() {
   const [carregando, setCarregando] = useState(true);
@@ -368,6 +406,8 @@ export default function AdminComunidadePage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const router = useRouter();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const { notificacoesNaoLidas } = useNotificacoes();
+
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -394,6 +434,161 @@ export default function AdminComunidadePage() {
   }, []);
 
 
+  async function carregarDenuncias() {
+    setErro("");
+
+    const { data: denunciasResposta, error: denunciasErro } = await supabase
+      .from("comunidade_denuncias")
+      .select(
+        "id, alvo_tipo, alvo_id, denunciante_id, motivo, detalhe, status, arquivada, observacao_admin, analisado_por, analisado_em, criado_em"
+      )
+      .order("criado_em", { ascending: false })
+      .limit(200);
+
+    if (denunciasErro) {
+      throw denunciasErro;
+    }
+
+    const denunciasMapeadas: DenunciaComunidade[] = (
+      (denunciasResposta || []) as unknown as Record<string, unknown>[]
+    ).map((denuncia) => ({
+      id: String(denuncia.id),
+      alvoTipo: normalizarTipoAlvo(denuncia.alvo_tipo),
+      alvoId: String(denuncia.alvo_id),
+      denuncianteId: String(denuncia.denunciante_id),
+      motivo: String(denuncia.motivo || "Conteúdo inadequado"),
+      detalhe: String(denuncia.detalhe || ""),
+      status: normalizarStatus(denuncia.status),
+      arquivada: Boolean(denuncia.arquivada),
+      observacaoAdmin: String(denuncia.observacao_admin || ""),
+      analisadoPor: denuncia.analisado_por
+        ? String(denuncia.analisado_por)
+        : null,
+      analisadoEm: denuncia.analisado_em ? String(denuncia.analisado_em) : null,
+      criadoEm: String(denuncia.criado_em),
+    }));
+
+    const denuncianteIds = Array.from(
+      new Set(denunciasMapeadas.map((denuncia) => denuncia.denuncianteId))
+    );
+
+    const postIds = denunciasMapeadas
+      .filter((denuncia) => denuncia.alvoTipo === "post")
+      .map((denuncia) => denuncia.alvoId);
+
+    const comentarioIds = denunciasMapeadas
+      .filter((denuncia) => denuncia.alvoTipo === "comentario")
+      .map((denuncia) => denuncia.alvoId);
+
+    const [
+      perfisPorUserIdResposta,
+      perfisPorIdResposta,
+      postsResposta,
+      comentariosResposta,
+    ] = await Promise.all([
+      denuncianteIds.length > 0
+        ? supabase
+            .from("profiles")
+            .select("id, user_id, nome")
+            .in("user_id", denuncianteIds)
+            .limit(1000)
+        : Promise.resolve({ data: [], error: null }),
+      denuncianteIds.length > 0
+        ? supabase
+            .from("profiles")
+            .select("id, user_id, nome")
+            .in("id", denuncianteIds)
+            .limit(1000)
+        : Promise.resolve({ data: [], error: null }),
+      postIds.length > 0
+        ? supabase
+            .from("comunidade_posts")
+            .select(
+              "id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em"
+            )
+            .in("id", postIds)
+            .limit(500)
+        : Promise.resolve({ data: [], error: null }),
+      comentarioIds.length > 0
+        ? supabase
+            .from("comunidade_comentarios")
+            .select("id, post_id, autor_nome, texto, criado_em")
+            .in("id", comentarioIds)
+            .limit(500)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    const perfis = [
+      ...(perfisPorUserIdResposta.error
+        ? []
+        : ((perfisPorUserIdResposta.data || []) as unknown as PerfilModeracao[])),
+      ...(perfisPorIdResposta.error
+        ? []
+        : ((perfisPorIdResposta.data || []) as unknown as PerfilModeracao[])),
+    ];
+
+    const posts = postsResposta.error
+      ? []
+      : ((postsResposta.data || []) as unknown as PostDenunciado[]);
+
+    const comentarios = comentariosResposta.error
+      ? []
+      : ((comentariosResposta.data || []) as unknown as ComentarioDenunciado[]);
+
+    const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
+
+    const postsPorId = new Map(posts.map((post) => [post.id, post]));
+    const comentariosPorId = new Map(
+      comentarios.map((comentario) => [comentario.id, comentario])
+    );
+
+    const denunciasComContexto = denunciasMapeadas.map((denuncia) => {
+      if (denuncia.alvoTipo === "post") {
+        const post = postsPorId.get(denuncia.alvoId);
+
+        return {
+          ...denuncia,
+          denuncianteNome:
+            perfisPorId.get(denuncia.denuncianteId) || "Usuário",
+          alvoResumo: post?.texto || "Publicação não encontrada ou removida.",
+          alvoAutor: post?.autor_nome || "Autor não encontrado",
+          alvoData: post?.criado_em || "",
+          alvoPostId: post?.id || denuncia.alvoId,
+          alvoCategoria: post?.categoria || "",
+          alvoTipoPublicacao: post?.tipo_publicacao || "Discussão",
+          alvoTemSpoiler: Boolean(post?.tem_spoiler),
+          alvoObra: post?.obra_relacionada || "",
+        };
+      }
+
+      const comentario = comentariosPorId.get(denuncia.alvoId);
+
+      return {
+        ...denuncia,
+        denuncianteNome: perfisPorId.get(denuncia.denuncianteId) || "Usuário",
+        alvoResumo:
+          comentario?.texto || "Comentário não encontrado ou removido.",
+        alvoAutor: comentario?.autor_nome || "Autor não encontrado",
+        alvoData: comentario?.criado_em || "",
+        alvoPostId: comentario?.post_id || "",
+      };
+    });
+
+    setDenuncias(denunciasComContexto);
+    setObservacoes((observacoesAtuais) => {
+      const proximasObservacoes = { ...observacoesAtuais };
+
+      denunciasComContexto.forEach((denuncia) => {
+        if (!(denuncia.id in proximasObservacoes)) {
+          proximasObservacoes[denuncia.id] = denuncia.observacaoAdmin;
+        }
+      });
+
+      return proximasObservacoes;
+    });
+  }
+
+
   useEffect(() => {
     let cancelado = false;
 
@@ -403,14 +598,14 @@ export default function AdminComunidadePage() {
       setSucesso("");
 
       try {
-        const { data: sessaoResposta, error: sessaoErro } =
-          await supabase.auth.getSession();
+        const { data: usuarioResposta, error: usuarioErro } =
+          await supabase.auth.getUser();
 
-        if (sessaoErro) {
-          throw sessaoErro;
+        if (usuarioErro) {
+          throw usuarioErro;
         }
 
-        const user = sessaoResposta.session?.user || null;
+        const user = usuarioResposta.user || null;
 
         if (!user) {
           if (!cancelado) {
@@ -512,7 +707,13 @@ export default function AdminComunidadePage() {
   }, [busca, denuncias, statusFiltro]);
 
   useEffect(() => {
-    setMenuDenunciaAbertoId("");
+    const fecharMenuTimer = window.setTimeout(() => {
+      setMenuDenunciaAbertoId("");
+    }, 0);
+
+    return () => {
+      window.clearTimeout(fecharMenuTimer);
+    };
   }, [busca, statusFiltro]);
 
   const totalPendentes = denunciasAtivas.filter(
@@ -530,155 +731,6 @@ export default function AdminComunidadePage() {
   const totalRejeitadas = denunciasAtivas.filter(
     (denuncia) => denuncia.status === "rejeitada"
   ).length;
-
-  async function carregarDenuncias() {
-    setErro("");
-
-    const { data: denunciasResposta, error: denunciasErro } = await supabase
-      .from("comunidade_denuncias")
-      .select(
-        "id, alvo_tipo, alvo_id, denunciante_id, motivo, detalhe, status, arquivada, observacao_admin, analisado_por, analisado_em, criado_em"
-      )
-      .order("criado_em", { ascending: false });
-
-    if (denunciasErro) {
-      throw denunciasErro;
-    }
-
-    const denunciasMapeadas: DenunciaComunidade[] = (
-      denunciasResposta || []
-    ).map((denuncia) => ({
-      id: String(denuncia.id),
-      alvoTipo: normalizarTipoAlvo(denuncia.alvo_tipo),
-      alvoId: String(denuncia.alvo_id),
-      denuncianteId: String(denuncia.denunciante_id),
-      motivo: String(denuncia.motivo || "Conteúdo inadequado"),
-      detalhe: String(denuncia.detalhe || ""),
-      status: normalizarStatus(denuncia.status),
-      arquivada: Boolean(denuncia.arquivada),
-      observacaoAdmin: String(denuncia.observacao_admin || ""),
-      analisadoPor: denuncia.analisado_por
-        ? String(denuncia.analisado_por)
-        : null,
-      analisadoEm: denuncia.analisado_em ? String(denuncia.analisado_em) : null,
-      criadoEm: String(denuncia.criado_em),
-    }));
-
-    const denuncianteIds = Array.from(
-      new Set(denunciasMapeadas.map((denuncia) => denuncia.denuncianteId))
-    );
-
-    const postIds = denunciasMapeadas
-      .filter((denuncia) => denuncia.alvoTipo === "post")
-      .map((denuncia) => denuncia.alvoId);
-
-    const comentarioIds = denunciasMapeadas
-      .filter((denuncia) => denuncia.alvoTipo === "comentario")
-      .map((denuncia) => denuncia.alvoId);
-
-    const [
-      perfisPorUserIdResposta,
-      perfisPorIdResposta,
-      postsResposta,
-      comentariosResposta,
-    ] = await Promise.all([
-      denuncianteIds.length > 0
-        ? supabase
-            .from("profiles")
-            .select("id, user_id, nome")
-            .in("user_id", denuncianteIds)
-        : Promise.resolve({ data: [], error: null }),
-      denuncianteIds.length > 0
-        ? supabase
-            .from("profiles")
-            .select("id, user_id, nome")
-            .in("id", denuncianteIds)
-        : Promise.resolve({ data: [], error: null }),
-      postIds.length > 0
-        ? supabase
-            .from("comunidade_posts")
-            .select(
-              "id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em"
-            )
-            .in("id", postIds)
-        : Promise.resolve({ data: [], error: null }),
-      comentarioIds.length > 0
-        ? supabase
-            .from("comunidade_comentarios")
-            .select("id, post_id, autor_nome, texto, criado_em")
-            .in("id", comentarioIds)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
-
-    const perfis = [
-      ...(perfisPorUserIdResposta.error
-        ? []
-        : ((perfisPorUserIdResposta.data || []) as PerfilModeracao[])),
-      ...(perfisPorIdResposta.error
-        ? []
-        : ((perfisPorIdResposta.data || []) as PerfilModeracao[])),
-    ];
-
-    const posts = postsResposta.error
-      ? []
-      : ((postsResposta.data || []) as PostDenunciado[]);
-
-    const comentarios = comentariosResposta.error
-      ? []
-      : ((comentariosResposta.data || []) as ComentarioDenunciado[]);
-
-    const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
-
-    const postsPorId = new Map(posts.map((post) => [post.id, post]));
-    const comentariosPorId = new Map(
-      comentarios.map((comentario) => [comentario.id, comentario])
-    );
-
-    const denunciasComContexto = denunciasMapeadas.map((denuncia) => {
-      if (denuncia.alvoTipo === "post") {
-        const post = postsPorId.get(denuncia.alvoId);
-
-        return {
-          ...denuncia,
-          denuncianteNome:
-            perfisPorId.get(denuncia.denuncianteId) || "Usuário",
-          alvoResumo: post?.texto || "Publicação não encontrada ou removida.",
-          alvoAutor: post?.autor_nome || "Autor não encontrado",
-          alvoData: post?.criado_em || "",
-          alvoPostId: post?.id || denuncia.alvoId,
-          alvoCategoria: post?.categoria || "",
-          alvoTipoPublicacao: post?.tipo_publicacao || "Discussão",
-          alvoTemSpoiler: Boolean(post?.tem_spoiler),
-          alvoObra: post?.obra_relacionada || "",
-        };
-      }
-
-      const comentario = comentariosPorId.get(denuncia.alvoId);
-
-      return {
-        ...denuncia,
-        denuncianteNome: perfisPorId.get(denuncia.denuncianteId) || "Usuário",
-        alvoResumo:
-          comentario?.texto || "Comentário não encontrado ou removido.",
-        alvoAutor: comentario?.autor_nome || "Autor não encontrado",
-        alvoData: comentario?.criado_em || "",
-        alvoPostId: comentario?.post_id || "",
-      };
-    });
-
-    setDenuncias(denunciasComContexto);
-    setObservacoes((observacoesAtuais) => {
-      const proximasObservacoes = { ...observacoesAtuais };
-
-      denunciasComContexto.forEach((denuncia) => {
-        if (!(denuncia.id in proximasObservacoes)) {
-          proximasObservacoes[denuncia.id] = denuncia.observacaoAdmin;
-        }
-      });
-
-      return proximasObservacoes;
-    });
-  }
 
   async function atualizarStatusDenuncia(
     denunciaId: string,
@@ -1082,6 +1134,28 @@ export default function AdminComunidadePage() {
               MODERAÇÃO
             </span>
           </Link>
+
+          {isDesktop ? (
+            <Link
+              href="/notificacoes"
+              style={desktopNotificationButtonStyle}
+              aria-label={
+                notificacoesNaoLidas > 0
+                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                  : "Notificações"
+              }
+            >
+              N
+
+              {notificacoesNaoLidas > 0 ? (
+                <span style={desktopNotificationBadgeStyle}>
+                  {notificacoesNaoLidas > 99
+                    ? "99+"
+                    : notificacoesNaoLidas}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
         </header>
 
         <section style={toolsStyle}>
@@ -1612,8 +1686,54 @@ const titleHeaderStyle: CSSProperties = {
 
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
+  position: "relative",
   marginTop: "6px",
   marginBottom: "22px",
+};
+
+const desktopNotificationButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  right: 0,
+  transform: "translateY(-50%)",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+  zIndex: 2,
+};
+
+const desktopNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
 };
 
 const titleHomeLinkStyle: CSSProperties = {

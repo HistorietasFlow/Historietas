@@ -7,8 +7,50 @@ import type { CSSProperties } from "react";
 import { obras } from "../data/obras";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 
 const SAVED_RELEASES_STORAGE_KEY = "historietas-lancamentos-salvos";
+
+function criarStorageKeyUsuarioEmBreve(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function carregarJsonUsuarioEmBreve(chave: string, userId: string) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return null;
+  }
+
+  try {
+    const texto = localStorage.getItem(
+      criarStorageKeyUsuarioEmBreve(chave, userId)
+    );
+
+    return texto ? JSON.parse(texto) : null;
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonUsuarioEmBreve(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioEmBreve(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage é fallback; a tela continua com estado em memória.
+  }
+}
 
 function pegarParametro(parametro?: string | string[] | null) {
   if (Array.isArray(parametro)) {
@@ -16,24 +58,6 @@ function pegarParametro(parametro?: string | string[] | null) {
   }
 
   return parametro?.trim() || "";
-}
-
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "obra";
 }
 
 function criarLoginHrefEmBreve() {
@@ -85,8 +109,10 @@ export default function EmBrevePage() {
   const [nomeObra, setNomeObra] = useState("");
   const [obrasSalvas, setObrasSalvas] = useState<string[]>([]);
   const [avisoAcesso, setAvisoAcesso] = useState("");
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [desktopLayout, setDesktopLayout] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const notificacoesNaoLidas = 0;
 
   useEffect(() => {
     const consultaDesktop = window.matchMedia("(min-width: 900px)");
@@ -95,10 +121,15 @@ export default function EmBrevePage() {
       setDesktopLayout(consultaDesktop.matches);
     }
 
-    atualizarLayoutDesktop();
+    const atualizarLayoutDesktopTimer = window.setTimeout(
+      atualizarLayoutDesktop,
+      0
+    );
+
     consultaDesktop.addEventListener("change", atualizarLayoutDesktop);
 
     return () => {
+      window.clearTimeout(atualizarLayoutDesktopTimer);
       consultaDesktop.removeEventListener("change", atualizarLayoutDesktop);
     };
   }, []);
@@ -108,22 +139,37 @@ export default function EmBrevePage() {
 
     async function carregarLancamentosSalvos() {
       const parametros = new URLSearchParams(window.location.search);
+      const nomeObraParam = pegarParametro(parametros.get("obra"));
 
-      setNomeObra(pegarParametro(parametros.get("obra")));
+      window.setTimeout(() => {
+        if (componenteAtivo) {
+          setNomeObra(nomeObraParam);
+        }
+      }, 0);
 
       try {
         const { data } = await supabase.auth.getUser();
 
         if (!data.user) {
-          if (componenteAtivo) {
-            setObrasSalvas([]);
-          }
+          window.setTimeout(() => {
+            if (componenteAtivo) {
+              setUsuarioIdLogado("");
+              setObrasSalvas([]);
+            }
+          }, 0);
 
           return;
         }
 
-        const salvasTexto = localStorage.getItem(SAVED_RELEASES_STORAGE_KEY);
-        const salvasJson: unknown = salvasTexto ? JSON.parse(salvasTexto) : [];
+        window.setTimeout(() => {
+          if (componenteAtivo) {
+            setUsuarioIdLogado(data.user.id);
+          }
+        }, 0);
+
+        const salvasJson: unknown =
+          carregarJsonUsuarioEmBreve(SAVED_RELEASES_STORAGE_KEY, data.user.id) ||
+          [];
 
         const salvasNormalizadas = Array.isArray(salvasJson)
           ? salvasJson.filter(
@@ -132,20 +178,24 @@ export default function EmBrevePage() {
             )
           : [];
 
-        localStorage.setItem(
+        salvarJsonUsuarioEmBreve(
           SAVED_RELEASES_STORAGE_KEY,
-          JSON.stringify(salvasNormalizadas)
+          data.user.id,
+          salvasNormalizadas
         );
 
-        if (componenteAtivo) {
-          setObrasSalvas(salvasNormalizadas);
-        }
+        window.setTimeout(() => {
+          if (componenteAtivo) {
+            setObrasSalvas(salvasNormalizadas);
+          }
+        }, 0);
       } catch {
-        localStorage.setItem(SAVED_RELEASES_STORAGE_KEY, JSON.stringify([]));
-
-        if (componenteAtivo) {
-          setObrasSalvas([]);
-        }
+        window.setTimeout(() => {
+          if (componenteAtivo) {
+            setUsuarioIdLogado("");
+            setObrasSalvas([]);
+          }
+        }, 0);
       }
     }
 
@@ -187,22 +237,28 @@ export default function EmBrevePage() {
         router.push(criarLoginHrefEmBreve());
         return;
       }
+
+      setUsuarioIdLogado(data.user.id);
+
+      const novasObrasSalvas = obrasSalvas.includes(tituloNormalizado)
+        ? obrasSalvas.filter((obra) => obra !== tituloNormalizado)
+        : Array.from(new Set([...obrasSalvas, tituloNormalizado]));
+
+      salvarJsonUsuarioEmBreve(
+        SAVED_RELEASES_STORAGE_KEY,
+        data.user.id,
+        novasObrasSalvas
+      );
+
+      setObrasSalvas(novasObrasSalvas);
+      return;
     } catch {
       setAvisoAcesso("Não consegui confirmar sua conta agora. Tente novamente.");
       router.push(criarLoginHrefEmBreve());
       return;
     }
 
-    const novasObrasSalvas = obrasSalvas.includes(tituloNormalizado)
-      ? obrasSalvas.filter((obra) => obra !== tituloNormalizado)
-      : Array.from(new Set([...obrasSalvas, tituloNormalizado]));
 
-    localStorage.setItem(
-      SAVED_RELEASES_STORAGE_KEY,
-      JSON.stringify(novasObrasSalvas)
-    );
-
-    setObrasSalvas(novasObrasSalvas);
   }
 
   return (
@@ -226,6 +282,28 @@ export default function EmBrevePage() {
               LANÇAMENTOS
             </span>
           </Link>
+
+          {desktopLayout ? (
+            <Link
+              href="/notificacoes"
+              style={desktopNotificationButtonStyle}
+              aria-label={
+                notificacoesNaoLidas > 0
+                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                  : "Notificações"
+              }
+            >
+              N
+
+              {notificacoesNaoLidas > 0 ? (
+                <span style={desktopNotificationBadgeStyle}>
+                  {notificacoesNaoLidas > 99
+                    ? "99+"
+                    : notificacoesNaoLidas}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
         </header>
 
         {outrasObrasEmBreve.length > 0 && (
@@ -562,8 +640,54 @@ const titleTextStyle: CSSProperties = {
 
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
+  position: "relative",
   marginTop: "6px",
   marginBottom: "18px",
+};
+
+const desktopNotificationButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  right: 0,
+  transform: "translateY(-50%)",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+  zIndex: 2,
+};
+
+const desktopNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
 };
 
 const desktopTitleLinkStyle: CSSProperties = {

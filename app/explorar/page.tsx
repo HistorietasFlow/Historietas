@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import { obras } from "../data/obras";
 import type { Obra } from "../data/obras";
 import { supabase } from "../../lib/supabase/client";
+import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 
 type CapituloLocal = {
   id: string;
@@ -81,7 +82,7 @@ type SupabaseCapituloRow = {
   obra_id: string;
   user_id: string;
   titulo: string | null;
-  texto: string | null;
+  texto?: string | null;
   ordem: number | null;
   publicado: boolean | null;
   criado_em: string | null;
@@ -630,24 +631,6 @@ function aplicarTemaVisualExplorar(temaVisual: TemaVisualExplorar) {
   document.body.dataset.historietasTemaVisual = temaVisual;
 }
 
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "obra";
-}
-
 function criarStorageKeyUsuarioExplorar(chave: string, userId: string) {
   const usuarioId = userId.trim();
 
@@ -777,7 +760,8 @@ async function carregarNomesProfilesExplorar(userIds: string[]) {
     const { data, error } = await supabase
       .from("profiles")
       .select("id, user_id, nome")
-      .or(`user_id.in.(${filtroIds}),id.in.(${filtroIds})`);
+      .or(`user_id.in.(${filtroIds}),id.in.(${filtroIds})`)
+      .limit(Math.max(idsUnicos.length * 2, 1));
 
     if (error) {
       console.warn("Não consegui carregar profiles no Explorar:", error.message);
@@ -983,9 +967,15 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
-function carregarBackupArquivosObras(): ArquivosObrasBackup {
+function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return {};
+  }
+
   try {
-    const backupTexto = localStorage.getItem(FILE_BACKUP_STORAGE_KEY);
+    const backupTexto = localStorage.getItem(
+      criarStorageKeyUsuarioExplorar(FILE_BACKUP_STORAGE_KEY, userId)
+    );
     const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
 
     if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
@@ -1040,7 +1030,8 @@ function criarChavesBackupObra(
 
 function obterArquivoObraComBackup(
   obra: Partial<ObraLocal> & Record<string, unknown>,
-  slug: string
+  slug: string,
+  userId = ""
 ) {
   const arquivoAtual = normalizarArquivoObra(obra.arquivoObra);
 
@@ -1048,7 +1039,7 @@ function obterArquivoObraComBackup(
     return arquivoAtual;
   }
 
-  const backupArquivos = carregarBackupArquivosObras();
+  const backupArquivos = carregarBackupArquivosObras(userId);
   const chaves = criarChavesBackupObra(obra, slug);
 
   for (const chave of chaves) {
@@ -1062,8 +1053,12 @@ function obterArquivoObraComBackup(
   return null;
 }
 
-function salvarBackupsArquivosObras(obrasParaSalvar: ObraLocal[]) {
-  const backupAtual = carregarBackupArquivosObras();
+function salvarBackupsArquivosObras(obrasParaSalvar: ObraLocal[], userId = "") {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return;
+  }
+
+  const backupAtual = carregarBackupArquivosObras(userId);
   const proximoBackup: ArquivosObrasBackup = { ...backupAtual };
 
   obrasParaSalvar.forEach((obra) => {
@@ -1078,12 +1073,16 @@ function salvarBackupsArquivosObras(obrasParaSalvar: ObraLocal[]) {
     });
   });
 
-  localStorage.setItem(FILE_BACKUP_STORAGE_KEY, JSON.stringify(proximoBackup));
+  localStorage.setItem(
+    criarStorageKeyUsuarioExplorar(FILE_BACKUP_STORAGE_KEY, userId),
+    JSON.stringify(proximoBackup)
+  );
 }
 
 function normalizarObra(
   obra: Partial<ObraLocal> & Record<string, unknown>,
-  index: number
+  index: number,
+  userId = ""
 ): ObraLocal {
   const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
     ? obra.capitulos.map((capitulo, capituloIndex) =>
@@ -1149,7 +1148,7 @@ function normalizarObra(
     tags: tagsNormalizadas.length > 0 ? tagsNormalizadas : ["sem tags"],
     capa: typeof obra.capa === "string" ? obra.capa : "",
     capaNome: typeof obra.capaNome === "string" ? obra.capaNome : "",
-    arquivoObra: obterArquivoObraComBackup(obra, slug),
+    arquivoObra: obterArquivoObraComBackup(obra, slug, userId),
     publicado: Boolean(obra.publicado),
     capitulos: capitulosNormalizados,
     criadaEm: typeof obra.criadaEm === "string" ? obra.criadaEm : "",
@@ -1203,7 +1202,7 @@ function normalizarObraSupabase(
           capitulo.titulo?.trim() ||
           capituloLocal?.titulo ||
           `Capítulo ${capituloIndex + 1}`,
-        texto: capitulo.texto || capituloLocal?.texto || "",
+        texto: capituloLocal?.texto || "",
         curtiu: Boolean(capituloLocal?.curtiu),
         salvo: Boolean(capituloLocal?.salvo),
         comentario: capituloLocal?.comentario || "",
@@ -1327,7 +1326,8 @@ async function carregarIdsColecaoUsuarioExplorar(
     const { data, error } = await supabase
       .from(tabela)
       .select("obra_id")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .limit(1000);
 
     if (error || !Array.isArray(data)) {
       if (error) {
@@ -1366,13 +1366,16 @@ async function carregarColecoesUsuarioExplorar(userId: string) {
   };
 }
 
-async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[]) {
+async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId = "") {
   try {
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
-      .select("*")
+      .select(
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+      )
       .eq("publicado", true)
-      .order("criada_em", { ascending: false });
+      .order("criada_em", { ascending: false })
+      .limit(80);
 
     if (erroObras) {
       console.warn(
@@ -1382,7 +1385,7 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[]) {
       return obrasLocais;
     }
 
-    const obrasSupabase = ((obrasBanco || []) as SupabaseObraRow[]).filter(
+    const obrasSupabase = ((obrasBanco || []) as unknown as SupabaseObraRow[]).filter(
       (obra) => Boolean(obra.id)
     );
 
@@ -1402,9 +1405,11 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[]) {
     const idsObras = obrasSupabase.map((obra) => obra.id);
     const { data: capitulosBanco, error: erroCapitulos } = await supabase
       .from("capitulos")
-      .select("*")
+      .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
       .in("obra_id", idsObras)
-      .order("ordem", { ascending: true });
+      .eq("publicado", true)
+      .order("ordem", { ascending: true })
+      .limit(600);
 
     if (erroCapitulos) {
       console.warn(
@@ -1415,7 +1420,7 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[]) {
 
     const capitulosPorObra = new Map<string, SupabaseCapituloRow[]>();
 
-    ((erroCapitulos ? [] : capitulosBanco || []) as SupabaseCapituloRow[]).forEach(
+    ((erroCapitulos ? [] : capitulosBanco || []) as unknown as SupabaseCapituloRow[]).forEach(
       (capitulo) => {
         const capitulosAtuais = capitulosPorObra.get(capitulo.obra_id) || [];
         capitulosAtuais.push(capitulo);
@@ -1453,8 +1458,13 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[]) {
       obrasSupabaseNormalizadas
     );
 
-    salvarBackupsArquivosObras(obrasMescladas);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasMescladas));
+    salvarBackupsArquivosObras(obrasMescladas, userId);
+    if (userId.trim()) {
+      localStorage.setItem(
+        criarStorageKeyUsuarioExplorar(STORAGE_KEY, userId),
+        JSON.stringify(obrasMescladas)
+      );
+    }
 
     return obrasMescladas;
   } catch (error) {
@@ -1757,12 +1767,19 @@ export default function ExplorarPage() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [mensagemLogin, setMensagemLogin] = useState("");
+  const notificacoesNaoLidas = 0;
 
   useEffect(() => {
     const temaSalvo = carregarTemaVisualExplorarSalvo();
-
-    setTemaVisual(temaSalvo);
     aplicarTemaVisualExplorar(temaSalvo);
+
+    const aplicarTemaTimer = window.setTimeout(() => {
+      setTemaVisual(temaSalvo);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(aplicarTemaTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -1854,32 +1871,35 @@ export default function ExplorarPage() {
           setUsuarioIdLogado(userIdAtual);
         }
 
-        const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
+        const obrasSalvasTexto = userIdAtual
+          ? localStorage.getItem(
+              criarStorageKeyUsuarioExplorar(STORAGE_KEY, userIdAtual)
+            )
+          : null;
         const obrasSalvasJson = obrasSalvasTexto
           ? JSON.parse(obrasSalvasTexto)
           : [];
 
         const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-          ? obrasSalvasJson.map((obra, index) => normalizarObra(obra, index))
+          ? obrasSalvasJson.map((obra, index) =>
+              normalizarObra(obra, index, userIdAtual)
+            )
           : [];
 
-        salvarBackupsArquivosObras(obrasNormalizadas);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+        salvarBackupsArquivosObras(obrasNormalizadas, userIdAtual);
+        if (userIdAtual) {
+          localStorage.setItem(
+            criarStorageKeyUsuarioExplorar(STORAGE_KEY, userIdAtual),
+            JSON.stringify(obrasNormalizadas)
+          );
+        }
 
-        const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
-        const obrasFavoritasJson = obrasFavoritasTexto
-          ? JSON.parse(obrasFavoritasTexto)
-          : [];
-        const favoritasGlobais = normalizarListaIdsExplorar(obrasFavoritasJson);
+        const favoritasGlobais: string[] = [];
         const favoritasDoUsuario = userIdAtual
           ? carregarListaIdsUsuarioExplorar(FAVORITES_STORAGE_KEY, userIdAtual)
           : [];
 
-        const obrasConcluidasTexto = localStorage.getItem(COMPLETED_STORAGE_KEY);
-        const obrasConcluidasJson = obrasConcluidasTexto
-          ? JSON.parse(obrasConcluidasTexto)
-          : [];
-        const concluidasGlobais = normalizarListaIdsExplorar(obrasConcluidasJson);
+        const concluidasGlobais: string[] = [];
         const concluidasDoUsuario = userIdAtual
           ? carregarListaIdsUsuarioExplorar(COMPLETED_STORAGE_KEY, userIdAtual)
           : [];
@@ -1921,7 +1941,8 @@ export default function ExplorarPage() {
         }
 
         const obrasComSupabase = await carregarObrasPublicadasSupabase(
-          obrasNormalizadas
+          obrasNormalizadas,
+          userIdAtual
         );
 
         if (!cancelado) {
@@ -2166,17 +2187,17 @@ export default function ExplorarPage() {
     const raiz = document.documentElement;
 
     if (!categoriaAtiva) {
-      delete raiz.dataset.historietasExplorarCategoriaAtiva;
-      delete document.body.dataset.historietasExplorarCategoriaAtiva;
-      document.body.style.background = "";
-      raiz.style.background = "";
+      raiz.removeAttribute("data-historietas-explorar-categoria-ativa");
+      document.body.removeAttribute("data-historietas-explorar-categoria-ativa");
+      document.body.style.removeProperty("background");
+      raiz.style.removeProperty("background");
       return;
     }
 
-    raiz.dataset.historietasExplorarCategoriaAtiva = "true";
-    document.body.dataset.historietasExplorarCategoriaAtiva = "true";
-    raiz.style.background = "#070212";
-    document.body.style.background = "#070212";
+    raiz.setAttribute("data-historietas-explorar-categoria-ativa", "true");
+    document.body.setAttribute("data-historietas-explorar-categoria-ativa", "true");
+    raiz.style.setProperty("background", "#070212");
+    document.body.style.setProperty("background", "#070212");
     raiz.style.setProperty("--historietas-accent", "#A78BFA");
     raiz.style.setProperty("--historietas-secondary", "#4C1D95");
     raiz.style.setProperty("--historietas-bg-start", temaCategoria.bgStart);
@@ -2327,6 +2348,27 @@ export default function ExplorarPage() {
             </span>
           </Link>
 
+          {isDesktop ? (
+            <Link
+              href="/notificacoes"
+              style={desktopNotificationButtonStyle}
+              aria-label={
+                notificacoesNaoLidas > 0
+                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                  : "Notificações"
+              }
+            >
+              N
+
+              {usuarioLogado && notificacoesNaoLidas > 0 ? (
+                <span style={desktopNotificationBadgeStyle}>
+                  {notificacoesNaoLidas > 99
+                    ? "99+"
+                    : notificacoesNaoLidas}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
         </header>
 
         <section style={isDesktop ? criarDesktopSearchBoxStyle(temaPagina, categoriaAtiva) : criarSearchBoxStyle(temaPagina, categoriaAtiva)}>
@@ -2343,7 +2385,6 @@ export default function ExplorarPage() {
               </span>
             ))}
           </p>
-
 
 
           <section className="explorar-carousel" style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
@@ -3145,7 +3186,7 @@ const themePageCss = `
   html[data-historietas-tema-visual] [data-bottom-nav],
   html[data-historietas-tema-visual] [data-mobile-nav],
   html[data-historietas-tema-visual] nav:has(a[href="/publicar"]),
-  html[data-historietas-tema-visual] div:has(> a[href="/publicar"]):has(> a[href="/biblioteca"]) {
+  html[data-historietas-tema-visual] div:has(> a[href="/publicar"]):has(> a[href="/perfil-autor?aba=biblioteca"]) {
     background: var(--historietas-bottom-nav-bg, #04000A) !important;
     border-color: var(--historietas-bottom-nav-border, rgba(59, 7, 100, 0.52)) !important;
     box-shadow: var(--historietas-bottom-nav-shadow, none) !important;
@@ -3432,9 +3473,57 @@ const titleHeaderStyle: CSSProperties = {
 };
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
+  position: "relative",
   marginTop: "6px",
   marginBottom: "22px",
 };
+
+const desktopNotificationButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  right: 0,
+  transform: "translateY(-50%)",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  flex: "0 0 auto",
+  boxShadow: "none",
+  zIndex: 2,
+};
+
+const desktopNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
+};
+
 const pageTitleLinkStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",

@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
+import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 
 type CapituloLocal = {
   id: string;
@@ -89,19 +91,6 @@ type AtividadeSeguindo = {
   href: string;
 };
 
-type NotificacaoLocal = {
-  id: string;
-  obraId: string;
-  capituloId: string;
-  titulo: string;
-  mensagem: string;
-  tipo: "novo-capitulo";
-  lida: boolean;
-  criadaEm: string;
-};
-
-type NotificacaoSalva = Partial<NotificacaoLocal> & Record<string, unknown>;
-
 
 type SupabaseObraRow = {
   id: string;
@@ -127,7 +116,7 @@ type SupabaseCapituloRow = {
   obra_id: string;
   user_id?: string | null;
   titulo: string | null;
-  texto: string | null;
+  texto?: string | null;
   ordem: number | null;
   publicado: boolean | null;
   criado_em: string | null;
@@ -135,6 +124,22 @@ type SupabaseCapituloRow = {
 };
 
 type RegistroSupabaseGenerico = Record<string, unknown>;
+
+function normalizarRegistrosSupabaseGenericos(
+  valor: unknown
+): RegistroSupabaseGenerico[] {
+  if (!Array.isArray(valor)) {
+    return [];
+  }
+
+  return valor.filter((registro): registro is RegistroSupabaseGenerico => {
+    return (
+      Boolean(registro) &&
+      typeof registro === "object" &&
+      !Array.isArray(registro)
+    );
+  });
+}
 
 type FiltroSeguindo =
   | "todos"
@@ -147,25 +152,53 @@ type FiltroSeguindo =
 
 type AbaSeguimentoPagina = "seguidores" | "seguindo";
 
-type OrdenacaoSeguindo = "recentes" | "titulo" | "progresso" | "capitulos";
+type OrdenacaoSeguindo = "padrao" | "recentes" | "antigos" | "titulo" | "progresso" | "capitulos";
+
+type AbaConteudoSeguindo = "seguidores" | "obras" | "pessoas";
 
 const STORAGE_KEY = "historietas-obras";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
+
+function criarStorageKeyUsuarioSeguindo(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function lerJsonStorageUsuarioSeguindo(chave: string, userId: string) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return null;
+  }
+
+  try {
+    const texto = localStorage.getItem(criarStorageKeyUsuarioSeguindo(chave, userId));
+
+    return texto ? JSON.parse(texto) : null;
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioSeguindo(chave: string, userId: string, valor: unknown) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioSeguindo(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage é apoio; a página continua com o estado em memória.
+  }
+}
 
 function normalizarNomeAutor(nome: string) {
   return nome.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function formatarGeneroSeguindo(genero: string) {
@@ -181,16 +214,6 @@ function formatarGeneroSeguindo(genero: string) {
   }
 
   return generoLimpo || "Não informado";
-}
-
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "obra";
 }
 
 function criarLoginHrefSeguindo() {
@@ -215,16 +238,24 @@ function obterParametrosSociaisSeguindoUrl(userIdLogado: string) {
       aba: "seguindo" as AbaSeguimentoPagina,
       perfilId: "",
       perfilNome: "",
+      conteudo: "obras" as AbaConteudoSeguindo,
     };
   }
 
   const params = new URLSearchParams(window.location.search);
   const abaParam = params.get("aba") === "seguidores" ? "seguidores" : "seguindo";
+  const conteudoParam = params.get("conteudo");
+  const conteudoSeguro: AbaConteudoSeguindo =
+    conteudoParam === "seguidores" ||
+    conteudoParam === "pessoas" ||
+    conteudoParam === "obras"
+      ? conteudoParam
+      : "obras";
   const perfilIdParam = (params.get("userId") || params.get("autorId") || "").trim();
   const perfilNomeParam = (params.get("autor") || params.get("nome") || "").trim();
   const perfilIdSeguro = idUsuarioSupabaseValido(perfilIdParam)
     ? perfilIdParam
-    : abaParam === "seguidores"
+    : abaParam === "seguidores" && !conteudoParam
       ? userIdLogado
       : "";
 
@@ -232,13 +263,8 @@ function obterParametrosSociaisSeguindoUrl(userIdLogado: string) {
     aba: abaParam as AbaSeguimentoPagina,
     perfilId: perfilIdSeguro,
     perfilNome: perfilNomeParam,
+    conteudo: conteudoSeguro,
   };
-}
-
-function idObraSupabaseValido(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    id
-  );
 }
 
 function criarHrefLeituraCapitulo(
@@ -489,27 +515,6 @@ function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
   };
 }
 
-function contarNotificacoesNaoLidas() {
-  try {
-    const notificacoesTexto = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    const notificacoesJson = notificacoesTexto
-      ? JSON.parse(notificacoesTexto)
-      : [];
-
-    const notificacoesNormalizadas: NotificacaoSalva[] = Array.isArray(
-      notificacoesJson
-    )
-      ? notificacoesJson
-      : [];
-
-    return notificacoesNormalizadas.filter((notificacao) => {
-      return !Boolean(notificacao.lida);
-    }).length;
-  } catch {
-    return 0;
-  }
-}
-
 function normalizarCapituloSalvo(
   capitulo: CapituloSalvo,
   obraIndex: number,
@@ -708,7 +713,7 @@ function criarMapaComentariosPorCapitulo(
 async function carregarIdsObrasUsuarioSupabase(
   tabela: "seguindo_obras" | "favoritos" | "concluidas",
   userId: string
-) {
+): Promise<RegistroSupabaseGenerico[]> {
   if (!userId) {
     return [] as RegistroSupabaseGenerico[];
   }
@@ -716,15 +721,16 @@ async function carregarIdsObrasUsuarioSupabase(
   try {
     const { data, error } = await supabase
       .from(tabela)
-      .select("*")
-      .eq("user_id", userId);
+      .select("obra_id")
+      .eq("user_id", userId)
+      .limit(1000);
 
     if (error) {
       console.warn(`Não consegui carregar ${tabela} no Supabase:`, error.message);
       return [];
     }
 
-    return Array.isArray(data) ? (data as RegistroSupabaseGenerico[]) : [];
+    return normalizarRegistrosSupabaseGenericos(data);
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} no Supabase:`, error);
     return [];
@@ -739,24 +745,32 @@ async function carregarRegistrosCapitulosUsuarioSupabase(
     | "progresso_leitura",
   userId: string,
   capituloIds: string[]
-) {
+): Promise<RegistroSupabaseGenerico[]> {
   if (!userId || capituloIds.length === 0) {
     return [] as RegistroSupabaseGenerico[];
   }
 
+  const camposPorTabela = {
+    salvos_capitulos: "capitulo_id",
+    curtidas_capitulos: "capitulo_id",
+    comentarios_capitulos: "capitulo_id,comentario",
+    progresso_leitura: "capitulo_id,lido",
+  } satisfies Record<typeof tabela, string>;
+
   try {
     const { data, error } = await supabase
       .from(tabela)
-      .select("*")
+      .select(camposPorTabela[tabela])
       .eq("user_id", userId)
-      .in("capitulo_id", capituloIds);
+      .in("capitulo_id", capituloIds)
+      .limit(1000);
 
     if (error) {
       console.warn(`Não consegui carregar ${tabela} no Supabase:`, error.message);
       return [];
     }
 
-    return Array.isArray(data) ? (data as RegistroSupabaseGenerico[]) : [];
+    return normalizarRegistrosSupabaseGenericos(data);
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} no Supabase:`, error);
     return [];
@@ -797,10 +811,7 @@ function converterObraSupabaseParaLocal({
         capitulo.titulo?.trim() ||
         capituloLocal?.titulo ||
         `Capítulo ${capituloIndex + 1}`,
-      texto:
-        typeof capitulo.texto === "string"
-          ? capitulo.texto
-          : capituloLocal?.texto || "Nenhum texto foi escrito ainda.",
+      texto: capituloLocal?.texto || "",
       curtiu: Boolean(capituloLocal?.curtiu) || capitulosCurtidos.has(capitulo.id),
       salvo: Boolean(capituloLocal?.salvo) || capitulosSalvos.has(capitulo.id),
       comentario: comentarioSupabase || capituloLocal?.comentario || "",
@@ -904,9 +915,12 @@ async function carregarSeguindoSupabase(
 
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
-      .select("*")
+      .select(
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,publicado,slug,link,criada_em,atualizado_em"
+      )
       .eq("publicado", true)
-      .order("criada_em", { ascending: false });
+      .order("criada_em", { ascending: false })
+      .limit(80);
 
     if (erroObras) {
       console.warn("Não consegui carregar obras no Seguindo:", erroObras.message);
@@ -920,7 +934,7 @@ async function carregarSeguindoSupabase(
     }
 
     const obrasSupabaseBanco = Array.isArray(obrasBanco)
-      ? (obrasBanco as SupabaseObraRow[])
+      ? (obrasBanco as unknown as SupabaseObraRow[])
       : [];
     const obraIds = obrasSupabaseBanco
       .map((obra) => obra.id)
@@ -937,9 +951,11 @@ async function carregarSeguindoSupabase(
 
     const { data: capitulosBanco, error: erroCapitulos } = await supabase
       .from("capitulos")
-      .select("*")
+      .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
       .in("obra_id", obraIds)
-      .order("ordem", { ascending: true });
+      .eq("publicado", true)
+      .order("ordem", { ascending: true })
+      .limit(600);
 
     if (erroCapitulos) {
       console.warn("Não consegui carregar capítulos no Seguindo:", erroCapitulos.message);
@@ -948,7 +964,7 @@ async function carregarSeguindoSupabase(
     const capitulosSupabaseBanco = erroCapitulos
       ? []
       : Array.isArray(capitulosBanco)
-      ? (capitulosBanco as SupabaseCapituloRow[])
+      ? (capitulosBanco as unknown as SupabaseCapituloRow[])
       : [];
     const capituloIds = capitulosSupabaseBanco
       .map((capitulo) => capitulo.id)
@@ -1058,17 +1074,14 @@ async function carregarUsuariosSeguidosSupabase(userId: string) {
       .from("seguindo_usuarios")
       .select("seguido_id, criado_em")
       .eq("seguidor_id", userId)
-      .order("criado_em", { ascending: false });
+      .order("criado_em", { ascending: false })
+      .limit(120);
 
     if (seguindoError || !Array.isArray(seguindoData)) {
       return [] as UsuarioSeguido[];
     }
 
-    const registrosSeguindo: RegistroSupabaseGenerico[] = seguindoData
-      .map((registro) => registro as RegistroSupabaseGenerico)
-      .filter((registro) =>
-        Boolean(registro) && typeof registro === "object" && !Array.isArray(registro)
-      );
+    const registrosSeguindo = normalizarRegistrosSupabaseGenericos(seguindoData);
     const usuariosIds = Array.from(
       new Set(
         registrosSeguindo
@@ -1086,11 +1099,14 @@ async function carregarUsuariosSeguidosSupabase(userId: string) {
     try {
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("*")
-        .in("user_id", usuariosIds);
+        .select(
+          "id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobre,descricao"
+        )
+        .in("user_id", usuariosIds)
+        .limit(120);
 
       if (Array.isArray(profilesData)) {
-        (profilesData as RegistroSupabaseGenerico[]).forEach((profile) => {
+        normalizarRegistrosSupabaseGenericos(profilesData).forEach((profile) => {
           const profileUserId = obterTextoRegistro(profile, "user_id");
 
           if (profileUserId) {
@@ -1110,11 +1126,14 @@ async function carregarUsuariosSeguidosSupabase(userId: string) {
       try {
         const { data: profilesDataPorId } = await supabase
           .from("profiles")
-          .select("*")
-          .in("id", usuariosSemProfile);
+          .select(
+            "id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobre,descricao"
+          )
+          .in("id", usuariosSemProfile)
+          .limit(120);
 
         if (Array.isArray(profilesDataPorId)) {
-          (profilesDataPorId as RegistroSupabaseGenerico[]).forEach((profile) => {
+          normalizarRegistrosSupabaseGenericos(profilesDataPorId).forEach((profile) => {
             const profileUserId =
               obterTextoRegistro(profile, "user_id") || obterTextoRegistro(profile, "id");
 
@@ -1173,17 +1192,14 @@ async function carregarUsuariosSeguidoresSupabase(userId: string) {
       .from("seguindo_usuarios")
       .select("seguidor_id, criado_em")
       .eq("seguido_id", userId)
-      .order("criado_em", { ascending: false });
+      .order("criado_em", { ascending: false })
+      .limit(120);
 
     if (seguidoresError || !Array.isArray(seguidoresData)) {
       return [] as UsuarioSeguido[];
     }
 
-    const registrosSeguidores: RegistroSupabaseGenerico[] = seguidoresData
-      .map((registro) => registro as RegistroSupabaseGenerico)
-      .filter((registro) =>
-        Boolean(registro) && typeof registro === "object" && !Array.isArray(registro)
-      );
+    const registrosSeguidores = normalizarRegistrosSupabaseGenericos(seguidoresData);
     const usuariosIds = Array.from(
       new Set(
         registrosSeguidores
@@ -1201,11 +1217,14 @@ async function carregarUsuariosSeguidoresSupabase(userId: string) {
     try {
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("*")
-        .in("user_id", usuariosIds);
+        .select(
+          "id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobre,descricao"
+        )
+        .in("user_id", usuariosIds)
+        .limit(120);
 
       if (Array.isArray(profilesData)) {
-        (profilesData as RegistroSupabaseGenerico[]).forEach((profile) => {
+        normalizarRegistrosSupabaseGenericos(profilesData).forEach((profile) => {
           const profileUserId = obterTextoRegistro(profile, "user_id");
 
           if (profileUserId) {
@@ -1225,11 +1244,14 @@ async function carregarUsuariosSeguidoresSupabase(userId: string) {
       try {
         const { data: profilesDataPorId } = await supabase
           .from("profiles")
-          .select("*")
-          .in("id", usuariosSemProfile);
+          .select(
+            "id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobre,descricao"
+          )
+          .in("id", usuariosSemProfile)
+          .limit(120);
 
         if (Array.isArray(profilesDataPorId)) {
-          (profilesDataPorId as RegistroSupabaseGenerico[]).forEach((profile) => {
+          normalizarRegistrosSupabaseGenericos(profilesDataPorId).forEach((profile) => {
             const profileUserId =
               obterTextoRegistro(profile, "user_id") || obterTextoRegistro(profile, "id");
 
@@ -1555,21 +1577,30 @@ function criarAtividadeSeguindoDeObra({
 async function carregarRegistrosAtividadesTabelaSeguindo(
   tabela: "diario_atividades" | "favoritos" | "concluidas" | "obra_avaliacoes",
   usuariosIds: string[],
-) {
+): Promise<RegistroSupabaseGenerico[]> {
+  const camposPorTabela = {
+    diario_atividades:
+      "id,user_id,tipo,obra_id,capitulo_id,texto,nota,visibilidade,metadata,criado_em,created_at,atualizado_em,updated_at",
+    favoritos:
+      "id,user_id,obra_id,visibilidade,criado_em,created_at,atualizado_em,updated_at",
+    concluidas:
+      "id,user_id,obra_id,visibilidade,criado_em,created_at,atualizado_em,updated_at",
+    obra_avaliacoes:
+      "id,user_id,obra_id,nota,rating,avaliacao,visibilidade,criado_em,created_at,atualizado_em,updated_at",
+  } satisfies Record<typeof tabela, string>;
+
   try {
     const { data, error } = await supabase
       .from(tabela)
-      .select("*")
-      .in("user_id", usuariosIds);
+      .select(camposPorTabela[tabela])
+      .in("user_id", usuariosIds)
+      .limit(120);
 
     if (error || !Array.isArray(data)) {
       return [] as RegistroSupabaseGenerico[];
     }
 
-    return data.filter(
-      (registro): registro is RegistroSupabaseGenerico =>
-        Boolean(registro) && typeof registro === "object" && !Array.isArray(registro),
-    );
+    return normalizarRegistrosSupabaseGenericos(data);
   } catch (error) {
     console.warn(`Não consegui carregar ${tabela} no feed Seguindo:`, error);
     return [] as RegistroSupabaseGenerico[];
@@ -1739,15 +1770,18 @@ export default function SeguindoPage() {
   const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
   const [usuariosSeguidos, setUsuariosSeguidos] = useState<UsuarioSeguido[]>([]);
   const [usuariosSeguidores, setUsuariosSeguidores] = useState<UsuarioSeguido[]>([]);
-  const [atividadesSeguindo, setAtividadesSeguindo] = useState<AtividadeSeguindo[]>([]);
+  const [, setAtividadesSeguindo] = useState<AtividadeSeguindo[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [, setCarregando] = useState(false);
-  const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
+  const { notificacoesNaoLidas } = useNotificacoes();
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<FiltroSeguindo>("todos");
   const [ordenacao, setOrdenacao] =
-    useState<OrdenacaoSeguindo>("recentes");
+    useState<OrdenacaoSeguindo>("padrao");
+  const [abaConteudo, setAbaConteudo] =
+    useState<AbaConteudoSeguindo>("obras");
+  const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
@@ -1764,12 +1798,16 @@ export default function SeguindoPage() {
       setIsDesktop(mediaQuery.matches);
     };
 
-    atualizarModoDesktop();
+    const atualizarModoDesktopTimer = window.setTimeout(
+      atualizarModoDesktop,
+      0
+    );
 
     if (typeof mediaQuery.addEventListener === "function") {
       mediaQuery.addEventListener("change", atualizarModoDesktop);
 
       return () => {
+        window.clearTimeout(atualizarModoDesktopTimer);
         mediaQuery.removeEventListener("change", atualizarModoDesktop);
       };
     }
@@ -1777,9 +1815,27 @@ export default function SeguindoPage() {
     mediaQuery.addListener(atualizarModoDesktop);
 
     return () => {
+      window.clearTimeout(atualizarModoDesktopTimer);
       mediaQuery.removeListener(atualizarModoDesktop);
     };
   }, []);
+
+  useEffect(() => {
+    if (!mostrarPainelOrdenacao || typeof document === "undefined") {
+      return;
+    }
+
+    const overflowAnterior = document.body.style.overflow;
+    const overscrollAnterior = document.body.style.overscrollBehavior;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      document.body.style.overscrollBehavior = overscrollAnterior;
+    };
+  }, [mostrarPainelOrdenacao]);
 
   useEffect(() => {
     let cancelado = false;
@@ -1796,13 +1852,16 @@ export default function SeguindoPage() {
 
         const parametrosSociais = obterParametrosSociaisSeguindoUrl(userId);
 
-        if (!cancelado) {
-          setUsuarioLogadoId(userId);
-          setAbaSeguimento(parametrosSociais.aba);
-          setPerfilSocialId(parametrosSociais.perfilId);
-          setPerfilSocialNome(parametrosSociais.perfilNome);
-          setVerificandoAcesso(false);
-        }
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setUsuarioLogadoId(userId);
+            setAbaSeguimento(parametrosSociais.aba);
+            setAbaConteudo(parametrosSociais.conteudo);
+            setPerfilSocialId(parametrosSociais.perfilId);
+            setPerfilSocialNome(parametrosSociais.perfilNome);
+            setVerificandoAcesso(false);
+          }
+        }, 0);
       } catch {
         if (!cancelado) {
           router.replace(criarLoginHrefSeguindo());
@@ -1817,27 +1876,20 @@ export default function SeguindoPage() {
     };
   }, [router]);
 
-  useEffect(() => {
-    if (!usuarioLogadoId) {
-      return;
-    }
-
-    void carregarDadosSeguindo();
-  }, [usuarioLogadoId, perfilSocialId]);
 
   async function carregarDadosSeguindo() {
-    setCarregando(true);
+    window.setTimeout(() => {
+      setCarregando(true);
+    }, 0);
 
     let obrasNormalizadas: ObraLocal[] = [];
     let seguindoNormalizado: string[] = [];
     let autoresNormalizados: string[] = [];
     let favoritasNormalizadas: string[] = [];
     let concluidasNormalizadas: string[] = [];
-    let totalNotificacoesNaoLidas = 0;
 
     try {
-      const obrasTexto = localStorage.getItem(STORAGE_KEY);
-      const obrasJson = obrasTexto ? JSON.parse(obrasTexto) : [];
+      const obrasJson = lerJsonStorageUsuarioSeguindo(STORAGE_KEY, usuarioLogadoId);
 
       obrasNormalizadas = Array.isArray(obrasJson)
         ? (obrasJson as ObraSalva[]).map((obra, obraIndex) =>
@@ -1845,8 +1897,10 @@ export default function SeguindoPage() {
           )
         : [];
 
-      const seguindoTexto = localStorage.getItem(FOLLOW_STORAGE_KEY);
-      const seguindoJson = seguindoTexto ? JSON.parse(seguindoTexto) : [];
+      const seguindoJson = lerJsonStorageUsuarioSeguindo(
+        FOLLOW_STORAGE_KEY,
+        usuarioLogadoId
+      );
 
       seguindoNormalizado = Array.isArray(seguindoJson)
         ? normalizarListaTexto(
@@ -1854,8 +1908,10 @@ export default function SeguindoPage() {
           )
         : [];
 
-      const autoresTexto = localStorage.getItem(AUTHOR_FOLLOW_STORAGE_KEY);
-      const autoresJson = autoresTexto ? JSON.parse(autoresTexto) : [];
+      const autoresJson = lerJsonStorageUsuarioSeguindo(
+        AUTHOR_FOLLOW_STORAGE_KEY,
+        usuarioLogadoId
+      );
 
       autoresNormalizados = Array.isArray(autoresJson)
         ? autoresJson
@@ -1863,8 +1919,10 @@ export default function SeguindoPage() {
             .map((autor) => normalizarNomeAutor(autor))
         : [];
 
-      const favoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
-      const favoritasJson = favoritasTexto ? JSON.parse(favoritasTexto) : [];
+      const favoritasJson = lerJsonStorageUsuarioSeguindo(
+        FAVORITES_STORAGE_KEY,
+        usuarioLogadoId
+      );
 
       favoritasNormalizadas = Array.isArray(favoritasJson)
         ? normalizarListaTexto(
@@ -1872,8 +1930,10 @@ export default function SeguindoPage() {
           )
         : [];
 
-      const concluidasTexto = localStorage.getItem(COMPLETED_STORAGE_KEY);
-      const concluidasJson = concluidasTexto ? JSON.parse(concluidasTexto) : [];
+      const concluidasJson = lerJsonStorageUsuarioSeguindo(
+        COMPLETED_STORAGE_KEY,
+        usuarioLogadoId
+      );
 
       concluidasNormalizadas = Array.isArray(concluidasJson)
         ? normalizarListaTexto(
@@ -1881,23 +1941,22 @@ export default function SeguindoPage() {
           )
         : [];
 
-      totalNotificacoesNaoLidas = contarNotificacoesNaoLidas();
     } catch {
       obrasNormalizadas = [];
       seguindoNormalizado = [];
       autoresNormalizados = [];
       favoritasNormalizadas = [];
       concluidasNormalizadas = [];
-      totalNotificacoesNaoLidas = 0;
     }
 
-    setObras(obrasNormalizadas);
-    setObrasSeguidas(seguindoNormalizado);
-    setAutoresSeguidos(autoresNormalizados);
-    setObrasFavoritas(favoritasNormalizadas);
-    setObrasConcluidas(concluidasNormalizadas);
-    setNotificacoesNaoLidas(totalNotificacoesNaoLidas);
-    setCarregando(false);
+    window.setTimeout(() => {
+      setObras(obrasNormalizadas);
+      setObrasSeguidas(seguindoNormalizado);
+      setAutoresSeguidos(autoresNormalizados);
+      setObrasFavoritas(favoritasNormalizadas);
+      setObrasConcluidas(concluidasNormalizadas);
+      setCarregando(false);
+    }, 0);
 
     const perfilIdParaListaSocial = perfilSocialId || usuarioLogadoId;
     const [
@@ -1927,37 +1986,66 @@ export default function SeguindoPage() {
     favoritasNormalizadas = normalizarListaTexto(dadosSupabase.obrasFavoritas);
     concluidasNormalizadas = normalizarListaTexto(dadosSupabase.obrasConcluidas);
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
-    localStorage.setItem(FOLLOW_STORAGE_KEY, JSON.stringify(seguindoNormalizado));
-    localStorage.setItem(
+    salvarJsonStorageUsuarioSeguindo(
+      STORAGE_KEY,
+      usuarioLogadoId,
+      obrasNormalizadas
+    );
+    salvarJsonStorageUsuarioSeguindo(
+      FOLLOW_STORAGE_KEY,
+      usuarioLogadoId,
+      seguindoNormalizado
+    );
+    salvarJsonStorageUsuarioSeguindo(
       AUTHOR_FOLLOW_STORAGE_KEY,
-      JSON.stringify(autoresNormalizados)
+      usuarioLogadoId,
+      autoresNormalizados
     );
-    localStorage.setItem(
+    salvarJsonStorageUsuarioSeguindo(
       FAVORITES_STORAGE_KEY,
-      JSON.stringify(favoritasNormalizadas)
+      usuarioLogadoId,
+      favoritasNormalizadas
     );
-    localStorage.setItem(
+    salvarJsonStorageUsuarioSeguindo(
       COMPLETED_STORAGE_KEY,
-      JSON.stringify(concluidasNormalizadas)
+      usuarioLogadoId,
+      concluidasNormalizadas
     );
 
-    setObras(obrasNormalizadas);
-    setObrasSeguidas(seguindoNormalizado);
-    setAutoresSeguidos(autoresNormalizados);
-    setUsuariosSeguidos(usuariosSeguidosSupabase);
-    setUsuariosSeguidores(usuariosSeguidoresSupabase);
-    setAtividadesSeguindo(atividadesSeguindoSupabase);
-    setObrasFavoritas(favoritasNormalizadas);
-    setObrasConcluidas(concluidasNormalizadas);
-    setNotificacoesNaoLidas(totalNotificacoesNaoLidas);
-    setCarregando(false);
+    window.setTimeout(() => {
+      setObras(obrasNormalizadas);
+      setObrasSeguidas(seguindoNormalizado);
+      setAutoresSeguidos(autoresNormalizados);
+      setUsuariosSeguidos(usuariosSeguidosSupabase);
+      setUsuariosSeguidores(usuariosSeguidoresSupabase);
+      setAtividadesSeguindo(atividadesSeguindoSupabase);
+      setObrasFavoritas(favoritasNormalizadas);
+      setObrasConcluidas(concluidasNormalizadas);
+      setCarregando(false);
+    }, 0);
   }
+  useEffect(() => {
+    if (!usuarioLogadoId) {
+      return;
+    }
+
+    const carregarDadosTimer = window.setTimeout(() => {
+      void carregarDadosSeguindo();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(carregarDadosTimer);
+    };
+  }, [usuarioLogadoId, perfilSocialId]);
+
 
   const termoBusca = normalizarTexto(busca);
   const visualizandoListaSocialDoPerfil = Boolean(perfilSocialId);
-  const usuariosBaseSocial =
-    visualizandoListaSocialDoPerfil && abaSeguimento === "seguidores"
+  const usuariosBaseSocial = visualizandoListaSocialDoPerfil
+    ? abaSeguimento === "seguidores"
+      ? usuariosSeguidores
+      : usuariosSeguidos
+    : abaConteudo === "seguidores"
       ? usuariosSeguidores
       : usuariosSeguidos;
   const tituloListaSocial =
@@ -1966,7 +2054,7 @@ export default function SeguindoPage() {
     ? `${tituloListaSocial.toLowerCase()} de ${perfilSocialNome.trim()}`
     : tituloListaSocial.toLowerCase();
   const podeRemoverUsuariosDaLista =
-    !visualizandoListaSocialDoPerfil && abaSeguimento === "seguindo";
+    !visualizandoListaSocialDoPerfil && abaConteudo === "pessoas";
 
   const obrasSeguidasBase = useMemo(() => {
     return obras.filter((obra) => obraEstaNaLista(obra, obrasSeguidas));
@@ -2083,7 +2171,7 @@ export default function SeguindoPage() {
   }, [obras, autoresSeguidos, obrasFavoritas, obrasConcluidas]);
 
   const obrasFiltradas = useMemo(() => {
-    if (visualizandoListaSocialDoPerfil) {
+    if (visualizandoListaSocialDoPerfil || abaConteudo !== "obras") {
       return [] as ObraLocal[];
     }
 
@@ -2122,6 +2210,10 @@ export default function SeguindoPage() {
         return obraB.capitulos.length - obraA.capitulos.length;
       }
 
+      if (ordenacao === "antigos") {
+        return dataAtividadeObra(obraA) - dataAtividadeObra(obraB);
+      }
+
       return dataAtividadeObra(obraB) - dataAtividadeObra(obraA);
     });
   }, [
@@ -2132,10 +2224,11 @@ export default function SeguindoPage() {
     obrasFavoritas,
     obrasConcluidas,
     visualizandoListaSocialDoPerfil,
+    abaConteudo,
   ]);
 
   const autoresFiltrados = useMemo<AutorSeguido[]>(() => {
-    if (visualizandoListaSocialDoPerfil) {
+    if (visualizandoListaSocialDoPerfil || abaConteudo !== "pessoas") {
       return [] as AutorSeguido[];
     }
 
@@ -2177,10 +2270,18 @@ export default function SeguindoPage() {
 
       return autorA.nome.localeCompare(autorB.nome);
     });
-  }, [autoresBase, termoBusca, filtro, ordenacao]);
+  }, [autoresBase, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil]);
 
   const usuariosFiltrados = useMemo<UsuarioSeguido[]>(() => {
     const filtrados = usuariosBaseSocial.filter((usuarioSeguido) => {
+      if (
+        !visualizandoListaSocialDoPerfil &&
+        abaConteudo !== "pessoas" &&
+        abaConteudo !== "seguidores"
+      ) {
+        return false;
+      }
+
       if (
         !visualizandoListaSocialDoPerfil &&
         filtro !== "todos" &&
@@ -2201,63 +2302,67 @@ export default function SeguindoPage() {
         return usuarioA.nome.localeCompare(usuarioB.nome);
       }
 
+      if (ordenacao === "antigos") {
+        return (
+          new Date(usuarioA.criadoEm).getTime() -
+          new Date(usuarioB.criadoEm).getTime()
+        );
+      }
+
       return (
         new Date(usuarioB.criadoEm).getTime() - new Date(usuarioA.criadoEm).getTime()
       );
     });
-  }, [usuariosSeguidos, termoBusca, filtro, ordenacao]);
+  }, [usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil]);
 
-  const atividadesFiltradas = useMemo<AtividadeSeguindo[]>(() => {
-    if (visualizandoListaSocialDoPerfil) {
-      return [] as AtividadeSeguindo[];
-    }
-
-    const filtradas = atividadesSeguindo.filter((atividade) => {
-      if (filtro !== "todos" && filtro !== "usuarios") {
-        return false;
-      }
-
-      const textoAtividade = normalizarTexto(
-        [
-          atividade.usuarioNome,
-          atividade.usuarioHandle,
-          atividade.tipoRotulo,
-          atividade.titulo,
-          atividade.descricao,
-        ].join(" ")
-      );
-
-      return termoBusca ? textoAtividade.includes(termoBusca) : true;
-    });
-
-    return [...filtradas].sort((atividadeA, atividadeB) => {
-      return (
-        new Date(atividadeB.data).getTime() - new Date(atividadeA.data).getTime()
-      );
-    });
-  }, [atividadesSeguindo, termoBusca, filtro]);
+  const totalDisponivelGeral = visualizandoListaSocialDoPerfil
+    ? usuariosBaseSocial.length
+    : obrasSeguidasBase.length +
+      autoresBase.length +
+      usuariosSeguidos.length +
+      usuariosSeguidores.length;
 
   const totalSemFiltros = visualizandoListaSocialDoPerfil
     ? usuariosBaseSocial.length
-    : obrasSeguidasBase.length + autoresBase.length + usuariosSeguidos.length;
+    : abaConteudo === "seguidores"
+      ? usuariosSeguidores.length
+      : abaConteudo === "obras"
+        ? obrasSeguidasBase.length
+        : autoresBase.length + usuariosSeguidos.length;
 
   const totalSeguindo = visualizandoListaSocialDoPerfil
     ? usuariosFiltrados.length
-    : obrasFiltradas.length + autoresFiltrados.length + usuariosFiltrados.length;
+    : abaConteudo === "seguidores"
+      ? usuariosFiltrados.length
+      : abaConteudo === "obras"
+        ? obrasFiltradas.length
+        : autoresFiltrados.length + usuariosFiltrados.length;
 
-  const totalLidosSeguidos = obrasFiltradas.reduce((total, obra) => {
-    return total + obra.capitulos.filter((capitulo) => capitulo.lido).length;
-  }, 0);
-
-  const totalEmLeituraSeguidas = obrasFiltradas.filter((obra) =>
-    obraEmLeitura(obra)
-  ).length;
 
   const filtrosAtivos = Boolean(
-    busca.trim() ||
-      (!visualizandoListaSocialDoPerfil && filtro !== "todos") ||
-      ordenacao !== "recentes"
+    busca.trim() || ordenacao !== "padrao"
   );
+
+  const opcoesOrdenacao: Array<{ valor: OrdenacaoSeguindo; rotulo: string }> =
+    !visualizandoListaSocialDoPerfil && abaConteudo === "obras"
+      ? [
+          { valor: "padrao", rotulo: "Padrão" },
+          { valor: "recentes", rotulo: "Mais recentes" },
+          { valor: "antigos", rotulo: "Mais antigos" },
+          { valor: "titulo", rotulo: "A-Z" },
+          { valor: "progresso", rotulo: "Maior progresso" },
+          { valor: "capitulos", rotulo: "Mais capítulos" },
+        ]
+      : [
+          { valor: "padrao", rotulo: "Padrão" },
+          { valor: "recentes", rotulo: "Mais recentes" },
+          { valor: "antigos", rotulo: "Mais antigos" },
+          { valor: "titulo", rotulo: "A-Z" },
+        ];
+
+  const rotuloOrdenacao =
+    opcoesOrdenacao.find((opcao) => opcao.valor === ordenacao)?.rotulo ||
+    "Padrão";
 
   function trocarAbaSeguimento(novaAba: AbaSeguimentoPagina) {
     setAbaSeguimento(novaAba);
@@ -2288,15 +2393,16 @@ export default function SeguindoPage() {
   function limparFiltros() {
     setBusca("");
     setFiltro("todos");
-    setOrdenacao("recentes");
+    setOrdenacao("padrao");
   }
 
   function deixarDeSeguirObra(obra: ObraLocal) {
     const novasObrasSeguidas = removerObraDaLista(obra, obrasSeguidas);
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioSeguindo(
       FOLLOW_STORAGE_KEY,
-      JSON.stringify(novasObrasSeguidas)
+      usuarioLogadoId,
+      novasObrasSeguidas
     );
 
     setObrasSeguidas(novasObrasSeguidas);
@@ -2308,9 +2414,10 @@ export default function SeguindoPage() {
       (autor) => autor !== autorChave
     );
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioSeguindo(
       AUTHOR_FOLLOW_STORAGE_KEY,
-      JSON.stringify(novosAutoresSeguidos)
+      usuarioLogadoId,
+      novosAutoresSeguidos
     );
 
     setAutoresSeguidos(novosAutoresSeguidos);
@@ -2347,9 +2454,10 @@ export default function SeguindoPage() {
       ? adicionarObraNaLista(obra, obrasFavoritas)
       : removerObraDaLista(obra, obrasFavoritas);
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioSeguindo(
       FAVORITES_STORAGE_KEY,
-      JSON.stringify(novasObrasFavoritas)
+      usuarioLogadoId,
+      novasObrasFavoritas
     );
 
     setObrasFavoritas(novasObrasFavoritas);
@@ -2366,9 +2474,10 @@ export default function SeguindoPage() {
       ? adicionarObraNaLista(obra, obrasConcluidas)
       : removerObraDaLista(obra, obrasConcluidas);
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioSeguindo(
       COMPLETED_STORAGE_KEY,
-      JSON.stringify(novasObrasConcluidas)
+      usuarioLogadoId,
+      novasObrasConcluidas
     );
 
     setObrasConcluidas(novasObrasConcluidas);
@@ -2410,227 +2519,223 @@ export default function SeguindoPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
+        {isDesktop ? (
           <Link
-            href="/"
-            style={isDesktop ? desktopTitleHomeLinkStyle : titleHomeLinkStyle}
-            aria-label="Voltar para a Home"
+            href="/notificacoes"
+            style={desktopNotificationButtonStyle}
+            aria-label={
+              notificacoesNaoLidas > 0
+                ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                : "Notificações"
+            }
           >
-            <span
-              className="historietas-theme-title"
-              style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
-            >
-              SEGUINDO
-            </span>
-          </Link>
-        </header>
+            N
 
-        {totalSemFiltros > 0 && (
-          <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
-            <div style={isDesktop ? desktopFilterHeaderStyle : filterHeaderStyle}>
-              <div style={filterHeaderTitleBoxStyle}>
-                <span style={miniTitleStyle}>ORGANIZAR</span>
-
-                <h2 style={filterTitleStyle}>Buscar e filtrar</h2>
-              </div>
-
-              <span style={filterResultBadgeStyle}>
-                {totalSeguindo} de {totalSemFiltros}
+            {notificacoesNaoLidas > 0 ? (
+              <span style={desktopNotificationBadgeStyle}>
+                {notificacoesNaoLidas > 99
+                  ? "99+"
+                  : notificacoesNaoLidas}
               </span>
-            </div>
+            ) : null}
+          </Link>
+        ) : null}
 
-            <input
-              value={busca}
-              onChange={(event) => setBusca(event.target.value)}
-              placeholder={
-                visualizandoListaSocialDoPerfil
-                  ? `Buscar em ${descricaoListaSocial}...`
-                  : "Buscar obra, autor, pessoa, gênero, tag ou classificação..."
-              }
-              style={isDesktop ? desktopSearchInputStyle : searchInputStyle}
-              type="text"
-            />
-
-            {visualizandoListaSocialDoPerfil && (
-              <div style={isDesktop ? desktopQuickFiltersStyle : quickFiltersStyle}>
-                <button
-                  type="button"
-                  onClick={() => trocarAbaSeguimento("seguidores")}
-                  style={
-                    abaSeguimento === "seguidores"
-                      ? quickFilterActiveStyle
-                      : quickFilterStyle
-                  }
+        {totalDisponivelGeral > 0 && (
+          <>
+            <section style={isDesktop ? desktopSocialToolbarStyle : socialToolbarStyle}>
+              <div
+                  style={{
+                    ...socialTabsStyle,
+                    gridTemplateColumns: visualizandoListaSocialDoPerfil
+                      ? "repeat(2, minmax(0, 1fr))"
+                      : "repeat(3, minmax(0, 1fr))",
+                  }}
                 >
-                  Seguidores
-                </button>
+                {visualizandoListaSocialDoPerfil ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => trocarAbaSeguimento("seguidores")}
+                      style={
+                        abaSeguimento === "seguidores"
+                          ? socialTabActiveStyle
+                          : socialTabStyle
+                      }
+                    >
+                      Seguidores
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => trocarAbaSeguimento("seguindo")}
-                  style={
-                    abaSeguimento === "seguindo"
-                      ? quickFilterActiveStyle
-                      : quickFilterStyle
-                  }
-                >
-                  Seguindo
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => trocarAbaSeguimento("seguindo")}
+                      style={
+                        abaSeguimento === "seguindo"
+                          ? socialTabActiveStyle
+                          : socialTabStyle
+                      }
+                    >
+                      Seguindo
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAbaConteudo("seguidores");
+                        setFiltro("todos");
+                        setBusca("");
+                        setOrdenacao("padrao");
+                      }}
+                      style={{
+                        ...(abaConteudo === "seguidores"
+                          ? socialTabActiveStyle
+                          : socialTabStyle),
+                        ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
+                      }}
+                    >
+                      Seguidores
+                      <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
+                        {usuariosSeguidores.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAbaConteudo("obras");
+                        setFiltro("todos");
+                        setBusca("");
+                        setOrdenacao("padrao");
+                      }}
+                      style={{
+                        ...(abaConteudo === "obras"
+                          ? socialTabActiveStyle
+                          : socialTabStyle),
+                        ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
+                      }}
+                    >
+                      Obras seguidas
+                      <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
+                        {obrasSeguidasBase.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAbaConteudo("pessoas");
+                        setFiltro("todos");
+                        setBusca("");
+                        setOrdenacao("padrao");
+                      }}
+                      style={{
+                        ...(abaConteudo === "pessoas"
+                          ? socialTabActiveStyle
+                          : socialTabStyle),
+                        ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
+                      }}
+                    >
+                      Pessoas seguidas
+                      <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
+                        {usuariosSeguidos.length}
+                      </span>
+                    </button>
+                  </>
+                )}
               </div>
-            )}
 
-            {!visualizandoListaSocialDoPerfil && (
-            <div style={isDesktop ? desktopQuickFiltersStyle : quickFiltersStyle}>
-              <button
-                type="button"
-                onClick={() => setFiltro("todos")}
-                style={filtro === "todos" ? quickFilterActiveStyle : quickFilterStyle}
-              >
-                Todos
-              </button>
+              <label style={instagramSearchShellStyle}>
+                <span style={searchIconStyle}>⌕</span>
 
-              <button
-                type="button"
-                onClick={() => setFiltro("obras")}
-                style={filtro === "obras" ? quickFilterActiveStyle : quickFilterStyle}
-              >
-                Obras
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFiltro("autores")}
-                style={filtro === "autores" ? quickFilterActiveStyle : quickFilterStyle}
-              >
-                Autores
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFiltro("usuarios")}
-                style={filtro === "usuarios" ? quickFilterActiveStyle : quickFilterStyle}
-              >
-                Pessoas
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFiltro("em-leitura")}
-                style={
-                  filtro === "em-leitura" ? quickFilterActiveStyle : quickFilterStyle
-                }
-              >
-                Em leitura
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFiltro("favoritas")}
-                style={
-                  filtro === "favoritas" ? quickFilterActiveStyle : quickFilterStyle
-                }
-              >
-                Minha lista
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFiltro("concluidas")}
-                style={
-                  filtro === "concluidas" ? quickFilterActiveStyle : quickFilterStyle
-                }
-              >
-                Concluídas
-              </button>
-            </div>
-            )}
-
-            <div style={isDesktop ? desktopFilterFooterStyle : filterFooterStyle}>
-              <div style={fieldBoxStyle}>
-                <select
-                  value={ordenacao}
-                  onChange={(event) =>
-                    setOrdenacao(event.target.value as OrdenacaoSeguindo)
+                <input
+                  value={busca}
+                  onChange={(event) => setBusca(event.target.value)}
+                  placeholder={
+                    visualizandoListaSocialDoPerfil
+                      ? `Pesquisar em ${descricaoListaSocial}`
+                      : abaConteudo === "seguidores"
+                        ? "Pesquisar seguidor ou perfil"
+                        : abaConteudo === "obras"
+                          ? "Pesquisar obra, autor, gênero ou tag"
+                          : "Pesquisar pessoa, autor ou perfil"
                   }
-                  style={selectStyle}
-                >
-                  <option value="recentes">Mais recentes</option>
-                  <option value="titulo">Título / Autor</option>
-                  <option value="progresso">Maior progresso</option>
-                  <option value="capitulos">Mais capítulos</option>
-                </select>
-              </div>
+                  style={instagramSearchInputStyle}
+                  type="text"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setMostrarPainelOrdenacao(true)}
+                style={sortingRowStyle}
+              >
+                <span style={sortingLabelStyle}>
+                  Classificado por{" "}
+                  <strong style={sortingValueStyle}>{rotuloOrdenacao}</strong>
+                </span>
+
+                <span style={sortingArrowStyle}>⇅</span>
+              </button>
 
               {filtrosAtivos && (
-                <button type="button" onClick={limparFiltros} style={isDesktop ? desktopClearFilterButtonStyle : clearFilterButtonStyle}>
-                  Limpar filtros
+                <button
+                  type="button"
+                  onClick={limparFiltros}
+                  style={compactClearButtonStyle}
+                >
+                  Limpar busca e classificação
                 </button>
               )}
-            </div>
-
-            <section
-              className="seguindo-summary-carousel"
-              style={isDesktop ? desktopSummaryGridStyle : summaryGridStyle}
-            >
-              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
-                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{totalSeguindo}</strong>
-                <span style={summaryLabelStyle}>
-                  {visualizandoListaSocialDoPerfil
-                    ? abaSeguimento === "seguidores"
-                      ? "seguidores"
-                      : "seguindo"
-                    : "seguindo"}
-                </span>
-              </div>
-
-              {!visualizandoListaSocialDoPerfil && (
-              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
-                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{obrasFiltradas.length}</strong>
-                <span style={summaryLabelStyle}>
-                  {obrasFiltradas.length === 1 ? "obra seguida" : "obras seguidas"}
-                </span>
-              </div>
-              )}
-
-              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
-                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{autoresFiltrados.length}</strong>
-                <span style={summaryLabelStyle}>
-                  {autoresFiltrados.length === 1
-                    ? "autor seguido"
-                    : "autores seguidos"}
-                </span>
-              </div>
-
-              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
-                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{usuariosFiltrados.length}</strong>
-                <span style={summaryLabelStyle}>
-                  {usuariosFiltrados.length === 1
-                    ? "pessoa seguida"
-                    : "pessoas seguidas"}
-                </span>
-              </div>
-
-              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
-                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{atividadesFiltradas.length}</strong>
-                <span style={summaryLabelStyle}>atividades</span>
-              </div>
-
-              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
-                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{totalEmLeituraSeguidas}</strong>
-                <span style={summaryLabelStyle}>em leitura</span>
-              </div>
-
-              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
-                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{totalLidosSeguidos}</strong>
-                <span style={summaryLabelStyle}>capítulos lidos</span>
-              </div>
-
-              <div style={isDesktop ? desktopSummaryCardStyle : summaryCardStyle}>
-                <strong style={isDesktop ? desktopSummaryNumberStyle : summaryNumberStyle}>{notificacoesNaoLidas}</strong>
-                <span style={summaryLabelStyle}>avisos novos</span>
-              </div>
             </section>
-          </section>
+
+            {mostrarPainelOrdenacao && (
+              <div
+                style={sortingBackdropStyle}
+                onClick={() => setMostrarPainelOrdenacao(false)}
+              >
+                <div
+                  style={sortingSheetStyle}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <span style={sortingHandleStyle} />
+
+                  <h2 style={sortingTitleStyle}>Classificar por</h2>
+
+                  <div style={sortingOptionsListStyle}>
+                    {opcoesOrdenacao.map((opcao) => {
+                      const ativo = ordenacao === opcao.valor;
+
+                      return (
+                        <button
+                          key={opcao.valor}
+                          type="button"
+                          onClick={() => {
+                            setOrdenacao(opcao.valor);
+                            setMostrarPainelOrdenacao(false);
+                          }}
+                          style={
+                            ativo ? sortingOptionActiveStyle : sortingOptionStyle
+                          }
+                        >
+                          <span>{opcao.rotulo}</span>
+
+                          <span
+                            style={
+                              ativo
+                                ? sortingOptionRadioActiveStyle
+                                : sortingOptionRadioStyle
+                            }
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {totalSemFiltros === 0 ? (
@@ -2640,7 +2745,9 @@ export default function SeguindoPage() {
                 ? abaSeguimento === "seguidores"
                   ? "Nenhum seguidor ainda"
                   : "Nenhum perfil seguido ainda"
-                : "Você ainda não segue nada"}
+                : abaConteudo === "seguidores"
+                  ? "Você ainda não tem seguidores"
+                  : "Você ainda não segue nada"}
             </h2>
 
             <p style={emptyTextStyle}>
@@ -2648,7 +2755,9 @@ export default function SeguindoPage() {
                 ? abaSeguimento === "seguidores"
                   ? "Quando alguém seguir este perfil, aparecerá aqui."
                   : "Quando este perfil seguir outras pessoas, elas aparecerão aqui."
-                : 'Entre em uma obra e clique em "Seguir obra", ou entre no perfil de uma pessoa e clique em "Seguir".'}
+                : abaConteudo === "seguidores"
+                  ? "Quando alguém seguir seu perfil, aparecerá aqui."
+                  : 'Entre em uma obra e clique em "Seguir obra", ou entre no perfil de uma pessoa e clique em "Seguir".'}
             </p>
 
             <div style={emptyActionsStyle}>
@@ -2675,15 +2784,8 @@ export default function SeguindoPage() {
               </div>
             )}
 
-            <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-              <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-                <div style={sectionHeaderTextStyle}>
-                  <h2 style={sectionTitleStyle}>OBRAS SEGUIDAS</h2>
-                </div>
-
-                <span style={sectionCounterStyle}>{obrasFiltradas.length}</span>
-              </div>
-
+            {!visualizandoListaSocialDoPerfil && abaConteudo === "obras" && (
+              <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
               {obrasFiltradas.length === 0 ? (
                 <div style={emptyMiniBoxStyle}>
                   Nenhuma obra seguida encontrada com os filtros atuais.
@@ -2691,56 +2793,15 @@ export default function SeguindoPage() {
               ) : (
                 <div style={isDesktop ? desktopGridStyle : gridStyle}>
                   {obrasFiltradas.map((obra) => {
-                    const obraHref = obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                    const capituloParaContinuar =
-                      encontrarCapituloParaContinuar(obra);
-                    const primeiroCapitulo = obra.capitulos[0] || null;
-                    const capituloDeLeitura =
-                      capituloParaContinuar || primeiroCapitulo;
-                    const indiceCapituloDeLeitura = capituloDeLeitura
-                      ? obra.capitulos.findIndex(
-                          (capitulo) => capitulo.id === capituloDeLeitura.id
-                        )
-                      : -1;
-                    const numeroCapituloDeLeitura =
-                      indiceCapituloDeLeitura >= 0
-                        ? indiceCapituloDeLeitura + 1
-                        : 1;
-                    const leituraHref = capituloDeLeitura
-                      ? criarHrefLeituraCapitulo(
-                          obra,
-                          capituloDeLeitura,
-                          numeroCapituloDeLeitura
-                        )
-                      : "";
-
-                    const progressoLeitura = calcularProgressoLeitura(
-                      obra.capitulos
-                    );
-
-                    const obraFavorita = obraEstaNaLista(obra, obrasFavoritas);
-                    const obraConcluida = obraEstaNaLista(obra, obrasConcluidas);
+                    const obraHref =
+                      obra.link ||
+                      `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
 
                     return (
                       <article key={obra.id} style={isDesktop ? desktopCardStyle : cardStyle}>
                         <div style={criarCoverStyle(obra.capa, isDesktop)}>
                           <div style={overlayStyle} />
 
-                          <div style={coverContentStyle}>
-                            <div style={coverTopBadgesStyle} />
-
-                            <div style={coverBottomStyle}>
-                              <strong style={chapterNumberStyle}>
-                                {obra.capitulos.length}
-                              </strong>
-
-                              <span style={chapterTextStyle}>
-                                {obra.capitulos.length === 1
-                                  ? "capítulo"
-                                  : "capítulos"}
-                              </span>
-                            </div>
-                          </div>
                         </div>
 
                         <div style={isDesktop ? desktopContentStyle : contentStyle}>
@@ -2759,10 +2820,6 @@ export default function SeguindoPage() {
                               </span>
                             )}
 
-                            {obraFavorita && (
-                              <span style={favoriteBadgeStyle}>Na lista</span>
-                            )}
-
                           </div>
 
                           <h3 style={cardTitleStyle}>{obra.titulo}</h3>
@@ -2777,78 +2834,40 @@ export default function SeguindoPage() {
                             Por {obra.autor}
                           </Link>
 
-                          {obra.capitulos.length > 0 && (
-                            <div style={progressLineStyle}>
-                              <div style={progressTrackStyle}>
-                                <div
-                                  style={{
-                                    ...progressBarStyle,
-                                    width: `${progressoLeitura}%`,
-                                  }}
-                                />
-                              </div>
+                          <div
+                            style={{
+                              ...actionsStyle,
+                              gridTemplateColumns:
+                                visualizandoListaSocialDoPerfil
+                                  ? "minmax(0, 1fr)"
+                                  : "minmax(0, 1fr) auto",
+                              alignItems: "stretch",
+                            }}
+                          >
+                            <Link
+                              href={obraHref}
+                              style={{
+                                ...readButtonStyle,
+                                width: "100%",
+                                minHeight: "28px",
+                              }}
+                            >
+                              Ver obra
+                            </Link>
 
-                              <span style={progressPercentStyle}>
-                                {progressoLeitura}%
-                              </span>
-                            </div>
-                          )}
-
-                          <div style={actionsStyle}>
-                            <div style={isDesktop ? desktopPrimaryActionsGridStyle : primaryActionsGridStyle}>
-                              <Link href={obraHref} style={readButtonStyle}>
-                                Abrir obra
-                              </Link>
-
-                              {capituloDeLeitura ? (
-                                <Link
-                                  href={leituraHref}
-                                  style={continueButtonStyle}
-                                >
-                                  {capituloParaContinuar
-                                    ? "Continuar leitura"
-                                    : "Começar leitura"}
-                                </Link>
-                              ) : (
-                                <span style={disabledActionStyle}>
-                                  Sem capítulos
-                                </span>
-                              )}
-                            </div>
-
-                            <div style={isDesktop ? desktopSecondaryActionsRowStyle : secondaryActionsRowStyle}>
-                              <button
-                                type="button"
-                                onClick={() => alternarFavoritoObra(obra)}
-                                style={
-                                  obraFavorita
-                                    ? favoriteActionActiveStyle
-                                    : favoriteActionStyle
-                                }
-                              >
-                                {obraFavorita ? "Na lista" : "Adicionar"}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => alternarConcluidoObra(obra)}
-                                style={
-                                  obraConcluida
-                                    ? completedActionActiveStyle
-                                    : completedActionStyle
-                                }
-                              >
-                                {obraConcluida ? "Concluída" : "Concluir"}
-                              </button>
-
+                            {!visualizandoListaSocialDoPerfil && (
                               <button
                                 type="button"
                                 onClick={() => deixarDeSeguirObra(obra)}
-                                style={unfollowButtonStyle}
+                                style={{
+                                  ...unfollowButtonStyle,
+                                  minWidth: isDesktop ? "124px" : "104px",
+                                  minHeight: "28px",
+                                }}
                               >
                                 Deixar de seguir
                               </button>
-                            </div>
+                            )}
                           </div>
                         </div>
                       </article>
@@ -2856,64 +2875,137 @@ export default function SeguindoPage() {
                   })}
                 </div>
               )}
-            </section>
+              </section>
+            )}
 
-            {atividadesFiltradas.length > 0 && (
+            {(visualizandoListaSocialDoPerfil ||
+              abaConteudo === "pessoas" ||
+              abaConteudo === "seguidores") &&
+              usuariosFiltrados.length > 0 && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-                  <div style={sectionHeaderTextStyle}>
-                    <h2 style={sectionTitleStyle}>ATIVIDADES RECENTES</h2>
-                  </div>
+                {visualizandoListaSocialDoPerfil && (
+                  <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
+                    <div style={sectionHeaderTextStyle}>
+                      <h2 style={sectionTitleStyle}>{tituloListaSocial}</h2>
+                    </div>
 
-                  <span style={sectionCounterStyle}>
-                    {atividadesFiltradas.length}
-                  </span>
-                </div>
+                    <span style={sectionCounterStyle}>
+                      {usuariosFiltrados.length}
+                    </span>
+                  </div>
+                )}
 
                 <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
-                  {atividadesFiltradas.slice(0, 12).map((atividade) => {
-                    const perfilUsuario = usuariosSeguidos.find(
-                      (usuarioSeguido) => usuarioSeguido.id === atividade.usuarioId
-                    );
-                    const perfilHref = perfilUsuario
-                      ? criarHrefPerfilUsuarioSeguindo(perfilUsuario)
-                      : "/perfil-autor";
+                  {usuariosFiltrados.map((usuarioSeguido) => {
+                    const hrefPerfilUsuario = criarHrefPerfilUsuarioSeguindo(usuarioSeguido);
 
                     return (
-                      <article key={atividade.id} style={isDesktop ? desktopAuthorCardStyle : authorCardStyle}>
-                        <Link
-                          href={perfilHref}
-                          style={criarAvatarUsuarioSeguindoStyle(atividade.usuarioAvatar)}
-                          aria-label={`Abrir perfil de ${atividade.usuarioNome}`}
+                      <article
+                        key={usuarioSeguido.id}
+                        role="link"
+                        tabIndex={0}
+                        aria-label={`Abrir perfil de ${usuarioSeguido.nome}`}
+                        onClick={() => router.push(hrefPerfilUsuario)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            router.push(hrefPerfilUsuario);
+                          }
+                        }}
+                        style={{
+                          ...(isDesktop ? desktopAuthorCardStyle : authorCardStyle),
+                          gridTemplateColumns: isDesktop
+                            ? "58px minmax(0, 1fr)"
+                            : "52px minmax(0, 1fr)",
+                          gap: isDesktop ? "7px" : "6px",
+                          width: isDesktop ? "104%" : "102%",
+                          margin: "0 auto",
+                          padding: isDesktop ? "6px 8px 6px 0" : "4px 7px 4px 0",
+                          borderRadius: 0,
+                          background: "transparent",
+                          border: "none",
+                          boxShadow: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div
+                          style={{
+                            ...criarAvatarUsuarioSeguindoStyle(usuarioSeguido.avatar),
+                            width: isDesktop ? "58px" : "52px",
+                            height: isDesktop ? "58px" : "52px",
+                            borderRadius: "16px",
+                            fontSize: isDesktop ? "25px" : "22px",
+                          }}
                         >
-                          {!atividade.usuarioAvatar && atividade.usuarioNome.slice(0, 1).toUpperCase()}
-                        </Link>
+                          {!usuarioSeguido.avatar && usuarioSeguido.nome.slice(0, 1).toUpperCase()}
+                        </div>
 
-                        <div style={authorContentStyle}>
-                          <div style={authorBadgeRowStyle}>
-                            <span style={badgeStyleSmall}>{atividade.tipoRotulo}</span>
+                        <div
+                          style={{
+                            ...authorContentStyle,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: isDesktop ? "10px" : "7px",
+                            minWidth: 0,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "grid",
+                              gap: "2px",
+                              minWidth: 0,
+                              flex: "1 1 auto",
+                            }}
+                          >
+                            <h3
+                              style={{
+                                ...authorNameStyle,
+                                fontSize: isDesktop ? "17px" : "15px",
+                                lineHeight: 1.05,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {usuarioSeguido.nome}
+                            </h3>
 
-                            <span style={readingBadgeStyle}>Diário</span>
+                            <span
+                              style={{
+                                ...authorLinkStyle,
+                                fontSize: isDesktop ? "11px" : "10px",
+                                lineHeight: 1,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {usuarioSeguido.handle}
+                            </span>
                           </div>
 
-                          <h3 style={authorNameStyle}>{atividade.usuarioNome}</h3>
-
-                          <span style={authorLinkStyle}>{atividade.descricao}</span>
-                          <span style={summaryLabelStyle}>
-                            {formatarDataAtividadeSeguindo(atividade.data)}
-                          </span>
-
-                          <div style={actionsStyle}>
-                            <div style={isDesktop ? desktopAuthorActionsGridStyle : authorActionsGridStyle}>
-                              <Link href={atividade.href} style={readButtonStyle}>
-                                Abrir atividade
-                              </Link>
-
-                              <Link href={perfilHref} style={continueButtonStyle}>
-                                Ver perfil
-                              </Link>
-                            </div>
-                          </div>
+                          {podeRemoverUsuariosDaLista && (
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                deixarDeSeguirUsuario(usuarioSeguido.id);
+                              }}
+                              onKeyDown={(event) => event.stopPropagation()}
+                              style={{
+                                ...unfollowButtonStyle,
+                                width: isDesktop ? "112px" : "92px",
+                                minWidth: isDesktop ? "112px" : "92px",
+                                minHeight: "25px",
+                                padding: "0 3px",
+                                fontSize: "9px",
+                                flex: "0 0 auto",
+                              }}
+                            >
+                              Deixar de seguir
+                            </button>
+                          )}
                         </div>
                       </article>
                     );
@@ -2922,74 +3014,7 @@ export default function SeguindoPage() {
               </section>
             )}
 
-            {usuariosFiltrados.length > 0 && (
-              <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-                  <div style={sectionHeaderTextStyle}>
-                    <h2 style={sectionTitleStyle}>
-                      {visualizandoListaSocialDoPerfil
-                        ? tituloListaSocial
-                        : "PESSOAS SEGUIDAS"}
-                    </h2>
-                  </div>
-
-                  <span style={sectionCounterStyle}>
-                    {usuariosFiltrados.length}
-                  </span>
-                </div>
-
-                <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
-                  {usuariosFiltrados.map((usuarioSeguido) => (
-                    <article key={usuarioSeguido.id} style={isDesktop ? desktopAuthorCardStyle : authorCardStyle}>
-                      <Link
-                        href={criarHrefPerfilUsuarioSeguindo(usuarioSeguido)}
-                        style={criarAvatarUsuarioSeguindoStyle(usuarioSeguido.avatar)}
-                        aria-label={`Abrir perfil de ${usuarioSeguido.nome}`}
-                      >
-                        {!usuarioSeguido.avatar && usuarioSeguido.nome.slice(0, 1).toUpperCase()}
-                      </Link>
-
-                      <div style={authorContentStyle}>
-                        <div style={authorBadgeRowStyle}>
-                          <span style={badgeStyleSmall}>Perfil</span>
-
-                          <span style={readingBadgeStyle}>Diário</span>
-                        </div>
-
-                        <h3 style={authorNameStyle}>{usuarioSeguido.nome}</h3>
-
-                        <span style={authorLinkStyle}>{usuarioSeguido.handle}</span>
-
-                        <p style={authorBioStyle}>{usuarioSeguido.bio}</p>
-
-                        <div style={actionsStyle}>
-                          <div style={isDesktop ? desktopAuthorActionsGridStyle : authorActionsGridStyle}>
-                            <Link
-                              href={criarHrefPerfilUsuarioSeguindo(usuarioSeguido)}
-                              style={readButtonStyle}
-                            >
-                              Abrir perfil
-                            </Link>
-
-                            {podeRemoverUsuariosDaLista && (
-                              <button
-                                type="button"
-                                onClick={() => deixarDeSeguirUsuario(usuarioSeguido.id)}
-                                style={unfollowButtonStyle}
-                              >
-                                Deixar de seguir
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {autoresFiltrados.length > 0 && (
+            {!visualizandoListaSocialDoPerfil && abaConteudo === "pessoas" && autoresFiltrados.length > 0 && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
                 <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
                   <div style={sectionHeaderTextStyle}>
@@ -3180,7 +3205,51 @@ const containerStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1220px, calc(100% - 64px))",
-  padding: "18px 0 40px",
+  padding: "10px 0 40px",
+};
+
+const desktopNotificationButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "10px",
+  right: 0,
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+  zIndex: 4,
+};
+
+const desktopNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
 };
 
 const topStyle: CSSProperties = {
@@ -3405,7 +3474,6 @@ const desktopHeroStyle: CSSProperties = {
 };
 
 
-
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
@@ -3560,6 +3628,282 @@ const searchInputStyle: CSSProperties = {
 const desktopSearchInputStyle: CSSProperties = {
   ...searchInputStyle,
   minHeight: "42px",
+};
+
+const socialToolbarStyle: CSSProperties = {
+  display: "grid",
+  gap: "12px",
+  margin: "10px 0 18px",
+  padding: "0 4px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+const desktopSocialToolbarStyle: CSSProperties = {
+  ...socialToolbarStyle,
+  width: "min(760px, 100%)",
+  margin: "-8px auto 22px",
+  padding: 0,
+};
+
+const socialTabsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  alignItems: "end",
+  minWidth: 0,
+  borderBottom: "1px solid rgba(255,255,255,0.10)",
+};
+
+const socialTabStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  minHeight: "42px",
+  border: "none",
+  borderBottom: "2px solid transparent",
+  background: "transparent",
+  color: "rgba(212,212,216,0.68)",
+  fontFamily: "inherit",
+  fontSize: "13px",
+  fontWeight: 950,
+  cursor: "pointer",
+  textAlign: "center",
+  padding: "0 8px 9px",
+  boxSizing: "border-box",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
+
+const socialTabActiveStyle: CSSProperties = {
+  ...socialTabStyle,
+  color: "#FFFFFF",
+  borderBottom: "2px solid rgba(255,255,255,0.92)",
+};
+
+const mobileThreeSocialTabStyle: CSSProperties = {
+  fontSize: "11px",
+  letterSpacing: "-0.25px",
+  padding: "0 1px 9px",
+  overflow: "visible",
+  textOverflow: "clip",
+};
+
+const socialTabCountStyle: CSSProperties = {
+  display: "inline",
+  marginLeft: "5px",
+  color: "inherit",
+  fontSize: "inherit",
+  fontWeight: 950,
+};
+
+const mobileThreeSocialTabCountStyle: CSSProperties = {
+  ...socialTabCountStyle,
+  marginLeft: "3px",
+};
+
+const instagramSearchShellStyle: CSSProperties = {
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+  width: "100%",
+  minHeight: "48px",
+  borderRadius: "14px",
+  background: "rgba(39, 39, 42, 0.88)",
+  border: "1px solid rgba(255,255,255,0.045)",
+  padding: "0 14px",
+  boxSizing: "border-box",
+  minWidth: 0,
+};
+
+const searchIconStyle: CSSProperties = {
+  flex: "0 0 auto",
+  color: "rgba(212,212,216,0.72)",
+  fontSize: "25px",
+  lineHeight: 1,
+  fontWeight: 400,
+  marginRight: "10px",
+  transform: "translateY(-1px)",
+};
+
+const instagramSearchInputStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  height: "46px",
+  border: "none",
+  outline: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "18px",
+  fontWeight: 750,
+  letterSpacing: "-0.035em",
+  padding: 0,
+  boxSizing: "border-box",
+};
+
+const sortingRowStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  width: "100%",
+  minHeight: "40px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  padding: "2px 0",
+  boxSizing: "border-box",
+  textAlign: "left",
+};
+
+const sortingLabelStyle: CSSProperties = {
+  color: "rgba(244,244,245,0.94)",
+  fontSize: "16px",
+  lineHeight: 1.25,
+  fontWeight: 500,
+  letterSpacing: "-0.035em",
+  minWidth: 0,
+  ...safeTextStyle,
+};
+
+const sortingValueStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontWeight: 950,
+};
+
+const sortingArrowStyle: CSSProperties = {
+  flex: "0 0 auto",
+  color: "#FFFFFF",
+  fontSize: "30px",
+  lineHeight: 1,
+  fontWeight: 700,
+};
+
+const compactClearButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "fit-content",
+  justifySelf: "center",
+  minHeight: "34px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "rgba(244,244,245,0.88)",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 900,
+  padding: "0 13px",
+  cursor: "pointer",
+  boxShadow: "none",
+};
+
+const sortingBackdropStyle: CSSProperties = {
+  position: "fixed",
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  height: "100dvh",
+  zIndex: 240,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  background: "rgba(0,0,0,0.68)",
+  padding: 0,
+  boxSizing: "border-box",
+  overscrollBehavior: "none",
+  touchAction: "none",
+};
+
+const sortingSheetStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  width: "min(760px, calc(100% - 12px))",
+  maxHeight: "none",
+  overflow: "hidden",
+  overscrollBehavior: "none",
+  borderRadius: "24px 24px 0 0",
+  background: "#15191C",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
+  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  boxSizing: "border-box",
+  touchAction: "none",
+};
+
+const sortingHandleStyle: CSSProperties = {
+  display: "block",
+  width: "72px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "rgba(244,244,245,0.62)",
+  margin: "0 auto 14px",
+};
+
+const sortingTitleStyle: CSSProperties = {
+  margin: "0 0 12px",
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
+  textAlign: "center",
+};
+
+const sortingOptionsListStyle: CSSProperties = {
+  display: "grid",
+  gap: 0,
+  borderTop: "1px solid rgba(255,255,255,0.045)",
+};
+
+const sortingOptionStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  minHeight: "48px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "16px",
+  border: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "18px",
+  fontWeight: 650,
+  letterSpacing: "-0.035em",
+  textAlign: "left",
+  padding: "0 30px",
+  cursor: "pointer",
+  boxSizing: "border-box",
+};
+
+const sortingOptionActiveStyle: CSSProperties = {
+  ...sortingOptionStyle,
+  fontWeight: 900,
+};
+
+const sortingOptionRadioStyle: CSSProperties = {
+  flex: "0 0 auto",
+  width: "28px",
+  height: "28px",
+  borderRadius: "999px",
+  border: "3px solid rgba(161,161,170,0.72)",
+  boxSizing: "border-box",
+};
+
+const sortingOptionRadioActiveStyle: CSSProperties = {
+  ...sortingOptionRadioStyle,
+  border: "8px solid #FFFFFF",
+  background: "transparent",
 };
 
 const quickFiltersStyle: CSSProperties = {
@@ -3874,10 +4218,10 @@ const desktopAuthorsGridStyle: CSSProperties = {
 const cardStyle: CSSProperties = {
   position: "relative",
   display: "grid",
-  gridTemplateColumns: "minmax(112px, 0.38fr) minmax(0, 1fr)",
+  gridTemplateColumns: "minmax(104px, 0.36fr) minmax(0, 1fr)",
   alignItems: "start",
-  gap: "10px",
-  padding: "10px",
+  gap: "6px",
+  padding: "6px",
   borderRadius: "22px",
   overflow: "hidden",
   background: "rgba(4, 0, 10, 0.72)",
@@ -3892,7 +4236,7 @@ const desktopCardStyle: CSSProperties = {
   ...cardStyle,
   display: "grid",
   gridTemplateColumns: "1fr",
-  gridTemplateRows: "165px 1fr",
+  gridTemplateRows: "104px 1fr",
   gap: 0,
   padding: 0,
   borderRadius: "24px",
@@ -3902,8 +4246,8 @@ const desktopCardStyle: CSSProperties = {
 const coverStyle: CSSProperties = {
   position: "relative",
   width: "100%",
-  height: "176px",
-  minHeight: "176px",
+  height: "108px",
+  minHeight: "108px",
   maxWidth: "100%",
   alignSelf: "start",
   boxSizing: "border-box",
@@ -3913,7 +4257,7 @@ const coverStyle: CSSProperties = {
   backgroundSize: "cover",
   backgroundPosition: "center",
   overflow: "hidden",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "none",
   borderBottom: "none",
   minWidth: 0,
   boxShadow: "none",
@@ -3921,35 +4265,16 @@ const coverStyle: CSSProperties = {
 
 const desktopCoverStyle: CSSProperties = {
   ...coverStyle,
-  height: "165px",
-  minHeight: "165px",
+  height: "104px",
+  minHeight: "104px",
   borderRadius: "24px 24px 0 0",
-  borderBottom: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))"
+  borderBottom: "none"
 };
 
 const overlayStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
   background: "linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.26) 100%)",
-};
-
-const coverContentStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "space-between",
-  padding: "9px",
-  minWidth: 0,
-  boxSizing: "border-box",
-  pointerEvents: "none",
-};
-
-const coverTopBadgesStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "4px",
-  minWidth: 0,
 };
 
 const genreStyle: CSSProperties = {
@@ -3965,44 +4290,12 @@ const genreStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const coverBottomStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "baseline",
-  justifyContent: "center",
-  gap: "6px",
-  minWidth: 0,
-};
-
-const chapterNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  textShadow: "none",
-  fontSize: "34px",
-  lineHeight: 0.9,
-  fontWeight: 950,
-  letterSpacing: "-0.08em",
-  flex: "0 0 auto",
-  ...safeTextStyle,
-};
-
-const chapterTextStyle: CSSProperties = {
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  textShadow: "none",
-  fontSize: "10px",
-  fontWeight: 900,
-  textTransform: "uppercase",
-  letterSpacing: "0.055em",
-  whiteSpace: "nowrap",
-  overflowWrap: "normal",
-  wordBreak: "normal",
-};
 
 const contentStyle: CSSProperties = {
   padding: 0,
   display: "grid",
   alignContent: "start",
-  gap: "7px",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box"
@@ -4010,8 +4303,8 @@ const contentStyle: CSSProperties = {
 
 const desktopContentStyle: CSSProperties = {
   ...contentStyle,
-  padding: "13px",
-  gap: "9px"
+  padding: "8px",
+  gap: "5px"
 };
 
 const badgeRowStyle: CSSProperties = {

@@ -2,8 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { supabase } from "./supabase/client";
 
 export const THEME_STORAGE_KEY = "historietas-tema-visual";
+
+export function criarStorageKeyUsuarioTema(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
 
 export type TemaVisualHistorietas =
   | "branco"
@@ -393,9 +400,7 @@ export const historietasThemeCss = `
   html[data-historietas-tema-visual] nav,
   html[data-historietas-tema-visual] [data-bottom-nav],
   html[data-historietas-tema-visual] [data-mobile-nav],
-  html[data-historietas-tema-visual] nav:has(a[href="/publicar"]),
-  html[data-historietas-tema-visual] div:has(> a[href="/publicar"]):has(> a[href="/biblioteca"]),
-  html[data-historietas-tema-visual] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) {
+  html[data-historietas-tema-visual] nav:has(a[href="/publicar"]) {
     background: var(--historietas-bottom-nav-bg, var(--historietas-surface-strong, rgba(18,8,31,0.98))) !important;
     border-color: var(--historietas-bottom-nav-border, var(--historietas-border-soft, rgba(255,255,255,0.12))) !important;
     box-shadow: var(--historietas-bottom-nav-shadow, none) !important;
@@ -407,17 +412,14 @@ export const historietasThemeCss = `
   html[data-historietas-tema-visual] [data-mobile-nav] a,
   html[data-historietas-tema-visual] nav button,
   html[data-historietas-tema-visual] [data-bottom-nav] button,
-  html[data-historietas-tema-visual] [data-mobile-nav] button,
-  html[data-historietas-tema-visual] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) a,
-  html[data-historietas-tema-visual] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) button {
+  html[data-historietas-tema-visual] [data-mobile-nav] button {
     color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
     box-shadow: none !important;
   }
 
   html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
-  html[data-historietas-tema-visual] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
     background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
@@ -582,13 +584,22 @@ export function obterTemaVisualSeguro(valor: unknown): TemaVisualHistorietas {
   return "original";
 }
 
-export function carregarTemaVisualSalvo(): TemaVisualHistorietas {
+export function carregarTemaVisualSalvo(
+  userId = "",
+  permitirLegadoGlobal = false
+): TemaVisualHistorietas {
   if (typeof localStorage === "undefined") {
     return "original";
   }
 
   try {
-    const texto = localStorage.getItem(THEME_STORAGE_KEY);
+    const userIdLimpo = userId.trim();
+    const chaveTema = criarStorageKeyUsuarioTema(THEME_STORAGE_KEY, userIdLimpo);
+    const texto = userIdLimpo
+      ? localStorage.getItem(chaveTema)
+      : permitirLegadoGlobal
+        ? localStorage.getItem(THEME_STORAGE_KEY)
+        : null;
 
     if (!texto) {
       return "original";
@@ -775,7 +786,8 @@ export function criarPageThemeStyle(
 }
 
 export function useHistorietasTheme(pageStyle: CSSProperties) {
-  const [temaVisual, setTemaVisual] = useState<TemaVisualHistorietas>("original");
+  const [temaVisual, setTemaVisual] =
+    useState<TemaVisualHistorietas>("original");
 
   const pageThemeStyle = useMemo<CSSProperties>(
     () => criarPageThemeStyle(pageStyle, temaVisual),
@@ -783,10 +795,66 @@ export function useHistorietasTheme(pageStyle: CSSProperties) {
   );
 
   useEffect(() => {
-    const temaSalvo = carregarTemaVisualSalvo();
+    let cancelado = false;
 
-    setTemaVisual(temaSalvo);
-    aplicarTemaVisual(temaSalvo);
+    async function carregarTemaDoUsuarioAtual() {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data.user?.id || "";
+        const temaSalvo = carregarTemaVisualSalvo(userId);
+
+        if (cancelado) {
+          return;
+        }
+
+        setTemaVisual(temaSalvo);
+        aplicarTemaVisual(temaSalvo);
+      } catch {
+        if (!cancelado) {
+          setTemaVisual("original");
+          aplicarTemaVisual("original");
+        }
+      }
+    }
+
+    void carregarTemaDoUsuarioAtual();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const userId = session?.user.id || "";
+      const temaSalvo = carregarTemaVisualSalvo(userId);
+
+      setTemaVisual(temaSalvo);
+      aplicarTemaVisual(temaSalvo);
+    });
+
+    function atualizarTemaAoMudarStorage(evento: StorageEvent) {
+      const chave = evento.key || "";
+
+      if (
+        chave === THEME_STORAGE_KEY ||
+        chave.startsWith(`${THEME_STORAGE_KEY}:`)
+      ) {
+        void carregarTemaDoUsuarioAtual();
+      }
+    }
+
+    window.addEventListener("storage", atualizarTemaAoMudarStorage);
+    window.addEventListener(
+      "historietas:tema-visual-atualizado",
+      carregarTemaDoUsuarioAtual
+    );
+
+    return () => {
+      cancelado = true;
+      subscription.unsubscribe();
+      window.removeEventListener("storage", atualizarTemaAoMudarStorage);
+      window.removeEventListener(
+        "historietas:tema-visual-atualizado",
+        carregarTemaDoUsuarioAtual
+      );
+    };
   }, []);
 
   return {

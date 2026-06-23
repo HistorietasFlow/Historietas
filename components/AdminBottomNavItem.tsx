@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase/client";
 
 export default function AdminBottomNavItem() {
   const [mostrarAdmin, setMostrarAdmin] = useState(false);
   const pathname = usePathname() || "/";
+  const verificacaoAtualRef = useRef(0);
 
   const itemAtivo =
     pathname === "/admin/comunidade" ||
@@ -17,33 +18,33 @@ export default function AdminBottomNavItem() {
     let cancelado = false;
 
     async function verificarAdmin() {
+      const verificacaoId = verificacaoAtualRef.current + 1;
+      verificacaoAtualRef.current = verificacaoId;
+
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const user = sessionData.session?.user || null;
+        const { data, error } = await supabase.auth.getUser();
+        const user = data.user || null;
 
-        if (!user) {
-          if (!cancelado) {
-            setMostrarAdmin(false);
-          }
-
+        if (cancelado || verificacaoAtualRef.current !== verificacaoId) {
           return;
         }
 
-        const { data, error } = await supabase.rpc("usuario_e_admin");
-
-        if (error) {
-          if (!cancelado) {
-            setMostrarAdmin(false);
-          }
-
+        if (error || !user) {
+          setMostrarAdmin(false);
           return;
         }
 
-        if (!cancelado) {
-          setMostrarAdmin(data === true);
+        const { data: adminLiberado, error: adminError } = await supabase.rpc(
+          "usuario_e_admin"
+        );
+
+        if (cancelado || verificacaoAtualRef.current !== verificacaoId) {
+          return;
         }
+
+        setMostrarAdmin(!adminError && adminLiberado === true);
       } catch {
-        if (!cancelado) {
+        if (!cancelado && verificacaoAtualRef.current === verificacaoId) {
           setMostrarAdmin(false);
         }
       }
@@ -53,7 +54,12 @@ export default function AdminBottomNavItem() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setMostrarAdmin(false);
+        return;
+      }
+
       void verificarAdmin();
     });
 

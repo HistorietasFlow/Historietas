@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
+import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
 import type { CSSProperties } from "react";
 
 type CapituloLocal = {
@@ -115,51 +117,28 @@ type ObraComMetricas = ObraLocal & {
   pontuacao: number;
 };
 
-type NotificacaoLocal = {
-  id: string;
-  obraId: string;
-  capituloId: string;
-  titulo: string;
-  mensagem: string;
-  tipo: "novo-capitulo";
-  lida: boolean;
-  criadaEm: string;
-};
 
 type FiltroPainel =
   | "todas"
   | "publicadas"
   | "rascunhos"
-  | "sem-capitulos";
+  | "sem-capitulos"
+  | "favoritas"
+  | "concluidas"
+  | "em-leitura";
 
 type OrdenacaoPainel =
   | "pontuacao"
   | "recentes"
   | "titulo"
-  | "capitulos";
+  | "capitulos"
+  | "progresso";
 
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
+const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "obra";
-}
 
 function criarLoginHrefPainelAutor() {
   const params = new URLSearchParams({
@@ -167,6 +146,28 @@ function criarLoginHrefPainelAutor() {
   });
 
   return `/login?${params.toString()}`;
+}
+
+function criarHrefLeituraCapituloPainel(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
+  capitulo: Pick<CapituloLocal, "id">,
+  numeroCapitulo: number
+) {
+  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  if (
+    obra.publicado &&
+    idObraSupabaseValido(obra.id) &&
+    slugSeguro &&
+    Number.isInteger(numeroCapitulo) &&
+    numeroCapitulo > 0
+  ) {
+    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
+  }
+
+  return `/ler-capitulo?obraId=${encodeURIComponent(
+    obra.id
+  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
 function formatarGeneroPainelAutor(genero: string) {
@@ -320,9 +321,12 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
-function carregarBackupArquivosObras(): ArquivosObrasBackup {
+function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   try {
-    const backupTexto = localStorage.getItem(FILE_BACKUP_STORAGE_KEY);
+    const backupTexto = lerStorageUsuarioPainel(
+      FILE_BACKUP_STORAGE_KEY,
+      userId
+    );
     const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
 
     if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
@@ -339,21 +343,22 @@ function carregarBackupArquivosObras(): ArquivosObrasBackup {
       }
     });
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioPainel(
       FILE_BACKUP_STORAGE_KEY,
-      JSON.stringify(backupNormalizado)
+      userId,
+      backupNormalizado
     );
 
     return backupNormalizado;
   } catch {
-    localStorage.setItem(FILE_BACKUP_STORAGE_KEY, JSON.stringify({}));
+    salvarJsonStorageUsuarioPainel(FILE_BACKUP_STORAGE_KEY, userId, {});
     return {};
   }
 }
 
-function sincronizarBackupArquivosObras(obras: ObraLocal[]) {
+function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
   try {
-    const backupAtual = carregarBackupArquivosObras();
+    const backupAtual = carregarBackupArquivosObras(userId);
 
     obras.forEach((obra) => {
       const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
@@ -363,7 +368,11 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[]) {
       }
     });
 
-    localStorage.setItem(FILE_BACKUP_STORAGE_KEY, JSON.stringify(backupAtual));
+    salvarJsonStorageUsuarioPainel(
+      FILE_BACKUP_STORAGE_KEY,
+      userId,
+      backupAtual
+    );
   } catch {
     // Se o backup falhar, o painel continua funcionando normalmente.
   }
@@ -514,25 +523,45 @@ function criarStorageKeyUsuarioPainel(chave: string, userId: string) {
   return usuarioId ? `${chave}:${usuarioId}` : chave;
 }
 
+function lerStorageUsuarioPainel(chave: string, userId: string) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(criarStorageKeyUsuarioPainel(chave, userId));
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioPainel(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioPainel(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage é fallback; o painel continua com estado em memória.
+  }
+}
+
 function carregarListaIdsPainel(chave: string, userId: string) {
   try {
-    const listaGlobalTexto = localStorage.getItem(chave);
-    const listaUsuarioTexto = localStorage.getItem(
-      criarStorageKeyUsuarioPainel(chave, userId)
-    );
-    const listaGlobalJson: unknown = listaGlobalTexto
-      ? JSON.parse(listaGlobalTexto)
-      : [];
+    const listaUsuarioTexto = lerStorageUsuarioPainel(chave, userId);
     const listaUsuarioJson: unknown = listaUsuarioTexto
       ? JSON.parse(listaUsuarioTexto)
       : [];
 
-    return Array.from(
-      new Set([
-        ...normalizarListaIds(listaGlobalJson),
-        ...normalizarListaIds(listaUsuarioJson),
-      ])
-    );
+    return normalizarListaIds(listaUsuarioJson);
   } catch {
     return [] as string[];
   }
@@ -541,20 +570,11 @@ function carregarListaIdsPainel(chave: string, userId: string) {
 function salvarListaIdsUsuarioPainel(
   chave: string,
   userId: string,
-  listaUsuario: string[],
-  listaGlobalPreservada: string[] = []
+  listaUsuario: string[]
 ) {
   const listaUsuarioNormalizada = normalizarListaIds(listaUsuario);
-  const listaGlobalNormalizada = normalizarListaIds(listaGlobalPreservada);
-  const listaGlobalMesclada = Array.from(
-    new Set([...listaUsuarioNormalizada, ...listaGlobalNormalizada])
-  );
 
-  localStorage.setItem(chave, JSON.stringify(listaGlobalMesclada));
-  localStorage.setItem(
-    criarStorageKeyUsuarioPainel(chave, userId),
-    JSON.stringify(listaUsuarioNormalizada)
-  );
+  salvarJsonStorageUsuarioPainel(chave, userId, listaUsuarioNormalizada);
 }
 
 function obterIdentificadoresObraPainel(
@@ -589,6 +609,95 @@ function colecaoTemObraPainel(
   );
 }
 
+
+function removerObraDaColecaoPainel(
+  colecao: string[],
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">
+) {
+  const identificadoresObra = new Set(obterIdentificadoresObraPainel(obra));
+
+  return colecao.filter((id) => !identificadoresObra.has(id.trim()));
+}
+
+function lerListaIdsStoragePainel(chave: string, userId = "") {
+  try {
+    const listaTexto = lerStorageUsuarioPainel(chave, userId);
+    const listaJson: unknown = listaTexto ? JSON.parse(listaTexto) : [];
+
+    return normalizarListaIds(listaJson);
+  } catch {
+    return [] as string[];
+  }
+}
+
+function salvarColecaoAposExcluirPainel(
+  chave: string,
+  userId: string,
+  listaUsuario: string[]
+) {
+  salvarJsonStorageUsuarioPainel(
+    chave,
+    userId,
+    normalizarListaIds(listaUsuario)
+  );
+}
+
+function limparReferenciasLocaisObraExcluidaPainel(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
+  userId: string
+) {
+  [FOLLOW_STORAGE_KEY, FAVORITES_STORAGE_KEY, COMPLETED_STORAGE_KEY].forEach(
+    (chave) => {
+      try {
+        const listaUsuario = removerObraDaColecaoPainel(
+          lerListaIdsStoragePainel(chave, userId),
+          obra
+        );
+
+        salvarJsonStorageUsuarioPainel(chave, userId, listaUsuario);
+      } catch {
+        // A limpeza local não pode impedir a exclusão da obra.
+      }
+    }
+  );
+}
+
+async function removerReferenciasSupabaseObraExcluidaPainel(
+  userId: string,
+  obraId: string,
+  capituloIds: string[]
+) {
+  const usuarioId = userId.trim();
+  const obraIdLimpo = obraId.trim();
+  const capitulosValidos = capituloIds.map((id) => id.trim()).filter(Boolean);
+
+  if (!usuarioId || !obraIdLimpo) {
+    return;
+  }
+
+  try {
+    await Promise.allSettled([
+      supabase.from("favoritos").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
+      supabase.from("concluidas").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
+      supabase.from("seguindo_obras").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
+      supabase.from("obra_curtidas").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
+      supabase.from("obra_avaliacoes").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
+      supabase.from("progresso_leitura").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
+      supabase.from("diario_atividades").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
+    ]);
+
+    if (capitulosValidos.length > 0) {
+      await Promise.allSettled([
+        supabase.from("curtidas_capitulos").delete().eq("user_id", usuarioId).in("capitulo_id", capitulosValidos),
+        supabase.from("salvos_capitulos").delete().eq("user_id", usuarioId).in("capitulo_id", capitulosValidos),
+        supabase.from("comentarios_capitulos").delete().eq("user_id", usuarioId).in("capitulo_id", capitulosValidos),
+      ]);
+    }
+  } catch {
+    // A exclusão principal da obra continua mesmo se a limpeza social falhar.
+  }
+}
+
 function normalizarIdUsuarioPainel(valor: string) {
   return valor.trim().toLowerCase();
 }
@@ -616,16 +725,6 @@ function filtrarListaPorObrasDoUsuario(listaIds: string[], obrasUsuario: ObraLoc
       obterIdentificadoresObraPainel(obra).includes(idLimpo)
     );
   });
-}
-
-function contarNotificacoesNaoLidas(valor: unknown) {
-  if (!Array.isArray(valor)) {
-    return 0;
-  }
-
-  return valor.filter((notificacao: Partial<NotificacaoLocal>) => {
-    return !Boolean(notificacao.lida);
-  }).length;
 }
 
 
@@ -706,6 +805,21 @@ function obterTextoComentarioRegistro(registro: RegistroSupabaseGenerico) {
   return typeof valorEncontrado === "string" ? valorEncontrado : "";
 }
 
+const CAMPOS_REGISTROS_PAINEL_AUTOR: Record<string, string> = {
+  favoritos: "user_id,obra_id",
+  concluidas: "user_id,obra_id",
+  salvos_capitulos: "user_id,capitulo_id",
+  curtidas_capitulos: "user_id,capitulo_id",
+  comentarios_capitulos: "user_id,capitulo_id,comentario,texto",
+  progresso_leitura: "user_id,obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
+  obra_curtidas: "user_id,obra_id",
+  seguindo_obras: "user_id,obra_id",
+};
+
+function obterCamposRegistrosPainelAutor(tabela: string) {
+  return CAMPOS_REGISTROS_PAINEL_AUTOR[tabela] || "id";
+}
+
 async function carregarRegistrosObraSupabase(
   tabela: string,
   obraIds: string[],
@@ -721,19 +835,19 @@ async function carregarRegistrosObraSupabase(
       return null as RegistroSupabaseGenerico[] | null;
     }
 
-    let query = supabase.from(tabela).select("*").in("obra_id", obraIds);
+    let query = supabase.from(tabela).select(obterCamposRegistrosPainelAutor(tabela)).in("obra_id", obraIds);
 
     if (userId) {
       query = query.eq("user_id", userId);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.limit(1000);
 
     if (error) {
       return null;
     }
 
-    return Array.isArray(data) ? (data as RegistroSupabaseGenerico[]) : [];
+    return Array.isArray(data) ? (data as unknown as RegistroSupabaseGenerico[]) : [];
   }
 
   async function tentarPorCapituloId() {
@@ -741,19 +855,19 @@ async function carregarRegistrosObraSupabase(
       return null as RegistroSupabaseGenerico[] | null;
     }
 
-    let query = supabase.from(tabela).select("*").in("capitulo_id", capituloIds);
+    let query = supabase.from(tabela).select(obterCamposRegistrosPainelAutor(tabela)).in("capitulo_id", capituloIds);
 
     if (userId) {
       query = query.eq("user_id", userId);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.limit(1000);
 
     if (error) {
       return null;
     }
 
-    return Array.isArray(data) ? (data as RegistroSupabaseGenerico[]) : [];
+    return Array.isArray(data) ? (data as unknown as RegistroSupabaseGenerico[]) : [];
   }
 
   try {
@@ -1121,9 +1235,12 @@ async function carregarPainelAutorSupabase(
 
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
-      .select("*")
+      .select(
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+      )
       .eq("user_id", userId)
-      .order("criada_em", { ascending: false });
+      .order("criada_em", { ascending: false })
+      .limit(80);
 
     if (erroObras) {
       console.warn("Não consegui carregar obras no Painel do Autor:", erroObras.message);
@@ -1135,7 +1252,7 @@ async function carregarPainelAutorSupabase(
     }
 
     const obrasSupabaseBanco = Array.isArray(obrasBanco)
-      ? (obrasBanco as SupabaseObraRow[])
+      ? (obrasBanco as unknown as SupabaseObraRow[])
       : [];
     const obraIds = obrasSupabaseBanco
       .map((obra) => obra.id)
@@ -1151,9 +1268,11 @@ async function carregarPainelAutorSupabase(
 
     const { data: capitulosBanco, error: erroCapitulos } = await supabase
       .from("capitulos")
-      .select("*")
+      .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
       .in("obra_id", obraIds)
-      .order("ordem", { ascending: true });
+      .eq("user_id", userId)
+      .order("ordem", { ascending: true })
+      .limit(600);
 
     if (erroCapitulos) {
       console.warn("Não consegui carregar capítulos no Painel do Autor:", erroCapitulos.message);
@@ -1162,7 +1281,7 @@ async function carregarPainelAutorSupabase(
     const capitulosSupabaseBanco = erroCapitulos
       ? []
       : Array.isArray(capitulosBanco)
-      ? (capitulosBanco as SupabaseCapituloRow[])
+      ? (capitulosBanco as unknown as SupabaseCapituloRow[])
       : [];
 
     const capituloIds = capitulosSupabaseBanco
@@ -1300,40 +1419,14 @@ async function carregarPainelAutorSupabase(
   }
 }
 
-async function carregarNotificacoesNaoLidasPainelSupabase(userId: string) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return 0;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("notificacoes")
-      .select("id")
-      .or(
-        `user_id.eq.${userIdLimpo},destinatario_id.eq.${userIdLimpo},recipient_id.eq.${userIdLimpo}`
-      )
-      .eq("lida", false)
-      .limit(1000);
-
-    if (error) {
-      return 0;
-    }
-
-    return Array.isArray(data) ? data.length : 0;
-  } catch {
-    return 0;
-  }
-}
-
 export default function PainelAutorPage() {
   const router = useRouter();
 
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
-  const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
+  const { notificacoesNaoLidas } = useNotificacoes();
+  const [obraComLinkCopiado, setObraComLinkCopiado] = useState("");
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<FiltroPainel>("todas");
   const [ordenacao, setOrdenacao] = useState<OrdenacaoPainel>("pontuacao");
@@ -1461,6 +1554,7 @@ export default function PainelAutorPage() {
     }
   }, [router, usuarioIdLogado, verificandoUsuario]);
 
+
   useEffect(() => {
     if (verificandoUsuario || !usuarioIdLogado) {
       return;
@@ -1470,12 +1564,15 @@ export default function PainelAutorPage() {
 
     async function carregarDadosPainelAutor() {
       try {
-        const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
+        const obrasSalvasTexto = lerStorageUsuarioPainel(
+          STORAGE_KEY,
+          usuarioIdLogado
+        );
         const obrasSalvasJson: unknown = obrasSalvasTexto
           ? JSON.parse(obrasSalvasTexto)
           : [];
 
-        const backupArquivosObras = carregarBackupArquivosObras();
+        const backupArquivosObras = carregarBackupArquivosObras(usuarioIdLogado);
 
         const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
           ? (obrasSalvasJson as ObraSalva[]).map((obra, obraIndex) =>
@@ -1492,30 +1589,15 @@ export default function PainelAutorPage() {
           usuarioIdLogado,
           nomeProfileAutorPainel
         );
-        const obrasOutrosUsuarios = obrasNormalizadas.filter(
-          (obra) => !obraPertenceAoUsuarioPainel(obra, usuarioIdLogado)
+
+        const obrasFavoritasNormalizadas = carregarListaIdsPainel(
+          FAVORITES_STORAGE_KEY,
+          usuarioIdLogado
         );
 
-        const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
-        const obrasFavoritasJson: unknown = obrasFavoritasTexto
-          ? JSON.parse(obrasFavoritasTexto)
-          : [];
-        const obrasFavoritasNormalizadas = Array.from(
-          new Set([
-            ...normalizarListaIds(obrasFavoritasJson),
-            ...carregarListaIdsPainel(FAVORITES_STORAGE_KEY, usuarioIdLogado),
-          ])
-        );
-
-        const obrasConcluidasTexto = localStorage.getItem(COMPLETED_STORAGE_KEY);
-        const obrasConcluidasJson: unknown = obrasConcluidasTexto
-          ? JSON.parse(obrasConcluidasTexto)
-          : [];
-        const obrasConcluidasNormalizadas = Array.from(
-          new Set([
-            ...normalizarListaIds(obrasConcluidasJson),
-            ...carregarListaIdsPainel(COMPLETED_STORAGE_KEY, usuarioIdLogado),
-          ])
+        const obrasConcluidasNormalizadas = carregarListaIdsPainel(
+          COMPLETED_STORAGE_KEY,
+          usuarioIdLogado
         );
 
         const obrasFavoritasUsuario = filtrarListaPorObrasDoUsuario(
@@ -1525,15 +1607,6 @@ export default function PainelAutorPage() {
         const obrasConcluidasUsuario = filtrarListaPorObrasDoUsuario(
           obrasConcluidasNormalizadas,
           obrasUsuarioLogado
-        );
-
-        const notificacoesTexto = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-        const notificacoesJson: unknown = notificacoesTexto
-          ? JSON.parse(notificacoesTexto)
-          : [];
-        const totalNotificacoesNaoLidas = Math.max(
-          contarNotificacoesNaoLidas(notificacoesJson),
-          await carregarNotificacoesNaoLidasPainelSupabase(usuarioIdLogado)
         );
 
         if (!componenteAtivo) {
@@ -1547,7 +1620,6 @@ export default function PainelAutorPage() {
         setObras(obrasUsuarioLogado);
         setObrasFavoritas(obrasFavoritasUsuario);
         setObrasConcluidas(obrasConcluidasUsuario);
-        setNotificacoesNaoLidas(totalNotificacoesNaoLidas);
 
         const dadosSupabase = await carregarPainelAutorSupabase(
           obrasUsuarioLogado,
@@ -1563,33 +1635,17 @@ export default function PainelAutorPage() {
           normalizarObra(obra as ObraSalva, index)
         );
 
-        const obrasPersistidas = [
-          ...obrasFinais,
-          ...obrasOutrosUsuarios.filter((obraOutroUsuario) =>
-            obrasFinais.every((obraAtual) => obraAtual.id !== obraOutroUsuario.id)
-          ),
-        ];
-        const idsObrasFinais = new Set(obrasFinais.map((obra) => obra.id));
-        const favoritasOutrosUsuarios = obrasFavoritasNormalizadas.filter(
-          (id) => !idsObrasFinais.has(id)
-        );
-        const concluidasOutrosUsuarios = obrasConcluidasNormalizadas.filter(
-          (id) => !idsObrasFinais.has(id)
-        );
-
-        sincronizarBackupArquivosObras(obrasFinais);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasPersistidas));
+        sincronizarBackupArquivosObras(obrasFinais, usuarioIdLogado);
+        salvarJsonStorageUsuarioPainel(STORAGE_KEY, usuarioIdLogado, obrasFinais);
         salvarListaIdsUsuarioPainel(
           FAVORITES_STORAGE_KEY,
           usuarioIdLogado,
-          dadosSupabase.favoritas,
-          favoritasOutrosUsuarios
+          dadosSupabase.favoritas
         );
         salvarListaIdsUsuarioPainel(
           COMPLETED_STORAGE_KEY,
           usuarioIdLogado,
-          dadosSupabase.concluidas,
-          concluidasOutrosUsuarios
+          dadosSupabase.concluidas
         );
 
         setObras(obrasFinais);
@@ -1603,7 +1659,6 @@ export default function PainelAutorPage() {
         setObras([]);
         setObrasFavoritas([]);
         setObrasConcluidas([]);
-        setNotificacoesNaoLidas(0);
       }
     }
 
@@ -1685,7 +1740,13 @@ export default function PainelAutorPage() {
             ? obra.publicado
             : filtro === "rascunhos"
             ? !obra.publicado
-            : obra.capitulos.length === 0;
+            : filtro === "sem-capitulos"
+            ? obra.capitulos.length === 0
+            : filtro === "favoritas"
+            ? colecaoTemObraPainel(obrasFavoritas, obra)
+            : filtro === "concluidas"
+            ? colecaoTemObraPainel(obrasConcluidas, obra)
+            : obra.progressoLeitura > 0 && obra.progressoLeitura < 100;
 
         return passaBusca && passaFiltro;
       })
@@ -1700,6 +1761,10 @@ export default function PainelAutorPage() {
 
         if (ordenacao === "capitulos") {
           return obraB.capitulos.length - obraA.capitulos.length;
+        }
+
+        if (ordenacao === "progresso") {
+          return obraB.progressoLeitura - obraA.progressoLeitura;
         }
 
         return obraB.pontuacao - obraA.pontuacao;
@@ -1736,6 +1801,8 @@ export default function PainelAutorPage() {
     0
   );
 
+  const totalArquivos = obrasComMetricas.filter((obra) => obra.arquivoObra).length;
+
   const melhorObra = obrasComMetricas[0] || null;
   const autorPrincipal =
     melhorObra?.autor || obrasComMetricas[0]?.autor || obras[0]?.autor || "";
@@ -1771,6 +1838,123 @@ export default function PainelAutorPage() {
       router.refresh();
     } catch {
       setSaindoDaConta(false);
+    }
+  }
+
+
+  function copiarTextoComFallback(texto: string) {
+    const campoTemporario = document.createElement("textarea");
+    campoTemporario.value = texto;
+    campoTemporario.setAttribute("readonly", "true");
+    campoTemporario.style.position = "fixed";
+    campoTemporario.style.left = "-9999px";
+    document.body.appendChild(campoTemporario);
+    campoTemporario.select();
+    document.execCommand("copy");
+    document.body.removeChild(campoTemporario);
+  }
+
+  async function copiarLinkObra(obra: ObraLocal) {
+    const href = obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+    const linkAbsoluto =
+      typeof window !== "undefined" ? new URL(href, window.location.origin).toString() : href;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(linkAbsoluto);
+        } catch {
+          copiarTextoComFallback(linkAbsoluto);
+        }
+      } else {
+        copiarTextoComFallback(linkAbsoluto);
+      }
+
+      setObraComLinkCopiado(obra.id);
+
+      window.setTimeout(() => {
+        setObraComLinkCopiado((obraIdAtual) =>
+          obraIdAtual === obra.id ? "" : obraIdAtual
+        );
+      }, 1800);
+    } catch {
+      setObraComLinkCopiado("");
+    }
+  }
+
+  async function excluirObra(obraId: string, tituloObra: string) {
+    const confirmar = window.confirm(
+      `Tem certeza que deseja excluir a obra "${tituloObra}"? Todos os capítulos e registros dessa obra serão removidos. Essa ação não pode ser desfeita.`
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    try {
+      const { data: dadosUsuario } = await supabase.auth.getUser();
+      const userId = dadosUsuario.user?.id || usuarioIdLogado;
+
+      if (!userId) {
+        router.replace(criarLoginHrefPainelAutor());
+        return;
+      }
+
+      const obraExcluida = obras.find((obra) => obra.id === obraId) || {
+        id: obraId,
+        slug: criarSlugBase(tituloObra),
+        titulo: tituloObra,
+        capitulos: [] as CapituloLocal[],
+      };
+      const novasObras = obras.filter((obra) => obra.id !== obraId);
+      const novasObrasFavoritas = removerObraDaColecaoPainel(
+        obrasFavoritas,
+        obraExcluida
+      );
+      const novasObrasConcluidas = removerObraDaColecaoPainel(
+        obrasConcluidas,
+        obraExcluida
+      );
+      limparReferenciasLocaisObraExcluidaPainel(obraExcluida, userId);
+      salvarJsonStorageUsuarioPainel(STORAGE_KEY, userId, novasObras);
+      salvarColecaoAposExcluirPainel(
+        FAVORITES_STORAGE_KEY,
+        userId,
+        novasObrasFavoritas
+      );
+      salvarColecaoAposExcluirPainel(
+        COMPLETED_STORAGE_KEY,
+        userId,
+        novasObrasConcluidas
+      );
+
+      setObras(novasObras);
+      setObrasFavoritas(novasObrasFavoritas);
+      setObrasConcluidas(novasObrasConcluidas);
+
+      await removerReferenciasSupabaseObraExcluidaPainel(
+        userId,
+        obraId,
+        obraExcluida.capitulos.map((capitulo) => capitulo.id)
+      );
+
+      await supabase
+        .from("capitulos")
+        .delete()
+        .eq("obra_id", obraId)
+        .eq("user_id", userId);
+
+      const { error } = await supabase
+        .from("obras")
+        .delete()
+        .eq("id", obraId)
+        .eq("user_id", userId);
+
+      if (error) {
+        console.warn("Não consegui concluir a exclusão remota no Estúdio:", error.message);
+      }
+    } catch (error) {
+      console.warn("Não consegui excluir a obra no Estúdio:", error);
     }
   }
 
@@ -1861,9 +2045,6 @@ export default function PainelAutorPage() {
                 Publicar
               </Link>
 
-              <Link href="/minhas-obras" style={heroSecondaryButtonStyle}>
-                Obras
-              </Link>
 
               <Link
                 href={criarPerfilUsuarioLogadoPainelHref(nomeConta, usuarioIdLogado)}
@@ -1935,6 +2116,13 @@ export default function PainelAutorPage() {
               {totalSalvos === 1 ? "salvo" : "salvos"}
             </span>
           </div>
+
+          <div style={statCardStyle}>
+            <strong style={statNumberStyle}>{totalArquivos}</strong>
+            <span style={statLabelStyle}>
+              {totalArquivos === 1 ? "arquivo" : "arquivos"}
+            </span>
+          </div>
         </section>
 
         <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
@@ -1983,6 +2171,9 @@ export default function PainelAutorPage() {
                 <option value="publicadas">Publicadas</option>
                 <option value="rascunhos">Rascunhos</option>
                 <option value="sem-capitulos">Sem capítulos</option>
+                <option value="favoritas">Na lista</option>
+                <option value="concluidas">Concluídas</option>
+                <option value="em-leitura">Em leitura</option>
               </select>
             </div>
 
@@ -2000,6 +2191,7 @@ export default function PainelAutorPage() {
                 <option value="recentes">Mais recentes</option>
                 <option value="titulo">Título</option>
                 <option value="capitulos">Mais capítulos</option>
+                <option value="progresso">Maior progresso</option>
               </select>
             </div>
           </div>
@@ -2034,6 +2226,9 @@ export default function PainelAutorPage() {
             obrasFavoritas={obrasFavoritas}
             obrasConcluidas={obrasConcluidas}
             isDesktop={isDesktop}
+            obraComLinkCopiado={obraComLinkCopiado}
+            onCopiarLink={copiarLinkObra}
+            onExcluirObra={excluirObra}
           />
         )}
       </section>
@@ -2071,11 +2266,17 @@ function PainelSecao({
   obrasFavoritas,
   obrasConcluidas,
   isDesktop,
+  obraComLinkCopiado,
+  onCopiarLink,
+  onExcluirObra,
 }: {
   obras: ObraComMetricas[];
   obrasFavoritas: string[];
   obrasConcluidas: string[];
   isDesktop: boolean;
+  obraComLinkCopiado: string;
+  onCopiarLink: (obra: ObraLocal) => void | Promise<void>;
+  onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
 }) {
   if (obras.length === 0) {
     return null;
@@ -2095,6 +2296,9 @@ function PainelSecao({
             favoritada={colecaoTemObraPainel(obrasFavoritas, obra)}
             concluida={colecaoTemObraPainel(obrasConcluidas, obra)}
             isDesktop={isDesktop}
+            linkCopiado={obraComLinkCopiado === obra.id}
+            onCopiarLink={onCopiarLink}
+            onExcluirObra={onExcluirObra}
           />
         ))}
       </div>
@@ -2107,16 +2311,31 @@ function ObraPainelCard({
   favoritada,
   concluida,
   isDesktop,
+  linkCopiado,
+  onCopiarLink,
+  onExcluirObra,
 }: {
   obra: ObraComMetricas;
   favoritada: boolean;
   concluida: boolean;
   isDesktop: boolean;
+  linkCopiado: boolean;
+  onCopiarLink: (obra: ObraLocal) => void | Promise<void>;
+  onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
 }) {
-  const obraHref = `/minha-obra?obraId=${obra.id}`;
+  const obraHref = `/editar-obra?obraId=${obra.id}`;
   const editarHref = `/editar-obra?obraId=${obra.id}`;
   const capituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
   const paginaPublicaHref = obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+  const verArquivoHref = `/ver-arquivo?obraId=${obra.id}`;
+  const capituloParaLer = obra.ultimoCapituloLido || obra.capitulos[0] || null;
+  const indiceCapituloParaLer = capituloParaLer
+    ? obra.capitulos.findIndex((capitulo) => capitulo.id === capituloParaLer.id)
+    : -1;
+  const numeroCapituloParaLer = indiceCapituloParaLer >= 0 ? indiceCapituloParaLer + 1 : 1;
+  const leituraCapituloHref = capituloParaLer
+    ? criarHrefLeituraCapituloPainel(obra, capituloParaLer, numeroCapituloParaLer)
+    : "";
   const perfilAutorHref = criarPerfilAutorHref(obra.autor, obra.autorId, obra.autorId);
   const progressoVisual = Math.min(100, Math.max(0, obra.progressoLeitura));
   const statusTexto = obra.publicado ? "Publicado" : "Rascunho";
@@ -2208,20 +2427,22 @@ function ObraPainelCard({
           <strong style={progressValueStyle}>{progressoVisual}%</strong>
         </div>
 
-        <div
-          style={
-            obra.publicado
-              ? isDesktop
-                ? desktopPublishedCardActionsGridStyle
-                : publishedActionsGridStyle
-              : isDesktop
-              ? desktopCardActionsGridStyle
-              : actionsGridStyle
-          }
-        >
+        <div style={isDesktop ? desktopCardActionsGridStyle : actionsGridStyle}>
           <Link href={obraHref} style={openButtonStyle}>
             Gerenciar
           </Link>
+
+          {capituloParaLer && (
+            <Link href={leituraCapituloHref} style={readButtonStyle}>
+              {obra.ultimoCapituloLido
+                ? isDesktop
+                  ? "Continuar leitura"
+                  : "Continuar"
+                : isDesktop
+                ? "Ler capítulo"
+                : "Ler"}
+            </Link>
+          )}
 
           <Link href={editarHref} style={editButtonStyle}>
             {isDesktop ? "Editar obra" : "Editar"}
@@ -2236,6 +2457,28 @@ function ObraPainelCard({
               {isDesktop ? "Página pública" : "Página"}
             </Link>
           )}
+
+          {obra.arquivoObra && (
+            <Link href={verArquivoHref} style={fileButtonStyle}>
+              {isDesktop ? "Ver arquivo" : "Arquivo"}
+            </Link>
+          )}
+
+          <button
+            type="button"
+            onClick={() => void onCopiarLink(obra)}
+            style={linkCopiado ? copiedButtonStyle : copyButtonStyle}
+          >
+            {linkCopiado ? "Copiado!" : isDesktop ? "Copiar link" : "Copiar"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void onExcluirObra(obra.id, obra.titulo)}
+            style={deleteButtonStyle}
+          >
+            Excluir
+          </button>
 
         </div>
       </div>
@@ -2466,10 +2709,6 @@ const topActionsStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
 };
-
-
-
-
 
 
 const signOutButtonStyle: CSSProperties = {
@@ -2791,7 +3030,6 @@ const selectStyle: CSSProperties = {
   minWidth: 0,
   boxShadow: "none",
 };
-
 
 
 const sectionStyle: CSSProperties = {
@@ -3157,6 +3395,14 @@ const openButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const readButtonStyle: CSSProperties = {
+  ...openButtonStyle,
+  background:
+    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  border: "1px solid rgba(249,115,22,0.24)",
+  color: "#FFFFFF",
+};
+
 const publicPageButtonStyle: CSSProperties = {
   minHeight: "28px",
   borderRadius: "999px",
@@ -3228,6 +3474,30 @@ const chapterButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const fileButtonStyle: CSSProperties = {
+  ...publicPageButtonStyle,
+};
+
+const copyButtonStyle: CSSProperties = {
+  ...publicPageButtonStyle,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
+const copiedButtonStyle: CSSProperties = {
+  ...copyButtonStyle,
+  background: "rgba(249,115,22,0.18)",
+  border: "1px solid rgba(249,115,22,0.34)",
+  color: "#FED7AA",
+};
+
+const deleteButtonStyle: CSSProperties = {
+  ...copyButtonStyle,
+  background: "rgba(127,29,29,0.20)",
+  border: "1px solid rgba(248,113,113,0.26)",
+  color: "#FCA5A5",
+};
+
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
@@ -3245,18 +3515,18 @@ const desktopHeroContentStyle: CSSProperties = {
 
 const desktopHeroActionsStyle: CSSProperties = {
   ...heroActionsStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 160px))",
+  gridTemplateColumns: "repeat(3, minmax(0, 160px))",
   justifyContent: "center",
   justifySelf: "center",
   gap: "8px",
-  width: "min(100%, 680px)",
-  maxWidth: "680px",
+  width: "min(100%, 520px)",
+  maxWidth: "520px",
 };
 
 const desktopStatsBoxStyle: CSSProperties = {
   ...statsBoxStyle,
   display: "grid",
-  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(8, minmax(0, 1fr))",
   gap: "10px",
   marginTop: "12px",
 };
@@ -3303,8 +3573,6 @@ const desktopSearchFieldBoxStyle: CSSProperties = {
   ...fieldBoxStyle,
   minWidth: 0,
 };
-
-
 
 
 const desktopSectionStyle: CSSProperties = {
@@ -3454,4 +3722,4 @@ const emptyButtonStyle: CSSProperties = {
   padding: "0 14px",
   boxShadow: "none",
   ...safeTextStyle,
-};
+}

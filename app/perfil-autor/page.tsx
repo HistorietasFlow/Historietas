@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
+import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, CSSProperties } from "react";
+import type { ChangeEvent, CSSProperties, ReactNode } from "react";
 
 type CapituloLocal = {
   id: string;
@@ -82,10 +83,17 @@ type PerfilUsuarioRemoto = {
 
 type FiltroObrasAutor = "todas" | "publicadas" | "rascunhos" | "sem-capitulos";
 type OrdenacaoObrasAutor = "recentes" | "titulo" | "capitulos" | "curtidas";
-type AbaPerfilAutor = "obras" | "diario" | "comunidade" | "sobre";
+type AbaPerfilAutor = "obras" | "diario" | "comunidade" | "sobre" | "biblioteca";
+type AbaBibliotecaPerfil =
+  | "quero-ler"
+  | "lendo-agora"
+  | "favoritas"
+  | "concluidas"
+  | "historico";
 
 const STORAGE_KEY = "historietas-obras";
 const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
+const LIBRARY_FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
@@ -95,6 +103,8 @@ const AVATAR_STORAGE_BUCKET = "avatars";
 const BIO_MAX_LENGTH = 90;
 const SOBRE_BIO_MAX_LENGTH = 600;
 const NOTAS_AVALIACAO_AUTOR = [1, 2, 3, 4, 5] as const;
+const DIARIO_ANOTACAO_MAX_LENGTH = 700;
+const DIARIO_COMENTARIO_MAX_LENGTH = 700;
 
 type PerfilAutorSalvo = {
   avatar: string;
@@ -128,6 +138,10 @@ type DiarioPerfilItem = {
   href?: string;
   nota?: number;
   progresso?: number;
+  visibilidade?: VisibilidadeDiarioPerfil;
+  anotacao?: string;
+  anotacaoId?: string;
+  anotacaoVisibilidade?: VisibilidadeDiarioPerfil;
 };
 
 type DiarioPerfilEstado = {
@@ -141,7 +155,88 @@ type DiarioPerfilEstado = {
   atividades: DiarioPerfilItem[];
 };
 
+type ItemBibliotecaPerfil = {
+  chave: string;
+  obra: ObraLocal;
+  capitulo: CapituloLocal | null;
+  numeroCapitulo: number;
+  tempoAtividade: number;
+  tipoDiario: DiarioPerfilItem["tipo"];
+  descricao: string;
+};
+
 type VisibilidadeDiarioPerfil = "publico" | "parcial" | "privado";
+
+type AnotacaoDiarioPerfil = {
+  id: string;
+  obraId: string;
+  tipo: DiarioPerfilItem["tipo"];
+  texto: string;
+  visibilidade: VisibilidadeDiarioPerfil;
+  atualizadoEm: string;
+};
+
+type EditorAnotacaoDiarioEstado = {
+  aberto: boolean;
+  itemChave: string;
+  obraId: string;
+  tipo: DiarioPerfilItem["tipo"];
+  texto: string;
+  visibilidade: VisibilidadeDiarioPerfil;
+  salvando: boolean;
+  erro: string;
+};
+
+type ComentarioAnotacaoDiarioPerfil = {
+  id: string;
+  anotacaoId: string;
+  userId: string;
+  autorNome: string;
+  texto: string;
+  criadoEm: string;
+};
+
+type InteracaoAnotacaoDiarioEstado = {
+  carregando: boolean;
+  totalCurtidas: number;
+  curtiu: boolean;
+  comentarios: ComentarioAnotacaoDiarioPerfil[];
+  novoComentario: string;
+  salvandoCurtida: boolean;
+  enviandoComentario: boolean;
+  erro: string;
+};
+
+type InteracoesAnotacoesDiarioEstado = Record<
+  string,
+  InteracaoAnotacaoDiarioEstado
+>;
+
+function criarInteracaoAnotacaoDiarioVazia(
+  carregando = false,
+): InteracaoAnotacaoDiarioEstado {
+  return {
+    carregando,
+    totalCurtidas: 0,
+    curtiu: false,
+    comentarios: [],
+    novoComentario: "",
+    salvandoCurtida: false,
+    enviandoComentario: false,
+    erro: "",
+  };
+}
+
+const editorAnotacaoDiarioVazio: EditorAnotacaoDiarioEstado = {
+  aberto: false,
+  itemChave: "",
+  obraId: "",
+  tipo: "atividade",
+  texto: "",
+  visibilidade: "privado",
+  salvando: false,
+  erro: "",
+};
 
 const diarioPerfilVazio: DiarioPerfilEstado = {
   carregando: false,
@@ -189,6 +284,25 @@ function criarLoginHrefPerfilAutor() {
   return `/login?${params.toString()}`;
 }
 
+function criarPerfilAutorHref(autor: string, autorId?: string) {
+  const params = new URLSearchParams();
+  const autorLimpo = autor.trim();
+  const autorIdLimpo = autorId?.trim() || "";
+
+  if (autorLimpo) {
+    params.set("autor", autorLimpo);
+  }
+
+  if (autorIdLimpo) {
+    params.set("autorId", autorIdLimpo);
+    params.set("userId", autorIdLimpo);
+  }
+
+  const query = params.toString();
+
+  return query ? `/perfil-autor?${query}` : "/perfil-autor";
+}
+
 function criarHrefListaSeguimentoPerfilAutor(
   aba: "seguidores" | "seguindo",
   perfil: Pick<AutorPerfil, "autorId" | "nome"> | null,
@@ -209,24 +323,6 @@ function criarHrefListaSeguimentoPerfilAutor(
   return `/seguindo?${params.toString()}`;
 }
 
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "obra";
-}
-
 function criarHandlePerfilAutor(nomeAutor: string, autorId: string) {
   const base = normalizarTexto(nomeAutor)
     .replace(/[^a-z0-9]+/g, ".")
@@ -242,10 +338,6 @@ function criarHandlePerfilAutor(nomeAutor: string, autorId: string) {
   }
 
   return sufixo ? `@autor.${sufixo}` : "@autor.historietas";
-}
-
-function idObraSupabaseValido(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 }
 
 function criarHrefLeituraCapituloPerfilAutor(
@@ -307,7 +399,7 @@ function normalizarNumeroPerfilAutor(valor: unknown, fallback = 0) {
   return fallback;
 }
 
-function formatarNumeroCompactoPerfilAutor(valor: number) {
+function compactarNumeroPerfilAutor(valor: number) {
   const numero = Math.max(0, Math.round(valor));
 
   if (numero >= 1000000) {
@@ -414,16 +506,14 @@ function obterChaveAvaliacaoAutor(perfil: Pick<AutorPerfil, "autorId" | "nome">)
   return criarChaveAutorPerfil(perfil.autorId, perfil.nome);
 }
 
-function carregarAvaliacoesAutoresLocais() {
+function carregarAvaliacoesAutoresLocais(userId = "") {
   if (typeof window === "undefined") {
     return {};
   }
 
   try {
-    const avaliacoesTexto = localStorage.getItem(AUTHOR_RATINGS_STORAGE_KEY);
-    const avaliacoesJson: unknown = avaliacoesTexto
-      ? JSON.parse(avaliacoesTexto)
-      : {};
+    const avaliacoesJson: unknown =
+      carregarJsonUsuarioPerfilAutor(AUTHOR_RATINGS_STORAGE_KEY, userId) || {};
 
     if (
       !avaliacoesJson ||
@@ -439,9 +529,12 @@ function carregarAvaliacoesAutoresLocais() {
   }
 }
 
-function obterAvaliacaoAutorLocal(perfil: Pick<AutorPerfil, "autorId" | "nome">) {
+function obterAvaliacaoAutorLocal(
+  perfil: Pick<AutorPerfil, "autorId" | "nome">,
+  userId = "",
+) {
   const chaveAvaliacao = obterChaveAvaliacaoAutor(perfil);
-  const avaliacoesLocais = carregarAvaliacoesAutoresLocais();
+  const avaliacoesLocais = carregarAvaliacoesAutoresLocais(userId);
   const nota = Number(avaliacoesLocais[chaveAvaliacao]);
 
   return Number.isFinite(nota) && nota >= 0.5 && nota <= 5
@@ -452,6 +545,7 @@ function obterAvaliacaoAutorLocal(perfil: Pick<AutorPerfil, "autorId" | "nome">)
 function salvarAvaliacaoAutorLocal(
   perfil: Pick<AutorPerfil, "autorId" | "nome">,
   nota: number,
+  userId = "",
 ) {
   if (typeof window === "undefined") {
     return;
@@ -464,7 +558,7 @@ function salvarAvaliacaoAutorLocal(
       return;
     }
 
-    const avaliacoesLocais = carregarAvaliacoesAutoresLocais();
+    const avaliacoesLocais = carregarAvaliacoesAutoresLocais(userId);
 
     if (nota <= 0) {
       delete avaliacoesLocais[chaveAvaliacao];
@@ -472,9 +566,10 @@ function salvarAvaliacaoAutorLocal(
       avaliacoesLocais[chaveAvaliacao] = nota;
     }
 
-    localStorage.setItem(
+    salvarJsonUsuarioPerfilAutor(
       AUTHOR_RATINGS_STORAGE_KEY,
-      JSON.stringify(avaliacoesLocais),
+      userId,
+      avaliacoesLocais,
     );
   } catch {
     // Avaliação local é fallback e não deve travar o perfil.
@@ -740,24 +835,28 @@ function normalizarPerfisAutores(valor: unknown): PerfisAutoresSalvos {
   return perfisValidos;
 }
 
-function carregarPerfisAutores(): PerfisAutoresSalvos {
-  if (typeof window === "undefined") {
+function carregarPerfisAutores(userId = ""): PerfisAutoresSalvos {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return {};
   }
 
   try {
-    const dados = localStorage.getItem(AUTHOR_PROFILE_STORAGE_KEY);
-    const perfis = dados ? JSON.parse(dados) : {};
+    const perfis =
+      carregarJsonUsuarioPerfilAutor(AUTHOR_PROFILE_STORAGE_KEY, userIdLimpo) ||
+      {};
     const perfisNormalizados = normalizarPerfisAutores(perfis);
 
-    localStorage.setItem(
+    salvarJsonUsuarioPerfilAutor(
       AUTHOR_PROFILE_STORAGE_KEY,
-      JSON.stringify(perfisNormalizados),
+      userIdLimpo,
+      perfisNormalizados,
     );
 
     return perfisNormalizados;
   } catch {
-    localStorage.setItem(AUTHOR_PROFILE_STORAGE_KEY, JSON.stringify({}));
+    salvarJsonUsuarioPerfilAutor(AUTHOR_PROFILE_STORAGE_KEY, userIdLimpo, {});
     return {};
   }
 }
@@ -794,6 +893,224 @@ function encontrarCapituloParaContinuar(obra: ObraLocal) {
 
   return obra.capitulos.find((capitulo) => !capitulo.lido) || obra.capitulos[0];
 }
+
+
+function criarStorageKeyUsuarioPerfilBiblioteca(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function normalizarListaIdsPerfilBiblioteca(valor: unknown) {
+  return Array.isArray(valor)
+    ? valor.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
+    : [];
+}
+
+function carregarListaIdsPerfilBiblioteca(chave: string, userId = "") {
+  if (typeof window === "undefined") {
+    return [] as string[];
+  }
+
+  try {
+    const chaveParaLer = criarStorageKeyUsuarioPerfilBiblioteca(chave, userId);
+    const listaTexto = localStorage.getItem(chaveParaLer);
+    const lista = normalizarListaIdsPerfilBiblioteca(
+      listaTexto ? JSON.parse(listaTexto) : [],
+    );
+
+    return Array.from(new Set(lista));
+  } catch {
+    return [] as string[];
+  }
+}
+
+function salvarListaIdsPerfilBiblioteca(
+  chave: string,
+  userId: string,
+  lista: string[],
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const listaNormalizada = normalizarListaIdsPerfilBiblioteca(lista);
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioPerfilBiblioteca(chave, userId),
+      JSON.stringify(listaNormalizada),
+    );
+  } catch {
+    // A Biblioteca continua funcionando em memória se o armazenamento local falhar.
+  }
+}
+
+function carregarJsonUsuarioPerfilAutor(chave: string, userId = "") {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const texto = localStorage.getItem(
+      criarStorageKeyUsuarioPerfilBiblioteca(chave, userId),
+    );
+
+    return texto ? JSON.parse(texto) : null;
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonUsuarioPerfilAutor(chave: string, userId: string, valor: unknown) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioPerfilBiblioteca(chave, userId),
+      JSON.stringify(valor),
+    );
+  } catch {
+    // localStorage é apoio; a tela segue com o estado em memória.
+  }
+}
+
+function obterIdentificadoresObraPerfilBiblioteca(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
+) {
+  return Array.from(
+    new Set(
+      [
+        obra.id,
+        obra.slug,
+        criarSlugBase(obra.titulo),
+        normalizarTexto(obra.titulo),
+      ].filter((valor): valor is string => typeof valor === "string" && Boolean(valor.trim())),
+    ),
+  );
+}
+
+function colecaoTemObraPerfilBiblioteca(
+  colecao: string[],
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
+) {
+  const idsColecao = new Set(colecao.filter((id) => typeof id === "string"));
+
+  return obterIdentificadoresObraPerfilBiblioteca(obra).some((identificador) =>
+    idsColecao.has(identificador),
+  );
+}
+
+function removerObraDaColecaoPerfilBiblioteca(
+  colecao: string[],
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
+) {
+  const identificadores = new Set(obterIdentificadoresObraPerfilBiblioteca(obra));
+
+  return colecao.filter((id) => !identificadores.has(id));
+}
+
+function obterTempoAtividadeBibliotecaPerfil(obra: ObraLocal) {
+  const tempos = [
+    obterTimestampData(obra.ultimaLeituraEm),
+    obterTimestampData(obra.criadaEm),
+    ...obra.capitulos.map((capitulo) =>
+      Math.max(
+        obterTimestampData(capitulo.lidoEm),
+        obterTimestampData(capitulo.criadoEm),
+      ),
+    ),
+  ];
+
+  return Math.max(0, ...tempos);
+}
+
+function obterCapituloBibliotecaPerfil(obra: ObraLocal) {
+  return (
+    obra.capitulos.find((capitulo) => capitulo.salvo) ||
+    encontrarCapituloParaContinuar(obra) ||
+    obra.capitulos.find((capitulo) => capitulo.lido) ||
+    obra.capitulos[0] ||
+    null
+  );
+}
+
+
+function converterItensDiarioParaBiblioteca(
+  itens: DiarioPerfilItem[],
+  prefixo: string,
+): ItemBibliotecaPerfil[] {
+  const itensPorObra = new Map<string, ItemBibliotecaPerfil>();
+
+  [...itens]
+    .sort(
+      (itemA, itemB) =>
+        obterTimestampData(itemB.data) - obterTimestampData(itemA.data),
+    )
+    .forEach((item) => {
+      const obra = item.obra;
+
+      if (!obra) {
+        return;
+      }
+
+      const chaveObra =
+        obra.id.trim() ||
+        obra.slug.trim() ||
+        normalizarTexto(obra.titulo);
+
+      if (!chaveObra || itensPorObra.has(chaveObra)) {
+        return;
+      }
+
+      const capitulo =
+        item.tipo === "lendo"
+          ? encontrarCapituloParaContinuar(obra)
+          : obterCapituloBibliotecaPerfil(obra);
+      const numeroCapitulo = capitulo
+        ? obra.capitulos.findIndex(
+            (capituloObra) => capituloObra.id === capitulo.id,
+          ) + 1
+        : 0;
+
+      itensPorObra.set(chaveObra, {
+        chave: `${prefixo}-${item.chave}`,
+        obra,
+        capitulo,
+        numeroCapitulo: Math.max(0, numeroCapitulo),
+        tempoAtividade:
+          obterTimestampData(item.data) ||
+          obterTempoAtividadeBibliotecaPerfil(obra),
+        tipoDiario: item.tipo,
+        descricao: item.descricao,
+      });
+    });
+
+  return Array.from(itensPorObra.values()).sort(
+    (itemA, itemB) => itemB.tempoAtividade - itemA.tempoAtividade,
+  );
+}
+
+function criarCapaBibliotecaPerfilStyle(capa: string, desktop: boolean): CSSProperties {
+  const baseStyle = desktop
+    ? profileLibraryCoverDesktopStyle
+    : profileLibraryCoverStyle;
+
+  if (!capa) {
+    return baseStyle;
+  }
+
+  return {
+    ...baseStyle,
+    background: "#04000A",
+    backgroundImage: `url(${capa})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
+
 
 function criarCoverStyle(capa: string): CSSProperties {
   if (!capa) {
@@ -843,6 +1160,26 @@ function criarCapaDestaquePerfilAutor(capa: string): CSSProperties {
 
   return {
     ...authorHighlightCoverStyle,
+    backgroundImage: `url(${capa})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
+
+function criarCapaItemDiarioPerfilStyle(
+  capa: string,
+  desktop: boolean,
+): CSSProperties {
+  const baseStyle = desktop
+    ? desktopDiaryItemCoverStyle
+    : diaryItemCoverStyle;
+
+  if (!capa) {
+    return baseStyle;
+  }
+
+  return {
+    ...baseStyle,
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -918,7 +1255,7 @@ async function carregarPerfilUsuarioSupabase(
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobreBio,sobre,descricao,created_at,criado_em")
       .eq("user_id", userIdLimpo)
       .maybeSingle();
 
@@ -936,7 +1273,7 @@ async function carregarPerfilUsuarioSupabase(
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobreBio,sobre,descricao,created_at,criado_em")
       .eq("id", userIdLimpo)
       .maybeSingle();
 
@@ -969,66 +1306,59 @@ async function salvarPerfilUsuarioSupabase({
     return { ok: false, erro: "ID de usuário inválido para salvar perfil." };
   }
 
-  const payloadCompleto = {
+  const atualizadoEm = new Date().toISOString();
+  const payloadPerfil = {
     user_id: userIdLimpo,
     nome: nome.trim() || "Usuário",
     avatar_url: perfil.avatar,
     bio: perfil.bio.slice(0, BIO_MAX_LENGTH),
     sobre_bio: perfil.sobreBio.slice(0, SOBRE_BIO_MAX_LENGTH),
-    atualizado_em: new Date().toISOString(),
+    atualizado_em: atualizadoEm,
   };
 
   try {
-    const { error } = await supabase.from("profiles").upsert(payloadCompleto, {
-      onConflict: "user_id",
-    });
-
-    if (!error) {
-      return { ok: true, erro: "" };
-    }
-
-    const { error: erroUpdate } = await supabase
+    const { data: perfilExistente } = await supabase
       .from("profiles")
-      .update({
-        nome: payloadCompleto.nome,
-        avatar_url: payloadCompleto.avatar_url,
-        bio: payloadCompleto.bio,
-        sobre_bio: payloadCompleto.sobre_bio,
-        atualizado_em: payloadCompleto.atualizado_em,
-      })
-      .eq("user_id", userIdLimpo);
+      .select("id,user_id")
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
 
-    if (!erroUpdate) {
-      return { ok: true, erro: "" };
+    const perfilId =
+      perfilExistente && typeof perfilExistente === "object"
+        ? pegarTexto((perfilExistente as Record<string, unknown>).id)
+        : "";
+
+    if (perfilId) {
+      const { error } = await supabase
+        .from("profiles")
+        .update(payloadPerfil)
+        .eq("id", perfilId);
+
+      return {
+        ok: !error,
+        erro: error?.message || "",
+      };
     }
 
-    const { error: erroUpdatePorId } = await supabase
-      .from("profiles")
-      .update({
-        nome: payloadCompleto.nome,
-        avatar_url: payloadCompleto.avatar_url,
-        bio: payloadCompleto.bio,
-        sobre_bio: payloadCompleto.sobre_bio,
-        atualizado_em: payloadCompleto.atualizado_em,
-      })
-      .eq("id", userIdLimpo);
-
-    if (!erroUpdatePorId) {
-      return { ok: true, erro: "" };
-    }
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        id: userIdLimpo,
+        ...payloadPerfil,
+      },
+      { onConflict: "id" }
+    );
 
     return {
-      ok: false,
-      erro:
-        erroUpdatePorId.message ||
-        erroUpdate.message ||
-        error.message ||
-        "Não foi possível salvar o perfil no Supabase.",
+      ok: !error,
+      erro: error?.message || "",
     };
   } catch (error) {
     return {
       ok: false,
-      erro: error instanceof Error ? error.message : "Erro inesperado ao salvar perfil.",
+      erro:
+        error instanceof Error
+          ? error.message
+          : "Erro inesperado ao salvar perfil.",
     };
   }
 }
@@ -1279,7 +1609,7 @@ function normalizarCapituloSupabase(
       `capitulo-supabase-${obraIndex + 1}-${capituloIndex + 1}`,
     ),
     titulo: pegarTexto(row.titulo, `Capítulo ${capituloIndex + 1}`),
-    texto: pegarTexto(row.texto ?? row.conteudo, ""),
+    texto: "",
     curtiu: false,
     salvo: false,
     comentario: "",
@@ -1373,16 +1703,19 @@ async function carregarObrasPublicadasSupabase() {
   try {
     const { data: obrasData, error: obrasError } = await supabase
       .from("obras")
-      .select("*")
+      .select(
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,criada_em,atualizado_em"
+      )
       .eq("publicado", true)
-      .order("criada_em", { ascending: false });
+      .order("criada_em", { ascending: false })
+      .limit(80);
 
     if (obrasError || !Array.isArray(obrasData)) {
       return [];
     }
 
     const obrasSupabase = obrasData.map((obra, index) =>
-      normalizarObraSupabase(obra as SupabaseObraRow, index),
+      normalizarObraSupabase(obra as unknown as SupabaseObraRow, index),
     );
 
     const idsObras = obrasSupabase.map((obra) => obra.id).filter(Boolean);
@@ -1394,16 +1727,18 @@ async function carregarObrasPublicadasSupabase() {
     try {
       const { data: capitulosData } = await supabase
         .from("capitulos")
-        .select("*")
+        .select("id,obra_id,titulo,ordem,publicado,criado_em,atualizado_em")
         .in("obra_id", idsObras)
-        .order("ordem", { ascending: true });
+        .eq("publicado", true)
+        .order("ordem", { ascending: true })
+        .limit(600);
 
       if (Array.isArray(capitulosData)) {
         const capitulosPorObra = new Map<string, CapituloLocal[]>();
 
         capitulosData.forEach((capitulo, index) => {
           const capituloNormalizado = normalizarCapituloSupabase(
-            capitulo as SupabaseCapituloRow,
+            capitulo as unknown as SupabaseCapituloRow,
             index,
             index,
           );
@@ -1452,7 +1787,8 @@ async function carregarIdsTabelaUsuario(
     const { data, error } = await supabase
       .from(tabela)
       .select(colunaId)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .limit(1000);
 
     if (error || !Array.isArray(data)) {
       return [];
@@ -1486,7 +1822,8 @@ async function carregarAutoresSeguidosSupabase(
     const { data, error } = await supabase
       .from("seguindo_autores")
       .select("autor")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .limit(1000);
 
     if (error || !Array.isArray(data)) {
       return [];
@@ -1527,7 +1864,8 @@ async function carregarInteracoesCapitulosSupabase(userId: string) {
     const { data } = await supabase
       .from("comentarios_capitulos")
       .select("capitulo_id, comentario, texto")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .limit(1000);
 
     if (Array.isArray(data)) {
       data.forEach((item) => {
@@ -1547,15 +1885,19 @@ async function carregarInteracoesCapitulosSupabase(userId: string) {
   try {
     const { data } = await supabase
       .from("progresso_leitura")
-      .select("*")
-      .eq("user_id", userId);
+      .select("capitulo_id,atualizado_em,criado_em")
+      .eq("user_id", userId)
+      .limit(1000);
 
     if (Array.isArray(data)) {
       data.forEach((item) => {
         const registro = item as Record<string, unknown>;
         const capituloId = pegarTexto(registro.capitulo_id);
         const lidoEm = pegarTexto(
-          registro.lido_em ?? registro.updated_at ?? registro.created_at,
+          registro.atualizado_em ??
+            registro.criado_em ??
+            registro.updated_at ??
+            registro.created_at,
         );
 
         if (capituloId && lidoEm) {
@@ -1579,10 +1921,11 @@ async function carregarEstadoUsuarioSupabase() {
       return null;
     }
 
-    const [favoritas, concluidas, autoresSeguidos, interacoes] =
+    const [favoritas, concluidas, obrasSeguidas, autoresSeguidos, interacoes] =
       await Promise.all([
         carregarIdsTabelaUsuario("favoritos", "obra_id", userId),
         carregarIdsTabelaUsuario("concluidas", "obra_id", userId),
+        carregarIdsTabelaUsuario("seguindo_obras", "obra_id", userId),
         carregarAutoresSeguidosSupabase(userId),
         carregarInteracoesCapitulosSupabase(userId),
       ]);
@@ -1591,6 +1934,7 @@ async function carregarEstadoUsuarioSupabase() {
       userId,
       favoritas,
       concluidas,
+      obrasSeguidas,
       autoresSeguidos,
       interacoes,
     };
@@ -1663,7 +2007,7 @@ function obterTextoResumoPrivacidadeDiario(podeVerPrivados: boolean) {
     : "Privados ocultos • Parciais visíveis no perfil • Públicos visíveis nas áreas sociais";
 }
 
-function formatarDataDiarioPerfil(dataIso: string) {
+function dataDiarioPerfilFormatada(dataIso: string) {
   if (!dataIso) {
     return "Data não informada";
   }
@@ -1676,8 +2020,171 @@ function formatarDataDiarioPerfil(dataIso: string) {
 
   return data.toLocaleDateString("pt-BR", {
     day: "2-digit",
-    month: "2-digit",
+    month: "short",
     year: "numeric",
+  });
+}
+
+function obterApresentacaoTipoDiarioPerfil(tipo: DiarioPerfilItem["tipo"]) {
+  if (tipo === "lendo") {
+    return { icone: "▶", texto: "Lendo", cor: "#FB923C", fundo: "rgba(249,115,22,0.14)" };
+  }
+
+  if (tipo === "favorita") {
+    return { icone: "♥", texto: "Favorita", cor: "#FB7185", fundo: "rgba(251,113,133,0.14)" };
+  }
+
+  if (tipo === "concluida") {
+    return { icone: "✓", texto: "Concluída", cor: "#86EFAC", fundo: "rgba(34,197,94,0.14)" };
+  }
+
+  if (tipo === "avaliacao") {
+    return { icone: "★", texto: "Avaliação", cor: "#FBBF24", fundo: "rgba(251,191,36,0.14)" };
+  }
+
+  if (tipo === "review") {
+    return { icone: "✎", texto: "Review", cor: "#C084FC", fundo: "rgba(192,132,252,0.14)" };
+  }
+
+  if (tipo === "quero_ler") {
+    return { icone: "+", texto: "Quero ler", cor: "#7DD3FC", fundo: "rgba(56,189,248,0.14)" };
+  }
+
+  return { icone: "●", texto: "Atividade", cor: "#D4D4D8", fundo: "rgba(255,255,255,0.08)" };
+}
+
+function obterApresentacaoVisibilidadeDiarioPerfil(
+  visibilidade: VisibilidadeDiarioPerfil | undefined,
+) {
+  if (visibilidade === "publico") {
+    return { icone: "🌐", texto: "Público" };
+  }
+
+  if (visibilidade === "parcial") {
+    return { icone: "◉", texto: "No perfil" };
+  }
+
+  return { icone: "🔒", texto: "Privado" };
+}
+
+function criarEstrelaDiarioPerfilStyle(
+  estrela: number,
+  nota: number,
+): CSSProperties {
+  const preenchimento =
+    nota >= estrela ? "100%" : nota >= estrela - 0.5 ? "50%" : "0%";
+
+  return {
+    display: "inline-block",
+    fontSize: "13px",
+    lineHeight: 1,
+    fontWeight: 950,
+    color: "transparent",
+    backgroundImage: `linear-gradient(90deg, #FBBF24 ${preenchimento}, rgba(255,255,255,0.18) ${preenchimento})`,
+    WebkitBackgroundClip: "text",
+    backgroundClip: "text",
+  };
+}
+
+function normalizarTipoAnotacaoDiarioPerfil(
+  valor: unknown,
+): DiarioPerfilItem["tipo"] | "" {
+  if (
+    valor === "lendo" ||
+    valor === "quero_ler" ||
+    valor === "favorita" ||
+    valor === "concluida" ||
+    valor === "avaliacao" ||
+    valor === "review" ||
+    valor === "atividade"
+  ) {
+    return valor;
+  }
+
+  return "";
+}
+
+function criarChaveAnotacaoDiarioPerfil(
+  obraId: string,
+  tipo: DiarioPerfilItem["tipo"],
+) {
+  return `${obraId.trim()}::${tipo}`;
+}
+
+function montarMapaAnotacoesDiarioPerfil(
+  registros: Record<string, unknown>[],
+  incluirPrivados: boolean,
+) {
+  const mapa = new Map<string, AnotacaoDiarioPerfil>();
+
+  registros.forEach((registro) => {
+    if (!registroDiarioPodeAparecer(registro, incluirPrivados, "privado")) {
+      return;
+    }
+
+    const obraId = pegarTexto(registro.obra_id ?? registro.obraId);
+    const tipo = normalizarTipoAnotacaoDiarioPerfil(registro.tipo);
+    const texto = pegarTexto(registro.texto);
+    const id = pegarTexto(registro.id);
+    const atualizadoEm = obterDataRegistroDiario(registro);
+    const visibilidade = obterVisibilidadeRegistroDiario(
+      registro,
+      "privado",
+    );
+
+    if (!obraId || !tipo || !texto) {
+      return;
+    }
+
+    const chave = criarChaveAnotacaoDiarioPerfil(obraId, tipo);
+    const existente = mapa.get(chave);
+
+    if (
+      existente &&
+      obterTimestampData(existente.atualizadoEm) >=
+        obterTimestampData(atualizadoEm)
+    ) {
+      return;
+    }
+
+    mapa.set(chave, {
+      id,
+      obraId,
+      tipo,
+      texto,
+      visibilidade,
+      atualizadoEm,
+    });
+  });
+
+  return mapa;
+}
+
+function aplicarAnotacoesDiarioPerfil(
+  itens: DiarioPerfilItem[],
+  anotacoes: Map<string, AnotacaoDiarioPerfil>,
+) {
+  return itens.map((item) => {
+    const obraId = item.obra?.id?.trim() || "";
+
+    if (!obraId) {
+      return item;
+    }
+
+    const anotacao = anotacoes.get(
+      criarChaveAnotacaoDiarioPerfil(obraId, item.tipo),
+    );
+
+    if (!anotacao) {
+      return item;
+    }
+
+    return {
+      ...item,
+      anotacao: anotacao.texto,
+      anotacaoId: anotacao.id,
+      anotacaoVisibilidade: anotacao.visibilidade,
+    };
   });
 }
 
@@ -1686,7 +2193,9 @@ function criarItemDiarioPerfil(
   obra: ObraLocal,
   data: string,
   descricao: string,
-  complemento: Partial<Pick<DiarioPerfilItem, "nota" | "progresso">> = {},
+  complemento: Partial<
+    Pick<DiarioPerfilItem, "nota" | "progresso" | "visibilidade">
+  > = {},
 ): DiarioPerfilItem {
   return {
     chave: `${tipo}-${obra.id}-${data || obra.id}`,
@@ -1722,34 +2231,6 @@ function obterHrefItemDiarioPerfil(item: DiarioPerfilItem) {
   return "/comunidade";
 }
 
-function obterRotuloItemDiarioPerfil(tipo: DiarioPerfilItem["tipo"]) {
-  if (tipo === "lendo") {
-    return "Lendo";
-  }
-
-  if (tipo === "quero_ler") {
-    return "Quero ler";
-  }
-
-  if (tipo === "favorita") {
-    return "Favorita";
-  }
-
-  if (tipo === "concluida") {
-    return "Concluída";
-  }
-
-  if (tipo === "avaliacao") {
-    return "Avaliação";
-  }
-
-  if (tipo === "review") {
-    return "Review";
-  }
-
-  return "Atividade";
-}
-
 function criarItemAtividadeDiarioPerfil(
   registro: Record<string, unknown>,
   obrasPorId: Map<string, ObraLocal>,
@@ -1773,7 +2254,7 @@ function criarItemAtividadeDiarioPerfil(
 
   let tipoItem: DiarioPerfilItem["tipo"] = "atividade";
   let descricao = "Atualizou o Diário.";
-  let href = obra
+  const href = obra
     ? obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`
     : postId
       ? `/comunidade?post=${encodeURIComponent(postId)}`
@@ -1817,6 +2298,10 @@ function criarItemAtividadeDiarioPerfil(
     obra,
     href,
     nota: Number.isFinite(nota) && nota > 0 ? nota : undefined,
+    visibilidade: obterVisibilidadeRegistroDiario(
+      registro,
+      tipoAtividade === "publicou_review" ? "publico" : "privado",
+    ),
   };
 }
 
@@ -1866,30 +2351,214 @@ function obterObraRegistroDiario(
   return null;
 }
 
+const CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR: Record<string, string> = {
+  seguindo_obras: "obra_id,criado_em,atualizado_em",
+  favoritos: "obra_id,criado_em,atualizado_em",
+  concluidas: "obra_id,criado_em,atualizado_em",
+  obra_avaliacoes: "obra_id,nota,criado_em,atualizado_em",
+  progresso_leitura: "obra_id,capitulo_id,progresso,criado_em,atualizado_em",
+  diario_atividades:
+    "id,tipo,texto,nota,obra_id,capitulo_id,obra_relacionada,metadata,visibilidade,criado_em,atualizado_em",
+  diario_anotacoes:
+    "id,obra_id,tipo,texto,visibilidade,criado_em,atualizado_em",
+};
+
+function obterCamposRegistrosDiarioPerfilAutor(tabela: string) {
+  return CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR[tabela] || "id";
+}
+
 async function carregarRegistrosDiarioPerfil(tabela: string, userId: string) {
   try {
     const { data, error } = await supabase
       .from(tabela)
-      .select("*")
-      .eq("user_id", userId);
+      .select(obterCamposRegistrosDiarioPerfilAutor(tabela))
+      .eq("user_id", userId)
+      .limit(1000);
 
     if (error || !Array.isArray(data)) {
       return [] as Record<string, unknown>[];
     }
 
-    return data.filter(
-      (registro): registro is Record<string, unknown> =>
-        Boolean(registro) && typeof registro === "object" && !Array.isArray(registro),
-    );
+    const registros: Record<string, unknown>[] = [];
+
+    data.forEach((registro: unknown) => {
+      if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+        return;
+      }
+
+      registros.push(registro as Record<string, unknown>);
+    });
+
+    return registros;
   } catch {
     return [] as Record<string, unknown>[];
   }
+}
+
+async function carregarNomesUsuariosComentariosDiario(
+  userIds: string[],
+) {
+  const idsUnicos = Array.from(
+    new Set(userIds.map((userId) => userId.trim()).filter(Boolean)),
+  );
+  const nomes = new Map<string, string>();
+
+  if (idsUnicos.length === 0) {
+    return nomes;
+  }
+
+  async function carregarPorColuna(coluna: "user_id" | "id") {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,user_id,nome,nome_usuario,username,display_name,apelido")
+        .in(coluna, idsUnicos)
+        .limit(Math.max(idsUnicos.length, 1));
+
+      if (error || !Array.isArray(data)) {
+        return;
+      }
+
+      data.forEach((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          return;
+        }
+
+        const registro = item as Record<string, unknown>;
+        const userId = pegarTexto(registro.user_id);
+        const id = pegarTexto(registro.id);
+        const nome =
+          pegarTexto(registro.nome) ||
+          pegarTexto(registro.nome_usuario) ||
+          pegarTexto(registro.username) ||
+          pegarTexto(registro.display_name) ||
+          pegarTexto(registro.apelido) ||
+          "Leitor";
+
+        if (userId) {
+          nomes.set(userId, nome);
+        }
+
+        if (id) {
+          nomes.set(id, nome);
+        }
+      });
+    } catch {
+      // O comentário continua visível como "Leitor".
+    }
+  }
+
+  await carregarPorColuna("user_id");
+  await carregarPorColuna("id");
+
+  return nomes;
+}
+
+async function carregarInteracoesAnotacoesDiario(
+  anotacaoIds: string[],
+  usuarioAtualId: string,
+): Promise<InteracoesAnotacoesDiarioEstado> {
+  const idsUnicos = Array.from(
+    new Set(anotacaoIds.map((id) => id.trim()).filter(Boolean)),
+  );
+  const resultado = idsUnicos.reduce<InteracoesAnotacoesDiarioEstado>(
+    (estado, anotacaoId) => {
+      estado[anotacaoId] = criarInteracaoAnotacaoDiarioVazia();
+      return estado;
+    },
+    {},
+  );
+
+  if (idsUnicos.length === 0) {
+    return resultado;
+  }
+
+  const [curtidasResposta, comentariosResposta] = await Promise.all([
+    supabase
+      .from("diario_anotacao_curtidas")
+      .select("id, anotacao_id, user_id")
+      .in("anotacao_id", idsUnicos)
+      .limit(1000),
+    supabase
+      .from("diario_anotacao_comentarios")
+      .select("id, anotacao_id, user_id, texto, criado_em, atualizado_em")
+      .in("anotacao_id", idsUnicos)
+      .order("criado_em", { ascending: true })
+      .limit(1000),
+  ]);
+
+  if (Array.isArray(curtidasResposta.data)) {
+    curtidasResposta.data.forEach((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return;
+      }
+
+      const registro = item as Record<string, unknown>;
+      const anotacaoId = pegarTexto(registro.anotacao_id);
+      const userId = pegarTexto(registro.user_id);
+      const interacao = resultado[anotacaoId];
+
+      if (!interacao) {
+        return;
+      }
+
+      interacao.totalCurtidas += 1;
+
+      if (usuarioAtualId && userId === usuarioAtualId) {
+        interacao.curtiu = true;
+      }
+    });
+  }
+
+  const comentariosRegistros: Record<string, unknown>[] = Array.isArray(
+    comentariosResposta.data,
+  )
+    ? comentariosResposta.data
+        .filter(
+          (item) =>
+            Boolean(item) &&
+            typeof item === "object" &&
+            !Array.isArray(item),
+        )
+        .map((item) => item as Record<string, unknown>)
+    : [];
+  const nomesUsuarios = await carregarNomesUsuariosComentariosDiario(
+    comentariosRegistros
+      .map((registro) => pegarTexto(registro.user_id))
+      .filter(Boolean),
+  );
+
+  comentariosRegistros.forEach((registro) => {
+    const anotacaoId = pegarTexto(registro.anotacao_id);
+    const userId = pegarTexto(registro.user_id);
+    const texto = pegarTexto(registro.texto);
+    const id = pegarTexto(registro.id);
+    const interacao = resultado[anotacaoId];
+
+    if (!interacao || !id || !texto) {
+      return;
+    }
+
+    interacao.comentarios.push({
+      id,
+      anotacaoId,
+      userId,
+      autorNome: nomesUsuarios.get(userId) || "Leitor",
+      texto,
+      criadoEm: pegarTexto(
+        registro.criado_em ?? registro.atualizado_em,
+      ),
+    });
+  });
+
+  return resultado;
 }
 
 function montarDiarioPerfilLocal(
   perfil: AutorPerfil,
   obrasFavoritasIds: string[],
   obrasConcluidasIds: string[],
+  obrasSeguidasIds: string[],
 ): Omit<DiarioPerfilEstado, "carregando"> {
   const lendoAgora = ordenarItensDiarioPerfil(
     perfil.obras
@@ -1900,33 +2569,35 @@ function montarDiarioPerfilLocal(
           obra,
           obra.ultimaLeituraEm || obra.criadaEm,
           `Leitura em andamento • ${obra.progressoLeitura}% concluída`,
-          { progresso: obra.progressoLeitura },
+          { progresso: obra.progressoLeitura, visibilidade: "privado" },
         ),
       ),
   );
 
   const favoritas = ordenarItensDiarioPerfil(
     perfil.obras
-      .filter((obra) => obrasFavoritasIds.includes(obra.id))
+      .filter((obra) => colecaoTemObraPerfilBiblioteca(obrasFavoritasIds, obra))
       .map((obra) =>
         criarItemDiarioPerfil(
           "favorita",
           obra,
           obra.ultimaLeituraEm || obra.criadaEm,
           "Obra favoritada no perfil",
+          { visibilidade: "parcial" },
         ),
       ),
   );
 
   const concluidas = ordenarItensDiarioPerfil(
     perfil.obras
-      .filter((obra) => obrasConcluidasIds.includes(obra.id))
+      .filter((obra) => colecaoTemObraPerfilBiblioteca(obrasConcluidasIds, obra))
       .map((obra) =>
         criarItemDiarioPerfil(
           "concluida",
           obra,
           obra.ultimaLeituraEm || obra.criadaEm,
           "Obra marcada como concluída",
+          { visibilidade: "parcial" },
         ),
       ),
   );
@@ -1935,16 +2606,16 @@ function montarDiarioPerfilLocal(
     perfil.obras
       .filter(
         (obra) =>
-          !obrasConcluidasIds.includes(obra.id) &&
-          !favoritas.some((item) => item.obra?.id === obra.id),
+          colecaoTemObraPerfilBiblioteca(obrasSeguidasIds, obra) &&
+          !colecaoTemObraPerfilBiblioteca(obrasConcluidasIds, obra),
       )
-      .slice(0, 6)
       .map((obra) =>
         criarItemDiarioPerfil(
           "quero_ler",
           obra,
-          obra.criadaEm,
-          "Obra disponível para leitura",
+          obra.ultimaLeituraEm || obra.criadaEm,
+          "Adicionada para acompanhar depois",
+          { visibilidade: "privado" },
         ),
       ),
   );
@@ -1981,6 +2652,7 @@ async function carregarDiarioPerfilSupabase(
     avaliacoes,
     progresso,
     diarioAtividades,
+    diarioAnotacoes,
   ] = await Promise.all([
     carregarRegistrosDiarioPerfil("seguindo_obras", userId),
     carregarRegistrosDiarioPerfil("favoritos", userId),
@@ -1988,6 +2660,7 @@ async function carregarDiarioPerfilSupabase(
     carregarRegistrosDiarioPerfil("obra_avaliacoes", userId),
     carregarRegistrosDiarioPerfil("progresso_leitura", userId),
     carregarRegistrosDiarioPerfil("diario_atividades", userId),
+    carregarRegistrosDiarioPerfil("diario_anotacoes", userId),
   ]);
 
   const concluidasIds = new Set(
@@ -2027,7 +2700,13 @@ async function carregarDiarioPerfilSupabase(
         obra,
         data,
         `Leitura em andamento • ${progressoObra}% concluída`,
-        { progresso: progressoObra },
+        {
+          progresso: progressoObra,
+          visibilidade: obterVisibilidadeRegistroDiario(
+            registro,
+            "privado",
+          ),
+        },
       ),
     );
   });
@@ -2042,7 +2721,7 @@ async function carregarDiarioPerfilSupabase(
       .map((registro) => {
         const obra = obterObraRegistroDiario(registro, obrasPorId, obrasPorCapituloId);
 
-        if (!obra) {
+        if (!obra || concluidasIds.has(obra.id)) {
           return null;
         }
 
@@ -2051,6 +2730,12 @@ async function carregarDiarioPerfilSupabase(
           obra,
           obterDataRegistroDiario(registro) || obra.criadaEm,
           "Adicionada para acompanhar depois",
+          {
+            visibilidade: obterVisibilidadeRegistroDiario(
+              registro,
+              "privado",
+            ),
+          },
         );
       })
       .filter((item): item is DiarioPerfilItem => Boolean(item)),
@@ -2073,6 +2758,12 @@ async function carregarDiarioPerfilSupabase(
           obra,
           obterDataRegistroDiario(registro) || obra.criadaEm,
           "Obra favoritada no Diário",
+          {
+            visibilidade: obterVisibilidadeRegistroDiario(
+              registro,
+              "parcial",
+            ),
+          },
         );
       })
       .filter((item): item is DiarioPerfilItem => Boolean(item)),
@@ -2095,6 +2786,12 @@ async function carregarDiarioPerfilSupabase(
           obra,
           obterDataRegistroDiario(registro) || obra.ultimaLeituraEm || obra.criadaEm,
           "Obra marcada como concluída",
+          {
+            visibilidade: obterVisibilidadeRegistroDiario(
+              registro,
+              "parcial",
+            ),
+          },
         );
       })
       .filter((item): item is DiarioPerfilItem => Boolean(item)),
@@ -2118,7 +2815,13 @@ async function carregarDiarioPerfilSupabase(
           obra,
           obterDataRegistroDiario(registro) || obra.criadaEm,
           `Avaliou com ${nota.toFixed(1).replace(".", ",")} estrelas`,
-          { nota },
+          {
+            nota,
+            visibilidade: obterVisibilidadeRegistroDiario(
+              registro,
+              "publico",
+            ),
+          },
         );
       })
       .filter((item): item is DiarioPerfilItem => Boolean(item)),
@@ -2146,14 +2849,40 @@ async function carregarDiarioPerfilSupabase(
     ...avaliacoesItens,
   ]).slice(0, 12);
 
+  const anotacoesPorItem = montarMapaAnotacoesDiarioPerfil(
+    diarioAnotacoes,
+    incluirPrivados,
+  );
+
   return {
-    lendoAgora,
-    queroLer,
-    favoritas,
-    concluidas: concluidasItens,
-    avaliacoes: avaliacoesItens,
-    reviews,
-    atividades,
+    lendoAgora: aplicarAnotacoesDiarioPerfil(
+      lendoAgora,
+      anotacoesPorItem,
+    ),
+    queroLer: aplicarAnotacoesDiarioPerfil(
+      queroLer,
+      anotacoesPorItem,
+    ),
+    favoritas: aplicarAnotacoesDiarioPerfil(
+      favoritas,
+      anotacoesPorItem,
+    ),
+    concluidas: aplicarAnotacoesDiarioPerfil(
+      concluidasItens,
+      anotacoesPorItem,
+    ),
+    avaliacoes: aplicarAnotacoesDiarioPerfil(
+      avaliacoesItens,
+      anotacoesPorItem,
+    ),
+    reviews: aplicarAnotacoesDiarioPerfil(
+      reviews,
+      anotacoesPorItem,
+    ),
+    atividades: aplicarAnotacoesDiarioPerfil(
+      atividades,
+      anotacoesPorItem,
+    ),
   };
 }
 
@@ -2254,7 +2983,7 @@ async function contarSeguimentoUsuarioPerfil(
   try {
     const { count, error } = await supabase
       .from("seguindo_usuarios")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq(coluna, userId);
 
     if (error) {
@@ -2378,6 +3107,59 @@ async function sincronizarUsuarioSeguidoSupabase(
   }
 }
 
+function DiaryCarouselRow({
+  children,
+  isDesktop,
+  totalItems,
+}: {
+  children: ReactNode;
+  isDesktop: boolean;
+  totalItems: number;
+}) {
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const mostrarSetas = isDesktop && totalItems > 3;
+  const listStyle = isDesktop
+    ? desktopDiaryItemsCarouselStyle
+    : diaryItemsCarouselStyle;
+
+  function rolarCarrossel(direcao: -1 | 1) {
+    rowRef.current?.scrollBy({
+      left: direcao * 360,
+      behavior: "smooth",
+    });
+  }
+
+  if (!mostrarSetas) {
+    return <div style={listStyle}>{children}</div>;
+  }
+
+  return (
+    <div style={desktopDiaryCarouselShellStyle}>
+      <button
+        type="button"
+        onClick={() => rolarCarrossel(-1)}
+        style={desktopDiaryCarouselArrowLeftStyle}
+        aria-label="Rolar Diário para a esquerda"
+      >
+        <span style={desktopDiaryCarouselArrowIconStyle}>‹</span>
+      </button>
+
+      <div ref={rowRef} style={listStyle}>
+        {children}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => rolarCarrossel(1)}
+        style={desktopDiaryCarouselArrowRightStyle}
+        aria-label="Rolar Diário para a direita"
+      >
+        <span style={desktopDiaryCarouselArrowIconStyle}>›</span>
+      </button>
+    </div>
+  );
+}
+
 export default function PerfilAutorPage() {
   const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -2404,12 +3186,28 @@ export default function PerfilAutorPage() {
   const [nomePerfilEditor, setNomePerfilEditor] = useState("");
   const [editorSobreAberto, setEditorSobreAberto] = useState(false);
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>("obras");
+  const [abaBibliotecaPerfil, setAbaBibliotecaPerfil] =
+    useState<AbaBibliotecaPerfil>("quero-ler");
+  const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
+  const [versaoSincronizacaoBiblioteca, setVersaoSincronizacaoBiblioteca] =
+    useState(0);
   const [filtrosObrasAbertos, setFiltrosObrasAbertos] = useState(false);
   const [obraMenuAbertoId, setObraMenuAbertoId] = useState("");
   const [avaliacaoAutor, setAvaliacaoAutor] =
     useState<AvaliacaoAutorPublica>(avaliacaoAutorVazia);
   const [diarioPerfil, setDiarioPerfil] =
     useState<DiarioPerfilEstado>(diarioPerfilVazio);
+  const [editorAnotacaoDiario, setEditorAnotacaoDiario] =
+    useState<EditorAnotacaoDiarioEstado>(editorAnotacaoDiarioVazio);
+  const [interacoesAnotacoesDiario, setInteracoesAnotacoesDiario] =
+    useState<InteracoesAnotacoesDiarioEstado>({});
+  const [
+    comentariosAnotacaoDiarioAbertoChave,
+    setComentariosAnotacaoDiarioAbertoChave,
+  ] = useState("");
+  const [resumoDiarioAberto, setResumoDiarioAberto] = useState(false);
+  const [reviewsDiarioAberto, setReviewsDiarioAberto] = useState(false);
+  const [atividadesDiarioAberto, setAtividadesDiarioAberto] = useState(false);
   const [seguindoUsuarioPerfil, setSeguindoUsuarioPerfil] = useState(false);
   const [seguidoresUsuarioPerfilTotal, setSeguidoresUsuarioPerfilTotal] =
     useState(0);
@@ -2420,6 +3218,7 @@ export default function PerfilAutorPage() {
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const notificacoesNaoLidas = 0;
 
   useEffect(() => {
     function atualizarTelaDesktop() {
@@ -2431,6 +3230,38 @@ export default function PerfilAutorPage() {
 
     return () => {
       window.removeEventListener("resize", atualizarTelaDesktop);
+    };
+  }, []);
+
+  useEffect(() => {
+    let componenteAtivo = true;
+
+    async function carregarUsuarioAutenticadoPerfil() {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data.user?.id || "";
+
+        if (componenteAtivo && userId) {
+          setUsuarioIdLogado(userId);
+        }
+      } catch {
+        // A aba Biblioteca depende do usuário logado, mas o perfil continua abrindo sem travar.
+      }
+    }
+
+    void carregarUsuarioAutenticadoPerfil();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (componenteAtivo) {
+        setUsuarioIdLogado(session?.user?.id || "");
+      }
+    });
+
+    return () => {
+      componenteAtivo = false;
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -2450,13 +3281,18 @@ export default function PerfilAutorPage() {
       let autoresSeguidosNormalizados: string[] = [];
       let obrasFavoritasNormalizadas: string[] = [];
       let obrasConcluidasNormalizadas: string[] = [];
+      let obrasSeguidasBibliotecaNormalizadas: string[] = [];
       let perfilUsuarioRemotoCarregado: PerfilUsuarioRemoto | null = null;
 
+      const obrasSupabase = await carregarObrasPublicadasSupabase();
+      const estadoUsuarioSupabase = await carregarEstadoUsuarioSupabase();
+      const usuarioIdAtual = estadoUsuarioSupabase?.userId || "";
+
       try {
-        const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
-        const obrasSalvasJson = obrasSalvasTexto
-          ? JSON.parse(obrasSalvasTexto)
-          : [];
+        const obrasSalvasJson = carregarJsonUsuarioPerfilAutor(
+          STORAGE_KEY,
+          usuarioIdAtual,
+        );
 
         obrasNormalizadas = Array.isArray(obrasSalvasJson)
           ? (obrasSalvasJson as ObraSalva[]).map((obra, index) =>
@@ -2464,12 +3300,10 @@ export default function PerfilAutorPage() {
             )
           : [];
 
-        const autoresSeguidosTexto = localStorage.getItem(
+        const autoresSeguidosJson = carregarJsonUsuarioPerfilAutor(
           AUTHOR_FOLLOW_STORAGE_KEY,
+          usuarioIdAtual,
         );
-        const autoresSeguidosJson = autoresSeguidosTexto
-          ? JSON.parse(autoresSeguidosTexto)
-          : [];
 
         autoresSeguidosNormalizados = Array.isArray(autoresSeguidosJson)
           ? autoresSeguidosJson
@@ -2480,41 +3314,29 @@ export default function PerfilAutorPage() {
               .map((autor) => normalizarNomeAutor(autor))
           : [];
 
-        const obrasFavoritasTexto = localStorage.getItem(FAVORITES_STORAGE_KEY);
-        const obrasFavoritasJson = obrasFavoritasTexto
-          ? JSON.parse(obrasFavoritasTexto)
-          : [];
-
-        obrasFavoritasNormalizadas = Array.isArray(obrasFavoritasJson)
-          ? obrasFavoritasJson.filter(
-              (id): id is string =>
-                typeof id === "string" && Boolean(id.trim()),
-            )
-          : [];
-
-        const obrasConcluidasTexto = localStorage.getItem(
-          COMPLETED_STORAGE_KEY,
+        obrasFavoritasNormalizadas = carregarListaIdsPerfilBiblioteca(
+          FAVORITES_STORAGE_KEY,
+          usuarioIdAtual,
         );
-        const obrasConcluidasJson = obrasConcluidasTexto
-          ? JSON.parse(obrasConcluidasTexto)
-          : [];
 
-        obrasConcluidasNormalizadas = Array.isArray(obrasConcluidasJson)
-          ? obrasConcluidasJson.filter(
-              (id): id is string =>
-                typeof id === "string" && Boolean(id.trim()),
-            )
-          : [];
+        obrasConcluidasNormalizadas = carregarListaIdsPerfilBiblioteca(
+          COMPLETED_STORAGE_KEY,
+          usuarioIdAtual,
+        );
+
+        obrasSeguidasBibliotecaNormalizadas =
+          carregarListaIdsPerfilBiblioteca(
+            LIBRARY_FOLLOW_STORAGE_KEY,
+            usuarioIdAtual,
+          );
       } catch {
         obrasNormalizadas = [];
         autoresSeguidosNormalizados = [];
         obrasFavoritasNormalizadas = [];
         obrasConcluidasNormalizadas = [];
+        obrasSeguidasBibliotecaNormalizadas = [];
       }
 
-      const obrasSupabase = await carregarObrasPublicadasSupabase();
-      const estadoUsuarioSupabase = await carregarEstadoUsuarioSupabase();
-      const usuarioIdAtual = estadoUsuarioSupabase?.userId || "";
       const perfilUsuarioIdParaBuscar =
         autorIdParam.trim() || usuarioIdAtual;
 
@@ -2552,6 +3374,12 @@ export default function PerfilAutorPage() {
             ...estadoUsuarioSupabase.autoresSeguidos,
           ]),
         );
+        obrasSeguidasBibliotecaNormalizadas = Array.from(
+          new Set([
+            ...obrasSeguidasBibliotecaNormalizadas,
+            ...estadoUsuarioSupabase.obrasSeguidas,
+          ]),
+        );
 
         obrasMescladas = aplicarInteracoesNasObras(
           obrasMescladas,
@@ -2573,20 +3401,27 @@ export default function PerfilAutorPage() {
             usuarioIdAtual,
           );
 
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasParaPersistir));
+          salvarJsonUsuarioPerfilAutor(
+            STORAGE_KEY,
+            usuarioIdAtual,
+            obrasParaPersistir,
+          );
         }
 
-        localStorage.setItem(
+        salvarJsonUsuarioPerfilAutor(
           AUTHOR_FOLLOW_STORAGE_KEY,
-          JSON.stringify(autoresSeguidosNormalizados),
+          usuarioIdAtual,
+          autoresSeguidosNormalizados,
         );
-        localStorage.setItem(
+        salvarListaIdsPerfilBiblioteca(
           FAVORITES_STORAGE_KEY,
-          JSON.stringify(obrasFavoritasNormalizadas),
+          usuarioIdAtual,
+          obrasFavoritasNormalizadas,
         );
-        localStorage.setItem(
+        salvarListaIdsPerfilBiblioteca(
           COMPLETED_STORAGE_KEY,
-          JSON.stringify(obrasConcluidasNormalizadas),
+          usuarioIdAtual,
+          obrasConcluidasNormalizadas,
         );
       } catch {
         // Se o navegador bloquear localStorage, a página ainda usa o estado em memória.
@@ -2602,7 +3437,8 @@ export default function PerfilAutorPage() {
       setAutoresSeguidos(autoresSeguidosNormalizados);
       setObrasFavoritas(obrasFavoritasNormalizadas);
       setObrasConcluidas(obrasConcluidasNormalizadas);
-      setPerfisAutoresSalvos(carregarPerfisAutores());
+      setObrasSeguidasBiblioteca(obrasSeguidasBibliotecaNormalizadas);
+      setPerfisAutoresSalvos(carregarPerfisAutores(usuarioIdAtual));
       setCarregando(false);
     }
 
@@ -2752,20 +3588,31 @@ export default function PerfilAutorPage() {
       ? perfilAtual
       : perfilDoUsuarioLogado || perfilUsuarioRemotoComoAutor || perfisAutores[0] || null;
 
+  const bibliotecaPerfilVisivel = true;
+
   useEffect(() => {
     const usuarioIdNormalizado = usuarioIdLogado.trim().toLowerCase();
     const autorIdPerfilNormalizado =
       perfilParaMostrar?.autorId.trim().toLowerCase() || "";
     const autorIdUrlNormalizado = autorIdSelecionado.trim().toLowerCase();
+    const perfilSemParametro =
+      !autorSelecionado.trim() && !autorIdSelecionado.trim();
 
     const perfilPertenceAoUsuario = Boolean(
       usuarioIdNormalizado &&
-        (autorIdPerfilNormalizado === usuarioIdNormalizado ||
+        (perfilSemParametro ||
+          autorIdPerfilNormalizado === usuarioIdNormalizado ||
           autorIdUrlNormalizado === usuarioIdNormalizado),
     );
 
     setPodeEditarPerfil(perfilPertenceAoUsuario);
-  }, [perfilParaMostrar, autorIdSelecionado, usuarioIdLogado]);
+  }, [perfilParaMostrar, autorIdSelecionado, autorSelecionado, usuarioIdLogado]);
+
+  useEffect(() => {
+    if (!bibliotecaPerfilVisivel && abaPerfil === "biblioteca") {
+      setAbaPerfil("obras");
+    }
+  }, [bibliotecaPerfilVisivel, abaPerfil]);
 
   useEffect(() => {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
@@ -2828,21 +3675,27 @@ export default function PerfilAutorPage() {
   const seguindoTotalPerfil = podeUsarSeguimentoUsuario
     ? seguindoUsuarioPerfilTotal
     : 0;
-  const seguidoresPerfilHref = criarHrefListaSeguimentoPerfilAutor(
-    "seguidores",
-    perfilParaMostrar,
-  );
-  const seguindoPerfilHref = criarHrefListaSeguimentoPerfilAutor(
-    "seguindo",
-    perfilParaMostrar,
-  );
+  const seguidoresPerfilHref = podeEditarPerfil
+    ? "/seguindo?conteudo=seguidores"
+    : criarHrefListaSeguimentoPerfilAutor(
+        "seguidores",
+        perfilParaMostrar,
+      );
+  const seguindoPerfilHref = podeEditarPerfil
+    ? "/seguindo?conteudo=pessoas"
+    : criarHrefListaSeguimentoPerfilAutor(
+        "seguindo",
+        perfilParaMostrar,
+      );
+  const obrasSeguidasPerfilHref = "/seguindo?conteudo=obras";
   const obrasFavoritasPerfil = perfilParaMostrar
-    ? perfilParaMostrar.obras.filter((obra) => obrasFavoritas.includes(obra.id))
-        .length
+    ? perfilParaMostrar.obras.filter((obra) =>
+        colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra),
+      ).length
     : 0;
   const obrasConcluidasPerfil = perfilParaMostrar
     ? perfilParaMostrar.obras.filter((obra) =>
-        obrasConcluidas.includes(obra.id),
+        colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra),
       ).length
     : 0;
   const perfilSalvoAutor = autorChavePerfil
@@ -3025,6 +3878,7 @@ export default function PerfilAutorPage() {
               perfilDiario,
               obrasFavoritas,
               obrasConcluidas,
+              obrasSeguidasBiblioteca,
             )
           : criarEstadoDiarioPerfilVazio();
 
@@ -3057,10 +3911,102 @@ export default function PerfilAutorPage() {
     return () => {
       cancelado = true;
     };
-  }, [perfilParaMostrar, obras, obrasFavoritas, obrasConcluidas, podeEditarPerfil]);
+  }, [
+    perfilParaMostrar,
+    obras,
+    obrasFavoritas,
+    obrasConcluidas,
+    obrasSeguidasBiblioteca,
+    podeEditarPerfil,
+    versaoSincronizacaoBiblioteca,
+  ]);
+
+  const anotacoesInterativasIds = useMemo(() => {
+    const itens = [
+      ...diarioPerfil.lendoAgora,
+      ...diarioPerfil.queroLer,
+      ...diarioPerfil.favoritas,
+      ...diarioPerfil.concluidas,
+      ...diarioPerfil.avaliacoes,
+      ...diarioPerfil.reviews,
+      ...diarioPerfil.atividades,
+    ];
+
+    return Array.from(
+      new Set(
+        itens
+          .filter(
+            (item) =>
+              Boolean(item.anotacaoId?.trim()) &&
+              item.anotacaoVisibilidade !== "privado",
+          )
+          .map((item) => item.anotacaoId?.trim() || "")
+          .filter(Boolean),
+      ),
+    ).sort();
+  }, [diarioPerfil]);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarInteracoes() {
+      if (anotacoesInterativasIds.length === 0) {
+        setInteracoesAnotacoesDiario({});
+        return;
+      }
+
+      setInteracoesAnotacoesDiario((estadoAtual) => {
+        return anotacoesInterativasIds.reduce<InteracoesAnotacoesDiarioEstado>(
+          (novoEstado, anotacaoId) => {
+            const anterior = estadoAtual[anotacaoId];
+
+            novoEstado[anotacaoId] = {
+              ...criarInteracaoAnotacaoDiarioVazia(true),
+              novoComentario: anterior?.novoComentario || "",
+            };
+
+            return novoEstado;
+          },
+          {},
+        );
+      });
+
+      const interacoes = await carregarInteracoesAnotacoesDiario(
+        anotacoesInterativasIds,
+        usuarioIdLogado,
+      );
+
+      if (cancelado) {
+        return;
+      }
+
+      setInteracoesAnotacoesDiario((estadoAtual) => {
+        return Object.entries(interacoes).reduce<InteracoesAnotacoesDiarioEstado>(
+          (novoEstado, [anotacaoId, interacao]) => {
+            const anterior = estadoAtual[anotacaoId];
+
+            novoEstado[anotacaoId] = {
+              ...interacao,
+              novoComentario: anterior?.novoComentario || "",
+            };
+
+            return novoEstado;
+          },
+          {},
+        );
+      });
+    }
+
+    void carregarInteracoes();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [anotacoesInterativasIds, usuarioIdLogado]);
 
   const totalLeiturasDiario =
     diarioPerfil.lendoAgora.length + diarioPerfil.concluidas.length;
+  const totalQueroLerDiario = diarioPerfil.queroLer.length;
   const totalFavoritasDiario = diarioPerfil.favoritas.length;
   const totalAvaliacoesDiario = diarioPerfil.avaliacoes.length;
   const totalReviewsDiario = diarioPerfil.reviews.length;
@@ -3074,7 +4020,10 @@ export default function PerfilAutorPage() {
     }
 
     const perfilAtualAutor = perfilParaMostrar;
-    const notaLocal = obterAvaliacaoAutorLocal(perfilAtualAutor);
+    const notaLocal = obterAvaliacaoAutorLocal(
+      perfilAtualAutor,
+      usuarioIdLogado,
+    );
 
     setAvaliacaoAutor({
       media: notaLocal > 0 ? notaLocal : 0,
@@ -3100,7 +4049,8 @@ export default function PerfilAutorPage() {
         const { data: avaliacoesData, error: erroAvaliacoes } = await supabase
           .from("autor_avaliacoes")
           .select("nota")
-          .eq("autor_id", autorId);
+          .eq("autor_id", autorId)
+          .limit(1000);
 
         if (erroAvaliacoes || !Array.isArray(avaliacoesData)) {
           return;
@@ -3233,6 +4183,134 @@ export default function PerfilAutorPage() {
     );
   }, [obraMenuAbertoId, obrasDoPerfilFiltradas]);
 
+
+  const itensBibliotecaQueroLer = useMemo(() => {
+    if (!bibliotecaPerfilVisivel) {
+      return [] as ItemBibliotecaPerfil[];
+    }
+
+    return converterItensDiarioParaBiblioteca(
+      diarioPerfil.queroLer,
+      "quero-ler",
+    );
+  }, [bibliotecaPerfilVisivel, diarioPerfil.queroLer]);
+
+  const itensBibliotecaLendoAgora = useMemo(() => {
+    if (!bibliotecaPerfilVisivel) {
+      return [] as ItemBibliotecaPerfil[];
+    }
+
+    return converterItensDiarioParaBiblioteca(
+      diarioPerfil.lendoAgora,
+      "lendo-agora",
+    );
+  }, [bibliotecaPerfilVisivel, diarioPerfil.lendoAgora]);
+
+  const itensBibliotecaFavoritas = useMemo(() => {
+    if (!bibliotecaPerfilVisivel) {
+      return [] as ItemBibliotecaPerfil[];
+    }
+
+    return converterItensDiarioParaBiblioteca(
+      diarioPerfil.favoritas,
+      "favorita",
+    );
+  }, [bibliotecaPerfilVisivel, diarioPerfil.favoritas]);
+
+  const itensBibliotecaConcluidas = useMemo(() => {
+    if (!bibliotecaPerfilVisivel) {
+      return [] as ItemBibliotecaPerfil[];
+    }
+
+    return converterItensDiarioParaBiblioteca(
+      diarioPerfil.concluidas,
+      "concluida",
+    );
+  }, [bibliotecaPerfilVisivel, diarioPerfil.concluidas]);
+
+  const itensBibliotecaHistorico = useMemo(() => {
+    if (!bibliotecaPerfilVisivel) {
+      return [] as ItemBibliotecaPerfil[];
+    }
+
+    const atividadesLeitura = diarioPerfil.atividades.filter(
+      (item) => item.tipo === "lendo",
+    );
+
+    return converterItensDiarioParaBiblioteca(
+      atividadesLeitura,
+      "historico",
+    );
+  }, [bibliotecaPerfilVisivel, diarioPerfil.atividades]);
+
+  const obrasSeguidasPerfilTotal = itensBibliotecaQueroLer.length;
+
+  const itensBibliotecaAtivos = useMemo(() => {
+    if (abaBibliotecaPerfil === "lendo-agora") {
+      return itensBibliotecaLendoAgora;
+    }
+
+    if (abaBibliotecaPerfil === "favoritas") {
+      return itensBibliotecaFavoritas;
+    }
+
+    if (abaBibliotecaPerfil === "concluidas") {
+      return itensBibliotecaConcluidas;
+    }
+
+    if (abaBibliotecaPerfil === "historico") {
+      return itensBibliotecaHistorico;
+    }
+
+    return itensBibliotecaQueroLer;
+  }, [
+    abaBibliotecaPerfil,
+    itensBibliotecaConcluidas,
+    itensBibliotecaFavoritas,
+    itensBibliotecaHistorico,
+    itensBibliotecaLendoAgora,
+    itensBibliotecaQueroLer,
+  ]);
+
+  const rotuloBibliotecaAtiva =
+    abaBibliotecaPerfil === "quero-ler"
+      ? "quero ler"
+      : abaBibliotecaPerfil === "lendo-agora"
+        ? "lendo agora"
+        : abaBibliotecaPerfil === "favoritas"
+          ? "favoritas"
+          : abaBibliotecaPerfil === "concluidas"
+            ? "concluídas"
+            : "histórico";
+
+  const estatisticasBibliotecaPerfil = [
+    {
+      aba: "quero-ler" as AbaBibliotecaPerfil,
+      numero: itensBibliotecaQueroLer.length,
+      label: "QUERO LER",
+    },
+    {
+      aba: "lendo-agora" as AbaBibliotecaPerfil,
+      numero: itensBibliotecaLendoAgora.length,
+      label: "LENDO",
+    },
+    {
+      aba: "favoritas" as AbaBibliotecaPerfil,
+      numero: itensBibliotecaFavoritas.length,
+      label: "FAVORITAS",
+    },
+    {
+      aba: "concluidas" as AbaBibliotecaPerfil,
+      numero: itensBibliotecaConcluidas.length,
+      label: "CONCLUÍDAS",
+    },
+    {
+      aba: "historico" as AbaBibliotecaPerfil,
+      numero: itensBibliotecaHistorico.length,
+      label: "HISTÓRICO",
+    },
+  ];
+
   const containerAtualStyle = isDesktop
     ? desktopContainerStyle
     : containerStyle;
@@ -3349,10 +4427,14 @@ export default function PerfilAutorPage() {
       [autorChavePerfil]: perfilNormalizado,
     };
 
-    localStorage.setItem(
-      AUTHOR_PROFILE_STORAGE_KEY,
-      JSON.stringify(novosPerfis),
-    );
+    if (usuarioIdLogado.trim()) {
+      salvarJsonUsuarioPerfilAutor(
+        AUTHOR_PROFILE_STORAGE_KEY,
+        usuarioIdLogado,
+        novosPerfis,
+      );
+    }
+
     setPerfisAutoresSalvos(novosPerfis);
 
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
@@ -3438,8 +4520,10 @@ export default function PerfilAutorPage() {
     );
 
     try {
-      const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
-      const obrasSalvasJson = obrasSalvasTexto ? JSON.parse(obrasSalvasTexto) : [];
+      const obrasSalvasJson = carregarJsonUsuarioPerfilAutor(
+        STORAGE_KEY,
+        perfilUserId,
+      );
       const obrasSalvasNormalizadas = Array.isArray(obrasSalvasJson)
         ? (obrasSalvasJson as ObraSalva[]).map((obra, index) =>
             normalizarObra(obra, index),
@@ -3451,7 +4535,11 @@ export default function PerfilAutorPage() {
           : obra,
       );
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasLocaisAtualizadas));
+      salvarJsonUsuarioPerfilAutor(
+        STORAGE_KEY,
+        perfilUserId,
+        obrasLocaisAtualizadas,
+      );
     } catch {
       // Se o localStorage falhar, a alteração em profiles ainda continua.
     }
@@ -3544,7 +4632,11 @@ export default function PerfilAutorPage() {
 
     setAvaliacaoAutor(proximaAvaliacao);
     setMensagemAcao("");
-    salvarAvaliacaoAutorLocal(perfilParaMostrar, notaNormalizada);
+    salvarAvaliacaoAutorLocal(
+      perfilParaMostrar,
+      notaNormalizada,
+      usuarioIdLogado,
+    );
 
     const autorId = perfilParaMostrar.autorId.trim();
 
@@ -3823,9 +4915,10 @@ export default function PerfilAutorPage() {
       ? Array.from(new Set([...autoresSeguidosSemAutorAtual, autorChaveSeguir]))
       : autoresSeguidosSemAutorAtual;
 
-    localStorage.setItem(
+    salvarJsonUsuarioPerfilAutor(
       AUTHOR_FOLLOW_STORAGE_KEY,
-      JSON.stringify(novosAutoresSeguidos),
+      usuarioIdLogado,
+      novosAutoresSeguidos,
     );
 
     setAutoresSeguidos(novosAutoresSeguidos);
@@ -3845,25 +4938,35 @@ export default function PerfilAutorPage() {
       return;
     }
 
-    const proximoEstadoFavorito = !obrasFavoritas.includes(obraId);
+    const obraAlvo = obras.find((obra) => obra.id === obraId) || null;
+    const jaFavorita = obraAlvo
+      ? colecaoTemObraPerfilBiblioteca(obrasFavoritas, obraAlvo)
+      : obrasFavoritas.includes(obraId);
+    const proximoEstadoFavorito = !jaFavorita;
 
-    const novasObrasFavoritas = proximoEstadoFavorito
-      ? Array.from(new Set([...obrasFavoritas, obraId]))
-      : obrasFavoritas.filter((id) => id !== obraId);
+    const novasObrasFavoritas = obraAlvo
+      ? proximoEstadoFavorito
+        ? Array.from(new Set([...obrasFavoritas, obraAlvo.id]))
+        : removerObraDaColecaoPerfilBiblioteca(obrasFavoritas, obraAlvo)
+      : proximoEstadoFavorito
+        ? Array.from(new Set([...obrasFavoritas, obraId]))
+        : obrasFavoritas.filter((id) => id !== obraId);
 
-    localStorage.setItem(
+    salvarListaIdsPerfilBiblioteca(
       FAVORITES_STORAGE_KEY,
-      JSON.stringify(novasObrasFavoritas),
+      usuarioIdLogado,
+      novasObrasFavoritas,
     );
 
     setObrasFavoritas(novasObrasFavoritas);
-    void sincronizarTabelaUsuario(
+    await sincronizarTabelaUsuario(
       "favoritos",
       "obra_id",
       obraId,
       proximoEstadoFavorito,
       "parcial",
     );
+    setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
   }
 
   async function alternarConcluidoObra(obraId: string) {
@@ -3876,50 +4979,1167 @@ export default function PerfilAutorPage() {
       return;
     }
 
-    const proximoEstadoConcluido = !obrasConcluidas.includes(obraId);
+    const obraAlvo = obras.find((obra) => obra.id === obraId) || null;
+    const jaConcluida = obraAlvo
+      ? colecaoTemObraPerfilBiblioteca(obrasConcluidas, obraAlvo)
+      : obrasConcluidas.includes(obraId);
+    const proximoEstadoConcluido = !jaConcluida;
 
-    const novasObrasConcluidas = proximoEstadoConcluido
-      ? Array.from(new Set([...obrasConcluidas, obraId]))
-      : obrasConcluidas.filter((id) => id !== obraId);
+    const novasObrasConcluidas = obraAlvo
+      ? proximoEstadoConcluido
+        ? Array.from(new Set([...obrasConcluidas, obraAlvo.id]))
+        : removerObraDaColecaoPerfilBiblioteca(obrasConcluidas, obraAlvo)
+      : proximoEstadoConcluido
+        ? Array.from(new Set([...obrasConcluidas, obraId]))
+        : obrasConcluidas.filter((id) => id !== obraId);
 
-    localStorage.setItem(
+    salvarListaIdsPerfilBiblioteca(
       COMPLETED_STORAGE_KEY,
-      JSON.stringify(novasObrasConcluidas),
+      usuarioIdLogado,
+      novasObrasConcluidas,
     );
 
     setObrasConcluidas(novasObrasConcluidas);
-    void sincronizarTabelaUsuario(
+    await sincronizarTabelaUsuario(
       "concluidas",
       "obra_id",
       obraId,
       proximoEstadoConcluido,
       "parcial",
     );
+    setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
+  }
+
+
+  function salvarObrasBibliotecaPerfil(novasObras: ObraLocal[]) {
+    setObras(novasObras);
+
+    try {
+      salvarJsonUsuarioPerfilAutor(
+        STORAGE_KEY,
+        usuarioIdLogado,
+        novasObras,
+      );
+    } catch {
+      // A tela continua usando o estado em memória se o localStorage falhar.
+    }
+  }
+
+  async function alternarSalvoCapituloBibliotecaPerfil(
+    obraId: string,
+    capituloId: string,
+    ativo?: boolean,
+  ) {
+    setMensagemAcao("");
+
+    const logado = await usuarioEstaLogado();
+
+    if (!logado) {
+      avisarLoginNecessario("Entre na sua conta para atualizar a Biblioteca.");
+      return;
+    }
+
+    let proximoEstadoSalvo = false;
+
+    const novasObras = obras.map((obra) => {
+      if (obra.id !== obraId) {
+        return obra;
+      }
+
+      return {
+        ...obra,
+        capitulos: obra.capitulos.map((capitulo) => {
+          if (capitulo.id !== capituloId) {
+            return capitulo;
+          }
+
+          proximoEstadoSalvo =
+            typeof ativo === "boolean" ? ativo : !capitulo.salvo;
+
+          return {
+            ...capitulo,
+            salvo: proximoEstadoSalvo,
+          };
+        }),
+      };
+    });
+
+    salvarObrasBibliotecaPerfil(novasObras);
+
+    void sincronizarTabelaUsuario(
+      "salvos_capitulos",
+      "capitulo_id",
+      capituloId,
+      proximoEstadoSalvo,
+      "privado",
+    );
+
+    setMensagemAcao(
+      proximoEstadoSalvo
+        ? "Capítulo salvo na Biblioteca."
+        : "Capítulo removido dos salvos.",
+    );
+  }
+
+  async function alternarObraSeguindoBibliotecaPerfil(obra: ObraLocal, ativo?: boolean) {
+    setMensagemAcao("");
+
+    const logado = await usuarioEstaLogado();
+
+    if (!logado) {
+      avisarLoginNecessario("Entre na sua conta para atualizar a Biblioteca.");
+      return;
+    }
+
+    const jaSegue = colecaoTemObraPerfilBiblioteca(obrasSeguidasBiblioteca, obra);
+    const proximoEstadoSeguindo = typeof ativo === "boolean" ? ativo : !jaSegue;
+    const listaAtualizada = proximoEstadoSeguindo
+      ? Array.from(new Set([...obrasSeguidasBiblioteca, obra.id]))
+      : removerObraDaColecaoPerfilBiblioteca(obrasSeguidasBiblioteca, obra);
+
+    salvarListaIdsPerfilBiblioteca(
+      LIBRARY_FOLLOW_STORAGE_KEY,
+      usuarioIdLogado,
+      listaAtualizada,
+    );
+    setObrasSeguidasBiblioteca(listaAtualizada);
+
+    await sincronizarTabelaUsuario(
+      "seguindo_obras",
+      "obra_id",
+      obra.id,
+      proximoEstadoSeguindo,
+      "privado",
+    );
+    setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
+
+    setMensagemAcao(
+      proximoEstadoSeguindo
+        ? "Obra adicionada ao Quero ler."
+        : "Obra removida do Quero ler.",
+    );
+  }
+
+  async function removerHistoricoLeituraBibliotecaPerfil(obra: ObraLocal) {
+    setMensagemAcao("");
+
+    const logado = await usuarioEstaLogado();
+
+    if (!logado) {
+      avisarLoginNecessario("Entre na sua conta para limpar o histórico.");
+      return;
+    }
+
+    const novasObras = obras.map((obraAtual) => {
+      if (obraAtual.id !== obra.id) {
+        return obraAtual;
+      }
+
+      return {
+        ...obraAtual,
+        ultimoCapituloLidoId: "",
+        ultimaLeituraEm: "",
+        progressoLeitura: 0,
+        capitulos: obraAtual.capitulos.map((capitulo) => ({
+          ...capitulo,
+          lido: false,
+          lidoEm: "",
+        })),
+      };
+    });
+
+    salvarObrasBibliotecaPerfil(novasObras);
+
+    try {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id || usuarioIdLogado;
+
+      if (userId && idObraSupabaseValido(obra.id)) {
+        await Promise.all([
+          supabase
+            .from("progresso_leitura")
+            .delete()
+            .eq("user_id", userId)
+            .eq("obra_id", obra.id),
+          supabase
+            .from("diario_atividades")
+            .delete()
+            .eq("user_id", userId)
+            .eq("obra_id", obra.id)
+            .in("tipo", ["comecou_ler", "leu_capitulo"]),
+        ]);
+      }
+    } catch (error) {
+      console.warn("Não consegui limpar o histórico remoto da obra:", error);
+    }
+
+    setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
+    setMensagemAcao("Histórico de leitura removido.");
+  }
+
+  async function removerItemBibliotecaPerfil(item: ItemBibliotecaPerfil) {
+    if (abaBibliotecaPerfil === "quero-ler") {
+      await alternarObraSeguindoBibliotecaPerfil(item.obra, false);
+      return;
+    }
+
+    if (abaBibliotecaPerfil === "favoritas") {
+      if (colecaoTemObraPerfilBiblioteca(obrasFavoritas, item.obra)) {
+        await alternarFavoritoObra(item.obra.id);
+      }
+      return;
+    }
+
+    if (abaBibliotecaPerfil === "concluidas") {
+      if (colecaoTemObraPerfilBiblioteca(obrasConcluidas, item.obra)) {
+        await alternarConcluidoObra(item.obra.id);
+      }
+      return;
+    }
+
+    await removerHistoricoLeituraBibliotecaPerfil(item.obra);
+  }
+
+  function atualizarAnotacaoNosItensDiarioPerfil(
+    obraId: string,
+    tipo: DiarioPerfilItem["tipo"],
+    atualizacao: Pick<
+      DiarioPerfilItem,
+      "anotacao" | "anotacaoId" | "anotacaoVisibilidade"
+    >,
+  ) {
+    const atualizarLista = (itens: DiarioPerfilItem[]) =>
+      itens.map((item) =>
+        item.obra?.id === obraId && item.tipo === tipo
+          ? { ...item, ...atualizacao }
+          : item,
+      );
+
+    setDiarioPerfil((estadoAtual) => ({
+      ...estadoAtual,
+      lendoAgora: atualizarLista(estadoAtual.lendoAgora),
+      queroLer: atualizarLista(estadoAtual.queroLer),
+      favoritas: atualizarLista(estadoAtual.favoritas),
+      concluidas: atualizarLista(estadoAtual.concluidas),
+      avaliacoes: atualizarLista(estadoAtual.avaliacoes),
+      reviews: atualizarLista(estadoAtual.reviews),
+      atividades: atualizarLista(estadoAtual.atividades),
+    }));
+  }
+
+  function abrirEditorAnotacaoDiario(item: DiarioPerfilItem) {
+    const obraId = item.obra?.id?.trim() || "";
+
+    if (!podeEditarPerfil || !obraId || !idAutorSupabaseValido(obraId)) {
+      setMensagemAcao(
+        "Esta anotação só pode ser criada em uma obra salva no Supabase.",
+      );
+      return;
+    }
+
+    setEditorAnotacaoDiario({
+      aberto: true,
+      itemChave: item.chave,
+      obraId,
+      tipo: item.tipo,
+      texto: item.anotacao || "",
+      visibilidade:
+        item.anotacaoVisibilidade || item.visibilidade || "privado",
+      salvando: false,
+      erro: "",
+    });
+  }
+
+  function fecharEditorAnotacaoDiario() {
+    setEditorAnotacaoDiario(editorAnotacaoDiarioVazio);
+  }
+
+  async function salvarAnotacaoDiario() {
+    const userId = usuarioIdLogado.trim();
+    const obraId = editorAnotacaoDiario.obraId.trim();
+    const texto = editorAnotacaoDiario.texto.trim();
+
+    if (!userId || !idAutorSupabaseValido(userId)) {
+      setEditorAnotacaoDiario((estadoAtual) => ({
+        ...estadoAtual,
+        erro: "Entre na sua conta para salvar a anotação.",
+      }));
+      return;
+    }
+
+    if (!obraId || !idAutorSupabaseValido(obraId)) {
+      setEditorAnotacaoDiario((estadoAtual) => ({
+        ...estadoAtual,
+        erro: "A obra ainda não possui um ID válido no Supabase.",
+      }));
+      return;
+    }
+
+    if (!texto) {
+      setEditorAnotacaoDiario((estadoAtual) => ({
+        ...estadoAtual,
+        erro: "Escreva uma anotação antes de salvar.",
+      }));
+      return;
+    }
+
+    setEditorAnotacaoDiario((estadoAtual) => ({
+      ...estadoAtual,
+      salvando: true,
+      erro: "",
+    }));
+
+    try {
+      const atualizadoEm = new Date().toISOString();
+      const payload = {
+        user_id: userId,
+        obra_id: obraId,
+        tipo: editorAnotacaoDiario.tipo,
+        texto: texto.slice(0, DIARIO_ANOTACAO_MAX_LENGTH),
+        visibilidade: editorAnotacaoDiario.visibilidade,
+        atualizado_em: atualizadoEm,
+      };
+
+      const { data, error } = await supabase
+        .from("diario_anotacoes")
+        .upsert(payload, {
+          onConflict: "user_id,obra_id,tipo",
+        })
+        .select("id, texto, visibilidade, atualizado_em")
+        .maybeSingle();
+
+      if (error) {
+        setEditorAnotacaoDiario((estadoAtual) => ({
+          ...estadoAtual,
+          salvando: false,
+          erro: error.message,
+        }));
+        return;
+      }
+
+      const registro =
+        data && typeof data === "object" && !Array.isArray(data)
+          ? (data as Record<string, unknown>)
+          : {};
+
+      atualizarAnotacaoNosItensDiarioPerfil(
+        obraId,
+        editorAnotacaoDiario.tipo,
+        {
+          anotacao: pegarTexto(registro.texto, payload.texto),
+          anotacaoId: pegarTexto(registro.id),
+          anotacaoVisibilidade: obterVisibilidadeRegistroDiario(
+            registro,
+            payload.visibilidade,
+          ),
+        },
+      );
+
+      setEditorAnotacaoDiario(editorAnotacaoDiarioVazio);
+      setMensagemAcao("Anotação salva no Diário.");
+    } catch (error) {
+      setEditorAnotacaoDiario((estadoAtual) => ({
+        ...estadoAtual,
+        salvando: false,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível salvar a anotação.",
+      }));
+    }
+  }
+
+  async function removerAnotacaoDiario() {
+    const userId = usuarioIdLogado.trim();
+    const obraId = editorAnotacaoDiario.obraId.trim();
+
+    if (
+      !userId ||
+      !obraId ||
+      !window.confirm("Remover esta anotação do Diário?")
+    ) {
+      return;
+    }
+
+    setEditorAnotacaoDiario((estadoAtual) => ({
+      ...estadoAtual,
+      salvando: true,
+      erro: "",
+    }));
+
+    try {
+      const { error } = await supabase
+        .from("diario_anotacoes")
+        .delete()
+        .eq("user_id", userId)
+        .eq("obra_id", obraId)
+        .eq("tipo", editorAnotacaoDiario.tipo);
+
+      if (error) {
+        setEditorAnotacaoDiario((estadoAtual) => ({
+          ...estadoAtual,
+          salvando: false,
+          erro: error.message,
+        }));
+        return;
+      }
+
+      atualizarAnotacaoNosItensDiarioPerfil(
+        obraId,
+        editorAnotacaoDiario.tipo,
+        {
+          anotacao: undefined,
+          anotacaoId: undefined,
+          anotacaoVisibilidade: undefined,
+        },
+      );
+
+      setEditorAnotacaoDiario(editorAnotacaoDiarioVazio);
+      setMensagemAcao("Anotação removida do Diário.");
+    } catch (error) {
+      setEditorAnotacaoDiario((estadoAtual) => ({
+        ...estadoAtual,
+        salvando: false,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível remover a anotação.",
+      }));
+    }
+  }
+
+  function atualizarInteracaoAnotacaoDiario(
+    anotacaoId: string,
+    atualizar: (
+      estadoAtual: InteracaoAnotacaoDiarioEstado,
+    ) => InteracaoAnotacaoDiarioEstado,
+  ) {
+    setInteracoesAnotacoesDiario((estadoAtual) => {
+      const interacaoAtual =
+        estadoAtual[anotacaoId] ||
+        criarInteracaoAnotacaoDiarioVazia();
+
+      return {
+        ...estadoAtual,
+        [anotacaoId]: atualizar(interacaoAtual),
+      };
+    });
+  }
+
+  function alternarComentariosAnotacaoDiario(item: DiarioPerfilItem) {
+    const anotacaoId = item.anotacaoId?.trim() || "";
+
+    if (!anotacaoId || item.anotacaoVisibilidade === "privado") {
+      return;
+    }
+
+    setComentariosAnotacaoDiarioAbertoChave((chaveAtual) =>
+      chaveAtual === item.chave ? "" : item.chave,
+    );
+
+    atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+      ...estadoAtual,
+      erro: "",
+    }));
+  }
+
+  function atualizarTextoComentarioAnotacaoDiario(
+    anotacaoId: string,
+    texto: string,
+  ) {
+    atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+      ...estadoAtual,
+      novoComentario: texto.slice(0, DIARIO_COMENTARIO_MAX_LENGTH),
+      erro: "",
+    }));
+  }
+
+  async function alternarCurtidaAnotacaoDiario(
+    item: DiarioPerfilItem,
+  ) {
+    const anotacaoId = item.anotacaoId?.trim() || "";
+    const userId = usuarioIdLogado.trim();
+
+    if (!anotacaoId || item.anotacaoVisibilidade === "privado") {
+      return;
+    }
+
+    if (!userId) {
+      router.push(criarLoginHrefPerfilAutor());
+      return;
+    }
+
+    const interacaoAtual =
+      interacoesAnotacoesDiario[anotacaoId] ||
+      criarInteracaoAnotacaoDiarioVazia();
+
+    if (interacaoAtual.salvandoCurtida) {
+      return;
+    }
+
+    atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+      ...estadoAtual,
+      salvandoCurtida: true,
+      erro: "",
+    }));
+
+    try {
+      if (interacaoAtual.curtiu) {
+        const { error } = await supabase
+          .from("diario_anotacao_curtidas")
+          .delete()
+          .eq("anotacao_id", anotacaoId)
+          .eq("user_id", userId);
+
+        if (error) {
+          atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+            ...estadoAtual,
+            salvandoCurtida: false,
+            erro: error.message,
+          }));
+          return;
+        }
+
+        atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+          ...estadoAtual,
+          curtiu: false,
+          totalCurtidas: Math.max(0, estadoAtual.totalCurtidas - 1),
+          salvandoCurtida: false,
+        }));
+        return;
+      }
+
+      const { error } = await supabase
+        .from("diario_anotacao_curtidas")
+        .insert({
+          anotacao_id: anotacaoId,
+          user_id: userId,
+        });
+
+      if (error) {
+        atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+          ...estadoAtual,
+          salvandoCurtida: false,
+          erro: error.message,
+        }));
+        return;
+      }
+
+      atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+        ...estadoAtual,
+        curtiu: true,
+        totalCurtidas: estadoAtual.totalCurtidas + 1,
+        salvandoCurtida: false,
+      }));
+    } catch (error) {
+      atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+        ...estadoAtual,
+        salvandoCurtida: false,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível atualizar a curtida.",
+      }));
+    }
+  }
+
+  async function enviarComentarioAnotacaoDiario(
+    item: DiarioPerfilItem,
+  ) {
+    const anotacaoId = item.anotacaoId?.trim() || "";
+    const userId = usuarioIdLogado.trim();
+
+    if (!anotacaoId || item.anotacaoVisibilidade === "privado") {
+      return;
+    }
+
+    if (!userId) {
+      router.push(criarLoginHrefPerfilAutor());
+      return;
+    }
+
+    const interacaoAtual =
+      interacoesAnotacoesDiario[anotacaoId] ||
+      criarInteracaoAnotacaoDiarioVazia();
+    const textoComentario = interacaoAtual.novoComentario.trim();
+
+    if (!textoComentario) {
+      atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+        ...estadoAtual,
+        erro: "Escreva um comentário antes de enviar.",
+      }));
+      return;
+    }
+
+    if (interacaoAtual.enviandoComentario) {
+      return;
+    }
+
+    atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+      ...estadoAtual,
+      enviandoComentario: true,
+      erro: "",
+    }));
+
+    try {
+      const { data, error } = await supabase
+        .from("diario_anotacao_comentarios")
+        .insert({
+          anotacao_id: anotacaoId,
+          user_id: userId,
+          texto: textoComentario.slice(
+            0,
+            DIARIO_COMENTARIO_MAX_LENGTH,
+          ),
+        })
+        .select("id, anotacao_id, user_id, texto, criado_em")
+        .maybeSingle();
+
+      if (error) {
+        atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+          ...estadoAtual,
+          enviandoComentario: false,
+          erro: error.message,
+        }));
+        return;
+      }
+
+      const registro =
+        data && typeof data === "object" && !Array.isArray(data)
+          ? (data as Record<string, unknown>)
+          : {};
+      const perfilComentario = await carregarPerfilUsuarioSupabase(
+        userId,
+        "Você",
+      );
+
+      const comentario: ComentarioAnotacaoDiarioPerfil = {
+        id: pegarTexto(registro.id),
+        anotacaoId,
+        userId,
+        autorNome: perfilComentario?.nome || "Você",
+        texto: pegarTexto(registro.texto, textoComentario),
+        criadoEm: pegarTexto(
+          registro.criado_em,
+          new Date().toISOString(),
+        ),
+      };
+
+      atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+        ...estadoAtual,
+        comentarios: comentario.id
+          ? [...estadoAtual.comentarios, comentario]
+          : estadoAtual.comentarios,
+        novoComentario: "",
+        enviandoComentario: false,
+      }));
+      setComentariosAnotacaoDiarioAbertoChave(item.chave);
+    } catch (error) {
+      atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+        ...estadoAtual,
+        enviandoComentario: false,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível enviar o comentário.",
+      }));
+    }
+  }
+
+  async function removerComentarioAnotacaoDiario(
+    item: DiarioPerfilItem,
+    comentario: ComentarioAnotacaoDiarioPerfil,
+  ) {
+    const anotacaoId = item.anotacaoId?.trim() || "";
+
+    if (
+      !anotacaoId ||
+      !comentario.id ||
+      !window.confirm("Remover este comentário?")
+    ) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("diario_anotacao_comentarios")
+        .delete()
+        .eq("id", comentario.id);
+
+      if (error) {
+        atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+          ...estadoAtual,
+          erro: error.message,
+        }));
+        return;
+      }
+
+      atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+        ...estadoAtual,
+        comentarios: estadoAtual.comentarios.filter(
+          (itemComentario) => itemComentario.id !== comentario.id,
+        ),
+        erro: "",
+      }));
+    } catch (error) {
+      atualizarInteracaoAnotacaoDiario(anotacaoId, (estadoAtual) => ({
+        ...estadoAtual,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível remover o comentário.",
+      }));
+    }
   }
 
   function renderizarItemDiarioPerfil(item: DiarioPerfilItem) {
     const itemHref = obterHrefItemDiarioPerfil(item);
+    const obra = item.obra;
+    const apresentacaoTipo = obterApresentacaoTipoDiarioPerfil(item.tipo);
+    const apresentacaoVisibilidade = obterApresentacaoVisibilidadeDiarioPerfil(
+      item.anotacao
+        ? item.anotacaoVisibilidade
+        : item.visibilidade,
+    );
+    const progresso = Math.max(
+      0,
+      Math.min(100, Math.round(item.progresso ?? obra?.progressoLeitura ?? 0)),
+    );
+    const capituloAtual =
+      item.tipo === "lendo" && obra
+        ? encontrarCapituloParaContinuar(obra)
+        : null;
+    const indiceCapituloAtual =
+      capituloAtual && obra
+        ? obra.capitulos.findIndex(
+            (capitulo) => capitulo.id === capituloAtual.id,
+          )
+        : -1;
+    const numeroCapituloAtual =
+      indiceCapituloAtual >= 0 ? indiceCapituloAtual + 1 : 1;
+    const totalCapitulos = obra?.capitulos.length || 0;
+    const hrefAcao =
+      capituloAtual && obra
+        ? criarHrefLeituraCapituloPerfilAutor(
+            obra,
+            capituloAtual,
+            numeroCapituloAtual,
+          )
+        : itemHref;
+    const nota = Math.max(0, Math.min(5, item.nota || 0));
+    const anotacaoId = item.anotacaoId?.trim() || "";
+    const podeInteragirAnotacao = Boolean(
+      item.anotacao &&
+        anotacaoId &&
+        item.anotacaoVisibilidade !== "privado",
+    );
+    const interacaoAnotacao = anotacaoId
+      ? interacoesAnotacoesDiario[anotacaoId] ||
+        criarInteracaoAnotacaoDiarioVazia()
+      : criarInteracaoAnotacaoDiarioVazia();
 
     return (
-      <Link key={item.chave} href={itemHref} style={diaryItemStyle}>
-        <div style={criarCapaDestaquePerfilAutor(item.obra?.capa || "")}>
-          <span style={diaryItemBadgeStyle}>
-            {obterRotuloItemDiarioPerfil(item.tipo)}
-          </span>
-        </div>
+      <article
+        key={item.chave}
+        style={isDesktop ? desktopDiaryItemStyle : diaryItemStyle}
+      >
+        <Link
+          href={itemHref}
+          style={diaryItemCoverLinkStyle}
+          aria-label={`Abrir ${item.titulo}`}
+        >
+          <div style={criarCapaItemDiarioPerfilStyle(obra?.capa || "", isDesktop)} />
+        </Link>
 
         <div style={diaryItemTextBlockStyle}>
-          <strong style={diaryItemTitleStyle}>{item.titulo}</strong>
-          <span style={diaryItemDescriptionStyle}>{item.descricao}</span>
-          <span style={diaryItemDateStyle}>{formatarDataDiarioPerfil(item.data)}</span>
+          <div style={diaryItemTopRowStyle}>
+            <span
+              style={{
+                ...diaryItemTypeBadgeStyle,
+                color: apresentacaoTipo.cor,
+                background: apresentacaoTipo.fundo,
+              }}
+            >
+              <span aria-hidden="true">{apresentacaoTipo.icone}</span>
+              <span>{apresentacaoTipo.texto}</span>
+            </span>
+
+            <span style={diaryItemDateStyle}>
+              {dataDiarioPerfilFormatada(item.data)}
+            </span>
+          </div>
+
+          <Link href={itemHref} style={diaryItemTitleLinkStyle}>
+            <strong style={diaryItemTitleStyle}>{item.titulo}</strong>
+          </Link>
+
+          {obra?.autor && (
+            <Link
+              href={criarPerfilAutorHref(obra.autor, obra.autorId)}
+              style={diaryItemAuthorStyle}
+            >
+              Por {obra.autor}
+            </Link>
+          )}
+
+          {item.tipo === "avaliacao" && nota > 0 ? (
+            <div style={diaryItemRatingRowStyle}>
+              <span style={diaryItemStarsStyle} aria-label={`${nota.toFixed(1)} estrelas`}>
+                {[1, 2, 3, 4, 5].map((estrela) => (
+                  <span
+                    key={`${item.chave}-estrela-${estrela}`}
+                    style={criarEstrelaDiarioPerfilStyle(estrela, nota)}
+                    aria-hidden="true"
+                  >
+                    ★
+                  </span>
+                ))}
+              </span>
+
+              <strong style={diaryItemRatingNumberStyle}>
+                {nota.toFixed(1).replace(".", ",")}
+              </strong>
+            </div>
+          ) : null}
+
+          {item.tipo === "lendo" && obra ? (
+            <div style={diaryItemReadingBlockStyle}>
+              <span style={diaryItemChapterStyle}>
+                {totalCapitulos > 0
+                  ? `Capítulo ${numeroCapituloAtual} de ${totalCapitulos}`
+                  : "Leitura em andamento"}
+              </span>
+
+              <div style={diaryItemProgressTrackStyle} aria-hidden="true">
+                <div
+                  style={{
+                    ...diaryItemProgressFillStyle,
+                    width: `${progresso}%`,
+                  }}
+                />
+              </div>
+
+              <span style={diaryItemProgressTextStyle}>
+                {progresso}% concluído
+              </span>
+            </div>
+          ) : (
+            <span style={diaryItemDescriptionStyle}>{item.descricao}</span>
+          )}
+
+          {item.anotacao && (
+            <div style={diaryItemAnnotationBoxStyle}>
+              <span style={diaryItemAnnotationLabelStyle}>
+                {podeEditarPerfil ? "Minha anotação" : "Anotação"}
+              </span>
+
+              <p style={diaryItemAnnotationTextStyle}>{item.anotacao}</p>
+            </div>
+          )}
+
+          {podeEditarPerfil &&
+            obra &&
+            idAutorSupabaseValido(obra.id) &&
+            editorAnotacaoDiario.itemChave !== item.chave && (
+              <button
+                type="button"
+                onClick={() => abrirEditorAnotacaoDiario(item)}
+                style={diaryItemAnnotationButtonStyle}
+              >
+                {item.anotacao ? "Editar anotação" : "+ Adicionar anotação"}
+              </button>
+            )}
+
+          {editorAnotacaoDiario.aberto &&
+            editorAnotacaoDiario.itemChave === item.chave && (
+              <div style={diaryItemAnnotationEditorStyle}>
+                <textarea
+                  value={editorAnotacaoDiario.texto}
+                  onChange={(event) =>
+                    setEditorAnotacaoDiario((estadoAtual) => ({
+                      ...estadoAtual,
+                      texto: event.target.value.slice(
+                        0,
+                        DIARIO_ANOTACAO_MAX_LENGTH,
+                      ),
+                      erro: "",
+                    }))
+                  }
+                  placeholder="Escreva o que achou desta leitura..."
+                  maxLength={DIARIO_ANOTACAO_MAX_LENGTH}
+                  rows={4}
+                  style={diaryItemAnnotationTextareaStyle}
+                  disabled={editorAnotacaoDiario.salvando}
+                />
+
+                <div style={diaryItemAnnotationEditorMetaStyle}>
+                  <select
+                    value={editorAnotacaoDiario.visibilidade}
+                    onChange={(event) =>
+                      setEditorAnotacaoDiario((estadoAtual) => ({
+                        ...estadoAtual,
+                        visibilidade:
+                          event.target.value as VisibilidadeDiarioPerfil,
+                      }))
+                    }
+                    style={diaryItemAnnotationSelectStyle}
+                    disabled={editorAnotacaoDiario.salvando}
+                    aria-label="Privacidade da anotação"
+                  >
+                    <option value="privado">Privado</option>
+                    <option value="parcial">No perfil</option>
+                    <option value="publico">Público</option>
+                  </select>
+
+                  <span style={diaryItemAnnotationCounterStyle}>
+                    {editorAnotacaoDiario.texto.length}/
+                    {DIARIO_ANOTACAO_MAX_LENGTH}
+                  </span>
+                </div>
+
+                {editorAnotacaoDiario.erro && (
+                  <span style={diaryItemAnnotationErrorStyle}>
+                    {editorAnotacaoDiario.erro}
+                  </span>
+                )}
+
+                <div style={diaryItemAnnotationEditorActionsStyle}>
+                  <button
+                    type="button"
+                    onClick={() => void salvarAnotacaoDiario()}
+                    disabled={editorAnotacaoDiario.salvando}
+                    style={diaryItemAnnotationSaveStyle}
+                  >
+                    {editorAnotacaoDiario.salvando ? "Salvando..." : "Salvar"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={fecharEditorAnotacaoDiario}
+                    disabled={editorAnotacaoDiario.salvando}
+                    style={diaryItemAnnotationCancelStyle}
+                  >
+                    Cancelar
+                  </button>
+
+                  {item.anotacao && (
+                    <button
+                      type="button"
+                      onClick={() => void removerAnotacaoDiario()}
+                      disabled={editorAnotacaoDiario.salvando}
+                      style={diaryItemAnnotationRemoveStyle}
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+          {podeInteragirAnotacao && (
+            <div style={diaryItemSocialBlockStyle}>
+              <div style={diaryItemSocialActionsStyle}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void alternarCurtidaAnotacaoDiario(item)
+                  }
+                  disabled={
+                    interacaoAnotacao.carregando ||
+                    interacaoAnotacao.salvandoCurtida
+                  }
+                  style={{
+                    ...diaryItemSocialButtonStyle,
+                    ...(interacaoAnotacao.curtiu
+                      ? diaryItemSocialButtonActiveStyle
+                      : {}),
+                  }}
+                  aria-pressed={interacaoAnotacao.curtiu}
+                >
+                  <span aria-hidden="true">
+                    {interacaoAnotacao.curtiu ? "♥" : "♡"}
+                  </span>
+                  <span>
+                    {interacaoAnotacao.carregando
+                      ? "..."
+                      : interacaoAnotacao.totalCurtidas}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    alternarComentariosAnotacaoDiario(item)
+                  }
+                  disabled={interacaoAnotacao.carregando}
+                  style={diaryItemSocialButtonStyle}
+                  aria-expanded={
+                    comentariosAnotacaoDiarioAbertoChave === item.chave
+                  }
+                >
+                  <span aria-hidden="true">💬</span>
+                  <span>
+                    {interacaoAnotacao.carregando
+                      ? "..."
+                      : interacaoAnotacao.comentarios.length}
+                  </span>
+                </button>
+              </div>
+
+              {interacaoAnotacao.erro && (
+                <span style={diaryItemSocialErrorStyle}>
+                  {interacaoAnotacao.erro}
+                </span>
+              )}
+
+              {comentariosAnotacaoDiarioAbertoChave === item.chave && (
+                <div style={diaryItemCommentsPanelStyle}>
+                  {interacaoAnotacao.comentarios.length === 0 ? (
+                    <span style={diaryItemCommentsEmptyStyle}>
+                      Nenhum comentário ainda.
+                    </span>
+                  ) : (
+                    <div style={diaryItemCommentsListStyle}>
+                      {interacaoAnotacao.comentarios.map(
+                        (comentario) => (
+                          <div
+                            key={comentario.id}
+                            style={diaryItemCommentStyle}
+                          >
+                            <div style={diaryItemCommentHeaderStyle}>
+                              <Link
+                                href={criarPerfilAutorHref(
+                                  comentario.autorNome,
+                                  comentario.userId,
+                                )}
+                                style={diaryItemCommentAuthorStyle}
+                              >
+                                {comentario.userId === usuarioIdLogado
+                                  ? "Você"
+                                  : comentario.autorNome}
+                              </Link>
+
+                              <span style={diaryItemCommentDateStyle}>
+                                {dataDiarioPerfilFormatada(
+                                  comentario.criadoEm,
+                                )}
+                              </span>
+                            </div>
+
+                            <p style={diaryItemCommentTextStyle}>
+                              {comentario.texto}
+                            </p>
+
+                            {(comentario.userId === usuarioIdLogado ||
+                              podeEditarPerfil) && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void removerComentarioAnotacaoDiario(
+                                    item,
+                                    comentario,
+                                  )
+                                }
+                                style={diaryItemCommentRemoveStyle}
+                              >
+                                Remover
+                              </button>
+                            )}
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
+
+                  {usuarioIdLogado ? (
+                    <div style={diaryItemCommentFormStyle}>
+                      <textarea
+                        value={interacaoAnotacao.novoComentario}
+                        onChange={(event) =>
+                          atualizarTextoComentarioAnotacaoDiario(
+                            anotacaoId,
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Escreva um comentário..."
+                        maxLength={DIARIO_COMENTARIO_MAX_LENGTH}
+                        rows={3}
+                        style={diaryItemCommentTextareaStyle}
+                        disabled={
+                          interacaoAnotacao.enviandoComentario
+                        }
+                      />
+
+                      <div style={diaryItemCommentFormFooterStyle}>
+                        <span style={diaryItemAnnotationCounterStyle}>
+                          {interacaoAnotacao.novoComentario.length}/
+                          {DIARIO_COMENTARIO_MAX_LENGTH}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void enviarComentarioAnotacaoDiario(item)
+                          }
+                          disabled={
+                            interacaoAnotacao.enviandoComentario
+                          }
+                          style={diaryItemCommentSendStyle}
+                        >
+                          {interacaoAnotacao.enviandoComentario
+                            ? "Enviando..."
+                            : "Comentar"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(criarLoginHrefPerfilAutor())
+                      }
+                      style={diaryItemLoginToCommentStyle}
+                    >
+                      Entrar para comentar
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={diaryItemFooterStyle}>
+            <span style={diaryItemPrivacyStyle}>
+              <span aria-hidden="true">{apresentacaoVisibilidade.icone}</span>
+              <span>{apresentacaoVisibilidade.texto}</span>
+            </span>
+
+            <Link href={hrefAcao} style={diaryItemActionStyle}>
+              {item.tipo === "lendo" ? "Continuar leitura" : "Abrir obra"}
+            </Link>
+          </div>
         </div>
-      </Link>
+      </article>
+    );
+  }
+
+  function renderizarConteudoSecaoDiarioPerfil(
+    itens: DiarioPerfilItem[],
+    vazio: string,
+  ) {
+    if (itens.length === 0) {
+      return <div style={diaryEmptyStateStyle}>{vazio}</div>;
+    }
+
+    return (
+      <DiaryCarouselRow isDesktop={isDesktop} totalItems={itens.length}>
+        {itens.slice(0, 8).map((item) => renderizarItemDiarioPerfil(item))}
+      </DiaryCarouselRow>
     );
   }
 
   function renderizarSecaoDiarioPerfil(
     titulo: string,
-    descricao: string,
     itens: DiarioPerfilItem[],
     vazio: string,
   ) {
@@ -3927,19 +6147,94 @@ export default function PerfilAutorPage() {
       <section style={diarySectionStyle}>
         <div style={diarySectionHeaderStyle}>
           <strong style={diarySectionTitleStyle}>{titulo}</strong>
-          <span style={diarySectionDescriptionStyle}>{descricao}</span>
         </div>
 
-        {itens.length === 0 ? (
-          <div style={diaryEmptyStateStyle}>{vazio}</div>
-        ) : (
-          <div style={isDesktop ? desktopDiaryItemsGridStyle : diaryItemsGridStyle}>
-            {itens.slice(0, 6).map((item) => renderizarItemDiarioPerfil(item))}
-          </div>
-        )}
+        {renderizarConteudoSecaoDiarioPerfil(itens, vazio)}
       </section>
     );
   }
+
+  function renderizarSecaoDiarioRecolhivelPerfil(
+    titulo: string,
+    aberto: boolean,
+    alternar: () => void,
+    itens: DiarioPerfilItem[],
+    vazio: string,
+  ) {
+    return (
+      <section style={diarySectionStyle}>
+        <div style={diaryCollapsibleHeaderStyle}>
+          <strong style={diarySectionTitleStyle}>{titulo}</strong>
+
+          <button
+            type="button"
+            onClick={alternar}
+            style={diaryToggleButtonStyle}
+            aria-expanded={aberto}
+          >
+            <span>{aberto ? "Ocultar" : "Abrir"}</span>
+            <span style={diaryToggleButtonIconStyle}>
+              {aberto ? "↑" : "↓"}
+            </span>
+          </button>
+        </div>
+
+        {aberto && renderizarConteudoSecaoDiarioPerfil(itens, vazio)}
+      </section>
+    );
+  }
+
+  function renderizarAtividadeRecenteDiarioPerfil() {
+    return (
+      <section style={diaryTimelineStyle}>
+        <div style={diaryCollapsibleHeaderStyle}>
+          <strong style={diarySectionTitleStyle}>Atividade recente</strong>
+
+          <button
+            type="button"
+            onClick={() =>
+              setAtividadesDiarioAberto((valorAtual) => !valorAtual)
+            }
+            style={diaryToggleButtonStyle}
+            aria-expanded={atividadesDiarioAberto}
+          >
+            <span>{atividadesDiarioAberto ? "Ocultar" : "Abrir"}</span>
+            <span style={diaryToggleButtonIconStyle}>
+              {atividadesDiarioAberto ? "↑" : "↓"}
+            </span>
+          </button>
+        </div>
+
+        {atividadesDiarioAberto &&
+          (diarioPerfil.atividades.length === 0 ? (
+            <div style={diaryEmptyStateStyle}>
+              Nenhuma atividade recente para mostrar.
+            </div>
+          ) : (
+            <div style={diaryTimelineListStyle}>
+              {diarioPerfil.atividades.slice(0, 8).map((item) => (
+                <Link
+                  key={`timeline-${item.chave}`}
+                  href={obterHrefItemDiarioPerfil(item)}
+                  style={diaryTimelineItemStyle}
+                >
+                  <span style={diaryTimelineDotStyle} aria-hidden="true" />
+                  <span style={diaryTimelineTextStyle}>
+                    <strong>{item.titulo}</strong>
+                    {" — "}
+                    {item.descricao}
+                  </span>
+                  <span style={diaryTimelineDateStyle}>
+                    {dataDiarioPerfilFormatada(item.data)}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ))}
+      </section>
+    );
+  }
+
 
   if (carregando) {
     return (
@@ -4049,13 +6344,39 @@ export default function PerfilAutorPage() {
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
       <section style={containerAtualStyle}>
-        <header style={profileHeaderStyle}>
+        <header
+          style={
+            isDesktop ? profileHeaderDesktopStyle : profileHeaderStyle
+          }
+        >
           <Link href="/" style={profileHeaderLogoStyle} aria-label="Historietas">
             <span style={logoMarkStyle}>H</span>
             <span className="historietas-home-logo-text" style={logoTextStyle}>
               istorietas
             </span>
           </Link>
+
+          {isDesktop ? (
+            <Link
+              href="/notificacoes"
+              style={profileNotificationButtonStyle}
+              aria-label={
+                notificacoesNaoLidas > 0
+                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                  : "Notificações"
+              }
+            >
+              N
+
+              {notificacoesNaoLidas > 0 ? (
+                <span style={profileNotificationBadgeStyle}>
+                  {notificacoesNaoLidas > 99
+                    ? "99+"
+                    : notificacoesNaoLidas}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
 
           <button
             type="button"
@@ -4139,7 +6460,7 @@ export default function PerfilAutorPage() {
                     </span>
 
                     <Link
-                      href="/minhas-obras"
+                      href="/painel-autor"
                       style={menuItemStyle}
                       onClick={() => setMenuPerfilAberto(false)}
                     >
@@ -4306,12 +6627,19 @@ export default function PerfilAutorPage() {
                     : profileStatsAtualStyle
                 }
               >
-                <div style={profileStatItemStyle}>
-                  <strong style={profileStatNumberStyle}>
-                    {perfilParaMostrar.obras.length}
+                <Link
+                  href={obrasSeguidasPerfilHref}
+                  style={profileStatLinkStyle}
+                  aria-label={`Abrir obras seguidas por ${perfilParaMostrar.nome}`}
+                >
+                  <strong style={profileStatWorksNumberStyle}>
+                    {obrasSeguidasPerfilTotal}
                   </strong>
-                  <span style={profileStatLabelStyle}>obras</span>
-                </div>
+                  <span style={profileStatWorksLabelStyle}>
+                    <span>obras</span>
+                    <span>seguidas</span>
+                  </span>
+                </Link>
 
                 <Link
                   href={seguidoresPerfilHref}
@@ -4341,36 +6669,38 @@ export default function PerfilAutorPage() {
                       {formatarMediaAvaliacaoAutor(avaliacaoAutor.media)}
                     </strong>
 
-                    <span
-                      style={profileRatingMiniStarsStyle}
-                      aria-label={`Média ${formatarMediaAvaliacaoAutor(
-                        avaliacaoAutor.media,
-                      )} de 5`}
-                    >
-                      {NOTAS_AVALIACAO_AUTOR.map((estrela) => (
-                        <span
-                          key={`media-autor-topo-${estrela}`}
-                          style={profileRatingMiniStarVisualStyle}
-                          aria-hidden="true"
-                        >
-                          <span style={profileRatingMiniStarBaseStyle}>★</span>
+                    <span style={profileRatingStackedMetaStyle}>
+                      <span
+                        style={profileRatingMiniStarsStyle}
+                        aria-label={`Média ${formatarMediaAvaliacaoAutor(
+                          avaliacaoAutor.media,
+                        )} de 5`}
+                      >
+                        {NOTAS_AVALIACAO_AUTOR.map((estrela) => (
                           <span
-                            style={{
-                              ...profileRatingMiniStarFillStyle,
-                              width: obterPreenchimentoEstrelaAutor(
-                                estrela,
-                                avaliacaoAutor.media,
-                              ),
-                            }}
+                            key={`media-autor-topo-${estrela}`}
+                            style={profileRatingMiniStarVisualStyle}
+                            aria-hidden="true"
                           >
-                            ★
+                            <span style={profileRatingMiniStarBaseStyle}>★</span>
+                            <span
+                              style={{
+                                ...profileRatingMiniStarFillStyle,
+                                width: obterPreenchimentoEstrelaAutor(
+                                  estrela,
+                                  avaliacaoAutor.media,
+                                ),
+                              }}
+                            >
+                              ★
+                            </span>
                           </span>
-                        </span>
-                      ))}
-                    </span>
+                        ))}
+                      </span>
 
-                    <span style={profileRatingTotalStyle}>
-                      {formatarTotalAvaliacoesAutor(avaliacaoAutor.total)}
+                      <span style={profileRatingTotalStyle}>
+                        {formatarTotalAvaliacoesAutor(avaliacaoAutor.total)}
+                      </span>
                     </span>
                   </div>
                 )}
@@ -4412,7 +6742,7 @@ export default function PerfilAutorPage() {
                 <button
                   type="button"
                   onClick={() => void copiarLinkPerfil()}
-                  style={profileSecondaryButtonStyle}
+                  style={profilePrimaryButtonStyle}
                 >
                   Compartilhar
                 </button>
@@ -4420,11 +6750,7 @@ export default function PerfilAutorPage() {
                 <button
                   type="button"
                   onClick={alternarDestaquesPerfil}
-                  style={
-                    perfilSalvoAutor.mostrarDestaques
-                      ? profileActiveButtonStyle
-                      : profileSecondaryButtonStyle
-                  }
+                  style={profilePrimaryButtonStyle}
                 >
                   {perfilSalvoAutor.mostrarDestaques
                     ? "Ocultar destaques"
@@ -4656,7 +6982,7 @@ export default function PerfilAutorPage() {
               abaPerfil === "obras" ? profileTabActiveStyle : profileTabStyle
             }
           >
-            Obras {perfilParaMostrar.obras.length}
+            Obras
           </button>
 
           <button
@@ -4678,7 +7004,7 @@ export default function PerfilAutorPage() {
                 : profileTabStyle
             }
           >
-            Comunidade 0
+            Comunidade
           </button>
 
           <button
@@ -4690,42 +7016,292 @@ export default function PerfilAutorPage() {
           >
             Sobre
           </button>
+
+          {bibliotecaPerfilVisivel && (
+            <button
+              type="button"
+              onClick={() => setAbaPerfil("biblioteca")}
+              style={
+                abaPerfil === "biblioteca"
+                  ? profileTabActiveStyle
+                  : profileTabStyle
+              }
+            >
+              Biblioteca
+            </button>
+          )}
         </div>
+
+
+        {abaPerfil === "biblioteca" && bibliotecaPerfilVisivel && (
+          <section
+            style={
+              isDesktop
+                ? desktopProfileLibrarySectionStyle
+                : profileLibrarySectionStyle
+            }
+          >
+            <div
+              style={
+                isDesktop
+                  ? desktopProfileLibraryStatsGridStyle
+                  : profileLibraryStatsGridStyle
+              }
+            >
+              {estatisticasBibliotecaPerfil.map((estatistica) => (
+                <button
+                  key={`biblioteca-stat-${estatistica.aba}`}
+                  type="button"
+                  onClick={() => setAbaBibliotecaPerfil(estatistica.aba)}
+                  style={
+                    abaBibliotecaPerfil === estatistica.aba
+                      ? profileLibraryStatCardActiveStyle
+                      : profileLibraryStatCardStyle
+                  }
+                >
+                  <strong style={profileLibraryStatNumberStyle}>
+                    {estatistica.numero}
+                  </strong>
+                  <span style={profileLibraryStatLabelStyle}>
+                    {estatistica.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <h2 style={profileLibrarySummaryTitleStyle}>
+              {itensBibliotecaAtivos.length} de {itensBibliotecaAtivos.length}{" "}
+              {rotuloBibliotecaAtiva}
+            </h2>
+
+            {diarioPerfil.carregando ? (
+              <div style={emptyMiniBoxStyle}>Carregando Biblioteca...</div>
+            ) : itensBibliotecaAtivos.length === 0 ? (
+              <div style={emptyMiniBoxStyle}>
+                Sua Biblioteca ainda não tem itens em {rotuloBibliotecaAtiva}.
+              </div>
+            ) : (
+              <div style={profileLibraryListStyle}>
+                {itensBibliotecaAtivos.map((item) => {
+                  const obraHref =
+                    item.obra.link ||
+                    `/obra/${item.obra.slug || criarSlugBase(item.obra.titulo)}`;
+                  const capituloHref = item.capitulo
+                    ? criarHrefLeituraCapituloPerfilAutor(
+                        item.obra,
+                        item.capitulo,
+                        item.numeroCapitulo || 1,
+                      )
+                    : obraHref;
+                  const metadadosObra = [
+                    item.obra.formato,
+                    formatarGeneroPerfilAutor(item.obra.genero),
+                    item.obra.tags[0],
+                  ]
+                    .filter((texto) => Boolean(texto && texto !== "sem tags"))
+                    .join(" • ");
+                  const capituloSalvo = Boolean(item.capitulo?.salvo);
+                  const capituloLido = Boolean(item.capitulo?.lido);
+                  const obraFavorita = colecaoTemObraPerfilBiblioteca(obrasFavoritas, item.obra);
+                  const obraConcluida = colecaoTemObraPerfilBiblioteca(obrasConcluidas, item.obra);
+                  const rotuloEstadoBiblioteca =
+                    abaBibliotecaPerfil === "quero-ler"
+                      ? "Quero ler"
+                      : abaBibliotecaPerfil === "lendo-agora"
+                        ? "Lendo"
+                        : abaBibliotecaPerfil === "favoritas"
+                          ? "Favorita"
+                          : abaBibliotecaPerfil === "concluidas"
+                            ? "Concluída"
+                            : "Histórico";
+
+                  return (
+                    <article key={item.chave} style={profileLibraryCardStyle}>
+                      <div
+                        style={
+                          isDesktop
+                            ? desktopProfileLibraryBookActionGridStyle
+                            : profileLibraryBookActionGridStyle
+                        }
+                      >
+                        <Link
+                          href={obraHref}
+                          style={criarCapaBibliotecaPerfilStyle(
+                            item.obra.capa,
+                            isDesktop,
+                          )}
+                          aria-label={`Abrir ${item.obra.titulo}`}
+                        >
+                        </Link>
+
+                        <div
+                          style={
+                            isDesktop
+                              ? desktopProfileLibraryBookInfoActionGridStyle
+                              : profileLibraryBookInfoActionGridStyle
+                          }
+                        >
+                          <div style={profileLibraryBadgesRowStyle}>
+                            <span style={profileLibraryChapterBadgeStyle}>
+                              {item.capitulo
+                                ? `CAPÍTULO ${item.numeroCapitulo || 1}`
+                                : "OBRA"}
+                            </span>
+
+                            <span style={profileLibraryStatusActiveStyle}>
+                              ✓ {rotuloEstadoBiblioteca}
+                            </span>
+
+                            {capituloSalvo && (
+                              <span style={profileLibraryStatusActiveStyle}>
+                                ✓ Salvo
+                              </span>
+                            )}
+
+                            {capituloLido && (
+                              <span style={profileLibraryStatusActiveStyle}>
+                                ✓ Lido
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 style={profileLibraryTitleStyle}>
+                            {item.obra.titulo}
+                          </h3>
+
+                          <p style={profileLibraryMetaStyle}>
+                            {item.capitulo ? `${item.capitulo.titulo} • ` : ""}
+                            {formatarGeneroPerfilAutor(item.obra.genero)} •{" "}
+                            {metadadosObra || "História Original"}
+                          </p>
+
+                          <Link
+                            href={criarPerfilAutorHref(item.obra.autor, item.obra.autorId)}
+                            style={profileLibraryAuthorStyle}
+                          >
+                            Por {item.obra.autor}
+                          </Link>
+                        </div>
+
+                        <Link href={capituloHref} style={profileLibraryReadButtonStyle}>
+                          Ler capítulo
+                        </Link>
+
+                        <Link href={obraHref} style={profileLibraryViewButtonStyle}>
+                          Ver obra
+                        </Link>
+                      </div>
+
+                      <div style={profileLibrarySecondaryActionsStyle}>
+                        <button
+                          type="button"
+                          onClick={() => void alternarFavoritoObra(item.obra.id)}
+                          style={
+                            obraFavorita
+                              ? profileLibraryListButtonActiveStyle
+                              : profileLibraryListButtonStyle
+                          }
+                        >
+                          {obraFavorita ? "Favorita" : "Favoritar"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => void alternarConcluidoObra(item.obra.id)}
+                          style={
+                            obraConcluida
+                              ? profileLibraryDoneButtonActiveStyle
+                              : profileLibraryDoneButtonStyle
+                          }
+                        >
+                          {obraConcluida ? "Concluída" : "Concluir"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => void removerItemBibliotecaPerfil(item)}
+                          style={profileLibraryRemoveButtonStyle}
+                        >
+                          {abaBibliotecaPerfil === "lendo-agora"
+                            ? "Parar leitura"
+                            : abaBibliotecaPerfil === "historico"
+                              ? "Limpar histórico"
+                              : "Remover"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
 
         {abaPerfil === "diario" && (
           <section style={isDesktop ? desktopDiaryBoxStyle : diaryBoxStyle}>
-            <div style={authorCommunityIntroStyle}>
-              <span style={authorCommunityEyebrowStyle}>Diário de leitura</span>
-
+            <div style={diaryTitleToolbarStyle}>
               <h2 style={authorCommunityTitleStyle}>
                 {podeEditarPerfil ? "Meu Diário" : `Diário de ${perfilParaMostrar.nome}`}
               </h2>
 
-              <p style={authorCommunityDescriptionStyle}>
-                {descricaoPrivacidadeDiario}
-              </p>
-
-              <div style={diaryPrivacyNoticeStyle}>
-                {resumoPrivacidadeDiario}
-              </div>
+              <button
+                type="button"
+                onClick={() => setResumoDiarioAberto((aberto) => !aberto)}
+                style={diaryStatsToggleButtonStyle}
+                aria-label={resumoDiarioAberto ? "Ocultar resumo do Diário" : "Mostrar resumo do Diário"}
+                aria-expanded={resumoDiarioAberto}
+              >
+                <span style={filtersToggleIconStyle}>
+                  {resumoDiarioAberto ? "−" : "+"}
+                </span>
+              </button>
             </div>
 
-            <div style={isDesktop ? desktopDiaryStatsGridStyle : diaryStatsGridStyle}>
-              <div style={diaryStatCardStyle}>
-                <strong style={diaryStatNumberStyle}>{totalLeiturasDiario}</strong>
-                <span style={diaryStatLabelStyle}>leituras</span>
-              </div>
+            <p style={authorCommunityDescriptionStyle}>
+              {descricaoPrivacidadeDiario}
+            </p>
 
-              <div style={diaryStatCardStyle}>
-                <strong style={diaryStatNumberStyle}>{totalFavoritasDiario}</strong>
-                <span style={diaryStatLabelStyle}>favoritas</span>
-              </div>
-
-              <div style={diaryStatCardStyle}>
-                <strong style={diaryStatNumberStyle}>{totalAvaliacoesDiario + totalReviewsDiario}</strong>
-                <span style={diaryStatLabelStyle}>avaliações/reviews</span>
-              </div>
+            <div style={diaryPrivacyNoticeStyle}>
+              {resumoPrivacidadeDiario}
             </div>
+
+            {resumoDiarioAberto && (
+              <div
+                style={
+                  isDesktop
+                    ? desktopDiaryStatsGridStyle
+                    : diaryStatsGridStyle
+                }
+              >
+                <div style={diaryStatCardStyle}>
+                  <strong style={diaryStatNumberStyle}>
+                    {totalLeiturasDiario}
+                  </strong>
+                  <span style={diaryStatLabelStyle}>leituras</span>
+                </div>
+
+                <div style={diaryStatCardStyle}>
+                  <strong style={diaryStatNumberStyle}>
+                    {totalQueroLerDiario}
+                  </strong>
+                  <span style={diaryStatLabelStyle}>quero ler</span>
+                </div>
+
+                <div style={diaryStatCardStyle}>
+                  <strong style={diaryStatNumberStyle}>
+                    {totalFavoritasDiario}
+                  </strong>
+                  <span style={diaryStatLabelStyle}>favoritas</span>
+                </div>
+
+                <div style={diaryStatCardStyle}>
+                  <strong style={diaryStatNumberStyle}>
+                    {totalAvaliacoesDiario + totalReviewsDiario}
+                  </strong>
+                  <span style={diaryStatLabelStyle}>avaliações/reviews</span>
+                </div>
+              </div>
+            )}
 
             {diarioPerfil.carregando ? (
               <div style={diaryEmptyStateStyle}>Carregando Diário...</div>
@@ -4733,7 +7309,6 @@ export default function PerfilAutorPage() {
               <>
                 {renderizarSecaoDiarioPerfil(
                   "Lendo agora",
-                  "Obras com progresso recente.",
                   diarioPerfil.lendoAgora,
                   podeEditarPerfil
                     ? "Suas leituras recentes aparecerão aqui."
@@ -4741,8 +7316,15 @@ export default function PerfilAutorPage() {
                 )}
 
                 {renderizarSecaoDiarioPerfil(
+                  "Quero ler",
+                  diarioPerfil.queroLer,
+                  podeEditarPerfil
+                    ? "As obras salvas para acompanhar depois aparecerão aqui."
+                    : "Este perfil ainda não compartilhou obras para ler depois.",
+                )}
+
+                {renderizarSecaoDiarioPerfil(
                   "Favoritas",
-                  "Obras que representam o gosto do perfil.",
                   diarioPerfil.favoritas,
                   podeEditarPerfil
                     ? "Favorite obras para montar sua vitrine de leitura."
@@ -4751,7 +7333,6 @@ export default function PerfilAutorPage() {
 
                 {renderizarSecaoDiarioPerfil(
                   "Concluídas",
-                  "Histórias marcadas como finalizadas.",
                   diarioPerfil.concluidas,
                   podeEditarPerfil
                     ? "Obras concluídas aparecerão nesta área."
@@ -4760,52 +7341,23 @@ export default function PerfilAutorPage() {
 
                 {renderizarSecaoDiarioPerfil(
                   "Avaliações recentes",
-                  "Notas públicas dadas para obras.",
                   diarioPerfil.avaliacoes,
                   podeEditarPerfil
                     ? "Suas avaliações públicas aparecerão aqui."
                     : "Este perfil ainda não possui avaliações públicas.",
                 )}
 
-                {renderizarSecaoDiarioPerfil(
+                {renderizarSecaoDiarioRecolhivelPerfil(
                   "Reviews recentes",
-                  "Opiniões publicadas na Comunidade.",
+                  reviewsDiarioAberto,
+                  () => setReviewsDiarioAberto((valorAtual) => !valorAtual),
                   diarioPerfil.reviews,
                   podeEditarPerfil
                     ? "Suas reviews publicadas na Comunidade aparecerão aqui."
                     : "Este perfil ainda não publicou reviews.",
                 )}
 
-                {diarioPerfil.atividades.length > 0 && (
-                  <section style={diaryTimelineStyle}>
-                    <div style={diarySectionHeaderStyle}>
-                      <strong style={diarySectionTitleStyle}>Atividade recente</strong>
-                      <span style={diarySectionDescriptionStyle}>
-                        Linha do tempo do Diário.
-                      </span>
-                    </div>
-
-                    <div style={diaryTimelineListStyle}>
-                      {diarioPerfil.atividades.slice(0, 8).map((item) => (
-                        <Link
-                          key={`timeline-${item.chave}`}
-                          href={obterHrefItemDiarioPerfil(item)}
-                          style={diaryTimelineItemStyle}
-                        >
-                          <span style={diaryTimelineDotStyle} aria-hidden="true" />
-                          <span style={diaryTimelineTextStyle}>
-                            <strong>{item.titulo}</strong>
-                            {" — "}
-                            {item.descricao}
-                          </span>
-                          <span style={diaryTimelineDateStyle}>
-                            {formatarDataDiarioPerfil(item.data)}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  </section>
-                )}
+                {renderizarAtividadeRecenteDiarioPerfil()}
               </>
             )}
           </section>
@@ -4820,15 +7372,9 @@ export default function PerfilAutorPage() {
             }
           >
             <div style={authorCommunityIntroStyle}>
-              <span style={authorCommunityEyebrowStyle}>Comunidade do autor</span>
-
               <h2 style={authorCommunityTitleStyle}>
                 Comunidade de {perfilParaMostrar.nome}
               </h2>
-
-              <p style={authorCommunityDescriptionStyle}>
-                Acompanhe posts, teorias, reviews e discussões sobre as obras deste autor.
-              </p>
             </div>
 
             <div
@@ -4970,28 +7516,28 @@ export default function PerfilAutorPage() {
                 <div style={profileAboutMetricsGridStyle}>
                   <div style={profileAboutMetricCardStyle}>
                     <strong style={profileAboutMetricNumberStyle}>
-                      {formatarNumeroCompactoPerfilAutor(perfilParaMostrar.totalPublicadas)}
+                      {compactarNumeroPerfilAutor(perfilParaMostrar.totalPublicadas)}
                     </strong>
                     <span style={profileAboutMetricLabelStyle}>publicadas</span>
                   </div>
 
                   <div style={profileAboutMetricCardStyle}>
                     <strong style={profileAboutMetricNumberStyle}>
-                      {formatarNumeroCompactoPerfilAutor(perfilParaMostrar.totalCapitulos)}
+                      {compactarNumeroPerfilAutor(perfilParaMostrar.totalCapitulos)}
                     </strong>
                     <span style={profileAboutMetricLabelStyle}>capítulos</span>
                   </div>
 
                   <div style={profileAboutMetricCardStyle}>
                     <strong style={profileAboutMetricNumberStyle}>
-                      {formatarNumeroCompactoPerfilAutor(perfilParaMostrar.totalCurtidas)}
+                      {compactarNumeroPerfilAutor(perfilParaMostrar.totalCurtidas)}
                     </strong>
                     <span style={profileAboutMetricLabelStyle}>curtidas</span>
                   </div>
 
                   <div style={profileAboutMetricCardStyle}>
                     <strong style={profileAboutMetricNumberStyle}>
-                      {formatarNumeroCompactoPerfilAutor(totalVisualizacoesPerfil)}
+                      {compactarNumeroPerfilAutor(totalVisualizacoesPerfil)}
                     </strong>
                     <span style={profileAboutMetricLabelStyle}>visualizações</span>
                   </div>
@@ -5034,11 +7580,10 @@ export default function PerfilAutorPage() {
           <section style={profileWorksSectionStyle}>
             <div style={profileWorksToolbarStyle}>
               <p style={profileWorksSummaryStyle}>
-                {obrasDoPerfilFiltradas.length} de{" "}
-                {perfilParaMostrar.obras.length}{" "}
-                {perfilParaMostrar.obras.length === 1 ? "obra" : "obras"} •{" "}
+                {obrasDoPerfilFiltradas.length}{" "}
+                {obrasDoPerfilFiltradas.length === 1 ? "obra" : "obras"} •{" "}
                 {obrasFavoritasPerfil} na lista • {obrasConcluidasPerfil}{" "}
-                concluídas
+                {obrasConcluidasPerfil === 1 ? "concluída" : "concluídas"}
               </p>
 
               <button
@@ -5141,12 +7686,12 @@ export default function PerfilAutorPage() {
                         numeroUltimoCapitulo || 1,
                       )
                     : "";
-                  const obraFavorita = obrasFavoritas.includes(obra.id);
-                  const obraConcluida = obrasConcluidas.includes(obra.id);
+                  const obraFavorita = colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra);
+                  const obraConcluida = colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra);
                   const totalCurtidas = obra.capitulos.filter(
                     (capitulo) => capitulo.curtiu,
                   ).length;
-                  const visualizacoesObra = formatarNumeroCompactoPerfilAutor(
+                  const visualizacoesObra = compactarNumeroPerfilAutor(
                     obra.visualizacoes,
                   );
                   const menuObraAberto = obraMenuAbertoId === obra.id;
@@ -5165,7 +7710,7 @@ export default function PerfilAutorPage() {
                                   : profileWorkDraftBadgeStyle
                               }
                             >
-                              {obra.publicado ? "Publicado" : "Rascunho"}
+                              {formatarGeneroPerfilAutor(obra.genero)}
                             </span>
 
                             {mostrarClassificacao(obra) && (
@@ -5181,7 +7726,6 @@ export default function PerfilAutorPage() {
                             </strong>
 
                             <span style={profileWorkCoverMetaStyle}>
-                              {formatarGeneroPerfilAutor(obra.genero)} •{" "}
                               {obra.capitulos.length}{" "}
                               {obra.capitulos.length === 1 ? "cap." : "caps."} •
                               <span style={profileWorkHeartMetaStyle}>
@@ -5239,12 +7783,12 @@ export default function PerfilAutorPage() {
                   numeroUltimoCapitulo || 1,
                 )
               : "";
-            const obraFavorita = obrasFavoritas.includes(obra.id);
-            const obraConcluida = obrasConcluidas.includes(obra.id);
+            const obraFavorita = colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra);
+            const obraConcluida = colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra);
             const totalCurtidas = obra.capitulos.filter(
               (capitulo) => capitulo.curtiu,
             ).length;
-            const visualizacoesObra = formatarNumeroCompactoPerfilAutor(
+            const visualizacoesObra = compactarNumeroPerfilAutor(
               obra.visualizacoes,
             );
 
@@ -5290,7 +7834,7 @@ export default function PerfilAutorPage() {
                     {podeEditarPerfil ? (
                       <>
                         <Link
-                          href="/minhas-obras"
+                          href="/painel-autor"
                           onClick={() => setObraMenuAbertoId("")}
                           style={workActionSheetItemStyle}
                         >
@@ -5495,6 +8039,394 @@ const safeTextStyle: CSSProperties = {
   wordBreak: "break-word",
 };
 
+
+const profileLibrarySectionStyle: CSSProperties = {
+  display: "grid",
+  gap: "14px",
+  width: "100%",
+  marginTop: "14px",
+  minWidth: 0,
+};
+
+const desktopProfileLibrarySectionStyle: CSSProperties = {
+  ...profileLibrarySectionStyle,
+  gap: "18px",
+  marginTop: "18px",
+};
+
+const profileLibraryStatsGridStyle: CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  overflowX: "auto",
+  overflowY: "hidden",
+  scrollSnapType: "x mandatory",
+  scrollbarWidth: "none",
+  WebkitOverflowScrolling: "touch",
+  marginTop: "4px",
+  padding: "0 2px 2px",
+  maxWidth: "100%",
+  minWidth: 0,
+};
+
+const desktopProfileLibraryStatsGridStyle: CSSProperties = {
+  ...profileLibraryStatsGridStyle,
+  justifyContent: "center",
+  overflowX: "visible",
+  flexWrap: "wrap",
+  gap: "8px",
+  padding: 0,
+};
+
+const profileLibraryStatCardStyle: CSSProperties = {
+  flex: "0 0 84px",
+  scrollSnapAlign: "start",
+  borderRadius: "11px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  padding: "4px 4px",
+  minHeight: "46px",
+  display: "grid",
+  gap: "1px",
+  alignContent: "center",
+  justifyItems: "center",
+  minWidth: 0,
+  overflow: "hidden",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textAlign: "center",
+  appearance: "none",
+  boxShadow: "none",
+};
+
+const profileLibraryStatCardActiveStyle: CSSProperties = {
+  ...profileLibraryStatCardStyle,
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
+  boxShadow: "none",
+};
+
+const profileLibraryStatNumberStyle: CSSProperties = {
+  color: "#DDD6FE",
+  fontSize: "16px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const profileLibraryStatLabelStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "7.2px",
+  lineHeight: 1.02,
+  fontWeight: 950,
+  textAlign: "center",
+  textTransform: "uppercase",
+  letterSpacing: "0.02em",
+  ...safeTextStyle,
+};
+
+const profileLibrarySummaryTitleStyle: CSSProperties = {
+  margin: "14px 0 2px",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "clamp(18px, 4.4vw, 24px)",
+  lineHeight: 1.08,
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.04em",
+  ...safeTextStyle,
+};
+
+const profileLibraryListStyle: CSSProperties = {
+  marginTop: "14px",
+  display: "grid",
+  gap: "12px",
+  width: "100%",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+const profileLibraryCardStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  padding: "11px",
+  borderRadius: "22px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "hidden",
+  boxShadow: "none",
+  boxSizing: "border-box",
+};
+
+
+const profileLibraryBookActionGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(58px, 66px) minmax(0, 1fr) minmax(0, 1fr)",
+  gridTemplateRows: "auto auto",
+  gap: "5px",
+  alignItems: "stretch",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+const desktopProfileLibraryBookActionGridStyle: CSSProperties = {
+  ...profileLibraryBookActionGridStyle,
+  gridTemplateColumns: "minmax(76px, 88px) minmax(0, 1fr) minmax(0, 1fr)",
+  gap: "6px",
+};
+
+const profileLibraryBookInfoActionGridStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "start",
+  gap: "4px",
+  minWidth: 0,
+  maxWidth: "100%",
+  gridColumn: "2 / 4",
+  gridRow: "1 / 2",
+};
+
+const desktopProfileLibraryBookInfoActionGridStyle: CSSProperties = {
+  ...profileLibraryBookInfoActionGridStyle,
+  gap: "5px",
+};
+
+
+const profileLibraryCoverLinkStyle: CSSProperties = {
+  display: "block",
+  textDecoration: "none",
+  minWidth: 0,
+  height: "100%",
+};
+
+const profileLibraryCoverStyle: CSSProperties = {
+  gridColumn: "1 / 2",
+  gridRow: "1 / 3",
+  width: "100%",
+  height: "100%",
+  minHeight: 0,
+  maxHeight: "none",
+  aspectRatio: "auto",
+  alignSelf: "stretch",
+  borderRadius: "16px",
+  position: "relative",
+  overflow: "hidden",
+  textDecoration: "none",
+  background: "#04000A",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  border: "1px solid rgba(255,255,255,0.08)",
+  display: "block",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  boxShadow: "none",
+};
+
+const profileLibraryCoverDesktopStyle: CSSProperties = {
+  ...profileLibraryCoverStyle,
+  borderRadius: "16px",
+};
+
+const profileLibraryCardContentStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "start",
+  gap: "4px",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
+const profileLibraryBadgesRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "4px",
+  flexWrap: "wrap",
+  minWidth: 0,
+};
+
+const profileLibraryChapterBadgeStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "5px 8px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "10px",
+  lineHeight: 1,
+  fontWeight: 900,
+  whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+const profileLibraryStatusStyle: CSSProperties = {
+  ...profileLibraryChapterBadgeStyle,
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid rgba(255,255,255,0.07)",
+  color: "rgba(255,255,255,0.62)",
+};
+
+const profileLibraryStatusActiveStyle: CSSProperties = {
+  ...profileLibraryChapterBadgeStyle,
+  background: "rgba(34, 197, 94, 0.12)",
+  border: "1px solid rgba(34, 197, 94, 0.22)",
+  color: "#86EFAC",
+  fontWeight: 950,
+};
+
+const profileLibraryTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "20px",
+  lineHeight: 1.05,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  maxWidth: "100%",
+  paddingBottom: "2px",
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
+const profileLibraryMetaStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  lineHeight: 1.25,
+  fontWeight: 700,
+  maxWidth: "100%",
+  display: "-webkit-box",
+  WebkitLineClamp: 1,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
+const profileLibraryAuthorStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D8C8FF)",
+  fontSize: "12px",
+  fontWeight: 800,
+  textDecoration: "none",
+  borderBottom: "0",
+  whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+const profileLibraryPrimaryActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const profileLibrarySecondaryActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  alignItems: "stretch",
+  gap: "5px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  paddingTop: "1px",
+  marginTop: 0,
+};
+
+const profileLibraryReadButtonStyle: CSSProperties = {
+  minHeight: "34px",
+  width: "100%",
+  maxWidth: "100%",
+  padding: "0 12px",
+  borderRadius: "999px",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 950,
+  lineHeight: 1.15,
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
+  boxShadow: "none",
+  textAlign: "center",
+  gridColumn: "2 / 3",
+  gridRow: "2 / 3",
+  ...safeTextStyle,
+};
+
+const profileLibraryViewButtonStyle: CSSProperties = {
+  ...profileLibraryReadButtonStyle,
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  gridColumn: "3 / 4",
+  gridRow: "2 / 3",
+};
+
+const profileLibraryListButtonStyle: CSSProperties = {
+  minHeight: "34px",
+  width: "100%",
+  maxWidth: "100%",
+  padding: "0 12px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 950,
+  lineHeight: 1.15,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
+  boxShadow: "none",
+  textAlign: "center",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  ...safeTextStyle,
+};
+
+const profileLibraryListButtonActiveStyle: CSSProperties = {
+  ...profileLibraryListButtonStyle,
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.12)",
+};
+
+const profileLibraryDoneButtonStyle: CSSProperties = {
+  ...profileLibraryListButtonStyle,
+  background: "rgba(34, 197, 94, 0.12)",
+  border: "1px solid rgba(34, 197, 94, 0.22)",
+  color: "#86EFAC",
+};
+
+const profileLibraryDoneButtonActiveStyle: CSSProperties = {
+  ...profileLibraryDoneButtonStyle,
+  background: "rgba(16,185,129,0.18)",
+  border: "1px solid rgba(16,185,129,0.38)",
+};
+
+const profileLibraryRemoveButtonStyle: CSSProperties = {
+  ...profileLibraryListButtonStyle,
+  background: "rgba(127, 29, 29, 0.28)",
+  border: "1px solid rgba(248, 113, 113, 0.22)",
+  color: "#FCA5A5",
+};
+
 const mobileTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
   top: 0,
@@ -5601,6 +8533,52 @@ const profileHeaderStyle: CSSProperties = {
   gap: "8px",
   marginBottom: "12px",
   minWidth: 0,
+};
+
+const profileHeaderDesktopStyle: CSSProperties = {
+  ...profileHeaderStyle,
+  gridTemplateColumns: "minmax(0, 1fr) 34px 36px",
+};
+
+const profileNotificationButtonStyle: CSSProperties = {
+  position: "relative",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+};
+
+const profileNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
 };
 
 const profileHeaderLogoStyle: CSSProperties = {
@@ -6216,6 +9194,12 @@ const profileStatNumberStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const profileStatWorksNumberStyle: CSSProperties = {
+  ...profileStatNumberStyle,
+  position: "relative",
+  top: "5px",
+};
+
 const profileStatLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "8.8px",
@@ -6227,18 +9211,42 @@ const profileStatLabelStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const profileStatStackedLabelStyle: CSSProperties = {
+  ...profileStatLabelStyle,
+  display: "grid",
+  justifyItems: "center",
+  gap: 0,
+  whiteSpace: "nowrap",
+};
+
+const profileStatWorksLabelStyle: CSSProperties = {
+  ...profileStatStackedLabelStyle,
+  position: "relative",
+  top: "5px",
+};
+
 const profileRatingStatItemStyle: CSSProperties = {
   ...profileStatItemStyle,
-  gap: "2px",
+  gap: "3px",
 };
 
 const profileRatingNumberStyle: CSSProperties = {
+  ...profileStatNumberStyle,
   color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "16px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
+  position: "relative",
+  top: "5px",
+};
+
+const profileRatingStackedMetaStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateRows: "10px 9.68px",
+  alignItems: "center",
+  justifyItems: "center",
+  gap: 0,
+  position: "relative",
+  top: "5px",
+  minWidth: 0,
+  whiteSpace: "nowrap",
 };
 
 const profileRatingMiniStarsStyle: CSSProperties = {
@@ -6250,6 +9258,8 @@ const profileRatingMiniStarsStyle: CSSProperties = {
   fontSize: "10px",
   lineHeight: 1,
   letterSpacing: "-0.02em",
+  position: "relative",
+  top: "-1px",
   ...safeTextStyle,
 };
 
@@ -6279,12 +9289,10 @@ const profileRatingMiniStarFillStyle: CSSProperties = {
 };
 
 const profileRatingTotalStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
+  ...profileStatLabelStyle,
   fontSize: "7.8px",
-  lineHeight: 1.05,
-  fontWeight: 850,
-  textAlign: "center",
-  ...safeTextStyle,
+  lineHeight: 1.1,
+  whiteSpace: "nowrap",
 };
 
 const authorRatingBoxStyle: CSSProperties = {
@@ -6587,7 +9595,7 @@ const authorHighlightMetaStyle: CSSProperties = {
 const profileTabsStyle: CSSProperties = {
   width: "100%",
   display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
   alignItems: "end",
   gap: 0,
   margin: "8px 0 0",
@@ -6617,14 +9625,17 @@ const profileTabStyle: CSSProperties = {
   boxShadow: "none",
   outline: "none",
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
+  fontSize: "clamp(9px, 2.45vw, 10.5px)",
   fontWeight: 950,
   fontFamily: "inherit",
   cursor: "pointer",
   textAlign: "center",
-  padding: "0 6px",
+  padding: "0 3px",
   boxSizing: "border-box",
   ...safeTextStyle,
+  whiteSpace: "nowrap",
+  wordBreak: "normal",
+  overflowWrap: "normal",
 };
 
 const profileTabActiveStyle: CSSProperties = {
@@ -6900,7 +9911,7 @@ const filtersToggleButtonStyle: CSSProperties = {
 };
 
 const filtersToggleIconStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "15px",
   lineHeight: 1,
   fontWeight: 950,
@@ -6953,11 +9964,10 @@ const statLabelStyle: CSSProperties = {
 
 const authorCommunityBoxStyle: CSSProperties = {
   marginTop: "10px",
-  padding: "10px",
-  borderRadius: "22px",
-  background:
-    "#08030F",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   display: "grid",
   justifyItems: "center",
   gap: "8px",
@@ -6994,6 +10004,35 @@ const authorCommunityTitleStyle: CSSProperties = {
   fontWeight: 950,
   textAlign: "center",
   ...safeTextStyle,
+};
+
+const diaryTitleToolbarStyle: CSSProperties = {
+  width: "100%",
+  position: "relative",
+  display: "grid",
+  justifyItems: "center",
+  alignItems: "center",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  textAlign: "center",
+};
+
+const diaryStatsToggleButtonStyle: CSSProperties = {
+  position: "absolute",
+  right: 0,
+  top: "50%",
+  transform: "translateY(-50%)",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-accent, #FDBA74)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "2px 4px",
+  boxSizing: "border-box",
+  cursor: "pointer",
+  fontFamily: "inherit",
 };
 
 const authorCommunityDescriptionStyle: CSSProperties = {
@@ -7054,8 +10093,8 @@ const authorCommunityCardStyle: CSSProperties = {
   minHeight: "48px",
   padding: "6px 4px",
   borderRadius: "16px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.07))",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "grid",
@@ -7065,6 +10104,7 @@ const authorCommunityCardStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const authorCommunityCardNumberStyle: CSSProperties = {
@@ -7182,9 +10222,9 @@ const authorCommunitySecondaryActionStyle: CSSProperties = {
   minHeight: "30px",
   padding: "0 10px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
   textDecoration: "none",
   display: "inline-flex",
   alignItems: "center",
@@ -7193,6 +10233,7 @@ const authorCommunitySecondaryActionStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 900,
   textAlign: "center",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -7481,7 +10522,7 @@ const profileWorkCoverStyle: CSSProperties = {
   background: "#08030F",
   backgroundSize: "cover",
   backgroundPosition: "center",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  border: "none",
   boxSizing: "border-box",
   boxShadow: "none",
 };
@@ -8298,15 +11339,23 @@ const desktopWorkActionsGridStyle: CSSProperties = {
 };
 
 const diaryBoxStyle: CSSProperties = {
-  ...authorCommunityBoxStyle,
+  width: "100%",
+  marginTop: "10px",
+  padding: "10px 10px 138px",
+  display: "grid",
+  justifyItems: "center",
   alignItems: "stretch",
+  gap: "8px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
   textAlign: "center",
 };
 
 const diaryStatsGridStyle: CSSProperties = {
   width: "100%",
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "8px",
   minWidth: 0,
   maxWidth: "100%",
@@ -8345,6 +11394,44 @@ const diarySectionHeaderStyle: CSSProperties = {
   maxWidth: "100%",
 };
 
+const diaryCollapsibleHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexWrap: "wrap",
+  gap: "9px",
+  minWidth: 0,
+  maxWidth: "100%",
+  textAlign: "center",
+};
+
+const diaryToggleButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  minHeight: "34px",
+  padding: "7px 13px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#FFFFFF",
+  fontSize: "11px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "0.01em",
+  cursor: "pointer",
+  boxSizing: "border-box",
+  ...safeTextStyle,
+};
+
+const diaryToggleButtonIconStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "13px",
+  lineHeight: 1,
+  fontWeight: 950,
+};
+
 const diarySectionTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "13px",
@@ -8354,74 +11441,116 @@ const diarySectionTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const diarySectionDescriptionStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const diaryItemsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
+const diaryItemsCarouselStyle: CSSProperties = {
+  display: "flex",
+  gap: "10px",
+  width: "calc(100% + 20px)",
+  maxWidth: "calc(100% + 20px)",
   minWidth: 0,
-  maxWidth: "100%",
   boxSizing: "border-box",
+  overflowX: "auto",
+  overflowY: "hidden",
+  padding: "2px 10px 10px",
+  margin: "0 -10px",
+  scrollSnapType: "x mandatory",
+  scrollPaddingLeft: "10px",
+  scrollPaddingRight: "10px",
+  scrollbarWidth: "none",
+  msOverflowStyle: "none",
 };
 
 const diaryItemStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "72px minmax(0, 1fr)",
+  gridTemplateColumns: "76px minmax(0, 1fr)",
   alignItems: "stretch",
-  gap: "9px",
-  minHeight: "92px",
-  padding: "8px",
-  borderRadius: "18px",
+  gap: "10px",
+  width: "min(318px, calc(100vw - 48px))",
+  minWidth: "min(318px, calc(100vw - 48px))",
+  flex: "0 0 min(318px, calc(100vw - 48px))",
+  scrollSnapAlign: "start",
+  minHeight: "142px",
+  padding: "10px",
+  borderRadius: "20px",
   background: "rgba(255,255,255,0.045)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  textDecoration: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   overflow: "hidden",
 };
 
-const diaryItemBadgeStyle: CSSProperties = {
-  position: "absolute",
-  left: "7px",
-  bottom: "7px",
-  maxWidth: "calc(100% - 14px)",
-  borderRadius: "999px",
-  padding: "3px 5px",
-  background: "rgba(0,0,0,0.62)",
-  color: "#FFFFFF",
-  fontSize: "7px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  boxSizing: "border-box",
-  ...safeTextStyle,
+const desktopDiaryItemStyle: CSSProperties = {
+  ...diaryItemStyle,
+  gridTemplateColumns: "84px minmax(0, 1fr)",
+  width: "340px",
+  minWidth: "340px",
+  flex: "0 0 340px",
+  minHeight: "152px",
+};
+
+const diaryItemCoverLinkStyle: CSSProperties = {
+  display: "block",
+  width: "100%",
+  height: "100%",
+  minWidth: 0,
+  textDecoration: "none",
+};
+
+const diaryItemCoverStyle: CSSProperties = {
+  width: "76px",
+  height: "108px",
+  borderRadius: "15px",
+  background: "#08030F",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  boxShadow: "none",
+};
+
+const desktopDiaryItemCoverStyle: CSSProperties = {
+  ...diaryItemCoverStyle,
+  width: "84px",
+  height: "120px",
 };
 
 const diaryItemTextBlockStyle: CSSProperties = {
   display: "grid",
-  alignContent: "center",
-  gap: "4px",
+  alignContent: "start",
+  gap: "5px",
   minWidth: 0,
   textAlign: "left",
 };
 
+const diaryItemTopRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const diaryItemTypeBadgeStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "4px",
+  width: "fit-content",
+  minHeight: "20px",
+  padding: "4px 7px",
+  borderRadius: "999px",
+  fontSize: "8px",
+  lineHeight: 1,
+  fontWeight: 950,
+  whiteSpace: "nowrap",
+};
+
+const diaryItemTitleLinkStyle: CSSProperties = {
+  color: "inherit",
+  textDecoration: "none",
+  minWidth: 0,
+};
+
 const diaryItemTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12px",
+  fontSize: "13px",
   lineHeight: 1.15,
   fontWeight: 950,
   overflow: "hidden",
@@ -8432,9 +11561,22 @@ const diaryItemTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const diaryItemAuthorStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "9px",
+  lineHeight: 1.15,
+  fontWeight: 800,
+  textDecoration: "none",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
 const diaryItemDescriptionStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
+  fontSize: "9.5px",
   lineHeight: 1.3,
   fontWeight: 750,
   overflow: "hidden",
@@ -8447,10 +11589,427 @@ const diaryItemDescriptionStyle: CSSProperties = {
 
 const diaryItemDateStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8.5px",
+  fontSize: "7.8px",
   lineHeight: 1,
   fontWeight: 850,
+  whiteSpace: "nowrap",
   ...safeTextStyle,
+};
+
+const diaryItemRatingRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const diaryItemStarsStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "1px",
+  minWidth: 0,
+};
+
+const diaryItemRatingNumberStyle: CSSProperties = {
+  color: "#FBBF24",
+  fontSize: "10px",
+  lineHeight: 1,
+  fontWeight: 950,
+};
+
+const diaryItemReadingBlockStyle: CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  minWidth: 0,
+};
+
+const diaryItemChapterStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "9px",
+  lineHeight: 1.2,
+  fontWeight: 850,
+};
+
+const diaryItemProgressTrackStyle: CSSProperties = {
+  width: "100%",
+  height: "5px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.09)",
+  overflow: "hidden",
+};
+
+const diaryItemProgressFillStyle: CSSProperties = {
+  height: "100%",
+  borderRadius: "999px",
+  background: "var(--historietas-accent, #F97316)",
+};
+
+const diaryItemProgressTextStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "8px",
+  lineHeight: 1,
+  fontWeight: 850,
+};
+
+const diaryItemAnnotationBoxStyle: CSSProperties = {
+  display: "grid",
+  gap: "3px",
+  padding: "7px 8px",
+  borderRadius: "12px",
+  background: "rgba(255,255,255,0.045)",
+  borderLeft: "2px solid var(--historietas-accent, #F97316)",
+  minWidth: 0,
+};
+
+const diaryItemAnnotationLabelStyle: CSSProperties = {
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "7.8px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+};
+
+const diaryItemAnnotationTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "9px",
+  lineHeight: 1.35,
+  fontWeight: 720,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  display: "-webkit-box",
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: "vertical",
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
+const diaryItemAnnotationButtonStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: 0,
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "8px",
+  lineHeight: 1.15,
+  fontWeight: 900,
+  cursor: "pointer",
+  textAlign: "left",
+};
+
+const diaryItemAnnotationEditorStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  padding: "8px",
+  borderRadius: "13px",
+  background: "rgba(0,0,0,0.24)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  minWidth: 0,
+};
+
+const diaryItemAnnotationTextareaStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "78px",
+  resize: "vertical",
+  padding: "8px 9px",
+  borderRadius: "11px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "rgba(255,255,255,0.05)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "9px",
+  lineHeight: 1.4,
+  fontWeight: 700,
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const diaryItemAnnotationEditorMetaStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const diaryItemAnnotationSelectStyle: CSSProperties = {
+  minHeight: "28px",
+  padding: "5px 8px",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "#120B1C",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "8px",
+  lineHeight: 1,
+  fontWeight: 850,
+  outline: "none",
+};
+
+const diaryItemAnnotationCounterStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "7.5px",
+  lineHeight: 1,
+  fontWeight: 800,
+  whiteSpace: "nowrap",
+};
+
+const diaryItemAnnotationErrorStyle: CSSProperties = {
+  color: "#FDA4AF",
+  fontSize: "8px",
+  lineHeight: 1.3,
+  fontWeight: 800,
+  overflowWrap: "anywhere",
+};
+
+const diaryItemAnnotationEditorActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: "5px",
+};
+
+const diaryItemAnnotationSaveStyle: CSSProperties = {
+  minHeight: "27px",
+  padding: "5px 9px",
+  borderRadius: "999px",
+  border: "none",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  fontSize: "7.8px",
+  lineHeight: 1,
+  fontWeight: 950,
+  cursor: "pointer",
+};
+
+const diaryItemAnnotationCancelStyle: CSSProperties = {
+  ...diaryItemAnnotationSaveStyle,
+  background: "rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+};
+
+const diaryItemAnnotationRemoveStyle: CSSProperties = {
+  ...diaryItemAnnotationSaveStyle,
+  background: "rgba(190,18,60,0.14)",
+  color: "#FDA4AF",
+};
+
+const diaryItemSocialBlockStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const diaryItemSocialActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const diaryItemSocialButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "4px",
+  minWidth: "38px",
+  minHeight: "27px",
+  padding: "5px 8px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.055)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "8px",
+  lineHeight: 1,
+  fontWeight: 950,
+  cursor: "pointer",
+};
+
+const diaryItemSocialButtonActiveStyle: CSSProperties = {
+  color: "#FB7185",
+  background: "rgba(251,113,133,0.14)",
+  border: "1px solid rgba(251,113,133,0.28)",
+};
+
+const diaryItemSocialErrorStyle: CSSProperties = {
+  color: "#FDA4AF",
+  fontSize: "8px",
+  lineHeight: 1.3,
+  fontWeight: 800,
+  overflowWrap: "anywhere",
+};
+
+const diaryItemCommentsPanelStyle: CSSProperties = {
+  display: "grid",
+  gap: "7px",
+  padding: "8px",
+  borderRadius: "13px",
+  background: "rgba(0,0,0,0.22)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  minWidth: 0,
+};
+
+const diaryItemCommentsEmptyStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "8.5px",
+  lineHeight: 1.3,
+  fontWeight: 750,
+};
+
+const diaryItemCommentsListStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  maxHeight: "210px",
+  overflowY: "auto",
+  minWidth: 0,
+};
+
+const diaryItemCommentStyle: CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  padding: "7px",
+  borderRadius: "11px",
+  background: "rgba(255,255,255,0.04)",
+  minWidth: 0,
+};
+
+const diaryItemCommentHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const diaryItemCommentAuthorStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "8px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  textDecoration: "none",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const diaryItemCommentDateStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "7px",
+  lineHeight: 1,
+  fontWeight: 800,
+  whiteSpace: "nowrap",
+};
+
+const diaryItemCommentTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "8.5px",
+  lineHeight: 1.35,
+  fontWeight: 720,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
+const diaryItemCommentRemoveStyle: CSSProperties = {
+  width: "fit-content",
+  padding: 0,
+  border: "none",
+  background: "transparent",
+  color: "#FDA4AF",
+  fontSize: "7px",
+  lineHeight: 1,
+  fontWeight: 850,
+  cursor: "pointer",
+};
+
+const diaryItemCommentFormStyle: CSSProperties = {
+  display: "grid",
+  gap: "5px",
+  minWidth: 0,
+};
+
+const diaryItemCommentTextareaStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "58px",
+  resize: "vertical",
+  padding: "7px 8px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.045)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "8.5px",
+  lineHeight: 1.35,
+  fontWeight: 700,
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const diaryItemCommentFormFooterStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+};
+
+const diaryItemCommentSendStyle: CSSProperties = {
+  minHeight: "27px",
+  padding: "5px 9px",
+  borderRadius: "999px",
+  border: "none",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  fontSize: "7.8px",
+  lineHeight: 1,
+  fontWeight: 950,
+  cursor: "pointer",
+};
+
+const diaryItemLoginToCommentStyle: CSSProperties = {
+  width: "fit-content",
+  padding: 0,
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "8px",
+  lineHeight: 1.2,
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const diaryItemFooterStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "7px",
+  marginTop: "auto",
+  minWidth: 0,
+};
+
+const diaryItemPrivacyStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "3px",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "7.8px",
+  lineHeight: 1,
+  fontWeight: 850,
+  whiteSpace: "nowrap",
+};
+
+const diaryItemActionStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: "25px",
+  padding: "5px 8px",
+  borderRadius: "999px",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  fontSize: "7.8px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textDecoration: "none",
+  whiteSpace: "nowrap",
 };
 
 const diaryEmptyStateStyle: CSSProperties = {
@@ -8528,20 +12087,77 @@ const diaryTimelineDateStyle: CSSProperties = {
 
 const desktopDiaryBoxStyle: CSSProperties = {
   ...diaryBoxStyle,
-  padding: "12px",
+  padding: "12px 12px 28px",
   gap: "10px",
 };
 
 const desktopDiaryStatsGridStyle: CSSProperties = {
   ...diaryStatsGridStyle,
-  maxWidth: "620px",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  maxWidth: "760px",
   justifySelf: "center",
 };
 
-const desktopDiaryItemsGridStyle: CSSProperties = {
-  ...diaryItemsGridStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "9px",
+const desktopDiaryCarouselShellStyle: CSSProperties = {
+  position: "relative",
+  width: "100%",
+  maxWidth: "100%",
+  overflow: "visible",
+  boxSizing: "border-box",
+};
+
+const desktopDiaryItemsCarouselStyle: CSSProperties = {
+  ...diaryItemsCarouselStyle,
+  width: "100%",
+  maxWidth: "100%",
+  gap: "12px",
+  padding: "2px 0 12px",
+  margin: 0,
+  scrollPaddingLeft: "0px",
+  scrollPaddingRight: "0px",
+};
+
+const desktopDiaryCarouselArrowBaseStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  zIndex: 4,
+  width: "28px",
+  height: "28px",
+  padding: 0,
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.16)",
+  background:
+    "linear-gradient(135deg, rgba(18,8,31,0.92) 0%, rgba(38,20,62,0.94) 100%)",
+  color: "#FFFFFF",
+  fontSize: 0,
+  lineHeight: 1,
+  fontWeight: 950,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+};
+
+const desktopDiaryCarouselArrowLeftStyle: CSSProperties = {
+  ...desktopDiaryCarouselArrowBaseStyle,
+  left: "4px",
+};
+
+const desktopDiaryCarouselArrowRightStyle: CSSProperties = {
+  ...desktopDiaryCarouselArrowBaseStyle,
+  right: "4px",
+};
+
+const desktopDiaryCarouselArrowIconStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "100%",
+  height: "100%",
+  fontSize: "21px",
+  lineHeight: 1,
+  fontWeight: 950,
 };
 
 const emptyBoxStyle: CSSProperties = {

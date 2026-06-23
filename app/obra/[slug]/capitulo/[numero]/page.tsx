@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { supabase } from "../../../../../lib/supabase/client";
+import { criarSupabaseServerClient } from "../../../../../lib/supabase/server";
 
 type PageProps = {
   params: Promise<{
@@ -40,18 +40,21 @@ export default async function CapituloCanonicoPage({ params }: PageProps) {
     redirect("/explorar");
   }
 
+  const supabase = await criarSupabaseServerClient();
+
   const { data: obraData, error: obraError } = await supabase
     .from("obras")
     .select("id, slug, publicado")
     .eq("slug", slugSeguro)
     .eq("publicado", true)
+    .limit(1)
     .maybeSingle();
 
   if (obraError || !obraData) {
     redirect(`/obra/${encodeURIComponent(slugSeguro)}`);
   }
 
-  const obra = obraData as ObraCapituloRouteRow;
+  const obra = obraData as unknown as ObraCapituloRouteRow;
 
   const { data: capituloData, error: capituloError } = await supabase
     .from("capitulos")
@@ -59,13 +62,14 @@ export default async function CapituloCanonicoPage({ params }: PageProps) {
     .eq("obra_id", obra.id)
     .eq("ordem", numeroCapitulo)
     .eq("publicado", true)
+    .limit(1)
     .maybeSingle();
 
   if (capituloError || !capituloData) {
     redirect(`/obra/${encodeURIComponent(slugSeguro)}`);
   }
 
-  const capitulo = capituloData as CapituloRouteRow;
+  const capitulo = capituloData as unknown as CapituloRouteRow;
 
   redirect(
     `/ler-capitulo?obraId=${encodeURIComponent(

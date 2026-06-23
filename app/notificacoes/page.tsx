@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
+import { criarSlugBase, formatarData, formatarNumeroCompacto, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
@@ -54,6 +56,9 @@ type NotificacaoLocal = {
     | "comentario-comunidade"
     | "review-comunidade"
     | "atividade-comunidade"
+    | "curtida-diario"
+    | "comentario-diario"
+    | "atividade-diario"
     | "novo-seguidor"
     | "denuncia-comunidade"
     | "moderacao-comunidade";
@@ -72,22 +77,43 @@ const CHAVE_NOTIFICACOES = "historietas-notificacoes";
 const CHAVE_OBRAS_SEGUIDAS = "historietas-obras-seguidas";
 const CHAVE_NOTIFICACOES_APAGADAS = "historietas-notificacoes-apagadas";
 
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+function criarStorageKeyUsuarioNotificacoes(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
 }
 
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+function lerStorageUsuarioNotificacoes(chave: string, userId: string) {
+  if (typeof window === "undefined") {
+    return null;
+  }
 
-  return slug || "obra";
+  try {
+    return localStorage.getItem(
+      criarStorageKeyUsuarioNotificacoes(chave, userId)
+    );
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioNotificacoes(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioNotificacoes(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage Ã© fallback; as notificaÃ§Ãµes continuam em memÃ³ria.
+  }
 }
 
 function criarLoginHrefNotificacoes() {
@@ -96,12 +122,6 @@ function criarLoginHrefNotificacoes() {
   });
 
   return `/login?${params.toString()}`;
-}
-
-function idObraSupabaseValido(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    id
-  );
 }
 
 function criarHrefLeituraCapitulo(
@@ -136,16 +156,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
-function formatarData(dataIso: string) {
-  const data = new Date(dataIso);
-
-  if (Number.isNaN(data.getTime())) {
-    return "Não registrada";
-  }
-
-  return data.toLocaleDateString("pt-BR");
-}
-
 function dataNotificacao(notificacao: NotificacaoLocal) {
   const data = new Date(notificacao.criadaEm).getTime();
 
@@ -164,7 +174,7 @@ function normalizarCapitulo(
     titulo:
       typeof capitulo.titulo === "string" && capitulo.titulo.trim()
         ? capitulo.titulo
-        : "Capítulo sem título",
+        : "CapÃ­tulo sem tÃ­tulo",
     texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
     curtiu: Boolean(capitulo.curtiu),
     salvo: Boolean(capitulo.salvo),
@@ -197,11 +207,11 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
     titulo:
       typeof obra.titulo === "string" && obra.titulo.trim()
         ? obra.titulo
-        : "Obra sem título",
+        : "Obra sem tÃ­tulo",
     autor:
       typeof obra.autor === "string" && obra.autor.trim()
         ? obra.autor
-        : "Autor não informado",
+        : "Autor nÃ£o informado",
     autorId:
       typeof obra.autorId === "string" && obra.autorId.trim()
         ? obra.autorId
@@ -209,16 +219,16 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
         ? obra.genero
-        : "Não informado",
+        : "NÃ£o informado",
     formato:
       typeof obra.formato === "string" && obra.formato.trim()
         ? obra.formato
-        : "Não informado",
+        : "NÃ£o informado",
     classificacaoIndicativa:
       typeof obra.classificacaoIndicativa === "string" &&
       obra.classificacaoIndicativa.trim()
         ? obra.classificacaoIndicativa
-        : "Não informada",
+        : "NÃ£o informada",
     sinopse:
       typeof obra.sinopse === "string" && obra.sinopse.trim()
         ? obra.sinopse
@@ -266,6 +276,9 @@ function normalizarTipoNotificacao(valor: unknown): NotificacaoLocal["tipo"] {
     valor === "comentario-comunidade" ||
     valor === "review-comunidade" ||
     valor === "atividade-comunidade" ||
+    valor === "curtida-diario" ||
+    valor === "comentario-diario" ||
+    valor === "atividade-diario" ||
     valor === "novo-seguidor" ||
     valor === "denuncia-comunidade" ||
     valor === "moderacao-comunidade"
@@ -298,11 +311,11 @@ function normalizarNotificacao(
     titulo:
       typeof notificacao.titulo === "string" && notificacao.titulo.trim()
         ? notificacao.titulo
-        : "Nova notificação",
+        : "Nova notificaÃ§Ã£o",
     mensagem:
       typeof notificacao.mensagem === "string" && notificacao.mensagem.trim()
         ? notificacao.mensagem
-        : "Uma obra recebeu uma atualização.",
+        : "Uma obra recebeu uma atualizaÃ§Ã£o.",
     tipo: normalizarTipoNotificacao(notificacaoBruta.tipo),
     lida: notificacaoBruta.lida === true,
     criadaEm:
@@ -324,17 +337,17 @@ function normalizarNotificacao(
   };
 }
 
-function carregarObras(): ObraLocal[] {
+function carregarObras(userId = ""): ObraLocal[] {
   if (typeof window === "undefined") {
     return [];
   }
 
   try {
-    const dados = localStorage.getItem(CHAVE_OBRAS);
+    const dados = lerStorageUsuarioNotificacoes(CHAVE_OBRAS, userId);
     const obras = dados ? JSON.parse(dados) : [];
 
     if (!Array.isArray(obras)) {
-      localStorage.setItem(CHAVE_OBRAS, JSON.stringify([]));
+      salvarJsonStorageUsuarioNotificacoes(CHAVE_OBRAS, userId, []);
       return [];
     }
 
@@ -342,26 +355,30 @@ function carregarObras(): ObraLocal[] {
       normalizarObra(obra, index)
     );
 
-    localStorage.setItem(CHAVE_OBRAS, JSON.stringify(obrasNormalizadas));
+    salvarJsonStorageUsuarioNotificacoes(
+      CHAVE_OBRAS,
+      userId,
+      obrasNormalizadas
+    );
 
     return obrasNormalizadas;
   } catch {
-    localStorage.setItem(CHAVE_OBRAS, JSON.stringify([]));
+    salvarJsonStorageUsuarioNotificacoes(CHAVE_OBRAS, userId, []);
     return [];
   }
 }
 
-function carregarNotificacoes(): NotificacaoLocal[] {
+function carregarNotificacoes(userId = ""): NotificacaoLocal[] {
   if (typeof window === "undefined") {
     return [];
   }
 
   try {
-    const dados = localStorage.getItem(CHAVE_NOTIFICACOES);
+    const dados = lerStorageUsuarioNotificacoes(CHAVE_NOTIFICACOES, userId);
     const notificacoes = dados ? JSON.parse(dados) : [];
 
     if (!Array.isArray(notificacoes)) {
-      localStorage.setItem(CHAVE_NOTIFICACOES, JSON.stringify([]));
+      salvarJsonStorageUsuarioNotificacoes(CHAVE_NOTIFICACOES, userId, []);
       return [];
     }
 
@@ -369,20 +386,31 @@ function carregarNotificacoes(): NotificacaoLocal[] {
       .map((notificacao, index) => normalizarNotificacao(notificacao, index))
       .sort((a, b) => dataNotificacao(b) - dataNotificacao(a));
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioNotificacoes(
       CHAVE_NOTIFICACOES,
-      JSON.stringify(notificacoesNormalizadas)
+      userId,
+      notificacoesNormalizadas
     );
 
     return notificacoesNormalizadas;
   } catch {
-    localStorage.setItem(CHAVE_NOTIFICACOES, JSON.stringify([]));
+    salvarJsonStorageUsuarioNotificacoes(CHAVE_NOTIFICACOES, userId, []);
     return [];
   }
 }
 
-function salvarNotificacoes(notificacoes: NotificacaoLocal[]) {
-  localStorage.setItem(CHAVE_NOTIFICACOES, JSON.stringify(notificacoes));
+function salvarNotificacoes(notificacoes: NotificacaoLocal[], userId = "") {
+  salvarJsonStorageUsuarioNotificacoes(
+    CHAVE_NOTIFICACOES,
+    userId,
+    notificacoes
+  );
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new Event("historietas:notificacoes-atualizadas")
+    );
+  }
 }
 
 function criarChaveNotificacoesApagadas(usuarioId: string) {
@@ -463,12 +491,42 @@ function criarPerfilHrefNotificacao(userId: string, nomeUsuario: string) {
   return query ? `/perfil-autor?${query}` : "/perfil-autor";
 }
 
+function criarDiarioPerfilHrefNotificacao(
+  userId: string,
+  nomeUsuario = ""
+) {
+  const params = new URLSearchParams();
+  const userIdLimpo = userId.trim();
+  const nomeLimpo = nomeUsuario.trim();
+
+  if (userIdLimpo) {
+    params.set("userId", userIdLimpo);
+    params.set("autorId", userIdLimpo);
+  }
+
+  if (nomeLimpo) {
+    params.set("autor", nomeLimpo);
+  }
+
+  params.set("aba", "diario");
+
+  return `/perfil-autor?${params.toString()}`;
+}
+
+function notificacaoEhDiario(notificacao: NotificacaoLocal) {
+  return (
+    notificacao.tipo === "curtida-diario" ||
+    notificacao.tipo === "comentario-diario" ||
+    notificacao.tipo === "atividade-diario"
+  );
+}
+
 function montarLinkNotificacao(
   notificacao: NotificacaoLocal,
   obra?: ObraLocal | null
 ) {
   if (notificacao.tipo === "novo-seguidor" && notificacao.autorId) {
-    return criarPerfilHrefNotificacao(notificacao.autorId, notificacao.autorNome || "Usuário");
+    return criarPerfilHrefNotificacao(notificacao.autorId, notificacao.autorNome || "UsuÃ¡rio");
   }
 
   if (
@@ -501,7 +559,7 @@ function montarLinkNotificacao(
     )}&capituloId=${encodeURIComponent(notificacao.capituloId)}`;
   }
 
-  return notificacaoEhCapitulo(notificacao) ? "/biblioteca" : "/comunidade";
+  return notificacaoEhCapitulo(notificacao) ? "/perfil-autor?aba=biblioteca" : "/comunidade";
 }
 
 function notificacaoEhCapitulo(notificacao: NotificacaoLocal) {
@@ -517,11 +575,23 @@ function notificacaoEhComunidade(notificacao: NotificacaoLocal) {
 
 function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
   if (notificacao.tipo === "comentario-comunidade") {
-    return "Comentário em publicação";
+    return "ComentÃ¡rio em publicaÃ§Ã£o";
   }
 
   if (notificacao.tipo === "review-comunidade") {
     return "Review publicada";
+  }
+
+  if (notificacao.tipo === "curtida-diario") {
+    return "Curtida no DiÃ¡rio";
+  }
+
+  if (notificacao.tipo === "comentario-diario") {
+    return "ComentÃ¡rio no DiÃ¡rio";
+  }
+
+  if (notificacao.tipo === "atividade-diario") {
+    return "Atividade do DiÃ¡rio";
   }
 
   if (notificacao.tipo === "novo-seguidor") {
@@ -533,18 +603,18 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
   }
 
   if (notificacao.tipo === "denuncia-comunidade") {
-    return "Denúncia analisada";
+    return "DenÃºncia analisada";
   }
 
   if (notificacao.tipo === "moderacao-comunidade") {
-    return "Moderação";
+    return "ModeraÃ§Ã£o";
   }
 
   if (notificacao.tipo === "comentario-capitulo") {
-    return "Comentário em capítulo";
+    return "ComentÃ¡rio em capÃ­tulo";
   }
 
-  return "Capítulo";
+  return "CapÃ­tulo";
 }
 
 function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
@@ -552,30 +622,46 @@ function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
     return "Ver perfil";
   }
 
+  if (notificacaoEhDiario(notificacao)) {
+    return "Ver DiÃ¡rio";
+  }
+
   if (notificacaoEhComunidade(notificacao)) {
     return "Ver comunidade";
   }
 
   return notificacao.tipo === "comentario-capitulo"
-    ? "Ver comentário"
-    : "Ver capítulo";
+    ? "Ver comentÃ¡rio"
+    : "Ver capÃ­tulo";
 }
 
 function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
   if (lida) {
-    return "✓";
+    return "âœ“";
   }
 
   if (notificacao.tipo === "comentario-comunidade") {
-    return "💬";
+    return "ðŸ’¬";
   }
 
   if (notificacao.tipo === "comentario-capitulo") {
-    return "💬";
+    return "ðŸ’¬";
   }
 
   if (notificacao.tipo === "review-comunidade") {
-    return "★";
+    return "â˜…";
+  }
+
+  if (notificacao.tipo === "curtida-diario") {
+    return "â™¥";
+  }
+
+  if (notificacao.tipo === "comentario-diario") {
+    return "ðŸ’¬";
+  }
+
+  if (notificacao.tipo === "atividade-diario") {
+    return "â—‰";
   }
 
   if (notificacao.tipo === "novo-seguidor") {
@@ -601,7 +687,7 @@ function obterTituloExibicaoNotificacao(notificacao: NotificacaoLocal) {
     notificacao.titulo.replace(/^Novo\s+/i, "").trim() || notificacao.titulo;
 
   if (notificacao.tipo === "comentario-comunidade") {
-    return tituloSemNovo.replace(/\bna publicação\b/i, "da publicação");
+    return tituloSemNovo.replace(/\bna publicaÃ§Ã£o\b/i, "da publicaÃ§Ã£o");
   }
 
   return tituloSemNovo;
@@ -633,7 +719,7 @@ function extrairTextoComentarioComunidade(notificacao: NotificacaoLocal) {
   if (indiceMarcador >= 0) {
     const comentario = mensagem.slice(indiceMarcador + marcadorComentario.length).trim();
 
-    return comentario || "Comentou na sua publicação.";
+    return comentario || "Comentou na sua publicaÃ§Ã£o.";
   }
 
   const indiceDoisPontos = mensagem.indexOf(": ");
@@ -641,10 +727,10 @@ function extrairTextoComentarioComunidade(notificacao: NotificacaoLocal) {
   if (indiceDoisPontos >= 0) {
     const comentario = mensagem.slice(indiceDoisPontos + 2).trim();
 
-    return comentario || "Comentou na sua publicação.";
+    return comentario || "Comentou na sua publicaÃ§Ã£o.";
   }
 
-  return "Comentou na sua publicação.";
+  return "Comentou na sua publicaÃ§Ã£o.";
 }
 
 function obterNomeAutorNotificacao(notificacao: NotificacaoLocal) {
@@ -652,7 +738,7 @@ function obterNomeAutorNotificacao(notificacao: NotificacaoLocal) {
     notificacao.autorNome?.trim() ||
     (notificacao.tipo === "comentario-comunidade"
       ? extrairAutorComentarioComunidade(notificacao)
-      : "Usuário")
+      : "UsuÃ¡rio")
   );
 }
 
@@ -701,20 +787,6 @@ function pegarBooleano(valor: unknown, fallback = false) {
   return typeof valor === "boolean" ? valor : fallback;
 }
 
-function obterNumeroSeguro(valor: unknown, fallback = 0) {
-  if (typeof valor === "number" && Number.isFinite(valor)) {
-    return valor;
-  }
-
-  if (typeof valor === "string" && valor.trim()) {
-    const numero = Number(valor);
-
-    return Number.isFinite(numero) ? numero : fallback;
-  }
-
-  return fallback;
-}
-
 type PerfilNotificacao = {
   userId: string;
   nome: string;
@@ -735,7 +807,7 @@ function normalizarPerfilNotificacao(
     pegarTexto(row.display_name) ||
     pegarTexto(row.apelido) ||
     nomeFallback.trim() ||
-    "Usuário";
+    "UsuÃ¡rio";
   const avatar =
     pegarTexto(row.avatar_url) ||
     pegarTexto(row.avatar) ||
@@ -763,13 +835,14 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
-      .in("user_id", ids);
+      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+      .in("user_id", ids)
+      .limit(1000);
 
     if (!error && Array.isArray(data)) {
       data.forEach((item) => {
         const row = item as Record<string, unknown>;
-        const perfil = normalizarPerfilNotificacao(row, "", "Usuário");
+        const perfil = normalizarPerfilNotificacao(row, "", "UsuÃ¡rio");
 
         if (perfil.userId) {
           perfis.set(perfil.userId, perfil);
@@ -777,7 +850,7 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
       });
     }
   } catch {
-    // Se user_id não existir no schema antigo, tenta pelo id abaixo.
+    // Se user_id nÃ£o existir no schema antigo, tenta pelo id abaixo.
   }
 
   const idsFaltantes = ids.filter((id) => !perfis.has(id));
@@ -786,13 +859,14 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
-        .in("id", idsFaltantes);
+        .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+        .in("id", idsFaltantes)
+        .limit(1000);
 
       if (!error && Array.isArray(data)) {
         data.forEach((item) => {
           const row = item as Record<string, unknown>;
-          const perfil = normalizarPerfilNotificacao(row, "", "Usuário");
+          const perfil = normalizarPerfilNotificacao(row, "", "UsuÃ¡rio");
 
           if (perfil.userId) {
             perfis.set(perfil.userId, perfil);
@@ -800,7 +874,7 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
         });
       }
     } catch {
-      // Profiles é complementar; as notificações continuam com nome salvo no registro.
+      // Profiles Ã© complementar; as notificaÃ§Ãµes continuam com nome salvo no registro.
     }
   }
 
@@ -818,7 +892,7 @@ function obterPerfilNotificacao(
   return (
     perfil || {
       userId: userIdLimpo,
-      nome: nomeFallback.trim() || "Usuário",
+      nome: nomeFallback.trim() || "UsuÃ¡rio",
       avatar: "",
     }
   );
@@ -852,13 +926,13 @@ function normalizarObraSupabase(row: SupabaseObraRow, index: number): ObraLocal 
   return {
     id: pegarTexto(row.id, `supabase-${index + 1}`),
     titulo,
-    autor: pegarTexto(row.autor ?? row.nome_autor ?? row.autor_nome, "Autor não informado"),
+    autor: pegarTexto(row.autor ?? row.nome_autor ?? row.autor_nome, "Autor nÃ£o informado"),
     autorId: pegarTexto(row.user_id ?? row.userId ?? row.autor_id ?? row.autorId, ""),
-    genero: pegarTexto(row.genero, "Não informado"),
-    formato: pegarTexto(row.formato, "Não informado"),
+    genero: pegarTexto(row.genero, "NÃ£o informado"),
+    formato: pegarTexto(row.formato, "NÃ£o informado"),
     classificacaoIndicativa: pegarTexto(
       row.classificacao_indicativa ?? row.classificacaoIndicativa,
-      "Não informada"
+      "NÃ£o informada"
     ),
     sinopse: pegarTexto(row.sinopse, "Nenhuma sinopse informada."),
     tags: pegarTagsSupabase(row.tags),
@@ -881,7 +955,7 @@ function normalizarCapituloSupabase(
 ): CapituloLocal & { obraId: string } {
   return {
     id: pegarTexto(row.id, `capitulo-supabase-${index + 1}`),
-    titulo: pegarTexto(row.titulo, `Capítulo ${index + 1}`),
+    titulo: pegarTexto(row.titulo, `CapÃ­tulo ${index + 1}`),
     texto: pegarTexto(row.texto ?? row.conteudo, ""),
     curtiu: false,
     salvo: false,
@@ -946,13 +1020,13 @@ function mesclarNotificacoes(
   return Array.from(mapa.values()).sort((a, b) => dataNotificacao(b) - dataNotificacao(a));
 }
 
-function lerIdsLocalStorage(chave: string): string[] {
+function lerIdsLocalStorage(chave: string, userId = ""): string[] {
   if (typeof window === "undefined") {
     return [];
   }
 
   try {
-    const texto = localStorage.getItem(chave);
+    const texto = lerStorageUsuarioNotificacoes(chave, userId);
     const json = texto ? JSON.parse(texto) : [];
 
     return Array.isArray(json)
@@ -967,9 +1041,12 @@ async function carregarObrasPublicadasSupabase() {
   try {
     const { data: obrasData, error: obrasError } = await supabase
       .from("obras")
-      .select("*")
+      .select(
+        "id, titulo, autor, nome_autor, autor_nome, user_id, autor_id, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, slug, publicado, criada_em, created_at"
+      )
       .eq("publicado", true)
-      .order("criada_em", { ascending: false });
+      .order("criada_em", { ascending: false })
+      .limit(80);
 
     if (obrasError || !Array.isArray(obrasData)) {
       return [];
@@ -988,9 +1065,11 @@ async function carregarObrasPublicadasSupabase() {
     try {
       const { data: capitulosData } = await supabase
         .from("capitulos")
-        .select("*")
+        .select("id, obra_id, titulo, ordem, publicado, criado_em, created_at")
         .in("obra_id", idsObras)
-        .order("ordem", { ascending: true });
+        .eq("publicado", true)
+        .order("ordem", { ascending: true })
+        .limit(600);
 
       if (!Array.isArray(capitulosData)) {
         return obrasSupabase;
@@ -1044,7 +1123,8 @@ async function carregarIdsTabelaUsuario(
     const { data, error } = await supabase
       .from(tabela)
       .select(colunaId)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .limit(1000);
 
     if (error || !Array.isArray(data)) {
       return [];
@@ -1098,15 +1178,15 @@ function normalizarNotificacaoSupabase(
     obraId: "",
     capituloId: "",
     link: "",
-    titulo: "Nova notificação",
-    mensagem: "Você recebeu uma nova notificação.",
+    titulo: "Nova notificaÃ§Ã£o",
+    mensagem: "VocÃª recebeu uma nova notificaÃ§Ã£o.",
     tipo,
     lida: false,
     criadaEm,
   }));
   const mensagem = pegarTexto(
     registro.mensagem ?? registro.texto ?? registro.descricao,
-    "Você recebeu uma nova notificação."
+    "VocÃª recebeu uma nova notificaÃ§Ã£o."
   );
 
   return normalizarNotificacao(
@@ -1144,7 +1224,7 @@ async function carregarNotificacoesDiretasSupabase(
   try {
     const { data, error } = await supabase
       .from("notificacoes")
-      .select("*")
+      .select("id,notificacao_id,obra_id,capitulo_id,link,href,titulo,mensagem,texto,descricao,tipo,lida,criado_em,criada_em,created_at,updated_at,atualizado_em,autor_id,autorId,remetente_id,autor_nome,autorNome,remetente_nome,autor_avatar,autorAvatar,remetente_avatar")
       .eq("user_id", userId)
       .limit(120);
 
@@ -1178,7 +1258,8 @@ async function carregarNotificacoesLidasSupabase(userId: string): Promise<string
       .from("notificacoes")
       .select("notificacao_id, id, lida")
       .eq("user_id", userId)
-      .eq("lida", true);
+      .eq("lida", true)
+      .limit(1000);
 
     if (error || !Array.isArray(data)) {
       return [];
@@ -1316,7 +1397,7 @@ function criarNotificacoesDeCapitulos(
         obraId: obra.id,
         capituloId: capitulo.id,
         link: criarHrefLeituraCapitulo(obra, capitulo.id, index + 1),
-        titulo: "Novo capítulo publicado",
+        titulo: "Novo capÃ­tulo publicado",
         mensagem: `${capitulo.titulo} chegou em ${obra.titulo}.`,
         tipo: "novo-capitulo",
         lida: idsLidos.has(id),
@@ -1365,7 +1446,8 @@ async function carregarNotificacoesComunidadeSupabase(
     const { data: postsData } = await supabase
       .from("comunidade_posts")
       .select("id, texto, autor_id, autor_nome, criado_em")
-      .eq("autor_id", userId);
+      .eq("autor_id", userId)
+      .limit(120);
 
     const posts = Array.isArray(postsData) ? postsData : [];
     const postIds = posts
@@ -1381,8 +1463,8 @@ async function carregarNotificacoesComunidadeSupabase(
       }
 
       postsPorId.set(postId, {
-        texto: pegarTexto(registro.texto, "sua publicação"),
-        autorNome: pegarTexto(registro.autor_nome, "Você"),
+        texto: pegarTexto(registro.texto, "sua publicaÃ§Ã£o"),
+        autorNome: pegarTexto(registro.autor_nome, "VocÃª"),
       });
     });
 
@@ -1392,7 +1474,8 @@ async function carregarNotificacoesComunidadeSupabase(
         .select("id, post_id, autor_id, autor_nome, texto, criado_em")
         .in("post_id", postIds)
         .neq("autor_id", userId)
-        .order("criado_em", { ascending: false });
+        .order("criado_em", { ascending: false })
+        .limit(160);
 
       if (Array.isArray(comentariosData)) {
         comentariosData.forEach((comentario) => {
@@ -1408,7 +1491,7 @@ async function carregarNotificacoesComunidadeSupabase(
       }
     }
   } catch {
-    // A página continua com notificações locais e de capítulos se a Comunidade falhar.
+    // A pÃ¡gina continua com notificaÃ§Ãµes locais e de capÃ­tulos se a Comunidade falhar.
   }
 
   try {
@@ -1419,7 +1502,8 @@ async function carregarNotificacoesComunidadeSupabase(
       )
       .eq("denunciante_id", userId)
       .in("status", ["em_analise", "resolvida", "rejeitada"])
-      .order("criado_em", { ascending: false });
+      .order("criado_em", { ascending: false })
+      .limit(80);
 
     if (Array.isArray(denunciasData)) {
       denunciasData.forEach((denuncia) => {
@@ -1427,7 +1511,7 @@ async function carregarNotificacoesComunidadeSupabase(
       });
     }
   } catch {
-    // Denúncias continuam opcionais para não bloquear as notificações.
+    // DenÃºncias continuam opcionais para nÃ£o bloquear as notificaÃ§Ãµes.
   }
 
   try {
@@ -1451,14 +1535,15 @@ async function carregarNotificacoesComunidadeSupabase(
       });
     }
   } catch {
-    // Seguir usuário é social; se falhar, as outras notificações continuam.
+    // Seguir usuÃ¡rio Ã© social; se falhar, as outras notificaÃ§Ãµes continuam.
   }
 
   try {
     const { data: obrasAutorData } = await supabase
       .from("obras")
       .select("id, titulo, slug, publicado, user_id")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .limit(80);
 
     const obrasAutorRows = Array.isArray(obrasAutorData)
       ? (obrasAutorData as Record<string, unknown>[])
@@ -1466,7 +1551,7 @@ async function carregarNotificacoesComunidadeSupabase(
 
     obrasAutorRows.forEach((obra, index) => {
       const obraId = pegarTexto(obra.id, `obra-autor-${index + 1}`);
-      const titulo = pegarTexto(obra.titulo, "Obra sem título");
+      const titulo = pegarTexto(obra.titulo, "Obra sem tÃ­tulo");
       const slug = pegarTexto(obra.slug, criarSlugBase(titulo));
 
       if (!obraId) {
@@ -1488,7 +1573,8 @@ async function carregarNotificacoesComunidadeSupabase(
         .from("capitulos")
         .select("id, obra_id, titulo, ordem, publicado, criado_em")
         .in("obra_id", obraIds)
-        .order("ordem", { ascending: true });
+        .order("ordem", { ascending: true })
+        .limit(600);
 
       if (Array.isArray(capitulosData)) {
         capitulosData.forEach((capitulo, index) => {
@@ -1503,7 +1589,7 @@ async function carregarNotificacoesComunidadeSupabase(
 
           capitulosAutor.set(capituloId, {
             id: capituloId,
-            titulo: pegarTexto(registro.titulo, `Capítulo ${index + 1}`),
+            titulo: pegarTexto(registro.titulo, `CapÃ­tulo ${index + 1}`),
             obraId,
             obraTitulo: obra.titulo,
             obraSlug: obra.slug,
@@ -1518,10 +1604,11 @@ async function carregarNotificacoesComunidadeSupabase(
       if (capituloIds.length > 0) {
         const { data: comentariosCapitulosData } = await supabase
           .from("comentarios_capitulos")
-          .select("*")
+          .select("id,capitulo_id,user_id,comentario,texto,criado_em,atualizado_em")
           .in("capitulo_id", capituloIds)
           .neq("user_id", userId)
-          .order("atualizado_em", { ascending: false });
+          .order("atualizado_em", { ascending: false })
+          .limit(200);
 
         if (Array.isArray(comentariosCapitulosData)) {
           comentariosCapitulosData.forEach((comentario) => {
@@ -1577,7 +1664,7 @@ async function carregarNotificacoesComunidadeSupabase(
       }
     }
   } catch {
-    // Comentários de capítulo/reviews são extras; não bloqueiam a página.
+    // ComentÃ¡rios de capÃ­tulo/reviews sÃ£o extras; nÃ£o bloqueiam a pÃ¡gina.
   }
 
   const perfis = await carregarPerfisNotificacoes(Array.from(userIdsParaProfiles));
@@ -1594,21 +1681,21 @@ async function carregarNotificacoesComunidadeSupabase(
     const perfilAutor = obterPerfilNotificacao(
       perfis,
       autorId,
-      pegarTexto(registro.autor_nome, "Alguém")
+      pegarTexto(registro.autor_nome, "AlguÃ©m")
     );
     const id = `comunidade-comentario-${comentarioId}`;
     const textoComentario = pegarTexto(registro.texto);
     const post = postsPorId.get(postId);
     const trechoPost = post?.texto
       ? post.texto.slice(0, 90)
-      : "uma publicação sua";
+      : "uma publicaÃ§Ã£o sua";
 
     notificacoesSociais.push({
       id,
       obraId: "",
       capituloId: "",
       link: `/comunidade?post=${encodeURIComponent(postId)}`,
-      titulo: "Novo comentário na Comunidade",
+      titulo: "Novo comentÃ¡rio na Comunidade",
       mensagem: `${perfilAutor.nome} comentou em "${trechoPost}${
         trechoPost.length >= 90 ? "..." : ""
       }"${textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."}`,
@@ -1628,7 +1715,7 @@ async function carregarNotificacoesComunidadeSupabase(
       return;
     }
 
-    const perfilSeguidor = obterPerfilNotificacao(perfis, seguidorId, "Usuário");
+    const perfilSeguidor = obterPerfilNotificacao(perfis, seguidorId, "UsuÃ¡rio");
     const id = `novo-seguidor-${pegarTexto(registro.id, seguidorId)}`;
 
     notificacoesSociais.push({
@@ -1637,7 +1724,7 @@ async function carregarNotificacoesComunidadeSupabase(
       capituloId: "",
       link: criarPerfilHrefNotificacao(seguidorId, perfilSeguidor.nome),
       titulo: "Novo seguidor",
-      mensagem: `${perfilSeguidor.nome} começou a seguir seu perfil.`,
+      mensagem: `${perfilSeguidor.nome} comeÃ§ou a seguir seu perfil.`,
       tipo: "novo-seguidor",
       lida: idsLidos.has(id),
       criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
@@ -1677,7 +1764,7 @@ async function carregarNotificacoesComunidadeSupabase(
         capituloId,
         capitulo.numero
       ),
-      titulo: "Novo comentário no capítulo",
+      titulo: "Novo comentÃ¡rio no capÃ­tulo",
       mensagem: `${perfilAutor.nome} comentou em ${capitulo.titulo}${
         textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."
       }`,
@@ -1742,8 +1829,8 @@ async function carregarNotificacoesComunidadeSupabase(
         ? "resolvida"
         : status === "rejeitada"
           ? "rejeitada"
-          : "em análise";
-    const alvoTipo = pegarTexto(registro.alvo_tipo, "conteúdo");
+          : "em anÃ¡lise";
+    const alvoTipo = pegarTexto(registro.alvo_tipo, "conteÃºdo");
     const alvoId = pegarTexto(registro.alvo_id);
     const observacaoAdmin = pegarTexto(registro.observacao_admin);
     const link =
@@ -1756,10 +1843,10 @@ async function carregarNotificacoesComunidadeSupabase(
       obraId: "",
       capituloId: "",
       link,
-      titulo: `Denúncia ${statusTexto}`,
+      titulo: `DenÃºncia ${statusTexto}`,
       mensagem: observacaoAdmin
-        ? `A moderação atualizou sua denúncia: ${observacaoAdmin}`
-        : `A moderação marcou sua denúncia como ${statusTexto}.`,
+        ? `A moderaÃ§Ã£o atualizou sua denÃºncia: ${observacaoAdmin}`
+        : `A moderaÃ§Ã£o marcou sua denÃºncia como ${statusTexto}.`,
       tipo: "denuncia-comunidade",
       lida: idsLidos.has(id),
       criadaEm: pegarTexto(
@@ -1767,7 +1854,7 @@ async function carregarNotificacoesComunidadeSupabase(
         new Date().toISOString()
       ),
       autorId: "",
-      autorNome: "Moderação",
+      autorNome: "ModeraÃ§Ã£o",
       autorAvatar: "",
     });
   });
@@ -1778,31 +1865,476 @@ async function carregarNotificacoesComunidadeSupabase(
 }
 
 
-async function sincronizarNotificacaoLidaSupabase(
-  notificacao: NotificacaoLocal,
-  lida: boolean
-) {
-  try {
-    const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id || "";
+function obterRotuloTipoAnotacaoDiarioNotificacao(tipo: string) {
+  if (tipo === "lendo") {
+    return "leitura";
+  }
 
-    if (!userId || !notificacao.id) {
+  if (tipo === "quero_ler") {
+    return "Quero ler";
+  }
+
+  if (tipo === "favorita") {
+    return "favorita";
+  }
+
+  if (tipo === "concluida") {
+    return "obra concluÃ­da";
+  }
+
+  if (tipo === "avaliacao") {
+    return "avaliaÃ§Ã£o";
+  }
+
+  if (tipo === "review") {
+    return "review";
+  }
+
+  return "anotaÃ§Ã£o";
+}
+
+function obterMetadataNotificacaoDiario(registro: Record<string, unknown>) {
+  const metadata = registro.metadata;
+
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return {} as Record<string, unknown>;
+  }
+
+  return metadata as Record<string, unknown>;
+}
+
+async function carregarNotificacoesDiarioSupabase(
+  userId: string,
+  notificacoesLidasIds: string[]
+): Promise<NotificacaoLocal[]> {
+  if (!userId) {
+    return [];
+  }
+
+  const idsLidos = new Set(notificacoesLidasIds);
+  const notificacoesDiario: NotificacaoLocal[] = [];
+  const anotacoesDoUsuario: Record<string, unknown>[] = [];
+  const curtidasAnotacoes: Record<string, unknown>[] = [];
+  const comentariosAnotacoes: Record<string, unknown>[] = [];
+  const atividadesSeguidos: Record<string, unknown>[] = [];
+  const usuariosParaPerfil = new Set<string>();
+  const obrasIds = new Set<string>();
+
+  try {
+    const { data: anotacoesData } = await supabase
+      .from("diario_anotacoes")
+      .select("id, user_id, obra_id, tipo, texto, visibilidade, criado_em, atualizado_em")
+      .eq("user_id", userId)
+      .order("atualizado_em", { ascending: false })
+      .limit(120);
+
+    if (Array.isArray(anotacoesData)) {
+      anotacoesData.forEach((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          return;
+        }
+
+        const registro = item as Record<string, unknown>;
+        const anotacaoId = pegarTexto(registro.id);
+        const obraId = pegarTexto(registro.obra_id);
+
+        if (!anotacaoId) {
+          return;
+        }
+
+        anotacoesDoUsuario.push(registro);
+
+        if (obraId) {
+          obrasIds.add(obraId);
+        }
+      });
+    }
+  } catch {
+    // O DiÃ¡rio continua sem notificaÃ§Ãµes de interaÃ§Ã£o se a consulta falhar.
+  }
+
+  const anotacoesPorId = new Map(
+    anotacoesDoUsuario
+      .map((anotacao) => [pegarTexto(anotacao.id), anotacao] as const)
+      .filter(([anotacaoId]) => Boolean(anotacaoId))
+  );
+  const anotacaoIds = Array.from(anotacoesPorId.keys());
+
+  if (anotacaoIds.length > 0) {
+    try {
+      const [curtidasResposta, comentariosResposta] = await Promise.all([
+        supabase
+          .from("diario_anotacao_curtidas")
+          .select("id, anotacao_id, user_id, criado_em")
+          .in("anotacao_id", anotacaoIds)
+          .neq("user_id", userId)
+          .order("criado_em", { ascending: false })
+          .limit(160),
+        supabase
+          .from("diario_anotacao_comentarios")
+          .select("id, anotacao_id, user_id, texto, criado_em, atualizado_em")
+          .in("anotacao_id", anotacaoIds)
+          .neq("user_id", userId)
+          .order("criado_em", { ascending: false })
+          .limit(160),
+      ]);
+
+      if (Array.isArray(curtidasResposta.data)) {
+        curtidasResposta.data.forEach((item) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) {
+            return;
+          }
+
+          const registro = item as Record<string, unknown>;
+          const autorId = pegarTexto(registro.user_id);
+
+          curtidasAnotacoes.push(registro);
+
+          if (autorId) {
+            usuariosParaPerfil.add(autorId);
+          }
+        });
+      }
+
+      if (Array.isArray(comentariosResposta.data)) {
+        comentariosResposta.data.forEach((item) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) {
+            return;
+          }
+
+          const registro = item as Record<string, unknown>;
+          const autorId = pegarTexto(registro.user_id);
+
+          comentariosAnotacoes.push(registro);
+
+          if (autorId) {
+            usuariosParaPerfil.add(autorId);
+          }
+        });
+      }
+    } catch {
+      // InteraÃ§Ãµes do DiÃ¡rio sÃ£o complementares Ã s demais notificaÃ§Ãµes.
+    }
+  }
+
+  try {
+    const { data: seguindoData } = await supabase
+      .from("seguindo_usuarios")
+      .select("seguido_id")
+      .eq("seguidor_id", userId)
+      .limit(120);
+
+    const usuariosSeguidos = Array.isArray(seguindoData)
+      ? seguindoData
+          .map((item) =>
+            item && typeof item === "object" && !Array.isArray(item)
+              ? pegarTexto((item as Record<string, unknown>).seguido_id)
+              : ""
+          )
+          .filter(Boolean)
+      : [];
+
+    usuariosSeguidos.forEach((seguidoId) => usuariosParaPerfil.add(seguidoId));
+
+    if (usuariosSeguidos.length > 0) {
+      const { data: atividadesData } = await supabase
+        .from("diario_atividades")
+        .select(
+          "id, user_id, tipo, obra_id, capitulo_id, texto, nota, visibilidade, metadata, criado_em, atualizado_em"
+        )
+        .in("user_id", usuariosSeguidos)
+        .eq("visibilidade", "publico")
+        .in("tipo", ["concluiu_obra", "avaliou_obra"])
+        .order("criado_em", { ascending: false })
+        .limit(100);
+
+      if (Array.isArray(atividadesData)) {
+        atividadesData.forEach((item) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) {
+            return;
+          }
+
+          const registro = item as Record<string, unknown>;
+          const autorId = pegarTexto(registro.user_id);
+          const obraId = pegarTexto(registro.obra_id);
+
+          atividadesSeguidos.push(registro);
+
+          if (autorId) {
+            usuariosParaPerfil.add(autorId);
+          }
+
+          if (obraId) {
+            obrasIds.add(obraId);
+          }
+        });
+      }
+    }
+  } catch {
+    // Atividades pÃºblicas de perfis seguidos nÃ£o bloqueiam as demais notificaÃ§Ãµes.
+  }
+
+  const obrasPorId = new Map<
+    string,
+    { id: string; titulo: string; slug: string; publicado: boolean }
+  >();
+
+  if (obrasIds.size > 0) {
+    try {
+      const { data: obrasData } = await supabase
+        .from("obras")
+        .select("id, titulo, slug, publicado")
+        .in("id", Array.from(obrasIds))
+        .limit(200);
+
+      if (Array.isArray(obrasData)) {
+        obrasData.forEach((item, index) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) {
+            return;
+          }
+
+          const registro = item as Record<string, unknown>;
+          const obraId = pegarTexto(registro.id);
+
+          if (!obraId) {
+            return;
+          }
+
+          const titulo = pegarTexto(registro.titulo, `Obra ${index + 1}`);
+
+          obrasPorId.set(obraId, {
+            id: obraId,
+            titulo,
+            slug: pegarTexto(registro.slug, criarSlugBase(titulo)),
+            publicado: pegarBooleano(registro.publicado, true),
+          });
+        });
+      }
+    } catch {
+      // O texto da anotaÃ§Ã£o continua permitindo identificar a notificaÃ§Ã£o.
+    }
+  }
+
+  const perfis = await carregarPerfisNotificacoes(
+    Array.from(usuariosParaPerfil)
+  );
+  const linkDiarioProprio = criarDiarioPerfilHrefNotificacao(userId);
+
+  curtidasAnotacoes.forEach((registro) => {
+    const curtidaId = pegarTexto(registro.id);
+    const anotacaoId = pegarTexto(registro.anotacao_id);
+    const anotacao = anotacoesPorId.get(anotacaoId);
+
+    if (!curtidaId || !anotacao) {
       return;
     }
 
-    const payloadCompleto = {
-      user_id: userId,
-      notificacao_id: notificacao.id,
-      obra_id: notificacao.obraId || null,
-      capitulo_id: notificacao.capituloId || null,
-      titulo: notificacao.titulo,
-      mensagem: notificacao.mensagem,
-      link: montarLinkNotificacao(notificacao),
-      tipo: notificacao.tipo,
-      lida,
-      created_at: notificacao.criadaEm,
-      updated_at: new Date().toISOString(),
-    };
+    const autorId = pegarTexto(registro.user_id);
+    const perfilAutor = obterPerfilNotificacao(perfis, autorId, "Leitor");
+    const obraId = pegarTexto(anotacao.obra_id);
+    const obra = obrasPorId.get(obraId);
+    const tipoAnotacao = obterRotuloTipoAnotacaoDiarioNotificacao(
+      pegarTexto(anotacao.tipo)
+    );
+    const id = `diario-curtida-${curtidaId}`;
+
+    notificacoesDiario.push({
+      id,
+      obraId,
+      capituloId: "",
+      link: linkDiarioProprio,
+      titulo: "Nova curtida no DiÃ¡rio",
+      mensagem: `${perfilAutor.nome} curtiu sua ${tipoAnotacao}${
+        obra?.titulo ? ` sobre ${obra.titulo}` : ""
+      }.`,
+      tipo: "curtida-diario",
+      lida: idsLidos.has(id),
+      criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
+      autorId,
+      autorNome: perfilAutor.nome,
+      autorAvatar: perfilAutor.avatar,
+    });
+  });
+
+  comentariosAnotacoes.forEach((registro) => {
+    const comentarioId = pegarTexto(registro.id);
+    const anotacaoId = pegarTexto(registro.anotacao_id);
+    const anotacao = anotacoesPorId.get(anotacaoId);
+
+    if (!comentarioId || !anotacao) {
+      return;
+    }
+
+    const autorId = pegarTexto(registro.user_id);
+    const perfilAutor = obterPerfilNotificacao(perfis, autorId, "Leitor");
+    const obraId = pegarTexto(anotacao.obra_id);
+    const obra = obrasPorId.get(obraId);
+    const comentario = pegarTexto(registro.texto);
+    const tipoAnotacao = obterRotuloTipoAnotacaoDiarioNotificacao(
+      pegarTexto(anotacao.tipo)
+    );
+    const id = `diario-comentario-${comentarioId}`;
+
+    notificacoesDiario.push({
+      id,
+      obraId,
+      capituloId: "",
+      link: linkDiarioProprio,
+      titulo: "Novo comentÃ¡rio no DiÃ¡rio",
+      mensagem: `${perfilAutor.nome} comentou na sua ${tipoAnotacao}${
+        obra?.titulo ? ` sobre ${obra.titulo}` : ""
+      }${comentario ? `: ${comentario.slice(0, 120)}` : "."}`,
+      tipo: "comentario-diario",
+      lida: idsLidos.has(id),
+      criadaEm: pegarTexto(
+        registro.criado_em ?? registro.atualizado_em,
+        new Date().toISOString()
+      ),
+      autorId,
+      autorNome: perfilAutor.nome,
+      autorAvatar: perfilAutor.avatar,
+    });
+  });
+
+  atividadesSeguidos.forEach((registro) => {
+    const atividadeId = pegarTexto(registro.id);
+
+    if (!atividadeId) {
+      return;
+    }
+
+    const autorId = pegarTexto(registro.user_id);
+    const perfilAutor = obterPerfilNotificacao(perfis, autorId, "UsuÃ¡rio");
+    const tipoAtividade = pegarTexto(registro.tipo);
+    const obraId = pegarTexto(registro.obra_id);
+    const obra = obrasPorId.get(obraId);
+    const metadata = obterMetadataNotificacaoDiario(registro);
+    const tituloObra =
+      obra?.titulo ||
+      pegarTexto(metadata.obra_titulo ?? metadata.titulo, "uma obra");
+    const nota = obterNumeroSeguro(registro.nota, 0);
+    const id = `diario-atividade-${atividadeId}`;
+    const mensagem =
+      tipoAtividade === "avaliou_obra"
+        ? `${perfilAutor.nome} avaliou ${tituloObra}${
+            nota > 0 ? ` com ${nota.toFixed(1).replace(".", ",")} estrelas` : ""
+          }.`
+        : `${perfilAutor.nome} concluiu ${tituloObra}.`;
+
+    notificacoesDiario.push({
+      id,
+      obraId,
+      capituloId: "",
+      link: criarDiarioPerfilHrefNotificacao(autorId, perfilAutor.nome),
+      titulo:
+        tipoAtividade === "avaliou_obra"
+          ? "Nova avaliaÃ§Ã£o no DiÃ¡rio"
+          : "Obra concluÃ­da no DiÃ¡rio",
+      mensagem,
+      tipo: "atividade-diario",
+      lida: idsLidos.has(id),
+      criadaEm: pegarTexto(
+        registro.criado_em ?? registro.atualizado_em,
+        new Date().toISOString()
+      ),
+      autorId,
+      autorNome: perfilAutor.nome,
+      autorAvatar: perfilAutor.avatar,
+    });
+  });
+
+  return notificacoesDiario.sort(
+    (a, b) => dataNotificacao(b) - dataNotificacao(a)
+  );
+}
+
+function criarPayloadNotificacaoSupabase(
+  userId: string,
+  notificacao: NotificacaoLocal,
+  lida: boolean
+) {
+  return {
+    user_id: userId,
+    notificacao_id: notificacao.id,
+    obra_id: notificacao.obraId || null,
+    capitulo_id: notificacao.capituloId || null,
+    titulo: notificacao.titulo,
+    mensagem: notificacao.mensagem,
+    link: montarLinkNotificacao(notificacao),
+    tipo: notificacao.tipo,
+    lida,
+    created_at: notificacao.criadaEm,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function criarPayloadMinimoNotificacaoSupabase(
+  userId: string,
+  notificacao: NotificacaoLocal,
+  lida: boolean
+) {
+  return {
+    user_id: userId,
+    notificacao_id: notificacao.id,
+    titulo: notificacao.titulo,
+    mensagem: notificacao.mensagem,
+    link: montarLinkNotificacao(notificacao),
+    tipo: notificacao.tipo,
+    lida,
+  };
+}
+
+async function obterUserIdAtualNotificacoes(fallbackUserId = "") {
+  const fallbackLimpo = fallbackUserId.trim();
+
+  if (fallbackLimpo && fallbackLimpo !== "anon") {
+    return fallbackLimpo;
+  }
+
+  try {
+    const { data } = await supabase.auth.getUser();
+
+    return data.user?.id || "";
+  } catch {
+    return "";
+  }
+}
+
+async function sincronizarNotificacoesLidasSupabase(
+  notificacoesParaSincronizar: NotificacaoLocal[],
+  lida: boolean,
+  userIdAtual = ""
+) {
+  const notificacoesValidas = notificacoesParaSincronizar.filter((notificacao) =>
+    Boolean(notificacao.id.trim())
+  );
+  const idsNotificacoes = Array.from(
+    new Set(notificacoesValidas.map((notificacao) => notificacao.id.trim()))
+  );
+
+  if (idsNotificacoes.length === 0) {
+    return;
+  }
+
+  try {
+    const userId = await obterUserIdAtualNotificacoes(userIdAtual);
+
+    if (!userId) {
+      return;
+    }
+
+    const { error: erroRpc } = await supabase.rpc("marcar_notificacoes_lidas", {
+      notificacao_ids: idsNotificacoes,
+      novo_estado: lida,
+    });
+
+    if (!erroRpc) {
+      return;
+    }
+
+    const payloadCompleto = notificacoesValidas.map((notificacao) =>
+      criarPayloadNotificacaoSupabase(userId, notificacao, lida)
+    );
 
     const { error: erroUpsert } = await supabase
       .from("notificacoes")
@@ -1816,7 +2348,7 @@ async function sincronizarNotificacaoLidaSupabase(
       .from("notificacoes")
       .delete()
       .eq("user_id", userId)
-      .eq("notificacao_id", notificacao.id);
+      .in("notificacao_id", idsNotificacoes);
 
     const { error: erroInsertCompleto } = await supabase
       .from("notificacoes")
@@ -1826,26 +2358,46 @@ async function sincronizarNotificacaoLidaSupabase(
       return;
     }
 
-    await supabase.from("notificacoes").insert({
-      user_id: userId,
-      notificacao_id: notificacao.id,
-      titulo: notificacao.titulo,
-      mensagem: notificacao.mensagem,
-      link: montarLinkNotificacao(notificacao),
-      tipo: notificacao.tipo,
-      lida,
-    });
+    await supabase
+      .from("notificacoes")
+      .insert(
+        notificacoesValidas.map((notificacao) =>
+          criarPayloadMinimoNotificacaoSupabase(userId, notificacao, lida)
+        )
+      );
   } catch {
-    // Se a tabela não existir ou a permissão falhar, o localStorage mantém funcionando.
+    // Se a RPC/tabela falhar, o localStorage mantém funcionando.
   }
 }
 
-async function apagarNotificacaoSupabase(notificacao: NotificacaoLocal) {
-  try {
-    const { data } = await supabase.auth.getUser();
-    const userId = data.user?.id || "";
+async function sincronizarNotificacaoLidaSupabase(
+  notificacao: NotificacaoLocal,
+  lida: boolean,
+  userIdAtual = ""
+) {
+  await sincronizarNotificacoesLidasSupabase([notificacao], lida, userIdAtual);
+}
 
-    if (!userId || !notificacao.id) {
+async function apagarNotificacoesSupabase(
+  notificacoesParaApagar: NotificacaoLocal[],
+  userIdAtual = ""
+) {
+  const ids = Array.from(
+    new Set(
+      notificacoesParaApagar
+        .map((notificacao) => notificacao.id.trim())
+        .filter(Boolean)
+    )
+  );
+
+  if (ids.length === 0) {
+    return;
+  }
+
+  try {
+    const userId = await obterUserIdAtualNotificacoes(userIdAtual);
+
+    if (!userId) {
       return;
     }
 
@@ -1853,12 +2405,34 @@ async function apagarNotificacaoSupabase(notificacao: NotificacaoLocal) {
       .from("notificacoes")
       .delete()
       .eq("user_id", userId)
-      .eq("notificacao_id", notificacao.id);
+      .in("notificacao_id", ids);
   } catch {
-    // A remoção local continua funcionando se o Supabase falhar.
+    // A remoÃ§Ã£o local continua funcionando se o Supabase falhar.
   }
 }
 
+async function apagarNotificacaoSupabase(
+  notificacao: NotificacaoLocal,
+  userIdAtual = ""
+) {
+  await apagarNotificacoesSupabase([notificacao], userIdAtual);
+}
+
+async function excluirNotificacoesLidasSupabase(userIdAtual = "") {
+  try {
+    const userId = await obterUserIdAtualNotificacoes(userIdAtual);
+
+    if (!userId) {
+      return false;
+    }
+
+    const { error } = await supabase.rpc("excluir_notificacoes_lidas");
+
+    return !error;
+  } catch {
+    return false;
+  }
+}
 export default function NotificacoesPage() {
   const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -1871,6 +2445,7 @@ export default function NotificacoesPage() {
   const [usuarioNotificacoesId, setUsuarioNotificacoesId] = useState("anon");
   const [menuNotificacaoAbertoId, setMenuNotificacaoAbertoId] = useState("");
   const [menuAcoesGeraisAberto, setMenuAcoesGeraisAberto] = useState(false);
+  const { definirNotificacoesNaoLidas } = useNotificacoes();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -1918,14 +2493,17 @@ export default function NotificacoesPage() {
         }
 
         const usuarioAtualId = dadosUsuario.user.id;
-        const obrasLocais = carregarObras();
-        const notificacoesLocais = carregarNotificacoes();
+        const obrasLocais = carregarObras(usuarioAtualId);
+        const notificacoesLocais = carregarNotificacoes(usuarioAtualId);
         const obrasSupabase = await carregarObrasPublicadasSupabase();
         const estadoSupabase = await carregarEstadoSupabaseNotificacoes();
         const idsNotificacoesApagadas =
           carregarIdsNotificacoesApagadas(usuarioAtualId);
         const obrasMescladas = mesclarObrasPorIdSlug(obrasLocais, obrasSupabase);
-        const obrasSeguidasLocais = lerIdsLocalStorage(CHAVE_OBRAS_SEGUIDAS);
+        const obrasSeguidasLocais = lerIdsLocalStorage(
+          CHAVE_OBRAS_SEGUIDAS,
+          usuarioAtualId
+        );
         const obrasSeguidasIds = Array.from(
           new Set([
             ...obrasSeguidasLocais,
@@ -1958,25 +2536,38 @@ export default function NotificacoesPage() {
           notificacoesLidasIds,
           usuarioAtualId
         );
-        const notificacoesComunidadeSupabase =
-          await carregarNotificacoesComunidadeSupabase(
+        const [
+          notificacoesComunidadeSupabase,
+          notificacoesDiarioSupabase,
+        ] = await Promise.all([
+          carregarNotificacoesComunidadeSupabase(
             usuarioAtualId,
             notificacoesLidasIds
-          );
+          ),
+          carregarNotificacoesDiarioSupabase(
+            usuarioAtualId,
+            notificacoesLidasIds
+          ),
+        ]);
         const notificacoesMescladas = filtrarNotificacoesApagadas(
           mesclarNotificacoes(notificacoesLocaisFiltradas, [
             ...notificacoesDiretasSupabase,
             ...notificacoesCapitulosSupabase,
             ...notificacoesComunidadeSupabase,
+            ...notificacoesDiarioSupabase,
           ]),
           idsNotificacoesApagadas
         );
 
         try {
-          localStorage.setItem(CHAVE_OBRAS, JSON.stringify(obrasMescladas));
-          salvarNotificacoes(notificacoesMescladas);
+          salvarJsonStorageUsuarioNotificacoes(
+            CHAVE_OBRAS,
+            usuarioAtualId,
+            obrasMescladas
+          );
+          salvarNotificacoes(notificacoesMescladas, usuarioAtualId);
         } catch {
-          // Se o navegador bloquear localStorage, a página continua com o estado em memória.
+          // Se o navegador bloquear localStorage, a pÃ¡gina continua com o estado em memÃ³ria.
         }
 
         if (!componenteAtivo) {
@@ -1986,6 +2577,9 @@ export default function NotificacoesPage() {
         setUsuarioNotificacoesId(usuarioAtualId);
         setObras(obrasMescladas);
         setNotificacoes(notificacoesMescladas);
+        definirNotificacoesNaoLidas(
+          notificacoesMescladas.filter((notificacao) => !notificacao.lida).length
+        );
       } catch {
         if (componenteAtivo) {
           manterCarregando = true;
@@ -2003,12 +2597,8 @@ export default function NotificacoesPage() {
     return () => {
       componenteAtivo = false;
     };
-  }, [router]);
+  }, [router, definirNotificacoesNaoLidas]);
 
-  useEffect(() => {
-    setMenuNotificacaoAbertoId("");
-    setMenuAcoesGeraisAberto(false);
-  }, [busca, filtro, ordenacao]);
 
   const obrasPorId = useMemo(() => {
     return new Map(obras.map((obra) => [obra.id, obra]));
@@ -2118,7 +2708,10 @@ export default function NotificacoesPage() {
 
   function atualizarNotificacoes(novasNotificacoes: NotificacaoLocal[]) {
     setNotificacoes(novasNotificacoes);
-    salvarNotificacoes(novasNotificacoes);
+    definirNotificacoesNaoLidas(
+      novasNotificacoes.filter((notificacao) => !notificacao.lida).length
+    );
+    salvarNotificacoes(novasNotificacoes, usuarioNotificacoesId);
   }
 
   function marcarComoLida(id: string) {
@@ -2137,7 +2730,7 @@ export default function NotificacoesPage() {
     atualizarNotificacoes(novasNotificacoes);
 
     if (notificacaoAtual) {
-      void sincronizarNotificacaoLidaSupabase(notificacaoAtual, true);
+      void sincronizarNotificacaoLidaSupabase(notificacaoAtual, true, usuarioNotificacoesId);
     }
   }
 
@@ -2157,7 +2750,7 @@ export default function NotificacoesPage() {
     atualizarNotificacoes(novasNotificacoes);
 
     if (notificacaoAtual) {
-      void sincronizarNotificacaoLidaSupabase(notificacaoAtual, false);
+      void sincronizarNotificacaoLidaSupabase(notificacaoAtual, false, usuarioNotificacoesId);
     }
   }
 
@@ -2175,9 +2768,11 @@ export default function NotificacoesPage() {
     }));
 
     atualizarNotificacoes(novasNotificacoes);
-    notificacoesParaSincronizar.forEach((notificacao) => {
-      void sincronizarNotificacaoLidaSupabase(notificacao, true);
-    });
+    void sincronizarNotificacoesLidasSupabase(
+      notificacoesParaSincronizar,
+      true,
+      usuarioNotificacoesId
+    );
   }
 
   function marcarFiltradasComoLidas() {
@@ -2200,9 +2795,11 @@ export default function NotificacoesPage() {
     });
 
     atualizarNotificacoes(novasNotificacoes);
-    notificacoesParaSincronizar.forEach((notificacao) => {
-      void sincronizarNotificacaoLidaSupabase(notificacao, true);
-    });
+    void sincronizarNotificacoesLidasSupabase(
+      notificacoesParaSincronizar,
+      true,
+      usuarioNotificacoesId
+    );
   }
 
   function apagarNotificacao(id: string) {
@@ -2218,7 +2815,7 @@ export default function NotificacoesPage() {
     atualizarNotificacoes(novasNotificacoes);
 
     if (notificacaoAtual) {
-      void apagarNotificacaoSupabase(notificacaoAtual);
+      void apagarNotificacaoSupabase(notificacaoAtual, usuarioNotificacoesId);
     }
   }
 
@@ -2230,9 +2827,10 @@ export default function NotificacoesPage() {
       notificacoesParaApagar.map((notificacao) => notificacao.id)
     );
     atualizarNotificacoes([]);
-    notificacoesParaApagar.forEach((notificacao) => {
-      void apagarNotificacaoSupabase(notificacao);
-    });
+    void apagarNotificacoesSupabase(
+      notificacoesParaApagar,
+      usuarioNotificacoesId
+    );
   }
 
   function limparLidas() {
@@ -2246,9 +2844,10 @@ export default function NotificacoesPage() {
       notificacoesLidas.map((notificacao) => notificacao.id)
     );
     atualizarNotificacoes(novasNotificacoes);
-    notificacoesLidas.forEach((notificacao) => {
-      void apagarNotificacaoSupabase(notificacao);
-    });
+    void apagarNotificacoesSupabase(
+      notificacoesLidas,
+      usuarioNotificacoesId
+    );
   }
 
   function alternarMenuNotificacao(id: string) {
@@ -2269,7 +2868,13 @@ export default function NotificacoesPage() {
     setMenuAcoesGeraisAberto(false);
   }
 
+  function fecharMenusNotificacoes() {
+    setMenuNotificacaoAbertoId("");
+    setMenuAcoesGeraisAberto(false);
+  }
+
   function limparFiltros() {
+    fecharMenusNotificacoes();
     setBusca("");
     setFiltro("todas");
     setOrdenacao("recentes");
@@ -2290,7 +2895,7 @@ export default function NotificacoesPage() {
             <h2 style={emptyTitleStyle}>Verificando acesso...</h2>
 
             <p style={emptyTextStyle}>
-              Aguarde enquanto confirmamos sua sessão.
+              Aguarde enquanto confirmamos sua sessÃ£o.
             </p>
           </section>
         </section>
@@ -2316,7 +2921,7 @@ export default function NotificacoesPage() {
               className="historietas-theme-title"
               style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
             >
-              NOTIFICAÇÕES
+              NOTIFICAÃ‡Ã•ES
             </span>
           </Link>
         </header>
@@ -2336,12 +2941,12 @@ export default function NotificacoesPage() {
                 <div style={filterActionsMenuWrapperStyle}>
                   <button
                     type="button"
-                    aria-label="Abrir ações gerais das notificações"
+                    aria-label="Abrir aÃ§Ãµes gerais das notificaÃ§Ãµes"
                     aria-expanded={menuAcoesGeraisAberto}
                     onClick={alternarMenuAcoesGerais}
                     style={filterActionsMenuButtonStyle}
                   >
-                    ⋮
+                    â‹®
                   </button>
 
                   {menuAcoesGeraisAberto && (
@@ -2375,7 +2980,7 @@ export default function NotificacoesPage() {
                         }
                         disabled={notificacoesFiltradas.length === 0}
                       >
-                        Marcar seleção
+                        Marcar seleÃ§Ã£o
                       </button>
 
                       <button
@@ -2416,8 +3021,11 @@ export default function NotificacoesPage() {
 
               <input
                 value={busca}
-                onChange={(event) => setBusca(event.target.value)}
-                placeholder="Buscar por obra, capítulo, comunidade ou mensagem..."
+                onChange={(event) => {
+                  fecharMenusNotificacoes();
+                  setBusca(event.target.value);
+                }}
+                placeholder="Buscar por obra, capÃ­tulo, comunidade ou mensagem..."
                 style={isDesktop ? desktopSearchInputStyle : searchInputStyle}
                 type="text"
               />
@@ -2425,7 +3033,10 @@ export default function NotificacoesPage() {
               <div style={isDesktop ? desktopQuickFiltersStyle : quickFiltersStyle}>
                 <button
                   type="button"
-                  onClick={() => setFiltro("todas")}
+                  onClick={() => {
+                    fecharMenusNotificacoes();
+                    setFiltro("todas");
+                  }}
                   style={
                     filtro === "todas"
                       ? quickFilterActiveStyle
@@ -2437,7 +3048,10 @@ export default function NotificacoesPage() {
 
                 <button
                   type="button"
-                  onClick={() => setFiltro("nao-lidas")}
+                  onClick={() => {
+                    fecharMenusNotificacoes();
+                    setFiltro("nao-lidas");
+                  }}
                   style={
                     filtro === "nao-lidas"
                       ? quickFilterActiveStyle
@@ -2449,7 +3063,10 @@ export default function NotificacoesPage() {
 
                 <button
                   type="button"
-                  onClick={() => setFiltro("lidas")}
+                  onClick={() => {
+                    fecharMenusNotificacoes();
+                    setFiltro("lidas");
+                  }}
                   style={
                     filtro === "lidas"
                       ? quickFilterActiveStyle
@@ -2461,19 +3078,25 @@ export default function NotificacoesPage() {
 
                 <button
                   type="button"
-                  onClick={() => setFiltro("capitulos")}
+                  onClick={() => {
+                    fecharMenusNotificacoes();
+                    setFiltro("capitulos");
+                  }}
                   style={
                     filtro === "capitulos"
                       ? quickFilterActiveStyle
                       : quickFilterStyle
                   }
                 >
-                  Capítulos
+                  CapÃ­tulos
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setFiltro("comunidade")}
+                  onClick={() => {
+                    fecharMenusNotificacoes();
+                    setFiltro("comunidade");
+                  }}
                   style={
                     filtro === "comunidade"
                       ? communityQuickFilterActiveStyle
@@ -2487,15 +3110,16 @@ export default function NotificacoesPage() {
               <div style={isDesktop ? desktopFilterFooterStyle : filterFooterStyle}>
                 <select
                   value={ordenacao}
-                  onChange={(event) =>
-                    setOrdenacao(event.target.value as OrdenacaoNotificacao)
-                  }
+                  onChange={(event) => {
+                    fecharMenusNotificacoes();
+                    setOrdenacao(event.target.value as OrdenacaoNotificacao);
+                  }}
                   style={selectStyle}
                 >
                   <option value="recentes">Mais recentes</option>
                   <option value="antigas">Mais antigas</option>
                   <option value="obra">Nome da obra</option>
-                  <option value="capitulo">Nome do capítulo</option>
+                  <option value="capitulo">Nome do capÃ­tulo</option>
                 </select>
 
                 {filtrosAtivos && (
@@ -2513,7 +3137,7 @@ export default function NotificacoesPage() {
         <section
               className="notificacoes-stats-carousel"
               style={isDesktop ? desktopStatsGridStyle : statsGridStyle}
-              aria-label="Resumo das notificações"
+              aria-label="Resumo das notificaÃ§Ãµes"
             >
           <div style={statCardStyle}>
             <strong style={statNumberStyle}>{totalNotificacoes}</strong>
@@ -2532,7 +3156,7 @@ export default function NotificacoesPage() {
 
           <div style={chapterStatCardStyle}>
             <strong style={statNumberStyle}>{totalCapitulos}</strong>
-            <span style={statLabelStyle}>Capítulos</span>
+            <span style={statLabelStyle}>CapÃ­tulos</span>
           </div>
 
           <div style={communityStatCardStyle}>
@@ -2542,7 +3166,7 @@ export default function NotificacoesPage() {
 
           <div style={statCardStyle}>
             <strong style={smallStatTextStyle}>{ultimaNotificacao}</strong>
-            <span style={statLabelStyle}>Última</span>
+            <span style={statLabelStyle}>Ãšltima</span>
           </div>
         </section>
 
@@ -2553,10 +3177,10 @@ export default function NotificacoesPage() {
           <section style={isDesktop ? desktopEmptyStyle : emptyStyle}>
             <span style={emptyIconStyle}>N</span>
 
-            <h2 style={emptyTitleStyle}>Nenhuma notificação</h2>
+            <h2 style={emptyTitleStyle}>Nenhuma notificaÃ§Ã£o</h2>
 
             <p style={emptyTextStyle}>
-              Quando uma obra seguida receber capítulo novo ou a Comunidade tiver novidades para você, o aviso aparece aqui.
+              Quando uma obra seguida receber capÃ­tulo novo ou a Comunidade tiver novidades para vocÃª, o aviso aparece aqui.
             </p>
 
             <Link href="/seguindo" style={emptyButtonStyle}>
@@ -2570,7 +3194,7 @@ export default function NotificacoesPage() {
             <h2 style={emptyTitleStyle}>Nada encontrado</h2>
 
             <p style={emptyTextStyle}>
-              Limpe a busca ou escolha outro filtro para ver suas notificações.
+              Limpe a busca ou escolha outro filtro para ver suas notificaÃ§Ãµes.
             </p>
 
             <button type="button" onClick={limparFiltros} style={emptyButtonStyle}>
@@ -2578,7 +3202,7 @@ export default function NotificacoesPage() {
             </button>
           </section>
         ) : (
-          <section style={isDesktop ? desktopListStyle : listStyle} aria-label="Lista de notificações">
+          <section style={isDesktop ? desktopListStyle : listStyle} aria-label="Lista de notificaÃ§Ãµes">
             {notificacoesFiltradas.map((notificacao) => {
               const obra = encontrarObra(notificacao.obraId);
               const capitulo = encontrarCapitulo(
@@ -2587,8 +3211,8 @@ export default function NotificacoesPage() {
               );
 
               const ehComunidade = notificacaoEhComunidade(notificacao);
-              const tituloObra = obra?.titulo || "Obra não encontrada";
-              const tituloCapitulo = capitulo?.titulo || "Capítulo não encontrado";
+              const tituloObra = obra?.titulo || "Obra nÃ£o encontrada";
+              const tituloCapitulo = capitulo?.titulo || "CapÃ­tulo nÃ£o encontrado";
               const tituloExibicao = obterTituloExibicaoNotificacao(notificacao);
               const autorComentarioComunidade =
                 extrairAutorComentarioComunidade(notificacao);
@@ -2658,12 +3282,12 @@ export default function NotificacoesPage() {
                         <div style={cardMenuWrapperStyle}>
                           <button
                             type="button"
-                            aria-label={`Abrir ações de ${tituloExibicao}`}
+                            aria-label={`Abrir aÃ§Ãµes de ${tituloExibicao}`}
                             aria-expanded={menuEstaAberto}
                             onClick={() => alternarMenuNotificacao(notificacao.id)}
                             style={cardMenuButtonStyle}
                           >
-                            ⋮
+                            â‹®
                           </button>
 
                           {menuEstaAberto && (
@@ -2763,23 +3387,24 @@ export default function NotificacoesPage() {
                   >
                     {ehComunidade ? (
                       <div style={communityCommentBoxStyle}>
-                        {notificacao.tipo === "comentario-comunidade" ? (
+                        {notificacao.tipo === "comentario-comunidade" ||
+                        notificacao.tipo === "comentario-diario" ? (
                           notificacao.autorId ? (
                             <Link
                               href={autorNotificacaoHref}
                               style={notificationAuthorInlineLinkStyle}
                             >
-                              Comentário de {autorComentarioComunidade}
+                              ComentÃ¡rio de {autorComentarioComunidade}
                             </Link>
                           ) : (
                             <span style={metaLabelStyle}>
-                              Comentário de {autorComentarioComunidade}
+                              ComentÃ¡rio de {autorComentarioComunidade}
                             </span>
                           )
                         ) : (
                           <span style={communityInlineStatusStyle}>
-                            <span>Atualização</span>
-                            <span style={communityInlineStatusDotStyle}>•</span>
+                            <span>AtualizaÃ§Ã£o</span>
+                            <span style={communityInlineStatusDotStyle}>â€¢</span>
                             <span>{obterDetalheNotificacao(notificacao)}</span>
                           </span>
                         )}
@@ -2798,7 +3423,7 @@ export default function NotificacoesPage() {
                         </div>
 
                         <div style={metaBoxStyle}>
-                          <span style={metaLabelStyle}>Capítulo</span>
+                          <span style={metaLabelStyle}>CapÃ­tulo</span>
                           <strong style={metaValueStyle}>{tituloCapitulo}</strong>
                         </div>
                       </>

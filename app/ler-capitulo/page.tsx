@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 
 type CapituloLocal = {
   id: string;
@@ -135,26 +136,71 @@ const FONT_SCALE_VALUES: TamanhoFonte[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const READER_PREFERENCES_STORAGE_KEY = "historietas-preferencias-leitura";
 
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+function criarStorageKeyUsuarioLeitor(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
 }
 
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+function lerStorageUsuarioLeitor(chave: string, userId: string) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return null;
+  }
 
-  return slug || "obra";
+  try {
+    return localStorage.getItem(criarStorageKeyUsuarioLeitor(chave, userId));
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioLeitor(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioLeitor(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage é fallback; a leitura continua com estado em memória.
+  }
+}
+
+async function marcarNotificacaoCapituloComoLidaSupabase(
+  userId: string,
+  obraId: string,
+  capituloId: string
+) {
+  const userIdLimpo = userId.trim();
+  const obraIdLimpo = obraId.trim();
+  const capituloIdLimpo = capituloId.trim();
+
+  if (!userIdLimpo || !obraIdLimpo || !capituloIdLimpo) {
+    return;
+  }
+
+  try {
+    await supabase
+      .from("notificacoes")
+      .update({
+        lida: true,
+      })
+      .eq("user_id", userIdLimpo)
+      .eq("obra_id", obraIdLimpo)
+      .eq("capitulo_id", capituloIdLimpo);
+  } catch {
+    // A leitura continua mesmo se a notificação remota não atualizar.
+  }
 }
 
 function criarLoginHrefLeitor(obraId?: string, capituloId?: string) {
@@ -309,60 +355,6 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
   };
 }
 
-function marcarNotificacaoCapituloComoLida(obraId: string, capituloId: string) {
-  try {
-    const notificacoesTexto = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    const notificacoesJson = notificacoesTexto
-      ? JSON.parse(notificacoesTexto)
-      : [];
-
-    if (!Array.isArray(notificacoesJson)) {
-      return;
-    }
-
-    const novasNotificacoes = notificacoesJson.map((notificacao) => {
-      if (!notificacao || typeof notificacao !== "object") {
-        return notificacao;
-      }
-
-      const notificacaoComObra = notificacao as {
-        obraId?: unknown;
-        capituloId?: unknown;
-        lida?: unknown;
-      };
-
-      if (
-        notificacaoComObra.obraId === obraId &&
-        notificacaoComObra.capituloId === capituloId
-      ) {
-        return {
-          ...notificacao,
-          lida: true,
-        };
-      }
-
-      return notificacao;
-    });
-
-    localStorage.setItem(
-      NOTIFICATIONS_STORAGE_KEY,
-      JSON.stringify(novasNotificacoes)
-    );
-  } catch {
-    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify([]));
-  }
-}
-
-function formatarData(dataIso: string) {
-  const data = new Date(dataIso);
-
-  if (Number.isNaN(data.getTime())) {
-    return "Data não informada";
-  }
-
-  return data.toLocaleDateString("pt-BR");
-}
-
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   if (capitulos.length === 0) {
     return 0;
@@ -397,8 +389,8 @@ function normalizarTamanhoFonte(valor: unknown): TamanhoFonte {
   return 5;
 }
 
-function carregarPreferenciasLeitura(): PreferenciasLeitura {
-  if (typeof window === "undefined") {
+function carregarPreferenciasLeitura(userId = ""): PreferenciasLeitura {
+  if (typeof window === "undefined" || !userId.trim()) {
     return {
       tamanhoFonte: 5,
       modoFoco: false,
@@ -407,7 +399,10 @@ function carregarPreferenciasLeitura(): PreferenciasLeitura {
   }
 
   try {
-    const preferenciasTexto = localStorage.getItem(READER_PREFERENCES_STORAGE_KEY);
+    const preferenciasTexto = lerStorageUsuarioLeitor(
+      READER_PREFERENCES_STORAGE_KEY,
+      userId
+    );
     const preferenciasJson: unknown = preferenciasTexto
       ? JSON.parse(preferenciasTexto)
       : null;
@@ -440,19 +435,15 @@ function carregarPreferenciasLeitura(): PreferenciasLeitura {
   }
 }
 
-function salvarPreferenciasLeitura(preferencias: PreferenciasLeitura) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    localStorage.setItem(
-      READER_PREFERENCES_STORAGE_KEY,
-      JSON.stringify(preferencias)
-    );
-  } catch {
-    // Preferências de leitura são um conforto extra. Não devem travar a leitura.
-  }
+function salvarPreferenciasLeitura(
+  preferencias: PreferenciasLeitura,
+  userId = ""
+) {
+  salvarJsonStorageUsuarioLeitor(
+    READER_PREFERENCES_STORAGE_KEY,
+    userId,
+    preferencias
+  );
 }
 
 function criarTextoLeituraStyle(tamanhoFonte: TamanhoFonte): CSSProperties {
@@ -483,39 +474,19 @@ function normalizarListaIds(valor: unknown): string[] {
     : [];
 }
 
-function carregarListaIdsStorage(chave: string): string[] {
+function carregarListaIdsStorage(chave: string, userId = ""): string[] {
   try {
-    const listaTexto = localStorage.getItem(chave);
+    const listaTexto = lerStorageUsuarioLeitor(chave, userId);
     const listaJson: unknown = listaTexto ? JSON.parse(listaTexto) : [];
     const listaNormalizada = normalizarListaIds(listaJson);
 
-    localStorage.setItem(chave, JSON.stringify(listaNormalizada));
+    salvarJsonStorageUsuarioLeitor(chave, userId, listaNormalizada);
 
     return listaNormalizada;
   } catch {
-    localStorage.setItem(chave, JSON.stringify([]));
+    salvarJsonStorageUsuarioLeitor(chave, userId, []);
     return [];
   }
-}
-
-function obterNumeroSeguro(valor: unknown, fallback = 0) {
-  if (typeof valor === "number" && Number.isFinite(valor)) {
-    return valor;
-  }
-
-  if (typeof valor === "string") {
-    const numero = Number(valor);
-
-    return Number.isFinite(numero) ? numero : fallback;
-  }
-
-  return fallback;
-}
-
-function idObraSupabaseValido(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    id
-  );
 }
 
 function criarHrefLeituraCapituloLeitor(
@@ -543,7 +514,10 @@ function criarHrefLeituraCapituloLeitor(
   )}&capituloId=${encodeURIComponent(capituloId)}`;
 }
 
-function incrementarVisualizacaoObraLocal(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
+function incrementarVisualizacaoObraLocal(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
+  userId = ""
+) {
   try {
     const chaveObra = obra.id || obra.slug || normalizarTexto(obra.titulo);
 
@@ -551,7 +525,10 @@ function incrementarVisualizacaoObraLocal(obra: Pick<ObraLocal, "id" | "slug" | 
       return;
     }
 
-    const visualizacoesTexto = localStorage.getItem(VIEWED_WORKS_STORAGE_KEY);
+    const visualizacoesTexto = lerStorageUsuarioLeitor(
+      VIEWED_WORKS_STORAGE_KEY,
+      userId
+    );
     const visualizacoesJson: unknown = visualizacoesTexto
       ? JSON.parse(visualizacoesTexto)
       : {};
@@ -563,12 +540,13 @@ function incrementarVisualizacaoObraLocal(obra: Pick<ObraLocal, "id" | "slug" | 
         : {};
     const visualizacoesAtuais = obterNumeroSeguro(visualizacoesPorObra[chaveObra], 0);
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioLeitor(
       VIEWED_WORKS_STORAGE_KEY,
-      JSON.stringify({
+      userId,
+      {
         ...visualizacoesPorObra,
         [chaveObra]: visualizacoesAtuais + 1,
-      })
+      }
     );
   } catch {
     // Visualização local é fallback e não deve travar a leitura.
@@ -594,6 +572,7 @@ async function incrementarVisualizacaoObraSupabase(obraId: string) {
       .from("obras")
       .select("visualizacoes")
       .eq("id", obraId)
+      .limit(1)
       .maybeSingle();
 
     const visualizacoesAtuais = obterNumeroSeguro(
@@ -753,8 +732,8 @@ function mesclarObraSupabaseComLocal(
   return normalizarObra(obraMesclada, 0);
 }
 
-function carregarObrasLocaisNormalizadas() {
-  const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
+function carregarObrasLocaisNormalizadas(userId = "") {
+  const obrasSalvasTexto = lerStorageUsuarioLeitor(STORAGE_KEY, userId);
   const obrasSalvasJson: unknown = obrasSalvasTexto
     ? JSON.parse(obrasSalvasTexto)
     : [];
@@ -765,7 +744,7 @@ function carregarObrasLocaisNormalizadas() {
       )
     : [];
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasNormalizadas));
+  salvarJsonStorageUsuarioLeitor(STORAGE_KEY, userId, obrasNormalizadas);
 
   return obrasNormalizadas;
 }
@@ -791,7 +770,8 @@ function salvarObrasPreservandoContas(
   userId: string
 ) {
   try {
-    const obrasAtuais = carregarObrasLocaisNormalizadas();
+    const userIdLimpo = userId.trim();
+    const obrasAtuais = carregarObrasLocaisNormalizadas(userIdLimpo);
     const obrasAtualizadasPorId = new Map(
       obrasAtualizadas.map((obra, index) => [
         obra.id,
@@ -810,7 +790,7 @@ function salvarObrasPreservandoContas(
         return obraNormalizada;
       }
 
-      return usuarioPodePersistirObraNoStorage(obraAtualizada, userId)
+      return usuarioPodePersistirObraNoStorage(obraAtualizada, userIdLimpo)
         ? obraAtualizada
         : obraNormalizada;
     });
@@ -820,7 +800,7 @@ function salvarObrasPreservandoContas(
 
       if (
         idsPersistidos.has(obraNormalizada.id) ||
-        !usuarioPodePersistirObraNoStorage(obraNormalizada, userId)
+        !usuarioPodePersistirObraNoStorage(obraNormalizada, userIdLimpo)
       ) {
         return;
       }
@@ -829,7 +809,7 @@ function salvarObrasPreservandoContas(
       idsPersistidos.add(obraNormalizada.id);
     });
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasMescladas));
+    salvarJsonStorageUsuarioLeitor(STORAGE_KEY, userIdLimpo, obrasMescladas);
   } catch {
     // A leitura deve continuar mesmo se o armazenamento local estiver indisponível.
   }
@@ -842,15 +822,18 @@ async function carregarObraSupabase(
 ) {
   const { data: obraSupabase, error: erroObra } = await supabase
     .from("obras")
-    .select("*")
+    .select(
+      "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+    )
     .eq("id", obraId)
+    .limit(1)
     .maybeSingle();
 
   if (erroObra || !obraSupabase) {
     return null;
   }
 
-  const obraBanco = obraSupabase as ObraSupabaseRow;
+  const obraBanco = obraSupabase as unknown as ObraSupabaseRow;
   const autorId = obraBanco.user_id?.trim() || "";
   const usuarioEhDono = Boolean(userId && autorId === userId);
 
@@ -860,9 +843,10 @@ async function carregarObraSupabase(
 
   let capitulosQuery = supabase
     .from("capitulos")
-    .select("*")
+    .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
     .eq("obra_id", obraId)
-    .order("ordem", { ascending: true });
+    .order("ordem", { ascending: true })
+    .limit(300);
 
   if (!usuarioEhDono) {
     capitulosQuery = capitulosQuery.eq("publicado", true);
@@ -873,7 +857,9 @@ async function carregarObraSupabase(
 
   return mesclarObraSupabaseComLocal(
     obraBanco,
-    erroCapitulos ? [] : ((capitulosSupabase || []) as CapituloSupabaseRow[]),
+    erroCapitulos
+      ? []
+      : ((capitulosSupabase || []) as unknown as CapituloSupabaseRow[]),
     obraLocal
   );
 }
@@ -885,7 +871,8 @@ async function carregarIdsTabelaUsuario(
   const { data, error } = await supabase
     .from(tabela)
     .select("obra_id")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .limit(1000);
 
   if (error || !Array.isArray(data)) {
     return [];
@@ -915,22 +902,26 @@ async function aplicarInteracoesCapitulosSupabase(
         .from("curtidas_capitulos")
         .select("capitulo_id")
         .eq("user_id", userId)
-        .in("capitulo_id", capituloIds),
+        .in("capitulo_id", capituloIds)
+        .limit(1000),
       supabase
         .from("salvos_capitulos")
         .select("capitulo_id")
         .eq("user_id", userId)
-        .in("capitulo_id", capituloIds),
+        .in("capitulo_id", capituloIds)
+        .limit(1000),
       supabase
         .from("comentarios_capitulos")
         .select("capitulo_id, comentario")
         .eq("user_id", userId)
-        .in("capitulo_id", capituloIds),
+        .in("capitulo_id", capituloIds)
+        .limit(1000),
       supabase
         .from("progresso_leitura")
         .select("capitulo_id, lido, progresso")
         .eq("user_id", userId)
-        .eq("obra_id", obra.id),
+        .eq("obra_id", obra.id)
+        .limit(1),
     ]);
 
   const curtidas = new Set(
@@ -1078,15 +1069,14 @@ async function registrarAtividadeDiarioLeitor({
   metadata?: Record<string, unknown>;
 }) {
   if (!userId || !idObraSupabaseValido(obra.id)) {
-    return;
+    return false;
   }
 
-  const capituloIdSeguro = capituloId && idObraSupabaseValido(capituloId)
-    ? capituloId
-    : null;
+  const capituloIdSeguro =
+    capituloId && idObraSupabaseValido(capituloId) ? capituloId : null;
 
   try {
-    await supabase.from("diario_atividades").insert({
+    const { error } = await supabase.from("diario_atividades").insert({
       user_id: userId,
       tipo,
       obra_id: obra.id,
@@ -1101,8 +1091,11 @@ async function registrarAtividadeDiarioLeitor({
         ...metadata,
       },
     });
+
+    return !error;
   } catch {
     // O Diário é camada social. A leitura nunca deve travar se o log falhar.
+    return false;
   }
 }
 
@@ -1388,8 +1381,9 @@ async function carregarProfilesPorUsuariosLeitor(userIds: string[]) {
   try {
     const { data } = await supabase
       .from("profiles")
-      .select("*")
-      .in("user_id", idsValidos);
+      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+      .in("user_id", idsValidos)
+      .limit(1000);
 
     if (Array.isArray(data)) {
       (data as Record<string, unknown>[]).forEach((profile) => {
@@ -1412,8 +1406,9 @@ async function carregarProfilesPorUsuariosLeitor(userIds: string[]) {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("*")
-        .in("id", idsSemProfile);
+        .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+        .in("id", idsSemProfile)
+        .limit(1000);
 
       if (Array.isArray(data)) {
         (data as Record<string, unknown>[]).forEach((profile) => {
@@ -1465,9 +1460,10 @@ async function carregarComentariosCapituloSupabase(
   try {
     const { data, error } = await supabase
       .from("comentarios_capitulos")
-      .select("*")
+      .select("id,user_id,comentario,atualizado_em,created_at,criado_em")
       .eq("capitulo_id", capituloIdLimpo)
-      .order("atualizado_em", { ascending: false });
+      .order("atualizado_em", { ascending: false })
+      .limit(100);
 
     if (error || !Array.isArray(data)) {
       return [];
@@ -1536,6 +1532,7 @@ export default function LerCapituloPage() {
     });
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const notificacoesNaoLidas = 0;
   const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(5);
   const [modoFoco, setModoFoco] = useState(false);
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
@@ -1546,6 +1543,7 @@ export default function LerCapituloPage() {
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
   const { temaVisual, pageThemeStyle, aplicarTemaVisual } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
+  const atividadeDiarioRegistradaRef = useRef("");
 
   useEffect(() => {
     let cancelado = false;
@@ -1580,16 +1578,21 @@ export default function LerCapituloPage() {
     };
   }, []);
 
+
   useEffect(() => {
     let cancelado = false;
 
     async function carregarPerfilComentario() {
       if (!usuarioIdLogado) {
-        setPerfilComentarioLeitor({
-          userId: "",
-          nome: "Usuário",
-          avatar: "",
-        });
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setPerfilComentarioLeitor({
+              userId: "",
+              nome: "Usuário",
+              avatar: "",
+            });
+          }
+        }, 0);
         return;
       }
 
@@ -1608,24 +1611,37 @@ export default function LerCapituloPage() {
   }, [usuarioIdLogado]);
 
   useEffect(() => {
-    const preferencias = carregarPreferenciasLeitura();
+    if (!usuarioIdLogado.trim()) {
+      return;
+    }
 
-    setTamanhoFonte(preferencias.tamanhoFonte);
-    setModoFoco(preferencias.modoFoco);
-    setMostrarLinhaProgresso(preferencias.mostrarLinhaProgresso);
-    setPreferenciasCarregadas(true);
-  }, []);
+    const carregarPreferenciasTimer = window.setTimeout(() => {
+      const preferencias = carregarPreferenciasLeitura(usuarioIdLogado);
+
+      setTamanhoFonte(preferencias.tamanhoFonte);
+      setModoFoco(preferencias.modoFoco);
+      setMostrarLinhaProgresso(preferencias.mostrarLinhaProgresso);
+      setPreferenciasCarregadas(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(carregarPreferenciasTimer);
+    };
+  }, [usuarioIdLogado]);
 
   useEffect(() => {
     if (!preferenciasCarregadas) {
       return;
     }
 
-    salvarPreferenciasLeitura({
-      tamanhoFonte,
-      modoFoco,
-      mostrarLinhaProgresso,
-    });
+    salvarPreferenciasLeitura(
+      {
+        tamanhoFonte,
+        modoFoco,
+        mostrarLinhaProgresso,
+      },
+      usuarioIdLogado
+    );
   }, [preferenciasCarregadas, tamanhoFonte, modoFoco, mostrarLinhaProgresso]);
 
   useEffect(() => {
@@ -1635,12 +1651,16 @@ export default function LerCapituloPage() {
       setIsDesktop(mediaQuery.matches);
     };
 
-    atualizarModoDesktop();
+    const atualizarModoDesktopTimer = window.setTimeout(
+      atualizarModoDesktop,
+      0
+    );
 
     if (typeof mediaQuery.addEventListener === "function") {
       mediaQuery.addEventListener("change", atualizarModoDesktop);
 
       return () => {
+        window.clearTimeout(atualizarModoDesktopTimer);
         mediaQuery.removeEventListener("change", atualizarModoDesktop);
       };
     }
@@ -1648,6 +1668,7 @@ export default function LerCapituloPage() {
     mediaQuery.addListener(atualizarModoDesktop);
 
     return () => {
+      window.clearTimeout(atualizarModoDesktopTimer);
       mediaQuery.removeListener(atualizarModoDesktop);
     };
   }, []);
@@ -1675,22 +1696,28 @@ export default function LerCapituloPage() {
       const obraIdParam = params.get("obraId") || "";
       const capituloIdParam = params.get("capituloId") || "";
 
-      setObraId(obraIdParam);
-      setCapituloId(capituloIdParam);
+      window.setTimeout(() => {
+        if (!cancelado) {
+          setObraId(obraIdParam);
+          setCapituloId(capituloIdParam);
+        }
+      }, 0);
 
       try {
         const { data: dadosUsuario } = await supabase.auth.getUser();
         const userId = dadosUsuario.user?.id || "";
-        const obrasLocaisTodas = carregarObrasLocaisNormalizadas();
+        const obrasLocaisTodas = carregarObrasLocaisNormalizadas(userId);
         const obrasLocais = obrasLocaisTodas.filter((obra) =>
           usuarioPodeAbrirObraNoLeitor(obra, userId)
         );
         let obrasAtualizadas = obrasLocais;
         let obrasFavoritasNormalizadas = carregarListaIdsStorage(
-          FAVORITES_STORAGE_KEY
+          FAVORITES_STORAGE_KEY,
+          userId
         );
         let obrasConcluidasNormalizadas = carregarListaIdsStorage(
-          COMPLETED_STORAGE_KEY
+          COMPLETED_STORAGE_KEY,
+          userId
         );
 
         if (obraIdParam) {
@@ -1743,13 +1770,15 @@ export default function LerCapituloPage() {
         }
 
         salvarObrasPreservandoContas(obrasAtualizadas, userId);
-        localStorage.setItem(
+        salvarJsonStorageUsuarioLeitor(
           FAVORITES_STORAGE_KEY,
-          JSON.stringify(obrasFavoritasNormalizadas)
+          userId,
+          obrasFavoritasNormalizadas
         );
-        localStorage.setItem(
+        salvarJsonStorageUsuarioLeitor(
           COMPLETED_STORAGE_KEY,
-          JSON.stringify(obrasConcluidasNormalizadas)
+          userId,
+          obrasConcluidasNormalizadas
         );
 
         if (!cancelado) {
@@ -1770,7 +1799,7 @@ export default function LerCapituloPage() {
       }
     }
 
-    carregarDados();
+    void carregarDados();
 
     return () => {
       cancelado = true;
@@ -1794,11 +1823,19 @@ export default function LerCapituloPage() {
 
     async function carregarComentariosCapitulo() {
       if (!capituloAtual?.id) {
-        setComentariosCapitulo([]);
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setComentariosCapitulo([]);
+          }
+        }, 0);
         return;
       }
 
-      setComentariosCarregando(true);
+      window.setTimeout(() => {
+        if (!cancelado) {
+          setComentariosCarregando(true);
+        }
+      }, 0);
       const comentarios = await carregarComentariosCapituloSupabase(
         capituloAtual.id,
         usuarioIdLogado,
@@ -1868,17 +1905,23 @@ export default function LerCapituloPage() {
     }
 
     visualizacaoObraRegistradaRef.current = chaveVisualizacao;
-    incrementarVisualizacaoObraLocal(obraAtual);
+    incrementarVisualizacaoObraLocal(obraAtual, usuarioIdLogado);
     void incrementarVisualizacaoObraSupabase(obraAtual.id);
-  }, [obraAtual?.id, obraAtual?.slug, obraAtual?.titulo]);
+  }, [obraAtual?.id, obraAtual?.slug, obraAtual?.titulo, usuarioIdLogado]);
 
   useEffect(() => {
-    setComentarioDigitado(capituloAtual?.comentario || "");
-    setComentarioStatus("");
-    setMensagemAcao("");
-    setMostrarComentario(
-      Boolean(usuarioIdLogado && capituloAtual?.comentario.trim())
-    );
+    const atualizarComentarioTimer = window.setTimeout(() => {
+      setComentarioDigitado(capituloAtual?.comentario || "");
+      setComentarioStatus("");
+      setMensagemAcao("");
+      setMostrarComentario(
+        Boolean(usuarioIdLogado && capituloAtual?.comentario.trim())
+      );
+    }, 0);
+
+    return () => {
+      window.clearTimeout(atualizarComentarioTimer);
+    };
   }, [capituloAtual?.id, usuarioIdLogado]);
 
   useEffect(() => {
@@ -1894,12 +1937,16 @@ export default function LerCapituloPage() {
       setProgressoRolagem(Math.min(100, Math.max(0, progressoAtual)));
     }
 
-    atualizarProgressoRolagem();
+    const atualizarProgressoTimer = window.setTimeout(
+      atualizarProgressoRolagem,
+      0
+    );
 
     window.addEventListener("scroll", atualizarProgressoRolagem);
     window.addEventListener("resize", atualizarProgressoRolagem);
 
     return () => {
+      window.clearTimeout(atualizarProgressoTimer);
       window.removeEventListener("scroll", atualizarProgressoRolagem);
       window.removeEventListener("resize", atualizarProgressoRolagem);
     };
@@ -1910,8 +1957,20 @@ export default function LerCapituloPage() {
       return;
     }
 
+    const chaveAtividade = `${usuarioIdLogado}:${obraAtual.id}:${capituloAtual.id}`;
+
+    if (atividadeDiarioRegistradaRef.current === chaveAtividade) {
+      return;
+    }
+
+    atividadeDiarioRegistradaRef.current = chaveAtividade;
+
     const agora = new Date().toISOString();
     const capituloJaLido = capituloAtual.lido;
+    const obraJaIniciada =
+      obraAtual.progressoLeitura > 0 ||
+      Boolean(obraAtual.ultimoCapituloLidoId) ||
+      obraAtual.capitulos.some((capitulo) => capitulo.lido);
     let obraAtualizadaParaSupabase: ObraLocal | null = null;
 
     const novasObras = obras.map((obra, obraIndex) => {
@@ -1945,20 +2004,47 @@ export default function LerCapituloPage() {
     });
 
     salvarObrasPreservandoContas(novasObras, usuarioIdLogado);
-    marcarNotificacaoCapituloComoLida(obraAtual.id, capituloAtual.id);
-    setObras(novasObras);
+    void marcarNotificacaoCapituloComoLidaSupabase(
+      usuarioIdLogado,
+      obraAtual.id,
+      capituloAtual.id
+    );
+    window.setTimeout(() => {
+      setObras(novasObras);
+    }, 0);
 
-    if (obraAtualizadaParaSupabase) {
-      const obraAtualizadaDiario = obraAtualizadaParaSupabase as ObraLocal;
+    if (!obraAtualizadaParaSupabase) {
+      return;
+    }
 
-      void salvarProgressoLeituraSupabase(
-        obraAtualizadaDiario,
-        capituloAtual.id,
-        true
-      );
+    const obraAtualizadaDiario = obraAtualizadaParaSupabase as ObraLocal;
 
-      if (!capituloJaLido) {
-        void registrarAtividadeDiarioLeitor({
+    void salvarProgressoLeituraSupabase(
+      obraAtualizadaDiario,
+      capituloAtual.id,
+      true
+    );
+
+    if (!capituloJaLido) {
+      void (async () => {
+        if (!obraJaIniciada) {
+          await registrarAtividadeDiarioLeitor({
+            userId: usuarioIdLogado,
+            tipo: "comecou_ler",
+            obra: obraAtualizadaDiario,
+            capituloId: capituloAtual.id,
+            visibilidade: "privado",
+            texto: `Começou a ler ${obraAtualizadaDiario.titulo}`,
+            metadata: {
+              capitulo_titulo: capituloAtual.titulo,
+              capitulo_numero: numeroCapitulo,
+              progresso_obra: obraAtualizadaDiario.progressoLeitura,
+              origem: "primeira_abertura_capitulo",
+            },
+          });
+        }
+
+        await registrarAtividadeDiarioLeitor({
           userId: usuarioIdLogado,
           tipo: "leu_capitulo",
           obra: obraAtualizadaDiario,
@@ -1972,7 +2058,7 @@ export default function LerCapituloPage() {
             origem: "abertura_capitulo",
           },
         });
-      }
+      })();
     }
   }, [usuarioIdLogado, obraAtual?.id, capituloAtual?.id]);
 
@@ -2231,14 +2317,21 @@ export default function LerCapituloPage() {
       return;
     }
 
+    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
+
+    if (!userIdAtual) {
+      return;
+    }
+
     const novoStatusFavorito = !obraFavorita;
     const novasObrasFavoritas = obraFavorita
       ? obrasFavoritas.filter((id) => id !== obraAtual.id)
       : [...obrasFavoritas, obraAtual.id];
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioLeitor(
       FAVORITES_STORAGE_KEY,
-      JSON.stringify(novasObrasFavoritas)
+      userIdAtual,
+      novasObrasFavoritas
     );
 
     setObrasFavoritas(novasObrasFavoritas);
@@ -2254,9 +2347,7 @@ export default function LerCapituloPage() {
         : "A lista ficou salva no aparelho, mas não foi sincronizada agora."
     );
 
-    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
-
-    if (novoStatusFavorito && userIdAtual) {
+    if (novoStatusFavorito) {
       void registrarAtividadeDiarioLeitor({
         userId: userIdAtual,
         tipo: "favoritou_obra",
@@ -2279,41 +2370,83 @@ export default function LerCapituloPage() {
       return;
     }
 
+    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
+
+    if (!userIdAtual) {
+      return;
+    }
+
     const novoStatusConcluido = !obraConcluida;
+    const agora = new Date().toISOString();
+    const ultimoCapitulo =
+      obraAtual.capitulos[obraAtual.capitulos.length - 1] || null;
+    const obraAtualizada: ObraLocal = novoStatusConcluido
+      ? {
+          ...obraAtual,
+          capitulos: obraAtual.capitulos.map((capitulo) => ({
+            ...capitulo,
+            lido: true,
+            lidoEm: capitulo.lidoEm || agora,
+          })),
+          ultimoCapituloLidoId:
+            ultimoCapitulo?.id || obraAtual.ultimoCapituloLidoId,
+          ultimaLeituraEm: agora,
+          progressoLeitura: obraAtual.capitulos.length > 0 ? 100 : 0,
+        }
+      : obraAtual;
     const novasObrasConcluidas = obraConcluida
       ? obrasConcluidas.filter((id) => id !== obraAtual.id)
       : [...obrasConcluidas, obraAtual.id];
 
-    localStorage.setItem(
+    if (novoStatusConcluido) {
+      salvarObras(
+        obras.map((obra) =>
+          obra.id === obraAtual.id ? obraAtualizada : obra
+        )
+      );
+    }
+
+    salvarJsonStorageUsuarioLeitor(
       COMPLETED_STORAGE_KEY,
-      JSON.stringify(novasObrasConcluidas)
+      userIdAtual,
+      novasObrasConcluidas
     );
 
     setObrasConcluidas(novasObrasConcluidas);
+
     const concluidoSincronizado = await salvarRegistroObraSupabase(
       "concluidas",
       obraAtual.id,
       novoStatusConcluido
     );
 
+    let progressoSincronizado = true;
+
+    if (novoStatusConcluido && ultimoCapitulo) {
+      progressoSincronizado = await salvarProgressoLeituraSupabase(
+        obraAtualizada,
+        ultimoCapitulo.id,
+        true
+      );
+    }
+
     setMensagemAcao(
-      concluidoSincronizado
+      concluidoSincronizado && progressoSincronizado
         ? ""
         : "A conclusão ficou salva no aparelho, mas não foi sincronizada agora."
     );
 
-    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
-
-    if (novoStatusConcluido && userIdAtual) {
+    if (novoStatusConcluido) {
       void registrarAtividadeDiarioLeitor({
         userId: userIdAtual,
         tipo: "concluiu_obra",
-        obra: obraAtual,
+        obra: obraAtualizada,
+        capituloId: ultimoCapitulo?.id,
         visibilidade: "parcial",
-        texto: `Concluiu ${obraAtual.titulo}`,
+        texto: `Concluiu ${obraAtualizada.titulo}`,
         metadata: {
-          total_capitulos: obraAtual.capitulos.length,
-          progresso_obra: 100,
+          total_capitulos: obraAtualizada.capitulos.length,
+          progresso_obra: obraAtualizada.progressoLeitura,
           origem: "concluir_obra_leitor",
         },
       });
@@ -2484,21 +2617,55 @@ export default function LerCapituloPage() {
             <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <button
-            type="button"
-            onClick={() => setMostrarAjustes((valorAtual) => !valorAtual)}
+          <div
             style={
-              modoFoco
-                ? isDesktop
-                  ? desktopFocusSettingsButtonStyle
-                  : focusTopSingleSettingsButtonStyle
-                : isDesktop
-                ? desktopSettingsButtonStyle
-                : topSingleSettingsButtonStyle
+              isDesktop
+                ? desktopHeaderActionsStyle
+                : headerActionsStyle
             }
           >
-            {mostrarAjustes ? "Fechar" : "Ajustes"}
-          </button>
+            {isDesktop ? (
+              <Link
+                href="/notificacoes"
+                style={
+                  modoFoco
+                    ? desktopFocusNotificationButtonStyle
+                    : desktopNotificationButtonStyle
+                }
+                aria-label={
+                  notificacoesNaoLidas > 0
+                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                    : "Notificações"
+                }
+              >
+                N
+
+                {notificacoesNaoLidas > 0 ? (
+                  <span style={desktopNotificationBadgeStyle}>
+                    {notificacoesNaoLidas > 99
+                      ? "99+"
+                      : notificacoesNaoLidas}
+                  </span>
+                ) : null}
+              </Link>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => setMostrarAjustes((valorAtual) => !valorAtual)}
+              style={
+                modoFoco
+                  ? isDesktop
+                    ? desktopFocusSettingsButtonStyle
+                    : focusTopSingleSettingsButtonStyle
+                  : isDesktop
+                  ? desktopSettingsButtonStyle
+                  : topSingleSettingsButtonStyle
+              }
+            >
+              {mostrarAjustes ? "Fechar" : "Ajustes"}
+            </button>
+          </div>
         </header>
 
         <section
@@ -2998,7 +3165,7 @@ const focusBottomNavigationCss = `
   body[data-historietas-reader-focus="true"] [data-mobile-nav],
   body[data-historietas-reader-focus="true"] nav[aria-label*="Navegação"],
   body[data-historietas-reader-focus="true"] nav[aria-label*="navegação"],
-  body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) {
+  body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/perfil-autor?aba=biblioteca"]) {
     background: #050505 !important;
     border-color: rgba(255,255,255,0.075) !important;
     box-shadow: none !important;
@@ -3011,8 +3178,8 @@ const focusBottomNavigationCss = `
   body[data-historietas-reader-focus="true"] nav button,
   body[data-historietas-reader-focus="true"] [data-bottom-nav] button,
   body[data-historietas-reader-focus="true"] [data-mobile-nav] button,
-  body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) a,
-  body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) button {
+  body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/perfil-autor?aba=biblioteca"]) a,
+  body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/perfil-autor?aba=biblioteca"]) button {
     color: #D4D4D8 !important;
     box-shadow: none !important;
   }
@@ -3020,7 +3187,7 @@ const focusBottomNavigationCss = `
   body[data-historietas-reader-focus="true"] nav a[href="/publicar"],
   body[data-historietas-reader-focus="true"] [data-bottom-nav] a[href="/publicar"],
   body[data-historietas-reader-focus="true"] [data-mobile-nav] a[href="/publicar"],
-  body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/biblioteca"]) a[href="/publicar"] {
+  body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/perfil-autor?aba=biblioteca"]) a[href="/publicar"] {
     background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%) !important;
     border-color: rgba(167,139,250,0.34) !important;
     color: #FFFFFF !important;
@@ -3120,6 +3287,69 @@ const topStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
+};
+
+const headerActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "8px",
+  flex: "0 0 auto",
+  minWidth: 0,
+};
+
+const desktopHeaderActionsStyle: CSSProperties = {
+  ...headerActionsStyle,
+  gap: "10px",
+};
+
+const desktopNotificationButtonStyle: CSSProperties = {
+  position: "relative",
+  width: "40px",
+  height: "40px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+};
+
+const desktopFocusNotificationButtonStyle: CSSProperties = {
+  ...desktopNotificationButtonStyle,
+  background: "#050506",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#F4F4F5",
+};
+
+const desktopNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
 };
 
 const logoStyle: CSSProperties = {

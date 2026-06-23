@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ChangeEvent, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
 
 type CapituloLocal = {
   id: string;
@@ -109,10 +111,47 @@ type SupabaseObraRow = {
 };
 
 const STORAGE_KEY = "historietas-obras";
-const USER_WORKS_STORAGE_PREFIX = "historietas-obras-usuario";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
-const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
+
+function criarStorageKeyUsuarioAdicionarCapitulo(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function lerStorageUsuarioAdicionarCapitulo(chave: string, userId: string) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(
+      criarStorageKeyUsuarioAdicionarCapitulo(chave, userId)
+    );
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioAdicionarCapitulo(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioAdicionarCapitulo(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage é fallback; a criação do capítulo continua em memória.
+  }
+}
 
 function criarId() {
   if (
@@ -136,24 +175,6 @@ function criarTituloPorNomeArquivo(nomeArquivo: string) {
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "obra";
 }
 
 function criarLoginHrefAdicionarCapitulo(obraId?: string) {
@@ -272,12 +293,6 @@ async function sincronizarAutorObraProfileAdicionarCapitulo(
   } catch {
     // Se a atualização do nome falhar, o capítulo e o backup local continuam funcionando.
   }
-}
-
-function idObraSupabaseValido(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    id
-  );
 }
 
 function criarHrefLeituraCapitulo(
@@ -402,9 +417,12 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
-function carregarBackupArquivosObras(): ArquivosObrasBackup {
+function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   try {
-    const backupTexto = localStorage.getItem(FILE_BACKUP_STORAGE_KEY);
+    const backupTexto = lerStorageUsuarioAdicionarCapitulo(
+      FILE_BACKUP_STORAGE_KEY,
+      userId
+    );
     const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
 
     if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
@@ -421,14 +439,15 @@ function carregarBackupArquivosObras(): ArquivosObrasBackup {
       }
     });
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioAdicionarCapitulo(
       FILE_BACKUP_STORAGE_KEY,
-      JSON.stringify(backupNormalizado)
+      userId,
+      backupNormalizado
     );
 
     return backupNormalizado;
   } catch {
-    localStorage.setItem(FILE_BACKUP_STORAGE_KEY, JSON.stringify({}));
+    salvarJsonStorageUsuarioAdicionarCapitulo(FILE_BACKUP_STORAGE_KEY, userId, {});
     return {};
   }
 }
@@ -449,9 +468,9 @@ function obterChavesBackupArquivoAdicionarCapitulo(
   );
 }
 
-function sincronizarBackupArquivosObras(obras: ObraLocal[]) {
+function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
   try {
-    const backupAtual = carregarBackupArquivosObras();
+    const backupAtual = carregarBackupArquivosObras(userId);
 
     obras.forEach((obra) => {
       const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
@@ -463,7 +482,11 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[]) {
       }
     });
 
-    localStorage.setItem(FILE_BACKUP_STORAGE_KEY, JSON.stringify(backupAtual));
+    salvarJsonStorageUsuarioAdicionarCapitulo(
+      FILE_BACKUP_STORAGE_KEY,
+      userId,
+      backupAtual
+    );
   } catch {
     // Se o backup falhar, a criação do capítulo continua funcionando normalmente.
   }
@@ -740,10 +763,14 @@ function mesclarObrasComSupabase(
   return [...obrasMescladas, ...obrasSomenteLocais];
 }
 
-function carregarObrasLocais() {
-  const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
+function carregarObrasLocais(userId = "") {
+  const userIdLimpo = userId.trim();
+  const obrasSalvasTexto = lerStorageUsuarioAdicionarCapitulo(
+    STORAGE_KEY,
+    userIdLimpo
+  );
   const obrasSalvasJson = obrasSalvasTexto ? JSON.parse(obrasSalvasTexto) : [];
-  const backupArquivosObras = carregarBackupArquivosObras();
+  const backupArquivosObras = carregarBackupArquivosObras(userIdLimpo);
 
   const obrasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
     ? obrasSalvasJson.map((obra, index) =>
@@ -754,13 +781,27 @@ function carregarObrasLocais() {
       )
     : [];
 
-  sincronizarBackupArquivosObras(obrasNormalizadas);
-  localStorage.setItem(
+  const obrasComAutorCorrigido = userIdLimpo
+    ? obrasNormalizadas.map((obra) => ({
+        ...obra,
+        autorId: obra.autorId?.trim() || userIdLimpo,
+      }))
+    : obrasNormalizadas;
+
+  const obrasDoUsuario = userIdLimpo
+    ? obrasComAutorCorrigido.filter((obra) =>
+        obraPertenceAoUsuario(obra, userIdLimpo)
+      )
+    : obrasComAutorCorrigido;
+
+  sincronizarBackupArquivosObras(obrasDoUsuario, userIdLimpo);
+  salvarJsonStorageUsuarioAdicionarCapitulo(
     STORAGE_KEY,
-    JSON.stringify(obrasNormalizadas.map(prepararObraAdicionarCapituloParaStorage))
+    userIdLimpo,
+    obrasDoUsuario.map(prepararObraAdicionarCapituloParaStorage)
   );
 
-  return obrasNormalizadas;
+  return obrasDoUsuario;
 }
 
 function normalizarUsuarioId(userId: string) {
@@ -795,63 +836,6 @@ function atualizarObrasLocaisDoUsuario(
   return [...obrasDoUsuario, ...outrasObrasLocais];
 }
 
-function normalizarNotificacao(
-  notificacao: Partial<NotificacaoLocal>
-): NotificacaoLocal {
-  const obraId = typeof notificacao.obraId === "string" ? notificacao.obraId : "";
-  const capituloId =
-    typeof notificacao.capituloId === "string" ? notificacao.capituloId : "";
-
-  return {
-    id:
-      typeof notificacao.id === "string" && notificacao.id.trim()
-        ? notificacao.id
-        : criarId(),
-    tipo: "novo-capitulo",
-    titulo:
-      typeof notificacao.titulo === "string" && notificacao.titulo.trim()
-        ? notificacao.titulo
-        : "Novo capítulo publicado",
-    mensagem:
-      typeof notificacao.mensagem === "string" && notificacao.mensagem.trim()
-        ? notificacao.mensagem
-        : "Uma obra recebeu um novo capítulo.",
-    obraId,
-    obraTitulo:
-      typeof notificacao.obraTitulo === "string" && notificacao.obraTitulo.trim()
-        ? notificacao.obraTitulo
-        : "Obra não informada",
-    autor:
-      typeof notificacao.autor === "string" && notificacao.autor.trim()
-        ? notificacao.autor
-        : "Autor não informado",
-    capituloId,
-    capituloTitulo:
-      typeof notificacao.capituloTitulo === "string" &&
-      notificacao.capituloTitulo.trim()
-        ? notificacao.capituloTitulo
-        : "Capítulo não informado",
-    href:
-      typeof notificacao.href === "string" && notificacao.href.trim()
-        ? notificacao.href
-        : obraId && capituloId
-          ? `/ler-capitulo?obraId=${obraId}&capituloId=${capituloId}`
-          : "/notificacoes",
-    lida: Boolean(notificacao.lida),
-    criadaEm:
-      typeof notificacao.criadaEm === "string" && notificacao.criadaEm.trim()
-        ? notificacao.criadaEm
-        : new Date().toISOString(),
-    obraPublicada: Boolean(notificacao.obraPublicada),
-    capa: typeof notificacao.capa === "string" ? notificacao.capa : "",
-    classificacaoIndicativa:
-      typeof notificacao.classificacaoIndicativa === "string" &&
-      notificacao.classificacaoIndicativa.trim()
-        ? notificacao.classificacaoIndicativa
-        : "Não informada",
-  };
-}
-
 function criarNotificacaoNovoCapitulo(
   obra: ObraLocal,
   capitulo: CapituloLocal,
@@ -879,41 +863,6 @@ function criarNotificacaoNovoCapitulo(
   };
 }
 
-function carregarNotificacoesAtuais() {
-  try {
-    const notificacoesTexto = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    const notificacoesJson = notificacoesTexto
-      ? JSON.parse(notificacoesTexto)
-      : [];
-
-    return Array.isArray(notificacoesJson)
-      ? notificacoesJson.map((notificacao) =>
-          normalizarNotificacao(notificacao as Partial<NotificacaoLocal>)
-        )
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function salvarNotificacaoInterna(notificacao: NotificacaoLocal) {
-  const notificacoesAtuais = carregarNotificacoesAtuais();
-  const notificacaoNormalizada = normalizarNotificacao(notificacao);
-  const notificacoesAtualizadas = [
-    notificacaoNormalizada,
-    ...notificacoesAtuais,
-  ].slice(0, 100);
-
-  localStorage.setItem(
-    NOTIFICATIONS_STORAGE_KEY,
-    JSON.stringify(notificacoesAtualizadas)
-  );
-}
-
-function criarStorageUsuarioAdicionarCapituloKey(userId: string) {
-  return `${USER_WORKS_STORAGE_PREFIX}:${userId.trim()}`;
-}
-
 function ehDataUrlAdicionarCapitulo(valor: string) {
   return valor.startsWith("data:");
 }
@@ -937,24 +886,24 @@ function salvarObrasAdicionarCapituloStorage(
   obrasParaSalvar: ObraLocal[],
   userId = ""
 ) {
+  const userIdLimpo = userId.trim();
   const obrasSemArquivosPesados = obrasParaSalvar.map(
     prepararObraAdicionarCapituloParaStorage
   );
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasSemArquivosPesados));
+  const obrasParaStorage = userIdLimpo
+    ? obrasSemArquivosPesados.filter((obra) =>
+        obraPertenceAoUsuario(obra, userIdLimpo)
+      )
+    : obrasSemArquivosPesados;
 
-  if (userId.trim()) {
-    const obrasDoUsuario = obrasSemArquivosPesados.filter((obra) =>
-      obraPertenceAoUsuario(obra, userId)
-    );
+  salvarJsonStorageUsuarioAdicionarCapitulo(
+    STORAGE_KEY,
+    userIdLimpo,
+    obrasParaStorage
+  );
 
-    localStorage.setItem(
-      criarStorageUsuarioAdicionarCapituloKey(userId),
-      JSON.stringify(obrasDoUsuario)
-    );
-  }
-
-  sincronizarBackupArquivosObras(obrasParaSalvar);
+  sincronizarBackupArquivosObras(obrasParaSalvar, userIdLimpo);
 }
 
 async function registrarDiarioNovoCapitulo({
@@ -1009,42 +958,10 @@ async function registrarDiarioNovoCapitulo({
   }
 }
 
-async function registrarNotificacaoNovoCapituloSupabase(
-  notificacao: NotificacaoLocal,
-  autorId: string
+function registrarNotificacaoNovoCapituloLocal(
+  notificacao: NotificacaoLocal
 ) {
-  try {
-    const criadoEm = notificacao.criadaEm || new Date().toISOString();
-    const payload = {
-      user_id: autorId,
-      autor_id: autorId,
-      tipo: "novo_capitulo",
-      titulo: notificacao.titulo,
-      mensagem: notificacao.mensagem,
-      obra_id: notificacao.obraId,
-      capitulo_id: notificacao.capituloId,
-      href: notificacao.href,
-      lida: false,
-      visibilidade: notificacao.obraPublicada ? "publico" : "privado",
-      metadata: {
-        obra_titulo: notificacao.obraTitulo,
-        autor: notificacao.autor,
-        capitulo_titulo: notificacao.capituloTitulo,
-        capa: notificacao.capa,
-        classificacao_indicativa: notificacao.classificacaoIndicativa,
-      },
-      criado_em: criadoEm,
-      atualizada_em: criadoEm,
-    };
-
-    const { error } = await supabase.from("notificacoes").insert(payload);
-
-    if (error) {
-      console.warn("Não consegui registrar notificação remota:", error.message);
-    }
-  } catch (error) {
-    console.warn("Não consegui acessar notificações remotas:", error);
-  }
+  return notificacao;
 }
 
 export default function AdicionarCapituloPage() {
@@ -1067,6 +984,7 @@ export default function AdicionarCapituloPage() {
   const [arquivoImportadoErro, setArquivoImportadoErro] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1097,8 +1015,11 @@ export default function AdicionarCapituloPage() {
 
     const params = new URLSearchParams(window.location.search);
     const obraIdParam = params.get("obraId") || "";
-
-    setObraId(obraIdParam);
+    const atualizarObraIdTimer = window.setTimeout(() => {
+      if (!cancelado) {
+        setObraId(obraIdParam);
+      }
+    }, 0);
 
     async function carregarDados() {
       try {
@@ -1126,7 +1047,7 @@ export default function AdicionarCapituloPage() {
         let obrasLocais: ObraLocal[] = [];
 
         try {
-          todasObrasLocais = carregarObrasLocais();
+          todasObrasLocais = carregarObrasLocais(user.id);
           obrasLocais = aplicarAutorProfileAdicionarCapitulo(
             filtrarObrasDoUsuario(todasObrasLocais, user.id),
             user.id,
@@ -1142,9 +1063,12 @@ export default function AdicionarCapituloPage() {
         try {
           const { data, error } = await supabase
             .from("obras")
-            .select("*, capitulos (*)")
+            .select(
+              "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em,capitulos(id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em)"
+            )
             .eq("user_id", user.id)
-            .order("criada_em", { ascending: false });
+            .order("criada_em", { ascending: false })
+            .limit(80);
 
           if (!error && Array.isArray(data)) {
             const obrasLocaisPorId = new Map(
@@ -1153,9 +1077,9 @@ export default function AdicionarCapituloPage() {
 
             const obrasSupabase = data.map((obra, index) =>
               normalizarObraSupabase(
-                obra as SupabaseObraRow,
+                obra as unknown as SupabaseObraRow,
                 index,
-                obrasLocaisPorId.get((obra as SupabaseObraRow).id),
+                obrasLocaisPorId.get((obra as unknown as SupabaseObraRow).id),
                 nomeProfileAutor
               )
             );
@@ -1199,6 +1123,7 @@ export default function AdicionarCapituloPage() {
 
     return () => {
       cancelado = true;
+      window.clearTimeout(atualizarObraIdTimer);
     };
   }, [router]);
 
@@ -1228,7 +1153,7 @@ export default function AdicionarCapituloPage() {
   }, [titulo, texto]);
 
   function salvarObras(novasObras: ObraLocal[]) {
-    const backupArquivosObras = carregarBackupArquivosObras();
+    const backupArquivosObras = carregarBackupArquivosObras(usuarioIdLogado);
     const obrasNormalizadas = novasObras.map((obra, index) =>
       restaurarArquivoObraComBackup(
         normalizarObra(obra, index),
@@ -1244,7 +1169,7 @@ export default function AdicionarCapituloPage() {
     let todasObrasLocaisAtuais: ObraLocal[] = [];
 
     try {
-      todasObrasLocaisAtuais = carregarObrasLocais();
+      todasObrasLocaisAtuais = carregarObrasLocais(usuarioIdLogado);
     } catch {
       todasObrasLocaisAtuais = [];
     }
@@ -1494,17 +1419,9 @@ export default function AdicionarCapituloPage() {
         criadoEm: novoCapitulo.criadoEm || criadoEm,
       });
 
-      void registrarNotificacaoNovoCapituloSupabase(
-        novaNotificacao,
-        user.id
+      setNotificacaoCriada(
+        registrarNotificacaoNovoCapituloLocal(novaNotificacao)
       );
-
-      try {
-        salvarNotificacaoInterna(novaNotificacao);
-        setNotificacaoCriada(novaNotificacao);
-      } catch {
-        setNotificacaoCriada(null);
-      }
 
       setCapituloCriado(novoCapitulo);
       setTitulo("");
@@ -1558,7 +1475,7 @@ export default function AdicionarCapituloPage() {
               Volte para Minhas Obras e clique novamente em Adicionar capítulo.
             </p>
 
-            <Link href="/minhas-obras" style={emptyButtonStyle}>
+            <Link href="/painel-autor" style={emptyButtonStyle}>
               Ir para Minhas Obras
             </Link>
           </div>
@@ -1567,7 +1484,7 @@ export default function AdicionarCapituloPage() {
     );
   }
 
-  const minhaObraHref = `/minha-obra?obraId=${obraAtual.id}`;
+  const minhaObraHref = "/painel-autor";
   const capituloCriadoHref = capituloCriado
     ? criarHrefLeituraCapitulo(
         obraAtual,
@@ -1600,6 +1517,28 @@ export default function AdicionarCapituloPage() {
               ADICIONAR CAPÍTULO
             </span>
           </Link>
+
+          {isDesktop ? (
+            <Link
+              href="/notificacoes"
+              style={desktopNotificationButtonStyle}
+              aria-label={
+                notificacoesNaoLidas > 0
+                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                  : "Notificações"
+              }
+            >
+              N
+
+              {notificacoesNaoLidas > 0 ? (
+                <span style={desktopNotificationBadgeStyle}>
+                  {notificacoesNaoLidas > 99
+                    ? "99+"
+                    : notificacoesNaoLidas}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
         </header>
 
         {erro && (
@@ -1724,7 +1663,7 @@ export default function AdicionarCapituloPage() {
 
                 {notificacaoCriada && (
                   <span style={notificationCreatedStyle}>
-                    Notificação criada.
+                    Notificação local registrada.
                   </span>
                 )}
 
@@ -1929,7 +1868,6 @@ const topStyle: CSSProperties = {
 };
 
 
-
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
@@ -1990,8 +1928,54 @@ const titleHeaderStyle: CSSProperties = {
 
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
+  position: "relative",
   marginTop: "6px",
   marginBottom: "22px",
+};
+
+const desktopNotificationButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  right: 0,
+  transform: "translateY(-50%)",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+  zIndex: 2,
+};
+
+const desktopNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
 };
 
 const headerTitleLinkStyle: CSSProperties = {
@@ -2040,7 +2024,6 @@ const headerTitleTextStyle: CSSProperties = {
 const desktopHeaderTitleTextStyle: CSSProperties = {
   ...headerTitleTextStyle,
 };
-
 
 
 const heroBoxStyle: CSSProperties = {
@@ -2828,10 +2811,6 @@ const emptyButtonStyle: CSSProperties = {
   whiteSpace: "normal",
   ...safeTextStyle,
 };
-
-
-
-
 
 
 const desktopContainerStyle: CSSProperties = {

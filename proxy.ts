@@ -4,13 +4,10 @@ import { NextResponse, type NextRequest } from "next/server";
 const rotasProtegidas = [
   "/publicar",
   "/painel-autor",
-  "/minhas-obras",
-  "/minha-obra",
   "/editar-obra",
   "/editar-capitulo",
   "/adicionar-capitulo",
   "/ver-arquivo",
-  "/biblioteca",
   "/seguindo",
   "/notificacoes",
   "/configuracoes",
@@ -74,10 +71,12 @@ export async function proxy(request: NextRequest) {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
-  const supabasePublishableKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() || "";
+  const supabasePublicKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+    "";
 
-  if (!supabaseUrl || !supabasePublishableKey) {
+  if (!supabaseUrl || !supabasePublicKey) {
     if (precisaLogin) {
       const redirectUrl = request.nextUrl.clone();
 
@@ -95,7 +94,7 @@ export async function proxy(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient(supabaseUrl, supabasePublishableKey, {
+  const supabase = createServerClient(supabaseUrl, supabasePublicKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
@@ -145,13 +144,10 @@ export const config = {
   matcher: [
     "/publicar/:path*",
     "/painel-autor/:path*",
-    "/minhas-obras/:path*",
-    "/minha-obra/:path*",
     "/editar-obra/:path*",
     "/editar-capitulo/:path*",
     "/adicionar-capitulo/:path*",
     "/ver-arquivo/:path*",
-    "/biblioteca/:path*",
     "/seguindo/:path*",
     "/notificacoes/:path*",
     "/configuracoes/:path*",

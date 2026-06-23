@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
 
 type TemaVisual =
   | "branco"
@@ -48,6 +49,45 @@ type ResumoLocal = {
 
 const CONFIG_STORAGE_KEY = "historietas-configuracoes-conta";
 const THEME_STORAGE_KEY = "historietas-tema-visual";
+
+function criarStorageKeyUsuarioConfiguracoes(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function lerStorageUsuarioConfiguracoes(chave: string, userId = "") {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(
+      criarStorageKeyUsuarioConfiguracoes(chave, userId)
+    );
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioConfiguracoes(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioConfiguracoes(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage é fallback; as configurações continuam em memória.
+  }
+}
 
 const TEMAS_VISUAIS: Record<
   TemaVisual,
@@ -445,9 +485,9 @@ function obterTemaVisualSeguro(valor: unknown): TemaVisual {
   return "original";
 }
 
-function carregarTemaVisualSalvo() {
+function carregarTemaVisualSalvo(userId = "") {
   try {
-    const texto = localStorage.getItem(THEME_STORAGE_KEY);
+    const texto = lerStorageUsuarioConfiguracoes(THEME_STORAGE_KEY, userId);
 
     if (!texto) {
       return "original";
@@ -463,8 +503,17 @@ function carregarTemaVisualSalvo() {
   }
 }
 
-function salvarTemaVisual(temaVisual: TemaVisual) {
-  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(temaVisual));
+function dispararEventoTemaVisualAtualizado() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event("historietas:tema-visual-atualizado"));
+}
+
+function salvarTemaVisual(temaVisual: TemaVisual, userId = "") {
+  salvarJsonStorageUsuarioConfiguracoes(THEME_STORAGE_KEY, userId, temaVisual);
+  dispararEventoTemaVisualAtualizado();
 }
 
 function aplicarTemaVisual(temaVisual: TemaVisual) {
@@ -522,9 +571,9 @@ function aplicarTemaVisual(temaVisual: TemaVisual) {
   document.body.dataset.historietasTemaVisual = temaVisual;
 }
 
-function carregarJsonArray(chave: string) {
+function carregarJsonArray(chave: string, userId = "") {
   try {
-    const texto = localStorage.getItem(chave);
+    const texto = lerStorageUsuarioConfiguracoes(chave, userId);
     const json: unknown = texto ? JSON.parse(texto) : [];
 
     return Array.isArray(json) ? json : [];
@@ -533,31 +582,31 @@ function carregarJsonArray(chave: string) {
   }
 }
 
-function contarItens(chave: string) {
-  return carregarJsonArray(chave).length;
+function contarItens(chave: string, userId = "") {
+  return carregarJsonArray(chave, userId).length;
 }
 
-function criarResumoLocal(): ResumoLocal {
+function criarResumoLocal(userId = ""): ResumoLocal {
   return {
-    obras: contarItens("historietas-obras"),
-    notificacoes: contarItens("historietas-notificacoes"),
-    lancamentos: contarItens("historietas-lancamentos-salvos"),
-    favoritas: contarItens("historietas-obras-favoritas"),
-    concluidas: contarItens("historietas-obras-concluidas"),
-    seguindoObras: contarItens("historietas-obras-seguidas"),
-    seguindoAutores: contarItens("historietas-autores-seguidos"),
+    obras: contarItens("historietas-obras", userId),
+    notificacoes: contarItens("historietas-notificacoes", userId),
+    lancamentos: contarItens("historietas-lancamentos-salvos", userId),
+    favoritas: contarItens("historietas-obras-favoritas", userId),
+    concluidas: contarItens("historietas-obras-concluidas", userId),
+    seguindoObras: contarItens("historietas-obras-seguidas", userId),
+    seguindoAutores: contarItens("historietas-autores-seguidos", userId),
   };
 }
 
-function carregarPreferencias(): PreferenciasConta {
+function carregarPreferencias(userId = ""): PreferenciasConta {
   try {
-    const texto = localStorage.getItem(CONFIG_STORAGE_KEY);
+    const texto = lerStorageUsuarioConfiguracoes(CONFIG_STORAGE_KEY, userId);
     const json: unknown = texto ? JSON.parse(texto) : null;
 
     if (!json || typeof json !== "object") {
       return {
         ...preferenciasPadrao,
-        temaVisual: carregarTemaVisualSalvo(),
+        temaVisual: carregarTemaVisualSalvo(userId),
       };
     }
 
@@ -585,38 +634,40 @@ function carregarPreferencias(): PreferenciasConta {
           ? preferencias.reduzirEfeitos
           : false,
       temaVisual: obterTemaVisualSeguro(
-        preferencias.temaVisual || carregarTemaVisualSalvo()
+        preferencias.temaVisual || carregarTemaVisualSalvo(userId)
       ),
     };
   } catch {
     return {
       ...preferenciasPadrao,
-      temaVisual: carregarTemaVisualSalvo(),
+      temaVisual: carregarTemaVisualSalvo(userId),
     };
   }
 }
 
-function salvarPreferencias(preferencias: PreferenciasConta) {
-  localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(preferencias));
-  salvarTemaVisual(preferencias.temaVisual);
+function salvarPreferencias(preferencias: PreferenciasConta, userId = "") {
+  salvarJsonStorageUsuarioConfiguracoes(CONFIG_STORAGE_KEY, userId, preferencias);
+  salvarTemaVisual(preferencias.temaVisual, userId);
   aplicarTemaVisual(preferencias.temaVisual);
+  dispararEventoTemaVisualAtualizado();
 }
 
-function criarBackupLocal() {
+function criarBackupLocal(userId = "") {
   const backup: Record<string, unknown> = {};
 
   CHAVES_RESUMO.forEach((chave) => {
     try {
-      const valor = localStorage.getItem(chave);
+      const valor = lerStorageUsuarioConfiguracoes(chave, userId);
       backup[chave] = valor ? JSON.parse(valor) : null;
     } catch {
       backup[chave] = null;
     }
   });
 
-  backup[CONFIG_STORAGE_KEY] = carregarPreferencias();
+  backup[CONFIG_STORAGE_KEY] = carregarPreferencias(userId);
   backup.exportadoEm = new Date().toISOString();
   backup.projeto = "Historietas";
+  backup.userId = userId;
 
   return JSON.stringify(backup, null, 2);
 }
@@ -649,6 +700,7 @@ function criarLoginHrefConfiguracoes() {
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
+  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [preferencias, setPreferencias] =
     useState<PreferenciasConta>(preferenciasPadrao);
   const [resumo, setResumo] = useState<ResumoLocal>(resumoPadrao);
@@ -657,6 +709,7 @@ export default function ConfiguracoesPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [adminLiberado, setAdminLiberado] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     let cancelado = false;
@@ -670,10 +723,12 @@ export default function ConfiguracoesPage() {
         }
 
         if (error || !data.user) {
+          setUsuarioIdLogado("");
           router.replace(criarLoginHrefConfiguracoes());
           return;
         }
 
+        setUsuarioIdLogado(data.user.id);
         setVerificandoAcesso(false);
       } catch {
         if (!cancelado) {
@@ -697,10 +752,19 @@ export default function ConfiguracoesPage() {
     }
 
     atualizarModoDesktop();
-    mediaQuery.addEventListener("change", atualizarModoDesktop);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", atualizarModoDesktop);
+
+      return () => {
+        mediaQuery.removeEventListener("change", atualizarModoDesktop);
+      };
+    }
+
+    mediaQuery.addListener(atualizarModoDesktop);
 
     return () => {
-      mediaQuery.removeEventListener("change", atualizarModoDesktop);
+      mediaQuery.removeListener(atualizarModoDesktop);
     };
   }, []);
 
@@ -709,13 +773,19 @@ export default function ConfiguracoesPage() {
       return;
     }
 
-    const preferenciasCarregadas = carregarPreferencias();
+    const carregarPreferenciasTimer = window.setTimeout(() => {
+      const preferenciasCarregadas = carregarPreferencias(usuarioIdLogado);
 
-    setPreferencias(preferenciasCarregadas);
-    aplicarTemaVisual(preferenciasCarregadas.temaVisual);
-    setResumo(criarResumoLocal());
-    setResumoAtualizadoEm(new Date().toLocaleTimeString("pt-BR"));
-  }, [verificandoAcesso]);
+      setPreferencias(preferenciasCarregadas);
+      aplicarTemaVisual(preferenciasCarregadas.temaVisual);
+      setResumo(criarResumoLocal(usuarioIdLogado));
+      setResumoAtualizadoEm(new Date().toLocaleTimeString("pt-BR"));
+    }, 0);
+
+    return () => {
+      window.clearTimeout(carregarPreferenciasTimer);
+    };
+  }, [verificandoAcesso, usuarioIdLogado]);
 
   useEffect(() => {
     if (verificandoAcesso) {
@@ -726,10 +796,10 @@ export default function ConfiguracoesPage() {
 
     async function verificarAdmin() {
       try {
-        const { data: sessaoResposta } = await supabase.auth.getSession();
-        const user = sessaoResposta.session?.user || null;
+        const { data, error: userError } = await supabase.auth.getUser();
+        const user = data.user || null;
 
-        if (!user) {
+        if (!user || userError) {
           if (!cancelado) {
             setAdminLiberado(false);
           }
@@ -737,10 +807,12 @@ export default function ConfiguracoesPage() {
           return;
         }
 
-        const { data, error } = await supabase.rpc("usuario_e_admin");
+        const { data: adminLiberadoResposta, error } = await supabase.rpc(
+          "usuario_e_admin"
+        );
 
         if (!cancelado) {
-          setAdminLiberado(!error && data === true);
+          setAdminLiberado(!error && adminLiberadoResposta === true);
         }
       } catch {
         if (!cancelado) {
@@ -749,12 +821,17 @@ export default function ConfiguracoesPage() {
       }
     }
 
-    verificarAdmin();
+    void verificarAdmin();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      verificarAdmin();
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setAdminLiberado(false);
+        return;
+      }
+
+      void verificarAdmin();
     });
 
     return () => {
@@ -779,12 +856,12 @@ export default function ConfiguracoesPage() {
       temaVisual,
     }));
 
-    salvarTemaVisual(temaVisual);
+    salvarTemaVisual(temaVisual, usuarioIdLogado);
     aplicarTemaVisual(temaVisual);
   }
 
   function salvar() {
-    salvarPreferencias(preferencias);
+    salvarPreferencias(preferencias, usuarioIdLogado);
     setMensagem("Configurações salvas.");
 
     window.setTimeout(() => {
@@ -794,7 +871,7 @@ export default function ConfiguracoesPage() {
 
   async function copiarBackup() {
     try {
-      await copiarTexto(criarBackupLocal());
+      await copiarTexto(criarBackupLocal(usuarioIdLogado));
       setMensagem("Dados copiados para a área de transferência.");
     } catch {
       setMensagem("Não consegui copiar os dados agora.");
@@ -807,7 +884,7 @@ export default function ConfiguracoesPage() {
 
   function baixarBackup() {
     try {
-      const backup = criarBackupLocal();
+      const backup = criarBackupLocal(usuarioIdLogado);
       const dataAtual = new Date().toISOString().slice(0, 10);
       const arquivo = new Blob([backup], {
         type: "application/json;charset=utf-8",
@@ -833,7 +910,7 @@ export default function ConfiguracoesPage() {
   }
 
   function atualizarResumo() {
-    setResumo(criarResumoLocal());
+    setResumo(criarResumoLocal(usuarioIdLogado));
     setResumoAtualizadoEm(new Date().toLocaleTimeString("pt-BR"));
     setMensagem("Resumo atualizado.");
 
@@ -892,6 +969,28 @@ export default function ConfiguracoesPage() {
               CONFIGURAÇÕES
             </span>
           </Link>
+
+          {isDesktop ? (
+            <Link
+              href="/notificacoes"
+              style={desktopNotificationButtonStyle}
+              aria-label={
+                notificacoesNaoLidas > 0
+                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                  : "Notificações"
+              }
+            >
+              N
+
+              {notificacoesNaoLidas > 0 ? (
+                <span style={desktopNotificationBadgeStyle}>
+                  {notificacoesNaoLidas > 99
+                    ? "99+"
+                    : notificacoesNaoLidas}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
         </header>
 
         {mensagem && <span style={messageStyle}>{mensagem}</span>}
@@ -1311,7 +1410,53 @@ const pageTitleTextStyle: CSSProperties = {
 
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
+  position: "relative",
   marginBottom: "18px",
+};
+
+const desktopNotificationButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  right: 0,
+  transform: "translateY(-50%)",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+  zIndex: 2,
+};
+
+const desktopNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
 };
 
 const desktopTitleHomeLinkStyle: CSSProperties = {

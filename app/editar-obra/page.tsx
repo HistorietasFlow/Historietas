@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
+import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 
 type CapituloLocal = {
   id: string;
@@ -88,7 +90,6 @@ type CapituloSupabaseRow = {
 };
 
 const STORAGE_KEY = "historietas-obras";
-const USER_WORKS_STORAGE_PREFIX = "historietas-obras-usuario";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_ARQUIVO_OBRA = 2 * 1024 * 1024;
@@ -152,6 +153,43 @@ const OPCOES_TAGS_OBRA = [
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
+function criarStorageKeyUsuarioEditarObra(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function lerStorageUsuarioEditarObra(chave: string, userId: string) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(criarStorageKeyUsuarioEditarObra(chave, userId));
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioEditarObra(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioEditarObra(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage é fallback; a edição continua com o estado em memória.
+  }
+}
+
 function contarLetrasNumeros(texto: string) {
   return (texto.match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9]/g) || []).length;
 }
@@ -210,19 +248,6 @@ function prepararValorEditavel(
   };
 }
 
-
-function contarPalavras(texto: string) {
-  return texto.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function normalizarTexto(texto: string) {
-  return texto
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
 function formatarGeneroEdicaoObra(genero: string) {
   const generoLimpo = genero.trim();
   const generoNormalizado = normalizarTexto(generoLimpo);
@@ -236,16 +261,6 @@ function formatarGeneroEdicaoObra(genero: string) {
   }
 
   return generoLimpo || "Não informado";
-}
-
-function criarSlugBase(titulo: string) {
-  const slug = normalizarTexto(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "obra";
 }
 
 function criarLoginHrefEditarObra(obraId?: string) {
@@ -296,6 +311,7 @@ async function carregarNomeAutorProfileEdicaoObra(
       .from("profiles")
       .select("nome")
       .eq("user_id", userIdLimpo)
+      .limit(1)
       .maybeSingle();
 
     if (!error) {
@@ -314,6 +330,7 @@ async function carregarNomeAutorProfileEdicaoObra(
       .from("profiles")
       .select("nome")
       .eq("id", userIdLimpo)
+      .limit(1)
       .maybeSingle();
 
     if (!error) {
@@ -590,13 +607,16 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
-function carregarBackupArquivosObras(): ArquivosObrasBackup {
-  if (typeof window === "undefined") {
+function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
+  if (typeof window === "undefined" || !userId.trim()) {
     return {};
   }
 
   try {
-    const backupTexto = localStorage.getItem(FILE_BACKUP_STORAGE_KEY);
+    const backupTexto = lerStorageUsuarioEditarObra(
+      FILE_BACKUP_STORAGE_KEY,
+      userId
+    );
     const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
 
     if (!backupJson || typeof backupJson !== "object" || Array.isArray(backupJson)) {
@@ -613,9 +633,10 @@ function carregarBackupArquivosObras(): ArquivosObrasBackup {
       }
     });
 
-    localStorage.setItem(
+    salvarJsonStorageUsuarioEditarObra(
       FILE_BACKUP_STORAGE_KEY,
-      JSON.stringify(backupNormalizado)
+      userId,
+      backupNormalizado
     );
 
     return backupNormalizado;
@@ -626,14 +647,15 @@ function carregarBackupArquivosObras(): ArquivosObrasBackup {
 
 function salvarArquivoObraNoBackup(
   obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">,
-  arquivo: ArquivoObraLocal | null
+  arquivo: ArquivoObraLocal | null,
+  userId = ""
 ) {
-  if (!obra.id.trim() || typeof window === "undefined") {
+  if (!obra.id.trim() || typeof window === "undefined" || !userId.trim()) {
     return;
   }
 
   try {
-    const backupAtual = carregarBackupArquivosObras();
+    const backupAtual = carregarBackupArquivosObras(userId);
 
     obterChavesBackupArquivoEdicaoObra(obra).forEach((chave) => {
       if (arquivo) {
@@ -643,19 +665,23 @@ function salvarArquivoObraNoBackup(
       }
     });
 
-    localStorage.setItem(FILE_BACKUP_STORAGE_KEY, JSON.stringify(backupAtual));
+    salvarJsonStorageUsuarioEditarObra(
+      FILE_BACKUP_STORAGE_KEY,
+      userId,
+      backupAtual
+    );
   } catch {
     // Mantém o salvamento principal funcionando mesmo se o backup falhar.
   }
 }
 
-function sincronizarBackupArquivosObras(obras: ObraLocal[]) {
-  if (typeof window === "undefined") {
+function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
+  if (typeof window === "undefined" || !userId.trim()) {
     return;
   }
 
   try {
-    const backupAtual = carregarBackupArquivosObras();
+    const backupAtual = carregarBackupArquivosObras(userId);
 
     obras.forEach((obra) => {
       if (obra.arquivoObra) {
@@ -665,7 +691,11 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[]) {
       }
     });
 
-    localStorage.setItem(FILE_BACKUP_STORAGE_KEY, JSON.stringify(backupAtual));
+    salvarJsonStorageUsuarioEditarObra(
+      FILE_BACKUP_STORAGE_KEY,
+      userId,
+      backupAtual
+    );
   } catch {
     // Backup é uma proteção extra. Não deve travar a página.
   }
@@ -704,12 +734,6 @@ function usuarioPodeEditarObraLocal(obra: ObraLocal, userId: string) {
   return Boolean(usuarioAtual) && (!autorIdObra || autorIdObra === usuarioAtual);
 }
 
-function obraPertenceAOutroUsuario(obra: ObraLocal, userId: string) {
-  const usuarioAtual = normalizarIdUsuario(userId);
-  const autorIdObra = normalizarIdUsuario(obra.autorId || "");
-
-  return Boolean(usuarioAtual && autorIdObra && autorIdObra !== usuarioAtual);
-}
 
 function salvarObrasDoUsuarioPreservandoOutrasContas(
   obrasDoUsuario: ObraLocal[],
@@ -719,71 +743,25 @@ function salvarObrasDoUsuarioPreservandoOutrasContas(
     return obrasDoUsuario;
   }
 
+  const usuarioId = userId.trim();
   const obrasDoUsuarioComDono = obrasDoUsuario.map((obra, index) =>
     normalizarObra(
       {
         ...obra,
-        autorId: obra.autorId || userId,
+        autorId: obra.autorId || usuarioId,
       },
       index
     )
   );
 
-  try {
-    const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
-    const obrasSalvasJson: unknown = obrasSalvasTexto
-      ? JSON.parse(obrasSalvasTexto)
-      : [];
+  salvarJsonStorageUsuarioEditarObra(
+    STORAGE_KEY,
+    usuarioId,
+    obrasDoUsuarioComDono
+  );
+  sincronizarBackupArquivosObras(obrasDoUsuarioComDono, usuarioId);
 
-    const obrasSalvasNormalizadas: ObraLocal[] = Array.isArray(obrasSalvasJson)
-      ? (obrasSalvasJson as Partial<ObraLocal>[]).map((obra, index) =>
-          normalizarObra(obra, index)
-        )
-      : [];
-
-    const idsAtualizados = new Set(
-      obrasDoUsuarioComDono.map((obra) => obra.id).filter(Boolean)
-    );
-    const slugsAtualizados = new Set(
-      obrasDoUsuarioComDono
-        .map((obra) => obra.slug || criarSlugBase(obra.titulo))
-        .filter(Boolean)
-    );
-
-    const obrasDeOutrasContas = obrasSalvasNormalizadas.filter((obra) => {
-      if (idsAtualizados.has(obra.id)) {
-        return false;
-      }
-
-      const slugObra = obra.slug || criarSlugBase(obra.titulo);
-
-      if (slugsAtualizados.has(slugObra)) {
-        return false;
-      }
-
-      return obraPertenceAOutroUsuario(obra, userId);
-    });
-
-    const obrasPreservadas = [...obrasDoUsuarioComDono, ...obrasDeOutrasContas];
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasPreservadas));
-    localStorage.setItem(
-      criarStorageUsuarioEditarObraKey(userId),
-      JSON.stringify(obrasDoUsuarioComDono),
-    );
-    sincronizarBackupArquivosObras(obrasPreservadas);
-
-    return obrasDoUsuarioComDono;
-  } catch {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasDoUsuarioComDono));
-    localStorage.setItem(
-      criarStorageUsuarioEditarObraKey(userId),
-      JSON.stringify(obrasDoUsuarioComDono),
-    );
-    sincronizarBackupArquivosObras(obrasDoUsuarioComDono);
-
-    return obrasDoUsuarioComDono;
-  }
+  return obrasDoUsuarioComDono;
 }
 
 function normalizarCapitulo(
@@ -896,9 +874,6 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
   };
 }
 
-function criarStorageUsuarioEditarObraKey(userId: string) {
-  return `${USER_WORKS_STORAGE_PREFIX}:${userId.trim()}`;
-}
 
 function obterChavesBackupArquivoEdicaoObra(
   obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "link">,
@@ -915,36 +890,14 @@ function obterChavesBackupArquivoEdicaoObra(
   );
 }
 
-function obterChaveComparacaoObraEdicaoObra(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
-  return obra.id || obra.slug || criarSlugBase(obra.titulo);
-}
-
-function mesclarListasObrasEdicaoObra(...listas: ObraLocal[][]) {
-  const obrasMescladas: ObraLocal[] = [];
-  const chavesUsadas = new Set<string>();
-
-  listas.forEach((lista) => {
-    lista.forEach((obra) => {
-      const chave = obterChaveComparacaoObraEdicaoObra(obra);
-
-      if (!chave || chavesUsadas.has(chave)) {
-        return;
-      }
-
-      chavesUsadas.add(chave);
-      obrasMescladas.push(obra);
-    });
-  });
-
-  return obrasMescladas;
-}
 
 function carregarObrasLocalStorageEdicaoObra(userId: string) {
   if (typeof window === "undefined") {
     return [] as ObraLocal[];
   }
 
-  const backupArquivosObras = carregarBackupArquivosObras();
+  const usuarioId = userId.trim();
+  const backupArquivosObras = carregarBackupArquivosObras(usuarioId);
 
   function normalizarLista(valor: unknown) {
     return Array.isArray(valor)
@@ -954,48 +907,28 @@ function carregarObrasLocalStorageEdicaoObra(userId: string) {
       : [];
   }
 
-  let obrasGlobais: ObraLocal[] = [];
   let obrasDoUsuario: ObraLocal[] = [];
 
   try {
-    const obrasSalvasTexto = localStorage.getItem(STORAGE_KEY);
-    const obrasSalvasJson: unknown = obrasSalvasTexto
-      ? JSON.parse(obrasSalvasTexto)
+    const obrasUsuarioTexto = lerStorageUsuarioEditarObra(STORAGE_KEY, usuarioId);
+    const obrasUsuarioJson: unknown = obrasUsuarioTexto
+      ? JSON.parse(obrasUsuarioTexto)
       : [];
-    obrasGlobais = normalizarLista(obrasSalvasJson);
-  } catch {
-    obrasGlobais = [];
-  }
 
-  try {
-    if (userId.trim()) {
-      const obrasUsuarioTexto = localStorage.getItem(
-        criarStorageUsuarioEditarObraKey(userId),
-      );
-      const obrasUsuarioJson: unknown = obrasUsuarioTexto
-        ? JSON.parse(obrasUsuarioTexto)
-        : [];
-      obrasDoUsuario = normalizarLista(obrasUsuarioJson);
-    }
+    obrasDoUsuario = normalizarLista(obrasUsuarioJson)
+      .map((obra) => ({
+        ...obra,
+        autorId: obra.autorId?.trim() || usuarioId,
+      }))
+      .filter((obra) => usuarioPodeEditarObraLocal(obra, usuarioId));
   } catch {
     obrasDoUsuario = [];
   }
 
-  const obrasMescladas = mesclarListasObrasEdicaoObra(obrasDoUsuario, obrasGlobais);
+  salvarJsonStorageUsuarioEditarObra(STORAGE_KEY, usuarioId, obrasDoUsuario);
+  sincronizarBackupArquivosObras(obrasDoUsuario, usuarioId);
 
-  sincronizarBackupArquivosObras(obrasMescladas);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(obrasMescladas));
-
-  if (userId.trim()) {
-    localStorage.setItem(
-      criarStorageUsuarioEditarObraKey(userId),
-      JSON.stringify(
-        obrasMescladas.filter((obra) => !obraPertenceAOutroUsuario(obra, userId)),
-      ),
-    );
-  }
-
-  return obrasMescladas;
+  return obrasDoUsuario;
 }
 
 async function registrarDiarioEdicaoObra({
@@ -1092,6 +1025,7 @@ function criarDesktopPreviewCoverStyle(capa: string): CSSProperties {
 export default function EditarObraPage() {
   const router = useRouter();
   const [obraId, setObraId] = useState("");
+  const [, setUsuarioIdLogado] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [obraEncontrada, setObraEncontrada] = useState(false);
@@ -1125,6 +1059,8 @@ export default function EditarObraPage() {
   const arquivoObraInputRef = useRef<HTMLInputElement | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const { notificacoesNaoLidas } = useNotificacoes();
+
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1133,12 +1069,16 @@ export default function EditarObraPage() {
       setIsDesktop(mediaQuery.matches);
     };
 
-    atualizarModoDesktop();
+    const atualizarModoDesktopTimer = window.setTimeout(
+      atualizarModoDesktop,
+      0
+    );
 
     if (typeof mediaQuery.addEventListener === "function") {
       mediaQuery.addEventListener("change", atualizarModoDesktop);
 
       return () => {
+        window.clearTimeout(atualizarModoDesktopTimer);
         mediaQuery.removeEventListener("change", atualizarModoDesktop);
       };
     }
@@ -1146,6 +1086,7 @@ export default function EditarObraPage() {
     mediaQuery.addListener(atualizarModoDesktop);
 
     return () => {
+      window.clearTimeout(atualizarModoDesktopTimer);
       mediaQuery.removeListener(atualizarModoDesktop);
     };
   }, []);
@@ -1206,7 +1147,11 @@ export default function EditarObraPage() {
       const params = new URLSearchParams(window.location.search);
       const obraIdParam = params.get("obraId") || "";
 
-      setObraId(obraIdParam);
+      window.setTimeout(() => {
+        if (!cancelado) {
+          setObraId(obraIdParam);
+        }
+      }, 0);
 
       let obrasNormalizadas: ObraLocal[] = [];
 
@@ -1218,10 +1163,15 @@ export default function EditarObraPage() {
 
         if (erroUsuario || !userId) {
           if (!cancelado) {
+            setUsuarioIdLogado("");
             router.replace(criarLoginHrefEditarObra(obraIdParam));
           }
 
           return;
+        }
+
+        if (!cancelado) {
+          setUsuarioIdLogado(userId);
         }
 
         const metadataUsuario = dadosUsuario.user?.user_metadata as
@@ -1272,9 +1222,12 @@ export default function EditarObraPage() {
 
         const { data: obraSupabase, error: erroObraSupabase } = await supabase
           .from("obras")
-          .select("*")
+          .select(
+            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+          )
           .eq("id", obraIdParam)
           .eq("user_id", userId)
+          .limit(1)
           .maybeSingle();
 
         if (erroObraSupabase) {
@@ -1292,9 +1245,11 @@ export default function EditarObraPage() {
         const { data: capitulosSupabase, error: erroCapitulosSupabase } =
           await supabase
             .from("capitulos")
-            .select("*")
+            .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
             .eq("obra_id", obraIdParam)
-            .order("ordem", { ascending: true });
+            .eq("user_id", userId)
+            .order("ordem", { ascending: true })
+            .limit(300);
 
         if (erroCapitulosSupabase) {
           console.warn(
@@ -1311,9 +1266,9 @@ export default function EditarObraPage() {
           (obra) => obra.id === obraIdParam
         );
         const obraNormalizadaSupabase = normalizarObraSupabase(
-          obraSupabase as ObraSupabaseRow,
+          obraSupabase as unknown as ObraSupabaseRow,
           Array.isArray(capitulosSupabase)
-            ? (capitulosSupabase as CapituloSupabaseRow[])
+            ? (capitulosSupabase as unknown as CapituloSupabaseRow[])
             : [],
           obraLocal,
           0
@@ -1337,7 +1292,7 @@ export default function EditarObraPage() {
         const obrasAtualizadasDoUsuario =
           salvarObrasDoUsuarioPreservandoOutrasContas(obrasAtualizadas, userId);
 
-        sincronizarBackupArquivosObras(obrasAtualizadasDoUsuario);
+        sincronizarBackupArquivosObras(obrasAtualizadasDoUsuario, userId);
 
         if (!cancelado) {
           setObras(obrasAtualizadasDoUsuario);
@@ -1352,7 +1307,7 @@ export default function EditarObraPage() {
       }
     }
 
-    carregarObra();
+    void carregarObra();
 
     return () => {
       cancelado = true;
@@ -1429,7 +1384,7 @@ export default function EditarObraPage() {
     sinopse,
   ]);
 
-  const minhaObraHref = `/minha-obra?obraId=${obraId}`;
+  const minhaObraHref = "/painel-autor";
   const autorProfileAtivo = nomeAutorProfile.trim();
   const autorPreview = autorProfileAtivo || autor.trim();
   function marcarAlteracao() {
@@ -1721,7 +1676,7 @@ export default function EditarObraPage() {
       autorFinal = nomeProfileAtualizado || autorFinal;
       setNomeAutorProfile(nomeProfileAtualizado);
 
-      const backupArquivosObras = carregarBackupArquivosObras();
+      const backupArquivosObras = carregarBackupArquivosObras(userId);
       const obraLocalAtual = obras.find((obra) => obra.id === obraId) || null;
 
       if (obraLocalAtual?.autorId && obraLocalAtual.autorId !== userId) {
@@ -1839,9 +1794,10 @@ export default function EditarObraPage() {
             link: obraLocalAtual?.link || `/obra/${obraLocalAtual?.slug || criarSlugBase(tituloFinal)}`,
           },
           null,
+          userId
         );
       } else {
-        sincronizarBackupArquivosObras(novasObrasDoUsuario);
+        sincronizarBackupArquivosObras(novasObrasDoUsuario, userId);
       }
 
       const obraAtualizadaDiario = novasObrasDoUsuario.find((obra) => obra.id === obraId);
@@ -1917,6 +1873,28 @@ export default function EditarObraPage() {
                 EDITAR OBRA
               </span>
             </Link>
+
+            {isDesktop ? (
+              <Link
+                href="/notificacoes"
+                style={desktopNotificationButtonStyle}
+                aria-label={
+                  notificacoesNaoLidas > 0
+                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                    : "Notificações"
+                }
+              >
+                N
+
+                {notificacoesNaoLidas > 0 ? (
+                  <span style={desktopNotificationBadgeStyle}>
+                    {notificacoesNaoLidas > 99
+                      ? "99+"
+                      : notificacoesNaoLidas}
+                  </span>
+                ) : null}
+              </Link>
+            ) : null}
           </header>
 
           <div style={emptyBoxStyle}>
@@ -1926,7 +1904,7 @@ export default function EditarObraPage() {
               Não encontrei essa obra na sua biblioteca.
             </p>
 
-            <Link href="/minhas-obras" style={emptyButtonStyle}>
+            <Link href="/painel-autor" style={emptyButtonStyle}>
               Voltar para Minhas Obras
             </Link>
           </div>
@@ -1954,6 +1932,28 @@ export default function EditarObraPage() {
               EDITAR OBRA
             </span>
           </Link>
+
+          {isDesktop ? (
+            <Link
+              href="/notificacoes"
+              style={desktopNotificationButtonStyle}
+              aria-label={
+                notificacoesNaoLidas > 0
+                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                  : "Notificações"
+              }
+            >
+              N
+
+              {notificacoesNaoLidas > 0 ? (
+                <span style={desktopNotificationBadgeStyle}>
+                  {notificacoesNaoLidas > 99
+                    ? "99+"
+                    : notificacoesNaoLidas}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
         </header>
 
         {erro && (
@@ -1979,7 +1979,7 @@ export default function EditarObraPage() {
                 Ver obra
               </Link>
 
-              <Link href="/minhas-obras" style={successSecondaryButtonStyle}>
+              <Link href="/painel-autor" style={successSecondaryButtonStyle}>
                 Minhas Obras
               </Link>
             </div>
@@ -2310,7 +2310,7 @@ export default function EditarObraPage() {
                 Ver obra
               </Link>
 
-              <Link href="/minhas-obras" style={isDesktop ? desktopCancelButtonStyle : cancelButtonStyle}>
+              <Link href="/painel-autor" style={isDesktop ? desktopCancelButtonStyle : cancelButtonStyle}>
                 Cancelar
               </Link>
             </div>
@@ -2428,18 +2428,18 @@ const editarObraPageCss = `
     background: var(--historietas-bottom-nav-bg, #04000A) !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/minhas-obras"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/minhas-obras"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/minhas-obras"] {
+  html[data-historietas-tema-visual] nav a[href="/painel-autor"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] {
     background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
     border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/minhas-obras"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/minhas-obras"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/minhas-obras"] .historietas-bottom-nav-icon {
+  html[data-historietas-tema-visual] nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
     background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
     border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
@@ -2596,7 +2596,53 @@ const titleHeaderStyle: CSSProperties = {
 
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
+  position: "relative",
   marginBottom: "18px",
+};
+
+const desktopNotificationButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  right: 0,
+  transform: "translateY(-50%)",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+  zIndex: 2,
+};
+
+const desktopNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
 };
 
 const headerTitleLinkStyle: CSSProperties = {

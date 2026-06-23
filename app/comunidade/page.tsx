@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
+import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
+import { useNotificacoes } from "../../components/NotificacoesProvider";
 
 type CategoriaComunidade =
   | "Geral"
@@ -114,6 +116,47 @@ const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
 const CHAVE_POSTS_SALVOS_COMUNIDADE = "historietas:comunidade:posts-salvos";
 const CHAVE_VOTOS_ENQUETES_COMUNIDADE = "historietas:comunidade:votos-enquetes";
 const POSTS_COMUNIDADE_POR_PAGINA = 50;
+
+function criarStorageKeyUsuarioComunidade(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function carregarJsonUsuarioComunidade(chave: string, userId = "") {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return null;
+  }
+
+  try {
+    const texto = window.localStorage.getItem(
+      criarStorageKeyUsuarioComunidade(chave, userId)
+    );
+
+    return texto ? JSON.parse(texto) : null;
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonUsuarioComunidade(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      criarStorageKeyUsuarioComunidade(chave, userId),
+      JSON.stringify(valor)
+    );
+  } catch {
+    // localStorage é fallback; a Comunidade continua em memória.
+  }
+}
 
 const AVISO_FIXADO_COMUNIDADE =
   "Use este espaço para falar sobre obras, pedir recomendações, divulgar capítulos e conversar com outros leitores sem spam e sem spoiler fora de aviso.";
@@ -377,31 +420,13 @@ function normalizarTipoPublicacao(valor: unknown): TipoPublicacaoComunidade {
     : "Discussão";
 }
 
-function normalizarTextoBusca(valor: string) {
-  return valor
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-}
-
-function criarSlugObraRelacionada(titulo: string) {
-  const slug = normalizarTextoBusca(titulo)
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return slug || "obra";
-}
-
 function criarLinkObraRelacionada(
   titulo: string,
   sugestoesObras: ObraRelacionadaSugestao[] = []
 ) {
-  const tituloNormalizado = normalizarTextoBusca(titulo);
+  const tituloNormalizado = normalizarTexto(titulo);
   const obraRelacionada = sugestoesObras.find((obra) => {
-    return normalizarTextoBusca(obra.titulo) === tituloNormalizado;
+    return normalizarTexto(obra.titulo) === tituloNormalizado;
   });
 
   if (obraRelacionada?.link?.trim()) {
@@ -412,11 +437,11 @@ function criarLinkObraRelacionada(
     return `/obra/${obraRelacionada.slug.trim()}`;
   }
 
-  return `/obra/${criarSlugObraRelacionada(titulo)}`;
+  return `/obra/${criarSlugBase(titulo)}`;
 }
 
 function obterTipoPublicacaoPorParametro(valor: string) {
-  const valorNormalizado = normalizarTextoBusca(valor);
+  const valorNormalizado = normalizarTexto(valor);
 
   if (!valorNormalizado) {
     return null;
@@ -424,7 +449,7 @@ function obterTipoPublicacaoPorParametro(valor: string) {
 
   return (
     TIPOS_PUBLICACAO_COMUNIDADE.find(
-      (tipo) => normalizarTextoBusca(tipo) === valorNormalizado
+      (tipo) => normalizarTexto(tipo) === valorNormalizado
     ) || null
   );
 }
@@ -464,7 +489,7 @@ function normalizarSugestaoObraLocal(valor: unknown, index: number) {
   const slug =
     typeof obra.slug === "string" && obra.slug.trim()
       ? obra.slug.trim()
-      : criarSlugObraRelacionada(titulo);
+      : criarSlugBase(titulo);
 
   const link =
     typeof obra.link === "string" && obra.link.trim()
@@ -481,10 +506,10 @@ function normalizarSugestaoObraLocal(valor: unknown, index: number) {
   } satisfies ObraRelacionadaSugestao;
 }
 
-function carregarSugestoesObrasLocais() {
+function carregarSugestoesObrasLocais(userId = "") {
   try {
-    const obrasTexto = window.localStorage.getItem("historietas-obras");
-    const obrasJson: unknown = obrasTexto ? JSON.parse(obrasTexto) : [];
+    const obrasJson: unknown =
+      carregarJsonUsuarioComunidade("historietas-obras", userId) || [];
 
     if (!Array.isArray(obrasJson)) {
       return [];
@@ -502,7 +527,7 @@ function removerSugestoesObrasDuplicadas(obrasBase: ObraRelacionadaSugestao[]) {
   const titulosRegistrados = new Set<string>();
 
   return obrasBase.filter((obra) => {
-    const chaveTitulo = normalizarTextoBusca(obra.titulo);
+    const chaveTitulo = normalizarTexto(obra.titulo);
 
     if (!chaveTitulo || titulosRegistrados.has(chaveTitulo)) {
       return false;
@@ -563,14 +588,15 @@ function obterOpcoesEnquete(texto: string) {
   return opcoes.length >= MIN_OPCOES_ENQUETE ? opcoes : [];
 }
 
-function carregarVotosEnquetesLocais() {
-  if (typeof window === "undefined") {
+function carregarVotosEnquetesLocais(userId = "") {
+  if (typeof window === "undefined" || !userId.trim()) {
     return {} as Record<string, string>;
   }
 
   try {
-    const texto = window.localStorage.getItem(CHAVE_VOTOS_ENQUETES_COMUNIDADE);
-    const json: unknown = texto ? JSON.parse(texto) : {};
+    const json: unknown =
+      carregarJsonUsuarioComunidade(CHAVE_VOTOS_ENQUETES_COMUNIDADE, userId) ||
+      {};
 
     if (!json || typeof json !== "object" || Array.isArray(json)) {
       return {} as Record<string, string>;
@@ -586,15 +612,12 @@ function carregarVotosEnquetesLocais() {
   }
 }
 
-function salvarVotosEnquetesLocais(votos: Record<string, string>) {
-  try {
-    window.localStorage.setItem(
-      CHAVE_VOTOS_ENQUETES_COMUNIDADE,
-      JSON.stringify(votos)
-    );
-  } catch {
-    // Se o navegador bloquear localStorage, a votação continua no estado da página.
-  }
+function salvarVotosEnquetesLocais(votos: Record<string, string>, userId = "") {
+  salvarJsonUsuarioComunidade(
+    CHAVE_VOTOS_ENQUETES_COMUNIDADE,
+    userId,
+    votos
+  );
 }
 
 function calcularTotalVotosEnquete(
@@ -634,7 +657,8 @@ async function carregarVotosEnquetesSupabase(
     const { data, error } = await supabase
       .from("comunidade_enquete_votos")
       .select("post_id, user_id, opcao")
-      .in("post_id", postIds);
+      .in("post_id", postIds)
+      .limit(5000);
 
     if (error || !Array.isArray(data)) {
       return null;
@@ -643,7 +667,7 @@ async function carregarVotosEnquetesSupabase(
     const resultados: ResultadoVotosEnquete = {};
     const meusVotos: Record<string, string> = {};
 
-    (data as SupabaseEnqueteVotoRow[]).forEach((voto) => {
+    (data as unknown as SupabaseEnqueteVotoRow[]).forEach((voto) => {
       const postId = typeof voto.post_id === "string" ? voto.post_id : "";
       const opcao = typeof voto.opcao === "string" ? voto.opcao : "";
       const userId = typeof voto.user_id === "string" ? voto.user_id : "";
@@ -923,11 +947,12 @@ async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
   try {
     const { data } = await supabase
       .from("profiles")
-      .select("*")
-      .in("user_id", idsValidos);
+      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+      .in("user_id", idsValidos)
+      .limit(1000);
 
     if (Array.isArray(data)) {
-      (data as PerfilComunidadeRow[]).forEach((profile) => {
+      (data as unknown as PerfilComunidadeRow[]).forEach((profile) => {
         const profileUserId = obterTextoProfileComunidade(profile, "user_id");
 
         if (profileUserId) {
@@ -947,11 +972,12 @@ async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("*")
-        .in("id", idsSemProfile);
+        .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+        .in("id", idsSemProfile)
+        .limit(1000);
 
       if (Array.isArray(data)) {
-        (data as PerfilComunidadeRow[]).forEach((profile) => {
+        (data as unknown as PerfilComunidadeRow[]).forEach((profile) => {
           const profileUserId =
             obterTextoProfileComunidade(profile, "user_id") ||
             obterTextoProfileComunidade(profile, "id");
@@ -973,7 +999,7 @@ function obterObraRelacionadaParaDiario(
   titulo: string,
   sugestoesObras: ObraRelacionadaSugestao[]
 ) {
-  const tituloNormalizado = normalizarTextoBusca(titulo);
+  const tituloNormalizado = normalizarTexto(titulo);
 
   if (!tituloNormalizado) {
     return null;
@@ -981,9 +1007,53 @@ function obterObraRelacionadaParaDiario(
 
   return (
     sugestoesObras.find((obra) => {
-      return normalizarTextoBusca(obra.titulo) === tituloNormalizado;
+      return normalizarTexto(obra.titulo) === tituloNormalizado;
     }) || null
   );
+}
+
+async function removerReviewComunidadeDoDiario({
+  userId,
+  postId,
+}: {
+  userId: string;
+  postId: string;
+}) {
+  const userIdLimpo = userId.trim();
+  const postIdLimpo = postId.trim();
+
+  if (!userIdLimpo || !postIdLimpo) {
+    return;
+  }
+
+  try {
+    const { error } = await supabase
+      .from("diario_atividades")
+      .delete()
+      .eq("user_id", userIdLimpo)
+      .eq("tipo", "publicou_review")
+      .contains("metadata", { post_id: postIdLimpo });
+
+    if (!error) {
+      return;
+    }
+
+    const { error: erroFallback } = await supabase
+      .from("diario_atividades")
+      .delete()
+      .eq("user_id", userIdLimpo)
+      .eq("tipo", "publicou_review")
+      .eq("metadata->>post_id", postIdLimpo);
+
+    if (erroFallback) {
+      console.warn(
+        "Não consegui remover a review do Diário:",
+        erroFallback.message
+      );
+    }
+  } catch (error) {
+    console.warn("Não consegui acessar o Diário para remover a review:", error);
+  }
 }
 
 async function registrarReviewComunidadeNoDiario({
@@ -1006,6 +1076,11 @@ async function registrarReviewComunidadeNoDiario({
   }
 
   try {
+    await removerReviewComunidadeDoDiario({
+      userId: userIdLimpo,
+      postId,
+    });
+
     const obraDiario = obterObraRelacionadaParaDiario(
       obraRelacionada,
       sugestoesObras
@@ -1745,6 +1820,7 @@ export default function ComunidadePage() {
     useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1753,12 +1829,16 @@ export default function ComunidadePage() {
       setIsDesktop(mediaQuery.matches);
     };
 
-    atualizarModoDesktop();
+    const atualizarModoDesktopTimer = window.setTimeout(
+      atualizarModoDesktop,
+      0
+    );
 
     if (typeof mediaQuery.addEventListener === "function") {
       mediaQuery.addEventListener("change", atualizarModoDesktop);
 
       return () => {
+        window.clearTimeout(atualizarModoDesktopTimer);
         mediaQuery.removeEventListener("change", atualizarModoDesktop);
       };
     }
@@ -1766,32 +1846,39 @@ export default function ComunidadePage() {
     mediaQuery.addListener(atualizarModoDesktop);
 
     return () => {
+      window.clearTimeout(atualizarModoDesktopTimer);
       mediaQuery.removeListener(atualizarModoDesktop);
     };
   }, []);
 
   useEffect(() => {
-    try {
-      const postsSalvos = window.localStorage.getItem(
-        CHAVE_POSTS_SALVOS_COMUNIDADE
-      );
-      const postsSalvosParseados = postsSalvos ? JSON.parse(postsSalvos) : [];
+    const userId = usuario?.id || "";
+    const carregarLocaisTimer = window.setTimeout(() => {
+      try {
+        const postsSalvosParseados =
+          carregarJsonUsuarioComunidade(CHAVE_POSTS_SALVOS_COMUNIDADE, userId) ||
+          [];
 
-      if (Array.isArray(postsSalvosParseados)) {
-        setPostsSalvosIds(
-          postsSalvosParseados.filter(
-            (postId): postId is string => typeof postId === "string"
-          )
-        );
-      } else {
+        if (Array.isArray(postsSalvosParseados)) {
+          setPostsSalvosIds(
+            postsSalvosParseados.filter(
+              (postId): postId is string => typeof postId === "string"
+            )
+          );
+        } else {
+          setPostsSalvosIds([]);
+        }
+      } catch {
         setPostsSalvosIds([]);
       }
-    } catch {
-      setPostsSalvosIds([]);
-    }
 
-    setVotosEnquetes(carregarVotosEnquetesLocais());
-  }, []);
+      setVotosEnquetes(carregarVotosEnquetesLocais(userId));
+    }, 0);
+
+    return () => {
+      window.clearTimeout(carregarLocaisTimer);
+    };
+  }, [usuario?.id]);
 
   useEffect(() => {
     return () => {
@@ -1811,16 +1898,24 @@ export default function ComunidadePage() {
         .filter(Boolean);
 
       if (postsEnqueteIds.length === 0) {
-        setResultadosEnquetes({});
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setResultadosEnquetes({});
+          }
+        }, 0);
         return;
       }
 
-      const votosLocais = carregarVotosEnquetesLocais();
+      const votosLocais = carregarVotosEnquetesLocais(usuario?.id || "");
 
-      setVotosEnquetes((votosAtuais) => ({
-        ...votosLocais,
-        ...votosAtuais,
-      }));
+      window.setTimeout(() => {
+        if (!cancelado) {
+          setVotosEnquetes((votosAtuais) => ({
+            ...votosLocais,
+            ...votosAtuais,
+          }));
+        }
+      }, 0);
 
       if (!usuario?.id) {
         return;
@@ -1835,18 +1930,24 @@ export default function ComunidadePage() {
         return;
       }
 
-      setResultadosEnquetes(votosReais.resultados);
+      window.setTimeout(() => {
+        if (cancelado) {
+          return;
+        }
 
-      setVotosEnquetes((votosAtuais) => {
-        const votosAtualizados = {
-          ...votosAtuais,
-          ...votosReais.meusVotos,
-        };
+        setResultadosEnquetes(votosReais.resultados);
 
-        salvarVotosEnquetesLocais(votosAtualizados);
+        setVotosEnquetes((votosAtuais) => {
+          const votosAtualizados = {
+            ...votosAtuais,
+            ...votosReais.meusVotos,
+          };
 
-        return votosAtualizados;
-      });
+          salvarVotosEnquetesLocais(votosAtualizados, usuario.id);
+
+          return votosAtualizados;
+        });
+      }, 0);
     }
 
     void carregarVotosReaisEnquetes();
@@ -1860,17 +1961,28 @@ export default function ComunidadePage() {
     let cancelado = false;
 
     async function carregarUsuario() {
-      setCarregandoUsuario(true);
+      window.setTimeout(() => {
+        if (!cancelado) {
+          setCarregandoUsuario(true);
+        }
+      }, 0);
 
       try {
-        const { data } = await supabase.auth.getSession();
-        const user = data.session?.user || null;
+        const { data, error: usuarioErro } = await supabase.auth.getUser();
+
+        if (usuarioErro) {
+          throw usuarioErro;
+        }
+
+        const user = data.user || null;
 
         if (!user) {
-          if (!cancelado) {
-            setUsuario(null);
-            setUsuarioEhAdmin(false);
-          }
+          window.setTimeout(() => {
+            if (!cancelado) {
+              setUsuario(null);
+              setUsuarioEhAdmin(false);
+            }
+          }, 0);
 
           return;
         }
@@ -1896,33 +2008,37 @@ export default function ComunidadePage() {
           usuarioAdmin = false;
         }
 
-        if (!cancelado) {
-          setUsuarioEhAdmin(usuarioAdmin);
-          const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios([
-            user.id,
-          ]);
-          const profile = profilesPorUsuario.get(user.id);
+        const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios([
+          user.id,
+        ]);
+        const profile = profilesPorUsuario.get(user.id);
 
-          setUsuario({
-            id: user.id,
-            email: user.email || "",
-            nome: obterNomeUsuario(user.email || "", nomeProfile),
-            avatar: obterAvatarProfileComunidade(profile),
-          });
-        }
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setUsuarioEhAdmin(usuarioAdmin);
+            setUsuario({
+              id: user.id,
+              email: user.email || "",
+              nome: obterNomeUsuario(user.email || "", nomeProfile),
+              avatar: obterAvatarProfileComunidade(profile),
+            });
+          }
+        }, 0);
       } finally {
-        if (!cancelado) {
-          setCarregandoUsuario(false);
-        }
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setCarregandoUsuario(false);
+          }
+        }, 0);
       }
     }
 
-    carregarUsuario();
+    void carregarUsuario();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
-      carregarUsuario();
+      void carregarUsuario();
     });
 
     return () => {
@@ -1935,20 +2051,21 @@ export default function ComunidadePage() {
     let cancelado = false;
 
     async function carregarObrasRelacionadas() {
-      const obrasLocais = carregarSugestoesObrasLocais();
+      const obrasLocais = carregarSugestoesObrasLocais(usuario?.id || "");
 
       try {
         const { data, error } = await supabase
           .from("obras")
           .select("id, user_id, titulo, autor, publicado, slug, link")
           .eq("publicado", true)
-          .order("criada_em", { ascending: false });
+          .order("criada_em", { ascending: false })
+          .limit(120);
 
         if (error) {
           throw error;
         }
 
-        const obrasSupabase = ((data || []) as SupabaseObraPublicaRow[])
+        const obrasSupabase = ((data || []) as unknown as SupabaseObraPublicaRow[])
           .map((obra, index) => {
             const titulo = obra.titulo?.trim() || "";
 
@@ -1956,7 +2073,7 @@ export default function ComunidadePage() {
               return null;
             }
 
-            const slug = obra.slug?.trim() || criarSlugObraRelacionada(titulo);
+            const slug = obra.slug?.trim() || criarSlugBase(titulo);
 
             return {
               id: obra.id || `obra-supabase-${index}`,
@@ -1988,13 +2105,21 @@ export default function ComunidadePage() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [usuario?.id]);
 
   useEffect(() => {
-    if (!composerAberto) {
+    if (composerAberto) {
+      return;
+    }
+
+    const fecharSugestoesTimer = window.setTimeout(() => {
       setSugestoesObrasAbertas(false);
       setObraRelacionadaBusca("");
-    }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(fecharSugestoesTimer);
+    };
   }, [composerAberto]);
 
   useEffect(() => {
@@ -2003,7 +2128,14 @@ export default function ComunidadePage() {
     }
 
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    carregarPostsComunidade(true);
+
+    const carregarFeedTimer = window.setTimeout(() => {
+      void carregarPostsComunidade(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(carregarFeedTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -2023,17 +2155,23 @@ export default function ComunidadePage() {
       return;
     }
 
-    if (buscaUrl) {
-      setTermoBusca(buscaUrl.slice(0, 90));
-    }
+    const aplicarParametrosTimer = window.setTimeout(() => {
+      if (buscaUrl) {
+        setTermoBusca(buscaUrl.slice(0, 90));
+      }
 
-    if (tipoUrl) {
-      setTipoPublicacaoAtiva(tipoUrl);
-      setMostrarFiltrosAvancadosComunidade(true);
-    }
+      if (tipoUrl) {
+        setTipoPublicacaoAtiva(tipoUrl);
+        setMostrarFiltrosAvancadosComunidade(true);
+      }
 
-    setMostrarApenasSalvos(false);
-    setOrdenacaoAtiva("Recentes");
+      setMostrarApenasSalvos(false);
+      setOrdenacaoAtiva("Recentes");
+    }, 0);
+
+    return () => {
+      window.clearTimeout(aplicarParametrosTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -2045,12 +2183,19 @@ export default function ComunidadePage() {
 
     if (postIdUrl && posts.some((post) => post.id === postIdUrl)) {
       comentarioUrlAplicadoRef.current = true;
-      setComentariosPostId(postIdUrl);
+
+      const abrirComentariosTimer = window.setTimeout(() => {
+        setComentariosPostId(postIdUrl);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(abrirComentariosTimer);
+      };
     }
   }, [comentariosPostId, posts]);
 
   const termoBuscaNormalizado = useMemo(
-    () => normalizarTextoBusca(termoBuscaAdiado),
+    () => normalizarTexto(termoBuscaAdiado),
     [termoBuscaAdiado]
   );
 
@@ -2075,7 +2220,7 @@ export default function ComunidadePage() {
         return true;
       }
 
-      const textoBuscaPost = normalizarTextoBusca(
+      const textoBuscaPost = normalizarTexto(
         [
           post.texto,
           post.autorNome,
@@ -2144,7 +2289,7 @@ export default function ComunidadePage() {
   }, [comentariosPostId, posts]);
 
   const sugestoesObrasRelacionadasVisiveis = useMemo(() => {
-    const buscaNormalizada = normalizarTextoBusca(obraRelacionadaBusca);
+    const buscaNormalizada = normalizarTexto(obraRelacionadaBusca);
 
     if (!buscaNormalizada) {
       return [];
@@ -2152,7 +2297,7 @@ export default function ComunidadePage() {
 
     return obrasRelacionadasSugestoes
       .filter((obra) => {
-        const tituloObra = normalizarTextoBusca(obra.titulo);
+        const tituloObra = normalizarTexto(obra.titulo);
 
         return tituloObra.startsWith(buscaNormalizada);
       })
@@ -2164,15 +2309,29 @@ export default function ComunidadePage() {
       return;
     }
 
-    const overflowAnterior = document.body.style.overflow;
-    const overscrollAnterior = document.documentElement.style.overscrollBehavior;
+    const overflowAnterior = document.body.style.getPropertyValue("overflow");
+    const overscrollAnterior = document.documentElement.style.getPropertyValue(
+      "overscroll-behavior"
+    );
 
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overscrollBehavior = "none";
+    document.body.style.setProperty("overflow", "hidden");
+    document.documentElement.style.setProperty("overscroll-behavior", "none");
 
     return () => {
-      document.body.style.overflow = overflowAnterior;
-      document.documentElement.style.overscrollBehavior = overscrollAnterior;
+      if (overflowAnterior) {
+        document.body.style.setProperty("overflow", overflowAnterior);
+      } else {
+        document.body.style.removeProperty("overflow");
+      }
+
+      if (overscrollAnterior) {
+        document.documentElement.style.setProperty(
+          "overscroll-behavior",
+          overscrollAnterior
+        );
+      } else {
+        document.documentElement.style.removeProperty("overscroll-behavior");
+      }
     };
   }, [comentariosPostId]);
 
@@ -2181,11 +2340,13 @@ export default function ComunidadePage() {
       return;
     }
 
-    const overflowAnterior = document.body.style.overflow;
-    const overscrollAnterior = document.documentElement.style.overscrollBehavior;
+    const overflowAnterior = document.body.style.getPropertyValue("overflow");
+    const overscrollAnterior = document.documentElement.style.getPropertyValue(
+      "overscroll-behavior"
+    );
 
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overscrollBehavior = "none";
+    document.body.style.setProperty("overflow", "hidden");
+    document.documentElement.style.setProperty("overscroll-behavior", "none");
 
     const focoTimer = window.setTimeout(() => {
       textoPostRef.current?.focus();
@@ -2193,8 +2354,21 @@ export default function ComunidadePage() {
 
     return () => {
       window.clearTimeout(focoTimer);
-      document.body.style.overflow = overflowAnterior;
-      document.documentElement.style.overscrollBehavior = overscrollAnterior;
+
+      if (overflowAnterior) {
+        document.body.style.setProperty("overflow", overflowAnterior);
+      } else {
+        document.body.style.removeProperty("overflow");
+      }
+
+      if (overscrollAnterior) {
+        document.documentElement.style.setProperty(
+          "overscroll-behavior",
+          overscrollAnterior
+        );
+      } else {
+        document.documentElement.style.removeProperty("overscroll-behavior");
+      }
     };
   }, [composerAberto]);
 
@@ -2368,7 +2542,7 @@ export default function ComunidadePage() {
                 ...votosReais.meusVotos,
               };
 
-              salvarVotosEnquetesLocais(votosAtualizados);
+              salvarVotosEnquetesLocais(votosAtualizados, usuario.id);
 
               return votosAtualizados;
             });
@@ -2387,7 +2561,7 @@ export default function ComunidadePage() {
           [postId]: opcao,
         };
 
-        salvarVotosEnquetesLocais(votosAtualizados);
+        salvarVotosEnquetesLocais(votosAtualizados, usuario.id);
 
         return votosAtualizados;
       });
@@ -2447,7 +2621,7 @@ export default function ComunidadePage() {
     setErro("");
 
     try {
-      if (!exigirLogin()) {
+      if (!exigirLogin() || !usuario) {
         return;
       }
 
@@ -2458,15 +2632,11 @@ export default function ComunidadePage() {
         ? postsSalvosIds.filter((postSalvoId) => postSalvoId !== postId)
         : [...postsSalvosIds, postId];
 
-      try {
-        window.localStorage.setItem(
-          CHAVE_POSTS_SALVOS_COMUNIDADE,
-          JSON.stringify(postsSalvosAtualizados)
-        );
-      } catch {
-        setErro("Não foi possível salvar esta publicação neste navegador.");
-        return;
-      }
+      salvarJsonUsuarioComunidade(
+        CHAVE_POSTS_SALVOS_COMUNIDADE,
+        usuario.id,
+        postsSalvosAtualizados
+      );
 
       setPostsSalvosIds(postsSalvosAtualizados);
       emitirFeedbackAcao(
@@ -2558,7 +2728,7 @@ export default function ComunidadePage() {
         throw postsResposta.error;
       }
 
-      const postsPagina = (postsResposta.data || []) as SupabasePostRow[];
+      const postsPagina = (postsResposta.data || []) as unknown as SupabasePostRow[];
       const postIds = postsPagina
         .map((post) => post.id)
         .filter((postId): postId is string => Boolean(postId));
@@ -2578,11 +2748,13 @@ export default function ComunidadePage() {
           .from("comunidade_comentarios")
           .select("id, post_id, autor_id, autor_nome, texto, criado_em")
           .in("post_id", postIds)
-          .order("criado_em", { ascending: true }),
+          .order("criado_em", { ascending: true })
+          .limit(2500),
         supabase
           .from("comunidade_curtidas")
           .select("post_id, usuario_id")
-          .in("post_id", postIds),
+          .in("post_id", postIds)
+          .limit(5000),
       ]);
 
       if (comentariosResposta.error) {
@@ -2594,7 +2766,7 @@ export default function ComunidadePage() {
       }
 
       const comentariosSupabase =
-        (comentariosResposta.data || []) as SupabaseComentarioRow[];
+        (comentariosResposta.data || []) as unknown as SupabaseComentarioRow[];
       const comentarioIds = comentariosSupabase
         .map((comentario) => comentario.id)
         .filter((comentarioId): comentarioId is string => Boolean(comentarioId));
@@ -2605,6 +2777,7 @@ export default function ComunidadePage() {
               .from("comunidade_comentario_curtidas")
               .select("comentario_id, usuario_id")
               .in("comentario_id", comentarioIds)
+              .limit(5000)
           : { data: [], error: null };
 
       if (comentarioCurtidasResposta.error) {
@@ -2626,8 +2799,8 @@ export default function ComunidadePage() {
       const postsSupabase = mapearPostsSupabase(
         postsPagina,
         comentariosSupabase,
-        (curtidasResposta.data || []) as SupabaseCurtidaRow[],
-        (comentarioCurtidasResposta.data || []) as SupabaseComentarioCurtidaRow[],
+        (curtidasResposta.data || []) as unknown as SupabaseCurtidaRow[],
+        (comentarioCurtidasResposta.data || []) as unknown as SupabaseComentarioCurtidaRow[],
         profilesPorUsuario
       );
 
@@ -3255,6 +3428,9 @@ export default function ComunidadePage() {
         return;
       }
 
+      const postParaRemover =
+        posts.find((post) => post.id === postId) || null;
+
       let removerPostQuery = supabase
         .from("comunidade_posts")
         .delete()
@@ -3271,6 +3447,13 @@ export default function ComunidadePage() {
         return;
       }
 
+      if (postParaRemover?.tipoPublicacao === "Review") {
+        await removerReviewComunidadeDoDiario({
+          userId: postParaRemover.autorId || usuario.id,
+          postId,
+        });
+      }
+
       setPosts((postsAtuais) =>
         postsAtuais.filter((post) => post.id !== postId)
       );
@@ -3281,14 +3464,11 @@ export default function ComunidadePage() {
 
       setPostsSalvosIds(postsSalvosAtualizados);
 
-      try {
-        window.localStorage.setItem(
-          CHAVE_POSTS_SALVOS_COMUNIDADE,
-          JSON.stringify(postsSalvosAtualizados)
-        );
-      } catch {
-        setErro("Publicação removida. Não foi possível atualizar os salvos locais.");
-      }
+      salvarJsonUsuarioComunidade(
+        CHAVE_POSTS_SALVOS_COMUNIDADE,
+        usuario.id,
+        postsSalvosAtualizados
+      );
 
       emitirFeedbackAcao("Publicação removida.");
     } finally {
@@ -3320,6 +3500,27 @@ export default function ComunidadePage() {
             </span>
           </h1>
 
+          {isDesktop ? (
+            <Link
+              href="/notificacoes"
+              style={communityNotificationButtonStyle}
+              aria-label={
+                notificacoesNaoLidas > 0
+                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                  : "Notificações"
+              }
+            >
+              N
+
+              {usuario && notificacoesNaoLidas > 0 ? (
+                <span style={communityNotificationBadgeStyle}>
+                  {notificacoesNaoLidas > 99
+                    ? "99+"
+                    : notificacoesNaoLidas}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
         </section>
 
         <section style={isDesktop ? desktopLayoutStyle : layoutStyle}>
@@ -4416,8 +4617,54 @@ const titleSectionStyle: CSSProperties = {
 
 const desktopTitleSectionStyle: CSSProperties = {
   ...titleSectionStyle,
+  position: "relative",
   marginTop: 0,
   marginBottom: "18px",
+};
+
+const communityNotificationButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  right: 0,
+  transform: "translateY(-50%)",
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-surface-strong, #04000A)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+  zIndex: 2,
+};
+
+const communityNotificationBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "-7px",
+  right: "-9px",
+  minWidth: "18px",
+  height: "18px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid var(--historietas-bg-start, #070212)",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
+  pointerEvents: "none",
 };
 
 const communityTitleStyle: CSSProperties = {
@@ -4980,7 +5227,6 @@ const focusedSpoilerBoxStyle: CSSProperties = {
   minWidth: 0,
   boxShadow: "none",
 };
-
 
 
 const focusedPostStatsStyle: CSSProperties = {
@@ -6790,7 +7036,6 @@ const spoilerHiddenTitleStyle: CSSProperties = {
   fontWeight: 950,
   ...safeTextStyle,
 };
-
 
 
 const postTextStyle: CSSProperties = {
