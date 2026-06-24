@@ -805,6 +805,7 @@ function criarAvatarNotificacaoStyle(
     backgroundSize: "cover",
     backgroundPosition: "center",
     color: "transparent",
+    textDecoration: "none",
     overflow: "hidden",
   };
 }
@@ -3976,13 +3977,14 @@ const filterResultBadgeStyle: CSSProperties = {
   left: "12px",
   width: "fit-content",
   maxWidth: "calc(100% - 24px)",
-  padding: "6px 9px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "0",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 950,
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -4191,6 +4193,8 @@ const notificationIconStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "18px",
   fontWeight: 950,
+  lineHeight: 1,
+  textDecoration: "none",
   boxShadow: "none",
   flex: "0 0 auto",
 };
