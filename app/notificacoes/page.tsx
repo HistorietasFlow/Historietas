@@ -77,6 +77,37 @@ const CHAVE_NOTIFICACOES = "historietas-notificacoes";
 const CHAVE_OBRAS_SEGUIDAS = "historietas-obras-seguidas";
 const CHAVE_NOTIFICACOES_APAGADAS = "historietas-notificacoes-apagadas";
 
+function corrigirTextoQuebrado(texto: string) {
+  let textoCorrigido = texto;
+
+  for (let tentativa = 0; tentativa < 2; tentativa += 1) {
+    if (!/[ÃÂâð�]/.test(textoCorrigido)) {
+      break;
+    }
+
+    try {
+      const bytes = new Uint8Array(
+        Array.from(textoCorrigido, (caractere) => caractere.charCodeAt(0) & 255)
+      );
+      const decodificado = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+
+      if (!decodificado || decodificado === textoCorrigido) {
+        break;
+      }
+
+      textoCorrigido = decodificado;
+    } catch {
+      break;
+    }
+  }
+
+  return textoCorrigido.replace(/�/g, "");
+}
+
+function limparTextoExibicao(valor: string) {
+  return corrigirTextoQuebrado(valor).trim();
+}
+
 function criarStorageKeyUsuarioNotificacoes(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
@@ -112,7 +143,7 @@ function salvarJsonStorageUsuarioNotificacoes(
       JSON.stringify(valor)
     );
   } catch {
-    // localStorage Ã© fallback; as notificaÃ§Ãµes continuam em memÃ³ria.
+    // localStorage é fallback; as notificações continuam em memória.
   }
 }
 
@@ -173,13 +204,15 @@ function normalizarCapitulo(
         : `capitulo-${index + 1}`,
     titulo:
       typeof capitulo.titulo === "string" && capitulo.titulo.trim()
-        ? capitulo.titulo
-        : "CapÃ­tulo sem tÃ­tulo",
-    texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
+        ? limparTextoExibicao(capitulo.titulo)
+        : "Capítulo sem título",
+    texto: typeof capitulo.texto === "string" ? corrigirTextoQuebrado(capitulo.texto) : "",
     curtiu: Boolean(capitulo.curtiu),
     salvo: Boolean(capitulo.salvo),
     comentario:
-      typeof capitulo.comentario === "string" ? capitulo.comentario : "",
+      typeof capitulo.comentario === "string"
+        ? corrigirTextoQuebrado(capitulo.comentario)
+        : "",
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
@@ -196,7 +229,7 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
   const tagsNormalizadas = Array.isArray(obra.tags)
     ? obra.tags
         .filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
-        .map((tag) => tag.trim())
+        .map((tag) => limparTextoExibicao(tag))
     : [];
 
   return {
@@ -206,32 +239,32 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
         : `obra-${index + 1}`,
     titulo:
       typeof obra.titulo === "string" && obra.titulo.trim()
-        ? obra.titulo
-        : "Obra sem tÃ­tulo",
+        ? limparTextoExibicao(obra.titulo)
+        : "Obra sem título",
     autor:
       typeof obra.autor === "string" && obra.autor.trim()
-        ? obra.autor
-        : "Autor nÃ£o informado",
+        ? limparTextoExibicao(obra.autor)
+        : "Autor não informado",
     autorId:
       typeof obra.autorId === "string" && obra.autorId.trim()
         ? obra.autorId
         : "",
     genero:
       typeof obra.genero === "string" && obra.genero.trim()
-        ? obra.genero
-        : "NÃ£o informado",
+        ? limparTextoExibicao(obra.genero)
+        : "Não informado",
     formato:
       typeof obra.formato === "string" && obra.formato.trim()
-        ? obra.formato
-        : "NÃ£o informado",
+        ? limparTextoExibicao(obra.formato)
+        : "Não informado",
     classificacaoIndicativa:
       typeof obra.classificacaoIndicativa === "string" &&
       obra.classificacaoIndicativa.trim()
-        ? obra.classificacaoIndicativa
-        : "NÃ£o informada",
+        ? limparTextoExibicao(obra.classificacaoIndicativa)
+        : "Não informada",
     sinopse:
       typeof obra.sinopse === "string" && obra.sinopse.trim()
-        ? obra.sinopse
+        ? corrigirTextoQuebrado(obra.sinopse)
         : "Nenhuma sinopse informada.",
     tags: tagsNormalizadas.length > 0 ? tagsNormalizadas : ["sem tags"],
     capa: typeof obra.capa === "string" ? obra.capa : "",
@@ -310,12 +343,12 @@ function normalizarNotificacao(
         : "",
     titulo:
       typeof notificacao.titulo === "string" && notificacao.titulo.trim()
-        ? notificacao.titulo
-        : "Nova notificaÃ§Ã£o",
+        ? limparTextoExibicao(notificacao.titulo)
+        : "Nova notificação",
     mensagem:
       typeof notificacao.mensagem === "string" && notificacao.mensagem.trim()
-        ? notificacao.mensagem
-        : "Uma obra recebeu uma atualizaÃ§Ã£o.",
+        ? corrigirTextoQuebrado(notificacao.mensagem)
+        : "Uma obra recebeu uma atualização.",
     tipo: normalizarTipoNotificacao(notificacaoBruta.tipo),
     lida: notificacaoBruta.lida === true,
     criadaEm:
@@ -328,7 +361,7 @@ function normalizarNotificacao(
         : "",
     autorNome:
       typeof notificacaoBruta.autorNome === "string"
-        ? notificacaoBruta.autorNome.trim()
+        ? limparTextoExibicao(notificacaoBruta.autorNome)
         : "",
     autorAvatar:
       typeof notificacaoBruta.autorAvatar === "string"
@@ -526,7 +559,7 @@ function montarLinkNotificacao(
   obra?: ObraLocal | null
 ) {
   if (notificacao.tipo === "novo-seguidor" && notificacao.autorId) {
-    return criarPerfilHrefNotificacao(notificacao.autorId, notificacao.autorNome || "UsuÃ¡rio");
+    return criarPerfilHrefNotificacao(notificacao.autorId, notificacao.autorNome || "Usuário");
   }
 
   if (
@@ -573,9 +606,13 @@ function notificacaoEhComunidade(notificacao: NotificacaoLocal) {
   return !notificacaoEhCapitulo(notificacao);
 }
 
+function normalizarNotificacaoParaExibicao(notificacao: NotificacaoLocal) {
+  return normalizarNotificacao(notificacao, 0);
+}
+
 function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
   if (notificacao.tipo === "comentario-comunidade") {
-    return "ComentÃ¡rio em publicaÃ§Ã£o";
+    return "Comentário em publicação";
   }
 
   if (notificacao.tipo === "review-comunidade") {
@@ -583,15 +620,15 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
   }
 
   if (notificacao.tipo === "curtida-diario") {
-    return "Curtida no DiÃ¡rio";
+    return "Curtida no Diário";
   }
 
   if (notificacao.tipo === "comentario-diario") {
-    return "ComentÃ¡rio no DiÃ¡rio";
+    return "Comentário no Diário";
   }
 
   if (notificacao.tipo === "atividade-diario") {
-    return "Atividade do DiÃ¡rio";
+    return "Atividade do Diário";
   }
 
   if (notificacao.tipo === "novo-seguidor") {
@@ -603,18 +640,18 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
   }
 
   if (notificacao.tipo === "denuncia-comunidade") {
-    return "DenÃºncia analisada";
+    return "Denúncia analisada";
   }
 
   if (notificacao.tipo === "moderacao-comunidade") {
-    return "ModeraÃ§Ã£o";
+    return "Moderação";
   }
 
   if (notificacao.tipo === "comentario-capitulo") {
-    return "ComentÃ¡rio em capÃ­tulo";
+    return "Comentário em capítulo";
   }
 
-  return "CapÃ­tulo";
+  return "Capítulo";
 }
 
 function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
@@ -623,7 +660,7 @@ function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
   }
 
   if (notificacaoEhDiario(notificacao)) {
-    return "Ver DiÃ¡rio";
+    return "Ver Diário";
   }
 
   if (notificacaoEhComunidade(notificacao)) {
@@ -631,37 +668,37 @@ function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
   }
 
   return notificacao.tipo === "comentario-capitulo"
-    ? "Ver comentÃ¡rio"
-    : "Ver capÃ­tulo";
+    ? "Ver comentário"
+    : "Ver capítulo";
 }
 
 function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
   if (lida) {
-    return "âœ“";
+    return "✓";
   }
 
   if (notificacao.tipo === "comentario-comunidade") {
-    return "ðŸ’¬";
+    return "💬";
   }
 
   if (notificacao.tipo === "comentario-capitulo") {
-    return "ðŸ’¬";
+    return "💬";
   }
 
   if (notificacao.tipo === "review-comunidade") {
-    return "â˜…";
+    return "★";
   }
 
   if (notificacao.tipo === "curtida-diario") {
-    return "â™¥";
+    return "♥";
   }
 
   if (notificacao.tipo === "comentario-diario") {
-    return "ðŸ’¬";
+    return "💬";
   }
 
   if (notificacao.tipo === "atividade-diario") {
-    return "â—‰";
+    return "◉";
   }
 
   if (notificacao.tipo === "novo-seguidor") {
@@ -687,7 +724,7 @@ function obterTituloExibicaoNotificacao(notificacao: NotificacaoLocal) {
     notificacao.titulo.replace(/^Novo\s+/i, "").trim() || notificacao.titulo;
 
   if (notificacao.tipo === "comentario-comunidade") {
-    return tituloSemNovo.replace(/\bna publicaÃ§Ã£o\b/i, "da publicaÃ§Ã£o");
+    return tituloSemNovo.replace(/\bna publicação\b/i, "da publicação");
   }
 
   return tituloSemNovo;
@@ -719,7 +756,7 @@ function extrairTextoComentarioComunidade(notificacao: NotificacaoLocal) {
   if (indiceMarcador >= 0) {
     const comentario = mensagem.slice(indiceMarcador + marcadorComentario.length).trim();
 
-    return comentario || "Comentou na sua publicaÃ§Ã£o.";
+    return comentario || "Comentou na sua publicação.";
   }
 
   const indiceDoisPontos = mensagem.indexOf(": ");
@@ -727,10 +764,14 @@ function extrairTextoComentarioComunidade(notificacao: NotificacaoLocal) {
   if (indiceDoisPontos >= 0) {
     const comentario = mensagem.slice(indiceDoisPontos + 2).trim();
 
-    return comentario || "Comentou na sua publicaÃ§Ã£o.";
+    return comentario || "Comentou na sua publicação.";
   }
 
-  return "Comentou na sua publicaÃ§Ã£o.";
+  return "Comentou na sua publicação.";
+}
+
+function prepararNotificacaoTexto(notificacao: NotificacaoLocal) {
+  return normalizarNotificacaoParaExibicao(notificacao);
 }
 
 function obterNomeAutorNotificacao(notificacao: NotificacaoLocal) {
@@ -738,7 +779,7 @@ function obterNomeAutorNotificacao(notificacao: NotificacaoLocal) {
     notificacao.autorNome?.trim() ||
     (notificacao.tipo === "comentario-comunidade"
       ? extrairAutorComentarioComunidade(notificacao)
-      : "UsuÃ¡rio")
+      : "Usuário")
   );
 }
 
@@ -780,7 +821,9 @@ type EstadoSupabaseNotificacoes = {
 };
 
 function pegarTexto(valor: unknown, fallback = "") {
-  return typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
+  const texto = typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
+
+  return limparTextoExibicao(texto);
 }
 
 function pegarBooleano(valor: unknown, fallback = false) {
@@ -807,7 +850,7 @@ function normalizarPerfilNotificacao(
     pegarTexto(row.display_name) ||
     pegarTexto(row.apelido) ||
     nomeFallback.trim() ||
-    "UsuÃ¡rio";
+    "Usuário";
   const avatar =
     pegarTexto(row.avatar_url) ||
     pegarTexto(row.avatar) ||
@@ -842,7 +885,7 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
     if (!error && Array.isArray(data)) {
       data.forEach((item) => {
         const row = item as Record<string, unknown>;
-        const perfil = normalizarPerfilNotificacao(row, "", "UsuÃ¡rio");
+        const perfil = normalizarPerfilNotificacao(row, "", "Usuário");
 
         if (perfil.userId) {
           perfis.set(perfil.userId, perfil);
@@ -850,7 +893,7 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
       });
     }
   } catch {
-    // Se user_id nÃ£o existir no schema antigo, tenta pelo id abaixo.
+    // Se user_id não existir no schema antigo, tenta pelo id abaixo.
   }
 
   const idsFaltantes = ids.filter((id) => !perfis.has(id));
@@ -866,7 +909,7 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
       if (!error && Array.isArray(data)) {
         data.forEach((item) => {
           const row = item as Record<string, unknown>;
-          const perfil = normalizarPerfilNotificacao(row, "", "UsuÃ¡rio");
+          const perfil = normalizarPerfilNotificacao(row, "", "Usuário");
 
           if (perfil.userId) {
             perfis.set(perfil.userId, perfil);
@@ -874,7 +917,7 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
         });
       }
     } catch {
-      // Profiles Ã© complementar; as notificaÃ§Ãµes continuam com nome salvo no registro.
+      // Profiles é complementar; as notificações continuam com nome salvo no registro.
     }
   }
 
@@ -892,7 +935,7 @@ function obterPerfilNotificacao(
   return (
     perfil || {
       userId: userIdLimpo,
-      nome: nomeFallback.trim() || "UsuÃ¡rio",
+      nome: nomeFallback.trim() || "Usuário",
       avatar: "",
     }
   );
@@ -902,7 +945,7 @@ function pegarTagsSupabase(valor: unknown): string[] {
   if (Array.isArray(valor)) {
     const tags = valor
       .filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
-      .map((tag) => tag.trim());
+      .map((tag) => limparTextoExibicao(tag));
 
     return tags.length > 0 ? tags : ["sem tags"];
   }
@@ -910,7 +953,7 @@ function pegarTagsSupabase(valor: unknown): string[] {
   if (typeof valor === "string" && valor.trim()) {
     const tags = valor
       .split(",")
-      .map((tag) => tag.trim())
+      .map((tag) => limparTextoExibicao(tag))
       .filter(Boolean);
 
     return tags.length > 0 ? tags : ["sem tags"];
@@ -926,13 +969,13 @@ function normalizarObraSupabase(row: SupabaseObraRow, index: number): ObraLocal 
   return {
     id: pegarTexto(row.id, `supabase-${index + 1}`),
     titulo,
-    autor: pegarTexto(row.autor ?? row.nome_autor ?? row.autor_nome, "Autor nÃ£o informado"),
+    autor: pegarTexto(row.autor ?? row.nome_autor ?? row.autor_nome, "Autor não informado"),
     autorId: pegarTexto(row.user_id ?? row.userId ?? row.autor_id ?? row.autorId, ""),
-    genero: pegarTexto(row.genero, "NÃ£o informado"),
-    formato: pegarTexto(row.formato, "NÃ£o informado"),
+    genero: pegarTexto(row.genero, "Não informado"),
+    formato: pegarTexto(row.formato, "Não informado"),
     classificacaoIndicativa: pegarTexto(
       row.classificacao_indicativa ?? row.classificacaoIndicativa,
-      "NÃ£o informada"
+      "Não informada"
     ),
     sinopse: pegarTexto(row.sinopse, "Nenhuma sinopse informada."),
     tags: pegarTagsSupabase(row.tags),
@@ -955,7 +998,7 @@ function normalizarCapituloSupabase(
 ): CapituloLocal & { obraId: string } {
   return {
     id: pegarTexto(row.id, `capitulo-supabase-${index + 1}`),
-    titulo: pegarTexto(row.titulo, `CapÃ­tulo ${index + 1}`),
+    titulo: pegarTexto(row.titulo, `Capítulo ${index + 1}`),
     texto: pegarTexto(row.texto ?? row.conteudo, ""),
     curtiu: false,
     salvo: false,
@@ -1005,15 +1048,18 @@ function mesclarNotificacoes(
   const mapa = new Map<string, NotificacaoLocal>();
 
   notificacoesLocais.forEach((notificacao) => {
-    mapa.set(notificacao.id, notificacao);
+    const notificacaoNormalizada = normalizarNotificacaoParaExibicao(notificacao);
+
+    mapa.set(notificacaoNormalizada.id, notificacaoNormalizada);
   });
 
   notificacoesSupabase.forEach((notificacao) => {
-    const existente = mapa.get(notificacao.id);
+    const notificacaoNormalizada = normalizarNotificacaoParaExibicao(notificacao);
+    const existente = mapa.get(notificacaoNormalizada.id);
 
-    mapa.set(notificacao.id, {
-      ...notificacao,
-      lida: existente?.lida || notificacao.lida,
+    mapa.set(notificacaoNormalizada.id, {
+      ...notificacaoNormalizada,
+      lida: existente?.lida || notificacaoNormalizada.lida,
     });
   });
 
@@ -1178,15 +1224,15 @@ function normalizarNotificacaoSupabase(
     obraId: "",
     capituloId: "",
     link: "",
-    titulo: "Nova notificaÃ§Ã£o",
-    mensagem: "VocÃª recebeu uma nova notificaÃ§Ã£o.",
+    titulo: "Nova notificação",
+    mensagem: "Você recebeu uma nova notificação.",
     tipo,
     lida: false,
     criadaEm,
   }));
   const mensagem = pegarTexto(
     registro.mensagem ?? registro.texto ?? registro.descricao,
-    "VocÃª recebeu uma nova notificaÃ§Ã£o."
+    "Você recebeu uma nova notificação."
   );
 
   return normalizarNotificacao(
@@ -1397,7 +1443,7 @@ function criarNotificacoesDeCapitulos(
         obraId: obra.id,
         capituloId: capitulo.id,
         link: criarHrefLeituraCapitulo(obra, capitulo.id, index + 1),
-        titulo: "Novo capÃ­tulo publicado",
+        titulo: "Novo capítulo publicado",
         mensagem: `${capitulo.titulo} chegou em ${obra.titulo}.`,
         tipo: "novo-capitulo",
         lida: idsLidos.has(id),
@@ -1463,8 +1509,8 @@ async function carregarNotificacoesComunidadeSupabase(
       }
 
       postsPorId.set(postId, {
-        texto: pegarTexto(registro.texto, "sua publicaÃ§Ã£o"),
-        autorNome: pegarTexto(registro.autor_nome, "VocÃª"),
+        texto: pegarTexto(registro.texto, "sua publicação"),
+        autorNome: pegarTexto(registro.autor_nome, "Você"),
       });
     });
 
@@ -1491,7 +1537,7 @@ async function carregarNotificacoesComunidadeSupabase(
       }
     }
   } catch {
-    // A pÃ¡gina continua com notificaÃ§Ãµes locais e de capÃ­tulos se a Comunidade falhar.
+    // A página continua com notificações locais e de capítulos se a Comunidade falhar.
   }
 
   try {
@@ -1511,7 +1557,7 @@ async function carregarNotificacoesComunidadeSupabase(
       });
     }
   } catch {
-    // DenÃºncias continuam opcionais para nÃ£o bloquear as notificaÃ§Ãµes.
+    // Denúncias continuam opcionais para não bloquear as notificações.
   }
 
   try {
@@ -1535,7 +1581,7 @@ async function carregarNotificacoesComunidadeSupabase(
       });
     }
   } catch {
-    // Seguir usuÃ¡rio Ã© social; se falhar, as outras notificaÃ§Ãµes continuam.
+    // Seguir usuário é social; se falhar, as outras notificações continuam.
   }
 
   try {
@@ -1551,7 +1597,7 @@ async function carregarNotificacoesComunidadeSupabase(
 
     obrasAutorRows.forEach((obra, index) => {
       const obraId = pegarTexto(obra.id, `obra-autor-${index + 1}`);
-      const titulo = pegarTexto(obra.titulo, "Obra sem tÃ­tulo");
+      const titulo = pegarTexto(obra.titulo, "Obra sem título");
       const slug = pegarTexto(obra.slug, criarSlugBase(titulo));
 
       if (!obraId) {
@@ -1589,7 +1635,7 @@ async function carregarNotificacoesComunidadeSupabase(
 
           capitulosAutor.set(capituloId, {
             id: capituloId,
-            titulo: pegarTexto(registro.titulo, `CapÃ­tulo ${index + 1}`),
+            titulo: pegarTexto(registro.titulo, `Capítulo ${index + 1}`),
             obraId,
             obraTitulo: obra.titulo,
             obraSlug: obra.slug,
@@ -1664,7 +1710,7 @@ async function carregarNotificacoesComunidadeSupabase(
       }
     }
   } catch {
-    // ComentÃ¡rios de capÃ­tulo/reviews sÃ£o extras; nÃ£o bloqueiam a pÃ¡gina.
+    // Comentários de capítulo/reviews são extras; não bloqueiam a página.
   }
 
   const perfis = await carregarPerfisNotificacoes(Array.from(userIdsParaProfiles));
@@ -1681,21 +1727,21 @@ async function carregarNotificacoesComunidadeSupabase(
     const perfilAutor = obterPerfilNotificacao(
       perfis,
       autorId,
-      pegarTexto(registro.autor_nome, "AlguÃ©m")
+      pegarTexto(registro.autor_nome, "Alguém")
     );
     const id = `comunidade-comentario-${comentarioId}`;
     const textoComentario = pegarTexto(registro.texto);
     const post = postsPorId.get(postId);
     const trechoPost = post?.texto
       ? post.texto.slice(0, 90)
-      : "uma publicaÃ§Ã£o sua";
+      : "uma publicação sua";
 
     notificacoesSociais.push({
       id,
       obraId: "",
       capituloId: "",
       link: `/comunidade?post=${encodeURIComponent(postId)}`,
-      titulo: "Novo comentÃ¡rio na Comunidade",
+      titulo: "Novo comentário na Comunidade",
       mensagem: `${perfilAutor.nome} comentou em "${trechoPost}${
         trechoPost.length >= 90 ? "..." : ""
       }"${textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."}`,
@@ -1715,7 +1761,7 @@ async function carregarNotificacoesComunidadeSupabase(
       return;
     }
 
-    const perfilSeguidor = obterPerfilNotificacao(perfis, seguidorId, "UsuÃ¡rio");
+    const perfilSeguidor = obterPerfilNotificacao(perfis, seguidorId, "Usuário");
     const id = `novo-seguidor-${pegarTexto(registro.id, seguidorId)}`;
 
     notificacoesSociais.push({
@@ -1724,7 +1770,7 @@ async function carregarNotificacoesComunidadeSupabase(
       capituloId: "",
       link: criarPerfilHrefNotificacao(seguidorId, perfilSeguidor.nome),
       titulo: "Novo seguidor",
-      mensagem: `${perfilSeguidor.nome} comeÃ§ou a seguir seu perfil.`,
+      mensagem: `${perfilSeguidor.nome} começou a seguir seu perfil.`,
       tipo: "novo-seguidor",
       lida: idsLidos.has(id),
       criadaEm: pegarTexto(registro.criado_em, new Date().toISOString()),
@@ -1764,7 +1810,7 @@ async function carregarNotificacoesComunidadeSupabase(
         capituloId,
         capitulo.numero
       ),
-      titulo: "Novo comentÃ¡rio no capÃ­tulo",
+      titulo: "Novo comentário no capítulo",
       mensagem: `${perfilAutor.nome} comentou em ${capitulo.titulo}${
         textoComentario ? `: ${textoComentario.slice(0, 90)}` : "."
       }`,
@@ -1829,8 +1875,8 @@ async function carregarNotificacoesComunidadeSupabase(
         ? "resolvida"
         : status === "rejeitada"
           ? "rejeitada"
-          : "em anÃ¡lise";
-    const alvoTipo = pegarTexto(registro.alvo_tipo, "conteÃºdo");
+          : "em análise";
+    const alvoTipo = pegarTexto(registro.alvo_tipo, "conteúdo");
     const alvoId = pegarTexto(registro.alvo_id);
     const observacaoAdmin = pegarTexto(registro.observacao_admin);
     const link =
@@ -1843,10 +1889,10 @@ async function carregarNotificacoesComunidadeSupabase(
       obraId: "",
       capituloId: "",
       link,
-      titulo: `DenÃºncia ${statusTexto}`,
+      titulo: `Denúncia ${statusTexto}`,
       mensagem: observacaoAdmin
-        ? `A moderaÃ§Ã£o atualizou sua denÃºncia: ${observacaoAdmin}`
-        : `A moderaÃ§Ã£o marcou sua denÃºncia como ${statusTexto}.`,
+        ? `A moderação atualizou sua denúncia: ${observacaoAdmin}`
+        : `A moderação marcou sua denúncia como ${statusTexto}.`,
       tipo: "denuncia-comunidade",
       lida: idsLidos.has(id),
       criadaEm: pegarTexto(
@@ -1854,7 +1900,7 @@ async function carregarNotificacoesComunidadeSupabase(
         new Date().toISOString()
       ),
       autorId: "",
-      autorNome: "ModeraÃ§Ã£o",
+      autorNome: "Moderação",
       autorAvatar: "",
     });
   });
@@ -1879,18 +1925,18 @@ function obterRotuloTipoAnotacaoDiarioNotificacao(tipo: string) {
   }
 
   if (tipo === "concluida") {
-    return "obra concluÃ­da";
+    return "obra concluída";
   }
 
   if (tipo === "avaliacao") {
-    return "avaliaÃ§Ã£o";
+    return "avaliação";
   }
 
   if (tipo === "review") {
     return "review";
   }
 
-  return "anotaÃ§Ã£o";
+  return "anotação";
 }
 
 function obterMetadataNotificacaoDiario(registro: Record<string, unknown>) {
@@ -1950,7 +1996,7 @@ async function carregarNotificacoesDiarioSupabase(
       });
     }
   } catch {
-    // O DiÃ¡rio continua sem notificaÃ§Ãµes de interaÃ§Ã£o se a consulta falhar.
+    // O Diário continua sem notificações de interação se a consulta falhar.
   }
 
   const anotacoesPorId = new Map(
@@ -2013,7 +2059,7 @@ async function carregarNotificacoesDiarioSupabase(
         });
       }
     } catch {
-      // InteraÃ§Ãµes do DiÃ¡rio sÃ£o complementares Ã s demais notificaÃ§Ãµes.
+      // Interações do Diário são complementares às demais notificações.
     }
   }
 
@@ -2071,7 +2117,7 @@ async function carregarNotificacoesDiarioSupabase(
       }
     }
   } catch {
-    // Atividades pÃºblicas de perfis seguidos nÃ£o bloqueiam as demais notificaÃ§Ãµes.
+    // Atividades públicas de perfis seguidos não bloqueiam as demais notificações.
   }
 
   const obrasPorId = new Map<
@@ -2111,7 +2157,7 @@ async function carregarNotificacoesDiarioSupabase(
         });
       }
     } catch {
-      // O texto da anotaÃ§Ã£o continua permitindo identificar a notificaÃ§Ã£o.
+      // O texto da anotação continua permitindo identificar a notificação.
     }
   }
 
@@ -2143,7 +2189,7 @@ async function carregarNotificacoesDiarioSupabase(
       obraId,
       capituloId: "",
       link: linkDiarioProprio,
-      titulo: "Nova curtida no DiÃ¡rio",
+      titulo: "Nova curtida no Diário",
       mensagem: `${perfilAutor.nome} curtiu sua ${tipoAnotacao}${
         obra?.titulo ? ` sobre ${obra.titulo}` : ""
       }.`,
@@ -2180,7 +2226,7 @@ async function carregarNotificacoesDiarioSupabase(
       obraId,
       capituloId: "",
       link: linkDiarioProprio,
-      titulo: "Novo comentÃ¡rio no DiÃ¡rio",
+      titulo: "Novo comentário no Diário",
       mensagem: `${perfilAutor.nome} comentou na sua ${tipoAnotacao}${
         obra?.titulo ? ` sobre ${obra.titulo}` : ""
       }${comentario ? `: ${comentario.slice(0, 120)}` : "."}`,
@@ -2204,7 +2250,7 @@ async function carregarNotificacoesDiarioSupabase(
     }
 
     const autorId = pegarTexto(registro.user_id);
-    const perfilAutor = obterPerfilNotificacao(perfis, autorId, "UsuÃ¡rio");
+    const perfilAutor = obterPerfilNotificacao(perfis, autorId, "Usuário");
     const tipoAtividade = pegarTexto(registro.tipo);
     const obraId = pegarTexto(registro.obra_id);
     const obra = obrasPorId.get(obraId);
@@ -2228,8 +2274,8 @@ async function carregarNotificacoesDiarioSupabase(
       link: criarDiarioPerfilHrefNotificacao(autorId, perfilAutor.nome),
       titulo:
         tipoAtividade === "avaliou_obra"
-          ? "Nova avaliaÃ§Ã£o no DiÃ¡rio"
-          : "Obra concluÃ­da no DiÃ¡rio",
+          ? "Nova avaliação no Diário"
+          : "Obra concluída no Diário",
       mensagem,
       tipo: "atividade-diario",
       lida: idsLidos.has(id),
@@ -2407,7 +2453,7 @@ async function apagarNotificacoesSupabase(
       .eq("user_id", userId)
       .in("notificacao_id", ids);
   } catch {
-    // A remoÃ§Ã£o local continua funcionando se o Supabase falhar.
+    // A remoção local continua funcionando se o Supabase falhar.
   }
 }
 
@@ -2557,7 +2603,7 @@ export default function NotificacoesPage() {
             ...notificacoesDiarioSupabase,
           ]),
           idsNotificacoesApagadas
-        );
+        ).map((notificacao) => prepararNotificacaoTexto(notificacao));
 
         try {
           salvarJsonStorageUsuarioNotificacoes(
@@ -2567,7 +2613,7 @@ export default function NotificacoesPage() {
           );
           salvarNotificacoes(notificacoesMescladas, usuarioAtualId);
         } catch {
-          // Se o navegador bloquear localStorage, a pÃ¡gina continua com o estado em memÃ³ria.
+          // Se o navegador bloquear localStorage, a página continua com o estado em memória.
         }
 
         if (!componenteAtivo) {
@@ -2707,11 +2753,15 @@ export default function NotificacoesPage() {
   }
 
   function atualizarNotificacoes(novasNotificacoes: NotificacaoLocal[]) {
-    setNotificacoes(novasNotificacoes);
-    definirNotificacoesNaoLidas(
-      novasNotificacoes.filter((notificacao) => !notificacao.lida).length
+    const notificacoesNormalizadas = novasNotificacoes.map((notificacao) =>
+      prepararNotificacaoTexto(notificacao)
     );
-    salvarNotificacoes(novasNotificacoes, usuarioNotificacoesId);
+
+    setNotificacoes(notificacoesNormalizadas);
+    definirNotificacoesNaoLidas(
+      notificacoesNormalizadas.filter((notificacao) => !notificacao.lida).length
+    );
+    salvarNotificacoes(notificacoesNormalizadas, usuarioNotificacoesId);
   }
 
   function marcarComoLida(id: string) {
@@ -2895,7 +2945,7 @@ export default function NotificacoesPage() {
             <h2 style={emptyTitleStyle}>Verificando acesso...</h2>
 
             <p style={emptyTextStyle}>
-              Aguarde enquanto confirmamos sua sessÃ£o.
+              Aguarde enquanto confirmamos sua sessão.
             </p>
           </section>
         </section>
@@ -2921,7 +2971,7 @@ export default function NotificacoesPage() {
               className="historietas-theme-title"
               style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
             >
-              NOTIFICAÃ‡Ã•ES
+              NOTIFICAÇÕES
             </span>
           </Link>
         </header>
@@ -2941,12 +2991,12 @@ export default function NotificacoesPage() {
                 <div style={filterActionsMenuWrapperStyle}>
                   <button
                     type="button"
-                    aria-label="Abrir aÃ§Ãµes gerais das notificaÃ§Ãµes"
+                    aria-label="Abrir ações gerais das notificações"
                     aria-expanded={menuAcoesGeraisAberto}
                     onClick={alternarMenuAcoesGerais}
                     style={filterActionsMenuButtonStyle}
                   >
-                    â‹®
+                    ⋮
                   </button>
 
                   {menuAcoesGeraisAberto && (
@@ -2980,7 +3030,7 @@ export default function NotificacoesPage() {
                         }
                         disabled={notificacoesFiltradas.length === 0}
                       >
-                        Marcar seleÃ§Ã£o
+                        Marcar seleção
                       </button>
 
                       <button
@@ -3025,7 +3075,7 @@ export default function NotificacoesPage() {
                   fecharMenusNotificacoes();
                   setBusca(event.target.value);
                 }}
-                placeholder="Buscar por obra, capÃ­tulo, comunidade ou mensagem..."
+                placeholder="Buscar por obra, capítulo, comunidade ou mensagem..."
                 style={isDesktop ? desktopSearchInputStyle : searchInputStyle}
                 type="text"
               />
@@ -3088,7 +3138,7 @@ export default function NotificacoesPage() {
                       : quickFilterStyle
                   }
                 >
-                  CapÃ­tulos
+                  Capítulos
                 </button>
 
                 <button
@@ -3119,7 +3169,7 @@ export default function NotificacoesPage() {
                   <option value="recentes">Mais recentes</option>
                   <option value="antigas">Mais antigas</option>
                   <option value="obra">Nome da obra</option>
-                  <option value="capitulo">Nome do capÃ­tulo</option>
+                  <option value="capitulo">Nome do capítulo</option>
                 </select>
 
                 {filtrosAtivos && (
@@ -3137,7 +3187,7 @@ export default function NotificacoesPage() {
         <section
               className="notificacoes-stats-carousel"
               style={isDesktop ? desktopStatsGridStyle : statsGridStyle}
-              aria-label="Resumo das notificaÃ§Ãµes"
+              aria-label="Resumo das notificações"
             >
           <div style={statCardStyle}>
             <strong style={statNumberStyle}>{totalNotificacoes}</strong>
@@ -3156,7 +3206,7 @@ export default function NotificacoesPage() {
 
           <div style={chapterStatCardStyle}>
             <strong style={statNumberStyle}>{totalCapitulos}</strong>
-            <span style={statLabelStyle}>CapÃ­tulos</span>
+            <span style={statLabelStyle}>Capítulos</span>
           </div>
 
           <div style={communityStatCardStyle}>
@@ -3166,7 +3216,7 @@ export default function NotificacoesPage() {
 
           <div style={statCardStyle}>
             <strong style={smallStatTextStyle}>{ultimaNotificacao}</strong>
-            <span style={statLabelStyle}>Ãšltima</span>
+            <span style={statLabelStyle}>Última</span>
           </div>
         </section>
 
@@ -3177,10 +3227,10 @@ export default function NotificacoesPage() {
           <section style={isDesktop ? desktopEmptyStyle : emptyStyle}>
             <span style={emptyIconStyle}>N</span>
 
-            <h2 style={emptyTitleStyle}>Nenhuma notificaÃ§Ã£o</h2>
+            <h2 style={emptyTitleStyle}>Nenhuma notificação</h2>
 
             <p style={emptyTextStyle}>
-              Quando uma obra seguida receber capÃ­tulo novo ou a Comunidade tiver novidades para vocÃª, o aviso aparece aqui.
+              Quando uma obra seguida receber capítulo novo ou a Comunidade tiver novidades para você, o aviso aparece aqui.
             </p>
 
             <Link href="/seguindo" style={emptyButtonStyle}>
@@ -3194,7 +3244,7 @@ export default function NotificacoesPage() {
             <h2 style={emptyTitleStyle}>Nada encontrado</h2>
 
             <p style={emptyTextStyle}>
-              Limpe a busca ou escolha outro filtro para ver suas notificaÃ§Ãµes.
+              Limpe a busca ou escolha outro filtro para ver suas notificações.
             </p>
 
             <button type="button" onClick={limparFiltros} style={emptyButtonStyle}>
@@ -3202,8 +3252,9 @@ export default function NotificacoesPage() {
             </button>
           </section>
         ) : (
-          <section style={isDesktop ? desktopListStyle : listStyle} aria-label="Lista de notificaÃ§Ãµes">
-            {notificacoesFiltradas.map((notificacao) => {
+          <section style={isDesktop ? desktopListStyle : listStyle} aria-label="Lista de notificações">
+            {notificacoesFiltradas.map((notificacaoOriginal) => {
+              const notificacao = prepararNotificacaoTexto(notificacaoOriginal);
               const obra = encontrarObra(notificacao.obraId);
               const capitulo = encontrarCapitulo(
                 notificacao.obraId,
@@ -3211,8 +3262,8 @@ export default function NotificacoesPage() {
               );
 
               const ehComunidade = notificacaoEhComunidade(notificacao);
-              const tituloObra = obra?.titulo || "Obra nÃ£o encontrada";
-              const tituloCapitulo = capitulo?.titulo || "CapÃ­tulo nÃ£o encontrado";
+              const tituloObra = obra?.titulo || "Obra não encontrada";
+              const tituloCapitulo = capitulo?.titulo || "Capítulo não encontrado";
               const tituloExibicao = obterTituloExibicaoNotificacao(notificacao);
               const autorComentarioComunidade =
                 extrairAutorComentarioComunidade(notificacao);
@@ -3282,12 +3333,12 @@ export default function NotificacoesPage() {
                         <div style={cardMenuWrapperStyle}>
                           <button
                             type="button"
-                            aria-label={`Abrir aÃ§Ãµes de ${tituloExibicao}`}
+                            aria-label={`Abrir ações de ${tituloExibicao}`}
                             aria-expanded={menuEstaAberto}
                             onClick={() => alternarMenuNotificacao(notificacao.id)}
                             style={cardMenuButtonStyle}
                           >
-                            â‹®
+                            ⋮
                           </button>
 
                           {menuEstaAberto && (
@@ -3394,17 +3445,17 @@ export default function NotificacoesPage() {
                               href={autorNotificacaoHref}
                               style={notificationAuthorInlineLinkStyle}
                             >
-                              ComentÃ¡rio de {autorComentarioComunidade}
+                              Comentário de {autorComentarioComunidade}
                             </Link>
                           ) : (
                             <span style={metaLabelStyle}>
-                              ComentÃ¡rio de {autorComentarioComunidade}
+                              Comentário de {autorComentarioComunidade}
                             </span>
                           )
                         ) : (
                           <span style={communityInlineStatusStyle}>
-                            <span>AtualizaÃ§Ã£o</span>
-                            <span style={communityInlineStatusDotStyle}>â€¢</span>
+                            <span>Atualização</span>
+                            <span style={communityInlineStatusDotStyle}>•</span>
                             <span>{obterDetalheNotificacao(notificacao)}</span>
                           </span>
                         )}
@@ -3423,7 +3474,7 @@ export default function NotificacoesPage() {
                         </div>
 
                         <div style={metaBoxStyle}>
-                          <span style={metaLabelStyle}>CapÃ­tulo</span>
+                          <span style={metaLabelStyle}>Capítulo</span>
                           <strong style={metaValueStyle}>{tituloCapitulo}</strong>
                         </div>
                       </>

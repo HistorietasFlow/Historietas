@@ -1,18 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const rotasProtegidas = [
-  "/publicar",
-  "/painel-autor",
-  "/editar-obra",
-  "/editar-capitulo",
-  "/adicionar-capitulo",
-  "/ver-arquivo",
-  "/seguindo",
-  "/notificacoes",
-  "/configuracoes",
-  "/admin",
-];
+const rotasPublicas = ["/login"];
 
 type CookieParaSalvar = {
   name: string;
@@ -20,8 +9,8 @@ type CookieParaSalvar = {
   options: CookieOptions;
 };
 
-function rotaEstaProtegida(pathname: string) {
-  return rotasProtegidas.some((rota) => {
+function rotaEstaPublica(pathname: string) {
+  return rotasPublicas.some((rota) => {
     return pathname === rota || pathname.startsWith(`${rota}/`);
   });
 }
@@ -61,14 +50,20 @@ function criarRedirectSeguro(request: NextRequest, destino: string) {
   return redirectUrl;
 }
 
+function criarRedirectLogin(request: NextRequest) {
+  const redirectUrl = request.nextUrl.clone();
+
+  redirectUrl.pathname = "/login";
+  redirectUrl.search = "";
+  redirectUrl.searchParams.set("redirectTo", obterPathComBusca(request));
+
+  return NextResponse.redirect(redirectUrl);
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const precisaLogin = rotaEstaProtegida(pathname);
   const estaNoLogin = pathname === "/login";
-
-  if (!precisaLogin && !estaNoLogin) {
-    return NextResponse.next();
-  }
+  const precisaLogin = !rotaEstaPublica(pathname);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
   const supabasePublicKey =
@@ -78,13 +73,7 @@ export async function proxy(request: NextRequest) {
 
   if (!supabaseUrl || !supabasePublicKey) {
     if (precisaLogin) {
-      const redirectUrl = request.nextUrl.clone();
-
-      redirectUrl.pathname = "/login";
-      redirectUrl.search = "";
-      redirectUrl.searchParams.set("redirectTo", obterPathComBusca(request));
-
-      return NextResponse.redirect(redirectUrl);
+      return criarRedirectLogin(request);
     }
 
     return NextResponse.next();
@@ -120,13 +109,7 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (precisaLogin && !user) {
-    const redirectUrl = request.nextUrl.clone();
-
-    redirectUrl.pathname = "/login";
-    redirectUrl.search = "";
-    redirectUrl.searchParams.set("redirectTo", obterPathComBusca(request));
-
-    return NextResponse.redirect(redirectUrl);
+    return criarRedirectLogin(request);
   }
 
   if (estaNoLogin && user) {
@@ -142,16 +125,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/publicar/:path*",
-    "/painel-autor/:path*",
-    "/editar-obra/:path*",
-    "/editar-capitulo/:path*",
-    "/adicionar-capitulo/:path*",
-    "/ver-arquivo/:path*",
-    "/seguindo/:path*",
-    "/notificacoes/:path*",
-    "/configuracoes/:path*",
-    "/admin/:path*",
-    "/login",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|xml|json)$).*)",
   ],
 };

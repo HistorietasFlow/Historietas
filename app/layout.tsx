@@ -124,6 +124,150 @@ export default function RootLayout({
         </nav>
 
           <Script
+            id="historietas-corrigir-texto-quebrado"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                (() => {
+                  const padraoTextoQuebrado = /[ÃÂâð�]/;
+                  const atributosParaCorrigir = ["aria-label", "title", "placeholder", "alt"];
+
+                  function corrigirTextoQuebrado(texto) {
+                    let textoCorrigido = texto;
+
+                    for (let tentativa = 0; tentativa < 2; tentativa += 1) {
+                      if (!padraoTextoQuebrado.test(textoCorrigido)) {
+                        break;
+                      }
+
+                      try {
+                        const bytes = new Uint8Array(
+                          Array.from(textoCorrigido, (caractere) => caractere.charCodeAt(0) & 255)
+                        );
+                        const decodificado = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+
+                        if (!decodificado || decodificado === textoCorrigido) {
+                          break;
+                        }
+
+                        textoCorrigido = decodificado;
+                      } catch {
+                        break;
+                      }
+                    }
+
+                    return textoCorrigido.replace(/\uFFFD/g, "");
+                  }
+
+                  function podeCorrigirNoElemento(elemento) {
+                    if (!elemento || !elemento.tagName) {
+                      return true;
+                    }
+
+                    const tag = elemento.tagName.toLowerCase();
+
+                    return tag !== "script" && tag !== "style" && tag !== "textarea" && tag !== "input";
+                  }
+
+                  function corrigirNoElemento(elemento) {
+                    if (!elemento || !podeCorrigirNoElemento(elemento)) {
+                      return;
+                    }
+
+                    atributosParaCorrigir.forEach((atributo) => {
+                      const valor = elemento.getAttribute?.(atributo);
+
+                      if (valor && padraoTextoQuebrado.test(valor)) {
+                        const valorCorrigido = corrigirTextoQuebrado(valor);
+
+                        if (valorCorrigido !== valor) {
+                          elemento.setAttribute(atributo, valorCorrigido);
+                        }
+                      }
+                    });
+                  }
+
+                  function corrigirTextos(root = document.body) {
+                    if (!root) {
+                      return;
+                    }
+
+                    if (root.nodeType === Node.ELEMENT_NODE) {
+                      corrigirNoElemento(root);
+                    }
+
+                    if (root.nodeType === Node.TEXT_NODE) {
+                      const texto = root.nodeValue || "";
+
+                      if (padraoTextoQuebrado.test(texto) && podeCorrigirNoElemento(root.parentElement)) {
+                        const textoCorrigido = corrigirTextoQuebrado(texto);
+
+                        if (textoCorrigido !== texto) {
+                          root.nodeValue = textoCorrigido;
+                        }
+                      }
+
+                      return;
+                    }
+
+                    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+                    const textos = [];
+
+                    while (walker.nextNode()) {
+                      textos.push(walker.currentNode);
+                    }
+
+                    textos.forEach((node) => {
+                      const texto = node.nodeValue || "";
+
+                      if (!padraoTextoQuebrado.test(texto) || !podeCorrigirNoElemento(node.parentElement)) {
+                        return;
+                      }
+
+                      const textoCorrigido = corrigirTextoQuebrado(texto);
+
+                      if (textoCorrigido !== texto) {
+                        node.nodeValue = textoCorrigido;
+                      }
+                    });
+
+                    if (root.querySelectorAll) {
+                      root.querySelectorAll("*").forEach(corrigirNoElemento);
+                    }
+                  }
+
+                  corrigirTextos();
+
+                  const observer = new MutationObserver((mutacoes) => {
+                    mutacoes.forEach((mutacao) => {
+                      mutacao.addedNodes.forEach((node) => corrigirTextos(node));
+
+                      if (mutacao.type === "characterData") {
+                        corrigirTextos(mutacao.target);
+                      }
+
+                      if (mutacao.type === "attributes") {
+                        corrigirTextos(mutacao.target);
+                      }
+                    });
+                  });
+
+                  observer.observe(document.body, {
+                    childList: true,
+                    characterData: true,
+                    attributes: true,
+                    subtree: true,
+                  });
+
+                  window.addEventListener("historietas:notificacoes-atualizadas", () => {
+                    window.setTimeout(() => corrigirTextos(), 30);
+                  });
+                })();
+              `,
+            }}
+          />
+
+          <Script
             id="historietas-bottom-nav-active"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
