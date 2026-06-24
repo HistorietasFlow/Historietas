@@ -15,33 +15,88 @@ const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
 
-function formatarErroAuth(mensagem: string) {
-  const mensagemNormalizada = mensagem.toLowerCase();
+type ErroAuthSupabase = {
+  message?: string;
+  code?: string;
+  status?: number | string;
+  name?: string;
+};
+
+function obterMensagemErroAuth(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+
+  const erroAuth = error as ErroAuthSupabase;
+
+  return typeof erroAuth.message === "string" ? erroAuth.message.trim() : "";
+}
+
+function obterCodigoErroAuth(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+
+  const erroAuth = error as ErroAuthSupabase;
+
+  return typeof erroAuth.code === "string" ? erroAuth.code.trim() : "";
+}
+
+function formatarErroAuth(error: unknown) {
+  const mensagem = obterMensagemErroAuth(error);
+  const codigo = obterCodigoErroAuth(error);
+  const textoErro = [mensagem, codigo].filter(Boolean).join(" | ");
+  const mensagemNormalizada = textoErro.toLowerCase();
+
+  let mensagemAmigavel = "Não foi possível concluir agora.";
 
   if (
     mensagemNormalizada.includes("invalid login credentials") ||
     mensagemNormalizada.includes("invalid credentials")
   ) {
-    return "E-mail ou senha incorretos.";
+    mensagemAmigavel = "E-mail ou senha incorretos.";
+  } else if (mensagemNormalizada.includes("email not confirmed")) {
+    mensagemAmigavel = "Confirme seu e-mail antes de entrar.";
+  } else if (
+    mensagemNormalizada.includes("user already registered") ||
+    mensagemNormalizada.includes("already registered") ||
+    mensagemNormalizada.includes("user_already_exists") ||
+    mensagemNormalizada.includes("email_exists")
+  ) {
+    mensagemAmigavel =
+      "Já existe uma conta com este e-mail. Use Entrar ou recupere a senha.";
+  } else if (
+    mensagemNormalizada.includes("signup") &&
+    mensagemNormalizada.includes("disabled")
+  ) {
+    mensagemAmigavel = "Cadastro por e-mail está desativado no Supabase.";
+  } else if (
+    mensagemNormalizada.includes("database error") ||
+    mensagemNormalizada.includes("saving new user") ||
+    mensagemNormalizada.includes("unexpected_failure")
+  ) {
+    mensagemAmigavel =
+      "O Supabase recusou o cadastro por erro no banco, trigger ou profile.";
+  } else if (
+    mensagemNormalizada.includes("password") ||
+    mensagemNormalizada.includes("weak_password")
+  ) {
+    mensagemAmigavel = "A senha não atende aos requisitos necessários.";
+  } else if (mensagemNormalizada.includes("email")) {
+    mensagemAmigavel = "Verifique o e-mail informado.";
+  } else if (
+    mensagemNormalizada.includes("failed to fetch") ||
+    mensagemNormalizada.includes("network") ||
+    mensagemNormalizada.includes("fetch")
+  ) {
+    mensagemAmigavel = "Não consegui conectar ao Supabase agora.";
   }
 
-  if (mensagemNormalizada.includes("email not confirmed")) {
-    return "Confirme seu e-mail antes de entrar.";
+  if (!textoErro) {
+    return `${mensagemAmigavel} Erro técnico: erro desconhecido.`;
   }
 
-  if (mensagemNormalizada.includes("user already registered")) {
-    return "Já existe uma conta com este e-mail.";
-  }
-
-  if (mensagemNormalizada.includes("password")) {
-    return "A senha não atende aos requisitos necessários.";
-  }
-
-  if (mensagemNormalizada.includes("email")) {
-    return "Verifique o e-mail informado.";
-  }
-
-  return "Não foi possível concluir agora. Confira os dados e tente novamente.";
+  return `${mensagemAmigavel} Erro técnico: ${textoErro}`;
 }
 
 function obterRedirectToSeguro(valor: string | null, fallback: string) {
@@ -418,7 +473,7 @@ export default function LoginPage() {
         });
 
         if (error) {
-          setErro(formatarErroAuth(error.message));
+          setErro(formatarErroAuth(error));
           return;
         }
 
@@ -447,7 +502,7 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setErro(formatarErroAuth(error.message));
+        setErro(formatarErroAuth(error));
         return;
       }
 
@@ -459,8 +514,8 @@ export default function LoginPage() {
       setMensagem("Entrada realizada. Redirecionando...");
       router.replace(obterRedirectToAtual("/painel-autor"));
       router.refresh();
-    } catch {
-      setErro("Não foi possível concluir agora. Tente novamente.");
+    } catch (error) {
+      setErro(formatarErroAuth(error));
     } finally {
       setCarregando(false);
     }
