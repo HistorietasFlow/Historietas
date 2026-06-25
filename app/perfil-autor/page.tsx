@@ -1187,6 +1187,26 @@ function criarCapaItemDiarioPerfilStyle(
   };
 }
 
+function criarCapaCardDiarioPerfilStyle(
+  capa: string,
+  desktop: boolean,
+): CSSProperties {
+  const baseStyle = desktop
+    ? desktopDiaryVisualCoverStyle
+    : diaryVisualCoverStyle;
+
+  if (!capa) {
+    return baseStyle;
+  }
+
+  return {
+    ...baseStyle,
+    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.18) 48%, rgba(0,0,0,0.58) 100%), url(${capa})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
+
 type SupabaseObraRow = Record<string, unknown>;
 type SupabaseCapituloRow = Record<string, unknown>;
 
@@ -1996,17 +2016,6 @@ function criarEstadoDiarioPerfilVazio(): Omit<DiarioPerfilEstado, "carregando"> 
   };
 }
 
-function obterDescricaoPrivacidadeDiario(podeVerPrivados: boolean) {
-  return podeVerPrivados
-    ? "Você vê itens públicos, parciais e privados. Visitantes veem somente o que estiver público ou parcial."
-    : "Este Diário mostra somente atividades públicas ou parciais. Leituras privadas e progresso reservado ficam ocultos.";
-}
-
-function obterTextoResumoPrivacidadeDiario(podeVerPrivados: boolean) {
-  return podeVerPrivados
-    ? "Privado só para você • Parcial aparece no perfil • Público aparece no perfil e nas áreas sociais"
-    : "Privados ocultos • Parciais visíveis no perfil • Públicos visíveis nas áreas sociais";
-}
 
 function dataDiarioPerfilFormatada(dataIso: string) {
   if (!dataIso) {
@@ -2054,19 +2063,6 @@ function obterApresentacaoTipoDiarioPerfil(tipo: DiarioPerfilItem["tipo"]) {
   return { icone: "●", texto: "Atividade", cor: "#D4D4D8", fundo: "rgba(255,255,255,0.08)" };
 }
 
-function obterApresentacaoVisibilidadeDiarioPerfil(
-  visibilidade: VisibilidadeDiarioPerfil | undefined,
-) {
-  if (visibilidade === "publico") {
-    return { icone: "🌐", texto: "Público" };
-  }
-
-  if (visibilidade === "parcial") {
-    return { icone: "◉", texto: "No perfil" };
-  }
-
-  return { icone: "🔒", texto: "Privado" };
-}
 
 function criarEstrelaDiarioPerfilStyle(
   estrela: number,
@@ -3194,6 +3190,7 @@ export default function PerfilAutorPage() {
     useState(0);
   const [filtrosObrasAbertos, setFiltrosObrasAbertos] = useState(false);
   const [obraMenuAbertoId, setObraMenuAbertoId] = useState("");
+  const [diarioMenuAbertoChave, setDiarioMenuAbertoChave] = useState("");
   const [avaliacaoAutor, setAvaliacaoAutor] =
     useState<AvaliacaoAutorPublica>(avaliacaoAutorVazia);
   const [diarioPerfil, setDiarioPerfil] =
@@ -4005,15 +4002,12 @@ export default function PerfilAutorPage() {
     };
   }, [anotacoesInterativasIds, usuarioIdLogado]);
 
-  const totalLeiturasDiario =
-    diarioPerfil.lendoAgora.length + diarioPerfil.concluidas.length;
+  const totalLeiturasDiario = diarioPerfil.lendoAgora.length;
   const totalQueroLerDiario = diarioPerfil.queroLer.length;
   const totalFavoritasDiario = diarioPerfil.favoritas.length;
+  const totalConcluidasDiario = diarioPerfil.concluidas.length;
   const totalAvaliacoesDiario = diarioPerfil.avaliacoes.length;
   const totalReviewsDiario = diarioPerfil.reviews.length;
-  const descricaoPrivacidadeDiario = obterDescricaoPrivacidadeDiario(podeEditarPerfil);
-  const resumoPrivacidadeDiario = obterTextoResumoPrivacidadeDiario(podeEditarPerfil);
-
   useEffect(() => {
     if (!perfilParaMostrar || !autorPodeReceberAvaliacao) {
       setAvaliacaoAutor(avaliacaoAutorVazia);
@@ -4183,6 +4177,26 @@ export default function PerfilAutorPage() {
       null
     );
   }, [obraMenuAbertoId, obrasDoPerfilFiltradas]);
+
+  const diarioMenuAberto = useMemo(() => {
+    if (!diarioMenuAbertoChave) {
+      return null;
+    }
+
+    const itensDiario = [
+      ...diarioPerfil.lendoAgora,
+      ...diarioPerfil.queroLer,
+      ...diarioPerfil.favoritas,
+      ...diarioPerfil.concluidas,
+      ...diarioPerfil.avaliacoes,
+      ...diarioPerfil.reviews,
+      ...diarioPerfil.atividades,
+    ];
+
+    return (
+      itensDiario.find((item) => item.chave === diarioMenuAbertoChave) || null
+    );
+  }, [diarioMenuAbertoChave, diarioPerfil]);
 
 
   const itensBibliotecaQueroLer = useMemo(() => {
@@ -5228,10 +5242,29 @@ export default function PerfilAutorPage() {
     }));
   }
 
+  function itemDiarioPertenceAoUsuarioLogado(item: DiarioPerfilItem) {
+    const userIdNormalizado = usuarioIdLogado.trim().toLowerCase();
+    const perfilUserIdNormalizado =
+      perfilParaMostrar?.autorId.trim().toLowerCase() || "";
+    const obraAutorIdNormalizado =
+      item.obra?.autorId?.trim().toLowerCase() || "";
+
+    return Boolean(
+      userIdNormalizado &&
+        (podeEditarPerfil ||
+          perfilUserIdNormalizado === userIdNormalizado ||
+          obraAutorIdNormalizado === userIdNormalizado),
+    );
+  }
+
   function abrirEditorAnotacaoDiario(item: DiarioPerfilItem) {
     const obraId = item.obra?.id?.trim() || "";
 
-    if (!podeEditarPerfil || !obraId || !idAutorSupabaseValido(obraId)) {
+    if (
+      !itemDiarioPertenceAoUsuarioLogado(item) ||
+      !obraId ||
+      !idAutorSupabaseValido(obraId)
+    ) {
       setMensagemAcao(
         "Esta anotação só pode ser criada em uma obra salva no Supabase.",
       );
@@ -5244,8 +5277,9 @@ export default function PerfilAutorPage() {
       obraId,
       tipo: item.tipo,
       texto: item.anotacao || "",
-      visibilidade:
-        item.anotacaoVisibilidade || item.visibilidade || "privado",
+      visibilidade: item.anotacao
+        ? item.anotacaoVisibilidade || item.visibilidade || "privado"
+        : "privado",
       salvando: false,
       erro: "",
     });
@@ -5696,429 +5730,63 @@ export default function PerfilAutorPage() {
   function renderizarItemDiarioPerfil(item: DiarioPerfilItem) {
     const itemHref = obterHrefItemDiarioPerfil(item);
     const obra = item.obra;
-    const apresentacaoTipo = obterApresentacaoTipoDiarioPerfil(item.tipo);
-    const apresentacaoVisibilidade = obterApresentacaoVisibilidadeDiarioPerfil(
-      item.anotacao
-        ? item.anotacaoVisibilidade
-        : item.visibilidade,
-    );
-    const progresso = Math.max(
-      0,
-      Math.min(100, Math.round(item.progresso ?? obra?.progressoLeitura ?? 0)),
-    );
-    const capituloAtual =
-      item.tipo === "lendo" && obra
-        ? encontrarCapituloParaContinuar(obra)
-        : null;
-    const indiceCapituloAtual =
-      capituloAtual && obra
-        ? obra.capitulos.findIndex(
-            (capitulo) => capitulo.id === capituloAtual.id,
-          )
-        : -1;
-    const numeroCapituloAtual =
-      indiceCapituloAtual >= 0 ? indiceCapituloAtual + 1 : 1;
     const totalCapitulos = obra?.capitulos.length || 0;
-    const hrefAcao =
-      capituloAtual && obra
-        ? criarHrefLeituraCapituloPerfilAutor(
-            obra,
-            capituloAtual,
-            numeroCapituloAtual,
-          )
-        : itemHref;
-    const nota = Math.max(0, Math.min(5, item.nota || 0));
-    const anotacaoId = item.anotacaoId?.trim() || "";
-    const podeInteragirAnotacao = Boolean(
-      item.anotacao &&
-        anotacaoId &&
-        item.anotacaoVisibilidade !== "privado",
+    const totalCurtidasDiario =
+      obra?.capitulos.filter((capitulo) => capitulo.curtiu).length || 0;
+    const visualizacoesDiario = compactarNumeroPerfilAutor(
+      obra?.visualizacoes || 0,
     );
-    const interacaoAnotacao = anotacaoId
-      ? interacoesAnotacoesDiario[anotacaoId] ||
-        criarInteracaoAnotacaoDiarioVazia()
-      : criarInteracaoAnotacaoDiarioVazia();
+    const nota = Math.max(0, Math.min(5, item.nota || 0));
+    const avaliacaoDiario = nota > 0 ? nota.toFixed(1) : "0.0";
 
     return (
       <article
         key={item.chave}
-        style={isDesktop ? desktopDiaryItemStyle : diaryItemStyle}
+        style={isDesktop ? desktopDiaryVisualCardStyle : diaryVisualCardStyle}
       >
         <Link
           href={itemHref}
-          style={diaryItemCoverLinkStyle}
+          style={diaryVisualCoverLinkStyle}
           aria-label={`Abrir ${item.titulo}`}
         >
-          <div style={criarCapaItemDiarioPerfilStyle(obra?.capa || "", isDesktop)} />
+          <div
+            style={criarCapaGridPerfilAutor(obra?.capa || "", isDesktop)}
+          >
+            <div style={diaryCardCoverOverlayStyle}>
+              <strong style={diaryCardCoverTitleStyle}>{item.titulo}</strong>
+
+              <span style={diaryCardCoverMetaStyle}>
+                <span>
+                  {totalCapitulos} {totalCapitulos === 1 ? "cap" : "caps"}
+                </span>
+                <span>👁 {visualizacoesDiario}</span>
+                <span>
+                  <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
+                  {totalCurtidasDiario}
+                </span>
+                <span>
+                  <span style={diaryCardStarMetaStyle}>★</span>{" "}
+                  {avaliacaoDiario}
+                </span>
+              </span>
+            </div>
+          </div>
         </Link>
 
-        <div style={diaryItemTextBlockStyle}>
-          <div style={diaryItemTopRowStyle}>
-            <span
-              style={{
-                ...diaryItemTypeBadgeStyle,
-                color: apresentacaoTipo.cor,
-                background: apresentacaoTipo.fundo,
-              }}
-            >
-              <span aria-hidden="true">{apresentacaoTipo.icone}</span>
-              <span>{apresentacaoTipo.texto}</span>
-            </span>
-
-            <span style={diaryItemDateStyle}>
-              {dataDiarioPerfilFormatada(item.data)}
-            </span>
-          </div>
-
-          <Link href={itemHref} style={diaryItemTitleLinkStyle}>
-            <strong style={diaryItemTitleStyle}>{item.titulo}</strong>
-          </Link>
-
-          {obra?.autor && (
-            <Link
-              href={criarPerfilAutorHref(obra.autor, obra.autorId)}
-              style={diaryItemAuthorStyle}
-            >
-              Por {obra.autor}
-            </Link>
-          )}
-
-          {item.tipo === "avaliacao" && nota > 0 ? (
-            <div style={diaryItemRatingRowStyle}>
-              <span style={diaryItemStarsStyle} aria-label={`${nota.toFixed(1)} estrelas`}>
-                {[1, 2, 3, 4, 5].map((estrela) => (
-                  <span
-                    key={`${item.chave}-estrela-${estrela}`}
-                    style={criarEstrelaDiarioPerfilStyle(estrela, nota)}
-                    aria-hidden="true"
-                  >
-                    ★
-                  </span>
-                ))}
-              </span>
-
-              <strong style={diaryItemRatingNumberStyle}>
-                {nota.toFixed(1).replace(".", ",")}
-              </strong>
-            </div>
-          ) : null}
-
-          {item.tipo === "lendo" && obra ? (
-            <div style={diaryItemReadingBlockStyle}>
-              <span style={diaryItemChapterStyle}>
-                {totalCapitulos > 0
-                  ? `Capítulo ${numeroCapituloAtual} de ${totalCapitulos}`
-                  : "Leitura em andamento"}
-              </span>
-
-              <div style={diaryItemProgressTrackStyle} aria-hidden="true">
-                <div
-                  style={{
-                    ...diaryItemProgressFillStyle,
-                    width: `${progresso}%`,
-                  }}
-                />
-              </div>
-
-              <span style={diaryItemProgressTextStyle}>
-                {progresso}% concluído
-              </span>
-            </div>
-          ) : (
-            <span style={diaryItemDescriptionStyle}>{item.descricao}</span>
-          )}
-
-          {item.anotacao && (
-            <div style={diaryItemAnnotationBoxStyle}>
-              <span style={diaryItemAnnotationLabelStyle}>
-                {podeEditarPerfil ? "Minha anotação" : "Anotação"}
-              </span>
-
-              <p style={diaryItemAnnotationTextStyle}>{item.anotacao}</p>
-            </div>
-          )}
-
-          {podeEditarPerfil &&
-            obra &&
-            idAutorSupabaseValido(obra.id) &&
-            editorAnotacaoDiario.itemChave !== item.chave && (
-              <button
-                type="button"
-                onClick={() => abrirEditorAnotacaoDiario(item)}
-                style={diaryItemAnnotationButtonStyle}
-              >
-                {item.anotacao ? "Editar anotação" : "+ Adicionar anotação"}
-              </button>
-            )}
-
-          {editorAnotacaoDiario.aberto &&
-            editorAnotacaoDiario.itemChave === item.chave && (
-              <div style={diaryItemAnnotationEditorStyle}>
-                <textarea
-                  value={editorAnotacaoDiario.texto}
-                  onChange={(event) =>
-                    setEditorAnotacaoDiario((estadoAtual) => ({
-                      ...estadoAtual,
-                      texto: event.target.value.slice(
-                        0,
-                        DIARIO_ANOTACAO_MAX_LENGTH,
-                      ),
-                      erro: "",
-                    }))
-                  }
-                  placeholder="Escreva o que achou desta leitura..."
-                  maxLength={DIARIO_ANOTACAO_MAX_LENGTH}
-                  rows={4}
-                  style={diaryItemAnnotationTextareaStyle}
-                  disabled={editorAnotacaoDiario.salvando}
-                />
-
-                <div style={diaryItemAnnotationEditorMetaStyle}>
-                  <select
-                    value={editorAnotacaoDiario.visibilidade}
-                    onChange={(event) =>
-                      setEditorAnotacaoDiario((estadoAtual) => ({
-                        ...estadoAtual,
-                        visibilidade:
-                          event.target.value as VisibilidadeDiarioPerfil,
-                      }))
-                    }
-                    style={diaryItemAnnotationSelectStyle}
-                    disabled={editorAnotacaoDiario.salvando}
-                    aria-label="Privacidade da anotação"
-                  >
-                    <option value="privado">Privado</option>
-                    <option value="parcial">No perfil</option>
-                    <option value="publico">Público</option>
-                  </select>
-
-                  <span style={diaryItemAnnotationCounterStyle}>
-                    {editorAnotacaoDiario.texto.length}/
-                    {DIARIO_ANOTACAO_MAX_LENGTH}
-                  </span>
-                </div>
-
-                {editorAnotacaoDiario.erro && (
-                  <span style={diaryItemAnnotationErrorStyle}>
-                    {editorAnotacaoDiario.erro}
-                  </span>
-                )}
-
-                <div style={diaryItemAnnotationEditorActionsStyle}>
-                  <button
-                    type="button"
-                    onClick={() => void salvarAnotacaoDiario()}
-                    disabled={editorAnotacaoDiario.salvando}
-                    style={diaryItemAnnotationSaveStyle}
-                  >
-                    {editorAnotacaoDiario.salvando ? "Salvando..." : "Salvar"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={fecharEditorAnotacaoDiario}
-                    disabled={editorAnotacaoDiario.salvando}
-                    style={diaryItemAnnotationCancelStyle}
-                  >
-                    Cancelar
-                  </button>
-
-                  {item.anotacao && (
-                    <button
-                      type="button"
-                      onClick={() => void removerAnotacaoDiario()}
-                      disabled={editorAnotacaoDiario.salvando}
-                      style={diaryItemAnnotationRemoveStyle}
-                    >
-                      Remover
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-          {podeInteragirAnotacao && (
-            <div style={diaryItemSocialBlockStyle}>
-              <div style={diaryItemSocialActionsStyle}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void alternarCurtidaAnotacaoDiario(item)
-                  }
-                  disabled={
-                    interacaoAnotacao.carregando ||
-                    interacaoAnotacao.salvandoCurtida
-                  }
-                  style={{
-                    ...diaryItemSocialButtonStyle,
-                    ...(interacaoAnotacao.curtiu
-                      ? diaryItemSocialButtonActiveStyle
-                      : {}),
-                  }}
-                  aria-pressed={interacaoAnotacao.curtiu}
-                >
-                  <span aria-hidden="true">
-                    {interacaoAnotacao.curtiu ? "♥" : "♡"}
-                  </span>
-                  <span>
-                    {interacaoAnotacao.carregando
-                      ? "..."
-                      : interacaoAnotacao.totalCurtidas}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    alternarComentariosAnotacaoDiario(item)
-                  }
-                  disabled={interacaoAnotacao.carregando}
-                  style={diaryItemSocialButtonStyle}
-                  aria-expanded={
-                    comentariosAnotacaoDiarioAbertoChave === item.chave
-                  }
-                >
-                  <span aria-hidden="true">💬</span>
-                  <span>
-                    {interacaoAnotacao.carregando
-                      ? "..."
-                      : interacaoAnotacao.comentarios.length}
-                  </span>
-                </button>
-              </div>
-
-              {interacaoAnotacao.erro && (
-                <span style={diaryItemSocialErrorStyle}>
-                  {interacaoAnotacao.erro}
-                </span>
-              )}
-
-              {comentariosAnotacaoDiarioAbertoChave === item.chave && (
-                <div style={diaryItemCommentsPanelStyle}>
-                  {interacaoAnotacao.comentarios.length === 0 ? (
-                    <span style={diaryItemCommentsEmptyStyle}>
-                      Nenhum comentário ainda.
-                    </span>
-                  ) : (
-                    <div style={diaryItemCommentsListStyle}>
-                      {interacaoAnotacao.comentarios.map(
-                        (comentario) => (
-                          <div
-                            key={comentario.id}
-                            style={diaryItemCommentStyle}
-                          >
-                            <div style={diaryItemCommentHeaderStyle}>
-                              <Link
-                                href={criarPerfilAutorHref(
-                                  comentario.autorNome,
-                                  comentario.userId,
-                                )}
-                                style={diaryItemCommentAuthorStyle}
-                              >
-                                {comentario.userId === usuarioIdLogado
-                                  ? "Você"
-                                  : comentario.autorNome}
-                              </Link>
-
-                              <span style={diaryItemCommentDateStyle}>
-                                {dataDiarioPerfilFormatada(
-                                  comentario.criadoEm,
-                                )}
-                              </span>
-                            </div>
-
-                            <p style={diaryItemCommentTextStyle}>
-                              {comentario.texto}
-                            </p>
-
-                            {(comentario.userId === usuarioIdLogado ||
-                              podeEditarPerfil) && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void removerComentarioAnotacaoDiario(
-                                    item,
-                                    comentario,
-                                  )
-                                }
-                                style={diaryItemCommentRemoveStyle}
-                              >
-                                Remover
-                              </button>
-                            )}
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  )}
-
-                  {usuarioIdLogado ? (
-                    <div style={diaryItemCommentFormStyle}>
-                      <textarea
-                        value={interacaoAnotacao.novoComentario}
-                        onChange={(event) =>
-                          atualizarTextoComentarioAnotacaoDiario(
-                            anotacaoId,
-                            event.target.value,
-                          )
-                        }
-                        placeholder="Escreva um comentário..."
-                        maxLength={DIARIO_COMENTARIO_MAX_LENGTH}
-                        rows={3}
-                        style={diaryItemCommentTextareaStyle}
-                        disabled={
-                          interacaoAnotacao.enviandoComentario
-                        }
-                      />
-
-                      <div style={diaryItemCommentFormFooterStyle}>
-                        <span style={diaryItemAnnotationCounterStyle}>
-                          {interacaoAnotacao.novoComentario.length}/
-                          {DIARIO_COMENTARIO_MAX_LENGTH}
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void enviarComentarioAnotacaoDiario(item)
-                          }
-                          disabled={
-                            interacaoAnotacao.enviandoComentario
-                          }
-                          style={diaryItemCommentSendStyle}
-                        >
-                          {interacaoAnotacao.enviandoComentario
-                            ? "Enviando..."
-                            : "Comentar"}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        router.push(criarLoginHrefPerfilAutor())
-                      }
-                      style={diaryItemLoginToCommentStyle}
-                    >
-                      Entrar para comentar
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div style={diaryItemFooterStyle}>
-            <span style={diaryItemPrivacyStyle}>
-              <span aria-hidden="true">{apresentacaoVisibilidade.icone}</span>
-              <span>{apresentacaoVisibilidade.texto}</span>
-            </span>
-
-            <Link href={hrefAcao} style={diaryItemActionStyle}>
-              {item.tipo === "lendo" ? "Continuar leitura" : "Abrir obra"}
-            </Link>
-          </div>
+        <div style={profileWorkMenuAnchorStyle}>
+          <button
+            type="button"
+            onClick={() =>
+              setDiarioMenuAbertoChave((chaveAtual) =>
+                chaveAtual === item.chave ? "" : item.chave,
+              )
+            }
+            style={profileWorkDotsButtonStyle}
+            aria-label={`Abrir opções de ${item.titulo}`}
+            aria-expanded={diarioMenuAbertoChave === item.chave}
+          >
+            ⋮
+          </button>
         </div>
       </article>
     );
@@ -6133,9 +5801,15 @@ export default function PerfilAutorPage() {
     }
 
     return (
-      <DiaryCarouselRow isDesktop={isDesktop} totalItems={itens.length}>
+      <div
+        style={
+          isDesktop
+            ? desktopProfileWorksGridStyle
+            : profileWorksGridStyle
+        }
+      >
         {itens.slice(0, 8).map((item) => renderizarItemDiarioPerfil(item))}
-      </DiaryCarouselRow>
+      </div>
     );
   }
 
@@ -6144,13 +5818,23 @@ export default function PerfilAutorPage() {
     itens: DiarioPerfilItem[],
     vazio: string,
   ) {
+    void vazio;
+
+    if (itens.length === 0) {
+      return null;
+    }
+
+    const tituloLimpo = titulo.trim();
+
     return (
       <section style={diarySectionStyle}>
-        <div style={diarySectionHeaderStyle}>
-          <strong style={diarySectionTitleStyle}>{titulo}</strong>
-        </div>
+        {tituloLimpo && (
+          <div style={diarySectionHeaderStyle}>
+            <strong style={diarySectionTitleStyle}>{tituloLimpo}</strong>
+          </div>
+        )}
 
-        {renderizarConteudoSecaoDiarioPerfil(itens, vazio)}
+        {renderizarConteudoSecaoDiarioPerfil(itens, "")}
       </section>
     );
   }
@@ -6962,7 +6646,7 @@ export default function PerfilAutorPage() {
 
                     <span style={authorHighlightMetaStyle}>
                       {formatarGeneroPerfilAutor(obra.genero)} • {obra.capitulos.length}{" "}
-                      {obra.capitulos.length === 1 ? "cap." : "caps."} • ♥ {totalCurtidasObra}
+                      {obra.capitulos.length === 1 ? "cap" : "caps"} ♥ {totalCurtidasObra}
                     </span>
                   </Link>
                 );
@@ -7241,7 +6925,7 @@ export default function PerfilAutorPage() {
         {abaPerfil === "diario" && (
           <section style={isDesktop ? desktopDiaryBoxStyle : diaryBoxStyle}>
             <div style={diaryTitleToolbarStyle}>
-              <h2 style={authorCommunityTitleStyle}>
+              <h2 style={diaryMainTitleStyle}>
                 {podeEditarPerfil ? "Meu Diário" : `Diário de ${perfilParaMostrar.nome}`}
               </h2>
 
@@ -7252,18 +6936,8 @@ export default function PerfilAutorPage() {
                 aria-label={resumoDiarioAberto ? "Ocultar resumo do Diário" : "Mostrar resumo do Diário"}
                 aria-expanded={resumoDiarioAberto}
               >
-                <span style={filtersToggleIconStyle}>
-                  {resumoDiarioAberto ? "−" : "+"}
-                </span>
+                <span style={filtersToggleIconStyle}>+</span>
               </button>
-            </div>
-
-            <p style={authorCommunityDescriptionStyle}>
-              {descricaoPrivacidadeDiario}
-            </p>
-
-            <div style={diaryPrivacyNoticeStyle}>
-              {resumoPrivacidadeDiario}
             </div>
 
             {resumoDiarioAberto && (
@@ -7278,7 +6952,7 @@ export default function PerfilAutorPage() {
                   <strong style={diaryStatNumberStyle}>
                     {totalLeiturasDiario}
                   </strong>
-                  <span style={diaryStatLabelStyle}>leituras</span>
+                  <span style={diaryStatLabelStyle}>lendo</span>
                 </div>
 
                 <div style={diaryStatCardStyle}>
@@ -7297,9 +6971,16 @@ export default function PerfilAutorPage() {
 
                 <div style={diaryStatCardStyle}>
                   <strong style={diaryStatNumberStyle}>
+                    {totalConcluidasDiario}
+                  </strong>
+                  <span style={diaryStatLabelStyle}>concluídas</span>
+                </div>
+
+                <div style={diaryStatCardStyle}>
+                  <strong style={diaryStatNumberStyle}>
                     {totalAvaliacoesDiario + totalReviewsDiario}
                   </strong>
-                  <span style={diaryStatLabelStyle}>avaliações/reviews</span>
+                  <span style={diaryStatLabelStyle}>avaliações</span>
                 </div>
               </div>
             )}
@@ -7309,7 +6990,7 @@ export default function PerfilAutorPage() {
             ) : (
               <>
                 {renderizarSecaoDiarioPerfil(
-                  "Lendo agora",
+                  "",
                   diarioPerfil.lendoAgora,
                   podeEditarPerfil
                     ? "Suas leituras recentes aparecerão aqui."
@@ -7349,13 +7030,13 @@ export default function PerfilAutorPage() {
                 )}
 
                 {renderizarSecaoDiarioRecolhivelPerfil(
-                  "Reviews recentes",
+                  "Avaliações",
                   reviewsDiarioAberto,
                   () => setReviewsDiarioAberto((valorAtual) => !valorAtual),
                   diarioPerfil.reviews,
                   podeEditarPerfil
-                    ? "Suas reviews publicadas na Comunidade aparecerão aqui."
-                    : "Este perfil ainda não publicou reviews.",
+                    ? "Suas avaliações publicadas na Comunidade aparecerão aqui."
+                    : "Este perfil ainda não publicou avaliações.",
                 )}
 
                 {renderizarAtividadeRecenteDiarioPerfil()}
@@ -7591,11 +7272,10 @@ export default function PerfilAutorPage() {
                 type="button"
                 onClick={() => setFiltrosObrasAbertos((aberto) => !aberto)}
                 style={profileWorksFilterButtonStyle}
+                aria-label={filtrosObrasAbertos ? "Ocultar filtros das obras" : "Mostrar filtros das obras"}
+                aria-expanded={filtrosObrasAbertos}
               >
-                {filtrosObrasAtivos ? "Filtros ativos" : "Filtros"}
-                <span style={filtersToggleIconStyle}>
-                  {filtrosObrasAbertos ? "−" : "+"}
-                </span>
+                <span style={filtersToggleIconStyle}>+</span>
               </button>
             </div>
 
@@ -7728,10 +7408,11 @@ export default function PerfilAutorPage() {
 
                             <span style={profileWorkCoverMetaStyle}>
                               {obra.capitulos.length}{" "}
-                              {obra.capitulos.length === 1 ? "cap." : "caps."} •
+                              {obra.capitulos.length === 1 ? "cap" : "caps"}
                               <span style={profileWorkHeartMetaStyle}>
                                 {" "}
-                                ♥ {totalCurtidas}
+                                <span style={profileWorkHeartIconMetaStyle}>♥</span>{" "}
+                                {totalCurtidas}
                               </span>
                               <span style={profileWorkViewsMetaStyle}>
                                 {" "}
@@ -7813,10 +7494,12 @@ export default function PerfilAutorPage() {
                         {obra.titulo}
                       </strong>
                       <span style={workActionSheetMetaStyle}>
-                        {formatarGeneroPerfilAutor(obra.genero)} •{" "}
+                        {formatarGeneroPerfilAutor(obra.genero)}
+                        {mostrarClassificacao(obra)
+                          ? ` • ${obra.classificacaoIndicativa}`
+                          : ""} • 👁 {visualizacoesObra} • ♥ {totalCurtidas} •{" "}
                         {obra.capitulos.length}{" "}
-                        {obra.capitulos.length === 1 ? "cap." : "caps."} • ♥{" "}
-                        {totalCurtidas} 👁 {visualizacoesObra}
+                        {obra.capitulos.length === 1 ? "cap" : "caps"}
                       </span>
                     </div>
                   </div>
@@ -7900,6 +7583,260 @@ export default function PerfilAutorPage() {
               </div>
             );
           })()}
+
+        {diarioMenuAberto &&
+          (() => {
+            const item = diarioMenuAberto;
+            const obra = item.obra;
+            const apresentacaoTipo = obterApresentacaoTipoDiarioPerfil(item.tipo);
+            const progresso = Math.max(
+              0,
+              Math.min(
+                100,
+                Math.round(item.progresso ?? obra?.progressoLeitura ?? 0),
+              ),
+            );
+            const capituloAtual =
+              item.tipo === "lendo" && obra
+                ? encontrarCapituloParaContinuar(obra)
+                : null;
+            const indiceCapituloAtual =
+              capituloAtual && obra
+                ? obra.capitulos.findIndex(
+                    (capitulo) => capitulo.id === capituloAtual.id,
+                  )
+                : -1;
+            const numeroCapituloAtual =
+              indiceCapituloAtual >= 0 ? indiceCapituloAtual + 1 : 1;
+            const totalCapitulos = obra?.capitulos.length || 0;
+            const hrefAcao =
+              capituloAtual && obra
+                ? criarHrefLeituraCapituloPerfilAutor(
+                    obra,
+                    capituloAtual,
+                    numeroCapituloAtual,
+                  )
+                : obterHrefItemDiarioPerfil(item);
+            const podeEditarItemDiario = itemDiarioPertenceAoUsuarioLogado(item);
+            const continuarLeituraDisponivel = Boolean(
+              item.tipo === "lendo" && capituloAtual && obra,
+            );
+            const nota = Math.max(0, Math.min(5, item.nota || 0));
+            const editorAbertoNesteItem =
+              editorAnotacaoDiario.aberto &&
+              editorAnotacaoDiario.itemChave === item.chave;
+            const anotacaoId = item.anotacaoId?.trim() || "";
+            const interacaoAnotacao = anotacaoId
+              ? interacoesAnotacoesDiario[anotacaoId] ||
+                criarInteracaoAnotacaoDiarioVazia()
+              : criarInteracaoAnotacaoDiarioVazia();
+            const anotacaoPodeReceberCurtida = Boolean(
+              item.anotacao &&
+                anotacaoId &&
+                item.anotacaoVisibilidade !== "privado",
+            );
+            const totalCurtidasAnotacao = compactarNumeroPerfilAutor(
+              interacaoAnotacao.totalCurtidas,
+            );
+            const metaSheet =
+              item.tipo === "lendo" && obra
+                ? `${apresentacaoTipo.texto} • ${
+                    totalCapitulos > 0
+                      ? `Capítulo ${numeroCapituloAtual} de ${totalCapitulos}`
+                      : "Leitura em andamento"
+                  } • ${progresso}% concluído`
+                : item.tipo === "avaliacao" && nota > 0
+                  ? `${apresentacaoTipo.texto} • ★ ${nota
+                      .toFixed(1)
+                      .replace(".", ",")} • ${dataDiarioPerfilFormatada(item.data)}`
+                  : `${apresentacaoTipo.texto} • ${dataDiarioPerfilFormatada(
+                      item.data,
+                    )}`;
+
+            return (
+              <div
+                style={workActionSheetOverlayStyle}
+                role="presentation"
+                onClick={() => setDiarioMenuAbertoChave("")}
+              >
+                <section
+                  style={workActionSheetStyle}
+                  role="dialog"
+                  aria-label={`Ações do Diário ${item.titulo}`}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div style={workActionSheetHandleStyle} aria-hidden="true" />
+
+                  <div style={workActionSheetHeaderStyle}>
+                    <div style={workActionSheetTextBlockStyle}>
+                      <strong style={workActionSheetTitleStyle}>
+                        {item.titulo}
+                      </strong>
+                      <span style={workActionSheetMetaStyle}>
+                        {metaSheet}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={workActionSheetActionsStyle}>
+                    <Link
+                      href={hrefAcao}
+                      onClick={() => setDiarioMenuAbertoChave("")}
+                      style={workActionSheetItemStyle}
+                    >
+                      {continuarLeituraDisponivel ? "Continuar leitura" : "Ver obra"}
+                    </Link>
+
+                    {podeEditarItemDiario &&
+                      obra &&
+                      idAutorSupabaseValido(obra.id) && (
+                        <button
+                          type="button"
+                          onClick={() => abrirEditorAnotacaoDiario(item)}
+                          style={workActionSheetItemStyle}
+                        >
+                          {item.anotacao ? "Editar anotação" : "Adicionar anotação"}
+                        </button>
+                      )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (obra) {
+                          void compartilharObraPerfilAutor(obra);
+                        }
+                      }}
+                      style={workActionSheetItemStyle}
+                    >
+                      Compartilhar
+                    </button>
+                  </div>
+
+                  {editorAbertoNesteItem && (
+                    <div style={diaryActionSheetEditorStyle}>
+                      <textarea
+                        value={editorAnotacaoDiario.texto}
+                        onChange={(event) =>
+                          setEditorAnotacaoDiario((estadoAtual) => ({
+                            ...estadoAtual,
+                            texto: event.target.value.slice(
+                              0,
+                              DIARIO_ANOTACAO_MAX_LENGTH,
+                            ),
+                            erro: "",
+                          }))
+                        }
+                        placeholder="Escreva o que achou desta leitura..."
+                        maxLength={DIARIO_ANOTACAO_MAX_LENGTH}
+                        rows={4}
+                        style={diaryItemAnnotationTextareaStyle}
+                        disabled={editorAnotacaoDiario.salvando}
+                      />
+
+                      <div style={diaryItemAnnotationEditorMetaStyle}>
+                        <span style={diaryItemAnnotationCounterStyle}>
+                          {editorAnotacaoDiario.texto.length}/
+                          {DIARIO_ANOTACAO_MAX_LENGTH}
+                        </span>
+                      </div>
+
+                      {editorAnotacaoDiario.erro && (
+                        <span style={diaryItemAnnotationErrorStyle}>
+                          {editorAnotacaoDiario.erro}
+                        </span>
+                      )}
+
+                      <div style={diaryItemAnnotationEditorActionsStyle}>
+                        <button
+                          type="button"
+                          onClick={() => void salvarAnotacaoDiario()}
+                          disabled={editorAnotacaoDiario.salvando}
+                          style={diaryItemAnnotationSaveStyle}
+                        >
+                          {editorAnotacaoDiario.salvando ? "Salvando..." : "Salvar"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={fecharEditorAnotacaoDiario}
+                          disabled={editorAnotacaoDiario.salvando}
+                          style={diaryItemAnnotationCancelStyle}
+                        >
+                          Cancelar
+                        </button>
+
+                        {item.anotacao && (
+                          <button
+                            type="button"
+                            onClick={() => void removerAnotacaoDiario()}
+                            disabled={editorAnotacaoDiario.salvando}
+                            style={diaryItemAnnotationRemoveStyle}
+                          >
+                            Remover
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {item.anotacao && !editorAbertoNesteItem && (
+                    <div style={diaryActionSheetAnnotationStyle}>
+                      <div style={diaryActionSheetAnnotationHeaderStyle}>
+                        <span aria-hidden="true" />
+
+                        <strong style={diaryActionSheetAnnotationTitleStyle}>
+                          Anotação
+                        </strong>
+
+                        {anotacaoPodeReceberCurtida ? (
+                          <button
+                            type="button"
+                            onClick={() => void alternarCurtidaAnotacaoDiario(item)}
+                            disabled={interacaoAnotacao.salvandoCurtida}
+                            style={{
+                              ...diaryActionSheetAnnotationLikeButtonStyle,
+                              opacity: interacaoAnotacao.salvandoCurtida ? 0.58 : 1,
+                              cursor: interacaoAnotacao.salvandoCurtida
+                                ? "not-allowed"
+                                : "pointer",
+                            }}
+                            aria-label={
+                              interacaoAnotacao.curtiu
+                                ? "Remover curtida da anotação"
+                                : "Curtir anotação"
+                            }
+                            aria-pressed={interacaoAnotacao.curtiu}
+                          >
+                            <span
+                              style={{
+                                ...diaryActionSheetAnnotationLikeIconStyle,
+                                color: interacaoAnotacao.curtiu
+                                  ? "#FB7185"
+                                  : "#FFFFFF",
+                              }}
+                              aria-hidden="true"
+                            >
+                              ♥
+                            </span>
+                            <span style={diaryActionSheetAnnotationLikeCountStyle}>
+                              {totalCurtidasAnotacao}
+                            </span>
+                          </button>
+                        ) : (
+                          <span aria-hidden="true" />
+                        )}
+                      </div>
+
+                      <p style={diaryActionSheetAnnotationTextStyle}>
+                        {item.anotacao}
+                      </p>
+                    </div>
+                  )}
+
+                </section>
+              </div>
+            );
+          })()}
       </section>
     </main>
   );
@@ -7907,112 +7844,126 @@ export default function PerfilAutorPage() {
 
 const workActionSheetOverlayStyle: CSSProperties = {
   position: "fixed",
-  inset: 0,
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  height: "100dvh",
   zIndex: 9998,
-  background:
-    "linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.62) 100%)",
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "center",
-  padding: "0 14px calc(96px + env(safe-area-inset-bottom, 0px))",
+  background: "rgba(0,0,0,0.68)",
+  padding: 0,
   boxSizing: "border-box",
+  overscrollBehavior: "none",
+  touchAction: "none",
 };
 
 const workActionSheetStyle: CSSProperties = {
-  width: "min(500px, 100%)",
-  borderRadius: "24px 24px 22px 22px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  boxShadow: "none",
-  padding: "8px 14px 12px",
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  width: "min(760px, calc(100% - 12px))",
+  maxHeight: "calc(100dvh - 18px)",
+  overflowX: "hidden",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+  borderRadius: "24px 24px 0 0",
+  background: "#15191C",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
+  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
   display: "grid",
-  gap: "9px",
+  gap: 0,
   boxSizing: "border-box",
+  touchAction: "none",
 };
 
 const workActionSheetHandleStyle: CSSProperties = {
-  width: "40px",
-  height: "4px",
+  width: "72px",
+  height: "5px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.24)",
+  background: "rgba(244,244,245,0.62)",
   justifySelf: "center",
+  margin: "0 auto 12px",
 };
 
 const workActionSheetHeaderStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr auto",
-  alignItems: "start",
-  gap: "11px",
+  justifyItems: "center",
+  gap: "4px",
   minWidth: 0,
+  padding: "0 24px 13px",
+  boxSizing: "border-box",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
 };
 
 const workActionSheetTextBlockStyle: CSSProperties = {
   display: "grid",
-  gap: "3px",
+  justifyItems: "center",
+  gap: "4px",
   minWidth: 0,
+  width: "100%",
 };
 
 const workActionSheetTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "17px",
+  color: "#FFFFFF",
+  fontSize: "21px",
   fontWeight: 950,
-  lineHeight: 1.05,
+  lineHeight: 1.1,
   letterSpacing: "-0.04em",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+  textAlign: "center",
+  maxWidth: "100%",
 };
 
 const workActionSheetMetaStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, rgba(255,255,255,0.68))",
-  fontSize: "10.5px",
+  color: "rgba(255,255,255,0.72)",
+  fontSize: "12px",
   fontWeight: 850,
   lineHeight: 1.2,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+  textAlign: "center",
+  maxWidth: "100%",
 };
 
-const workActionSheetCloseButtonStyle: CSSProperties = {
-  appearance: "none",
-  border: "none",
-  width: "36px",
-  height: "36px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "24px",
-  fontWeight: 950,
-  lineHeight: 1,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  padding: 0,
-};
 
 const workActionSheetActionsStyle: CSSProperties = {
   display: "grid",
   gap: 0,
-  borderRadius: "17px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.045)",
+  borderRadius: 0,
+  border: "none",
+  borderTop: "none",
+  background: "transparent",
   overflow: "hidden",
 };
 
 const workActionSheetItemStyle: CSSProperties = {
   appearance: "none",
+  WebkitAppearance: "none",
   width: "100%",
+  minHeight: "48px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "16px",
   border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.075)",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
   borderRadius: 0,
   background: "transparent",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "#FFFFFF",
   textDecoration: "none",
-  padding: "11px 14px",
-  fontSize: "14px",
-  fontWeight: 900,
+  padding: "0 30px",
+  fontSize: "18px",
+  fontWeight: 650,
   lineHeight: 1.15,
+  letterSpacing: "-0.035em",
   fontFamily: "inherit",
   textAlign: "left",
   cursor: "pointer",
@@ -8022,18 +7973,159 @@ const workActionSheetItemStyle: CSSProperties = {
 
 const workActionSheetItemActiveStyle: CSSProperties = {
   ...workActionSheetItemStyle,
-  borderBottom: "1px solid rgba(249,115,22,0.16)",
-  background: "rgba(249,115,22,0.10)",
-  color: "var(--historietas-accent, #F97316)",
+  fontWeight: 900,
+  background: "transparent",
+  color: "#FFFFFF",
 };
 
 const workActionSheetCancelButtonStyle: CSSProperties = {
   ...workActionSheetItemStyle,
-  textAlign: "center",
   justifyContent: "center",
+  textAlign: "center",
   background: "transparent",
-  color: "var(--historietas-text-muted, rgba(255,255,255,0.58))",
+  color: "rgba(255,255,255,0.58)",
 };
+
+const diaryVisualCardStyle: CSSProperties = {
+  display: "grid",
+  gap: 0,
+  minWidth: 0,
+  maxWidth: "100%",
+  width: "100%",
+  boxSizing: "border-box",
+  overflow: "visible",
+  position: "relative",
+  border: "0",
+  borderBottom: "0",
+  outline: "none",
+  boxShadow: "none",
+  background: "transparent",
+};
+
+const desktopDiaryVisualCardStyle: CSSProperties = {
+  ...diaryVisualCardStyle,
+};
+
+const diaryVisualCoverLinkStyle: CSSProperties = {
+  display: "block",
+  textDecoration: "none",
+  textDecorationLine: "none",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  minWidth: 0,
+  maxWidth: "100%",
+  border: "0",
+  borderBottom: "0",
+  outline: "none",
+  boxShadow: "none",
+  background: "transparent",
+  width: "100%",
+};
+
+const diaryVisualCoverStyle: CSSProperties = {
+  width: "100%",
+  aspectRatio: "3 / 4",
+  minHeight: "208px",
+  borderRadius: "18px",
+  position: "relative",
+  overflow: "hidden",
+  background: "#08030F",
+  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  border: "0",
+  outline: "none",
+  boxSizing: "border-box",
+  boxShadow: "none",
+};
+
+const desktopDiaryVisualCoverStyle: CSSProperties = {
+  ...diaryVisualCoverStyle,
+  minHeight: "236px",
+};
+
+const diaryActionSheetEditorStyle: CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  padding: "12px 18px 14px",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  boxSizing: "border-box",
+};
+
+const diaryActionSheetAnnotationStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  maxHeight: "min(34dvh, 260px)",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+  WebkitOverflowScrolling: "touch",
+  padding: "12px 24px 14px",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  boxSizing: "border-box",
+};
+
+const diaryActionSheetAnnotationHeaderStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(54px, 1fr) auto minmax(54px, 1fr)",
+  alignItems: "center",
+  gap: "10px",
+  width: "100%",
+  minWidth: 0,
+};
+
+const diaryActionSheetAnnotationTitleStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.82)",
+  fontSize: "12px",
+  fontWeight: 900,
+  lineHeight: 1.2,
+  letterSpacing: "0.02em",
+  textTransform: "uppercase",
+  textAlign: "center",
+};
+
+const diaryActionSheetAnnotationLikeButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  justifySelf: "end",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "5px",
+  minWidth: "54px",
+  minHeight: "30px",
+  padding: "0 2px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  lineHeight: 1,
+};
+
+const diaryActionSheetAnnotationLikeIconStyle: CSSProperties = {
+  fontSize: "17px",
+  fontWeight: 950,
+  lineHeight: 1,
+  transition: "color 160ms ease, transform 160ms ease",
+};
+
+const diaryActionSheetAnnotationLikeCountStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 850,
+  lineHeight: 1,
+};
+
+const diaryActionSheetAnnotationTextStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "15px",
+  fontWeight: 650,
+  lineHeight: 1.45,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
+
 
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
@@ -8109,7 +8201,7 @@ const profileLibraryStatCardActiveStyle: CSSProperties = {
 };
 
 const profileLibraryStatNumberStyle: CSSProperties = {
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   fontSize: "16px",
   lineHeight: 1,
   fontWeight: 950,
@@ -9658,7 +9750,7 @@ const profileAboutBoxStyle: CSSProperties = {
 
 const profileAboutTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "16px",
   lineHeight: 1.15,
   fontWeight: 950,
@@ -9798,7 +9890,7 @@ const profileAboutPanelStyle: CSSProperties = {
 };
 
 const profileAboutPanelTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "12px",
   lineHeight: 1.2,
   fontWeight: 950,
@@ -9999,12 +10091,17 @@ const authorCommunityEyebrowStyle: CSSProperties = {
 
 const authorCommunityTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "15px",
   lineHeight: 1.08,
   fontWeight: 950,
   textAlign: "center",
   ...safeTextStyle,
+};
+
+const diaryMainTitleStyle: CSSProperties = {
+  ...authorCommunityTitleStyle,
+  color: "#FFFFFF",
 };
 
 const diaryTitleToolbarStyle: CSSProperties = {
@@ -10109,7 +10206,7 @@ const authorCommunityCardStyle: CSSProperties = {
 };
 
 const authorCommunityCardNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "14px",
   lineHeight: 1,
   fontWeight: 950,
@@ -10503,14 +10600,25 @@ const profileWorkCardStyle: CSSProperties = {
   boxSizing: "border-box",
   overflow: "visible",
   position: "relative",
+  border: "0",
+  borderBottom: "0",
+  outline: "none",
+  boxShadow: "none",
+  background: "transparent",
 };
 
 const profileWorkCoverLinkStyle: CSSProperties = {
   display: "block",
   textDecoration: "none",
+  textDecorationLine: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
   minWidth: 0,
   maxWidth: "100%",
+  border: "0",
+  borderBottom: "0",
+  outline: "none",
+  boxShadow: "none",
+  background: "transparent",
 };
 
 const profileWorkCoverStyle: CSSProperties = {
@@ -10523,7 +10631,8 @@ const profileWorkCoverStyle: CSSProperties = {
   background: "#08030F",
   backgroundSize: "cover",
   backgroundPosition: "center",
-  border: "none",
+  border: "0",
+  outline: "none",
   boxSizing: "border-box",
   boxShadow: "none",
 };
@@ -10584,11 +10693,11 @@ const profileWorkCoverOverlayStyle: CSSProperties = {
   left: 0,
   right: 0,
   bottom: 0,
-  padding: "34px 42px 10px 10px",
+  padding: "28px 42px 9px 10px",
   display: "grid",
   gap: "4px",
   background:
-    "linear-gradient(180deg, rgba(8,5,13,0) 0%, rgba(8,5,13,0.72) 38%, rgba(8,5,13,0.94) 100%)",
+    "linear-gradient(180deg, rgba(8,5,13,0) 0%, rgba(8,5,13,0.58) 44%, rgba(8,5,13,0.92) 100%)",
   boxSizing: "border-box",
   zIndex: 1,
   minWidth: 0,
@@ -10619,6 +10728,40 @@ const profileWorkCoverMetaStyle: CSSProperties = {
   letterSpacing: "-0.01em",
   textShadow: "none",
   minWidth: 0,
+};
+
+const diaryCardCoverOverlayStyle: CSSProperties = {
+  ...profileWorkCoverOverlayStyle,
+  padding: "28px 42px 9px 10px",
+  justifyItems: "start",
+  textAlign: "left",
+};
+
+const diaryCardCoverTitleStyle: CSSProperties = {
+  ...profileWorkCoverTitleStyle,
+  width: "100%",
+  textAlign: "left",
+};
+
+const diaryCardCoverMetaStyle: CSSProperties = {
+  ...profileWorkCoverMetaStyle,
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "10px",
+  color: "#FFFFFF",
+  textAlign: "left",
+};
+
+const diaryCardHeartMetaStyle: CSSProperties = {
+  color: "#EF4444",
+  fontWeight: 950,
+};
+
+const diaryCardStarMetaStyle: CSSProperties = {
+  color: "#FBBF24",
+  fontWeight: 950,
 };
 
 const profileWorkSmallActionHintStyle: CSSProperties = {
@@ -10684,6 +10827,11 @@ const profileWorkMetaStyle: CSSProperties = {
 
 const profileWorkHeartMetaStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
+  fontWeight: 950,
+};
+
+const profileWorkHeartIconMetaStyle: CSSProperties = {
+  color: "#EF4444",
   fontWeight: 950,
 };
 
@@ -11341,10 +11489,10 @@ const desktopWorkActionsGridStyle: CSSProperties = {
 
 const diaryBoxStyle: CSSProperties = {
   width: "100%",
-  marginTop: "10px",
-  padding: "10px 10px 138px",
+  marginTop: "8px",
+  padding: "8px 0 138px",
   display: "grid",
-  justifyItems: "center",
+  justifyItems: "stretch",
   alignItems: "stretch",
   gap: "8px",
   minWidth: 0,
@@ -11356,8 +11504,8 @@ const diaryBoxStyle: CSSProperties = {
 const diaryStatsGridStyle: CSSProperties = {
   width: "100%",
   display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -11365,17 +11513,27 @@ const diaryStatsGridStyle: CSSProperties = {
 
 const diaryStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  minHeight: "58px",
-  borderRadius: "16px",
+  minHeight: "52px",
+  borderRadius: "14px",
+  padding: "7px 2px",
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid rgba(255,255,255,0.07)",
+  boxShadow: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const diaryStatNumberStyle: CSSProperties = {
   ...statNumberStyle,
-  fontSize: "21px",
+  color: "#FFFFFF",
+  fontSize: "18px",
 };
 
 const diaryStatLabelStyle: CSSProperties = {
   ...statLabelStyle,
+  fontSize: "7px",
+  letterSpacing: "0.025em",
+  color: "rgba(255,255,255,0.72)",
 };
 
 const diarySectionStyle: CSSProperties = {
@@ -11410,12 +11568,12 @@ const diaryToggleButtonStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "8px",
-  minHeight: "34px",
-  padding: "7px 13px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.06)",
+  gap: "5px",
+  minHeight: "auto",
+  padding: 0,
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   color: "#FFFFFF",
   fontSize: "11px",
   lineHeight: 1,
@@ -12015,10 +12173,10 @@ const diaryItemActionStyle: CSSProperties = {
 
 const diaryEmptyStateStyle: CSSProperties = {
   width: "100%",
-  borderRadius: "18px",
-  padding: "14px",
-  background: "rgba(255,255,255,0.035)",
-  border: "1px dashed var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  margin: "0",
+  padding: "2px 0",
+  background: "transparent",
+  border: "0",
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
   lineHeight: 1.45,
@@ -12094,7 +12252,7 @@ const desktopDiaryBoxStyle: CSSProperties = {
 
 const desktopDiaryStatsGridStyle: CSSProperties = {
   ...diaryStatsGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
   maxWidth: "760px",
   justifySelf: "center",
 };

@@ -2821,44 +2821,6 @@ export default function Home() {
   const totalRecomendacoesHome =
     obrasRecomendadas.length + obrasCatalogoRecomendadas.length;
 
-  const resumoInicio = useMemo(() => {
-    const totalCapitulosPublicados = obrasPublicadas.reduce((total, obra) => {
-      return total + obra.capitulos.length;
-    }, 0);
-
-    const totalEmLeitura = usuarioLogado
-      ? obrasPublicadas.filter((obra) => {
-          return Boolean(encontrarCapituloParaContinuar(obra));
-        }).length
-      : 0;
-
-    const totalFavoritas = usuarioLogado
-      ? obrasPublicadas.filter((obra) => {
-          return colecaoTemIdentificadorHome(
-            criarIdentificadoresObraLocalHome(obra),
-            obrasFavoritas
-          );
-        }).length
-      : 0;
-
-    const totalConcluidas = usuarioLogado
-      ? obrasPublicadas.filter((obra) => {
-          return colecaoTemIdentificadorHome(
-            criarIdentificadoresObraLocalHome(obra),
-            obrasConcluidas
-          );
-        }).length
-      : 0;
-
-    return {
-      totalPublicadas: obrasPublicadas.length,
-      totalCapitulosPublicados,
-      totalEmLeitura,
-      totalFavoritas,
-      totalConcluidas,
-    };
-  }, [obrasPublicadas, obrasFavoritas, obrasConcluidas, usuarioLogado]);
-
   const obrasFiltradas = useMemo(() => {
     if (!termoBusca) {
       return obras;
@@ -3158,7 +3120,28 @@ export default function Home() {
                       : mobileSearchToggleStyle
                   }
                 >
-                  🔍
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="10.85"
+                      cy="10.85"
+                      r="6.65"
+                      stroke="currentColor"
+                      strokeWidth="2.15"
+                    />
+                    <path
+                      d="M16.05 16.05L20.25 20.25"
+                      stroke="currentColor"
+                      strokeWidth="2.15"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 </button>
               )}
             </div>
@@ -3413,32 +3396,16 @@ export default function Home() {
           )}
         </section>
 
-        <section style={isDesktop ? desktopSummaryStripStyle : summaryStripStyle} aria-label="Resumo da plataforma">
-          <div style={summaryItemStyle}>
-            <strong style={summaryNumberStyle}>
-              {resumoInicio.totalPublicadas}
-            </strong>
-            <span style={summaryLabelStyle}>publicadas</span>
-          </div>
+        <section style={isDesktop ? desktopSummaryStripStyle : summaryStripStyle} aria-label="Atalhos principais">
+          <Link href="/em-breve" style={summaryItemStyle}>
+            <strong style={summaryNumberStyle}>Em breve</strong>
+          </Link>
 
-          <div style={summaryItemStyle}>
-            <strong style={summaryNumberStyle}>
-              {resumoInicio.totalEmLeitura}
-            </strong>
-            <span style={summaryLabelStyle}>em leitura</span>
-          </div>
+          <span style={summaryDividerLineStyle} aria-hidden="true" />
 
-          <div style={summaryItemStyle}>
-            <strong style={summaryNumberStyle}>
-              {resumoInicio.totalCapitulosPublicados}
-            </strong>
-            <span style={summaryLabelStyle}>capítulos</span>
-          </div>
-
-          <div style={summaryItemStyle}>
-            <strong style={summaryNumberStyle}>{usuarioLogado ? notificacoesNaoLidas : 0}</strong>
-            <span style={summaryLabelStyle}>avisos</span>
-          </div>
+          <Link href="/em-alta" style={summaryItemStyle}>
+            <strong style={summaryNumberStyle}>Em alta</strong>
+          </Link>
         </section>
 
         {homeSemObrasReais && <HomeEmptyState isDesktop={isDesktop} />}
@@ -4321,6 +4288,38 @@ const themePageCss = `
     border-color: var(--historietas-bottom-nav-main-icon-border, rgba(255,255,255,0.18)) !important;
   }
 
+
+
+  button[aria-label="Abrir busca"],
+  button[aria-label="Fechar busca"],
+  button[aria-label="Abrir busca"]:hover,
+  button[aria-label="Fechar busca"]:hover,
+  button[aria-label="Abrir busca"]:active,
+  button[aria-label="Fechar busca"]:active,
+  button[aria-label="Abrir busca"]:focus,
+  button[aria-label="Fechar busca"]:focus,
+  button[aria-label="Abrir busca"]:focus-visible,
+  button[aria-label="Fechar busca"]:focus-visible {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  input[placeholder="Buscar obras, autor, gênero..."],
+  input[placeholder="Buscar obras, autor, gênero..."]:hover,
+  input[placeholder="Buscar obras, autor, gênero..."]:focus,
+  input[placeholder="Buscar obras, autor, gênero..."]:focus-visible {
+    border-color: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+  }
+
   html[data-historietas-tema-visual="branco"] input::placeholder {
     color: #80868B !important;
   }
@@ -4630,24 +4629,31 @@ const notificationCountBadgeStyle: CSSProperties = {
 const mobileSearchToggleStyle: CSSProperties = {
   width: "34px",
   height: "34px",
-  borderRadius: "999px",
-  border: "1px solid rgba(59, 7, 100, 0.56)",
-  background: "#04000A",
-  color: "#DDD6FE",
+  borderRadius: 0,
+  border: 0,
+  background: "transparent",
+  color: "#FFFFFF",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  padding: 0,
   fontSize: "15px",
   cursor: "pointer",
   flex: "0 0 auto",
   boxShadow: "none",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+  WebkitAppearance: "none",
+  appearance: "none",
 };
 
 const mobileSearchToggleActiveStyle: CSSProperties = {
   ...mobileSearchToggleStyle,
-  border: "1px solid rgba(91, 33, 182, 0.62)",
-  background: "rgba(46, 16, 101, 0.84)",
+  border: 0,
+  background: "transparent",
   color: "#FFFFFF",
+  boxShadow: "none",
+  outline: "none",
 };
 
 const menuStyle: CSSProperties = {
@@ -4714,7 +4720,7 @@ const inputStyle: CSSProperties = {
   width: "100%",
   height: "44px",
   borderRadius: "999px",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid transparent",
   background: "#04000A",
   color: "#FFFFFF",
   padding: "0 15px",
@@ -4807,7 +4813,7 @@ const searchSuggestionBadgeStyle: CSSProperties = {
 };
 
 const heroStyle: CSSProperties = {
-  marginTop: "12px",
+  marginTop: "8px",
   borderRadius: "28px",
   overflow: "hidden",
   border: "1px solid rgba(255,255,255,0.06)",
@@ -4819,7 +4825,7 @@ const heroStyle: CSSProperties = {
 };
 
 const desktopHeroStyle: CSSProperties = {
-  marginTop: "18px",
+  marginTop: "14px",
   borderRadius: "30px",
   backgroundPosition: "center",
 };
@@ -5114,12 +5120,12 @@ const primaryButtonStyle: CSSProperties = {
   minHeight: "50px",
   padding: "0 22px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "rgba(4, 0, 10, 0.72)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "15px",
-  fontWeight: 950,
-  border: "1px solid rgba(255,255,255,0.10)",
+  fontWeight: 900,
+  border: "1px solid rgba(255,255,255,0.08)",
   textAlign: "center",
   lineHeight: 1.15,
   minWidth: 0,
@@ -5138,7 +5144,7 @@ const secondaryButtonStyle: CSSProperties = {
   padding: "0 22px",
   borderRadius: "999px",
   background: "rgba(4, 0, 10, 0.72)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontFamily: "inherit",
   fontSize: "15px",
@@ -5427,41 +5433,57 @@ const mobileHeroDotActiveStyle: CSSProperties = {
 
 const summaryStripStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
   alignItems: "center",
-  gap: "6px",
+  gap: "0",
   marginTop: "14px",
-  padding: "12px 8px",
-  borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  padding: "0",
+  borderRadius: "0",
+  background: "transparent",
+  border: "0",
   boxShadow: "none",
   maxWidth: "100%",
   boxSizing: "border-box",
   minWidth: 0,
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const desktopSummaryStripStyle: CSSProperties = {
   ...summaryStripStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "12px",
-  padding: "14px",
-  borderRadius: "26px",
+  gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
+  gap: "0",
+  padding: "0",
+  borderRadius: "0",
 };
 
 const summaryItemStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  alignContent: "center",
-  gap: "4px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: "42px",
+  padding: "8px 10px",
   maxWidth: "100%",
   minWidth: 0,
+  borderRadius: "0",
+  background: "transparent",
+  border: "0",
+  textDecoration: "none",
+  color: "#FFFFFF",
+  boxSizing: "border-box",
+};
+
+const summaryDividerLineStyle: CSSProperties = {
+  width: "1px",
+  height: "30px",
+  alignSelf: "center",
+  justifySelf: "center",
+  background: "rgba(255,255,255,0.20)",
+  borderRadius: "999px",
 };
 
 const summaryNumberStyle: CSSProperties = {
-  color: "#DDD6FE",
-  fontSize: "20px",
+  color: "#FFFFFF",
+  fontSize: "17px",
   lineHeight: 1,
   fontWeight: 950,
   textAlign: "center",
@@ -5470,7 +5492,7 @@ const summaryNumberStyle: CSSProperties = {
 
 const summaryLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
+  fontSize: "10.5px",
   fontWeight: 850,
   textAlign: "center",
   lineHeight: 1.25,
@@ -6323,7 +6345,7 @@ const statusBadgeStyle: CSSProperties = {
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
+  fontSize: "10.5px",
   fontWeight: 850,
   whiteSpace: "normal",
   ...safeTextStyle,

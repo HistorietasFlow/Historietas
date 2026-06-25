@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
-import { criarSlugBase, formatarData, formatarNumeroCompacto, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
+import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
@@ -2492,6 +2492,7 @@ export default function NotificacoesPage() {
   const [usuarioNotificacoesId, setUsuarioNotificacoesId] = useState("anon");
   const [menuNotificacaoAbertoId, setMenuNotificacaoAbertoId] = useState("");
   const [menuAcoesGeraisAberto, setMenuAcoesGeraisAberto] = useState(false);
+  const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);
   const { definirNotificacoesNaoLidas } = useNotificacoes();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -2658,15 +2659,6 @@ export default function NotificacoesPage() {
   }, [notificacoes]);
 
   const totalLidas = Math.max(totalNotificacoes - totalNaoLidas, 0);
-  const totalCapitulos = notificacoes.filter((notificacao) =>
-    notificacaoEhCapitulo(notificacao)
-  ).length;
-  const totalComunidade = notificacoes.filter((notificacao) =>
-    notificacaoEhComunidade(notificacao)
-  ).length;
-  const ultimaNotificacao = notificacoes[0]
-    ? formatarData(notificacoes[0].criadaEm)
-    : "Sem registros";
   const termoBusca = normalizarTexto(busca);
 
   const notificacoesFiltradas = useMemo(() => {
@@ -2738,6 +2730,19 @@ export default function NotificacoesPage() {
   const filtrosAtivos = Boolean(
     busca.trim() || filtro !== "todas" || ordenacao !== "recentes"
   );
+
+  const opcoesFiltro: Array<{ valor: FiltroNotificacao; rotulo: string }> = [
+    { valor: "todas", rotulo: "Todas" },
+    { valor: "nao-lidas", rotulo: "Novas" },
+    { valor: "lidas", rotulo: "Lidas" },
+    { valor: "capitulos", rotulo: "Capítulos" },
+    { valor: "comunidade", rotulo: "Comunidade" },
+  ];
+
+  const opcoesOrdenacao: Array<{ valor: OrdenacaoNotificacao; rotulo: string }> = [
+    { valor: "recentes", rotulo: "Mais recentes" },
+    { valor: "antigas", rotulo: "Mais antigas" },
+  ];
 
   function encontrarObra(obraId: string) {
     return obrasPorId.get(obraId) || null;
@@ -2922,6 +2927,7 @@ export default function NotificacoesPage() {
   function fecharMenusNotificacoes() {
     setMenuNotificacaoAbertoId("");
     setMenuAcoesGeraisAberto(false);
+    setMostrarPainelOrdenacao(false);
   }
 
   function limparFiltros() {
@@ -2979,17 +2985,37 @@ export default function NotificacoesPage() {
 
         {totalNotificacoes > 0 && (
           <>
-            <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
-              <div style={isDesktop ? desktopFilterHeaderStyle : filterHeaderStyle}>
-                <span style={filterResultBadgeStyle}>
-                  {notificacoesFiltradas.length} de {totalNotificacoes}
-                </span>
+            <section style={isDesktop ? desktopNotificationsControlsStyle : notificationsControlsStyle}>
+              <label style={notificationSearchShellStyle}>
+                <span style={notificationSearchIconStyle}>⌕</span>
 
-                <div style={isDesktop ? desktopFilterHeaderTitleBoxStyle : filterHeaderTitleBoxStyle}>
-                  <span style={miniTitleStyle}>ORGANIZAR</span>
-                </div>
+                <input
+                  value={busca}
+                  onChange={(event) => {
+                    fecharMenusNotificacoes();
+                    setBusca(event.target.value);
+                  }}
+                  placeholder="Buscar notificação..."
+                  style={notificationSearchInputStyle}
+                  type="text"
+                />
+              </label>
 
-                <div style={filterActionsMenuWrapperStyle}>
+              <div style={notificationSortingRowStyle}>
+                <div style={notificationSortingLeftGroupStyle}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fecharMenusNotificacoes();
+                      setMostrarPainelOrdenacao(true);
+                    }}
+                    style={notificationSortingLabelButtonStyle}
+                  >
+                    <span style={notificationSortingLabelStyle}>
+                      Filtrar e classificar
+                    </span>
+                  </button>
+
                   <button
                     type="button"
                     aria-label="Abrir ações gerais das notificações"
@@ -2999,227 +3025,196 @@ export default function NotificacoesPage() {
                   >
                     ⋮
                   </button>
-
-                  {menuAcoesGeraisAberto && (
-                    <div style={filterActionsMenuDropdownStyle}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          marcarTodasComoLidas();
-                          fecharMenuAcoesGerais();
-                        }}
-                        style={
-                          notificacoes.length === 0
-                            ? filterActionsMenuItemDisabledStyle
-                            : cardMenuItemStyle
-                        }
-                        disabled={notificacoes.length === 0}
-                      >
-                        Marcar todas como lidas
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          marcarFiltradasComoLidas();
-                          fecharMenuAcoesGerais();
-                        }}
-                        style={
-                          notificacoesFiltradas.length === 0
-                            ? filterActionsMenuItemDisabledStyle
-                            : cardMenuItemStyle
-                        }
-                        disabled={notificacoesFiltradas.length === 0}
-                      >
-                        Marcar seleção
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          limparLidas();
-                          fecharMenuAcoesGerais();
-                        }}
-                        style={
-                          totalLidas === 0
-                            ? filterActionsMenuItemDisabledStyle
-                            : cardMenuItemStyle
-                        }
-                        disabled={totalLidas === 0}
-                      >
-                        Apagar lidas
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          limparTodas();
-                          fecharMenuAcoesGerais();
-                        }}
-                        style={
-                          notificacoes.length === 0
-                            ? filterActionsMenuDangerItemDisabledStyle
-                            : cardMenuDangerItemStyle
-                        }
-                        disabled={notificacoes.length === 0}
-                      >
-                        Limpar todos
-                      </button>
-                    </div>
-                  )}
                 </div>
-              </div>
-
-              <input
-                value={busca}
-                onChange={(event) => {
-                  fecharMenusNotificacoes();
-                  setBusca(event.target.value);
-                }}
-                placeholder="Buscar por obra, capítulo, comunidade ou mensagem..."
-                style={isDesktop ? desktopSearchInputStyle : searchInputStyle}
-                type="text"
-              />
-
-              <div style={isDesktop ? desktopQuickFiltersStyle : quickFiltersStyle}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    fecharMenusNotificacoes();
-                    setFiltro("todas");
-                  }}
-                  style={
-                    filtro === "todas"
-                      ? quickFilterActiveStyle
-                      : quickFilterStyle
-                  }
-                >
-                  Todas
-                </button>
 
                 <button
                   type="button"
+                  aria-label="Abrir filtros e classificação"
                   onClick={() => {
                     fecharMenusNotificacoes();
-                    setFiltro("nao-lidas");
+                    setMostrarPainelOrdenacao(true);
                   }}
-                  style={
-                    filtro === "nao-lidas"
-                      ? quickFilterActiveStyle
-                      : quickFilterStyle
-                  }
+                  style={notificationSortingArrowButtonStyle}
                 >
-                  Novas
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    fecharMenusNotificacoes();
-                    setFiltro("lidas");
-                  }}
-                  style={
-                    filtro === "lidas"
-                      ? quickFilterActiveStyle
-                      : quickFilterStyle
-                  }
-                >
-                  Lidas
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    fecharMenusNotificacoes();
-                    setFiltro("capitulos");
-                  }}
-                  style={
-                    filtro === "capitulos"
-                      ? quickFilterActiveStyle
-                      : quickFilterStyle
-                  }
-                >
-                  Capítulos
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    fecharMenusNotificacoes();
-                    setFiltro("comunidade");
-                  }}
-                  style={
-                    filtro === "comunidade"
-                      ? communityQuickFilterActiveStyle
-                      : quickFilterStyle
-                  }
-                >
-                  Comunidade
+                  <span style={notificationSortingArrowStyle}>⇅</span>
                 </button>
               </div>
 
-              <div style={isDesktop ? desktopFilterFooterStyle : filterFooterStyle}>
-                <select
-                  value={ordenacao}
-                  onChange={(event) => {
-                    fecharMenusNotificacoes();
-                    setOrdenacao(event.target.value as OrdenacaoNotificacao);
-                  }}
-                  style={selectStyle}
+              {filtrosAtivos && (
+                <button
+                  type="button"
+                  onClick={limparFiltros}
+                  style={notificationClearButtonStyle}
                 >
-                  <option value="recentes">Mais recentes</option>
-                  <option value="antigas">Mais antigas</option>
-                  <option value="obra">Nome da obra</option>
-                  <option value="capitulo">Nome do capítulo</option>
-                </select>
-
-                {filtrosAtivos && (
-                  <button
-                    type="button"
-                    onClick={limparFiltros}
-                    style={secondaryButtonStyle}
-                  >
-                    Limpar filtros
-                  </button>
-                )}
-              </div>
+                  Limpar busca e filtros
+                </button>
+              )}
             </section>
 
-        <section
-              className="notificacoes-stats-carousel"
-              style={isDesktop ? desktopStatsGridStyle : statsGridStyle}
-              aria-label="Resumo das notificações"
-            >
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totalNotificacoes}</strong>
-            <span style={statLabelStyle}>Total</span>
-          </div>
+            {menuAcoesGeraisAberto && (
+              <div
+                style={notificationSortingBackdropStyle}
+                onClick={fecharMenuAcoesGerais}
+              >
+                <div
+                  style={notificationActionsSheetStyle}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <span style={notificationSortingHandleStyle} />
 
-          <div style={unreadStatCardStyle}>
-            <strong style={statNumberStyle}>{totalNaoLidas}</strong>
-            <span style={statLabelStyle}>Novas</span>
-          </div>
+                  <h2 style={notificationSortingTitleStyle}>Ações</h2>
 
-          <div style={readStatCardStyle}>
-            <strong style={statNumberStyle}>{totalLidas}</strong>
-            <span style={statLabelStyle}>Lidas</span>
-          </div>
+                  <div style={notificationSortingOptionsListStyle}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        marcarTodasComoLidas();
+                        fecharMenuAcoesGerais();
+                      }}
+                      style={
+                        notificacoes.length === 0
+                          ? notificationActionsOptionDisabledStyle
+                          : notificationActionsOptionStyle
+                      }
+                      disabled={notificacoes.length === 0}
+                    >
+                      Marcar todas como lidas
+                    </button>
 
-          <div style={chapterStatCardStyle}>
-            <strong style={statNumberStyle}>{totalCapitulos}</strong>
-            <span style={statLabelStyle}>Capítulos</span>
-          </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        marcarFiltradasComoLidas();
+                        fecharMenuAcoesGerais();
+                      }}
+                      style={
+                        notificacoesFiltradas.length === 0
+                          ? notificationActionsOptionDisabledStyle
+                          : notificationActionsOptionStyle
+                      }
+                      disabled={notificacoesFiltradas.length === 0}
+                    >
+                      Marcar seleção
+                    </button>
 
-          <div style={communityStatCardStyle}>
-            <strong style={statNumberStyle}>{totalComunidade}</strong>
-            <span style={statLabelStyle}>Comunidade</span>
-          </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        limparLidas();
+                        fecharMenuAcoesGerais();
+                      }}
+                      style={
+                        totalLidas === 0
+                          ? notificationActionsOptionDisabledStyle
+                          : notificationActionsOptionStyle
+                      }
+                      disabled={totalLidas === 0}
+                    >
+                      Apagar lidas
+                    </button>
 
-          <div style={statCardStyle}>
-            <strong style={smallStatTextStyle}>{ultimaNotificacao}</strong>
-            <span style={statLabelStyle}>Última</span>
-          </div>
-        </section>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        limparTodas();
+                        fecharMenuAcoesGerais();
+                      }}
+                      style={
+                        notificacoes.length === 0
+                          ? notificationActionsDangerOptionDisabledStyle
+                          : notificationActionsDangerOptionStyle
+                      }
+                      disabled={notificacoes.length === 0}
+                    >
+                      Limpar todos
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {mostrarPainelOrdenacao && (
+              <div
+                style={notificationSortingBackdropStyle}
+                onClick={() => setMostrarPainelOrdenacao(false)}
+              >
+                <div
+                  style={notificationSortingSheetStyle}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <span style={notificationSortingHandleStyle} />
+
+                  <h2 style={notificationSortingTitleStyle}>Filtrar e classificar</h2>
+
+                  <div style={notificationSortingOptionsListStyle}>
+                    <span style={notificationSortingSectionLabelStyle}>Mostrar</span>
+
+                    {opcoesFiltro.map((opcao) => {
+                      const ativo = filtro === opcao.valor;
+
+                      return (
+                        <button
+                          key={opcao.valor}
+                          type="button"
+                          onClick={() => {
+                            setFiltro(opcao.valor);
+                            setMostrarPainelOrdenacao(false);
+                          }}
+                          style={
+                            ativo
+                              ? notificationSortingOptionActiveStyle
+                              : notificationSortingOptionStyle
+                          }
+                        >
+                          <span>{opcao.rotulo}</span>
+
+                          <span
+                            style={
+                              ativo
+                                ? notificationSortingOptionRadioActiveStyle
+                                : notificationSortingOptionRadioStyle
+                            }
+                          />
+                        </button>
+                      );
+                    })}
+
+                    <span style={notificationSortingSectionLabelStyle}>Classificar por</span>
+
+                    {opcoesOrdenacao.map((opcao) => {
+                      const ativo = ordenacao === opcao.valor;
+
+                      return (
+                        <button
+                          key={opcao.valor}
+                          type="button"
+                          onClick={() => {
+                            setOrdenacao(opcao.valor);
+                            setMostrarPainelOrdenacao(false);
+                          }}
+                          style={
+                            ativo
+                              ? notificationSortingOptionActiveStyle
+                              : notificationSortingOptionStyle
+                          }
+                        >
+                          <span>{opcao.rotulo}</span>
+
+                          <span
+                            style={
+                              ativo
+                                ? notificationSortingOptionRadioActiveStyle
+                                : notificationSortingOptionRadioStyle
+                            }
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
 
           </>
         )}
@@ -3343,72 +3338,86 @@ export default function NotificacoesPage() {
                           </button>
 
                           {menuEstaAberto && (
-                            <div style={cardMenuDropdownStyle}>
-                              <Link
-                                href={linkCapitulo}
-                                style={cardMenuItemStyle}
-                                onClick={() => {
-                                  abrirNotificacao(notificacao.id);
-                                  fecharMenuNotificacao();
-                                }}
+                            <div
+                              style={notificationSortingBackdropStyle}
+                              onClick={fecharMenuNotificacao}
+                            >
+                              <div
+                                style={notificationActionsSheetStyle}
+                                onClick={(event) => event.stopPropagation()}
                               >
-                                {labelAcaoPrincipal}
-                              </Link>
+                                <span style={notificationSortingHandleStyle} />
 
-                              {notificacao.autorId && (
-                                <Link
-                                  href={autorNotificacaoHref}
-                                  style={cardMenuItemStyle}
-                                  onClick={fecharMenuNotificacao}
-                                >
-                                  Abrir perfil
-                                </Link>
-                              )}
+                                <h2 style={notificationSortingTitleStyle}>Ações da notificação</h2>
 
-                              {notificacao.lida ? (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    marcarComoNaoLida(notificacao.id);
-                                    fecharMenuNotificacao();
-                                  }}
-                                  style={cardMenuItemStyle}
-                                >
-                                  Marcar como nova
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    marcarComoLida(notificacao.id);
-                                    fecharMenuNotificacao();
-                                  }}
-                                  style={cardMenuItemStyle}
-                                >
-                                  Marcar como lida
-                                </button>
-                              )}
+                                <div style={notificationSortingOptionsListStyle}>
+                                  <Link
+                                    href={linkCapitulo}
+                                    style={notificationActionsOptionLinkStyle}
+                                    onClick={() => {
+                                      abrirNotificacao(notificacao.id);
+                                      fecharMenuNotificacao();
+                                    }}
+                                  >
+                                    {labelAcaoPrincipal}
+                                  </Link>
 
-                              {obra && !ehComunidade && (
-                                <Link
-                                  href={`/obra/${obra.slug || criarSlugBase(obra.titulo)}`}
-                                  style={cardMenuItemStyle}
-                                  onClick={fecharMenuNotificacao}
-                                >
-                                  Abrir obra
-                                </Link>
-                              )}
+                                  {notificacao.autorId && (
+                                    <Link
+                                      href={autorNotificacaoHref}
+                                      style={notificationActionsOptionLinkStyle}
+                                      onClick={fecharMenuNotificacao}
+                                    >
+                                      Abrir perfil
+                                    </Link>
+                                  )}
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  apagarNotificacao(notificacao.id);
-                                  fecharMenuNotificacao();
-                                }}
-                                style={cardMenuDangerItemStyle}
-                              >
-                                Apagar
-                              </button>
+                                  {notificacao.lida ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        marcarComoNaoLida(notificacao.id);
+                                        fecharMenuNotificacao();
+                                      }}
+                                      style={notificationActionsOptionStyle}
+                                    >
+                                      Marcar como nova
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        marcarComoLida(notificacao.id);
+                                        fecharMenuNotificacao();
+                                      }}
+                                      style={notificationActionsOptionStyle}
+                                    >
+                                      Marcar como lida
+                                    </button>
+                                  )}
+
+                                  {obra && !ehComunidade && (
+                                    <Link
+                                      href={`/obra/${obra.slug || criarSlugBase(obra.titulo)}`}
+                                      style={notificationActionsOptionLinkStyle}
+                                      onClick={fecharMenuNotificacao}
+                                    >
+                                      Abrir obra
+                                    </Link>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      apagarNotificacao(notificacao.id);
+                                      fecharMenuNotificacao();
+                                    }}
+                                    style={notificationActionsDangerOptionStyle}
+                                  >
+                                    Apagar
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -3438,7 +3447,14 @@ export default function NotificacoesPage() {
                     }
                   >
                     {ehComunidade ? (
-                      <div style={communityCommentBoxStyle}>
+                      <div
+                        style={
+                          notificacao.tipo === "comentario-comunidade" ||
+                          notificacao.tipo === "comentario-diario"
+                            ? communityCommentBoxStyle
+                            : communityUpdateBoxStyle
+                        }
+                      >
                         {notificacao.tipo === "comentario-comunidade" ||
                         notificacao.tipo === "comentario-diario" ? (
                           notificacao.autorId ? (
@@ -3597,7 +3613,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
+  padding: "18px 0 calc(14px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -3704,8 +3720,8 @@ const pageTitleTextStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
-  color: "var(--historietas-accent, #F97316)",
-  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   textAlign: "center",
   textShadow: "none",
   ...safeTextStyle,
@@ -3823,95 +3839,319 @@ const descriptionStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const statsGridStyle: CSSProperties = {
-  marginTop: "10px",
-  display: "flex",
-  alignItems: "stretch",
-  gap: "7px",
+
+
+
+
+
+
+
+
+
+
+const notificationsControlsStyle: CSSProperties = {
+  position: "relative",
+  marginTop: "12px",
+  display: "grid",
+  gap: "8px",
+  padding: "0",
+  background: "transparent",
+  border: "none",
+  boxShadow: "none",
   minWidth: 0,
-  width: "calc(100% + 28px)",
-  maxWidth: "calc(100% + 28px)",
-  marginLeft: "-14px",
-  marginRight: "-14px",
-  overflowX: "auto",
-  overflowY: "hidden",
+  maxWidth: "100%",
+  overflow: "visible",
+  boxSizing: "border-box",
+};
+
+const desktopNotificationsControlsStyle: CSSProperties = {
+  ...notificationsControlsStyle,
+  maxWidth: "760px",
+  marginLeft: "auto",
+  marginRight: "auto",
+};
+
+const notificationSearchShellStyle: CSSProperties = {
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+  width: "100%",
+  minHeight: "48px",
+  borderRadius: "14px",
+  background: "rgba(39, 39, 42, 0.88)",
+  border: "1px solid rgba(255,255,255,0.045)",
   padding: "0 14px",
   boxSizing: "border-box",
-  scrollSnapType: "x proximity",
+  minWidth: 0,
 };
 
-const statCardStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  alignContent: "center",
-  textAlign: "center",
-  gap: "2px",
-  borderRadius: "14px",
-  padding: "6px 7px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  flex: "0 0 86px",
-  minWidth: "86px",
-  minHeight: "50px",
-  maxWidth: "86px",
-  overflow: "hidden",
+const notificationSearchIconStyle: CSSProperties = {
+  flex: "0 0 auto",
+  color: "rgba(212,212,216,0.72)",
+  fontSize: "25px",
+  lineHeight: 1,
+  fontWeight: 400,
+  marginRight: "10px",
+  transform: "translateY(-1px)",
+};
+
+const notificationSearchInputStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  height: "46px",
+  border: "none",
+  outline: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "18px",
+  fontWeight: 750,
+  letterSpacing: "-0.035em",
+  padding: 0,
   boxSizing: "border-box",
 };
 
-const unreadStatCardStyle: CSSProperties = {
-  ...statCardStyle,
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
+const notificationSortingRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  width: "100%",
+  minHeight: "34px",
+  background: "transparent",
+  color: "#FFFFFF",
+  padding: "0",
+  boxSizing: "border-box",
+  minWidth: 0,
+};
+
+const notificationSortingLeftGroupStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "4px",
+  minWidth: 0,
+};
+
+const notificationSortingLabelButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+  textAlign: "left",
+  minWidth: 0,
+  WebkitTapHighlightColor: "transparent",
+};
+
+const notificationSortingLabelStyle: CSSProperties = {
+  color: "rgba(244,244,245,0.94)",
+  fontSize: "16px",
+  lineHeight: 1.25,
+  fontWeight: 500,
+  letterSpacing: "-0.035em",
+  minWidth: 0,
+  ...safeTextStyle,
+};
+
+
+const notificationSortingArrowButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  flex: "0 0 auto",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "38px",
+  height: "38px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  cursor: "pointer",
+  padding: 0,
+  WebkitTapHighlightColor: "transparent",
+};
+
+const notificationSortingArrowStyle: CSSProperties = {
+  flex: "0 0 auto",
+  color: "#FFFFFF",
+  fontSize: "30px",
+  lineHeight: 1,
+  fontWeight: 700,
+};
+
+const notificationClearButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "fit-content",
+  justifySelf: "center",
+  minHeight: "34px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.06)",
+  color: "rgba(244,244,245,0.88)",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 900,
+  padding: "0 13px",
+  cursor: "pointer",
   boxShadow: "none",
 };
 
-const readStatCardStyle: CSSProperties = {
-  ...statCardStyle,
-  background: "rgba(4, 0, 10, 0.72)",
+const notificationSortingBackdropStyle: CSSProperties = {
+  position: "fixed",
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  height: "100dvh",
+  zIndex: 240,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  background: "rgba(0,0,0,0.68)",
+  padding: 0,
+  boxSizing: "border-box",
+  overscrollBehavior: "none",
+  touchAction: "none",
+};
+
+const notificationSortingSheetStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  width: "min(760px, calc(100% - 12px))",
+  maxHeight: "calc(100dvh - 116px)",
+  overflowY: "auto",
+  overflowX: "hidden",
+  overscrollBehavior: "none",
+  borderRadius: "24px 24px 0 0",
+  background: "#15191C",
   border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
+  padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
+  boxSizing: "border-box",
+  touchAction: "none",
 };
 
-const chapterStatCardStyle: CSSProperties = {
-  ...statCardStyle,
-  background: "rgba(4, 0, 10, 0.72)",
-  boxShadow: "none",
+const notificationSortingHandleStyle: CSSProperties = {
+  display: "block",
+  width: "72px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "rgba(244,244,245,0.62)",
+  margin: "0 auto 14px",
 };
 
-const communityStatCardStyle: CSSProperties = {
-  ...statCardStyle,
-  background: "rgba(4, 0, 10, 0.72)",
-  boxShadow: "none",
-};
-
-const statLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "7.5px",
-  lineHeight: 1.05,
+const notificationSortingTitleStyle: CSSProperties = {
+  margin: "0 0 12px",
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1.1,
   fontWeight: 950,
-  letterSpacing: "0.02em",
+  letterSpacing: "-0.04em",
+  textAlign: "center",
+};
+
+const notificationSortingOptionsListStyle: CSSProperties = {
+  display: "grid",
+  gap: 0,
+  borderTop: "1px solid rgba(255,255,255,0.045)",
+};
+
+const notificationSortingSectionLabelStyle: CSSProperties = {
+  display: "block",
+  color: "rgba(244,244,245,0.56)",
+  fontSize: "11px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "0.08em",
   textTransform: "uppercase",
-  textAlign: "center",
+  padding: "15px 30px 8px",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
   ...safeTextStyle,
 };
 
-const statNumberStyle: CSSProperties = {
-  color: "#DDD6FE",
-  fontSize: "17px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
+const notificationSortingOptionStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  minHeight: "48px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "16px",
+  border: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "18px",
+  fontWeight: 650,
+  letterSpacing: "-0.035em",
+  textAlign: "left",
+  padding: "0 30px",
+  cursor: "pointer",
+  boxSizing: "border-box",
 };
 
-const smallStatTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8px",
-  lineHeight: 1,
-  fontWeight: 850,
-  textAlign: "center",
-  ...safeTextStyle,
+const notificationSortingOptionActiveStyle: CSSProperties = {
+  ...notificationSortingOptionStyle,
+  fontWeight: 900,
+};
+
+const notificationSortingOptionRadioStyle: CSSProperties = {
+  flex: "0 0 auto",
+  width: "28px",
+  height: "28px",
+  borderRadius: "999px",
+  border: "3px solid rgba(161,161,170,0.72)",
+  boxSizing: "border-box",
+};
+
+const notificationSortingOptionRadioActiveStyle: CSSProperties = {
+  ...notificationSortingOptionRadioStyle,
+  border: "8px solid #FFFFFF",
+  background: "transparent",
+};
+
+const notificationActionsSheetStyle: CSSProperties = {
+  ...notificationSortingSheetStyle,
+  maxHeight: "calc(100dvh - 150px)",
+};
+
+const notificationActionsOptionStyle: CSSProperties = {
+  ...notificationSortingOptionStyle,
+  justifyContent: "flex-start",
+  minHeight: "54px",
+  fontWeight: 900,
+};
+
+const notificationActionsOptionLinkStyle: CSSProperties = {
+  ...notificationActionsOptionStyle,
+  textDecoration: "none",
+};
+
+const notificationActionsOptionDisabledStyle: CSSProperties = {
+  ...notificationActionsOptionStyle,
+  opacity: 0.45,
+  cursor: "not-allowed",
+};
+
+const notificationActionsDangerOptionStyle: CSSProperties = {
+  ...notificationActionsOptionStyle,
+  color: "#FCA5A5",
+};
+
+const notificationActionsDangerOptionDisabledStyle: CSSProperties = {
+  ...notificationActionsDangerOptionStyle,
+  opacity: 0.45,
+  cursor: "not-allowed",
 };
 
 const filterBoxStyle: CSSProperties = {
@@ -4006,44 +4246,9 @@ const searchInputStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const quickFiltersStyle: CSSProperties = {
-  display: "flex",
-  gap: "6px",
-  flexWrap: "wrap",
-  justifyContent: "center",
-  minWidth: 0,
-};
 
-const quickFilterStyle: CSSProperties = {
-  minHeight: "32px",
-  padding: "0 9px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const quickFilterActiveStyle: CSSProperties = {
-  ...quickFilterStyle,
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  boxShadow: "none",
-};
 
-const communityQuickFilterActiveStyle: CSSProperties = {
-  ...quickFilterStyle,
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  boxShadow: "none",
-};
 
 const filterFooterStyle: CSSProperties = {
   display: "grid",
@@ -4203,7 +4408,7 @@ const unreadNotificationIconStyle: CSSProperties = {
   ...notificationIconStyle,
   background: "rgba(127,29,29,0.24)",
   border: "1px solid rgba(248,113,113,0.36)",
-  color: "#FCA5A5",
+  color: "#FFFFFF",
   boxShadow: "none",
 };
 
@@ -4211,7 +4416,7 @@ const readNotificationIconStyle: CSSProperties = {
   ...notificationIconStyle,
   background: "rgba(34,197,94,0.12)",
   border: "1px solid rgba(34,197,94,0.18)",
-  color: "#86EFAC",
+  color: "#FFFFFF",
   boxShadow: "none",
 };
 
@@ -4219,7 +4424,7 @@ const communityNotificationIconStyle: CSSProperties = {
   ...notificationIconStyle,
   background: "#08030F",
   border: "1px solid rgba(255,255,255,0.10)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
 };
 
 const cardHeaderTextStyle: CSSProperties = {
@@ -4280,7 +4485,7 @@ const notificationKindBadgeStyle: CSSProperties = {
 
 const notificationTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "16px",
   lineHeight: 1.02,
   fontWeight: 950,
@@ -4326,100 +4531,18 @@ const cardMenuButtonStyle: CSSProperties = {
   WebkitTapHighlightColor: "transparent",
 };
 
-const cardMenuDropdownStyle: CSSProperties = {
-  position: "absolute",
-  top: "24px",
-  right: 0,
-  width: "196px",
-  maxWidth: "calc(100vw - 44px)",
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  alignItems: "stretch",
-  justifyItems: "stretch",
-  rowGap: "6px",
-  padding: "7px",
-  borderRadius: "15px",
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  boxShadow: "0 14px 34px rgba(0,0,0,0.34)",
-  zIndex: 80,
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
 
-const cardMenuItemStyle: CSSProperties = {
-  width: "100%",
-  minWidth: 0,
-  minHeight: "34px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-start",
-  padding: "0 12px",
-  margin: 0,
-  borderRadius: "11px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.055)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "12px",
-  lineHeight: 1.1,
-  fontWeight: 900,
-  fontFamily: "inherit",
-  textAlign: "left",
-  cursor: "pointer",
-  boxSizing: "border-box",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  wordBreak: "normal",
-  appearance: "none",
-  WebkitAppearance: "none",
-};
 
-const cardMenuDangerItemStyle: CSSProperties = {
-  ...cardMenuItemStyle,
-  color: "#FCA5A5",
-  background: "rgba(239,68,68,0.075)",
-  border: "1px solid rgba(239,68,68,0.14)",
-};
-
-const filterActionsMenuWrapperStyle: CSSProperties = {
-  position: "absolute",
-  top: "8px",
-  right: "10px",
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "flex-end",
-  minWidth: 0,
-  zIndex: 120,
-};
 
 const filterActionsMenuButtonStyle: CSSProperties = {
   ...cardMenuButtonStyle,
-  width: "26px",
-  height: "26px",
+  width: "28px",
+  height: "28px",
+  marginLeft: "0",
 };
 
-const filterActionsMenuDropdownStyle: CSSProperties = {
-  ...cardMenuDropdownStyle,
-  top: "30px",
-  right: 0,
-  width: "min(224px, calc(100vw - 56px))",
-  maxWidth: "calc(100vw - 56px)",
-  zIndex: 130,
-};
 
-const filterActionsMenuItemDisabledStyle: CSSProperties = {
-  ...cardMenuItemStyle,
-  opacity: 0.45,
-  cursor: "not-allowed",
-};
 
-const filterActionsMenuDangerItemDisabledStyle: CSSProperties = {
-  ...cardMenuDangerItemStyle,
-  opacity: 0.45,
-  cursor: "not-allowed",
-};
 
 const communityDateTextStyle: CSSProperties = {
   display: "block",
@@ -4504,6 +4627,16 @@ const communityCommentBoxStyle: CSSProperties = {
   padding: "6px",
   background: "rgba(255,255,255,0.04)",
   border: "1px solid rgba(255,255,255,0.06)",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "hidden",
+  boxSizing: "border-box",
+  textAlign: "left",
+};
+
+const communityUpdateBoxStyle: CSSProperties = {
+  display: "grid",
+  gap: "2px",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -4682,16 +4815,6 @@ const desktopDescriptionStyle: CSSProperties = {
   maxWidth: "680px",
 };
 
-const desktopStatsGridStyle: CSSProperties = {
-  ...statsGridStyle,
-  gap: "8px",
-  marginTop: "12px",
-  width: "100%",
-  maxWidth: "100%",
-  marginLeft: 0,
-  marginRight: 0,
-  padding: 0,
-};
 
 const desktopFilterBoxStyle: CSSProperties = {
   ...filterBoxStyle,
@@ -4711,10 +4834,6 @@ const desktopSearchInputStyle: CSSProperties = {
   fontSize: "13px",
 };
 
-const desktopQuickFiltersStyle: CSSProperties = {
-  ...quickFiltersStyle,
-  gap: "8px",
-};
 
 const desktopFilterFooterStyle: CSSProperties = {
   ...filterFooterStyle,

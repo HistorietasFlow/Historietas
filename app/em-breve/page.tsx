@@ -280,7 +280,7 @@ export default function EmBrevePage() {
               className="historietas-theme-title"
               style={desktopLayout ? desktopTitleTextStyle : titleTextStyle}
             >
-              LANÇAMENTOS
+              EM BREVE
             </span>
           </Link>
 
@@ -360,8 +360,6 @@ export default function EmBrevePage() {
                             {obra.titulo}
                           </strong>
                         </Link>
-
-                        <span style={relatedSideBadgeStyle}>EM BREVE</span>
                       </div>
 
                       <span style={relatedAuthorStyle}>Por {obra.autor}</span>
@@ -1188,27 +1186,11 @@ const relatedTitleLinkStyle: CSSProperties = {
 
 const relatedTopLineStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
+  gridTemplateColumns: "minmax(0, 1fr)",
   alignItems: "start",
   gap: "8px",
   minWidth: 0,
   maxWidth: "100%",
-};
-
-const relatedSideBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "9.5px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  whiteSpace: "nowrap",
-  boxSizing: "border-box",
-  ...safeTextStyle,
 };
 
 const relatedTitleStyle: CSSProperties = {
@@ -1281,8 +1263,8 @@ const relatedStatsStyle: CSSProperties = {
 };
 
 const relatedSaveButtonStyle: CSSProperties = {
-  border: "1px solid rgba(249,115,22,0.34)",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.06)",
   color: "#FFFFFF",
   borderRadius: "999px",
   minHeight: "34px",
@@ -1296,8 +1278,8 @@ const relatedSaveButtonStyle: CSSProperties = {
 
 const relatedSavedButtonStyle: CSSProperties = {
   ...relatedSaveButtonStyle,
-  background: "rgba(124,58,237,0.18)",
-  border: "1px solid rgba(124,58,237,0.30)",
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.08)",
   color: "#FFFFFF",
 };
 

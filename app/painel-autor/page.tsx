@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
-import { useNotificacoes } from "../../components/NotificacoesProvider";
 import type { CSSProperties } from "react";
 
 type CapituloLocal = {
@@ -133,6 +132,24 @@ type OrdenacaoPainel =
   | "titulo"
   | "capitulos"
   | "progresso";
+
+const FILTROS_PAINEL: { valor: FiltroPainel; rotulo: string }[] = [
+  { valor: "todas", rotulo: "Todas as obras" },
+  { valor: "publicadas", rotulo: "Publicadas" },
+  { valor: "rascunhos", rotulo: "Rascunhos" },
+  { valor: "sem-capitulos", rotulo: "Sem capítulos" },
+  { valor: "favoritas", rotulo: "Na lista" },
+  { valor: "concluidas", rotulo: "Concluídas" },
+  { valor: "em-leitura", rotulo: "Em leitura" },
+];
+
+const ORDENACOES_PAINEL: { valor: OrdenacaoPainel; rotulo: string }[] = [
+  { valor: "pontuacao", rotulo: "Melhor desempenho" },
+  { valor: "recentes", rotulo: "Mais recentes" },
+  { valor: "titulo", rotulo: "Título" },
+  { valor: "capitulos", rotulo: "Mais capítulos" },
+  { valor: "progresso", rotulo: "Maior progresso" },
+];
 
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
@@ -1425,17 +1442,15 @@ export default function PainelAutorPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
-  const { notificacoesNaoLidas } = useNotificacoes();
   const [obraComLinkCopiado, setObraComLinkCopiado] = useState("");
   const [busca, setBusca] = useState("");
+  const [buscaPainelAberta, setBuscaPainelAberta] = useState(false);
   const [filtro, setFiltro] = useState<FiltroPainel>("todas");
   const [ordenacao, setOrdenacao] = useState<OrdenacaoPainel>("pontuacao");
   const [isDesktop, setIsDesktop] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
-  const [emailUsuarioLogado, setEmailUsuarioLogado] = useState("");
-  const [nomeUsuarioLogado, setNomeUsuarioLogado] = useState("");
   const [verificandoUsuario, setVerificandoUsuario] = useState(true);
-  const [saindoDaConta, setSaindoDaConta] = useState(false);
+  const [mostrarFiltrosPainel, setMostrarFiltrosPainel] = useState(false);
 
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -1465,39 +1480,11 @@ export default function PainelAutorPage() {
           return;
         }
 
-        if (!usuario) {
-          setUsuarioIdLogado("");
-          setEmailUsuarioLogado("");
-          setNomeUsuarioLogado("");
-          setVerificandoUsuario(false);
-          return;
-        }
-
-        const nomeMetadata =
-          typeof usuario.user_metadata?.nome === "string"
-            ? usuario.user_metadata.nome.trim()
-            : "";
-
-        setUsuarioIdLogado(usuario.id);
-        setEmailUsuarioLogado(usuario.email || "");
-        setNomeUsuarioLogado(nomeMetadata);
+        setUsuarioIdLogado(usuario?.id || "");
         setVerificandoUsuario(false);
-
-        const profile = await carregarProfilePainelAutor(usuario.id);
-        const nomeProfile = obterNomeProfilePainelAutor(profile);
-
-        if (!componenteAtivo) {
-          return;
-        }
-
-        if (nomeProfile) {
-          setNomeUsuarioLogado(nomeProfile);
-        }
       } catch {
         if (componenteAtivo) {
           setUsuarioIdLogado("");
-          setEmailUsuarioLogado("");
-          setNomeUsuarioLogado("");
           setVerificandoUsuario(false);
         }
       }
@@ -1507,38 +1494,12 @@ export default function PainelAutorPage() {
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_evento, sessao) => {
-        const usuario = sessao?.user;
-
         if (!componenteAtivo) {
           return;
         }
 
-        if (!usuario) {
-          setUsuarioIdLogado("");
-          setEmailUsuarioLogado("");
-          setNomeUsuarioLogado("");
-          setVerificandoUsuario(false);
-          return;
-        }
-
-        const nomeMetadata =
-          typeof usuario.user_metadata?.nome === "string"
-            ? usuario.user_metadata.nome.trim()
-            : "";
-
-        setUsuarioIdLogado(usuario.id);
-        setEmailUsuarioLogado(usuario.email || "");
-        setNomeUsuarioLogado(nomeMetadata);
+        setUsuarioIdLogado(sessao?.user?.id || "");
         setVerificandoUsuario(false);
-
-        void (async () => {
-          const profile = await carregarProfilePainelAutor(usuario.id);
-          const nomeProfile = obterNomeProfilePainelAutor(profile);
-
-          if (componenteAtivo && nomeProfile) {
-            setNomeUsuarioLogado(nomeProfile);
-          }
-        })();
       }
     );
 
@@ -1553,6 +1514,37 @@ export default function PainelAutorPage() {
       router.replace(criarLoginHrefPainelAutor());
     }
   }, [router, usuarioIdLogado, verificandoUsuario]);
+
+  useEffect(() => {
+    if (!mostrarFiltrosPainel) {
+      return;
+    }
+
+    const overflowAnterior = document.body.style.getPropertyValue("overflow");
+    const overscrollAnterior = document.documentElement.style.getPropertyValue(
+      "overscroll-behavior"
+    );
+
+    document.body.style.setProperty("overflow", "hidden");
+    document.documentElement.style.setProperty("overscroll-behavior", "none");
+
+    return () => {
+      if (overflowAnterior) {
+        document.body.style.setProperty("overflow", overflowAnterior);
+      } else {
+        document.body.style.removeProperty("overflow");
+      }
+
+      if (overscrollAnterior) {
+        document.documentElement.style.setProperty(
+          "overscroll-behavior",
+          overscrollAnterior
+        );
+      } else {
+        document.documentElement.style.removeProperty("overscroll-behavior");
+      }
+    };
+  }, [mostrarFiltrosPainel]);
 
 
   useEffect(() => {
@@ -1611,10 +1603,6 @@ export default function PainelAutorPage() {
 
         if (!componenteAtivo) {
           return;
-        }
-
-        if (nomeProfileAutorPainel) {
-          setNomeUsuarioLogado(nomeProfileAutorPainel);
         }
 
         setObras(obrasUsuarioLogado);
@@ -1803,17 +1791,8 @@ export default function PainelAutorPage() {
 
   const totalArquivos = obrasComMetricas.filter((obra) => obra.arquivoObra).length;
 
-  const melhorObra = obrasComMetricas[0] || null;
-  const autorPrincipal =
-    melhorObra?.autor || obrasComMetricas[0]?.autor || obras[0]?.autor || "";
-
   const filtrosAtivos =
     Boolean(busca.trim()) || filtro !== "todas" || ordenacao !== "pontuacao";
-  const textoResultadoFiltro =
-    obrasFiltradas.length === 1
-      ? "1 obra encontrada"
-      : `${obrasFiltradas.length} obras encontradas`;
-
   function limparFiltros() {
     setBusca("");
     setFiltro("todas");
@@ -1821,27 +1800,6 @@ export default function PainelAutorPage() {
   }
 
   const usuarioLogado = Boolean(usuarioIdLogado);
-  const nomeConta =
-    nomeUsuarioLogado.trim() ||
-    emailUsuarioLogado.split("@")[0] ||
-    "Conta Historietas";
-
-  async function sairDaConta() {
-    setSaindoDaConta(true);
-
-    try {
-      await supabase.auth.signOut();
-      setUsuarioIdLogado("");
-      setEmailUsuarioLogado("");
-      setNomeUsuarioLogado("");
-      router.replace("/login");
-      router.refresh();
-    } catch {
-      setSaindoDaConta(false);
-    }
-  }
-
-
   function copiarTextoComFallback(texto: string) {
     const campoTemporario = document.createElement("textarea");
     campoTemporario.value = texto;
@@ -1998,75 +1956,48 @@ export default function PainelAutorPage() {
             <span className="historietas-painel-logo-text" style={logoTextStyle}>istorietas</span>
           </Link>
 
-          <div style={topActionsStyle}>
-            {usuarioLogado ? (
-              <button
-                type="button"
-                onClick={sairDaConta}
-                style={signOutButtonStyle}
-                disabled={saindoDaConta}
-              >
-                {saindoDaConta ? "Saindo..." : "Sair"}
-              </button>
-            ) : (
-              <Link href={criarLoginHrefPainelAutor()} style={topButtonStyle}>
-                {verificandoUsuario ? "Verificando..." : "Entrar"}
-              </Link>
-            )}
-          </div>
+          <button
+            type="button"
+            aria-label={buscaPainelAberta ? "Fechar busca" : "Abrir busca"}
+            aria-expanded={buscaPainelAberta || Boolean(busca.trim())}
+            onClick={() => setBuscaPainelAberta((aberta) => !aberta)}
+            style={topSearchButtonStyle}
+          >
+            ⌕
+          </button>
         </header>
 
-        <section style={heroStyle}>
-          <div style={heroGlowStyle} />
+        <section style={isDesktop ? desktopStudioControlsStyle : studioControlsStyle}>
+          {(buscaPainelAberta || busca.trim()) && (
+            <label style={studioSearchShellStyle}>
+              <span style={studioSearchIconStyle}>⌕</span>
 
-          <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <h1 className="historietas-painel-hero-title" style={titleStyle}>Estúdio</h1>
+              <input
+                value={busca}
+                onChange={(event) => setBusca(event.target.value)}
+                placeholder="Buscar obra..."
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                maxLength={90}
+                style={studioSearchInputStyle}
+                type="text"
+              />
+            </label>
+          )}
 
-            <p style={descriptionStyle}>
-              Gerencie obras, capítulos e desempenho.
-            </p>
-
-            {usuarioLogado && (
-              <div style={accountNoticeStyle}>
-                <span style={accountNoticeLabelStyle}>CONTA</span>
-
-                <strong style={accountNoticeNameStyle}>{nomeConta}</strong>
-
-                {isDesktop && (
-                  <span style={accountNoticeEmailStyle}>
-                    {emailUsuarioLogado}
-                  </span>
-                )}
-              </div>
-            )}
-
-            <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
-              <Link href="/publicar" style={heroPrimaryButtonStyle}>
-                Publicar
-              </Link>
-
-
-              <Link
-                href={criarPerfilUsuarioLogadoPainelHref(nomeConta, usuarioIdLogado)}
-                style={heroSecondaryButtonStyle}
-              >
-                Editar perfil
-              </Link>
-
-              <Link
-                href="/notificacoes"
-                style={isDesktop ? heroSecondaryButtonStyle : heroNotificationButtonStyle}
-              >
-                {notificacoesNaoLidas > 0
-                  ? `${notificacoesNaoLidas} avisos`
-                  : "Avisos"}
-              </Link>
-            </div>
+          <div style={studioFilterRowStyle}>
+            <button
+              type="button"
+              onClick={() => setMostrarFiltrosPainel(true)}
+              style={studioFilterButtonStyle}
+            >
+              <span>Filtrar e ordenar{filtrosAtivos ? " (1)" : ""}</span>
+              <span style={studioFilterIconStyle}>⇅</span>
+            </button>
           </div>
-        </section>
 
-
-        <section style={isDesktop ? desktopStatsBoxStyle : statsBoxStyle}>
+          <section style={isDesktop ? desktopStatsBoxStyle : statsBoxStyle}>
           <div style={statCardStyle}>
             <strong style={statNumberStyle}>{obrasComMetricas.length}</strong>
             <span style={statLabelStyle}>
@@ -2125,77 +2056,90 @@ export default function PainelAutorPage() {
           </div>
         </section>
 
-        <section style={isDesktop ? desktopFilterBoxStyle : filterBoxStyle}>
-          <div style={isDesktop ? desktopFilterHeaderStyle : filterHeaderStyle}>
-            <div style={isDesktop ? desktopFilterHeaderTextStyle : filterHeaderTextStyle}>
-              <h2 style={filterTitleStyle}>CONTROLE DO ESTÚDIO</h2>
 
-              <p style={filterTextStyle}>
-                {textoResultadoFiltro} de {obrasComMetricas.length} no estúdio.
-              </p>
-            </div>
-
-            {filtrosAtivos && (
-              <button
-                type="button"
-                onClick={limparFiltros}
-                style={isDesktop ? desktopClearFilterButtonStyle : clearFilterButtonStyle}
-              >
-                Limpar filtros
-              </button>
-            )}
-          </div>
-
-          <div style={isDesktop ? desktopFilterControlsGridStyle : filterGridStyle}>
-            <div style={isDesktop ? desktopSearchFieldBoxStyle : fieldBoxStyle}>
-              <label style={filterLabelStyle}>Buscar obra</label>
-
-              <input
-                value={busca}
-                onChange={(event) => setBusca(event.target.value)}
-                placeholder="Título, autor, gênero, formato, tag ou capítulo..."
-                style={searchInputStyle}
-                type="text"
-              />
-            </div>
-
-            <div style={fieldBoxStyle}>
-              <label style={filterLabelStyle}>Filtrar</label>
-
-              <select
-                value={filtro}
-                onChange={(event) => setFiltro(event.target.value as FiltroPainel)}
-                style={selectStyle}
-              >
-                <option value="todas">Todas as obras</option>
-                <option value="publicadas">Publicadas</option>
-                <option value="rascunhos">Rascunhos</option>
-                <option value="sem-capitulos">Sem capítulos</option>
-                <option value="favoritas">Na lista</option>
-                <option value="concluidas">Concluídas</option>
-                <option value="em-leitura">Em leitura</option>
-              </select>
-            </div>
-
-            <div style={fieldBoxStyle}>
-              <label style={filterLabelStyle}>Ordenar</label>
-
-              <select
-                value={ordenacao}
-                onChange={(event) =>
-                  setOrdenacao(event.target.value as OrdenacaoPainel)
-                }
-                style={selectStyle}
-              >
-                <option value="pontuacao">Melhor desempenho</option>
-                <option value="recentes">Mais recentes</option>
-                <option value="titulo">Título</option>
-                <option value="capitulos">Mais capítulos</option>
-                <option value="progresso">Maior progresso</option>
-              </select>
-            </div>
-          </div>
+          {filtrosAtivos && (
+            <button type="button" onClick={limparFiltros} style={studioClearButtonStyle}>
+              Limpar filtros
+            </button>
+          )}
         </section>
+
+        {mostrarFiltrosPainel && (
+          <div
+            style={filterSheetOverlayStyle}
+            onClick={() => setMostrarFiltrosPainel(false)}
+          >
+            <section
+              style={isDesktop ? desktopFilterSheetStyle : filterSheetStyle}
+              onClick={(event) => event.stopPropagation()}
+              aria-label="Filtrar e ordenar"
+            >
+              <span style={filterSheetHandleStyle} aria-hidden="true" />
+
+              <h2 style={filterSheetTitleStyle}>Filtrar e ordenar</h2>
+
+              <div style={filterSheetContentStyle}>
+                <p style={filterSheetSectionLabelStyle}>MOSTRAR</p>
+
+                {FILTROS_PAINEL.map((opcao) => {
+                  const ativo = filtro === opcao.valor;
+
+                  return (
+                    <button
+                      key={opcao.valor}
+                      type="button"
+                      onClick={() => {
+                        setFiltro(opcao.valor);
+                        setMostrarFiltrosPainel(false);
+                      }}
+                      style={criarFilterSheetOptionStyle(ativo)}
+                    >
+                      <span>{opcao.rotulo}</span>
+                      <span
+                        style={criarFilterSheetRadioStyle(ativo)}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  );
+                })}
+
+                <p style={filterSheetSectionLabelStyle}>ORDENAR</p>
+
+                {ORDENACOES_PAINEL.map((opcao) => {
+                  const ativo = ordenacao === opcao.valor;
+
+                  return (
+                    <button
+                      key={opcao.valor}
+                      type="button"
+                      onClick={() => {
+                        setOrdenacao(opcao.valor);
+                        setMostrarFiltrosPainel(false);
+                      }}
+                      style={criarFilterSheetOptionStyle(ativo)}
+                    >
+                      <span>{opcao.rotulo}</span>
+                      <span
+                        style={criarFilterSheetRadioStyle(ativo)}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  );
+                })}
+
+                {filtrosAtivos && (
+                  <>
+                    <span style={filterSheetClearDividerStyle} aria-hidden="true" />
+
+                    <button type="button" onClick={limparFiltros} style={filterSheetClearStyle}>
+                      Limpar filtros
+                    </button>
+                  </>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
 
         {obrasComMetricas.length === 0 ? (
           <section style={emptyBoxStyle}>
@@ -2206,9 +2150,6 @@ export default function PainelAutorPage() {
               estúdio de autor.
             </p>
 
-            <Link href="/publicar" style={emptyButtonStyle}>
-              Criar primeira obra
-            </Link>
           </section>
         ) : obrasFiltradas.length === 0 ? (
           <section style={emptyMiniBoxStyle}>
@@ -2255,12 +2196,6 @@ function criarPerfilAutorHref(autor: string, autorId?: string, userId?: string) 
   return `/perfil-autor?${params.toString()}`;
 }
 
-function criarPerfilUsuarioLogadoPainelHref(nomeConta: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return criarPerfilAutorHref(nomeConta, userIdLimpo, userIdLimpo);
-}
-
 function PainelSecao({
   obras,
   obrasFavoritas,
@@ -2285,7 +2220,7 @@ function PainelSecao({
   return (
     <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
       <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-        <h2 style={sectionTitleStyle}>Obras do Estúdio</h2>
+        <h2 style={sectionTitleStyle}>OBRAS</h2>
       </div>
 
       <div style={isDesktop ? desktopWorksGridStyle : worksGridStyle}>
@@ -2589,15 +2524,7 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   opacity: 0,
 };
 
-const themeAccent = "var(--historietas-accent, #F97316)";
-const themeSecondary = "var(--historietas-secondary, #7C3AED)";
-const themeTextAccent = "var(--historietas-accent, #F97316)";
 const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)";
-
-const themeAccentSoft = "rgba(255,255,255,0.06)";
-const themeSecondarySoft = "rgba(255,255,255,0.06)";
-const themeAccentBorder = "rgba(255,255,255,0.08)";
-const themeSecondaryBorder = "rgba(255,255,255,0.08)";
 
 const pageStyle: CSSProperties = {
   position: "relative",
@@ -2628,7 +2555,7 @@ const topStyle: CSSProperties = {
   justifyContent: "space-between",
   gap: "10px",
   flexWrap: "nowrap",
-  marginBottom: "8px",
+  marginBottom: "10px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2644,7 +2571,7 @@ const logoStyle: CSSProperties = {
   alignItems: "center",
   gap: "3px",
   minWidth: 0,
-  maxWidth: "min(100%, calc(100% - 78px))",
+  maxWidth: "100%",
   overflow: "visible",
   ...safeTextStyle,
 };
@@ -2678,180 +2605,33 @@ const logoTextStyle: CSSProperties = {
   letterSpacing: "-0.055em",
 };
 
-const topButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 12px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  color: "#DDD6FE",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
+
+const topSearchButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "34px",
+  height: "34px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
   fontFamily: "inherit",
-  cursor: "pointer",
+  fontSize: "24px",
+  lineHeight: 1,
+  fontWeight: 950,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  textAlign: "center",
-  boxSizing: "border-box",
+  cursor: "pointer",
+  padding: 0,
   boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const topActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flexWrap: "nowrap",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-
-const signOutButtonStyle: CSSProperties = {
-  ...topButtonStyle,
-  border: "1px solid rgba(239,68,68,0.18)",
-  background: "rgba(239,68,68,0.075)",
-  color: "#FCA5A5",
-};
-
-const accountNoticeStyle: CSSProperties = {
-  marginBottom: "10px",
-  padding: "10px 12px",
-  borderRadius: "18px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  display: "grid",
-  gap: "4px",
-  minWidth: 0,
-  boxShadow: "none",
-};
-
-const accountNoticeLabelStyle: CSSProperties = {
-  color: themeTextAccent,
-  fontSize: "7px",
-  fontWeight: 950,
-  letterSpacing: "0.075em",
-  ...safeTextStyle,
-};
-
-const accountNoticeNameStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "11px",
-  lineHeight: 1.1,
-  fontWeight: 950,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const accountNoticeEmailStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.2,
-  fontWeight: 800,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const heroStyle: CSSProperties = {
-  position: "relative",
-  overflow: "hidden",
-  borderRadius: "30px",
-  border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
-  boxShadow: "none",
-  minWidth: 0,
-};
-
-const heroGlowStyle: CSSProperties = {
-  display: "none",
-};
-
-const heroContentStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  padding: "9px 9px",
-  display: "grid",
-  gap: "5px",
-  minWidth: 0,
-  textAlign: "center",
-};
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "clamp(34px, 9vw, 56px)",
-  lineHeight: 1.02,
-  fontWeight: 950,
-  letterSpacing: "-0.072em",
-  maxWidth: "100%",
-  paddingBottom: "3px",
-  textAlign: "center",
-  textShadow: "none",
-  ...safeTextStyle,
-};
-
-const descriptionStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
-  lineHeight: 1.55,
-  fontWeight: 720,
-  maxWidth: "680px",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const heroActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const heroPrimaryButtonStyle: CSSProperties = {
-  minHeight: "39px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  boxSizing: "border-box",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const heroSecondaryButtonStyle: CSSProperties = {
-  ...heroPrimaryButtonStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-};
-
-const heroNotificationButtonStyle: CSSProperties = {
-  ...heroSecondaryButtonStyle,
-  gridColumn: "auto",
-  justifySelf: "stretch",
-  width: "100%",
+  flex: "0 0 auto",
 };
 
 const statsBoxStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
   gap: "5px",
-  marginTop: "8px",
+  marginTop: "0",
   alignItems: "stretch",
   minWidth: 0,
   maxWidth: "100%",
@@ -2893,147 +2673,260 @@ const statLabelStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const filterBoxStyle: CSSProperties = {
-  marginTop: "6px",
-  display: "grid",
-  gap: "6px",
-  padding: "8px",
-  borderRadius: "18px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-const filterHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  textAlign: "center",
-};
-
-const filterHeaderTextStyle: CSSProperties = {
-  minWidth: 0,
-  maxWidth: "100%",
-  display: "grid",
-  justifyItems: "center",
-  gap: "2px",
-  textAlign: "center",
-};
-
-const filterTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "16px",
-  lineHeight: 1.12,
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const filterTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "7px",
-  lineHeight: 1.12,
-  fontWeight: 800,
-  maxWidth: "100%",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const clearFilterButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const searchInputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  color: "#FFFFFF",
-  padding: "0 13px",
-  outline: "none",
-  fontSize: "12px",
-  fontWeight: 750,
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  minWidth: 0,
-  boxShadow: "none",
-};
-
-const filterGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const fieldBoxStyle: CSSProperties = {
+const studioControlsStyle: CSSProperties = {
+  marginTop: "8px",
   display: "grid",
   gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
-  padding: "7px",
-  borderRadius: "14px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
-};
-
-const filterLabelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.04em",
-  textTransform: "uppercase",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const selectStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  color: "#FFFFFF",
-  padding: "0 12px",
-  outline: "none",
-  fontSize: "12px",
-  fontWeight: 750,
-  fontFamily: "inherit",
-  textAlign: "center",
-  textAlignLast: "center",
   boxSizing: "border-box",
-  minWidth: 0,
+};
+
+const studioSearchShellStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "52px",
+  borderRadius: "22px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(39, 39, 42, 0.86)",
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "0 16px",
+  boxSizing: "border-box",
   boxShadow: "none",
 };
 
+const studioSearchIconStyle: CSSProperties = {
+  color: "rgba(244,244,245,0.68)",
+  fontSize: "22px",
+  lineHeight: 1,
+  fontWeight: 700,
+  flex: "0 0 auto",
+};
+
+const studioSearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  minWidth: 0,
+  height: "50px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  outline: "none",
+  fontFamily: "inherit",
+  fontSize: "15px",
+  fontWeight: 850,
+  letterSpacing: "-0.035em",
+  boxSizing: "border-box",
+};
+
+const studioFilterRowStyle: CSSProperties = {
+  minHeight: "32px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+const studioFilterButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  padding: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+  fontSize: "16px",
+  lineHeight: 1.15,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  textAlign: "left",
+  letterSpacing: "-0.04em",
+  boxShadow: "none",
+  ...safeTextStyle,
+};
+
+const studioFilterIconStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1,
+  fontWeight: 700,
+  flex: "0 0 auto",
+};
+
+const studioClearButtonStyle: CSSProperties = {
+  minHeight: "34px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.055)",
+  color: "#FFFFFF",
+  fontSize: "11px",
+  fontWeight: 900,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textAlign: "center",
+  padding: "0 12px",
+  boxShadow: "none",
+  ...safeTextStyle,
+};
+
+const filterSheetOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 80,
+  background: "rgba(0,0,0,0.62)",
+  display: "block",
+  padding: "0 10px",
+  boxSizing: "border-box",
+  overflow: "hidden",
+  overscrollBehavior: "contain",
+};
+
+const filterSheetStyle: CSSProperties = {
+  position: "fixed",
+  left: "10px",
+  right: "10px",
+  bottom: 0,
+  width: "auto",
+  maxWidth: "720px",
+  maxHeight: "min(620px, calc(100dvh - 112px))",
+  margin: "0 auto",
+  overflowY: "auto",
+  overflowX: "hidden",
+  background: "#151A1B",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderBottom: "0",
+  borderRadius: "28px 28px 0 0",
+  boxShadow: "none",
+  padding: "12px 0 112px",
+  boxSizing: "border-box",
+  overscrollBehavior: "contain",
+  WebkitOverflowScrolling: "touch",
+  color: "#FFFFFF",
+};
+
+const desktopFilterSheetStyle: CSSProperties = {
+  ...filterSheetStyle,
+  left: "50%",
+  right: "auto",
+  bottom: "24px",
+  width: "min(560px, calc(100vw - 24px))",
+  maxWidth: "560px",
+  maxHeight: "82vh",
+  transform: "translateX(-50%)",
+  borderRadius: "28px",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  margin: 0,
+  paddingBottom: "18px",
+};
+
+const filterSheetHandleStyle: CSSProperties = {
+  display: "block",
+  width: "74px",
+  height: "6px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.58)",
+  margin: "0 auto 14px",
+};
+
+const filterSheetTitleStyle: CSSProperties = {
+  margin: "0 24px 16px",
+  color: "#FFFFFF",
+  fontSize: "23px",
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.04em",
+  ...safeTextStyle,
+};
+
+const filterSheetContentStyle: CSSProperties = {
+  display: "grid",
+  gap: 0,
+};
+
+const filterSheetSectionLabelStyle: CSSProperties = {
+  margin: 0,
+  padding: "12px 28px 8px",
+  borderTop: "1px solid rgba(255,255,255,0.055)",
+  color: "rgba(255,255,255,0.58)",
+  fontSize: "12px",
+  fontWeight: 950,
+  letterSpacing: "0.16em",
+  textTransform: "uppercase",
+  ...safeTextStyle,
+};
+
+function criarFilterSheetOptionStyle(ativo: boolean): CSSProperties {
+  return {
+    appearance: "none",
+    WebkitAppearance: "none",
+    width: "100%",
+    minHeight: "56px",
+    border: 0,
+    borderTop: "1px solid rgba(255,255,255,0.055)",
+    background: ativo ? "rgba(255,255,255,0.035)" : "transparent",
+    color: "#FFFFFF",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "18px",
+    padding: "0 28px",
+    boxSizing: "border-box",
+    fontSize: "20px",
+    fontWeight: 950,
+    fontFamily: "inherit",
+    cursor: "pointer",
+    textAlign: "left",
+    ...safeTextStyle,
+  };
+}
+
+function criarFilterSheetRadioStyle(ativo: boolean): CSSProperties {
+  return {
+    width: "32px",
+    height: "32px",
+    borderRadius: "999px",
+    border: ativo
+      ? "9px solid #FFFFFF"
+      : "5px solid rgba(255,255,255,0.40)",
+    boxSizing: "border-box",
+    flex: "0 0 auto",
+  };
+}
+
+const filterSheetClearDividerStyle: CSSProperties = {
+  display: "block",
+  width: "100%",
+  height: "1px",
+  background: "rgba(255,255,255,0.07)",
+};
+
+const filterSheetClearStyle: CSSProperties = {
+  appearance: "none",
+  minHeight: "52px",
+  margin: "12px 28px 10px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: "18px",
+  background: "rgba(255,255,255,0.055)",
+  color: "#FFFFFF",
+  fontSize: "20px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  ...safeTextStyle,
+};
 
 const sectionStyle: CSSProperties = {
-  marginTop: "5px",
+  marginTop: "8px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -3047,16 +2940,6 @@ const sectionHeaderStyle: CSSProperties = {
   textAlign: "center",
 };
 
-const miniTitleStyle: CSSProperties = {
-  display: "inline-flex",
-  color: themeTextAccent,
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.075em",
-  marginBottom: "6px",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
@@ -3367,10 +3250,6 @@ const actionsGridStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const publishedActionsGridStyle: CSSProperties = {
-  ...actionsGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-};
 
 const openButtonStyle: CSSProperties = {
   minHeight: "28px",
@@ -3505,73 +3384,19 @@ const desktopContainerStyle: CSSProperties = {
   padding: "24px 0 36px",
 };
 
-const desktopHeroContentStyle: CSSProperties = {
-  ...heroContentStyle,
-  padding: "22px 30px",
-  gap: "11px",
-  textAlign: "center",
-  justifyItems: "center",
-};
-
-const desktopHeroActionsStyle: CSSProperties = {
-  ...heroActionsStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 160px))",
-  justifyContent: "center",
-  justifySelf: "center",
-  gap: "8px",
-  width: "min(100%, 520px)",
-  maxWidth: "520px",
-};
-
 const desktopStatsBoxStyle: CSSProperties = {
   ...statsBoxStyle,
   display: "grid",
   gridTemplateColumns: "repeat(8, minmax(0, 1fr))",
   gap: "10px",
-  marginTop: "12px",
+  marginTop: "0",
 };
 
-const desktopFilterBoxStyle: CSSProperties = {
-  ...filterBoxStyle,
-  width: "100%",
-  margin: "12px 0 0",
-  padding: "12px",
-  borderRadius: "20px",
-  gap: "10px",
-};
-
-const desktopFilterHeaderStyle: CSSProperties = {
-  ...filterHeaderStyle,
-  alignItems: "center",
-  flexWrap: "nowrap",
-};
-
-const desktopFilterHeaderTextStyle: CSSProperties = {
-  ...filterHeaderTextStyle,
-  flex: "1 1 auto",
-  justifyItems: "center",
-};
-
-const desktopClearFilterButtonStyle: CSSProperties = {
-  ...clearFilterButtonStyle,
-  flex: "0 0 auto",
-  width: "160px",
-  minHeight: "40px",
-};
-
-const desktopFilterControlsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(280px, 1.6fr) minmax(190px, 0.7fr) minmax(190px, 0.7fr)",
-  gap: "10px",
-  alignItems: "end",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const desktopSearchFieldBoxStyle: CSSProperties = {
-  ...fieldBoxStyle,
-  minWidth: 0,
+const desktopStudioControlsStyle: CSSProperties = {
+  ...studioControlsStyle,
+  width: "min(860px, 100%)",
+  margin: "10px auto 0",
+  gap: "8px",
 };
 
 
@@ -3617,10 +3442,6 @@ const desktopCardActionsGridStyle: CSSProperties = {
   gap: "7px",
 };
 
-const desktopPublishedCardActionsGridStyle: CSSProperties = {
-  ...desktopCardActionsGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-};
 
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
@@ -3704,22 +3525,3 @@ const emptyTextStyle: CSSProperties = {
   maxWidth: "100%",
   ...safeTextStyle,
 };
-
-const emptyButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "42px",
-  borderRadius: "999px",
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 14px",
-  boxShadow: "none",
-  ...safeTextStyle,
-}

@@ -542,7 +542,7 @@ export default function LoginPage() {
           <div style={heroContentStyle}>
             <div style={introStyle}>
               <h1 className="historietas-theme-title" style={titleStyle}>
-                {criandoConta ? "Criar conta" : "Entrar na plataforma"}
+                {criandoConta ? "CRIAR CONTA" : "ENTRAR NA PLATAFORMA"}
               </h1>
 
               <p style={descriptionStyle}>
@@ -563,7 +563,7 @@ export default function LoginPage() {
                   }}
                   style={modo === "entrar" ? tabActiveStyle : tabStyle}
                 >
-                  Entrar
+                  ENTRAR
                 </button>
 
                 <button
@@ -575,7 +575,7 @@ export default function LoginPage() {
                   }}
                   style={modo === "criar" ? tabActiveStyle : tabStyle}
                 >
-                  Criar conta
+                  CRIAR CONTA
                 </button>
               </div>
 
@@ -636,8 +636,8 @@ export default function LoginPage() {
                   {carregando
                     ? "Aguarde..."
                     : criandoConta
-                    ? "Criar conta"
-                    : "Entrar"}
+                    ? "CRIAR CONTA"
+                    : "ENTRAR"}
                 </button>
               </form>
 
@@ -814,10 +814,11 @@ const introStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(32px, 7.4vw, 72px)",
-  lineHeight: 1.02,
+  fontSize: "clamp(27px, 6.6vw, 64px)",
+  lineHeight: 1.08,
   fontWeight: 950,
-  letterSpacing: "-0.08em",
+  letterSpacing: "-0.055em",
+  width: "100%",
   maxWidth: "760px",
   textAlign: "center",
   background:
@@ -825,10 +826,13 @@ const titleStyle: CSSProperties = {
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  paddingBottom: "3px",
+  padding: "0 0.16em 4px",
   marginLeft: "auto",
   marginRight: "auto",
-  ...safeTextStyle,
+  overflow: "visible",
+  overflowWrap: "normal",
+  wordBreak: "normal",
+  whiteSpace: "normal",
 };
 
 const descriptionStyle: CSSProperties = {
@@ -873,7 +877,7 @@ const tabStyle: CSSProperties = {
   borderRadius: "999px",
   border: "1px solid rgba(59, 7, 100, 0.50)",
   background: "#04000A",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
   cursor: "pointer",
@@ -969,11 +973,11 @@ const messageStyle: CSSProperties = {
 
 const helperTextStyle: CSSProperties = {
   margin: 0,
-  padding: "9px 10px",
-  borderRadius: "16px",
-  background: "rgba(46, 16, 101, 0.28)",
-  border: "1px solid rgba(59, 7, 100, 0.42)",
-  color: "#A78BFA",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "#D4D4D8",
   fontSize: "11px",
   lineHeight: 1.45,
   fontWeight: 700,

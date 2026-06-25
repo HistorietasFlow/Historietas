@@ -400,6 +400,8 @@ export default function AdminComunidadePage() {
     "todas"
   );
   const [busca, setBusca] = useState("");
+  const [buscaModeracaoAberta, setBuscaModeracaoAberta] = useState(false);
+  const [mostrarFiltrosModeracao, setMostrarFiltrosModeracao] = useState(false);
   const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
   const [observacoes, setObservacoes] = useState<Record<string, string>>({});
   const [menuDenunciaAbertoId, setMenuDenunciaAbertoId] = useState("");
@@ -1036,6 +1038,8 @@ export default function AdminComunidadePage() {
   function limparFiltros() {
     setStatusFiltro("todas");
     setBusca("");
+    setBuscaModeracaoAberta(false);
+    setMostrarFiltrosModeracao(false);
   }
 
   if (carregando) {
@@ -1135,6 +1139,37 @@ export default function AdminComunidadePage() {
             </span>
           </Link>
 
+          <button
+            type="button"
+            aria-label={buscaModeracaoAberta ? "Fechar busca" : "Abrir busca"}
+            aria-expanded={buscaModeracaoAberta || Boolean(busca.trim())}
+            onClick={() => setBuscaModeracaoAberta((aberta) => !aberta)}
+            style={titleSearchButtonStyle}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <circle
+                cx="10.85"
+                cy="10.85"
+                r="6.65"
+                stroke="currentColor"
+                strokeWidth="2.15"
+              />
+              <path
+                d="M16.05 16.05L20.25 20.25"
+                stroke="currentColor"
+                strokeWidth="2.15"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+
           {isDesktop ? (
             <Link
               href="/notificacoes"
@@ -1159,50 +1194,85 @@ export default function AdminComunidadePage() {
         </header>
 
         <section style={toolsStyle}>
-          <label style={searchBoxStyle}>
-            <span style={toolLabelStyle}>Buscar denúncias</span>
-            <input
-              value={busca}
-              onChange={(event) => setBusca(event.target.value)}
-              placeholder="Buscar por motivo, autor, texto, tipo, spoiler ou denunciante..."
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              maxLength={100}
-              style={inputStyle}
-            />
-          </label>
+          {(buscaModeracaoAberta || busca.trim()) && (
+            <label style={adminSearchShellStyle}>
+              <span style={adminSearchIconStyle}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="10.85"
+                    cy="10.85"
+                    r="6.65"
+                    stroke="currentColor"
+                    strokeWidth="2.15"
+                  />
+                  <path
+                    d="M16.05 16.05L20.25 20.25"
+                    stroke="currentColor"
+                    strokeWidth="2.15"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
 
-        <section className="admin-comunidade-stats" style={statsGridStyle}>
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{denunciasAtivas.length}</strong>
-            <span style={statLabelStyle}>total</span>
+              <input
+                value={busca}
+                onChange={(event) => setBusca(event.target.value)}
+                placeholder="Buscar denúncias..."
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                maxLength={100}
+                style={adminSearchInputStyle}
+              />
+            </label>
+          )}
+
+          <div style={adminFilterControlsRowStyle}>
+            <button
+              type="button"
+              onClick={() => setMostrarFiltrosModeracao(true)}
+              style={adminFilterLabelButtonStyle}
+            >
+              <span>Filtrar e ordenar</span>
+              <span style={adminFilterActionIconStyle}>⇅</span>
+            </button>
           </div>
 
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totalPendentes}</strong>
-            <span style={statLabelStyle}>pendentes</span>
-          </div>
+          <section className="admin-comunidade-stats" style={statsGridStyle}>
+            <div style={statCardStyle}>
+              <strong style={statNumberStyle}>{denunciasAtivas.length}</strong>
+              <span style={statLabelStyle}>total</span>
+            </div>
 
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totalEmAnalise}</strong>
-            <span style={statLabelStyle}>em análise</span>
-          </div>
+            <div style={statCardStyle}>
+              <strong style={statNumberStyle}>{totalPendentes}</strong>
+              <span style={statLabelStyle}>pendentes</span>
+            </div>
 
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totalResolvidas}</strong>
-            <span style={statLabelStyle}>resolvidas</span>
-          </div>
+            <div style={statCardStyle}>
+              <strong style={statNumberStyle}>{totalEmAnalise}</strong>
+              <span style={statLabelStyle}>em análise</span>
+            </div>
 
-          <div style={statCardStyle}>
-            <strong style={statNumberStyle}>{totalRejeitadas}</strong>
-            <span style={statLabelStyle}>rejeitadas</span>
-          </div>
-        </section>
+            <div style={statCardStyle}>
+              <strong style={statNumberStyle}>{totalResolvidas}</strong>
+              <span style={statLabelStyle}>resolvidas</span>
+            </div>
+
+            <div style={statCardStyle}>
+              <strong style={statNumberStyle}>{totalRejeitadas}</strong>
+              <span style={statLabelStyle}>rejeitadas</span>
+            </div>
+          </section>
 
           <div style={statusFilterWrapStyle}>
-            <span style={toolLabelStyle}>Status</span>
-
             <div className="admin-comunidade-filter-buttons" style={filterButtonsStyle}>
               {(["todas", ...STATUS_DENUNCIAS, "arquivadas"] as const).map((status) => (
                 <button
@@ -1231,6 +1301,74 @@ export default function AdminComunidadePage() {
             )}
           </div>
         </section>
+
+        {mostrarFiltrosModeracao && (
+          <section
+            style={adminFiltersSheetOverlayStyle}
+            aria-label="Filtrar denúncias"
+          >
+            <button
+              type="button"
+              aria-label="Fechar filtros"
+              onClick={() => setMostrarFiltrosModeracao(false)}
+              style={adminFiltersSheetBackdropStyle}
+            />
+
+            <article style={adminFiltersSheetStyle}>
+              <div style={adminFiltersSheetHandleStyle} />
+
+              <strong style={adminFiltersSheetTitleStyle}>
+                Filtrar e ordenar
+              </strong>
+
+              <span style={adminFiltersSheetSectionLabelStyle}>Status</span>
+
+              {(["todas", ...STATUS_DENUNCIAS, "arquivadas"] as const).map(
+                (status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => {
+                      setStatusFiltro(status);
+                      setMostrarFiltrosModeracao(false);
+                    }}
+                    style={
+                      statusFiltro === status
+                        ? adminFiltersSheetOptionActiveStyle
+                        : adminFiltersSheetOptionStyle
+                    }
+                  >
+                    <span>
+                      {status === "todas"
+                        ? "Todas"
+                        : status === "arquivadas"
+                          ? "Arquivadas"
+                          : STATUS_LABEL[status]}
+                    </span>
+
+                    <span
+                      style={
+                        statusFiltro === status
+                          ? adminFiltersSheetRadioActiveStyle
+                          : adminFiltersSheetRadioStyle
+                      }
+                    />
+                  </button>
+                )
+              )}
+
+              {(busca || statusFiltro !== "todas") && (
+                <button
+                  type="button"
+                  onClick={limparFiltros}
+                  style={adminFiltersSheetClearButtonStyle}
+                >
+                  Limpar filtros
+                </button>
+              )}
+            </article>
+          </section>
+        )}
 
         {(erro || sucesso) && (
           <section style={feedbackWrapStyle}>
@@ -1320,11 +1458,27 @@ export default function AdminComunidadePage() {
                             cursor: acaoAtiva ? "not-allowed" : "pointer",
                           }}
                         >
-                          ⋯
+                          ⋮
                         </button>
 
                         {menuAberto && (
-                          <div style={reportMenuStyle}>
+                          <section
+                            style={reportMenuOverlayStyle}
+                            aria-label="Ações da denúncia"
+                          >
+                            <button
+                              type="button"
+                              aria-label="Fechar ações da denúncia"
+                              onClick={() => setMenuDenunciaAbertoId("")}
+                              style={reportMenuBackdropStyle}
+                            />
+
+                            <article role="menu" style={reportMenuStyle}>
+                              <div style={reportMenuHandleStyle} />
+
+                              <strong style={reportMenuTitleStyle}>
+                                Ações da denúncia
+                              </strong>
                             {denuncia.alvoPostId && (
                               <Link
                                 href={`/comunidade?post=${encodeURIComponent(
@@ -1436,9 +1590,10 @@ export default function AdminComunidadePage() {
                                     ].toLowerCase()}`}
                               </button>
                             ))}
-                          </div>
-                        )}
-                      </div>
+
+                            </article>
+                          </section>
+                        )}</div>
                     </div>
                   </div>
 
@@ -1534,7 +1689,7 @@ export default function AdminComunidadePage() {
 
                     <label style={adminNoteStyle}>
                       <div style={sectionHeaderLineStyle}>
-                        <span style={boxLabelStyle}>Observação interna</span>
+                        <span style={adminObservationLabelStyle}>Observação interna</span>
                         {!denunciaResolvidaComConteudoIndisponivel && (
                           <span style={sectionHintStyle}>Até 800 caracteres</span>
                         )}
@@ -1672,6 +1827,7 @@ const desktopContainerStyle: CSSProperties = {
 };
 
 const titleHeaderStyle: CSSProperties = {
+  position: "relative",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1694,7 +1850,7 @@ const desktopTitleHeaderStyle: CSSProperties = {
 const desktopNotificationButtonStyle: CSSProperties = {
   position: "absolute",
   top: "50%",
-  right: 0,
+  right: "42px",
   transform: "translateY(-50%)",
   width: "34px",
   height: "34px",
@@ -1757,6 +1913,33 @@ const titleHomeLinkStyle: CSSProperties = {
 
 const desktopTitleHomeLinkStyle: CSSProperties = {
   ...titleHomeLinkStyle,
+};
+
+const titleSearchButtonStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  right: 0,
+  transform: "translateY(-50%)",
+  width: "34px",
+  height: "34px",
+  borderRadius: 0,
+  border: 0,
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "15px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+  boxShadow: "none",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+  WebkitAppearance: "none",
+  appearance: "none",
 };
 
 const pageTitleTextStyle: CSSProperties = {
@@ -2127,7 +2310,7 @@ const statsGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
   gap: "6px",
-  margin: "0",
+  margin: "2px 0 0",
   minWidth: 0,
 };
 
@@ -2148,7 +2331,7 @@ const statCardStyle: CSSProperties = {
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "#FDBA74",
+  color: "#FFFFFF",
   fontSize: "20px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2171,15 +2354,15 @@ const statLabelStyle: CSSProperties = {
 const toolsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr)",
-  gap: "10px",
-  padding: "12px",
-  borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  marginBottom: "10px",
+  gap: "7px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  marginBottom: "12px",
   minWidth: 0,
   boxShadow: "none",
-  overflow: "hidden",
+  overflow: "visible",
   backdropFilter: "none",
   WebkitBackdropFilter: "none",
 };
@@ -2217,10 +2400,89 @@ const inputStyle: CSSProperties = {
   minWidth: 0,
 };
 
+const adminSearchShellStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "44px",
+  borderRadius: "999px",
+  border: "1px solid transparent",
+  background: "#04000A",
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  padding: "0 15px",
+  boxSizing: "border-box",
+  boxShadow: "none",
+  outline: "none",
+};
+
+const adminSearchIconStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.72)",
+  width: "22px",
+  height: "22px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  lineHeight: 1,
+  flex: "0 0 auto",
+};
+
+const adminSearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  minWidth: 0,
+  height: "44px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  outline: "none",
+  fontFamily: "inherit",
+  fontSize: "14px",
+  fontWeight: 700,
+  letterSpacing: 0,
+  boxSizing: "border-box",
+};
+
+const adminFilterControlsRowStyle: CSSProperties = {
+  minHeight: "32px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+};
+
+const adminFilterLabelButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "16px",
+  lineHeight: 1.15,
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
+  textAlign: "left",
+  padding: 0,
+  cursor: "pointer",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  ...safeTextStyle,
+};
+
+const adminFilterActionIconStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1,
+  fontWeight: 700,
+  flex: "0 0 auto",
+};
+
 const statusFilterWrapStyle: CSSProperties = {
   display: "grid",
-  justifyItems: "center",
-  gap: "8px",
+  justifyItems: "stretch",
+  gap: "7px",
   minWidth: 0,
 };
 
@@ -2298,19 +2560,19 @@ const successStyle: CSSProperties = {
 const summaryStyle: CSSProperties = {
   display: "grid",
   justifyItems: "center",
-  gap: "4px",
-  padding: "12px",
-  borderRadius: "22px",
-  background: "rgba(4,0,10,0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  gap: "2px",
+  padding: "4px 0 6px",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   color: "#D4D4D8",
   textAlign: "center",
-  marginBottom: "10px",
+  marginBottom: "6px",
   boxShadow: "none",
 };
 
 const summaryTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "14px",
   fontWeight: 950,
   textAlign: "center",
@@ -2446,90 +2708,290 @@ const reportMenuWrapStyle: CSSProperties = {
 };
 
 const reportMenuButtonStyle: CSSProperties = {
-  width: "30px",
+  width: "24px",
   height: "30px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-surface, rgba(255,255,255,0.055))",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "19px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "24px",
+  fontWeight: 950,
+  letterSpacing: 0,
   lineHeight: 1,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  padding: 0,
+  position: "relative",
+  zIndex: 2,
+  boxShadow: "none",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+};
+
+const adminFiltersSheetOverlayStyle: CSSProperties = {
+  position: "fixed",
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  height: "100dvh",
+  zIndex: 238,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  background: "rgba(0,0,0,0.68)",
+  padding: 0,
+  boxSizing: "border-box",
+  overscrollBehavior: "none",
+  touchAction: "none",
+};
+
+const adminFiltersSheetBackdropStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  border: "none",
+  background: "transparent",
+  cursor: "pointer",
+  padding: 0,
+};
+
+const adminFiltersSheetStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  zIndex: 1,
+  width: "min(760px, calc(100% - 12px))",
+  maxHeight: "calc(100dvh - 190px)",
+  display: "grid",
+  gap: 0,
+  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  borderRadius: "24px 24px 0 0",
+  background: "#15191C",
+  border: "1px solid rgba(255,255,255,0.06)",
+  overflowY: "auto",
+  overflowX: "hidden",
+  overscrollBehavior: "none",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
+  boxSizing: "border-box",
+  touchAction: "none",
+};
+
+const adminFiltersSheetHandleStyle: CSSProperties = {
+  justifySelf: "center",
+  width: "72px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "rgba(244,244,245,0.62)",
+  margin: "0 auto 14px",
+};
+
+const adminFiltersSheetTitleStyle: CSSProperties = {
+  display: "block",
+  margin: "0 0 12px",
+  padding: 0,
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.04em",
+  ...safeTextStyle,
+};
+
+const adminFiltersSheetSectionLabelStyle: CSSProperties = {
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+  padding: "0 30px",
+  borderTop: "1px solid rgba(255,255,255,0.045)",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  color: "rgba(244,244,245,0.62)",
+  fontSize: "12px",
+  fontWeight: 950,
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+};
+
+const adminFiltersSheetOptionStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  minHeight: "54px",
+  border: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontSize: "18px",
+  lineHeight: 1,
+  fontWeight: 900,
+  letterSpacing: "-0.035em",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "16px",
+  padding: "0 30px",
+  textAlign: "left",
+  boxSizing: "border-box",
+  boxShadow: "none",
+  ...safeTextStyle,
+};
+
+const adminFiltersSheetOptionActiveStyle: CSSProperties = {
+  ...adminFiltersSheetOptionStyle,
+  background: "rgba(255,255,255,0.045)",
+};
+
+const adminFiltersSheetRadioStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border: "5px solid rgba(244,244,245,0.42)",
+  boxSizing: "border-box",
+  flex: "0 0 auto",
+};
+
+const adminFiltersSheetRadioActiveStyle: CSSProperties = {
+  ...adminFiltersSheetRadioStyle,
+  borderColor: "#FFFFFF",
+  background: "#15191C",
+};
+
+const adminFiltersSheetClearButtonStyle: CSSProperties = {
+  minHeight: "48px",
+  margin: "14px 30px 0",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.045)",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "16px",
   fontWeight: 950,
   cursor: "pointer",
-  boxShadow: "none",
+};
+
+const reportMenuOverlayStyle: CSSProperties = {
+  position: "fixed",
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  height: "100dvh",
+  zIndex: 240,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  background: "rgba(0,0,0,0.68)",
+  padding: 0,
+  boxSizing: "border-box",
+  overscrollBehavior: "none",
+  touchAction: "none",
+};
+
+const reportMenuBackdropStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  border: "none",
+  background: "transparent",
+  cursor: "pointer",
+  padding: 0,
 };
 
 const reportMenuStyle: CSSProperties = {
-  position: "absolute",
-  top: "calc(100% + 8px)",
-  right: 0,
-  zIndex: 30,
-  width: "244px",
-  minWidth: "220px",
-  maxWidth: "calc(100vw - 44px)",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "stretch",
-  gap: "5px",
-  padding: "8px",
-  borderRadius: "18px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface-strong, rgba(12,7,23,0.98)), var(--historietas-surface, rgba(31,16,52,0.96)))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  zIndex: 1,
+  width: "min(760px, calc(100% - 12px))",
+  maxHeight: "calc(100dvh - 190px)",
+  display: "grid",
+  gap: 0,
+  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  borderRadius: "24px 24px 0 0",
+  background: "#15191C",
+  border: "1px solid rgba(255,255,255,0.06)",
+  overflowY: "auto",
+  overflowX: "hidden",
+  overscrollBehavior: "none",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
   boxSizing: "border-box",
+  touchAction: "none",
+};
+
+const reportMenuHandleStyle: CSSProperties = {
+  justifySelf: "center",
+  width: "72px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "rgba(244,244,245,0.62)",
+  margin: "0 auto 14px",
+};
+
+const reportMenuTitleStyle: CSSProperties = {
+  display: "block",
+  margin: "0 0 12px",
+  padding: 0,
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.04em",
+  ...safeTextStyle,
 };
 
 const reportMenuItemStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
   width: "100%",
-  minWidth: 0,
-  minHeight: "34px",
+  minHeight: "54px",
+  border: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontSize: "18px",
+  lineHeight: 1,
+  fontWeight: 900,
+  letterSpacing: "-0.035em",
+  cursor: "pointer",
+  fontFamily: "inherit",
   display: "flex",
-  flexDirection: "row",
   alignItems: "center",
   justifyContent: "flex-start",
-  padding: "0 10px",
-  borderRadius: "12px",
-  border: "1px solid transparent",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.2,
-  fontWeight: 900,
-  fontFamily: "inherit",
+  gap: "16px",
+  padding: "0 30px",
   textAlign: "left",
-  whiteSpace: "nowrap",
-  wordBreak: "normal",
-  overflowWrap: "normal",
-  cursor: "pointer",
+  boxSizing: "border-box",
   boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const reportMenuItemLinkStyle: CSSProperties = {
   ...reportMenuItemStyle,
   textDecoration: "none",
-  boxSizing: "border-box",
 };
 
 const reportMenuItemActiveStyle: CSSProperties = {
   ...reportMenuItemStyle,
-  background: "var(--historietas-active-surface, rgba(249,115,22,0.16))",
-  border:
-    "1px solid rgba(249,115,22,0.26)",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "rgba(244,244,245,0.58)",
   cursor: "default",
 };
 
 const reportMenuDangerItemStyle: CSSProperties = {
   ...reportMenuItemStyle,
-  background: "var(--historietas-danger-surface, rgba(248,113,113,0.12))",
-  border: "1px solid rgba(248,113,113,0.22)",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  color: "#FB7185",
 };
 
 const reportMenuDividerStyle: CSSProperties = {
   height: "1px",
-  margin: "2px 0",
-  background: "var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  margin: "0",
+  background: "rgba(255,255,255,0.045)",
 };
 
 const reportBodyStyle: CSSProperties = {
@@ -2569,11 +3031,16 @@ const sectionHintStyle: CSSProperties = {
 };
 
 const boxLabelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "9.8px",
   fontWeight: 950,
   letterSpacing: "0.105em",
   textTransform: "uppercase",
+};
+
+const adminObservationLabelStyle: CSSProperties = {
+  ...boxLabelStyle,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const reportedTextStyle: CSSProperties = {

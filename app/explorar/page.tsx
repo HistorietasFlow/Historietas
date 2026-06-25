@@ -446,21 +446,6 @@ const categorias = [
   "Biografia",
 ];
 
-const formatosBase = [
-  "Webnovel",
-  "Light novel",
-  "Fanfic",
-  "Mangá",
-  "Webtoon",
-  "Conto",
-  "Crônica",
-  "Roteiro",
-  "História Original",
-  "Poesia",
-  "Novel",
-  "Livro",
-];
-
 function obterTemaVisualExplorarSeguro(valor: unknown): TemaVisualExplorar {
   if (typeof valor === "string" && valor in TEMAS_VISUAIS_EXPLORAR) {
     return valor as TemaVisualExplorar;
@@ -1756,6 +1741,7 @@ export default function ExplorarPage() {
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
   const [busca, setBusca] = useState("");
+  const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
   const [filtroFormato, setFiltroFormato] = useState("todos");
   const [filtroClassificacao, setFiltroClassificacao] = useState("todos");
   const [filtroCapitulos, setFiltroCapitulos] = useState("todos");
@@ -1847,6 +1833,23 @@ export default function ExplorarPage() {
       mediaQuery.removeListener(atualizarModoDesktop);
     };
   }, []);
+
+  useEffect(() => {
+    if (!mostrarFiltrosAvancados || typeof document === "undefined") {
+      return;
+    }
+
+    const bodyOverflowAnterior = document.body.style.overflow;
+    const htmlOverflowAnterior = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = bodyOverflowAnterior;
+      document.documentElement.style.overflow = htmlOverflowAnterior;
+    };
+  }, [mostrarFiltrosAvancados]);
 
   useEffect(() => {
     let cancelado = false;
@@ -1966,32 +1969,6 @@ export default function ExplorarPage() {
   }, []);
 
   const termoBusca = normalizarTexto(busca);
-
-  const formatosDisponiveis = useMemo(() => {
-    const formatosLocais = obrasLocais
-      .map((obra) => obra.formato)
-      .filter((formato) => formato && formato !== "Não informado");
-
-    return Array.from(new Set([...formatosBase, ...formatosLocais])).sort(
-      (a, b) => a.localeCompare(b)
-    );
-  }, [obrasLocais]);
-
-  const classificacoesDisponiveis = useMemo(() => {
-    const classificacoesLocais = obrasLocais
-      .map((obra) => obra.classificacaoIndicativa)
-      .filter(
-        (classificacao) => classificacao && classificacao !== "Não informada"
-      );
-
-    const classificacoesFixas = obras
-      .map((obra) => obra.classificacaoIndicativa)
-      .filter((classificacao) => classificacao && classificacao.trim());
-
-    return Array.from(
-      new Set([...classificacoesLocais, ...classificacoesFixas])
-    ).sort((a, b) => a.localeCompare(b));
-  }, [obrasLocais]);
 
   const obrasLocaisFiltradas = useMemo(() => {
     const filtradas = obrasLocais.filter((obra) => {
@@ -2133,18 +2110,6 @@ export default function ExplorarPage() {
   const totalResultados =
     obrasLocaisFiltradas.length + obrasFixasFiltradas.length;
 
-  const totalFavoritasResultado = usuarioLogado
-    ? obrasLocaisFiltradas.filter((obra) => colecaoTemObraExplorar(obrasFavoritas, obra)).length
-    : 0;
-
-  const totalConcluidasResultado = usuarioLogado
-    ? obrasLocaisFiltradas.filter((obra) => colecaoTemObraExplorar(obrasConcluidas, obra)).length
-    : 0;
-
-  const totalLendoResultado = usuarioLogado
-    ? obrasLocaisFiltradas.filter((obra) => obraTemAtividadeLeitura(obra)).length
-    : 0;
-
   const filtrosAtivos = Boolean(
     categoriaSelecionada ||
       termoBusca ||
@@ -2156,6 +2121,7 @@ export default function ExplorarPage() {
   );
 
   const totalFiltrosAvancadosAtivos = [
+    usuarioLogado && filtroColecao !== "todos",
     filtroFormato !== "todos",
     filtroClassificacao !== "todos",
     filtroCapitulos !== "todos",
@@ -2164,8 +2130,8 @@ export default function ExplorarPage() {
 
   const textoBotaoFiltrosAvancados =
     totalFiltrosAvancadosAtivos > 0
-      ? `Filtros avançados (${totalFiltrosAvancadosAtivos})`
-      : "Filtros avançados";
+      ? `Filtrar e ordenar (${totalFiltrosAvancadosAtivos})`
+      : "Filtrar e ordenar";
 
   const categoriaAtiva = categoriaSelecionada.trim().length > 0;
   const temaCategoria = obterTemaCategoria(categoriaSelecionada);
@@ -2254,33 +2220,6 @@ export default function ExplorarPage() {
     raiz.style.setProperty("--historietas-bottom-nav-shine", "none");
   }, [categoriaAtiva, categoriaSelecionada, temaVisual]);
 
-  const textoTotalResultados =
-    totalResultados === 1
-      ? "1 história encontrada"
-      : `${totalResultados} histórias encontradas`;
-
-  const detalhesResumo = [
-    obrasLocaisFiltradas.length > 0
-      ? `${obrasLocaisFiltradas.length} ${
-          obrasLocaisFiltradas.length === 1 ? "publicação" : "publicações"
-        } da comunidade`
-      : "",
-    obrasFixasFiltradas.length > 0
-      ? `${obrasFixasFiltradas.length} do catálogo inicial`
-      : "",
-    totalLendoResultado > 0 ? `${totalLendoResultado} em leitura` : "",
-    totalFavoritasResultado > 0
-      ? `${totalFavoritasResultado} na lista`
-      : "",
-    totalConcluidasResultado > 0
-      ? `${totalConcluidasResultado} ${
-          totalConcluidasResultado === 1 ? "concluída" : "concluídas"
-        }`
-      : "",
-  ].filter(Boolean);
-
-  const resumoItens = [textoTotalResultados, ...detalhesResumo];
-
   function atualizarUrl(categoria: string) {
     const novaUrl = categoria
       ? `/explorar?categoria=${encodeURIComponent(categoria)}`
@@ -2328,6 +2267,7 @@ export default function ExplorarPage() {
   return (
     <main style={criarExplorarPageStyle(temaPagina)}>
       <style>{themePageCss}</style>
+      <style>{explorarBuscaToggleCss}</style>
 
       {isDesktop && (
         <div style={criarExplorarTopWaterFadeStyle(temaPagina, true)} aria-hidden="true" />
@@ -2348,6 +2288,43 @@ export default function ExplorarPage() {
               EXPLORAR HISTÓRIAS
             </span>
           </Link>
+
+          {!isDesktop && (
+            <button
+              type="button"
+              onClick={() => setBuscaMobileAberta((aberta) => !aberta)}
+              aria-label={buscaMobileAberta ? "Fechar busca" : "Abrir busca"}
+              aria-pressed={buscaMobileAberta}
+              style={
+                buscaMobileAberta
+                  ? mobileSearchToggleActiveStyle
+                  : mobileSearchToggleStyle
+              }
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="10.85"
+                  cy="10.85"
+                  r="6.65"
+                  stroke="currentColor"
+                  strokeWidth="2.15"
+                />
+                <path
+                  d="M16.05 16.05L20.25 20.25"
+                  stroke="currentColor"
+                  strokeWidth="2.15"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )}
 
           {isDesktop ? (
             <Link
@@ -2373,20 +2350,34 @@ export default function ExplorarPage() {
         </header>
 
         <section style={isDesktop ? criarDesktopSearchBoxStyle(temaPagina, categoriaAtiva) : criarSearchBoxStyle(temaPagina, categoriaAtiva)}>
-          <p
-            style={{
-              ...criarCompactSummaryStyle(temaPagina, isDesktop, categoriaAtiva),
-              margin: 0,
-            }}
-          >
-            {resumoItens.map((item, index) => (
-              <span key={item} style={compactSummaryItemStyle}>
-                {index > 0 && <span style={compactSummarySeparatorStyle}>•</span>}
-                {item}
-              </span>
-            ))}
-          </p>
+          {(isDesktop || buscaMobileAberta) && (
+            <input
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+              placeholder="Buscar histórias..."
+              style={criarSearchInputStyle(temaPagina, isDesktop, categoriaAtiva)}
+              type="text"
+            />
+          )}
 
+          <div style={explorarFilterRowStyle}>
+            <button
+              type="button"
+              onClick={() => setMostrarFiltrosAvancados(true)}
+              style={explorarFilterMainButtonStyle}
+            >
+              <span>{textoBotaoFiltrosAvancados}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMostrarFiltrosAvancados(true)}
+              aria-label="Abrir filtros e ordenação"
+              style={explorarFilterIconButtonStyle}
+            >
+              ⇅
+            </button>
+          </div>
 
           <section className="explorar-carousel" style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
             <button
@@ -2412,177 +2403,9 @@ export default function ExplorarPage() {
               </button>
             ))}
           </section>
-          <input
-            value={busca}
-            onChange={(event) => setBusca(event.target.value)}
-            placeholder="Buscar por título, autor, gênero ou tags..."
-            style={criarSearchInputStyle(temaPagina, isDesktop, categoriaAtiva)}
-            type="text"
-          />
-
-          <div className="explorar-carousel" style={isDesktop ? desktopQuickFiltersStyle : quickFiltersStyle}>
-            <Link
-              href="/em-breve"
-              style={criarSoonQuickFilterLinkStyle(temaPagina, isDesktop, categoriaAtiva)}
-            >
-              Em breve
-            </Link>
-
-            <button
-              type="button"
-              onClick={() => selecionarFiltroColecao("todos")}
-              style={
-                filtroColecao === "todos"
-                  ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
-                  : isDesktop
-                    ? criarQuickFilterInactiveStyle(temaPagina, true, categoriaAtiva)
-                    : criarQuickFilterInactiveStyle(temaPagina, false, categoriaAtiva)
-              }
-            >
-              Todas
-            </button>
-
-            <button
-              type="button"
-              onClick={() => selecionarFiltroColecao("lendo")}
-              style={
-                filtroColecao === "lendo"
-                  ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
-                  : isDesktop
-                    ? criarQuickFilterInactiveStyle(temaPagina, true, categoriaAtiva)
-                    : criarQuickFilterInactiveStyle(temaPagina, false, categoriaAtiva)
-              }
-            >
-              Lendo agora
-            </button>
-
-            <button
-              type="button"
-              onClick={() => selecionarFiltroColecao("favoritas")}
-              style={
-                filtroColecao === "favoritas"
-                  ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
-                  : isDesktop
-                    ? criarQuickFilterInactiveStyle(temaPagina, true, categoriaAtiva)
-                    : criarQuickFilterInactiveStyle(temaPagina, false, categoriaAtiva)
-              }
-            >
-              Na lista
-            </button>
-
-            <button
-              type="button"
-              onClick={() => selecionarFiltroColecao("concluidas")}
-              style={
-                filtroColecao === "concluidas"
-                  ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
-                  : isDesktop
-                    ? criarQuickFilterInactiveStyle(temaPagina, true, categoriaAtiva)
-                    : criarQuickFilterInactiveStyle(temaPagina, false, categoriaAtiva)
-              }
-            >
-              Concluídas
-            </button>
-
-            <button
-              type="button"
-              onClick={() => selecionarFiltroColecao("sem-leitura")}
-              style={
-                filtroColecao === "sem-leitura"
-                  ? criarQuickFilterActiveStyle(temaPagina, isDesktop)
-                  : isDesktop
-                    ? criarQuickFilterInactiveStyle(temaPagina, true, categoriaAtiva)
-                    : criarQuickFilterInactiveStyle(temaPagina, false, categoriaAtiva)
-              }
-            >
-              Sem leitura
-            </button>
-          </div>
 
           {mensagemLogin && (
             <span style={loginNoticeStyle}>{mensagemLogin}</span>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setMostrarFiltrosAvancados((valorAtual) => !valorAtual)}
-            style={criarToggleFiltrosStyle(temaPagina, categoriaAtiva)}
-          >
-            <span>{textoBotaoFiltrosAvancados}</span>
-            <span>{mostrarFiltrosAvancados ? "↑" : "↓"}</span>
-          </button>
-
-          {mostrarFiltrosAvancados && (
-            <div style={isDesktop ? desktopAdvancedFiltersStyle : advancedFiltersStyle}>
-            <div style={criarFieldBoxStyle(temaPagina, categoriaAtiva)}>
-              <label style={criarSearchLabelStyle(categoriaAtiva)}>Formato</label>
-
-              <select
-                value={filtroFormato}
-                onChange={(event) => setFiltroFormato(event.target.value)}
-                style={criarSelectStyle(temaPagina, categoriaAtiva)}
-              >
-                <option value="todos">Todos os formatos</option>
-
-                {formatosDisponiveis.map((formato) => (
-                  <option key={formato} value={formato}>
-                    {formato}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={criarFieldBoxStyle(temaPagina, categoriaAtiva)}>
-              <label style={criarSearchLabelStyle(categoriaAtiva)}>Classificação</label>
-
-              <select
-                value={filtroClassificacao}
-                onChange={(event) => setFiltroClassificacao(event.target.value)}
-                style={criarSelectStyle(temaPagina, categoriaAtiva)}
-              >
-                <option value="todos">Todas</option>
-
-                {classificacoesDisponiveis.map((classificacao) => (
-                  <option key={classificacao} value={classificacao}>
-                    {classificacao}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={criarFieldBoxStyle(temaPagina, categoriaAtiva)}>
-              <label style={criarSearchLabelStyle(categoriaAtiva)}>Capítulos</label>
-
-              <select
-                value={filtroCapitulos}
-                onChange={(event) => setFiltroCapitulos(event.target.value)}
-                style={criarSelectStyle(temaPagina, categoriaAtiva)}
-              >
-                <option value="todos">Com ou sem capítulos</option>
-                <option value="com-capitulos">Com capítulos</option>
-                <option value="sem-capitulos">Sem capítulos</option>
-              </select>
-            </div>
-
-            <div style={criarFieldBoxStyle(temaPagina, categoriaAtiva)}>
-              <label style={criarSearchLabelStyle(categoriaAtiva)}>Ordenar</label>
-
-              <select
-                value={ordenacao}
-                onChange={(event) =>
-                  setOrdenacao(event.target.value as OrdenacaoExplorar)
-                }
-                style={criarSelectStyle(temaPagina, categoriaAtiva)}
-              >
-                <option value="relevancia">Relevância</option>
-                <option value="mais-curtidas">Mais curtidas</option>
-                <option value="mais-salvas">Mais salvas</option>
-                <option value="mais-comentadas">Mais comentadas</option>
-                <option value="mais-recentes">Mais recentes</option>
-                <option value="mais-capitulos">Mais capítulos</option>
-              </select>
-            </div>
-            </div>
           )}
 
           {filtrosAtivos && (
@@ -2597,6 +2420,77 @@ export default function ExplorarPage() {
             </div>
           )}
         </section>
+
+        {mostrarFiltrosAvancados && (
+          <div
+            style={explorarModalOverlayStyle}
+            onClick={() => setMostrarFiltrosAvancados(false)}
+          >
+            <section
+              style={isDesktop ? desktopExplorarModalSheetStyle : explorarModalSheetStyle}
+              onClick={(event) => event.stopPropagation()}
+              aria-label="Filtrar e ordenar"
+            >
+              <span style={explorarModalHandleStyle} aria-hidden="true" />
+
+              <h2 style={explorarModalTitleStyle}>Filtrar e ordenar</h2>
+
+              <div style={explorarModalContentStyle}>
+                <p style={explorarModalSectionLabelStyle}>Mostrar</p>
+
+                {[
+                  ["todos", "Todas"],
+                  ["lendo", "Lendo agora"],
+                  ["favoritas", "Na lista"],
+                  ["concluidas", "Concluídas"],
+                  ["sem-leitura", "Sem leitura"],
+                ].map(([valor, rotulo]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    onClick={() => selecionarFiltroColecao(valor as FiltroColecaoExplorar)}
+                    style={criarExplorarModalOptionStyle(filtroColecao === valor)}
+                  >
+                    <span>{rotulo}</span>
+                    <span style={criarExplorarModalRadioStyle(filtroColecao === valor)} />
+                  </button>
+                ))}
+
+                <p style={explorarModalSectionLabelStyle}>Ordenar</p>
+
+                {[
+                  ["relevancia", "Relevância"],
+                  ["mais-curtidas", "Mais curtidas"],
+                  ["mais-recentes", "Mais recentes"],
+                ].map(([valor, rotulo]) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    onClick={() => setOrdenacao(valor as OrdenacaoExplorar)}
+                    style={criarExplorarModalOptionStyle(ordenacao === valor)}
+                  >
+                    <span>{rotulo}</span>
+                    <span style={criarExplorarModalRadioStyle(ordenacao === valor)} />
+                  </button>
+                ))}
+
+                {filtrosAtivos && (
+                  <>
+                    <span style={explorarModalClearDividerStyle} aria-hidden="true" />
+
+                    <button
+                      type="button"
+                      onClick={limparFiltros}
+                      style={explorarModalClearButtonStyle}
+                    >
+                      Limpar filtros
+                    </button>
+                  </>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
 
         {obrasLocaisFiltradas.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
@@ -2877,19 +2771,6 @@ function criarActiveCategoryStyle(_tema: ReturnType<typeof obterTemaCategoria>):
   };
 }
 
-function criarQuickFilterActiveStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>,
-  isDesktop = false
-): CSSProperties {
-  return {
-    ...(isDesktop ? desktopQuickFilterActiveStyle : quickFilterActiveStyle),
-    background: "#08030F",
-    border: "1px solid rgba(255,255,255,0.10)",
-    color: "#FFFFFF",
-    boxShadow: "none",
-  };
-}
-
 function criarSearchBoxStyle(
   _tema: ReturnType<typeof obterTemaCategoria>,
   _categoriaAtiva = false
@@ -2910,7 +2791,7 @@ function criarDesktopSearchBoxStyle(
     ...criarSearchBoxStyle(tema, categoriaAtiva),
     gridTemplateColumns: "1fr",
     alignItems: "stretch",
-    gap: "8px",
+    gap: "5px",
     marginTop: "12px",
     padding: "10px 12px",
     borderRadius: "22px",
@@ -2927,76 +2808,12 @@ function criarSearchInputStyle(
   return isDesktop ? desktopSearchInputStyle : searchInputStyle;
 }
 
-function criarQuickFilterInactiveStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>,
-  isDesktop = false,
-  _categoriaAtiva = false
-): CSSProperties {
-  return isDesktop ? desktopQuickFilterButtonStyle : quickFilterButtonStyle;
-}
-
-function criarSoonQuickFilterLinkStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
-  isDesktop = false,
-  categoriaAtiva = false
-): CSSProperties {
-  return {
-    ...criarQuickFilterInactiveStyle(tema, isDesktop, categoriaAtiva),
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textDecoration: "none",
-  };
-}
-
-function criarFieldBoxStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>,
-  _categoriaAtiva: boolean
-): CSSProperties {
-  return fieldBoxStyle;
-}
-
-function criarSearchLabelStyle(categoriaAtiva: boolean): CSSProperties {
-  if (!categoriaAtiva) {
-    return searchLabelStyle;
-  }
-
-  return {
-    ...searchLabelStyle,
-    color: "#FFFFFF",
-  };
-}
-
-function criarSelectStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>,
-  _categoriaAtiva: boolean
-): CSSProperties {
-  return selectStyle;
-}
-
-function criarCompactSummaryStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>,
-  isDesktop: boolean,
-  _categoriaAtiva: boolean
-): CSSProperties {
-  return isDesktop ? desktopCompactSummaryStyle : compactSummaryStyle;
-}
-
 function criarClearFilterButtonStyle(
   _tema: ReturnType<typeof obterTemaCategoria>,
   _categoriaAtiva: boolean
 ): CSSProperties {
   return clearFilterButtonStyle;
 }
-
-function criarFilterInfoBoxStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
-  return {
-    ...filterInfoBoxStyle,
-    background: "rgba(4, 0, 10, 0.72)",
-    border: "1px solid rgba(255,255,255,0.06)",
-  };
-}
-
 
 function criarCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
@@ -3128,33 +2945,6 @@ function criarCardPrimaryActionStyle(
   };
 }
 
-function criarToggleFiltrosStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
-  categoriaAtiva = false
-): CSSProperties {
-  return {
-    minHeight: "34px",
-    borderRadius: "999px",
-    border: `1px solid color-mix(in srgb, ${tema.accent} ${categoriaAtiva ? "38%" : "22%"}, rgba(255,255,255,0.10))`,
-    background: categoriaAtiva
-      ? `linear-gradient(135deg, color-mix(in srgb, ${tema.accent} 24%, rgba(5,5,12,0.80)) 0%, rgba(3,3,8,0.88) 100%)`
-      : `linear-gradient(135deg, color-mix(in srgb, ${tema.accent} 8%, rgba(255,255,255,0.045)) 0%, rgba(255,255,255,0.032) 100%)`,
-    color: categoriaAtiva ? "#FFFFFF" : "var(--historietas-text-primary, #FFFFFF)",
-    fontSize: "11px",
-    fontWeight: 900,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    textAlign: "center",
-    padding: "0 12px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    boxShadow: "none",
-    ...safeTextStyle,
-  };
-}
-
 const themePageCss = `
   html[data-historietas-tema-visual] body,
   html[data-historietas-tema-visual] main,
@@ -3279,6 +3069,38 @@ const themePageCss = `
   }
 `;
 
+const explorarBuscaToggleCss = `
+  button[aria-label="Abrir busca"],
+  button[aria-label="Fechar busca"],
+  button[aria-label="Abrir busca"]:hover,
+  button[aria-label="Fechar busca"]:hover,
+  button[aria-label="Abrir busca"]:active,
+  button[aria-label="Fechar busca"]:active,
+  button[aria-label="Abrir busca"]:focus,
+  button[aria-label="Fechar busca"]:focus,
+  button[aria-label="Abrir busca"]:focus-visible,
+  button[aria-label="Fechar busca"]:focus-visible {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  input[placeholder="Buscar histórias..."],
+  input[placeholder="Buscar histórias..."]:hover,
+  input[placeholder="Buscar histórias..."]:focus,
+  input[placeholder="Buscar histórias..."]:focus-visible {
+    box-shadow: none !important;
+    outline: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+  }
+`;
+
+
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -3378,7 +3200,7 @@ const topActionsStyle: CSSProperties = {
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "25px",
+  fontSize: "23px",
   fontWeight: 950,
   letterSpacing: "-0.06em",
   display: "flex",
@@ -3461,6 +3283,7 @@ const desktopSoonTopButtonStyle: CSSProperties = {
 };
 
 const titleHeaderStyle: CSSProperties = {
+  position: "relative",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -3477,6 +3300,40 @@ const desktopTitleHeaderStyle: CSSProperties = {
   position: "relative",
   marginTop: "6px",
   marginBottom: "22px",
+};
+
+const mobileSearchToggleStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  right: 0,
+  transform: "translateY(-50%)",
+  width: "34px",
+  height: "34px",
+  borderRadius: 0,
+  border: 0,
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  cursor: "pointer",
+  flex: "0 0 auto",
+  boxShadow: "none",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+  WebkitAppearance: "none",
+  appearance: "none",
+  zIndex: 2,
+};
+
+const mobileSearchToggleActiveStyle: CSSProperties = {
+  ...mobileSearchToggleStyle,
+  border: 0,
+  background: "transparent",
+  color: "#FFFFFF",
+  boxShadow: "none",
+  outline: "none",
 };
 
 const desktopNotificationButtonStyle: CSSProperties = {
@@ -3657,12 +3514,12 @@ const descriptionStyle: CSSProperties = {
 
 const categoriesStyle: CSSProperties = {
   display: "flex",
-  gap: "9px",
+  gap: "8px",
   overflowX: "auto",
   overflowY: "hidden",
   marginLeft: "-12px",
   marginRight: "-12px",
-  padding: "7px 12px 6px",
+  padding: "2px 12px 5px",
   maxWidth: "calc(100% + 24px)",
   scrollbarWidth: "none",
   msOverflowStyle: "none",
@@ -3673,7 +3530,7 @@ const categoriesStyle: CSSProperties = {
 const categoryStyle: CSSProperties = {
   flex: "0 0 auto",
   maxWidth: "220px",
-  padding: "10px 14px",
+  padding: "9px 13px",
   borderRadius: "999px",
   background: "rgba(4, 0, 10, 0.72)",
   border: "1px solid rgba(255,255,255,0.06)",
@@ -3695,37 +3552,6 @@ const activeCategoryStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const compactSummaryStyle: CSSProperties = {
-  margin: "0 auto 2px",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12.5px",
-  fontWeight: 820,
-  lineHeight: 1.45,
-  textAlign: "center",
-  display: "flex",
-  flexWrap: "wrap",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "4px 8px",
-  boxShadow: "none",
-  letterSpacing: "-0.01em",
-  ...safeTextStyle,
-};
-const compactSummaryItemStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "8px",
-  whiteSpace: "nowrap",
-};
-
-const compactSummarySeparatorStyle: CSSProperties = {
-  opacity: 0.9,
-};
-
 const loginNoticeStyle: CSSProperties = {
   display: "block",
   margin: "-2px auto 0",
@@ -3738,11 +3564,11 @@ const loginNoticeStyle: CSSProperties = {
 };
 
 const searchBoxStyle: CSSProperties = {
-  marginTop: "14px",
+  marginTop: "10px",
   display: "grid",
-  gap: "10px",
-  padding: "12px",
-  borderRadius: "22px",
+  gap: "5px",
+  padding: "10px",
+  borderRadius: "20px",
   background: "rgba(4, 0, 10, 0.72)",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
@@ -3752,16 +3578,9 @@ const searchBoxStyle: CSSProperties = {
   WebkitBackdropFilter: "none",
 };
 
-const searchLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 870,
-  ...safeTextStyle,
-};
-
 const searchInputStyle: CSSProperties = {
   width: "100%",
-  height: "46px",
+  height: "44px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
   background: "#04000A",
@@ -3781,111 +3600,6 @@ const desktopSearchInputStyle: CSSProperties = {
   textAlign: "left",
 };
 
-const quickFiltersStyle: CSSProperties = {
-  display: "flex",
-  gap: "8px",
-  overflowX: "auto",
-  overflowY: "hidden",
-  marginLeft: "-12px",
-  marginRight: "-12px",
-  padding: "0 12px 2px",
-  maxWidth: "calc(100% + 24px)",
-  scrollbarWidth: "none",
-  msOverflowStyle: "none",
-  boxSizing: "border-box",
-  scrollSnapType: "x proximity",
-};
-
-const quickFilterButtonStyle: CSSProperties = {
-  flex: "0 0 auto",
-  maxWidth: "210px",
-  minHeight: "32px",
-  padding: "0 11px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.06)",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10.5px",
-  fontWeight: 880,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const desktopQuickFilterButtonStyle: CSSProperties = {
-  ...quickFilterButtonStyle,
-  minHeight: "34px",
-  padding: "0 13px",
-  fontSize: "11.5px",
-  fontWeight: 900,
-  maxWidth: "none",
-};
-
-const quickFilterActiveStyle: CSSProperties = {
-  ...quickFilterButtonStyle,
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  boxShadow: "none",
-};
-
-const desktopQuickFilterActiveStyle: CSSProperties = {
-  ...desktopQuickFilterButtonStyle,
-  background: "rgba(124,58,237,0.28)",
-  border: "1px solid rgba(139,92,246,0.34)",
-  color: "#FFFFFF",
-  boxShadow: "none",
-};
-
-const advancedFiltersStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "10px",
-  minWidth: 0,
-  paddingTop: "2px",
-};
-
-const fieldBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  minWidth: 0,
-  padding: "8px",
-  borderRadius: "15px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
-};
-
-const selectStyle: CSSProperties = {
-  width: "100%",
-  height: "40px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  color: "#FFFFFF",
-  padding: "0 12px",
-  outline: "none",
-  fontSize: "11.5px",
-  fontWeight: 820,
-  boxSizing: "border-box",
-  minWidth: 0,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
-const filterInfoBoxStyle: CSSProperties = {
-  marginTop: "0",
-  padding: "9px 10px",
-  borderRadius: "15px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  display: "grid",
-  gap: "7px",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
 const compactClearFiltersStyle: CSSProperties = {
   display: "flex",
   justifyContent: "center",
@@ -3902,15 +3616,202 @@ const clearFilterButtonStyle: CSSProperties = {
   width: "100%",
   minHeight: "38px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "#DDD6FE",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "transparent",
+  color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
   fontFamily: "inherit",
   cursor: "pointer",
   boxShadow: "none",
 };
+
+
+const explorarFilterRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  width: "100%",
+  marginTop: "0",
+};
+
+const explorarFilterMainButtonStyle: CSSProperties = {
+  appearance: "none",
+  border: "0",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontSize: "16px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+  textAlign: "left",
+  minWidth: 0,
+  ...safeTextStyle,
+};
+
+const explorarFilterIconButtonStyle: CSSProperties = {
+  appearance: "none",
+  width: "38px",
+  height: "38px",
+  border: "0",
+  borderRadius: "999px",
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "23px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  flex: "0 0 auto",
+};
+
+const explorarModalOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 80,
+  background: "rgba(0,0,0,0.62)",
+  display: "block",
+  padding: "0 10px",
+  boxSizing: "border-box",
+  overflow: "hidden",
+  overscrollBehavior: "contain",
+};
+
+const explorarModalSheetStyle: CSSProperties = {
+  position: "fixed",
+  left: "10px",
+  right: "10px",
+  bottom: 0,
+  width: "auto",
+  maxWidth: "720px",
+  maxHeight: "min(620px, calc(100dvh - 112px))",
+  margin: "0 auto",
+  overflowY: "auto",
+  background: "#151A1B",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderBottom: "0",
+  borderRadius: "28px 28px 0 0",
+  boxShadow: "none",
+  padding: "12px 0 112px",
+  boxSizing: "border-box",
+  overscrollBehavior: "contain",
+};
+
+const desktopExplorarModalSheetStyle: CSSProperties = {
+  ...explorarModalSheetStyle,
+  left: "50%",
+  right: "auto",
+  bottom: "24px",
+  width: "min(560px, calc(100vw - 24px))",
+  maxWidth: "560px",
+  maxHeight: "82vh",
+  transform: "translateX(-50%)",
+  borderRadius: "28px",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  margin: 0,
+  paddingBottom: "18px",
+};
+
+const explorarModalHandleStyle: CSSProperties = {
+  display: "block",
+  width: "74px",
+  height: "6px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.58)",
+  margin: "0 auto 14px",
+};
+
+const explorarModalTitleStyle: CSSProperties = {
+  margin: "0 24px 16px",
+  color: "#FFFFFF",
+  fontSize: "23px",
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.04em",
+  ...safeTextStyle,
+};
+
+const explorarModalContentStyle: CSSProperties = {
+  display: "grid",
+  gap: 0,
+};
+
+const explorarModalSectionLabelStyle: CSSProperties = {
+  margin: "0",
+  padding: "12px 28px 8px",
+  borderTop: "1px solid rgba(255,255,255,0.055)",
+  color: "rgba(255,255,255,0.58)",
+  fontSize: "12px",
+  fontWeight: 950,
+  letterSpacing: "0.16em",
+  textTransform: "uppercase",
+  ...safeTextStyle,
+};
+
+function criarExplorarModalOptionStyle(ativo: boolean): CSSProperties {
+  return {
+    appearance: "none",
+    width: "100%",
+    minHeight: "56px",
+    border: "0",
+    borderTop: "1px solid rgba(255,255,255,0.055)",
+    background: ativo ? "rgba(255,255,255,0.035)" : "transparent",
+    color: "#FFFFFF",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "18px",
+    padding: "0 28px",
+    boxSizing: "border-box",
+    fontSize: "20px",
+    fontWeight: 950,
+    fontFamily: "inherit",
+    cursor: "pointer",
+    textAlign: "left",
+    ...safeTextStyle,
+  };
+}
+
+function criarExplorarModalRadioStyle(ativo: boolean): CSSProperties {
+  return {
+    width: "32px",
+    height: "32px",
+    borderRadius: "999px",
+    border: ativo
+      ? "9px solid #FFFFFF"
+      : "5px solid rgba(255,255,255,0.40)",
+    boxSizing: "border-box",
+    flex: "0 0 auto",
+  };
+}
+
+const explorarModalClearDividerStyle: CSSProperties = {
+  display: "block",
+  width: "100%",
+  height: "1px",
+  background: "rgba(255,255,255,0.07)",
+};
+
+const explorarModalClearButtonStyle: CSSProperties = {
+  appearance: "none",
+  minHeight: "52px",
+  margin: "12px 28px 10px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: "18px",
+  background: "rgba(255,255,255,0.055)",
+  color: "#FFFFFF",
+  fontSize: "20px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  ...safeTextStyle,
+};
+
 
 const sectionStyle: CSSProperties = {
   marginTop: "30px",
@@ -4465,40 +4366,8 @@ const desktopCategoriesStyle: CSSProperties = {
   justifyContent: "center",
   marginLeft: 0,
   marginRight: 0,
-  padding: "7px 0 8px",
+  padding: "3px 0 8px",
   maxWidth: "100%",
-};
-
-const desktopCompactSummaryStyle: CSSProperties = {
-  ...compactSummaryStyle,
-  margin: "0 auto 2px",
-  padding: 0,
-  fontSize: "13px",
-  lineHeight: 1.5,
-  width: "fit-content",
-  maxWidth: "100%",
-  textAlign: "center",
-  opacity: 1,
-};
-const desktopQuickFiltersStyle: CSSProperties = {
-  ...quickFiltersStyle,
-  flexWrap: "wrap",
-  overflowX: "visible",
-  marginLeft: 0,
-  marginRight: 0,
-  padding: 0,
-  gap: "8px",
-  maxWidth: "100%",
-  minWidth: 0,
-  scrollbarWidth: "none",
-};
-
-const desktopAdvancedFiltersStyle: CSSProperties = {
-  ...advancedFiltersStyle,
-  gridColumn: "1 / -1",
-  gridTemplateColumns: "repeat(7, minmax(128px, 1fr))",
-  gap: "8px",
-  alignItems: "end",
 };
 
 const desktopSectionStyle: CSSProperties = {
