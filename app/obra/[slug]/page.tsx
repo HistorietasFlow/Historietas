@@ -2336,7 +2336,7 @@ export default function ObraDinamicaPage() {
     try {
       const obrasSeguidasTexto = lerStorageUsuarioObraPublica(
         FOLLOWED_WORKS_STORAGE_KEY,
-        usuarioIdLogado
+        userId
       );
       const obrasSeguidasJson: unknown = obrasSeguidasTexto
         ? JSON.parse(obrasSeguidasTexto)
@@ -2402,6 +2402,7 @@ export default function ObraDinamicaPage() {
         const inserirResposta = await supabase.from("seguindo_obras").insert({
           obra_id: obraId,
           user_id: userId,
+          visibilidade: "publico",
         });
 
         if (inserirResposta.error) {
@@ -2412,7 +2413,7 @@ export default function ObraDinamicaPage() {
           userId,
           obra: obraAtual,
           tipo: "salvou_obra",
-          visibilidade: "privado",
+          visibilidade: "publico",
           texto: `Adicionou ${obraAtual.titulo} para acompanhar.`,
         });
       } else {
@@ -2423,53 +2424,12 @@ export default function ObraDinamicaPage() {
         });
       }
     } catch (error) {
-      console.warn("Não consegui salvar seguimento da obra:", error);
-
-      try {
-        const obrasSeguidasTexto = lerStorageUsuarioObraPublica(
-        FOLLOWED_WORKS_STORAGE_KEY,
-        usuarioIdLogado
+      console.warn("Não consegui salvar seguimento da obra no Supabase:", error);
+      setMensagemAcao(
+        seguindo
+          ? "Obra salva no navegador. Verifique o Supabase/RLS se não sincronizar online."
+          : "Obra removida da lista no navegador. Verifique o Supabase/RLS se voltar depois."
       );
-        const obrasSeguidasJson: unknown = obrasSeguidasTexto
-          ? JSON.parse(obrasSeguidasTexto)
-          : [];
-        const obrasSeguidas = Array.isArray(obrasSeguidasJson)
-          ? obrasSeguidasJson.filter(
-              (titulo): titulo is string =>
-                typeof titulo === "string" && Boolean(titulo.trim())
-            )
-          : [];
-
-        const chavesObraAtual = Array.from(
-          new Set(
-            [
-              obraNormalizada,
-              obraAtual?.id || "",
-              obraAtual?.slug || "",
-              obraAtual?.link || "",
-            ].filter((chave) => Boolean(chave.trim()))
-          )
-        );
-
-        const obrasSeguidasRestauradas = seguindo
-          ? obrasSeguidas.filter((titulo) => !chavesObraAtual.includes(titulo))
-          : Array.from(new Set([...obrasSeguidas, ...chavesObraAtual]));
-
-        salvarStorageUsuarioObraPublica(
-          FOLLOWED_WORKS_STORAGE_KEY,
-          userId,
-          obrasSeguidasRestauradas
-        );
-      } catch {
-        // O rollback local não deve travar a mensagem de erro.
-      }
-
-      setObraSeguida(!seguindo);
-      setMetricasObra((metricasAtuais) => ({
-        ...metricasAtuais,
-        seguidores: Math.max(0, metricasAtuais.seguidores - seguidoresDelta),
-      }));
-      setMensagemAcao("Não foi possível salvar agora.");
     }
   }
 

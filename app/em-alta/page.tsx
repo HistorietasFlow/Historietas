@@ -191,6 +191,7 @@ const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
+const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
 
 
 function normalizarListaIdsEmAlta(valor: unknown) {
@@ -210,6 +211,106 @@ function criarStorageKeyUsuarioEmAlta(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
   return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function normalizarChaveAutorEmAlta(valor: string) {
+  return valor.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function adicionarAvatarAutorLocalEmAlta(
+  avataresPorAutor: Map<string, string>,
+  chave: string,
+  avatar: unknown
+) {
+  const chaveLimpa = normalizarChaveAutorEmAlta(chave);
+  const avatarLimpo = typeof avatar === "string" ? avatar.trim() : "";
+
+  if (!chaveLimpa || !avatarLimpo) {
+    return;
+  }
+
+  avataresPorAutor.set(chaveLimpa, avatarLimpo);
+}
+
+function carregarAvataresAutoresLocaisEmAlta(userIds: string[]) {
+  const avataresPorAutor = new Map<string, string>();
+
+  if (typeof window === "undefined") {
+    return avataresPorAutor;
+  }
+
+  const chavesParaLer = Array.from(
+    new Set([
+      AUTHOR_PROFILE_STORAGE_KEY,
+      ...userIds
+        .map((userId) => userId.trim())
+        .filter(Boolean)
+        .map((userId) => criarStorageKeyUsuarioEmAlta(AUTHOR_PROFILE_STORAGE_KEY, userId)),
+    ])
+  );
+
+  chavesParaLer.forEach((chaveStorage) => {
+    try {
+      const texto = localStorage.getItem(chaveStorage);
+      const perfis = texto ? JSON.parse(texto) : null;
+
+      if (!perfis || typeof perfis !== "object" || Array.isArray(perfis)) {
+        return;
+      }
+
+      Object.entries(perfis as Record<string, unknown>).forEach(([chaveAutor, perfil]) => {
+        if (!perfil || typeof perfil !== "object" || Array.isArray(perfil)) {
+          return;
+        }
+
+        const registro = perfil as Record<string, unknown>;
+
+        adicionarAvatarAutorLocalEmAlta(
+          avataresPorAutor,
+          chaveAutor,
+          registro.avatar ??
+            registro.avatar_url ??
+            registro.foto_url ??
+            registro.imagem_url ??
+            registro.photo_url
+        );
+
+        adicionarAvatarAutorLocalEmAlta(
+          avataresPorAutor,
+          typeof registro.nome === "string" ? registro.nome : "",
+          registro.avatar ??
+            registro.avatar_url ??
+            registro.foto_url ??
+            registro.imagem_url ??
+            registro.photo_url
+        );
+      });
+    } catch {
+      // Avatar local é só fallback para os cards de autores.
+    }
+  });
+
+  return avataresPorAutor;
+}
+
+function obterAvatarAutorLocalEmAlta(
+  avataresPorAutor: Map<string, string>,
+  nomeAutor: string,
+  autorId: string
+) {
+  const chaves = [autorId, nomeAutor, normalizarTexto(nomeAutor)]
+    .map((chave) => normalizarChaveAutorEmAlta(chave))
+    .filter(Boolean);
+
+  for (const chave of chaves) {
+    const avatar = avataresPorAutor.get(chave);
+
+    if (avatar) {
+      return avatar;
+    }
+  }
+
+  return "";
 }
 
 function carregarListaIdsLocalEmAlta(chave: string, userId: string) {
@@ -923,7 +1024,8 @@ function converterObraSupabaseParaLocal(
   seguidoresPorObra: Record<string, number>,
   avaliacoesPorObra: Record<string, AvaliacaoRankingObra>,
   profilesAutores: Map<string, SupabaseProfileAutorRankingRow>,
-  seguidoresAutores: Record<string, number>
+  seguidoresAutores: Record<string, number>,
+  avataresLocaisAutores: Map<string, string>
 ): ObraLocal {
   const capitulosLocaisPorId = new Map(
     (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
@@ -969,10 +1071,13 @@ function converterObraSupabaseParaLocal(
   const autorId = obra.user_id?.trim() || obraLocal?.autorId || "";
   const profileAutor = autorId ? profilesAutores.get(autorId) || null : null;
   const nomeAutorProfile = obterNomeProfileAutorRanking(profileAutor);
+  const nomeAutorObra = obra.autor?.trim() || obraLocal?.autor || "";
   const nomeAutor =
-    nomeAutorProfile || obra.autor?.trim() || obraLocal?.autor || "Autor não informado";
+    nomeAutorProfile || nomeAutorObra || "Autor não informado";
   const avatarAutor =
     obterAvatarProfileAutorRanking(profileAutor) ||
+    obterAvatarAutorLocalEmAlta(avataresLocaisAutores, nomeAutor, autorId) ||
+    obterAvatarAutorLocalEmAlta(avataresLocaisAutores, nomeAutorObra, autorId) ||
     obraLocal?.autorAvatarRanking ||
     "";
   const totalSeguidoresAutor = autorId
@@ -1084,6 +1189,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
     const autorIds = obrasSupabase
       .map((obra) => obra.user_id?.trim() || "")
       .filter(Boolean);
+    const avataresLocaisAutores = carregarAvataresAutoresLocaisEmAlta(autorIds);
 
     const { data: capitulosBanco, error: erroCapitulos } = await supabase
       .from("capitulos")
@@ -1154,7 +1260,8 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
         seguidoresPorObra,
         avaliacoesPorObra,
         profilesAutores,
-        seguidoresAutores
+        seguidoresAutores,
+        avataresLocaisAutores
       );
     });
   } catch (error) {
@@ -1198,7 +1305,7 @@ function criarRankingCoverStyle(
       ...baseStyle,
       backgroundColor: "#04000A",
       backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
-      border: "1px solid rgba(255,255,255,0.08)",
+      border: "none",
     };
   }
 
@@ -1208,7 +1315,7 @@ function criarRankingCoverStyle(
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
-    border: "1px solid rgba(255,255,255,0.08)",
+    border: "none",
   };
 }
 
@@ -1877,7 +1984,7 @@ export default function EmAltaPage() {
               className="historietas-em-alta-hero-title"
               style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
             >
-              istórias mais populares
+              ISTORIETAS POPULARES
             </span>
           </Link>
 
@@ -2426,6 +2533,7 @@ function AutorRankingCard({
   const router = useRouter();
   const inicialAutor = autor.nome.trim().charAt(0).toUpperCase() || "A";
   const temaPosicao = obterTemaPosicao(posicao);
+  const avatarAutor = autor.avatar.trim();
 
   function abrirPerfil() {
     router.push(autor.href);
@@ -2445,13 +2553,13 @@ function AutorRankingCard({
         }
       }}
     >
-      <div style={criarAutorAvatarRankingStyle(autor.avatar, posicao, isDesktop)}>
-        {!autor.avatar && (
+      <div style={criarAutorAvatarRankingStyle(avatarAutor, posicao, isDesktop)}>
+        {!avatarAutor && (
           <span style={authorRankingAvatarInitialStyle}>{inicialAutor}</span>
         )}
 
         <span
-          style={criarTierBadgeStyle(posicao)}
+          style={criarAutorTierBadgeStyle(posicao)}
           aria-label={`Posição ${posicao} — ${temaPosicao.nome}`}
         >
           <span style={rankCrownMiniStyle} aria-hidden="true">♛</span>
@@ -2462,7 +2570,7 @@ function AutorRankingCard({
 
       <div style={isDesktop ? desktopCardContentStyle : cardContentStyle}>
         <div style={authorRankingTitleAreaStyle}>
-          <h3 style={criarCardTitleRankingStyle(posicao)}>{autor.nome}</h3>
+          <h3 style={criarAutorCardTitleRankingStyle(posicao)}>{autor.nome}</h3>
         </div>
 
         <div style={authorRankingMetaStackStyle}>
@@ -2523,7 +2631,6 @@ function AutorRankingCard({
           </span>
         </div>
 
-        <span style={criarReadRankingStyle(posicao, true)}>Abrir perfil →</span>
       </div>
     </article>
   );
@@ -2682,9 +2789,6 @@ function RankingCard({
           </span>
         </div>
 
-        <span style={criarReadRankingStyle(posicao, obra.disponivel)}>
-          {obra.disponivel ? "Abrir obra →" : "Ver detalhes →"}
-        </span>
       </div>
     </article>
   );
@@ -2965,7 +3069,9 @@ function criarAutorAvatarRankingStyle(
       : temaPosicao.coverBackground,
     backgroundSize: "cover",
     backgroundPosition: "center",
-    border: `1px solid ${temaPosicao.border}`,
+    border: "none",
+    outline: "none",
+    boxShadow: "none",
   };
 }
 
@@ -3196,9 +3302,11 @@ const headerTitleLinkStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: "3px",
-  width: "fit-content",
+  width: "100%",
   maxWidth: "100%",
+  margin: "0 auto",
   minWidth: 0,
+  textAlign: "center",
 };
 
 const desktopHeaderTitleLinkStyle: CSSProperties = {
@@ -3235,18 +3343,21 @@ const desktopHeaderTitleMarkStyle: CSSProperties = {
 const headerTitleTextStyle: CSSProperties = {
   ...titleStyle,
   margin: 0,
+  fontSize: "clamp(26px, 6.8vw, 40px)",
   maxWidth: "calc(100vw - 86px)",
-  textAlign: "left",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  textAlign: "center",
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
   textShadow: "none",
+  textTransform: "uppercase",
+  whiteSpace: "nowrap",
 };
 
 const desktopHeaderTitleTextStyle: CSSProperties = {
   ...headerTitleTextStyle,
+  fontSize: "clamp(34px, 3.6vw, 44px)",
   maxWidth: "760px",
 };
 
@@ -3316,7 +3427,7 @@ const carouselArrowButtonStyle: CSSProperties = {
   width: "38px",
   height: "38px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "none",
   background: "#04000A",
   color: "#DDD6FE",
   display: "none",
@@ -3471,7 +3582,7 @@ const coverStyle: CSSProperties = {
   backgroundSize: "cover",
   backgroundPosition: "center",
   minWidth: 0,
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "none",
   boxShadow: "none",
 };
 
@@ -3843,6 +3954,7 @@ const authorRankingAvatarInitialStyle: CSSProperties = {
   fontWeight: 950,
   textShadow: "0 4px 12px rgba(0,0,0,0.42)",
 };
+
 
 const authorRankingTierBadgeStyle: CSSProperties = {
   position: "absolute",

@@ -107,6 +107,20 @@ const NOTAS_AVALIACAO_AUTOR = [1, 2, 3, 4, 5] as const;
 const DIARIO_ANOTACAO_MAX_LENGTH = 700;
 const DIARIO_COMENTARIO_MAX_LENGTH = 700;
 
+function normalizarAbaPerfilAutor(valor: string | null): AbaPerfilAutor {
+  if (
+    valor === "obras" ||
+    valor === "diario" ||
+    valor === "comunidade" ||
+    valor === "sobre" ||
+    valor === "biblioteca"
+  ) {
+    return valor;
+  }
+
+  return "obras";
+}
+
 type PerfilAutorSalvo = {
   avatar: string;
   avatarNome: string;
@@ -1799,6 +1813,100 @@ async function carregarObrasPublicadasSupabase() {
   }
 }
 
+function coletarObraIdsRegistrosDiarioPerfil(
+  registros: Record<string, unknown>[],
+) {
+  return registros
+    .map((registro) => pegarTexto(registro.obra_id ?? registro.obraId))
+    .filter(Boolean);
+}
+
+async function carregarObrasPublicadasPorIdsSupabase(obraIds: string[]) {
+  const idsUnicos = Array.from(
+    new Set(obraIds.map((obraId) => obraId.trim()).filter(Boolean)),
+  );
+
+  if (idsUnicos.length === 0) {
+    return [] as ObraLocal[];
+  }
+
+  try {
+    const { data: obrasData, error: obrasError } = await supabase
+      .from("obras")
+      .select(
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,criada_em,atualizado_em"
+      )
+      .in("id", idsUnicos)
+      .eq("publicado", true)
+      .limit(Math.max(idsUnicos.length, 1));
+
+    if (obrasError || !Array.isArray(obrasData)) {
+      return [] as ObraLocal[];
+    }
+
+    const obrasSupabase = obrasData.map((obra, index) =>
+      normalizarObraSupabase(obra as unknown as SupabaseObraRow, index),
+    );
+    const idsEncontrados = obrasSupabase.map((obra) => obra.id).filter(Boolean);
+
+    if (idsEncontrados.length === 0) {
+      return obrasSupabase;
+    }
+
+    try {
+      const { data: capitulosData } = await supabase
+        .from("capitulos")
+        .select("id,obra_id,titulo,ordem,publicado,criado_em,atualizado_em")
+        .in("obra_id", idsEncontrados)
+        .eq("publicado", true)
+        .order("ordem", { ascending: true })
+        .limit(Math.max(idsEncontrados.length * 20, 1));
+
+      if (Array.isArray(capitulosData)) {
+        const capitulosPorObra = new Map<string, CapituloLocal[]>();
+
+        capitulosData.forEach((capitulo, index) => {
+          const capituloNormalizado = normalizarCapituloSupabase(
+            capitulo as unknown as SupabaseCapituloRow,
+            index,
+            index,
+          );
+
+          if (!capituloNormalizado.obraId) {
+            return;
+          }
+
+          const capitulosAtuais =
+            capitulosPorObra.get(capituloNormalizado.obraId) || [];
+          const { obraId: _obraId, ...capituloSemObraId } = capituloNormalizado;
+          void _obraId;
+
+          capitulosPorObra.set(capituloNormalizado.obraId, [
+            ...capitulosAtuais,
+            capituloSemObraId,
+          ]);
+        });
+
+        return obrasSupabase.map((obra) => {
+          const capitulos = capitulosPorObra.get(obra.id) || [];
+
+          return {
+            ...obra,
+            capitulos,
+            progressoLeitura: calcularProgressoLeitura(capitulos),
+          };
+        });
+      }
+    } catch {
+      // Se capítulos falhar, a Biblioteca ainda mostra a obra salva.
+    }
+
+    return obrasSupabase;
+  } catch {
+    return [] as ObraLocal[];
+  }
+}
+
 async function carregarIdsTabelaUsuario(
   tabela: string,
   colunaId: string,
@@ -2349,9 +2457,9 @@ function obterObraRegistroDiario(
 }
 
 const CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR: Record<string, string> = {
-  seguindo_obras: "obra_id,criado_em,atualizado_em",
-  favoritos: "obra_id,criado_em,atualizado_em",
-  concluidas: "obra_id,criado_em,atualizado_em",
+  seguindo_obras: "obra_id,visibilidade,criado_em,atualizado_em",
+  favoritos: "obra_id,visibilidade,criado_em,atualizado_em",
+  concluidas: "obra_id,visibilidade,criado_em,atualizado_em",
   obra_avaliacoes: "obra_id,nota,criado_em,atualizado_em",
   progresso_leitura: "obra_id,capitulo_id,progresso,criado_em,atualizado_em",
   diario_atividades:
@@ -2372,7 +2480,16 @@ async function carregarRegistrosDiarioPerfil(tabela: string, userId: string) {
       .eq("user_id", userId)
       .limit(1000);
 
-    if (error || !Array.isArray(data)) {
+    if (error) {
+      console.warn(
+        `Não consegui carregar ${tabela} no Diário/Biblioteca do perfil:`,
+        error.message,
+      );
+
+      return [] as Record<string, unknown>[];
+    }
+
+    if (!Array.isArray(data)) {
       return [] as Record<string, unknown>[];
     }
 
@@ -2556,9 +2673,12 @@ function montarDiarioPerfilLocal(
   obrasFavoritasIds: string[],
   obrasConcluidasIds: string[],
   obrasSeguidasIds: string[],
+  obrasDisponiveis: ObraLocal[] = perfil.obras,
 ): Omit<DiarioPerfilEstado, "carregando"> {
+  const obrasBiblioteca = obrasDisponiveis.length > 0 ? obrasDisponiveis : perfil.obras;
+
   const lendoAgora = ordenarItensDiarioPerfil(
-    perfil.obras
+    obrasBiblioteca
       .filter((obra) => obra.progressoLeitura > 0 && obra.progressoLeitura < 100)
       .map((obra) =>
         criarItemDiarioPerfil(
@@ -2572,7 +2692,7 @@ function montarDiarioPerfilLocal(
   );
 
   const favoritas = ordenarItensDiarioPerfil(
-    perfil.obras
+    obrasBiblioteca
       .filter((obra) => colecaoTemObraPerfilBiblioteca(obrasFavoritasIds, obra))
       .map((obra) =>
         criarItemDiarioPerfil(
@@ -2586,7 +2706,7 @@ function montarDiarioPerfilLocal(
   );
 
   const concluidas = ordenarItensDiarioPerfil(
-    perfil.obras
+    obrasBiblioteca
       .filter((obra) => colecaoTemObraPerfilBiblioteca(obrasConcluidasIds, obra))
       .map((obra) =>
         criarItemDiarioPerfil(
@@ -2600,7 +2720,7 @@ function montarDiarioPerfilLocal(
   );
 
   const queroLer = ordenarItensDiarioPerfil(
-    perfil.obras
+    obrasBiblioteca
       .filter(
         (obra) =>
           colecaoTemObraPerfilBiblioteca(obrasSeguidasIds, obra) &&
@@ -2612,7 +2732,7 @@ function montarDiarioPerfilLocal(
           obra,
           obra.ultimaLeituraEm || obra.criadaEm,
           "Adicionada para acompanhar depois",
-          { visibilidade: "privado" },
+          { visibilidade: "publico" },
         ),
       ),
   );
@@ -2635,13 +2755,83 @@ function montarDiarioPerfilLocal(
   };
 }
 
+type DiarioPerfilSemCarregando = Omit<DiarioPerfilEstado, "carregando">;
+
+function criarChaveMesclaDiarioPerfil(item: DiarioPerfilItem) {
+  const obraId = item.obra?.id || "";
+  const capituloId = item.obra?.ultimoCapituloLidoId || "";
+
+  return [item.tipo, obraId || item.chave, capituloId].join("::");
+}
+
+function mesclarItensDiarioPerfil(
+  itensPrincipais: DiarioPerfilItem[],
+  itensComplementares: DiarioPerfilItem[],
+) {
+  const mapa = new Map<string, DiarioPerfilItem>();
+
+  [...itensComplementares, ...itensPrincipais].forEach((item) => {
+    mapa.set(criarChaveMesclaDiarioPerfil(item), item);
+  });
+
+  return ordenarItensDiarioPerfil(Array.from(mapa.values()));
+}
+
+function mesclarDiarioPerfilComLocal(
+  diarioSupabase: DiarioPerfilSemCarregando,
+  diarioLocal: DiarioPerfilSemCarregando,
+): DiarioPerfilSemCarregando {
+  const lendoAgora = mesclarItensDiarioPerfil(
+    diarioSupabase.lendoAgora,
+    diarioLocal.lendoAgora,
+  );
+  const queroLer = mesclarItensDiarioPerfil(
+    diarioSupabase.queroLer,
+    diarioLocal.queroLer,
+  );
+  const favoritas = mesclarItensDiarioPerfil(
+    diarioSupabase.favoritas,
+    diarioLocal.favoritas,
+  );
+  const concluidas = mesclarItensDiarioPerfil(
+    diarioSupabase.concluidas,
+    diarioLocal.concluidas,
+  );
+  const avaliacoes = mesclarItensDiarioPerfil(
+    diarioSupabase.avaliacoes,
+    diarioLocal.avaliacoes,
+  );
+  const reviews = mesclarItensDiarioPerfil(
+    diarioSupabase.reviews,
+    diarioLocal.reviews,
+  );
+  const atividades = ordenarItensDiarioPerfil([
+    ...lendoAgora,
+    ...queroLer,
+    ...favoritas,
+    ...concluidas,
+    ...avaliacoes,
+    ...reviews,
+    ...diarioSupabase.atividades,
+    ...diarioLocal.atividades,
+  ]).slice(0, 8);
+
+  return {
+    lendoAgora,
+    queroLer,
+    favoritas,
+    concluidas,
+    avaliacoes,
+    reviews,
+    atividades,
+  };
+}
+
 async function carregarDiarioPerfilSupabase(
   userId: string,
   obrasDisponiveis: ObraLocal[],
   incluirPrivados: boolean,
 ): Promise<Omit<DiarioPerfilEstado, "carregando">> {
-  const { obrasPorId, obrasPorCapituloId } = montarMapaObrasDiario(obrasDisponiveis);
-
   const [
     seguindoObras,
     favoritos,
@@ -2659,6 +2849,33 @@ async function carregarDiarioPerfilSupabase(
     carregarRegistrosDiarioPerfil("diario_atividades", userId),
     carregarRegistrosDiarioPerfil("diario_anotacoes", userId),
   ]);
+
+  const idsObrasDiario = Array.from(
+    new Set([
+      ...coletarObraIdsRegistrosDiarioPerfil(seguindoObras),
+      ...coletarObraIdsRegistrosDiarioPerfil(favoritos),
+      ...coletarObraIdsRegistrosDiarioPerfil(concluidas),
+      ...coletarObraIdsRegistrosDiarioPerfil(avaliacoes),
+      ...coletarObraIdsRegistrosDiarioPerfil(progresso),
+      ...coletarObraIdsRegistrosDiarioPerfil(diarioAtividades),
+      ...coletarObraIdsRegistrosDiarioPerfil(diarioAnotacoes),
+    ]),
+  );
+  const idsObrasDisponiveis = new Set(
+    obrasDisponiveis.map((obra) => obra.id).filter(Boolean),
+  );
+  const idsObrasFaltantes = idsObrasDiario.filter(
+    (obraId) => !idsObrasDisponiveis.has(obraId),
+  );
+  const obrasFaltantes = await carregarObrasPublicadasPorIdsSupabase(
+    idsObrasFaltantes,
+  );
+  const obrasParaDiario = mesclarObrasPorIdSlug(
+    obrasDisponiveis,
+    obrasFaltantes,
+  );
+  const { obrasPorId, obrasPorCapituloId } =
+    montarMapaObrasDiario(obrasParaDiario);
 
   const concluidasIds = new Set(
     concluidas
@@ -3191,6 +3408,7 @@ export default function PerfilAutorPage() {
   const [filtrosObrasAbertos, setFiltrosObrasAbertos] = useState(false);
   const [obraMenuAbertoId, setObraMenuAbertoId] = useState("");
   const [diarioMenuAbertoChave, setDiarioMenuAbertoChave] = useState("");
+  const [bibliotecaMenuAbertoChave, setBibliotecaMenuAbertoChave] = useState("");
   const [avaliacaoAutor, setAvaliacaoAutor] =
     useState<AvaliacaoAutorPublica>(avaliacaoAutorVazia);
   const [diarioPerfil, setDiarioPerfil] =
@@ -3212,6 +3430,8 @@ export default function PerfilAutorPage() {
   const [seguindoUsuarioPerfilTotal, setSeguindoUsuarioPerfilTotal] =
     useState(0);
   const [seguirUsuarioSalvando, setSeguirUsuarioSalvando] = useState(false);
+  const seguidoresTotalEstavelRef = useRef<Record<string, number>>({});
+  const seguindoTotalEstavelRef = useRef<Record<string, number>>({});
 
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -3271,6 +3491,8 @@ export default function PerfilAutorPage() {
       const autorParam = params.get("autor") || "";
       const autorIdParam =
         params.get("autorId") || params.get("id") || params.get("userId") || "";
+      const abaParam = normalizarAbaPerfilAutor(params.get("aba"));
+      setAbaPerfil(abaParam);
       setAutorSelecionado(autorParam.trim());
       setAutorIdSelecionado(autorIdParam.trim());
       setPodeEditarPerfil(false);
@@ -3388,6 +3610,35 @@ export default function PerfilAutorPage() {
         );
       }
 
+      const idsBibliotecaLocal = Array.from(
+        new Set([
+          ...obrasFavoritasNormalizadas,
+          ...obrasConcluidasNormalizadas,
+          ...obrasSeguidasBibliotecaNormalizadas,
+        ]),
+      ).filter((obraId) => idObraSupabaseValido(obraId));
+
+      if (idsBibliotecaLocal.length > 0) {
+        const idsObrasCarregadas = new Set(
+          obrasMescladas.map((obra) => obra.id).filter(Boolean),
+        );
+        const idsObrasBibliotecaFaltantes = idsBibliotecaLocal.filter(
+          (obraId) => !idsObrasCarregadas.has(obraId),
+        );
+
+        if (idsObrasBibliotecaFaltantes.length > 0) {
+          const obrasBibliotecaFaltantes =
+            await carregarObrasPublicadasPorIdsSupabase(
+              idsObrasBibliotecaFaltantes,
+            );
+
+          obrasMescladas = mesclarObrasPorIdSlug(
+            obrasMescladas,
+            obrasBibliotecaFaltantes,
+          );
+        }
+      }
+
       try {
         if (usuarioIdAtual) {
           const obrasDoUsuarioParaPersistir = obrasMescladas.filter((obra) =>
@@ -3420,6 +3671,11 @@ export default function PerfilAutorPage() {
           COMPLETED_STORAGE_KEY,
           usuarioIdAtual,
           obrasConcluidasNormalizadas,
+        );
+        salvarListaIdsPerfilBiblioteca(
+          LIBRARY_FOLLOW_STORAGE_KEY,
+          usuarioIdAtual,
+          obrasSeguidasBibliotecaNormalizadas,
         );
       } catch {
         // Se o navegador bloquear localStorage, a página ainda usa o estado em memória.
@@ -3617,8 +3873,6 @@ export default function PerfilAutorPage() {
 
     if (!perfilUserId || !idAutorSupabaseValido(perfilUserId)) {
       setSeguindoUsuarioPerfil(false);
-      setSeguidoresUsuarioPerfilTotal(0);
-      setSeguindoUsuarioPerfilTotal(0);
       return;
     }
 
@@ -3634,9 +3888,23 @@ export default function PerfilAutorPage() {
         return;
       }
 
+      const seguidoresMinimoPorEstadoAtual = estadoSeguimento.seguindo ? 1 : 0;
+      const seguidoresTotalSeguro = Math.max(
+        estadoSeguimento.seguidoresTotal,
+        seguidoresMinimoPorEstadoAtual,
+        seguidoresTotalEstavelRef.current[perfilUserId] || 0,
+      );
+      const seguindoTotalSeguro = Math.max(
+        estadoSeguimento.seguindoTotal,
+        seguindoTotalEstavelRef.current[perfilUserId] || 0,
+      );
+
+      seguidoresTotalEstavelRef.current[perfilUserId] = seguidoresTotalSeguro;
+      seguindoTotalEstavelRef.current[perfilUserId] = seguindoTotalSeguro;
+
       setSeguindoUsuarioPerfil(estadoSeguimento.seguindo);
-      setSeguidoresUsuarioPerfilTotal(estadoSeguimento.seguidoresTotal);
-      setSeguindoUsuarioPerfilTotal(estadoSeguimento.seguindoTotal);
+      setSeguidoresUsuarioPerfilTotal(seguidoresTotalSeguro);
+      setSeguindoUsuarioPerfilTotal(seguindoTotalSeguro);
     }
 
     void carregarSeguimentoUsuario();
@@ -3644,7 +3912,7 @@ export default function PerfilAutorPage() {
     return () => {
       cancelado = true;
     };
-  }, [perfilParaMostrar, usuarioIdLogado]);
+  }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
 
   const autorChavePerfil = perfilParaMostrar
     ? criarChaveAutorPerfil(perfilParaMostrar.autorId, perfilParaMostrar.nome)
@@ -3662,17 +3930,72 @@ export default function PerfilAutorPage() {
   const podeUsarSeguimentoUsuario = Boolean(
     perfilUserIdParaSeguir && idAutorSupabaseValido(perfilUserIdParaSeguir),
   );
+  const chaveSeguimentoPerfil =
+    perfilUserIdParaSeguir || autorChavePerfil || autorNormalizadoParaSeguir;
   const seguindoPerfilAtual = podeUsarSeguimentoUsuario
     ? seguindoUsuarioPerfil
     : seguindoAutor;
-  const seguidoresTotal = podeUsarSeguimentoUsuario
-    ? seguidoresUsuarioPerfilTotal
-    : seguindoAutor
-      ? 1
-      : 0;
-  const seguindoTotalPerfil = podeUsarSeguimentoUsuario
-    ? seguindoUsuarioPerfilTotal
-    : 0;
+  const seguidoresTotal = useMemo(() => {
+    const totalMinimoPorSeguimentoAtual =
+      seguindoPerfilAtual || seguindoUsuarioPerfil || seguindoAutor ? 1 : 0;
+    const totalAtual = podeUsarSeguimentoUsuario
+      ? Math.max(
+          seguidoresUsuarioPerfilTotal,
+          totalMinimoPorSeguimentoAtual,
+        )
+      : seguindoAutor
+        ? 1
+        : 0;
+
+    if (!chaveSeguimentoPerfil) {
+      return totalAtual;
+    }
+
+    const ultimoTotalValido =
+      seguidoresTotalEstavelRef.current[chaveSeguimentoPerfil] || 0;
+    const totalSeguro = Math.max(totalAtual, ultimoTotalValido);
+
+    seguidoresTotalEstavelRef.current[chaveSeguimentoPerfil] = totalSeguro;
+
+    return totalSeguro;
+  }, [
+    chaveSeguimentoPerfil,
+    podeUsarSeguimentoUsuario,
+    seguidoresUsuarioPerfilTotal,
+    seguindoPerfilAtual,
+    seguindoUsuarioPerfil,
+    seguindoAutor,
+  ]);
+  const seguindoTotalPerfil = useMemo(() => {
+    const totalAtual = podeUsarSeguimentoUsuario
+      ? Math.max(
+          seguindoUsuarioPerfilTotal,
+          podeEditarPerfil ? autoresSeguidos.length : 0,
+        )
+      : podeEditarPerfil
+        ? autoresSeguidos.length
+        : 0;
+
+    if (!chaveSeguimentoPerfil) {
+      return totalAtual;
+    }
+
+    const ultimoTotalValido =
+      seguindoTotalEstavelRef.current[chaveSeguimentoPerfil] || 0;
+    const totalSeguro = Math.max(totalAtual, ultimoTotalValido);
+
+    if (totalSeguro > 0) {
+      seguindoTotalEstavelRef.current[chaveSeguimentoPerfil] = totalSeguro;
+    }
+
+    return totalSeguro;
+  }, [
+    chaveSeguimentoPerfil,
+    podeUsarSeguimentoUsuario,
+    seguindoUsuarioPerfilTotal,
+    podeEditarPerfil,
+    autoresSeguidos.length,
+  ]);
   const seguidoresPerfilHref = podeEditarPerfil
     ? "/seguindo?conteudo=seguidores"
     : criarHrefListaSeguimentoPerfilAutor(
@@ -3686,12 +4009,12 @@ export default function PerfilAutorPage() {
         perfilParaMostrar,
       );
   const obrasSeguidasPerfilHref = "/seguindo?conteudo=obras";
-  const obrasFavoritasPerfil = perfilParaMostrar
+  const obrasFavoritasPerfilPorObrasDoAutor = perfilParaMostrar
     ? perfilParaMostrar.obras.filter((obra) =>
         colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra),
       ).length
     : 0;
-  const obrasConcluidasPerfil = perfilParaMostrar
+  const obrasConcluidasPerfilPorObrasDoAutor = perfilParaMostrar
     ? perfilParaMostrar.obras.filter((obra) =>
         colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra),
       ).length
@@ -3864,22 +4187,28 @@ export default function PerfilAutorPage() {
 
     async function carregarDiarioPerfil() {
       const userIdPerfil = perfilDiario.autorId.trim();
+      const bibliotecaUsaUsuarioLogado = abaPerfil === "biblioteca" && Boolean(usuarioIdLogado.trim());
+      const userIdFonteDiario = bibliotecaUsaUsuarioLogado
+        ? usuarioIdLogado.trim()
+        : userIdPerfil;
+      const incluirItensPrivados = bibliotecaUsaUsuarioLogado || podeEditarPerfil;
 
       setDiarioPerfil({
         ...diarioPerfilVazio,
         carregando: true,
       });
 
-      if (!userIdPerfil || !idAutorSupabaseValido(userIdPerfil)) {
-        const diarioLocal = podeEditarPerfil
-          ? montarDiarioPerfilLocal(
-              perfilDiario,
-              obrasFavoritas,
-              obrasConcluidas,
-              obrasSeguidasBiblioteca,
-            )
-          : criarEstadoDiarioPerfilVazio();
+      const diarioLocal = incluirItensPrivados
+        ? montarDiarioPerfilLocal(
+            perfilDiario,
+            obrasFavoritas,
+            obrasConcluidas,
+            obrasSeguidasBiblioteca,
+            obras,
+          )
+        : criarEstadoDiarioPerfilVazio();
 
+      if (!userIdFonteDiario || !idAutorSupabaseValido(userIdFonteDiario)) {
         if (!cancelado) {
           setDiarioPerfil({
             carregando: false,
@@ -3891,15 +4220,18 @@ export default function PerfilAutorPage() {
       }
 
       const diarioSupabase = await carregarDiarioPerfilSupabase(
-        userIdPerfil,
+        userIdFonteDiario,
         obras,
-        podeEditarPerfil,
+        incluirItensPrivados,
       );
+      const diarioFinal = incluirItensPrivados
+        ? mesclarDiarioPerfilComLocal(diarioSupabase, diarioLocal)
+        : diarioSupabase;
 
       if (!cancelado) {
         setDiarioPerfil({
           carregando: false,
-          ...diarioSupabase,
+          ...diarioFinal,
         });
       }
     }
@@ -3916,6 +4248,8 @@ export default function PerfilAutorPage() {
     obrasConcluidas,
     obrasSeguidasBiblioteca,
     podeEditarPerfil,
+    abaPerfil,
+    usuarioIdLogado,
     versaoSincronizacaoBiblioteca,
   ]);
 
@@ -4258,7 +4592,47 @@ export default function PerfilAutorPage() {
     );
   }, [bibliotecaPerfilVisivel, diarioPerfil.atividades]);
 
-  const obrasSeguidasPerfilTotal = itensBibliotecaQueroLer.length;
+  const obrasSeguidasPerfilTotal = useMemo(() => {
+    const totalPorObrasCarregadas = obras.filter((obra) =>
+      colecaoTemObraPerfilBiblioteca(obrasSeguidasBiblioteca, obra),
+    ).length;
+
+    return Math.max(totalPorObrasCarregadas, itensBibliotecaQueroLer.length);
+  }, [obras, obrasSeguidasBiblioteca, itensBibliotecaQueroLer.length]);
+
+  const obrasFavoritasPerfilTotal = useMemo(() => {
+    const totalPorObrasCarregadas = obras.filter((obra) =>
+      colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra),
+    ).length;
+
+    return Math.max(
+      obrasFavoritasPerfilPorObrasDoAutor,
+      totalPorObrasCarregadas,
+      itensBibliotecaFavoritas.length,
+    );
+  }, [
+    obras,
+    obrasFavoritas,
+    obrasFavoritasPerfilPorObrasDoAutor,
+    itensBibliotecaFavoritas.length,
+  ]);
+
+  const obrasConcluidasPerfilTotal = useMemo(() => {
+    const totalPorObrasCarregadas = obras.filter((obra) =>
+      colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra),
+    ).length;
+
+    return Math.max(
+      obrasConcluidasPerfilPorObrasDoAutor,
+      totalPorObrasCarregadas,
+      itensBibliotecaConcluidas.length,
+    );
+  }, [
+    obras,
+    obrasConcluidas,
+    obrasConcluidasPerfilPorObrasDoAutor,
+    itensBibliotecaConcluidas.length,
+  ]);
 
   const itensBibliotecaAtivos = useMemo(() => {
     if (abaBibliotecaPerfil === "lendo-agora") {
@@ -4287,6 +4661,18 @@ export default function PerfilAutorPage() {
     itensBibliotecaQueroLer,
   ]);
 
+  const bibliotecaMenuAberto = useMemo(() => {
+    if (!bibliotecaMenuAbertoChave) {
+      return null;
+    }
+
+    return (
+      itensBibliotecaAtivos.find(
+        (item) => item.chave === bibliotecaMenuAbertoChave,
+      ) || null
+    );
+  }, [bibliotecaMenuAbertoChave, itensBibliotecaAtivos]);
+
   const rotuloBibliotecaAtiva =
     abaBibliotecaPerfil === "quero-ler"
       ? "quero ler"
@@ -4301,7 +4687,7 @@ export default function PerfilAutorPage() {
   const estatisticasBibliotecaPerfil = [
     {
       aba: "quero-ler" as AbaBibliotecaPerfil,
-      numero: itensBibliotecaQueroLer.length,
+      numero: obrasSeguidasPerfilTotal,
       label: "QUERO LER",
     },
     {
@@ -4311,12 +4697,12 @@ export default function PerfilAutorPage() {
     },
     {
       aba: "favoritas" as AbaBibliotecaPerfil,
-      numero: itensBibliotecaFavoritas.length,
+      numero: obrasFavoritasPerfilTotal,
       label: "FAVORITAS",
     },
     {
       aba: "concluidas" as AbaBibliotecaPerfil,
-      numero: itensBibliotecaConcluidas.length,
+      numero: obrasConcluidasPerfilTotal,
       label: "CONCLUÍDAS",
     },
     {
@@ -4883,11 +5269,15 @@ export default function PerfilAutorPage() {
 
       setSeguirUsuarioSalvando(true);
       setSeguindoUsuarioPerfil(proximoEstadoSeguindo);
-      setSeguidoresUsuarioPerfilTotal((totalAtual) =>
-        proximoEstadoSeguindo
+      setSeguidoresUsuarioPerfilTotal((totalAtual) => {
+        const proximoTotal = proximoEstadoSeguindo
           ? totalAtual + 1
-          : Math.max(0, totalAtual - 1),
-      );
+          : Math.max(0, totalAtual - 1);
+
+        seguidoresTotalEstavelRef.current[userIdPerfil] = proximoTotal;
+
+        return proximoTotal;
+      });
 
       const resultadoSeguimento = await sincronizarUsuarioSeguidoSupabase(
         userIdAtual,
@@ -4899,11 +5289,15 @@ export default function PerfilAutorPage() {
 
       if (!resultadoSeguimento.ok) {
         setSeguindoUsuarioPerfil(!proximoEstadoSeguindo);
-        setSeguidoresUsuarioPerfilTotal((totalAtual) =>
-          proximoEstadoSeguindo
+        setSeguidoresUsuarioPerfilTotal((totalAtual) => {
+          const totalAnterior = proximoEstadoSeguindo
             ? Math.max(0, totalAtual - 1)
-            : totalAtual + 1,
-        );
+            : totalAtual + 1;
+
+          seguidoresTotalEstavelRef.current[userIdPerfil] = totalAnterior;
+
+          return totalAnterior;
+        });
         setMensagemAcao("Não consegui atualizar este seguimento agora.");
         return;
       }
@@ -5124,7 +5518,7 @@ export default function PerfilAutorPage() {
       "obra_id",
       obra.id,
       proximoEstadoSeguindo,
-      "privado",
+      "publico",
     );
     setVersaoSincronizacaoBiblioteca((versaoAtual) => versaoAtual + 1);
 
@@ -5733,6 +6127,8 @@ export default function PerfilAutorPage() {
     const totalCapitulos = obra?.capitulos.length || 0;
     const totalCurtidasDiario =
       obra?.capitulos.filter((capitulo) => capitulo.curtiu).length || 0;
+    const totalComentariosDiario =
+      obra?.capitulos.filter((capitulo) => capitulo.comentario.trim()).length || 0;
     const visualizacoesDiario = compactarNumeroPerfilAutor(
       obra?.visualizacoes || 0,
     );
@@ -5764,10 +6160,17 @@ export default function PerfilAutorPage() {
                   <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
                   {totalCurtidasDiario}
                 </span>
-                <span>
-                  <span style={diaryCardStarMetaStyle}>★</span>{" "}
-                  {avaliacaoDiario}
-                </span>
+                {item.tipo === "avaliacao" && nota > 0 ? (
+                  <span>
+                    <span style={diaryCardStarMetaStyle}>★</span>{" "}
+                    {avaliacaoDiario}
+                  </span>
+                ) : (
+                  <span>
+                    <span style={diaryCardCommentMetaStyle}>💬</span>{" "}
+                    {totalComentariosDiario}
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -5784,6 +6187,79 @@ export default function PerfilAutorPage() {
             style={profileWorkDotsButtonStyle}
             aria-label={`Abrir opções de ${item.titulo}`}
             aria-expanded={diarioMenuAbertoChave === item.chave}
+          >
+            ⋮
+          </button>
+        </div>
+      </article>
+    );
+  }
+
+  function renderizarItemBibliotecaPerfil(item: ItemBibliotecaPerfil) {
+    const obraHref =
+      item.obra.link ||
+      `/obra/${item.obra.slug || criarSlugBase(item.obra.titulo)}`;
+    const capituloHref = item.capitulo
+      ? criarHrefLeituraCapituloPerfilAutor(
+          item.obra,
+          item.capitulo,
+          item.numeroCapitulo || 1,
+        )
+      : obraHref;
+    const totalCapitulos = item.obra.capitulos.length;
+    const totalCurtidasBiblioteca = item.obra.capitulos.filter(
+      (capitulo) => capitulo.curtiu,
+    ).length;
+    const totalComentariosBiblioteca = item.obra.capitulos.filter(
+      (capitulo) => capitulo.comentario.trim(),
+    ).length;
+    const visualizacoesBiblioteca = compactarNumeroPerfilAutor(
+      item.obra.visualizacoes || 0,
+    );
+
+    return (
+      <article
+        key={item.chave}
+        style={isDesktop ? desktopDiaryVisualCardStyle : diaryVisualCardStyle}
+      >
+        <Link
+          href={capituloHref}
+          style={diaryVisualCoverLinkStyle}
+          aria-label={`Abrir ${item.obra.titulo}`}
+        >
+          <div style={criarCapaGridPerfilAutor(item.obra.capa, isDesktop)}>
+            <div style={diaryCardCoverOverlayStyle}>
+              <strong style={diaryCardCoverTitleStyle}>{item.obra.titulo}</strong>
+
+              <span style={diaryCardCoverMetaStyle}>
+                <span>
+                  {totalCapitulos} {totalCapitulos === 1 ? "cap" : "caps"}
+                </span>
+                <span>👁 {visualizacoesBiblioteca}</span>
+                <span>
+                  <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
+                  {totalCurtidasBiblioteca}
+                </span>
+                <span>
+                  <span style={diaryCardCommentMetaStyle}>💬</span>{" "}
+                  {totalComentariosBiblioteca}
+                </span>
+              </span>
+            </div>
+          </div>
+        </Link>
+
+        <div style={profileWorkMenuAnchorStyle}>
+          <button
+            type="button"
+            onClick={() =>
+              setBibliotecaMenuAbertoChave((chaveAtual) =>
+                chaveAtual === item.chave ? "" : item.chave,
+              )
+            }
+            style={profileWorkDotsButtonStyle}
+            aria-label={`Abrir opções de ${item.obra.titulo}`}
+            aria-expanded={bibliotecaMenuAbertoChave === item.chave}
           >
             ⋮
           </button>
@@ -6143,16 +6619,6 @@ export default function PerfilAutorPage() {
                     <span style={menuSectionTitleStyle}>
                       Ferramentas pessoais
                     </span>
-
-                    <Link
-                      href="/painel-autor"
-                      style={menuItemStyle}
-                      onClick={() => setMenuPerfilAberto(false)}
-                    >
-                      <span style={menuItemIconStyle}>📚</span>
-                      <strong style={menuItemTextStyle}>Minhas obras</strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </Link>
 
                     <Link
                       href={comunidadeAutorHref}
@@ -6766,157 +7232,16 @@ export default function PerfilAutorPage() {
                 Sua Biblioteca ainda não tem itens em {rotuloBibliotecaAtiva}.
               </div>
             ) : (
-              <div style={profileLibraryListStyle}>
-                {itensBibliotecaAtivos.map((item) => {
-                  const obraHref =
-                    item.obra.link ||
-                    `/obra/${item.obra.slug || criarSlugBase(item.obra.titulo)}`;
-                  const capituloHref = item.capitulo
-                    ? criarHrefLeituraCapituloPerfilAutor(
-                        item.obra,
-                        item.capitulo,
-                        item.numeroCapitulo || 1,
-                      )
-                    : obraHref;
-                  const metadadosObra = [
-                    item.obra.formato,
-                    formatarGeneroPerfilAutor(item.obra.genero),
-                    item.obra.tags[0],
-                  ]
-                    .filter((texto) => Boolean(texto && texto !== "sem tags"))
-                    .join(" • ");
-                  const capituloSalvo = Boolean(item.capitulo?.salvo);
-                  const capituloLido = Boolean(item.capitulo?.lido);
-                  const obraFavorita = colecaoTemObraPerfilBiblioteca(obrasFavoritas, item.obra);
-                  const obraConcluida = colecaoTemObraPerfilBiblioteca(obrasConcluidas, item.obra);
-                  const rotuloEstadoBiblioteca =
-                    abaBibliotecaPerfil === "quero-ler"
-                      ? "Quero ler"
-                      : abaBibliotecaPerfil === "lendo-agora"
-                        ? "Lendo"
-                        : abaBibliotecaPerfil === "favoritas"
-                          ? "Favorita"
-                          : abaBibliotecaPerfil === "concluidas"
-                            ? "Concluída"
-                            : "Histórico";
-
-                  return (
-                    <article key={item.chave} style={profileLibraryCardStyle}>
-                      <div
-                        style={
-                          isDesktop
-                            ? desktopProfileLibraryBookActionGridStyle
-                            : profileLibraryBookActionGridStyle
-                        }
-                      >
-                        <Link
-                          href={obraHref}
-                          style={criarCapaBibliotecaPerfilStyle(
-                            item.obra.capa,
-                            isDesktop,
-                          )}
-                          aria-label={`Abrir ${item.obra.titulo}`}
-                        >
-                        </Link>
-
-                        <div
-                          style={
-                            isDesktop
-                              ? desktopProfileLibraryBookInfoActionGridStyle
-                              : profileLibraryBookInfoActionGridStyle
-                          }
-                        >
-                          <div style={profileLibraryBadgesRowStyle}>
-                            <span style={profileLibraryChapterBadgeStyle}>
-                              {item.capitulo
-                                ? `CAPÍTULO ${item.numeroCapitulo || 1}`
-                                : "OBRA"}
-                            </span>
-
-                            <span style={profileLibraryStatusActiveStyle}>
-                              ✓ {rotuloEstadoBiblioteca}
-                            </span>
-
-                            {capituloSalvo && (
-                              <span style={profileLibraryStatusActiveStyle}>
-                                ✓ Salvo
-                              </span>
-                            )}
-
-                            {capituloLido && (
-                              <span style={profileLibraryStatusActiveStyle}>
-                                ✓ Lido
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 style={profileLibraryTitleStyle}>
-                            {item.obra.titulo}
-                          </h3>
-
-                          <p style={profileLibraryMetaStyle}>
-                            {item.capitulo ? `${item.capitulo.titulo} • ` : ""}
-                            {formatarGeneroPerfilAutor(item.obra.genero)} •{" "}
-                            {metadadosObra || "História Original"}
-                          </p>
-
-                          <Link
-                            href={criarPerfilAutorHref(item.obra.autor, item.obra.autorId)}
-                            style={profileLibraryAuthorStyle}
-                          >
-                            Por {item.obra.autor}
-                          </Link>
-                        </div>
-
-                        <Link href={capituloHref} style={profileLibraryReadButtonStyle}>
-                          Ler capítulo
-                        </Link>
-
-                        <Link href={obraHref} style={profileLibraryViewButtonStyle}>
-                          Ver obra
-                        </Link>
-                      </div>
-
-                      <div style={profileLibrarySecondaryActionsStyle}>
-                        <button
-                          type="button"
-                          onClick={() => void alternarFavoritoObra(item.obra.id)}
-                          style={
-                            obraFavorita
-                              ? profileLibraryListButtonActiveStyle
-                              : profileLibraryListButtonStyle
-                          }
-                        >
-                          {obraFavorita ? "Favorita" : "Favoritar"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => void alternarConcluidoObra(item.obra.id)}
-                          style={
-                            obraConcluida
-                              ? profileLibraryDoneButtonActiveStyle
-                              : profileLibraryDoneButtonStyle
-                          }
-                        >
-                          {obraConcluida ? "Concluída" : "Concluir"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => void removerItemBibliotecaPerfil(item)}
-                          style={profileLibraryRemoveButtonStyle}
-                        >
-                          {abaBibliotecaPerfil === "lendo-agora"
-                            ? "Parar leitura"
-                            : abaBibliotecaPerfil === "historico"
-                              ? "Limpar histórico"
-                              : "Remover"}
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
+              <div
+                style={
+                  isDesktop
+                    ? desktopProfileWorksGridStyle
+                    : profileWorksGridStyle
+                }
+              >
+                {itensBibliotecaAtivos.map((item) =>
+                  renderizarItemBibliotecaPerfil(item),
+                )}
               </div>
             )}
           </section>
@@ -7225,7 +7550,7 @@ export default function PerfilAutorPage() {
                   </span>
                   <span style={profileAboutRowStyle}>
                     concluídas por leitores
-                    <strong>{obrasConcluidasPerfil}</strong>
+                    <strong>{obrasConcluidasPerfilTotal}</strong>
                   </span>
                   {totalObrasSemCapitulosPerfil > 0 && (
                     <span style={profileAboutRowStyle}>
@@ -7245,8 +7570,8 @@ export default function PerfilAutorPage() {
               <p style={profileWorksSummaryStyle}>
                 {obrasDoPerfilFiltradas.length}{" "}
                 {obrasDoPerfilFiltradas.length === 1 ? "obra" : "obras"} •{" "}
-                {obrasFavoritasPerfil} na lista • {obrasConcluidasPerfil}{" "}
-                {obrasConcluidasPerfil === 1 ? "concluída" : "concluídas"}
+                {obrasFavoritasPerfilTotal} na lista • {obrasConcluidasPerfilTotal}{" "}
+                {obrasConcluidasPerfilTotal === 1 ? "concluída" : "concluídas"}
               </p>
 
               <button
@@ -7353,6 +7678,9 @@ export default function PerfilAutorPage() {
                   const totalCurtidas = obra.capitulos.filter(
                     (capitulo) => capitulo.curtiu,
                   ).length;
+                  const totalComentarios = obra.capitulos.filter(
+                    (capitulo) => capitulo.comentario.trim(),
+                  ).length;
                   const visualizacoesObra = compactarNumeroPerfilAutor(
                     obra.visualizacoes,
                   );
@@ -7387,17 +7715,19 @@ export default function PerfilAutorPage() {
                               {obra.titulo}
                             </strong>
 
-                            <span style={profileWorkCoverMetaStyle}>
-                              {obra.capitulos.length}{" "}
-                              {obra.capitulos.length === 1 ? "cap" : "caps"}
-                              <span style={profileWorkHeartMetaStyle}>
-                                {" "}
-                                <span style={profileWorkHeartIconMetaStyle}>♥</span>{" "}
+                            <span style={diaryCardCoverMetaStyle}>
+                              <span>
+                                {obra.capitulos.length}{" "}
+                                {obra.capitulos.length === 1 ? "cap" : "caps"}
+                              </span>
+                              <span>👁 {visualizacoesObra}</span>
+                              <span>
+                                <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
                                 {totalCurtidas}
                               </span>
-                              <span style={profileWorkViewsMetaStyle}>
-                                {" "}
-                                👁 {visualizacoesObra}
+                              <span>
+                                <span style={diaryCardCommentMetaStyle}>💬</span>{" "}
+                                {totalComentarios}
                               </span>
                             </span>
                           </div>
@@ -7555,6 +7885,165 @@ export default function PerfilAutorPage() {
                     <button
                       type="button"
                       onClick={() => void compartilharObraPerfilAutor(obra)}
+                      style={workActionSheetItemStyle}
+                    >
+                      Compartilhar
+                    </button>
+                  </div>
+                </section>
+              </div>
+            );
+          })()}
+
+        {bibliotecaMenuAberto &&
+          (() => {
+            const item = bibliotecaMenuAberto;
+            const obra = item.obra;
+            const obraHref =
+              obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+            const capituloHref = item.capitulo
+              ? criarHrefLeituraCapituloPerfilAutor(
+                  obra,
+                  item.capitulo,
+                  item.numeroCapitulo || 1,
+                )
+              : obraHref;
+            const obraFavorita = colecaoTemObraPerfilBiblioteca(
+              obrasFavoritas,
+              obra,
+            );
+            const obraConcluida = colecaoTemObraPerfilBiblioteca(
+              obrasConcluidas,
+              obra,
+            );
+            const obraNoQueroLer = colecaoTemObraPerfilBiblioteca(
+              obrasSeguidasBiblioteca,
+              obra,
+            );
+            const totalCapitulos = obra.capitulos.length;
+            const progresso = Math.max(
+              0,
+              Math.min(100, Math.round(obra.progressoLeitura || 0)),
+            );
+            const metaSheet = `${
+              item.tipoDiario === "lendo"
+                ? "Lendo"
+                : item.tipoDiario === "favorita"
+                  ? "Favorita"
+                  : item.tipoDiario === "concluida"
+                    ? "Concluída"
+                    : item.tipoDiario === "quero_ler"
+                      ? "Quero ler"
+                      : "Biblioteca"
+            } • ${
+              item.capitulo
+                ? `Capítulo ${item.numeroCapitulo || 1} de ${totalCapitulos || 1}`
+                : totalCapitulos > 0
+                  ? `${totalCapitulos} ${totalCapitulos === 1 ? "capítulo" : "capítulos"}`
+                  : "Obra"
+            } • ${progresso}% concluído`;
+
+            return (
+              <div
+                style={workActionSheetOverlayStyle}
+                role="presentation"
+                onClick={() => setBibliotecaMenuAbertoChave("")}
+              >
+                <section
+                  style={workActionSheetStyle}
+                  role="dialog"
+                  aria-label={`Ações da Biblioteca ${obra.titulo}`}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div style={workActionSheetHandleStyle} aria-hidden="true" />
+
+                  <div style={workActionSheetHeaderStyle}>
+                    <div style={workActionSheetTextBlockStyle}>
+                      <strong style={workActionSheetTitleStyle}>
+                        {obra.titulo}
+                      </strong>
+                      <span style={workActionSheetMetaStyle}>{metaSheet}</span>
+                    </div>
+                  </div>
+
+                  <div style={workActionSheetActionsStyle}>
+                    <Link
+                      href={capituloHref}
+                      onClick={() => setBibliotecaMenuAbertoChave("")}
+                      style={workActionSheetItemStyle}
+                    >
+                      Ler capítulo
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBibliotecaMenuAbertoChave("");
+                        void alternarObraSeguindoBibliotecaPerfil(
+                          obra,
+                          !obraNoQueroLer,
+                        );
+                      }}
+                      style={
+                        obraNoQueroLer
+                          ? workActionSheetItemActiveStyle
+                          : workActionSheetItemStyle
+                      }
+                    >
+                      {obraNoQueroLer ? "Remover do Quero ler" : "Quero ler"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBibliotecaMenuAbertoChave("");
+                        void alternarFavoritoObra(obra.id);
+                      }}
+                      style={
+                        obraFavorita
+                          ? workActionSheetItemActiveStyle
+                          : workActionSheetItemStyle
+                      }
+                    >
+                      {obraFavorita ? "Remover favorita" : "Favoritar"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBibliotecaMenuAbertoChave("");
+                        void alternarConcluidoObra(obra.id);
+                      }}
+                      style={
+                        obraConcluida
+                          ? workActionSheetItemActiveStyle
+                          : workActionSheetItemStyle
+                      }
+                    >
+                      {obraConcluida ? "Marcar como não concluída" : "Concluir"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBibliotecaMenuAbertoChave("");
+                        void removerItemBibliotecaPerfil(item);
+                      }}
+                      style={workActionSheetItemStyle}
+                    >
+                      {abaBibliotecaPerfil === "lendo-agora"
+                        ? "Parar leitura"
+                        : abaBibliotecaPerfil === "historico"
+                          ? "Limpar histórico"
+                          : "Remover"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBibliotecaMenuAbertoChave("");
+                        void compartilharObraPerfilAutor(obra);
+                      }}
                       style={workActionSheetItemStyle}
                     >
                       Compartilhar
@@ -9042,9 +9531,9 @@ const profileNameInputStyle: CSSProperties = {
   width: "100%",
   minHeight: "38px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-input-bg, #04000A)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   padding: "0 12px",
   outline: "none",
   fontSize: "12px",
@@ -9073,9 +9562,9 @@ const avatarSmallButtonStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "0 9px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   fontSize: "9px",
   fontWeight: 900,
   cursor: "pointer",
@@ -9088,9 +9577,6 @@ const avatarSmallButtonStyle: CSSProperties = {
 
 const avatarRemoveButtonStyle: CSSProperties = {
   ...avatarSmallButtonStyle,
-  border: "1px solid rgba(239,68,68,0.22)",
-  background: "rgba(239,68,68,0.12)",
-  color: "#FCA5A5",
 };
 
 const avatarErrorStyle: CSSProperties = {
@@ -9119,9 +9605,9 @@ const bioTextareaStyle: CSSProperties = {
   minHeight: "64px",
   resize: "vertical",
   borderRadius: "16px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-input-bg, #04000A)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   padding: "10px 11px",
   outline: "none",
   fontSize: "11px",
@@ -9135,7 +9621,7 @@ const bioTextareaStyle: CSSProperties = {
 };
 
 const bioCounterStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 900,
   textAlign: "right",
@@ -9813,9 +10299,9 @@ const profileAboutTextareaStyle: CSSProperties = {
   minHeight: "104px",
   resize: "vertical",
   borderRadius: "16px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-input-bg, #04000A)",
-  color: "var(--historietas-input-text, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   padding: "10px 11px",
   outline: "none",
   fontSize: "11px",
@@ -10758,6 +11244,11 @@ const diaryCardStarMetaStyle: CSSProperties = {
   fontWeight: 950,
 };
 
+const diaryCardCommentMetaStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.92)",
+  fontWeight: 950,
+};
+
 const profileWorkSmallActionHintStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
@@ -11342,9 +11833,6 @@ const desktopAvatarSmallButtonStyle: CSSProperties = {
 
 const desktopAvatarRemoveButtonStyle: CSSProperties = {
   ...desktopAvatarSmallButtonStyle,
-  border: "1px solid rgba(239,68,68,0.22)",
-  background: "rgba(239,68,68,0.12)",
-  color: "#FCA5A5",
 };
 
 const desktopBioTextareaStyle: CSSProperties = {
