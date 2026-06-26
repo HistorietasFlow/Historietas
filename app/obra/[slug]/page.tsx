@@ -561,7 +561,7 @@ function criarResumoCapitulo(texto: string) {
   const textoLimpo = texto.trim().replace(/\s+/g, " ");
 
   if (!textoLimpo) {
-    return "Capítulo publicado na obra.";
+    return "";
   }
 
   return textoLimpo.length > 120 ? `${textoLimpo.slice(0, 120)}...` : textoLimpo;
@@ -884,9 +884,9 @@ function criarCoverArtStyle(capa: string): CSSProperties {
 
   return {
     ...coverArtStyle,
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.22) 100%), url(${capa})`,
+    backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
-    backgroundPosition: "center 24%",
+    backgroundPosition: "center top",
   };
 }
 
@@ -897,9 +897,9 @@ function criarDesktopCoverArtStyle(capa: string): CSSProperties {
 
   return {
     ...desktopCoverArtStyle,
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.24) 100%), url(${capa})`,
+    backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
-    backgroundPosition: "center 24%",
+    backgroundPosition: "center",
   };
 }
 
@@ -1526,6 +1526,7 @@ export default function ObraDinamicaPage() {
     useState<PerfilPublicoObra | null>(null);
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
+  const [acoesObraAbertas, setAcoesObraAbertas] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -2544,9 +2545,7 @@ export default function ObraDinamicaPage() {
         proximaCurtidaAtiva
       );
 
-      setMensagemAcao(
-        proximaCurtidaAtiva ? "Obra curtida." : "Curtida removida."
-      );
+      setMensagemAcao("");
     } catch {
       setMetricasObra((metricasAtuais) => ({
         ...metricasAtuais,
@@ -2816,6 +2815,12 @@ export default function ObraDinamicaPage() {
     document.body.removeChild(campoTemporario);
   }
 
+  const hrefPrincipalObra = obra
+    ? capitulosDaObra.find((capitulo) => capitulo.disponivel)?.href ||
+      obra.link ||
+      `/obra/${obra.slug}`
+    : "/explorar";
+
   const resumoAvaliacaoCabecalho = (
     <div style={ratingSummaryStyle}>
       <strong style={ratingNumberStyle}>
@@ -2877,8 +2882,7 @@ export default function ObraDinamicaPage() {
           <header style={isDesktop ? desktopTopStyle : topStyle}>
             <Link href="/" style={logoStyle} aria-label="Historietas">
               <span style={logoMarkStyle}>H</span>
-              <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
-            </Link>
+              </Link>
 
             {isDesktop ? (
               <Link
@@ -2940,177 +2944,273 @@ export default function ObraDinamicaPage() {
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Historietas">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
-          </Link>
-
-          {isDesktop ? (
-            <div style={desktopHeaderRightStyle}>
-              <Link
-                href="/notificacoes"
-                style={desktopNotificationButtonStyle}
-                aria-label={
-                  notificacoesNaoLidas > 0
-                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                    : "Notificações"
-                }
-              >
-                N
-
-                {notificacoesNaoLidas > 0 ? (
-                  <span style={desktopNotificationBadgeStyle}>
-                    {notificacoesNaoLidas > 99
-                      ? "99+"
-                      : notificacoesNaoLidas}
-                  </span>
-                ) : null}
-              </Link>
-
-              {resumoAvaliacaoCabecalho}
-            </div>
-          ) : (
-            resumoAvaliacaoCabecalho
-          )}
-        </header>
-
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
+          <header
+            style={isDesktop ? desktopHeroTopOverlayStyle : heroTopOverlayStyle}
+          >
+            <Link href="/" style={heroLogoStyle} aria-label="Historietas">
+              <span style={logoMarkStyle}>H</span>
+            </Link>
+
+            {isDesktop ? (
+              <div style={desktopHeaderRightStyle}>
+                <Link
+                  href="/notificacoes"
+                  style={desktopNotificationButtonStyle}
+                  aria-label={
+                    notificacoesNaoLidas > 0
+                      ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                      : "Notificações"
+                  }
+                >
+                  N
+
+                  {notificacoesNaoLidas > 0 ? (
+                    <span style={desktopNotificationBadgeStyle}>
+                      {notificacoesNaoLidas > 99
+                        ? "99+"
+                        : notificacoesNaoLidas}
+                    </span>
+                  ) : null}
+                </Link>
+
+                {resumoAvaliacaoCabecalho}
+              </div>
+            ) : (
+              resumoAvaliacaoCabecalho
+            )}
+          </header>
+
           <div style={heroGlowStyle} />
 
           <div style={isDesktop ? desktopHeroContentStyle : heroContentStyle}>
-            <div style={isDesktop ? criarDesktopCoverArtStyle(obra.capa) : criarCoverArtStyle(obra.capa)} aria-hidden="true">
-              {!obra.capa && (
-                <strong style={coverTitleStyle}>
-                  {obra.titulo
-                    .split(" ")
-                    .map((parte) => parte[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase()}
-                </strong>
+            <Link
+              href={hrefPrincipalObra}
+              style={isDesktop ? desktopHeroCoverLinkStyle : heroCoverLinkStyle}
+              aria-label={`Abrir ${obra.titulo}`}
+            >
+              <div
+                style={
+                  isDesktop
+                    ? criarDesktopCoverArtStyle(obra.capa)
+                    : criarCoverArtStyle(obra.capa)
+                }
+                aria-hidden="true"
+              >
+                {!obra.capa && (
+                  <strong style={coverTitleStyle}>
+                    {obra.titulo
+                      .split(" ")
+                      .map((parte) => parte[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </strong>
+                )}
+              </div>
+            </Link>
+
+            <div
+              style={
+                isDesktop
+                  ? desktopHeroOverlayContentStyle
+                  : heroOverlayContentStyle
+              }
+            >
+              <h1
+                className="historietas-theme-title"
+                style={isDesktop ? desktopTitleStyle : titleStyle}
+              >
+                {obra.titulo}
+              </h1>
+
+              <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
+                {obra.sinopse}
+              </p>
+
+              <div
+                style={
+                  isDesktop ? desktopHeroBottomMetaBarStyle : heroBottomMetaBarStyle
+                }
+              >
+                <Link
+                  href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
+                  style={heroBottomAuthorLinkStyle}
+                  aria-label={`Abrir perfil do autor ${autorObraNome}`}
+                  title={perfilAutorObra?.bio || undefined}
+                >
+                  Por {autorObraNome}
+                </Link>
+
+                <div style={heroBottomMetricsStyle}>
+                  <span style={heroBottomMetricStyle}>
+                    📚 {capitulosDaObra.length}
+                  </span>
+                  <span style={heroBottomMetricStyle}>
+                    👁 {formatarNumeroCompacto(metricasObra.visualizacoes)}
+                  </span>
+                  <span style={heroBottomLikeMetricStyle}>
+                    <span style={metricHeartIconStyle}>♥</span>{" "}
+                    <span style={metricWhiteNumberStyle}>
+                      {formatarNumeroCompacto(metricasObra.curtidas)}
+                    </span>
+                  </span>
+                  <span style={heroBottomMetricStyle}>
+                    💬 {formatarNumeroCompacto(metricasObra.comentarios)}
+                  </span>
+                </div>
+              </div>
+
+              <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
+                <button
+                  type="button"
+                  onClick={alternarSeguirObra}
+                  style={obraSeguida ? followedButtonStyle : secondaryButtonStyle}
+                >
+                  {obraSeguida ? "✓ Seguindo" : "Seguir obra"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAcoesObraAbertas((menuAberto) => !menuAberto)
+                  }
+                  style={obraAddButtonStyle}
+                  aria-label="Abrir ações da obra"
+                  aria-expanded={acoesObraAbertas}
+                  aria-haspopup="dialog"
+                >
+                  +
+                </button>
+              </div>
+
+              {mensagemAcao && (
+                <span style={actionMessageStyle}>{mensagemAcao}</span>
               )}
-
             </div>
-
-            <div style={isDesktop ? desktopBadgeRowStyle : badgeRowStyle}>
-              <span style={infoBadgeStyle}>{generoObraFormatado}</span>
-              <span style={infoBadgeStyle}>{obra.formato}</span>
-              <span style={ratingBadgeStyle}>{obra.classificacaoIndicativa}</span>
-              <span style={statusBadgeStyle}>
-                {obraDisponivel ? obra.status : "Em breve"}
-              </span>
-
-              {obra.tags.slice(0, 1).map((tag, index) => (
-                <span key={`${obra.id}-public-tag-${tag}-${index}`} style={tagBadgeStyle}>
-                  {tag}
-                </span>
-              ))}
-
-              {obra.arquivoObra && (
-                <span style={fileAttachedBadgeStyle}>Arquivo anexado</span>
-              )}
-            </div>
-
-            <h1 className="historietas-theme-title" style={isDesktop ? desktopTitleStyle : titleStyle}>{obra.titulo}</h1>
-
-            <div style={isDesktop ? desktopInfoRowStyle : infoRowStyle}>
-              <Link
-                href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
-                style={authorInlineStyle}
-                aria-label={`Abrir perfil do autor ${autorObraNome}`}
-                title={perfilAutorObra?.bio || undefined}
-              >
-                Por {autorObraNome}
-              </Link>
-            </div>
-
-            <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>{obra.sinopse}</p>
-
-            <div style={isDesktop ? desktopHeroActionsStyle : heroActionsStyle}>
-              <button
-                type="button"
-                onClick={alternarSeguirObra}
-                style={obraSeguida ? followedButtonStyle : secondaryButtonStyle}
-              >
-                {obraSeguida ? "✓ Seguindo" : "Seguir obra"}
-              </button>
-
-              <button
-                type="button"
-                onClick={alternarFavoritoObra}
-                style={obraFavoritada ? followedButtonStyle : secondaryButtonStyle}
-              >
-                {obraFavoritada ? "✓ Na lista" : "Salvar"}
-              </button>
-
-              <button
-                type="button"
-                onClick={alternarConcluirObra}
-                style={obraConcluida ? followedButtonStyle : copyLinkButtonStyle}
-              >
-                {obraConcluida ? "✓ Concluída" : "Concluir"}
-              </button>
-
-              <button
-                type="button"
-                onClick={copiarLinkAtual}
-                style={linkCopiado ? copiedLinkButtonStyle : copyLinkButtonStyle}
-              >
-                {linkCopiado ? "Link copiado!" : "Copiar link"}
-              </button>
-
-            </div>
-
-            {mensagemAcao && <span style={actionMessageStyle}>{mensagemAcao}</span>}
-          </div>
-        </section>
-
-        <section style={isDesktop ? desktopCommunityBoxStyle : communityBoxStyle}>
-          <div style={communityHeaderStyle}>
-            <h2 style={communityTitleStyle}>COMUNIDADE</h2>
-
           </div>
 
-          <div style={communityGridStyle}>
-            <CommunityItem
-              numero={formatarNumeroCompacto(metricasComunidadeObra.teorias)}
-              rotulo="teorias"
-              href={criarLinkComunidadeObra(obra.titulo, "Teoria")}
-            />
-            <CommunityItem
-              numero={formatarNumeroCompacto(metricasComunidadeObra.reviews)}
-              rotulo="reviews"
-              href={criarLinkComunidadeObra(obra.titulo, "Review")}
-            />
-            <CommunityItem
-              numero={formatarNumeroCompacto(metricasComunidadeObra.interacoes)}
-              rotulo="posts"
-              href={criarLinkComunidadeObra(obra.titulo)}
-            />
-          </div>
         </section>
 
-        <section style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
-          <MetricCard
-            numero={formatarNumeroCompacto(metricasObra.visualizacoes)}
-            rotulo="visualizações"
-          />
-          <MetricCard
-            numero={formatarNumeroCompacto(metricasObra.curtidas)}
-            rotulo="curtidas"
-            ativo={metricasObra.curtidaAtiva}
-            onClick={alternarCurtidaObra}
-          />
-          <MetricCard
-            numero={formatarNumeroCompacto(metricasObra.comentarios)}
-            rotulo="comentários"
-          />
-          <MetricCard
-            numero={formatarNumeroCompacto(metricasObra.seguidores)}
-            rotulo="seguidores"
-          />
-        </section>
+        {acoesObraAbertas && (
+          <div
+            style={obraActionSheetOverlayStyle}
+            role="presentation"
+            onClick={() => setAcoesObraAbertas(false)}
+          >
+            <section
+              style={isDesktop ? desktopObraActionsMenuStyle : obraActionsMenuStyle}
+              role="dialog"
+              aria-label={`Ações da obra ${obra.titulo}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div style={obraActionSheetHandleStyle} aria-hidden="true" />
+
+              <div style={obraMenuHeaderStyle}>
+                <strong style={obraMenuTitleStyle}>{obra.titulo}</strong>
+
+                <div style={obraMenuAuthorMetricsRowStyle}>
+                  <Link
+                    href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
+                    style={obraMenuAuthorLinkStyle}
+                    aria-label={`Abrir perfil do autor ${autorObraNome}`}
+                    title={perfilAutorObra?.bio || undefined}
+                  >
+                    Por {autorObraNome}
+                  </Link>
+
+                  <div style={obraMenuMetricsStyle}>
+                    <span style={obraMenuMetricStyle}>
+                      📚 {capitulosDaObra.length}
+                    </span>
+                    <span style={obraMenuMetricStyle}>
+                      👁 {formatarNumeroCompacto(metricasObra.visualizacoes)}
+                    </span>
+                    <span style={obraMenuLikeMetricStyle}>
+                      <span style={metricHeartIconStyle}>♥</span>{" "}
+                      <span style={metricWhiteNumberStyle}>
+                        {formatarNumeroCompacto(metricasObra.curtidas)}
+                      </span>
+                    </span>
+                    <span style={obraMenuMetricStyle}>
+                      💬 {formatarNumeroCompacto(metricasObra.comentarios)}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={obraMenuTagsStyle}>
+                  {[
+                    obra.formato,
+                    generoObraFormatado,
+                    ...obra.tags,
+                    obra.classificacaoIndicativa,
+                    obra.arquivoObra ? "Arquivo anexado" : "",
+                  ]
+                    .filter((tag) => tag.trim())
+                    .slice(0, 10)
+                    .map((tag, index) => (
+                      <span
+                        key={`${obra.id}-menu-tag-${tag}-${index}`}
+                        style={obraMenuTagStyle}
+                      >
+                        {index > 0 ? (
+                          <span style={obraMenuTagSeparatorStyle}>•</span>
+                        ) : null}
+                        {tag}
+                      </span>
+                    ))}
+                </div>
+              </div>
+
+              <div style={obraMenuActionsStyle}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAcoesObraAbertas(false);
+                    void alternarFavoritoObra();
+                  }}
+                  style={
+                    obraFavoritada
+                      ? obraMenuItemActiveStyle
+                      : obraMenuItemButtonStyle
+                  }
+                >
+                  {obraFavoritada ? "Na lista" : "Salvar"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAcoesObraAbertas(false);
+                    void alternarConcluirObra();
+                  }}
+                  style={
+                    obraConcluida
+                      ? obraMenuItemActiveStyle
+                      : obraMenuItemButtonStyle
+                  }
+                >
+                  {obraConcluida ? "Concluída" : "Concluir"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAcoesObraAbertas(false);
+                    void copiarLinkAtual();
+                  }}
+                  style={
+                    linkCopiado
+                      ? obraMenuItemCopiedStyle
+                      : obraMenuItemButtonStyle
+                  }
+                >
+                  {linkCopiado ? "Link copiado!" : "Copiar link"}
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
 
         <section style={isDesktop ? desktopWorkRatingBoxStyle : workRatingBoxStyle}>
           <div style={workRatingHeaderStyle}>
@@ -3160,6 +3260,52 @@ export default function ObraDinamicaPage() {
           </div>
         </section>
 
+        <section style={isDesktop ? desktopCommunityBoxStyle : communityBoxStyle}>
+          <div style={communityHeaderStyle}>
+            <h2 style={communityTitleStyle}>COMUNIDADE</h2>
+
+          </div>
+
+          <div style={communityGridStyle}>
+            <CommunityItem
+              numero={formatarNumeroCompacto(metricasComunidadeObra.teorias)}
+              rotulo="teorias"
+              href={criarLinkComunidadeObra(obra.titulo, "Teoria")}
+            />
+            <CommunityItem
+              numero={formatarNumeroCompacto(metricasComunidadeObra.reviews)}
+              rotulo="reviews"
+              href={criarLinkComunidadeObra(obra.titulo, "Review")}
+            />
+            <CommunityItem
+              numero={formatarNumeroCompacto(metricasComunidadeObra.interacoes)}
+              rotulo="posts"
+              href={criarLinkComunidadeObra(obra.titulo)}
+            />
+          </div>
+        </section>
+
+        <section style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
+          <MetricCard
+            numero={formatarNumeroCompacto(metricasObra.visualizacoes)}
+            rotulo="visualizações"
+          />
+          <MetricCard
+            numero={formatarNumeroCompacto(metricasObra.curtidas)}
+            rotulo="curtidas"
+            ativo={metricasObra.curtidaAtiva}
+            onClick={alternarCurtidaObra}
+          />
+          <MetricCard
+            numero={formatarNumeroCompacto(metricasObra.comentarios)}
+            rotulo="comentários"
+          />
+          <MetricCard
+            numero={formatarNumeroCompacto(metricasObra.seguidores)}
+            rotulo="seguidores"
+          />
+        </section>
+
         <section id="capitulos" style={chaptersSectionStyle}>
           <div style={sectionHeaderStyle}>
             <h2 style={accentSectionTitleStyle}>CAPÍTULOS</h2>
@@ -3177,23 +3323,11 @@ export default function ObraDinamicaPage() {
                 <div style={chapterNumberStyle}>{capitulo.numero}</div>
 
                 <div style={chapterContentStyle}>
-                  <div style={chapterTopLineStyle}>
-                    <span style={chapterOrderBadgeStyle}>
-                      Capítulo {index + 1}
-                    </span>
-
-                    <span style={chapterStatusBadgeStyle}>
-                      {obraDisponivel ? "Disponível" : "Em breve"}
-                    </span>
-                  </div>
-
                   <h3 style={chapterTitleStyle}>{capitulo.titulo}</h3>
 
-                  <p style={chapterMetaStyle}>
-                    {obraDisponivel
-                      ? capitulo.descricao
-                      : "Capítulo previsto para lançamento."}
-                  </p>
+                  {capitulo.descricao ? (
+                    <p style={chapterMetaStyle}>{capitulo.descricao}</p>
+                  ) : null}
                 </div>
 
                 {obraDisponivel && capitulo.disponivel ? (
@@ -3379,6 +3513,26 @@ const safeTextStyle: CSSProperties = {
   wordBreak: "break-word",
 };
 
+const heroTitleOutlineStyle: CSSProperties = {
+  textShadow:
+    "-1px -1px 0 rgba(0,0,0,0.86), 1px -1px 0 rgba(0,0,0,0.86), -1px 1px 0 rgba(0,0,0,0.86), 1px 1px 0 rgba(0,0,0,0.86)",
+};
+
+const heroTextOutlineStyle: CSSProperties = {
+  textShadow:
+    "-1px -1px 0 rgba(0,0,0,0.78), 1px -1px 0 rgba(0,0,0,0.78), -1px 1px 0 rgba(0,0,0,0.78), 1px 1px 0 rgba(0,0,0,0.78)",
+};
+
+const heroSmallTextOutlineStyle: CSSProperties = {
+  textShadow:
+    "-1px -1px 0 rgba(0,0,0,0.74), 1px -1px 0 rgba(0,0,0,0.74), -1px 1px 0 rgba(0,0,0,0.74), 1px 1px 0 rgba(0,0,0,0.74)",
+};
+
+const heroIconOutlineStyle: CSSProperties = {
+  textShadow:
+    "-1px -1px 0 rgba(0,0,0,0.72), 1px -1px 0 rgba(0,0,0,0.72), -1px 1px 0 rgba(0,0,0,0.72), 1px 1px 0 rgba(0,0,0,0.72)",
+};
+
 const mobileTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
   top: 0,
@@ -3421,7 +3575,7 @@ const containerStyle: CSSProperties = {
   width: "min(860px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 calc(52px + env(safe-area-inset-bottom))",
+  padding: "0 0 calc(52px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -3447,6 +3601,30 @@ const desktopTopStyle: CSSProperties = {
   ...topStyle,
   flexWrap: "nowrap",
   marginBottom: "14px",
+};
+
+const heroTopOverlayStyle: CSSProperties = {
+  position: "absolute",
+  top: "16px",
+  left: "18px",
+  right: "18px",
+  zIndex: 4,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  minWidth: 0,
+  maxWidth: "calc(100vw - 36px)",
+  marginBottom: 0,
+  pointerEvents: "auto",
+};
+
+const desktopHeroTopOverlayStyle: CSSProperties = {
+  ...heroTopOverlayStyle,
+  top: "22px",
+  left: "24px",
+  right: "24px",
+  maxWidth: "calc(100% - 48px)",
 };
 
 const desktopHeaderRightStyle: CSSProperties = {
@@ -3509,10 +3687,15 @@ const logoStyle: CSSProperties = {
   letterSpacing: 0,
   display: "flex",
   alignItems: "center",
-  gap: "4px",
+  gap: 0,
   minWidth: 0,
-  maxWidth: "min(100%, calc(100% - 96px))",
+  maxWidth: "fit-content",
   ...safeTextStyle,
+};
+
+const heroLogoStyle: CSSProperties = {
+  ...logoStyle,
+  transform: "translate(4px, -5px)",
 };
 
 const logoMarkStyle: CSSProperties = {
@@ -3522,14 +3705,15 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "rgba(4, 0, 10, 0.96)",
   color: "#FFFFFF",
   fontSize: "19px",
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
-  boxShadow: "none",
+  border: "1px solid rgba(124, 58, 237, 0.72)",
+  boxShadow:
+    "0 0 0 1px rgba(59, 7, 100, 0.48), 0 0 14px rgba(124, 58, 237, 0.22)",
 };
 
 const logoTextStyle: CSSProperties = {
@@ -3546,13 +3730,15 @@ const logoTextStyle: CSSProperties = {
 const heroStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
-  borderRadius: "22px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background:
-    "linear-gradient(135deg, #08030F 0%, #04000A 58%, #020006 100%)",
+  width: "100vw",
+  marginLeft: "calc(50% - 50vw)",
+  marginRight: "calc(50% - 50vw)",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   boxShadow: "none",
   minWidth: 0,
-  maxWidth: "100%",
+  maxWidth: "100vw",
   boxSizing: "border-box",
 };
 
@@ -3563,50 +3749,60 @@ const heroGlowStyle: CSSProperties = {
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  padding: "10px",
-  display: "grid",
-  gridTemplateColumns: "minmax(112px, 0.38fr) minmax(0, 1fr)",
-  gap: "6px 10px",
-  alignItems: "start",
+  minHeight: "min(460px, 68vh)",
+  display: "block",
+  padding: 0,
+  overflow: "hidden",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
+  borderBottomLeftRadius: "28px",
+  borderBottomRightRadius: "28px",
 };
 
 const coverArtStyle: CSSProperties = {
-  gridColumn: "1",
-  gridRow: "1 / span 5",
   width: "100%",
-  minHeight: "198px",
-  height: "198px",
-  alignSelf: "start",
-  borderRadius: "17px",
+  minHeight: "min(460px, 68vh)",
+  height: "100%",
+  borderRadius: "0 0 28px 28px",
   position: "relative",
   overflow: "hidden",
   backgroundImage: "linear-gradient(145deg, #08030F 0%, #04000A 58%, #020006 100%)",
   backgroundSize: "cover",
-  backgroundPosition: "center",
-  border: "1px solid rgba(255,255,255,0.08)",
+  backgroundPosition: "center top",
+  border: "none",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
-const coverTopBadgeStyle: CSSProperties = {
+const heroCoverLinkStyle: CSSProperties = {
   position: "absolute",
-  top: "8px",
-  left: "8px",
-  maxWidth: "calc(100% - 16px)",
-  padding: "5px 7px",
-  borderRadius: "999px",
-  background: "rgba(59, 7, 100, 0.78)",
-  color: "#FFFFFF",
-  fontSize: "8.8px",
-  fontWeight: 950,
-  lineHeight: 1.1,
+  inset: 0,
+  zIndex: 1,
+  display: "block",
+  color: "inherit",
+  textDecoration: "none",
+  minWidth: 0,
+  borderRadius: "0 0 28px 28px",
+  overflow: "hidden",
+};
+
+const heroOverlayContentStyle: CSSProperties = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: "0px",
+  zIndex: 2,
+  padding: "0 16px 4px",
+  display: "grid",
+  justifyItems: "center",
+  gap: "8px",
+  background: "transparent",
+  minWidth: 0,
+  boxSizing: "border-box",
   textAlign: "center",
-  ...safeTextStyle,
 };
 
 const coverTitleStyle: CSSProperties = {
@@ -3620,140 +3816,130 @@ const coverTitleStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.12em",
-  textShadow: "0 18px 38px rgba(0,0,0,0.42)",
+  ...heroTitleOutlineStyle,
   ...safeTextStyle,
-};
-
-const coverBottomBadgeStyle: CSSProperties = {
-  position: "absolute",
-  left: "8px",
-  right: "8px",
-  bottom: "8px",
-  padding: "7px 8px",
-  borderRadius: "14px",
-  background: "rgba(4, 0, 10, 0.82)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  display: "grid",
-  gap: "2px",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const badgeRowStyle: CSSProperties = {
-  gridColumn: "2",
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "5px",
-  minWidth: 0,
-  justifyContent: "flex-start",
-  alignItems: "center",
-};
-
-const infoBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "5px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "8.8px",
-  fontWeight: 950,
-  lineHeight: 1.1,
-  ...safeTextStyle,
-};
-
-const authorInlineStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  textDecoration: "none",
-  cursor: "pointer",
-  fontSize: "10.5px",
-  lineHeight: 1.15,
-  fontWeight: 950,
-  textAlign: "left",
-  ...safeTextStyle,
-};
-
-
-const statusBadgeStyle: CSSProperties = {
-  ...infoBadgeStyle,
-  background: "rgba(34, 197, 94, 0.14)",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
-  color: "#86EFAC",
-};
-
-const ratingBadgeStyle: CSSProperties = {
-  ...infoBadgeStyle,
-  background: "rgba(124, 58, 237, 0.14)",
-  border: "1px solid rgba(124, 58, 237, 0.26)",
-  color: "#DDD6FE",
-};
-
-const tagBadgeStyle: CSSProperties = {
-  ...infoBadgeStyle,
-  background: "rgba(124, 58, 237, 0.12)",
-  border: "1px solid rgba(124, 58, 237, 0.22)",
-  color: "#DDD6FE",
 };
 
 const titleStyle: CSSProperties = {
-  gridColumn: "2",
   margin: 0,
-  fontSize: "clamp(28px, 7.6vw, 42px)",
-  lineHeight: 0.98,
+  fontSize: "clamp(36px, 9.6vw, 58px)",
+  lineHeight: 0.94,
   fontWeight: 950,
-  letterSpacing: "-0.07em",
+  letterSpacing: "-0.085em",
   maxWidth: "100%",
-  textAlign: "left",
+  textAlign: "center",
   background: "none",
   WebkitBackgroundClip: "initial",
   backgroundClip: "initial",
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
+  textShadow:
+    "0 1px 0 rgba(0,0,0,0.34), 0 2px 12px rgba(0,0,0,0.34)",
+  transform: "translateY(6px)",
   ...safeTextStyle,
 };
 
 const descriptionStyle: CSSProperties = {
-  gridColumn: "2",
   margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11.2px",
-  lineHeight: 1.38,
-  fontWeight: 650,
-  maxWidth: "100%",
-  textAlign: "left",
-  display: "-webkit-box",
-  WebkitLineClamp: 3,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "15.4px",
+  lineHeight: 1.35,
+  fontWeight: 850,
+  maxWidth: "620px",
+  textAlign: "center",
+  display: "block",
+  overflow: "visible",
+  opacity: 1,
+  textShadow:
+    "0 1px 0 rgba(0,0,0,0.32), 0 2px 10px rgba(0,0,0,0.30)",
+  transform: "translateY(6px)",
   ...safeTextStyle,
 };
 
-const infoRowStyle: CSSProperties = {
-  gridColumn: "2",
+const heroActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) 50px",
+  gap: "12px",
+  marginTop: "10px",
+  minWidth: 0,
+  width: "100%",
+  maxWidth: "428px",
+};
+
+const metricHeartIconStyle: CSSProperties = {
+  color: "#FB7185",
+};
+
+const metricWhiteNumberStyle: CSSProperties = {
+  color: "#FFFFFF",
+};
+
+const metricStarIconStyle: CSSProperties = {
+  color: "#FBBF24",
+};
+
+const metricStarValueStyle: CSSProperties = {
+  color: "#FBBF24",
+};
+
+const heroBottomMetaBarStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 3,
+  width: "100%",
+  maxWidth: "380px",
+  marginTop: "6px",
+  padding: 0,
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   display: "flex",
-  flexWrap: "wrap",
-  justifyContent: "flex-start",
-  gap: "4px",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  minWidth: 0,
+  boxSizing: "border-box",
+  transform: "translateY(6px)",
+};
+
+const heroBottomAuthorLinkStyle: CSSProperties = {
+  minWidth: 0,
+  color: "rgba(255,255,255,0.95)",
+  textDecoration: "none",
+  fontSize: "14.1px",
+  lineHeight: 1.15,
+  fontWeight: 950,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28)",
+  ...safeTextStyle,
+};
+
+const heroBottomMetricsStyle: CSSProperties = {
+  flex: "0 0 auto",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "11px",
   minWidth: 0,
 };
 
-const heroActionsStyle: CSSProperties = {
-  gridColumn: "2",
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "5px",
-  marginTop: "2px",
-  minWidth: 0,
-  maxWidth: "100%",
+const heroBottomMetricStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "13.5px",
+  lineHeight: 1.15,
+  fontWeight: 950,
+  whiteSpace: "nowrap",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28)",
+  ...safeTextStyle,
 };
+
+const heroBottomLikeMetricStyle: CSSProperties = {
+  ...heroBottomMetricStyle,
+  color: "#FFFFFF",
+};
+
 
 const primaryButtonStyle: CSSProperties = {
   gridColumn: "1 / -1",
@@ -3793,13 +3979,13 @@ const primaryLinkButtonStyle: CSSProperties = {
 };
 
 const secondaryButtonStyle: CSSProperties = {
-  minHeight: "42px",
+  minHeight: "50px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-secondary, #7C3AED)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(0, 0, 0, 0.54)",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "11px",
+  fontSize: "14px",
   fontWeight: 900,
   cursor: "pointer",
   fontFamily: "inherit",
@@ -3807,7 +3993,7 @@ const secondaryButtonStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 8px",
+  padding: "0 22px",
   boxShadow: "none",
   boxSizing: "border-box",
   textShadow: "none",
@@ -3843,30 +4029,249 @@ const copyLinkButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const copiedLinkButtonStyle: CSSProperties = {
-  ...copyLinkButtonStyle,
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
-  color: "#86EFAC",
+const followedButtonStyle: CSSProperties = {
+  ...secondaryButtonStyle,
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(0, 0, 0, 0.54)",
+  color: "#FFFFFF",
   boxShadow: "none",
 };
 
-const followedButtonStyle: CSSProperties = {
-  ...secondaryButtonStyle,
-  border: "1px solid rgba(34, 197, 94, 0.28)",
-  background: "rgba(34, 197, 94, 0.14)",
-  color: "#86EFAC",
-  boxShadow: "none",
+const obraAddButtonStyle: CSSProperties = {
+  ...copyLinkButtonStyle,
+  width: "50px",
+  minHeight: "50px",
+  height: "50px",
+  padding: 0,
+  borderRadius: "999px",
+  background: "rgba(0, 0, 0, 0.54)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  color: "#FFFFFF",
+  fontSize: "26px",
+  lineHeight: 1,
+  fontWeight: 900,
+};
+
+const obraActionSheetOverlayStyle: CSSProperties = {
+  position: "fixed",
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  height: "100dvh",
+  zIndex: 9998,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  background: "rgba(0,0,0,0.68)",
+  padding: 0,
+  boxSizing: "border-box",
+  overscrollBehavior: "none",
+  touchAction: "none",
+};
+
+const obraActionSheetHandleStyle: CSSProperties = {
+  width: "72px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "rgba(244,244,245,0.62)",
+  justifySelf: "center",
+  margin: "0 auto 12px",
+};
+
+const obraMenuActionsStyle: CSSProperties = {
+  display: "grid",
+  gap: 0,
+  borderRadius: 0,
+  border: "none",
+  borderTop: "none",
+  background: "transparent",
+  overflow: "hidden",
+};
+
+
+const obraActionsMenuStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  width: "min(760px, calc(100% - 12px))",
+  maxHeight: "calc(100dvh - 18px)",
+  overflowX: "hidden",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+  borderRadius: "24px 24px 0 0",
+  background: "#15191C",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
+  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  display: "grid",
+  gap: 0,
+  boxSizing: "border-box",
+  touchAction: "none",
+  zIndex: 9999,
+};
+
+const obraMenuHeaderStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "stretch",
+  gap: "8px",
+  minWidth: 0,
+  padding: "0 24px 14px",
+  boxSizing: "border-box",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+};
+
+const obraMenuTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
+  textAlign: "center",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  maxWidth: "100%",
+  ...safeTextStyle,
+};
+
+const obraMenuAuthorMetricsRowStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+};
+
+const obraMenuAuthorLinkStyle: CSSProperties = {
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "12px",
+  lineHeight: 1.15,
+  fontWeight: 850,
+  ...safeTextStyle,
+};
+
+const obraMenuMetricsStyle: CSSProperties = {
+  flexShrink: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "8px",
+  color: "#FFFFFF",
+  fontSize: "11px",
+  lineHeight: 1.15,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+  ...safeTextStyle,
+};
+
+const obraMenuMetricStyle: CSSProperties = {
+  color: "#FFFFFF",
+};
+
+const obraMenuLikeMetricStyle: CSSProperties = {
+  ...obraMenuMetricStyle,
+  color: "#FFFFFF",
+};
+
+const obraMenuStarMetricStyle: CSSProperties = {
+  ...obraMenuMetricStyle,
+  color: "#FFFFFF",
+};
+
+const obraMenuTagsStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "nowrap",
+  justifyContent: "center",
+  gap: 0,
+  minWidth: 0,
+  maxWidth: "100%",
+  color: "#FFFFFF",
+  overflowX: "auto",
+  overflowY: "hidden",
+  whiteSpace: "nowrap",
+  scrollbarWidth: "none",
+};
+
+const obraMenuTagStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "none",
+  flex: "0 0 auto",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "10px",
+  fontWeight: 800,
+  lineHeight: 1.2,
+  whiteSpace: "nowrap",
+  ...safeTextStyle,
+};
+
+const obraMenuTagSeparatorStyle: CSSProperties = {
+  display: "inline-block",
+  margin: "0 5px",
+  color: "rgba(255,255,255,0.34)",
+};
+
+const obraMenuItemButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  minHeight: "52px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "16px",
+  border: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  borderRadius: 0,
+  background: "transparent",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  padding: "0 30px",
+  fontSize: "18px",
+  fontWeight: 650,
+  lineHeight: 1.15,
+  letterSpacing: "-0.035em",
+  fontFamily: "inherit",
+  textAlign: "left",
+  cursor: "pointer",
+  boxSizing: "border-box",
+  whiteSpace: "nowrap",
+};
+
+const obraMenuItemActiveStyle: CSSProperties = {
+  ...obraMenuItemButtonStyle,
+  fontWeight: 900,
+  background: "transparent",
+  color: "#FFFFFF",
+};
+
+const obraMenuItemCopiedStyle: CSSProperties = {
+  ...obraMenuItemButtonStyle,
+  fontWeight: 900,
+  background: "transparent",
+  color: "#FFFFFF",
 };
 
 const actionMessageStyle: CSSProperties = {
-  gridColumn: "2",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
-  lineHeight: 1.25,
-  fontWeight: 800,
-  textAlign: "left",
-  marginTop: 0,
+  gridColumn: "1 / -1",
+  justifySelf: "center",
+  color: "#FFFFFF",
+  fontSize: "10.5px",
+  fontWeight: 850,
+  ...heroSmallTextOutlineStyle,
   ...safeTextStyle,
 };
 
@@ -3896,8 +4301,8 @@ const statCardStyle: CSSProperties = {
 
 const activeStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background: "#04140A",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   filter: "none",
   backdropFilter: "none",
@@ -3919,7 +4324,7 @@ const activeStatButtonStyle: CSSProperties = {
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "clamp(16px, 4.6vw, 21px)",
   fontWeight: 950,
   lineHeight: 1,
@@ -3950,7 +4355,7 @@ const miniTitleStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "clamp(24px, 4vw, 30px)",
   lineHeight: 1.05,
   fontWeight: 950,
@@ -3962,7 +4367,7 @@ const sectionTitleStyle: CSSProperties = {
 
 const accentSectionTitleStyle: CSSProperties = {
   ...sectionTitleStyle,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   textTransform: "uppercase",
 };
 
@@ -3976,13 +4381,6 @@ const textStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-
-const fileAttachedBadgeStyle: CSSProperties = {
-  ...infoBadgeStyle,
-  background: "rgba(34, 197, 94, 0.14)",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
-  color: "#86EFAC",
-};
 
 const fileBoxStyle: CSSProperties = {
   marginTop: "12px",
@@ -4172,10 +4570,15 @@ const workRatingHeaderStyle: CSSProperties = {
 };
 
 const workRatingTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+  margin: 0,
+  width: "100%",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "clamp(22px, 6.5vw, 31px)",
+  lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "0.075em",
+  letterSpacing: "-0.045em",
+  textTransform: "uppercase",
   maxWidth: "100%",
   textAlign: "center",
   ...safeTextStyle,
@@ -4245,7 +4648,7 @@ const workRatingStarFillStyle: CSSProperties = {
 };
 
 const communityBoxStyle: CSSProperties = {
-  marginTop: "10px",
+  marginTop: "8px",
   padding: 0,
   borderRadius: 0,
   background: "transparent",
@@ -4270,7 +4673,8 @@ const communityHeaderStyle: CSSProperties = {
 const communityTitleStyle: CSSProperties = {
   margin: 0,
   width: "100%",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   fontSize: "clamp(22px, 6.5vw, 31px)",
   lineHeight: 1,
   fontWeight: 950,
@@ -4308,7 +4712,7 @@ const communityItemStyle: CSSProperties = {
 };
 
 const communityNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
   fontWeight: 950,
@@ -4361,13 +4765,15 @@ const ratingSummaryStyle: CSSProperties = {
   border: "none",
   boxShadow: "none",
   boxSizing: "border-box",
+  textAlign: "center",
 };
 
 const ratingNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FF9C2B",
   fontSize: "28px",
   lineHeight: 1,
   fontWeight: 950,
+  textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 10px rgba(0,0,0,0.22)",
   ...safeTextStyle,
 };
 
@@ -4382,6 +4788,7 @@ const ratingStarsStyle: CSSProperties = {
   letterSpacing: "-0.02em",
   marginTop: "-4px",
   marginBottom: "1px",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.2)",
   ...safeTextStyle,
 };
 
@@ -4411,12 +4818,13 @@ const ratingTopStarFillStyle: CSSProperties = {
 };
 
 const ratingTotalStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "9px",
+  color: "rgba(255,255,255,0.95)",
+  fontSize: "10px",
   lineHeight: 1.1,
   fontWeight: 900,
   textTransform: "uppercase",
-  textAlign: "right",
+  textAlign: "center",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.2)",
   ...safeTextStyle,
 };
 
@@ -4507,9 +4915,9 @@ const chapterNumberStyle: CSSProperties = {
   width: "38px",
   height: "38px",
   borderRadius: "13px",
-  background: "rgba(249, 115, 22, 0.12)",
-  border: "1px solid rgba(249, 115, 22, 0.24)",
-  color: "var(--historietas-accent, #F97316)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "#FFFFFF",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -4579,7 +4987,8 @@ const chapterButtonStyle: CSSProperties = {
   gridColumn: "1 / -1",
   minHeight: "38px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11px",
@@ -4590,67 +4999,84 @@ const chapterButtonStyle: CSSProperties = {
   textAlign: "center",
   padding: "0 10px",
   boxShadow: "none",
+  boxSizing: "border-box",
   ...safeTextStyle,
 };
 
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
-  borderRadius: "26px",
+  width: "100%",
+  maxWidth: "100%",
+  marginLeft: 0,
+  marginRight: 0,
+  borderRadius: "30px",
+  border: "1px solid rgba(255,255,255,0.06)",
+  background: "#04000A",
 };
 
 const desktopHeroContentStyle: CSSProperties = {
   ...heroContentStyle,
-  gridTemplateColumns: "236px minmax(0, 1fr)",
-  gap: "8px 20px",
-  padding: "15px",
-  alignItems: "start",
+  minHeight: "560px",
 };
 
 const desktopCoverArtStyle: CSSProperties = {
   ...coverArtStyle,
-  minHeight: "396px",
+  minHeight: "560px",
   height: "100%",
-  borderRadius: "22px",
-  gridColumn: "auto",
-  gridRow: "auto",
+  borderRadius: "26px",
+  backgroundPosition: "center",
 };
 
-const desktopBadgeRowStyle: CSSProperties = {
-  ...badgeRowStyle,
-  gridColumn: "2",
-  justifyContent: "flex-start",
+const desktopHeroCoverLinkStyle: CSSProperties = {
+  ...heroCoverLinkStyle,
+  inset: "8px",
+  borderRadius: "26px",
+};
+
+const desktopHeroOverlayContentStyle: CSSProperties = {
+  ...heroOverlayContentStyle,
+  bottom: "8px",
+  alignItems: "end",
+  justifyItems: "start",
+  padding: "0 30px 10px",
+  gap: "10px",
+  textAlign: "left",
+};
+
+const desktopHeroBottomMetaBarStyle: CSSProperties = {
+  ...heroBottomMetaBarStyle,
+  maxWidth: "320px",
+  padding: 0,
+  borderRadius: 0,
 };
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
-  gridColumn: "auto",
-  fontSize: "clamp(46px, 5.8vw, 78px)",
+  fontSize: "clamp(48px, 6vw, 82px)",
   lineHeight: 0.92,
   letterSpacing: "-0.085em",
   textAlign: "left",
+  maxWidth: "900px",
 };
 
 const desktopDescriptionStyle: CSSProperties = {
   ...descriptionStyle,
-  gridColumn: "2",
   maxWidth: "760px",
-  fontSize: "13px",
+  fontSize: "15px",
   lineHeight: 1.55,
   textAlign: "left",
 };
 
-const desktopInfoRowStyle: CSSProperties = {
-  ...infoRowStyle,
-  gridColumn: "2",
-  justifyContent: "flex-start",
-};
-
 const desktopHeroActionsStyle: CSSProperties = {
   ...heroActionsStyle,
-  gridColumn: "2",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  maxWidth: "520px",
+  gridTemplateColumns: "minmax(0, 280px) 50px",
+  maxWidth: "364px",
+};
+
+const desktopObraActionsMenuStyle: CSSProperties = {
+  ...obraActionsMenuStyle,
+  width: "min(760px, calc(100% - 24px))",
 };
 
 const desktopStatsGridStyle: CSSProperties = {

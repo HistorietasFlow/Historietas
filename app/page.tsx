@@ -5538,7 +5538,7 @@ const sectionHeaderStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "clamp(24px, 4vw, 30px)",
   lineHeight: 1.05,
   fontWeight: 950,

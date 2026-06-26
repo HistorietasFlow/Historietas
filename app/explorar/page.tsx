@@ -2566,7 +2566,7 @@ function SectionHeader({
   const titleStyleTema: CSSProperties = {
     ...(isDesktop ? desktopSectionTitleStyle : sectionTitleStyle),
     background: "none",
-    color: "var(--historietas-accent, #F97316)",
+    color: "#FFFFFF",
     textAlign: "center",
   };
 

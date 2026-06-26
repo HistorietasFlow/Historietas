@@ -1583,11 +1583,6 @@ export default function EditarCapituloPage() {
                 <div style={importInfoStyle}>
                   <strong style={importTitleStyle}>Importar versão revisada</strong>
 
-                  <span style={isDesktop ? desktopImportTextStyle : importTextStyle}>
-                    Envie um arquivo .txt ou .md para substituir o texto atual.
-                    Você ainda pode revisar tudo antes de salvar.
-                  </span>
-
                   {arquivoImportadoNome && (
                     <span style={importSuccessStyle}>
                       Arquivo importado: {arquivoImportadoNome}
@@ -1983,7 +1978,8 @@ const successActionsStyle: CSSProperties = {
 const successPrimaryButtonStyle: CSSProperties = {
   minHeight: "48px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "14px",
@@ -2004,9 +2000,9 @@ const successPrimaryButtonStyle: CSSProperties = {
 const successSecondaryButtonStyle: CSSProperties = {
   minHeight: "48px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
+  background: "#04000A",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "14px",
   fontWeight: 900,
@@ -2036,15 +2032,15 @@ const mainGridStyle: CSSProperties = {
 const formStyle: CSSProperties = {
   display: "grid",
   gap: "12px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  borderRadius: "22px",
-  padding: "12px",
+  background: "transparent",
+  border: "none",
+  borderRadius: 0,
+  padding: 0,
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const formHeaderStyle: CSSProperties = {
@@ -2056,7 +2052,7 @@ const formHeaderStyle: CSSProperties = {
 };
 
 const formMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.10em",
@@ -2066,7 +2062,7 @@ const formMiniTitleStyle: CSSProperties = {
 
 const formTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "26px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2092,12 +2088,12 @@ const labelStyle: CSSProperties = {
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "46px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  minHeight: "36px",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   color: "#FFFFFF",
-  padding: "0 16px",
+  padding: "0 4px",
   outline: "none",
   fontSize: "14px",
   fontWeight: 720,
@@ -2174,14 +2170,6 @@ const importTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const importTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.35,
-  fontWeight: 700,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const importSuccessStyle: CSSProperties = {
   width: "fit-content",
@@ -2213,9 +2201,9 @@ const importButtonStyle: CSSProperties = {
   minHeight: "38px",
   width: "100%",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
+  background: "#04000A",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
   display: "flex",
@@ -2248,8 +2236,8 @@ const buttonAreaStyle: CSSProperties = {
 const saveButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
   color: "#FFFFFF",
   fontSize: "13px",
   fontWeight: 950,
@@ -2270,8 +2258,8 @@ const disabledButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "#A1A1AA",
+  background: "#04000A",
+  color: "rgba(255,255,255,0.55)",
   fontSize: "13px",
   fontWeight: 950,
   cursor: "not-allowed",
@@ -2289,9 +2277,9 @@ const disabledButtonStyle: CSSProperties = {
 const secondaryButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
+  background: "#04000A",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "13px",
   fontWeight: 900,
@@ -2311,9 +2299,9 @@ const secondaryButtonStyle: CSSProperties = {
 const cancelButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
+  background: "#04000A",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "13px",
   fontWeight: 900,
@@ -2503,8 +2491,8 @@ const desktopMainGridStyle: CSSProperties = {
 const desktopFormStyle: CSSProperties = {
   ...formStyle,
   width: "100%",
-  padding: "16px",
-  borderRadius: "24px",
+  padding: 0,
+  borderRadius: 0,
   gap: "12px",
 };
 
@@ -2531,10 +2519,6 @@ const desktopImportBoxStyle: CSSProperties = {
   border: "none",
 };
 
-const desktopImportTextStyle: CSSProperties = {
-  ...importTextStyle,
-  display: "none",
-};
 
 const desktopImportButtonStyle: CSSProperties = {
   ...importButtonStyle,

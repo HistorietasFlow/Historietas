@@ -2100,7 +2100,7 @@ const progressLabelStyle: CSSProperties = {
 };
 
 const progressNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -2166,10 +2166,10 @@ const inlineStatsBoxStyle: CSSProperties = {
 const inlineStatsItemStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "6px 8px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 900,
@@ -2178,16 +2178,16 @@ const inlineStatsItemStyle: CSSProperties = {
 
 const inlineStatsReadyStyle: CSSProperties = {
   ...inlineStatsItemStyle,
-  background: "rgba(34,197,94,0.12)",
-  border: "1px solid rgba(34,197,94,0.28)",
-  color: "#86EFAC",
+  background: "transparent",
+  border: "none",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const inlineStatsWarningStyle: CSSProperties = {
   ...inlineStatsItemStyle,
-  background: "rgba(249,115,22,0.14)",
-  border: "1px solid rgba(249,115,22,0.30)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "transparent",
+  border: "none",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const mainGridStyle: CSSProperties = {
@@ -2203,15 +2203,15 @@ const mainGridStyle: CSSProperties = {
 const formPanelStyle: CSSProperties = {
   display: "grid",
   gap: "12px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  borderRadius: "22px",
-  padding: "12px",
+  background: "transparent",
+  border: "none",
+  borderRadius: 0,
+  padding: 0,
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const formHeaderStyle: CSSProperties = {
@@ -2223,7 +2223,7 @@ const formHeaderStyle: CSSProperties = {
 };
 
 const formMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.10em",
@@ -2233,7 +2233,7 @@ const formMiniTitleStyle: CSSProperties = {
 
 const formTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "26px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2341,6 +2341,7 @@ const importTitleStyle: CSSProperties = {
 };
 
 const importTextStyle: CSSProperties = {
+  display: "none",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   lineHeight: 1.35,
@@ -2384,9 +2385,9 @@ const importButtonStyle: CSSProperties = {
   minHeight: "38px",
   width: "100%",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
+  background: "#04000A",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
   display: "flex",
@@ -2459,7 +2460,8 @@ const createdActionsStyle: CSSProperties = {
 const successPrimaryButtonStyle: CSSProperties = {
   minHeight: "48px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "14px",
@@ -2480,9 +2482,9 @@ const successPrimaryButtonStyle: CSSProperties = {
 const successSecondaryButtonStyle: CSSProperties = {
   minHeight: "48px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
+  background: "#04000A",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "14px",
   fontWeight: 900,
@@ -2512,8 +2514,8 @@ const buttonAreaStyle: CSSProperties = {
 const primaryButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
   color: "#FFFFFF",
   fontSize: "13px",
   fontWeight: 950,
@@ -2534,7 +2536,7 @@ const disabledButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
+  background: "#04000A",
   color: "#A1A1AA",
   fontSize: "13px",
   fontWeight: 950,
@@ -2553,9 +2555,9 @@ const disabledButtonStyle: CSSProperties = {
 const secondaryButtonStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
+  background: "#04000A",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "13px",
   fontWeight: 900,
@@ -2595,7 +2597,7 @@ const previewHeaderStyle: CSSProperties = {
 };
 
 const previewMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "9.5px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -2604,6 +2606,7 @@ const previewMiniTitleStyle: CSSProperties = {
 
 const previewTitleStyle: CSSProperties = {
   margin: 0,
+  color: "#FFFFFF",
   fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2641,9 +2644,9 @@ const previewChapterBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 10px",
   borderRadius: "999px",
-  background: "rgba(249,115,22,0.14)",
-  border: "1px solid rgba(249,115,22,0.28)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 950,
   whiteSpace: "normal",
@@ -2716,7 +2719,7 @@ const recentBoxStyle: CSSProperties = {
 };
 
 const recentMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "9.5px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -2746,7 +2749,7 @@ const recentItemStyle: CSSProperties = {
 };
 
 const recentNumberStyle: CSSProperties = {
-  color: "var(--historietas-secondary, #C4B5FD)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -2871,9 +2874,12 @@ const desktopMainGridSoloStyle: CSSProperties = {
 const desktopFormPanelStyle: CSSProperties = {
   ...formPanelStyle,
   width: "100%",
-  padding: "16px",
-  borderRadius: "24px",
+  padding: 0,
+  borderRadius: 0,
   gap: "12px",
+  background: "transparent",
+  border: "none",
+  overflow: "visible",
 };
 
 const desktopFormHeaderStyle: CSSProperties = {

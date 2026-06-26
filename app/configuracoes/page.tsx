@@ -957,19 +957,6 @@ export default function ConfiguracoesPage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
-          <Link
-            href="/"
-            style={isDesktop ? desktopTitleHomeLinkStyle : titleHomeLinkStyle}
-            aria-label="Voltar para a Home"
-          >
-            <span
-              className="historietas-config-hero-title"
-              style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
-            >
-              CONFIGURAÇÕES
-            </span>
-          </Link>
-
           {isDesktop ? (
             <Link
               href="/notificacoes"
@@ -1402,8 +1389,8 @@ const pageTitleTextStyle: CSSProperties = {
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
   background: "none",
-  color: "var(--historietas-accent, #F97316)",
-  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   textAlign: "center",
   textShadow: "none",
 };
@@ -1499,9 +1486,9 @@ const titleStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: "-0.07em",
   maxWidth: "100%",
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   background: "none",
-  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
+  WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
   textAlign: "center",
   ...safeTextStyle,
@@ -1667,7 +1654,7 @@ const sectionHeaderStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "clamp(24px, 5vw, 30px)",
   lineHeight: 1.05,
   fontWeight: 950,
@@ -1679,7 +1666,7 @@ const sectionTitleStyle: CSSProperties = {
 
 const accentSectionTitleStyle: CSSProperties = {
   ...sectionTitleStyle,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
 };
 
 const cardStyle: CSSProperties = {
@@ -1703,7 +1690,7 @@ const fieldStyle: CSSProperties = {
 };
 
 const labelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "11px",
   lineHeight: 1,
   fontWeight: 950,
@@ -1914,7 +1901,7 @@ const statCardStyle: CSSProperties = {
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "17px",
   lineHeight: 1,
   fontWeight: 950,

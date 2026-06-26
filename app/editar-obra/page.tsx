@@ -1008,19 +1008,6 @@ function criarPreviewCoverStyle(capa: string): CSSProperties {
   };
 }
 
-function criarDesktopPreviewCoverStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return desktopPreviewCoverStyle;
-  }
-
-  return {
-    ...desktopPreviewCoverStyle,
-    background: "#04000A",
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
 
 export default function EditarObraPage() {
   const router = useRouter();
@@ -1989,8 +1976,6 @@ export default function EditarObraPage() {
         <section style={isDesktop ? desktopMainGridStyle : mainGridStyle}>
           <form onSubmit={salvarEdicao} style={isDesktop ? desktopFormStyle : formStyle}>
             <div style={fieldGroupStyle}>
-              <label style={formCoverTitleStyle}>Capa da obra</label>
-
               <input
                 ref={capaInputRef}
                 type="file"
@@ -2333,74 +2318,91 @@ export default function EditarObraPage() {
               <span style={previewMiniTitleStyle}>PRÉVIA DA OBRA</span>
             </div>
 
-            <div style={isDesktop ? desktopPreviewBodyStyle : previewBodyStyle}>
-              <div style={isDesktop ? criarDesktopPreviewCoverStyle(capa) : criarPreviewCoverStyle(capa)}>
-
-
-                <div style={previewCoverBottomStyle}>
-                  <strong style={previewCoverNumberStyle}>
-                    {obraAtual?.capitulos.length || 0}
-                  </strong>
-
-                  <span style={previewCoverTextStyle}>
-                    {(obraAtual?.capitulos.length || 0) === 1
-                      ? "capítulo"
-                      : "capítulos"}
-                  </span>
-                </div>
+            <article style={isDesktop ? desktopPreviewCardStyle : previewCardStyle}>
+              <div style={criarPreviewCoverStyle(capa)}>
+                <div style={previewCoverGlowStyle} />
               </div>
 
-              <div style={isDesktop ? desktopPreviewContentStyle : previewContentStyle}>
-                <div style={previewBadgesStyle}>
-                  <span style={previewBadgeStyle}>
-                    {formatoFinal || "Formato"}
-                  </span>
+              <div style={previewContentStyle}>
+                <div style={previewTopRowStyle}>
+                  <h3 style={previewObraTitleStyle}>
+                    {titulo.trim() || "Obra sem título"}
+                  </h3>
 
-                  <span style={previewBadgeStyle}>
-                    {generoFinal || "Gênero"}
-                  </span>
-
-                  {tagsPreview.slice(0, 1).map((tag, index) => (
-                    <span key={`${tag}-preview-badge-${index}`} style={previewBadgeStyle}>
-                      {tag}
+                  <div style={previewBadgesStyle}>
+                    <span style={previewBadgeStyle}>
+                      {formatoFinal || "Formato"}
                     </span>
-                  ))}
 
-                  <span style={previewRatingBadgeStyle}>
-                    {classificacaoIndicativa === "Não informada" ||
-                    classificacaoIndicativa === "Não informado"
-                      ? "Livre"
-                      : classificacaoIndicativa || "Livre"}
-                  </span>
-
-                  <span
-                    style={
-                      obraAtual?.publicado
-                        ? previewPublishedBadgeStyle
-                        : previewDraftBadgeStyle
-                    }
-                  >
-                    {obraAtual?.publicado ? "Publicado" : "Rascunho"}
-                  </span>
-
-                  {arquivoObra && (
-                    <span style={previewFileBadgeStyle}>Arquivo anexado</span>
-                  )}
+                    <span style={previewRatingBadgeStyle}>
+                      {classificacaoIndicativa === "Não informada" ||
+                      classificacaoIndicativa === "Não informado"
+                        ? "Livre"
+                        : classificacaoIndicativa || "Livre"}
+                    </span>
+                  </div>
                 </div>
-
-                <h3 style={previewObraTitleStyle}>
-                  {titulo.trim() || "Obra sem título"}
-                </h3>
 
                 <p style={previewAuthorStyle}>
                   Por {autorPreview || "Autor não informado"}
                 </p>
 
+                <div style={previewStatsStyle}>
+                  <span style={previewStatItemStyle}>
+                    <span style={previewStatIconStyle}>👁</span>
+                    <span style={previewStatValueStyle}>0</span>
+                  </span>
+
+                  <span style={previewStatItemStyle}>
+                    <span style={previewStatHeartIconStyle}>♥</span>
+                    <span style={previewStatValueStyle}>0</span>
+                  </span>
+
+                  <span style={previewStatItemStyle}>
+                    <span style={previewStatIconStyle}>💬</span>
+                    <span style={previewStatValueStyle}>0</span>
+                  </span>
+
+                  <span style={previewStatItemStyle}>
+                    <span style={previewStatIconStyle}>📚</span>
+                    <span style={previewStatValueStyle}>
+                      {(obraAtual?.capitulos.length || 0) === 1
+                        ? "1 cap."
+                        : `${obraAtual?.capitulos.length || 0} cap.`}
+                    </span>
+                  </span>
+                </div>
+
+                <div style={previewProgressCompactStyle}>
+                  <div style={previewProgressTrackStyle}>
+                    <div
+                      style={{
+                        ...previewProgressFillStyle,
+                        width: `${progresso}%`,
+                      }}
+                    />
+                  </div>
+
+                  <span style={previewProgressTextStyle}>
+                    {progresso}% pronto
+                  </span>
+                </div>
+
                 <p style={previewSinopseStyle}>
                   {sinopse.trim() || "Nenhuma sinopse informada."}
                 </p>
+
+                <div style={previewActionRowStyle}>
+                  <span style={previewGenreBadgeStyle}>
+                    {generoFinal || "Gênero"}
+                  </span>
+
+                  <span style={previewActionBadgeStyle}>
+                    {obraAtual?.publicado ? "Publicado" : "Rascunho"}
+                  </span>
+                </div>
               </div>
-            </div>
+            </article>
           </aside>
         </section>
       </section>
@@ -2686,12 +2688,11 @@ const headerTitleTextStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: 0,
   wordSpacing: "normal",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
 };
 
@@ -2952,22 +2953,6 @@ const formMiniTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const formCoverTitleStyle: CSSProperties = {
-  display: "block",
-  width: "100%",
-  padding: 0,
-  background: "transparent",
-  border: "0",
-  borderRadius: 0,
-  boxShadow: "none",
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "18px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.045em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const fieldGroupStyle: CSSProperties = {
   display: "grid",
@@ -2999,14 +2984,14 @@ const coverUploadBoxStyle: CSSProperties = {
   gridTemplateColumns: "minmax(70px, 82px) minmax(0, 1fr)",
   gap: "10px",
   alignItems: "stretch",
-  padding: "7px",
-  borderRadius: "18px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "0",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
   boxShadow: "none",
 };
 
@@ -3167,23 +3152,7 @@ const coverButtonStyle: CSSProperties = {
 };
 
 const removeCoverButtonStyle: CSSProperties = {
-  flex: "1 1 94px",
-  minHeight: "34px",
-  maxWidth: "100%",
-  padding: "0 11px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  ...safeTextStyle,
+  ...coverButtonStyle,
 };
 
 const inputStyle: CSSProperties = {
@@ -3275,12 +3244,12 @@ const disabledButtonStyle: CSSProperties = {
 const secondaryButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11.5px",
-  fontWeight: 900,
+  fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -3297,7 +3266,6 @@ const secondaryButtonStyle: CSSProperties = {
 
 const cancelButtonStyle: CSSProperties = {
   ...secondaryButtonStyle,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
 };
 
 const previewPanelStyle: CSSProperties = {
@@ -3322,7 +3290,8 @@ const previewHeaderStyle: CSSProperties = {
 };
 
 const previewMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   fontSize: "19px",
   lineHeight: 1.05,
   fontWeight: 950,
@@ -3332,14 +3301,43 @@ const previewMiniTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const previewCardStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(88px, 98px) minmax(0, 1fr)",
+  alignItems: "stretch",
+  gap: "14px",
+  padding: "11px",
+  borderRadius: "22px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  boxShadow: "none",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const desktopPreviewCardStyle: CSSProperties = {
+  ...previewCardStyle,
+  gridTemplateColumns: "112px minmax(0, 1fr)",
+  gap: "15px",
+  padding: "13px",
+  borderRadius: "24px",
+};
+
+const previewCoverGlowStyle: CSSProperties = {
+  display: "none",
+};
+
 const previewCoverStyle: CSSProperties = {
   width: "100%",
-  minHeight: "164px",
-  height: "164px",
-  maxHeight: "164px",
+  minHeight: "116px",
+  height: "100%",
+  maxHeight: "none",
   maxWidth: "100%",
-  alignSelf: "start",
-  borderRadius: "14px",
+  alignSelf: "stretch",
+  borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
   background: "#04000A",
@@ -3353,71 +3351,24 @@ const previewCoverStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const previewCoverBottomStyle: CSSProperties = {
-  position: "absolute",
-  left: "9px",
-  right: "9px",
-  bottom: "9px",
-  display: "grid",
-  gridTemplateColumns: "auto minmax(0, 1fr)",
-  alignItems: "end",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const previewCoverNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "30px",
-  lineHeight: 0.88,
-  fontWeight: 950,
-  letterSpacing: "-0.07em",
-  textShadow: "0 1px 10px rgba(0,0,0,0.34)",
-  ...safeTextStyle,
-};
 
-const previewCoverTextStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "8.5px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "0.055em",
-  textAlign: "left",
-  textTransform: "uppercase",
-  textShadow: "0 1px 10px rgba(0,0,0,0.34)",
-  ...safeTextStyle,
-};
 
-const previewBodyStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(104px, 0.36fr) minmax(0, 1fr)",
-  alignItems: "start",
-  gap: "8px",
-  padding: "8px",
-  borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
 
 const previewContentStyle: CSSProperties = {
   display: "grid",
-  alignContent: "start",
-  gap: "5px",
+  alignContent: "center",
+  gap: "7px",
   minWidth: 0,
   maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const previewBadgesStyle: CSSProperties = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "4px",
-  rowGap: "4px",
+  gap: "6px",
+  rowGap: "5px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -3425,13 +3376,14 @@ const previewBadgesStyle: CSSProperties = {
 const previewBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "4px 6px",
+  padding: "5px 8px",
   borderRadius: "999px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 950,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "10px",
+  fontWeight: 900,
+  whiteSpace: "normal",
   ...safeTextStyle,
 };
 
@@ -3440,35 +3392,21 @@ const previewRatingBadgeStyle: CSSProperties = {
   color: "#DDD6FE",
 };
 
-const previewDraftBadgeStyle: CSSProperties = {
-  ...previewBadgeStyle,
-  background: "rgba(249,115,22,0.12)",
-  border: "1px solid rgba(249,115,22,0.24)",
-  color: "var(--historietas-accent, #FDBA74)",
-};
 
-const previewPublishedBadgeStyle: CSSProperties = {
-  ...previewBadgeStyle,
-  background: "rgba(34,197,94,0.12)",
-  border: "1px solid rgba(34,197,94,0.28)",
-  color: "#86EFAC",
-};
 
-const previewFileBadgeStyle: CSSProperties = {
-  ...previewBadgeStyle,
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.22)",
-  color: "#86EFAC",
-};
 
 const previewObraTitleStyle: CSSProperties = {
-  margin: "0",
+  margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "22px",
-  lineHeight: 1.02,
+  fontSize: "20px",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "-0.06em",
+  letterSpacing: "-0.03em",
   maxWidth: "100%",
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
   textDecoration: "none",
   borderBottom: "none",
   ...safeTextStyle,
@@ -3477,10 +3415,10 @@ const previewObraTitleStyle: CSSProperties = {
 const previewAuthorStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  margin: "-1px 0 0",
+  margin: 0,
   color: "var(--historietas-text-secondary, #D8C8FF)",
-  fontSize: "12.5px",
-  fontWeight: 900,
+  fontSize: "12px",
+  fontWeight: 800,
   textDecoration: "none",
   borderBottom: "none",
   ...safeTextStyle,
@@ -3490,16 +3428,153 @@ const previewSinopseStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
-  lineHeight: 1.38,
-  fontWeight: 650,
+  lineHeight: 1.32,
+  fontWeight: 700,
   whiteSpace: "pre-wrap",
   maxWidth: "100%",
   display: "-webkit-box",
-  WebkitLineClamp: 3,
+  WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
   overflowWrap: "break-word",
   wordBreak: "break-word",
+  ...safeTextStyle,
+};
+
+const previewTopRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "8px",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
+const previewStatsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flexWrap: "wrap",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "11px",
+  fontWeight: 850,
+  maxWidth: "100%",
+  minWidth: 0,
+};
+
+const previewStatItemStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "4px",
+  minWidth: 0,
+  whiteSpace: "nowrap",
+  lineHeight: 1,
+};
+
+const previewStatIconStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  lineHeight: 1,
+  flex: "0 0 auto",
+};
+
+const previewStatHeartIconStyle: CSSProperties = {
+  ...previewStatIconStyle,
+  color: "#E11D48",
+};
+
+const previewStatValueStyle: CSSProperties = {
+  display: "inline-block",
+  lineHeight: 1,
+  whiteSpace: "nowrap",
+};
+
+const previewProgressCompactStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: "8px",
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  minWidth: 0,
+};
+
+const previewProgressTrackStyle: CSSProperties = {
+  width: "100%",
+  height: "7px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const previewProgressFillStyle: CSSProperties = {
+  height: "100%",
+  borderRadius: "999px",
+  background:
+    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+};
+
+const previewProgressTextStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  fontWeight: 850,
+  lineHeight: 1.2,
+  whiteSpace: "nowrap",
+};
+
+const previewActionRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  marginTop: "2px",
+  maxWidth: "100%",
+  minWidth: 0,
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const previewGenreBadgeStyle: CSSProperties = {
+  flex: "0 1 42%",
+  maxWidth: "42%",
+  minHeight: "34px",
+  padding: "0 10px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+  fontWeight: 900,
+  lineHeight: 1.12,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  boxSizing: "border-box",
+  ...safeTextStyle,
+};
+
+const previewActionBadgeStyle: CSSProperties = {
+  flex: "1 1 auto",
+  minWidth: 0,
+  maxWidth: "100%",
+  minHeight: "34px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 950,
+  lineHeight: 1.15,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -3623,8 +3698,6 @@ const desktopCoverUploadBoxStyle: CSSProperties = {
   ...coverUploadBoxStyle,
   gridTemplateColumns: "84px minmax(0, 1fr)",
   gap: "12px",
-  padding: "8px",
-  borderRadius: "18px",
 };
 
 const desktopFileUploadBoxStyle: CSSProperties = {
@@ -3687,30 +3760,4 @@ const desktopPreviewPanelStyle: CSSProperties = {
   position: "sticky",
   top: "24px",
   alignSelf: "start",
-};
-
-const desktopPreviewBodyStyle: CSSProperties = {
-  ...previewBodyStyle,
-  gridTemplateColumns: "138px minmax(0, 1fr)",
-  gap: "12px",
-  padding: "10px",
-  borderRadius: "22px",
-};
-
-const desktopPreviewContentStyle: CSSProperties = {
-  ...previewContentStyle,
-  alignSelf: "stretch",
-  alignContent: "start",
-  gap: "6px",
-  padding: 0,
-  boxSizing: "border-box",
-};
-
-const desktopPreviewCoverStyle: CSSProperties = {
-  ...previewCoverStyle,
-  width: "100%",
-  minHeight: "164px",
-  height: "164px",
-  maxHeight: "164px",
-  borderRadius: "16px",
 };

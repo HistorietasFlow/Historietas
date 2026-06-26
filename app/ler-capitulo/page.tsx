@@ -2717,10 +2717,6 @@ export default function LerCapituloPage() {
                 : settingsPanelStyle
             }
           >
-            <div style={settingsHeaderStyle}>
-              <h2 style={settingsTitleStyle}>Ajustes de leitura</h2>
-            </div>
-
             <select
               value={capituloAtual.id}
               onChange={(event) => trocarCapitulo(event.target.value)}
@@ -3309,10 +3305,9 @@ const desktopNotificationButtonStyle: CSSProperties = {
   width: "40px",
   height: "40px",
   borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   textDecoration: "none",
   display: "inline-flex",
   alignItems: "center",
@@ -3326,9 +3321,6 @@ const desktopNotificationButtonStyle: CSSProperties = {
 
 const desktopFocusNotificationButtonStyle: CSSProperties = {
   ...desktopNotificationButtonStyle,
-  background: "#050506",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#F4F4F5",
 };
 
 const desktopNotificationBadgeStyle: CSSProperties = {
@@ -3415,9 +3407,9 @@ const topMiniButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -3437,9 +3429,9 @@ const backButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -3459,9 +3451,9 @@ const settingsButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "#04000A",
-  border: "1px solid rgba(249,115,22,0.30)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
   cursor: "pointer",
@@ -3491,14 +3483,6 @@ const topSingleSettingsButtonStyle: CSSProperties = {
 
 const focusTopSingleSettingsButtonStyle: CSSProperties = {
   ...topSingleSettingsButtonStyle,
-  background: "#050506",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#F4F4F5",
-  boxShadow: "none",
-  textShadow: "none",
-  filter: "none",
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
 };
 
 const chapterHeaderStyle: CSSProperties = {
@@ -3522,7 +3506,7 @@ const focusChapterHeaderStyle: CSSProperties = {
 };
 
 const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "9px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -3572,11 +3556,11 @@ const statusRowStyle: CSSProperties = {
 const statusBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "rgba(4,0,10,0.72)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "#FFFFFF",
   fontSize: "9px",
   fontWeight: 850,
   textAlign: "center",
@@ -3585,7 +3569,7 @@ const statusBadgeStyle: CSSProperties = {
 
 const statusLinkBadgeStyle: CSSProperties = {
   ...statusBadgeStyle,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   textDecoration: "none",
 };
 
@@ -3606,7 +3590,7 @@ const readingProgressBadgeStyle: CSSProperties = {
   borderRadius: 0,
   background: "transparent",
   border: "none",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   fontSize: "9px",
   fontWeight: 900,
   textAlign: "center",
@@ -3682,27 +3666,6 @@ const focusSettingsPanelStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.07)",
 };
 
-const settingsHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-  textAlign: "center",
-};
-
-const settingsTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "18px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
 const chapterSelectStyle: CSSProperties = {
   width: "100%",
   minHeight: "40px",
@@ -3763,7 +3726,7 @@ const fontScaleValueStyle: CSSProperties = {
   borderRadius: 0,
   background: "transparent",
   border: "none",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "10px",
   fontWeight: 950,
   boxShadow: "none",
@@ -3785,9 +3748,9 @@ const desktopFontScaleGridStyle: CSSProperties = {
 const fontScaleButtonStyle: CSSProperties = {
   minHeight: "30px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.045)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   fontSize: "10px",
   fontWeight: 900,
   cursor: "pointer",
@@ -3798,15 +3761,11 @@ const fontScaleButtonStyle: CSSProperties = {
 
 const focusFontScaleButtonStyle: CSSProperties = {
   ...fontScaleButtonStyle,
-  background: "rgba(255,255,255,0.045)",
-  color: "#D4D4D8",
 };
 
 const fontScaleButtonActiveStyle: CSSProperties = {
   ...fontScaleButtonStyle,
-  background: "#04000A",
-  border: "1px solid rgba(249,115,22,0.30)",
-  color: "var(--historietas-accent, #FDBA74)",
+  border: "1px solid rgba(255,255,255,0.18)",
   boxShadow: "none",
   textShadow: "none",
   filter: "none",
@@ -3825,9 +3784,9 @@ const settingsGridStyle: CSSProperties = {
 const settingsActionStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.045)",
-  color: "#DDD6FE",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   fontSize: "10px",
   fontWeight: 900,
   cursor: "pointer",
@@ -3841,23 +3800,16 @@ const settingsActionStyle: CSSProperties = {
 
 const settingsActionActiveStyle: CSSProperties = {
   ...settingsActionStyle,
-  background: "var(--historietas-accent, #F97316)",
-  border: "1px solid rgba(249,115,22,0.34)",
-  color: "#FFFFFF",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const focusMutedSettingsActionStyle: CSSProperties = {
   ...settingsActionStyle,
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#D4D4D8",
 };
 
 const focusActionActiveStyle: CSSProperties = {
   ...settingsActionStyle,
-  background: "rgba(249,115,22,0.12)",
-  border: "1px solid rgba(249,115,22,0.24)",
-  color: "var(--historietas-accent, #FDBA74)",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const settingsLinkStyle: CSSProperties = {
@@ -3870,9 +3822,6 @@ const settingsLinkStyle: CSSProperties = {
 
 const focusSettingsLinkStyle: CSSProperties = {
   ...settingsLinkStyle,
-  background: "rgba(167,139,250,0.095)",
-  border: "1px solid rgba(167,139,250,0.18)",
-  color: "#DDD6FE",
 };
 
 const textCardStyle: CSSProperties = {
@@ -3919,39 +3868,37 @@ const readerActionsStyle: CSSProperties = {
 const actionButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.045)",
-  color: "#DDD6FE",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   fontSize: "10.5px",
-  fontWeight: 900,
+  fontWeight: 950,
   cursor: "pointer",
+  boxShadow: "none",
   fontFamily: "inherit",
   textAlign: "center",
   padding: "0 8px",
   lineHeight: 1.05,
-  boxShadow: "none",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
   ...safeTextStyle,
 };
 
 const activeActionButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "rgba(249,115,22,0.12)",
-  border: "1px solid rgba(249,115,22,0.24)",
-  color: "var(--historietas-accent, #FDBA74)",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const activeSaveButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "rgba(34,197,94,0.12)",
-  border: "1px solid rgba(34,197,94,0.24)",
-  color: "#86EFAC",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const activeCommentButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "rgba(124,58,237,0.18)",
-  border: "1px solid rgba(124,58,237,0.30)",
-  color: "#DDD6FE",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const focusReaderActionsStyle: CSSProperties = {
@@ -3960,31 +3907,21 @@ const focusReaderActionsStyle: CSSProperties = {
 
 const focusActionButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#D4D4D8",
-  boxShadow: "none",
 };
 
 const focusActiveActionButtonStyle: CSSProperties = {
   ...focusActionButtonStyle,
-  background: "rgba(249,115,22,0.10)",
-  border: "1px solid rgba(249,115,22,0.20)",
-  color: "#FDBA74",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const focusActiveSaveButtonStyle: CSSProperties = {
   ...focusActionButtonStyle,
-  background: "rgba(124,58,237,0.12)",
-  border: "1px solid rgba(124,58,237,0.22)",
-  color: "#C4B5FD",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const focusActiveCommentButtonStyle: CSSProperties = {
   ...focusActionButtonStyle,
-  background: "rgba(34,197,94,0.08)",
-  border: "1px solid rgba(34,197,94,0.18)",
-  color: "#86EFAC",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const commentBoxStyle: CSSProperties = {
@@ -4019,7 +3956,7 @@ const commentHeaderStyle: CSSProperties = {
 
 const commentTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
   fontWeight: 950,
@@ -4046,15 +3983,17 @@ const commentProfileAvatarStyle: CSSProperties = {
   width: "34px",
   height: "34px",
   flex: "0 0 auto",
-  display: "grid",
-  placeItems: "center",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, rgba(249,115,22,0.92), rgba(124,58,237,0.82))",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "12px",
+  background: "#04000A",
   color: "#FFFFFF",
-  fontSize: "13px",
+  fontSize: "19px",
   fontWeight: 950,
+  letterSpacing: 0,
   textDecoration: "none",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   boxShadow: "none",
 };
 
@@ -4157,7 +4096,7 @@ const commentMineBadgeStyle: CSSProperties = {
 
 const commentPublicTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "#FFFFFF",
   fontSize: "12px",
   lineHeight: 1.45,
   fontWeight: 650,
@@ -4193,8 +4132,8 @@ const commentInputStyle: CSSProperties = {
 const commentButtonStyle: CSSProperties = {
   minHeight: "40px",
   borderRadius: "999px",
-  border: "1px solid rgba(249,115,22,0.34)",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
@@ -4205,18 +4144,15 @@ const commentButtonStyle: CSSProperties = {
 
 const focusCommentButtonStyle: CSSProperties = {
   ...commentButtonStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  border: "1px solid rgba(255,255,255,0.075)",
-  color: "var(--historietas-text-primary, #E4E4E7)",
 };
 
 const deleteCommentButtonStyle: CSSProperties = {
   minHeight: "30px",
   padding: "0 9px",
   borderRadius: "999px",
-  border: "1px solid rgba(239,68,68,0.16)",
-  background: "rgba(239,68,68,0.06)",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   fontSize: "10px",
   fontWeight: 900,
   cursor: "pointer",
@@ -4240,36 +4176,35 @@ const chapterNavigationStyle: CSSProperties = {
 const chapterNavButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.045)",
-  color: "#DDD6FE",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11px",
-  fontWeight: 900,
+  fontWeight: 950,
+  cursor: "pointer",
+  fontFamily: "inherit",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  cursor: "pointer",
-  fontFamily: "inherit",
   padding: "0 8px",
+  lineHeight: 1.05,
+  minWidth: 0,
+  maxWidth: "100%",
   boxSizing: "border-box",
+  whiteSpace: "normal",
   boxShadow: "none",
   ...safeTextStyle,
 };
 
 const chapterNavButtonPrimaryStyle: CSSProperties = {
   ...chapterNavButtonStyle,
-  background: "var(--historietas-accent, #F97316)",
-  border: "1px solid rgba(249,115,22,0.34)",
-  color: "#FFFFFF",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const returnToWorkButtonStyle: CSSProperties = {
   ...chapterNavButtonStyle,
-  background: "#04000A",
-  border: "1px solid rgba(249,115,22,0.30)",
-  color: "var(--historietas-accent, #FDBA74)",
   boxShadow: "none",
   textShadow: "none",
   filter: "none",
@@ -4289,24 +4224,15 @@ const focusChapterNavigationStyle: CSSProperties = {
 
 const focusChapterNavButtonStyle: CSSProperties = {
   ...chapterNavButtonStyle,
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#D4D4D8",
-  boxShadow: "none",
 };
 
 const focusChapterNavButtonPrimaryStyle: CSSProperties = {
   ...focusChapterNavButtonStyle,
-  background: "rgba(249,115,22,0.12)",
-  border: "1px solid rgba(249,115,22,0.24)",
-  color: "#FDBA74",
+  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const focusReturnToWorkButtonStyle: CSSProperties = {
   ...focusChapterNavButtonStyle,
-  background: "#050506",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#F4F4F5",
   boxShadow: "none",
   textShadow: "none",
   filter: "none",
@@ -4382,7 +4308,8 @@ const emptyButtonStyle: CSSProperties = {
   width: "100%",
   minHeight: "40px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
@@ -4428,14 +4355,6 @@ const desktopSettingsButtonStyle: CSSProperties = {
 
 const desktopFocusSettingsButtonStyle: CSSProperties = {
   ...desktopSettingsButtonStyle,
-  background: "#050506",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  boxShadow: "none",
-  textShadow: "none",
-  filter: "none",
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
 };
 
 const desktopChapterHeaderStyle: CSSProperties = {

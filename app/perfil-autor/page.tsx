@@ -7066,7 +7066,11 @@ export default function PerfilAutorPage() {
                   : authorCommunityGridStyle
               }
             >
-              <Link href={comunidadeAutorHref} style={authorCommunityCardStyle}>
+              <Link
+                href={comunidadeAutorHref}
+                style={authorCommunityCardStyle}
+                aria-label={`Abrir publicações de ${perfilParaMostrar.nome} na comunidade`}
+              >
                 <strong style={authorCommunityCardNumberStyle}>0</strong>
                 <span style={authorCommunityCardTitleStyle}>PUBLICAÇÕES</span>
                 <span style={authorCommunityCardTextStyle}>posts do perfil</span>
@@ -7075,6 +7079,7 @@ export default function PerfilAutorPage() {
               <Link
                 href={comunidadeAutorTeoriasHref}
                 style={authorCommunityCardStyle}
+                aria-label={`Abrir teorias de ${perfilParaMostrar.nome} na comunidade`}
               >
                 <strong style={authorCommunityCardNumberStyle}>0</strong>
                 <span style={authorCommunityCardTitleStyle}>TEORIAS</span>
@@ -7084,6 +7089,7 @@ export default function PerfilAutorPage() {
               <Link
                 href={comunidadeAutorReviewsHref}
                 style={authorCommunityCardStyle}
+                aria-label={`Abrir reviews de ${perfilParaMostrar.nome} na comunidade`}
               >
                 <strong style={authorCommunityCardNumberStyle}>0</strong>
                 <span style={authorCommunityCardTitleStyle}>REVIEWS</span>
@@ -7109,31 +7115,6 @@ export default function PerfilAutorPage() {
               </div>
             </div>
 
-            <div
-              style={
-                isDesktop
-                  ? desktopAuthorCommunityActionsStyle
-                  : authorCommunityActionsStyle
-              }
-            >
-              <Link href={comunidadeAutorHref} style={authorCommunityPrimaryActionStyle}>
-                {podeEditarPerfil ? "Publicar na comunidade" : "Entrar na comunidade"}
-              </Link>
-
-              <Link
-                href={comunidadeAutorTeoriasHref}
-                style={authorCommunitySecondaryActionStyle}
-              >
-                Ver teorias
-              </Link>
-
-              <Link
-                href={comunidadeAutorReviewsHref}
-                style={authorCommunitySecondaryActionStyle}
-              >
-                Ver reviews
-              </Link>
-            </div>
           </section>
         )}
 
@@ -9004,19 +8985,19 @@ const avatarBaseStyle: CSSProperties = {
   maxWidth: "76px",
   height: "76px",
   borderRadius: "20px",
-  border: "none",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   padding: 0,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
   color: "#FFFFFF",
   fontSize: "24px",
   fontWeight: 950,
   overflow: "hidden",
   fontFamily: "inherit",
   boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const avatarButtonStyle: CSSProperties = {
@@ -9415,7 +9396,8 @@ const authorRatingHeaderStyle: CSSProperties = {
 };
 
 const authorRatingTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.075em",
@@ -9438,13 +9420,18 @@ const authorRatingStarsRowStyle: CSSProperties = {
   gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
   gap: "6px",
   minWidth: 0,
+  background: "transparent",
+  boxShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const authorRatingStarButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "rgba(255,255,255,0.06)",
+  minHeight: "auto",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   color: "rgba(251, 191, 36, 0.34)",
   fontSize: "22px",
   fontWeight: 950,
@@ -9452,7 +9439,10 @@ const authorRatingStarButtonStyle: CSSProperties = {
   cursor: "pointer",
   fontFamily: "inherit",
   boxShadow: "none",
-  padding: 0,
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  padding: "0 2px",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -9460,9 +9450,13 @@ const authorRatingStarButtonStyle: CSSProperties = {
 
 const authorRatingStarActiveStyle: CSSProperties = {
   ...authorRatingStarButtonStyle,
-  border: "1px solid rgba(251, 191, 36, 0.38)",
-  background: "rgba(251, 191, 36, 0.12)",
+  border: "none",
+  background: "transparent",
   color: "#FBBF24",
+  boxShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
 };
 
 const authorRatingStarVisualStyle: CSSProperties = {
@@ -9530,18 +9524,18 @@ const profilePrimaryButtonStyle: CSSProperties = {
 
 const profileSecondaryButtonStyle: CSSProperties = {
   ...profilePrimaryButtonStyle,
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: profilePrimaryButtonStyle.border,
+  background: profilePrimaryButtonStyle.background,
+  color: profilePrimaryButtonStyle.color,
+  boxShadow: "none",
 };
 
 const profileActiveButtonStyle: CSSProperties = {
-  ...profileSecondaryButtonStyle,
-  border:
-    "1px solid rgba(255,255,255,0.10)",
-  background:
-    "rgba(255,255,255,0.06)",
-  color: "var(--historietas-accent, #FDBA74)",
+  ...profilePrimaryButtonStyle,
+  border: profilePrimaryButtonStyle.border,
+  background: profilePrimaryButtonStyle.background,
+  color: profilePrimaryButtonStyle.color,
+  boxShadow: "none",
 };
 
 const authorHighlightsStyle: CSSProperties = {

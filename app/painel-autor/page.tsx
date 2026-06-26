@@ -257,13 +257,6 @@ function encontrarCapituloParaContinuar(obra: ObraLocal) {
   return capitulosAtivos[capitulosAtivos.length - 1] || null;
 }
 
-function mostrarClassificacao(obra: ObraLocal) {
-  return (
-    obra.classificacaoIndicativa &&
-    obra.classificacaoIndicativa !== "Não informada"
-  );
-}
-
 function criarPainelCoverStyle(capa: string): CSSProperties {
   if (!capa) {
     return {
@@ -287,8 +280,8 @@ function criarPainelCoverStyle(capa: string): CSSProperties {
 function criarPainelCoverDesktopStyle(capa: string): CSSProperties {
   return {
     ...criarPainelCoverStyle(capa),
-    minHeight: "152px",
-    height: "100%",
+    minHeight: "240px",
+    borderRadius: "20px",
   };
 }
 
@@ -1951,10 +1944,14 @@ export default function PainelAutorPage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-painel-logo-text" style={logoTextStyle}>istorietas</span>
-          </Link>
+          <button
+            type="button"
+            onClick={() => setMostrarFiltrosPainel(true)}
+            style={topFilterButtonStyle}
+          >
+            <span>Filtrar e ordenar{filtrosAtivos ? " (1)" : ""}</span>
+            <span style={topFilterIconStyle}>⇅</span>
+          </button>
 
           <button
             type="button"
@@ -1986,16 +1983,6 @@ export default function PainelAutorPage() {
             </label>
           )}
 
-          <div style={studioFilterRowStyle}>
-            <button
-              type="button"
-              onClick={() => setMostrarFiltrosPainel(true)}
-              style={studioFilterButtonStyle}
-            >
-              <span>Filtrar e ordenar{filtrosAtivos ? " (1)" : ""}</span>
-              <span style={studioFilterIconStyle}>⇅</span>
-            </button>
-          </div>
 
           <section style={isDesktop ? desktopStatsBoxStyle : statsBoxStyle}>
           <div style={statCardStyle}>
@@ -2258,12 +2245,15 @@ function ObraPainelCard({
   onCopiarLink: (obra: ObraLocal) => void | Promise<void>;
   onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
 }) {
+  const [acoesAbertas, setAcoesAbertas] = useState(false);
   const obraHref = `/editar-obra?obraId=${obra.id}`;
   const editarHref = `/editar-obra?obraId=${obra.id}`;
   const capituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
-  const paginaPublicaHref = obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
   const verArquivoHref = `/ver-arquivo?obraId=${obra.id}`;
   const capituloParaLer = obra.ultimoCapituloLido || obra.capitulos[0] || null;
+  const editarCapituloHref = capituloParaLer
+    ? `/editar-capitulo?obraId=${obra.id}&capituloId=${capituloParaLer.id}`
+    : `/editar-capitulo?obraId=${obra.id}`;
   const indiceCapituloParaLer = capituloParaLer
     ? obra.capitulos.findIndex((capitulo) => capitulo.id === capituloParaLer.id)
     : -1;
@@ -2273,151 +2263,251 @@ function ObraPainelCard({
     : "";
   const perfilAutorHref = criarPerfilAutorHref(obra.autor, obra.autorId, obra.autorId);
   const progressoVisual = Math.min(100, Math.max(0, obra.progressoLeitura));
+  const visualizacoesPainel = Math.max(0, obra.totalLidos);
   const statusTexto = obra.publicado ? "Publicado" : "Rascunho";
-  const classificacaoTexto = mostrarClassificacao(obra)
-    ? obra.classificacaoIndicativa
-    : "";
+  const totalCapitulosTexto = `${obra.capitulos.length} ${
+    obra.capitulos.length === 1 ? "cap" : "caps"
+  }`;
+  const metaSheet = [
+    statusTexto,
+    favoritada ? "Na lista" : "",
+    totalCapitulosTexto,
+  ]
+    .filter(Boolean)
+    .join(" • ");
   const indicadoresTexto = [
     obra.arquivoObra ? "Arquivo" : "",
-    favoritada ? "Na lista" : "",
     concluida ? "Concluída" : "",
   ]
     .filter(Boolean)
     .join(" • ");
 
+  useEffect(() => {
+    if (!acoesAbertas || typeof document === "undefined") {
+      return;
+    }
+
+    const overflowAnterior = document.body.style.getPropertyValue("overflow");
+    const overscrollAnterior = document.documentElement.style.getPropertyValue(
+      "overscroll-behavior"
+    );
+
+    document.body.style.setProperty("overflow", "hidden");
+    document.documentElement.style.setProperty("overscroll-behavior", "none");
+
+    return () => {
+      if (overflowAnterior) {
+        document.body.style.setProperty("overflow", overflowAnterior);
+      } else {
+        document.body.style.removeProperty("overflow");
+      }
+
+      if (overscrollAnterior) {
+        document.documentElement.style.setProperty(
+          "overscroll-behavior",
+          overscrollAnterior
+        );
+      } else {
+        document.documentElement.style.removeProperty("overscroll-behavior");
+      }
+    };
+  }, [acoesAbertas]);
+
   return (
-    <article style={isDesktop ? desktopWorkCardStyle : workCardStyle}>
-      <Link href={obraHref} style={coverLinkStyle}>
-        <div style={isDesktop ? criarPainelCoverDesktopStyle(obra.capa) : criarPainelCoverStyle(obra.capa)}>
-          <div style={coverGlowStyle} />
+    <>
+      <article style={isDesktop ? desktopWorkCardStyle : workCardStyle}>
+        <Link
+          href={obraHref}
+          style={coverLinkStyle}
+          aria-label={`Abrir ${obra.titulo}`}
+        >
+          <div
+            style={
+              isDesktop
+                ? criarPainelCoverDesktopStyle(obra.capa)
+                : criarPainelCoverStyle(obra.capa)
+            }
+          >
+            <div style={coverGlowStyle} />
 
-          <div style={coverBottomStyle}>
-            <strong style={coverNumberStyle}>{obra.capitulos.length}</strong>
+            <div style={statusRowStyle}>
+              <span style={obra.publicado ? publishedStatusStyle : draftStatusStyle}>
+                {statusTexto}
+              </span>
 
-            <span style={coverLabelStyle}>
-              {obra.capitulos.length === 1 ? "capítulo" : "capítulos"}
-            </span>
+            </div>
+
+            <div style={isDesktop ? desktopWorkContentStyle : workContentStyle}>
+              <h3 style={workTitleStyle}>{obra.titulo}</h3>
+
+              <span style={workMetaLineStyle}>
+                <span>{totalCapitulosTexto}</span>
+                <span>👁 {visualizacoesPainel}</span>
+                <span>
+                  <span style={workCardHeartMetaStyle}>♥</span>{" "}
+                  {obra.totalCurtidas}
+                </span>
+                <span>
+                  <span style={workCardCommentMetaStyle}>💬</span>{" "}
+                  {obra.totalComentarios}
+                </span>
+              </span>
+            </div>
           </div>
-        </div>
-      </Link>
-
-      <div style={isDesktop ? desktopWorkContentStyle : workContentStyle}>
-        <div style={statusRowStyle}>
-          <span style={obra.publicado ? publishedStatusStyle : draftStatusStyle}>
-            {statusTexto}
-          </span>
-
-          {classificacaoTexto && (
-            <span style={classificationBadgeStyle}>{classificacaoTexto}</span>
-          )}
-
-          {indicadoresTexto && (
-            <span style={panelTinyInfoStyle}>{indicadoresTexto}</span>
-          )}
-        </div>
-
-        <h3 style={workTitleStyle}>{obra.titulo}</h3>
-
-        <Link href={perfilAutorHref} style={authorStyle}>
-          Por {obra.autor}
         </Link>
 
-        <span style={workMetaLineStyle}>
-          {obra.formato} • {formatarGeneroPainelAutor(obra.genero)}
-          {obra.tags[0] ? ` • ${obra.tags[0]}` : ""}
-        </span>
+        <button
+          type="button"
+          onClick={() => setAcoesAbertas(true)}
+          style={workCardDotsButtonStyle}
+          aria-label={`Abrir opções de ${obra.titulo}`}
+          aria-expanded={acoesAbertas}
+        >
+          ⋮
+        </button>
+      </article>
 
-        <div style={isDesktop ? desktopMetricGridStyle : metricGridStyle}>
-          <div style={metricItemStyle}>
-            <strong style={metricNumberStyle}>{obra.capitulos.length}</strong>
-            <span style={metricLabelStyle}>caps.</span>
-          </div>
-
-          <div style={metricItemStyle}>
-            <strong style={metricNumberStyle}>{obra.totalCurtidas}</strong>
-            <span style={metricLabelStyle}>curt.</span>
-          </div>
-
-          <div style={metricItemStyle}>
-            <strong style={metricNumberStyle}>{obra.totalComentarios}</strong>
-            <span style={metricLabelStyle}>coment.</span>
-          </div>
-
-          <div style={metricItemStyle}>
-            <strong style={metricNumberStyle}>{obra.totalSalvos}</strong>
-            <span style={metricLabelStyle}>salvos</span>
-          </div>
-        </div>
-
-        <div style={progressInlineStyle}>
-          <div style={progressTrackStyle}>
-            <div
-              style={{
-                ...progressFillStyle,
-                width: `${progressoVisual}%`,
-              }}
-            />
-          </div>
-
-          <strong style={progressValueStyle}>{progressoVisual}%</strong>
-        </div>
-
-        <div style={isDesktop ? desktopCardActionsGridStyle : actionsGridStyle}>
-          <Link href={obraHref} style={openButtonStyle}>
-            Gerenciar
-          </Link>
-
-          {capituloParaLer && (
-            <Link href={leituraCapituloHref} style={readButtonStyle}>
-              {obra.ultimoCapituloLido
-                ? isDesktop
-                  ? "Continuar leitura"
-                  : "Continuar"
-                : isDesktop
-                ? "Ler capítulo"
-                : "Ler"}
-            </Link>
-          )}
-
-          <Link href={editarHref} style={editButtonStyle}>
-            {isDesktop ? "Editar obra" : "Editar"}
-          </Link>
-
-          <Link href={capituloHref} style={chapterButtonStyle}>
-            {isDesktop ? "Adicionar capítulo" : "+ cap."}
-          </Link>
-
-          {obra.publicado && (
-            <Link href={paginaPublicaHref} style={publicPageButtonStyle}>
-              {isDesktop ? "Página pública" : "Página"}
-            </Link>
-          )}
-
-          {obra.arquivoObra && (
-            <Link href={verArquivoHref} style={fileButtonStyle}>
-              {isDesktop ? "Ver arquivo" : "Arquivo"}
-            </Link>
-          )}
-
-          <button
-            type="button"
-            onClick={() => void onCopiarLink(obra)}
-            style={linkCopiado ? copiedButtonStyle : copyButtonStyle}
+      {acoesAbertas && (
+        <div
+          style={workActionSheetOverlayStyle}
+          role="presentation"
+          onClick={() => setAcoesAbertas(false)}
+        >
+          <section
+            style={workActionSheetStyle}
+            role="dialog"
+            aria-label={`Ações de ${obra.titulo}`}
+            onClick={(event) => event.stopPropagation()}
           >
-            {linkCopiado ? "Copiado!" : isDesktop ? "Copiar link" : "Copiar"}
-          </button>
+            <div style={workActionSheetHandleStyle} aria-hidden="true" />
 
-          <button
-            type="button"
-            onClick={() => void onExcluirObra(obra.id, obra.titulo)}
-            style={deleteButtonStyle}
-          >
-            Excluir
-          </button>
+            <div style={workActionSheetHeaderStyle}>
+              <div style={workActionSheetTextBlockStyle}>
+                <strong style={workActionSheetTitleStyle}>{obra.titulo}</strong>
 
+                <Link
+                  href={perfilAutorHref}
+                  onClick={() => setAcoesAbertas(false)}
+                  style={authorStyle}
+                >
+                  Por {obra.autor}
+                </Link>
+
+                <span style={workActionSheetMetaStyle}>{metaSheet}</span>
+
+                {indicadoresTexto && (
+                  <span style={panelTinyInfoStyle}>{indicadoresTexto}</span>
+                )}
+              </div>
+            </div>
+
+            <div style={isDesktop ? desktopMetricGridStyle : metricGridStyle}>
+              <div style={metricItemStyle}>
+                <strong style={metricNumberStyle}>{obra.capitulos.length}</strong>
+                <span style={metricLabelStyle}>caps.</span>
+              </div>
+
+              <div style={metricItemStyle}>
+                <strong style={metricNumberStyle}>{obra.totalCurtidas}</strong>
+                <span style={metricLabelStyle}>curt.</span>
+              </div>
+
+              <div style={metricItemStyle}>
+                <strong style={metricNumberStyle}>{obra.totalComentarios}</strong>
+                <span style={metricLabelStyle}>coment.</span>
+              </div>
+
+              <div style={metricItemStyle}>
+                <strong style={metricNumberStyle}>{obra.totalSalvos}</strong>
+                <span style={metricLabelStyle}>salvos</span>
+              </div>
+            </div>
+
+            <div style={progressInlineStyle}>
+              <div style={progressTrackStyle}>
+                <div
+                  style={{
+                    ...progressFillStyle,
+                    width: `${progressoVisual}%`,
+                  }}
+                />
+              </div>
+
+              <strong style={progressValueStyle}>{progressoVisual}%</strong>
+            </div>
+
+            <div style={isDesktop ? desktopCardActionsGridStyle : actionsGridStyle}>
+              <Link
+                href={editarCapituloHref}
+                onClick={() => setAcoesAbertas(false)}
+                style={openButtonStyle}
+              >
+                Editar capítulo
+              </Link>
+
+              {capituloParaLer && (
+                <Link
+                  href={leituraCapituloHref}
+                  onClick={() => setAcoesAbertas(false)}
+                  style={readButtonStyle}
+                >
+                  {obra.ultimoCapituloLido ? "Continuar leitura" : "Ler capítulo"}
+                </Link>
+              )}
+
+              <Link
+                href={editarHref}
+                onClick={() => setAcoesAbertas(false)}
+                style={editButtonStyle}
+              >
+                Editar obra
+              </Link>
+
+              <Link
+                href={capituloHref}
+                onClick={() => setAcoesAbertas(false)}
+                style={chapterButtonStyle}
+              >
+                Adicionar capítulo
+              </Link>
+
+
+              {obra.arquivoObra && (
+                <Link
+                  href={verArquivoHref}
+                  onClick={() => setAcoesAbertas(false)}
+                  style={fileButtonStyle}
+                >
+                  Ver arquivo
+                </Link>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  void onCopiarLink(obra);
+                }}
+                style={linkCopiado ? copiedButtonStyle : copyButtonStyle}
+              >
+                {linkCopiado ? "Copiado!" : "Copiar link"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAcoesAbertas(false);
+                  void onExcluirObra(obra.id, obra.titulo);
+                }}
+                style={deleteButtonStyle}
+              >
+                Excluir
+              </button>
+            </div>
+
+          </section>
         </div>
-      </div>
-    </article>
+      )}
+    </>
   );
 }
 
@@ -2561,50 +2651,38 @@ const topStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "22px",
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  display: "flex",
+const topFilterButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  padding: 0,
+  display: "inline-flex",
   alignItems: "center",
-  gap: "3px",
+  justifyContent: "flex-start",
+  gap: "8px",
   minWidth: 0,
   maxWidth: "100%",
-  overflow: "visible",
+  flex: "1 1 auto",
+  fontSize: "16px",
+  lineHeight: 1.15,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  textAlign: "left",
+  letterSpacing: "-0.04em",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "#04000A",
+const topFilterIconStyle: CSSProperties = {
   color: "#FFFFFF",
-  fontSize: "19px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  border: "1px solid rgba(59, 7, 100, 0.58)",
-  boxShadow: "none",
+  fontSize: "21px",
+  lineHeight: 1,
+  fontWeight: 700,
   flex: "0 0 auto",
 };
-
-const logoTextStyle: CSSProperties = {
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
-  textShadow: "none",
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-};
-
 
 const topSearchButtonStyle: CSSProperties = {
   appearance: "none",
@@ -2657,7 +2735,7 @@ const statCardStyle: CSSProperties = {
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   fontSize: "15px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2687,7 +2765,7 @@ const studioSearchShellStyle: CSSProperties = {
   minHeight: "52px",
   borderRadius: "22px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(39, 39, 42, 0.86)",
+  background: "#000000",
   display: "flex",
   alignItems: "center",
   gap: "10px",
@@ -2697,7 +2775,7 @@ const studioSearchShellStyle: CSSProperties = {
 };
 
 const studioSearchIconStyle: CSSProperties = {
-  color: "rgba(244,244,245,0.68)",
+  color: "#FFFFFF",
   fontSize: "22px",
   lineHeight: 1,
   fontWeight: 700,
@@ -2719,48 +2797,6 @@ const studioSearchInputStyle: CSSProperties = {
   fontWeight: 850,
   letterSpacing: "-0.035em",
   boxSizing: "border-box",
-};
-
-const studioFilterRowStyle: CSSProperties = {
-  minHeight: "32px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const studioFilterButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "100%",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  padding: 0,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-  fontSize: "16px",
-  lineHeight: 1.15,
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  textAlign: "left",
-  letterSpacing: "-0.04em",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const studioFilterIconStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "21px",
-  lineHeight: 1,
-  fontWeight: 700,
-  flex: "0 0 auto",
 };
 
 const studioClearButtonStyle: CSSProperties = {
@@ -2943,7 +2979,7 @@ const sectionHeaderStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
   fontSize: "28px",
   lineHeight: 1.08,
   fontWeight: 950,
@@ -2956,8 +2992,9 @@ const sectionTitleStyle: CSSProperties = {
 
 const worksGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  columnGap: "10px",
+  rowGap: "14px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2965,42 +3002,48 @@ const worksGridStyle: CSSProperties = {
 
 const workCardStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "96px minmax(0, 1fr)",
-  alignItems: "stretch",
-  gap: "8px",
-  padding: "8px",
-  borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  gap: 0,
   minWidth: 0,
   maxWidth: "100%",
+  width: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
+  position: "relative",
+  border: "0",
+  outline: "none",
+  boxShadow: "none",
+  background: "transparent",
+  color: "#FFFFFF",
 };
 
 const coverLinkStyle: CSSProperties = {
   display: "block",
-  height: "100%",
-  textDecoration: "none",
-  color: "#FFFFFF",
+  width: "100%",
   minWidth: 0,
   maxWidth: "100%",
+  textDecoration: "none",
+  textDecorationLine: "none",
+  color: "#FFFFFF",
+  border: "0",
+  outline: "none",
+  boxShadow: "none",
+  background: "transparent",
   boxSizing: "border-box",
 };
 
 const coverStyle: CSSProperties = {
-  height: "100%",
-  minHeight: "128px",
-  borderRadius: "14px",
+  width: "100%",
+  aspectRatio: "3 / 4",
+  minHeight: "208px",
+  borderRadius: "18px",
   position: "relative",
   overflow: "hidden",
-  background: "#04000A",
+  background: "#08030F",
   backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "0",
+  outline: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -3011,176 +3054,153 @@ const coverGlowStyle: CSSProperties = {
   display: "none",
 };
 
-const coverBottomStyle: CSSProperties = {
-  position: "absolute",
-  left: "7px",
-  right: "7px",
-  bottom: "7px",
-  display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "flex-start",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const coverNumberStyle: CSSProperties = {
-  WebkitTextFillColor: "#FFFFFF",
-  textShadow: "none",
-  color: "#FFFFFF",
-  fontSize: "20px",
-  lineHeight: 0.9,
-  fontWeight: 950,
-  letterSpacing: "-0.08em",
-  ...safeTextStyle,
-};
-
-const coverLabelStyle: CSSProperties = {
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  textShadow: "none",
-  fontSize: "7px",
-  lineHeight: 1.02,
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.055em",
-  textAlign: "left",
-  ...safeTextStyle,
-};
-
 const workContentStyle: CSSProperties = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 2,
   display: "grid",
   gap: "4px",
-  alignContent: "start",
   minWidth: 0,
   maxWidth: "100%",
+  padding: "28px 42px 9px 10px",
+  boxSizing: "border-box",
+  color: "#FFFFFF",
 };
 
 const statusRowStyle: CSSProperties = {
+  position: "absolute",
+  top: "8px",
+  left: "8px",
+  right: "8px",
+  zIndex: 2,
   display: "flex",
   flexWrap: "wrap",
-  gap: "5px",
+  gap: "6px",
   alignItems: "center",
   minWidth: 0,
+  pointerEvents: "none",
 };
 
 const publishedStatusStyle: CSSProperties = {
   width: "fit-content",
+  minHeight: "18px",
   maxWidth: "100%",
-  padding: "4px 7px",
+  padding: "0 6px",
   borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.22)",
-  color: "#86EFAC",
+  background: "rgba(8,5,13,0.52)",
+  border: "1px solid rgba(255,255,255,0.14)",
+  color: "#FFFFFF",
   fontSize: "8px",
   fontWeight: 950,
-  letterSpacing: "0.045em",
-  textTransform: "uppercase",
+  lineHeight: 1,
+  letterSpacing: "0.01em",
+  textTransform: "none",
+  textShadow: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
   ...safeTextStyle,
 };
 
 const draftStatusStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "8px",
-  fontWeight: 950,
-  letterSpacing: "0.045em",
-  textTransform: "uppercase",
-  ...safeTextStyle,
+  ...publishedStatusStyle,
+  background: "rgba(8,5,13,0.52)",
+  border: "1px solid rgba(255,255,255,0.14)",
+  color: "#FFFFFF",
 };
 
-const classificationBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
-  fontSize: "8px",
-  fontWeight: 950,
-  letterSpacing: "0.045em",
-  textTransform: "uppercase",
-  ...safeTextStyle,
-};
 
 const panelTinyInfoStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: 0,
-  color: "var(--historietas-text-muted, rgba(255,255,255,0.54))",
-  fontSize: "8px",
+  color: "rgba(255,255,255,0.72)",
+  fontSize: "12px",
+  lineHeight: 1.2,
   fontWeight: 850,
-  lineHeight: 1.05,
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
   overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  textAlign: "center",
+  maxWidth: "100%",
   ...safeTextStyle,
 };
 
 const workTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "16px",
+  color: "#FFFFFF",
+  fontSize: "13px",
   lineHeight: 1.06,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
-  maxWidth: "100%",
-  paddingBottom: 0,
+  letterSpacing: "-0.035em",
+  textShadow: "none",
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
+  minWidth: 0,
+  maxWidth: "100%",
   ...safeTextStyle,
 };
 
 const authorStyle: CSSProperties = {
-  margin: 0,
-  display: "inline-flex",
+  color: "rgba(255,255,255,0.76)",
   textDecoration: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 900,
+  fontSize: "12px",
+  lineHeight: 1.2,
+  fontWeight: 850,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  textAlign: "center",
   maxWidth: "100%",
   ...safeTextStyle,
 };
 
 const workMetaLineStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "10px",
+  color: "#FFFFFF",
   fontSize: "9px",
-  lineHeight: 1.15,
+  lineHeight: 1.18,
   fontWeight: 850,
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
+  letterSpacing: "-0.01em",
+  textShadow: "none",
   overflow: "hidden",
-  maxWidth: "100%",
-  ...safeTextStyle,
+  whiteSpace: "nowrap",
+  minWidth: 0,
+};
+
+const workCardHeartMetaStyle: CSSProperties = {
+  color: "#EF4444",
+  fontWeight: 950,
+};
+
+const workCardCommentMetaStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontWeight: 950,
 };
 
 const metricGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "2px",
+  gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
+  padding: "12px 16px 8px",
 };
 
 const metricItemStyle: CSSProperties = {
-  padding: "2px 1px",
-  borderRadius: "7px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  padding: "8px 4px",
+  borderRadius: "12px",
+  background: "rgba(255,255,255,0.035)",
+  border: "1px solid rgba(255,255,255,0.055)",
   display: "grid",
-  gap: "1px",
+  gap: "3px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -3189,7 +3209,7 @@ const metricItemStyle: CSSProperties = {
 
 const metricNumberStyle: CSSProperties = {
   color: "#DDD6FE",
-  fontSize: "11px",
+  fontSize: "14px",
   lineHeight: 1,
   fontWeight: 950,
   textAlign: "center",
@@ -3197,184 +3217,231 @@ const metricNumberStyle: CSSProperties = {
 };
 
 const metricLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "6.5px",
+  color: "rgba(255,255,255,0.62)",
+  fontSize: "8px",
   lineHeight: 1,
   fontWeight: 850,
   textAlign: "center",
-  letterSpacing: "-0.01em",
   ...safeTextStyle,
 };
 
 const progressInlineStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr) auto",
+  gap: "10px",
   alignItems: "center",
-  gap: "8px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
+  padding: "0 22px 13px",
 };
 
 const progressValueStyle: CSSProperties = {
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "11px",
+  color: "#FB923C",
+  fontSize: "14px",
+  lineHeight: 1,
   fontWeight: 950,
-  flex: "0 0 auto",
+  ...safeTextStyle,
 };
 
 const progressTrackStyle: CSSProperties = {
-  width: "100%",
-  height: "6px",
+  height: "7px",
   borderRadius: "999px",
   overflow: "hidden",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.07)",
   minWidth: 0,
 };
 
 const progressFillStyle: CSSProperties = {
   height: "100%",
-  minWidth: "6px",
   borderRadius: "999px",
-  background:
-    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "linear-gradient(90deg, #F97316 0%, #A855F7 100%)",
 };
 
 const actionsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "3px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
+  gap: 0,
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  overflow: "hidden",
 };
 
-
 const openButtonStyle: CSSProperties = {
-  minHeight: "28px",
-  borderRadius: "999px",
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "8px",
-  fontWeight: 950,
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  minHeight: "48px",
   display: "flex",
   alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 4px",
-  lineHeight: 1.05,
-  minWidth: 0,
-  maxWidth: "100%",
+  justifyContent: "flex-start",
+  gap: "16px",
+  border: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  borderRadius: 0,
+  background: "transparent",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  padding: "0 30px",
+  fontSize: "18px",
+  fontWeight: 700,
+  lineHeight: 1.15,
+  letterSpacing: "-0.035em",
+  fontFamily: "inherit",
+  textAlign: "left",
+  cursor: "pointer",
   boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
 const readButtonStyle: CSSProperties = {
   ...openButtonStyle,
-  background:
-    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-  border: "1px solid rgba(249,115,22,0.24)",
-  color: "#FFFFFF",
+  fontWeight: 900,
 };
 
-const publicPageButtonStyle: CSSProperties = {
-  minHeight: "28px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  textDecoration: "none",
-  fontSize: "8px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 4px",
-  lineHeight: 1.05,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 const editButtonStyle: CSSProperties = {
-  minHeight: "28px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  textDecoration: "none",
-  fontSize: "8px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 4px",
-  lineHeight: 1.05,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  ...safeTextStyle,
+  ...openButtonStyle,
 };
 
 const chapterButtonStyle: CSSProperties = {
-  minHeight: "28px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  textDecoration: "none",
-  fontSize: "8px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 4px",
-  lineHeight: 1.05,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: "none",
-  ...safeTextStyle,
+  ...openButtonStyle,
 };
 
 const fileButtonStyle: CSSProperties = {
-  ...publicPageButtonStyle,
+  ...openButtonStyle,
 };
 
 const copyButtonStyle: CSSProperties = {
-  ...publicPageButtonStyle,
-  cursor: "pointer",
-  fontFamily: "inherit",
+  ...openButtonStyle,
 };
 
 const copiedButtonStyle: CSSProperties = {
   ...copyButtonStyle,
-  background: "rgba(249,115,22,0.18)",
-  border: "1px solid rgba(249,115,22,0.34)",
-  color: "#FED7AA",
+  color: "#86EFAC",
 };
 
 const deleteButtonStyle: CSSProperties = {
-  ...copyButtonStyle,
-  background: "rgba(127,29,29,0.20)",
-  border: "1px solid rgba(248,113,113,0.26)",
+  ...openButtonStyle,
   color: "#FCA5A5",
+};
+
+const workCardDotsButtonStyle: CSSProperties = {
+  position: "absolute",
+  right: "8px",
+  bottom: "8px",
+  zIndex: 4,
+  width: "24px",
+  height: "24px",
+  border: "none",
+  borderRadius: 0,
+  background: "transparent",
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  margin: 0,
+  textShadow: "none",
+};
+
+const workActionSheetOverlayStyle: CSSProperties = {
+  position: "fixed",
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  height: "100dvh",
+  zIndex: 9998,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  background: "rgba(0,0,0,0.68)",
+  padding: 0,
+  boxSizing: "border-box",
+  overscrollBehavior: "none",
+  touchAction: "none",
+};
+
+const workActionSheetStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  width: "min(760px, calc(100% - 12px))",
+  maxHeight: "calc(100dvh - 18px)",
+  overflowX: "hidden",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+  borderRadius: "24px 24px 0 0",
+  background: "#15191C",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
+  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  display: "grid",
+  gap: 0,
+  boxSizing: "border-box",
+  touchAction: "none",
+};
+
+const workActionSheetHandleStyle: CSSProperties = {
+  width: "72px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "rgba(244,244,245,0.62)",
+  justifySelf: "center",
+  margin: "0 auto 12px",
+};
+
+const workActionSheetHeaderStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
+  gap: "4px",
+  minWidth: 0,
+  padding: "0 24px 13px",
+  boxSizing: "border-box",
+  borderBottom: "1px solid rgba(255,255,255,0.045)",
+};
+
+const workActionSheetTextBlockStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
+  gap: "4px",
+  minWidth: 0,
+  width: "100%",
+};
+
+const workActionSheetTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "21px",
+  fontWeight: 950,
+  lineHeight: 1.1,
+  letterSpacing: "-0.04em",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  textAlign: "center",
+  maxWidth: "100%",
+  ...safeTextStyle,
+};
+
+const workActionSheetMetaStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.72)",
+  fontSize: "12px",
+  fontWeight: 850,
+  lineHeight: 1.2,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  textAlign: "center",
+  maxWidth: "100%",
+  ...safeTextStyle,
 };
 
 
@@ -3412,36 +3479,29 @@ const desktopSectionHeaderStyle: CSSProperties = {
 
 const desktopWorksGridStyle: CSSProperties = {
   ...worksGridStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "12px",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  columnGap: "14px",
+  rowGap: "18px",
 };
 
 const desktopWorkCardStyle: CSSProperties = {
   ...workCardStyle,
-  gridTemplateColumns: "126px minmax(0, 1fr)",
-  gap: "12px",
-  padding: "12px",
-  borderRadius: "22px",
 };
 
 const desktopWorkContentStyle: CSSProperties = {
   ...workContentStyle,
-  gap: "6px",
-  alignContent: "start",
+  padding: "28px 42px 9px 10px",
 };
 
 const desktopMetricGridStyle: CSSProperties = {
   ...metricGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "6px",
+  padding: "14px 22px 10px",
+  gap: "8px",
 };
 
 const desktopCardActionsGridStyle: CSSProperties = {
   ...actionsGridStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "7px",
 };
-
 
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
