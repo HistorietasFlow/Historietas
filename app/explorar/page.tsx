@@ -953,6 +953,18 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
+function obraTemArquivoAnexadoExplorar(
+  obra: Pick<ObraLocal, "arquivoObra">
+) {
+  return Boolean(normalizarArquivoObra(obra.arquivoObra));
+}
+
+function obraTemConteudoPublicadoExplorar(
+  obra: Pick<ObraLocal, "capitulos" | "arquivoObra">
+) {
+  return obra.capitulos.length > 0 || obraTemArquivoAnexadoExplorar(obra);
+}
+
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   if (typeof window === "undefined" || !userId.trim()) {
     return {};
@@ -1414,30 +1426,33 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
       }
     );
 
-    const obrasSupabaseNormalizadas = obrasSupabase.map((obraBanco, index) => {
-      const slugBanco = obraBanco.slug?.trim() || "";
-      const obraLocal = obrasLocais.find((obraLocalAtual) => {
-        const slugLocal =
-          obraLocalAtual.slug || criarSlugBase(obraLocalAtual.titulo);
+    const obrasSupabaseNormalizadas = obrasSupabase
+      .map((obraBanco, index) => {
+        const slugBanco = obraBanco.slug?.trim() || "";
+        const obraLocal = obrasLocais.find((obraLocalAtual) => {
+          const slugLocal =
+            obraLocalAtual.slug || criarSlugBase(obraLocalAtual.titulo);
 
-        return obraLocalAtual.id === obraBanco.id || slugLocal === slugBanco;
-      });
+          return obraLocalAtual.id === obraBanco.id || slugLocal === slugBanco;
+        });
 
-      const obraNormalizada = normalizarObraSupabase(
-        obraBanco,
-        capitulosPorObra.get(obraBanco.id) || [],
-        obraLocal,
-        index
-      );
-      const nomeProfile = nomesProfiles.get(obraNormalizada.autorId || "") || "";
+        const obraNormalizada = normalizarObraSupabase(
+          obraBanco,
+          capitulosPorObra.get(obraBanco.id) || [],
+          obraLocal,
+          index
+        );
+        const nomeProfile =
+          nomesProfiles.get(obraNormalizada.autorId || "") || "";
 
-      return nomeProfile
-        ? {
-            ...obraNormalizada,
-            autor: nomeProfile,
-          }
-        : obraNormalizada;
-    });
+        return nomeProfile
+          ? {
+              ...obraNormalizada,
+              autor: nomeProfile,
+            }
+          : obraNormalizada;
+      })
+      .filter((obra) => obraTemConteudoPublicadoExplorar(obra));
 
     const obrasMescladas = mesclarObrasSemDuplicar(
       obrasLocaisComProfiles,
@@ -1984,7 +1999,7 @@ export default function ExplorarPage() {
           ? true
           : obra.classificacaoIndicativa === filtroClassificacao;
 
-      const passaPublicacao = obra.publicado;
+      const passaPublicacao = obra.publicado && obraTemConteudoPublicadoExplorar(obra);
 
       const passaCapitulos =
         filtroCapitulos === "todos"

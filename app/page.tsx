@@ -1320,6 +1320,10 @@ function obraTemArquivoAnexado(obra: ObraLocal) {
   );
 }
 
+function obraTemConteudoPublicoHome(obra: ObraLocal) {
+  return obra.capitulos.length > 0 || obraTemArquivoAnexado(obra);
+}
+
 function obraCatalogoCombinaTemas(obra: Obra, temas: string[]) {
   const textoObra = normalizarTexto(
     [
@@ -2346,7 +2350,9 @@ export default function Home() {
   const termoBusca = normalizarTexto(busca);
 
   const obrasPublicadas = useMemo(() => {
-    return obrasLocais.filter((obra) => obra.publicado);
+    return obrasLocais.filter((obra) => {
+      return obra.publicado && obraTemConteudoPublicoHome(obra);
+    });
   }, [obrasLocais]);
 
   const homeSemObrasReais =

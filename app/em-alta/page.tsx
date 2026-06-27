@@ -5,9 +5,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import {
+  historietasThemeCss,
+  useHistorietasTheme,
+} from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
-import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import {
+  criarSlugBase,
+  idObraSupabaseValido,
+  normalizarTexto,
+} from "../../lib/utils";
 
 type CapituloLocal = {
   id: string;
@@ -193,7 +200,6 @@ const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
 const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
 
-
 function normalizarListaIdsEmAlta(valor: unknown) {
   return Array.isArray(valor)
     ? Array.from(
@@ -201,8 +207,8 @@ function normalizarListaIdsEmAlta(valor: unknown) {
           valor
             .filter((id): id is string => typeof id === "string")
             .map((id) => id.trim())
-            .filter(Boolean)
-        )
+            .filter(Boolean),
+        ),
       )
     : [];
 }
@@ -220,7 +226,7 @@ function normalizarChaveAutorEmAlta(valor: string) {
 function adicionarAvatarAutorLocalEmAlta(
   avataresPorAutor: Map<string, string>,
   chave: string,
-  avatar: unknown
+  avatar: unknown,
 ) {
   const chaveLimpa = normalizarChaveAutorEmAlta(chave);
   const avatarLimpo = typeof avatar === "string" ? avatar.trim() : "";
@@ -245,8 +251,10 @@ function carregarAvataresAutoresLocaisEmAlta(userIds: string[]) {
       ...userIds
         .map((userId) => userId.trim())
         .filter(Boolean)
-        .map((userId) => criarStorageKeyUsuarioEmAlta(AUTHOR_PROFILE_STORAGE_KEY, userId)),
-    ])
+        .map((userId) =>
+          criarStorageKeyUsuarioEmAlta(AUTHOR_PROFILE_STORAGE_KEY, userId),
+        ),
+    ]),
   );
 
   chavesParaLer.forEach((chaveStorage) => {
@@ -258,33 +266,35 @@ function carregarAvataresAutoresLocaisEmAlta(userIds: string[]) {
         return;
       }
 
-      Object.entries(perfis as Record<string, unknown>).forEach(([chaveAutor, perfil]) => {
-        if (!perfil || typeof perfil !== "object" || Array.isArray(perfil)) {
-          return;
-        }
+      Object.entries(perfis as Record<string, unknown>).forEach(
+        ([chaveAutor, perfil]) => {
+          if (!perfil || typeof perfil !== "object" || Array.isArray(perfil)) {
+            return;
+          }
 
-        const registro = perfil as Record<string, unknown>;
+          const registro = perfil as Record<string, unknown>;
 
-        adicionarAvatarAutorLocalEmAlta(
-          avataresPorAutor,
-          chaveAutor,
-          registro.avatar ??
-            registro.avatar_url ??
-            registro.foto_url ??
-            registro.imagem_url ??
-            registro.photo_url
-        );
+          adicionarAvatarAutorLocalEmAlta(
+            avataresPorAutor,
+            chaveAutor,
+            registro.avatar ??
+              registro.avatar_url ??
+              registro.foto_url ??
+              registro.imagem_url ??
+              registro.photo_url,
+          );
 
-        adicionarAvatarAutorLocalEmAlta(
-          avataresPorAutor,
-          typeof registro.nome === "string" ? registro.nome : "",
-          registro.avatar ??
-            registro.avatar_url ??
-            registro.foto_url ??
-            registro.imagem_url ??
-            registro.photo_url
-        );
-      });
+          adicionarAvatarAutorLocalEmAlta(
+            avataresPorAutor,
+            typeof registro.nome === "string" ? registro.nome : "",
+            registro.avatar ??
+              registro.avatar_url ??
+              registro.foto_url ??
+              registro.imagem_url ??
+              registro.photo_url,
+          );
+        },
+      );
     } catch {
       // Avatar local é só fallback para os cards de autores.
     }
@@ -296,7 +306,7 @@ function carregarAvataresAutoresLocaisEmAlta(userIds: string[]) {
 function obterAvatarAutorLocalEmAlta(
   avataresPorAutor: Map<string, string>,
   nomeAutor: string,
-  autorId: string
+  autorId: string,
 ) {
   const chaves = [autorId, nomeAutor, normalizarTexto(nomeAutor)]
     .map((chave) => normalizarChaveAutorEmAlta(chave))
@@ -320,7 +330,7 @@ function carregarListaIdsLocalEmAlta(chave: string, userId: string) {
 
   try {
     const textoLista = localStorage.getItem(
-      criarStorageKeyUsuarioEmAlta(chave, userId)
+      criarStorageKeyUsuarioEmAlta(chave, userId),
     );
     const jsonLista: unknown = textoLista ? JSON.parse(textoLista) : [];
 
@@ -330,7 +340,11 @@ function carregarListaIdsLocalEmAlta(chave: string, userId: string) {
   }
 }
 
-function salvarListaIdsLocalEmAlta(chave: string, userId: string, lista: string[]) {
+function salvarListaIdsLocalEmAlta(
+  chave: string,
+  userId: string,
+  lista: string[],
+) {
   if (typeof window === "undefined" || !userId.trim()) {
     return;
   }
@@ -339,13 +353,13 @@ function salvarListaIdsLocalEmAlta(chave: string, userId: string, lista: string[
 
   localStorage.setItem(
     criarStorageKeyUsuarioEmAlta(chave, userId),
-    JSON.stringify(listaNormalizada)
+    JSON.stringify(listaNormalizada),
   );
 }
 
 async function carregarIdsColecaoUsuarioSupabaseEmAlta(
   tabela: "favoritos" | "concluidas",
-  userId: string
+  userId: string,
 ) {
   const userIdLimpo = userId.trim();
 
@@ -362,7 +376,10 @@ async function carregarIdsColecaoUsuarioSupabaseEmAlta(
 
     if (error || !Array.isArray(data)) {
       if (error) {
-        console.warn(`Não consegui carregar ${tabela} no Em Alta:`, error.message);
+        console.warn(
+          `Não consegui carregar ${tabela} no Em Alta:`,
+          error.message,
+        );
       }
 
       return [] as string[];
@@ -370,14 +387,18 @@ async function carregarIdsColecaoUsuarioSupabaseEmAlta(
 
     return normalizarListaIdsEmAlta(
       data.map((registro) => {
-        if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+        if (
+          !registro ||
+          typeof registro !== "object" ||
+          Array.isArray(registro)
+        ) {
           return "";
         }
 
         const obraId = (registro as Record<string, unknown>).obra_id;
 
         return typeof obraId === "string" ? obraId : "";
-      })
+      }),
     );
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} no Em Alta:`, error);
@@ -385,17 +406,26 @@ async function carregarIdsColecaoUsuarioSupabaseEmAlta(
   }
 }
 
-function obterIdentificadoresObraLocalEmAlta(obra: Pick<ObraLocal, "id" | "slug" | "titulo">) {
+function obterIdentificadoresObraLocalEmAlta(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
+) {
   return Array.from(
     new Set(
-      [obra.id, obra.slug, criarSlugBase(obra.titulo), normalizarTexto(obra.titulo)]
+      [
+        obra.id,
+        obra.slug,
+        criarSlugBase(obra.titulo),
+        normalizarTexto(obra.titulo),
+      ]
         .map((id) => id.trim())
-        .filter(Boolean)
-    )
+        .filter(Boolean),
+    ),
   );
 }
 
-function obterIdentificadoresRankingObra(obra: Pick<ObraRanking, "storageId" | "titulo" | "href">) {
+function obterIdentificadoresRankingObra(
+  obra: Pick<ObraRanking, "storageId" | "titulo" | "href">,
+) {
   const hrefSlug = obra.href.startsWith("/obra/")
     ? decodeURIComponent(obra.href.replace("/obra/", "").split(/[?#]/)[0] || "")
     : "";
@@ -409,27 +439,27 @@ function obterIdentificadoresRankingObra(obra: Pick<ObraRanking, "storageId" | "
         normalizarTexto(obra.titulo),
       ]
         .map((id) => id.trim())
-        .filter(Boolean)
-    )
+        .filter(Boolean),
+    ),
   );
 }
 
 function listaTemRankingObra(
   obra: Pick<ObraRanking, "storageId" | "titulo" | "href">,
-  lista: string[]
+  lista: string[],
 ) {
   const listaNormalizada = new Set(
-    lista.map((id) => id.trim()).filter(Boolean)
+    lista.map((id) => id.trim()).filter(Boolean),
   );
 
   return obterIdentificadoresRankingObra(obra).some((id) =>
-    listaNormalizada.has(id)
+    listaNormalizada.has(id),
   );
 }
 
 function removerRankingObraDaLista(
   obra: Pick<ObraRanking, "storageId" | "titulo" | "href">,
-  lista: string[]
+  lista: string[],
 ) {
   const idsObra = new Set(obterIdentificadoresRankingObra(obra));
 
@@ -438,7 +468,7 @@ function removerRankingObraDaLista(
 
 function adicionarRankingObraNaLista(
   obra: Pick<ObraRanking, "storageId" | "titulo" | "href">,
-  lista: string[]
+  lista: string[],
 ) {
   return normalizarListaIdsEmAlta([
     ...removerRankingObraDaLista(obra, lista),
@@ -449,7 +479,7 @@ function adicionarRankingObraNaLista(
 async function sincronizarColecaoRankingSupabase(
   tabela: "favoritos" | "concluidas",
   obra: Pick<ObraRanking, "storageId" | "titulo"> | null,
-  ativo: boolean
+  ativo: boolean,
 ) {
   try {
     const { data } = await supabase.auth.getUser();
@@ -490,7 +520,7 @@ async function sincronizarColecaoRankingSupabase(
 
 async function registrarColecaoRankingNoDiario(
   tipo: "favoritou_obra" | "concluiu_obra",
-  obra: Pick<ObraRanking, "storageId" | "titulo"> | null
+  obra: Pick<ObraRanking, "storageId" | "titulo"> | null,
 ) {
   try {
     const { data } = await supabase.auth.getUser();
@@ -551,7 +581,7 @@ function criarLoginHrefEmAlta() {
 function criarHrefLeituraCapitulo(
   obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
   capitulo: CapituloLocal,
-  numeroCapitulo: number
+  numeroCapitulo: number,
 ) {
   const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
 
@@ -566,7 +596,7 @@ function criarHrefLeituraCapitulo(
   }
 
   return `/ler-capitulo?obraId=${encodeURIComponent(
-    obra.id
+    obra.id,
   )}&capituloId=${encodeURIComponent(capitulo.id)}`;
 }
 
@@ -590,14 +620,16 @@ function criarLinkPerfilAutorRanking(nomeAutor: string, autorId?: string) {
   return query ? `/perfil-autor?${query}` : "/perfil-autor";
 }
 
-function obterNomeProfileAutorRanking(profile?: SupabaseProfileAutorRankingRow | null) {
+function obterNomeProfileAutorRanking(
+  profile?: SupabaseProfileAutorRankingRow | null,
+) {
   return typeof profile?.nome === "string" && profile.nome.trim()
     ? profile.nome.trim()
     : "";
 }
 
 function obterAvatarProfileAutorRanking(
-  profile?: SupabaseProfileAutorRankingRow | null
+  profile?: SupabaseProfileAutorRankingRow | null,
 ) {
   const candidatos = [
     profile?.avatar_url,
@@ -608,7 +640,8 @@ function obterAvatarProfileAutorRanking(
   ];
 
   const avatar = candidatos.find(
-    (valor): valor is string => typeof valor === "string" && Boolean(valor.trim())
+    (valor): valor is string =>
+      typeof valor === "string" && Boolean(valor.trim()),
   );
 
   return avatar?.trim() || "";
@@ -616,9 +649,10 @@ function obterAvatarProfileAutorRanking(
 
 function adicionarProfileAutorRankingNoMapa(
   mapa: Map<string, SupabaseProfileAutorRankingRow>,
-  profile: SupabaseProfileAutorRankingRow
+  profile: SupabaseProfileAutorRankingRow,
 ) {
-  const userId = typeof profile.user_id === "string" ? profile.user_id.trim() : "";
+  const userId =
+    typeof profile.user_id === "string" ? profile.user_id.trim() : "";
   const id = typeof profile.id === "string" ? profile.id.trim() : "";
 
   if (userId) {
@@ -632,7 +666,7 @@ function adicionarProfileAutorRankingNoMapa(
 
 async function carregarProfilesAutoresRanking(userIds: string[]) {
   const idsUnicos = Array.from(
-    new Set(userIds.map((userId) => userId.trim()).filter(Boolean))
+    new Set(userIds.map((userId) => userId.trim()).filter(Boolean)),
   );
   const profilesPorUsuario = new Map<string, SupabaseProfileAutorRankingRow>();
 
@@ -648,14 +682,22 @@ async function carregarProfilesAutoresRanking(userIds: string[]) {
       .limit(1000);
 
     if (error) {
-      console.warn("Não consegui carregar profiles por user_id no ranking:", error.message);
+      console.warn(
+        "Não consegui carregar profiles por user_id no ranking:",
+        error.message,
+      );
     } else {
-      ((data || []) as unknown as SupabaseProfileAutorRankingRow[]).forEach((profile) => {
-        adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
-      });
+      ((data || []) as unknown as SupabaseProfileAutorRankingRow[]).forEach(
+        (profile) => {
+          adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
+        },
+      );
     }
   } catch (error) {
-    console.warn("Não consegui acessar profiles por user_id no ranking:", error);
+    console.warn(
+      "Não consegui acessar profiles por user_id no ranking:",
+      error,
+    );
   }
 
   try {
@@ -666,11 +708,16 @@ async function carregarProfilesAutoresRanking(userIds: string[]) {
       .limit(1000);
 
     if (error) {
-      console.warn("Não consegui carregar profiles por id no ranking:", error.message);
+      console.warn(
+        "Não consegui carregar profiles por id no ranking:",
+        error.message,
+      );
     } else {
-      ((data || []) as unknown as SupabaseProfileAutorRankingRow[]).forEach((profile) => {
-        adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
-      });
+      ((data || []) as unknown as SupabaseProfileAutorRankingRow[]).forEach(
+        (profile) => {
+          adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
+        },
+      );
     }
   } catch (error) {
     console.warn("Não consegui acessar profiles por id no ranking:", error);
@@ -681,7 +728,7 @@ async function carregarProfilesAutoresRanking(userIds: string[]) {
 
 async function buscarSeguidoresAutoresRanking(autorIds: string[]) {
   const idsUnicos = Array.from(
-    new Set(autorIds.map((autorId) => autorId.trim()).filter(Boolean))
+    new Set(autorIds.map((autorId) => autorId.trim()).filter(Boolean)),
   );
 
   if (idsUnicos.length === 0) {
@@ -699,7 +746,7 @@ async function buscarSeguidoresAutoresRanking(autorIds: string[]) {
       if (error) {
         console.warn(
           "Não consegui carregar seguidores dos autores no ranking:",
-          error.message
+          error.message,
         );
       }
 
@@ -707,7 +754,11 @@ async function buscarSeguidoresAutoresRanking(autorIds: string[]) {
     }
 
     return data.reduce<Record<string, number>>((contagem, registro) => {
-      if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+      if (
+        !registro ||
+        typeof registro !== "object" ||
+        Array.isArray(registro)
+      ) {
         return contagem;
       }
 
@@ -747,24 +798,24 @@ function normalizarVisualizacoesRanking(valor: unknown) {
     return {};
   }
 
-  return Object.entries(valor as Record<string, unknown>).reduce<Record<string, number>>(
-    (visualizacoesNormalizadas, [chave, total]) => {
-      const chaveLimpa = chave.trim();
-      const totalNumerico = typeof total === "number" && Number.isFinite(total) ? total : 0;
+  return Object.entries(valor as Record<string, unknown>).reduce<
+    Record<string, number>
+  >((visualizacoesNormalizadas, [chave, total]) => {
+    const chaveLimpa = chave.trim();
+    const totalNumerico =
+      typeof total === "number" && Number.isFinite(total) ? total : 0;
 
-      if (chaveLimpa && totalNumerico > 0) {
-        visualizacoesNormalizadas[chaveLimpa] = Math.round(totalNumerico);
-      }
+    if (chaveLimpa && totalNumerico > 0) {
+      visualizacoesNormalizadas[chaveLimpa] = Math.round(totalNumerico);
+    }
 
-      return visualizacoesNormalizadas;
-    },
-    {}
-  );
+    return visualizacoesNormalizadas;
+  }, {});
 }
 
 function obterVisualizacoesRegistradasObra(
   obra: ObraLocal,
-  visualizacoesRegistradas: Record<string, number>
+  visualizacoesRegistradas: Record<string, number>,
 ) {
   const chavesObra = [
     obra.id,
@@ -785,26 +836,26 @@ function normalizarAvaliacoesLocaisRanking(valor: unknown) {
     return {};
   }
 
-  return Object.entries(valor as Record<string, unknown>).reduce<Record<string, number>>(
-    (avaliacoesNormalizadas, [chave, nota]) => {
-      const chaveLimpa = chave.trim();
-      const notaNumerica = typeof nota === "number" && Number.isFinite(nota)
+  return Object.entries(valor as Record<string, unknown>).reduce<
+    Record<string, number>
+  >((avaliacoesNormalizadas, [chave, nota]) => {
+    const chaveLimpa = chave.trim();
+    const notaNumerica =
+      typeof nota === "number" && Number.isFinite(nota)
         ? Math.round(nota * 2) / 2
         : 0;
 
-      if (chaveLimpa && notaNumerica >= 0.5 && notaNumerica <= 5) {
-        avaliacoesNormalizadas[chaveLimpa] = notaNumerica;
-      }
+    if (chaveLimpa && notaNumerica >= 0.5 && notaNumerica <= 5) {
+      avaliacoesNormalizadas[chaveLimpa] = notaNumerica;
+    }
 
-      return avaliacoesNormalizadas;
-    },
-    {}
-  );
+    return avaliacoesNormalizadas;
+  }, {});
 }
 
 function obterAvaliacaoLocalRanking(
   obra: ObraLocal,
-  avaliacoesLocais: Record<string, number>
+  avaliacoesLocais: Record<string, number>,
 ) {
   const chavesObra = [
     obra.id,
@@ -853,11 +904,20 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
     return 0;
   }
 
-  return Math.round((calcularCapitulosLidos(capitulos) / capitulos.length) * 100);
+  return Math.round(
+    (calcularCapitulosLidos(capitulos) / capitulos.length) * 100,
+  );
 }
 
-function normalizarTipoArquivoSupabase(tipo: string | null): ArquivoObraLocal["tipo"] {
-  if (tipo === "imagem" || tipo === "documento" || tipo === "texto" || tipo === "outro") {
+function normalizarTipoArquivoSupabase(
+  tipo: string | null,
+): ArquivoObraLocal["tipo"] {
+  if (
+    tipo === "imagem" ||
+    tipo === "documento" ||
+    tipo === "texto" ||
+    tipo === "outro"
+  ) {
     return tipo;
   }
 
@@ -898,9 +958,10 @@ function calcularAvaliacoesPorObra(linhas: SupabaseAvaliacaoObraRow[]) {
 
   linhas.forEach((linha) => {
     const obraId = linha.obra_id?.trim();
-    const nota = typeof linha.nota === "number" && Number.isFinite(linha.nota)
-      ? linha.nota
-      : 0;
+    const nota =
+      typeof linha.nota === "number" && Number.isFinite(linha.nota)
+        ? linha.nota
+        : 0;
 
     if (!obraId || nota <= 0) {
       return;
@@ -910,24 +971,23 @@ function calcularAvaliacoesPorObra(linhas: SupabaseAvaliacaoObraRow[]) {
     totalPorObra[obraId] = (totalPorObra[obraId] || 0) + 1;
   });
 
-  return Object.entries(totalPorObra).reduce<Record<string, AvaliacaoRankingObra>>(
-    (avaliacoes, [obraId, total]) => {
-      const soma = somaPorObra[obraId] || 0;
+  return Object.entries(totalPorObra).reduce<
+    Record<string, AvaliacaoRankingObra>
+  >((avaliacoes, [obraId, total]) => {
+    const soma = somaPorObra[obraId] || 0;
 
-      avaliacoes[obraId] = {
-        total,
-        media: total > 0 ? soma / total : 0,
-      };
+    avaliacoes[obraId] = {
+      total,
+      media: total > 0 ? soma / total : 0,
+    };
 
-      return avaliacoes;
-    },
-    {}
-  );
+    return avaliacoes;
+  }, {});
 }
 
 async function buscarContagemInteracoesObras(
   tabela: "obra_curtidas" | "seguindo_obras",
-  obraIds: string[]
+  obraIds: string[],
 ) {
   if (obraIds.length === 0) {
     return {};
@@ -969,7 +1029,9 @@ async function buscarAvaliacoesObras(obraIds: string[]) {
       return {};
     }
 
-    return calcularAvaliacoesPorObra((data || []) as unknown as SupabaseAvaliacaoObraRow[]);
+    return calcularAvaliacoesPorObra(
+      (data || []) as unknown as SupabaseAvaliacaoObraRow[],
+    );
   } catch (error) {
     console.warn("Não consegui acessar obra_avaliacoes agora:", error);
     return {};
@@ -978,7 +1040,7 @@ async function buscarAvaliacoesObras(obraIds: string[]) {
 
 async function buscarContagemInteracoesCapitulos(
   tabela: "curtidas_capitulos" | "salvos_capitulos" | "comentarios_capitulos",
-  capituloIds: string[]
+  capituloIds: string[],
 ) {
   if (capituloIds.length === 0) {
     return {};
@@ -996,7 +1058,9 @@ async function buscarContagemInteracoesCapitulos(
       return {};
     }
 
-    return contarPorCapitulo((data || []) as unknown as SupabaseInteracaoCapituloRow[]);
+    return contarPorCapitulo(
+      (data || []) as unknown as SupabaseInteracaoCapituloRow[],
+    );
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} agora:`, error);
     return {};
@@ -1005,7 +1069,7 @@ async function buscarContagemInteracoesCapitulos(
 
 function somarContagensCapitulos(
   capitulos: SupabaseCapituloRow[],
-  contagem: Record<string, number>
+  contagem: Record<string, number>,
 ) {
   return capitulos.reduce((total, capitulo) => {
     return total + (contagem[capitulo.id] || 0);
@@ -1025,10 +1089,10 @@ function converterObraSupabaseParaLocal(
   avaliacoesPorObra: Record<string, AvaliacaoRankingObra>,
   profilesAutores: Map<string, SupabaseProfileAutorRankingRow>,
   seguidoresAutores: Record<string, number>,
-  avataresLocaisAutores: Map<string, string>
+  avataresLocaisAutores: Map<string, string>,
 ): ObraLocal {
   const capitulosLocaisPorId = new Map(
-    (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
+    (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo]),
   );
 
   const capitulosNormalizados = capitulos.map((capitulo, capituloIndex) => {
@@ -1047,7 +1111,8 @@ function converterObraSupabaseParaLocal(
       curtiu: Boolean(capituloLocal?.curtiu) || totalCurtidas > 0,
       salvo: Boolean(capituloLocal?.salvo) || totalSalvos > 0,
       comentario:
-        capituloLocal?.comentario || (totalComentarios > 0 ? `${totalComentarios} comentário(s)` : ""),
+        capituloLocal?.comentario ||
+        (totalComentarios > 0 ? `${totalComentarios} comentário(s)` : ""),
       criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
       lido: Boolean(capituloLocal?.lido),
       lidoEm: capituloLocal?.lidoEm || "",
@@ -1055,14 +1120,20 @@ function converterObraSupabaseParaLocal(
   });
 
   const capitulosRemotosIds = new Set(
-    capitulosNormalizados.map((capitulo) => capitulo.id)
+    capitulosNormalizados.map((capitulo) => capitulo.id),
   );
   const capitulosApenasLocais = (obraLocal?.capitulos || []).filter(
-    (capitulo) => !capitulosRemotosIds.has(capitulo.id)
+    (capitulo) => !capitulosRemotosIds.has(capitulo.id),
   );
-  const capitulosMesclados = [...capitulosNormalizados, ...capitulosApenasLocais];
+  const capitulosMesclados = [
+    ...capitulosNormalizados,
+    ...capitulosApenasLocais,
+  ];
   const titulo = obra.titulo?.trim() || obraLocal?.titulo || "Obra sem título";
-  const slug = obra.slug?.trim() || obraLocal?.slug || criarSlugBase(titulo || `obra-${index + 1}`);
+  const slug =
+    obra.slug?.trim() ||
+    obraLocal?.slug ||
+    criarSlugBase(titulo || `obra-${index + 1}`);
   const arquivoUrl = obra.arquivo_url?.trim() || "";
   const arquivoTipo = normalizarTipoArquivoSupabase(obra.arquivo_categoria);
   const totalCurtidasObra = curtidasPorObra[obra.id] || 0;
@@ -1072,12 +1143,15 @@ function converterObraSupabaseParaLocal(
   const profileAutor = autorId ? profilesAutores.get(autorId) || null : null;
   const nomeAutorProfile = obterNomeProfileAutorRanking(profileAutor);
   const nomeAutorObra = obra.autor?.trim() || obraLocal?.autor || "";
-  const nomeAutor =
-    nomeAutorProfile || nomeAutorObra || "Autor não informado";
+  const nomeAutor = nomeAutorProfile || nomeAutorObra || "Autor não informado";
   const avatarAutor =
     obterAvatarProfileAutorRanking(profileAutor) ||
     obterAvatarAutorLocalEmAlta(avataresLocaisAutores, nomeAutor, autorId) ||
-    obterAvatarAutorLocalEmAlta(avataresLocaisAutores, nomeAutorObra, autorId) ||
+    obterAvatarAutorLocalEmAlta(
+      avataresLocaisAutores,
+      nomeAutorObra,
+      autorId,
+    ) ||
     obraLocal?.autorAvatarRanking ||
     "";
   const totalSeguidoresAutor = autorId
@@ -1097,10 +1171,14 @@ function converterObraSupabaseParaLocal(
       obraLocal?.classificacaoIndicativa ||
       "Não informada",
     sinopse:
-      obra.sinopse?.trim() || obraLocal?.sinopse || "Nenhuma sinopse informada.",
+      obra.sinopse?.trim() ||
+      obraLocal?.sinopse ||
+      "Nenhuma sinopse informada.",
     tags:
       Array.isArray(obra.tags) && obra.tags.length > 0
-        ? obra.tags.filter((tag) => typeof tag === "string" && Boolean(tag.trim()))
+        ? obra.tags.filter(
+            (tag) => typeof tag === "string" && Boolean(tag.trim()),
+          )
         : obraLocal?.tags || ["sem tags"],
     capa: obra.capa_url?.trim() || obraLocal?.capa || "",
     capaNome: obra.capa_nome?.trim() || obraLocal?.capaNome || "",
@@ -1114,10 +1192,14 @@ function converterObraSupabaseParaLocal(
     link: obra.link?.trim() || obraLocal?.link || `/obra/${slug}`,
     arquivoObra: arquivoUrl
       ? {
-          nome: obra.arquivo_nome?.trim() || obraLocal?.arquivoObra?.nome || "Arquivo da obra",
+          nome:
+            obra.arquivo_nome?.trim() ||
+            obraLocal?.arquivoObra?.nome ||
+            "Arquivo da obra",
           tipo: arquivoTipo,
           tamanho:
-            typeof obra.arquivo_tamanho === "number" && Number.isFinite(obra.arquivo_tamanho)
+            typeof obra.arquivo_tamanho === "number" &&
+            Number.isFinite(obra.arquivo_tamanho)
               ? obra.arquivo_tamanho
               : obraLocal?.arquivoObra?.tamanho || 0,
           conteudo: arquivoUrl,
@@ -1127,38 +1209,39 @@ function converterObraSupabaseParaLocal(
     totalCurtidasRanking: Math.max(
       obraLocal?.totalCurtidasRanking || 0,
       somarContagensCapitulos(capitulos, curtidasPorCapitulo),
-      totalCurtidasObra
+      totalCurtidasObra,
     ),
     totalComentariosRanking: Math.max(
       obraLocal?.totalComentariosRanking || 0,
-      somarContagensCapitulos(capitulos, comentariosPorCapitulo)
+      somarContagensCapitulos(capitulos, comentariosPorCapitulo),
     ),
     totalSalvosRanking: Math.max(
       obraLocal?.totalSalvosRanking || 0,
       somarContagensCapitulos(capitulos, salvosPorCapitulo),
-      totalSeguidoresObra
+      totalSeguidoresObra,
     ),
     totalViewsRanking: Math.max(
       obraLocal?.totalViewsRanking || 0,
-      typeof obra.visualizacoes === "number" && Number.isFinite(obra.visualizacoes)
+      typeof obra.visualizacoes === "number" &&
+        Number.isFinite(obra.visualizacoes)
         ? obra.visualizacoes
-        : 0
+        : 0,
     ),
     totalSeguidoresRanking: Math.max(
       obraLocal?.totalSeguidoresRanking || 0,
-      totalSeguidoresObra
+      totalSeguidoresObra,
     ),
     totalSeguidoresAutorRanking: Math.max(
       obraLocal?.totalSeguidoresAutorRanking || 0,
-      totalSeguidoresAutor
+      totalSeguidoresAutor,
     ),
     totalAvaliacoesRanking: Math.max(
       obraLocal?.totalAvaliacoesRanking || 0,
-      avaliacaoObra.total
+      avaliacaoObra.total,
     ),
     mediaAvaliacoesRanking: Math.max(
       obraLocal?.mediaAvaliacoesRanking || 0,
-      avaliacaoObra.media
+      avaliacaoObra.media,
     ),
   };
 }
@@ -1168,14 +1251,17 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
       .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em"
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em",
       )
       .eq("publicado", true)
       .order("criada_em", { ascending: false })
       .limit(80);
 
     if (erroObras) {
-      console.warn("Não consegui carregar obras publicadas do Supabase:", erroObras.message);
+      console.warn(
+        "Não consegui carregar obras publicadas do Supabase:",
+        erroObras.message,
+      );
       return [] as ObraLocal[];
     }
 
@@ -1193,20 +1279,27 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
 
     const { data: capitulosBanco, error: erroCapitulos } = await supabase
       .from("capitulos")
-      .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
+      .select(
+        "id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em",
+      )
       .in("obra_id", obraIds)
       .eq("publicado", true)
       .order("ordem", { ascending: true })
       .limit(600);
 
     if (erroCapitulos) {
-      console.warn("Não consegui carregar capítulos publicados do ranking:", erroCapitulos.message);
+      console.warn(
+        "Não consegui carregar capítulos publicados do ranking:",
+        erroCapitulos.message,
+      );
     }
 
     const capitulosSupabase = erroCapitulos
       ? []
       : ((capitulosBanco || []) as unknown as SupabaseCapituloRow[]);
-    const capituloIds = capitulosSupabase.map((capitulo) => capitulo.id).filter(Boolean);
+    const capituloIds = capitulosSupabase
+      .map((capitulo) => capitulo.id)
+      .filter(Boolean);
 
     const [
       curtidasPorCapitulo,
@@ -1228,25 +1321,30 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
       buscarSeguidoresAutoresRanking(autorIds),
     ]);
 
-    const capitulosPorObra = capitulosSupabase.reduce<Record<string, SupabaseCapituloRow[]>>(
-      (grupos, capitulo) => {
-        if (!grupos[capitulo.obra_id]) {
-          grupos[capitulo.obra_id] = [];
-        }
+    const capitulosPorObra = capitulosSupabase.reduce<
+      Record<string, SupabaseCapituloRow[]>
+    >((grupos, capitulo) => {
+      if (!grupos[capitulo.obra_id]) {
+        grupos[capitulo.obra_id] = [];
+      }
 
-        grupos[capitulo.obra_id].push(capitulo);
+      grupos[capitulo.obra_id].push(capitulo);
 
-        return grupos;
-      },
-      {}
+      return grupos;
+    }, {});
+
+    const obrasLocaisPorId = new Map(
+      obrasLocais.map((obra) => [obra.id, obra]),
+    );
+    const obrasLocaisPorSlug = new Map(
+      obrasLocais.map((obra) => [obra.slug, obra]),
     );
 
-    const obrasLocaisPorId = new Map(obrasLocais.map((obra) => [obra.id, obra]));
-    const obrasLocaisPorSlug = new Map(obrasLocais.map((obra) => [obra.slug, obra]));
-
     return obrasSupabase.map((obra, index) => {
-      const slug = obra.slug?.trim() || criarSlugBase(obra.titulo || `obra-${index + 1}`);
-      const obraLocal = obrasLocaisPorId.get(obra.id) || obrasLocaisPorSlug.get(slug);
+      const slug =
+        obra.slug?.trim() || criarSlugBase(obra.titulo || `obra-${index + 1}`);
+      const obraLocal =
+        obrasLocaisPorId.get(obra.id) || obrasLocaisPorSlug.get(slug);
 
       return converterObraSupabaseParaLocal(
         obra,
@@ -1261,7 +1359,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
         avaliacoesPorObra,
         profilesAutores,
         seguidoresAutores,
-        avataresLocaisAutores
+        avataresLocaisAutores,
       );
     });
   } catch (error) {
@@ -1273,7 +1371,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
 function encontrarCapituloParaContinuar(obra: ObraLocal) {
   const capituloRegistrado = obra.ultimoCapituloLidoId
     ? obra.capitulos.find(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
+        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId,
       )
     : null;
 
@@ -1296,7 +1394,7 @@ function encontrarCapituloParaContinuar(obra: ObraLocal) {
 function criarRankingCoverStyle(
   capa: string,
   isDesktop = false,
-  _posicao = 5
+  _posicao = 5,
 ): CSSProperties {
   const baseStyle = isDesktop ? desktopCoverStyle : coverStyle;
 
@@ -1336,7 +1434,7 @@ function ordenarRanking(lista: ObraRanking[], tipo: TipoRanking) {
 
   if (tipo === "comentadas") {
     return novaLista.sort(
-      (obraA, obraB) => obraB.comentarios - obraA.comentarios
+      (obraA, obraB) => obraB.comentarios - obraA.comentarios,
     );
   }
 
@@ -1346,7 +1444,7 @@ function ordenarRanking(lista: ObraRanking[], tipo: TipoRanking) {
 
   if (tipo === "recentes") {
     return novaLista.sort(
-      (obraA, obraB) => obraB.criadaEmTimestamp - obraA.criadaEmTimestamp
+      (obraA, obraB) => obraB.criadaEmTimestamp - obraA.criadaEmTimestamp,
     );
   }
 
@@ -1363,7 +1461,12 @@ function pegarTopRanking(lista: ObraRanking[], tipo: TipoRanking) {
 
 function criarDecoracaoPaginaStyle(index: number): CSSProperties {
   const posicoes: CSSProperties[] = [
-    { top: "32%", right: "-18px", fontSize: "72px", transform: "rotate(-14deg)" },
+    {
+      top: "32%",
+      right: "-18px",
+      fontSize: "72px",
+      transform: "rotate(-14deg)",
+    },
     { top: "64%", left: "-16px", fontSize: "58px", transform: "rotate(12deg)" },
     { bottom: "8%", right: "10%", fontSize: "52px", transform: "rotate(8deg)" },
   ];
@@ -1388,9 +1491,8 @@ export default function EmAltaPage() {
   const [visualizacoesRegistradas, setVisualizacoesRegistradas] = useState<
     Record<string, number>
   >({});
-  const [avaliacoesLocaisRegistradas, setAvaliacoesLocaisRegistradas] = useState<
-    Record<string, number>
-  >({});
+  const [avaliacoesLocaisRegistradas, setAvaliacoesLocaisRegistradas] =
+    useState<Record<string, number>>({});
   const [isDesktop, setIsDesktop] = useState(false);
   const [carregandoRanking, setCarregandoRanking] = useState(true);
   const [usuarioLogado, setUsuarioLogado] = useState(false);
@@ -1407,7 +1509,7 @@ export default function EmAltaPage() {
 
     const atualizarModoDesktopTimer = window.setTimeout(
       atualizarModoDesktop,
-      0
+      0,
     );
 
     if (typeof mediaQuery.addEventListener === "function") {
@@ -1498,16 +1600,16 @@ export default function EmAltaPage() {
         salvarListaIdsLocalEmAlta(
           FAVORITES_STORAGE_KEY,
           userIdAtual,
-          obrasFavoritasNormalizadas
+          obrasFavoritasNormalizadas,
         );
         salvarListaIdsLocalEmAlta(
           COMPLETED_STORAGE_KEY,
           userIdAtual,
-          obrasConcluidasNormalizadas
+          obrasConcluidasNormalizadas,
         );
 
         const visualizacoesTexto = localStorage.getItem(
-          criarStorageKeyUsuarioEmAlta(VIEWED_WORKS_STORAGE_KEY, userIdAtual)
+          criarStorageKeyUsuarioEmAlta(VIEWED_WORKS_STORAGE_KEY, userIdAtual),
         );
         const visualizacoesJson = visualizacoesTexto
           ? JSON.parse(visualizacoesTexto)
@@ -1516,7 +1618,7 @@ export default function EmAltaPage() {
           normalizarVisualizacoesRanking(visualizacoesJson);
 
         const avaliacoesLocaisTexto = localStorage.getItem(
-          criarStorageKeyUsuarioEmAlta(RATED_WORKS_STORAGE_KEY, userIdAtual)
+          criarStorageKeyUsuarioEmAlta(RATED_WORKS_STORAGE_KEY, userIdAtual),
         );
         const avaliacoesLocaisJson = avaliacoesLocaisTexto
           ? JSON.parse(avaliacoesLocaisTexto)
@@ -1536,9 +1638,8 @@ export default function EmAltaPage() {
           }
         }, 0);
 
-        const obrasComSupabase = await carregarObrasSupabasePublicadas(
-          obrasNormalizadas
-        );
+        const obrasComSupabase =
+          await carregarObrasSupabasePublicadas(obrasNormalizadas);
 
         window.setTimeout(() => {
           if (!cancelado) {
@@ -1576,55 +1677,55 @@ export default function EmAltaPage() {
       .filter((obra) => obra.publicado)
       .map((obra) => {
         const totalCurtidasLocais = obra.capitulos.filter(
-          (capitulo) => capitulo.curtiu
+          (capitulo) => capitulo.curtiu,
         ).length;
 
         const totalComentariosLocais = obra.capitulos.filter((capitulo) =>
-          capitulo.comentario.trim()
+          capitulo.comentario.trim(),
         ).length;
 
         const totalSalvosLocais = obra.capitulos.filter(
-          (capitulo) => capitulo.salvo
+          (capitulo) => capitulo.salvo,
         ).length;
 
         const totalCurtidas = Math.max(
           totalCurtidasLocais,
-          obra.totalCurtidasRanking || 0
+          obra.totalCurtidasRanking || 0,
         );
         const totalComentarios = Math.max(
           totalComentariosLocais,
-          obra.totalComentariosRanking || 0
+          obra.totalComentariosRanking || 0,
         );
         const totalSalvos = Math.max(
           totalSalvosLocais,
           obra.totalSalvosRanking || 0,
-          obra.totalSeguidoresRanking || 0
+          obra.totalSeguidoresRanking || 0,
         );
         const avaliacaoLocalObra = obterAvaliacaoLocalRanking(
           obra,
-          avaliacoesLocaisRegistradas
+          avaliacoesLocaisRegistradas,
         );
         const totalAvaliacoes = Math.max(
           0,
           obra.totalAvaliacoesRanking || 0,
-          avaliacaoLocalObra > 0 ? 1 : 0
+          avaliacaoLocalObra > 0 ? 1 : 0,
         );
         const mediaAvaliacoes = Math.max(
           0,
           Math.min(
             5,
-            Math.max(obra.mediaAvaliacoesRanking || 0, avaliacaoLocalObra)
-          )
+            Math.max(obra.mediaAvaliacoesRanking || 0, avaliacaoLocalObra),
+          ),
         );
 
         const visualizacoesRegistradasObra = obterVisualizacoesRegistradasObra(
           obra,
-          visualizacoesRegistradas
+          visualizacoesRegistradas,
         );
         const capitulosLidos = Math.max(
           calcularCapitulosLidos(obra.capitulos),
           obra.totalViewsRanking || 0,
-          visualizacoesRegistradasObra
+          visualizacoesRegistradasObra,
         );
         const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
         const capituloParaContinuar = encontrarCapituloParaContinuar(obra);
@@ -1633,7 +1734,7 @@ export default function EmAltaPage() {
           : "";
         const indiceCapituloParaContinuar = capituloParaContinuar
           ? obra.capitulos.findIndex(
-              (capitulo) => capitulo.id === capituloParaContinuar.id
+              (capitulo) => capitulo.id === capituloParaContinuar.id,
             )
           : -1;
         const numeroCapituloParaContinuar =
@@ -1644,7 +1745,7 @@ export default function EmAltaPage() {
           ? criarHrefLeituraCapitulo(
               obra,
               capituloParaContinuar,
-              numeroCapituloParaContinuar
+              numeroCapituloParaContinuar,
             )
           : "";
         const ultimaLeituraEm =
@@ -1656,13 +1757,13 @@ export default function EmAltaPage() {
           : criadaEmTimestamp;
 
         const pontuacao =
-          obra.capitulos.length * 2 +
-          totalCurtidas * 5 +
-          totalComentarios * 8 +
+          obra.capitulos.length * 1 +
+          totalCurtidas * 2 +
+          totalComentarios * 3 +
           totalSalvos * 4 +
-          capitulosLidos * 3 +
-          totalAvaliacoes * 6 +
-          Math.round(mediaAvaliacoes * 10);
+          capitulosLidos * 1 +
+          totalAvaliacoes * 4 +
+          Math.round(mediaAvaliacoes * 4);
 
         return {
           id: `local-${obra.id}`,
@@ -1718,11 +1819,7 @@ export default function EmAltaPage() {
       const autorId = obra.autorId?.trim() || "";
       const chave = autorId || `nome:${nomeNormalizado}`;
       const pesoNota =
-        obra.avaliacoes > 0
-          ? obra.avaliacoes
-          : obra.mediaAvaliacao > 0
-            ? 1
-            : 0;
+        obra.avaliacoes > 0 ? obra.avaliacoes : obra.mediaAvaliacao > 0 ? 1 : 0;
       const existente = autoresPorChave.get(chave);
 
       if (!existente) {
@@ -1753,7 +1850,7 @@ export default function EmAltaPage() {
       existente.capitulos += obra.capitulos;
       existente.seguidores = Math.max(
         existente.seguidores,
-        obra.seguidoresAutor
+        obra.seguidoresAutor,
       );
       existente.seguidoresObras += obra.salvos;
       existente.views += obra.views;
@@ -1778,18 +1875,21 @@ export default function EmAltaPage() {
         const mediaAvaliacao =
           autor.pesoNotas > 0 ? autor.somaNotas / autor.pesoNotas : 0;
         const pontuacao =
-          autor.obras * 18 +
-          autor.capitulos * 2 +
-          autor.seguidores * 12 +
+          autor.obras * 1 +
+          autor.capitulos * 1 +
+          autor.seguidores * 4 +
           autor.seguidoresObras * 4 +
-          autor.views * 3 +
-          autor.curtidas * 5 +
-          autor.comentarios * 8 +
-          autor.avaliacoes * 6 +
-          Math.round(mediaAvaliacao * 10);
+          autor.views * 1 +
+          autor.curtidas * 2 +
+          autor.comentarios * 3 +
+          autor.avaliacoes * 4 +
+          Math.round(mediaAvaliacao * 4);
 
-        const { somaNotas: _somaNotas, pesoNotas: _pesoNotas, ...autorFinal } =
-          autor;
+        const {
+          somaNotas: _somaNotas,
+          pesoNotas: _pesoNotas,
+          ...autorFinal
+        } = autor;
         void _somaNotas;
         void _pesoNotas;
 
@@ -1816,36 +1916,39 @@ export default function EmAltaPage() {
   const obrasFavoritasProtegidas = usuarioLogado ? obrasFavoritas : [];
   const obrasConcluidasProtegidas = usuarioLogado ? obrasConcluidas : [];
 
-  const rankingGeral = useMemo(() => pegarTopRanking(ranking, "geral"), [
-    ranking,
-  ]);
+  const rankingGeral = useMemo(
+    () => pegarTopRanking(ranking, "geral"),
+    [ranking],
+  );
 
-  const rankingMaisLidas = useMemo(() => pegarTopRanking(ranking, "lidas"), [
-    ranking,
-  ]);
+  const rankingMaisLidas = useMemo(
+    () => pegarTopRanking(ranking, "lidas"),
+    [ranking],
+  );
 
   const rankingMaisCurtidas = useMemo(
     () => pegarTopRanking(ranking, "curtidas"),
-    [ranking]
+    [ranking],
   );
 
   const rankingMaisComentadas = useMemo(
     () => pegarTopRanking(ranking, "comentadas"),
-    [ranking]
+    [ranking],
   );
 
-  const rankingMaisSalvas = useMemo(() => pegarTopRanking(ranking, "salvas"), [
-    ranking,
-  ]);
+  const rankingMaisSalvas = useMemo(
+    () => pegarTopRanking(ranking, "salvas"),
+    [ranking],
+  );
 
   const rankingMaisRecentes = useMemo(
     () => pegarTopRanking(ranking, "recentes"),
-    [ranking]
+    [ranking],
   );
 
   const rankingMaisCapitulos = useMemo(
     () => pegarTopRanking(ranking, "capitulos"),
-    [ranking]
+    [ranking],
   );
 
   function avisarLoginRanking() {
@@ -1878,9 +1981,10 @@ export default function EmAltaPage() {
       return;
     }
 
-    const obraRanking = ranking.find((obra) => {
-      return obra.storageId === obraId || obra.id === obraId;
-    }) || null;
+    const obraRanking =
+      ranking.find((obra) => {
+        return obra.storageId === obraId || obra.id === obraId;
+      }) || null;
 
     const obraVaiFicarFavorita = obraRanking
       ? !listaTemRankingObra(obraRanking, obrasFavoritas)
@@ -1897,7 +2001,7 @@ export default function EmAltaPage() {
     salvarListaIdsLocalEmAlta(
       FAVORITES_STORAGE_KEY,
       usuarioLogadoId,
-      novasObrasFavoritas
+      novasObrasFavoritas,
     );
 
     setObrasFavoritas(novasObrasFavoritas);
@@ -1905,7 +2009,7 @@ export default function EmAltaPage() {
     void sincronizarColecaoRankingSupabase(
       "favoritos",
       obraRanking,
-      obraVaiFicarFavorita
+      obraVaiFicarFavorita,
     );
 
     if (obraVaiFicarFavorita) {
@@ -1921,9 +2025,10 @@ export default function EmAltaPage() {
       return;
     }
 
-    const obraRanking = ranking.find((obra) => {
-      return obra.storageId === obraId || obra.id === obraId;
-    }) || null;
+    const obraRanking =
+      ranking.find((obra) => {
+        return obra.storageId === obraId || obra.id === obraId;
+      }) || null;
 
     const obraVaiFicarConcluida = obraRanking
       ? !listaTemRankingObra(obraRanking, obrasConcluidas)
@@ -1940,7 +2045,7 @@ export default function EmAltaPage() {
     salvarListaIdsLocalEmAlta(
       COMPLETED_STORAGE_KEY,
       usuarioLogadoId,
-      novasObrasConcluidas
+      novasObrasConcluidas,
     );
 
     setObrasConcluidas(novasObrasConcluidas);
@@ -1948,7 +2053,7 @@ export default function EmAltaPage() {
     void sincronizarColecaoRankingSupabase(
       "concluidas",
       obraRanking,
-      obraVaiFicarConcluida
+      obraVaiFicarConcluida,
     );
 
     if (obraVaiFicarConcluida) {
@@ -1962,7 +2067,10 @@ export default function EmAltaPage() {
 
       <div style={pageDecorationLayerStyle} aria-hidden="true">
         {["#", "★", "↑"].map((decoracao, index) => (
-          <span key={`${decoracao}-${index}`} style={criarDecoracaoPaginaStyle(index)}>
+          <span
+            key={`${decoracao}-${index}`}
+            style={criarDecoracaoPaginaStyle(index)}
+          >
             {decoracao}
           </span>
         ))}
@@ -1976,13 +2084,23 @@ export default function EmAltaPage() {
         <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
           <Link
             href="/"
-            style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
+            style={
+              isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle
+            }
             aria-label="Voltar para a Home"
           >
-            <span style={isDesktop ? desktopHeaderTitleMarkStyle : headerTitleMarkStyle}>H</span>
+            <span
+              style={
+                isDesktop ? desktopHeaderTitleMarkStyle : headerTitleMarkStyle
+              }
+            >
+              H
+            </span>
             <span
               className="historietas-em-alta-hero-title"
-              style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
+              style={
+                isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle
+              }
             >
               ISTORIETAS POPULARES
             </span>
@@ -1999,12 +2117,9 @@ export default function EmAltaPage() {
               }
             >
               N
-
               {usuarioLogado && notificacoesNaoLidas > 0 ? (
                 <span style={desktopNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99
-                    ? "99+"
-                    : notificacoesNaoLidas}
+                  {notificacoesNaoLidas > 99 ? "99+" : notificacoesNaoLidas}
                 </span>
               ) : null}
             </Link>
@@ -2023,98 +2138,96 @@ export default function EmAltaPage() {
 
         {!carregandoRanking && ranking.length > 0 && (
           <>
-        <AutoresEmAltaSection
-          autores={rankingAutores}
-          isDesktop={isDesktop}
-        />
+            <AutoresEmAltaSection
+              autores={rankingAutores}
+              isDesktop={isDesktop}
+            />
 
-        <RankingSection
-          titulo="Ranking Mestre"
-          descricao=""
-          obras={rankingGeral}
-          tipo="geral"
-          obrasFavoritas={obrasFavoritasProtegidas}
-          obrasConcluidas={obrasConcluidasProtegidas}
-          onAlternarFavorito={alternarFavorito}
-          onAlternarConcluido={alternarConcluido}
-          isDesktop={isDesktop}
-        />
+            <RankingSection
+              titulo="Ranking Mestre"
+              descricao=""
+              obras={rankingGeral}
+              tipo="geral"
+              obrasFavoritas={obrasFavoritasProtegidas}
+              obrasConcluidas={obrasConcluidasProtegidas}
+              onAlternarFavorito={alternarFavorito}
+              onAlternarConcluido={alternarConcluido}
+              isDesktop={isDesktop}
+            />
 
-        <RankingSection
-          titulo="Alcance Dominante"
-          descricao="As histórias que mais chamaram atenção dos leitores."
-          obras={rankingMaisLidas}
-          tipo="lidas"
-          obrasFavoritas={obrasFavoritasProtegidas}
-          obrasConcluidas={obrasConcluidasProtegidas}
-          onAlternarFavorito={alternarFavorito}
-          onAlternarConcluido={alternarConcluido}
-          isDesktop={isDesktop}
-        />
+            <RankingSection
+              titulo="Alcance Dominante"
+              descricao="As histórias que mais chamaram atenção dos leitores."
+              obras={rankingMaisLidas}
+              tipo="lidas"
+              obrasFavoritas={obrasFavoritasProtegidas}
+              obrasConcluidas={obrasConcluidasProtegidas}
+              onAlternarFavorito={alternarFavorito}
+              onAlternarConcluido={alternarConcluido}
+              isDesktop={isDesktop}
+            />
 
-        <RankingSection
-          titulo="Preferidas do Público"
-          descricao="As obras que mais receberam curtidas e reações positivas."
-          obras={rankingMaisCurtidas}
-          tipo="curtidas"
-          obrasFavoritas={obrasFavoritasProtegidas}
-          obrasConcluidas={obrasConcluidasProtegidas}
-          onAlternarFavorito={alternarFavorito}
-          onAlternarConcluido={alternarConcluido}
-          isDesktop={isDesktop}
-        />
+            <RankingSection
+              titulo="Preferidas do Público"
+              descricao="As obras que mais receberam curtidas e reações positivas."
+              obras={rankingMaisCurtidas}
+              tipo="curtidas"
+              obrasFavoritas={obrasFavoritasProtegidas}
+              obrasConcluidas={obrasConcluidasProtegidas}
+              onAlternarFavorito={alternarFavorito}
+              onAlternarConcluido={alternarConcluido}
+              isDesktop={isDesktop}
+            />
 
-        <RankingSection
-          titulo="Mais Comentadas"
-          descricao="As histórias que mais puxaram conversa entre os leitores."
-          obras={rankingMaisComentadas}
-          tipo="comentadas"
-          obrasFavoritas={obrasFavoritasProtegidas}
-          obrasConcluidas={obrasConcluidasProtegidas}
-          onAlternarFavorito={alternarFavorito}
-          onAlternarConcluido={alternarConcluido}
-          isDesktop={isDesktop}
-        />
+            <RankingSection
+              titulo="Mais Comentadas"
+              descricao="As histórias que mais puxaram conversa entre os leitores."
+              obras={rankingMaisComentadas}
+              tipo="comentadas"
+              obrasFavoritas={obrasFavoritasProtegidas}
+              obrasConcluidas={obrasConcluidasProtegidas}
+              onAlternarFavorito={alternarFavorito}
+              onAlternarConcluido={alternarConcluido}
+              isDesktop={isDesktop}
+            />
 
-        <RankingSection
-          titulo="Mais Seguidas"
-          descricao="Obras que mais leitores decidiram acompanhar."
-          obras={rankingMaisSalvas}
-          tipo="salvas"
-          obrasFavoritas={obrasFavoritasProtegidas}
-          obrasConcluidas={obrasConcluidasProtegidas}
-          onAlternarFavorito={alternarFavorito}
-          onAlternarConcluido={alternarConcluido}
-          isDesktop={isDesktop}
-        />
+            <RankingSection
+              titulo="Mais Seguidas"
+              descricao="Obras que mais leitores decidiram acompanhar."
+              obras={rankingMaisSalvas}
+              tipo="salvas"
+              obrasFavoritas={obrasFavoritasProtegidas}
+              obrasConcluidas={obrasConcluidasProtegidas}
+              onAlternarFavorito={alternarFavorito}
+              onAlternarConcluido={alternarConcluido}
+              isDesktop={isDesktop}
+            />
 
-        <RankingSection
-          titulo="Novas Promessas"
-          descricao="Publicações recentes começando a aparecer no radar."
-          obras={rankingMaisRecentes}
-          tipo="recentes"
-          obrasFavoritas={obrasFavoritasProtegidas}
-          obrasConcluidas={obrasConcluidasProtegidas}
-          onAlternarFavorito={alternarFavorito}
-          onAlternarConcluido={alternarConcluido}
-          isDesktop={isDesktop}
-        />
+            <RankingSection
+              titulo="Novas Promessas"
+              descricao="Publicações recentes começando a aparecer no radar."
+              obras={rankingMaisRecentes}
+              tipo="recentes"
+              obrasFavoritas={obrasFavoritasProtegidas}
+              obrasConcluidas={obrasConcluidasProtegidas}
+              onAlternarFavorito={alternarFavorito}
+              onAlternarConcluido={alternarConcluido}
+              isDesktop={isDesktop}
+            />
 
-        <RankingSection
-          titulo="Grandes Jornadas"
-          descricao="Histórias com mais capítulos e conteúdo publicado."
-          obras={rankingMaisCapitulos}
-          tipo="capitulos"
-          obrasFavoritas={obrasFavoritasProtegidas}
-          obrasConcluidas={obrasConcluidasProtegidas}
-          onAlternarFavorito={alternarFavorito}
-          onAlternarConcluido={alternarConcluido}
-          isDesktop={isDesktop}
-        />
-
+            <RankingSection
+              titulo="Grandes Jornadas"
+              descricao="Histórias com mais capítulos e conteúdo publicado."
+              obras={rankingMaisCapitulos}
+              tipo="capitulos"
+              obrasFavoritas={obrasFavoritasProtegidas}
+              obrasConcluidas={obrasConcluidasProtegidas}
+              onAlternarFavorito={alternarFavorito}
+              onAlternarConcluido={alternarConcluido}
+              isDesktop={isDesktop}
+            />
           </>
         )}
-
 
         {!carregandoRanking && ranking.length === 0 && (
           <section style={emptyBoxStyle}>
@@ -2129,7 +2242,6 @@ export default function EmAltaPage() {
             </Link>
           </section>
         )}
-
       </section>
     </main>
   );
@@ -2142,8 +2254,10 @@ function obterTemaRanking(tipo: TipoRanking) {
       label: "Ranking Mestre",
       titleColor: "var(--historietas-accent, #FDBA74)",
       accent: "var(--historietas-accent, #FDBA74)",
-      border: "color-mix(in srgb, var(--historietas-accent, #F97316) 42%, transparent)",
-      borderStrong: "color-mix(in srgb, var(--historietas-accent, #F97316) 58%, transparent)",
+      border:
+        "color-mix(in srgb, var(--historietas-accent, #F97316) 42%, transparent)",
+      borderStrong:
+        "color-mix(in srgb, var(--historietas-accent, #F97316) 58%, transparent)",
       glow: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
       background:
         "linear-gradient(135deg, rgba(41,27,53,0.82) 0%, rgba(18,12,30,0.92) 100%)",
@@ -2233,7 +2347,7 @@ function obterTemaRanking(tipo: TipoRanking) {
   };
 }
 function criarSectionHeaderTemaStyle(
-  _tema: ReturnType<typeof obterTemaRanking>
+  _tema: ReturnType<typeof obterTemaRanking>,
 ): CSSProperties {
   void _tema;
 
@@ -2246,7 +2360,7 @@ function criarSectionHeaderTemaStyle(
 }
 
 function criarDesktopSectionHeaderTemaStyle(
-  _tema: ReturnType<typeof obterTemaRanking>
+  _tema: ReturnType<typeof obterTemaRanking>,
 ): CSSProperties {
   void _tema;
 
@@ -2259,7 +2373,7 @@ function criarDesktopSectionHeaderTemaStyle(
 }
 
 function criarSectionIconStyle(
-  tema: ReturnType<typeof obterTemaRanking>
+  tema: ReturnType<typeof obterTemaRanking>,
 ): CSSProperties {
   return {
     width: "auto",
@@ -2325,16 +2439,36 @@ function RankingSection({
 
   return (
     <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-      <div style={isDesktop ? criarDesktopSectionHeaderTemaStyle(tema) : criarSectionHeaderTemaStyle(tema)}>
-        <div style={isDesktop ? desktopSectionHeaderContentStyle : sectionHeaderContentStyle}>
+      <div
+        style={
+          isDesktop
+            ? criarDesktopSectionHeaderTemaStyle(tema)
+            : criarSectionHeaderTemaStyle(tema)
+        }
+      >
+        <div
+          style={
+            isDesktop
+              ? desktopSectionHeaderContentStyle
+              : sectionHeaderContentStyle
+          }
+        >
           <span style={criarSectionIconStyle(tema)}>{tema.icone}</span>
 
-          <div style={isDesktop ? desktopSectionTextBlockStyle : sectionTextBlockStyle}>
+          <div
+            style={
+              isDesktop ? desktopSectionTextBlockStyle : sectionTextBlockStyle
+            }
+          >
             <h2
               style={
                 isDesktop
-                  ? { ...sectionTitleStyle, color: tema.accent, textAlign: "center" }
-                  : { ...sectionTitleStyle, color: tema.accent }
+                  ? {
+                      ...sectionTitleStyle,
+                      color: "#FFFFFF",
+                      textAlign: "center",
+                    }
+                  : { ...sectionTitleStyle, color: "#FFFFFF" }
               }
             >
               {titulo}
@@ -2451,9 +2585,7 @@ function AutoresEmAltaSection({
 
           <div
             style={
-              isDesktop
-                ? desktopSectionTextBlockStyle
-                : sectionTextBlockStyle
+              isDesktop ? desktopSectionTextBlockStyle : sectionTextBlockStyle
             }
           >
             <h2
@@ -2461,10 +2593,10 @@ function AutoresEmAltaSection({
                 isDesktop
                   ? {
                       ...sectionTitleStyle,
-                      color: tema.accent,
+                      color: "#FFFFFF",
                       textAlign: "center",
                     }
-                  : { ...sectionTitleStyle, color: tema.accent }
+                  : { ...sectionTitleStyle, color: "#FFFFFF" }
               }
             >
               Autores em Alta
@@ -2553,19 +2685,12 @@ function AutorRankingCard({
         }
       }}
     >
-      <div style={criarAutorAvatarRankingStyle(avatarAutor, posicao, isDesktop)}>
+      <div
+        style={criarAutorAvatarRankingStyle(avatarAutor, posicao, isDesktop)}
+      >
         {!avatarAutor && (
           <span style={authorRankingAvatarInitialStyle}>{inicialAutor}</span>
         )}
-
-        <span
-          style={criarAutorTierBadgeStyle(posicao)}
-          aria-label={`Posição ${posicao} — ${temaPosicao.nome}`}
-        >
-          <span style={rankCrownMiniStyle} aria-hidden="true">♛</span>
-          <span style={coroaNumberStyle}>{posicao}</span>
-          <span>{temaPosicao.nome}</span>
-        </span>
       </div>
 
       <div style={isDesktop ? desktopCardContentStyle : cardContentStyle}>
@@ -2576,61 +2701,79 @@ function AutorRankingCard({
         <div style={authorRankingMetaStackStyle}>
           <span style={authorRankingWorksBadgeStyle}>
             {formatarNumero(autor.obras)}{" "}
-            {autor.obras === 1 ? "obra publicada" : "obras publicadas"}
-          </span>
-
-          <span style={authorRankingFollowersBadgeStyle}>
-            {formatarNumero(autor.seguidores)}{" "}
-            {autor.seguidores === 1 ? "seguidor" : "seguidores"}
+            {autor.obras === 1 ? "Obra Publicada" : "Obras Publicadas"}
           </span>
         </div>
 
-        <span style={criarHighlightRankingStyle(posicao)}>
-          {formatarNumero(autor.pontuacao)} pts
-        </span>
-
         <div style={statsStyle}>
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">👁</span>
-            <span style={metricValueStyle}>{formatarNumero(autor.views)}</span>
-          </span>
-
-          <span style={statsItemStyle}>
-            <span style={heartMetricIconStyle} aria-hidden="true">♥</span>
-            <span style={metricValueStyle}>{formatarNumero(autor.curtidas)}</span>
-          </span>
-
-          <span style={statsItemStyle}>
-            <span style={starMetricIconStyle} aria-hidden="true">★</span>
-            <span style={metricValueStyle}>
-              {formatarMediaRanking(autor.mediaAvaliacao)}
+            <span style={metricIconStyle} aria-hidden="true">
+              💬
             </span>
-          </span>
-        </div>
-
-        <div style={statsStyle}>
-          <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">💬</span>
             <span style={metricValueStyle}>
               {formatarNumero(autor.comentarios)}
             </span>
           </span>
 
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">👥</span>
+            <span style={metricIconStyle} aria-hidden="true">
+              👥
+            </span>
             <span style={metricValueStyle}>
               {formatarNumero(autor.seguidores)}
             </span>
           </span>
 
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">📚</span>
+            <span style={metricIconStyle} aria-hidden="true">
+              📚
+            </span>
             <span style={metricValueStyle}>
               {formatarNumero(autor.capitulos)}
             </span>
           </span>
         </div>
 
+        <div style={statsStyle}>
+          <span style={statsItemStyle}>
+            <span style={metricIconStyle} aria-hidden="true">
+              👁
+            </span>
+            <span style={metricValueStyle}>{formatarNumero(autor.views)}</span>
+          </span>
+
+          <span style={statsItemStyle}>
+            <span style={heartMetricIconStyle} aria-hidden="true">
+              ♥
+            </span>
+            <span style={metricValueStyle}>
+              {formatarNumero(autor.curtidas)}
+            </span>
+          </span>
+
+          <span style={statsItemStyle}>
+            <span style={starMetricIconStyle} aria-hidden="true">
+              ★
+            </span>
+            <span style={metricValueStyle}>
+              {formatarMediaRanking(autor.mediaAvaliacao)}
+            </span>
+          </span>
+        </div>
+
+        <div style={authorRankingScoreRowStyle}>
+          <span style={criarAutorPointsBadgeStyle(posicao)}>
+            {formatarNumero(autor.pontuacao)} pts
+          </span>
+
+          <span
+            style={criarAutorTierInlineBadgeStyle(posicao)}
+            aria-label={`Posição ${posicao}º — ${temaPosicao.nome}`}
+          >
+            <span style={coroaNumberStyle}>{posicao}º</span>
+            <span style={coroaNumberStyle}>{temaPosicao.nome}</span>
+          </span>
+        </div>
       </div>
     </article>
   );
@@ -2659,21 +2802,31 @@ function RankingCard({
     obra.classificacaoIndicativa &&
     obra.classificacaoIndicativa !== "Não informada";
   const temaPosicao = obterTemaPosicao(posicao);
+  const generoCard = formatarGeneroCard(obra.genero);
+  const formatoCard = obra.formato.trim() || "História";
+  const mostrarGeneroRanking = Boolean(
+    generoCard && normalizarTexto(generoCard) !== "nao informado",
+  );
+  const mostrarFormatoRanking = Boolean(
+    formatoCard && normalizarTexto(formatoCard) !== "nao informado",
+  );
   const mostrarStatusRanking = normalizarTexto(obra.status) !== "publicado";
+  const mostrarFormatoNoTopoRankingMestre =
+    tipo === "geral" && mostrarFormatoRanking;
   const destaque =
     tipo === "geral"
       ? `${formatarNumero(obra.pontuacao)} pts`
       : tipo === "lidas"
-      ? `${formatarNumero(obra.views)} visualizações`
-      : tipo === "curtidas"
-      ? `${formatarNumero(obra.curtidas)} curtidas`
-      : tipo === "comentadas"
-      ? `${formatarNumero(obra.comentarios)} comentários`
-      : tipo === "salvas"
-      ? `${formatarNumero(obra.salvos)} seguidores`
-      : tipo === "recentes"
-      ? formatarDataRanking(obra.criadaEmTimestamp)
-      : `${formatarNumero(obra.capitulos)} capítulos`;
+        ? `${formatarNumero(obra.views)} visualizações`
+        : tipo === "curtidas"
+          ? `${formatarNumero(obra.curtidas)} curtidas`
+          : tipo === "comentadas"
+            ? `${formatarNumero(obra.comentarios)} comentários`
+            : tipo === "salvas"
+              ? `${formatarNumero(obra.salvos)} seguidores`
+              : tipo === "recentes"
+                ? formatarDataRanking(obra.criadaEmTimestamp)
+                : `${formatarNumero(obra.capitulos)} capítulos`;
 
   function abrirObra() {
     router.push(obra.href);
@@ -2694,23 +2847,12 @@ function RankingCard({
       }}
     >
       <div style={criarRankingCoverStyle(obra.capa, isDesktop, posicao)}>
-        <span
-          style={criarTierBadgeStyle(posicao)}
-          aria-label={`Posição ${posicao} — ${temaPosicao.nome}`}
-        >
-          <span style={rankCrownMiniStyle} aria-hidden="true">♛</span>
-          <span style={coroaNumberStyle}>{posicao}</span>
-          <span>{temaPosicao.nome}</span>
-        </span>
-
         {null}
       </div>
 
       <div style={isDesktop ? desktopCardContentStyle : cardContentStyle}>
         <div style={cardTopStyle}>
-          <h3 style={criarObraCardTitleRankingStyle(posicao)}>
-            {obra.titulo}
-          </h3>
+          <h3 style={criarObraCardTitleRankingStyle(posicao)}>{obra.titulo}</h3>
         </div>
 
         <Link
@@ -2727,15 +2869,25 @@ function RankingCard({
           Por {obra.autor}
         </Link>
 
-        <div style={cardMetaRowStyle}>
-          <span style={formatBadgeStyle}>{formatarGeneroCard(obra.genero)}</span>
+        {(mostrarFormatoNoTopoRankingMestre ||
+          mostrarGeneroRanking ||
+          mostrarClassificacao) && (
+          <div style={cardMetaRowStyle}>
+            {mostrarFormatoNoTopoRankingMestre && (
+              <span style={formatBadgeStyle}>{formatoCard}</span>
+            )}
 
-          {mostrarClassificacao && (
-            <span style={classificationBadgeStyle}>
-              {obra.classificacaoIndicativa}
-            </span>
-          )}
-        </div>
+            {mostrarGeneroRanking && (
+              <span style={formatBadgeStyle}>{generoCard}</span>
+            )}
+
+            {mostrarClassificacao && (
+              <span style={classificationBadgeStyle}>
+                {obra.classificacaoIndicativa}
+              </span>
+            )}
+          </div>
+        )}
 
         {mostrarStatusRanking && (
           <div style={statusRowStyle}>
@@ -2747,48 +2899,87 @@ function RankingCard({
           </div>
         )}
 
-        <span style={criarHighlightRankingStyle(posicao)}>{destaque}</span>
-
         <div style={statsStyle}>
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">👁</span>
-            <span style={metricValueStyle}>{formatarNumero(obra.views)}</span>
-          </span>
-
-          <span style={statsItemStyle}>
-            <span style={heartMetricIconStyle} aria-hidden="true">♥</span>
-            <span style={metricValueStyle}>{formatarNumero(obra.curtidas)}</span>
-          </span>
-
-          <span style={statsItemStyle}>
-            <span style={starMetricIconStyle} aria-hidden="true">★</span>
-            <span style={metricValueStyle}>
-              {formatarMediaRanking(obra.mediaAvaliacao)}
+            <span style={metricIconStyle} aria-hidden="true">
+              💬
             </span>
-          </span>
-        </div>
-
-        <div style={statsStyle}>
-          <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">💬</span>
             <span style={metricValueStyle}>
               {formatarNumero(obra.comentarios)}
             </span>
           </span>
 
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">👥</span>
+            <span style={metricIconStyle} aria-hidden="true">
+              👥
+            </span>
             <span style={metricValueStyle}>{formatarNumero(obra.salvos)}</span>
           </span>
 
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">📚</span>
+            <span style={metricIconStyle} aria-hidden="true">
+              📚
+            </span>
             <span style={metricValueStyle}>
               {formatarNumero(obra.capitulos)}
             </span>
           </span>
         </div>
 
+        <div style={statsStyle}>
+          <span style={statsItemStyle}>
+            <span style={metricIconStyle} aria-hidden="true">
+              👁
+            </span>
+            <span style={metricValueStyle}>{formatarNumero(obra.views)}</span>
+          </span>
+
+          <span style={statsItemStyle}>
+            <span style={heartMetricIconStyle} aria-hidden="true">
+              ♥
+            </span>
+            <span style={metricValueStyle}>
+              {formatarNumero(obra.curtidas)}
+            </span>
+          </span>
+
+          <span style={statsItemStyle}>
+            <span style={starMetricIconStyle} aria-hidden="true">
+              ★
+            </span>
+            <span style={metricValueStyle}>
+              {formatarMediaRanking(obra.mediaAvaliacao)}
+            </span>
+          </span>
+        </div>
+
+        <div
+          style={
+            isDesktop
+              ? desktopRankingCardActionRowStyle
+              : rankingCardActionRowStyle
+          }
+        >
+          <span
+            style={
+              isDesktop ? desktopRankingThemeBadgeStyle : rankingThemeBadgeStyle
+            }
+          >
+            {tipo === "geral"
+              ? destaque
+              : mostrarFormatoRanking
+                ? formatoCard
+                : "História"}
+          </span>
+
+          <span
+            style={criarRankingTierInlineBadgeStyle(posicao)}
+            aria-label={`Posição ${posicao}º — ${temaPosicao.nome}`}
+          >
+            <span style={coroaNumberStyle}>{posicao}º</span>
+            <span style={coroaNumberStyle}>{temaPosicao.nome}</span>
+          </span>
+        </div>
       </div>
     </article>
   );
@@ -2803,8 +2994,7 @@ function obterTemaPosicao(posicao: number) {
       accentSoft: "#E0F2FE",
       deep: "#061523",
       border: "rgba(125,211,252,0.78)",
-      cardBackground:
-        "radial-gradient(circle at 10% 8%, rgba(224,242,254,0.22), transparent 28%), radial-gradient(circle at 84% 18%, rgba(125,211,252,0.20), transparent 30%), linear-gradient(135deg, rgba(9,31,48,0.99) 0%, rgba(16,28,52,0.99) 48%, rgba(8,10,24,0.99) 100%)",
+      cardBackground: "#2486C2",
       coverBackground:
         "radial-gradient(circle at 28% 18%, rgba(224,242,254,0.22), transparent 26%), radial-gradient(circle at 80% 92%, rgba(56,189,248,0.22), transparent 32%), linear-gradient(145deg, #0B2235 0%, #111C33 52%, #090A18 100%)",
       coverOverlay:
@@ -2819,7 +3009,8 @@ function obterTemaPosicao(posicao: number) {
       badgeBorder: "rgba(125,211,252,0.42)",
       badgeText: "#BAE6FD",
       readColor: "#7DD3FC",
-      shadow: "0 18px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
+      shadow:
+        "0 18px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
     };
   }
 
@@ -2831,8 +3022,7 @@ function obterTemaPosicao(posicao: number) {
       accentSoft: "#FFE4E6",
       deep: "#2A0716",
       border: "rgba(251,113,133,0.74)",
-      cardBackground:
-        "radial-gradient(circle at 10% 8%, rgba(255,228,230,0.18), transparent 28%), radial-gradient(circle at 86% 20%, rgba(251,113,133,0.24), transparent 30%), linear-gradient(135deg, rgba(62,20,37,0.99) 0%, rgba(42,12,31,0.99) 50%, rgba(17,9,25,0.99) 100%)",
+      cardBackground: "#A32A4B",
       coverBackground:
         "radial-gradient(circle at 28% 18%, rgba(255,228,230,0.16), transparent 28%), radial-gradient(circle at 80% 92%, rgba(251,113,133,0.24), transparent 34%), linear-gradient(145deg, #3A1020 0%, #28101F 52%, #0D0917 100%)",
       coverOverlay:
@@ -2847,7 +3037,8 @@ function obterTemaPosicao(posicao: number) {
       badgeBorder: "rgba(251,113,133,0.44)",
       badgeText: "#FDA4AF",
       readColor: "#FB7185",
-      shadow: "0 18px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.075)",
+      shadow:
+        "0 18px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.075)",
     };
   }
 
@@ -2859,8 +3050,7 @@ function obterTemaPosicao(posicao: number) {
       accentSoft: "#FEF3C7",
       deep: "#271504",
       border: "rgba(251,191,36,0.72)",
-      cardBackground:
-        "radial-gradient(circle at 10% 8%, rgba(254,243,199,0.18), transparent 28%), radial-gradient(circle at 86% 20%, rgba(251,191,36,0.24), transparent 30%), linear-gradient(135deg, rgba(65,42,11,0.99) 0%, rgba(44,25,9,0.99) 52%, rgba(17,10,20,0.99) 100%)",
+      cardBackground: "#B57D22",
       coverBackground:
         "radial-gradient(circle at 28% 18%, rgba(254,243,199,0.18), transparent 28%), radial-gradient(circle at 80% 92%, rgba(251,191,36,0.24), transparent 34%), linear-gradient(145deg, #3A2508 0%, #271808 52%, #100A14 100%)",
       coverOverlay:
@@ -2875,7 +3065,8 @@ function obterTemaPosicao(posicao: number) {
       badgeBorder: "rgba(251,191,36,0.44)",
       badgeText: "#FCD34D",
       readColor: "#FBBF24",
-      shadow: "0 18px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.075)",
+      shadow:
+        "0 18px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.075)",
     };
   }
 
@@ -2887,8 +3078,7 @@ function obterTemaPosicao(posicao: number) {
       accentSoft: "#F8FAFC",
       deep: "#101722",
       border: "rgba(203,213,225,0.68)",
-      cardBackground:
-        "radial-gradient(circle at 10% 8%, rgba(248,250,252,0.14), transparent 28%), radial-gradient(circle at 86% 20%, rgba(203,213,225,0.18), transparent 30%), linear-gradient(135deg, rgba(47,56,69,0.99) 0%, rgba(28,33,45,0.99) 52%, rgba(14,11,23,0.99) 100%)",
+      cardBackground: "#7B8AA3",
       coverBackground:
         "radial-gradient(circle at 28% 18%, rgba(248,250,252,0.14), transparent 28%), radial-gradient(circle at 80% 92%, rgba(148,163,184,0.18), transparent 34%), linear-gradient(145deg, #26303D 0%, #1A202B 52%, #0D0B16 100%)",
       coverOverlay:
@@ -2903,7 +3093,8 @@ function obterTemaPosicao(posicao: number) {
       badgeBorder: "rgba(203,213,225,0.38)",
       badgeText: "#E2E8F0",
       readColor: "#CBD5E1",
-      shadow: "0 18px 38px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.07)",
+      shadow:
+        "0 18px 38px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.07)",
     };
   }
 
@@ -2914,8 +3105,7 @@ function obterTemaPosicao(posicao: number) {
     accentSoft: "#FED7AA",
     deep: "#241006",
     border: "rgba(251,146,60,0.70)",
-    cardBackground:
-      "radial-gradient(circle at 10% 8%, rgba(254,215,170,0.14), transparent 28%), radial-gradient(circle at 86% 20%, rgba(251,146,60,0.20), transparent 30%), linear-gradient(135deg, rgba(61,34,18,0.99) 0%, rgba(39,21,13,0.99) 52%, rgba(16,10,20,0.99) 100%)",
+    cardBackground: "#9A6535",
     coverBackground:
       "radial-gradient(circle at 28% 18%, rgba(254,215,170,0.14), transparent 28%), radial-gradient(circle at 80% 92%, rgba(251,146,60,0.22), transparent 34%), linear-gradient(145deg, #351D0E 0%, #24140B 52%, #100A14 100%)",
     coverOverlay:
@@ -2930,27 +3120,33 @@ function obterTemaPosicao(posicao: number) {
     badgeBorder: "rgba(251,146,60,0.40)",
     badgeText: "#FDBA74",
     readColor: "#FB923C",
-    shadow: "0 18px 38px rgba(0,0,0,0.33), inset 0 1px 0 rgba(255,255,255,0.07)",
+    shadow:
+      "0 18px 38px rgba(0,0,0,0.33), inset 0 1px 0 rgba(255,255,255,0.07)",
   };
 }
 function criarCardRankingStyle(
   posicao: number,
   disponivel: boolean,
   _tipo: TipoRanking,
-  isDesktop = false
+  isDesktop = false,
 ): CSSProperties {
   const temaPosicao = obterTemaPosicao(posicao);
 
   return {
-    ...(disponivel ? (isDesktop ? desktopCardStyle : cardStyle) : (isDesktop ? desktopCardSoonStyle : cardSoonStyle)),
+    ...(disponivel
+      ? isDesktop
+        ? desktopCardStyle
+        : cardStyle
+      : isDesktop
+        ? desktopCardSoonStyle
+        : cardSoonStyle),
     background: temaPosicao.cardBackground,
+    backgroundColor: temaPosicao.cardBackground,
     border: `1px solid ${temaPosicao.border}`,
-    boxShadow: "none",
-    outline: `1px solid ${temaPosicao.border}`,
-    outlineOffset: "-2px",
+    outline: "none",
+    boxShadow: temaPosicao.shadow,
   };
 }
-
 function criarTierBadgeStyle(posicao: number): CSSProperties {
   const temaPosicao = obterTemaPosicao(posicao);
 
@@ -2969,9 +3165,9 @@ function criarTierBadgeStyle(posicao: number): CSSProperties {
     justifyContent: "center",
     flexWrap: "nowrap",
     gap: "5px",
-    background: temaPosicao.tierBackground,
-    border: `1px solid ${temaPosicao.border}`,
-    color: temaPosicao.tierText,
+    background: temaPosicao.badgeBackground,
+    border: `1px solid ${temaPosicao.badgeBorder}`,
+    color: "#FFFFFF",
     fontSize: "10px",
     lineHeight: 1,
     fontWeight: 950,
@@ -2981,52 +3177,55 @@ function criarTierBadgeStyle(posicao: number): CSSProperties {
     overflowWrap: "normal",
     wordBreak: "normal",
     overflow: "hidden",
-    boxShadow: "0 8px 16px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.22)",
+    boxShadow:
+      "0 8px 16px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.22)",
     pointerEvents: "none",
   };
 }
 
-function criarHighlightRankingStyle(posicao: number): CSSProperties {
+function criarRankingTierInlineBadgeStyle(posicao: number): CSSProperties {
   const temaPosicao = obterTemaPosicao(posicao);
 
   return {
     ...highlightBadgeStyle,
-    padding: 0,
-    borderRadius: 0,
-    background: "transparent",
-    border: "none",
-    color: temaPosicao.badgeText,
+    ...rankingHighlightBadgeInlineStyle,
+    position: "static",
+    minHeight: "34px",
+    marginTop: 0,
+    padding: "0 12px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "5px",
+    background: temaPosicao.badgeBackground,
+    border: `1px solid ${temaPosicao.badgeBorder}`,
+    color: "#FFFFFF",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.055em",
+    lineHeight: 1,
+    textTransform: "uppercase",
+    whiteSpace: "nowrap",
     boxShadow: "none",
   };
 }
 
-function criarCardTitleRankingStyle(posicao: number): CSSProperties {
-  const temaPosicao = obterTemaPosicao(posicao);
-
+function criarCardTitleRankingStyle(_posicao: number): CSSProperties {
   return {
     ...cardTitleStyle,
-    color: temaPosicao.accentSoft,
+    color: "#FFFFFF",
   };
 }
-
-function criarObraCardTitleRankingStyle(posicao: number): CSSProperties {
-  const temaPosicao = obterTemaPosicao(posicao);
-
+function criarObraCardTitleRankingStyle(_posicao: number): CSSProperties {
   return {
     ...cardTitleStyle,
-    color: temaPosicao.accentSoft,
-    display: "block",
-    whiteSpace: "normal",
-    overflow: "visible",
-    textOverflow: "clip",
-    WebkitLineClamp: "unset",
-    WebkitBoxOrient: "initial",
-    overflowWrap: "anywhere",
-    wordBreak: "normal",
+    color: "#FFFFFF",
   };
 }
-
-function criarReadRankingStyle(posicao: number, disponivel: boolean): CSSProperties {
+function criarReadRankingStyle(
+  posicao: number,
+  disponivel: boolean,
+): CSSProperties {
   const temaPosicao = obterTemaPosicao(posicao);
 
   return {
@@ -3037,23 +3236,23 @@ function criarReadRankingStyle(posicao: number, disponivel: boolean): CSSPropert
 
 function criarAutorCardRankingStyle(
   posicao: number,
-  isDesktop: boolean
+  isDesktop: boolean,
 ): CSSProperties {
   const temaPosicao = obterTemaPosicao(posicao);
 
   return {
     ...(isDesktop ? desktopAuthorRankingCardStyle : authorRankingCardStyle),
     background: temaPosicao.cardBackground,
+    backgroundColor: temaPosicao.cardBackground,
     border: `1px solid ${temaPosicao.border}`,
-    outline: `1px solid ${temaPosicao.border}`,
-    outlineOffset: "-2px",
+    outline: "none",
+    boxShadow: temaPosicao.shadow,
   };
 }
-
 function criarAutorAvatarRankingStyle(
   avatar: string,
   posicao: number,
-  isDesktop: boolean
+  isDesktop: boolean,
 ): CSSProperties {
   const temaPosicao = obterTemaPosicao(posicao);
   const baseStyle = isDesktop ? desktopCoverStyle : coverStyle;
@@ -3075,26 +3274,44 @@ function criarAutorAvatarRankingStyle(
   };
 }
 
-function criarAutorTierBadgeStyle(posicao: number): CSSProperties {
+function criarAutorTierInlineBadgeStyle(posicao: number): CSSProperties {
   const temaPosicao = obterTemaPosicao(posicao);
 
   return {
     ...authorRankingTierBadgeStyle,
-    background: temaPosicao.tierBackground,
-    border: `1px solid ${temaPosicao.border}`,
-    color: temaPosicao.tierText,
+    position: "static",
+    left: "auto",
+    right: "auto",
+    bottom: "auto",
+    minHeight: "34px",
+    padding: "0 16px",
+    width: "fit-content",
+    maxWidth: "100%",
+    flex: "0 0 auto",
+    background: temaPosicao.badgeBackground,
+    border: `1px solid ${temaPosicao.badgeBorder}`,
+    color: "#FFFFFF",
+    boxSizing: "border-box",
   };
 }
 
-function criarAutorCardTitleRankingStyle(posicao: number): CSSProperties {
-  const temaPosicao = obterTemaPosicao(posicao);
+function criarAutorPointsBadgeStyle(_posicao: number): CSSProperties {
+  return {
+    ...highlightBadgeStyle,
+    marginTop: 0,
+    minHeight: "34px",
+    padding: "0 16px",
+    color: "#FFFFFF",
+    flex: "0 0 auto",
+  };
+}
 
+function criarAutorCardTitleRankingStyle(_posicao: number): CSSProperties {
   return {
     ...authorRankingCardTitleStyle,
-    color: temaPosicao.accentSoft,
+    color: "#FFFFFF",
   };
 }
-
 
 const emAltaPageCss = `
   html[data-historietas-tema-visual] body,
@@ -3168,7 +3385,6 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   maskImage: "none",
 };
 
-
 const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100vh",
@@ -3207,7 +3423,6 @@ const topStyle: CSSProperties = {
   minWidth: 0,
 };
 
-
 const titleStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
@@ -3218,7 +3433,8 @@ const titleStyle: CSSProperties = {
   letterSpacing: "-0.074em",
   maxWidth: "100%",
   textAlign: "center",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+  background:
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -3257,8 +3473,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   width: "34px",
   height: "34px",
   borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   background: "var(--historietas-surface-strong, #04000A)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
@@ -3361,26 +3576,28 @@ const desktopHeaderTitleTextStyle: CSSProperties = {
   maxWidth: "760px",
 };
 
-
 const sectionStyle: CSSProperties = {
-  marginTop: "30px",
+  marginTop: "32px",
+  paddingBottom: "14px",
+  maxWidth: "100%",
+  boxSizing: "border-box",
   minWidth: 0,
 };
 
 const desktopSectionStyle: CSSProperties = {
   ...sectionStyle,
-  marginTop: "34px",
+  marginTop: "40px",
+  paddingBottom: "18px",
 };
 
 const sectionHeaderStyle: CSSProperties = {
   display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
   justifyItems: "center",
   gap: "6px",
-  marginBottom: "12px",
-  padding: "6px 0 10px",
-  borderRadius: 0,
+  marginBottom: "14px",
+  maxWidth: "100%",
   minWidth: 0,
-  overflow: "visible",
   textAlign: "center",
 };
 
@@ -3392,22 +3609,24 @@ const desktopSectionHeaderStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "31px",
-  lineHeight: 0.98,
+  color: "#FFFFFF",
+  fontSize: "clamp(24px, 4vw, 30px)",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "-0.065em",
+  letterSpacing: "-0.03em",
   maxWidth: "100%",
   textAlign: "center",
   textShadow: "none",
-  color: "var(--historietas-accent, #F97316)",
   ...safeTextStyle,
 };
 
 const carouselShellStyle: CSSProperties = {
   position: "relative",
   minWidth: 0,
+  width: "100%",
   maxWidth: "100%",
-  overflow: "hidden",
+  boxSizing: "border-box",
+  overflow: "visible",
 };
 
 const desktopCarouselShellStyle: CSSProperties = {
@@ -3459,29 +3678,33 @@ const carouselArrowRightStyle: CSSProperties = {
 };
 
 const carouselStyle: CSSProperties = {
-  display: "grid",
-  gridAutoFlow: "column",
-  gridAutoColumns: "minmax(308px, calc(100vw - 36px))",
-  gap: "14px",
+  display: "flex",
+  alignItems: "stretch",
+  gap: "16px",
+  width: "calc(100% + 24px)",
+  maxWidth: "calc(100% + 24px)",
+  minWidth: 0,
+  boxSizing: "border-box",
   overflowX: "auto",
   overflowY: "hidden",
-  padding: "1px 2px 4px",
+  padding: "4px 12px 22px",
+  margin: "0 -12px",
   scrollSnapType: "x mandatory",
-  scrollPaddingLeft: "2px",
-  scrollPaddingRight: "2px",
+  scrollPaddingLeft: "12px",
+  scrollPaddingRight: "12px",
   scrollbarWidth: "none",
   overscrollBehaviorX: "contain",
-  minWidth: 0,
-  maxWidth: "100%",
 };
 
 const desktopCarouselStyle: CSSProperties = {
   ...carouselStyle,
-  gridAutoColumns: "minmax(400px, 448px)",
-  gap: "16px",
-  padding: "2px 4px 6px",
-  scrollPaddingLeft: "4px",
-  scrollPaddingRight: "4px",
+  gap: "22px",
+  width: "100%",
+  maxWidth: "100%",
+  padding: "8px 0 30px",
+  margin: 0,
+  scrollPaddingLeft: "0px",
+  scrollPaddingRight: "0px",
 };
 
 const sectionHeaderContentStyle: CSSProperties = {
@@ -3512,39 +3735,40 @@ const desktopSectionTextBlockStyle: CSSProperties = {
   textAlign: "center",
 };
 
-
 const cardStyle: CSSProperties = {
   position: "relative",
+  flex: "0 0 min(360px, 88vw)",
+  width: "min(360px, 88vw)",
+  scrollSnapAlign: "start",
+  scrollSnapStop: "always",
   display: "grid",
-  gridTemplateColumns: "118px minmax(0, 1fr)",
-  gap: "9px",
-  padding: "12px",
-  paddingRight: "52px",
-  borderRadius: "26px",
-  background:
-    "radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--historietas-accent, #F97316) 10%, transparent), transparent 32%), linear-gradient(135deg, rgba(38, 28, 58, 0.98) 0%, rgba(18, 12, 30, 0.99) 100%)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 20%, transparent)",
+  gridTemplateColumns: "minmax(88px, 98px) minmax(0, 1fr)",
+  gap: "14px",
+  alignItems: "stretch",
+  padding: "11px",
+  borderRadius: "22px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   minWidth: 0,
-  maxWidth: "100%",
+  maxWidth: "88vw",
   overflow: "hidden",
   boxShadow: "none",
   boxSizing: "border-box",
   cursor: "pointer",
-  scrollSnapAlign: "start",
-  scrollSnapStop: "always",
-  minHeight: "198px",
 };
 
 const desktopCardStyle: CSSProperties = {
   ...cardStyle,
-  gridTemplateColumns: "140px minmax(0, 1fr)",
-  gap: "12px",
-  padding: "14px",
-  paddingRight: "58px",
-  borderRadius: "26px",
-  minHeight: "206px",
+  flex: "0 0 410px",
+  width: "410px",
+  maxWidth: "100%",
+  gridTemplateColumns: "112px minmax(0, 1fr)",
+  gap: "15px",
+  padding: "13px",
+  borderRadius: "24px",
+  boxShadow: "none",
 };
 
 const cardSoonStyle: CSSProperties = {
@@ -3557,44 +3781,42 @@ const desktopCardSoonStyle: CSSProperties = {
   opacity: 0.9,
 };
 
-const rankCrownMiniStyle: CSSProperties = {
-  fontSize: "13px",
-  lineHeight: 1,
-  fontWeight: 950,
-  color: "#FFFFFF",
-};
-
 const coroaNumberStyle: CSSProperties = {
-  fontSize: "15px",
+  fontSize: "11px",
   fontWeight: 950,
   lineHeight: 1,
+  color: "#FFFFFF",
   textShadow: "0 1px 4px rgba(0,0,0,0.28)",
 };
 
-
 const coverStyle: CSSProperties = {
-  minHeight: "144px",
-  borderRadius: "18px",
+  minHeight: "122px",
+  borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  backgroundColor: "#04000A",
   backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
+  maxWidth: "100%",
+  boxSizing: "border-box",
   minWidth: 0,
   border: "none",
+  outline: "none",
   boxShadow: "none",
+  transform: "scaleX(1.125) scaleY(1.095)",
+  transformOrigin: "center",
 };
 
 const desktopCoverStyle: CSSProperties = {
   ...coverStyle,
-  minHeight: "164px",
-  borderRadius: "17px",
+  minHeight: "142px",
+  borderRadius: "18px",
 };
 
 const cardContentStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "100%",
+  boxSizing: "border-box",
   display: "grid",
   alignContent: "center",
   gap: "7px",
@@ -3608,16 +3830,18 @@ const desktopCardContentStyle: CSSProperties = {
 
 const cardTopStyle: CSSProperties = {
   display: "grid",
+  gridTemplateColumns: "1fr",
   gap: "8px",
   minWidth: 0,
 };
 
 const cardTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "21px",
-  lineHeight: 1,
+  color: "#FFFFFF",
+  fontSize: "20px",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "-0.05em",
+  letterSpacing: "-0.03em",
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -3635,11 +3859,67 @@ const statusRowStyle: CSSProperties = {
 
 const cardMetaRowStyle: CSSProperties = {
   display: "flex",
-  alignItems: "center",
-  flexWrap: "nowrap",
+  flexWrap: "wrap",
   gap: "6px",
-  minWidth: 0,
   maxWidth: "100%",
+  minWidth: 0,
+};
+
+const rankingCardActionRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  marginTop: "2px",
+  maxWidth: "100%",
+  minWidth: 0,
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const desktopRankingCardActionRowStyle: CSSProperties = {
+  ...rankingCardActionRowStyle,
+  overflow: "visible",
+};
+
+const rankingThemeBadgeStyle: CSSProperties = {
+  flex: "0 1 42%",
+  maxWidth: "42%",
+  minHeight: "34px",
+  padding: "0 10px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+  fontWeight: 900,
+  lineHeight: 1.12,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  boxSizing: "border-box",
+  ...safeTextStyle,
+};
+
+const desktopRankingThemeBadgeStyle: CSSProperties = {
+  ...rankingThemeBadgeStyle,
+  flex: "0 1 46%",
+  maxWidth: "46%",
+  padding: "0 8px",
+  textAlign: "center",
+  whiteSpace: "normal",
+  overflow: "visible",
+  textOverflow: "clip",
+};
+
+const rankingHighlightBadgeInlineStyle: CSSProperties = {
+  flex: "1 1 auto",
+  minWidth: 0,
+  marginTop: 0,
+  padding: "0 12px",
+  textAlign: "center",
 };
 
 const statusStyle: CSSProperties = {
@@ -3647,8 +3927,10 @@ const statusStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "6px 9px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
+  background:
+    "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
   color: "var(--historietas-accent, #FDBA74)",
   fontSize: "11px",
   fontWeight: 850,
@@ -3671,58 +3953,63 @@ const publishedStatusStyle: CSSProperties = {
 };
 
 const formatBadgeStyle: CSSProperties = {
-  width: "auto",
-  maxWidth: "none",
-  flex: "0 1 auto",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: "5px 8px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
   border: "none",
-  color: "var(--historietas-text-secondary, #B3B3B3)",
-  fontSize: "11px",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "10px",
   fontWeight: 900,
-  whiteSpace: "nowrap",
-  overflowWrap: "normal",
-  wordBreak: "normal",
-  boxShadow: "none",
+  whiteSpace: "normal",
+  ...safeTextStyle,
 };
 
 const classificationBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  flex: "0 0 auto",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-secondary, #B3B3B3)",
-  fontSize: "11px",
-  fontWeight: 950,
-  whiteSpace: "nowrap",
-  overflowWrap: "normal",
-  wordBreak: "normal",
-  boxShadow: "none",
-};
-
-const highlightBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "6px 9px",
+  padding: "5px 8px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--historietas-accent, #F97316) 16%, transparent)",
-  border: "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
+  background: "rgba(255,255,255,0.06)",
+  border: "none",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "10px",
   fontWeight: 950,
   whiteSpace: "normal",
   ...safeTextStyle,
 };
 
+const highlightBadgeStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  minHeight: "34px",
+  padding: "0 10px",
+  marginTop: "4px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+  fontWeight: 900,
+  lineHeight: 1.12,
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "5px",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  ...safeTextStyle,
+};
+
 const authorStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #B3B3B3)",
-  fontSize: "13px",
-  fontWeight: 700,
+  color: "var(--historietas-text-secondary, #D8C8FF)",
+  fontSize: "12px",
+  fontWeight: 750,
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 1,
@@ -3738,33 +4025,24 @@ const authorLinkStyle: CSSProperties = {
 };
 
 const statsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(62px, 1.15fr) minmax(48px, 0.9fr) minmax(54px, 0.95fr)",
+  display: "flex",
   alignItems: "center",
-  columnGap: "3px",
-  rowGap: "5px",
-  width: "100%",
-  maxWidth: "100%",
-  boxSizing: "border-box",
+  gap: "8px",
+  flexWrap: "wrap",
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
-  fontWeight: 850,
+  fontWeight: 800,
+  maxWidth: "100%",
   minWidth: 0,
 };
 
 const statsItemStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "14px minmax(0, 1fr)",
+  display: "inline-flex",
   alignItems: "center",
-  justifyContent: "start",
-  columnGap: "2px",
-  width: "100%",
-  maxWidth: "100%",
-  lineHeight: 1,
-  minHeight: "17px",
+  gap: "4px",
   minWidth: 0,
   whiteSpace: "nowrap",
-  overflow: "hidden",
+  lineHeight: 1,
 };
 
 const metricIconStyle: CSSProperties = {
@@ -3779,14 +4057,10 @@ const metricIconStyle: CSSProperties = {
 };
 
 const metricValueStyle: CSSProperties = {
-  display: "block",
-  width: "100%",
-  minWidth: 0,
+  display: "inline-block",
   lineHeight: 1,
   whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "clip",
-  fontVariantNumeric: "tabular-nums",
+  color: "#FFFFFF",
 };
 
 const heartMetricIconStyle: CSSProperties = {
@@ -3819,7 +4093,8 @@ const progressTrackStyle: CSSProperties = {
 const progressBarStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background:
+    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
 };
 
 const progressTextStyle: CSSProperties = {
@@ -3955,7 +4230,6 @@ const authorRankingAvatarInitialStyle: CSSProperties = {
   textShadow: "0 4px 12px rgba(0,0,0,0.42)",
 };
 
-
 const authorRankingTierBadgeStyle: CSSProperties = {
   position: "absolute",
   left: "6px",
@@ -4030,19 +4304,29 @@ const authorRankingMetaStackStyle: CSSProperties = {
 };
 
 const authorRankingWorksBadgeStyle: CSSProperties = {
-  ...formatBadgeStyle,
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D8C8FF)",
+  fontSize: "12px",
+  lineHeight: 1.2,
+  fontWeight: 750,
   width: "fit-content",
   maxWidth: "100%",
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  borderRadius: 0,
   whiteSpace: "normal",
-  lineHeight: 1.15,
+  ...safeTextStyle,
 };
 
-const authorRankingFollowersBadgeStyle: CSSProperties = {
-  ...classificationBadgeStyle,
-  width: "fit-content",
+const authorRankingScoreRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flexWrap: "wrap",
+  marginTop: "4px",
   maxWidth: "100%",
-  whiteSpace: "normal",
-  lineHeight: 1.15,
+  minWidth: 0,
 };
 
 const emptyBoxStyle: CSSProperties = {

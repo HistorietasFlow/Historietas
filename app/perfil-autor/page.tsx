@@ -7826,25 +7826,7 @@ export default function PerfilAutorPage() {
                       </Link>
                     )}
 
-                    {podeEditarPerfil ? (
-                      <>
-                        <Link
-                          href="/painel-autor"
-                          onClick={() => setObraMenuAbertoId("")}
-                          style={workActionSheetItemStyle}
-                        >
-                          Editar obra
-                        </Link>
-
-                        <Link
-                          href="/publicar"
-                          onClick={() => setObraMenuAbertoId("")}
-                          style={workActionSheetItemStyle}
-                        >
-                          Adicionar capítulo
-                        </Link>
-                      </>
-                    ) : (
+                    {!podeEditarPerfil && (
                       <>
                         <button
                           type="button"

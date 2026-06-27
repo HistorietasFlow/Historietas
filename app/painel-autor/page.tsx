@@ -234,6 +234,34 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
+function obraTemConteudoPainel(
+  obra: Pick<ObraLocal, "capitulos" | "arquivoObra">
+) {
+  return obra.capitulos.length > 0 || Boolean(normalizarArquivoObra(obra.arquivoObra));
+}
+
+function obraPublicadaComConteudoPainel(
+  obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">
+) {
+  return obra.publicado && obraTemConteudoPainel(obra);
+}
+
+function obraRascunhoOuSemConteudoPainel(
+  obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">
+) {
+  return !obraPublicadaComConteudoPainel(obra);
+}
+
+function obterStatusPainelAutor(
+  obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">
+) {
+  if (obraPublicadaComConteudoPainel(obra)) {
+    return "Publicado";
+  }
+
+  return obra.publicado ? "Sem conteúdo" : "Rascunho";
+}
+
 function encontrarCapituloParaContinuar(obra: ObraLocal) {
   const capituloRegistrado = obra.ultimoCapituloLidoId
     ? obra.capitulos.find(
@@ -1718,9 +1746,9 @@ export default function PainelAutorPage() {
           filtro === "todas"
             ? true
             : filtro === "publicadas"
-            ? obra.publicado
+            ? obraPublicadaComConteudoPainel(obra)
             : filtro === "rascunhos"
-            ? !obra.publicado
+            ? obraRascunhoOuSemConteudoPainel(obra)
             : filtro === "sem-capitulos"
             ? obra.capitulos.length === 0
             : filtro === "favoritas"
@@ -1759,8 +1787,12 @@ export default function PainelAutorPage() {
     obrasConcluidas,
   ]);
 
-  const obrasPublicadas = obrasComMetricas.filter((obra) => obra.publicado);
-  const obrasRascunhos = obrasComMetricas.filter((obra) => !obra.publicado);
+  const obrasPublicadas = obrasComMetricas.filter((obra) =>
+    obraPublicadaComConteudoPainel(obra)
+  );
+  const obrasRascunhos = obrasComMetricas.filter((obra) =>
+    obraRascunhoOuSemConteudoPainel(obra)
+  );
 
   const totalCapitulos = obrasComMetricas.reduce(
     (total, obra) => total + obra.capitulos.length,
@@ -2246,7 +2278,9 @@ function ObraPainelCard({
   onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
 }) {
   const [acoesAbertas, setAcoesAbertas] = useState(false);
-  const obraHref = `/editar-obra?obraId=${obra.id}`;
+  const slugObraPainel = obra.slug?.trim() || criarSlugBase(obra.titulo);
+  const linkObraPainel = obra.link?.trim();
+  const obraHref = linkObraPainel || `/obra/${encodeURIComponent(slugObraPainel)}`;
   const editarHref = `/editar-obra?obraId=${obra.id}`;
   const capituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
   const verArquivoHref = `/ver-arquivo?obraId=${obra.id}`;
@@ -2264,7 +2298,8 @@ function ObraPainelCard({
   const perfilAutorHref = criarPerfilAutorHref(obra.autor, obra.autorId, obra.autorId);
   const progressoVisual = Math.min(100, Math.max(0, obra.progressoLeitura));
   const visualizacoesPainel = Math.max(0, obra.totalLidos);
-  const statusTexto = obra.publicado ? "Publicado" : "Rascunho";
+  const statusTexto = obterStatusPainelAutor(obra);
+  const obraComStatusPublicado = obraPublicadaComConteudoPainel(obra);
   const totalCapitulosTexto = `${obra.capitulos.length} ${
     obra.capitulos.length === 1 ? "cap" : "caps"
   }`;
@@ -2331,7 +2366,7 @@ function ObraPainelCard({
             <div style={coverGlowStyle} />
 
             <div style={statusRowStyle}>
-              <span style={obra.publicado ? publishedStatusStyle : draftStatusStyle}>
+              <span style={obraComStatusPublicado ? publishedStatusStyle : draftStatusStyle}>
                 {statusTexto}
               </span>
 

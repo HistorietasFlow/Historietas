@@ -12,6 +12,39 @@ import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 
 const SAVED_RELEASES_STORAGE_KEY = "historietas-lancamentos-salvos";
 
+
+type SupabaseObraEmBreveRow = {
+  id: string;
+  user_id: string | null;
+  titulo: string | null;
+  autor: string | null;
+  genero: string | null;
+  capa_url: string | null;
+  arquivo_url: string | null;
+  publicado: boolean | null;
+  slug: string | null;
+  link: string | null;
+  criada_em: string | null;
+};
+
+type SupabaseCapituloEmBreveRow = {
+  obra_id: string | null;
+};
+
+type ObraEmBreveCard = {
+  id: string;
+  titulo: string;
+  autor: string;
+  genero: string;
+  views: string;
+  likes: string;
+  comentarios: string;
+  slug: string;
+  link: string;
+  capa: string;
+  origem: "catalogo" | "supabase";
+};
+
 function criarStorageKeyUsuarioEmBreve(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
@@ -105,10 +138,174 @@ function criarLinkObra(titulo: string) {
   return `/obra/${criarSlugBase(titulo)}`;
 }
 
+
+function obraSupabaseTemArquivoEmBreve(obra: SupabaseObraEmBreveRow) {
+  return Boolean(obra.arquivo_url?.trim());
+}
+
+function normalizarObraCatalogoEmBreve(
+  obra: (typeof obras)[number]
+): ObraEmBreveCard {
+  const slug = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+  return {
+    id: slug || obra.titulo,
+    titulo: obra.titulo,
+    autor: obra.autor,
+    genero: obra.genero,
+    views: String(obra.views || "0"),
+    likes: String(obra.likes || "0"),
+    comentarios: String(obra.comentarios || "0"),
+    slug,
+    link: obra.link?.trim() || `/obra/${slug}`,
+    capa:
+      typeof (obra as { capa?: unknown }).capa === "string"
+        ? ((obra as { capa?: string }).capa || "").trim()
+        : typeof (obra as { capaUrl?: unknown }).capaUrl === "string"
+          ? ((obra as { capaUrl?: string }).capaUrl || "").trim()
+          : "",
+    origem: "catalogo",
+  };
+}
+
+function normalizarObraSupabaseEmBreve(
+  obra: SupabaseObraEmBreveRow
+): ObraEmBreveCard {
+  const titulo = obra.titulo?.trim() || "Obra sem título";
+  const slug = obra.slug?.trim() || criarSlugBase(titulo);
+  return {
+    id: obra.id || slug || titulo,
+    titulo,
+    autor: obra.autor?.trim() || "Autor não informado",
+    genero: obra.genero?.trim() || "Não informado",
+    views: "0",
+    likes: "0",
+    comentarios: "0",
+    slug,
+    link: obra.link?.trim() || `/obra/${slug}`,
+    capa: obra.capa_url?.trim() || "",
+    origem: "supabase",
+  };
+}
+
+async function carregarObrasReaisEmBreve() {
+  try {
+    const { data: obrasBanco, error: erroObras } = await supabase
+      .from("obras")
+      .select(
+        "id,user_id,titulo,autor,genero,capa_url,arquivo_url,publicado,slug,link,criada_em"
+      )
+      .eq("publicado", true)
+      .order("criada_em", { ascending: false })
+      .limit(100);
+
+    if (erroObras || !Array.isArray(obrasBanco)) {
+      if (erroObras) {
+        console.warn(
+          "Não consegui carregar obras reais do Em breve:",
+          erroObras.message
+        );
+      }
+
+      return [] as ObraEmBreveCard[];
+    }
+
+    const obrasPublicadas = obrasBanco as unknown as SupabaseObraEmBreveRow[];
+    const obraIds = obrasPublicadas
+      .map((obra) => obra.id?.trim() || "")
+      .filter(Boolean);
+
+    if (obraIds.length === 0) {
+      return [] as ObraEmBreveCard[];
+    }
+
+    const { data: capitulosBanco, error: erroCapitulos } = await supabase
+      .from("capitulos")
+      .select("obra_id")
+      .in("obra_id", obraIds)
+      .eq("publicado", true)
+      .limit(1000);
+
+    if (erroCapitulos || !Array.isArray(capitulosBanco)) {
+      if (erroCapitulos) {
+        console.warn(
+          "Não consegui verificar capítulos das obras do Em breve:",
+          erroCapitulos.message
+        );
+      }
+
+      return [] as ObraEmBreveCard[];
+    }
+
+    const obrasComCapituloPublicado = new Set(
+      (capitulosBanco as unknown as SupabaseCapituloEmBreveRow[])
+        .map((capitulo) => capitulo.obra_id?.trim() || "")
+        .filter(Boolean)
+    );
+
+    return obrasPublicadas
+      .filter((obra) => {
+        const obraId = obra.id?.trim() || "";
+
+        return (
+          obraId &&
+          !obrasComCapituloPublicado.has(obraId) &&
+          !obraSupabaseTemArquivoEmBreve(obra)
+        );
+      })
+      .map((obra) => normalizarObraSupabaseEmBreve(obra));
+  } catch (error) {
+    console.warn("Não consegui acessar obras reais do Em breve:", error);
+    return [] as ObraEmBreveCard[];
+  }
+}
+
+function removerObrasDuplicadasEmBreve(obrasParaMostrar: ObraEmBreveCard[]) {
+  const obrasVistas = new Set<string>();
+
+  return obrasParaMostrar.filter((obra) => {
+    const chave = normalizarTexto(obra.titulo) || obra.id;
+
+    if (!chave || obrasVistas.has(chave)) {
+      return false;
+    }
+
+    obrasVistas.add(chave);
+    return true;
+  });
+}
+
+function criarLinkCardEmBreve(obra: ObraEmBreveCard) {
+  if (obra.origem === "catalogo") {
+    return criarLinkObra(obra.titulo);
+  }
+
+  return `/em-breve?obra=${encodeURIComponent(obra.titulo)}`;
+}
+
+function criarCoverCardEmBreveStyle(
+  obra: ObraEmBreveCard,
+  desktopLayout: boolean
+): CSSProperties {
+  const baseStyle = desktopLayout ? desktopRelatedCoverStyle : relatedCoverStyle;
+
+  if (!obra.capa) {
+    return baseStyle;
+  }
+
+  return {
+    ...baseStyle,
+    backgroundImage: `url(${obra.capa})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
+
 export default function EmBrevePage() {
   const router = useRouter();
   const [nomeObra, setNomeObra] = useState("");
   const [obrasSalvas, setObrasSalvas] = useState<string[]>([]);
+  const [obrasReaisEmBreve, setObrasReaisEmBreve] = useState<ObraEmBreveCard[]>([]);
   const [avisoAcesso, setAvisoAcesso] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [desktopLayout, setDesktopLayout] = useState(false);
@@ -132,6 +329,26 @@ export default function EmBrevePage() {
     return () => {
       window.clearTimeout(atualizarLayoutDesktopTimer);
       consultaDesktop.removeEventListener("change", atualizarLayoutDesktop);
+    };
+  }, []);
+
+  useEffect(() => {
+    let componenteAtivo = true;
+
+    async function carregarObrasReais() {
+      const obrasSemConteudo = await carregarObrasReaisEmBreve();
+
+      window.setTimeout(() => {
+        if (componenteAtivo) {
+          setObrasReaisEmBreve(obrasSemConteudo);
+        }
+      }, 0);
+    }
+
+    void carregarObrasReais();
+
+    return () => {
+      componenteAtivo = false;
     };
   }, []);
 
@@ -207,19 +424,27 @@ export default function EmBrevePage() {
     };
   }, []);
 
-  const obraCatalogo = nomeObra ? encontrarObraPorTitulo(nomeObra) : null;
+  const obrasCatalogoEmBreve = obras
+    .filter((obra) => !obra.disponivel)
+    .map((obra) => normalizarObraCatalogoEmBreve(obra));
 
-  const obrasEmBreve = obras.filter((obra) => !obra.disponivel);
+  const obrasEmBreve = removerObrasDuplicadasEmBreve([
+    ...obrasReaisEmBreve,
+    ...obrasCatalogoEmBreve,
+  ]);
 
-  const outrasObrasEmBreve = obrasEmBreve
-    .filter((obra) => {
-      if (!obraCatalogo) {
-        return true;
-      }
+  const obraConsultada = nomeObra
+    ? obrasEmBreve.find(
+        (obra) => normalizarTexto(obra.titulo) === normalizarTexto(nomeObra)
+      ) || null
+    : null;
 
-      return obra.titulo !== obraCatalogo.titulo;
-    })
-    .slice(0, 4);
+  const outrasObrasEmBreve = obraConsultada
+    ? [
+        obraConsultada,
+        ...obrasEmBreve.filter((obra) => obra.id !== obraConsultada.id),
+      ].slice(0, 8)
+    : obrasEmBreve.slice(0, 8);
 
   async function salvarLancamento(titulo: string) {
     const tituloNormalizado = normalizarTexto(titulo);
@@ -323,18 +548,16 @@ export default function EmBrevePage() {
 
                 return (
                   <article
-                    key={obra.titulo}
+                    key={`${obra.origem}-${obra.id}`}
                     style={desktopLayout ? desktopRelatedCardStyle : relatedCardStyle}
                   >
                     <Link
-                      href={criarLinkObra(obra.titulo)}
+                      href={criarLinkCardEmBreve(obra)}
                       style={relatedCoverLinkStyle}
                       aria-label={`Abrir página de ${obra.titulo}`}
                     >
                       <div
-                        style={
-                          desktopLayout ? desktopRelatedCoverStyle : relatedCoverStyle
-                        }
+                        style={criarCoverCardEmBreveStyle(obra, desktopLayout)}
                       >
                         <span style={relatedGenreStyle}>{obra.genero}</span>
                       </div>
@@ -353,7 +576,7 @@ export default function EmBrevePage() {
                         }
                       >
                         <Link
-                          href={criarLinkObra(obra.titulo)}
+                          href={criarLinkCardEmBreve(obra)}
                           style={relatedTitleLinkStyle}
                         >
                           <strong style={relatedTitleStyle}>
