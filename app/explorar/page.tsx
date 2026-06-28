@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { obras } from "../data/obras";
-import type { Obra } from "../data/obras";
 import { supabase } from "../../lib/supabase/client";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
@@ -816,16 +814,6 @@ function categoriaCombinaComGenero(categoria: string, genero: string) {
   return generoNormalizado.includes(categoriaNormalizada);
 }
 
-function converterMetricaParaNumero(valor: string) {
-  const texto = valor.trim().toLowerCase().replace(",", ".");
-
-  if (texto.endsWith("k")) {
-    return Number(texto.replace("k", "")) * 1000;
-  }
-
-  return Number(texto) || 0;
-}
-
 function totalCurtidasObra(obra: ObraLocal) {
   return obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
 }
@@ -1504,28 +1492,6 @@ function ordenarObrasLocais(lista: ObraLocal[], ordenacao: OrdenacaoExplorar) {
   return novaLista;
 }
 
-function ordenarObrasFixas(lista: Obra[], ordenacao: OrdenacaoExplorar) {
-  const novaLista = [...lista];
-
-  if (ordenacao === "mais-curtidas") {
-    return novaLista.sort(
-      (a, b) =>
-        converterMetricaParaNumero(b.likes) -
-        converterMetricaParaNumero(a.likes)
-    );
-  }
-
-  if (ordenacao === "mais-comentadas") {
-    return novaLista.sort(
-      (a, b) =>
-        converterMetricaParaNumero(b.comentarios) -
-        converterMetricaParaNumero(a.comentarios)
-    );
-  }
-
-  return novaLista;
-}
-
 function criarPublishedCoverStyle(
   capa: string,
   tema?: ReturnType<typeof obterTemaCategoria>
@@ -2063,67 +2029,7 @@ export default function ExplorarPage() {
     obrasConcluidas,
   ]);
 
-  const obrasFixasFiltradas = useMemo(() => {
-    const filtradas = obras.filter((obra) => {
-      const passaCategoria = categoriaSelecionada
-        ? categoriaCombinaComGenero(categoriaSelecionada, obra.genero)
-        : true;
-
-      const passaFormato = filtroFormato === "todos";
-
-      const passaClassificacao =
-        filtroClassificacao === "todos"
-          ? true
-          : obra.classificacaoIndicativa === filtroClassificacao;
-
-      const passaPublicacao = obra.disponivel;
-
-      const passaCapitulos =
-        filtroCapitulos === "todos"
-          ? true
-          : filtroCapitulos === "com-capitulos"
-            ? false
-            : true;
-
-      const passaColecao = !usuarioLogado || filtroColecao === "todos";
-
-      const textoBusca = normalizarTexto(
-        [
-          obra.titulo,
-          obra.autor,
-          obra.genero,
-          obra.classificacaoIndicativa,
-          obra.status,
-        ].join(" ")
-      );
-
-      const passaBusca = termoBusca ? textoBusca.includes(termoBusca) : true;
-
-      return (
-        passaCategoria &&
-        passaFormato &&
-        passaClassificacao &&
-        passaPublicacao &&
-        passaCapitulos &&
-        passaColecao &&
-        passaBusca
-      );
-    });
-
-    return ordenarObrasFixas(filtradas, ordenacao);
-  }, [
-    categoriaSelecionada,
-    filtroFormato,
-    filtroClassificacao,
-    filtroCapitulos,
-    filtroColecao,
-    usuarioLogado,
-    termoBusca,
-    ordenacao,
-  ]);
-
-  const totalResultados =
-    obrasLocaisFiltradas.length + obrasFixasFiltradas.length;
+  const totalResultados = obrasLocaisFiltradas.length;
 
   const filtrosAtivos = Boolean(
     categoriaSelecionada ||
@@ -2294,15 +2200,21 @@ export default function ExplorarPage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
-          <Link
-            href="/"
-            style={isDesktop ? desktopPageTitleLinkStyle : pageTitleLinkStyle}
-            aria-label="Voltar para a Home"
+          <button
+            type="button"
+            onClick={() => setMostrarFiltrosAvancados(true)}
+            style={
+              isDesktop
+                ? desktopExplorarHeaderFilterButtonStyle
+                : explorarHeaderFilterButtonStyle
+            }
+            aria-label="Filtrar e ordenar"
           >
-            <span className="historietas-explorar-logo-text" style={pageTitleTextStyle}>
-              EXPLORAR HISTÓRIAS
+            <span>{textoBotaoFiltrosAvancados}</span>
+            <span style={explorarHeaderFilterIconStyle} aria-hidden="true">
+              ⇅
             </span>
-          </Link>
+          </button>
 
           {!isDesktop && (
             <button
@@ -2375,25 +2287,6 @@ export default function ExplorarPage() {
             />
           )}
 
-          <div style={explorarFilterRowStyle}>
-            <button
-              type="button"
-              onClick={() => setMostrarFiltrosAvancados(true)}
-              style={explorarFilterMainButtonStyle}
-            >
-              <span>{textoBotaoFiltrosAvancados}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMostrarFiltrosAvancados(true)}
-              aria-label="Abrir filtros e ordenação"
-              style={explorarFilterIconButtonStyle}
-            >
-              ⇅
-            </button>
-          </div>
-
           <section className="explorar-carousel" style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
             <button
               type="button"
@@ -2423,17 +2316,6 @@ export default function ExplorarPage() {
             <span style={loginNoticeStyle}>{mensagemLogin}</span>
           )}
 
-          {filtrosAtivos && (
-            <div style={isDesktop ? desktopCompactClearFiltersStyle : compactClearFiltersStyle}>
-              <button
-                type="button"
-                onClick={limparFiltros}
-                style={criarClearFilterButtonStyle(temaPagina, categoriaAtiva)}
-              >
-                Limpar filtros
-              </button>
-            </div>
-          )}
         </section>
 
         {mostrarFiltrosAvancados && (
@@ -2534,35 +2416,12 @@ export default function ExplorarPage() {
           </section>
         )}
 
-        <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-          <SectionHeader
-            title={
-              categoriaSelecionada
-                ? `Catálogo em ${categoriaSelecionada}`
-                : "Catálogo inicial"
-            }
-            tema={temaPagina}
-            isDesktop={isDesktop}
-          />
-
-          {obrasFixasFiltradas.length > 0 ? (
-            <div style={isDesktop ? desktopGridStyle : gridStyle}>
-              {obrasFixasFiltradas.map((obra) => (
-                <ObraFixaCard key={obra.titulo} obra={obra} tema={temaPagina} isDesktop={isDesktop} />
-              ))}
-            </div>
-          ) : totalResultados > 0 ? (
-            <div style={isDesktop ? desktopEmptyBoxStyle : emptyBoxStyle}>
-              Nenhuma obra do catálogo inicial encontrada com esses filtros.
-            </div>
-          ) : null}
-        </section>
 
         {totalResultados === 0 && (
-          <section style={isDesktop ? desktopEmptyBoxStyle : emptyBoxStyle}>
+          <p style={isDesktop ? desktopEmptyMessageStyle : emptyMessageStyle}>
             Nenhuma obra encontrada no Explorar. Tente limpar os filtros ou usar
             outra busca.
-          </section>
+          </p>
         )}
       </section>
     </main>
@@ -2589,76 +2448,6 @@ function SectionHeader({
     <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
       <h2 style={titleStyleTema}>{title}</h2>
     </div>
-  );
-}
-
-function ObraFixaCard({ obra, tema, isDesktop }: { obra: Obra; tema: ReturnType<typeof obterTemaCategoria>; isDesktop?: boolean }) {
-  const obraHref = obra.disponivel
-    ? obra.link
-    : `/em-breve?obra=${encodeURIComponent(obra.titulo)}`;
-
-  const conteudoCard = (
-    <>
-      <div style={isDesktop ? criarDesktopCoverTemaStyle(tema) : criarCoverTemaStyle(tema)} />
-
-      <div style={cardContentStyle}>
-        <div style={cardTopStyle}>
-          <h3 style={isDesktop ? desktopCardTitleStyle : cardTitleStyle}>{obra.titulo}</h3>
-
-          <div style={statusRowStyle}>
-            <span style={statusStyle}>{obra.status}</span>
-            <span style={classificationBadgeStyle}>
-              {obra.classificacaoIndicativa}
-            </span>
-            {!obra.disponivel && <span style={soonBadgeStyle}>Em breve</span>}
-          </div>
-        </div>
-
-        <p style={authorStyle}>Por {obra.autor}</p>
-
-        <div style={statsStyle}>
-          <span style={metricItemStyle}>
-            <span style={metricIconStyle}>👁</span>
-            {obra.views}
-          </span>
-
-          <span style={metricItemStyle}>
-            <span style={heartMetricIconStyle}>♥</span>
-            {obra.likes}
-          </span>
-
-          <span style={metricItemStyle}>
-            <span style={metricIconStyle}>💬</span>
-            {obra.comentarios}
-          </span>
-
-          <span style={metricItemStyle}>
-            <span style={metricIconStyle}>📚</span>
-            0 cap.
-          </span>
-        </div>
-
-        <div style={isDesktop ? desktopCardActionRowStyle : cardActionRowStyle}>
-          <span style={isDesktop ? desktopCardGenreBadgeStyle : cardGenreBadgeStyle}>
-            {obra.genero}
-          </span>
-
-          <span style={criarCardPrimaryActionStyle(tema, isDesktop)}>
-            {obra.disponivel ? "Ver obra" : "Ver detalhes"}
-          </span>
-        </div>
-      </div>
-    </>
-  );
-
-  return (
-    <Link
-      href={obraHref}
-      style={obra.disponivel ? (isDesktop ? criarDesktopCardTemaStyle(tema) : criarCardTemaStyle(tema)) : (isDesktop ? criarDesktopCardSoonTemaStyle(tema) : criarCardSoonTemaStyle(tema))}
-      aria-label={`Abrir página da obra ${obra.titulo}`}
-    >
-      {conteudoCard}
-    </Link>
   );
 }
 
@@ -2724,12 +2513,10 @@ function ObraPublicadaCard({
         )}
 
         <div style={statsStyle}>
-          {totalLidos > 0 && (
-            <span style={metricItemStyle}>
-              <span style={metricIconStyle}>👁</span>
-              {totalLidos} lidos
-            </span>
-          )}
+          <span style={metricItemStyle}>
+            <span style={metricIconStyle}>👁</span>
+            {totalLidos}
+          </span>
 
           <span style={metricItemStyle}>
             <span style={heartMetricIconStyle}>♥</span>
@@ -2823,42 +2610,10 @@ function criarSearchInputStyle(
   return isDesktop ? desktopSearchInputStyle : searchInputStyle;
 }
 
-function criarClearFilterButtonStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>,
-  _categoriaAtiva: boolean
-): CSSProperties {
-  return clearFilterButtonStyle;
-}
 
-function criarCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
-  return {
-    ...cardStyle,
-    border: "1px solid rgba(255,255,255,0.06)",
-    boxShadow: "none",
-  };
-}
 
-function criarCardSoonTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
-  return {
-    ...criarCardTemaStyle(tema),
-    opacity: 0.9,
-  };
-}
 
-function criarDesktopCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
-  return {
-    ...desktopCardStyle,
-    border: "1px solid rgba(255,255,255,0.06)",
-    boxShadow: "none",
-  };
-}
 
-function criarDesktopCardSoonTemaStyle(tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
-  return {
-    ...criarDesktopCardTemaStyle(tema),
-    opacity: 0.9,
-  };
-}
 
 function criarPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
@@ -2876,23 +2631,7 @@ function criarDesktopPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCa
   };
 }
 
-function criarCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
-  return {
-    ...coverStyle,
-    backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
 
-function criarDesktopCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
-  return {
-    ...desktopCoverStyle,
-    backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
 
 function criarPublishedCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
@@ -3183,7 +2922,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
+  padding: "8px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -3301,20 +3040,22 @@ const titleHeaderStyle: CSSProperties = {
   position: "relative",
   display: "flex",
   alignItems: "center",
-  justifyContent: "center",
-  marginTop: "4px",
-  marginBottom: "18px",
+  justifyContent: "flex-start",
+  marginTop: "0",
+  marginBottom: "10px",
   padding: 0,
   minWidth: 0,
+  minHeight: "38px",
   maxWidth: "100%",
-  textAlign: "center",
+  textAlign: "left",
   boxSizing: "border-box",
 };
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
   position: "relative",
-  marginTop: "6px",
-  marginBottom: "22px",
+  marginTop: "0",
+  marginBottom: "12px",
+  minHeight: "40px",
 };
 
 const mobileSearchToggleStyle: CSSProperties = {
@@ -3349,6 +3090,48 @@ const mobileSearchToggleActiveStyle: CSSProperties = {
   color: "#FFFFFF",
   boxShadow: "none",
   outline: "none",
+};
+
+const explorarHeaderFilterButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  border: 0,
+  background: "transparent",
+  color: "#FFFFFF",
+  minHeight: "38px",
+  maxWidth: "calc(100% - 46px)",
+  padding: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "8px",
+  fontSize: "16px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  textAlign: "left",
+  cursor: "pointer",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+  ...safeTextStyle,
+};
+
+const desktopExplorarHeaderFilterButtonStyle: CSSProperties = {
+  ...explorarHeaderFilterButtonStyle,
+  minHeight: "40px",
+  maxWidth: "calc(100% - 52px)",
+  fontSize: "17px",
+};
+
+const explorarHeaderFilterIconStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#FFFFFF",
+  fontSize: "22px",
+  lineHeight: 1,
+  fontWeight: 950,
+  flex: "0 0 auto",
 };
 
 const desktopNotificationButtonStyle: CSSProperties = {
@@ -3397,47 +3180,6 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   pointerEvents: "none",
 };
 
-const pageTitleLinkStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "23px",
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "1px",
-  width: "fit-content",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "visible",
-  textAlign: "center",
-  flex: "0 1 auto",
-  ...safeTextStyle,
-};
-const desktopPageTitleLinkStyle: CSSProperties = {
-  ...pageTitleLinkStyle,
-};
-const pageTitleTextStyle: CSSProperties = {
-  display: "inline-block",
-  marginLeft: 0,
-  paddingRight: "0.2em",
-  paddingBottom: "0.04em",
-  whiteSpace: "nowrap",
-  overflow: "visible",
-  fontSize: "23px",
-  lineHeight: 1.08,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  wordSpacing: "0.11em",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
-  textShadow: "none",
-};
 const soonTitleButtonStyle: CSSProperties = {
   ...soonTopButtonStyle,
   justifySelf: "center",
@@ -3615,75 +3357,9 @@ const desktopSearchInputStyle: CSSProperties = {
   textAlign: "left",
 };
 
-const compactClearFiltersStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "center",
-  width: "100%",
-  marginTop: "2px",
-};
-
-const desktopCompactClearFiltersStyle: CSSProperties = {
-  ...compactClearFiltersStyle,
-  justifyContent: "center",
-};
-
-const clearFilterButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "38px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxShadow: "none",
-};
 
 
-const explorarFilterRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  width: "100%",
-  marginTop: "0",
-};
 
-const explorarFilterMainButtonStyle: CSSProperties = {
-  appearance: "none",
-  border: "0",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontSize: "16px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  padding: 0,
-  cursor: "pointer",
-  textAlign: "left",
-  minWidth: 0,
-  ...safeTextStyle,
-};
-
-const explorarFilterIconButtonStyle: CSSProperties = {
-  appearance: "none",
-  width: "38px",
-  height: "38px",
-  border: "0",
-  borderRadius: "999px",
-  background: "transparent",
-  color: "#FFFFFF",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "23px",
-  lineHeight: 1,
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  flex: "0 0 auto",
-};
 
 const explorarModalOverlayStyle: CSSProperties = {
   position: "fixed",
@@ -3879,28 +3555,7 @@ const publishedCardStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const cardStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(88px, 98px) minmax(0, 1fr)",
-  gap: "14px",
-  alignItems: "stretch",
-  padding: "11px",
-  borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-  boxSizing: "border-box",
-  boxShadow: "none",
-};
 
-const cardSoonStyle: CSSProperties = {
-  ...cardStyle,
-  opacity: 0.9,
-};
 
 const publishedCoverStyle: CSSProperties = {
   minHeight: "122px",
@@ -3916,56 +3571,9 @@ const publishedCoverStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const coverStyle: CSSProperties = {
-  minHeight: "122px",
-  borderRadius: "16px",
-  position: "relative",
-  overflow: "hidden",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  minWidth: 0,
-  boxSizing: "border-box",
-};
 
-const genreBadgeStyle: CSSProperties = {
-  position: "absolute",
-  left: "8px",
-  right: "8px",
-  bottom: "8px",
-  maxWidth: "calc(100% - 16px)",
-  padding: "7px 8px",
-  borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  fontWeight: 900,
-  textAlign: "center",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const noCoverBadgeStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "rgba(255,255,255,0.62)",
-  fontSize: "26px",
-  fontWeight: 950,
-  background: "transparent",
-};
 
-const cardContentStyle: CSSProperties = {
-  minWidth: 0,
-  maxWidth: "100%",
-  display: "grid",
-  alignContent: "center",
-  gap: "7px",
-};
 
 const cardTopStyle: CSSProperties = {
   display: "grid",
@@ -3973,19 +3581,6 @@ const cardTopStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const cardTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "20px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
 
 const publishedTitleStyle: CSSProperties = {
   margin: 0,
@@ -4008,47 +3603,8 @@ const statusRowStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const statusStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 850,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const soonBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(113,113,122,0.18))",
-  border: "1px solid var(--historietas-border-soft, rgba(161,161,170,0.22))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 880,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const publishedStatusStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.22)",
-  color: "#86EFAC",
-  fontSize: "9px",
-  fontWeight: 880,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const draftStatusStyle: CSSProperties = {
   width: "fit-content",
@@ -4134,14 +3690,6 @@ const completedBadgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const authorStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #B3B3B3)",
-  fontSize: "13px",
-  fontWeight: 700,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
 const authorLinkStyle: CSSProperties = {
   width: "fit-content",
@@ -4271,12 +3819,6 @@ const readStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const soonReadStyle: CSSProperties = {
-  ...readStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-};
 
 const cardActionRowStyle: CSSProperties = {
   display: "flex",
@@ -4336,7 +3878,7 @@ const desktopCardPrimaryActionStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1220px, calc(100% - 64px))",
-  padding: "26px 0 40px",
+  padding: "12px 0 40px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -4404,13 +3946,6 @@ const desktopSectionTitleStyle: CSSProperties = {
   fontSize: "34px",
 };
 
-const desktopGridStyle: CSSProperties = {
-  ...gridStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  justifyContent: "stretch",
-  alignItems: "stretch",
-  gap: "18px",
-};
 
 const desktopPublishedGridStyle: CSSProperties = {
   ...gridStyle,
@@ -4432,16 +3967,6 @@ const desktopPublishedCardStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const desktopCardStyle: CSSProperties = {
-  ...cardStyle,
-  gridTemplateColumns: "126px minmax(0, 1fr)",
-  gap: "17px",
-  padding: "14px",
-  borderRadius: "24px",
-  minHeight: "178px",
-  background: "rgba(4, 0, 10, 0.72)",
-  boxShadow: "none",
-};
 
 const desktopPublishedCoverStyle: CSSProperties = {
   ...publishedCoverStyle,
@@ -4449,17 +3974,7 @@ const desktopPublishedCoverStyle: CSSProperties = {
   borderRadius: "18px",
 };
 
-const desktopCoverStyle: CSSProperties = {
-  ...coverStyle,
-  minHeight: "150px",
-  borderRadius: "18px",
-};
 
-const desktopCardTitleStyle: CSSProperties = {
-  ...cardTitleStyle,
-  fontSize: "22px",
-  lineHeight: 1.08,
-};
 
 const desktopPublishedTitleStyle: CSSProperties = {
   ...publishedTitleStyle,
@@ -4468,21 +3983,23 @@ const desktopPublishedTitleStyle: CSSProperties = {
   letterSpacing: "-0.03em",
 };
 
-const emptyBoxStyle: CSSProperties = {
-  padding: "28px",
-  borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+
+const emptyMessageStyle: CSSProperties = {
+  margin: "22px 0 34px",
+  padding: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "14px",
+  lineHeight: 1.55,
   fontWeight: 850,
+  textAlign: "center",
+  background: "transparent",
+  border: "none",
   boxShadow: "none",
-  minWidth: 0,
-  overflow: "hidden",
   ...safeTextStyle,
 };
 
-
-const desktopEmptyBoxStyle: CSSProperties = {
-  ...emptyBoxStyle,
-  padding: "34px",
+const desktopEmptyMessageStyle: CSSProperties = {
+  ...emptyMessageStyle,
+  margin: "28px 0 44px",
+  fontSize: "15px",
 };

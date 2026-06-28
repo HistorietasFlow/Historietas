@@ -19,6 +19,7 @@ type SupabaseObraEmBreveRow = {
   titulo: string | null;
   autor: string | null;
   genero: string | null;
+  formato: string | null;
   capa_url: string | null;
   arquivo_url: string | null;
   publicado: boolean | null;
@@ -36,6 +37,7 @@ type ObraEmBreveCard = {
   titulo: string;
   autor: string;
   genero: string;
+  formato: string;
   views: string;
   likes: string;
   comentarios: string;
@@ -153,6 +155,10 @@ function normalizarObraCatalogoEmBreve(
     titulo: obra.titulo,
     autor: obra.autor,
     genero: obra.genero,
+    formato:
+      typeof obra.formato === "string" && obra.formato.trim()
+        ? obra.formato.trim()
+        : "Original",
     views: String(obra.views || "0"),
     likes: String(obra.likes || "0"),
     comentarios: String(obra.comentarios || "0"),
@@ -178,6 +184,7 @@ function normalizarObraSupabaseEmBreve(
     titulo,
     autor: obra.autor?.trim() || "Autor não informado",
     genero: obra.genero?.trim() || "Não informado",
+    formato: obra.formato?.trim() || "Original",
     views: "0",
     likes: "0",
     comentarios: "0",
@@ -193,7 +200,7 @@ async function carregarObrasReaisEmBreve() {
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
       .select(
-        "id,user_id,titulo,autor,genero,capa_url,arquivo_url,publicado,slug,link,criada_em"
+        "id,user_id,titulo,autor,genero,formato,capa_url,arquivo_url,publicado,slug,link,criada_em"
       )
       .eq("publicado", true)
       .order("criada_em", { ascending: false })
@@ -281,6 +288,56 @@ function criarLinkCardEmBreve(obra: ObraEmBreveCard) {
   }
 
   return `/em-breve?obra=${encodeURIComponent(obra.titulo)}`;
+}
+
+function obterIconeTematicaEmBreve(genero: string) {
+  const generoNormalizado = normalizarTexto(genero);
+
+  if (generoNormalizado.includes("romance")) {
+    return "♡";
+  }
+
+  if (generoNormalizado.includes("terror")) {
+    return "☾";
+  }
+
+  if (generoNormalizado.includes("fantasia")) {
+    return "✦";
+  }
+
+  if (generoNormalizado.includes("acao")) {
+    return "⚡";
+  }
+
+  if (generoNormalizado.includes("aventura")) {
+    return "⌖";
+  }
+
+  if (generoNormalizado.includes("comedia")) {
+    return "☺";
+  }
+
+  if (
+    generoNormalizado.includes("ficcao") ||
+    generoNormalizado.includes("sci-fi") ||
+    generoNormalizado.includes("sci fi")
+  ) {
+    return "⌬";
+  }
+
+  if (generoNormalizado.includes("misterio")) {
+    return "◇";
+  }
+
+  if (generoNormalizado.includes("suspense")) {
+    return "◌";
+  }
+
+  if (generoNormalizado.includes("sobrenatural")) {
+    return "✧";
+  }
+
+  return "✦";
 }
 
 function criarCoverCardEmBreveStyle(
@@ -558,9 +615,7 @@ export default function EmBrevePage() {
                     >
                       <div
                         style={criarCoverCardEmBreveStyle(obra, desktopLayout)}
-                      >
-                        <span style={relatedGenreStyle}>{obra.genero}</span>
-                      </div>
+                      />
                     </Link>
 
                     <div
@@ -612,12 +667,21 @@ export default function EmBrevePage() {
                             : relatedBottomRowStyle
                         }
                       >
-                        <div style={relatedStatsStyle}>
-                          <span style={safeTextStyle}>👁 {obra.views}</span>
-                          <span style={safeTextStyle}>♥ {obra.likes}</span>
-                          <span style={safeTextStyle}>
-                            💬 {obra.comentarios}
-                          </span>
+                        <div style={relatedMetaBadgesStyle}>
+                          <div style={relatedThemeBadgeStyle}>
+                            <span style={relatedThemeIconStyle}>
+                              {obterIconeTematicaEmBreve(obra.genero)}
+                            </span>
+                            <span style={relatedThemeTextStyle}>
+                              {obra.genero}
+                            </span>
+                          </div>
+
+                          <div style={relatedFormatBadgeStyle}>
+                            <span style={relatedThemeTextStyle}>
+                              {obra.formato}
+                            </span>
+                          </div>
                         </div>
 
                         <button
@@ -850,12 +914,11 @@ const titleTextStyle: CSSProperties = {
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
   textAlign: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
   ...safeTextStyle,
 };
@@ -1359,7 +1422,7 @@ const relatedCoverStyle: CSSProperties = {
   backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxShadow: "none",
@@ -1401,7 +1464,7 @@ const relatedContentStyle: CSSProperties = {
 };
 
 const relatedTitleLinkStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "#FFFFFF",
   textDecoration: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -1417,7 +1480,7 @@ const relatedTopLineStyle: CSSProperties = {
 };
 
 const relatedTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "#FFFFFF",
   fontSize: "clamp(18px, 5.8vw, 21px)",
   lineHeight: 1.02,
   fontWeight: 950,
@@ -1483,6 +1546,61 @@ const relatedStatsStyle: CSSProperties = {
   fontWeight: 850,
   minWidth: 0,
   maxWidth: "100%",
+};
+
+const relatedMetaBadgesStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "10px",
+  minWidth: 0,
+  maxWidth: "100%",
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const relatedThemeBadgeStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "5px",
+  width: "fit-content",
+  maxWidth: "100%",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  color: "#FFFFFF",
+  fontSize: "10px",
+  fontWeight: 950,
+  letterSpacing: "0.055em",
+  textTransform: "uppercase",
+  boxSizing: "border-box",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
+const relatedThemeIconStyle: CSSProperties = {
+  color: "var(--historietas-accent, #FDBA74)",
+  fontSize: "12px",
+  lineHeight: 1,
+  fontWeight: 950,
+  flex: "0 0 auto",
+};
+
+const relatedThemeTextStyle: CSSProperties = {
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  ...safeTextStyle,
+};
+
+const relatedFormatBadgeStyle: CSSProperties = {
+  ...relatedThemeBadgeStyle,
+  gap: 0,
+  background: "transparent",
+  color: "#FFFFFF",
 };
 
 const relatedSaveButtonStyle: CSSProperties = {

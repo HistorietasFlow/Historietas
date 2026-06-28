@@ -1468,7 +1468,6 @@ function criarDecoracaoPaginaStyle(index: number): CSSProperties {
       transform: "rotate(-14deg)",
     },
     { top: "64%", left: "-16px", fontSize: "58px", transform: "rotate(12deg)" },
-    { bottom: "8%", right: "10%", fontSize: "52px", transform: "rotate(8deg)" },
   ];
 
   return {
@@ -2062,11 +2061,11 @@ export default function EmAltaPage() {
   }
 
   return (
-    <main style={pageThemeStyle}>
+    <main className="historietas-em-alta-page" style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${emAltaPageCss}`}</style>
 
       <div style={pageDecorationLayerStyle} aria-hidden="true">
-        {["#", "★", "↑"].map((decoracao, index) => (
+        {["#", "★"].map((decoracao, index) => (
           <span
             key={`${decoracao}-${index}`}
             style={criarDecoracaoPaginaStyle(index)}
@@ -3319,6 +3318,40 @@ const emAltaPageCss = `
     background: #070212 !important;
   }
 
+  .historietas-em-alta-page,
+  .historietas-em-alta-page *,
+  .historietas-em-alta-page *::before,
+  .historietas-em-alta-page *::after {
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .historietas-em-alta-page a,
+  .historietas-em-alta-page button,
+  .historietas-em-alta-page [role="link"],
+  .historietas-em-alta-page [role="button"] {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+  }
+
+  .historietas-em-alta-page a:active,
+  .historietas-em-alta-page button:active,
+  .historietas-em-alta-page [role="link"]:active,
+  .historietas-em-alta-page [role="button"]:active,
+  .historietas-em-alta-page a:focus,
+  .historietas-em-alta-page button:focus,
+  .historietas-em-alta-page [role="link"]:focus,
+  .historietas-em-alta-page [role="button"]:focus {
+    outline: none !important;
+  }
+
+  .historietas-em-alta-page a:focus-visible,
+  .historietas-em-alta-page button:focus-visible,
+  .historietas-em-alta-page [role="link"]:focus-visible,
+  .historietas-em-alta-page [role="button"]:focus-visible {
+    outline: none !important;
+  }
+
   html[data-historietas-tema-visual] nav a[href="/em-alta"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"] {
@@ -3567,6 +3600,7 @@ const headerTitleTextStyle: CSSProperties = {
   color: "#FFFFFF",
   textShadow: "none",
   textTransform: "uppercase",
+  wordSpacing: "0.1em",
   whiteSpace: "nowrap",
 };
 
@@ -3655,6 +3689,8 @@ const carouselArrowButtonStyle: CSSProperties = {
   cursor: "pointer",
   boxShadow: "none",
   transform: "translateY(-50%)",
+  WebkitTapHighlightColor: "transparent",
+  touchAction: "manipulation",
 };
 
 const carouselArrowIconStyle: CSSProperties = {
@@ -3757,6 +3793,9 @@ const cardStyle: CSSProperties = {
   boxShadow: "none",
   boxSizing: "border-box",
   cursor: "pointer",
+  WebkitTapHighlightColor: "transparent",
+  touchAction: "manipulation",
+  userSelect: "none",
 };
 
 const desktopCardStyle: CSSProperties = {
@@ -4022,6 +4061,8 @@ const authorLinkStyle: CSSProperties = {
   ...authorStyle,
   textDecoration: "none",
   cursor: "pointer",
+  WebkitTapHighlightColor: "transparent",
+  touchAction: "manipulation",
 };
 
 const statsStyle: CSSProperties = {

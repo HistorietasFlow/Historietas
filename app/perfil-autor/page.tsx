@@ -2805,16 +2805,22 @@ function mesclarDiarioPerfilComLocal(
     diarioSupabase.reviews,
     diarioLocal.reviews,
   );
-  const atividades = ordenarItensDiarioPerfil([
-    ...lendoAgora,
-    ...queroLer,
-    ...favoritas,
-    ...concluidas,
-    ...avaliacoes,
-    ...reviews,
-    ...diarioSupabase.atividades,
-    ...diarioLocal.atividades,
-  ]).slice(0, 8);
+  const atividades = ordenarItensDiarioPerfil(
+    Array.from(
+      new Map(
+        [
+          ...lendoAgora,
+          ...queroLer,
+          ...favoritas,
+          ...concluidas,
+          ...avaliacoes,
+          ...reviews,
+          ...diarioSupabase.atividades,
+          ...diarioLocal.atividades,
+        ].map((item) => [criarChaveMesclaDiarioPerfil(item), item]),
+      ).values(),
+    ),
+  ).slice(0, 8);
 
   return {
     lendoAgora,
@@ -6121,9 +6127,19 @@ export default function PerfilAutorPage() {
     }
   }
 
-  function renderizarItemDiarioPerfil(item: DiarioPerfilItem) {
+  function renderizarItemDiarioPerfil(
+    item: DiarioPerfilItem,
+    emCarrossel = false,
+  ) {
     const itemHref = obterHrefItemDiarioPerfil(item);
     const obra = item.obra;
+    const estiloCardDiario = emCarrossel
+      ? isDesktop
+        ? desktopDiaryVisualCarouselCardStyle
+        : diaryVisualCarouselCardStyle
+      : isDesktop
+        ? desktopDiaryVisualCardStyle
+        : diaryVisualCardStyle;
     const totalCapitulos = obra?.capitulos.length || 0;
     const totalCurtidasDiario =
       obra?.capitulos.filter((capitulo) => capitulo.curtiu).length || 0;
@@ -6136,10 +6152,7 @@ export default function PerfilAutorPage() {
     const avaliacaoDiario = nota > 0 ? nota.toFixed(1) : "0.0";
 
     return (
-      <article
-        key={item.chave}
-        style={isDesktop ? desktopDiaryVisualCardStyle : diaryVisualCardStyle}
-      >
+      <article key={item.chave} style={estiloCardDiario}>
         <Link
           href={itemHref}
           style={diaryVisualCoverLinkStyle}
@@ -6289,6 +6302,23 @@ export default function PerfilAutorPage() {
     );
   }
 
+  function renderizarCarrosselSecaoDiarioPerfil(
+    itens: DiarioPerfilItem[],
+    vazio: string,
+  ) {
+    if (itens.length === 0) {
+      return <div style={diaryEmptyStateStyle}>{vazio}</div>;
+    }
+
+    return (
+      <DiaryCarouselRow isDesktop={isDesktop} totalItems={itens.length}>
+        {itens
+          .slice(0, 12)
+          .map((item) => renderizarItemDiarioPerfil(item, true))}
+      </DiaryCarouselRow>
+    );
+  }
+
   function renderizarSecaoDiarioPerfil(
     titulo: string,
     itens: DiarioPerfilItem[],
@@ -6310,7 +6340,7 @@ export default function PerfilAutorPage() {
           </div>
         )}
 
-        {renderizarConteudoSecaoDiarioPerfil(itens, "")}
+        {renderizarCarrosselSecaoDiarioPerfil(itens, "")}
       </section>
     );
   }
@@ -8456,6 +8486,21 @@ const diaryVisualCardStyle: CSSProperties = {
 
 const desktopDiaryVisualCardStyle: CSSProperties = {
   ...diaryVisualCardStyle,
+};
+
+const diaryVisualCarouselCardStyle: CSSProperties = {
+  ...diaryVisualCardStyle,
+  width: "clamp(142px, 42vw, 172px)",
+  minWidth: "clamp(142px, 42vw, 172px)",
+  flex: "0 0 clamp(142px, 42vw, 172px)",
+  scrollSnapAlign: "start",
+};
+
+const desktopDiaryVisualCarouselCardStyle: CSSProperties = {
+  ...diaryVisualCarouselCardStyle,
+  width: "190px",
+  minWidth: "190px",
+  flex: "0 0 190px",
 };
 
 const diaryVisualCoverLinkStyle: CSSProperties = {
@@ -12066,6 +12111,7 @@ const diarySectionTitleStyle: CSSProperties = {
 
 const diaryItemsCarouselStyle: CSSProperties = {
   display: "flex",
+  alignItems: "stretch",
   gap: "10px",
   width: "calc(100% + 20px)",
   maxWidth: "calc(100% + 20px)",
