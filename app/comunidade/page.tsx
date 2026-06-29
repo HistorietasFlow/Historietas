@@ -10,7 +10,6 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
-import { useNotificacoes } from "../../components/NotificacoesProvider";
 
 type CategoriaComunidade =
   | "Geral"
@@ -1773,7 +1772,6 @@ export default function ComunidadePage() {
   const [temSpoilerPost, setTemSpoilerPost] = useState(false);
   const [spoilersReveladosIds, setSpoilersReveladosIds] = useState<string[]>([]);
   const [termoBusca, setTermoBusca] = useState("");
-  const [buscaComunidadeAberta, setBuscaComunidadeAberta] = useState(false);
   const termoBuscaAdiado = useDeferredValue(termoBusca);
   const [ordenacaoAtiva, setOrdenacaoAtiva] =
     useState<OrdenacaoComunidade>("Recentes");
@@ -1820,7 +1818,6 @@ export default function ComunidadePage() {
     useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -2440,17 +2437,7 @@ export default function ComunidadePage() {
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
-  const totalFiltrosAvancadosAtivos = [
-    categoriaAtiva !== "Todos",
-    tipoPublicacaoAtiva !== "Todos",
-    ordenacaoAtiva !== "Recentes",
-    mostrarApenasSalvos,
-  ].filter(Boolean).length;
-
-  const textoBotaoFiltrosAvancadosComunidade =
-    totalFiltrosAvancadosAtivos > 0
-      ? `Filtrar e ordenar (${totalFiltrosAvancadosAtivos})`
-      : "Filtrar e ordenar";
+  const textoBotaoFiltrosAvancadosComunidade = "Comunidade";
 
   function iniciarAcaoComunidade(chave: string) {
     if (acoesComunidadeRef.current.has(chave)) {
@@ -3554,72 +3541,6 @@ export default function ComunidadePage() {
       )}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <section style={isDesktop ? desktopTitleSectionStyle : titleSectionStyle}>
-          <h1 style={isDesktop ? communityTitleStyle : mobileCommunityTitleStyle}>
-            <span style={titleWordStyle}>COMUNIDADE</span>
-
-            <span style={titleGroupStyle}>
-              <span style={isDesktop ? desktopTitleMarkStyle : titleMarkStyle}>H</span>
-              <span className="historietas-home-logo-text" style={titleLogoTextStyle}>ISTORIETAS</span>
-            </span>
-          </h1>
-
-          <button
-            type="button"
-            aria-label={
-              buscaComunidadeAberta ? "Fechar busca" : "Abrir busca"
-            }
-            aria-expanded={buscaComunidadeAberta || Boolean(termoBusca.trim())}
-            onClick={() => setBuscaComunidadeAberta((aberta) => !aberta)}
-            style={communityTitleSearchButtonStyle}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <circle
-                cx="10.85"
-                cy="10.85"
-                r="6.65"
-                stroke="currentColor"
-                strokeWidth="2.15"
-              />
-              <path
-                d="M16.05 16.05L20.25 20.25"
-                stroke="currentColor"
-                strokeWidth="2.15"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-
-          {isDesktop ? (
-            <Link
-              href="/notificacoes"
-              style={communityNotificationButtonStyle}
-              aria-label={
-                notificacoesNaoLidas > 0
-                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                  : "Notificações"
-              }
-            >
-              N
-
-              {usuario && notificacoesNaoLidas > 0 ? (
-                <span style={communityNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99
-                    ? "99+"
-                    : notificacoesNaoLidas}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
-        </section>
-
         <section style={isDesktop ? desktopLayoutStyle : layoutStyle}>
           <section style={feedColumnStyle}>
             {usuario && erro && !composerAberto && (
@@ -3633,7 +3554,27 @@ export default function ComunidadePage() {
                   : exploreLikeFilterBoxStyle
               }
             >
-              {(buscaComunidadeAberta || termoBusca.trim()) && (
+              <div style={communityFilterControlsRowStyle}>
+                <button
+                  type="button"
+                  onClick={() => setMostrarFiltrosAvancadosComunidade(true)}
+                  style={communityFilterLabelButtonStyle}
+                >
+                  <span>{textoBotaoFiltrosAvancadosComunidade}</span>
+                </button>
+
+                <button
+                  type="button"
+                  aria-label="Abrir filtros, ordenação e ações da comunidade"
+                  aria-expanded={menuAcoesRapidasComunidadeAberto}
+                  onClick={() =>
+                    setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
+                  }
+                  style={communityQuickActionsInlinePlusButtonStyle}
+                >
+                  <span style={communityFilterActionIconStyle}>+</span>
+                </button>
+
                 <label style={communitySearchShellStyle}>
                   <span style={communitySearchIconStyle}>
                     <svg
@@ -3663,7 +3604,7 @@ export default function ComunidadePage() {
                   <input
                     value={termoBusca}
                     onChange={(event) => setTermoBusca(event.target.value)}
-                    placeholder="Buscar na comunidade..."
+                    placeholder="Buscar"
                     autoComplete="off"
                     autoCorrect="off"
                     spellCheck={false}
@@ -3671,29 +3612,6 @@ export default function ComunidadePage() {
                     style={communitySearchInputStyle}
                   />
                 </label>
-              )}
-
-              <div style={communityFilterControlsRowStyle}>
-                <button
-                  type="button"
-                  onClick={() => setMostrarFiltrosAvancadosComunidade(true)}
-                  style={communityFilterLabelButtonStyle}
-                >
-                  <span>{textoBotaoFiltrosAvancadosComunidade}</span>
-                  <span style={communityFilterActionIconStyle}>⇅</span>
-                </button>
-
-                <button
-                  type="button"
-                  aria-label="Abrir ações da comunidade"
-                  aria-expanded={menuAcoesRapidasComunidadeAberto}
-                  onClick={() =>
-                    setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
-                  }
-                  style={communityQuickActionsInlinePlusButtonStyle}
-                >
-                  +
-                </button>
               </div>
 
               {filtrosAtivos && (
@@ -3863,11 +3781,11 @@ export default function ComunidadePage() {
             {menuAcoesRapidasComunidadeAberto && (
               <section
                 style={communityFiltersSheetOverlayStyle}
-                aria-label="Ações da comunidade"
+                aria-label="Filtros, ordenação e ações da comunidade"
               >
                 <button
                   type="button"
-                  aria-label="Fechar ações da comunidade"
+                  aria-label="Fechar filtros e ações da comunidade"
                   onClick={() => setMenuAcoesRapidasComunidadeAberto(false)}
                   style={communityFiltersSheetBackdropStyle}
                 />
@@ -3876,8 +3794,12 @@ export default function ComunidadePage() {
                   <div style={communityFiltersSheetHandleStyle} />
 
                   <strong style={communityFiltersSheetTitleStyle}>
-                    Ações da comunidade
+                    Filtrar e ordenar
                   </strong>
+
+                  <span style={communityFiltersSheetSectionLabelStyle}>
+                    Ações
+                  </span>
 
                   <button
                     type="button"
@@ -3894,6 +3816,141 @@ export default function ComunidadePage() {
                   >
                     Desafio da semana
                   </button>
+
+                  <span style={communityFiltersSheetSectionLabelStyle}>
+                    Mostrar
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      limparFiltrosComunidade();
+                      setMenuAcoesRapidasComunidadeAberto(false);
+                    }}
+                    style={
+                      !filtrosAtivos
+                        ? communityFiltersSheetOptionActiveStyle
+                        : communityFiltersSheetOptionStyle
+                    }
+                  >
+                    <span>Todas</span>
+                    <span
+                      style={
+                        !filtrosAtivos
+                          ? communityFiltersSheetRadioActiveStyle
+                          : communityFiltersSheetRadioStyle
+                      }
+                    />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMostrarApenasSalvos(true);
+                      setMenuAcoesRapidasComunidadeAberto(false);
+                    }}
+                    style={
+                      mostrarApenasSalvos
+                        ? communityFiltersSheetOptionActiveStyle
+                        : communityFiltersSheetOptionStyle
+                    }
+                  >
+                    <span>Posts salvos</span>
+                    <span
+                      style={
+                        mostrarApenasSalvos
+                          ? communityFiltersSheetRadioActiveStyle
+                          : communityFiltersSheetRadioStyle
+                      }
+                    />
+                  </button>
+
+                  <span style={communityFiltersSheetSectionLabelStyle}>
+                    Ordenar
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrdenacaoAtiva("Recentes");
+                      setMostrarApenasSalvos(false);
+                      setMenuAcoesRapidasComunidadeAberto(false);
+                    }}
+                    style={
+                      ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
+                        ? communityFiltersSheetOptionActiveStyle
+                        : communityFiltersSheetOptionStyle
+                    }
+                  >
+                    <span>Recentes</span>
+                    <span
+                      style={
+                        ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
+                          ? communityFiltersSheetRadioActiveStyle
+                          : communityFiltersSheetRadioStyle
+                      }
+                    />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrdenacaoAtiva("Em alta");
+                      setMostrarApenasSalvos(false);
+                      setMenuAcoesRapidasComunidadeAberto(false);
+                    }}
+                    style={
+                      ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
+                        ? communityFiltersSheetOptionActiveStyle
+                        : communityFiltersSheetOptionStyle
+                    }
+                  >
+                    <span>Em alta</span>
+                    <span
+                      style={
+                        ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
+                          ? communityFiltersSheetRadioActiveStyle
+                          : communityFiltersSheetRadioStyle
+                      }
+                    />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrdenacaoAtiva("Mais comentadas");
+                      setMostrarApenasSalvos(false);
+                      setMenuAcoesRapidasComunidadeAberto(false);
+                    }}
+                    style={
+                      ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
+                        ? communityFiltersSheetOptionActiveStyle
+                        : communityFiltersSheetOptionStyle
+                    }
+                  >
+                    <span>Mais comentadas</span>
+                    <span
+                      style={
+                        ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
+                          ? communityFiltersSheetRadioActiveStyle
+                          : communityFiltersSheetRadioStyle
+                      }
+                    />
+                  </button>
+
+                  {filtrosAtivos && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        limparFiltrosComunidade();
+                        setMenuAcoesRapidasComunidadeAberto(false);
+                      }}
+                      style={communityFiltersSheetClearButtonStyle}
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
+
                 </article>
               </section>
             )}
@@ -4571,7 +4628,6 @@ const pageStyle: CSSProperties = {
 
 const containerStyle: CSSProperties = {
   position: "relative",
-  zIndex: 1,
   width: "min(1120px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
@@ -4680,179 +4736,17 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   opacity: 0,
 };
 
-const titleSectionStyle: CSSProperties = {
-  position: "relative",
-  margin: "0 0 6px",
-  minWidth: 0,
-  textAlign: "center",
-  overflow: "visible",
-};
 
-const desktopTitleSectionStyle: CSSProperties = {
-  ...titleSectionStyle,
-  position: "relative",
-  marginTop: 0,
-  marginBottom: "18px",
-};
 
-const communityNotificationButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: "42px",
-  transform: "translateY(-50%)",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  boxShadow: "none",
-  zIndex: 2,
-};
 
-const communityNotificationBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
-};
 
-const communityTitleStyle: CSSProperties = {
-  margin: "0 auto",
-  fontSize: "23px",
-  lineHeight: 1.08,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
-  wordSpacing: "0.08em",
-  maxWidth: "100%",
-  color: "transparent",
-  padding: 0,
-  textAlign: "center",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexWrap: "wrap",
-  columnGap: "8px",
-  rowGap: "4px",
-  overflow: "visible",
-  ...safeTextStyle,
-};
 
-const mobileCommunityTitleStyle: CSSProperties = {
-  ...communityTitleStyle,
-  fontSize: "23px",
-  lineHeight: 1.08,
-  letterSpacing: "-0.055em",
-  maxWidth: "100%",
-  columnGap: "7px",
-  rowGap: "4px",
-};
 
-const communityTitleSearchButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: 0,
-  transform: "translateY(-50%)",
-  width: "34px",
-  height: "34px",
-  borderRadius: 0,
-  border: 0,
-  background: "transparent",
-  color: "#FFFFFF",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "15px",
-  lineHeight: 1,
-  fontWeight: 950,
-  fontFamily: "inherit",
-  padding: 0,
-  cursor: "pointer",
-  boxShadow: "none",
-  outline: "none",
-  WebkitTapHighlightColor: "transparent",
-  WebkitAppearance: "none",
-  appearance: "none",
-};
 
-const titleGroupStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "2px",
-  minWidth: 0,
-  overflow: "visible",
-};
 
-const titleWordStyle: CSSProperties = {
-  display: "inline-block",
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  textShadow: "none",
-  lineHeight: 1.08,
-  paddingRight: "0.08em",
-  paddingBottom: "0.04em",
-  overflow: "visible",
-};
 
-const titleLogoTextStyle: CSSProperties = {
-  display: "inline-block",
-  marginLeft: "-0.03em",
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  textShadow: "none",
-  lineHeight: 1.08,
-  paddingRight: "0.08em",
-  paddingBottom: "0.04em",
-  overflow: "visible",
-};
 
-const titleMarkStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "1.12em",
-  height: "1.12em",
-  borderRadius: "0.32em",
-  background: "#04000A",
-  color: "#FFFFFF",
-  fontSize: "1em",
-  fontWeight: 950,
-  letterSpacing: 0,
-  lineHeight: 1,
-  textAlign: "center",
-  flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
-  boxShadow: "none",
-  transform: "none",
-};
 
-const desktopTitleMarkStyle: CSSProperties = {
-  ...titleMarkStyle,
-};
 
 const titleUserAreaStyle: CSSProperties = {
   display: "flex",
@@ -6070,13 +5964,13 @@ const weeklyChallengeButtonDesktopStyle: CSSProperties = {
 const communityQuickActionsInlinePlusButtonStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
-  width: "34px",
-  height: "34px",
+  width: "36px",
+  height: "44px",
   border: "none",
   background: "transparent",
   color: "#FFFFFF",
   fontFamily: "inherit",
-  fontSize: "23px",
+  fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
   display: "inline-flex",
@@ -6202,7 +6096,8 @@ const desktopExploreLikeSearchInputStyle: CSSProperties = {
 };
 
 const communitySearchShellStyle: CSSProperties = {
-  width: "100%",
+  flex: "1 1 auto",
+  minWidth: 0,
   minHeight: "44px",
   borderRadius: "999px",
   border: "1px solid transparent",
@@ -6210,7 +6105,7 @@ const communitySearchShellStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: "8px",
-  padding: "0 15px",
+  padding: "0 14px",
   boxSizing: "border-box",
   boxShadow: "none",
   outline: "none",
@@ -6245,30 +6140,35 @@ const communitySearchInputStyle: CSSProperties = {
 };
 
 const communityFilterControlsRowStyle: CSSProperties = {
-  minHeight: "32px",
+  minHeight: "44px",
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "flex-start",
   gap: "8px",
+  width: "100%",
+  minWidth: 0,
 };
 
 const communityFilterLabelButtonStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
+  flex: "0 0 auto",
+  minHeight: "44px",
   border: "none",
   background: "transparent",
   color: "#FFFFFF",
   fontFamily: "inherit",
-  fontSize: "16px",
+  fontSize: "15px",
   lineHeight: 1.15,
   fontWeight: 950,
   letterSpacing: "-0.04em",
   textAlign: "left",
-  padding: 0,
+  padding: "0 2px",
   cursor: "pointer",
   display: "inline-flex",
   alignItems: "center",
   gap: "8px",
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
@@ -6345,14 +6245,14 @@ const communityFiltersSheetStyle: CSSProperties = {
   left: "50%",
   bottom: 0,
   transform: "translateX(-50%)",
-  zIndex: 1,
-  width: "min(760px, calc(100% - 12px))",
+  zIndex: 241,
+  width: "min(820px, calc(100% - 4px))",
   maxHeight: "calc(100dvh - 116px)",
   display: "grid",
   gap: "0",
   padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "#15191C",
+  background: "#070212",
   border: "1px solid rgba(255,255,255,0.06)",
   overflowY: "auto",
   overflowX: "hidden",
@@ -6386,9 +6286,7 @@ const communityFiltersSheetTitleStyle: CSSProperties = {
 
 const communityFiltersSheetSectionLabelStyle: CSSProperties = {
   display: "block",
-  padding: "15px 30px 8px",
-  borderTop: "1px solid rgba(255,255,255,0.045)",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  padding: "11px 30px 5px",
   color: "rgba(244,244,245,0.56)",
   fontSize: "11px",
   lineHeight: 1,
@@ -6402,9 +6300,8 @@ const communityFiltersSheetOptionStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
   width: "100%",
-  minHeight: "48px",
+  minHeight: "44px",
   border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
   background: "transparent",
   color: "#FFFFFF",
   fontSize: "18px",
@@ -6430,10 +6327,10 @@ const communityFiltersSheetOptionActiveStyle: CSSProperties = {
 };
 
 const communityFiltersSheetRadioStyle: CSSProperties = {
-  width: "28px",
-  height: "28px",
+  width: "23px",
+  height: "23px",
   borderRadius: "999px",
-  border: "3px solid rgba(161,161,170,0.72)",
+  border: "2.5px solid rgba(161,161,170,0.72)",
   background: "transparent",
   flex: "0 0 auto",
   boxSizing: "border-box",
@@ -6441,7 +6338,7 @@ const communityFiltersSheetRadioStyle: CSSProperties = {
 
 const communityFiltersSheetRadioActiveStyle: CSSProperties = {
   ...communityFiltersSheetRadioStyle,
-  border: "8px solid #FFFFFF",
+  border: "6.5px solid #FFFFFF",
 };
 
 const communityFiltersSheetClearButtonStyle: CSSProperties = {
@@ -6464,12 +6361,12 @@ const communityFiltersSheetClearButtonStyle: CSSProperties = {
 const communityActionsSheetStyle: CSSProperties = {
   ...communityFiltersSheetStyle,
   maxHeight: "calc(100dvh - 190px)",
-  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
 };
 
 const communityActionsSheetItemStyle: CSSProperties = {
   ...communityFiltersSheetOptionStyle,
-  minHeight: "54px",
+  minHeight: "48px",
   fontSize: "18px",
   fontWeight: 900,
 };

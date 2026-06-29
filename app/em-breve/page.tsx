@@ -290,6 +290,64 @@ function criarLinkCardEmBreve(obra: ObraEmBreveCard) {
   return `/em-breve?obra=${encodeURIComponent(obra.titulo)}`;
 }
 
+function criarLinkObraPublicadaEmBreve(obra: Pick<SupabaseObraEmBreveRow, "titulo" | "slug" | "link">) {
+  const titulo = obra.titulo?.trim() || "obra";
+  const slug = obra.slug?.trim() || criarSlugBase(titulo);
+  const link = obra.link?.trim() || "";
+
+  return link && !link.startsWith("/em-breve") ? link : `/obra/${slug}`;
+}
+
+async function encontrarLinkObraComConteudoEmBreve(tituloBusca: string) {
+  const tituloLimpo = tituloBusca.trim();
+
+  if (!tituloLimpo) {
+    return "";
+  }
+
+  try {
+    const { data: obrasBanco, error: erroObras } = await supabase
+      .from("obras")
+      .select("id,titulo,slug,link,arquivo_url,publicado")
+      .ilike("titulo", tituloLimpo)
+      .eq("publicado", true)
+      .limit(5);
+
+    if (erroObras || !Array.isArray(obrasBanco)) {
+      return "";
+    }
+
+    const obrasEncontradas = obrasBanco as unknown as SupabaseObraEmBreveRow[];
+    const obraEncontrada =
+      obrasEncontradas.find(
+        (obra) => normalizarTexto(obra.titulo || "") === normalizarTexto(tituloLimpo)
+      ) || obrasEncontradas[0] || null;
+
+    if (!obraEncontrada?.id) {
+      return "";
+    }
+
+    if (obraSupabaseTemArquivoEmBreve(obraEncontrada)) {
+      return criarLinkObraPublicadaEmBreve(obraEncontrada);
+    }
+
+    const { data: capitulosBanco, error: erroCapitulos } = await supabase
+      .from("capitulos")
+      .select("obra_id")
+      .eq("obra_id", obraEncontrada.id)
+      .eq("publicado", true)
+      .limit(1);
+
+    if (erroCapitulos || !Array.isArray(capitulosBanco)) {
+      return "";
+    }
+
+    return capitulosBanco.length > 0 ? criarLinkObraPublicadaEmBreve(obraEncontrada) : "";
+  } catch {
+    return "";
+  }
+}
+
 function obterIconeTematicaEmBreve(genero: string) {
   const generoNormalizado = normalizarTexto(genero);
 
@@ -421,6 +479,17 @@ export default function EmBrevePage() {
           setNomeObra(nomeObraParam);
         }
       }, 0);
+
+      if (nomeObraParam) {
+        const linkObraComConteudo = await encontrarLinkObraComConteudoEmBreve(
+          nomeObraParam
+        );
+
+        if (componenteAtivo && linkObraComConteudo) {
+          router.replace(linkObraComConteudo);
+          return;
+        }
+      }
 
       try {
         const { data } = await supabase.auth.getUser();

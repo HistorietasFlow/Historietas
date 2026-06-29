@@ -1811,7 +1811,6 @@ const pageStyle: CSSProperties = {
 
 const containerStyle: CSSProperties = {
   position: "relative",
-  zIndex: 1,
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
@@ -2738,7 +2737,7 @@ const adminFiltersSheetOverlayStyle: CSSProperties = {
   top: 0,
   bottom: 0,
   height: "100dvh",
-  zIndex: 238,
+  zIndex: 9998,
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "center",
@@ -2763,14 +2762,14 @@ const adminFiltersSheetStyle: CSSProperties = {
   left: "50%",
   bottom: 0,
   transform: "translateX(-50%)",
-  zIndex: 1,
-  width: "min(760px, calc(100% - 12px))",
-  maxHeight: "calc(100dvh - 190px)",
+  zIndex: 9999,
+  width: "min(820px, calc(100% - 4px))",
+  maxHeight: "calc(100dvh - 116px)",
   display: "grid",
-  gap: 0,
-  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  gap: "0",
+  padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "#15191C",
+  background: "#070212",
   border: "1px solid rgba(255,255,255,0.06)",
   overflowY: "auto",
   overflowX: "hidden",
@@ -2803,31 +2802,28 @@ const adminFiltersSheetTitleStyle: CSSProperties = {
 };
 
 const adminFiltersSheetSectionLabelStyle: CSSProperties = {
-  minHeight: "38px",
-  display: "flex",
-  alignItems: "center",
-  padding: "0 30px",
-  borderTop: "1px solid rgba(255,255,255,0.045)",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
-  color: "rgba(244,244,245,0.62)",
-  fontSize: "12px",
+  display: "block",
+  padding: "11px 30px 5px",
+  color: "rgba(244,244,245,0.56)",
+  fontSize: "11px",
+  lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "0.18em",
   textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  ...safeTextStyle,
 };
 
 const adminFiltersSheetOptionStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
   width: "100%",
-  minHeight: "54px",
+  minHeight: "44px",
   border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
   background: "transparent",
   color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
-  fontWeight: 900,
+  fontWeight: 650,
   letterSpacing: "-0.035em",
   cursor: "pointer",
   fontFamily: "inherit",
@@ -2844,35 +2840,40 @@ const adminFiltersSheetOptionStyle: CSSProperties = {
 
 const adminFiltersSheetOptionActiveStyle: CSSProperties = {
   ...adminFiltersSheetOptionStyle,
-  background: "rgba(255,255,255,0.045)",
+  fontWeight: 900,
+  background: "transparent",
 };
 
 const adminFiltersSheetRadioStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
+  width: "23px",
+  height: "23px",
   borderRadius: "999px",
-  border: "5px solid rgba(244,244,245,0.42)",
-  boxSizing: "border-box",
+  border: "2.5px solid rgba(161,161,170,0.72)",
+  background: "transparent",
   flex: "0 0 auto",
+  boxSizing: "border-box",
 };
 
 const adminFiltersSheetRadioActiveStyle: CSSProperties = {
   ...adminFiltersSheetRadioStyle,
-  borderColor: "#FFFFFF",
-  background: "#15191C",
+  border: "6.5px solid #FFFFFF",
 };
 
 const adminFiltersSheetClearButtonStyle: CSSProperties = {
-  minHeight: "48px",
-  margin: "14px 30px 0",
+  width: "calc(100% - 60px)",
+  justifySelf: "center",
+  minHeight: "46px",
+  marginTop: "12px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.045)",
+  background: "transparent",
   color: "#FFFFFF",
   fontFamily: "inherit",
-  fontSize: "16px",
+  fontSize: "15px",
   fontWeight: 950,
   cursor: "pointer",
+  textAlign: "center",
+  ...safeTextStyle,
 };
 
 const reportMenuOverlayStyle: CSSProperties = {
@@ -2882,7 +2883,7 @@ const reportMenuOverlayStyle: CSSProperties = {
   top: 0,
   bottom: 0,
   height: "100dvh",
-  zIndex: 240,
+  zIndex: 9998,
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "center",
@@ -2907,14 +2908,14 @@ const reportMenuStyle: CSSProperties = {
   left: "50%",
   bottom: 0,
   transform: "translateX(-50%)",
-  zIndex: 1,
-  width: "min(760px, calc(100% - 12px))",
+  zIndex: 9999,
+  width: "min(820px, calc(100% - 4px))",
   maxHeight: "calc(100dvh - 190px)",
   display: "grid",
-  gap: 0,
-  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  gap: "0",
+  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "#15191C",
+  background: "#070212",
   border: "1px solid rgba(255,255,255,0.06)",
   overflowY: "auto",
   overflowX: "hidden",
@@ -2950,14 +2951,13 @@ const reportMenuItemStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
   width: "100%",
-  minHeight: "54px",
+  minHeight: "44px",
   border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
   background: "transparent",
   color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
-  fontWeight: 900,
+  fontWeight: 650,
   letterSpacing: "-0.035em",
   cursor: "pointer",
   fontFamily: "inherit",
@@ -2981,6 +2981,7 @@ const reportMenuItemActiveStyle: CSSProperties = {
   ...reportMenuItemStyle,
   color: "rgba(244,244,245,0.58)",
   cursor: "default",
+  fontWeight: 900,
 };
 
 const reportMenuDangerItemStyle: CSSProperties = {
@@ -2989,9 +2990,10 @@ const reportMenuDangerItemStyle: CSSProperties = {
 };
 
 const reportMenuDividerStyle: CSSProperties = {
-  height: "1px",
-  margin: "0",
-  background: "rgba(255,255,255,0.045)",
+  display: "none",
+  height: 0,
+  margin: 0,
+  background: "transparent",
 };
 
 const reportBodyStyle: CSSProperties = {

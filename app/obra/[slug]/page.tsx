@@ -300,22 +300,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
-function obterRotuloCategoriaArquivo(categoria: ArquivoObraLocal["categoria"]) {
-  if (categoria === "imagem") {
-    return "Imagem";
-  }
-
-  if (categoria === "documento") {
-    return "PDF";
-  }
-
-  if (categoria === "texto") {
-    return "Texto";
-  }
-
-  return "Arquivo";
-}
-
 function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
     return null;
@@ -838,7 +822,7 @@ function converterObraCatalogoParaDinamica(
 }
 
 function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
-  const obraDisponivel = obra.publicado && obra.capitulos.length > 0;
+  const obraDisponivel = obra.publicado && (obra.capitulos.length > 0 || Boolean(obra.arquivoObra));
 
   return {
     id: obra.id,
@@ -857,7 +841,9 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
     ),
     disponivel: obraDisponivel,
     slug: obra.slug,
-    link: obraDisponivel ? obra.link : criarLinkAviso(obra.titulo),
+    link: obraDisponivel
+      ? obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`
+      : criarLinkAviso(obra.titulo),
     sinopse: obra.sinopse,
     tags: obra.tags,
     capa: obra.capa,
@@ -1700,6 +1686,12 @@ export default function ObraDinamicaPage() {
   const autorObraNome = perfilAutorObra?.nome || obra?.autor || "Autor não informado";
   const autorObraId = perfilAutorObra?.userId || obra?.autorId || "";
   const obraDisponivel = Boolean(obra?.disponivel);
+  const sinopseObraMenu =
+    obra &&
+    obra.sinopse.trim() &&
+    normalizarTexto(obra.sinopse) !== "nenhuma sinopse informada"
+      ? obra.sinopse.trim()
+      : "";
 
   useEffect(() => {
     if (!obra || obraDisponivel || carregandoObras) {
@@ -1716,6 +1708,10 @@ export default function ObraDinamicaPage() {
 
     if (obra.capitulos.length > 0) {
       return obra.capitulos;
+    }
+
+    if (obra.arquivoObra) {
+      return [];
     }
 
     return capitulosModelo.map((capitulo, index) => ({
@@ -2984,9 +2980,6 @@ export default function ObraDinamicaPage() {
                 {obra.titulo}
               </h1>
 
-              <p style={isDesktop ? desktopDescriptionStyle : descriptionStyle}>
-                {obra.sinopse}
-              </p>
 
               <div
                 style={
@@ -3078,24 +3071,6 @@ export default function ObraDinamicaPage() {
                   >
                     Por {autorObraNome}
                   </Link>
-
-                  <div style={obraMenuMetricsStyle}>
-                    <span style={obraMenuMetricStyle}>
-                      📚 {capitulosDaObra.length}
-                    </span>
-                    <span style={obraMenuMetricStyle}>
-                      👁 {formatarNumeroCompacto(metricasObra.visualizacoes)}
-                    </span>
-                    <span style={obraMenuLikeMetricStyle}>
-                      <span style={metricHeartIconStyle}>♥</span>{" "}
-                      <span style={metricWhiteNumberStyle}>
-                        {formatarNumeroCompacto(metricasObra.curtidas)}
-                      </span>
-                    </span>
-                    <span style={obraMenuMetricStyle}>
-                      💬 {formatarNumeroCompacto(metricasObra.comentarios)}
-                    </span>
-                  </div>
                 </div>
 
                 <div style={obraMenuTagsStyle}>
@@ -3120,7 +3095,27 @@ export default function ObraDinamicaPage() {
                       </span>
                     ))}
                 </div>
+
+                <div style={obraMenuMetricsStyle}>
+                  <span style={obraMenuMetricStyle}>
+                    📚 {capitulosDaObra.length}
+                  </span>
+                  <span style={obraMenuMetricStyle}>
+                    👁 {formatarNumeroCompacto(metricasObra.visualizacoes)}
+                  </span>
+                  <span style={obraMenuLikeMetricStyle}>
+                    <span style={metricHeartIconStyle}>♥</span>{" "}
+                    <span style={metricWhiteNumberStyle}>
+                      {formatarNumeroCompacto(metricasObra.curtidas)}
+                    </span>
+                  </span>
+                  <span style={obraMenuMetricStyle}>
+                    💬 {formatarNumeroCompacto(metricasObra.comentarios)}
+                  </span>
+                </div>
               </div>
+
+              <span style={obraMenuSectionLabelStyle}>Ações</span>
 
               <div style={obraMenuActionsStyle}>
                 <button
@@ -3135,7 +3130,14 @@ export default function ObraDinamicaPage() {
                       : obraMenuItemButtonStyle
                   }
                 >
-                  {obraFavoritada ? "Na lista" : "Salvar"}
+                  <span>{obraFavoritada ? "Na lista" : "Salvar"}</span>
+                  <span
+                    style={
+                      obraFavoritada
+                        ? obraMenuItemDotActiveStyle
+                        : obraMenuItemDotStyle
+                    }
+                  />
                 </button>
 
                 <button
@@ -3150,7 +3152,14 @@ export default function ObraDinamicaPage() {
                       : obraMenuItemButtonStyle
                   }
                 >
-                  {obraConcluida ? "Concluída" : "Concluir"}
+                  <span>{obraConcluida ? "Concluída" : "Concluir"}</span>
+                  <span
+                    style={
+                      obraConcluida
+                        ? obraMenuItemDotActiveStyle
+                        : obraMenuItemDotStyle
+                    }
+                  />
                 </button>
 
                 <button
@@ -3165,8 +3174,22 @@ export default function ObraDinamicaPage() {
                       : obraMenuItemButtonStyle
                   }
                 >
-                  {linkCopiado ? "Link copiado!" : "Copiar link"}
+                  <span>{linkCopiado ? "Link copiado!" : "Copiar link"}</span>
+                  <span
+                    style={
+                      linkCopiado
+                        ? obraMenuItemDotActiveStyle
+                        : obraMenuItemDotStyle
+                    }
+                  />
                 </button>
+
+                {sinopseObraMenu ? (
+                  <div style={obraMenuSynopsisStyle}>
+                    <span style={obraMenuSynopsisLabelStyle}>Sinopse</span>
+                    <p style={obraMenuSynopsisTextStyle}>{sinopseObraMenu}</p>
+                  </div>
+                ) : null}
               </div>
             </section>
           </div>
@@ -3266,50 +3289,52 @@ export default function ObraDinamicaPage() {
           />
         </section>
 
-        <section id="capitulos" style={chaptersSectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <h2 style={accentSectionTitleStyle}>CAPÍTULOS</h2>
+        {capitulosDaObra.length > 0 && (
+          <section id="capitulos" style={chaptersSectionStyle}>
+            <div style={sectionHeaderStyle}>
+              <h2 style={accentSectionTitleStyle}>CAPÍTULOS</h2>
 
-            <span style={chapterCountBadgeStyle}>
-              {obraDisponivel
-                ? `${capitulosDaObra.length} disponíveis`
-                : `${capitulosDaObra.length} em breve`}
-            </span>
-          </div>
+              <span style={chapterCountBadgeStyle}>
+                {obraDisponivel
+                  ? `${capitulosDaObra.length} disponíveis`
+                  : `${capitulosDaObra.length} em breve`}
+              </span>
+            </div>
 
-          <div style={isDesktop ? desktopChaptersListStyle : chaptersListStyle}>
-            {capitulosDaObra.map((capitulo, index) => (
-              <article key={capitulo.id || capitulo.numero} style={isDesktop ? desktopChapterCardStyle : chapterCardStyle}>
-                <div style={chapterNumberStyle}>{capitulo.numero}</div>
+            <div style={isDesktop ? desktopChaptersListStyle : chaptersListStyle}>
+              {capitulosDaObra.map((capitulo, index) => (
+                <article key={capitulo.id || capitulo.numero} style={isDesktop ? desktopChapterCardStyle : chapterCardStyle}>
+                  <div style={chapterNumberStyle}>{capitulo.numero}</div>
 
-                <div style={chapterContentStyle}>
-                  <h3 style={chapterTitleStyle}>{capitulo.titulo}</h3>
+                  <div style={chapterContentStyle}>
+                    <h3 style={chapterTitleStyle}>{capitulo.titulo}</h3>
 
-                  {capitulo.descricao ? (
-                    <p style={chapterMetaStyle}>{capitulo.descricao}</p>
-                  ) : null}
-                </div>
+                    {capitulo.descricao ? (
+                      <p style={chapterMetaStyle}>{capitulo.descricao}</p>
+                    ) : null}
+                  </div>
 
-                {obraDisponivel && capitulo.disponivel ? (
-                  <Link href={capitulo.href} style={isDesktop ? desktopChapterButtonStyle : chapterButtonStyle}>
-                    Ler capítulo
-                  </Link>
-                ) : (
-                  <Link
-                    href={capitulo.href || criarLinkAviso(obra.titulo, capitulo.titulo)}
-                    style={isDesktop ? desktopChapterButtonStyle : chapterButtonStyle}
-                  >
-                    Avisar
-                  </Link>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
+                  {obraDisponivel && capitulo.disponivel ? (
+                    <Link href={capitulo.href} style={isDesktop ? desktopChapterButtonStyle : chapterButtonStyle}>
+                      Ler capítulo
+                    </Link>
+                  ) : (
+                    <Link
+                      href={capitulo.href || criarLinkAviso(obra.titulo, capitulo.titulo)}
+                      style={isDesktop ? desktopChapterButtonStyle : chapterButtonStyle}
+                    >
+                      Avisar
+                    </Link>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
 
         {obra.arquivoObra && (
-          <ArquivoObraPublico arquivo={obra.arquivoObra} slug={obra.slug} isDesktop={isDesktop} />
+          <ArquivoObraPublico arquivo={obra.arquivoObra} isDesktop={isDesktop} />
         )}
 
 
@@ -3320,33 +3345,59 @@ export default function ObraDinamicaPage() {
 
 function ArquivoObraPublico({
   arquivo,
-  slug,
   isDesktop,
 }: {
   arquivo: ArquivoObraLocal;
-  slug: string;
   isDesktop: boolean;
 }) {
-  const tipoArquivo = obterRotuloCategoriaArquivo(arquivo.categoria);
   const tamanhoArquivo = formatarTamanhoArquivo(arquivo.tamanho);
   const dataArquivo = formatarData(arquivo.criadoEm);
-  const verArquivoHref = `/ver-arquivo?slug=${encodeURIComponent(slug)}`;
+  const arquivoHref = arquivo.conteudo;
+  const nomeArquivoDownload = arquivo.nome?.trim() || "arquivo-da-obra";
+
+  async function baixarArquivo() {
+    if (!arquivoHref) {
+      return;
+    }
+
+    try {
+      const resposta = await fetch(arquivoHref);
+
+      if (!resposta.ok) {
+        throw new Error("Não foi possível baixar o arquivo.");
+      }
+
+      const arquivoBlob = await resposta.blob();
+      const arquivoUrlTemporaria = window.URL.createObjectURL(arquivoBlob);
+      const linkDownload = document.createElement("a");
+
+      linkDownload.href = arquivoUrlTemporaria;
+      linkDownload.download = nomeArquivoDownload;
+      document.body.appendChild(linkDownload);
+      linkDownload.click();
+      linkDownload.remove();
+      window.setTimeout(() => {
+        window.URL.revokeObjectURL(arquivoUrlTemporaria);
+      }, 1000);
+    } catch {
+      const linkDownload = document.createElement("a");
+
+      linkDownload.href = arquivoHref;
+      linkDownload.download = nomeArquivoDownload;
+      linkDownload.rel = "noopener noreferrer";
+      document.body.appendChild(linkDownload);
+      linkDownload.click();
+      linkDownload.remove();
+    }
+  }
 
   return (
     <section style={isDesktop ? desktopFileBoxStyle : fileBoxStyle}>
-      <div style={fileHeaderStyle}>
-        <div style={{ minWidth: 0 }}>
-          <span style={miniTitleStyle}>ARQUIVO DA OBRA</span>
-
-          <h2 style={fileTitleStyle}>Arquivo anexado</h2>
-        </div>
-
-        <span style={fileTypeBadgeStyle}>{tipoArquivo}</span>
-      </div>
-
       <div style={isDesktop ? desktopFileInfoCardStyle : fileInfoCardStyle}>
-        <Link
-          href={verArquivoHref}
+        <a
+          href={arquivoHref}
+          target="_blank"
+          rel="noopener noreferrer"
           style={filePreviewLinkStyle}
           aria-label={`Abrir arquivo ${arquivo.nome}`}
         >
@@ -3365,29 +3416,32 @@ function ArquivoObraPublico({
                 : "ARQ"}
             </span>
           )}
-        </Link>
+        </a>
 
         <div style={fileInfoTextStyle}>
-          <strong style={fileNameTitleStyle}>{arquivo.nome}</strong>
-
           <span style={fileMetaStyle}>
-            {tipoArquivo} • {tamanhoArquivo} • Adicionado em {dataArquivo}
+            Arquivo anexado • {tamanhoArquivo} • {dataArquivo}
           </span>
+
+          <div style={isDesktop ? desktopFileActionsStyle : fileActionsStyle}>
+            <a
+              href={arquivoHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={filePrimaryButtonStyle}
+            >
+              Abrir arquivo
+            </a>
+
+            <button
+              type="button"
+              onClick={baixarArquivo}
+              style={fileSecondaryButtonStyle}
+            >
+              Baixar arquivo
+            </button>
+          </div>
         </div>
-      </div>
-
-      <div style={isDesktop ? desktopFileActionsStyle : fileActionsStyle}>
-        <Link href={verArquivoHref} style={filePrimaryButtonStyle}>
-          Abrir arquivo
-        </Link>
-
-        <a
-          href={arquivo.conteudo}
-          download={arquivo.nome || "arquivo-da-obra"}
-          style={fileSecondaryButtonStyle}
-        >
-          Baixar arquivo
-        </a>
       </div>
     </section>
   );
@@ -3531,7 +3585,6 @@ const pageStyle: CSSProperties = {
 
 const containerStyle: CSSProperties = {
   position: "relative",
-  zIndex: 1,
   width: "min(860px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
@@ -4036,7 +4089,7 @@ const obraActionSheetHandleStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(244,244,245,0.62)",
   justifySelf: "center",
-  margin: "0 auto 12px",
+  margin: "0 auto 14px",
 };
 
 const obraMenuActionsStyle: CSSProperties = {
@@ -4055,16 +4108,16 @@ const obraActionsMenuStyle: CSSProperties = {
   left: "50%",
   bottom: 0,
   transform: "translateX(-50%)",
-  width: "min(760px, calc(100% - 12px))",
-  maxHeight: "calc(100dvh - 18px)",
+  width: "min(820px, calc(100% - 4px))",
+  maxHeight: "calc(100dvh - 116px)",
   overflowX: "hidden",
   overflowY: "auto",
-  overscrollBehavior: "contain",
+  overscrollBehavior: "none",
   borderRadius: "24px 24px 0 0",
-  background: "#15191C",
+  background: "#070212",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
-  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
   display: "grid",
   gap: 0,
   boxSizing: "border-box",
@@ -4077,9 +4130,9 @@ const obraMenuHeaderStyle: CSSProperties = {
   justifyItems: "stretch",
   gap: "8px",
   minWidth: 0,
-  padding: "0 24px 14px",
+  padding: "0 30px 10px",
   boxSizing: "border-box",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  borderBottom: "none",
 };
 
 const obraMenuTitleStyle: CSSProperties = {
@@ -4101,18 +4154,20 @@ const obraMenuAuthorMetricsRowStyle: CSSProperties = {
   minWidth: 0,
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
+  justifyContent: "center",
+  gap: "6px",
 };
 
 const obraMenuAuthorLinkStyle: CSSProperties = {
   minWidth: 0,
+  maxWidth: "100%",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
   textDecoration: "none",
+  textAlign: "center",
   fontSize: "12px",
   lineHeight: 1.15,
   fontWeight: 850,
@@ -4120,14 +4175,16 @@ const obraMenuAuthorLinkStyle: CSSProperties = {
 };
 
 const obraMenuMetricsStyle: CSSProperties = {
-  flexShrink: 0,
+  width: "100%",
+  minWidth: 0,
   display: "flex",
   alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
+  justifyContent: "center",
+  flexWrap: "wrap",
+  gap: "7px",
   color: "#FFFFFF",
-  fontSize: "11px",
-  lineHeight: 1.15,
+  fontSize: "10.5px",
+  lineHeight: 1.1,
   fontWeight: 900,
   whiteSpace: "nowrap",
   ...safeTextStyle,
@@ -4180,21 +4237,33 @@ const obraMenuTagStyle: CSSProperties = {
 
 const obraMenuTagSeparatorStyle: CSSProperties = {
   display: "inline-block",
-  margin: "0 5px",
+  margin: "0 4px",
   color: "rgba(255,255,255,0.34)",
+};
+
+const obraMenuSectionLabelStyle: CSSProperties = {
+  display: "block",
+  padding: "11px 30px 5px",
+  color: "rgba(244,244,245,0.56)",
+  fontSize: "11px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  ...safeTextStyle,
 };
 
 const obraMenuItemButtonStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
   width: "100%",
-  minHeight: "52px",
+  minHeight: "44px",
   display: "flex",
   alignItems: "center",
-  justifyContent: "flex-start",
+  justifyContent: "space-between",
   gap: "16px",
   border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  borderBottom: "none",
   borderRadius: 0,
   background: "transparent",
   color: "#FFFFFF",
@@ -4202,13 +4271,14 @@ const obraMenuItemButtonStyle: CSSProperties = {
   padding: "0 30px",
   fontSize: "18px",
   fontWeight: 650,
-  lineHeight: 1.15,
+  lineHeight: 1,
   letterSpacing: "-0.035em",
   fontFamily: "inherit",
   textAlign: "left",
   cursor: "pointer",
   boxSizing: "border-box",
   whiteSpace: "nowrap",
+  ...safeTextStyle,
 };
 
 const obraMenuItemActiveStyle: CSSProperties = {
@@ -4223,6 +4293,60 @@ const obraMenuItemCopiedStyle: CSSProperties = {
   fontWeight: 900,
   background: "transparent",
   color: "#FFFFFF",
+};
+
+const obraMenuItemDotStyle: CSSProperties = {
+  width: "20px",
+  height: "20px",
+  borderRadius: "999px",
+  border: "2.25px solid rgba(161,161,170,0.72)",
+  background: "transparent",
+  flex: "0 0 auto",
+  boxSizing: "border-box",
+};
+
+const obraMenuItemDotActiveStyle: CSSProperties = {
+  ...obraMenuItemDotStyle,
+  border: "5.8px solid #FFFFFF",
+};
+
+const obraMenuSynopsisStyle: CSSProperties = {
+  width: "100%",
+  display: "grid",
+  gap: "5px",
+  padding: "4px 30px 11px",
+  boxSizing: "border-box",
+  color: "#FFFFFF",
+  textAlign: "left",
+  ...safeTextStyle,
+};
+
+const obraMenuSynopsisLabelStyle: CSSProperties = {
+  color: "rgba(244,244,245,0.58)",
+  fontSize: "10.5px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  ...safeTextStyle,
+};
+
+const obraMenuSynopsisTextStyle: CSSProperties = {
+  margin: 0,
+  maxHeight: "96px",
+  overflowX: "hidden",
+  overflowY: "auto",
+  overscrollBehavior: "contain",
+  paddingRight: "4px",
+  color: "rgba(255,255,255,0.82)",
+  fontSize: "12px",
+  lineHeight: 1.38,
+  fontWeight: 650,
+  whiteSpace: "normal",
+  wordBreak: "break-word",
+  scrollbarWidth: "thin",
+  WebkitOverflowScrolling: "touch",
+  ...safeTextStyle,
 };
 
 const actionMessageStyle: CSSProperties = {
@@ -4356,47 +4480,15 @@ const fileBoxStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const fileHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: "10px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
-
-const fileTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "clamp(24px, 7vw, 30px)",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  ...safeTextStyle,
-};
-
-const fileTypeBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "7px 9px",
-  borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.14)",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
-  color: "#86EFAC",
-  fontSize: "10px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
 const fileInfoCardStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "74px minmax(0, 1fr)",
   gap: "12px",
   alignItems: "center",
-  padding: "10px",
-  borderRadius: "18px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -4441,29 +4533,18 @@ const fileIconBoxStyle: CSSProperties = {
 
 const fileInfoTextStyle: CSSProperties = {
   display: "grid",
-  gap: "6px",
+  alignContent: "center",
+  gap: "8px",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
 };
 
-const fileNameTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "16px",
-  lineHeight: 1.12,
-  fontWeight: 950,
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
 const fileMetaStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "11px",
   lineHeight: 1.35,
-  fontWeight: 850,
+  fontWeight: 900,
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
@@ -4482,8 +4563,8 @@ const fileActionsStyle: CSSProperties = {
 const filePrimaryButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
@@ -4494,14 +4575,17 @@ const filePrimaryButtonStyle: CSSProperties = {
   textAlign: "center",
   padding: "0 10px",
   boxShadow: "none",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  WebkitAppearance: "none",
+  appearance: "none",
+  WebkitTapHighlightColor: "transparent",
   ...safeTextStyle,
 };
 
 const fileSecondaryButtonStyle: CSSProperties = {
   ...filePrimaryButtonStyle,
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
 };
 
 const workRatingBoxStyle: CSSProperties = {
@@ -5036,7 +5120,7 @@ const desktopHeroActionsStyle: CSSProperties = {
 
 const desktopObraActionsMenuStyle: CSSProperties = {
   ...obraActionsMenuStyle,
-  width: "min(760px, calc(100% - 24px))",
+  width: "min(820px, calc(100% - 24px))",
 };
 
 const desktopStatsGridStyle: CSSProperties = {

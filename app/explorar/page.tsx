@@ -1273,7 +1273,7 @@ function normalizarObraSupabase(
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
     slug: slugObra,
-    link: obra.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
+    link: `/obra/${slugObra}`,
   };
 }
 
@@ -2468,10 +2468,7 @@ function ObraPublicadaCard({
   const totalComentarios = totalComentariosObra(obra);
   const totalLidos = totalLidosObra(obra);
   const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
-  const paginaPublicaHref =
-    obra.link && obra.link.trim()
-      ? obra.link
-      : `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+  const paginaPublicaHref = `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
   const perfilAutorHref = criarPerfilAutorHrefExplorar(
     obra.autor,
     obra.autorId
@@ -2918,7 +2915,6 @@ function criarExplorarTopWaterFadeStyle(
 
 const containerStyle: CSSProperties = {
   position: "relative",
-  zIndex: 1,
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
@@ -3364,33 +3360,40 @@ const desktopSearchInputStyle: CSSProperties = {
 const explorarModalOverlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
-  zIndex: 80,
-  background: "rgba(0,0,0,0.62)",
-  display: "block",
-  padding: "0 10px",
+  height: "100dvh",
+  zIndex: 240,
+  background: "rgba(0,0,0,0.68)",
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  padding: 0,
   boxSizing: "border-box",
   overflow: "hidden",
-  overscrollBehavior: "contain",
+  overscrollBehavior: "none",
+  touchAction: "none",
 };
 
 const explorarModalSheetStyle: CSSProperties = {
   position: "fixed",
-  left: "10px",
-  right: "10px",
+  left: "50%",
   bottom: 0,
-  width: "auto",
-  maxWidth: "720px",
-  maxHeight: "min(620px, calc(100dvh - 112px))",
-  margin: "0 auto",
-  overflowY: "auto",
-  background: "#151A1B",
-  border: "1px solid rgba(255,255,255,0.08)",
+  transform: "translateX(-50%)",
+  zIndex: 241,
+  width: "min(820px, calc(100% - 4px))",
+  maxHeight: "calc(100dvh - 116px)",
+  display: "grid",
+  gap: "0",
+  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
+  borderRadius: "24px 24px 0 0",
+  background: "var(--historietas-bg-start, #070212)",
+  border: "1px solid rgba(255,255,255,0.06)",
   borderBottom: "0",
-  borderRadius: "28px 28px 0 0",
-  boxShadow: "none",
-  padding: "12px 0 112px",
+  overflowY: "auto",
+  overflowX: "hidden",
+  overscrollBehavior: "none",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
   boxSizing: "border-box",
-  overscrollBehavior: "contain",
+  touchAction: "none",
 };
 
 const desktopExplorarModalSheetStyle: CSSProperties = {
@@ -3402,25 +3405,29 @@ const desktopExplorarModalSheetStyle: CSSProperties = {
   maxWidth: "560px",
   maxHeight: "82vh",
   transform: "translateX(-50%)",
-  borderRadius: "28px",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: "24px",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
   margin: 0,
   paddingBottom: "18px",
 };
 
 const explorarModalHandleStyle: CSSProperties = {
   display: "block",
-  width: "74px",
-  height: "6px",
+  justifySelf: "center",
+  width: "72px",
+  height: "5px",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.58)",
+  background: "rgba(244,244,245,0.62)",
   margin: "0 auto 14px",
 };
 
 const explorarModalTitleStyle: CSSProperties = {
-  margin: "0 24px 16px",
+  display: "block",
+  margin: "0 0 12px",
+  padding: 0,
   color: "#FFFFFF",
-  fontSize: "23px",
+  fontSize: "21px",
+  lineHeight: 1.1,
   fontWeight: 950,
   textAlign: "center",
   letterSpacing: "-0.04em",
@@ -3433,13 +3440,15 @@ const explorarModalContentStyle: CSSProperties = {
 };
 
 const explorarModalSectionLabelStyle: CSSProperties = {
-  margin: "0",
-  padding: "12px 28px 8px",
-  borderTop: "1px solid rgba(255,255,255,0.055)",
-  color: "rgba(255,255,255,0.58)",
-  fontSize: "12px",
+  margin: 0,
+  display: "block",
+  padding: "11px 30px 5px",
+  borderTop: "none",
+  color: "rgba(244,244,245,0.56)",
+  fontSize: "11px",
+  lineHeight: 1,
   fontWeight: 950,
-  letterSpacing: "0.16em",
+  letterSpacing: "0.08em",
   textTransform: "uppercase",
   ...safeTextStyle,
 };
@@ -3447,20 +3456,22 @@ const explorarModalSectionLabelStyle: CSSProperties = {
 function criarExplorarModalOptionStyle(ativo: boolean): CSSProperties {
   return {
     appearance: "none",
+    WebkitAppearance: "none",
     width: "100%",
-    minHeight: "56px",
-    border: "0",
-    borderTop: "1px solid rgba(255,255,255,0.055)",
-    background: ativo ? "rgba(255,255,255,0.035)" : "transparent",
+    minHeight: "44px",
+    border: "none",
+    background: "transparent",
     color: "#FFFFFF",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: "18px",
-    padding: "0 28px",
+    gap: "16px",
+    padding: "0 30px",
     boxSizing: "border-box",
-    fontSize: "20px",
-    fontWeight: 950,
+    fontSize: "18px",
+    lineHeight: 1,
+    fontWeight: ativo ? 900 : 650,
+    letterSpacing: "-0.035em",
     fontFamily: "inherit",
     cursor: "pointer",
     textAlign: "left",
@@ -3470,36 +3481,36 @@ function criarExplorarModalOptionStyle(ativo: boolean): CSSProperties {
 
 function criarExplorarModalRadioStyle(ativo: boolean): CSSProperties {
   return {
-    width: "32px",
-    height: "32px",
+    width: "23px",
+    height: "23px",
     borderRadius: "999px",
     border: ativo
-      ? "9px solid #FFFFFF"
-      : "5px solid rgba(255,255,255,0.40)",
+      ? "6.5px solid #FFFFFF"
+      : "2.5px solid rgba(161,161,170,0.72)",
+    background: "transparent",
     boxSizing: "border-box",
     flex: "0 0 auto",
   };
 }
 
 const explorarModalClearDividerStyle: CSSProperties = {
-  display: "block",
-  width: "100%",
-  height: "1px",
-  background: "rgba(255,255,255,0.07)",
+  display: "none",
 };
 
 const explorarModalClearButtonStyle: CSSProperties = {
-  appearance: "none",
-  minHeight: "52px",
-  margin: "12px 28px 10px",
+  width: "calc(100% - 60px)",
+  justifySelf: "center",
+  minHeight: "46px",
+  marginTop: "12px",
+  borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  borderRadius: "18px",
-  background: "rgba(255,255,255,0.055)",
+  background: "transparent",
   color: "#FFFFFF",
-  fontSize: "20px",
+  fontSize: "15px",
   fontWeight: 950,
-  fontFamily: "inherit",
   cursor: "pointer",
+  fontFamily: "inherit",
+  textAlign: "center",
   ...safeTextStyle,
 };
 

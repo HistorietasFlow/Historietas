@@ -82,8 +82,6 @@ type PerfilUsuarioRemoto = {
   criadoEm: string;
 };
 
-type FiltroObrasAutor = "todas" | "publicadas" | "rascunhos" | "sem-capitulos";
-type OrdenacaoObrasAutor = "recentes" | "titulo" | "capitulos" | "curtidas";
 type AbaPerfilAutor = "obras" | "diario" | "comunidade" | "sobre" | "biblioteca";
 type AbaBibliotecaPerfil =
   | "quero-ler"
@@ -99,7 +97,9 @@ const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
 const AUTHOR_RATINGS_STORAGE_KEY = "historietas-autores-avaliacoes";
-const AVATAR_MAX_SIZE = 2 * 1024 * 1024;
+const TOP_FIVE_STORAGE_KEY = "historietas-top-5-obras";
+const TOP_FIVE_MAXIMO = 5;
+const AVATAR_MAX_SIZE = 1 * 1024 * 1024;
 const AVATAR_STORAGE_BUCKET = "avatars";
 const BIO_MAX_LENGTH = 90;
 const SOBRE_BIO_MAX_LENGTH = 600;
@@ -390,6 +390,40 @@ function formatarGeneroPerfilAutor(genero: string) {
   }
 
   return generoLimpo || "Não informado";
+}
+
+function formatarFormatoPerfilAutor(formato: string) {
+  const formatoLimpo = formato.trim();
+
+  if (
+    !formatoLimpo ||
+    normalizarTexto(formatoLimpo) === "nao informado" ||
+    normalizarTexto(formatoLimpo) === "nao informada"
+  ) {
+    return "";
+  }
+
+  return formatoLimpo;
+}
+
+function obterTagPrincipalPerfilAutor(
+  obra: Pick<ObraLocal, "tags" | "genero" | "formato">,
+) {
+  const generoNormalizado = normalizarTexto(obra.genero);
+  const formatoNormalizado = normalizarTexto(obra.formato);
+
+  return (obra.tags || [])
+    .map((tag) => tag.trim())
+    .find((tag) => {
+      const tagNormalizada = normalizarTexto(tag);
+
+      return (
+        tag &&
+        tagNormalizada !== "sem tags" &&
+        tagNormalizada !== generoNormalizado &&
+        tagNormalizada !== formatoNormalizado
+      );
+    }) || "";
 }
 
 function obterTimestampData(dataIso: string) {
@@ -1025,6 +1059,51 @@ function removerObraDaColecaoPerfilBiblioteca(
   const identificadores = new Set(obterIdentificadoresObraPerfilBiblioteca(obra));
 
   return colecao.filter((id) => !identificadores.has(id));
+}
+
+function carregarTopFivePerfilAutor(userId = "") {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return [] as string[];
+  }
+
+  try {
+    const topFiveSalvo = carregarJsonUsuarioPerfilAutor(
+      TOP_FIVE_STORAGE_KEY,
+      userId,
+    );
+
+    return Array.isArray(topFiveSalvo)
+      ? Array.from(
+          new Set(
+            topFiveSalvo.filter(
+              (id): id is string =>
+                typeof id === "string" && Boolean(id.trim()),
+            ),
+          ),
+        ).slice(0, TOP_FIVE_MAXIMO)
+      : [];
+  } catch {
+    return [] as string[];
+  }
+}
+
+function encontrarObraPorIdentificadorTopFivePerfil(
+  obrasDisponiveis: ObraLocal[],
+  identificador: string,
+) {
+  const identificadorLimpo = identificador.trim();
+
+  if (!identificadorLimpo) {
+    return null;
+  }
+
+  return (
+    obrasDisponiveis.find((obra) =>
+      obterIdentificadoresObraPerfilBiblioteca(obra).includes(
+        identificadorLimpo,
+      ),
+    ) || null
+  );
 }
 
 function obterTempoAtividadeBibliotecaPerfil(obra: ObraLocal) {
@@ -3380,6 +3459,95 @@ function DiaryCarouselRow({
   );
 }
 
+
+type MenuPerfilIconeTipo =
+  | "painel"
+  | "notificacoes"
+  | "configuracoes"
+  | "link"
+  | "sair"
+  | "comunidade"
+  | "explorar";
+
+function MenuPerfilIcone({ tipo }: { tipo: MenuPerfilIconeTipo }) {
+  const iconProps = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2.1,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": true,
+  } as const;
+
+  if (tipo === "painel") {
+    return (
+      <svg {...iconProps}>
+        <path d="M4 19V5" />
+        <path d="M20 19H4" />
+        <path d="M8 16V10" />
+        <path d="M12 16V7" />
+        <path d="M16 16v-4" />
+      </svg>
+    );
+  }
+
+  if (tipo === "notificacoes") {
+    return (
+      <svg {...iconProps}>
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+    );
+  }
+
+  if (tipo === "configuracoes") {
+    return (
+      <svg {...iconProps}>
+        <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.4 1.08V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8.6 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.08-.4H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-.6A1.65 1.65 0 0 0 10.4 3V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15.4 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.42.18.72.56.72 1v4c0 .44-.3.82-.72 1Z" />
+      </svg>
+    );
+  }
+
+  if (tipo === "link") {
+    return (
+      <svg {...iconProps}>
+        <path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.9 5.03" />
+        <path d="M14 11a5 5 0 0 0-7.07 0L4.81 13.12a5 5 0 0 0 7.07 7.07l1.22-1.22" />
+      </svg>
+    );
+  }
+
+  if (tipo === "sair") {
+    return (
+      <svg {...iconProps}>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <path d="M16 17l5-5-5-5" />
+        <path d="M21 12H9" />
+      </svg>
+    );
+  }
+
+  if (tipo === "comunidade") {
+    return (
+      <svg {...iconProps}>
+        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...iconProps}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+
 export default function PerfilAutorPage() {
   const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -3388,6 +3556,7 @@ export default function PerfilAutorPage() {
   const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
+  const [topFiveObraIds, setTopFiveObraIds] = useState<string[]>([]);
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
   const [avatarErro, setAvatarErro] = useState("");
@@ -3397,21 +3566,15 @@ export default function PerfilAutorPage() {
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [podeEditarPerfil, setPodeEditarPerfil] = useState(false);
   const [carregando, setCarregando] = useState(true);
-  const [buscaObras, setBuscaObras] = useState("");
-  const [filtroObras, setFiltroObras] = useState<FiltroObrasAutor>("todas");
-  const [ordenacaoObras, setOrdenacaoObras] =
-    useState<OrdenacaoObrasAutor>("recentes");
   const [menuPerfilAberto, setMenuPerfilAberto] = useState(false);
   const [editorPerfilAberto, setEditorPerfilAberto] = useState(false);
   const [nomePerfilEditor, setNomePerfilEditor] = useState("");
   const [editorSobreAberto, setEditorSobreAberto] = useState(false);
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>("obras");
-  const [abaBibliotecaPerfil, setAbaBibliotecaPerfil] =
-    useState<AbaBibliotecaPerfil>("quero-ler");
+  const [abaBibliotecaPerfil] = useState<AbaBibliotecaPerfil>("quero-ler");
   const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
   const [versaoSincronizacaoBiblioteca, setVersaoSincronizacaoBiblioteca] =
     useState(0);
-  const [filtrosObrasAbertos, setFiltrosObrasAbertos] = useState(false);
   const [obraMenuAbertoId, setObraMenuAbertoId] = useState("");
   const [diarioMenuAbertoChave, setDiarioMenuAbertoChave] = useState("");
   const [bibliotecaMenuAbertoChave, setBibliotecaMenuAbertoChave] = useState("");
@@ -3488,6 +3651,7 @@ export default function PerfilAutorPage() {
       subscription.unsubscribe();
     };
   }, []);
+
 
   useEffect(() => {
     let componenteAtivo = true;
@@ -3848,6 +4012,40 @@ export default function PerfilAutorPage() {
       ? perfilAtual
       : perfilDoUsuarioLogado || perfilUsuarioRemotoComoAutor || perfisAutores[0] || null;
 
+  useEffect(() => {
+    const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
+    const topFiveUserId = perfilAutorId || usuarioIdLogado.trim();
+
+    function atualizarTopFivePerfil() {
+      setTopFiveObraIds(carregarTopFivePerfilAutor(topFiveUserId));
+    }
+
+    atualizarTopFivePerfil();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    function atualizarQuandoVoltarParaTela() {
+      if (document.visibilityState !== "hidden") {
+        atualizarTopFivePerfil();
+      }
+    }
+
+    window.addEventListener("focus", atualizarTopFivePerfil);
+    window.addEventListener("storage", atualizarTopFivePerfil);
+    document.addEventListener("visibilitychange", atualizarQuandoVoltarParaTela);
+
+    return () => {
+      window.removeEventListener("focus", atualizarTopFivePerfil);
+      window.removeEventListener("storage", atualizarTopFivePerfil);
+      document.removeEventListener(
+        "visibilitychange",
+        atualizarQuandoVoltarParaTela,
+      );
+    };
+  }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
+
   const bibliotecaPerfilVisivel = true;
 
   useEffect(() => {
@@ -4015,11 +4213,6 @@ export default function PerfilAutorPage() {
         perfilParaMostrar,
       );
   const obrasSeguidasPerfilHref = "/seguindo?conteudo=obras";
-  const obrasFavoritasPerfilPorObrasDoAutor = perfilParaMostrar
-    ? perfilParaMostrar.obras.filter((obra) =>
-        colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra),
-      ).length
-    : 0;
   const obrasConcluidasPerfilPorObrasDoAutor = perfilParaMostrar
     ? perfilParaMostrar.obras.filter((obra) =>
         colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra),
@@ -4083,8 +4276,6 @@ export default function PerfilAutorPage() {
   const caracteresRestantesBio = BIO_MAX_LENGTH - bioAutorPersonalizada.length;
   const caracteresRestantesBioSobre =
     SOBRE_BIO_MAX_LENGTH - bioSobrePersonalizada.length;
-  const termoBuscaObras = normalizarTexto(buscaObras);
-
   const autorPodeReceberAvaliacao = Boolean(
     perfilParaMostrar && perfilParaMostrar.obras.length > 0,
   );
@@ -4094,91 +4285,45 @@ export default function PerfilAutorPage() {
       return [];
     }
 
-    const filtradas = perfilParaMostrar.obras.filter((obra) => {
-      const textoBusca = normalizarTexto(
-        [
-          obra.titulo,
-          obra.autor,
-          obra.genero,
-          formatarGeneroPerfilAutor(obra.genero),
-          obra.formato,
-          obra.classificacaoIndicativa,
-          obra.sinopse,
-          obra.tags.join(" "),
-          obra.capaNome,
-          obra.arquivoObra?.nome || "",
-          obra.capitulos.map((capitulo) => capitulo.titulo).join(" "),
-        ].join(" "),
-      );
-
-      const passaBusca = termoBuscaObras
-        ? textoBusca.includes(termoBuscaObras)
-        : true;
-
-      const passaFiltro =
-        filtroObras === "todas"
-          ? true
-          : filtroObras === "publicadas"
-            ? obra.publicado
-            : filtroObras === "rascunhos"
-              ? !obra.publicado
-              : obra.capitulos.length === 0;
-
-      return passaBusca && passaFiltro;
-    });
-
-    return filtradas.sort((obraA, obraB) => {
-      if (ordenacaoObras === "titulo") {
-        return obraA.titulo.localeCompare(obraB.titulo);
-      }
-
-      if (ordenacaoObras === "capitulos") {
-        return obraB.capitulos.length - obraA.capitulos.length;
-      }
-
-      if (ordenacaoObras === "curtidas") {
-        return (
-          obraB.capitulos.filter((capitulo) => capitulo.curtiu).length -
-          obraA.capitulos.filter((capitulo) => capitulo.curtiu).length
-        );
-      }
-
-      return (
-        obterTimestampData(obraB.criadaEm) - obterTimestampData(obraA.criadaEm)
-      );
-    });
-  }, [perfilParaMostrar, termoBuscaObras, filtroObras, ordenacaoObras]);
+    return [...perfilParaMostrar.obras].sort(
+      (obraA, obraB) =>
+        obterTimestampData(obraB.criadaEm) - obterTimestampData(obraA.criadaEm),
+    );
+  }, [perfilParaMostrar]);
 
   const obrasEmDestaque = useMemo(() => {
-    if (!perfilParaMostrar) {
-      return [];
+    if (topFiveObraIds.length === 0) {
+      return [] as ObraLocal[];
     }
 
-    return [...perfilParaMostrar.obras]
-      .sort((obraA, obraB) => {
-        if (obraA.publicado !== obraB.publicado) {
-          return Number(obraB.publicado) - Number(obraA.publicado);
-        }
+    const obrasDisponiveis = mesclarObrasPorIdSlug(
+      obras,
+      perfilParaMostrar?.obras || [],
+    );
+    const obrasSelecionadas = new Map<string, ObraLocal>();
 
-        const curtidasA = obraA.capitulos.filter(
-          (capitulo) => capitulo.curtiu,
-        ).length;
-        const curtidasB = obraB.capitulos.filter(
-          (capitulo) => capitulo.curtiu,
-        ).length;
+    topFiveObraIds.forEach((obraId) => {
+      const obraEncontrada = encontrarObraPorIdentificadorTopFivePerfil(
+        obrasDisponiveis,
+        obraId,
+      );
 
-        if (curtidasA !== curtidasB) {
-          return curtidasB - curtidasA;
-        }
+      if (!obraEncontrada) {
+        return;
+      }
 
-        if (obraA.visualizacoes !== obraB.visualizacoes) {
-          return obraB.visualizacoes - obraA.visualizacoes;
-        }
+      const chaveObra =
+        obraEncontrada.id.trim() ||
+        obraEncontrada.slug.trim() ||
+        normalizarTexto(obraEncontrada.titulo);
 
-        return obterTimestampData(obraB.criadaEm) - obterTimestampData(obraA.criadaEm);
-      })
-      .slice(0, 4);
-  }, [perfilParaMostrar]);
+      if (chaveObra && !obrasSelecionadas.has(chaveObra)) {
+        obrasSelecionadas.set(chaveObra, obraEncontrada);
+      }
+    });
+
+    return Array.from(obrasSelecionadas.values()).slice(0, TOP_FIVE_MAXIMO);
+  }, [obras, perfilParaMostrar?.obras, topFiveObraIds]);
 
   useEffect(() => {
     const perfilAtual = perfilParaMostrar;
@@ -4501,12 +4646,6 @@ export default function PerfilAutorPage() {
     ? perfilParaMostrar.obras.filter((obra) => obra.capitulos.length === 0).length
     : 0;
 
-  const filtrosObrasAtivos = Boolean(
-    buscaObras.trim() ||
-    filtroObras !== "todas" ||
-    ordenacaoObras !== "recentes",
-  );
-
   const obraMenuAberta = useMemo(() => {
     if (!obraMenuAbertoId) {
       return null;
@@ -4606,23 +4745,6 @@ export default function PerfilAutorPage() {
     return Math.max(totalPorObrasCarregadas, itensBibliotecaQueroLer.length);
   }, [obras, obrasSeguidasBiblioteca, itensBibliotecaQueroLer.length]);
 
-  const obrasFavoritasPerfilTotal = useMemo(() => {
-    const totalPorObrasCarregadas = obras.filter((obra) =>
-      colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra),
-    ).length;
-
-    return Math.max(
-      obrasFavoritasPerfilPorObrasDoAutor,
-      totalPorObrasCarregadas,
-      itensBibliotecaFavoritas.length,
-    );
-  }, [
-    obras,
-    obrasFavoritas,
-    obrasFavoritasPerfilPorObrasDoAutor,
-    itensBibliotecaFavoritas.length,
-  ]);
-
   const obrasConcluidasPerfilTotal = useMemo(() => {
     const totalPorObrasCarregadas = obras.filter((obra) =>
       colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra),
@@ -4689,34 +4811,6 @@ export default function PerfilAutorPage() {
           : abaBibliotecaPerfil === "concluidas"
             ? "concluídas"
             : "histórico";
-
-  const estatisticasBibliotecaPerfil = [
-    {
-      aba: "quero-ler" as AbaBibliotecaPerfil,
-      numero: obrasSeguidasPerfilTotal,
-      label: "QUERO LER",
-    },
-    {
-      aba: "lendo-agora" as AbaBibliotecaPerfil,
-      numero: itensBibliotecaLendoAgora.length,
-      label: "LENDO",
-    },
-    {
-      aba: "favoritas" as AbaBibliotecaPerfil,
-      numero: obrasFavoritasPerfilTotal,
-      label: "FAVORITAS",
-    },
-    {
-      aba: "concluidas" as AbaBibliotecaPerfil,
-      numero: obrasConcluidasPerfilTotal,
-      label: "CONCLUÍDAS",
-    },
-    {
-      aba: "historico" as AbaBibliotecaPerfil,
-      numero: itensBibliotecaHistorico.length,
-      label: "HISTÓRICO",
-    },
-  ];
 
   const containerAtualStyle = isDesktop
     ? desktopContainerStyle
@@ -4808,12 +4902,6 @@ export default function PerfilAutorPage() {
   function avisarLoginNecessario(mensagem: string) {
     setMensagemAcao(mensagem);
     router.push(criarLoginHrefPerfilAutor());
-  }
-
-  function limparFiltrosObras() {
-    setBuscaObras("");
-    setFiltroObras("todas");
-    setOrdenacaoObras("recentes");
   }
 
   function salvarPerfilAutor(novoPerfil: PerfilAutorSalvo) {
@@ -5108,7 +5196,7 @@ export default function PerfilAutorPage() {
     }
 
     if (arquivo.size > AVATAR_MAX_SIZE) {
-      setAvatarErro("A imagem precisa ter no máximo 2 MB.");
+      setAvatarErro("A imagem precisa ter no máximo 1 MB.");
       event.target.value = "";
       return;
     }
@@ -6140,7 +6228,6 @@ export default function PerfilAutorPage() {
       : isDesktop
         ? desktopDiaryVisualCardStyle
         : diaryVisualCardStyle;
-    const totalCapitulos = obra?.capitulos.length || 0;
     const totalCurtidasDiario =
       obra?.capitulos.filter((capitulo) => capitulo.curtiu).length || 0;
     const totalComentariosDiario =
@@ -6165,9 +6252,6 @@ export default function PerfilAutorPage() {
               <strong style={diaryCardCoverTitleStyle}>{item.titulo}</strong>
 
               <span style={diaryCardCoverMetaStyle}>
-                <span>
-                  {totalCapitulos} {totalCapitulos === 1 ? "cap" : "caps"}
-                </span>
                 <span>👁 {visualizacoesDiario}</span>
                 <span>
                   <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
@@ -6219,7 +6303,6 @@ export default function PerfilAutorPage() {
           item.numeroCapitulo || 1,
         )
       : obraHref;
-    const totalCapitulos = item.obra.capitulos.length;
     const totalCurtidasBiblioteca = item.obra.capitulos.filter(
       (capitulo) => capitulo.curtiu,
     ).length;
@@ -6245,9 +6328,6 @@ export default function PerfilAutorPage() {
               <strong style={diaryCardCoverTitleStyle}>{item.obra.titulo}</strong>
 
               <span style={diaryCardCoverMetaStyle}>
-                <span>
-                  {totalCapitulos} {totalCapitulos === 1 ? "cap" : "caps"}
-                </span>
                 <span>👁 {visualizacoesBiblioteca}</span>
                 <span>
                   <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
@@ -6601,11 +6681,9 @@ export default function PerfilAutorPage() {
                   <strong style={menuTitleStyle}>
                     {perfilParaMostrar.nome}
                   </strong>
-                  <span style={menuSubtitleStyle}>
-                    {podeEditarPerfil
-                      ? "Configurações e atividade"
-                      : "Ações do perfil"}
-                  </span>
+                  {!podeEditarPerfil ? (
+                    <span style={menuSubtitleStyle}>Ações do perfil</span>
+                  ) : null}
                 </div>
 
                 <button
@@ -6621,44 +6699,17 @@ export default function PerfilAutorPage() {
               <div style={menuListStyle}>
                 {podeEditarPerfil ? (
                   <>
-                    <span style={menuSectionTitleStyle}>Recursos do autor</span>
+                    <span style={menuSectionTitleStyle}>Conta e sistema</span>
 
                     <Link
                       href="/painel-autor"
                       style={menuItemStyle}
                       onClick={() => setMenuPerfilAberto(false)}
                     >
-                      <span style={menuItemIconStyle}>📊</span>
+                      <span style={menuItemIconStyle}>
+                        <MenuPerfilIcone tipo="painel" />
+                      </span>
                       <strong style={menuItemTextStyle}>Painel do Autor</strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </Link>
-
-                    <Link
-                      href="/publicar"
-                      style={menuItemStyle}
-                      onClick={() => setMenuPerfilAberto(false)}
-                    >
-                      <span style={menuItemIconStyle}>✍</span>
-                      <strong style={menuItemTextStyle}>
-                        Publicar nova obra
-                      </strong>
-                      <span style={menuChevronStyle}>›</span>
-                    </Link>
-
-                    <div style={menuDividerStyle} />
-                    <span style={menuSectionTitleStyle}>
-                      Ferramentas pessoais
-                    </span>
-
-                    <Link
-                      href={comunidadeAutorHref}
-                      style={menuItemStyle}
-                      onClick={() => setMenuPerfilAberto(false)}
-                    >
-                      <span style={menuItemIconStyle}>💬</span>
-                      <strong style={menuItemTextStyle}>
-                        Comunidade do autor
-                      </strong>
                       <span style={menuChevronStyle}>›</span>
                     </Link>
 
@@ -6667,21 +6718,24 @@ export default function PerfilAutorPage() {
                       style={menuItemStyle}
                       onClick={() => setMenuPerfilAberto(false)}
                     >
-                      <span style={menuItemIconStyle}>🔔</span>
+                      <span style={menuItemIconStyle}>
+                        <MenuPerfilIcone tipo="notificacoes" />
+                      </span>
                       <strong style={menuItemTextStyle}>Notificações</strong>
                       <span style={menuChevronStyle}>›</span>
                     </Link>
-
-                    <div style={menuDividerStyle} />
-                    <span style={menuSectionTitleStyle}>Conta e sistema</span>
 
                     <Link
                       href="/configuracoes"
                       style={menuItemStyle}
                       onClick={() => setMenuPerfilAberto(false)}
                     >
-                      <span style={menuItemIconStyle}>⚙</span>
-                      <strong style={menuItemTextStyle}>Configurações</strong>
+                      <span style={menuItemIconStyle}>
+                        <MenuPerfilIcone tipo="configuracoes" />
+                      </span>
+                      <strong style={menuItemTextStyle}>
+                        Configurações e atividade
+                      </strong>
                       <span style={menuChevronStyle}>›</span>
                     </Link>
 
@@ -6690,7 +6744,9 @@ export default function PerfilAutorPage() {
                       onClick={() => void copiarLinkPerfil()}
                       style={menuItemStyle}
                     >
-                      <span style={menuItemIconStyle}>🔗</span>
+                      <span style={menuItemIconStyle}>
+                        <MenuPerfilIcone tipo="link" />
+                      </span>
                       <strong style={menuItemTextStyle}>
                         Copiar link do perfil
                       </strong>
@@ -6702,7 +6758,9 @@ export default function PerfilAutorPage() {
                       onClick={() => void sairDaConta()}
                       style={menuDangerItemStyle}
                     >
-                      <span style={menuItemIconStyle}>🚪</span>
+                      <span style={menuItemIconStyle}>
+                        <MenuPerfilIcone tipo="sair" />
+                      </span>
                       <strong style={menuItemTextStyle}>Sair da conta</strong>
                       <span style={menuChevronStyle}>›</span>
                     </button>
@@ -6716,7 +6774,7 @@ export default function PerfilAutorPage() {
                       onClick={() => void copiarLinkPerfil()}
                       style={menuItemStyle}
                     >
-                      <span style={menuItemIconStyle}>🔗</span>
+                      <span style={menuItemIconStyle}><MenuPerfilIcone tipo="link" /></span>
                       <strong style={menuItemTextStyle}>
                         Copiar link do perfil
                       </strong>
@@ -6728,7 +6786,7 @@ export default function PerfilAutorPage() {
                       style={menuItemStyle}
                       onClick={() => setMenuPerfilAberto(false)}
                     >
-                      <span style={menuItemIconStyle}>💬</span>
+                      <span style={menuItemIconStyle}><MenuPerfilIcone tipo="comunidade" /></span>
                       <strong style={menuItemTextStyle}>
                         Comunidade do autor
                       </strong>
@@ -6743,7 +6801,7 @@ export default function PerfilAutorPage() {
                       style={menuItemStyle}
                       onClick={() => setMenuPerfilAberto(false)}
                     >
-                      <span style={menuItemIconStyle}>🔎</span>
+                      <span style={menuItemIconStyle}><MenuPerfilIcone tipo="explorar" /></span>
                       <strong style={menuItemTextStyle}>
                         Explorar outras obras
                       </strong>
@@ -7098,52 +7156,38 @@ export default function PerfilAutorPage() {
           </section>
         )}
 
-        {perfilSalvoAutor.mostrarDestaques && obrasEmDestaque.length > 0 && (
-          <section
-            style={isDesktop ? desktopAuthorHighlightsStyle : authorHighlightsStyle}
-            aria-label="Obras em destaque"
-          >
-            <div style={authorHighlightsHeaderStyle}>
-              <strong style={authorHighlightsTitleStyle}>Obras em destaque</strong>
-              <span style={authorHighlightsSubtitleStyle}>
-                {obrasEmDestaque.length === 1
-                  ? "1 obra selecionada"
-                  : `${obrasEmDestaque.length} obras selecionadas`}
-              </span>
-            </div>
+        {perfilSalvoAutor.mostrarDestaques &&
+          (obrasEmDestaque.length > 0 || podeEditarPerfil) && (
+            <section
+              style={isDesktop ? desktopAuthorHighlightsStyle : authorHighlightsStyle}
+              aria-label="TOP 5"
+            >
+              <div style={authorHighlightsHeaderStyle}>
+                <strong style={authorHighlightsTitleStyle}>TOP 5</strong>
 
-            <div style={isDesktop ? desktopAuthorHighlightsListStyle : authorHighlightsListStyle}>
-              {obrasEmDestaque.map((obra) => {
+                {podeEditarPerfil && (
+                  <Link
+                    href="/perfil-autor/top-5"
+                    style={authorHighlightsTopFiveButtonStyle}
+                    aria-label="Montar ou editar TOP 5"
+                  >
+                    +
+                  </Link>
+                )}
+              </div>
+
+              <div style={isDesktop ? desktopAuthorHighlightsListStyle : authorHighlightsListStyle}>
+                {obrasEmDestaque.map((obra) => {
                 const obraHref =
                   obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                const totalCurtidasObra = obra.capitulos.filter(
-                  (capitulo) => capitulo.curtiu,
-                ).length;
-
                 return (
                   <Link
                     key={`destaque-${obra.id}`}
                     href={obraHref}
                     style={authorHighlightItemStyle}
+                    aria-label={obra.titulo}
                   >
-                    <div style={criarCapaDestaquePerfilAutor(obra.capa)}>
-                      <span
-                        style={
-                          obra.publicado
-                            ? authorHighlightStatusPublishedStyle
-                            : authorHighlightStatusDraftStyle
-                        }
-                      >
-                        {obra.publicado ? "Publicado" : "Rascunho"}
-                      </span>
-                    </div>
-
-                    <strong style={authorHighlightNameStyle}>{obra.titulo}</strong>
-
-                    <span style={authorHighlightMetaStyle}>
-                      {formatarGeneroPerfilAutor(obra.genero)} • {obra.capitulos.length}{" "}
-                      {obra.capitulos.length === 1 ? "cap" : "caps"} ♥ {totalCurtidasObra}
-                    </span>
+                    <div style={criarCapaDestaquePerfilAutor(obra.capa)} />
                   </Link>
                 );
               })}
@@ -7222,39 +7266,6 @@ export default function PerfilAutorPage() {
                 : profileLibrarySectionStyle
             }
           >
-            <div
-              style={
-                isDesktop
-                  ? desktopProfileLibraryStatsGridStyle
-                  : profileLibraryStatsGridStyle
-              }
-            >
-              {estatisticasBibliotecaPerfil.map((estatistica) => (
-                <button
-                  key={`biblioteca-stat-${estatistica.aba}`}
-                  type="button"
-                  onClick={() => setAbaBibliotecaPerfil(estatistica.aba)}
-                  style={
-                    abaBibliotecaPerfil === estatistica.aba
-                      ? profileLibraryStatCardActiveStyle
-                      : profileLibraryStatCardStyle
-                  }
-                >
-                  <strong style={profileLibraryStatNumberStyle}>
-                    {estatistica.numero}
-                  </strong>
-                  <span style={profileLibraryStatLabelStyle}>
-                    {estatistica.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <h2 style={profileLibrarySummaryTitleStyle}>
-              {itensBibliotecaAtivos.length} de {itensBibliotecaAtivos.length}{" "}
-              {rotuloBibliotecaAtiva}
-            </h2>
-
             {diarioPerfil.carregando ? (
               <div style={emptyMiniBoxStyle}>Carregando Biblioteca...</div>
             ) : itensBibliotecaAtivos.length === 0 ? (
@@ -7596,84 +7607,13 @@ export default function PerfilAutorPage() {
 
         {abaPerfil === "obras" && (
           <section style={profileWorksSectionStyle}>
-            <div style={profileWorksToolbarStyle}>
-              <p style={profileWorksSummaryStyle}>
-                {obrasDoPerfilFiltradas.length}{" "}
-                {obrasDoPerfilFiltradas.length === 1 ? "obra" : "obras"} •{" "}
-                {obrasFavoritasPerfilTotal} na lista • {obrasConcluidasPerfilTotal}{" "}
-                {obrasConcluidasPerfilTotal === 1 ? "concluída" : "concluídas"}
-              </p>
-
-              <button
-                type="button"
-                onClick={() => setFiltrosObrasAbertos((aberto) => !aberto)}
-                style={profileWorksFilterButtonStyle}
-                aria-label={filtrosObrasAbertos ? "Ocultar filtros das obras" : "Mostrar filtros das obras"}
-                aria-expanded={filtrosObrasAbertos}
-              >
-                <span style={filtersToggleIconStyle}>+</span>
-              </button>
-            </div>
-
-            {filtrosObrasAbertos && (
-              <section style={filterBoxAtualStyle}>
-                <input
-                  value={buscaObras}
-                  onChange={(event) => setBuscaObras(event.target.value)}
-                  placeholder="Buscar obra..."
-                  style={filterInputStyle}
-                  type="text"
-                />
-
-                <div style={filterGridAtualStyle}>
-                  <select
-                    value={filtroObras}
-                    onChange={(event) =>
-                      setFiltroObras(event.target.value as FiltroObrasAutor)
-                    }
-                    style={filterSelectStyle}
-                  >
-                    <option value="todas">Todas</option>
-                    <option value="publicadas">Publicadas</option>
-                    <option value="rascunhos">Rascunhos</option>
-                    <option value="sem-capitulos">Sem capítulos</option>
-                  </select>
-
-                  <select
-                    value={ordenacaoObras}
-                    onChange={(event) =>
-                      setOrdenacaoObras(
-                        event.target.value as OrdenacaoObrasAutor,
-                      )
-                    }
-                    style={filterSelectStyle}
-                  >
-                    <option value="recentes">Mais recentes</option>
-                    <option value="titulo">Título</option>
-                    <option value="capitulos">Mais capítulos</option>
-                    <option value="curtidas">Mais curtidas</option>
-                  </select>
-                </div>
-
-                {filtrosObrasAtivos && (
-                  <button
-                    type="button"
-                    onClick={limparFiltrosObras}
-                    style={clearFilterButtonAtualStyle}
-                  >
-                    Limpar filtros
-                  </button>
-                )}
-              </section>
-            )}
-
             {obrasDoPerfilFiltradas.length === 0 ? (
               <div style={emptyMiniBoxStyle}>
                 {perfilParaMostrar.obras.length === 0
                   ? podeEditarPerfil
                     ? "Você ainda não publicou obras. Seu perfil continua ativo como leitor, com Diário e Comunidade."
                     : "Este perfil ainda não publicou obras. O Diário e a Comunidade continuam disponíveis."
-                  : "Nenhuma obra encontrada com esses filtros."}
+                  : "Nenhuma obra encontrada."}
               </div>
             ) : (
               <div
@@ -7722,34 +7662,12 @@ export default function PerfilAutorPage() {
                         <div
                           style={criarCapaGridPerfilAutor(obra.capa, isDesktop)}
                         >
-                          <div style={profileWorkTopBadgesStyle}>
-                            <span
-                              style={
-                                obra.publicado
-                                  ? profileWorkPublishedBadgeStyle
-                                  : profileWorkDraftBadgeStyle
-                              }
-                            >
-                              {formatarGeneroPerfilAutor(obra.genero)}
-                            </span>
-
-                            {mostrarClassificacao(obra) && (
-                              <span style={profileWorkClassificationBadgeStyle}>
-                                {obra.classificacaoIndicativa}
-                              </span>
-                            )}
-                          </div>
-
                           <div style={profileWorkCoverOverlayStyle}>
                             <strong style={profileWorkCoverTitleStyle}>
                               {obra.titulo}
                             </strong>
 
                             <span style={diaryCardCoverMetaStyle}>
-                              <span>
-                                {obra.capitulos.length}{" "}
-                                {obra.capitulos.length === 1 ? "cap" : "caps"}
-                              </span>
                               <span>👁 {visualizacoesObra}</span>
                               <span>
                                 <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
@@ -7811,9 +7729,32 @@ export default function PerfilAutorPage() {
             const totalCurtidas = obra.capitulos.filter(
               (capitulo) => capitulo.curtiu,
             ).length;
+            const totalComentarios = obra.capitulos.filter(
+              (capitulo) => capitulo.comentario.trim(),
+            ).length;
             const visualizacoesObra = compactarNumeroPerfilAutor(
               obra.visualizacoes,
             );
+            const formatoObra = formatarFormatoPerfilAutor(obra.formato);
+            const tagPrincipalObra = obterTagPrincipalPerfilAutor(obra);
+            const metaObraSheet = [
+              formatarGeneroPerfilAutor(obra.genero),
+              formatoObra,
+              tagPrincipalObra,
+              mostrarClassificacao(obra) ? obra.classificacaoIndicativa : "",
+            ]
+              .filter(Boolean)
+              .join(" • ");
+            const metricasObraSheet = [
+              `👁 ${visualizacoesObra}`,
+              `♥ ${totalCurtidas}`,
+              `💬 ${totalComentarios}`,
+              `${obra.capitulos.length} ${
+                obra.capitulos.length === 1 ? "cap" : "caps"
+              }`,
+            ]
+              .filter(Boolean)
+              .join(" • ");
 
             return (
               <div
@@ -7834,13 +7775,17 @@ export default function PerfilAutorPage() {
                       <strong style={workActionSheetTitleStyle}>
                         {obra.titulo}
                       </strong>
+
+                      <span style={workActionSheetAuthorStyle}>
+                        Por {obra.autor}
+                      </span>
+
                       <span style={workActionSheetMetaStyle}>
-                        {formatarGeneroPerfilAutor(obra.genero)}
-                        {mostrarClassificacao(obra)
-                          ? ` • ${obra.classificacaoIndicativa}`
-                          : ""} • 👁 {visualizacoesObra} • ♥ {totalCurtidas} •{" "}
-                        {obra.capitulos.length}{" "}
-                        {obra.capitulos.length === 1 ? "cap" : "caps"}
+                        {metaObraSheet}
+                      </span>
+
+                      <span style={workActionSheetMetricsStyle}>
+                        {metricasObraSheet}
                       </span>
                     </div>
                   </div>
@@ -8347,16 +8292,16 @@ const workActionSheetStyle: CSSProperties = {
   left: "50%",
   bottom: 0,
   transform: "translateX(-50%)",
-  width: "min(760px, calc(100% - 12px))",
-  maxHeight: "calc(100dvh - 18px)",
+  width: "min(820px, calc(100% - 4px))",
+  maxHeight: "calc(100dvh - 190px)",
   overflowX: "hidden",
   overflowY: "auto",
   overscrollBehavior: "contain",
   borderRadius: "24px 24px 0 0",
-  background: "#15191C",
+  background: "#070212",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
-  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
+  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   display: "grid",
   gap: 0,
   boxSizing: "border-box",
@@ -8377,9 +8322,9 @@ const workActionSheetHeaderStyle: CSSProperties = {
   justifyItems: "center",
   gap: "4px",
   minWidth: 0,
-  padding: "0 24px 13px",
+  padding: "0 24px 12px",
   boxSizing: "border-box",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  borderBottom: "none",
 };
 
 const workActionSheetTextBlockStyle: CSSProperties = {
@@ -8403,6 +8348,18 @@ const workActionSheetTitleStyle: CSSProperties = {
   maxWidth: "100%",
 };
 
+const workActionSheetAuthorStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 850,
+  lineHeight: 1.2,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  textAlign: "center",
+  maxWidth: "100%",
+};
+
 const workActionSheetMetaStyle: CSSProperties = {
   color: "rgba(255,255,255,0.72)",
   fontSize: "12px",
@@ -8413,6 +8370,19 @@ const workActionSheetMetaStyle: CSSProperties = {
   whiteSpace: "nowrap",
   textAlign: "center",
   maxWidth: "100%",
+};
+
+const workActionSheetMetricsStyle: CSSProperties = {
+  ...workActionSheetMetaStyle,
+  color: "#FFFFFF",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexWrap: "wrap",
+  gap: "6px 10px",
+  whiteSpace: "normal",
+  overflow: "visible",
+  textOverflow: "clip",
 };
 
 
@@ -8430,13 +8400,13 @@ const workActionSheetItemStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
   width: "100%",
-  minHeight: "48px",
+  minHeight: "44px",
   display: "flex",
   alignItems: "center",
   justifyContent: "flex-start",
-  gap: "16px",
+  gap: "14px",
   border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  borderBottom: "none",
   borderRadius: 0,
   background: "transparent",
   color: "#FFFFFF",
@@ -8444,7 +8414,7 @@ const workActionSheetItemStyle: CSSProperties = {
   padding: "0 30px",
   fontSize: "18px",
   fontWeight: 650,
-  lineHeight: 1.15,
+  lineHeight: 1,
   letterSpacing: "-0.035em",
   fontFamily: "inherit",
   textAlign: "left",
@@ -9056,7 +9026,6 @@ const pageStyle: CSSProperties = {
 
 const containerStyle: CSSProperties = {
   position: "relative",
-  zIndex: 1,
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
@@ -9245,7 +9214,7 @@ const menuOverlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
   zIndex: 9999,
-  background: "rgba(0,0,0,0.58)",
+  background: "rgba(0,0,0,0.62)",
   display: "flex",
   alignItems: "stretch",
   justifyContent: "flex-end",
@@ -9259,9 +9228,8 @@ const menuSheetStyle: CSSProperties = {
   maxHeight: "100dvh",
   borderRadius: 0,
   border: "0",
-  borderLeft:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "#04000A",
+  borderLeft: "1px solid rgba(255,255,255,0.08)",
+  background: "#070212",
   padding: "22px 16px calc(132px + env(safe-area-inset-bottom, 0px))",
   display: "grid",
   alignContent: "start",
@@ -9317,12 +9285,12 @@ const menuSubtitleStyle: CSSProperties = {
 };
 
 const menuCloseButtonStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
+  width: "40px",
+  height: "40px",
   borderRadius: "999px",
   border: "0",
-  background: "rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "rgba(255,255,255,0.075)",
+  color: "#FFFFFF",
   fontSize: "20px",
   lineHeight: 1,
   fontWeight: 900,
@@ -9332,14 +9300,14 @@ const menuCloseButtonStyle: CSSProperties = {
 
 const menuListStyle: CSSProperties = {
   display: "grid",
-  gap: "10px",
+  gap: "8px",
   minWidth: 0,
   paddingBottom: "24px",
 };
 
 const menuSectionTitleStyle: CSSProperties = {
   marginTop: "8px",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
+  color: "rgba(255,255,255,0.52)",
   fontSize: "10px",
   lineHeight: 1.2,
   fontWeight: 900,
@@ -9350,20 +9318,20 @@ const menuSectionTitleStyle: CSSProperties = {
 
 const menuDividerStyle: CSSProperties = {
   height: "1px",
-  background: "rgba(255,255,255,0.06)",
+  background: "rgba(255,255,255,0.075)",
   margin: "8px 0 4px",
 };
 
 const menuItemStyle: CSSProperties = {
   width: "100%",
-  minHeight: "48px",
+  minHeight: "52px",
   borderRadius: "0",
   border: "0",
   background: "transparent",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "#FFFFFF",
   textDecoration: "none",
   display: "grid",
-  gridTemplateColumns: "30px minmax(0, 1fr) 16px",
+  gridTemplateColumns: "32px minmax(0, 1fr) 16px",
   alignItems: "center",
   gap: "10px",
   padding: "0",
@@ -9379,10 +9347,11 @@ const menuDangerItemStyle: CSSProperties = {
 };
 
 const menuItemIconStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
+  width: "32px",
+  height: "32px",
   borderRadius: "10px",
   background: "transparent",
+  color: "rgba(255,255,255,0.82)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -9393,11 +9362,12 @@ const menuItemTextStyle: CSSProperties = {
   fontSize: "15px",
   fontWeight: 900,
   lineHeight: 1.2,
+  color: "inherit",
   ...safeTextStyle,
 };
 
 const menuChevronStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
+  color: "rgba(255,255,255,0.52)",
   fontSize: "26px",
   lineHeight: 1,
   fontWeight: 700,
@@ -10053,18 +10023,18 @@ const profileActiveButtonStyle: CSSProperties = {
 
 const authorHighlightsStyle: CSSProperties = {
   width: "100%",
-  marginTop: "8px",
+  marginTop: "0",
   display: "grid",
-  gap: "8px",
+  gap: "3px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const desktopAuthorHighlightsStyle: CSSProperties = {
   ...authorHighlightsStyle,
-  marginTop: "10px",
+  marginTop: "0",
 };
 
 const authorHighlightsHeaderStyle: CSSProperties = {
@@ -10078,7 +10048,7 @@ const authorHighlightsHeaderStyle: CSSProperties = {
 };
 
 const authorHighlightsTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "12px",
   lineHeight: 1.1,
   fontWeight: 950,
@@ -10086,48 +10056,73 @@ const authorHighlightsTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const authorHighlightsSubtitleStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "9px",
-  lineHeight: 1.1,
-  fontWeight: 850,
-  textAlign: "right",
-  ...safeTextStyle,
+const authorHighlightsTopFiveButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0 2px",
+  border: "none",
+  borderRadius: 0,
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "22px",
+  lineHeight: 1,
+  fontWeight: 900,
+  textDecoration: "none",
+  boxSizing: "border-box",
+  flex: "0 0 auto",
 };
 
 const authorHighlightsListStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(5, 70px)",
+  alignItems: "start",
+  justifyContent: "center",
+  columnGap: "3px",
+  rowGap: "0",
   width: "100%",
-  display: "flex",
-  gap: "10px",
-  minWidth: 0,
   maxWidth: "100%",
-  overflowX: "auto",
-  overflowY: "hidden",
-  paddingBottom: "2px",
+  minWidth: 0,
   boxSizing: "border-box",
+  overflow: "visible",
+  padding: "0",
+  margin: 0,
+  scrollSnapType: "none",
+  scrollbarWidth: "none",
+  msOverflowStyle: "none",
+  touchAction: "pan-y",
+  overscrollBehaviorX: "none",
 };
 
 const desktopAuthorHighlightsListStyle: CSSProperties = {
   ...authorHighlightsListStyle,
-  gap: "14px",
+  gridTemplateColumns: "repeat(5, 70px)",
+  justifyContent: "center",
+  columnGap: "3px",
+  rowGap: "0",
+  width: "100%",
+  maxWidth: "100%",
+  padding: "0",
+  margin: 0,
 };
 
 const authorHighlightItemStyle: CSSProperties = {
+  flex: "0 0 70px",
   width: "70px",
   minWidth: "70px",
   maxWidth: "70px",
-  flex: "0 0 70px",
+  scrollSnapAlign: "none",
   display: "grid",
   justifyItems: "stretch",
-  gap: "5px",
+  gap: "0",
   textDecoration: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
   boxSizing: "border-box",
 };
 
 const authorHighlightCoverStyle: CSSProperties = {
-  width: "70px",
-  height: "99px",
+  width: "100%",
+  aspectRatio: "70 / 99",
   minHeight: "0",
   borderRadius: "16px",
   position: "relative",
@@ -10135,61 +10130,9 @@ const authorHighlightCoverStyle: CSSProperties = {
   background: "#08030F",
   backgroundSize: "cover",
   backgroundPosition: "center",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  border: "none",
   boxShadow: "none",
   boxSizing: "border-box",
-};
-
-const authorHighlightStatusPublishedStyle: CSSProperties = {
-  position: "absolute",
-  left: "50%",
-  bottom: "7px",
-  transform: "translateX(-50%)",
-  maxWidth: "calc(100% - 12px)",
-  padding: "3px 6px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "rgba(8,5,13,0.52)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "6.4px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.03em",
-  textAlign: "center",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  boxSizing: "border-box",
-  textShadow: "none",
-};
-
-const authorHighlightStatusDraftStyle: CSSProperties = {
-  ...authorHighlightStatusPublishedStyle,
-};
-
-const authorHighlightNameStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "8.4px",
-  lineHeight: 1.08,
-  fontWeight: 950,
-  textAlign: "left",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
-const authorHighlightMetaStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "7px",
-  lineHeight: 1.1,
-  fontWeight: 850,
-  textAlign: "left",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
 };
 
 const profileTabsStyle: CSSProperties = {
@@ -10198,7 +10141,7 @@ const profileTabsStyle: CSSProperties = {
   gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
   alignItems: "end",
   gap: 0,
-  margin: "8px 0 0",
+  margin: "4px 0 0",
   padding: 0,
   minWidth: 0,
   maxWidth: "100%",
@@ -11150,51 +11093,6 @@ const desktopProfileWorkCoverStyle: CSSProperties = {
   borderRadius: "20px",
 };
 
-const profileWorkTopBadgesStyle: CSSProperties = {
-  position: "absolute",
-  top: "8px",
-  left: "8px",
-  right: "8px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "6px",
-  zIndex: 1,
-  minWidth: 0,
-};
-
-const profileWorkMiniBadgeStyle: CSSProperties = {
-  minHeight: "18px",
-  padding: "0 6px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "rgba(8,5,13,0.52)",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "8px",
-  fontWeight: 950,
-  lineHeight: 1,
-  letterSpacing: "0.01em",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  textShadow: "none",
-  ...safeTextStyle,
-};
-
-const profileWorkPublishedBadgeStyle: CSSProperties = {
-  ...profileWorkMiniBadgeStyle,
-};
-
-const profileWorkDraftBadgeStyle: CSSProperties = {
-  ...profileWorkMiniBadgeStyle,
-};
-
-const profileWorkClassificationBadgeStyle: CSSProperties = {
-  ...profileWorkMiniBadgeStyle,
-};
-
 const profileWorkCoverOverlayStyle: CSSProperties = {
   position: "absolute",
   left: 0,
@@ -11388,37 +11286,37 @@ const profileWorkOptionsMenuStyle: CSSProperties = {
   position: "absolute",
   right: "calc(100% + 6px)",
   top: "4px",
-  zIndex: 20,
-  width: "156px",
-  minWidth: "156px",
-  maxWidth: "156px",
-  padding: "6px",
-  borderRadius: "14px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-surface-strong, #04000A)",
+  zIndex: 45,
+  width: "184px",
+  minWidth: "184px",
+  maxWidth: "calc(100vw - 36px)",
+  padding: "5px",
+  borderRadius: "13px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "#070212",
   boxShadow: "none",
   display: "flex",
   flexDirection: "column",
   alignItems: "stretch",
   justifyContent: "flex-start",
-  gap: "2px",
+  gap: "1px",
   whiteSpace: "nowrap",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const profileWorkMenuItemStyle: CSSProperties = {
   width: "100%",
   minWidth: 0,
-  minHeight: "32px",
+  minHeight: "30px",
   border: "none",
-  borderRadius: "10px",
+  borderRadius: "9px",
   background: "transparent",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
-  fontSize: "10px",
-  lineHeight: 1.15,
-  fontWeight: 900,
+  fontSize: "11.5px",
+  lineHeight: 1,
+  fontWeight: 850,
   fontFamily: "inherit",
   cursor: "pointer",
   display: "flex",
@@ -11428,8 +11326,8 @@ const profileWorkMenuItemStyle: CSSProperties = {
   whiteSpace: "nowrap",
   overflowWrap: "normal",
   wordBreak: "normal",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
+  overflow: "visible",
+  textOverflow: "clip",
   padding: "0 9px",
   boxSizing: "border-box",
   flexShrink: 0,

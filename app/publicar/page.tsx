@@ -63,7 +63,7 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_ARQUIVO_TEXTO = 900 * 1024;
-const TAMANHO_MAXIMO_ARQUIVO_OBRA = 2 * 1024 * 1024;
+const TAMANHO_MAXIMO_ARQUIVO_OBRA = 5 * 1024 * 1024;
 
 const OUTRO_FORMATO_VALUE = "__outro_formato__";
 const OUTRO_GENERO_VALUE = "__outro_genero__";
@@ -1221,7 +1221,7 @@ export default function PublicarPage() {
 
     if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_OBRA) {
       setArquivoObraErro(
-        "O arquivo completo precisa ter no máximo 2 MB."
+        "O arquivo completo precisa ter no máximo 5 MB."
       );
       event.target.value = "";
       return;
@@ -1994,7 +1994,7 @@ export default function PublicarPage() {
                   </strong>
 
                   <span style={hintStyle}>
-                    Opcional. Anexe PDF, texto, imagem ou página de mangá.
+                    Opcional. Anexe PDF, texto, imagem ou página de mangá. Tamanho máximo: 5 MB.
                   </span>
 
                   {arquivoObra && (
@@ -2214,9 +2214,11 @@ export default function PublicarPage() {
                     </span>
                   </div>
 
-                  <p style={previewSinopseStyle}>
-                    {sinopse.trim() || "Nenhuma sinopse informada."}
-                  </p>
+                  {sinopse.trim() && (
+                    <p style={previewSinopseStyle}>
+                      {sinopse.trim()}
+                    </p>
+                  )}
 
                   {temCapituloImportado && (
                     <div style={previewImportedChapterStyle}>
@@ -2667,7 +2669,7 @@ const progressLabelStyle: CSSProperties = {
 };
 
 const progressNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "#FFFFFF",
   fontSize: "13px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -3110,17 +3112,14 @@ const chapterImportIconBoxStyle: CSSProperties = {
 };
 
 const chapterImportIconStyle: CSSProperties = {
-  width: "31px",
-  height: "31px",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
   color: "#FFFFFF",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "18px",
+  fontSize: "22px",
   fontWeight: 950,
+  lineHeight: 1,
+  background: "transparent",
   boxShadow: "none",
 };
 
@@ -3241,17 +3240,14 @@ const emptyPreviewCoverStyle: CSSProperties = {
 };
 
 const emptyPreviewIconStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
   color: "#FFFFFF",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "22px",
+  fontSize: "24px",
   fontWeight: 950,
+  lineHeight: 1,
+  background: "transparent",
 };
 
 const emptyPreviewContentStyle: CSSProperties = {
@@ -3371,7 +3367,7 @@ const previewBadgeStyle: CSSProperties = {
 
 const previewRatingBadgeStyle: CSSProperties = {
   ...previewBadgeStyle,
-  color: "#DDD6FE",
+  color: "#FFFFFF",
 };
 
 

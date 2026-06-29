@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import type { CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import {
+  historietasThemeCss,
+  useHistorietasTheme,
+} from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 
 type TemaVisual =
@@ -47,403 +50,45 @@ type ResumoLocal = {
   seguindoAutores: number;
 };
 
-const CONFIG_STORAGE_KEY = "historietas-configuracoes-conta";
-const THEME_STORAGE_KEY = "historietas-tema-visual";
-
-function criarStorageKeyUsuarioConfiguracoes(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
-}
-
-function lerStorageUsuarioConfiguracoes(chave: string, userId = "") {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    return localStorage.getItem(
-      criarStorageKeyUsuarioConfiguracoes(chave, userId)
-    );
-  } catch {
-    return null;
-  }
-}
-
-function salvarJsonStorageUsuarioConfiguracoes(
-  chave: string,
-  userId: string,
-  valor: unknown
-) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioConfiguracoes(chave, userId),
-      JSON.stringify(valor)
-    );
-  } catch {
-    // localStorage é fallback; as configurações continuam em memória.
-  }
-}
-
-const TEMAS_VISUAIS: Record<
-  TemaVisual,
-  {
-    nome: string;
-    descricao: string;
-    icone: string;
-    accent: string;
-    secondary: string;
-    bgStart: string;
-    bgMid: string;
-    bgEnd: string;
-    glowPrimary: string;
-    glowSecondary: string;
-    textPrimary?: string;
-    textSecondary?: string;
-    surface?: string;
-    surfaceStrong?: string;
-    borderSoft?: string;
-    inputBg?: string;
-    inputText?: string;
-    titleFrom?: string;
-    titleMid?: string;
-    titleTo?: string;
-    heroShadow?: string;
-    cardShadow?: string;
-    logoShadow?: string;
-    activeSurface?: string;
-    secondarySurface?: string;
-    secondaryButtonText?: string;
-    dangerSurface?: string;
-    dangerButtonText?: string;
-  }
-> = {
-  branco: {
-    nome: "Branco",
-    descricao: "Modo claro limpo no estilo Google/Play Store.",
-    icone: "G",
-    accent: "#1A73E8",
-    secondary: "#01875F",
-    bgStart: "#FFFFFF",
-    bgMid: "#FFFFFF",
-    bgEnd: "#F8F9FA",
-    glowPrimary: "rgba(26,115,232,0.020)",
-    glowSecondary: "rgba(1,135,95,0.018)",
-    textPrimary: "#202124",
-    textSecondary: "#5F6368",
-    surface: "#FFFFFF",
-    surfaceStrong: "#FFFFFF",
-    borderSoft: "#DADCE0",
-    inputBg: "#FFFFFF",
-    inputText: "#202124",
-    titleFrom: "#202124",
-    titleMid: "#202124",
-    titleTo: "#202124",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(26,115,232,0.10)",
-    secondarySurface: "rgba(1,135,95,0.10)",
-    secondaryButtonText: "#188038",
-    dangerSurface: "rgba(217,48,37,0.10)",
-    dangerButtonText: "#B3261E",
-  },
-  escuro: {
-    nome: "Escuro",
-    descricao: "Modo escuro com fundo preto e cores padrão do Historietas.",
-    icone: "N",
-    accent: "#F97316",
-    secondary: "#7C3AED",
-    bgStart: "#000000",
-    bgMid: "#000000",
-    bgEnd: "#000000",
-    glowPrimary: "rgba(249,115,22,0.030)",
-    glowSecondary: "rgba(124,58,237,0.030)",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#B3B3B3",
-    surface: "#101010",
-    surfaceStrong: "#000000",
-    borderSoft: "rgba(255,255,255,0.11)",
-    inputBg: "#0B0B0B",
-    inputText: "#FFFFFF",
-    titleFrom: "#FFFFFF",
-    titleMid: "#FFFFFF",
-    titleTo: "#FFFFFF",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(124,58,237,0.14)",
-    secondarySurface: "rgba(124,58,237,0.12)",
-    secondaryButtonText: "#FFFFFF",
-    dangerSurface: "rgba(239,68,68,0.12)",
-    dangerButtonText: "#FCA5A5",
-  },
-  foco: {
-    nome: "Foco",
-    descricao: "Base escura quase preta, inspirada no modo foco da leitura.",
-    icone: "◉",
-    accent: "#A78BFA",
-    secondary: "#27272A",
-    bgStart: "#050506",
-    bgMid: "#030305",
-    bgEnd: "#020203",
-    glowPrimary: "rgba(124,58,237,0.08)",
-    glowSecondary: "rgba(255,255,255,0.045)",
-    textPrimary: "#F4F4F5",
-    textSecondary: "#D4D4D8",
-    surface: "rgba(9,9,11,0.88)",
-    surfaceStrong: "rgba(3,3,6,0.96)",
-    borderSoft: "rgba(255,255,255,0.065)",
-    inputBg: "#09090B",
-    inputText: "#F4F4F5",
-    titleFrom: "#FFFFFF",
-    titleMid: "#E4E4E7",
-    titleTo: "#A78BFA",
-  },
-  original: {
-    nome: "Original",
-    descricao: "Roxo e laranja premium, o visual padrão do app.",
-    icone: "✦",
-    accent: "#F97316",
-    secondary: "#7C3AED",
-    bgStart: "#070212",
-    bgMid: "#070212",
-    bgEnd: "#070212",
-    glowPrimary: "transparent",
-    glowSecondary: "transparent",
-  },
-  fantasia: {
-    nome: "Fantasia",
-    descricao: "Aura mística com violeta profundo e azul arcano.",
-    icone: "◇",
-    accent: "#A855F7",
-    secondary: "#2563EB",
-    bgStart: "#090417",
-    bgMid: "#130A2A",
-    bgEnd: "#0B1028",
-    glowPrimary: "rgba(168,85,247,0.34)",
-    glowSecondary: "rgba(37,99,235,0.18)",
-  },
-  romance: {
-    nome: "Romance",
-    descricao: "Rosa, vinho e brilho suave para histórias emocionais.",
-    icone: "♡",
-    accent: "#EC4899",
-    secondary: "#BE123C",
-    bgStart: "#140711",
-    bgMid: "#251022",
-    bgEnd: "#1E0B16",
-    glowPrimary: "rgba(236,72,153,0.30)",
-    glowSecondary: "rgba(190,18,60,0.18)",
-  },
-  terror: {
-    nome: "Terror",
-    descricao: "Vermelho sombrio, clima pesado e cinematográfico.",
-    icone: "☾",
-    accent: "#EF4444",
-    secondary: "#7F1D1D",
-    bgStart: "#080305",
-    bgMid: "#160707",
-    bgEnd: "#100608",
-    glowPrimary: "rgba(239,68,68,0.30)",
-    glowSecondary: "rgba(127,29,29,0.22)",
-  },
-  acao: {
-    nome: "Ação",
-    descricao: "Laranja e vermelho intenso, com energia de batalha.",
-    icone: "⚡",
-    accent: "#F97316",
-    secondary: "#DC2626",
-    bgStart: "#100604",
-    bgMid: "#1E0B08",
-    bgEnd: "#17101B",
-    glowPrimary: "rgba(249,115,22,0.34)",
-    glowSecondary: "rgba(220,38,38,0.18)",
-  },
-  scifi: {
-    nome: "Sci-fi",
-    descricao: "Azul e ciano neon para mundos tecnológicos.",
-    icone: "◌",
-    accent: "#06B6D4",
-    secondary: "#2563EB",
-    bgStart: "#031017",
-    bgMid: "#071C2D",
-    bgEnd: "#071321",
-    glowPrimary: "rgba(6,182,212,0.30)",
-    glowSecondary: "rgba(37,99,235,0.20)",
-  },
-  drama: {
-    nome: "Drama",
-    descricao: "Roxo dramático e profundo para histórias intensas.",
-    icone: "✧",
-    accent: "#C084FC",
-    secondary: "#581C87",
-    bgStart: "#0E0718",
-    bgMid: "#160A24",
-    bgEnd: "#17101F",
-    glowPrimary: "rgba(192,132,252,0.30)",
-    glowSecondary: "rgba(88,28,135,0.22)",
-  },
-  aventura: {
-    nome: "Aventura",
-    descricao: "Deserto cinematográfico, ruínas e jornadas de exploração.",
-    icone: "⌖",
-    accent: "#EAB308",
-    secondary: "#92400E",
-    bgStart: "#0D0803",
-    bgMid: "#171006",
-    bgEnd: "#1F1308",
-    glowPrimary: "rgba(234,179,8,0.18)",
-    glowSecondary: "rgba(146,64,14,0.20)",
-    titleTo: "#FDE68A",
-    activeSurface: "rgba(234,179,8,0.15)",
-    secondarySurface: "rgba(146,64,14,0.20)",
-    secondaryButtonText: "#FDE68A",
-  },
-  misterio: {
-    nome: "Mistério",
-    descricao: "Azul investigativo e índigo para segredos e pistas ocultas.",
-    icone: "?",
-    accent: "#818CF8",
-    secondary: "#312E81",
-    bgStart: "#060817",
-    bgMid: "#0B1026",
-    bgEnd: "#10112A",
-    glowPrimary: "rgba(129,140,248,0.26)",
-    glowSecondary: "rgba(49,46,129,0.24)",
-    titleTo: "#C7D2FE",
-    activeSurface: "rgba(129,140,248,0.16)",
-    secondarySurface: "rgba(49,46,129,0.22)",
-    secondaryButtonText: "#C7D2FE",
-  },
-  suspense: {
-    nome: "Suspense",
-    descricao: "Verde ácido escuro e oliva para tensão e alerta constante.",
-    icone: "!",
-    accent: "#A3E635",
-    secondary: "#365314",
-    bgStart: "#070B05",
-    bgMid: "#101607",
-    bgEnd: "#11140A",
-    glowPrimary: "rgba(163,230,53,0.18)",
-    glowSecondary: "rgba(54,83,20,0.24)",
-    titleTo: "#D9F99D",
-    activeSurface: "rgba(163,230,53,0.14)",
-    secondarySurface: "rgba(54,83,20,0.24)",
-    secondaryButtonText: "#D9F99D",
-  },
-  sobrenatural: {
-    nome: "Sobrenatural",
-    descricao: "Verde espectral com toque místico e misterioso.",
-    icone: "☾",
-    accent: "#34D399",
-    secondary: "#065F46",
-    bgStart: "#06120D",
-    bgMid: "#0B1D1C",
-    bgEnd: "#10171A",
-    glowPrimary: "rgba(52,211,153,0.24)",
-    glowSecondary: "rgba(6,95,70,0.22)",
-  },
-  historico: {
-    nome: "Histórico",
-    descricao: "Marrom antigo e cobre escuro para épocas, arquivos e memória.",
-    icone: "⌛",
-    accent: "#D97706",
-    secondary: "#78350F",
-    bgStart: "#110805",
-    bgMid: "#1A0F08",
-    bgEnd: "#17100A",
-    glowPrimary: "rgba(217,119,6,0.22)",
-    glowSecondary: "rgba(120,53,15,0.25)",
-    titleTo: "#FDBA74",
-    activeSurface: "rgba(217,119,6,0.16)",
-    secondarySurface: "rgba(120,53,15,0.22)",
-    secondaryButtonText: "#FED7AA",
-  },
-  biografia: {
-    nome: "Biografia",
-    descricao: "Azul aço e grafite para perfis, memória real e documento.",
-    icone: "B",
-    accent: "#60A5FA",
-    secondary: "#334155",
-    bgStart: "#06101F",
-    bgMid: "#0B1728",
-    bgEnd: "#101827",
-    glowPrimary: "rgba(96,165,250,0.22)",
-    glowSecondary: "rgba(51,65,85,0.28)",
-    titleTo: "#BFDBFE",
-    activeSurface: "rgba(96,165,250,0.15)",
-    secondarySurface: "rgba(51,65,85,0.24)",
-    secondaryButtonText: "#BFDBFE",
-  },
-  comedia: {
-    nome: "Comédia",
-    descricao: "Amarelo vibrante e coral para histórias leves e divertidas.",
-    icone: "☀",
-    accent: "#FACC15",
-    secondary: "#FB7185",
-    bgStart: "#110D04",
-    bgMid: "#1D1608",
-    bgEnd: "#1A1014",
-    glowPrimary: "rgba(250,204,21,0.24)",
-    glowSecondary: "rgba(251,113,133,0.18)",
-  },
-  pixel: {
-    nome: "Pixel",
-    descricao: "Interface retrô em estilo arcade/RPG, com bordas secas e grid pixelado.",
-    icone: "▣",
-    accent: "#22C55E",
-    secondary: "#38BDF8",
-    bgStart: "#030703",
-    bgMid: "#061106",
-    bgEnd: "#020402",
-    glowPrimary: "rgba(34,197,94,0.16)",
-    glowSecondary: "rgba(56,189,248,0.12)",
-    textPrimary: "#ECFDF5",
-    textSecondary: "#BBF7D0",
-    surface: "#07120A",
-    surfaceStrong: "#030803",
-    borderSoft: "rgba(34,197,94,0.34)",
-    inputBg: "#020602",
-    inputText: "#ECFDF5",
-    titleFrom: "#ECFDF5",
-    titleMid: "#BBF7D0",
-    titleTo: "#86EFAC",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(34,197,94,0.18)",
-    secondarySurface: "rgba(56,189,248,0.12)",
-    secondaryButtonText: "#BAE6FD",
-    dangerSurface: "rgba(239,68,68,0.14)",
-    dangerButtonText: "#FCA5A5",
-  },
+type UsuarioConfiguracoes = {
+  id: string;
+  nome: string;
+  email: string;
 };
 
-const ORDEM_TEMAS_VISUAIS: TemaVisual[] = [
-  "branco",
-  "escuro",
-  "foco",
-  "original",
-  "fantasia",
-  "romance",
-  "terror",
-  "acao",
-  "scifi",
-  "drama",
-  "aventura",
-  "misterio",
-  "suspense",
-  "sobrenatural",
-  "historico",
-  "biografia",
-  "comedia",
-  "pixel",
-];
+type IconName =
+  | "user"
+  | "mail"
+  | "lock"
+  | "shield"
+  | "bell"
+  | "book"
+  | "bookmark"
+  | "clock"
+  | "star"
+  | "trophy"
+  | "palette"
+  | "moon"
+  | "download"
+  | "copy"
+  | "database"
+  | "help"
+  | "file"
+  | "logout"
+  | "admin"
+  | "chart"
+  | "pen"
+  | "comment"
+  | "settings"
+  | "search"
+  | "arrowLeft"
+  | "chevronRight"
+  | "check"
+  | "layers"
+  | "spark";
+
+const CONFIG_STORAGE_KEY = "historietas-configuracoes-conta";
+const THEME_STORAGE_KEY = "historietas-tema-visual";
 
 const CHAVES_RESUMO = [
   "historietas-obras",
@@ -476,6 +121,367 @@ const resumoPadrao: ResumoLocal = {
   seguindoAutores: 0,
 };
 
+const TEMAS_VISUAIS: Record<
+  TemaVisual,
+  {
+    nome: string;
+    descricao: string;
+    accent: string;
+    secondary: string;
+    bgStart: string;
+    bgMid: string;
+    bgEnd: string;
+    glowPrimary: string;
+    glowSecondary: string;
+    textPrimary?: string;
+    textSecondary?: string;
+    surface?: string;
+    surfaceStrong?: string;
+    borderSoft?: string;
+    inputBg?: string;
+    inputText?: string;
+    titleFrom?: string;
+    titleMid?: string;
+    titleTo?: string;
+    activeSurface?: string;
+    secondarySurface?: string;
+    secondaryButtonText?: string;
+    dangerSurface?: string;
+    dangerButtonText?: string;
+  }
+> = {
+  branco: {
+    nome: "Branco",
+    descricao: "Modo claro limpo.",
+    accent: "#1A73E8",
+    secondary: "#01875F",
+    bgStart: "#FFFFFF",
+    bgMid: "#FFFFFF",
+    bgEnd: "#F8F9FA",
+    glowPrimary: "rgba(26,115,232,0.020)",
+    glowSecondary: "rgba(1,135,95,0.018)",
+    textPrimary: "#202124",
+    textSecondary: "#5F6368",
+    surface: "#FFFFFF",
+    surfaceStrong: "#FFFFFF",
+    borderSoft: "#DADCE0",
+    inputBg: "#FFFFFF",
+    inputText: "#202124",
+    titleFrom: "#202124",
+    titleMid: "#202124",
+    titleTo: "#202124",
+    activeSurface: "rgba(26,115,232,0.10)",
+    secondarySurface: "rgba(1,135,95,0.10)",
+    secondaryButtonText: "#188038",
+    dangerSurface: "rgba(217,48,37,0.10)",
+    dangerButtonText: "#B3261E",
+  },
+  escuro: {
+    nome: "Escuro",
+    descricao: "Fundo preto e leitura confortável.",
+    accent: "#F97316",
+    secondary: "#7C3AED",
+    bgStart: "#000000",
+    bgMid: "#000000",
+    bgEnd: "#000000",
+    glowPrimary: "rgba(249,115,22,0.030)",
+    glowSecondary: "rgba(124,58,237,0.030)",
+    textPrimary: "#FFFFFF",
+    textSecondary: "#B3B3B3",
+    surface: "#101010",
+    surfaceStrong: "#000000",
+    borderSoft: "rgba(255,255,255,0.11)",
+    inputBg: "#0B0B0B",
+    inputText: "#FFFFFF",
+    titleFrom: "#FFFFFF",
+    titleMid: "#FFFFFF",
+    titleTo: "#FFFFFF",
+    activeSurface: "rgba(124,58,237,0.14)",
+    secondarySurface: "rgba(124,58,237,0.12)",
+    secondaryButtonText: "#FFFFFF",
+    dangerSurface: "rgba(239,68,68,0.12)",
+    dangerButtonText: "#FCA5A5",
+  },
+  foco: {
+    nome: "Foco",
+    descricao: "Escuro suave para concentração.",
+    accent: "#A78BFA",
+    secondary: "#27272A",
+    bgStart: "#050506",
+    bgMid: "#030305",
+    bgEnd: "#020203",
+    glowPrimary: "rgba(124,58,237,0.08)",
+    glowSecondary: "rgba(255,255,255,0.045)",
+    textPrimary: "#F4F4F5",
+    textSecondary: "#D4D4D8",
+    surface: "rgba(9,9,11,0.88)",
+    surfaceStrong: "rgba(3,3,6,0.96)",
+    borderSoft: "rgba(255,255,255,0.065)",
+    inputBg: "#09090B",
+    inputText: "#F4F4F5",
+    titleFrom: "#FFFFFF",
+    titleMid: "#E4E4E7",
+    titleTo: "#A78BFA",
+  },
+  original: {
+    nome: "Original",
+    descricao: "Roxo e laranja padrão do Historietas.",
+    accent: "#F97316",
+    secondary: "#7C3AED",
+    bgStart: "#070212",
+    bgMid: "#070212",
+    bgEnd: "#070212",
+    glowPrimary: "transparent",
+    glowSecondary: "transparent",
+  },
+  fantasia: {
+    nome: "Fantasia",
+    descricao: "Violeta profundo e azul.",
+    accent: "#A855F7",
+    secondary: "#2563EB",
+    bgStart: "#090417",
+    bgMid: "#130A2A",
+    bgEnd: "#0B1028",
+    glowPrimary: "rgba(168,85,247,0.34)",
+    glowSecondary: "rgba(37,99,235,0.18)",
+  },
+  romance: {
+    nome: "Romance",
+    descricao: "Rosa e vinho suave.",
+    accent: "#EC4899",
+    secondary: "#BE123C",
+    bgStart: "#140711",
+    bgMid: "#251022",
+    bgEnd: "#1E0B16",
+    glowPrimary: "rgba(236,72,153,0.30)",
+    glowSecondary: "rgba(190,18,60,0.18)",
+  },
+  terror: {
+    nome: "Terror",
+    descricao: "Vermelho sombrio.",
+    accent: "#EF4444",
+    secondary: "#7F1D1D",
+    bgStart: "#080305",
+    bgMid: "#160707",
+    bgEnd: "#100608",
+    glowPrimary: "rgba(239,68,68,0.30)",
+    glowSecondary: "rgba(127,29,29,0.22)",
+  },
+  acao: {
+    nome: "Ação",
+    descricao: "Laranja e vermelho intenso.",
+    accent: "#F97316",
+    secondary: "#DC2626",
+    bgStart: "#100604",
+    bgMid: "#1E0B08",
+    bgEnd: "#17101B",
+    glowPrimary: "rgba(249,115,22,0.34)",
+    glowSecondary: "rgba(220,38,38,0.18)",
+  },
+  scifi: {
+    nome: "Sci-fi",
+    descricao: "Azul e ciano neon.",
+    accent: "#06B6D4",
+    secondary: "#2563EB",
+    bgStart: "#031017",
+    bgMid: "#071C2D",
+    bgEnd: "#071321",
+    glowPrimary: "rgba(6,182,212,0.30)",
+    glowSecondary: "rgba(37,99,235,0.20)",
+  },
+  drama: {
+    nome: "Drama",
+    descricao: "Roxo dramático.",
+    accent: "#C084FC",
+    secondary: "#581C87",
+    bgStart: "#0E0718",
+    bgMid: "#160A24",
+    bgEnd: "#17101F",
+    glowPrimary: "rgba(192,132,252,0.30)",
+    glowSecondary: "rgba(88,28,135,0.22)",
+  },
+  aventura: {
+    nome: "Aventura",
+    descricao: "Dourado e cobre.",
+    accent: "#EAB308",
+    secondary: "#92400E",
+    bgStart: "#0D0803",
+    bgMid: "#171006",
+    bgEnd: "#1F1308",
+    glowPrimary: "rgba(234,179,8,0.18)",
+    glowSecondary: "rgba(146,64,14,0.20)",
+    titleTo: "#FDE68A",
+    activeSurface: "rgba(234,179,8,0.15)",
+    secondarySurface: "rgba(146,64,14,0.20)",
+    secondaryButtonText: "#FDE68A",
+  },
+  misterio: {
+    nome: "Mistério",
+    descricao: "Azul investigativo.",
+    accent: "#818CF8",
+    secondary: "#312E81",
+    bgStart: "#060817",
+    bgMid: "#0B1026",
+    bgEnd: "#10112A",
+    glowPrimary: "rgba(129,140,248,0.26)",
+    glowSecondary: "rgba(49,46,129,0.24)",
+    titleTo: "#C7D2FE",
+    activeSurface: "rgba(129,140,248,0.16)",
+    secondarySurface: "rgba(49,46,129,0.22)",
+    secondaryButtonText: "#C7D2FE",
+  },
+  suspense: {
+    nome: "Suspense",
+    descricao: "Verde ácido escuro.",
+    accent: "#A3E635",
+    secondary: "#365314",
+    bgStart: "#070B05",
+    bgMid: "#101607",
+    bgEnd: "#11140A",
+    glowPrimary: "rgba(163,230,53,0.18)",
+    glowSecondary: "rgba(54,83,20,0.24)",
+    titleTo: "#D9F99D",
+    activeSurface: "rgba(163,230,53,0.14)",
+    secondarySurface: "rgba(54,83,20,0.24)",
+    secondaryButtonText: "#D9F99D",
+  },
+  sobrenatural: {
+    nome: "Sobrenatural",
+    descricao: "Verde espectral.",
+    accent: "#34D399",
+    secondary: "#065F46",
+    bgStart: "#06120D",
+    bgMid: "#0B1D1C",
+    bgEnd: "#10171A",
+    glowPrimary: "rgba(52,211,153,0.24)",
+    glowSecondary: "rgba(6,95,70,0.22)",
+  },
+  historico: {
+    nome: "Histórico",
+    descricao: "Marrom antigo e cobre.",
+    accent: "#D97706",
+    secondary: "#78350F",
+    bgStart: "#110805",
+    bgMid: "#1A0F08",
+    bgEnd: "#17100A",
+    glowPrimary: "rgba(217,119,6,0.22)",
+    glowSecondary: "rgba(120,53,15,0.25)",
+    titleTo: "#FDBA74",
+    activeSurface: "rgba(217,119,6,0.16)",
+    secondarySurface: "rgba(120,53,15,0.22)",
+    secondaryButtonText: "#FED7AA",
+  },
+  biografia: {
+    nome: "Biografia",
+    descricao: "Azul aço e grafite.",
+    accent: "#60A5FA",
+    secondary: "#334155",
+    bgStart: "#06101F",
+    bgMid: "#0B1728",
+    bgEnd: "#101827",
+    glowPrimary: "rgba(96,165,250,0.22)",
+    glowSecondary: "rgba(51,65,85,0.28)",
+    titleTo: "#BFDBFE",
+    activeSurface: "rgba(96,165,250,0.15)",
+    secondarySurface: "rgba(51,65,85,0.24)",
+    secondaryButtonText: "#BFDBFE",
+  },
+  comedia: {
+    nome: "Comédia",
+    descricao: "Amarelo e coral.",
+    accent: "#FACC15",
+    secondary: "#FB7185",
+    bgStart: "#110D04",
+    bgMid: "#1D1608",
+    bgEnd: "#1A1014",
+    glowPrimary: "rgba(250,204,21,0.24)",
+    glowSecondary: "rgba(251,113,133,0.18)",
+  },
+  pixel: {
+    nome: "Pixel",
+    descricao: "Verde arcade e azul.",
+    accent: "#22C55E",
+    secondary: "#38BDF8",
+    bgStart: "#030703",
+    bgMid: "#061106",
+    bgEnd: "#020402",
+    glowPrimary: "rgba(34,197,94,0.16)",
+    glowSecondary: "rgba(56,189,248,0.12)",
+    textPrimary: "#ECFDF5",
+    textSecondary: "#BBF7D0",
+    surface: "#07120A",
+    surfaceStrong: "#030803",
+    borderSoft: "rgba(34,197,94,0.34)",
+    inputBg: "#020602",
+    inputText: "#ECFDF5",
+    titleFrom: "#ECFDF5",
+    titleMid: "#BBF7D0",
+    titleTo: "#86EFAC",
+    activeSurface: "rgba(34,197,94,0.18)",
+    secondarySurface: "rgba(56,189,248,0.12)",
+    secondaryButtonText: "#BAE6FD",
+    dangerSurface: "rgba(239,68,68,0.14)",
+    dangerButtonText: "#FCA5A5",
+  },
+};
+
+const ORDEM_TEMAS_VISUAIS: TemaVisual[] = [
+  "branco",
+  "escuro",
+  "foco",
+  "original",
+  "fantasia",
+  "romance",
+  "terror",
+  "acao",
+  "scifi",
+  "drama",
+  "aventura",
+  "misterio",
+  "suspense",
+  "sobrenatural",
+  "historico",
+  "biografia",
+  "comedia",
+  "pixel",
+];
+
+function criarStorageKeyUsuarioConfiguracoes(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+}
+
+function lerStorageUsuarioConfiguracoes(chave: string, userId = "") {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(criarStorageKeyUsuarioConfiguracoes(chave, userId));
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioConfiguracoes(
+  chave: string,
+  userId: string,
+  valor: unknown,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      criarStorageKeyUsuarioConfiguracoes(chave, userId),
+      JSON.stringify(valor),
+    );
+  } catch {
+    // localStorage é fallback; as configurações continuam em memória.
+  }
+}
 
 function obterTemaVisualSeguro(valor: unknown): TemaVisual {
   if (typeof valor === "string" && valor in TEMAS_VISUAIS) {
@@ -534,26 +540,22 @@ function aplicarTemaVisual(temaVisual: TemaVisual) {
   raiz.style.setProperty("--historietas-glow-secondary", tema.glowSecondary);
   raiz.style.setProperty("--historietas-text-primary", tema.textPrimary || "#FFFFFF");
   raiz.style.setProperty("--historietas-text-secondary", tema.textSecondary || "#D4D4D8");
-  raiz.style.setProperty("--historietas-surface", tema.surface || "rgba(4,0,10,0.72)");
-  raiz.style.setProperty("--historietas-surface-strong", tema.surfaceStrong || "#04000A");
-  raiz.style.setProperty("--historietas-border-soft", tema.borderSoft || "rgba(255,255,255,0.08)");
-  raiz.style.setProperty("--historietas-input-bg", tema.inputBg || "#04000A");
+  raiz.style.setProperty("--historietas-surface", tema.surface || "rgba(255,255,255,0.055)");
+  raiz.style.setProperty("--historietas-surface-strong", tema.surfaceStrong || "#0B0B0F");
+  raiz.style.setProperty("--historietas-border-soft", tema.borderSoft || "rgba(255,255,255,0.10)");
+  raiz.style.setProperty("--historietas-input-bg", tema.inputBg || "#101014");
   raiz.style.setProperty("--historietas-input-text", tema.inputText || "#FFFFFF");
   raiz.style.setProperty("--historietas-title-from", tema.titleFrom || "#FFFFFF");
   raiz.style.setProperty("--historietas-title-mid", tema.titleMid || "#F5F3FF");
   raiz.style.setProperty("--historietas-title-to", tema.titleTo || "#FDBA74");
-  raiz.style.setProperty("--historietas-hero-shadow", tema.heroShadow || "none");
-  raiz.style.setProperty("--historietas-card-shadow", tema.cardShadow || "none");
-  raiz.style.setProperty("--historietas-logo-shadow", tema.logoShadow || "none");
-  raiz.style.setProperty("--historietas-active-surface", tema.activeSurface || "rgba(59,7,100,0.54)");
+  raiz.style.setProperty("--historietas-active-surface", tema.activeSurface || "rgba(124,58,237,0.18)");
   raiz.style.setProperty("--historietas-secondary-surface", tema.secondarySurface || "rgba(255,255,255,0.06)");
   raiz.style.setProperty("--historietas-secondary-button-text", tema.secondaryButtonText || "#DDD6FE");
-  raiz.style.setProperty("--historietas-danger-surface", tema.dangerSurface || "rgba(239,68,68,0.10)");
+  raiz.style.setProperty("--historietas-danger-surface", tema.dangerSurface || "rgba(239,68,68,0.12)");
   raiz.style.setProperty("--historietas-danger-button-text", tema.dangerButtonText || "#FCA5A5");
 
   raiz.style.setProperty("--historietas-bottom-nav-bg", isBranco ? "#FFFFFF" : "#04000A");
   raiz.style.setProperty("--historietas-bottom-nav-border", isBranco ? "#DADCE0" : "rgba(59,7,100,0.52)");
-  raiz.style.setProperty("--historietas-bottom-nav-shadow", "none");
   raiz.style.setProperty("--historietas-bottom-nav-text", isBranco ? "#5F6368" : "#9980D8");
   raiz.style.setProperty("--historietas-bottom-nav-hover-bg", isBranco ? "#F1F3F4" : "rgba(59,7,100,0.20)");
   raiz.style.setProperty("--historietas-bottom-nav-hover-text", isBranco ? "#202124" : "#FFFFFF");
@@ -562,10 +564,6 @@ function aplicarTemaVisual(temaVisual: TemaVisual) {
   raiz.style.setProperty("--historietas-bottom-nav-icon-border", isBranco ? "#E0E3E7" : "rgba(76,29,149,0.34)");
   raiz.style.setProperty("--historietas-bottom-nav-main-bg", isBranco ? tema.accent : "#08030F");
   raiz.style.setProperty("--historietas-bottom-nav-main-border", isBranco ? tema.accent : "rgba(255,255,255,0.10)");
-  raiz.style.setProperty("--historietas-bottom-nav-main-shadow", "none");
-  raiz.style.setProperty("--historietas-bottom-nav-main-icon-bg", isBranco ? "rgba(255,255,255,0.16)" : "#04000A");
-  raiz.style.setProperty("--historietas-bottom-nav-main-icon-border", isBranco ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.10)");
-  raiz.style.setProperty("--historietas-bottom-nav-shine", "none");
 
   raiz.dataset.historietasTemaVisual = temaVisual;
   document.body.dataset.historietasTemaVisual = temaVisual;
@@ -634,7 +632,7 @@ function carregarPreferencias(userId = ""): PreferenciasConta {
           ? preferencias.reduzirEfeitos
           : false,
       temaVisual: obterTemaVisualSeguro(
-        preferencias.temaVisual || carregarTemaVisualSalvo(userId)
+        preferencias.temaVisual || carregarTemaVisualSalvo(userId),
       ),
     };
   } catch {
@@ -679,6 +677,7 @@ async function copiarTexto(texto: string) {
   }
 
   const campoTemporario = document.createElement("textarea");
+
   campoTemporario.value = texto;
   campoTemporario.setAttribute("readonly", "true");
   campoTemporario.style.position = "fixed";
@@ -697,19 +696,396 @@ function criarLoginHrefConfiguracoes() {
   return `/login?${params.toString()}`;
 }
 
+function pegarTexto(valor: unknown, fallback = "") {
+  return typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
+}
+
+function obterIniciais(nome: string, email: string) {
+  const base = nome.trim() || email.trim() || "Historietas";
+  const partes = base
+    .replace(/@.*/, "")
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (partes.length >= 2) {
+    return `${partes[0][0]}${partes[1][0]}`.toUpperCase();
+  }
+
+  return (partes[0] || "H").slice(0, 2).toUpperCase();
+}
+
+function SvgIcon({
+  name,
+  size = 24,
+  strokeWidth = 2,
+}: {
+  name: IconName;
+  size?: number;
+  strokeWidth?: number;
+}) {
+  const common = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  const paths: Record<IconName, ReactNode> = {
+    user: (
+      <>
+        <path {...common} d="M20 21a8 8 0 0 0-16 0" />
+        <circle {...common} cx="12" cy="7" r="4" />
+      </>
+    ),
+    mail: (
+      <>
+        <rect {...common} x="3" y="5" width="18" height="14" rx="2" />
+        <path {...common} d="m3 7 9 6 9-6" />
+      </>
+    ),
+    lock: (
+      <>
+        <rect {...common} x="5" y="10" width="14" height="10" rx="2" />
+        <path {...common} d="M8 10V7a4 4 0 0 1 8 0v3" />
+      </>
+    ),
+    shield: <path {...common} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />,
+    bell: (
+      <>
+        <path {...common} d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+        <path {...common} d="M10 21h4" />
+      </>
+    ),
+    book: (
+      <>
+        <path {...common} d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path {...common} d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" />
+      </>
+    ),
+    bookmark: <path {...common} d="M6 3h12v18l-6-4-6 4V3Z" />,
+    clock: (
+      <>
+        <circle {...common} cx="12" cy="12" r="9" />
+        <path {...common} d="M12 7v5l3 3" />
+      </>
+    ),
+    star: (
+      <path
+        {...common}
+        d="m12 3 2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.9-5.4 2.9 1-6-4.3-4.2 6-.9L12 3Z"
+      />
+    ),
+    trophy: (
+      <>
+        <path {...common} d="M8 21h8" />
+        <path {...common} d="M12 17v4" />
+        <path {...common} d="M7 4h10v6a5 5 0 0 1-10 0V4Z" />
+        <path {...common} d="M5 5H3v3a3 3 0 0 0 3 3h1" />
+        <path {...common} d="M19 5h2v3a3 3 0 0 1-3 3h-1" />
+      </>
+    ),
+    palette: (
+      <>
+        <circle {...common} cx="13.5" cy="6.5" r=".5" />
+        <circle {...common} cx="17.5" cy="10.5" r=".5" />
+        <circle {...common} cx="8.5" cy="7.5" r=".5" />
+        <circle {...common} cx="6.5" cy="12.5" r=".5" />
+        <path
+          {...common}
+          d="M12 3a9 9 0 0 0 0 18h1.4a2.6 2.6 0 0 0 2.2-4c-.5-.8.1-1.9 1-1.9H18a6 6 0 0 0 0-12h-6Z"
+        />
+      </>
+    ),
+    moon: <path {...common} d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />,
+    download: (
+      <>
+        <path {...common} d="M12 3v12" />
+        <path {...common} d="m7 10 5 5 5-5" />
+        <path {...common} d="M5 21h14" />
+      </>
+    ),
+    copy: (
+      <>
+        <rect {...common} x="9" y="9" width="12" height="12" rx="2" />
+        <rect {...common} x="3" y="3" width="12" height="12" rx="2" />
+      </>
+    ),
+    database: (
+      <>
+        <ellipse {...common} cx="12" cy="5" rx="8" ry="3" />
+        <path {...common} d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
+        <path {...common} d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
+      </>
+    ),
+    help: (
+      <>
+        <circle {...common} cx="12" cy="12" r="9" />
+        <path {...common} d="M9.5 9a2.7 2.7 0 0 1 5.1 1.3c0 2-2.6 2.2-2.6 4" />
+        <path {...common} d="M12 18h.01" />
+      </>
+    ),
+    file: (
+      <>
+        <path {...common} d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+        <path {...common} d="M14 2v6h6" />
+      </>
+    ),
+    logout: (
+      <>
+        <path {...common} d="M10 17l5-5-5-5" />
+        <path {...common} d="M15 12H3" />
+        <path {...common} d="M21 3v18" />
+      </>
+    ),
+    admin: (
+      <>
+        <path {...common} d="M12 3 3 8l9 5 9-5-9-5Z" />
+        <path {...common} d="m3 13 9 5 9-5" />
+      </>
+    ),
+    chart: (
+      <>
+        <path {...common} d="M4 19V5" />
+        <path {...common} d="M4 19h16" />
+        <path {...common} d="M8 16v-5" />
+        <path {...common} d="M12 16V8" />
+        <path {...common} d="M16 16v-3" />
+      </>
+    ),
+    pen: (
+      <>
+        <path {...common} d="M12 20h9" />
+        <path {...common} d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </>
+    ),
+    comment: (
+      <>
+        <path {...common} d="M21 12a8 8 0 0 1-8 8H7l-4 3v-6a8 8 0 1 1 18-5Z" />
+      </>
+    ),
+    settings: (
+      <>
+        <circle {...common} cx="12" cy="12" r="3" />
+        <path
+          {...common}
+          d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 3-.2-.1a1.7 1.7 0 0 0-2-.2 1.7 1.7 0 0 0-1 1.5V21h-3.4v-.3a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-2 .2l-.2.1-2-3 .1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.4-1H3v-4h.2a1.7 1.7 0 0 0 1.4-1 1.7 1.7 0 0 0-.3-1.9L4.2 7l2-3 .2.1a1.7 1.7 0 0 0 2 .2 1.7 1.7 0 0 0 1-1.5V2h3.4v.3a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 2-.2l.2-.1 2 3-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.4 1h.2v4h-.2a1.7 1.7 0 0 0-1.4 1Z"
+        />
+      </>
+    ),
+    search: (
+      <>
+        <circle {...common} cx="11" cy="11" r="7" />
+        <path {...common} d="m20 20-3.5-3.5" />
+      </>
+    ),
+    arrowLeft: (
+      <>
+        <path {...common} d="M19 12H5" />
+        <path {...common} d="m12 19-7-7 7-7" />
+      </>
+    ),
+    chevronRight: <path {...common} d="m9 18 6-6-6-6" />,
+    check: (
+      <>
+        <circle {...common} cx="12" cy="12" r="9" />
+        <path {...common} d="m8 12 2.6 2.6L16 9" />
+      </>
+    ),
+    layers: (
+      <>
+        <path {...common} d="m12 2 9 5-9 5-9-5 9-5Z" />
+        <path {...common} d="m3 12 9 5 9-5" />
+        <path {...common} d="m3 17 9 5 9-5" />
+      </>
+    ),
+    spark: (
+      <>
+        <path {...common} d="M12 2v5" />
+        <path {...common} d="M12 17v5" />
+        <path {...common} d="M4.9 4.9 8.4 8.4" />
+        <path {...common} d="m15.6 15.6 3.5 3.5" />
+        <path {...common} d="M2 12h5" />
+        <path {...common} d="M17 12h5" />
+        <path {...common} d="m4.9 19.1 3.5-3.5" />
+        <path {...common} d="m15.6 8.4 3.5-3.5" />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {paths[name]}
+    </svg>
+  );
+}
+
+function ValorLinha({ children, danger = false }: { children: ReactNode; danger?: boolean }) {
+  return (
+    <span style={danger ? rowValueDangerStyle : rowValueStyle}>
+      {children}
+    </span>
+  );
+}
+
+function SectionTitle({ children }: { children: ReactNode }) {
+  return <h2 style={sectionTitleStyle}>{children}</h2>;
+}
+
+function SettingsSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section style={sectionStyle}>
+      <SectionTitle>{title}</SectionTitle>
+      <div style={listCardStyle}>{children}</div>
+    </section>
+  );
+}
+
+function SettingsRow({
+  icon,
+  title,
+  subtitle,
+  right,
+  href,
+  onClick,
+  danger = false,
+  hideChevron = false,
+}: {
+  icon: IconName;
+  title: string;
+  subtitle?: string;
+  right?: ReactNode;
+  href?: string;
+  onClick?: () => void;
+  danger?: boolean;
+  hideChevron?: boolean;
+}) {
+  const content = (
+    <>
+      <span style={rowIconStyle}>
+        <SvgIcon name={icon} size={23} strokeWidth={2.15} />
+      </span>
+
+      <span style={rowTextBoxStyle}>
+        <span style={danger ? rowTitleDangerStyle : rowTitleStyle}>{title}</span>
+        {subtitle ? <span style={rowSubtitleStyle}>{subtitle}</span> : null}
+      </span>
+
+      {right ? <span style={rowRightStyle}>{right}</span> : null}
+
+      {!hideChevron ? (
+        <span style={rowChevronStyle}>
+          <SvgIcon name="chevronRight" size={22} strokeWidth={2.6} />
+        </span>
+      ) : null}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} style={rowLinkStyle}>
+        {content}
+      </Link>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} style={rowButtonStyle}>
+        {content}
+      </button>
+    );
+  }
+
+  return <div style={rowStaticStyle}>{content}</div>;
+}
+
+function Toggle({
+  checked,
+  onChange,
+  ariaLabel,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  ariaLabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      aria-label={ariaLabel}
+      aria-pressed={checked}
+      style={checked ? toggleOnStyle : toggleOffStyle}
+    >
+      <span style={checked ? toggleKnobOnStyle : toggleKnobOffStyle} />
+    </button>
+  );
+}
+
+function SettingsInput({
+  icon,
+  label,
+  value,
+  placeholder,
+  type = "text",
+  onChange,
+}: {
+  icon: IconName;
+  label: string;
+  value: string;
+  placeholder: string;
+  type?: string;
+  onChange: (valor: string) => void;
+}) {
+  return (
+    <label style={inputRowStyle}>
+      <span style={rowIconStyle}>
+        <SvgIcon name={icon} size={23} strokeWidth={2.15} />
+      </span>
+
+      <span style={inputTextBoxStyle}>
+        <span style={inputLabelStyle}>{label}</span>
+        <input
+          className="configuracoes-input"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          type={type}
+          style={inputStyle}
+        />
+      </span>
+    </label>
+  );
+}
+
 export default function ConfiguracoesPage() {
   const router = useRouter();
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const [usuario, setUsuario] = useState<UsuarioConfiguracoes | null>(null);
   const [preferencias, setPreferencias] =
     useState<PreferenciasConta>(preferenciasPadrao);
   const [resumo, setResumo] = useState<ResumoLocal>(resumoPadrao);
   const [mensagem, setMensagem] = useState("");
-  const [resumoAtualizadoEm, setResumoAtualizadoEm] = useState("");
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [mostrarTemas, setMostrarTemas] = useState(false);
   const [adminLiberado, setAdminLiberado] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
+
+  const usuarioIdLogado = usuario?.id || "";
+  const temaAtual = TEMAS_VISUAIS[preferencias.temaVisual];
 
   useEffect(() => {
     let cancelado = false;
@@ -723,12 +1099,21 @@ export default function ConfiguracoesPage() {
         }
 
         if (error || !data.user) {
-          setUsuarioIdLogado("");
           router.replace(criarLoginHrefConfiguracoes());
           return;
         }
 
-        setUsuarioIdLogado(data.user.id);
+        const nome =
+          pegarTexto(data.user.user_metadata?.nome) ||
+          pegarTexto(data.user.user_metadata?.name) ||
+          pegarTexto(data.user.email) ||
+          "Usuário";
+
+        setUsuario({
+          id: data.user.id,
+          nome,
+          email: data.user.email || "",
+        });
         setVerificandoAcesso(false);
       } catch {
         if (!cancelado) {
@@ -745,47 +1130,20 @@ export default function ConfiguracoesPage() {
   }, [router]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 900px)");
-
-    function atualizarModoDesktop() {
-      setIsDesktop(mediaQuery.matches);
-    }
-
-    atualizarModoDesktop();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (verificandoAcesso) {
+    if (verificandoAcesso || !usuarioIdLogado) {
       return;
     }
 
-    const carregarPreferenciasTimer = window.setTimeout(() => {
-      const preferenciasCarregadas = carregarPreferencias(usuarioIdLogado);
+    const preferenciasCarregadas = carregarPreferencias(usuarioIdLogado);
 
-      setPreferencias(preferenciasCarregadas);
-      aplicarTemaVisual(preferenciasCarregadas.temaVisual);
-      setResumo(criarResumoLocal(usuarioIdLogado));
-      setResumoAtualizadoEm(new Date().toLocaleTimeString("pt-BR"));
-    }, 0);
-
-    return () => {
-      window.clearTimeout(carregarPreferenciasTimer);
-    };
-  }, [verificandoAcesso, usuarioIdLogado]);
+    setPreferencias((preferenciasAtuais) => ({
+      ...preferenciasCarregadas,
+      nomeExibicao: preferenciasCarregadas.nomeExibicao || usuario?.nome || "",
+      emailContato: preferenciasCarregadas.emailContato || usuario?.email || "",
+    }));
+    aplicarTemaVisual(preferenciasCarregadas.temaVisual);
+    setResumo(criarResumoLocal(usuarioIdLogado));
+  }, [verificandoAcesso, usuarioIdLogado, usuario?.email, usuario?.nome]);
 
   useEffect(() => {
     if (verificandoAcesso) {
@@ -808,7 +1166,7 @@ export default function ConfiguracoesPage() {
         }
 
         const { data: adminLiberadoResposta, error } = await supabase.rpc(
-          "usuario_e_admin"
+          "usuario_e_admin",
         );
 
         if (!cancelado) {
@@ -840,9 +1198,24 @@ export default function ConfiguracoesPage() {
     };
   }, [verificandoAcesso]);
 
+  const buscaNormalizada = busca.trim().toLowerCase();
+
+  function deveMostrar(...termos: string[]) {
+    if (!buscaNormalizada) {
+      return true;
+    }
+
+    return termos.join(" ").toLowerCase().includes(buscaNormalizada);
+  }
+
+  const totalBiblioteca = useMemo(
+    () => resumo.favoritas + resumo.concluidas + resumo.seguindoObras,
+    [resumo.concluidas, resumo.favoritas, resumo.seguindoObras],
+  );
+
   function atualizarPreferencia<K extends keyof PreferenciasConta>(
     campo: K,
-    valor: PreferenciasConta[K]
+    valor: PreferenciasConta[K],
   ) {
     setPreferencias((preferenciasAtuais) => ({
       ...preferenciasAtuais,
@@ -862,24 +1235,25 @@ export default function ConfiguracoesPage() {
 
   function salvar() {
     salvarPreferencias(preferencias, usuarioIdLogado);
+    setResumo(criarResumoLocal(usuarioIdLogado));
     setMensagem("Configurações salvas.");
 
     window.setTimeout(() => {
       setMensagem("");
-    }, 2200);
+    }, 1800);
   }
 
   async function copiarBackup() {
     try {
       await copiarTexto(criarBackupLocal(usuarioIdLogado));
-      setMensagem("Dados copiados para a área de transferência.");
+      setMensagem("Dados copiados.");
     } catch {
       setMensagem("Não consegui copiar os dados agora.");
     }
 
     window.setTimeout(() => {
       setMensagem("");
-    }, 2600);
+    }, 2200);
   }
 
   function baixarBackup() {
@@ -909,16 +1283,6 @@ export default function ConfiguracoesPage() {
     }, 2200);
   }
 
-  function atualizarResumo() {
-    setResumo(criarResumoLocal(usuarioIdLogado));
-    setResumoAtualizadoEm(new Date().toLocaleTimeString("pt-BR"));
-    setMensagem("Resumo atualizado.");
-
-    window.setTimeout(() => {
-      setMensagem("");
-    }, 1600);
-  }
-
   async function sairDaConta() {
     setMensagem("Saindo da conta...");
 
@@ -935,10 +1299,7 @@ export default function ConfiguracoesPage() {
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
 
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+        <section style={containerStyle}>
           <div style={emptyAccessBoxStyle}>
             <h1 style={emptyAccessTitleStyle}>Verificando acesso...</h1>
             <p style={emptyAccessTextStyle}>Aguarde enquanto confirmo sua conta.</p>
@@ -952,225 +1313,372 @@ export default function ConfiguracoesPage() {
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
 
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+      <section style={containerStyle}>
+        <header style={headerStyle}>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            style={backButtonStyle}
+            aria-label="Voltar"
+          >
+            <SvgIcon name="arrowLeft" size={25} strokeWidth={2.4} />
+          </button>
 
-      <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
-          {isDesktop ? (
-            <Link
-              href="/notificacoes"
-              style={desktopNotificationButtonStyle}
-              aria-label={
-                notificacoesNaoLidas > 0
-                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                  : "Notificações"
-              }
-            >
-              N
-
-              {notificacoesNaoLidas > 0 ? (
-                <span style={desktopNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99
-                    ? "99+"
-                    : notificacoesNaoLidas}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
+          <h1 style={pageTitleStyle}>Configurações e atividade</h1>
         </header>
 
-        {mensagem && <span style={messageStyle}>{mensagem}</span>}
+        <label style={searchBoxStyle} htmlFor="buscar-configuracoes">
+          <SvgIcon name="search" size={23} strokeWidth={2.3} />
+          <input
+            id="buscar-configuracoes"
+            className="configuracoes-input"
+            value={busca}
+            onChange={(event) => setBusca(event.target.value)}
+            placeholder="Pesquisar"
+            style={searchInputStyle}
+          />
+        </label>
 
-        {adminLiberado && isDesktop && (
-          <section style={sectionStyle}>
-            <div style={sectionHeaderStyle}>
-              <h2 style={accentSectionTitleStyle}>Moderação</h2>
-            </div>
-
-            <div style={desktopAdminAccessCardStyle}>
-              <div style={adminAccessTextStyle}>
-                <strong style={adminAccessTitleStyle}>Área de moderação</strong>
-                <span style={adminAccessDescriptionStyle}>
-                  Acesse as denúncias da Comunidade e revise conteúdos enviados
-                  para análise.
-                </span>
-              </div>
-
-              <Link href="/admin/comunidade" style={adminAccessLinkStyle}>
-                Abrir moderação
-              </Link>
-            </div>
-          </section>
-        )}
-
-        <section style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <h2 style={accentSectionTitleStyle}>Conta</h2>
+        <section style={profileCardStyle}>
+          <div style={avatarStyle}>
+            {obterIniciais(preferencias.nomeExibicao, preferencias.emailContato)}
           </div>
 
-          <div style={isDesktop ? desktopAccountCardStyle : cardStyle}>
-            <label style={fieldStyle}>
-              <span style={labelStyle}>Nome de exibição</span>
+          <div style={profileTextStyle}>
+            <strong style={profileNameStyle}>
+              {preferencias.nomeExibicao || usuario?.nome || "Conta Historietas"}
+            </strong>
+            <span style={profileEmailStyle}>
+              {preferencias.emailContato || usuario?.email || "E-mail não informado"}
+            </span>
+          </div>
+        </section>
 
-              <input
+        {mensagem ? <span style={messageStyle}>{mensagem}</span> : null}
+
+        {deveMostrar("conta", "nome", "email", "senha", "privacidade", "salvar") ? (
+          <SettingsSection title="Sua conta">
+            {deveMostrar("nome", "exibição", "autor") ? (
+              <SettingsInput
+                icon="user"
+                label="Nome de exibição"
                 value={preferencias.nomeExibicao}
-                onChange={(event) =>
-                  atualizarPreferencia("nomeExibicao", event.target.value)
-                }
+                onChange={(valor) => atualizarPreferencia("nomeExibicao", valor)}
                 placeholder="Ex: Nome do autor"
-                style={inputStyle}
               />
-            </label>
+            ) : null}
 
-            <label style={fieldStyle}>
-              <span style={labelStyle}>E-mail de contato</span>
-
-              <input
+            {deveMostrar("email", "contato") ? (
+              <SettingsInput
+                icon="mail"
+                label="E-mail de contato"
                 value={preferencias.emailContato}
-                onChange={(event) =>
-                  atualizarPreferencia("emailContato", event.target.value)
-                }
+                onChange={(valor) => atualizarPreferencia("emailContato", valor)}
                 placeholder="Ex: seuemail@email.com"
-                style={inputStyle}
                 type="email"
               />
-            </label>
+            ) : null}
 
-          </div>
-        </section>
+            {deveMostrar("salvar", "alterações", "configurações") ? (
+              <SettingsRow
+                icon="check"
+                title="Salvar alterações"
+                subtitle="Grava suas preferências nesta conta"
+                onClick={salvar}
+              />
+            ) : null}
 
-        <section style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <h2 style={accentSectionTitleStyle}>Resumo da conta</h2>
-          </div>
+            {deveMostrar("privacidade", "conta") ? (
+              <SettingsRow
+                icon="shield"
+                title="Privacidade da conta"
+                subtitle="Em breve: público, privado ou seguidores"
+                right={<ValorLinha>Em breve</ValorLinha>}
+              />
+            ) : null}
 
-          <div className="configuracoes-carousel" style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
-            <div style={statCardStyle}>
-              <strong style={statNumberStyle}>{resumo.obras}</strong>
-              <span style={statLabelStyle}>obras criadas</span>
+            {deveMostrar("senha", "segurança") ? (
+              <SettingsRow
+                icon="lock"
+                title="Senha e segurança"
+                subtitle="Gerenciada pela sua autenticação"
+                right={<ValorLinha>Conta</ValorLinha>}
+              />
+            ) : null}
+          </SettingsSection>
+        ) : null}
+
+        {adminLiberado && deveMostrar("moderação", "admin", "comunidade") ? (
+          <SettingsSection title="Moderação">
+            <SettingsRow
+              icon="admin"
+              title="Área de moderação"
+              subtitle="Revisar denúncias e conteúdos enviados"
+              href="/admin/comunidade"
+            />
+          </SettingsSection>
+        ) : null}
+
+        {deveMostrar(
+          "historietas",
+          "obras",
+          "biblioteca",
+          "notificações",
+          "comunidade",
+          "top 5",
+          "diário",
+        ) ? (
+          <SettingsSection title="Como você usa o Historietas">
+            {deveMostrar("obras", "criadas") ? (
+              <SettingsRow
+                icon="book"
+                title="Obras criadas"
+                subtitle="Total publicado ou salvo no seu dispositivo"
+                right={<ValorLinha>{resumo.obras}</ValorLinha>}
+                href="/perfil-autor?aba=obras"
+              />
+            ) : null}
+
+            {deveMostrar("biblioteca", "lista", "favoritas", "concluidas") ? (
+              <SettingsRow
+                icon="bookmark"
+                title="Biblioteca"
+                subtitle="Favoritas, concluídas e obras seguidas"
+                right={<ValorLinha>{totalBiblioteca}</ValorLinha>}
+                href="/perfil-autor?aba=biblioteca"
+              />
+            ) : null}
+
+            {deveMostrar("notificações", "avisos") ? (
+              <SettingsRow
+                icon="bell"
+                title="Notificações"
+                subtitle="Mensagens, avisos e atividade recente"
+                right={<ValorLinha>{notificacoesNaoLidas}</ValorLinha>}
+                href="/notificacoes"
+              />
+            ) : null}
+
+            {deveMostrar("comunidade", "autor") ? (
+              <SettingsRow
+                icon="comment"
+                title="Comunidade do autor"
+                subtitle="Interações e publicações da comunidade"
+                href="/perfil-autor?aba=comunidade"
+              />
+            ) : null}
+
+            {deveMostrar("top 5", "favoritas") ? (
+              <SettingsRow
+                icon="trophy"
+                title="TOP 5"
+                subtitle="Escolha suas cinco obras favoritas"
+                href="/perfil-autor/top-5"
+              />
+            ) : null}
+
+            {deveMostrar("histórico", "leitura", "diário") ? (
+              <SettingsRow
+                icon="clock"
+                title="Histórico de leitura"
+                subtitle="Diário, leituras recentes e avaliações"
+                href="/perfil-autor?aba=diario"
+              />
+            ) : null}
+          </SettingsSection>
+        ) : null}
+
+        {deveMostrar("preferências", "tema", "aparência", "efeitos", "avisos") ? (
+          <SettingsSection title="Preferências">
+            {deveMostrar("tema", "visual", "aparência") ? (
+              <>
+                <SettingsRow
+                  icon="palette"
+                  title="Tema visual"
+                  subtitle="Altere as cores principais do Historietas"
+                  right={<ValorLinha>{temaAtual.nome}</ValorLinha>}
+                  onClick={() => setMostrarTemas((atual) => !atual)}
+                />
+
+                {mostrarTemas ? (
+                  <div style={themeListStyle}>
+                    {ORDEM_TEMAS_VISUAIS.map((temaVisual) => {
+                      const tema = TEMAS_VISUAIS[temaVisual];
+                      const ativo = preferencias.temaVisual === temaVisual;
+
+                      return (
+                        <button
+                          key={temaVisual}
+                          type="button"
+                          onClick={() => atualizarTemaVisual(temaVisual)}
+                          style={ativo ? themeOptionActiveStyle : themeOptionStyle}
+                          aria-pressed={ativo}
+                        >
+                          <span
+                            style={{
+                              ...themeSwatchStyle,
+                              background: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
+                            }}
+                          />
+
+                          <span style={themeTextStyle}>
+                            <strong style={themeNameStyle}>{tema.nome}</strong>
+                            <span style={themeDescriptionStyle}>{tema.descricao}</span>
+                          </span>
+
+                          {ativo ? (
+                            <span style={themeCheckStyle}>
+                              <SvgIcon name="check" size={21} strokeWidth={2.2} />
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
+            {deveMostrar("receber", "avisos") ? (
+              <SettingsRow
+                icon="bell"
+                title="Receber avisos"
+                subtitle="Ativa alertas importantes do site"
+                right={
+                  <Toggle
+                    checked={preferencias.receberAvisos}
+                    onChange={() =>
+                      atualizarPreferencia(
+                        "receberAvisos",
+                        !preferencias.receberAvisos,
+                      )
+                    }
+                    ariaLabel="Ativar ou desativar avisos"
+                  />
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar("leitura", "confortável") ? (
+              <SettingsRow
+                icon="moon"
+                title="Leitura confortável"
+                subtitle="Reduz contraste e deixa a leitura mais suave"
+                right={
+                  <Toggle
+                    checked={preferencias.leituraConfortavel}
+                    onChange={() =>
+                      atualizarPreferencia(
+                        "leituraConfortavel",
+                        !preferencias.leituraConfortavel,
+                      )
+                    }
+                    ariaLabel="Ativar ou desativar leitura confortável"
+                  />
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar("efeitos", "reduzir") ? (
+              <SettingsRow
+                icon="spark"
+                title="Reduzir efeitos"
+                subtitle="Diminui brilhos, transições e animações"
+                right={
+                  <Toggle
+                    checked={preferencias.reduzirEfeitos}
+                    onChange={() =>
+                      atualizarPreferencia("reduzirEfeitos", !preferencias.reduzirEfeitos)
+                    }
+                    ariaLabel="Ativar ou desativar redução de efeitos"
+                  />
+                }
+                hideChevron
+              />
+            ) : null}
+          </SettingsSection>
+        ) : null}
+
+        {deveMostrar("dados", "backup", "copiar", "baixar", "download") ? (
+          <SettingsSection title="Dados e arquivos">
+            {deveMostrar("copiar", "dados") ? (
+              <SettingsRow
+                icon="copy"
+                title="Copiar dados"
+                subtitle="Copia um backup em texto para a área de transferência"
+                onClick={copiarBackup}
+              />
+            ) : null}
+
+            {deveMostrar("baixar", "backup", "download") ? (
+              <SettingsRow
+                icon="download"
+                title="Baixar backup"
+                subtitle="Salva um arquivo JSON com seus dados locais"
+                onClick={baixarBackup}
+              />
+            ) : null}
+
+            {deveMostrar("resumo", "dados") ? (
+              <SettingsRow
+                icon="database"
+                title="Resumo da conta"
+                subtitle={`${resumo.obras} obras, ${resumo.favoritas} na lista, ${
+                  resumo.seguindoObras + resumo.seguindoAutores
+                } seguindo`}
+                hideChevron
+              />
+            ) : null}
+          </SettingsSection>
+        ) : null}
+
+        {deveMostrar("suporte", "ajuda", "termos", "políticas", "sobre") ? (
+          <SettingsSection title="Suporte e sobre">
+            {deveMostrar("ajuda", "suporte") ? (
+              <SettingsRow
+                icon="help"
+                title="Central de ajuda"
+                subtitle="Dúvidas, problemas e orientação"
+                right={<ValorLinha>Em breve</ValorLinha>}
+              />
+            ) : null}
+
+            {deveMostrar("termos", "políticas", "privacidade") ? (
+              <SettingsRow
+                icon="file"
+                title="Termos e políticas"
+                subtitle="Privacidade, uso da plataforma e regras"
+                right={<ValorLinha>Em breve</ValorLinha>}
+              />
+            ) : null}
+
+            {deveMostrar("sobre", "versão") ? (
+              <SettingsRow
+                icon="settings"
+                title="Sobre o Historietas"
+                subtitle="Versão local de desenvolvimento"
+                right={<ValorLinha>Beta</ValorLinha>}
+                hideChevron
+              />
+            ) : null}
+          </SettingsSection>
+        ) : null}
+
+        {deveMostrar("sair", "conta", "login") ? (
+          <section style={sectionStyle}>
+            <div style={listCardTransparentStyle}>
+              <SettingsRow
+                icon="logout"
+                title="Sair da conta"
+                subtitle="Encerrar sessão neste dispositivo"
+                onClick={sairDaConta}
+                danger
+              />
             </div>
-
-            <div style={statCardStyle}>
-              <strong style={statNumberStyle}>{resumo.notificacoes}</strong>
-              <span style={statLabelStyle}>notificações</span>
-            </div>
-
-            <div style={statCardStyle}>
-              <strong style={statNumberStyle}>{resumo.lancamentos}</strong>
-              <span style={statLabelStyle}>avisos ativos</span>
-            </div>
-
-            <div style={statCardStyle}>
-              <strong style={statNumberStyle}>{resumo.favoritas}</strong>
-              <span style={statLabelStyle}>na lista</span>
-            </div>
-
-            <div style={statCardStyle}>
-              <strong style={statNumberStyle}>{resumo.concluidas}</strong>
-              <span style={statLabelStyle}>concluídas</span>
-            </div>
-
-            <div style={statCardStyle}>
-              <strong style={statNumberStyle}>
-                {resumo.seguindoObras + resumo.seguindoAutores}
-              </strong>
-              <span style={statLabelStyle}>seguindo</span>
-            </div>
-          </div>
-
-          <p style={lastUpdateStyle}>
-            Resumo atualizado às {resumoAtualizadoEm || "--:--"}.
-          </p>
-        </section>
-
-        <section style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <h2 style={accentSectionTitleStyle}>Ações</h2>
-          </div>
-
-          <div className="configuracoes-carousel" style={isDesktop ? desktopActionsStyle : actionsStyle}>
-            <button type="button" onClick={salvar} style={primaryButtonStyle}>
-              Salvar configurações
-            </button>
-
-            <button
-              type="button"
-              onClick={copiarBackup}
-              style={secondaryButtonStyle}
-            >
-              Copiar dados
-            </button>
-
-            <button
-              type="button"
-              onClick={baixarBackup}
-              style={secondaryButtonStyle}
-            >
-              Baixar backup
-            </button>
-
-            <button
-              type="button"
-              onClick={atualizarResumo}
-              style={secondaryButtonStyle}
-            >
-              Atualizar resumo
-            </button>
-
-            <button type="button" onClick={sairDaConta} style={dangerButtonStyle}>
-              Sair da conta
-            </button>
-          </div>
-        </section>
-
-        <section style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <h2 style={accentSectionTitleStyle}>Tema visual</h2>
-          </div>
-
-          <div className="configuracoes-carousel" style={isDesktop ? desktopThemeGridStyle : themeGridStyle}>
-            {ORDEM_TEMAS_VISUAIS.map((temaVisual) => {
-              const tema = TEMAS_VISUAIS[temaVisual];
-              const temaAtivo = preferencias.temaVisual === temaVisual;
-
-              return (
-                <button
-                  key={temaVisual}
-                  type="button"
-                  onClick={() => atualizarTemaVisual(temaVisual)}
-                  style={
-                    temaAtivo
-                      ? isDesktop
-                        ? desktopThemeOptionActiveStyle
-                        : themeOptionActiveStyle
-                      : isDesktop
-                      ? desktopThemeOptionStyle
-                      : themeOptionStyle
-                  }
-                  aria-pressed={temaAtivo}
-                >
-                  <span
-                    style={{
-                      ...themePreviewStyle,
-                      background: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
-                      boxShadow: "none",
-                    }}
-                  >
-                    {tema.icone}
-                  </span>
-
-                  <span style={themeTextBoxStyle}>
-                    <strong style={themeTitleStyle}>{tema.nome}</strong>
-                  </span>
-
-                </button>
-              );
-            })}
-          </div>
-
-        </section>
-
+          </section>
+        ) : null}
       </section>
     </main>
   );
@@ -1181,56 +1689,27 @@ const configuracoesPageCss = `
   html[data-historietas-tema-visual] main,
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
+    background: var(--historietas-bg-start, #050509) !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
-  }
-
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
-    background: transparent !important;
-    opacity: 0 !important;
-  }
-
-  .configuracoes-carousel {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .configuracoes-carousel::-webkit-scrollbar {
-    display: none;
-  }
-
-  html[data-historietas-tema-visual] nav,
-  html[data-historietas-tema-visual] [data-bottom-nav],
-  html[data-historietas-tema-visual] [data-mobile-nav] {
-    background: var(--historietas-bottom-nav-bg, #04000A) !important;
-  }
-
-  html[data-historietas-tema-visual] nav a[href="/configuracoes"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/configuracoes"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/configuracoes"] {
-    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
-    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
-    color: #FFFFFF !important;
-  }
-
-  html[data-historietas-tema-visual] nav a[href="/configuracoes"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/configuracoes"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/configuracoes"] .historietas-bottom-nav-icon {
-    color: #FFFFFF !important;
-    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
-    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
   }
 
   html[data-historietas-tema-visual] input::placeholder,
   html[data-historietas-tema-visual] textarea::placeholder {
-    color: rgba(212,212,216,0.68) !important;
+    color: rgba(212,212,216,0.56) !important;
   }
 
   html[data-historietas-tema-visual] input,
   html[data-historietas-tema-visual] textarea,
   html[data-historietas-tema-visual] select {
-    color: #FFFFFF !important;
+    color: var(--historietas-input-text, #FFFFFF) !important;
+  }
+
+  .configuracoes-input {
+    appearance: none;
+  }
+
+  .configuracoes-input::-webkit-search-cancel-button {
+    appearance: none;
   }
 `;
 
@@ -1239,382 +1718,434 @@ const safeTextStyle: CSSProperties = {
   wordBreak: "break-word",
 };
 
-const mobileTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(340px, 48vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-  opacity: 0,
-};
-
-const desktopTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(620px, 68vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-  opacity: 0,
-};
-
 const pageStyle: CSSProperties = {
-  position: "relative",
   minHeight: "100vh",
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background: "#070212",
+  background: "#050509",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-  isolation: "isolate",
+  fontFamily:
+    "Inter, Poppins, Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
 };
 
 const containerStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  width: "min(900px, calc(100% - 32px))",
+  width: "min(760px, calc(100% - 32px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 22px",
+  padding: "16px 0 120px",
   boxSizing: "border-box",
   minWidth: 0,
 };
 
-const topStyle: CSSProperties = {
-  display: "flex",
+const headerStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "40px minmax(0, 1fr)",
   alignItems: "center",
-  justifyContent: "flex-start",
   gap: "10px",
-  marginBottom: "10px",
-  padding: "6px 0",
-  minWidth: 0,
+  marginBottom: "16px",
 };
 
-const logoStyle: CSSProperties = {
+const backButtonStyle: CSSProperties = {
+  width: "40px",
+  height: "40px",
+  border: "0",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.08)",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "24px",
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "visible",
-};
-
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  fontSize: "17px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  flex: "0 0 auto",
+  cursor: "pointer",
 };
 
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-  overflow: "visible",
-  whiteSpace: "nowrap",
-};
-
-
-const titleHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "12px",
-  flexWrap: "nowrap",
-  width: "100%",
-  margin: "0 auto 14px",
-  padding: 0,
-  minWidth: 0,
-  textAlign: "center",
-};
-
-const titleHomeLinkStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "23px",
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "1px",
-  width: "fit-content",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "visible",
-  flex: "0 1 auto",
-  ...safeTextStyle,
-};
-
-const pageTitleTextStyle: CSSProperties = {
-  display: "inline-block",
+const pageTitleStyle: CSSProperties = {
   margin: 0,
-  marginLeft: 0,
-  paddingRight: "0.2em",
-  paddingBottom: "0.04em",
-  whiteSpace: "nowrap",
-  overflow: "visible",
-  fontSize: "23px",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "clamp(20px, 5.2vw, 25px)",
   lineHeight: 1.08,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  wordSpacing: "0.11em",
-  background: "none",
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  textAlign: "center",
-  textShadow: "none",
+  fontWeight: 900,
+  letterSpacing: "-0.04em",
+  textAlign: "left",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
 };
 
-const desktopTitleHeaderStyle: CSSProperties = {
-  ...titleHeaderStyle,
-  position: "relative",
+const searchBoxStyle: CSSProperties = {
+  minHeight: "48px",
+  borderRadius: "15px",
+  background: "rgba(255,255,255,0.11)",
+  border: "1px solid rgba(255,255,255,0.05)",
+  color: "rgba(255,255,255,0.55)",
+  display: "grid",
+  gridTemplateColumns: "23px minmax(0, 1fr)",
+  alignItems: "center",
+  gap: "10px",
+  padding: "0 15px",
   marginBottom: "18px",
 };
 
-const desktopNotificationButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: 0,
-  transform: "translateY(-50%)",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  boxShadow: "none",
-  zIndex: 2,
-};
-
-const desktopNotificationBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
-};
-
-const desktopTitleHomeLinkStyle: CSSProperties = {
-  ...titleHomeLinkStyle,
-};
-
-const desktopPageTitleTextStyle: CSSProperties = {
-  ...pageTitleTextStyle,
-};
-
-const heroStyle: CSSProperties = {
-  position: "relative",
-  borderRadius: "28px",
-  border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
-  boxShadow: "none",
-  overflow: "hidden",
-  minWidth: 0,
-};
-
-const heroGlowStyle: CSSProperties = {
-  display: "none",
-};
-
-const heroContentStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  padding: "20px 16px",
-  display: "grid",
-  justifyItems: "center",
-  gap: "10px",
-  minWidth: 0,
-  textAlign: "center",
-};
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "clamp(34px, 8.8vw, 54px)",
-  lineHeight: 1.08,
-  fontWeight: 950,
-  letterSpacing: "-0.07em",
-  maxWidth: "100%",
-  color: "#FFFFFF",
-  background: "none",
-  WebkitTextFillColor: "#FFFFFF",
-  textShadow: "none",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const descriptionStyle: CSSProperties = {
-  margin: "0 auto",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.58,
+const searchInputStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  minHeight: "46px",
+  border: "0",
+  outline: "none",
+  background: "transparent",
+  color: "var(--historietas-input-text, #FFFFFF)",
+  fontSize: "16px",
   fontWeight: 650,
-  maxWidth: "620px",
-  ...safeTextStyle,
-};
-
-const heroActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
-  margin: "4px auto 0",
-  width: "min(420px, 100%)",
+  fontFamily: "inherit",
   minWidth: 0,
 };
 
-const primaryLinkStyle: CSSProperties = {
-  minHeight: "44px",
-  borderRadius: "999px",
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const secondaryLinkStyle: CSSProperties = {
-  ...primaryLinkStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  boxShadow: "none",
-};
-
-const desktopAdminAccessCardStyle: CSSProperties = {
+const profileCardStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) 180px",
+  gridTemplateColumns: "52px minmax(0, 1fr)",
   alignItems: "center",
-  gap: "16px",
-  padding: "18px",
-  borderRadius: "26px",
-  background: "rgba(4, 0, 10, 0.72)",
+  gap: "12px",
+  padding: "14px",
+  borderRadius: "20px",
+  background: "rgba(255,255,255,0.09)",
   border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  minWidth: 0,
+  marginBottom: "18px",
 };
 
-const adminAccessTextStyle: CSSProperties = {
-  display: "grid",
-  gap: "5px",
-  minWidth: 0,
-};
-
-const adminAccessTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "18px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.045em",
-  ...safeTextStyle,
-};
-
-const adminAccessDescriptionStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.45,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const adminAccessLinkStyle: CSSProperties = {
-  minHeight: "38px",
+const avatarStyle: CSSProperties = {
+  width: "52px",
+  height: "52px",
   borderRadius: "999px",
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  display: "flex",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  textAlign: "center",
-  fontSize: "12px",
-  fontWeight: 950,
-  boxShadow: "none",
+  color: "#FFFFFF",
+  background:
+    "linear-gradient(135deg, rgba(148,163,184,0.90), rgba(75,85,99,0.95))",
+  fontSize: "21px",
+  fontWeight: 760,
+  letterSpacing: "-0.035em",
+  flex: "0 0 auto",
+};
+
+const profileTextStyle: CSSProperties = {
+  display: "grid",
+  gap: "3px",
+  minWidth: 0,
+};
+
+const profileNameStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "17px",
+  lineHeight: 1.08,
+  fontWeight: 780,
+  letterSpacing: "-0.025em",
+  ...safeTextStyle,
+};
+
+const profileEmailStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.52)",
+  fontSize: "13px",
+  lineHeight: 1.18,
+  fontWeight: 520,
   ...safeTextStyle,
 };
 
 const messageStyle: CSSProperties = {
-  margin: "10px auto 0",
+  display: "block",
   width: "fit-content",
   maxWidth: "100%",
-  padding: "8px 10px",
+  margin: "0 auto 14px",
+  padding: "8px 12px",
   borderRadius: "999px",
   background: "rgba(34,197,94,0.12)",
   border: "1px solid rgba(34,197,94,0.24)",
   color: "#86EFAC",
-  fontSize: "11px",
-  fontWeight: 900,
+  fontSize: "12px",
+  fontWeight: 850,
   textAlign: "center",
   ...safeTextStyle,
 };
 
+const sectionStyle: CSSProperties = {
+  marginTop: "18px",
+  minWidth: 0,
+};
+
+const sectionTitleStyle: CSSProperties = {
+  margin: "0 0 8px",
+  color: "rgba(255,255,255,0.52)",
+  fontSize: "13px",
+  lineHeight: 1.15,
+  fontWeight: 760,
+  letterSpacing: "-0.01em",
+  ...safeTextStyle,
+};
+
+const listCardStyle: CSSProperties = {
+  overflow: "hidden",
+  borderRadius: "18px",
+  background: "rgba(255,255,255,0.09)",
+  border: "1px solid rgba(255,255,255,0.045)",
+};
+
+const listCardTransparentStyle: CSSProperties = {
+  overflow: "hidden",
+  borderRadius: "20px",
+  background: "transparent",
+};
+
+const rowBaseStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "58px",
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr) auto 22px",
+  alignItems: "center",
+  gap: "9px",
+  padding: "8px 12px",
+  boxSizing: "border-box",
+  border: "0",
+  borderBottom: "1px solid rgba(255,255,255,0.065)",
+  background: "transparent",
+  color: "inherit",
+  fontFamily: "inherit",
+  textAlign: "left",
+  textDecoration: "none",
+  cursor: "pointer",
+};
+
+const rowButtonStyle: CSSProperties = {
+  ...rowBaseStyle,
+};
+
+const rowLinkStyle: CSSProperties = {
+  ...rowBaseStyle,
+};
+
+const rowStaticStyle: CSSProperties = {
+  ...rowBaseStyle,
+  cursor: "default",
+};
+
+const rowIconStyle: CSSProperties = {
+  width: "32px",
+  height: "32px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "rgba(255,255,255,0.78)",
+  flex: "0 0 auto",
+};
+
+const rowTextBoxStyle: CSSProperties = {
+  display: "grid",
+  gap: "3px",
+  minWidth: 0,
+};
+
+const rowTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "16px",
+  lineHeight: 1.1,
+  fontWeight: 760,
+  letterSpacing: "-0.02em",
+  ...safeTextStyle,
+};
+
+const rowTitleDangerStyle: CSSProperties = {
+  ...rowTitleStyle,
+  color: "#FCA5A5",
+};
+
+const rowSubtitleStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.52)",
+  fontSize: "12px",
+  lineHeight: 1.22,
+  fontWeight: 520,
+  ...safeTextStyle,
+};
+
+const rowRightStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  minWidth: 0,
+};
+
+const rowValueStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.56)",
+  fontSize: "13px",
+  lineHeight: 1,
+  fontWeight: 650,
+  whiteSpace: "nowrap",
+};
+
+const rowValueDangerStyle: CSSProperties = {
+  ...rowValueStyle,
+  color: "#FCA5A5",
+};
+
+const rowChevronStyle: CSSProperties = {
+  width: "22px",
+  height: "22px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "rgba(255,255,255,0.46)",
+};
+
+const inputRowStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "76px",
+  display: "grid",
+  gridTemplateColumns: "40px minmax(0, 1fr)",
+  alignItems: "center",
+  gap: "10px",
+  padding: "12px 14px",
+  boxSizing: "border-box",
+  borderBottom: "1px solid rgba(255,255,255,0.065)",
+};
+
+const inputTextBoxStyle: CSSProperties = {
+  display: "grid",
+  gap: "7px",
+  minWidth: 0,
+};
+
+const inputLabelStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.60)",
+  fontSize: "12px",
+  lineHeight: 1,
+  fontWeight: 880,
+  textTransform: "uppercase",
+  letterSpacing: "0.03em",
+};
+
+const inputStyle: CSSProperties = {
+  width: "100%",
+  border: "0",
+  outline: "none",
+  background: "transparent",
+  color: "var(--historietas-input-text, #FFFFFF)",
+  fontSize: "17px",
+  lineHeight: 1.2,
+  fontWeight: 760,
+  fontFamily: "inherit",
+  padding: 0,
+  minWidth: 0,
+};
+
+const toggleBaseStyle: CSSProperties = {
+  width: "52px",
+  height: "31px",
+  borderRadius: "999px",
+  border: "0",
+  padding: "3px",
+  display: "inline-flex",
+  alignItems: "center",
+  cursor: "pointer",
+  transition: "background 160ms ease",
+};
+
+const toggleOnStyle: CSSProperties = {
+  ...toggleBaseStyle,
+  justifyContent: "flex-end",
+  background: "var(--historietas-accent, #F97316)",
+};
+
+const toggleOffStyle: CSSProperties = {
+  ...toggleBaseStyle,
+  justifyContent: "flex-start",
+  background: "rgba(255,255,255,0.18)",
+};
+
+const toggleKnobBaseStyle: CSSProperties = {
+  width: "25px",
+  height: "25px",
+  borderRadius: "999px",
+  background: "#FFFFFF",
+  boxShadow: "0 4px 10px rgba(0,0,0,0.28)",
+};
+
+const toggleKnobOnStyle: CSSProperties = {
+  ...toggleKnobBaseStyle,
+};
+
+const toggleKnobOffStyle: CSSProperties = {
+  ...toggleKnobBaseStyle,
+};
+
+const themeListStyle: CSSProperties = {
+  padding: "6px 0",
+  borderTop: "1px solid rgba(255,255,255,0.065)",
+};
+
+const themeOptionStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "62px",
+  display: "grid",
+  gridTemplateColumns: "38px minmax(0, 1fr) 28px",
+  alignItems: "center",
+  gap: "12px",
+  padding: "10px 14px",
+  border: "0",
+  borderBottom: "1px solid rgba(255,255,255,0.055)",
+  background: "transparent",
+  color: "inherit",
+  fontFamily: "inherit",
+  textAlign: "left",
+  cursor: "pointer",
+};
+
+const themeOptionActiveStyle: CSSProperties = {
+  ...themeOptionStyle,
+  background: "rgba(255,255,255,0.055)",
+};
+
+const themeSwatchStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  border: "1px solid rgba(255,255,255,0.13)",
+};
+
+const themeTextStyle: CSSProperties = {
+  display: "grid",
+  gap: "3px",
+  minWidth: 0,
+};
+
+const themeNameStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "15px",
+  lineHeight: 1.1,
+  fontWeight: 850,
+};
+
+const themeDescriptionStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.52)",
+  fontSize: "12px",
+  lineHeight: 1.2,
+  fontWeight: 620,
+  ...safeTextStyle,
+};
+
+const themeCheckStyle: CSSProperties = {
+  width: "26px",
+  height: "26px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "var(--historietas-accent, #F97316)",
+};
+
 const emptyAccessBoxStyle: CSSProperties = {
-  minHeight: "100vh",
+  minHeight: "70vh",
   display: "grid",
   alignContent: "center",
   justifyItems: "center",
   gap: "10px",
-  padding: "24px",
-  background: "#070212",
   textAlign: "center",
 };
 
@@ -1630,476 +2161,9 @@ const emptyAccessTitleStyle: CSSProperties = {
 
 const emptyAccessTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.55,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const sectionStyle: CSSProperties = {
-  marginTop: "14px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const sectionHeaderStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "4px",
-  marginBottom: "10px",
-  textAlign: "center",
-};
-
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "clamp(24px, 5vw, 30px)",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  maxWidth: "100%",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const accentSectionTitleStyle: CSSProperties = {
-  ...sectionTitleStyle,
-  color: "#FFFFFF",
-};
-
-const cardStyle: CSSProperties = {
-  display: "grid",
-  gap: "12px",
-  padding: "14px",
-  borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-const fieldStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  minWidth: 0,
-};
-
-const labelStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "11px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "42px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  color: "#FFFFFF",
-  padding: "0 14px",
-  outline: "none",
-  fontSize: "13px",
-  fontWeight: 800,
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  minWidth: 0,
-  boxShadow: "none",
-};
-
-const settingsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "10px",
-  minWidth: 0,
-};
-
-const themeGridStyle: CSSProperties = {
-  display: "flex",
-  gap: "8px",
-  minWidth: 0,
-  width: "calc(100% + 32px)",
-  maxWidth: "calc(100% + 32px)",
-  margin: "0 -16px",
-  overflowX: "auto",
-  overflowY: "hidden",
-  padding: "0 16px",
-  boxSizing: "border-box",
-  scrollSnapType: "x proximity",
-  scrollPaddingLeft: "16px",
-  scrollPaddingRight: "16px",
-};
-
-const themeOptionStyle: CSSProperties = {
-  flex: "0 0 86px",
-  width: "86px",
-  minHeight: "78px",
-  padding: "8px 6px",
-  borderRadius: "18px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(4, 0, 10, 0.72)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  justifyItems: "center",
-  alignContent: "center",
-  gap: "6px",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxShadow: "none",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
-const themeOptionActiveStyle: CSSProperties = {
-  ...themeOptionStyle,
-  border: "1px solid rgba(249,115,22,0.34)",
-  background: "rgba(8, 3, 15, 0.92)",
-  boxShadow: "none",
-};
-
-const themePreviewStyle: CSSProperties = {
-  width: "32px",
-  height: "32px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "#FFFFFF",
-  fontSize: "16px",
-  fontWeight: 950,
-  flex: "0 0 auto",
-  border: "1px solid rgba(255,255,255,0.12)",
-};
-
-const themeTextBoxStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "2px",
-  minWidth: 0,
-  width: "100%",
-  textAlign: "center",
-};
-
-const themeTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  lineHeight: 1.08,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const preferenceStyle: CSSProperties = {
-  minHeight: "78px",
-  borderRadius: "17px",
-  padding: "8px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(4, 0, 10, 0.72)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  display: "grid",
-  gridTemplateColumns: "40px minmax(0, 1fr)",
-  alignItems: "center",
-  columnGap: "9px",
-  rowGap: "1px",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxShadow: "none",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
-const preferenceActiveStyle: CSSProperties = {
-  ...preferenceStyle,
-  border: "1px solid rgba(249,115,22,0.30)",
-  background: "rgba(8, 3, 15, 0.92)",
-  boxShadow: "none",
-};
-
-const preferenceIconStyle: CSSProperties = {
-  width: "40px",
-  height: "40px",
-  borderRadius: "15px",
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "19px",
-  gridRow: "1 / span 2",
-};
-
-const preferenceTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "15.5px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
-  textAlign: "center",
-  alignSelf: "end",
-  ...safeTextStyle,
-};
-
-const preferenceTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11.2px",
-  lineHeight: 1.14,
+  color: "rgba(255,255,255,0.58)",
+  fontSize: "14px",
+  lineHeight: 1.45,
   fontWeight: 650,
-  textAlign: "center",
-  alignSelf: "start",
   ...safeTextStyle,
-};
-
-const statsGridStyle: CSSProperties = {
-  display: "flex",
-  gap: "7px",
-  minWidth: 0,
-  width: "calc(100% + 32px)",
-  maxWidth: "calc(100% + 32px)",
-  margin: "0 -16px",
-  overflowX: "auto",
-  overflowY: "hidden",
-  padding: "0 16px",
-  boxSizing: "border-box",
-  scrollSnapType: "x proximity",
-  scrollPaddingLeft: "16px",
-  scrollPaddingRight: "16px",
-};
-
-const statCardStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  alignContent: "center",
-  gap: "1px",
-  flex: "0 0 78px",
-  width: "78px",
-  minHeight: "46px",
-  padding: "5px 4px",
-  borderRadius: "13px",
-  scrollSnapAlign: "start",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  minWidth: 0,
-  overflow: "hidden",
-  textAlign: "center",
-};
-
-const statNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "17px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const statLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "7px",
-  lineHeight: 1.1,
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const lastUpdateStyle: CSSProperties = {
-  margin: "10px auto 0",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontWeight: 750,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const actionsStyle: CSSProperties = {
-  display: "flex",
-  gap: "7px",
-  padding: "10px 16px",
-  borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  minWidth: 0,
-  width: "calc(100% + 32px)",
-  maxWidth: "calc(100% + 32px)",
-  margin: "0 -16px",
-  overflowX: "auto",
-  overflowY: "hidden",
-  boxSizing: "border-box",
-  scrollSnapType: "x proximity",
-  scrollPaddingLeft: "16px",
-  scrollPaddingRight: "16px",
-};
-
-const buttonBaseStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  padding: "0 10px",
-  fontSize: "10.5px",
-  flex: "0 0 132px",
-  lineHeight: 1.12,
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "132px",
-  boxShadow: "none",
-  scrollSnapAlign: "start",
-  ...safeTextStyle,
-};
-
-const primaryButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
-  color: "#FFFFFF",
-  boxShadow: "none",
-};
-
-const secondaryButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  boxShadow: "none",
-};
-
-const dangerButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: "1px solid rgba(239, 68, 68, 0.26)",
-  background: "var(--historietas-danger-surface, rgba(239, 68, 68, 0.105))",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
-  boxShadow: "none",
-};
-
-const desktopContainerStyle: CSSProperties = {
-  ...containerStyle,
-  width: "min(1180px, calc(100% - 56px))",
-  padding: "18px 0 28px",
-};
-
-const desktopHeroStyle: CSSProperties = {
-  ...heroStyle,
-  borderRadius: "32px",
-  boxShadow: "none",
-};
-
-const desktopHeroContentStyle: CSSProperties = {
-  ...heroContentStyle,
-  padding: "34px 42px",
-  gap: "14px",
-  maxWidth: "900px",
-  margin: "0 auto",
-  textAlign: "center",
-  justifyItems: "center",
-};
-
-const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  fontSize: "clamp(52px, 5vw, 68px)",
-  lineHeight: 1.08,
-  maxWidth: "820px",
-};
-
-const desktopHeroActionsStyle: CSSProperties = {
-  ...heroActionsStyle,
-  gridTemplateColumns: "repeat(2, minmax(190px, 240px))",
-  justifyContent: "center",
-  maxWidth: "520px",
-};
-
-const desktopAccountCardStyle: CSSProperties = {
-  ...cardStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "14px",
-  padding: "18px",
-};
-
-const desktopThemeGridStyle: CSSProperties = {
-  ...themeGridStyle,
-  gap: "10px",
-  width: "100%",
-  maxWidth: "100%",
-  margin: 0,
-  padding: "0 1px 0",
-  scrollPaddingLeft: "0px",
-  scrollPaddingRight: "0px",
-};
-
-const desktopThemeOptionStyle: CSSProperties = {
-  ...themeOptionStyle,
-  flex: "0 0 98px",
-  width: "98px",
-  minHeight: "82px",
-  padding: "8px 6px",
-};
-
-const desktopThemeOptionActiveStyle: CSSProperties = {
-  ...themeOptionActiveStyle,
-  flex: "0 0 98px",
-  width: "98px",
-  minHeight: "82px",
-  padding: "8px 6px",
-};
-
-const desktopSettingsGridStyle: CSSProperties = {
-  ...settingsGridStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "12px",
-};
-
-const desktopPreferenceStyle: CSSProperties = {
-  ...preferenceStyle,
-  minHeight: "84px",
-  padding: "10px",
-};
-
-const desktopPreferenceActiveStyle: CSSProperties = {
-  ...preferenceActiveStyle,
-  minHeight: "84px",
-  padding: "10px",
-};
-
-const desktopStatsGridStyle: CSSProperties = {
-  ...statsGridStyle,
-  gap: "8px",
-  width: "100%",
-  maxWidth: "100%",
-  margin: 0,
-  padding: "0 1px 0",
-  scrollPaddingLeft: "0px",
-  scrollPaddingRight: "0px",
-};
-
-const desktopActionsStyle: CSSProperties = {
-  ...actionsStyle,
-  gap: "8px",
-  padding: "11px",
-  borderRadius: "24px",
-  width: "100%",
-  maxWidth: "100%",
-  margin: 0,
-  scrollPaddingLeft: "0px",
-  scrollPaddingRight: "0px",
 };
