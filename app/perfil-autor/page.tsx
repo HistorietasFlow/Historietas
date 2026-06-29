@@ -98,6 +98,7 @@ const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
 const AUTHOR_RATINGS_STORAGE_KEY = "historietas-autores-avaliacoes";
 const TOP_FIVE_STORAGE_KEY = "historietas-top-5-obras";
+const TOP_FIVE_LIKES_STORAGE_KEY = "historietas-top-5-curtidas";
 const TOP_FIVE_MAXIMO = 5;
 const AVATAR_MAX_SIZE = 1 * 1024 * 1024;
 const AVATAR_STORAGE_BUCKET = "avatars";
@@ -1104,6 +1105,193 @@ function encontrarObraPorIdentificadorTopFivePerfil(
       ),
     ) || null
   );
+}
+
+function criarChaveCurtidaTopFivePerfil(perfilUserId: string) {
+  return perfilUserId.trim().toLowerCase();
+}
+
+function normalizarCurtidasTopFiveLocais(valor: unknown) {
+  const curtidasNormalizadas: Record<string, string[]> = {};
+
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
+    return curtidasNormalizadas;
+  }
+
+  Object.entries(valor as Record<string, unknown>).forEach(([perfilId, curtidas]) => {
+    if (!perfilId.trim() || !Array.isArray(curtidas)) {
+      return;
+    }
+
+    curtidasNormalizadas[criarChaveCurtidaTopFivePerfil(perfilId)] = Array.from(
+      new Set(
+        curtidas
+          .filter((usuarioId): usuarioId is string =>
+            typeof usuarioId === "string" && Boolean(usuarioId.trim()),
+          )
+          .map((usuarioId) => usuarioId.trim().toLowerCase()),
+      ),
+    );
+  });
+
+  return curtidasNormalizadas;
+}
+
+function carregarCurtidasTopFiveLocais(
+  perfilUserId: string,
+  usuarioId = "",
+) {
+  const chavePerfil = criarChaveCurtidaTopFivePerfil(perfilUserId);
+
+  if (!chavePerfil) {
+    return { total: 0, curtiu: false };
+  }
+
+  try {
+    const curtidasJson = carregarJsonUsuarioPerfilAutor(
+      TOP_FIVE_LIKES_STORAGE_KEY,
+      "",
+    );
+    const curtidasPorPerfil = normalizarCurtidasTopFiveLocais(curtidasJson);
+    const curtidasPerfil = curtidasPorPerfil[chavePerfil] || [];
+    const usuarioIdNormalizado = usuarioId.trim().toLowerCase();
+
+    return {
+      total: curtidasPerfil.length,
+      curtiu: Boolean(
+        usuarioIdNormalizado && curtidasPerfil.includes(usuarioIdNormalizado),
+      ),
+    };
+  } catch {
+    return { total: 0, curtiu: false };
+  }
+}
+
+function salvarCurtidaTopFiveLocal(
+  perfilUserId: string,
+  usuarioId: string,
+  curtir: boolean,
+) {
+  const chavePerfil = criarChaveCurtidaTopFivePerfil(perfilUserId);
+  const usuarioIdNormalizado = usuarioId.trim().toLowerCase();
+
+  if (!chavePerfil || !usuarioIdNormalizado) {
+    return;
+  }
+
+  try {
+    const curtidasJson = carregarJsonUsuarioPerfilAutor(
+      TOP_FIVE_LIKES_STORAGE_KEY,
+      "",
+    );
+    const curtidasPorPerfil = normalizarCurtidasTopFiveLocais(curtidasJson);
+    const curtidasAtuais = curtidasPorPerfil[chavePerfil] || [];
+    const curtidasSemUsuario = curtidasAtuais.filter(
+      (curtidaUsuarioId) => curtidaUsuarioId !== usuarioIdNormalizado,
+    );
+
+    curtidasPorPerfil[chavePerfil] = curtir
+      ? [...curtidasSemUsuario, usuarioIdNormalizado]
+      : curtidasSemUsuario;
+
+    salvarJsonUsuarioPerfilAutor(
+      TOP_FIVE_LIKES_STORAGE_KEY,
+      "",
+      curtidasPorPerfil,
+    );
+  } catch {
+    // Curtida local é fallback e não deve travar o perfil.
+  }
+}
+
+async function carregarCurtidasTopFivePerfil(
+  perfilUserId: string,
+  usuarioId = "",
+) {
+  const estadoLocal = carregarCurtidasTopFiveLocais(perfilUserId, usuarioId);
+  const perfilUserIdLimpo = perfilUserId.trim();
+  const usuarioIdLimpo = usuarioId.trim();
+
+  if (!idAutorSupabaseValido(perfilUserIdLimpo)) {
+    return estadoLocal;
+  }
+
+  try {
+    const { count, error } = await supabase
+      .from("top5_curtidas")
+      .select("perfil_user_id", { count: "exact", head: true })
+      .eq("perfil_user_id", perfilUserIdLimpo);
+
+    if (error) {
+      return estadoLocal;
+    }
+
+    let curtiu = estadoLocal.curtiu;
+
+    if (usuarioIdLimpo && idAutorSupabaseValido(usuarioIdLimpo)) {
+      const { data: minhaCurtida, error: erroMinhaCurtida } = await supabase
+        .from("top5_curtidas")
+        .select("perfil_user_id")
+        .eq("perfil_user_id", perfilUserIdLimpo)
+        .eq("usuario_id", usuarioIdLimpo)
+        .limit(1)
+        .maybeSingle();
+
+      if (!erroMinhaCurtida) {
+        curtiu = Boolean(minhaCurtida);
+      }
+    }
+
+    return {
+      total: Math.max(count ?? 0, estadoLocal.total),
+      curtiu,
+    };
+  } catch {
+    return estadoLocal;
+  }
+}
+
+async function salvarCurtidaTopFiveSupabase(
+  perfilUserId: string,
+  usuarioId: string,
+  curtir: boolean,
+) {
+  const perfilUserIdLimpo = perfilUserId.trim();
+  const usuarioIdLimpo = usuarioId.trim();
+
+  if (
+    !idAutorSupabaseValido(perfilUserIdLimpo) ||
+    !idAutorSupabaseValido(usuarioIdLimpo)
+  ) {
+    return false;
+  }
+
+  try {
+    const { error: erroDelete } = await supabase
+      .from("top5_curtidas")
+      .delete()
+      .eq("perfil_user_id", perfilUserIdLimpo)
+      .eq("usuario_id", usuarioIdLimpo);
+
+    if (erroDelete) {
+      return false;
+    }
+
+    if (!curtir) {
+      return true;
+    }
+
+    const { error: erroInsert } = await supabase
+      .from("top5_curtidas")
+      .insert({
+        perfil_user_id: perfilUserIdLimpo,
+        usuario_id: usuarioIdLimpo,
+      });
+
+    return !erroInsert;
+  } catch {
+    return false;
+  }
 }
 
 function obterTempoAtividadeBibliotecaPerfil(obra: ObraLocal) {
@@ -3557,6 +3745,9 @@ export default function PerfilAutorPage() {
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [topFiveObraIds, setTopFiveObraIds] = useState<string[]>([]);
+  const [topFiveCurtidasTotal, setTopFiveCurtidasTotal] = useState(0);
+  const [topFiveCurtidoPorMim, setTopFiveCurtidoPorMim] = useState(false);
+  const [topFiveCurtidaSalvando, setTopFiveCurtidaSalvando] = useState(false);
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
   const [avatarErro, setAvatarErro] = useState("");
@@ -4046,6 +4237,57 @@ export default function PerfilAutorPage() {
     };
   }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
 
+  useEffect(() => {
+    const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
+
+    if (!perfilAutorId) {
+      setTopFiveCurtidasTotal(0);
+      setTopFiveCurtidoPorMim(false);
+      return;
+    }
+
+    let cancelado = false;
+
+    async function atualizarCurtidasTopFive() {
+      const estadoLocal = carregarCurtidasTopFiveLocais(
+        perfilAutorId,
+        usuarioIdLogado,
+      );
+
+      setTopFiveCurtidasTotal(estadoLocal.total);
+      setTopFiveCurtidoPorMim(estadoLocal.curtiu);
+
+      const estadoRemoto = await carregarCurtidasTopFivePerfil(
+        perfilAutorId,
+        usuarioIdLogado,
+      );
+
+      if (cancelado) {
+        return;
+      }
+
+      setTopFiveCurtidasTotal(estadoRemoto.total);
+      setTopFiveCurtidoPorMim(estadoRemoto.curtiu);
+    }
+
+    void atualizarCurtidasTopFive();
+
+    if (typeof window === "undefined") {
+      return () => {
+        cancelado = true;
+      };
+    }
+
+    window.addEventListener("focus", atualizarCurtidasTopFive);
+    window.addEventListener("storage", atualizarCurtidasTopFive);
+
+    return () => {
+      cancelado = true;
+      window.removeEventListener("focus", atualizarCurtidasTopFive);
+      window.removeEventListener("storage", atualizarCurtidasTopFive);
+    };
+  }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
+
   const bibliotecaPerfilVisivel = true;
 
   useEffect(() => {
@@ -4324,6 +4566,51 @@ export default function PerfilAutorPage() {
 
     return Array.from(obrasSelecionadas.values()).slice(0, TOP_FIVE_MAXIMO);
   }, [obras, perfilParaMostrar?.obras, topFiveObraIds]);
+
+  async function alternarCurtidaTopFivePerfil() {
+    const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
+    const usuarioId = usuarioIdLogado.trim();
+
+    if (!perfilAutorId) {
+      return;
+    }
+
+    if (!usuarioId) {
+      setMensagemAcao("Entre para curtir o TOP 5 deste perfil.");
+      return;
+    }
+
+    if (topFiveCurtidaSalvando) {
+      return;
+    }
+
+    const proximaCurtida = !topFiveCurtidoPorMim;
+
+    setTopFiveCurtidaSalvando(true);
+    setTopFiveCurtidoPorMim(proximaCurtida);
+    setTopFiveCurtidasTotal((totalAtual) =>
+      Math.max(0, totalAtual + (proximaCurtida ? 1 : -1)),
+    );
+    salvarCurtidaTopFiveLocal(perfilAutorId, usuarioId, proximaCurtida);
+
+    const salvouRemoto = await salvarCurtidaTopFiveSupabase(
+      perfilAutorId,
+      usuarioId,
+      proximaCurtida,
+    );
+
+    if (salvouRemoto) {
+      const estadoAtualizado = await carregarCurtidasTopFivePerfil(
+        perfilAutorId,
+        usuarioId,
+      );
+
+      setTopFiveCurtidasTotal(estadoAtualizado.total);
+      setTopFiveCurtidoPorMim(estadoAtualizado.curtiu);
+    }
+
+    setTopFiveCurtidaSalvando(false);
+  }
 
   useEffect(() => {
     const perfilAtual = perfilParaMostrar;
@@ -7163,17 +7450,87 @@ export default function PerfilAutorPage() {
               aria-label="TOP 5"
             >
               <div style={authorHighlightsHeaderStyle}>
-                <strong style={authorHighlightsTitleStyle}>TOP 5</strong>
+                <div style={authorHighlightsTitleGroupStyle}>
+                  <strong style={authorHighlightsTitleStyle}>TOP 5</strong>
 
-                {podeEditarPerfil && (
-                  <Link
-                    href="/perfil-autor/top-5"
-                    style={authorHighlightsTopFiveButtonStyle}
-                    aria-label="Montar ou editar TOP 5"
-                  >
-                    +
-                  </Link>
-                )}
+                  {podeEditarPerfil && obrasEmDestaque.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => void alternarCurtidaTopFivePerfil()}
+                      disabled={topFiveCurtidaSalvando}
+                      style={
+                        topFiveCurtidoPorMim
+                          ? authorHighlightsLikeButtonActiveStyle
+                          : authorHighlightsLikeButtonStyle
+                      }
+                      aria-label={
+                        topFiveCurtidoPorMim
+                          ? "Remover curtida do TOP 5"
+                          : "Curtir TOP 5"
+                      }
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill={topFiveCurtidoPorMim ? "currentColor" : "none"}
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+                      </svg>
+                      <span style={authorHighlightsLikeCountStyle}>{compactarNumeroPerfilAutor(topFiveCurtidasTotal)}</span>
+                    </button>
+                  )}
+                </div>
+
+                <div style={authorHighlightsHeaderActionsStyle}>
+                  {podeEditarPerfil ? (
+                    <Link
+                      href="/perfil-autor/top-5"
+                      style={authorHighlightsTopFiveButtonStyle}
+                      aria-label="Montar ou editar TOP 5"
+                    >
+                      +
+                    </Link>
+                  ) : (
+                    obrasEmDestaque.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => void alternarCurtidaTopFivePerfil()}
+                        disabled={topFiveCurtidaSalvando}
+                        style={
+                          topFiveCurtidoPorMim
+                            ? authorHighlightsLikeButtonActiveStyle
+                            : authorHighlightsLikeButtonStyle
+                        }
+                        aria-label={
+                          topFiveCurtidoPorMim
+                            ? "Remover curtida do TOP 5"
+                            : "Curtir TOP 5"
+                        }
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill={topFiveCurtidoPorMim ? "currentColor" : "none"}
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+                        </svg>
+                        <span style={authorHighlightsLikeCountStyle}>{compactarNumeroPerfilAutor(topFiveCurtidasTotal)}</span>
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
 
               <div style={isDesktop ? desktopAuthorHighlightsListStyle : authorHighlightsListStyle}>
@@ -10047,12 +10404,63 @@ const authorHighlightsHeaderStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+const authorHighlightsTitleGroupStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "7px",
+  minWidth: 0,
+  flex: "1 1 auto",
+};
+
 const authorHighlightsTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "12px",
   lineHeight: 1.1,
   fontWeight: 950,
   letterSpacing: "-0.02em",
+  ...safeTextStyle,
+};
+
+const authorHighlightsHeaderActionsStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "8px",
+  flex: "0 0 auto",
+};
+
+const authorHighlightsLikeButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "4px",
+  minWidth: 0,
+  height: "22px",
+  padding: 0,
+  border: "none",
+  borderRadius: 0,
+  background: "transparent",
+  color: "var(--historietas-text-muted, rgba(255,255,255,0.76))",
+  fontSize: "11px",
+  lineHeight: 1,
+  fontWeight: 850,
+  cursor: "pointer",
+  boxSizing: "border-box",
+  WebkitTapHighlightColor: "transparent",
+  ...safeTextStyle,
+};
+
+const authorHighlightsLikeButtonActiveStyle: CSSProperties = {
+  ...authorHighlightsLikeButtonStyle,
+  color: "#EF4444",
+};
+
+const authorHighlightsLikeCountStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+  lineHeight: 1,
+  fontWeight: 850,
   ...safeTextStyle,
 };
 
