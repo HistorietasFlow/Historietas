@@ -1802,7 +1802,8 @@ export default function PublicarPage() {
                   <option>Romance</option>
                   <option>Conto</option>
                   <option>Poesia</option>
-                  <option>HQ/Mangá</option>
+                  <option>HQ</option>
+                  <option>Mangá</option>
                   <option>Fanfic</option>
                   <option value={OUTRO_FORMATO_VALUE}>Outro formato</option>
                 </select>

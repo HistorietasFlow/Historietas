@@ -2567,7 +2567,7 @@ export default function ObraDinamicaPage() {
       }
 
       setMensagemAcao(
-        proximoFavorito ? "Obra salva na lista." : "Obra removida da lista."
+        proximoFavorito ? "" : "Obra removida da lista."
       );
     } catch (error) {
       console.warn("Não consegui salvar favorito da obra:", error);
@@ -3036,10 +3036,6 @@ export default function ObraDinamicaPage() {
                   +
                 </button>
               </div>
-
-              {mensagemAcao && (
-                <span style={actionMessageStyle}>{mensagemAcao}</span>
-              )}
             </div>
           </div>
 

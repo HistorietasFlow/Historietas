@@ -167,103 +167,6 @@ const MAX_OPCOES_ENQUETE = 4;
 const MODELO_ENQUETE_COMUNIDADE =
   "Enquete: qual opção você escolheria?\nOpção 1:\nOpção 2:";
 
-type FigurinhaComentario = {
-  id: string;
-  rotulo: string;
-  alt: string;
-  src: string;
-};
-
-function criarFigurinhaSvg(rotulo: string, destaque: string, fundo: string) {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
-      <defs>
-        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stop-color="${destaque}" />
-          <stop offset="1" stop-color="#7C3AED" />
-        </linearGradient>
-      </defs>
-      <rect width="160" height="160" rx="42" fill="${fundo}" />
-      <circle cx="80" cy="70" r="44" fill="url(#g)" />
-      <circle cx="62" cy="62" r="7" fill="#FFFFFF" />
-      <circle cx="98" cy="62" r="7" fill="#FFFFFF" />
-      <path d="M60 88c12 11 28 11 40 0" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
-      <path d="M37 117c16-18 33-24 50-18 13 5 24 15 33 29" fill="none" stroke="${destaque}" stroke-width="10" stroke-linecap="round" opacity="0.9" />
-      <text x="80" y="139" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="900" fill="#FFFFFF">${rotulo}</text>
-    </svg>
-  `;
-
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
-const FIGURINHAS_COMENTARIOS: FigurinhaComentario[] = [
-  {
-    id: "impacto",
-    rotulo: "Impacto",
-    alt: "Figurinha Impacto",
-    src: criarFigurinhaSvg("BOOM", "#F97316", "#12081F"),
-  },
-  {
-    id: "chocado",
-    rotulo: "Chocado",
-    alt: "Figurinha Chocado",
-    src: criarFigurinhaSvg("WOW", "#FDBA74", "#0B0614"),
-  },
-  {
-    id: "fofo",
-    rotulo: "Fofo",
-    alt: "Figurinha Fofo",
-    src: criarFigurinhaSvg("FOFO", "#F472B6", "#12081F"),
-  },
-  {
-    id: "sombrio",
-    rotulo: "Sombrio",
-    alt: "Figurinha Sombrio",
-    src: criarFigurinhaSvg("DARK", "#7C3AED", "#0B0614"),
-  },
-  {
-    id: "fogo",
-    rotulo: "Fogo",
-    alt: "Figurinha Fogo",
-    src: criarFigurinhaSvg("FIRE", "#F97316", "#180B2D"),
-  },
-  {
-    id: "amei",
-    rotulo: "Amei",
-    alt: "Figurinha Amei",
-    src: criarFigurinhaSvg("LOVE", "#F43F5E", "#12081F"),
-  },
-  {
-    id: "genial",
-    rotulo: "Genial",
-    alt: "Figurinha Genial",
-    src: criarFigurinhaSvg("TOP", "#FACC15", "#0B0614"),
-  },
-  {
-    id: "vilao",
-    rotulo: "Vilão",
-    alt: "Figurinha Vilão",
-    src: criarFigurinhaSvg("VILÃO", "#A855F7", "#0B0614"),
-  },
-];
-
-function obterCodigoFigurinha(id: string) {
-  return `[figurinha:${id}]`;
-}
-
-function obterFigurinhaPorTexto(texto: string) {
-  const match = /^\[figurinha:([a-z0-9-]+)\]$/i.exec(texto.trim());
-
-  if (!match) {
-    return null;
-  }
-
-  return (
-    FIGURINHAS_COMENTARIOS.find((figurinha) => figurinha.id === match[1]) ||
-    null
-  );
-}
-
 function obterNomeUsuario(email: string, nomeProfile = "") {
   const nomeLimpo = nomeProfile.trim();
 
@@ -1147,10 +1050,6 @@ const ComentariosSheet = memo(function ComentariosSheet({
   const dragStartYRef = useRef(0);
   const dragOffsetYRef = useRef(0);
   const [sheetExpandido, setSheetExpandido] = useState(false);
-  const [figurinhasAbertas, setFigurinhasAbertas] = useState(false);
-  const [figurinhaSelecionadaId, setFigurinhaSelecionadaId] = useState<
-    string | null
-  >(null);
   const [comentarioEnviando, setComentarioEnviando] = useState(false);
   const [comentarioCurtindoId, setComentarioCurtindoId] = useState<string | null>(null);
   const [comentarioRemovendoId, setComentarioRemovendoId] = useState<
@@ -1161,17 +1060,6 @@ const ComentariosSheet = memo(function ComentariosSheet({
   >(null);
   const comentarioAcoesRef = useRef<Set<string>>(new Set<string>());
 
-  const figurinhaSelecionada = useMemo(() => {
-    if (!figurinhaSelecionadaId) {
-      return null;
-    }
-
-    return (
-      FIGURINHAS_COMENTARIOS.find(
-        (figurinha) => figurinha.id === figurinhaSelecionadaId
-      ) || null
-    );
-  }, [figurinhaSelecionadaId]);
 
   function inserirNoComentario(valor: string) {
     if (!podeComentar || !comentarioRef.current) {
@@ -1188,28 +1076,6 @@ const ComentariosSheet = memo(function ComentariosSheet({
 
     const novaPosicao = inicio + valor.length;
     campo.setSelectionRange(novaPosicao, novaPosicao);
-  }
-
-  function inserirFigurinha(id: string) {
-    if (!podeComentar) {
-      return;
-    }
-
-    setFigurinhaSelecionadaId(id);
-    setFigurinhasAbertas(false);
-
-    if (comentarioRef.current) {
-      comentarioRef.current.value = "";
-      comentarioRef.current.blur();
-    }
-  }
-
-  function removerFigurinhaSelecionada() {
-    setFigurinhaSelecionadaId(null);
-
-    if (comentarioRef.current) {
-      comentarioRef.current.focus();
-    }
   }
 
   function iniciarAcaoComentario(chave: string) {
@@ -1288,9 +1154,6 @@ const ComentariosSheet = memo(function ComentariosSheet({
     }
 
     const mencao = `@${nomeAutor.replace(/\s+/g, " ").trim()} `;
-
-    setFigurinhaSelecionadaId(null);
-    setFigurinhasAbertas(false);
 
     window.setTimeout(() => {
       if (!comentarioRef.current) {
@@ -1383,18 +1246,11 @@ const ComentariosSheet = memo(function ComentariosSheet({
     setComentarioEnviando(true);
 
     try {
-      const conteudoComentario = figurinhaSelecionadaId
-        ? obterCodigoFigurinha(figurinhaSelecionadaId)
-        : comentarioRef.current?.value || "";
-
+      const conteudoComentario = comentarioRef.current?.value || "";
       const enviado = await onEnviar(post.id, conteudoComentario);
 
-      if (enviado) {
-        setFigurinhaSelecionadaId(null);
-
-        if (comentarioRef.current) {
-          comentarioRef.current.value = "";
-        }
+      if (enviado && comentarioRef.current) {
+        comentarioRef.current.value = "";
       }
     } finally {
       finalizarAcaoComentario(chaveAcao);
@@ -1492,18 +1348,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                     <span style={commentTimeStyle}>agora</span>
                   </div>
 
-                  {obterFigurinhaPorTexto(comentario.texto) ? (
-                    <img
-                      src={obterFigurinhaPorTexto(comentario.texto)?.src}
-                      alt={
-                        obterFigurinhaPorTexto(comentario.texto)?.alt ||
-                        "Figurinha"
-                      }
-                      style={commentStickerImageStyle}
-                    />
-                  ) : (
-                    <p style={commentTextStyle}>{comentario.texto}</p>
-                  )}
+                  <p style={commentTextStyle}>{comentario.texto}</p>
 
                   <div style={commentActionsRowStyle}>
                     <button
@@ -1618,64 +1463,13 @@ const ComentariosSheet = memo(function ComentariosSheet({
                 key={emoji}
                 type="button"
                 onClick={() => inserirNoComentario(emoji)}
-                disabled={!podeComentar || Boolean(figurinhaSelecionada)}
+                disabled={!podeComentar}
                 style={commentsQuickReactionButtonStyle}
               >
                 {emoji}
               </button>
             ))}
-
-            <button
-              type="button"
-              aria-label="Abrir figurinhas"
-              title="Figurinhas"
-              onClick={() => setFigurinhasAbertas((aberto) => !aberto)}
-              disabled={!podeComentar}
-              style={
-                figurinhasAbertas
-                  ? commentsStickerToggleActiveStyle
-                  : commentsStickerToggleStyle
-              }
-            >
-              ▣
-            </button>
           </div>
-
-          {figurinhasAbertas && (
-            <div style={commentsStickerTrayStyle}>
-              <div style={commentsStickerTrayHeaderStyle}>
-                <strong style={commentsStickerTrayTitleStyle}>
-                  Figurinhas Historietas
-                </strong>
-
-                <button
-                  type="button"
-                  onClick={() => setFigurinhasAbertas(false)}
-                  style={commentsStickerTrayCloseStyle}
-                >
-                  ×
-                </button>
-              </div>
-
-              <div style={commentsStickersGridStyle}>
-                {FIGURINHAS_COMENTARIOS.map((figurinha) => (
-                  <button
-                    key={figurinha.id}
-                    type="button"
-                    aria-label={figurinha.alt}
-                    onClick={() => inserirFigurinha(figurinha.id)}
-                    style={commentsStickerButtonStyle}
-                  >
-                    <img
-                      src={figurinha.src}
-                      alt={figurinha.alt}
-                      style={commentsStickerPreviewStyle}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </section>
 
         <form onSubmit={enviarComentario} style={commentsSheetFormStyle}>
@@ -1690,46 +1484,27 @@ const ComentariosSheet = memo(function ComentariosSheet({
           </div>
 
           <div style={commentsInputBoxStyle}>
-            {figurinhaSelecionada ? (
-              <div style={commentsSelectedStickerStyle}>
-                <img
-                  src={figurinhaSelecionada.src}
-                  alt={figurinhaSelecionada.alt}
-                  style={commentsSelectedStickerImageStyle}
-                />
-
-                <button
-                  type="button"
-                  aria-label="Remover figurinha"
-                  onClick={removerFigurinhaSelecionada}
-                  style={commentsSelectedStickerRemoveStyle}
-                >
-                  ×
-                </button>
-              </div>
-            ) : (
-              <textarea
-                ref={comentarioRef}
-                placeholder={
-                  podeComentar ? "Adicionar comentário..." : "Entre para comentar."
-                }
-                disabled={!podeComentar || comentarioEnviando}
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                inputMode="text"
-                enterKeyHint="send"
-                maxLength={420}
-                rows={1}
-                style={commentsSheetInputStyle}
-              />
-            )}
+            <textarea
+              ref={comentarioRef}
+              placeholder={
+                podeComentar ? "Adicionar comentário..." : "Entre para comentar."
+              }
+              disabled={!podeComentar || comentarioEnviando}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              inputMode="text"
+              enterKeyHint="send"
+              maxLength={420}
+              rows={1}
+              style={commentsSheetInputStyle}
+            />
           </div>
 
           <button
             type="button"
             onClick={() => inserirNoComentario("@")}
-            disabled={!podeComentar || Boolean(figurinhaSelecionada)}
+            disabled={!podeComentar}
             style={commentsInputIconButtonStyle}
           >
             @
@@ -1812,8 +1587,6 @@ export default function ComunidadePage() {
   const parametrosComunidadeAplicadosRef = useRef(false);
   const comentarioUrlAplicadoRef = useRef(false);
   const [composerAberto, setComposerAberto] = useState(false);
-  const [mostrarFiltrosAvancadosComunidade, setMostrarFiltrosAvancadosComunidade] =
-    useState(false);
   const [menuAcoesRapidasComunidadeAberto, setMenuAcoesRapidasComunidadeAberto] =
     useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -2120,37 +1893,6 @@ export default function ComunidadePage() {
   }, [composerAberto]);
 
   useEffect(() => {
-    if (!mostrarFiltrosAvancadosComunidade) {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.getPropertyValue("overflow");
-    const overscrollAnterior = document.documentElement.style.getPropertyValue(
-      "overscroll-behavior"
-    );
-
-    document.body.style.setProperty("overflow", "hidden");
-    document.documentElement.style.setProperty("overscroll-behavior", "none");
-
-    return () => {
-      if (overflowAnterior) {
-        document.body.style.setProperty("overflow", overflowAnterior);
-      } else {
-        document.body.style.removeProperty("overflow");
-      }
-
-      if (overscrollAnterior) {
-        document.documentElement.style.setProperty(
-          "overscroll-behavior",
-          overscrollAnterior
-        );
-      } else {
-        document.documentElement.style.removeProperty("overscroll-behavior");
-      }
-    };
-  }, [mostrarFiltrosAvancadosComunidade]);
-
-  useEffect(() => {
     if (!menuAcoesRapidasComunidadeAberto && !postMenuAbertoId) {
       return;
     }
@@ -2221,7 +1963,7 @@ export default function ComunidadePage() {
 
       if (tipoUrl) {
         setTipoPublicacaoAtiva(tipoUrl);
-        setMostrarFiltrosAvancadosComunidade(true);
+        setMenuAcoesRapidasComunidadeAberto(true);
       }
 
       setMostrarApenasSalvos(false);
@@ -3557,7 +3299,11 @@ export default function ComunidadePage() {
               <div style={communityFilterControlsRowStyle}>
                 <button
                   type="button"
-                  onClick={() => setMostrarFiltrosAvancadosComunidade(true)}
+                  aria-label="Abrir filtros, ordenação e ações da comunidade"
+                  aria-expanded={menuAcoesRapidasComunidadeAberto}
+                  onClick={() =>
+                    setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
+                  }
                   style={communityFilterLabelButtonStyle}
                 >
                   <span>{textoBotaoFiltrosAvancadosComunidade}</span>
@@ -3625,158 +3371,6 @@ export default function ComunidadePage() {
               )}
             </section>
 
-            {mostrarFiltrosAvancadosComunidade && (
-              <section style={communityFiltersSheetOverlayStyle} aria-label="Filtrar e ordenar publicações">
-                <button
-                  type="button"
-                  aria-label="Fechar filtros"
-                  onClick={() => setMostrarFiltrosAvancadosComunidade(false)}
-                  style={communityFiltersSheetBackdropStyle}
-                />
-
-                <article style={communityFiltersSheetStyle}>
-                  <div style={communityFiltersSheetHandleStyle} />
-
-                  <strong style={communityFiltersSheetTitleStyle}>
-                    Filtrar e ordenar
-                  </strong>
-
-                  <span style={communityFiltersSheetSectionLabelStyle}>
-                    Mostrar
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      limparFiltrosComunidade();
-                      setMostrarFiltrosAvancadosComunidade(false);
-                    }}
-                    style={
-                      !filtrosAtivos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
-                  >
-                    <span>Todas</span>
-                    <span
-                      style={
-                        !filtrosAtivos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
-                      }
-                    />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMostrarApenasSalvos(true);
-                      setMostrarFiltrosAvancadosComunidade(false);
-                    }}
-                    style={
-                      mostrarApenasSalvos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
-                  >
-                    <span>Posts salvos</span>
-                    <span
-                      style={
-                        mostrarApenasSalvos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
-                      }
-                    />
-                  </button>
-
-                  <span style={communityFiltersSheetSectionLabelStyle}>
-                    Ordenar
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOrdenacaoAtiva("Recentes");
-                      setMostrarApenasSalvos(false);
-                      setMostrarFiltrosAvancadosComunidade(false);
-                    }}
-                    style={
-                      ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
-                  >
-                    <span>Recentes</span>
-                    <span
-                      style={
-                        ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
-                      }
-                    />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOrdenacaoAtiva("Em alta");
-                      setMostrarApenasSalvos(false);
-                      setMostrarFiltrosAvancadosComunidade(false);
-                    }}
-                    style={
-                      ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
-                  >
-                    <span>Em alta</span>
-                    <span
-                      style={
-                        ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
-                      }
-                    />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOrdenacaoAtiva("Mais comentadas");
-                      setMostrarApenasSalvos(false);
-                      setMostrarFiltrosAvancadosComunidade(false);
-                    }}
-                    style={
-                      ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
-                  >
-                    <span>Mais comentadas</span>
-                    <span
-                      style={
-                        ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
-                      }
-                    />
-                  </button>
-
-                  {filtrosAtivos && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        limparFiltrosComunidade();
-                        setMostrarFiltrosAvancadosComunidade(false);
-                      }}
-                      style={communityFiltersSheetClearButtonStyle}
-                    >
-                      Limpar filtros
-                    </button>
-                  )}
-                </article>
-              </section>
-            )}
 
             {menuAcoesRapidasComunidadeAberto && (
               <section
@@ -3987,6 +3581,145 @@ export default function ComunidadePage() {
                     denunciaEnviandoId === obterChaveDenuncia("post", post.id);
                   const spoilerRevelado = spoilersReveladosIds.includes(post.id);
                   const ocultarTextoSpoiler = post.temSpoiler && !spoilerRevelado;
+                  const opcoesPublicacao = (
+                    <div style={postOptionsWrapStyle}>
+                      <button
+                        type="button"
+                        aria-label="Abrir opções da publicação"
+                        aria-haspopup="menu"
+                        aria-expanded={postMenuAbertoId === post.id}
+                        onClick={() =>
+                          setPostMenuAbertoId((postIdAtual) =>
+                            postIdAtual === post.id ? null : post.id
+                          )
+                        }
+                        style={postMenuAbertoId ? postOptionsButtonActiveStyle : postOptionsButtonStyle}
+                      >
+                        ⋮
+                      </button>
+
+                      {postMenuAbertoId === post.id && (
+                        <section
+                          style={communityFiltersSheetOverlayStyle}
+                          aria-label="Ações da publicação"
+                        >
+                          <button
+                            type="button"
+                            aria-label="Fechar ações da publicação"
+                            onClick={() => setPostMenuAbertoId(null)}
+                            style={communityFiltersSheetBackdropStyle}
+                          />
+
+                          <article role="menu" style={communityActionsSheetStyle}>
+                            <div style={communityFiltersSheetHandleStyle} />
+
+                            <strong style={communityFiltersSheetTitleStyle}>
+                              Ações da publicação
+                            </strong>
+
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setPostMenuAbertoId(null);
+                                alternarPostSalvo(post.id);
+                              }}
+                              disabled={postSalvando}
+                              style={{
+                                ...communityActionsSheetItemStyle,
+                                opacity: postSalvando ? 0.58 : 1,
+                                cursor: postSalvando ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              {postSalvando
+                                ? "Salvando..."
+                                : postSalvo
+                                  ? "Remover dos salvos"
+                                  : "Salvar publicação"}
+                            </button>
+
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setPostMenuAbertoId(null);
+                                compartilharPublicacao(post);
+                              }}
+                              disabled={postCompartilhando}
+                              style={{
+                                ...communityActionsSheetItemStyle,
+                                opacity: postCompartilhando ? 0.58 : 1,
+                                cursor: postCompartilhando ? "not-allowed" : "pointer",
+                              }}
+                            >
+                              {postCompartilhando ? "Copiando..." : "Copiar link"}
+                            </button>
+
+                            {usuarioEhAdmin && (
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setPostMenuAbertoId(null);
+                                  alternarFixadoPost(post);
+                                }}
+                                disabled={postFixando}
+                                style={{
+                                  ...communityActionsSheetItemStyle,
+                                  opacity: postFixando ? 0.58 : 1,
+                                  cursor: postFixando ? "not-allowed" : "pointer",
+                                }}
+                              >
+                                {postFixando
+                                  ? "Atualizando..."
+                                  : post.fixado
+                                    ? "Desfixar publicação"
+                                    : "Fixar publicação"}
+                              </button>
+                            )}
+
+                            {podeRemover && (
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setPostMenuAbertoId(null);
+                                  removerPost(post.id);
+                                }}
+                                disabled={postRemovendo}
+                                style={{
+                                  ...communityActionsSheetDangerItemStyle,
+                                  opacity: postRemovendo ? 0.58 : 1,
+                                  cursor: postRemovendo ? "not-allowed" : "pointer",
+                                }}
+                              >
+                                {postRemovendo ? "Removendo..." : "Remover publicação"}
+                              </button>
+                            )}
+
+                            {podeDenunciarPost && (
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setPostMenuAbertoId(null);
+                                  denunciarConteudo("post", post.id);
+                                }}
+                                disabled={postDenunciando}
+                                style={{
+                                  ...communityActionsSheetDangerItemStyle,
+                                  opacity: postDenunciando ? 0.58 : 1,
+                                  cursor: postDenunciando ? "not-allowed" : "pointer",
+                                }}
+                              >
+                                {postDenunciando ? "Enviando..." : "Denunciar"}
+                              </button>
+                            )}
+                          </article>
+                        </section>
+                      )}
+                    </div>
+                  );
 
                   return (
                     <article key={post.id} style={isDesktop ? postCardDesktopStyle : postCardStyle}>
@@ -4028,143 +3761,7 @@ export default function ComunidadePage() {
                           </span>
                         </div>
 
-                        <div style={postOptionsWrapStyle}>
-                          <button
-                            type="button"
-                            aria-label="Abrir opções da publicação"
-                            aria-haspopup="menu"
-                            aria-expanded={postMenuAbertoId === post.id}
-                            onClick={() =>
-                              setPostMenuAbertoId((postIdAtual) =>
-                                postIdAtual === post.id ? null : post.id
-                              )
-                            }
-                            style={postMenuAbertoId ? postOptionsButtonActiveStyle : postOptionsButtonStyle}
-                          >
-                            ⋮
-                          </button>
-
-                          {postMenuAbertoId === post.id && (
-                            <section
-                              style={communityFiltersSheetOverlayStyle}
-                              aria-label="Ações da publicação"
-                            >
-                              <button
-                                type="button"
-                                aria-label="Fechar ações da publicação"
-                                onClick={() => setPostMenuAbertoId(null)}
-                                style={communityFiltersSheetBackdropStyle}
-                              />
-
-                              <article role="menu" style={communityActionsSheetStyle}>
-                                <div style={communityFiltersSheetHandleStyle} />
-
-                                <strong style={communityFiltersSheetTitleStyle}>
-                                  Ações da publicação
-                                </strong>
-
-                                <button
-                                  type="button"
-                                  role="menuitem"
-                                  onClick={() => {
-                                    setPostMenuAbertoId(null);
-                                    alternarPostSalvo(post.id);
-                                  }}
-                                  disabled={postSalvando}
-                                  style={{
-                                    ...communityActionsSheetItemStyle,
-                                    opacity: postSalvando ? 0.58 : 1,
-                                    cursor: postSalvando ? "not-allowed" : "pointer",
-                                  }}
-                                >
-                                  {postSalvando
-                                    ? "Salvando..."
-                                    : postSalvo
-                                      ? "Remover dos salvos"
-                                      : "Salvar publicação"}
-                                </button>
-
-                                <button
-                                  type="button"
-                                  role="menuitem"
-                                  onClick={() => {
-                                    setPostMenuAbertoId(null);
-                                    compartilharPublicacao(post);
-                                  }}
-                                  disabled={postCompartilhando}
-                                  style={{
-                                    ...communityActionsSheetItemStyle,
-                                    opacity: postCompartilhando ? 0.58 : 1,
-                                    cursor: postCompartilhando ? "not-allowed" : "pointer",
-                                  }}
-                                >
-                                  {postCompartilhando ? "Copiando..." : "Copiar link"}
-                                </button>
-
-                                {usuarioEhAdmin && (
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => {
-                                      setPostMenuAbertoId(null);
-                                      alternarFixadoPost(post);
-                                    }}
-                                    disabled={postFixando}
-                                    style={{
-                                      ...communityActionsSheetItemStyle,
-                                      opacity: postFixando ? 0.58 : 1,
-                                      cursor: postFixando ? "not-allowed" : "pointer",
-                                    }}
-                                  >
-                                    {postFixando
-                                      ? "Atualizando..."
-                                      : post.fixado
-                                        ? "Desfixar publicação"
-                                        : "Fixar publicação"}
-                                  </button>
-                                )}
-
-                                {podeRemover && (
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => {
-                                      setPostMenuAbertoId(null);
-                                      removerPost(post.id);
-                                    }}
-                                    disabled={postRemovendo}
-                                    style={{
-                                      ...communityActionsSheetDangerItemStyle,
-                                      opacity: postRemovendo ? 0.58 : 1,
-                                      cursor: postRemovendo ? "not-allowed" : "pointer",
-                                    }}
-                                  >
-                                    {postRemovendo ? "Removendo..." : "Remover publicação"}
-                                  </button>
-                                )}
-
-                                {podeDenunciarPost && (
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => {
-                                      setPostMenuAbertoId(null);
-                                      denunciarConteudo("post", post.id);
-                                    }}
-                                    disabled={postDenunciando}
-                                    style={{
-                                      ...communityActionsSheetDangerItemStyle,
-                                      opacity: postDenunciando ? 0.58 : 1,
-                                      cursor: postDenunciando ? "not-allowed" : "pointer",
-                                    }}
-                                  >
-                                    {postDenunciando ? "Enviando..." : "Denunciar"}
-                                  </button>
-                                )}
-                              </article>
-                            </section>
-                          )}
-                        </div>
+                        {opcoesPublicacao}
                       </div>
 
                       <div style={postBadgesRowStyle}>
@@ -4198,11 +3795,9 @@ export default function ComunidadePage() {
                       </div>
 
                       {ocultarTextoSpoiler ? (
-                        <div style={spoilerHiddenBoxStyle}>
-                          <strong style={spoilerHiddenTitleStyle}>
-                            Conteúdo com spoiler oculto
-                          </strong>
-                        </div>
+                        <strong style={spoilerHiddenTitleStyle}>
+                          Conteúdo com spoiler oculto
+                        </strong>
                       ) : (
                         <>
                           {postEhEnquete(post) ? (
@@ -4246,13 +3841,25 @@ export default function ComunidadePage() {
                                         }}
                                       />
 
-                                      <span style={pollPostOptionTextStyle}>
+                                      <span
+                                        style={{
+                                          ...pollPostOptionTextStyle,
+                                          color: "#FFFFFF",
+                                          WebkitTextFillColor: "#FFFFFF",
+                                        }}
+                                      >
                                         {opcao}
                                       </span>
 
-                                      <span style={pollPostStatusStyle}>
+                                      <span
+                                        style={{
+                                          ...pollPostStatusStyle,
+                                          color: "#FFFFFF",
+                                          WebkitTextFillColor: "#FFFFFF",
+                                        }}
+                                      >
                                         {selecionada
-                                          ? `Seu voto · ${totalVotos > 0 ? porcentagem : 100}%`
+                                          ? `${totalVotos > 0 ? porcentagem : 100}%`
                                           : totalVotos > 0
                                             ? `${porcentagem}%`
                                             : "Votar"}
@@ -4488,11 +4095,18 @@ export default function ComunidadePage() {
                               }}
                               style={relatedWorkSuggestionButtonStyle}
                             >
-                              <strong style={relatedWorkSuggestionTitleStyle}>
-                                {obra.titulo}
-                              </strong>
-                              <span style={relatedWorkSuggestionAuthorStyle}>
-                                Por {obra.autor}
+                              <span style={relatedWorkSuggestionContentStyle}>
+                                <strong style={relatedWorkSuggestionTitleStyle}>
+                                  {obra.titulo}
+                                </strong>
+
+                                <span style={relatedWorkSuggestionAuthorStyle}>
+                                  {obra.autor}
+                                </span>
+                              </span>
+
+                              <span style={relatedWorkSuggestionBadgeStyle}>
+                                OBRA
                               </span>
                             </button>
                           ))}
@@ -5295,7 +4909,7 @@ const pollTemplateButtonStyle: CSSProperties = {
   minHeight: "auto",
   border: "none",
   background: "transparent",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   padding: 0,
   fontSize: "10px",
   fontWeight: 950,
@@ -5344,7 +4958,9 @@ const pollPostOptionStyle: CSSProperties = {
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   background: "rgba(255,255,255,0.045)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  opacity: 1,
   fontSize: "11px",
   fontWeight: 900,
   fontFamily: "inherit",
@@ -5358,6 +4974,8 @@ const pollPostOptionSelectedStyle: CSSProperties = {
   border: "1px solid rgba(56,189,248,0.62)",
   background: "linear-gradient(135deg, #2563EB 0%, #38BDF8 100%)",
   color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  opacity: 1,
 };
 
 const pollPostResultBarStyle: CSSProperties = {
@@ -5374,6 +4992,8 @@ const pollPostOptionTextStyle: CSSProperties = {
   textAlign: "left",
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
+  opacity: 1,
+  textShadow: "0 1px 2px rgba(0,0,0,0.38)",
   ...safeTextStyle,
 };
 
@@ -5382,6 +5002,8 @@ const pollPostStatusStyle: CSSProperties = {
   zIndex: 1,
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
+  opacity: 1,
+  textShadow: "0 1px 2px rgba(0,0,0,0.38)",
   fontSize: "10px",
   fontWeight: 950,
   whiteSpace: "nowrap",
@@ -5558,53 +5180,79 @@ const relatedWorkSearchWrapStyle: CSSProperties = {
 };
 
 const relatedWorkSuggestionsStyle: CSSProperties = {
-  position: "absolute",
-  top: "calc(100% + 5px)",
-  left: 0,
-  right: 0,
-  zIndex: 18,
+  position: "relative",
+  top: "auto",
+  left: "auto",
+  right: "auto",
+  zIndex: 1,
   display: "grid",
-  gap: "4px",
-  padding: "6px",
-  borderRadius: "16px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  background: "var(--historietas-surface-strong, rgba(12,7,23,0.98))",
+  gap: 0,
+  marginTop: "8px",
+  padding: "0 8px",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   boxShadow: "none",
-  maxHeight: "172px",
+  maxHeight: "260px",
   overflowY: "auto",
   WebkitOverflowScrolling: "touch",
+  boxSizing: "border-box",
 };
 
 const relatedWorkSuggestionButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  display: "grid",
-  gap: "2px",
-  justifyItems: "start",
-  padding: "7px 9px",
-  borderRadius: "12px",
-  border: "1px solid transparent",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
+  minHeight: "58px",
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  padding: "12px 0",
+  borderRadius: 0,
+  border: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.10)",
+  background: "transparent",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "inherit",
   cursor: "pointer",
   textAlign: "left",
   minWidth: 0,
+  boxSizing: "border-box",
+};
+
+const relatedWorkSuggestionContentStyle: CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  minWidth: 0,
 };
 
 const relatedWorkSuggestionTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12px",
+  fontSize: "13px",
   lineHeight: 1.15,
   fontWeight: 950,
   ...safeTextStyle,
 };
 
 const relatedWorkSuggestionAuthorStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  lineHeight: 1.15,
-  fontWeight: 800,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  lineHeight: 1.25,
+  fontWeight: 750,
   ...safeTextStyle,
+};
+
+const relatedWorkSuggestionBadgeStyle: CSSProperties = {
+  flex: "0 0 auto",
+  borderRadius: 0,
+  border: "none",
+  color: "#D4D4D8",
+  background: "transparent",
+  padding: 0,
+  fontSize: "10px",
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+  whiteSpace: "nowrap",
 };
 
 const selectStyle: CSSProperties = {
@@ -5670,7 +5318,7 @@ const postComposerDesktopSheetStyle: CSSProperties = {
   maxHeight: "min(760px, calc(100dvh - 56px))",
   alignSelf: "center",
   borderRadius: "28px",
-  borderBottom: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  borderBottom: "none",
 };
 
 const postComposerHeaderStyle: CSSProperties = {
@@ -5680,7 +5328,7 @@ const postComposerHeaderStyle: CSSProperties = {
   alignItems: "center",
   justifyItems: "center",
   gap: "8px",
-  borderBottom: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  borderBottom: "none",
   paddingBottom: "8px",
   minWidth: 0,
   textAlign: "center",
@@ -5753,9 +5401,9 @@ const spoilerComposerStyle: CSSProperties = {
   gap: "8px",
   padding: "0 10px 0 12px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.12)",
+  color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 900,
   fontFamily: "inherit",
@@ -5769,9 +5417,9 @@ const spoilerComposerStyle: CSSProperties = {
 
 const spoilerComposerActiveStyle: CSSProperties = {
   ...spoilerComposerStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.12)",
+  color: "#FFFFFF",
 };
 
 const spoilerComposerLabelStyle: CSSProperties = {
@@ -6254,6 +5902,7 @@ const communityFiltersSheetStyle: CSSProperties = {
   borderRadius: "24px 24px 0 0",
   background: "#070212",
   border: "1px solid rgba(255,255,255,0.06)",
+  borderBottom: "none",
   overflowY: "auto",
   overflowX: "hidden",
   overscrollBehavior: "none",
@@ -6874,7 +6523,7 @@ const savedFilterActiveStyle: CSSProperties = {
 
 const postsListStyle: CSSProperties = {
   display: "grid",
-  gap: "12px",
+  gap: 0,
   minWidth: 0,
 };
 
@@ -6953,10 +6602,10 @@ const emptyFeedButtonStyle: CSSProperties = {
 const postCardStyle: CSSProperties = {
   display: "grid",
   gap: "11px",
-  padding: "14px",
-  borderRadius: "23px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.08)",
+  padding: "14px 0",
+  borderRadius: 0,
+  background: "transparent",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   minWidth: 0,
   overflow: "visible",
@@ -6965,8 +6614,8 @@ const postCardStyle: CSSProperties = {
 const postCardDesktopStyle: CSSProperties = {
   ...postCardStyle,
   gap: "12px",
-  padding: "16px",
-  borderRadius: "26px",
+  padding: "16px 0",
+  borderRadius: 0,
 };
 
 const postHeaderStyle: CSSProperties = {
@@ -7115,9 +6764,14 @@ const spoilerHiddenBoxStyle: CSSProperties = {
 };
 
 const spoilerHiddenTitleStyle: CSSProperties = {
+  display: "inline-flex",
+  width: "fit-content",
+  maxWidth: "100%",
+  margin: 0,
   color: "#FCA5A5",
   fontSize: "13px",
   fontWeight: 950,
+  lineHeight: 1.35,
   ...safeTextStyle,
 };
 
@@ -7242,6 +6896,14 @@ const postActionsStyle: CSSProperties = {
 const postActionsDesktopStyle: CSSProperties = {
   ...postActionsStyle,
   alignItems: "center",
+};
+
+const postActionsOptionsWrapStyle: CSSProperties = {
+  marginLeft: "auto",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  minWidth: "24px",
 };
 
 const actionButtonStyle: CSSProperties = {
@@ -7482,12 +7144,6 @@ const commentTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const commentStickerImageStyle: CSSProperties = {
-  width: "92px",
-  height: "92px",
-  objectFit: "contain",
-  display: "block",
-};
 
 const commentActionsRowStyle: CSSProperties = {
   display: "flex",
@@ -7587,7 +7243,7 @@ const commentsToolsStyle: CSSProperties = {
   display: "grid",
   gap: "6px",
   padding: "5px 0 0",
-  borderTop: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  borderTop: "none",
 };
 
 const commentsQuickReactionsStyle: CSSProperties = {
@@ -7615,96 +7271,14 @@ const commentsQuickReactionButtonStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
-const commentsStickerToggleStyle: CSSProperties = {
-  width: "34px",
-  height: "28px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
-  fontSize: "15px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  padding: 0,
-  cursor: "pointer",
-  flex: "0 0 auto",
-};
 
-const commentsStickerToggleActiveStyle: CSSProperties = {
-  ...commentsStickerToggleStyle,
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
-  border:
-    "1px solid rgba(255,255,255,0.14)",
-};
 
-const commentsStickerTrayStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  padding: "8px",
-  borderRadius: "18px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-};
 
-const commentsStickerTrayHeaderStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) 26px",
-  alignItems: "center",
-  gap: "8px",
-  minWidth: 0,
-};
 
-const commentsStickerTrayTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const commentsStickerTrayCloseStyle: CSSProperties = {
-  width: "26px",
-  height: "26px",
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "20px",
-  lineHeight: 1,
-  cursor: "pointer",
-  padding: 0,
-};
 
-const commentsStickersGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "8px",
-  maxHeight: "158px",
-  overflowY: "auto",
-  padding: "1px 0 2px",
-  WebkitOverflowScrolling: "touch",
-};
 
-const commentsStickerButtonStyle: CSSProperties = {
-  minHeight: "62px",
-  display: "grid",
-  alignContent: "center",
-  justifyItems: "center",
-  border: "none",
-  borderRadius: "16px",
-  background: "var(--historietas-input-bg, #18181B)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "inherit",
-  cursor: "pointer",
-  padding: "6px",
-};
 
-const commentsStickerPreviewStyle: CSSProperties = {
-  width: "48px",
-  height: "48px",
-  objectFit: "contain",
-  display: "block",
-};
 
 const commentsSheetFormStyle: CSSProperties = {
   display: "grid",
@@ -7713,7 +7287,7 @@ const commentsSheetFormStyle: CSSProperties = {
   gap: "7px",
   padding: "7px 0 0",
   minWidth: 0,
-  background: "var(--historietas-surface-strong, rgba(12,7,23,0.99))",
+  background: "transparent",
 };
 
 const commentsInputBoxStyle: CSSProperties = {
@@ -7723,40 +7297,8 @@ const commentsInputBoxStyle: CSSProperties = {
   alignItems: "center",
 };
 
-const commentsSelectedStickerStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "50px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-  padding: "5px 6px 5px 10px",
-  borderRadius: "20px",
-  background: "var(--historietas-input-bg, #18181B)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  minWidth: 0,
-};
 
-const commentsSelectedStickerImageStyle: CSSProperties = {
-  width: "42px",
-  height: "42px",
-  objectFit: "contain",
-  display: "block",
-};
 
-const commentsSelectedStickerRemoveStyle: CSSProperties = {
-  width: "26px",
-  height: "26px",
-  border: "none",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "18px",
-  lineHeight: 1,
-  padding: 0,
-  cursor: "pointer",
-  flex: "0 0 auto",
-};
 
 const commentsInputAvatarStyle: CSSProperties = {
   width: "30px",
@@ -7765,11 +7307,12 @@ const commentsInputAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
+  boxShadow: "none",
 };
 
 const commentsSheetInputStyle: CSSProperties = {

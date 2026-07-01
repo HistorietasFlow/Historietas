@@ -3736,6 +3736,90 @@ function MenuPerfilIcone({ tipo }: { tipo: MenuPerfilIconeTipo }) {
 }
 
 
+
+type DadosCompartilhamentoPerfilAutor = {
+  title?: string;
+  text?: string;
+  url?: string;
+};
+
+type NavegadorCompartilhamentoPerfilAutor = Navigator & {
+  share?: (data: DadosCompartilhamentoPerfilAutor) => Promise<void>;
+  canShare?: (data: DadosCompartilhamentoPerfilAutor) => boolean;
+};
+
+function criarUrlAbsolutaCompartilhamentoPerfilAutor(href: string) {
+  const hrefLimpo = href.trim();
+
+  if (typeof window === "undefined") {
+    return hrefLimpo;
+  }
+
+  try {
+    return new URL(hrefLimpo || window.location.href, window.location.origin).toString();
+  } catch {
+    return window.location.href;
+  }
+}
+
+async function copiarTextoComFallbackPerfilAutor(texto: string) {
+  const textoLimpo = texto.trim();
+
+  if (!textoLimpo || typeof window === "undefined" || typeof document === "undefined") {
+    return false;
+  }
+
+  try {
+    if (
+      window.isSecureContext &&
+      navigator.clipboard &&
+      typeof navigator.clipboard.writeText === "function"
+    ) {
+      await navigator.clipboard.writeText(textoLimpo);
+      return true;
+    }
+  } catch {
+    // Continua para o fallback abaixo.
+  }
+
+  let campoTemporario: HTMLTextAreaElement | null = null;
+
+  try {
+    campoTemporario = document.createElement("textarea");
+    campoTemporario.value = textoLimpo;
+    campoTemporario.setAttribute("readonly", "true");
+    campoTemporario.style.position = "fixed";
+    campoTemporario.style.top = "-9999px";
+    campoTemporario.style.left = "-9999px";
+    campoTemporario.style.width = "1px";
+    campoTemporario.style.height = "1px";
+    campoTemporario.style.opacity = "0";
+
+    document.body.appendChild(campoTemporario);
+    campoTemporario.focus();
+    campoTemporario.select();
+    campoTemporario.setSelectionRange(0, campoTemporario.value.length);
+
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    if (campoTemporario?.parentNode) {
+      campoTemporario.parentNode.removeChild(campoTemporario);
+    }
+  }
+}
+
+function erroCompartilhamentoFoiCanceladoPerfilAutor(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const nomeErro = "name" in error ? String((error as { name?: unknown }).name || "") : "";
+
+  return nomeErro === "AbortError";
+}
+
 export default function PerfilAutorPage() {
   const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -3748,6 +3832,7 @@ export default function PerfilAutorPage() {
   const [topFiveCurtidasTotal, setTopFiveCurtidasTotal] = useState(0);
   const [topFiveCurtidoPorMim, setTopFiveCurtidoPorMim] = useState(false);
   const [topFiveCurtidaSalvando, setTopFiveCurtidaSalvando] = useState(false);
+  const [mostrarDestaquesVisitante, setMostrarDestaquesVisitante] = useState(false);
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
   const [avatarErro, setAvatarErro] = useState("");
@@ -4238,6 +4323,10 @@ export default function PerfilAutorPage() {
   }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
 
   useEffect(() => {
+    setMostrarDestaquesVisitante(false);
+  }, [perfilParaMostrar?.autorId]);
+
+  useEffect(() => {
     const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
 
     if (!perfilAutorId) {
@@ -4288,9 +4377,7 @@ export default function PerfilAutorPage() {
     };
   }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
 
-  const bibliotecaPerfilVisivel = true;
-
-  useEffect(() => {
+  const perfilPertenceAoUsuario = useMemo(() => {
     const usuarioIdNormalizado = usuarioIdLogado.trim().toLowerCase();
     const autorIdPerfilNormalizado =
       perfilParaMostrar?.autorId.trim().toLowerCase() || "";
@@ -4298,15 +4385,19 @@ export default function PerfilAutorPage() {
     const perfilSemParametro =
       !autorSelecionado.trim() && !autorIdSelecionado.trim();
 
-    const perfilPertenceAoUsuario = Boolean(
+    return Boolean(
       usuarioIdNormalizado &&
         (perfilSemParametro ||
           autorIdPerfilNormalizado === usuarioIdNormalizado ||
           autorIdUrlNormalizado === usuarioIdNormalizado),
     );
-
-    setPodeEditarPerfil(perfilPertenceAoUsuario);
   }, [perfilParaMostrar, autorIdSelecionado, autorSelecionado, usuarioIdLogado]);
+
+  const bibliotecaPerfilVisivel = perfilPertenceAoUsuario;
+
+  useEffect(() => {
+    setPodeEditarPerfil(perfilPertenceAoUsuario);
+  }, [perfilPertenceAoUsuario]);
 
   useEffect(() => {
     if (!bibliotecaPerfilVisivel && abaPerfil === "biblioteca") {
@@ -4567,6 +4658,10 @@ export default function PerfilAutorPage() {
     return Array.from(obrasSelecionadas.values()).slice(0, TOP_FIVE_MAXIMO);
   }, [obras, perfilParaMostrar?.obras, topFiveObraIds]);
 
+  const destaquesPerfilVisivel = podeEditarPerfil
+    ? perfilSalvoAutor.mostrarDestaques
+    : mostrarDestaquesVisitante;
+
   async function alternarCurtidaTopFivePerfil() {
     const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
     const usuarioId = usuarioIdLogado.trim();
@@ -4625,7 +4720,10 @@ export default function PerfilAutorPage() {
 
     async function carregarDiarioPerfil() {
       const userIdPerfil = perfilDiario.autorId.trim();
-      const bibliotecaUsaUsuarioLogado = abaPerfil === "biblioteca" && Boolean(usuarioIdLogado.trim());
+      const bibliotecaUsaUsuarioLogado =
+        bibliotecaPerfilVisivel &&
+        abaPerfil === "biblioteca" &&
+        Boolean(usuarioIdLogado.trim());
       const userIdFonteDiario = bibliotecaUsaUsuarioLogado
         ? usuarioIdLogado.trim()
         : userIdPerfil;
@@ -4686,6 +4784,7 @@ export default function PerfilAutorPage() {
     obrasConcluidas,
     obrasSeguidasBiblioteca,
     podeEditarPerfil,
+    bibliotecaPerfilVisivel,
     abaPerfil,
     usuarioIdLogado,
     versaoSincronizacaoBiblioteca,
@@ -5569,15 +5668,65 @@ export default function PerfilAutorPage() {
     }
   }
 
+  async function compartilharLinkPerfilAutor({
+    url,
+    titulo,
+    texto,
+    mensagemCompartilhado,
+    mensagemCopiado,
+    mensagemErro,
+  }: {
+    url: string;
+    titulo: string;
+    texto: string;
+    mensagemCompartilhado: string;
+    mensagemCopiado: string;
+    mensagemErro: string;
+  }) {
+    const urlFinal = criarUrlAbsolutaCompartilhamentoPerfilAutor(url);
+    const dadosCompartilhamento: DadosCompartilhamentoPerfilAutor = {
+      title: titulo,
+      text: texto,
+      url: urlFinal,
+    };
+    const navegadorCompartilhamento =
+      navigator as NavegadorCompartilhamentoPerfilAutor;
+
+    if (typeof navegadorCompartilhamento.share === "function") {
+      try {
+        if (
+          !navegadorCompartilhamento.canShare ||
+          navegadorCompartilhamento.canShare(dadosCompartilhamento)
+        ) {
+          await navegadorCompartilhamento.share(dadosCompartilhamento);
+          setMensagemAcao(mensagemCompartilhado);
+          return;
+        }
+      } catch (error) {
+        if (erroCompartilhamentoFoiCanceladoPerfilAutor(error)) {
+          return;
+        }
+      }
+    }
+
+    const linkCopiado = await copiarTextoComFallbackPerfilAutor(urlFinal);
+
+    setMensagemAcao(linkCopiado ? mensagemCopiado : mensagemErro);
+  }
+
   async function copiarLinkPerfil() {
     setMenuPerfilAberto(false);
 
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setMensagemAcao("Link do perfil copiado.");
-    } catch {
-      setMensagemAcao("Não consegui copiar o link do perfil neste navegador.");
-    }
+    await compartilharLinkPerfilAutor({
+      url: window.location.href,
+      titulo: perfilParaMostrar?.nome || "Perfil na Historietas",
+      texto: perfilParaMostrar
+        ? `Veja o perfil de ${perfilParaMostrar.nome} na Historietas.`
+        : "Veja este perfil na Historietas.",
+      mensagemCompartilhado: "Compartilhamento do perfil aberto.",
+      mensagemCopiado: "",
+      mensagemErro: "",
+    });
   }
 
   async function compartilharObraPerfilAutor(obra: ObraLocal) {
@@ -5585,16 +5734,15 @@ export default function PerfilAutorPage() {
 
     const obraHref =
       obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-    const obraUrl = obraHref.startsWith("http")
-      ? obraHref
-      : `${window.location.origin}${obraHref.startsWith("/") ? obraHref : `/${obraHref}`}`;
 
-    try {
-      await navigator.clipboard.writeText(obraUrl);
-      setMensagemAcao("Link da obra copiado.");
-    } catch {
-      setMensagemAcao("Não consegui copiar o link da obra neste navegador.");
-    }
+    await compartilharLinkPerfilAutor({
+      url: obraHref,
+      titulo: obra.titulo || "Obra na Historietas",
+      texto: `Veja ${obra.titulo} na Historietas.`,
+      mensagemCompartilhado: "Compartilhamento da obra aberto.",
+      mensagemCopiado: "Link da obra copiado.",
+      mensagemErro: "Não consegui compartilhar nem copiar o link da obra neste navegador.",
+    });
   }
 
   async function sairDaConta() {
@@ -7304,19 +7452,24 @@ export default function PerfilAutorPage() {
                       : "Seguir"}
                 </button>
 
-                <Link
-                  href={comunidadeAutorHref}
-                  style={profileSecondaryButtonStyle}
-                >
-                  Comunidade
-                </Link>
-
                 <button
                   type="button"
                   onClick={() => void copiarLinkPerfil()}
                   style={profileSecondaryButtonStyle}
                 >
                   Compartilhar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMostrarDestaquesVisitante((valorAtual) => !valorAtual)
+                  }
+                  style={profileSecondaryButtonStyle}
+                >
+                  {mostrarDestaquesVisitante
+                    ? "Ocultar destaque"
+                    : "Mostrar destaque"}
                 </button>
               </>
             )}
@@ -7391,60 +7544,8 @@ export default function PerfilAutorPage() {
           )}
         </section>
 
-        {autorPodeReceberAvaliacao && !podeEditarPerfil && (
-          <section
-            style={isDesktop ? desktopAuthorRatingBoxStyle : authorRatingBoxStyle}
-            aria-label="Avaliação do autor"
-          >
-            <div style={authorRatingHeaderStyle}>
-              <span style={authorRatingTitleStyle}>AVALIE ESTE AUTOR</span>
-            </div>
-
-            <div style={authorRatingStarsRowStyle}>
-              {NOTAS_AVALIACAO_AUTOR.map((estrela) => {
-                const preenchimentoEstrela = obterPreenchimentoEstrelaAutor(
-                  estrela,
-                  avaliacaoAutor.minhaNota,
-                );
-                const proximaNota = obterProximaNotaAvaliacaoAutor(
-                  estrela,
-                  avaliacaoAutor.minhaNota,
-                );
-
-                return (
-                  <button
-                    key={`avaliacao-autor-${estrela}`}
-                    type="button"
-                    onClick={() => void avaliarAutor(proximaNota)}
-                    style={
-                      preenchimentoEstrela === "0%"
-                        ? authorRatingStarButtonStyle
-                        : authorRatingStarActiveStyle
-                    }
-                    aria-label={`Avaliar autor com ${proximaNota
-                      .toString()
-                      .replace(".", ",")} estrela${proximaNota === 1 ? "" : "s"}`}
-                  >
-                    <span style={authorRatingStarVisualStyle} aria-hidden="true">
-                      <span style={authorRatingStarBaseStyle}>★</span>
-                      <span
-                        style={{
-                          ...authorRatingStarFillStyle,
-                          width: preenchimentoEstrela,
-                        }}
-                      >
-                        ★
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {perfilSalvoAutor.mostrarDestaques &&
-          (obrasEmDestaque.length > 0 || podeEditarPerfil) && (
+        {destaquesPerfilVisivel &&
+          (obrasEmDestaque.length > 0 || podeEditarPerfil || mostrarDestaquesVisitante) && (
             <section
               style={isDesktop ? desktopAuthorHighlightsStyle : authorHighlightsStyle}
               aria-label="TOP 5"
@@ -7533,19 +7634,89 @@ export default function PerfilAutorPage() {
                 </div>
               </div>
 
-              <div style={isDesktop ? desktopAuthorHighlightsListStyle : authorHighlightsListStyle}>
-                {obrasEmDestaque.map((obra) => {
-                const obraHref =
-                  obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                return (
-                  <Link
-                    key={`destaque-${obra.id}`}
-                    href={obraHref}
-                    style={authorHighlightItemStyle}
-                    aria-label={obra.titulo}
+              {obrasEmDestaque.length === 0 ? (
+                podeEditarPerfil ? (
+                  <div style={emptyMiniBoxStyle}>
+                    Monte seu TOP 5 para destacar suas obras favoritas.
+                  </div>
+                ) : (
+                  <p
+                    style={{
+                      ...emptyTextStyle,
+                      textAlign: "center",
+                      fontWeight: 800,
+                    }}
                   >
-                    <div style={criarCapaDestaquePerfilAutor(obra.capa)} />
-                  </Link>
+                    {`${perfilParaMostrar.nome} nao montou top 5`}
+                  </p>
+                )
+              ) : (
+                <div style={isDesktop ? desktopAuthorHighlightsListStyle : authorHighlightsListStyle}>
+                  {obrasEmDestaque.map((obra) => {
+                    const obraHref =
+                      obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+                    return (
+                      <Link
+                        key={`destaque-${obra.id}`}
+                        href={obraHref}
+                        style={authorHighlightItemStyle}
+                        aria-label={obra.titulo}
+                      >
+                        <div style={criarCapaDestaquePerfilAutor(obra.capa)} />
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+          </section>
+        )}
+
+        {autorPodeReceberAvaliacao && !podeEditarPerfil && (
+          <section
+            style={isDesktop ? desktopAuthorRatingBoxStyle : authorRatingBoxStyle}
+            aria-label="Avaliação do autor"
+          >
+            <div style={authorRatingHeaderStyle}>
+              <span style={authorRatingTitleStyle}>AVALIE ESTE AUTOR</span>
+            </div>
+
+            <div style={authorRatingStarsRowStyle}>
+              {NOTAS_AVALIACAO_AUTOR.map((estrela) => {
+                const preenchimentoEstrela = obterPreenchimentoEstrelaAutor(
+                  estrela,
+                  avaliacaoAutor.minhaNota,
+                );
+                const proximaNota = obterProximaNotaAvaliacaoAutor(
+                  estrela,
+                  avaliacaoAutor.minhaNota,
+                );
+
+                return (
+                  <button
+                    key={`avaliacao-autor-${estrela}`}
+                    type="button"
+                    onClick={() => void avaliarAutor(proximaNota)}
+                    style={
+                      preenchimentoEstrela === "0%"
+                        ? authorRatingStarButtonStyle
+                        : authorRatingStarActiveStyle
+                    }
+                    aria-label={`Avaliar autor com ${proximaNota
+                      .toString()
+                      .replace(".", ",")} estrela${proximaNota === 1 ? "" : "s"}`}
+                  >
+                    <span style={authorRatingStarVisualStyle} aria-hidden="true">
+                      <span style={authorRatingStarBaseStyle}>★</span>
+                      <span
+                        style={{
+                          ...authorRatingStarFillStyle,
+                          width: preenchimentoEstrela,
+                        }}
+                      >
+                        ★
+                      </span>
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -7554,7 +7725,12 @@ export default function PerfilAutorPage() {
 
         <div
           role="tablist"
-          style={profileTabsStyle}
+          style={{
+            ...profileTabsStyle,
+            gridTemplateColumns: bibliotecaPerfilVisivel
+              ? "repeat(5, minmax(0, 1fr))"
+              : "repeat(4, minmax(0, 1fr))",
+          }}
           aria-label="Seções do perfil"
         >
           <button
@@ -8656,7 +8832,10 @@ const workActionSheetStyle: CSSProperties = {
   overscrollBehavior: "contain",
   borderRadius: "24px 24px 0 0",
   background: "#070212",
-  border: "1px solid rgba(255,255,255,0.06)",
+  borderTop: "1px solid rgba(255,255,255,0.06)",
+  borderLeft: "1px solid rgba(255,255,255,0.06)",
+  borderRight: "1px solid rgba(255,255,255,0.06)",
+  borderBottom: "0",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   display: "grid",
@@ -8871,7 +9050,7 @@ const diaryActionSheetEditorStyle: CSSProperties = {
   display: "grid",
   gap: "10px",
   padding: "12px 18px 14px",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  borderBottom: "0",
   boxSizing: "border-box",
 };
 
@@ -8883,7 +9062,7 @@ const diaryActionSheetAnnotationStyle: CSSProperties = {
   overscrollBehavior: "contain",
   WebkitOverflowScrolling: "touch",
   padding: "12px 24px 14px",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
+  borderBottom: "0",
   boxSizing: "border-box",
 };
 

@@ -2696,7 +2696,7 @@ export default function SeguindoPage() {
                 onClick={() => setMostrarPainelOrdenacao(false)}
               >
                 <div
-                  style={sortingSheetStyle}
+                  style={isDesktop ? desktopSortingSheetStyle : sortingSheetStyle}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <span style={sortingHandleStyle} />
@@ -3188,12 +3188,10 @@ const pageStyle: CSSProperties = {
   background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-  isolation: "isolate",
 };
 
 const containerStyle: CSSProperties = {
   position: "relative",
-  zIndex: 1,
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
@@ -3745,28 +3743,30 @@ const instagramSearchInputStyle: CSSProperties = {
 const sortingRowStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  width: "100%",
-  minHeight: "40px",
-  border: "none",
+  border: 0,
   background: "transparent",
   color: "#FFFFFF",
+  minHeight: "38px",
+  maxWidth: "100%",
+  padding: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "8px",
   fontFamily: "inherit",
-  cursor: "pointer",
-  padding: "2px 0",
-  boxSizing: "border-box",
   textAlign: "left",
+  cursor: "pointer",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+  boxSizing: "border-box",
 };
 
 const sortingLabelStyle: CSSProperties = {
-  color: "rgba(244,244,245,0.94)",
+  color: "#FFFFFF",
   fontSize: "16px",
-  lineHeight: 1.25,
-  fontWeight: 500,
-  letterSpacing: "-0.035em",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
   minWidth: 0,
   ...safeTextStyle,
 };
@@ -3777,11 +3777,14 @@ const sortingValueStyle: CSSProperties = {
 };
 
 const sortingArrowStyle: CSSProperties = {
-  flex: "0 0 auto",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
   color: "#FFFFFF",
-  fontSize: "30px",
+  fontSize: "22px",
   lineHeight: 1,
-  fontWeight: 700,
+  fontWeight: 950,
+  flex: "0 0 auto",
 };
 
 const compactClearButtonStyle: CSSProperties = {
@@ -3792,11 +3795,11 @@ const compactClearButtonStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "rgba(244,244,245,0.88)",
+  background: "transparent",
+  color: "#FFFFFF",
   fontFamily: "inherit",
   fontSize: "12px",
-  fontWeight: 900,
+  fontWeight: 950,
   padding: "0 13px",
   cursor: "pointer",
   boxShadow: "none",
@@ -3804,18 +3807,16 @@ const compactClearButtonStyle: CSSProperties = {
 
 const sortingBackdropStyle: CSSProperties = {
   position: "fixed",
-  left: 0,
-  right: 0,
-  top: 0,
-  bottom: 0,
+  inset: 0,
   height: "100dvh",
   zIndex: 240,
+  background: "rgba(0,0,0,0.68)",
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "center",
-  background: "rgba(0,0,0,0.68)",
   padding: 0,
   boxSizing: "border-box",
+  overflow: "hidden",
   overscrollBehavior: "none",
   touchAction: "none",
 };
@@ -3825,21 +3826,42 @@ const sortingSheetStyle: CSSProperties = {
   left: "50%",
   bottom: 0,
   transform: "translateX(-50%)",
-  width: "min(760px, calc(100% - 12px))",
-  maxHeight: "none",
-  overflow: "hidden",
-  overscrollBehavior: "none",
+  zIndex: 241,
+  width: "min(820px, calc(100% - 4px))",
+  maxHeight: "calc(100dvh - 116px)",
+  display: "grid",
+  gap: 0,
+  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "#15191C",
+  background: "var(--historietas-bg-start, #070212)",
   border: "1px solid rgba(255,255,255,0.06)",
+  borderBottom: "0",
+  overflowY: "auto",
+  overflowX: "hidden",
+  overscrollBehavior: "none",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
-  padding: "8px 0 calc(94px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   touchAction: "none",
 };
 
+const desktopSortingSheetStyle: CSSProperties = {
+  ...sortingSheetStyle,
+  left: "50%",
+  right: "auto",
+  bottom: "24px",
+  width: "min(560px, calc(100vw - 24px))",
+  maxWidth: "560px",
+  maxHeight: "82vh",
+  transform: "translateX(-50%)",
+  borderRadius: "24px",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
+  margin: 0,
+  paddingBottom: "18px",
+};
+
 const sortingHandleStyle: CSSProperties = {
   display: "block",
+  justifySelf: "center",
   width: "72px",
   height: "5px",
   borderRadius: "999px",
@@ -3848,42 +3870,45 @@ const sortingHandleStyle: CSSProperties = {
 };
 
 const sortingTitleStyle: CSSProperties = {
+  display: "block",
   margin: "0 0 12px",
+  padding: 0,
   color: "#FFFFFF",
   fontSize: "21px",
   lineHeight: 1.1,
   fontWeight: 950,
   letterSpacing: "-0.04em",
   textAlign: "center",
+  ...safeTextStyle,
 };
 
 const sortingOptionsListStyle: CSSProperties = {
   display: "grid",
   gap: 0,
-  borderTop: "1px solid rgba(255,255,255,0.045)",
 };
 
 const sortingOptionStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
   width: "100%",
-  minHeight: "48px",
+  minHeight: "44px",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   gap: "16px",
   border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
   background: "transparent",
   color: "#FFFFFF",
   fontFamily: "inherit",
   fontSize: "18px",
+  lineHeight: 1,
   fontWeight: 650,
   letterSpacing: "-0.035em",
   textAlign: "left",
   padding: "0 30px",
   cursor: "pointer",
   boxSizing: "border-box",
+  ...safeTextStyle,
 };
 
 const sortingOptionActiveStyle: CSSProperties = {
@@ -3893,16 +3918,17 @@ const sortingOptionActiveStyle: CSSProperties = {
 
 const sortingOptionRadioStyle: CSSProperties = {
   flex: "0 0 auto",
-  width: "28px",
-  height: "28px",
+  width: "23px",
+  height: "23px",
   borderRadius: "999px",
-  border: "3px solid rgba(161,161,170,0.72)",
+  border: "2.5px solid rgba(161,161,170,0.72)",
+  background: "transparent",
   boxSizing: "border-box",
 };
 
 const sortingOptionRadioActiveStyle: CSSProperties = {
   ...sortingOptionRadioStyle,
-  border: "8px solid #FFFFFF",
+  border: "6.5px solid #FFFFFF",
   background: "transparent",
 };
 

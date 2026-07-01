@@ -1131,7 +1131,7 @@ export default function EditarCapituloPage() {
     );
   }, [obraAtual, capituloAtual]);
 
-  const capituloLabel = `AnimesFlow Cap. ${String(numeroCapitulo || 1).padStart(2, "0")}`;
+  const capituloLabel = `Capítulo ${String(numeroCapitulo || 1).padStart(2, "0")}`;
 
   const minhaObraHref = obraAtual
     ? `/editar-obra?obraId=${obraAtual.id}`
@@ -1145,10 +1145,6 @@ export default function EditarCapituloPage() {
           numeroCapitulo || 1
         )
       : "/painel-autor";
-
-  const estatisticasCapitulo = useMemo(() => {
-    return calcularEstatisticasCapitulo(titulo, texto, numeroCapitulo || 1);
-  }, [titulo, texto, numeroCapitulo]);
 
 
   const tituloPreview =
@@ -1275,11 +1271,6 @@ export default function EditarCapituloPage() {
     if (erroValidacao) {
       setErro(erroValidacao);
       setSalvou(false);
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
 
       return;
     }
@@ -1415,11 +1406,6 @@ export default function EditarCapituloPage() {
       }
 
       setSalvou(true);
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
     } catch {
       alert(
         "Não consegui salvar as alterações. Tente atualizar a página e salvar novamente."
@@ -1528,37 +1514,25 @@ export default function EditarCapituloPage() {
           </section>
         )}
 
-        {salvou && (
-          <section style={successBoxStyle}>
-            <div style={{ minWidth: 0 }}>
-              <h2 style={successTitleStyle}>✓ Capítulo atualizado</h2>
-
-              <p style={successTextStyle}>
-                As alterações foram salvas sem apagar interações, comentários ou dados da obra.
-              </p>
-            </div>
-
-            <div style={successActionsStyle}>
-              <Link href={lerCapituloHref} style={successPrimaryButtonStyle}>
-                Ler capítulo
-              </Link>
-
-              <Link href={minhaObraHref} style={successSecondaryButtonStyle}>
-                Ver obra
-              </Link>
-            </div>
-          </section>
-        )}
-
         <section style={isDesktop ? desktopMainGridStyle : mainGridStyle}>
           <form onSubmit={salvarEdicao} style={isDesktop ? desktopFormStyle : formStyle}>
-            <div style={isDesktop ? desktopFormHeaderStyle : formHeaderStyle}>
+            <div
+              style={
+                isDesktop
+                  ? { ...desktopFormHeaderStyle, gridColumn: "1 / -1" }
+                  : formHeaderStyle
+              }
+            >
               <span style={formMiniTitleStyle}>{capituloLabel}</span>
 
-              <h2 style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>Título do capítulo</h2>
+              <h2 style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>
+                {obraAtual.titulo}
+              </h2>
             </div>
 
             <div style={fieldGroupStyle}>
+              <label style={labelStyle}>Título do capítulo</label>
+
               <input
                 value={titulo}
                 onChange={(event) => {
@@ -1571,17 +1545,30 @@ export default function EditarCapituloPage() {
               />
 
               <span style={hintStyle}>
-                Opcional. Se deixar vazio, o sistema usa Capítulo{" "}
-                {numeroCapitulo}.
+                Se deixar vazio, o sistema usa Capítulo {numeroCapitulo}.
               </span>
             </div>
 
-            <div style={fieldGroupStyle}>
-              <label style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>Texto do capítulo</label>
+            <div
+              style={
+                isDesktop
+                  ? { ...fieldGroupStyle, gridColumn: "1 / -1" }
+                  : fieldGroupStyle
+              }
+            >
+              <label style={labelStyle}>Texto do capítulo</label>
 
               <div style={isDesktop ? desktopImportBoxStyle : importBoxStyle}>
+                <div style={importIconBoxStyle}>
+                  <span style={importIconStyle}>TXT</span>
+                </div>
+
                 <div style={importInfoStyle}>
                   <strong style={importTitleStyle}>Importar versão revisada</strong>
+
+                  <span style={hintStyle}>
+                    Opcional. Importe um arquivo .txt ou .md.
+                  </span>
 
                   {arquivoImportadoNome && (
                     <span style={importSuccessStyle}>
@@ -1592,17 +1579,17 @@ export default function EditarCapituloPage() {
                   {arquivoImportadoErro && (
                     <span style={importErrorStyle}>{arquivoImportadoErro}</span>
                   )}
-                </div>
 
-                <label style={isDesktop ? desktopImportButtonStyle : importButtonStyle}>
-                  Importar .txt/.md
-                  <input
-                    type="file"
-                    accept=".txt,.md,text/plain,text/markdown"
-                    onChange={importarArquivoTexto}
-                    style={hiddenFileInputStyle}
-                  />
-                </label>
+                  <label style={isDesktop ? desktopImportButtonStyle : importButtonStyle}>
+                    Importar .txt/.md
+                    <input
+                      type="file"
+                      accept=".txt,.md,text/plain,text/markdown"
+                      onChange={importarArquivoTexto}
+                      style={hiddenFileInputStyle}
+                    />
+                  </label>
+                </div>
               </div>
 
               <textarea
@@ -1615,23 +1602,50 @@ export default function EditarCapituloPage() {
                 style={isDesktop ? desktopTextareaStyle : textareaStyle}
               />
 
+              <span style={hintStyle}>Mínimo: 20 letras ou números.</span>
             </div>
 
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
               <button
                 type="submit"
-                style={
-                  processando
+                style={{
+                  ...(processando
                     ? isDesktop
                       ? desktopDisabledButtonStyle
                       : disabledButtonStyle
                     : isDesktop
-                    ? desktopSaveButtonStyle
-                    : saveButtonStyle
-                }
+                      ? desktopSaveButtonStyle
+                      : saveButtonStyle),
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "7px",
+                }}
                 disabled={processando}
               >
-                {processando ? "Salvando..." : "Salvar alterações"}
+                {processando ? (
+                  "Salvando..."
+                ) : salvou ? (
+                  <>
+                    <span>Atualizado</span>
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      style={{ width: 17, height: 17, flex: "0 0 auto" }}
+                    >
+                      <path
+                        d="M20 6 9 17l-5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </>
+                ) : (
+                  "Salvar alterações"
+                )}
               </button>
 
               <Link href={lerCapituloHref} style={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}>
@@ -1646,14 +1660,19 @@ export default function EditarCapituloPage() {
 
           <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
             <div style={previewHeaderStyle}>
-              <h2 style={previewTitleStyle}>PRÉVIA DO CAPÍTULO</h2>
+              <span style={previewMiniTitleStyle}>PRÉVIA DO CAPÍTULO</span>
             </div>
 
             <article style={isDesktop ? desktopPreviewChapterCardStyle : previewChapterCardStyle}>
-              <h3 style={isDesktop ? desktopPreviewChapterTitleStyle : previewChapterTitleStyle}>{tituloPreview}</h3>
+              <div style={previewTopRowStyle}>
+                <h3 style={isDesktop ? desktopPreviewChapterTitleStyle : previewChapterTitleStyle}>
+                  {tituloPreview}
+                </h3>
+              </div>
 
-              <p style={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}>{textoPreview}</p>
-
+              <p style={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}>
+                {textoPreview}
+              </p>
             </article>
           </aside>
         </section>
@@ -1740,10 +1759,10 @@ const pageStyle: CSSProperties = {
 const containerStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  width: "min(900px, calc(100% - 28px))",
+  width: "min(900px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
+  padding: "14px 0 18px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1848,12 +1867,11 @@ const headerTitleTextStyle: CSSProperties = {
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
   textAlign: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
 };
 
@@ -1862,48 +1880,13 @@ const desktopHeaderTitleTextStyle: CSSProperties = {
 };
 
 
-const heroBoxStyle: CSSProperties = {
-  position: "relative",
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-  gap: "8px",
-  padding: "18px",
-  borderRadius: "30px",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
 
 
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #F97316)",
-  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
-  fontSize: "clamp(28px, 7.4vw, 40px)",
-  lineHeight: 1.02,
-  fontWeight: 950,
-  letterSpacing: "-0.048em",
-  maxWidth: "100%",
-  textAlign: "center",
-  textShadow: "none",
-  ...safeTextStyle,
-};
 
-const descriptionStyle: CSSProperties = {
-  margin: "0 auto",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11.5px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-  maxWidth: "560px",
-  textAlign: "center",
-  ...safeTextStyle,
-};
+
+
+
+
 
 
 const errorBoxStyle: CSSProperties = {
@@ -1938,102 +1921,18 @@ const errorTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const successBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  padding: "16px",
-  borderRadius: "22px",
-  background: "rgba(34,197,94,0.10)",
-  border: "1px solid rgba(34,197,94,0.24)",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-const successTitleStyle: CSSProperties = {
-  color: "#86EFAC",
-  fontSize: "16px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const successTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.6,
-  fontWeight: 650,
-  ...safeTextStyle,
-};
-
-const successActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
-  gap: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const successPrimaryButtonStyle: CSSProperties = {
-  minHeight: "48px",
-  borderRadius: "999px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "14px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const successSecondaryButtonStyle: CSSProperties = {
-  minHeight: "48px",
-  borderRadius: "999px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "14px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
 const mainGridStyle: CSSProperties = {
-  marginTop: "10px",
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "10px",
+  gap: "14px",
   minWidth: 0,
   maxWidth: "100%",
-  boxSizing: "border-box",
 };
 
 const formStyle: CSSProperties = {
   display: "grid",
-  gap: "12px",
+  gap: "14px",
   background: "transparent",
-  border: "none",
+  border: "0",
   borderRadius: 0,
   padding: 0,
   boxShadow: "none",
@@ -2073,78 +1972,75 @@ const formTitleStyle: CSSProperties = {
 
 const fieldGroupStyle: CSSProperties = {
   display: "grid",
-  gap: "6px",
+  gap: "7px",
   minWidth: 0,
-  maxWidth: "100%",
 };
 
 const labelStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
-  fontWeight: 900,
-  textAlign: "center",
+  fontSize: "12px",
+  fontWeight: 950,
+  letterSpacing: "-0.01em",
   ...safeTextStyle,
 };
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "36px",
-  borderRadius: 0,
-  border: "none",
-  background: "transparent",
+  minHeight: "46px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
   color: "#FFFFFF",
-  padding: "0 4px",
+  padding: "0 14px",
   outline: "none",
-  fontSize: "14px",
-  fontWeight: 720,
+  fontSize: "13px",
+  fontWeight: 700,
   fontFamily: "inherit",
-  textAlign: "center",
   boxSizing: "border-box",
-  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
-  ...safeTextStyle,
+  boxShadow: "none",
 };
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  minHeight: "110px",
+  minHeight: "78px",
   borderRadius: "20px",
   border: "1px solid rgba(255,255,255,0.08)",
   background: "#04000A",
   color: "#FFFFFF",
-  padding: "13px 14px",
+  padding: "14px",
   outline: "none",
-  fontSize: "14px",
-  fontWeight: 650,
-  lineHeight: 1.65,
+  fontSize: "13px",
+  fontWeight: 700,
+  lineHeight: 1.58,
   resize: "vertical",
   fontFamily: "inherit",
   boxSizing: "border-box",
-  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const hintStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11.5px",
-  lineHeight: 1.4,
-  fontWeight: 700,
-  textAlign: "center",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "11px",
+  lineHeight: 1.45,
+  fontWeight: 650,
   ...safeTextStyle,
 };
 
 
 const importBoxStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
+  gridTemplateColumns: "minmax(56px, 64px) minmax(0, 1fr)",
+  gap: "12px",
+  alignItems: "stretch",
   padding: 0,
   borderRadius: 0,
   background: "transparent",
-  border: "none",
+  border: "0",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2154,21 +2050,47 @@ const importBoxStyle: CSSProperties = {
 
 const importInfoStyle: CSSProperties = {
   display: "grid",
-  gap: "4px",
+  alignContent: "center",
+  gap: "7px",
   minWidth: 0,
   maxWidth: "100%",
-  textAlign: "center",
-  justifyItems: "center",
 };
 
 const importTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
+  fontSize: "15px",
   fontWeight: 950,
-  letterSpacing: "-0.02em",
-  textAlign: "center",
+  letterSpacing: "-0.045em",
   ...safeTextStyle,
 };
+
+const importIconBoxStyle: CSSProperties = {
+  minHeight: "82px",
+  borderRadius: "18px",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  boxShadow: "none",
+};
+
+const importIconStyle: CSSProperties = {
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "13px",
+  fontWeight: 950,
+  lineHeight: 1,
+  letterSpacing: "-0.04em",
+  boxShadow: "none",
+};
+
 
 
 const importSuccessStyle: CSSProperties = {
@@ -2198,22 +2120,23 @@ const importErrorStyle: CSSProperties = {
 };
 
 const importButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  width: "100%",
+  width: "fit-content",
+  minHeight: "36px",
+  maxWidth: "100%",
+  padding: "0 12px",
   borderRadius: "999px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
-  display: "flex",
+  cursor: "pointer",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  cursor: "pointer",
   boxShadow: "none",
   minWidth: 0,
-  maxWidth: "100%",
   boxSizing: "border-box",
   ...safeTextStyle,
 };
@@ -2226,7 +2149,7 @@ const hiddenFileInputStyle: CSSProperties = {
 const buttonAreaStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "8px",
+  gap: "6px",
   marginTop: "2px",
   minWidth: 0,
   maxWidth: "100%",
@@ -2234,19 +2157,19 @@ const buttonAreaStyle: CSSProperties = {
 };
 
 const saveButtonStyle: CSSProperties = {
-  minHeight: "46px",
+  minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
-  fontSize: "13px",
+  fontSize: "11.5px",
   fontWeight: 950,
   cursor: "pointer",
   boxShadow: "none",
   fontFamily: "inherit",
   textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
+  padding: "0 8px",
+  lineHeight: 1.05,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2255,124 +2178,97 @@ const saveButtonStyle: CSSProperties = {
 };
 
 const disabledButtonStyle: CSSProperties = {
-  minHeight: "46px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  color: "rgba(255,255,255,0.55)",
-  fontSize: "13px",
-  fontWeight: 950,
+  ...saveButtonStyle,
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  boxShadow: "none",
   cursor: "not-allowed",
-  fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
 };
 
 const secondaryButtonStyle: CSSProperties = {
-  minHeight: "46px",
+  minHeight: "42px",
   borderRadius: "999px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 900,
+  fontSize: "11.5px",
+  fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
+  padding: "0 8px",
+  lineHeight: 1.05,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const cancelButtonStyle: CSSProperties = {
-  minHeight: "46px",
-  borderRadius: "999px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
+  ...secondaryButtonStyle,
 };
 
 const previewPanelStyle: CSSProperties = {
   display: "grid",
-  gap: "10px",
+  gap: "12px",
+  padding: 0,
   background: "transparent",
   border: "none",
   borderRadius: 0,
-  padding: 0,
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "visible",
 };
 
 const previewHeaderStyle: CSSProperties = {
   display: "grid",
   gap: "4px",
-  minWidth: 0,
   justifyItems: "center",
   textAlign: "center",
+  minWidth: 0,
 };
 
 
-const previewTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "22px",
-  lineHeight: 1,
+const previewMiniTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "19px",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: "-0.035em",
   textAlign: "center",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
 const previewChapterCardStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
+  gap: "7px",
   padding: "11px",
-  borderRadius: "20px",
+  borderRadius: "22px",
   background: "rgba(4, 0, 10, 0.72)",
   border: "1px solid rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
-  boxSizing: "border-box",
   overflow: "hidden",
-  boxShadow: "none",
+  boxSizing: "border-box",
 };
 
 
 const previewChapterTitleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "22px",
-  lineHeight: 1.05,
+  fontSize: "19px",
+  lineHeight: 1.08,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: "-0.045em",
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -2380,16 +2276,41 @@ const previewChapterTitleStyle: CSSProperties = {
 const previewChapterTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.55,
+  fontSize: "11px",
+  lineHeight: 1.45,
   fontWeight: 650,
   display: "-webkit-box",
-  WebkitLineClamp: 4,
+  WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
-  textAlign: "center",
+  textAlign: "left",
   ...safeTextStyle,
 };
+
+const previewTopRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "6px",
+  justifyItems: "center",
+  textAlign: "center",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 const emptyBoxStyle: CSSProperties = {
@@ -2446,54 +2367,28 @@ const emptyButtonStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  padding: "26px 0 34px",
+  width: "min(1120px, calc(100% - 48px))",
+  padding: "24px 0 64px",
 };
 
 
-const desktopHeroBoxStyle: CSSProperties = {
-  ...heroBoxStyle,
-  width: "100%",
-  maxWidth: "100%",
-  margin: "0",
-  gridTemplateColumns: "1fr",
-  justifyItems: "center",
-  textAlign: "center",
-  gap: "8px",
-  padding: "16px 24px",
-  borderRadius: "24px",
-  alignItems: "center",
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-
-const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  fontSize: "clamp(38px, 4.4vw, 58px)",
-};
-
-const desktopDescriptionStyle: CSSProperties = {
-  ...descriptionStyle,
-  fontSize: "13px",
-  maxWidth: "760px",
-};
 
 
 const desktopMainGridStyle: CSSProperties = {
   ...mainGridStyle,
-  width: "100%",
-  maxWidth: "100%",
-  margin: "14px 0 0",
-  gap: "12px",
+  gridTemplateColumns: "minmax(0, 1.52fr) minmax(340px, 0.88fr)",
+  alignItems: "start",
+  gap: "18px",
 };
 
 const desktopFormStyle: CSSProperties = {
   ...formStyle,
-  width: "100%",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  alignItems: "start",
   padding: 0,
   borderRadius: 0,
-  gap: "12px",
+  gap: "16px",
+  overflow: "visible",
 };
 
 const desktopFormHeaderStyle: CSSProperties = {
@@ -2510,10 +2405,10 @@ const desktopFormTitleStyle: CSSProperties = {
 
 const desktopImportBoxStyle: CSSProperties = {
   ...importBoxStyle,
-  gridTemplateColumns: "minmax(0, 1fr) 128px",
-  alignItems: "center",
+  gridTemplateColumns: "minmax(64px, 72px) minmax(0, 1fr)",
+  alignItems: "stretch",
   padding: 0,
-  gap: "8px",
+  gap: "12px",
   borderRadius: 0,
   background: "transparent",
   border: "none",
@@ -2523,70 +2418,70 @@ const desktopImportBoxStyle: CSSProperties = {
 const desktopImportButtonStyle: CSSProperties = {
   ...importButtonStyle,
   minHeight: "36px",
-  fontSize: "10.5px",
-  padding: "0 8px",
+  fontSize: "11px",
+  padding: "0 12px",
 };
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "125px",
+  minHeight: "126px",
   fontSize: "14px",
   lineHeight: 1.65,
-  textAlign: "left",
 };
 
 const desktopButtonAreaStyle: CSSProperties = {
   ...buttonAreaStyle,
+  gridColumn: "1 / -1",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "10px",
-  marginTop: "2px",
+  justifyContent: "stretch",
+  gap: "8px",
 };
 
 const desktopSaveButtonStyle: CSSProperties = {
   ...saveButtonStyle,
-  minHeight: "48px",
-  fontSize: "14px",
+  minHeight: "46px",
+  fontSize: "13px",
 };
 
 const desktopDisabledButtonStyle: CSSProperties = {
   ...disabledButtonStyle,
-  minHeight: "48px",
+  minHeight: "50px",
   fontSize: "14px",
 };
 
 const desktopSecondaryButtonStyle: CSSProperties = {
   ...secondaryButtonStyle,
-  minHeight: "48px",
-  fontSize: "14px",
+  minHeight: "46px",
+  fontSize: "13px",
 };
 
 const desktopCancelButtonStyle: CSSProperties = {
   ...cancelButtonStyle,
-  minHeight: "48px",
-  fontSize: "14px",
+  minHeight: "46px",
+  fontSize: "13px",
 };
 
 const desktopPreviewPanelStyle: CSSProperties = {
   ...previewPanelStyle,
-  width: "100%",
-  padding: 0,
-  borderRadius: 0,
-  gap: "12px",
+  position: "sticky",
+  top: "24px",
+  alignSelf: "start",
 };
 
 const desktopPreviewChapterCardStyle: CSSProperties = {
   ...previewChapterCardStyle,
-  padding: "12px",
-  borderRadius: "18px",
+  padding: "11px",
+  borderRadius: "22px",
 };
 
 const desktopPreviewChapterTitleStyle: CSSProperties = {
   ...previewChapterTitleStyle,
-  fontSize: "28px",
+  fontSize: "23px",
 };
 
 const desktopPreviewChapterTextStyle: CSSProperties = {
   ...previewChapterTextStyle,
-  fontSize: "13px",
-  lineHeight: 1.6,
+  fontSize: "11.5px",
+  lineHeight: 1.45,
+  WebkitLineClamp: 2,
 };

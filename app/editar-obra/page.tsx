@@ -1616,11 +1616,6 @@ export default function EditarObraPage() {
       setErro(erroValidacao);
       setSalvou(false);
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-
       return;
     }
 
@@ -1808,10 +1803,7 @@ export default function EditarObraPage() {
       setArquivoObraRemovidoManualmente(false);
       setSalvou(true);
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+
     } catch {
       alert(
         "Não consegui salvar as alterações. Tente usar uma capa/arquivo menor ou atualizar a página e salvar novamente."
@@ -1951,27 +1943,6 @@ export default function EditarObraPage() {
           </section>
         )}
 
-        {salvou && (
-          <section style={successBoxStyle}>
-            <div style={{ minWidth: 0 }}>
-              <h2 style={successTitleStyle}>✓ Obra atualizada</h2>
-
-              <p style={successTextStyle}>
-                As alterações foram salvas sem apagar os capítulos.
-              </p>
-            </div>
-
-            <div style={successActionsStyle}>
-              <Link href={minhaObraHref} style={successPrimaryButtonStyle}>
-                Ver obra
-              </Link>
-
-              <Link href="/painel-autor" style={successSecondaryButtonStyle}>
-                Minhas Obras
-              </Link>
-            </div>
-          </section>
-        )}
 
         <section style={isDesktop ? desktopMainGridStyle : mainGridStyle}>
           <form onSubmit={salvarEdicao} style={isDesktop ? desktopFormStyle : formStyle}>
@@ -2285,10 +2256,44 @@ export default function EditarObraPage() {
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
               <button
                 type="submit"
-                style={processando ? (isDesktop ? desktopDisabledButtonStyle : disabledButtonStyle) : (isDesktop ? desktopSaveButtonStyle : saveButtonStyle)}
+                style={{
+                  ...(processando
+                    ? isDesktop
+                      ? desktopDisabledButtonStyle
+                      : disabledButtonStyle
+                    : isDesktop
+                      ? desktopSaveButtonStyle
+                      : saveButtonStyle),
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "7px",
+                }}
                 disabled={processando}
               >
-                {processando ? "Salvando..." : "Salvar alterações"}
+                {processando ? (
+                  "Salvando..."
+                ) : salvou ? (
+                  <>
+                    <span>Atualizada</span>
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      style={{ width: 17, height: 17, flex: "0 0 auto" }}
+                    >
+                      <path
+                        d="M20 6 9 17l-5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </>
+                ) : (
+                  "Salvar alterações"
+                )}
               </button>
 
               <Link href={minhaObraHref} style={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}>
@@ -2387,10 +2392,6 @@ export default function EditarObraPage() {
                     {progresso}% pronto
                   </span>
                 </div>
-
-                <p style={previewSinopseStyle}>
-                  {sinopse.trim() || "Nenhuma sinopse informada."}
-                </p>
 
                 <div style={previewActionRowStyle}>
                   <span style={previewGenreBadgeStyle}>
@@ -2837,85 +2838,6 @@ const errorTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const successBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: "13px",
-  borderRadius: "21px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  display: "grid",
-  gap: "12px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-const successTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#86EFAC",
-  fontSize: "20px",
-  fontWeight: 950,
-  letterSpacing: "-0.045em",
-  ...safeTextStyle,
-};
-
-const successTextStyle: CSSProperties = {
-  margin: "7px 0 0",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.55,
-  fontWeight: 700,
-  ...safeTextStyle,
-};
-
-const successActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
-  gap: "9px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const successPrimaryButtonStyle: CSSProperties = {
-  minHeight: "46px",
-  borderRadius: "999px",
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  lineHeight: 1.15,
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const successSecondaryButtonStyle: CSSProperties = {
-  minHeight: "46px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  lineHeight: 1.15,
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
 const mainGridStyle: CSSProperties = {
   display: "grid",
   gap: "14px",
@@ -3031,17 +2953,14 @@ const fileUploadIconBoxStyle: CSSProperties = {
 };
 
 const fileUploadIconStyle: CSSProperties = {
-  width: "31px",
-  height: "31px",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
-  color: "#FFFFFF",
-  display: "flex",
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "18px",
+  fontSize: "20px",
   fontWeight: 950,
+  lineHeight: 1,
   boxShadow: "none",
 };
 
@@ -3389,7 +3308,7 @@ const previewBadgeStyle: CSSProperties = {
 
 const previewRatingBadgeStyle: CSSProperties = {
   ...previewBadgeStyle,
-  color: "#DDD6FE",
+  color: "var(--historietas-text-primary, #FFFFFF)",
 };
 
 
@@ -3424,22 +3343,6 @@ const previewAuthorStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const previewSinopseStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.32,
-  fontWeight: 700,
-  whiteSpace: "pre-wrap",
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  overflowWrap: "break-word",
-  wordBreak: "break-word",
-  ...safeTextStyle,
-};
 
 const previewTopRowStyle: CSSProperties = {
   display: "grid",

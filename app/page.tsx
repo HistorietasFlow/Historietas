@@ -3849,14 +3849,30 @@ function MobileObraLocalCard({
         ? `Leitura Cap. ${String(numeroCapituloContinuar).padStart(2, "0")}`
         : "Leitura"
       : tipo === "novo-capitulo" && numeroUltimoCapitulo > 0
-      ? `Cap. ${String(numeroUltimoCapitulo).padStart(2, "0")}`
+      ? `Cap ${numeroUltimoCapitulo}`
       : "";
+  const cardComAlturaExtra = progressoLeitura > 0 || tipo === "novo-capitulo";
+  const cardStyle = isDesktop
+    ? cardComAlturaExtra
+      ? desktopPublishedCardCompactHeightStyle
+      : desktopPublishedCardStyle
+    : cardComAlturaExtra
+    ? publishedCardCompactHeightStyle
+    : publishedCardStyle;
   const capaStyle = isDesktop
-    ? { ...criarMobileCoverStyle(obra.capa), ...desktopCoverPlaceholderStyle }
-    : criarMobileCoverStyle(obra.capa);
+    ? {
+        ...criarMobileCoverStyle(obra.capa),
+        ...(cardComAlturaExtra
+          ? desktopCoverPlaceholderCompactHeightStyle
+          : desktopCoverPlaceholderStyle),
+      }
+    : {
+        ...criarMobileCoverStyle(obra.capa),
+        ...(cardComAlturaExtra ? coverPlaceholderCompactHeightStyle : {}),
+      };
 
   return (
-    <article style={isDesktop ? desktopPublishedCardStyle : publishedCardStyle}>
+    <article style={cardStyle}>
       <Link href={verObraHref} style={capaStyle} />
 
       <div style={publishedInfoStyle}>
@@ -3877,7 +3893,7 @@ function MobileObraLocalCard({
 
         {tipo === "novo-capitulo" && ultimoCapituloPublicado && (
           <Link href={ultimoCapituloHref} style={latestChapterInfoStyle}>
-            Novo: Cap. {String(numeroUltimoCapitulo).padStart(2, "0")} •{" "}
+            Novo cap {numeroUltimoCapitulo} •{" "}
             {ultimoCapituloPublicado.titulo}
           </Link>
         )}
@@ -4169,6 +4185,28 @@ function CarouselRow({
         ? desktopStaticAuthorListStyle
         : desktopStaticStoryListStyle;
 
+  useEffect(() => {
+    const row = rowRef.current;
+
+    if (!row) {
+      return;
+    }
+
+    const voltarParaInicio = () => {
+      row.scrollLeft = 0;
+    };
+
+    voltarParaInicio();
+
+    const frame = window.requestAnimationFrame(voltarParaInicio);
+    const timer = window.setTimeout(voltarParaInicio, 90);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [isDesktop, precisaDeCarrossel, totalItems, variant]);
+
   function rolarCarrossel(direcao: -1 | 1) {
     rowRef.current?.scrollBy({
       left: direcao * 450,
@@ -4177,7 +4215,11 @@ function CarouselRow({
   }
 
   if (!isDesktop || !precisaDeCarrossel) {
-    return <div style={listStyle}>{children}</div>;
+    return (
+      <div ref={rowRef} style={listStyle}>
+        {children}
+      </div>
+    );
   }
 
   return (
@@ -4746,11 +4788,11 @@ const searchSuggestionsPanelStyle: CSSProperties = {
   right: 0,
   zIndex: 60,
   display: "grid",
-  gap: "7px",
-  padding: "8px",
-  borderRadius: "18px",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
-  background: "#04000A",
+  gap: 0,
+  padding: "0 8px",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   boxSizing: "border-box",
   maxHeight: "320px",
   overflowY: "auto",
@@ -4773,10 +4815,11 @@ const searchSuggestionItemStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "10px",
-  padding: "10px 11px",
-  borderRadius: "14px",
-  border: "1px solid rgba(59, 7, 100, 0.44)",
-  background: "rgba(46, 16, 101, 0.42)",
+  padding: "12px 0",
+  borderRadius: 0,
+  border: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.10)",
+  background: "transparent",
   color: "#FFFFFF",
   textDecoration: "none",
   boxSizing: "border-box",
@@ -4806,11 +4849,11 @@ const searchSuggestionMetaStyle: CSSProperties = {
 
 const searchSuggestionBadgeStyle: CSSProperties = {
   flex: "0 0 auto",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 0,
+  border: "none",
   color: "#D4D4D8",
-  background: "rgba(255,255,255,0.06)",
-  padding: "6px 8px",
+  background: "transparent",
+  padding: 0,
   fontSize: "10px",
   fontWeight: 950,
   textTransform: "uppercase",
@@ -5900,6 +5943,16 @@ const desktopPublishedCardStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+const publishedCardCompactHeightStyle: CSSProperties = {
+  ...publishedCardStyle,
+  padding: "8px",
+};
+
+const desktopPublishedCardCompactHeightStyle: CSSProperties = {
+  ...desktopPublishedCardStyle,
+  padding: "10px",
+};
+
 const coverPlaceholderStyle: CSSProperties = {
   minHeight: "116px",
   borderRadius: "16px",
@@ -5917,6 +5970,15 @@ const coverPlaceholderStyle: CSSProperties = {
 
 const desktopCoverPlaceholderStyle: CSSProperties = {
   minHeight: "142px",
+  borderRadius: "18px",
+};
+
+const coverPlaceholderCompactHeightStyle: CSSProperties = {
+  minHeight: "106px",
+};
+
+const desktopCoverPlaceholderCompactHeightStyle: CSSProperties = {
+  minHeight: "130px",
   borderRadius: "18px",
 };
 

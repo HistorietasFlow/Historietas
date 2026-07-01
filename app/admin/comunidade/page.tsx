@@ -2102,7 +2102,7 @@ const desktopTopButtonStyle: CSSProperties = {
 const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "30px",
-  border: "1px solid rgba(255,255,255,0.075)",
+  border: "none",
   background:
     "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.92)) 0%, var(--historietas-surface-strong, rgba(8,3,18,0.98)) 100%)",
   padding: "18px",
@@ -2142,7 +2142,7 @@ const headerStyle: CSSProperties = {
   borderRadius: "28px",
   background:
     "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(8,3,18,0.98)) 100%)",
-  border: "1px solid rgba(255,255,255,0.075)",
+  border: "none",
   boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
   overflow: "hidden",
@@ -2234,7 +2234,7 @@ const loadingCardStyle: CSSProperties = {
   padding: "28px 18px",
   borderRadius: "28px",
   background: "rgba(4,0,10,0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "none",
   textAlign: "center",
   boxShadow: "none",
 };
@@ -2261,7 +2261,7 @@ const accessCardStyle: CSSProperties = {
   padding: "28px 18px",
   borderRadius: "30px",
   background: "rgba(4,0,10,0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "none",
   textAlign: "center",
   boxShadow: "none",
 };
@@ -2322,7 +2322,7 @@ const statCardStyle: CSSProperties = {
   padding: "7px 3px",
   borderRadius: "15px",
   background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.07)",
+  border: "none",
   textAlign: "center",
   minWidth: 0,
   overflow: "hidden",
@@ -2603,7 +2603,7 @@ const reportCardStyle: CSSProperties = {
   padding: "14px",
   borderRadius: "24px",
   background: "rgba(4,0,10,0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "none",
   boxShadow: "none",
   minWidth: 0,
   overflow: "visible",
@@ -2770,7 +2770,7 @@ const adminFiltersSheetStyle: CSSProperties = {
   padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
   background: "#070212",
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "none",
   overflowY: "auto",
   overflowX: "hidden",
   overscrollBehavior: "none",
@@ -2916,7 +2916,7 @@ const reportMenuStyle: CSSProperties = {
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
   background: "#070212",
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "none",
   overflowY: "auto",
   overflowX: "hidden",
   overscrollBehavior: "none",
@@ -3218,7 +3218,7 @@ const emptyStyle: CSSProperties = {
   padding: "28px 16px",
   borderRadius: "26px",
   background: "var(--historietas-surface, rgba(255,255,255,0.045))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  border: "none",
   textAlign: "center",
 };
 

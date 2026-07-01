@@ -1135,22 +1135,10 @@ export default function AdicionarCapituloPage() {
 
   const tituloPreview = titulo.trim() || `Capítulo ${numeroNovoCapitulo}`;
 
-  const textoPreview =
-    texto.trim() ||
-    "O texto do capítulo vai aparecer aqui enquanto você escreve.";
+  const textoPreview = texto.trim();
 
-  const mostrarPreviaCapitulo = Boolean(titulo.trim() || texto.trim());
 
-  const estatisticasCapitulo = useMemo(() => {
-    return calcularEstatisticasCapitulo(titulo, texto, numeroNovoCapitulo);
-  }, [titulo, texto, numeroNovoCapitulo]);
 
-  const progresso = useMemo(() => {
-    const campos = [titulo, texto];
-    const preenchidos = campos.filter((campo) => campo.trim()).length;
-
-    return Math.round((preenchidos / campos.length) * 100);
-  }, [titulo, texto]);
 
   function salvarObras(novasObras: ObraLocal[]) {
     const backupArquivosObras = carregarBackupArquivosObras(usuarioIdLogado);
@@ -1493,8 +1481,6 @@ export default function AdicionarCapituloPage() {
       )
     : "";
 
-  const mostrarPainelLateral =
-    mostrarPreviaCapitulo || obraAtual.capitulos.length > 0;
 
   return (
     <main style={pageThemeStyle}>
@@ -1551,13 +1537,23 @@ export default function AdicionarCapituloPage() {
 
         <section style={isDesktop ? desktopMainGridSoloStyle : mainGridStyle}>
           <form onSubmit={criarCapitulo} style={isDesktop ? desktopFormPanelStyle : formPanelStyle}>
-            <div style={isDesktop ? desktopFormHeaderStyle : formHeaderStyle}>
-              <span style={formMiniTitleStyle}>CAPÍTULO {numeroNovoCapitulo}</span>
+            <div
+              style={
+                isDesktop
+                  ? { ...desktopFormHeaderStyle, gridColumn: "1 / -1" }
+                  : formHeaderStyle
+              }
+            >
+              <span style={formMiniTitleStyle}>Capítulo {String(numeroNovoCapitulo || 1).padStart(2, "0")}</span>
 
-              <h2 style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>Título do capítulo</h2>
+              <h2 style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>
+                {obraAtual.titulo}
+              </h2>
             </div>
 
             <div style={fieldGroupStyle}>
+              <label style={labelStyle}>Título do capítulo</label>
+
               <input
                 value={titulo}
                 onChange={(event) => {
@@ -1576,16 +1572,25 @@ export default function AdicionarCapituloPage() {
               </span>
             </div>
 
-            <div style={fieldGroupStyle}>
-              <label style={isDesktop ? desktopFormTitleStyle : formTitleStyle}>Texto do capítulo</label>
+            <div
+              style={
+                isDesktop
+                  ? { ...fieldGroupStyle, gridColumn: "1 / -1" }
+                  : fieldGroupStyle
+              }
+            >
+              <label style={labelStyle}>Texto do capítulo</label>
 
               <div style={isDesktop ? desktopImportBoxStyle : importBoxStyle}>
-                <div style={importInfoStyle}>
-                  <strong style={importTitleStyle}>Importar capítulo pronto</strong>
+                <div style={importIconBoxStyle}>
+                  <span style={importIconStyle}>TXT</span>
+                </div>
 
-                  <span style={isDesktop ? desktopImportTextStyle : importTextStyle}>
-                    Envie um arquivo .txt ou .md. O conteúdo entra direto no
-                    editor e você ainda pode revisar antes de salvar.
+                <div style={importInfoStyle}>
+                  <strong style={importTitleStyle}>Importar versão revisada</strong>
+
+                  <span style={hintStyle}>
+                    Opcional. Importe um arquivo .txt ou .md.
                   </span>
 
                   {arquivoImportadoNome && (
@@ -1597,17 +1602,17 @@ export default function AdicionarCapituloPage() {
                   {arquivoImportadoErro && (
                     <span style={importErrorStyle}>{arquivoImportadoErro}</span>
                   )}
-                </div>
 
-                <label style={isDesktop ? desktopImportButtonStyle : importButtonStyle}>
-                  Importar .txt/.md
-                  <input
-                    type="file"
-                    accept=".txt,.md,text/plain,text/markdown"
-                    onChange={importarArquivoTexto}
-                    style={hiddenFileInputStyle}
-                  />
-                </label>
+                  <label style={isDesktop ? desktopImportButtonStyle : importButtonStyle}>
+                    Importar .txt/.md
+                    <input
+                      type="file"
+                      accept=".txt,.md,text/plain,text/markdown"
+                      onChange={importarArquivoTexto}
+                      style={hiddenFileInputStyle}
+                    />
+                  </label>
+                </div>
               </div>
 
               <textarea
@@ -1620,159 +1625,78 @@ export default function AdicionarCapituloPage() {
                 style={isDesktop ? desktopTextareaStyle : textareaStyle}
                 placeholder="Escreva o texto do capítulo aqui..."
               />
-
-              <div style={inlineStatsBoxStyle}>
-                <span style={inlineStatsItemStyle}>
-                  {estatisticasCapitulo.palavras} palavras
-                </span>
-
-                <span style={inlineStatsItemStyle}>
-                  {estatisticasCapitulo.caracteres} caracteres
-                </span>
-
-                <span style={inlineStatsItemStyle}>
-                  {estatisticasCapitulo.minutosLeitura} min
-                </span>
-
-                <span
-                  style={
-                    estatisticasCapitulo.textoValido
-                      ? inlineStatsReadyStyle
-                      : inlineStatsWarningStyle
-                  }
-                >
-                  {estatisticasCapitulo.textoValido
-                    ? "Texto pronto"
-                    : `${Math.max(
-                        20 - estatisticasCapitulo.caracteresValidos,
-                        0
-                      )} faltando`}
-                </span>
-              </div>
             </div>
-
-            {capituloCriado && (
-              <div style={successBoxStyle}>
-                <strong style={successTitleStyle}>
-                  {capituloCriado.titulo} criado com sucesso!
-                </strong>
-
-                <span style={successTextStyle}>
-                  O capítulo foi salvo sem apagar os capítulos anteriores.
-                </span>
-
-                {notificacaoCriada && (
-                  <span style={notificationCreatedStyle}>
-                    Notificação local registrada.
-                  </span>
-                )}
-
-                <div style={createdActionsStyle}>
-                  <Link
-                    href={capituloCriadoHref}
-                    style={successPrimaryButtonStyle}
-                  >
-                    Ler capítulo criado
-                  </Link>
-
-                  <Link href={minhaObraHref} style={successSecondaryButtonStyle}>
-                    Ver obra
-                  </Link>
-                </div>
-              </div>
-            )}
-
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
-              <Link href={minhaObraHref} style={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}>
-                Cancelar
-              </Link>
-
               <button
                 type="submit"
-                style={processando ? (isDesktop ? desktopDisabledButtonStyle : disabledButtonStyle) : (isDesktop ? desktopPrimaryButtonStyle : primaryButtonStyle)}
+                style={{
+                  ...(processando
+                    ? isDesktop
+                      ? desktopDisabledButtonStyle
+                      : disabledButtonStyle
+                    : isDesktop
+                      ? desktopPrimaryButtonStyle
+                      : primaryButtonStyle),
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "7px",
+                }}
                 disabled={processando}
               >
-                {processando ? "Salvando..." : "Criar capítulo"}
+                {processando ? (
+                  "Salvando..."
+                ) : capituloCriado ? (
+                  <>
+                    <span>Criado</span>
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      style={{ width: 17, height: 17, flex: "0 0 auto" }}
+                    >
+                      <path
+                        d="M20 6 9 17l-5-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </>
+                ) : (
+                  "Criar capítulo"
+                )}
               </button>
+
+              <Link href={capituloCriadoHref || minhaObraHref} style={isDesktop ? desktopSecondaryButtonStyle : secondaryButtonStyle}>
+                {capituloCriado ? "Ler capítulo" : "Ver obra"}
+              </Link>
+
+              <Link href={minhaObraHref} style={isDesktop ? desktopCancelButtonStyle : cancelButtonStyle}>
+                Cancelar
+              </Link>
             </div>
 
-            <div style={isDesktop ? desktopProgressBoxStyle : progressBoxStyle}>
-              <div style={progressTopStyle}>
-                <span style={progressLabelStyle}>Progresso</span>
-
-                <strong style={progressNumberStyle}>{progresso}%</strong>
-              </div>
-
-              <div style={progressTrackStyle}>
-                <div style={{ ...progressFillStyle, width: `${progresso}%` }} />
-              </div>
-            </div>
           </form>
 
-          {mostrarPainelLateral && (
-            <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
-              {mostrarPreviaCapitulo ? (
-                <>
-                  <div style={previewHeaderStyle}>
-                    <span style={previewMiniTitleStyle}>PRÉVIA DO CAPÍTULO</span>
+          <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
+            <div style={previewHeaderStyle}>
+              <span style={previewMiniTitleStyle}>PRÉVIA DO CAPÍTULO</span>
+            </div>
 
-                    <h2 style={previewTitleStyle}>Como o capítulo vai aparecer</h2>
-                  </div>
+            <article style={isDesktop ? desktopPreviewChapterCardStyle : previewChapterCardStyle}>
+              <div style={previewTopRowStyle}>
+                <h3 style={isDesktop ? desktopPreviewChapterTitleStyle : previewChapterTitleStyle}>
+                  {tituloPreview}
+                </h3>
+              </div>
 
-                  <article style={isDesktop ? desktopPreviewChapterCardStyle : previewChapterCardStyle}>
-                    <div style={previewChapterTopStyle}>
-                      <span style={previewChapterBadgeStyle}>
-                        CAPÍTULO {numeroNovoCapitulo}
-                      </span>
-
-                      <span style={previewChapterStatusStyle}>Rascunho</span>
-                    </div>
-
-                    <h3 style={previewChapterTitleStyle}>{tituloPreview}</h3>
-
-                    <p style={previewChapterTextStyle}>{textoPreview}</p>
-
-                    <div style={previewStatsStyle}>
-                      <span style={safeTextStyle}>
-                        {estatisticasCapitulo.palavras} palavras
-                      </span>
-                      <span style={safeTextStyle}>
-                        {estatisticasCapitulo.minutosLeitura} min
-                      </span>
-                    </div>
-                  </article>
-                </>
-              ) : null}
-
-              {obraAtual.capitulos.length > 0 && (
-                <section style={recentBoxStyle}>
-                  <span style={recentMiniTitleStyle}>CAPÍTULOS DA OBRA</span>
-
-                  <div style={recentListStyle}>
-                    {obraAtual.capitulos.slice(-3).map((capitulo, index) => {
-                      const numeroReal =
-                        obraAtual.capitulos.length -
-                        obraAtual.capitulos.slice(-3).length +
-                        index +
-                        1;
-
-                      return (
-                        <article key={capitulo.id} style={recentItemStyle}>
-                          <span style={recentNumberStyle}>
-                            Capítulo {numeroReal}
-                          </span>
-
-                          <strong style={recentTitleStyle}>
-                            {capitulo.titulo}
-                          </strong>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-            </aside>
-          )}
+              <p style={isDesktop ? desktopPreviewChapterTextStyle : previewChapterTextStyle}>
+                {textoPreview}
+              </p>
+            </article>
+          </aside>
         </section>
       </section>
     </main>
@@ -1801,6 +1725,15 @@ const adicionarCapituloPageCss = `
   html[data-historietas-tema-visual] input,
   html[data-historietas-tema-visual] textarea {
     color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/painel-autor"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] {
+    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
   }
 `;
 
@@ -1849,10 +1782,10 @@ const pageStyle: CSSProperties = {
 const containerStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  width: "min(900px, calc(100% - 28px))",
+  width: "min(900px, calc(100% - 24px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
+  padding: "14px 0 18px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -2012,12 +1945,11 @@ const headerTitleTextStyle: CSSProperties = {
   letterSpacing: "-0.055em",
   wordSpacing: "0.11em",
   textAlign: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
 };
 
@@ -2191,20 +2123,17 @@ const inlineStatsWarningStyle: CSSProperties = {
 };
 
 const mainGridStyle: CSSProperties = {
-  marginTop: "10px",
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "10px",
+  gap: "14px",
   minWidth: 0,
   maxWidth: "100%",
-  boxSizing: "border-box",
 };
 
 const formPanelStyle: CSSProperties = {
   display: "grid",
-  gap: "12px",
+  gap: "14px",
   background: "transparent",
-  border: "none",
+  border: "0",
   borderRadius: 0,
   padding: 0,
   boxShadow: "none",
@@ -2244,16 +2173,15 @@ const formTitleStyle: CSSProperties = {
 
 const fieldGroupStyle: CSSProperties = {
   display: "grid",
-  gap: "6px",
+  gap: "7px",
   minWidth: 0,
-  maxWidth: "100%",
 };
 
 const labelStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
-  fontWeight: 900,
-  textAlign: "center",
+  fontSize: "12px",
+  fontWeight: 950,
+  letterSpacing: "-0.01em",
   ...safeTextStyle,
 };
 
@@ -2264,57 +2192,55 @@ const inputStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.08)",
   background: "#04000A",
   color: "#FFFFFF",
-  padding: "0 16px",
+  padding: "0 14px",
   outline: "none",
-  fontSize: "14px",
-  fontWeight: 720,
+  fontSize: "13px",
+  fontWeight: 700,
   fontFamily: "inherit",
-  textAlign: "center",
   boxSizing: "border-box",
-  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
-  ...safeTextStyle,
+  boxShadow: "none",
 };
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  minHeight: "110px",
+  minHeight: "78px",
   borderRadius: "20px",
   border: "1px solid rgba(255,255,255,0.08)",
   background: "#04000A",
   color: "#FFFFFF",
-  padding: "13px 14px",
+  padding: "14px",
   outline: "none",
-  fontSize: "14px",
-  fontWeight: 650,
-  lineHeight: 1.65,
+  fontSize: "13px",
+  fontWeight: 700,
+  lineHeight: 1.58,
   resize: "vertical",
   fontFamily: "inherit",
   boxSizing: "border-box",
-  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
+  boxShadow: "none",
   ...safeTextStyle,
 };
 
 const hintStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11.5px",
-  lineHeight: 1.4,
-  fontWeight: 700,
-  textAlign: "center",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "11px",
+  lineHeight: 1.45,
+  fontWeight: 650,
   ...safeTextStyle,
 };
 
 const importBoxStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
+  gridTemplateColumns: "minmax(56px, 64px) minmax(0, 1fr)",
+  gap: "12px",
+  alignItems: "stretch",
   padding: 0,
   borderRadius: 0,
   background: "transparent",
-  border: "none",
+  border: "0",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2324,19 +2250,44 @@ const importBoxStyle: CSSProperties = {
 
 const importInfoStyle: CSSProperties = {
   display: "grid",
-  gap: "4px",
+  alignContent: "center",
+  gap: "7px",
   minWidth: 0,
   maxWidth: "100%",
-  textAlign: "center",
-  justifyItems: "center",
+};
+
+const importIconStyle: CSSProperties = {
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "13px",
+  fontWeight: 950,
+  lineHeight: 1,
+  letterSpacing: "-0.04em",
+  boxShadow: "none",
+};
+
+const importIconBoxStyle: CSSProperties = {
+  minHeight: "82px",
+  borderRadius: "18px",
+  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.08)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const importTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
+  fontSize: "15px",
   fontWeight: 950,
-  letterSpacing: "-0.02em",
-  textAlign: "center",
+  letterSpacing: "-0.045em",
   ...safeTextStyle,
 };
 
@@ -2382,22 +2333,23 @@ const importErrorStyle: CSSProperties = {
 };
 
 const importButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  width: "100%",
+  width: "fit-content",
+  minHeight: "36px",
+  maxWidth: "100%",
+  padding: "0 12px",
   borderRadius: "999px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
-  display: "flex",
+  cursor: "pointer",
+  display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  cursor: "pointer",
   boxShadow: "none",
   minWidth: 0,
-  maxWidth: "100%",
   boxSizing: "border-box",
   ...safeTextStyle,
 };
@@ -2503,8 +2455,8 @@ const successSecondaryButtonStyle: CSSProperties = {
 
 const buttonAreaStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "6px",
   marginTop: "2px",
   minWidth: 0,
   maxWidth: "100%",
@@ -2512,19 +2464,19 @@ const buttonAreaStyle: CSSProperties = {
 };
 
 const primaryButtonStyle: CSSProperties = {
-  minHeight: "46px",
+  minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
-  fontSize: "13px",
+  fontSize: "11.5px",
   fontWeight: 950,
   cursor: "pointer",
   boxShadow: "none",
   fontFamily: "inherit",
   textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
+  padding: "0 8px",
+  lineHeight: 1.05,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -2533,74 +2485,76 @@ const primaryButtonStyle: CSSProperties = {
 };
 
 const disabledButtonStyle: CSSProperties = {
-  minHeight: "46px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  color: "#A1A1AA",
-  fontSize: "13px",
-  fontWeight: 950,
+  ...primaryButtonStyle,
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  boxShadow: "none",
   cursor: "not-allowed",
-  fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
 };
 
 const secondaryButtonStyle: CSSProperties = {
-  minHeight: "46px",
+  minHeight: "42px",
   borderRadius: "999px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 900,
+  fontSize: "11.5px",
+  fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 10px",
-  lineHeight: 1.15,
+  padding: "0 8px",
+  lineHeight: 1.05,
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  boxShadow: "none",
   ...safeTextStyle,
+};
+
+const desktopCancelButtonStyle: CSSProperties = {
+  ...secondaryButtonStyle,
+  minHeight: "46px",
+  fontSize: "13px",
+};
+
+const cancelButtonStyle: CSSProperties = {
+  ...secondaryButtonStyle,
 };
 
 const previewPanelStyle: CSSProperties = {
   display: "grid",
-  gap: "10px",
+  gap: "12px",
+  padding: 0,
   background: "transparent",
   border: "none",
   borderRadius: 0,
-  padding: 0,
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "visible",
 };
 
 const previewHeaderStyle: CSSProperties = {
   display: "grid",
   gap: "4px",
-  minWidth: 0,
   justifyItems: "center",
   textAlign: "center",
+  minWidth: 0,
 };
 
 const previewMiniTitleStyle: CSSProperties = {
   color: "#FFFFFF",
-  fontSize: "9.5px",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "19px",
+  lineHeight: 1.05,
   fontWeight: 950,
-  letterSpacing: "0.08em",
+  letterSpacing: "-0.035em",
+  textAlign: "center",
+  textTransform: "uppercase",
   ...safeTextStyle,
 };
 
@@ -2617,16 +2571,17 @@ const previewTitleStyle: CSSProperties = {
 
 const previewChapterCardStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
+  gap: "7px",
   padding: "11px",
-  borderRadius: "20px",
+  borderRadius: "22px",
   background: "rgba(4, 0, 10, 0.72)",
   border: "1px solid rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
-  boxSizing: "border-box",
   overflow: "hidden",
-  boxShadow: "none",
+  boxSizing: "border-box",
 };
 
 const previewChapterTopStyle: CSSProperties = {
@@ -2670,10 +2625,10 @@ const previewChapterStatusStyle: CSSProperties = {
 const previewChapterTitleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "22px",
-  lineHeight: 1.05,
+  fontSize: "19px",
+  lineHeight: 1.08,
   fontWeight: 950,
-  letterSpacing: "-0.055em",
+  letterSpacing: "-0.045em",
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -2681,15 +2636,37 @@ const previewChapterTitleStyle: CSSProperties = {
 const previewChapterTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.55,
+  fontSize: "11px",
+  lineHeight: 1.45,
   fontWeight: 650,
   display: "-webkit-box",
-  WebkitLineClamp: 4,
+  WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
-  textAlign: "center",
+  textAlign: "left",
   ...safeTextStyle,
+};
+
+const desktopPreviewChapterTextStyle: CSSProperties = {
+  ...previewChapterTextStyle,
+  fontSize: "11.5px",
+  lineHeight: 1.45,
+  WebkitLineClamp: 2,
+};
+
+const desktopPreviewChapterTitleStyle: CSSProperties = {
+  ...previewChapterTitleStyle,
+  fontSize: "23px",
+};
+
+const previewTopRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "6px",
+  justifyItems: "center",
+  textAlign: "center",
+  minWidth: 0,
+  maxWidth: "100%",
 };
 
 const previewStatsStyle: CSSProperties = {
@@ -2818,8 +2795,8 @@ const emptyButtonStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  padding: "26px 0 34px",
+  width: "min(1120px, calc(100% - 48px))",
+  padding: "24px 0 64px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -2864,26 +2841,25 @@ const desktopProgressBoxStyle: CSSProperties = {
 
 const desktopMainGridSoloStyle: CSSProperties = {
   ...mainGridStyle,
-  width: "100%",
-  maxWidth: "100%",
-  margin: "14px 0 0",
-  gap: "12px",
+  gridTemplateColumns: "minmax(0, 1.52fr) minmax(340px, 0.88fr)",
+  alignItems: "start",
+  gap: "18px",
 };
 
 
 const desktopFormPanelStyle: CSSProperties = {
   ...formPanelStyle,
-  width: "100%",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  alignItems: "start",
   padding: 0,
   borderRadius: 0,
-  gap: "12px",
-  background: "transparent",
-  border: "none",
+  gap: "16px",
   overflow: "visible",
 };
 
 const desktopFormHeaderStyle: CSSProperties = {
   ...formHeaderStyle,
+  gap: "5px",
   justifyItems: "center",
   textAlign: "center",
 };
@@ -2891,15 +2867,14 @@ const desktopFormHeaderStyle: CSSProperties = {
 const desktopFormTitleStyle: CSSProperties = {
   ...formTitleStyle,
   fontSize: "30px",
-  textAlign: "center",
 };
 
 const desktopImportBoxStyle: CSSProperties = {
   ...importBoxStyle,
-  gridTemplateColumns: "minmax(0, 1fr) 128px",
-  alignItems: "center",
+  gridTemplateColumns: "minmax(64px, 72px) minmax(0, 1fr)",
+  alignItems: "stretch",
   padding: 0,
-  gap: "8px",
+  gap: "12px",
   borderRadius: 0,
   background: "transparent",
   border: "none",
@@ -2908,53 +2883,47 @@ const desktopImportBoxStyle: CSSProperties = {
 const desktopImportButtonStyle: CSSProperties = {
   ...importButtonStyle,
   minHeight: "36px",
-  fontSize: "10.5px",
-  padding: "0 8px",
+  fontSize: "11px",
+  padding: "0 12px",
 };
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "125px",
-  fontSize: "14px",
-  lineHeight: 1.65,
-  textAlign: "left",
+  minHeight: "126px",
 };
 
 const desktopButtonAreaStyle: CSSProperties = {
   ...buttonAreaStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "10px",
-  marginTop: "2px",
+  gridColumn: "1 / -1",
 };
 
 const desktopPrimaryButtonStyle: CSSProperties = {
   ...primaryButtonStyle,
-  minHeight: "48px",
-  fontSize: "14px",
+  minHeight: "46px",
+  fontSize: "13px",
 };
 
 const desktopDisabledButtonStyle: CSSProperties = {
   ...disabledButtonStyle,
-  minHeight: "48px",
+  minHeight: "50px",
   fontSize: "14px",
 };
 
 const desktopSecondaryButtonStyle: CSSProperties = {
   ...secondaryButtonStyle,
-  minHeight: "48px",
-  fontSize: "14px",
+  minHeight: "46px",
+  fontSize: "13px",
 };
 
 const desktopPreviewPanelStyle: CSSProperties = {
   ...previewPanelStyle,
-  width: "100%",
-  padding: 0,
-  borderRadius: 0,
-  gap: "12px",
+  position: "sticky",
+  top: "24px",
+  alignSelf: "start",
 };
 
 const desktopPreviewChapterCardStyle: CSSProperties = {
   ...previewChapterCardStyle,
-  padding: "12px",
-  borderRadius: "18px",
+  padding: "11px",
+  borderRadius: "22px",
 };
