@@ -74,6 +74,27 @@ type DenunciaComContexto = DenunciaComunidade & {
   alvoObra?: string;
 };
 
+type StatusDenunciaPerfil = "pendente" | "analisada" | "ignorada" | "resolvida";
+
+type DenunciaPerfil = {
+  id: string;
+  denuncianteId: string;
+  denunciadoId: string;
+  perfilNome: string;
+  perfilUrl: string;
+  motivo: string;
+  descricao: string;
+  status: StatusDenunciaPerfil;
+  criadoEm: string;
+  atualizadoEm: string;
+};
+
+type DenunciaPerfilComContexto = DenunciaPerfil & {
+  denuncianteNome: string;
+  denunciadoNome: string;
+  perfilHref: string;
+};
+
 const STATUS_DENUNCIAS: StatusDenuncia[] = [
   "pendente",
   "em_analise",
@@ -86,6 +107,29 @@ const STATUS_LABEL: Record<StatusDenuncia, string> = {
   em_analise: "Em análise",
   resolvida: "Resolvida",
   rejeitada: "Rejeitada",
+};
+
+const STATUS_DENUNCIAS_PERFIS: StatusDenunciaPerfil[] = [
+  "pendente",
+  "analisada",
+  "ignorada",
+  "resolvida",
+];
+
+const STATUS_PERFIL_LABEL: Record<StatusDenunciaPerfil, string> = {
+  pendente: "Pendente",
+  analisada: "Analisada",
+  ignorada: "Ignorada",
+  resolvida: "Resolvida",
+};
+
+const MOTIVOS_DENUNCIA_PERFIL_LABEL: Record<string, string> = {
+  spam: "Spam",
+  ofensivo: "Conteúdo ofensivo",
+  perfil_falso: "Perfil falso",
+  assedio: "Assédio",
+  improprio: "Conteúdo impróprio",
+  outro: "Outro",
 };
 
 const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
@@ -189,6 +233,26 @@ function normalizarStatus(valor: unknown): StatusDenuncia {
   return STATUS_DENUNCIAS.includes(valor as StatusDenuncia)
     ? (valor as StatusDenuncia)
     : "pendente";
+}
+
+function normalizarStatusPerfil(valor: unknown): StatusDenunciaPerfil {
+  return STATUS_DENUNCIAS_PERFIS.includes(valor as StatusDenunciaPerfil)
+    ? (valor as StatusDenunciaPerfil)
+    : "pendente";
+}
+
+function formatarMotivoDenunciaPerfil(motivo: string) {
+  return MOTIVOS_DENUNCIA_PERFIL_LABEL[motivo] || motivo || "Denúncia de perfil";
+}
+
+function criarHrefPerfilDenunciado(denuncia: Pick<DenunciaPerfil, "denunciadoId" | "perfilUrl">) {
+  const url = denuncia.perfilUrl.trim();
+
+  if (url && url.startsWith("/") && !url.startsWith("//")) {
+    return url;
+  }
+
+  return `/perfil-autor?userId=${encodeURIComponent(denuncia.denunciadoId)}`;
 }
 
 function normalizarTipoAlvo(valor: unknown): TipoAlvoDenuncia {
@@ -396,6 +460,7 @@ export default function AdminComunidadePage() {
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [denuncias, setDenuncias] = useState<DenunciaComContexto[]>([]);
+  const [denunciasPerfis, setDenunciasPerfis] = useState<DenunciaPerfilComContexto[]>([]);
   const [statusFiltro, setStatusFiltro] = useState<StatusFiltroDenuncia>(
     "todas"
   );
@@ -591,6 +656,89 @@ export default function AdminComunidadePage() {
   }
 
 
+  async function carregarDenunciasPerfis() {
+    const { data: denunciasResposta, error: denunciasErro } = await supabase
+      .from("denuncias_perfis")
+      .select(
+        "id, denunciante_id, denunciado_id, perfil_nome, perfil_url, motivo, descricao, status, criado_em, atualizado_em"
+      )
+      .order("criado_em", { ascending: false })
+      .limit(200);
+
+    if (denunciasErro) {
+      if (erroOpcionalIgnoravel(denunciasErro)) {
+        setDenunciasPerfis([]);
+        return;
+      }
+
+      throw denunciasErro;
+    }
+
+    const denunciasMapeadas: DenunciaPerfil[] = (
+      (denunciasResposta || []) as unknown as Record<string, unknown>[]
+    ).map((denuncia) => ({
+      id: String(denuncia.id || ""),
+      denuncianteId: String(denuncia.denunciante_id || ""),
+      denunciadoId: String(denuncia.denunciado_id || ""),
+      perfilNome: String(denuncia.perfil_nome || ""),
+      perfilUrl: String(denuncia.perfil_url || ""),
+      motivo: String(denuncia.motivo || "outro"),
+      descricao: String(denuncia.descricao || ""),
+      status: normalizarStatusPerfil(denuncia.status),
+      criadoEm: String(denuncia.criado_em || ""),
+      atualizadoEm: String(denuncia.atualizado_em || denuncia.criado_em || ""),
+    }));
+
+    const perfilIds = Array.from(
+      new Set(
+        denunciasMapeadas
+          .flatMap((denuncia) => [denuncia.denuncianteId, denuncia.denunciadoId])
+          .filter(Boolean)
+      )
+    );
+
+    const [perfisPorUserIdResposta, perfisPorIdResposta] = await Promise.all([
+      perfilIds.length > 0
+        ? supabase
+            .from("profiles")
+            .select("id, user_id, nome")
+            .in("user_id", perfilIds)
+            .limit(1000)
+        : Promise.resolve({ data: [], error: null }),
+      perfilIds.length > 0
+        ? supabase
+            .from("profiles")
+            .select("id, user_id, nome")
+            .in("id", perfilIds)
+            .limit(1000)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    const perfis = [
+      ...(perfisPorUserIdResposta.error
+        ? []
+        : ((perfisPorUserIdResposta.data || []) as unknown as PerfilModeracao[])),
+      ...(perfisPorIdResposta.error
+        ? []
+        : ((perfisPorIdResposta.data || []) as unknown as PerfilModeracao[])),
+    ];
+
+    const nomesPorId = criarMapaNomesPerfisModeracao(perfis);
+
+    const denunciasComContexto = denunciasMapeadas.map((denuncia) => ({
+      ...denuncia,
+      denuncianteNome: nomesPorId.get(denuncia.denuncianteId) || "Usuário",
+      denunciadoNome:
+        denuncia.perfilNome ||
+        nomesPorId.get(denuncia.denunciadoId) ||
+        "Usuário denunciado",
+      perfilHref: criarHrefPerfilDenunciado(denuncia),
+    }));
+
+    setDenunciasPerfis(denunciasComContexto);
+  }
+
+
   useEffect(() => {
     let cancelado = false;
 
@@ -614,6 +762,7 @@ export default function AdminComunidadePage() {
             setUsuarioId("");
             setEhAdmin(false);
             setDenuncias([]);
+            setDenunciasPerfis([]);
             router.replace(criarLoginHrefAdminModeracao());
           }
 
@@ -635,7 +784,7 @@ export default function AdminComunidadePage() {
         }
 
         if (adminConfirmado) {
-          await carregarDenuncias();
+          await Promise.all([carregarDenuncias(), carregarDenunciasPerfis()]);
         }
       } catch (error) {
         if (!cancelado) {
@@ -708,6 +857,33 @@ export default function AdminComunidadePage() {
     });
   }, [busca, denuncias, statusFiltro]);
 
+
+  const denunciasPerfisFiltradas = useMemo(() => {
+    const buscaNormalizada = normalizarTexto(busca);
+
+    return denunciasPerfis.filter((denuncia) => {
+      if (!buscaNormalizada) {
+        return true;
+      }
+
+      const conteudoBusca = normalizarTexto(
+        [
+          "perfil usuario denuncia",
+          denuncia.motivo,
+          formatarMotivoDenunciaPerfil(denuncia.motivo),
+          denuncia.descricao,
+          denuncia.status,
+          denuncia.denuncianteNome,
+          denuncia.denunciadoNome,
+          denuncia.denunciadoId,
+          denuncia.perfilUrl,
+        ].join(" ")
+      );
+
+      return conteudoBusca.includes(buscaNormalizada);
+    });
+  }, [busca, denunciasPerfis]);
+
   useEffect(() => {
     const fecharMenuTimer = window.setTimeout(() => {
       setMenuDenunciaAbertoId("");
@@ -733,6 +909,69 @@ export default function AdminComunidadePage() {
   const totalRejeitadas = denunciasAtivas.filter(
     (denuncia) => denuncia.status === "rejeitada"
   ).length;
+
+
+  const totalPerfisPendentes = denunciasPerfis.filter(
+    (denuncia) => denuncia.status === "pendente"
+  ).length;
+
+  async function atualizarStatusDenunciaPerfil(
+    denunciaId: string,
+    novoStatus: StatusDenunciaPerfil
+  ) {
+    if (!usuarioId || !ehAdmin) {
+      setErro("Apenas moderadores podem atualizar denúncias de perfis.");
+      return;
+    }
+
+    const chaveAcao = `perfil-${denunciaId}-${novoStatus}`;
+
+    if (acaoEmAndamento) {
+      return;
+    }
+
+    setAcaoEmAndamento(chaveAcao);
+    setErro("");
+    setSucesso("");
+
+    const atualizadoEm = new Date().toISOString();
+
+    try {
+      const { error } = await supabase
+        .from("denuncias_perfis")
+        .update({
+          status: novoStatus,
+          atualizado_em: atualizadoEm,
+        })
+        .eq("id", denunciaId);
+
+      if (error) {
+        throw error;
+      }
+
+      setDenunciasPerfis((denunciasAtuais) =>
+        denunciasAtuais.map((denuncia) =>
+          denuncia.id === denunciaId
+            ? {
+                ...denuncia,
+                status: novoStatus,
+                atualizadoEm,
+              }
+            : denuncia
+        )
+      );
+
+      setSucesso(
+        `Denúncia de perfil marcada como ${STATUS_PERFIL_LABEL[
+          novoStatus
+        ].toLowerCase()}.`
+      );
+    } catch (error) {
+      setErro(criarMensagemErro("Erro ao atualizar denúncia de perfil", error));
+    } finally {
+      setAcaoEmAndamento("");
+    }
+  }
 
   async function atualizarStatusDenuncia(
     denunciaId: string,
@@ -1035,6 +1274,54 @@ export default function AdminComunidadePage() {
     }
   }
 
+
+  async function removerDenunciaPerfilResolvida(denunciaId: string) {
+    if (!usuarioId || !ehAdmin) {
+      setErro("Apenas moderadores podem remover denúncias de perfis resolvidas.");
+      return;
+    }
+
+    if (acaoEmAndamento) {
+      return;
+    }
+
+    const denuncia = denunciasPerfis.find((item) => item.id === denunciaId);
+
+    if (!denuncia || denuncia.status !== "resolvida") {
+      setErro("Somente denúncias de perfis resolvidas podem ser removidas do painel.");
+      return;
+    }
+
+    const chaveAcao = `perfil-${denunciaId}-remover-denuncia`;
+
+    setMenuDenunciaAbertoId("");
+    setAcaoEmAndamento(chaveAcao);
+    setErro("");
+    setSucesso("");
+
+    try {
+      const { error } = await supabase
+        .from("denuncias_perfis")
+        .delete()
+        .eq("id", denunciaId)
+        .eq("status", "resolvida");
+
+      if (error) {
+        throw error;
+      }
+
+      setDenunciasPerfis((denunciasAtuais) =>
+        denunciasAtuais.filter((denunciaAtual) => denunciaAtual.id !== denunciaId)
+      );
+
+      setSucesso("Denúncia de perfil resolvida removida do painel.");
+    } catch (error) {
+      setErro(criarMensagemErro("Erro ao remover denúncia de perfil resolvida", error));
+    } finally {
+      setAcaoEmAndamento("");
+    }
+  }
+
   function limparFiltros() {
     setStatusFiltro("todas");
     setBusca("");
@@ -1126,71 +1413,69 @@ export default function AdminComunidadePage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
-          <Link
-            href="/"
-            style={isDesktop ? desktopTitleHomeLinkStyle : titleHomeLinkStyle}
-            aria-label="Voltar para a Home"
-          >
-            <span
-              className="historietas-theme-title"
-              style={isDesktop ? desktopPageTitleTextStyle : pageTitleTextStyle}
-            >
-              MODERAÇÃO
-            </span>
-          </Link>
-
           <button
             type="button"
-            aria-label={buscaModeracaoAberta ? "Fechar busca" : "Abrir busca"}
-            aria-expanded={buscaModeracaoAberta || Boolean(busca.trim())}
-            onClick={() => setBuscaModeracaoAberta((aberta) => !aberta)}
-            style={titleSearchButtonStyle}
+            onClick={() => setMostrarFiltrosModeracao(true)}
+            style={adminFilterLabelButtonStyle}
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <circle
-                cx="10.85"
-                cy="10.85"
-                r="6.65"
-                stroke="currentColor"
-                strokeWidth="2.15"
-              />
-              <path
-                d="M16.05 16.05L20.25 20.25"
-                stroke="currentColor"
-                strokeWidth="2.15"
-                strokeLinecap="round"
-              />
-            </svg>
+            <span>Moderação</span>
+            <span style={adminFilterActionIconStyle}>⇅</span>
           </button>
 
-          {isDesktop ? (
-            <Link
-              href="/notificacoes"
-              style={desktopNotificationButtonStyle}
-              aria-label={
-                notificacoesNaoLidas > 0
-                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                  : "Notificações"
-              }
+          <div style={titleHeaderActionsStyle}>
+            <button
+              type="button"
+              aria-label={buscaModeracaoAberta ? "Fechar busca" : "Abrir busca"}
+              aria-expanded={buscaModeracaoAberta || Boolean(busca.trim())}
+              onClick={() => setBuscaModeracaoAberta((aberta) => !aberta)}
+              style={titleSearchButtonStyle}
             >
-              N
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="10.85"
+                  cy="10.85"
+                  r="6.65"
+                  stroke="currentColor"
+                  strokeWidth="2.15"
+                />
+                <path
+                  d="M16.05 16.05L20.25 20.25"
+                  stroke="currentColor"
+                  strokeWidth="2.15"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
 
-              {notificacoesNaoLidas > 0 ? (
-                <span style={desktopNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99
-                    ? "99+"
-                    : notificacoesNaoLidas}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
+            {isDesktop ? (
+              <Link
+                href="/notificacoes"
+                style={desktopNotificationButtonStyle}
+                aria-label={
+                  notificacoesNaoLidas > 0
+                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                    : "Notificações"
+                }
+              >
+                N
+
+                {notificacoesNaoLidas > 0 ? (
+                  <span style={desktopNotificationBadgeStyle}>
+                    {notificacoesNaoLidas > 99
+                      ? "99+"
+                      : notificacoesNaoLidas}
+                  </span>
+                ) : null}
+              </Link>
+            ) : null}
+          </div>
         </header>
 
         <section style={toolsStyle}>
@@ -1234,17 +1519,6 @@ export default function AdminComunidadePage() {
             </label>
           )}
 
-          <div style={adminFilterControlsRowStyle}>
-            <button
-              type="button"
-              onClick={() => setMostrarFiltrosModeracao(true)}
-              style={adminFilterLabelButtonStyle}
-            >
-              <span>Filtrar e ordenar</span>
-              <span style={adminFilterActionIconStyle}>⇅</span>
-            </button>
-          </div>
-
           <section className="admin-comunidade-stats" style={statsGridStyle}>
             <div style={statCardStyle}>
               <strong style={statNumberStyle}>{denunciasAtivas.length}</strong>
@@ -1269,6 +1543,16 @@ export default function AdminComunidadePage() {
             <div style={statCardStyle}>
               <strong style={statNumberStyle}>{totalRejeitadas}</strong>
               <span style={statLabelStyle}>rejeitadas</span>
+            </div>
+
+            <div style={statCardStyle}>
+              <strong style={statNumberStyle}>{denunciasPerfis.length}</strong>
+              <span style={statLabelStyle}>perfis</span>
+            </div>
+
+            <div style={statCardStyle}>
+              <strong style={statNumberStyle}>{totalPerfisPendentes}</strong>
+              <span style={statLabelStyle}>perfis pend.</span>
             </div>
           </section>
 
@@ -1318,7 +1602,7 @@ export default function AdminComunidadePage() {
               <div style={adminFiltersSheetHandleStyle} />
 
               <strong style={adminFiltersSheetTitleStyle}>
-                Filtrar e ordenar
+                Moderação
               </strong>
 
               <span style={adminFiltersSheetSectionLabelStyle}>Status</span>
@@ -1377,11 +1661,221 @@ export default function AdminComunidadePage() {
           </section>
         )}
 
+        {denunciasPerfisFiltradas.length > 0 && (
+          <section style={listStyle}>
+            <section style={summaryStyle}>
+              <strong style={summaryTitleStyle}>
+                {denunciasPerfisFiltradas.length === 1
+                  ? "1 denúncia de perfil encontrada"
+                  : `${denunciasPerfisFiltradas.length} denúncias de perfis encontradas`}
+              </strong>
+            </section>
+
+            {denunciasPerfisFiltradas.map((denuncia) => {
+              const acaoAtiva = acaoEmAndamento.startsWith(`perfil-${denuncia.id}`);
+              const menuIdPerfil = `perfil-${denuncia.id}`;
+              const menuAberto = menuDenunciaAbertoId === menuIdPerfil;
+
+              return (
+                <article key={denuncia.id} style={reportCardStyle}>
+                  <div className="admin-comunidade-report-header" style={reportHeaderStyle}>
+                    <div style={reportTitleWrapStyle}>
+                      <div style={reportMetaLineStyle}>
+                        <span
+                          style={{
+                            ...targetBadgeStyle,
+                            ...commentTargetBadgeStyle,
+                          }}
+                        >
+                          Perfil
+                        </span>
+
+                        <span style={reportDotStyle}>•</span>
+
+                        <span style={reportDateStyle}>
+                          Denunciado em {formatarData(denuncia.criadoEm)}
+                        </span>
+
+                        <span style={reportDotStyle}>•</span>
+
+                        <span style={statusInlineStyle}>
+                          {STATUS_PERFIL_LABEL[denuncia.status]}
+                        </span>
+                      </div>
+
+                      <strong style={reportTitleStyle}>
+                        {formatarMotivoDenunciaPerfil(denuncia.motivo)}
+                      </strong>
+                    </div>
+
+                    <div style={reportHeaderRightStyle}>
+                      <div style={reportMenuWrapStyle}>
+                        <button
+                          type="button"
+                          aria-label={
+                            menuAberto
+                              ? "Fechar ações da denúncia de perfil"
+                              : "Abrir ações da denúncia de perfil"
+                          }
+                          aria-expanded={menuAberto}
+                          onClick={() =>
+                            setMenuDenunciaAbertoId((denunciaAbertaId) =>
+                              denunciaAbertaId === menuIdPerfil ? "" : menuIdPerfil
+                            )
+                          }
+                          disabled={acaoAtiva}
+                          style={{
+                            ...reportMenuButtonStyle,
+                            opacity: acaoAtiva ? 0.58 : 1,
+                            cursor: acaoAtiva ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          ⋮
+                        </button>
+
+                        {menuAberto && (
+                          <section
+                            style={reportMenuOverlayStyle}
+                            aria-label="Ações da denúncia de perfil"
+                          >
+                            <button
+                              type="button"
+                              aria-label="Fechar ações da denúncia de perfil"
+                              onClick={() => setMenuDenunciaAbertoId("")}
+                              style={reportMenuBackdropStyle}
+                            />
+
+                            <article role="menu" style={reportMenuStyle}>
+                              <div style={reportMenuHandleStyle} />
+
+                              <strong style={reportMenuTitleStyle}>
+                                Ações da denúncia
+                              </strong>
+
+                              <Link
+                                href={denuncia.perfilHref}
+                                onClick={() => setMenuDenunciaAbertoId("")}
+                                style={reportMenuItemLinkStyle}
+                              >
+                                Abrir perfil denunciado
+                              </Link>
+
+                              {denuncia.status === "resolvida" && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void removerDenunciaPerfilResolvida(denuncia.id)
+                                  }
+                                  disabled={acaoAtiva}
+                                  style={reportMenuDangerItemStyle}
+                                >
+                                  {acaoEmAndamento ===
+                                  `perfil-${denuncia.id}-remover-denuncia`
+                                    ? "Removendo..."
+                                    : "Remover do painel"}
+                                </button>
+                              )}
+
+                              {denuncia.status === "pendente" && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setMenuDenunciaAbertoId("");
+                                    void atualizarStatusDenunciaPerfil(
+                                      denuncia.id,
+                                      "analisada"
+                                    );
+                                  }}
+                                  disabled={acaoAtiva}
+                                  style={reportMenuItemStyle}
+                                >
+                                  {acaoEmAndamento ===
+                                  `perfil-${denuncia.id}-analisada`
+                                    ? "Assumindo..."
+                                    : "Assumir análise"}
+                                </button>
+                              )}
+
+                              <div style={reportMenuDividerStyle} />
+
+                              {STATUS_DENUNCIAS_PERFIS.map((status) => (
+                                <button
+                                  key={status}
+                                  type="button"
+                                  onClick={() => {
+                                    setMenuDenunciaAbertoId("");
+                                    void atualizarStatusDenunciaPerfil(
+                                      denuncia.id,
+                                      status
+                                    );
+                                  }}
+                                  disabled={acaoAtiva || denuncia.status === status}
+                                  style={
+                                    denuncia.status === status
+                                      ? reportMenuItemActiveStyle
+                                      : reportMenuItemStyle
+                                  }
+                                >
+                                  {acaoEmAndamento ===
+                                  `perfil-${denuncia.id}-${status}`
+                                    ? "Salvando..."
+                                    : `Marcar como ${STATUS_PERFIL_LABEL[
+                                        status
+                                      ].toLowerCase()}`}
+                                </button>
+                              ))}
+                            </article>
+                          </section>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="admin-comunidade-report-body" style={reportBodyStyle}>
+                    <section style={contentBoxStyle}>
+                      <div style={sectionHeaderLineStyle}>
+                        <span style={boxLabelStyle}>Perfil denunciado</span>
+                      </div>
+
+                      <p style={reportedTextCompactStyle}>{denuncia.denunciadoNome}</p>
+
+                      <div style={metaGridStyle}>
+                        <span style={metaItemStyle}>
+                          Denunciante: <strong>{denuncia.denuncianteNome}</strong>
+                        </span>
+                      </div>
+                    </section>
+
+                    <section style={contentBoxStyle}>
+                      <div style={sectionHeaderLineStyle}>
+                        <span style={boxLabelStyle}>Denúncia</span>
+                        <span style={sectionHintStyle}>Registro interno</span>
+                      </div>
+
+                      {denuncia.descricao ? (
+                        <p style={detailTextStyle}>{denuncia.descricao}</p>
+                      ) : (
+                        <p style={mutedTextStyle}>Sem descrição adicional.</p>
+                      )}
+                    </section>
+                  </div>
+
+                  {denuncia.atualizadoEm && denuncia.atualizadoEm !== denuncia.criadoEm && (
+                    <span style={analysisMetaStyle}>
+                      Última atualização em {formatarData(denuncia.atualizadoEm)}
+                    </span>
+                  )}
+                </article>
+              );
+            })}
+          </section>
+        )}
+
         <section style={summaryStyle}>
           <strong style={summaryTitleStyle}>
             {denunciasFiltradas.length === 1
-              ? "1 denúncia encontrada"
-              : `${denunciasFiltradas.length} denúncias encontradas`}
+              ? "1 denúncia da Comunidade encontrada"
+              : `${denunciasFiltradas.length} denúncias da Comunidade encontradas`}
           </strong>
         </section>
 
@@ -1689,10 +2183,10 @@ export default function AdminComunidadePage() {
 
                     <label style={adminNoteStyle}>
                       <div style={sectionHeaderLineStyle}>
-                        <span style={adminObservationLabelStyle}>Observação interna</span>
-                        {!denunciaResolvidaComConteudoIndisponivel && (
-                          <span style={sectionHintStyle}>Até 800 caracteres</span>
-                        )}
+                        <span style={adminObservationLabelStyle}>
+                          Observação interna
+                        </span>
+                        <span style={sectionHintStyle}>Até 800 caracteres</span>
                       </div>
 
                       <textarea
@@ -1706,12 +2200,8 @@ export default function AdminComunidadePage() {
                         disabled={acaoAtiva}
                         placeholder="Ex.: conteúdo analisado, ação tomada, manter observação interna..."
                         maxLength={800}
-                        rows={denunciaResolvidaComConteudoIndisponivel ? 1 : 2}
-                        style={
-                          denunciaResolvidaComConteudoIndisponivel
-                            ? compactTextareaStyle
-                            : textareaStyle
-                        }
+                        rows={2}
+                        style={textareaStyle}
                       />
                     </label>
                   </div>
@@ -1766,6 +2256,18 @@ const adminComunidadePageCss = `
   }
 
 
+  .admin-comunidade-stats > * {
+    min-width: 0;
+  }
+
+  .admin-comunidade-stats > *:nth-child(-n + 3) {
+    grid-column: span 4;
+  }
+
+  .admin-comunidade-stats > *:nth-child(n + 4) {
+    grid-column: span 3;
+  }
+
   .admin-comunidade-filter-buttons {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -1814,7 +2316,7 @@ const containerStyle: CSSProperties = {
   width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "18px 0 calc(24px + env(safe-area-inset-bottom))",
+  padding: "10px 0 calc(24px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -1822,35 +2324,40 @@ const containerStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1220px, calc(100% - 64px))",
-  padding: "20px 0 42px",
+  padding: "12px 0 42px",
 };
 
 const titleHeaderStyle: CSSProperties = {
   position: "relative",
   display: "flex",
   alignItems: "center",
-  justifyContent: "center",
-  marginTop: "4px",
-  marginBottom: "18px",
+  justifyContent: "space-between",
+  gap: "12px",
+  marginTop: 0,
+  marginBottom: "12px",
   padding: 0,
   minWidth: 0,
   maxWidth: "100%",
-  textAlign: "center",
+  textAlign: "left",
   boxSizing: "border-box",
 };
 
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
-  position: "relative",
-  marginTop: "6px",
-  marginBottom: "22px",
+  marginTop: 0,
+  marginBottom: "16px",
+};
+
+const titleHeaderActionsStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "10px",
+  flex: "0 0 auto",
 };
 
 const desktopNotificationButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: "42px",
-  transform: "translateY(-50%)",
+  position: "relative",
   width: "34px",
   height: "34px",
   borderRadius: "999px",
@@ -1891,34 +2398,8 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   pointerEvents: "none",
 };
 
-const titleHomeLinkStyle: CSSProperties = {
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "23px",
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "1px",
-  width: "fit-content",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "visible",
-  textAlign: "center",
-  flex: "0 1 auto",
-  ...safeTextStyle,
-};
-
-const desktopTitleHomeLinkStyle: CSSProperties = {
-  ...titleHomeLinkStyle,
-};
 
 const titleSearchButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: 0,
-  transform: "translateY(-50%)",
   width: "34px",
   height: "34px",
   borderRadius: 0,
@@ -1941,30 +2422,6 @@ const titleSearchButtonStyle: CSSProperties = {
   appearance: "none",
 };
 
-const pageTitleTextStyle: CSSProperties = {
-  display: "inline-block",
-  marginLeft: 0,
-  paddingRight: "0.2em",
-  paddingBottom: "0.04em",
-  whiteSpace: "nowrap",
-  overflow: "visible",
-  fontSize: "23px",
-  lineHeight: 1.08,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  wordSpacing: "0.11em",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 42%, #FDBA74 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
-  textShadow: "none",
-};
-
-const desktopPageTitleTextStyle: CSSProperties = {
-  ...pageTitleTextStyle,
-};
 
 
 const mobileTopWaterFadeStyle: CSSProperties = {
@@ -2307,7 +2764,7 @@ const secondaryButtonStyle: CSSProperties = {
 
 const statsGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
   gap: "6px",
   margin: "2px 0 0",
   minWidth: 0,
@@ -2442,13 +2899,6 @@ const adminSearchInputStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const adminFilterControlsRowStyle: CSSProperties = {
-  minHeight: "32px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-};
 
 const adminFilterLabelButtonStyle: CSSProperties = {
   appearance: "none",
@@ -2593,17 +3043,18 @@ const clearButtonStyle: CSSProperties = {
 
 const listStyle: CSSProperties = {
   display: "grid",
-  gap: "10px",
+  gap: 0,
   minWidth: 0,
 };
 
 const reportCardStyle: CSSProperties = {
   display: "grid",
   gap: "12px",
-  padding: "14px",
-  borderRadius: "24px",
-  background: "rgba(4,0,10,0.72)",
+  padding: "16px 0",
+  borderRadius: 0,
+  background: "transparent",
   border: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.62)",
   boxShadow: "none",
   minWidth: 0,
   overflow: "visible",
@@ -2651,11 +3102,11 @@ const targetBadgeStyle: CSSProperties = {
 };
 
 const postTargetBadgeStyle: CSSProperties = {
-  color: "#DDD6FE",
+  color: "#FFFFFF",
 };
 
 const commentTargetBadgeStyle: CSSProperties = {
-  color: "#FDBA74",
+  color: "#FFFFFF",
 };
 
 const reportTitleStyle: CSSProperties = {
@@ -2998,20 +3449,22 @@ const reportMenuDividerStyle: CSSProperties = {
 
 const reportBodyStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1.08fr) minmax(260px, 0.92fr)",
-  gap: "12px 18px",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  gap: 0,
   minWidth: 0,
-  paddingTop: "10px",
-  borderTop: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
+  paddingTop: "8px",
+  borderTop: "none",
 };
 
 const contentBoxStyle: CSSProperties = {
   display: "grid",
   gap: "9px",
-  padding: 0,
+  padding: "13px 0",
   borderRadius: 0,
   background: "transparent",
   border: "none",
+  borderBottom: "none",
+  boxShadow: "none",
   minWidth: 0,
   alignContent: "start",
 };
@@ -3121,30 +3574,50 @@ const adminNoteStyle: CSSProperties = {
   gap: "7px",
   minWidth: 0,
   gridColumn: "1 / -1",
-  paddingTop: "10px",
-  borderTop: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.06))",
+  padding: "13px 0 0",
+  borderTop: "none",
+  background: "transparent",
+  boxShadow: "none",
 };
 
 const textareaStyle: CSSProperties = {
   width: "100%",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  border: "none",
+  borderRadius: 0,
   outline: "none",
-  borderRadius: "14px",
-  background: "var(--historietas-input-bg, rgba(255,255,255,0.055))",
+  background: "transparent",
   color: "var(--historietas-input-text, var(--historietas-text-primary, #FFFFFF))",
-  padding: "9px 10px",
+  padding: "8px 0 0",
   boxSizing: "border-box",
   fontSize: "12.5px",
   lineHeight: 1.4,
   fontWeight: 800,
   resize: "vertical",
-  minHeight: "58px",
+  minHeight: "46px",
+  cursor: "text",
+  caretColor: "#FFFFFF",
+  boxShadow: "none",
 };
 
 const compactTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "44px",
+  minHeight: "auto",
   resize: "none",
+};
+
+const adminObservationReadonlyStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12.5px",
+  lineHeight: 1.45,
+  fontWeight: 800,
+  whiteSpace: "pre-wrap",
+  background: "transparent",
+  border: "none",
+  borderRadius: 0,
+  padding: 0,
+  boxShadow: "none",
+  ...safeTextStyle,
 };
 
 const reportActionsStyle: CSSProperties = {

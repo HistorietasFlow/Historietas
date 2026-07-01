@@ -107,6 +107,15 @@ const SOBRE_BIO_MAX_LENGTH = 600;
 const NOTAS_AVALIACAO_AUTOR = [1, 2, 3, 4, 5] as const;
 const DIARIO_ANOTACAO_MAX_LENGTH = 700;
 const DIARIO_COMENTARIO_MAX_LENGTH = 700;
+const DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH = 500;
+const DENUNCIA_PERFIL_MOTIVOS = [
+  { valor: "spam", rotulo: "Spam" },
+  { valor: "ofensivo", rotulo: "Conteúdo ofensivo" },
+  { valor: "perfil_falso", rotulo: "Perfil falso" },
+  { valor: "assedio", rotulo: "Assédio" },
+  { valor: "improprio", rotulo: "Conteúdo impróprio" },
+  { valor: "outro", rotulo: "Outro" },
+] as const;
 
 function normalizarAbaPerfilAutor(valor: string | null): AbaPerfilAutor {
   if (
@@ -182,6 +191,7 @@ type ItemBibliotecaPerfil = {
 };
 
 type VisibilidadeDiarioPerfil = "publico" | "parcial" | "privado";
+type MotivoDenunciaPerfil = (typeof DENUNCIA_PERFIL_MOTIVOS)[number]["valor"];
 
 type AnotacaoDiarioPerfil = {
   id: string;
@@ -3655,6 +3665,7 @@ type MenuPerfilIconeTipo =
   | "link"
   | "sair"
   | "comunidade"
+  | "denunciar"
   | "explorar";
 
 function MenuPerfilIcone({ tipo }: { tipo: MenuPerfilIconeTipo }) {
@@ -3723,6 +3734,16 @@ function MenuPerfilIcone({ tipo }: { tipo: MenuPerfilIconeTipo }) {
     return (
       <svg {...iconProps}>
         <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z" />
+      </svg>
+    );
+  }
+
+  if (tipo === "denunciar") {
+    return (
+      <svg {...iconProps}>
+        <path d="M12 3 3 7v6c0 5 3.8 7.6 9 8 5.2-.4 9-3 9-8V7l-9-4Z" />
+        <path d="M12 8v5" />
+        <path d="M12 17h.01" />
       </svg>
     );
   }
@@ -3875,6 +3896,12 @@ export default function PerfilAutorPage() {
   const [seguindoUsuarioPerfilTotal, setSeguindoUsuarioPerfilTotal] =
     useState(0);
   const [seguirUsuarioSalvando, setSeguirUsuarioSalvando] = useState(false);
+  const [denunciaPerfilAberta, setDenunciaPerfilAberta] = useState(false);
+  const [motivoDenunciaPerfil, setMotivoDenunciaPerfil] =
+    useState<MotivoDenunciaPerfil>("spam");
+  const [descricaoDenunciaPerfil, setDescricaoDenunciaPerfil] = useState("");
+  const [denunciaPerfilErro, setDenunciaPerfilErro] = useState("");
+  const [denunciaPerfilSalvando, setDenunciaPerfilSalvando] = useState(false);
   const seguidoresTotalEstavelRef = useRef<Record<string, number>>({});
   const seguindoTotalEstavelRef = useRef<Record<string, number>>({});
 
@@ -5259,6 +5286,9 @@ export default function PerfilAutorPage() {
   const profileActionsAtualStyle = isDesktop
     ? desktopProfileActionsStyle
     : profileActionsStyle;
+  const profileVisitorActionsAtualStyle = isDesktop
+    ? desktopProfileVisitorActionsStyle
+    : profileVisitorActionsStyle;
   const menuSheetAtualStyle = isDesktop
     ? desktopMenuSheetStyle
     : menuSheetStyle;
@@ -5727,6 +5757,96 @@ export default function PerfilAutorPage() {
       mensagemCopiado: "",
       mensagemErro: "",
     });
+  }
+
+  function abrirDenunciaPerfil() {
+    if (podeEditarPerfil) {
+      return;
+    }
+
+    setMenuPerfilAberto(false);
+    setDenunciaPerfilErro("");
+    setMensagemAcao("");
+    setDenunciaPerfilAberta(true);
+  }
+
+  function fecharDenunciaPerfil() {
+    if (denunciaPerfilSalvando) {
+      return;
+    }
+
+    setDenunciaPerfilAberta(false);
+    setDenunciaPerfilErro("");
+  }
+
+  async function enviarDenunciaPerfil() {
+    if (!perfilParaMostrar || podeEditarPerfil || denunciaPerfilSalvando) {
+      return;
+    }
+
+    const perfilDenunciadoId = perfilParaMostrar.autorId.trim();
+
+    if (!perfilDenunciadoId || !idAutorSupabaseValido(perfilDenunciadoId)) {
+      setDenunciaPerfilErro("Não foi possível identificar este perfil.");
+      return;
+    }
+
+    setDenunciaPerfilSalvando(true);
+    setDenunciaPerfilErro("");
+
+    try {
+      const { data } = await supabase.auth.getUser();
+      const denuncianteId = data.user?.id || usuarioIdLogado.trim();
+
+      if (!denuncianteId) {
+        setDenunciaPerfilSalvando(false);
+        setDenunciaPerfilAberta(false);
+        avisarLoginNecessario("Entre na sua conta para denunciar este perfil.");
+        return;
+      }
+
+      if (denuncianteId === perfilDenunciadoId) {
+        setDenunciaPerfilSalvando(false);
+        setDenunciaPerfilErro("Você não pode denunciar o próprio perfil.");
+        return;
+      }
+
+      const descricao = descricaoDenunciaPerfil
+        .trim()
+        .slice(0, DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH);
+      const perfilUrl =
+        typeof window !== "undefined"
+          ? criarUrlAbsolutaCompartilhamentoPerfilAutor(window.location.href)
+          : "";
+
+      const { error } = await supabase.from("denuncias_perfis").insert({
+        denunciante_id: denuncianteId,
+        denunciado_id: perfilDenunciadoId,
+        perfil_nome: perfilParaMostrar.nome,
+        perfil_url: perfilUrl,
+        motivo: motivoDenunciaPerfil,
+        descricao,
+        status: "pendente",
+        criado_em: new Date().toISOString(),
+      });
+
+      if (error) {
+        setDenunciaPerfilErro(
+          "Não consegui enviar a denúncia agora. Verifique se a tabela denuncias_perfis já existe no Supabase.",
+        );
+        setDenunciaPerfilSalvando(false);
+        return;
+      }
+
+      setDenunciaPerfilAberta(false);
+      setMotivoDenunciaPerfil("spam");
+      setDescricaoDenunciaPerfil("");
+      setDenunciaPerfilSalvando(false);
+      setMensagemAcao("Denúncia enviada para análise.");
+    } catch {
+      setDenunciaPerfilErro("Não consegui enviar a denúncia agora.");
+      setDenunciaPerfilSalvando(false);
+    }
   }
 
   async function compartilharObraPerfilAutor(obra: ObraLocal) {
@@ -7228,6 +7348,20 @@ export default function PerfilAutorPage() {
                       <span style={menuChevronStyle}>›</span>
                     </Link>
 
+                    <button
+                      type="button"
+                      onClick={abrirDenunciaPerfil}
+                      style={menuDangerItemStyle}
+                    >
+                      <span style={menuItemIconStyle}>
+                        <MenuPerfilIcone tipo="denunciar" />
+                      </span>
+                      <strong style={menuItemTextStyle}>
+                        Denunciar perfil
+                      </strong>
+                      <span style={menuChevronStyle}>›</span>
+                    </button>
+
                     <div style={menuDividerStyle} />
                     <span style={menuSectionTitleStyle}>Descoberta</span>
 
@@ -7244,6 +7378,113 @@ export default function PerfilAutorPage() {
                     </Link>
                   </>
                 )}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {denunciaPerfilAberta && !podeEditarPerfil && (
+          <div
+            style={denunciaPerfilOverlayStyle}
+            role="presentation"
+            onClick={fecharDenunciaPerfil}
+          >
+            <section
+              style={denunciaPerfilSheetStyle}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Denunciar perfil"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div style={denunciaPerfilHeaderStyle}>
+                <div style={denunciaPerfilTitleBlockStyle}>
+                  <strong style={denunciaPerfilTitleStyle}>
+                    Denunciar perfil
+                  </strong>
+                  <span style={denunciaPerfilSubtitleStyle}>
+                    Essa denúncia será enviada para análise da moderação.
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={fecharDenunciaPerfil}
+                  disabled={denunciaPerfilSalvando}
+                  style={denunciaPerfilCloseButtonStyle}
+                  aria-label="Fechar denúncia"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={denunciaPerfilMotivosGridStyle}>
+                {DENUNCIA_PERFIL_MOTIVOS.map((opcao) => (
+                  <button
+                    key={opcao.valor}
+                    type="button"
+                    onClick={() => {
+                      setMotivoDenunciaPerfil(opcao.valor);
+                      setDenunciaPerfilErro("");
+                    }}
+                    disabled={denunciaPerfilSalvando}
+                    style={
+                      motivoDenunciaPerfil === opcao.valor
+                        ? denunciaPerfilMotivoAtivoStyle
+                        : denunciaPerfilMotivoButtonStyle
+                    }
+                  >
+                    {opcao.rotulo}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={descricaoDenunciaPerfil}
+                onChange={(event) => {
+                  setDescricaoDenunciaPerfil(
+                    event.target.value.slice(
+                      0,
+                      DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH,
+                    ),
+                  );
+                  setDenunciaPerfilErro("");
+                }}
+                placeholder="Explique rapidamente o problema, se quiser."
+                maxLength={DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH}
+                rows={4}
+                disabled={denunciaPerfilSalvando}
+                style={denunciaPerfilTextareaStyle}
+              />
+
+              <span style={denunciaPerfilCounterStyle}>
+                {descricaoDenunciaPerfil.length}/
+                {DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH}
+              </span>
+
+              {denunciaPerfilErro && (
+                <span style={denunciaPerfilErrorStyle}>
+                  {denunciaPerfilErro}
+                </span>
+              )}
+
+              <div style={denunciaPerfilActionsStyle}>
+                <button
+                  type="button"
+                  onClick={fecharDenunciaPerfil}
+                  disabled={denunciaPerfilSalvando}
+                  style={denunciaPerfilCancelButtonStyle}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void enviarDenunciaPerfil()}
+                  disabled={denunciaPerfilSalvando}
+                  style={denunciaPerfilSubmitButtonStyle}
+                >
+                  {denunciaPerfilSalvando ? "Enviando..." : "Enviar denúncia"}
+                </button>
               </div>
             </section>
           </div>
@@ -7402,7 +7643,13 @@ export default function PerfilAutorPage() {
             )}
           </div>
 
-          <div style={profileActionsAtualStyle}>
+          <div
+            style={
+              podeEditarPerfil
+                ? profileActionsAtualStyle
+                : profileVisitorActionsAtualStyle
+            }
+          >
             {podeEditarPerfil ? (
               <>
                 <button
@@ -10133,6 +10380,171 @@ const actionMessageStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const denunciaPerfilOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 10000,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "18px",
+  boxSizing: "border-box",
+  background: "rgba(0,0,0,0.68)",
+};
+
+const denunciaPerfilSheetStyle: CSSProperties = {
+  width: "min(430px, 100%)",
+  maxHeight: "calc(100dvh - 36px)",
+  overflowY: "auto",
+  borderRadius: "24px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#070212",
+  boxShadow: "0 24px 80px rgba(0,0,0,0.55)",
+  padding: "18px",
+  display: "grid",
+  gap: "14px",
+  boxSizing: "border-box",
+};
+
+const denunciaPerfilHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: "12px",
+  minWidth: 0,
+};
+
+const denunciaPerfilTitleBlockStyle: CSSProperties = {
+  display: "grid",
+  gap: "5px",
+  minWidth: 0,
+};
+
+const denunciaPerfilTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "17px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  ...safeTextStyle,
+};
+
+const denunciaPerfilSubtitleStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "11px",
+  lineHeight: 1.35,
+  fontWeight: 750,
+  ...safeTextStyle,
+};
+
+const denunciaPerfilCloseButtonStyle: CSSProperties = {
+  width: "36px",
+  height: "36px",
+  borderRadius: "999px",
+  border: "0",
+  background: "rgba(255,255,255,0.075)",
+  color: "#FFFFFF",
+  fontSize: "20px",
+  lineHeight: 1,
+  fontWeight: 900,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  flex: "0 0 auto",
+};
+
+const denunciaPerfilMotivosGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const denunciaPerfilMotivoButtonStyle: CSSProperties = {
+  minHeight: "38px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.04)",
+  color: "#FFFFFF",
+  padding: "0 10px",
+  fontSize: "10px",
+  lineHeight: 1.15,
+  fontWeight: 900,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  textAlign: "center",
+  boxSizing: "border-box",
+  ...safeTextStyle,
+};
+
+const denunciaPerfilMotivoAtivoStyle: CSSProperties = {
+  ...denunciaPerfilMotivoButtonStyle,
+  border: "1px solid rgba(248,113,113,0.42)",
+  background: "rgba(127,29,29,0.24)",
+  color: "#FCA5A5",
+};
+
+const denunciaPerfilTextareaStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "92px",
+  resize: "vertical",
+  borderRadius: "18px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
+  padding: "12px",
+  outline: "none",
+  fontSize: "12px",
+  lineHeight: 1.42,
+  fontWeight: 650,
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+  minWidth: 0,
+  ...safeTextStyle,
+};
+
+const denunciaPerfilCounterStyle: CSSProperties = {
+  marginTop: "-8px",
+  color: "var(--historietas-text-muted, #A1A1AA)",
+  fontSize: "10px",
+  lineHeight: 1.2,
+  fontWeight: 850,
+  textAlign: "right",
+  ...safeTextStyle,
+};
+
+const denunciaPerfilErrorStyle: CSSProperties = {
+  color: "#FCA5A5",
+  fontSize: "11px",
+  lineHeight: 1.3,
+  fontWeight: 850,
+  ...safeTextStyle,
+};
+
+const denunciaPerfilActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const denunciaPerfilCancelButtonStyle: CSSProperties = {
+  minHeight: "40px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#FFFFFF",
+  fontSize: "11px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+};
+
+const denunciaPerfilSubmitButtonStyle: CSSProperties = {
+  ...denunciaPerfilCancelButtonStyle,
+  border: "1px solid rgba(248,113,113,0.36)",
+  background: "rgba(127,29,29,0.34)",
+  color: "#FCA5A5",
+};
+
 const bioTextareaStyle: CSSProperties = {
   width: "100%",
   minHeight: "64px",
@@ -10516,6 +10928,16 @@ const desktopProfileActionsStyle: CSSProperties = {
   width: "min(640px, 100%)",
   margin: "4px auto 0",
   gap: "10px",
+};
+
+const profileVisitorActionsStyle: CSSProperties = {
+  ...profileActionsStyle,
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+};
+
+const desktopProfileVisitorActionsStyle: CSSProperties = {
+  ...desktopProfileActionsStyle,
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
 };
 
 const profilePrimaryButtonStyle: CSSProperties = {
