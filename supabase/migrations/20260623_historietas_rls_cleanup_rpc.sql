@@ -1,530 +1,735 @@
--- 20260703_historietas_comunidade_rls_rpc.sql
--- HISTORIETAS - complemento de produção para Comunidade, denúncias, TOP 5 e RPCs.
--- Rode depois de 20260623_historietas_rls_cleanup_rpc.sql.
-
-begin;
-
-create extension if not exists pgcrypto;
-
--- ============================================================
--- RPC: ADMIN
--- ============================================================
-
-create or replace function public.usuario_e_admin()
-returns boolean
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  usuario_atual uuid := auth.uid();
-  jwt_atual jsonb := coalesce(auth.jwt(), '{}'::jsonb);
-  predicados_usuario text[] := array[]::text[];
-  where_usuario text := '';
-  coluna text;
-  eh_admin boolean := false;
-begin
-  if usuario_atual is null then
-    return false;
-  end if;
-
-  if lower(coalesce(jwt_atual -> 'app_metadata' ->> 'role', '')) in ('admin', 'moderador', 'moderator') then
-    return true;
-  end if;
-
-  if lower(coalesce(jwt_atual -> 'app_metadata' ->> 'cargo', '')) in ('admin', 'moderador', 'moderator') then
-    return true;
-  end if;
-
-  if lower(coalesce(jwt_atual -> 'app_metadata' ->> 'tipo_usuario', '')) in ('admin', 'moderador', 'moderator') then
-    return true;
-  end if;
-
-  if lower(coalesce(jwt_atual -> 'user_metadata' ->> 'role', '')) in ('admin', 'moderador', 'moderator') then
-    return true;
-  end if;
-
-  if to_regclass('public.profiles') is null then
-    return false;
-  end if;
-
-  if exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'profiles'
-      and column_name = 'id'
-  ) then
-    predicados_usuario := array_append(predicados_usuario, 'id::text = $1::text');
-  end if;
-
-  if exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'profiles'
-      and column_name = 'user_id'
-  ) then
-    predicados_usuario := array_append(predicados_usuario, 'user_id::text = $1::text');
-  end if;
-
-  if array_length(predicados_usuario, 1) is null then
-    return false;
-  end if;
-
-  where_usuario := '(' || array_to_string(predicados_usuario, ' or ') || ')';
-
-  foreach coluna in array array['is_admin', 'admin', 'eh_admin', 'moderador', 'is_moderator'] loop
-    if exists (
-      select 1
-      from information_schema.columns
-      where table_schema = 'public'
-        and table_name = 'profiles'
-        and column_name = coluna
-    ) then
-      execute format(
-        'select exists (select 1 from public.profiles where %s and coalesce(%I, false) = true)',
-        where_usuario,
-        coluna
-      )
-      into eh_admin
-      using usuario_atual;
-
-      if eh_admin then
-        return true;
-      end if;
-    end if;
-  end loop;
-
-  foreach coluna in array array['role', 'cargo', 'tipo_usuario', 'papel'] loop
-    if exists (
-      select 1
-      from information_schema.columns
-      where table_schema = 'public'
-        and table_name = 'profiles'
-        and column_name = coluna
-    ) then
-      execute format(
-        'select exists (select 1 from public.profiles where %s and lower(coalesce(%I::text, '''')) in (''admin'', ''moderador'', ''moderator''))',
-        where_usuario,
-        coluna
-      )
-      into eh_admin
-      using usuario_atual;
-
-      if eh_admin then
-        return true;
-      end if;
-    end if;
-  end loop;
-
-  return false;
-end;
-$$;
-
-revoke all on function public.usuario_e_admin() from public;
-grant execute on function public.usuario_e_admin() to authenticated;
+-- 20260623_rls_core_policies_historietas.sql
+-- HISTORIETAS - RLS principal do app.
+-- Objetivo:
+-- - deixar leitura pública só onde o app precisa mostrar conteúdo público;
+-- - manter dados privados por user_id/seguidor_id/denunciante_id;
+-- - manter obras/capítulos públicos somente quando publicado = true;
+-- - deixar notificações restritas ao dono.
+--
+-- Rode no Supabase SQL Editor depois da migration de comunidade já existente.
 
 -- ============================================================
--- RPC: VISUALIZAÇÕES DE OBRAS
+-- PROFILES
 -- ============================================================
 
-create or replace function public.incrementar_visualizacao_obra(obra_id_param uuid)
-returns integer
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  total_visualizacoes integer := 0;
-begin
-  update public.obras
-  set visualizacoes = coalesce(visualizacoes, 0) + 1
-  where id = obra_id_param
-    and coalesce(publicado, false) = true
-  returning coalesce(visualizacoes, 0)
-  into total_visualizacoes;
+alter table if exists public.profiles enable row level security;
 
-  return coalesce(total_visualizacoes, 0);
-end;
-$$;
+drop policy if exists "profiles_select_publico" on public.profiles;
+drop policy if exists "profiles_insert_proprio" on public.profiles;
+drop policy if exists "profiles_update_proprio" on public.profiles;
+drop policy if exists "profiles_delete_proprio" on public.profiles;
 
-revoke all on function public.incrementar_visualizacao_obra(uuid) from public;
-grant execute on function public.incrementar_visualizacao_obra(uuid) to anon, authenticated;
-
--- ============================================================
--- TABELAS: COMUNIDADE
--- ============================================================
-
-create table if not exists public.comunidade_posts (
-  id uuid primary key default gen_random_uuid(),
-  autor_id uuid not null references auth.users(id) on delete cascade,
-  autor_nome text not null default '',
-  categoria text not null default 'Geral',
-  tipo_publicacao text default 'Discussão',
-  tem_spoiler boolean not null default false,
-  texto text not null,
-  obra_relacionada text,
-  criado_em timestamptz not null default now(),
-  fixado boolean not null default false,
-  fixado_em timestamptz,
-  fixado_por uuid references auth.users(id) on delete set null
-);
-
-alter table if exists public.comunidade_posts add column if not exists autor_id uuid;
-alter table if exists public.comunidade_posts add column if not exists autor_nome text default '';
-alter table if exists public.comunidade_posts add column if not exists categoria text default 'Geral';
-alter table if exists public.comunidade_posts add column if not exists tipo_publicacao text default 'Discussão';
-alter table if exists public.comunidade_posts add column if not exists tem_spoiler boolean default false;
-alter table if exists public.comunidade_posts add column if not exists texto text;
-alter table if exists public.comunidade_posts add column if not exists obra_relacionada text;
-alter table if exists public.comunidade_posts add column if not exists criado_em timestamptz default now();
-alter table if exists public.comunidade_posts add column if not exists fixado boolean default false;
-alter table if exists public.comunidade_posts add column if not exists fixado_em timestamptz;
-alter table if exists public.comunidade_posts add column if not exists fixado_por uuid;
-
-create table if not exists public.comunidade_comentarios (
-  id uuid primary key default gen_random_uuid(),
-  post_id uuid not null references public.comunidade_posts(id) on delete cascade,
-  autor_id uuid not null references auth.users(id) on delete cascade,
-  autor_nome text not null default '',
-  texto text not null,
-  criado_em timestamptz not null default now()
-);
-
-alter table if exists public.comunidade_comentarios add column if not exists post_id uuid;
-alter table if exists public.comunidade_comentarios add column if not exists autor_id uuid;
-alter table if exists public.comunidade_comentarios add column if not exists autor_nome text default '';
-alter table if exists public.comunidade_comentarios add column if not exists texto text;
-alter table if exists public.comunidade_comentarios add column if not exists criado_em timestamptz default now();
-
-create table if not exists public.comunidade_curtidas (
-  post_id uuid not null references public.comunidade_posts(id) on delete cascade,
-  usuario_id uuid not null references auth.users(id) on delete cascade,
-  criado_em timestamptz not null default now(),
-  primary key (post_id, usuario_id)
-);
-
-alter table if exists public.comunidade_curtidas add column if not exists post_id uuid;
-alter table if exists public.comunidade_curtidas add column if not exists usuario_id uuid;
-alter table if exists public.comunidade_curtidas add column if not exists criado_em timestamptz default now();
-
-create table if not exists public.comunidade_comentario_curtidas (
-  comentario_id uuid not null references public.comunidade_comentarios(id) on delete cascade,
-  usuario_id uuid not null references auth.users(id) on delete cascade,
-  criado_em timestamptz not null default now(),
-  primary key (comentario_id, usuario_id)
-);
-
-alter table if exists public.comunidade_comentario_curtidas add column if not exists comentario_id uuid;
-alter table if exists public.comunidade_comentario_curtidas add column if not exists usuario_id uuid;
-alter table if exists public.comunidade_comentario_curtidas add column if not exists criado_em timestamptz default now();
-
-create table if not exists public.comunidade_enquete_votos (
-  post_id uuid not null references public.comunidade_posts(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  opcao text not null,
-  criado_em timestamptz not null default now(),
-  primary key (post_id, user_id)
-);
-
-alter table if exists public.comunidade_enquete_votos add column if not exists post_id uuid;
-alter table if exists public.comunidade_enquete_votos add column if not exists user_id uuid;
-alter table if exists public.comunidade_enquete_votos add column if not exists opcao text;
-alter table if exists public.comunidade_enquete_votos add column if not exists criado_em timestamptz default now();
-
-create table if not exists public.comunidade_denuncias (
-  id uuid primary key default gen_random_uuid(),
-  alvo_tipo text not null,
-  alvo_id text not null,
-  denunciante_id uuid not null references auth.users(id) on delete cascade,
-  motivo text not null default 'Conteúdo inadequado',
-  detalhe text not null default '',
-  status text not null default 'pendente',
-  arquivada boolean not null default false,
-  observacao_admin text not null default '',
-  analisado_por uuid references auth.users(id) on delete set null,
-  analisado_em timestamptz,
-  criado_em timestamptz not null default now(),
-  atualizado_em timestamptz not null default now()
-);
-
-alter table if exists public.comunidade_denuncias add column if not exists alvo_tipo text;
-alter table if exists public.comunidade_denuncias add column if not exists alvo_id text;
-alter table if exists public.comunidade_denuncias add column if not exists denunciante_id uuid;
-alter table if exists public.comunidade_denuncias add column if not exists motivo text default 'Conteúdo inadequado';
-alter table if exists public.comunidade_denuncias add column if not exists detalhe text default '';
-alter table if exists public.comunidade_denuncias add column if not exists status text default 'pendente';
-alter table if exists public.comunidade_denuncias add column if not exists arquivada boolean default false;
-alter table if exists public.comunidade_denuncias add column if not exists observacao_admin text default '';
-alter table if exists public.comunidade_denuncias add column if not exists analisado_por uuid;
-alter table if exists public.comunidade_denuncias add column if not exists analisado_em timestamptz;
-alter table if exists public.comunidade_denuncias add column if not exists criado_em timestamptz default now();
-alter table if exists public.comunidade_denuncias add column if not exists atualizado_em timestamptz default now();
-
--- ============================================================
--- TABELAS: PERFIS / TOP 5
--- ============================================================
-
-create table if not exists public.top5_curtidas (
-  perfil_user_id uuid not null references auth.users(id) on delete cascade,
-  usuario_id uuid not null references auth.users(id) on delete cascade,
-  criado_em timestamptz not null default now(),
-  primary key (perfil_user_id, usuario_id)
-);
-
-alter table if exists public.top5_curtidas add column if not exists perfil_user_id uuid;
-alter table if exists public.top5_curtidas add column if not exists usuario_id uuid;
-alter table if exists public.top5_curtidas add column if not exists criado_em timestamptz default now();
-
-create table if not exists public.denuncias_perfis (
-  id uuid primary key default gen_random_uuid(),
-  denunciante_id uuid not null references auth.users(id) on delete cascade,
-  denunciado_id uuid not null references auth.users(id) on delete cascade,
-  perfil_nome text not null default '',
-  perfil_url text not null default '',
-  motivo text not null default 'outro',
-  descricao text not null default '',
-  status text not null default 'pendente',
-  criado_em timestamptz not null default now(),
-  atualizado_em timestamptz not null default now()
-);
-
-alter table if exists public.denuncias_perfis add column if not exists denunciante_id uuid;
-alter table if exists public.denuncias_perfis add column if not exists denunciado_id uuid;
-alter table if exists public.denuncias_perfis add column if not exists perfil_nome text default '';
-alter table if exists public.denuncias_perfis add column if not exists perfil_url text default '';
-alter table if exists public.denuncias_perfis add column if not exists motivo text default 'outro';
-alter table if exists public.denuncias_perfis add column if not exists descricao text default '';
-alter table if exists public.denuncias_perfis add column if not exists status text default 'pendente';
-alter table if exists public.denuncias_perfis add column if not exists criado_em timestamptz default now();
-alter table if exists public.denuncias_perfis add column if not exists atualizado_em timestamptz default now();
-
--- ============================================================
--- ÍNDICES / CONSTRAINTS SEM QUEBRAR TABELAS EXISTENTES
--- ============================================================
-
-create index if not exists comunidade_posts_criado_em_idx on public.comunidade_posts (criado_em desc);
-create index if not exists comunidade_posts_autor_id_idx on public.comunidade_posts (autor_id);
-create index if not exists comunidade_posts_fixado_idx on public.comunidade_posts (fixado, fixado_em desc);
-
-create index if not exists comunidade_comentarios_post_id_idx on public.comunidade_comentarios (post_id);
-create index if not exists comunidade_comentarios_autor_id_idx on public.comunidade_comentarios (autor_id);
-create index if not exists comunidade_curtidas_post_id_idx on public.comunidade_curtidas (post_id);
-create index if not exists comunidade_comentario_curtidas_comentario_id_idx on public.comunidade_comentario_curtidas (comentario_id);
-create index if not exists comunidade_enquete_votos_post_id_idx on public.comunidade_enquete_votos (post_id);
-
-create unique index if not exists comunidade_curtidas_unica_idx on public.comunidade_curtidas (post_id, usuario_id);
-create unique index if not exists comunidade_comentario_curtidas_unica_idx on public.comunidade_comentario_curtidas (comentario_id, usuario_id);
-create unique index if not exists comunidade_enquete_votos_unico_idx on public.comunidade_enquete_votos (post_id, user_id);
-create unique index if not exists comunidade_denuncias_unica_idx on public.comunidade_denuncias (alvo_tipo, alvo_id, denunciante_id);
-
-create index if not exists denuncias_perfis_status_idx on public.denuncias_perfis (status, criado_em desc);
-create index if not exists denuncias_perfis_denunciante_idx on public.denuncias_perfis (denunciante_id);
-create index if not exists denuncias_perfis_denunciado_idx on public.denuncias_perfis (denunciado_id);
-create unique index if not exists denuncias_perfis_unica_idx on public.denuncias_perfis (denunciante_id, denunciado_id);
-
-create index if not exists top5_curtidas_perfil_user_id_idx on public.top5_curtidas (perfil_user_id);
-create unique index if not exists top5_curtidas_unica_idx on public.top5_curtidas (perfil_user_id, usuario_id);
-
--- ============================================================
--- TRIGGER: FIXAÇÃO DE POSTS
--- ============================================================
-
-create or replace function public.definir_fixacao_comunidade_post()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if tg_op = 'UPDATE' and new.fixado is distinct from old.fixado then
-    if coalesce(new.fixado, false) = true then
-      new.fixado_em := coalesce(new.fixado_em, now());
-      new.fixado_por := coalesce(new.fixado_por, auth.uid());
-    else
-      new.fixado_em := null;
-      new.fixado_por := null;
-    end if;
-  end if;
-
-  return new;
-end;
-$$;
-
-drop trigger if exists comunidade_posts_definir_fixacao on public.comunidade_posts;
-create trigger comunidade_posts_definir_fixacao
-before update of fixado on public.comunidade_posts
-for each row
-execute function public.definir_fixacao_comunidade_post();
-
--- ============================================================
--- RLS
--- ============================================================
-
-alter table public.comunidade_posts enable row level security;
-alter table public.comunidade_comentarios enable row level security;
-alter table public.comunidade_curtidas enable row level security;
-alter table public.comunidade_comentario_curtidas enable row level security;
-alter table public.comunidade_enquete_votos enable row level security;
-alter table public.comunidade_denuncias enable row level security;
-alter table public.top5_curtidas enable row level security;
-alter table public.denuncias_perfis enable row level security;
-
--- comunidade_posts
-
-drop policy if exists "comunidade_posts_select_publico" on public.comunidade_posts;
-drop policy if exists "comunidade_posts_insert_proprio" on public.comunidade_posts;
-drop policy if exists "comunidade_posts_update_proprio" on public.comunidade_posts;
-drop policy if exists "comunidade_posts_update_admin" on public.comunidade_posts;
-drop policy if exists "comunidade_posts_delete_proprio_ou_admin" on public.comunidade_posts;
-
-create policy "comunidade_posts_select_publico"
-  on public.comunidade_posts
+create policy "profiles_select_publico"
+  on public.profiles
   for select
   using (true);
 
-create policy "comunidade_posts_insert_proprio"
-  on public.comunidade_posts
+create policy "profiles_insert_proprio"
+  on public.profiles
   for insert
   with check (
     auth.uid() is not null
-    and autor_id::text = auth.uid()::text
-    and coalesce(fixado, false) = false
-    and fixado_em is null
-    and fixado_por is null
+    and (
+      id = auth.uid()
+      or user_id = auth.uid()
+    )
   );
 
-create policy "comunidade_posts_update_proprio"
-  on public.comunidade_posts
+create policy "profiles_update_proprio"
+  on public.profiles
   for update
-  using (auth.uid() is not null and autor_id::text = auth.uid()::text)
-  with check (
+  using (
     auth.uid() is not null
-    and autor_id::text = auth.uid()::text
-    and coalesce(fixado, false) = false
-    and fixado_em is null
-    and fixado_por is null
-  );
-
-create policy "comunidade_posts_update_admin"
-  on public.comunidade_posts
-  for update
-  using (public.usuario_e_admin())
-  with check (public.usuario_e_admin());
-
-create policy "comunidade_posts_delete_proprio_ou_admin"
-  on public.comunidade_posts
-  for delete
-  using (
-    public.usuario_e_admin()
-    or (auth.uid() is not null and autor_id::text = auth.uid()::text)
-  );
-
--- comunidade_comentarios
-
-drop policy if exists "comunidade_comentarios_select_publico" on public.comunidade_comentarios;
-drop policy if exists "comunidade_comentarios_insert_proprio" on public.comunidade_comentarios;
-drop policy if exists "comunidade_comentarios_update_proprio_ou_admin" on public.comunidade_comentarios;
-drop policy if exists "comunidade_comentarios_delete_proprio_ou_admin" on public.comunidade_comentarios;
-
-create policy "comunidade_comentarios_select_publico"
-  on public.comunidade_comentarios
-  for select
-  using (true);
-
-create policy "comunidade_comentarios_insert_proprio"
-  on public.comunidade_comentarios
-  for insert
-  with check (auth.uid() is not null and autor_id::text = auth.uid()::text);
-
-create policy "comunidade_comentarios_update_proprio_ou_admin"
-  on public.comunidade_comentarios
-  for update
-  using (
-    public.usuario_e_admin()
-    or (auth.uid() is not null and autor_id::text = auth.uid()::text)
+    and (
+      id = auth.uid()
+      or user_id = auth.uid()
+    )
   )
   with check (
-    public.usuario_e_admin()
-    or (auth.uid() is not null and autor_id::text = auth.uid()::text)
+    auth.uid() is not null
+    and (
+      id = auth.uid()
+      or user_id = auth.uid()
+    )
   );
 
-create policy "comunidade_comentarios_delete_proprio_ou_admin"
-  on public.comunidade_comentarios
+create policy "profiles_delete_proprio"
+  on public.profiles
   for delete
   using (
-    public.usuario_e_admin()
-    or (auth.uid() is not null and autor_id::text = auth.uid()::text)
+    auth.uid() is not null
+    and (
+      id = auth.uid()
+      or user_id = auth.uid()
+    )
   );
 
--- comunidade_curtidas
+-- ============================================================
+-- OBRAS
+-- ============================================================
 
-drop policy if exists "comunidade_curtidas_select_publico" on public.comunidade_curtidas;
-drop policy if exists "comunidade_curtidas_insert_proprio" on public.comunidade_curtidas;
-drop policy if exists "comunidade_curtidas_delete_proprio" on public.comunidade_curtidas;
+alter table if exists public.obras enable row level security;
 
-create policy "comunidade_curtidas_select_publico"
-  on public.comunidade_curtidas
+drop policy if exists "obras_select_publicadas_ou_proprias" on public.obras;
+drop policy if exists "obras_insert_proprias" on public.obras;
+drop policy if exists "obras_update_proprias" on public.obras;
+drop policy if exists "obras_delete_proprias" on public.obras;
+
+create policy "obras_select_publicadas_ou_proprias"
+  on public.obras
   for select
-  using (true);
+  using (
+    coalesce(publicado, false) = true
+    or user_id = auth.uid()
+  );
 
-create policy "comunidade_curtidas_insert_proprio"
-  on public.comunidade_curtidas
+create policy "obras_insert_proprias"
+  on public.obras
   for insert
-  with check (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+  with check (
+    auth.uid() is not null
+    and (
+      user_id = auth.uid()
+    )
+  );
 
-create policy "comunidade_curtidas_delete_proprio"
-  on public.comunidade_curtidas
-  for delete
-  using (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+create policy "obras_update_proprias"
+  on public.obras
+  for update
+  using (
+    auth.uid() is not null
+    and (
+      user_id = auth.uid()
+    )
+  )
+  with check (
+    auth.uid() is not null
+    and (
+      user_id = auth.uid()
+    )
+  );
 
--- comunidade_comentario_curtidas
-
-drop policy if exists "comunidade_comentario_curtidas_select_publico" on public.comunidade_comentario_curtidas;
-drop policy if exists "comunidade_comentario_curtidas_insert_proprio" on public.comunidade_comentario_curtidas;
-drop policy if exists "comunidade_comentario_curtidas_delete_proprio" on public.comunidade_comentario_curtidas;
-
-create policy "comunidade_comentario_curtidas_select_publico"
-  on public.comunidade_comentario_curtidas
-  for select
-  using (true);
-
-create policy "comunidade_comentario_curtidas_insert_proprio"
-  on public.comunidade_comentario_curtidas
-  for insert
-  with check (auth.uid() is not null and usuario_id::text = auth.uid()::text);
-
-create policy "comunidade_comentario_curtidas_delete_proprio"
-  on public.comunidade_comentario_curtidas
-  for delete
-  using (auth.uid() is not null and usuario_id::text = auth.uid()::text);
-
--- comunidade_enquete_votos
-
-drop policy if exists "comunidade_enquete_votos_select_publico" on public.comunidade_enquete_votos;
-drop policy if exists "comunidade_enquete_votos_insert_proprio" on public.comunidade_enquete_votos;
-drop policy if exists "comunidade_enquete_votos_delete_proprio_ou_admin" on public.comunidade_enquete_votos;
-
-create policy "comunidade_enquete_votos_select_publico"
-  on public.comunidade_enquete_votos
-  for select
-  using (true);
-
-create policy "comunidade_enquete_votos_insert_proprio"
-  on public.comunidade_enquete_votos
-  for insert
-  with check (auth.uid() is not null and user_id::text = auth.uid()::text);
-
-create policy "comunidade_enquete_votos_delete_proprio_ou_admin"
-  on public.comunidade_enquete_votos
+create policy "obras_delete_proprias"
+  on public.obras
   for delete
   using (
-    public.usuario_e_admin()
-    or (auth.uid() is not null and user_id::text = auth.uid()::text)
+    auth.uid() is not null
+    and (
+      user_id = auth.uid()
+    )
   );
 
--- comunidade_denuncias
+-- ============================================================
+-- CAPITULOS
+-- ============================================================
+
+alter table if exists public.capitulos enable row level security;
+
+drop policy if exists "capitulos_select_publicados_ou_proprios" on public.capitulos;
+drop policy if exists "capitulos_insert_proprios" on public.capitulos;
+drop policy if exists "capitulos_update_proprios" on public.capitulos;
+drop policy if exists "capitulos_delete_proprios" on public.capitulos;
+
+create policy "capitulos_select_publicados_ou_proprios"
+  on public.capitulos
+  for select
+  using (
+    (
+      coalesce(publicado, false) = true
+      and exists (
+        select 1
+        from public.obras o
+        where o.id = capitulos.obra_id
+          and coalesce(o.publicado, false) = true
+      )
+    )
+    or user_id = auth.uid()
+    or exists (
+      select 1
+      from public.obras o
+      where o.id = capitulos.obra_id
+        and (
+          o.user_id = auth.uid()
+        )
+    )
+  );
+
+create policy "capitulos_insert_proprios"
+  on public.capitulos
+  for insert
+  with check (
+    auth.uid() is not null
+    and (
+      user_id = auth.uid()
+      or exists (
+        select 1
+        from public.obras o
+        where o.id = capitulos.obra_id
+          and (
+            o.user_id = auth.uid()
+          )
+      )
+    )
+  );
+
+create policy "capitulos_update_proprios"
+  on public.capitulos
+  for update
+  using (
+    auth.uid() is not null
+    and (
+      user_id = auth.uid()
+      or exists (
+        select 1
+        from public.obras o
+        where o.id = capitulos.obra_id
+          and (
+            o.user_id = auth.uid()
+          )
+      )
+    )
+  )
+  with check (
+    auth.uid() is not null
+    and (
+      user_id = auth.uid()
+      or exists (
+        select 1
+        from public.obras o
+        where o.id = capitulos.obra_id
+          and (
+            o.user_id = auth.uid()
+          )
+      )
+    )
+  );
+
+create policy "capitulos_delete_proprios"
+  on public.capitulos
+  for delete
+  using (
+    auth.uid() is not null
+    and (
+      user_id = auth.uid()
+      or exists (
+        select 1
+        from public.obras o
+        where o.id = capitulos.obra_id
+          and (
+            o.user_id = auth.uid()
+          )
+      )
+    )
+  );
+
+-- ============================================================
+-- INTERAÇÕES DE OBRA
+-- ============================================================
+
+alter table if exists public.obra_curtidas enable row level security;
+alter table if exists public.obra_avaliacoes enable row level security;
+
+drop policy if exists "obra_curtidas_select_publico" on public.obra_curtidas;
+drop policy if exists "obra_curtidas_insert_proprio" on public.obra_curtidas;
+drop policy if exists "obra_curtidas_delete_proprio" on public.obra_curtidas;
+
+create policy "obra_curtidas_select_publico"
+  on public.obra_curtidas
+  for select
+  using (true);
+
+create policy "obra_curtidas_insert_proprio"
+  on public.obra_curtidas
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "obra_curtidas_delete_proprio"
+  on public.obra_curtidas
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "obra_avaliacoes_select_publico" on public.obra_avaliacoes;
+drop policy if exists "obra_avaliacoes_insert_proprio" on public.obra_avaliacoes;
+drop policy if exists "obra_avaliacoes_update_proprio" on public.obra_avaliacoes;
+drop policy if exists "obra_avaliacoes_delete_proprio" on public.obra_avaliacoes;
+
+create policy "obra_avaliacoes_select_publico"
+  on public.obra_avaliacoes
+  for select
+  using (true);
+
+create policy "obra_avaliacoes_insert_proprio"
+  on public.obra_avaliacoes
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "obra_avaliacoes_update_proprio"
+  on public.obra_avaliacoes
+  for update
+  using (auth.uid() is not null and user_id = auth.uid())
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "obra_avaliacoes_delete_proprio"
+  on public.obra_avaliacoes
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+-- ============================================================
+-- AVALIAÇÕES DE AUTOR
+-- ============================================================
+
+create table if not exists public.autor_avaliacoes (
+  id uuid primary key default gen_random_uuid(),
+  autor_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  nota numeric(2, 1) not null,
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now(),
+
+  constraint autor_avaliacoes_autor_user_unique unique (autor_id, user_id),
+  constraint autor_avaliacoes_nota_check check (nota >= 0.5 and nota <= 5)
+);
+
+create index if not exists autor_avaliacoes_autor_id_idx
+  on public.autor_avaliacoes (autor_id);
+
+create index if not exists autor_avaliacoes_user_id_idx
+  on public.autor_avaliacoes (user_id);
+
+alter table if exists public.autor_avaliacoes enable row level security;
+
+drop policy if exists "autor_avaliacoes_select_publico" on public.autor_avaliacoes;
+drop policy if exists "autor_avaliacoes_insert_proprio" on public.autor_avaliacoes;
+drop policy if exists "autor_avaliacoes_update_proprio" on public.autor_avaliacoes;
+drop policy if exists "autor_avaliacoes_delete_proprio" on public.autor_avaliacoes;
+
+create policy "autor_avaliacoes_select_publico"
+  on public.autor_avaliacoes
+  for select
+  using (true);
+
+create policy "autor_avaliacoes_insert_proprio"
+  on public.autor_avaliacoes
+  for insert
+  with check (
+    auth.uid() is not null
+    and user_id = auth.uid()
+  );
+
+create policy "autor_avaliacoes_update_proprio"
+  on public.autor_avaliacoes
+  for update
+  using (
+    auth.uid() is not null
+    and user_id = auth.uid()
+  )
+  with check (
+    auth.uid() is not null
+    and user_id = auth.uid()
+  );
+
+create policy "autor_avaliacoes_delete_proprio"
+  on public.autor_avaliacoes
+  for delete
+  using (
+    auth.uid() is not null
+    and user_id = auth.uid()
+  );
+
+grant select on public.autor_avaliacoes to anon, authenticated;
+grant insert, update, delete on public.autor_avaliacoes to authenticated;
+
+-- ============================================================
+-- INTERAÇÕES DE CAPÍTULO
+-- ============================================================
+
+alter table if exists public.curtidas_capitulos enable row level security;
+alter table if exists public.salvos_capitulos enable row level security;
+alter table if exists public.comentarios_capitulos enable row level security;
+alter table if exists public.progresso_leitura enable row level security;
+
+drop policy if exists "curtidas_capitulos_select_publico" on public.curtidas_capitulos;
+drop policy if exists "curtidas_capitulos_insert_proprio" on public.curtidas_capitulos;
+drop policy if exists "curtidas_capitulos_delete_proprio" on public.curtidas_capitulos;
+
+create policy "curtidas_capitulos_select_publico"
+  on public.curtidas_capitulos
+  for select
+  using (true);
+
+create policy "curtidas_capitulos_insert_proprio"
+  on public.curtidas_capitulos
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "curtidas_capitulos_delete_proprio"
+  on public.curtidas_capitulos
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "salvos_capitulos_select_proprio" on public.salvos_capitulos;
+drop policy if exists "salvos_capitulos_insert_proprio" on public.salvos_capitulos;
+drop policy if exists "salvos_capitulos_delete_proprio" on public.salvos_capitulos;
+
+create policy "salvos_capitulos_select_proprio"
+  on public.salvos_capitulos
+  for select
+  using (auth.uid() is not null and user_id = auth.uid());
+
+create policy "salvos_capitulos_insert_proprio"
+  on public.salvos_capitulos
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "salvos_capitulos_delete_proprio"
+  on public.salvos_capitulos
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "comentarios_capitulos_select_publico_ou_proprio" on public.comentarios_capitulos;
+drop policy if exists "comentarios_capitulos_insert_proprio" on public.comentarios_capitulos;
+drop policy if exists "comentarios_capitulos_update_proprio" on public.comentarios_capitulos;
+drop policy if exists "comentarios_capitulos_delete_proprio" on public.comentarios_capitulos;
+
+create policy "comentarios_capitulos_select_publico_ou_proprio"
+  on public.comentarios_capitulos
+  for select
+  using (
+    user_id = auth.uid()
+    or exists (
+      select 1
+      from public.capitulos c
+      join public.obras o on o.id = c.obra_id
+      where c.id = comentarios_capitulos.capitulo_id
+        and coalesce(c.publicado, false) = true
+        and coalesce(o.publicado, false) = true
+    )
+  );
+
+create policy "comentarios_capitulos_insert_proprio"
+  on public.comentarios_capitulos
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "comentarios_capitulos_update_proprio"
+  on public.comentarios_capitulos
+  for update
+  using (auth.uid() is not null and user_id = auth.uid())
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "comentarios_capitulos_delete_proprio"
+  on public.comentarios_capitulos
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "progresso_leitura_select_proprio" on public.progresso_leitura;
+drop policy if exists "progresso_leitura_insert_proprio" on public.progresso_leitura;
+drop policy if exists "progresso_leitura_update_proprio" on public.progresso_leitura;
+drop policy if exists "progresso_leitura_delete_proprio" on public.progresso_leitura;
+
+create policy "progresso_leitura_select_proprio"
+  on public.progresso_leitura
+  for select
+  using (auth.uid() is not null and user_id = auth.uid());
+
+create policy "progresso_leitura_insert_proprio"
+  on public.progresso_leitura
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "progresso_leitura_update_proprio"
+  on public.progresso_leitura
+  for update
+  using (auth.uid() is not null and user_id = auth.uid())
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "progresso_leitura_delete_proprio"
+  on public.progresso_leitura
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+-- ============================================================
+-- BIBLIOTECA / LISTAS / SEGUINDO
+-- ============================================================
+
+alter table if exists public.favoritos enable row level security;
+alter table if exists public.concluidas enable row level security;
+alter table if exists public.seguindo_obras enable row level security;
+alter table if exists public.seguindo_autores enable row level security;
+alter table if exists public.seguindo_usuarios enable row level security;
+
+drop policy if exists "favoritos_select_proprio" on public.favoritos;
+drop policy if exists "favoritos_insert_proprio" on public.favoritos;
+drop policy if exists "favoritos_delete_proprio" on public.favoritos;
+
+create policy "favoritos_select_proprio"
+  on public.favoritos
+  for select
+  using (auth.uid() is not null and user_id = auth.uid());
+
+create policy "favoritos_insert_proprio"
+  on public.favoritos
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "favoritos_delete_proprio"
+  on public.favoritos
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "concluidas_select_proprio" on public.concluidas;
+drop policy if exists "concluidas_insert_proprio" on public.concluidas;
+drop policy if exists "concluidas_delete_proprio" on public.concluidas;
+
+create policy "concluidas_select_proprio"
+  on public.concluidas
+  for select
+  using (auth.uid() is not null and user_id = auth.uid());
+
+create policy "concluidas_insert_proprio"
+  on public.concluidas
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "concluidas_delete_proprio"
+  on public.concluidas
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "seguindo_obras_select_proprio" on public.seguindo_obras;
+drop policy if exists "seguindo_obras_insert_proprio" on public.seguindo_obras;
+drop policy if exists "seguindo_obras_delete_proprio" on public.seguindo_obras;
+
+create policy "seguindo_obras_select_proprio"
+  on public.seguindo_obras
+  for select
+  using (auth.uid() is not null and user_id = auth.uid());
+
+create policy "seguindo_obras_insert_proprio"
+  on public.seguindo_obras
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "seguindo_obras_delete_proprio"
+  on public.seguindo_obras
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "seguindo_autores_select_publico" on public.seguindo_autores;
+drop policy if exists "seguindo_autores_insert_proprio" on public.seguindo_autores;
+drop policy if exists "seguindo_autores_delete_proprio" on public.seguindo_autores;
+
+create policy "seguindo_autores_select_publico"
+  on public.seguindo_autores
+  for select
+  using (true);
+
+create policy "seguindo_autores_insert_proprio"
+  on public.seguindo_autores
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "seguindo_autores_delete_proprio"
+  on public.seguindo_autores
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "seguindo_usuarios_select_publico" on public.seguindo_usuarios;
+drop policy if exists "seguindo_usuarios_insert_proprio" on public.seguindo_usuarios;
+drop policy if exists "seguindo_usuarios_delete_proprio" on public.seguindo_usuarios;
+
+create policy "seguindo_usuarios_select_publico"
+  on public.seguindo_usuarios
+  for select
+  using (true);
+
+create policy "seguindo_usuarios_insert_proprio"
+  on public.seguindo_usuarios
+  for insert
+  with check (auth.uid() is not null and seguidor_id = auth.uid());
+
+create policy "seguindo_usuarios_delete_proprio"
+  on public.seguindo_usuarios
+  for delete
+  using (auth.uid() is not null and seguidor_id = auth.uid());
+
+-- ============================================================
+-- DIÁRIO
+-- ============================================================
+
+alter table if exists public.diario_atividades enable row level security;
+alter table if exists public.diario_anotacoes enable row level security;
+alter table if exists public.diario_anotacao_curtidas enable row level security;
+alter table if exists public.diario_anotacao_comentarios enable row level security;
+
+drop policy if exists "diario_atividades_select_visiveis" on public.diario_atividades;
+drop policy if exists "diario_atividades_insert_proprio" on public.diario_atividades;
+drop policy if exists "diario_atividades_update_proprio" on public.diario_atividades;
+drop policy if exists "diario_atividades_delete_proprio" on public.diario_atividades;
+
+create policy "diario_atividades_select_visiveis"
+  on public.diario_atividades
+  for select
+  using (
+    user_id = auth.uid()
+    or coalesce(visibilidade, 'privado') in ('publico', 'parcial')
+  );
+
+create policy "diario_atividades_insert_proprio"
+  on public.diario_atividades
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "diario_atividades_update_proprio"
+  on public.diario_atividades
+  for update
+  using (auth.uid() is not null and user_id = auth.uid())
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "diario_atividades_delete_proprio"
+  on public.diario_atividades
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "diario_anotacoes_select_visiveis" on public.diario_anotacoes;
+drop policy if exists "diario_anotacoes_insert_proprio" on public.diario_anotacoes;
+drop policy if exists "diario_anotacoes_update_proprio" on public.diario_anotacoes;
+drop policy if exists "diario_anotacoes_delete_proprio" on public.diario_anotacoes;
+
+create policy "diario_anotacoes_select_visiveis"
+  on public.diario_anotacoes
+  for select
+  using (
+    user_id = auth.uid()
+    or coalesce(visibilidade, 'privado') in ('publico', 'parcial')
+  );
+
+create policy "diario_anotacoes_insert_proprio"
+  on public.diario_anotacoes
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "diario_anotacoes_update_proprio"
+  on public.diario_anotacoes
+  for update
+  using (auth.uid() is not null and user_id = auth.uid())
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "diario_anotacoes_delete_proprio"
+  on public.diario_anotacoes
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "diario_anotacao_curtidas_select_visiveis" on public.diario_anotacao_curtidas;
+drop policy if exists "diario_anotacao_curtidas_insert_proprio" on public.diario_anotacao_curtidas;
+drop policy if exists "diario_anotacao_curtidas_delete_proprio" on public.diario_anotacao_curtidas;
+
+create policy "diario_anotacao_curtidas_select_visiveis"
+  on public.diario_anotacao_curtidas
+  for select
+  using (
+    user_id = auth.uid()
+    or exists (
+      select 1
+      from public.diario_anotacoes a
+      where a.id = diario_anotacao_curtidas.anotacao_id
+        and (
+          a.user_id = auth.uid()
+          or coalesce(a.visibilidade, 'privado') in ('publico', 'parcial')
+        )
+    )
+  );
+
+create policy "diario_anotacao_curtidas_insert_proprio"
+  on public.diario_anotacao_curtidas
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "diario_anotacao_curtidas_delete_proprio"
+  on public.diario_anotacao_curtidas
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+drop policy if exists "diario_anotacao_comentarios_select_visiveis" on public.diario_anotacao_comentarios;
+drop policy if exists "diario_anotacao_comentarios_insert_proprio" on public.diario_anotacao_comentarios;
+drop policy if exists "diario_anotacao_comentarios_update_proprio" on public.diario_anotacao_comentarios;
+drop policy if exists "diario_anotacao_comentarios_delete_proprio" on public.diario_anotacao_comentarios;
+
+create policy "diario_anotacao_comentarios_select_visiveis"
+  on public.diario_anotacao_comentarios
+  for select
+  using (
+    user_id = auth.uid()
+    or exists (
+      select 1
+      from public.diario_anotacoes a
+      where a.id = diario_anotacao_comentarios.anotacao_id
+        and (
+          a.user_id = auth.uid()
+          or coalesce(a.visibilidade, 'privado') in ('publico', 'parcial')
+        )
+    )
+  );
+
+create policy "diario_anotacao_comentarios_insert_proprio"
+  on public.diario_anotacao_comentarios
+  for insert
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "diario_anotacao_comentarios_update_proprio"
+  on public.diario_anotacao_comentarios
+  for update
+  using (auth.uid() is not null and user_id = auth.uid())
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "diario_anotacao_comentarios_delete_proprio"
+  on public.diario_anotacao_comentarios
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+-- ============================================================
+-- NOTIFICAÇÕES
+-- ============================================================
+
+alter table if exists public.notificacoes enable row level security;
+
+drop policy if exists "notificacoes_select_proprias" on public.notificacoes;
+drop policy if exists "notificacoes_insert_autenticado" on public.notificacoes;
+drop policy if exists "notificacoes_insert_proprias" on public.notificacoes;
+drop policy if exists "notificacoes_update_proprias" on public.notificacoes;
+drop policy if exists "notificacoes_delete_proprias" on public.notificacoes;
+
+create policy "notificacoes_select_proprias"
+  on public.notificacoes
+  for select
+  using (auth.uid() is not null and user_id = auth.uid());
+
+-- INSERT restrito ao próprio usuário.
+-- Notificações para terceiros devem ser criadas depois via RPC/Edge Function/server.
+create policy "notificacoes_insert_proprias"
+  on public.notificacoes
+  for insert
+  with check (
+    auth.uid() is not null
+    and user_id = auth.uid()
+  );
+
+create policy "notificacoes_update_proprias"
+  on public.notificacoes
+  for update
+  using (auth.uid() is not null and user_id = auth.uid())
+  with check (auth.uid() is not null and user_id = auth.uid());
+
+create policy "notificacoes_delete_proprias"
+  on public.notificacoes
+  for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+-- ============================================================
+-- DENÚNCIAS
+-- ============================================================
+
+alter table if exists public.comunidade_denuncias enable row level security;
 
 drop policy if exists "comunidade_denuncias_select_proprias_ou_admin" on public.comunidade_denuncias;
 drop policy if exists "comunidade_denuncias_insert_propria" on public.comunidade_denuncias;
@@ -535,143 +740,143 @@ create policy "comunidade_denuncias_select_proprias_ou_admin"
   on public.comunidade_denuncias
   for select
   using (
-    public.usuario_e_admin()
-    or (auth.uid() is not null and denunciante_id::text = auth.uid()::text)
+    denunciante_id = auth.uid()
+    or usuario_e_admin()
   );
 
 create policy "comunidade_denuncias_insert_propria"
   on public.comunidade_denuncias
   for insert
-  with check (auth.uid() is not null and denunciante_id::text = auth.uid()::text);
+  with check (auth.uid() is not null and denunciante_id = auth.uid());
 
 create policy "comunidade_denuncias_update_admin"
   on public.comunidade_denuncias
   for update
-  using (public.usuario_e_admin())
-  with check (public.usuario_e_admin());
+  using (usuario_e_admin())
+  with check (usuario_e_admin());
 
 create policy "comunidade_denuncias_delete_admin"
   on public.comunidade_denuncias
   for delete
-  using (public.usuario_e_admin());
+  using (usuario_e_admin());
 
--- top5_curtidas
-
-drop policy if exists "top5_curtidas_select_publico" on public.top5_curtidas;
-drop policy if exists "top5_curtidas_insert_proprio" on public.top5_curtidas;
-drop policy if exists "top5_curtidas_delete_proprio" on public.top5_curtidas;
-
-create policy "top5_curtidas_select_publico"
-  on public.top5_curtidas
-  for select
-  using (true);
-
-create policy "top5_curtidas_insert_proprio"
-  on public.top5_curtidas
-  for insert
-  with check (
-    auth.uid() is not null
-    and usuario_id::text = auth.uid()::text
-    and perfil_user_id::text <> auth.uid()::text
-  );
-
-create policy "top5_curtidas_delete_proprio"
-  on public.top5_curtidas
-  for delete
-  using (auth.uid() is not null and usuario_id::text = auth.uid()::text);
-
--- denuncias_perfis
-
-drop policy if exists "denuncias_perfis_select_proprias_ou_admin" on public.denuncias_perfis;
-drop policy if exists "denuncias_perfis_insert_propria" on public.denuncias_perfis;
-drop policy if exists "denuncias_perfis_update_admin" on public.denuncias_perfis;
-drop policy if exists "denuncias_perfis_delete_admin" on public.denuncias_perfis;
-
-create policy "denuncias_perfis_select_proprias_ou_admin"
-  on public.denuncias_perfis
-  for select
-  using (
-    public.usuario_e_admin()
-    or (auth.uid() is not null and denunciante_id::text = auth.uid()::text)
-  );
-
-create policy "denuncias_perfis_insert_propria"
-  on public.denuncias_perfis
-  for insert
-  with check (
-    auth.uid() is not null
-    and denunciante_id::text = auth.uid()::text
-    and denunciante_id::text <> denunciado_id::text
-  );
-
-create policy "denuncias_perfis_update_admin"
-  on public.denuncias_perfis
-  for update
-  using (public.usuario_e_admin())
-  with check (public.usuario_e_admin());
-
-create policy "denuncias_perfis_delete_admin"
-  on public.denuncias_perfis
-  for delete
-  using (public.usuario_e_admin());
 
 -- ============================================================
--- LIMPEZA DE POLICIES ANTIGAS DESTAS TABELAS
+-- FIM DA PARTE ANTERIOR
 -- ============================================================
 
-create temp table historietas_rls_keep_comunidade (
+-- 20260623_cleanup_duplicate_rls_policies.sql
+-- HISTORIETAS - limpeza de policies antigas/duplicadas.
+-- Rode depois de 20260623_rls_core_policies_historietas.sql.
+--
+-- Motivo:
+-- o PostgreSQL combina policies permissivas com OR. Policy antiga duplicada pode
+-- abrir acesso mais do que a policy nova. Este script mantém só a lista aprovada.
+
+begin;
+
+create temp table rls_policies_keep (
   tabela text not null,
   policy_name text not null
 ) on commit drop;
 
-insert into historietas_rls_keep_comunidade (tabela, policy_name)
+insert into rls_policies_keep (tabela, policy_name)
 values
-  ('comunidade_posts', 'comunidade_posts_select_publico'),
-  ('comunidade_posts', 'comunidade_posts_insert_proprio'),
-  ('comunidade_posts', 'comunidade_posts_update_proprio'),
-  ('comunidade_posts', 'comunidade_posts_update_admin'),
-  ('comunidade_posts', 'comunidade_posts_delete_proprio_ou_admin'),
-  ('comunidade_comentarios', 'comunidade_comentarios_select_publico'),
-  ('comunidade_comentarios', 'comunidade_comentarios_insert_proprio'),
-  ('comunidade_comentarios', 'comunidade_comentarios_update_proprio_ou_admin'),
-  ('comunidade_comentarios', 'comunidade_comentarios_delete_proprio_ou_admin'),
-  ('comunidade_curtidas', 'comunidade_curtidas_select_publico'),
-  ('comunidade_curtidas', 'comunidade_curtidas_insert_proprio'),
-  ('comunidade_curtidas', 'comunidade_curtidas_delete_proprio'),
-  ('comunidade_comentario_curtidas', 'comunidade_comentario_curtidas_select_publico'),
-  ('comunidade_comentario_curtidas', 'comunidade_comentario_curtidas_insert_proprio'),
-  ('comunidade_comentario_curtidas', 'comunidade_comentario_curtidas_delete_proprio'),
-  ('comunidade_enquete_votos', 'comunidade_enquete_votos_select_publico'),
-  ('comunidade_enquete_votos', 'comunidade_enquete_votos_insert_proprio'),
-  ('comunidade_enquete_votos', 'comunidade_enquete_votos_delete_proprio_ou_admin'),
+  ('profiles', 'profiles_select_publico'),
+  ('profiles', 'profiles_insert_proprio'),
+  ('profiles', 'profiles_update_proprio'),
+  ('profiles', 'profiles_delete_proprio'),
+  ('obras', 'obras_select_publicadas_ou_proprias'),
+  ('obras', 'obras_insert_proprias'),
+  ('obras', 'obras_update_proprias'),
+  ('obras', 'obras_delete_proprias'),
+  ('capitulos', 'capitulos_select_publicados_ou_proprios'),
+  ('capitulos', 'capitulos_insert_proprios'),
+  ('capitulos', 'capitulos_update_proprios'),
+  ('capitulos', 'capitulos_delete_proprios'),
+  ('obra_curtidas', 'obra_curtidas_select_publico'),
+  ('obra_curtidas', 'obra_curtidas_insert_proprio'),
+  ('obra_curtidas', 'obra_curtidas_delete_proprio'),
+  ('obra_avaliacoes', 'obra_avaliacoes_select_publico'),
+  ('obra_avaliacoes', 'obra_avaliacoes_insert_proprio'),
+  ('obra_avaliacoes', 'obra_avaliacoes_update_proprio'),
+  ('obra_avaliacoes', 'obra_avaliacoes_delete_proprio'),
+  ('autor_avaliacoes', 'autor_avaliacoes_select_publico'),
+  ('autor_avaliacoes', 'autor_avaliacoes_insert_proprio'),
+  ('autor_avaliacoes', 'autor_avaliacoes_update_proprio'),
+  ('autor_avaliacoes', 'autor_avaliacoes_delete_proprio'),
+  ('curtidas_capitulos', 'curtidas_capitulos_select_publico'),
+  ('curtidas_capitulos', 'curtidas_capitulos_insert_proprio'),
+  ('curtidas_capitulos', 'curtidas_capitulos_delete_proprio'),
+  ('salvos_capitulos', 'salvos_capitulos_select_proprio'),
+  ('salvos_capitulos', 'salvos_capitulos_insert_proprio'),
+  ('salvos_capitulos', 'salvos_capitulos_delete_proprio'),
+  ('comentarios_capitulos', 'comentarios_capitulos_select_publico_ou_proprio'),
+  ('comentarios_capitulos', 'comentarios_capitulos_insert_proprio'),
+  ('comentarios_capitulos', 'comentarios_capitulos_update_proprio'),
+  ('comentarios_capitulos', 'comentarios_capitulos_delete_proprio'),
+  ('progresso_leitura', 'progresso_leitura_select_proprio'),
+  ('progresso_leitura', 'progresso_leitura_insert_proprio'),
+  ('progresso_leitura', 'progresso_leitura_update_proprio'),
+  ('progresso_leitura', 'progresso_leitura_delete_proprio'),
+  ('favoritos', 'favoritos_select_proprio'),
+  ('favoritos', 'favoritos_insert_proprio'),
+  ('favoritos', 'favoritos_delete_proprio'),
+  ('concluidas', 'concluidas_select_proprio'),
+  ('concluidas', 'concluidas_insert_proprio'),
+  ('concluidas', 'concluidas_delete_proprio'),
+  ('seguindo_obras', 'seguindo_obras_select_publico'),
+  ('seguindo_obras', 'seguindo_obras_insert_proprio'),
+  ('seguindo_obras', 'seguindo_obras_delete_proprio'),
+  ('seguindo_autores', 'seguindo_autores_select_publico'),
+  ('seguindo_autores', 'seguindo_autores_insert_proprio'),
+  ('seguindo_autores', 'seguindo_autores_delete_proprio'),
+  ('seguindo_usuarios', 'seguindo_usuarios_select_publico'),
+  ('seguindo_usuarios', 'seguindo_usuarios_insert_proprio'),
+  ('seguindo_usuarios', 'seguindo_usuarios_delete_proprio'),
+  ('diario_atividades', 'diario_atividades_select_visiveis'),
+  ('diario_atividades', 'diario_atividades_insert_proprio'),
+  ('diario_atividades', 'diario_atividades_update_proprio'),
+  ('diario_atividades', 'diario_atividades_delete_proprio'),
+  ('diario_anotacoes', 'diario_anotacoes_select_visiveis'),
+  ('diario_anotacoes', 'diario_anotacoes_insert_proprio'),
+  ('diario_anotacoes', 'diario_anotacoes_update_proprio'),
+  ('diario_anotacoes', 'diario_anotacoes_delete_proprio'),
+  ('diario_anotacao_curtidas', 'diario_anotacao_curtidas_select_visiveis'),
+  ('diario_anotacao_curtidas', 'diario_anotacao_curtidas_insert_proprio'),
+  ('diario_anotacao_curtidas', 'diario_anotacao_curtidas_delete_proprio'),
+  ('diario_anotacao_comentarios', 'diario_anotacao_comentarios_select_visiveis'),
+  ('diario_anotacao_comentarios', 'diario_anotacao_comentarios_insert_proprio'),
+  ('diario_anotacao_comentarios', 'diario_anotacao_comentarios_update_proprio'),
+  ('diario_anotacao_comentarios', 'diario_anotacao_comentarios_delete_proprio'),
+  ('notificacoes', 'notificacoes_select_proprias'),
+  ('notificacoes', 'notificacoes_insert_proprias'),
+  ('notificacoes', 'notificacoes_update_proprias'),
+  ('notificacoes', 'notificacoes_delete_proprias'),
   ('comunidade_denuncias', 'comunidade_denuncias_select_proprias_ou_admin'),
   ('comunidade_denuncias', 'comunidade_denuncias_insert_propria'),
   ('comunidade_denuncias', 'comunidade_denuncias_update_admin'),
-  ('comunidade_denuncias', 'comunidade_denuncias_delete_admin'),
-  ('top5_curtidas', 'top5_curtidas_select_publico'),
-  ('top5_curtidas', 'top5_curtidas_insert_proprio'),
-  ('top5_curtidas', 'top5_curtidas_delete_proprio'),
-  ('denuncias_perfis', 'denuncias_perfis_select_proprias_ou_admin'),
-  ('denuncias_perfis', 'denuncias_perfis_insert_propria'),
-  ('denuncias_perfis', 'denuncias_perfis_update_admin'),
-  ('denuncias_perfis', 'denuncias_perfis_delete_admin');
+  ('comunidade_denuncias', 'comunidade_denuncias_delete_admin');
 
 do $$
 declare
   policy_record record;
 begin
   for policy_record in
-    select schemaname, tablename, policyname
+    select
+      schemaname,
+      tablename,
+      policyname
     from pg_policies
     where schemaname = 'public'
       and tablename in (
         select distinct tabela
-        from historietas_rls_keep_comunidade
+        from rls_policies_keep
       )
   loop
     if not exists (
       select 1
-      from historietas_rls_keep_comunidade k
+      from rls_policies_keep k
       where k.tabela = policy_record.tablename
         and k.policy_name = policy_record.policyname
     ) then
@@ -685,27 +890,95 @@ begin
   end loop;
 end $$;
 
+-- seguindo_obras precisa ser público para contagem/listas sociais.
+-- A policy privada criada na primeira migration é removida e substituída pela pública.
+drop policy if exists "seguindo_obras_select_proprio" on public.seguindo_obras;
+drop policy if exists "seguindo_obras_select_publico" on public.seguindo_obras;
+
+create policy "seguindo_obras_select_publico"
+  on public.seguindo_obras
+  for select
+  using (true);
+
+commit;
+
+
 -- ============================================================
--- GRANTS
+-- FIM DA PARTE ANTERIOR
 -- ============================================================
 
-grant usage on schema public to anon, authenticated;
+-- 20260623_rpc_notificacoes_bulk.sql
+-- HISTORIETAS - RPCs para operações em massa de notificações.
+-- Rode depois das policies de RLS.
+--
+-- Objetivo:
+-- - evitar várias requisições para marcar notificações como lidas;
+-- - evitar várias requisições para excluir notificações lidas;
+-- - manter tudo restrito ao auth.uid().
 
-grant select on public.comunidade_posts to anon, authenticated;
-grant select on public.comunidade_comentarios to anon, authenticated;
-grant select on public.comunidade_curtidas to anon, authenticated;
-grant select on public.comunidade_comentario_curtidas to anon, authenticated;
-grant select on public.comunidade_enquete_votos to anon, authenticated;
-grant select on public.top5_curtidas to anon, authenticated;
+begin;
 
-grant insert, update, delete on public.comunidade_posts to authenticated;
-grant insert, update, delete on public.comunidade_comentarios to authenticated;
-grant insert, delete on public.comunidade_curtidas to authenticated;
-grant insert, delete on public.comunidade_comentario_curtidas to authenticated;
-grant insert, delete on public.comunidade_enquete_votos to authenticated;
-grant insert, delete on public.top5_curtidas to authenticated;
+create or replace function public.marcar_notificacoes_lidas(
+  notificacao_ids text[] default null,
+  novo_estado boolean default true
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  total_afetadas integer := 0;
+begin
+  if auth.uid() is null then
+    raise exception 'Usuário não autenticado.';
+  end if;
 
-grant select, insert, update, delete on public.comunidade_denuncias to authenticated;
-grant select, insert, update, delete on public.denuncias_perfis to authenticated;
+  update public.notificacoes
+  set
+    lida = novo_estado,
+    updated_at = now()
+  where user_id = auth.uid()
+    and (
+      notificacao_ids is null
+      or cardinality(notificacao_ids) = 0
+      or id::text = any(notificacao_ids)
+      or notificacao_id = any(notificacao_ids)
+    );
+
+  get diagnostics total_afetadas = row_count;
+
+  return total_afetadas;
+end;
+$$;
+
+create or replace function public.excluir_notificacoes_lidas()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  total_excluidas integer := 0;
+begin
+  if auth.uid() is null then
+    raise exception 'Usuário não autenticado.';
+  end if;
+
+  delete from public.notificacoes
+  where user_id = auth.uid()
+    and lida = true;
+
+  get diagnostics total_excluidas = row_count;
+
+  return total_excluidas;
+end;
+$$;
+
+revoke all on function public.marcar_notificacoes_lidas(text[], boolean) from public;
+revoke all on function public.excluir_notificacoes_lidas() from public;
+
+grant execute on function public.marcar_notificacoes_lidas(text[], boolean) to authenticated;
+grant execute on function public.excluir_notificacoes_lidas() to authenticated;
 
 commit;
