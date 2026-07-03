@@ -1109,11 +1109,21 @@ export default function ConfiguracoesPage() {
           pegarTexto(data.user.email) ||
           "Usuário";
 
-        setUsuario({
+        const usuarioCarregado: UsuarioConfiguracoes = {
           id: data.user.id,
           nome,
           email: data.user.email || "",
+        };
+        const preferenciasCarregadas = carregarPreferencias(usuarioCarregado.id);
+
+        setUsuario(usuarioCarregado);
+        setPreferencias({
+          ...preferenciasCarregadas,
+          nomeExibicao: preferenciasCarregadas.nomeExibicao || usuarioCarregado.nome,
+          emailContato: preferenciasCarregadas.emailContato || usuarioCarregado.email,
         });
+        aplicarTemaVisual(preferenciasCarregadas.temaVisual);
+        setResumo(criarResumoLocal(usuarioCarregado.id));
         setVerificandoAcesso(false);
       } catch {
         if (!cancelado) {
@@ -1129,21 +1139,6 @@ export default function ConfiguracoesPage() {
     };
   }, [router]);
 
-  useEffect(() => {
-    if (verificandoAcesso || !usuarioIdLogado) {
-      return;
-    }
-
-    const preferenciasCarregadas = carregarPreferencias(usuarioIdLogado);
-
-    setPreferencias((preferenciasAtuais) => ({
-      ...preferenciasCarregadas,
-      nomeExibicao: preferenciasCarregadas.nomeExibicao || usuario?.nome || "",
-      emailContato: preferenciasCarregadas.emailContato || usuario?.email || "",
-    }));
-    aplicarTemaVisual(preferenciasCarregadas.temaVisual);
-    setResumo(criarResumoLocal(usuarioIdLogado));
-  }, [verificandoAcesso, usuarioIdLogado, usuario?.email, usuario?.nome]);
 
   useEffect(() => {
     if (verificandoAcesso) {

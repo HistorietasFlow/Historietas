@@ -1,7 +1,18 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const rotasPublicas = ["/login"];
+const rotasProtegidas = [
+  "/adicionar-capitulo",
+  "/admin",
+  "/configuracoes",
+  "/editar-capitulo",
+  "/editar-obra",
+  "/notificacoes",
+  "/painel-autor",
+  "/publicar",
+  "/seguindo",
+  "/ver-arquivo",
+];
 
 type CookieParaSalvar = {
   name: string;
@@ -9,8 +20,8 @@ type CookieParaSalvar = {
   options: CookieOptions;
 };
 
-function rotaEstaPublica(pathname: string) {
-  return rotasPublicas.some((rota) => {
+function rotaEstaProtegida(pathname: string) {
+  return rotasProtegidas.some((rota) => {
     return pathname === rota || pathname.startsWith(`${rota}/`);
   });
 }
@@ -63,7 +74,7 @@ function criarRedirectLogin(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const estaNoLogin = pathname === "/login";
-  const precisaLogin = !rotaEstaPublica(pathname);
+  const precisaLogin = rotaEstaProtegida(pathname);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
   const supabasePublicKey =
