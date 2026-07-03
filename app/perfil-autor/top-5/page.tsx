@@ -682,16 +682,22 @@ export default function Top5PerfilAutorPage() {
       </div>
 
       <section style={searchSectionStyle} aria-label="Buscar obras">
-        <label style={searchLabelStyle} htmlFor="buscar-obra-top-5">
-          Buscar obra
+        <label style={searchShellStyle} htmlFor="buscar-obra-top-5">
+          <span style={searchIconStyle}>⌕</span>
+
+          <input
+            id="buscar-obra-top-5"
+            value={busca}
+            onChange={(event) => setBusca(event.target.value)}
+            placeholder="Buscar obra..."
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            maxLength={90}
+            style={searchInputStyle}
+            type="text"
+          />
         </label>
-        <input
-          id="buscar-obra-top-5"
-          value={busca}
-          onChange={(event) => setBusca(event.target.value)}
-          placeholder="Digite nome, autor, gênero ou tag"
-          style={searchInputStyle}
-        />
       </section>
 
       {mensagem && <p style={messageStyle}>{mensagem}</p>}
@@ -877,28 +883,49 @@ const emptySelectedSlotStyle: CSSProperties = {
 const searchSectionStyle: CSSProperties = {
   maxWidth: "980px",
   margin: "0 auto 10px",
-  display: "flex",
-  flexDirection: "column",
-  gap: "7px",
+  display: "grid",
+  gap: "5px",
+  minWidth: 0,
+  boxSizing: "border-box",
 };
 
-const searchLabelStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.72)",
-  fontSize: "12px",
-  fontWeight: 850,
+const searchShellStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "52px",
+  borderRadius: "22px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#000000",
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "0 16px",
+  boxSizing: "border-box",
+  boxShadow: "none",
+};
+
+const searchIconStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "22px",
+  lineHeight: 1,
+  fontWeight: 700,
+  flex: "0 0 auto",
 };
 
 const searchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
   width: "100%",
-  minHeight: "46px",
-  padding: "0 14px",
-  borderRadius: "16px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  outline: "none",
-  background: "rgba(255,255,255,0.075)",
+  minWidth: 0,
+  height: "50px",
+  border: "none",
+  background: "transparent",
   color: "#FFFFFF",
-  fontSize: "14px",
-  fontWeight: 750,
+  outline: "none",
+  fontFamily: "inherit",
+  fontSize: "15px",
+  fontWeight: 850,
+  letterSpacing: "-0.035em",
+  boxSizing: "border-box",
 };
 
 const messageStyle: CSSProperties = {

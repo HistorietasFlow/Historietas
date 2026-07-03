@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -122,6 +122,17 @@ type ComentarioCapituloPublico = {
   texto: string;
   criadoEm: string;
   meuComentario: boolean;
+  curtidas: string[];
+};
+
+type ComentariosCapituloPost = {
+  id: string;
+  comentarios: ComentarioCapituloPublico[];
+};
+
+type ComentarioCapituloCurtidaRow = {
+  comentario_id: string;
+  usuario_id: string;
 };
 
 type TamanhoFonte = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
@@ -139,6 +150,8 @@ const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const READER_PREFERENCES_STORAGE_KEY = "historietas-preferencias-leitura";
+const TABELA_COMENTARIOS_CAPITULOS_CURTIDAS = "comentarios_capitulos_curtidas";
+const CURTIDAS_COMENTARIOS_CAPITULOS_STORAGE_KEY = "historietas-comentarios-capitulos-curtidas";
 
 function criarStorageKeyUsuarioLeitor(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
@@ -175,6 +188,96 @@ function salvarJsonStorageUsuarioLeitor(
   } catch {
     // localStorage é fallback; a leitura continua com estado em memória.
   }
+}
+
+function carregarCurtidasComentariosCapitulosLocais(
+  userId: string
+): Record<string, boolean> {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return {};
+  }
+
+  try {
+    const texto = lerStorageUsuarioLeitor(
+      CURTIDAS_COMENTARIOS_CAPITULOS_STORAGE_KEY,
+      userIdLimpo
+    );
+    const json: unknown = texto ? JSON.parse(texto) : {};
+
+    if (!json || typeof json !== "object" || Array.isArray(json)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(json as Record<string, unknown>).filter(
+        (entrada): entrada is [string, boolean] =>
+          typeof entrada[0] === "string" && typeof entrada[1] === "boolean"
+      )
+    );
+  } catch {
+    return {};
+  }
+}
+
+function salvarCurtidaComentarioCapituloLocal(
+  userId: string,
+  comentarioId: string,
+  ativo: boolean
+) {
+  const userIdLimpo = userId.trim();
+  const comentarioIdLimpo = comentarioId.trim();
+
+  if (!userIdLimpo || !comentarioIdLimpo) {
+    return;
+  }
+
+  const curtidasLocais = carregarCurtidasComentariosCapitulosLocais(userIdLimpo);
+
+  salvarJsonStorageUsuarioLeitor(
+    CURTIDAS_COMENTARIOS_CAPITULOS_STORAGE_KEY,
+    userIdLimpo,
+    {
+      ...curtidasLocais,
+      [comentarioIdLimpo]: ativo,
+    }
+  );
+}
+
+function aplicarCurtidasComentariosCapitulosLocais(
+  comentarios: ComentarioCapituloPublico[],
+  userId: string
+) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return comentarios;
+  }
+
+  const curtidasLocais = carregarCurtidasComentariosCapitulosLocais(userIdLimpo);
+
+  return comentarios.map((comentario) => {
+    const estadoLocal = curtidasLocais[comentario.id];
+
+    if (estadoLocal === true) {
+      return {
+        ...comentario,
+        curtidas: Array.from(new Set([...comentario.curtidas, userIdLimpo])),
+      };
+    }
+
+    if (estadoLocal === false) {
+      return {
+        ...comentario,
+        curtidas: comentario.curtidas.filter(
+          (curtidaId) => curtidaId !== userIdLimpo
+        ),
+      };
+    }
+
+    return comentario;
+  });
 }
 
 async function marcarNotificacaoCapituloComoLidaSupabase(
@@ -1161,59 +1264,53 @@ async function salvarRegistroCapituloSupabase(
 async function salvarComentarioCapituloSupabase(
   capituloId: string,
   comentario: string
-) {
+): Promise<Record<string, unknown> | null> {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
     const userId = dadosUsuario.user?.id || "";
+    const capituloIdLimpo = capituloId.trim();
     const comentarioLimpo = comentario.trim();
+    const agora = new Date().toISOString();
 
-    if (!userId || !capituloId.trim()) {
-      return false;
-    }
-
-    const { error: erroDelete } = await supabase
-      .from("comentarios_capitulos")
-      .delete()
-      .eq("user_id", userId)
-      .eq("capitulo_id", capituloId);
-
-    if (erroDelete) {
-      throw erroDelete;
-    }
-
-    if (!comentarioLimpo) {
-      return true;
+    if (!userId || !capituloIdLimpo || !comentarioLimpo) {
+      return null;
     }
 
     const payloadBase = {
       user_id: userId,
-      capitulo_id: capituloId,
-      comentario: comentarioLimpo,
+      capitulo_id: capituloIdLimpo,
+      comentario: comentarioLimpo.slice(0, 420),
     };
 
-    const { error: erroComAtualizacao } = await supabase
-      .from("comentarios_capitulos")
-      .insert({
-        ...payloadBase,
-        atualizado_em: new Date().toISOString(),
-      });
+    const { data: comentarioComAtualizacao, error: erroComAtualizacao } =
+      await supabase
+        .from("comentarios_capitulos")
+        .insert({
+          ...payloadBase,
+          atualizado_em: agora,
+        })
+        .select("id,user_id,comentario,atualizado_em,criado_em")
+        .single();
 
-    if (!erroComAtualizacao) {
-      return true;
+    if (!erroComAtualizacao && comentarioComAtualizacao) {
+      return comentarioComAtualizacao as Record<string, unknown>;
     }
 
-    const { error: erroSemAtualizacao } = await supabase
-      .from("comentarios_capitulos")
-      .insert(payloadBase);
+    const { data: comentarioSemAtualizacao, error: erroSemAtualizacao } =
+      await supabase
+        .from("comentarios_capitulos")
+        .insert(payloadBase)
+        .select("id,user_id,comentario,criado_em")
+        .single();
 
-    if (erroSemAtualizacao) {
-      throw erroSemAtualizacao;
+    if (!erroSemAtualizacao && comentarioSemAtualizacao) {
+      return comentarioSemAtualizacao as Record<string, unknown>;
     }
 
-    return true;
+    throw erroSemAtualizacao || erroComAtualizacao;
   } catch (error) {
     console.warn("Não consegui salvar comentário do capítulo no Supabase:", error);
-    return false;
+    return null;
   }
 }
 
@@ -1333,6 +1430,41 @@ function obterAvatarProfileLeitor(profile: Record<string, unknown> | undefined) 
   );
 }
 
+function obterMetadataUsuarioLeitor(metadata: unknown) {
+  return metadata && typeof metadata === "object" && !Array.isArray(metadata)
+    ? (metadata as Record<string, unknown>)
+    : {};
+}
+
+function obterNomeMetadataUsuarioLeitor(metadata: Record<string, unknown>) {
+  return (
+    obterTextoRegistroLeitor(metadata, "nome") ||
+    obterTextoRegistroLeitor(metadata, "nome_usuario") ||
+    obterTextoRegistroLeitor(metadata, "username") ||
+    obterTextoRegistroLeitor(metadata, "display_name") ||
+    obterTextoRegistroLeitor(metadata, "apelido") ||
+    obterTextoRegistroLeitor(metadata, "name") ||
+    obterTextoRegistroLeitor(metadata, "full_name")
+  );
+}
+
+function obterAvatarMetadataUsuarioLeitor(metadata: Record<string, unknown>) {
+  return (
+    obterTextoRegistroLeitor(metadata, "avatar_url") ||
+    obterTextoRegistroLeitor(metadata, "avatar") ||
+    obterTextoRegistroLeitor(metadata, "foto_url") ||
+    obterTextoRegistroLeitor(metadata, "imagem_url") ||
+    obterTextoRegistroLeitor(metadata, "photo_url") ||
+    obterTextoRegistroLeitor(metadata, "picture")
+  );
+}
+
+function obterNomePorEmailLeitor(email: string) {
+  const nomeEmail = email.trim().split("@")[0];
+
+  return nomeEmail || "Usuário";
+}
+
 function criarHrefPerfilUsuarioLeitor(userId: string, nome: string) {
   const params = new URLSearchParams();
   const userIdLimpo = userId.trim();
@@ -1348,15 +1480,18 @@ function criarHrefPerfilUsuarioLeitor(userId: string, nome: string) {
   return `/perfil-autor?${params.toString()}`;
 }
 
-function criarAvatarComentarioStyle(avatar: string): CSSProperties {
+function criarAvatarComentarioBaseStyle(
+  estiloBase: CSSProperties,
+  avatar: string
+): CSSProperties {
   const avatarLimpo = avatar.trim();
 
   if (!avatarLimpo) {
-    return commentProfileAvatarStyle;
+    return estiloBase;
   }
 
   return {
-    ...commentProfileAvatarStyle,
+    ...estiloBase,
     backgroundImage: `url(${avatarLimpo})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -1439,14 +1574,33 @@ async function carregarPerfilComentarioLeitor(userId: string) {
 
   const profilesPorUsuario = await carregarProfilesPorUsuariosLeitor([userIdLimpo]);
   const profile = profilesPorUsuario.get(userIdLimpo);
-  const nome = obterNomeProfileLeitor(profile) || "Usuário";
+  let nome = obterNomeProfileLeitor(profile);
+  let avatar = obterAvatarProfileLeitor(profile);
+
+  try {
+    const { data } = await supabase.auth.getUser();
+    const usuario = data.user;
+
+    if (usuario?.id === userIdLimpo) {
+      const metadata = obterMetadataUsuarioLeitor(usuario.user_metadata);
+
+      nome =
+        nome ||
+        obterNomeMetadataUsuarioLeitor(metadata) ||
+        obterNomePorEmailLeitor(usuario.email || "");
+      avatar = avatar || obterAvatarMetadataUsuarioLeitor(metadata);
+    }
+  } catch {
+    // O fallback de autenticação não deve travar os comentários.
+  }
 
   return {
     userId: userIdLimpo,
-    nome: nome.slice(0, 80),
-    avatar: obterAvatarProfileLeitor(profile),
+    nome: (nome || "Usuário").slice(0, 80),
+    avatar,
   } satisfies PerfilComentarioLeitor;
 }
+
 
 async function carregarComentariosCapituloSupabase(
   capituloId: string,
@@ -1459,12 +1613,34 @@ async function carregarComentariosCapituloSupabase(
   }
 
   try {
-    const { data, error } = await supabase
+    let data: Record<string, unknown>[] | null = null;
+    let error: unknown = null;
+
+    const comentariosComAtualizacao = await supabase
       .from("comentarios_capitulos")
-      .select("id,user_id,comentario,atualizado_em,created_at,criado_em")
+      .select("id,user_id,comentario,atualizado_em,criado_em")
       .eq("capitulo_id", capituloIdLimpo)
-      .order("atualizado_em", { ascending: false })
-      .limit(100);
+      .order("atualizado_em", { ascending: true })
+      .limit(500);
+
+    data = Array.isArray(comentariosComAtualizacao.data)
+      ? (comentariosComAtualizacao.data as Record<string, unknown>[])
+      : null;
+    error = comentariosComAtualizacao.error;
+
+    if (error || !Array.isArray(data)) {
+      const comentariosSemAtualizacao = await supabase
+        .from("comentarios_capitulos")
+        .select("id,user_id,comentario,criado_em")
+        .eq("capitulo_id", capituloIdLimpo)
+        .order("criado_em", { ascending: true })
+        .limit(500);
+
+      data = Array.isArray(comentariosSemAtualizacao.data)
+        ? (comentariosSemAtualizacao.data as Record<string, unknown>[])
+        : null;
+      error = comentariosSemAtualizacao.error;
+    }
 
     if (error || !Array.isArray(data)) {
       return [];
@@ -1473,16 +1649,61 @@ async function carregarComentariosCapituloSupabase(
     const registros = (data as Record<string, unknown>[]).filter(
       (registro) => Boolean(obterTextoRegistroLeitor(registro, "comentario"))
     );
+    const comentarioIds = registros
+      .map((registro) => obterTextoRegistroLeitor(registro, "id"))
+      .filter(Boolean);
     const usuariosIds = registros
       .map((registro) => obterTextoRegistroLeitor(registro, "user_id"))
       .filter(Boolean);
     const profilesPorUsuario = await carregarProfilesPorUsuariosLeitor(usuariosIds);
+    const perfilUsuarioLogado = usuarioLogadoId.trim()
+      ? await carregarPerfilComentarioLeitor(usuarioLogadoId)
+      : null;
+    const curtidasPorComentario = new Map<string, string[]>();
 
-    return registros
+    if (comentarioIds.length > 0) {
+      const { data: curtidasData, error: erroCurtidas } = await supabase
+        .from(TABELA_COMENTARIOS_CAPITULOS_CURTIDAS)
+        .select("comentario_id,usuario_id")
+        .in("comentario_id", comentarioIds)
+        .limit(5000);
+
+      if (!erroCurtidas && Array.isArray(curtidasData)) {
+        (curtidasData as unknown as ComentarioCapituloCurtidaRow[]).forEach(
+          (curtida) => {
+            const comentarioId = curtida.comentario_id;
+            const usuarioId = curtida.usuario_id;
+
+            if (!comentarioId || !usuarioId) {
+              return;
+            }
+
+            const curtidasAtuais = curtidasPorComentario.get(comentarioId) || [];
+
+            if (!curtidasAtuais.includes(usuarioId)) {
+              curtidasPorComentario.set(comentarioId, [
+                ...curtidasAtuais,
+                usuarioId,
+              ]);
+            }
+          }
+        );
+      }
+    }
+
+    const comentariosMapeados = registros
       .map((registro, index) => {
+        const idComentario =
+          obterTextoRegistroLeitor(registro, "id") ||
+          `${capituloIdLimpo}-${index}`;
         const userId = obterTextoRegistroLeitor(registro, "user_id");
         const profile = profilesPorUsuario.get(userId);
-        const nome = obterNomeProfileLeitor(profile) || "Usuário";
+        const nomeProfile = obterNomeProfileLeitor(profile);
+        const nomeUsuarioLogado =
+          perfilUsuarioLogado?.userId === userId ? perfilUsuarioLogado.nome : "";
+        const avatarUsuarioLogado =
+          perfilUsuarioLogado?.userId === userId ? perfilUsuarioLogado.avatar : "";
+        const nome = nomeProfile || nomeUsuarioLogado || "Usuário";
         const texto = obterTextoRegistroLeitor(registro, "comentario");
 
         if (!userId || !texto) {
@@ -1490,27 +1711,536 @@ async function carregarComentariosCapituloSupabase(
         }
 
         return {
-          id:
-            obterTextoRegistroLeitor(registro, "id") ||
-            `${capituloIdLimpo}-${userId}-${index}`,
+          id: idComentario,
           userId,
           nome: nome.slice(0, 80),
-          avatar: obterAvatarProfileLeitor(profile),
+          avatar: obterAvatarProfileLeitor(profile) || avatarUsuarioLogado,
           texto: texto.slice(0, 420),
           criadoEm:
             obterTextoRegistroLeitor(registro, "atualizado_em") ||
-            obterTextoRegistroLeitor(registro, "created_at") ||
             obterTextoRegistroLeitor(registro, "criado_em"),
           meuComentario: Boolean(usuarioLogadoId && usuarioLogadoId === userId),
+          curtidas: curtidasPorComentario.get(idComentario) || [],
         } satisfies ComentarioCapituloPublico;
       })
       .filter(
         (comentario): comentario is ComentarioCapituloPublico =>
           Boolean(comentario)
       );
+
+    return aplicarCurtidasComentariosCapitulosLocais(
+      comentariosMapeados,
+      usuarioLogadoId
+    );
   } catch {
     return [];
   }
+}
+
+
+type ComentariosCapituloSheetProps = {
+  post: ComentariosCapituloPost | null;
+  podeComentar: boolean;
+  usuarioId: string;
+  usuarioNome: string;
+  usuarioAvatar: string;
+  onFechar: () => void;
+  onEnviar: (postId: string, texto: string) => boolean | Promise<boolean>;
+  onCurtirComentario: (postId: string, comentarioId: string) => void | Promise<void>;
+  onRemoverComentario: (postId: string, comentarioId: string) => void | Promise<void>;
+  onDenunciarComentario: (comentarioId: string) => void | Promise<void>;
+};
+
+function ComentariosCapituloSheet({
+  post,
+  podeComentar,
+  usuarioId,
+  usuarioNome,
+  usuarioAvatar,
+  onFechar,
+  onEnviar,
+  onCurtirComentario,
+  onRemoverComentario,
+  onDenunciarComentario,
+}: ComentariosCapituloSheetProps) {
+  const comentarioRef = useRef<HTMLTextAreaElement | null>(null);
+  const sheetRef = useRef<HTMLElement | null>(null);
+  const dragStartYRef = useRef(0);
+  const dragOffsetYRef = useRef(0);
+  const [sheetExpandido, setSheetExpandido] = useState(false);
+  const [comentarioEnviando, setComentarioEnviando] = useState(false);
+  const [comentarioCurtindoId, setComentarioCurtindoId] = useState<string | null>(null);
+  const [comentarioRemovendoId, setComentarioRemovendoId] = useState<
+    string | null
+  >(null);
+  const [comentarioDenunciandoId, setComentarioDenunciandoId] = useState<
+    string | null
+  >(null);
+  const comentarioAcoesRef = useRef<Set<string>>(new Set<string>());
+
+  function inserirNoComentario(valor: string) {
+    if (!podeComentar || !comentarioRef.current) {
+      return;
+    }
+
+    const campo = comentarioRef.current;
+    const inicio = campo.selectionStart ?? campo.value.length;
+    const fim = campo.selectionEnd ?? campo.value.length;
+    const textoAtual = campo.value;
+
+    campo.value = `${textoAtual.slice(0, inicio)}${valor}${textoAtual.slice(fim)}`;
+    campo.focus();
+
+    const novaPosicao = inicio + valor.length;
+    campo.setSelectionRange(novaPosicao, novaPosicao);
+  }
+
+  function iniciarAcaoComentario(chave: string) {
+    if (comentarioAcoesRef.current.has(chave)) {
+      return false;
+    }
+
+    comentarioAcoesRef.current.add(chave);
+    return true;
+  }
+
+  function finalizarAcaoComentario(chave: string) {
+    comentarioAcoesRef.current.delete(chave);
+  }
+
+  async function curtirComentarioSeguro(postId: string, comentarioId: string) {
+    const chaveAcao = `curtir-comentario:${comentarioId}`;
+
+    if (!iniciarAcaoComentario(chaveAcao)) {
+      return;
+    }
+
+    setComentarioCurtindoId(comentarioId);
+
+    try {
+      await onCurtirComentario(postId, comentarioId);
+    } finally {
+      finalizarAcaoComentario(chaveAcao);
+      setComentarioCurtindoId((comentarioAtualId) =>
+        comentarioAtualId === comentarioId ? null : comentarioAtualId
+      );
+    }
+  }
+
+  async function removerComentarioSeguro(postId: string, comentarioId: string) {
+    const chaveAcao = `remover-comentario:${comentarioId}`;
+
+    if (!iniciarAcaoComentario(chaveAcao)) {
+      return;
+    }
+
+    setComentarioRemovendoId(comentarioId);
+
+    try {
+      await onRemoverComentario(postId, comentarioId);
+    } finally {
+      finalizarAcaoComentario(chaveAcao);
+      setComentarioRemovendoId((comentarioAtualId) =>
+        comentarioAtualId === comentarioId ? null : comentarioAtualId
+      );
+    }
+  }
+
+  async function denunciarComentarioSeguro(comentarioId: string) {
+    const chaveAcao = `denunciar-comentario:${comentarioId}`;
+
+    if (!iniciarAcaoComentario(chaveAcao)) {
+      return;
+    }
+
+    setComentarioDenunciandoId(comentarioId);
+
+    try {
+      await onDenunciarComentario(comentarioId);
+    } finally {
+      finalizarAcaoComentario(chaveAcao);
+      setComentarioDenunciandoId((comentarioAtualId) =>
+        comentarioAtualId === comentarioId ? null : comentarioAtualId
+      );
+    }
+  }
+
+  function responderComentario(nomeAutor: string) {
+    if (!podeComentar) {
+      return;
+    }
+
+    const mencao = `@${nomeAutor.replace(/\s+/g, " ").trim()} `;
+
+    window.setTimeout(() => {
+      if (!comentarioRef.current) {
+        return;
+      }
+
+      comentarioRef.current.value = mencao;
+      comentarioRef.current.focus();
+      comentarioRef.current.setSelectionRange(mencao.length, mencao.length);
+    }, 0);
+  }
+
+  function iniciarArraste(event: TouchEvent<HTMLDivElement>) {
+    dragStartYRef.current = event.touches[0]?.clientY || 0;
+    dragOffsetYRef.current = 0;
+
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = "none";
+    }
+  }
+
+  function moverArraste(event: TouchEvent<HTMLDivElement>) {
+    const posicaoAtual = event.touches[0]?.clientY || dragStartYRef.current;
+    const limiteSuperior = sheetExpandido ? -46 : -58;
+    const limiteInferior = sheetExpandido ? 112 : 132;
+    const deslocamento = Math.max(
+      limiteSuperior,
+      Math.min(limiteInferior, posicaoAtual - dragStartYRef.current)
+    );
+
+    dragOffsetYRef.current = deslocamento;
+
+    if (sheetRef.current) {
+      const handle = sheetRef.current.querySelector(
+        "[data-comments-sheet-handle='true']"
+      ) as HTMLElement | null;
+
+      if (handle) {
+        handle.style.transform = `translate3d(0, ${deslocamento}px, 0)`;
+      }
+    }
+  }
+
+  function finalizarArraste() {
+    const deslocamento = dragOffsetYRef.current;
+
+    if (sheetRef.current) {
+      const handle = sheetRef.current.querySelector(
+        "[data-comments-sheet-handle='true']"
+      ) as HTMLElement | null;
+
+      if (handle) {
+        handle.style.transition = "transform 160ms ease";
+        handle.style.transform = "";
+      }
+    }
+
+    if (deslocamento < -34) {
+      setSheetExpandido(true);
+      return;
+    }
+
+    if (deslocamento > 52 && sheetExpandido) {
+      setSheetExpandido(false);
+      return;
+    }
+
+    if (deslocamento > 118 && !sheetExpandido) {
+      onFechar();
+    }
+  }
+
+  if (!post) {
+    return null;
+  }
+
+  async function enviarComentario(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!post) {
+      return;
+    }
+
+    const chaveAcao = `enviar-comentario:${post.id}`;
+
+    if (!iniciarAcaoComentario(chaveAcao)) {
+      return;
+    }
+
+    setComentarioEnviando(true);
+
+    try {
+      const conteudoComentario = comentarioRef.current?.value || "";
+      const enviado = await onEnviar(post.id, conteudoComentario);
+
+      if (enviado && comentarioRef.current) {
+        comentarioRef.current.value = "";
+      }
+    } finally {
+      finalizarAcaoComentario(chaveAcao);
+      setComentarioEnviando(false);
+    }
+  }
+
+  return (
+    <section style={commentsSheetOverlayStyle} aria-label="Comentários">
+      <button
+        type="button"
+        aria-label="Fechar comentários"
+        onClick={onFechar}
+        style={commentsSheetBackdropStyle}
+      />
+
+      <article
+        ref={sheetRef}
+        style={{
+          ...commentsSheetStyle,
+          ...(sheetExpandido
+            ? commentsSheetExpandedStyle
+            : commentsSheetCompactStyle),
+        }}
+      >
+        <div
+          data-comments-sheet-handle="true"
+          style={commentsSheetHandleWrapStyle}
+          onTouchStart={iniciarArraste}
+          onTouchMove={moverArraste}
+          onTouchEnd={finalizarArraste}
+          onTouchCancel={finalizarArraste}
+        >
+          <div style={commentsSheetHandleStyle} />
+        </div>
+
+        <header style={commentsSheetHeaderStyle}>
+          <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
+
+          <strong style={commentsSheetTitleStyle}>
+            {post.comentarios.length === 1
+              ? "1 comentário"
+              : `${post.comentarios.length} comentários`}
+          </strong>
+
+          <button type="button" onClick={onFechar} style={commentsSheetCloseStyle}>
+            ×
+          </button>
+        </header>
+
+        <section style={commentsSheetListStyle}>
+          {post.comentarios.length > 0 ? (
+            post.comentarios.map((comentario) => {
+              const usuarioCurtiuComentario = Boolean(
+                usuarioId && comentario.curtidas.includes(usuarioId)
+              );
+              const podeRemoverComentario = Boolean(
+                usuarioId && comentario.userId === usuarioId
+              );
+              const podeDenunciarComentario = Boolean(
+                usuarioId && comentario.userId !== usuarioId
+              );
+              const comentarioCurtindo = comentarioCurtindoId === comentario.id;
+              const comentarioRemovendo = comentarioRemovendoId === comentario.id;
+              const comentarioDenunciando =
+                comentarioDenunciandoId === comentario.id;
+
+              return (
+                <article key={comentario.id} style={commentSheetItemStyle}>
+                  <Link
+                    href={criarHrefPerfilUsuarioLeitor(
+                      comentario.userId,
+                      comentario.nome
+                    )}
+                    aria-label={`Abrir perfil de ${comentario.nome}`}
+                    style={criarAvatarComentarioBaseStyle(
+                      commentSheetAvatarLinkStyle,
+                      comentario.avatar
+                    )}
+                  >
+                    {!comentario.avatar && comentario.nome.slice(0, 1).toUpperCase()}
+                  </Link>
+
+                  <div style={commentSheetContentStyle}>
+                    <div style={commentSheetTopLineStyle}>
+                      <Link
+                        href={criarHrefPerfilUsuarioLeitor(
+                          comentario.userId,
+                          comentario.nome
+                        )}
+                        style={commentSheetAuthorLinkStyle}
+                      >
+                        {comentario.nome}
+                      </Link>
+                      <span style={commentSheetTimeStyle}>agora</span>
+                    </div>
+
+                    <p style={commentSheetTextStyle}>{comentario.texto}</p>
+
+                    <div style={commentSheetActionsRowStyle}>
+                      <button
+                        type="button"
+                        onClick={() => responderComentario(comentario.nome)}
+                        disabled={!podeComentar}
+                        style={{
+                          ...commentSheetReplyButtonStyle,
+                          opacity: podeComentar ? 1 : 0.52,
+                          cursor: podeComentar ? "pointer" : "not-allowed",
+                        }}
+                      >
+                        Responder
+                      </button>
+
+                      {podeRemoverComentario && (
+                        <button
+                          type="button"
+                          onClick={() => removerComentarioSeguro(post.id, comentario.id)}
+                          disabled={comentarioRemovendo}
+                          style={{
+                            ...commentSheetRemoveButtonStyle,
+                            opacity: comentarioRemovendo ? 0.58 : 1,
+                            cursor: comentarioRemovendo ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          Remover
+                        </button>
+                      )}
+
+                      {podeDenunciarComentario && (
+                        <button
+                          type="button"
+                          onClick={() => denunciarComentarioSeguro(comentario.id)}
+                          disabled={comentarioDenunciando}
+                          style={{
+                            ...commentSheetReportButtonStyle,
+                            opacity: comentarioDenunciando ? 0.58 : 1,
+                            cursor: comentarioDenunciando ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          Denunciar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={commentSheetLikeWrapStyle}>
+                    <button
+                      type="button"
+                      aria-label={
+                        usuarioCurtiuComentario
+                          ? "Remover curtida do comentário"
+                          : "Curtir comentário"
+                      }
+                      onClick={() => curtirComentarioSeguro(post.id, comentario.id)}
+                      disabled={!podeComentar || comentarioCurtindo}
+                      style={{
+                        ...commentSheetLikeButtonStyle,
+                        opacity: podeComentar && !comentarioCurtindo ? 1 : 0.58,
+                        cursor:
+                          podeComentar && !comentarioCurtindo
+                            ? "pointer"
+                            : "not-allowed",
+                      }}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        style={commentSheetHeartIconStyle}
+                      >
+                        <path
+                          d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                          fill={usuarioCurtiuComentario ? "#F43F5E" : "none"}
+                          stroke={
+                            usuarioCurtiuComentario
+                              ? "#F43F5E"
+                              : "var(--historietas-text-secondary, #D4D4D8)"
+                          }
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+
+                    <span style={commentSheetLikeCountStyle}>
+                      {comentario.curtidas.length}
+                    </span>
+                  </div>
+                </article>
+              );
+            })
+          ) : (
+            <div style={commentsSheetEmptyStyle}>
+              <strong style={commentsSheetEmptyTitleStyle}>Sem comentários ainda</strong>
+              <span style={commentsSheetEmptyTextStyle}>
+                Seja o primeiro a comentar.
+              </span>
+            </div>
+          )}
+        </section>
+
+
+        <section style={commentsToolsStyle}>
+          <div style={commentsQuickReactionsStyle}>
+            {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => inserirNoComentario(emoji)}
+                disabled={!podeComentar}
+                style={commentsQuickReactionButtonStyle}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <form onSubmit={enviarComentario} style={commentsSheetFormStyle}>
+          <div
+            style={criarAvatarComentarioBaseStyle(
+              commentsInputAvatarStyle,
+              podeComentar ? usuarioAvatar : ""
+            )}
+          >
+            {!(podeComentar && usuarioAvatar) &&
+              (podeComentar ? usuarioNome : "H").slice(0, 1).toUpperCase()}
+          </div>
+
+          <div style={commentsInputBoxStyle}>
+            <textarea
+              ref={comentarioRef}
+              placeholder={
+                podeComentar ? "Adicionar comentário..." : "Entre para comentar."
+              }
+              disabled={!podeComentar || comentarioEnviando}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              inputMode="text"
+              enterKeyHint="send"
+              maxLength={420}
+              rows={1}
+              style={commentsSheetInputStyle}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => inserirNoComentario("@")}
+            disabled={!podeComentar}
+            style={commentsInputIconButtonStyle}
+          >
+            @
+          </button>
+
+          <button
+            type="submit"
+            aria-label="Enviar comentário"
+            disabled={!podeComentar || comentarioEnviando}
+            style={{
+              ...commentsSheetSendStyle,
+              opacity: podeComentar && !comentarioEnviando ? 1 : 0.58,
+              cursor:
+                podeComentar && !comentarioEnviando ? "pointer" : "not-allowed",
+            }}
+          >
+            {comentarioEnviando ? "..." : "↑"}
+          </button>
+        </form>
+      </article>
+    </section>
+  );
 }
 
 export default function LerCapituloPage() {
@@ -1521,8 +2251,8 @@ export default function LerCapituloPage() {
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [comentarioDigitado, setComentarioDigitado] = useState("");
-  const [comentarioStatus, setComentarioStatus] = useState("");
+  const [, setComentarioDigitado] = useState("");
+  const [, setComentarioStatus] = useState("");
   const [comentariosCapitulo, setComentariosCapitulo] = useState<ComentarioCapituloPublico[]>([]);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
   const [perfilComentarioLeitor, setPerfilComentarioLeitor] =
@@ -1545,6 +2275,7 @@ export default function LerCapituloPage() {
   const { temaVisual, pageThemeStyle, aplicarTemaVisual } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
   const atividadeDiarioRegistradaRef = useRef("");
+  const acoesComentariosCapituloRef = useRef<Set<string>>(new Set<string>());
 
   useEffect(() => {
     let cancelado = false;
@@ -1578,6 +2309,7 @@ export default function LerCapituloPage() {
       subscription.unsubscribe();
     };
   }, []);
+
 
 
   useEffect(() => {
@@ -1832,11 +2564,6 @@ export default function LerCapituloPage() {
         return;
       }
 
-      window.setTimeout(() => {
-        if (!cancelado) {
-          setComentariosCarregando(true);
-        }
-      }, 0);
       const comentarios = await carregarComentariosCapituloSupabase(
         capituloAtual.id,
         usuarioIdLogado,
@@ -1892,6 +2619,12 @@ export default function LerCapituloPage() {
   const progressoLeitura = obraAtual
     ? calcularProgressoLeitura(obraAtual.capitulos)
     : 0;
+  const postComentariosCapitulo: ComentariosCapituloPost | null = capituloAtual
+    ? {
+        id: capituloAtual.id,
+        comentarios: comentariosCapitulo,
+      }
+    : null;
 
   useEffect(() => {
     if (!obraAtual) {
@@ -2100,7 +2833,6 @@ export default function LerCapituloPage() {
       return;
     }
 
-    setComentariosCarregando(true);
     const comentarios = await carregarComentariosCapituloSupabase(
       capituloAtual.id,
       usuarioIdLogado,
@@ -2111,17 +2843,27 @@ export default function LerCapituloPage() {
   }
 
   async function alternarComentarioVisivel() {
-    if (mostrarComentario) {
-      setMostrarComentario(false);
-      return;
-    }
-
-    if (!(await exigirLogin("Entre na sua conta para comentar este capítulo."))) {
-      return;
-    }
-
-    setMostrarComentario(true);
+    setComentarioStatus("");
+    setMostrarComentario((valorAtual) => !valorAtual);
   }
+
+  function fecharComentariosCapitulo() {
+    setMostrarComentario(false);
+  }
+
+  function iniciarAcaoComentariosCapitulo(chave: string) {
+    if (acoesComentariosCapituloRef.current.has(chave)) {
+      return false;
+    }
+
+    acoesComentariosCapituloRef.current.add(chave);
+    return true;
+  }
+
+  function finalizarAcaoComentariosCapitulo(chave: string) {
+    acoesComentariosCapituloRef.current.delete(chave);
+  }
+
 
   function salvarObras(novasObras: ObraLocal[]) {
     const obrasNormalizadas = novasObras.map((obra, index) =>
@@ -2454,76 +3196,258 @@ export default function LerCapituloPage() {
     }
   }
 
-  async function salvarComentario(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function enviarComentarioCapitulo(postId: string, textoRecebido: string) {
+    const chaveAcao = `enviar-comentario-capitulo:${postId}`;
 
-    if (!(await exigirLogin("Entre na sua conta para comentar este capítulo."))) {
-      return;
+    if (!iniciarAcaoComentariosCapitulo(chaveAcao)) {
+      return false;
     }
 
-    const textoLimpo = comentarioDigitado.trim();
+    setComentarioStatus("");
 
-    atualizarCapitulo({
-      comentario: textoLimpo,
-    });
+    try {
+      const userIdAtual = await obterUsuarioLogadoIdAtual();
 
-    let comentarioSincronizado = true;
+      if (!userIdAtual) {
+        setMensagemAcao("Entre na sua conta para comentar este capítulo.");
+        router.push(criarLoginHrefLeitor(obraId, capituloId));
+        return false;
+      }
 
-    if (capituloAtual) {
-      comentarioSincronizado = await salvarComentarioCapituloSupabase(
-        capituloAtual.id,
+      const textoLimpo = textoRecebido.trim();
+
+      if (!textoLimpo) {
+        setComentarioStatus("Escreva um comentário antes de enviar.");
+        return false;
+      }
+
+      const perfilAtual = await carregarPerfilComentarioLeitor(userIdAtual);
+      setPerfilComentarioLeitor(perfilAtual);
+
+      const comentarioSalvo = await salvarComentarioCapituloSupabase(
+        postId,
         textoLimpo
       );
+      const agora = new Date().toISOString();
+      const comentarioId = obterTextoRegistroLeitor(comentarioSalvo, "id");
+
+      if (!comentarioId) {
+        return false;
+      }
+
+      const criadoEm =
+        obterTextoRegistroLeitor(comentarioSalvo, "atualizado_em") ||
+        obterTextoRegistroLeitor(comentarioSalvo, "criado_em") ||
+        agora;
+      const novoComentario: ComentarioCapituloPublico = {
+        id: comentarioId,
+        userId: userIdAtual,
+        nome: perfilAtual.nome || "Usuário",
+        avatar: perfilAtual.avatar,
+        texto: textoLimpo.slice(0, 420),
+        criadoEm,
+        meuComentario: true,
+        curtidas: [],
+      };
+
+      atualizarCapitulo({
+        comentario: textoLimpo,
+      });
+      setComentarioDigitado(textoLimpo);
+      setComentariosCapitulo((comentariosAtuais) => [
+        ...comentariosAtuais,
+        novoComentario,
+      ]);
+      setMostrarComentario(true);
+      return true;
+    } finally {
+      finalizarAcaoComentariosCapitulo(chaveAcao);
+    }
+  }
+
+
+  async function removerComentarioCapitulo(postId: string, comentarioId: string) {
+    const chaveAcao = `remover-comentario-capitulo:${comentarioId}`;
+
+    if (!iniciarAcaoComentariosCapitulo(chaveAcao)) {
+      return;
+    }
+
+    setComentarioStatus("");
+
+    try {
+      const userIdAtual = await obterUsuarioLogadoIdAtual();
+
+      if (!userIdAtual) {
+        setMensagemAcao("Entre na sua conta para apagar seu comentário.");
+        router.push(criarLoginHrefLeitor(obraId, capituloId));
+        return;
+      }
+
+      const comentarioAtual = comentariosCapitulo.find(
+        (comentario) => comentario.id === comentarioId
+      );
+
+      if (!comentarioAtual || comentarioAtual.userId !== userIdAtual) {
+        setComentarioStatus("Você só pode remover seus próprios comentários.");
+        return;
+      }
+
+
+      atualizarCapitulo({
+        comentario: "",
+      });
+      setComentarioDigitado("");
+
+      const { error } = await supabase
+        .from("comentarios_capitulos")
+        .delete()
+        .eq("id", comentarioId)
+        .eq("user_id", userIdAtual);
+
+      if (error) {
+        const comentarioSincronizado = await salvarComentarioCapituloSupabase(
+          postId,
+          ""
+        );
+
+        if (!comentarioSincronizado) {
+          setComentarioStatus(
+            "Comentário apagado do aparelho, mas não sincronizado agora."
+          );
+          return;
+        }
+      }
+
+      setComentariosCapitulo((comentariosAtuais) =>
+        comentariosAtuais.filter((comentario) => comentario.id !== comentarioId)
+      );
       await recarregarComentariosCapituloAtual();
+    } finally {
+      finalizarAcaoComentariosCapitulo(chaveAcao);
     }
-
-    setComentarioStatus(
-      textoLimpo
-        ? comentarioSincronizado
-          ? "Comentário salvo."
-          : "Comentário salvo no aparelho, mas não sincronizado agora."
-        : comentarioSincronizado
-          ? "Comentário removido."
-          : "Comentário removido do aparelho, mas não sincronizado agora."
-    );
-    setMostrarComentario(Boolean(textoLimpo));
   }
 
-  async function apagarComentario() {
-    if (!capituloAtual || !capituloAtual.comentario.trim()) {
+  async function alternarCurtidaComentarioCapitulo(
+    postId: string,
+    comentarioId: string
+  ) {
+    const chaveAcao = `curtir-comentario-capitulo:${comentarioId}`;
+
+    if (!iniciarAcaoComentariosCapitulo(chaveAcao)) {
       return;
     }
 
-    if (!(await exigirLogin("Entre na sua conta para apagar seu comentário."))) {
-      return;
+    setComentarioStatus("");
+
+    try {
+      const userIdAtual = await obterUsuarioLogadoIdAtual();
+
+      if (!userIdAtual) {
+        setMensagemAcao("Entre na sua conta para curtir comentários.");
+        router.push(criarLoginHrefLeitor(obraId, capituloId));
+        return;
+      }
+
+      const comentarioAtual = comentariosCapitulo.find(
+        (comentario) => comentario.id === comentarioId
+      );
+      const jaCurtiu = Boolean(comentarioAtual?.curtidas.includes(userIdAtual));
+
+      setComentariosCapitulo((comentariosAtuais) =>
+        comentariosAtuais.map((comentario) => {
+          if (comentario.id !== comentarioId) {
+            return comentario;
+          }
+
+          return {
+            ...comentario,
+            curtidas: jaCurtiu
+              ? comentario.curtidas.filter((curtidaId) => curtidaId !== userIdAtual)
+              : Array.from(new Set([...comentario.curtidas, userIdAtual])),
+          };
+        })
+      );
+      salvarCurtidaComentarioCapituloLocal(userIdAtual, comentarioId, !jaCurtiu);
+
+      try {
+        const { error: erroLimparCurtida } = await supabase
+          .from(TABELA_COMENTARIOS_CAPITULOS_CURTIDAS)
+          .delete()
+          .eq("comentario_id", comentarioId)
+          .eq("usuario_id", userIdAtual);
+
+        if (erroLimparCurtida) {
+          throw erroLimparCurtida;
+        }
+
+        if (!jaCurtiu) {
+          const { error: erroInserirCurtida } = await supabase
+            .from(TABELA_COMENTARIOS_CAPITULOS_CURTIDAS)
+            .insert({
+              comentario_id: comentarioId,
+              usuario_id: userIdAtual,
+            });
+
+          if (erroInserirCurtida) {
+            throw erroInserirCurtida;
+          }
+        }
+        await recarregarComentariosCapituloAtual();
+      } catch (error) {
+        console.warn("Não consegui sincronizar a curtida do comentário:", error);
+      }
+
+      void postId;
+    } finally {
+      finalizarAcaoComentariosCapitulo(chaveAcao);
     }
-
-    const confirmar = window.confirm(
-      "Tem certeza que deseja apagar seu comentário deste capítulo?"
-    );
-
-    if (!confirmar) {
-      return;
-    }
-
-    atualizarCapitulo({
-      comentario: "",
-    });
-
-    const comentarioSincronizado = await salvarComentarioCapituloSupabase(
-      capituloAtual.id,
-      ""
-    );
-    await recarregarComentariosCapituloAtual();
-
-    setComentarioDigitado("");
-    setComentarioStatus(
-      comentarioSincronizado
-        ? "Comentário apagado."
-        : "Comentário apagado do aparelho, mas não sincronizado agora."
-    );
-    setMostrarComentario(false);
   }
+
+
+  async function denunciarComentarioCapitulo(comentarioId: string) {
+    const chaveAcao = `denunciar-comentario-capitulo:${comentarioId}`;
+
+    if (!iniciarAcaoComentariosCapitulo(chaveAcao)) {
+      return;
+    }
+
+    setComentarioStatus("");
+
+    try {
+      const userIdAtual = await obterUsuarioLogadoIdAtual();
+
+      if (!userIdAtual) {
+        setMensagemAcao("Entre na sua conta para denunciar comentários.");
+        router.push(criarLoginHrefLeitor(obraId, capituloId));
+        return;
+      }
+
+      const { error } = await supabase.from("comunidade_denuncias").insert({
+        alvo_tipo: "comentario_capitulo",
+        alvo_id: comentarioId,
+        denunciante_id: userIdAtual,
+        motivo: "Conteúdo inadequado",
+        detalhe: "Comentário em capítulo",
+      });
+
+      if (error) {
+        const codigoErro = (error as { code?: string }).code;
+
+        if (codigoErro === "23505") {
+          setComentarioStatus("Você já denunciou este conteúdo.");
+          return;
+        }
+
+        setComentarioStatus("Não consegui enviar a denúncia agora.");
+        return;
+      }
+
+    } finally {
+      finalizarAcaoComentariosCapitulo(chaveAcao);
+    }
+  }
+
 
   function trocarCapitulo(novoCapituloId: string) {
     if (!obraAtual) {
@@ -2690,19 +3614,21 @@ export default function LerCapituloPage() {
             </span>
           </div>
 
-          <h1 className="historietas-theme-title" style={titleStyle}>{capituloAtual.titulo}</h1>
+          <h1 style={titleStyle}>{capituloAtual.titulo}</h1>
 
           <p style={metaStyle}>
-            {obraAtual.titulo} • {tempoLeitura > 0 ? `${tempoLeitura} min` : "tempo não informado"} • {totalPalavras} palavras
-          </p>
-
-          <div style={statusRowStyle}>
-            <span style={statusBadgeStyle}>{statusLeituraTexto}</span>
-
-            <Link href={perfilAutorHref} style={statusLinkBadgeStyle}>
+            {obraAtual.titulo}{" "}
+            <Link href={perfilAutorHref} style={metaAuthorLinkStyle}>
               Por {obraAtual.autor}
             </Link>
-          </div>
+          </p>
+
+          <p style={statusMetaLineStyle}>
+            <span style={statusBadgeStyle}>{statusLeituraTexto}</span>{" "}
+            <span style={metaReadingStatsStyle}>
+              {tempoLeitura > 0 ? `${tempoLeitura}min` : "tempo não informado"} {totalPalavras} palavras
+            </span>
+          </p>
         </section>
 
         {mostrarAjustes && (
@@ -2876,137 +3802,20 @@ export default function LerCapituloPage() {
             onClick={() => void alternarComentarioVisivel()}
             style={
               modoFoco
-                ? mostrarComentario || capituloAtual.comentario.trim()
+                ? mostrarComentario || comentariosCapitulo.length > 0
                   ? focusActiveCommentButtonStyle
                   : focusActionButtonStyle
-                : mostrarComentario || capituloAtual.comentario.trim()
+                : mostrarComentario || comentariosCapitulo.length > 0
                 ? activeCommentButtonStyle
                 : actionButtonStyle
             }
           >
-            {capituloAtual.comentario.trim() ? "💬 Comentado" : "Comentar"}
+            💬 {comentariosCapitulo.length}
           </button>
         </section>
 
         {mensagemAcao && <p style={commentStatusStyle}>{mensagemAcao}</p>}
 
-        {mostrarComentario && (
-          <section
-            style={
-              modoFoco
-                ? isDesktop
-                  ? desktopFocusCommentBoxStyle
-                  : focusCommentBoxStyle
-                : isDesktop
-                ? desktopCommentBoxStyle
-                : commentBoxStyle
-            }
-          >
-            <div style={commentHeaderStyle}>
-              <h2 style={commentTitleStyle}>Comentário</h2>
-
-              {capituloAtual.comentario.trim() && (
-                <button
-                  type="button"
-                  onClick={apagarComentario}
-                  style={deleteCommentButtonStyle}
-                >
-                  Apagar
-                </button>
-              )}
-            </div>
-
-            {comentarioStatus && (
-              <p style={commentStatusStyle}>{comentarioStatus}</p>
-            )}
-
-            <div style={commentProfileRowStyle}>
-              <Link
-                href={criarHrefPerfilUsuarioLeitor(
-                  perfilComentarioLeitor.userId || usuarioIdLogado,
-                  perfilComentarioLeitor.nome,
-                )}
-                style={criarAvatarComentarioStyle(perfilComentarioLeitor.avatar)}
-                aria-label={`Abrir perfil de ${perfilComentarioLeitor.nome}`}
-              >
-                {perfilComentarioLeitor.nome.slice(0, 1).toUpperCase()}
-              </Link>
-
-              <div style={commentProfileTextStyle}>
-                <Link
-                  href={criarHrefPerfilUsuarioLeitor(
-                    perfilComentarioLeitor.userId || usuarioIdLogado,
-                    perfilComentarioLeitor.nome,
-                  )}
-                  style={commentProfileNameStyle}
-                >
-                  {perfilComentarioLeitor.nome}
-                </Link>
-                <span style={commentProfileCaptionStyle}>Comentando com seu perfil público</span>
-              </div>
-            </div>
-
-            {comentariosCapitulo.length > 0 && (
-              <section style={commentListStyle} aria-label="Comentários do capítulo">
-                <div style={commentListHeaderStyle}>
-                  <strong style={commentListTitleStyle}>Comentários do capítulo</strong>
-                  <span style={commentListCountStyle}>{comentariosCapitulo.length}</span>
-                </div>
-
-                {comentariosCapitulo.slice(0, 6).map((comentarioPublico) => (
-                  <article key={comentarioPublico.id} style={commentPublicItemStyle}>
-                    <Link
-                      href={criarHrefPerfilUsuarioLeitor(
-                        comentarioPublico.userId,
-                        comentarioPublico.nome,
-                      )}
-                      style={criarAvatarComentarioStyle(comentarioPublico.avatar)}
-                      aria-label={`Abrir perfil de ${comentarioPublico.nome}`}
-                    >
-                      {comentarioPublico.nome.slice(0, 1).toUpperCase()}
-                    </Link>
-
-                    <div style={commentPublicContentStyle}>
-                      <div style={commentPublicTopStyle}>
-                        <Link
-                          href={criarHrefPerfilUsuarioLeitor(
-                            comentarioPublico.userId,
-                            comentarioPublico.nome,
-                          )}
-                          style={commentPublicNameStyle}
-                        >
-                          {comentarioPublico.nome}
-                        </Link>
-                        {comentarioPublico.meuComentario && (
-                          <span style={commentMineBadgeStyle}>Seu comentário</span>
-                        )}
-                      </div>
-
-                      <p style={commentPublicTextStyle}>{comentarioPublico.texto}</p>
-                    </div>
-                  </article>
-                ))}
-              </section>
-            )}
-
-            {comentariosCarregando && (
-              <p style={commentStatusStyle}>Carregando comentários...</p>
-            )}
-
-            <form onSubmit={salvarComentario} style={commentFormStyle}>
-              <textarea
-                value={comentarioDigitado}
-                onChange={(event) => setComentarioDigitado(event.target.value)}
-                style={commentInputStyle}
-                placeholder="Escreva um comentário curto sobre esse capítulo..."
-              />
-
-              <button type="submit" style={modoFoco ? focusCommentButtonStyle : commentButtonStyle}>
-                {comentarioDigitado.trim() ? "Salvar comentário" : "Remover comentário"}
-              </button>
-            </form>
-          </section>
-        )}
 
         <section
           style={
@@ -3046,6 +3855,20 @@ export default function LerCapituloPage() {
           )}
         </section>
       </section>
+
+      <ComentariosCapituloSheet
+        post={mostrarComentario ? postComentariosCapitulo : null}
+        podeComentar={Boolean(usuarioIdLogado)}
+        usuarioId={usuarioIdLogado}
+        usuarioNome={perfilComentarioLeitor.nome}
+        usuarioAvatar={perfilComentarioLeitor.avatar}
+        onFechar={fecharComentariosCapitulo}
+        onEnviar={enviarComentarioCapitulo}
+        onCurtirComentario={alternarCurtidaComentarioCapitulo}
+        onRemoverComentario={removerComentarioCapitulo}
+        onDenunciarComentario={denunciarComentarioCapitulo}
+      />
+
     </main>
   );
 }
@@ -3506,7 +4329,7 @@ const focusChapterHeaderStyle: CSSProperties = {
 };
 
 const miniTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -3523,11 +4346,11 @@ const titleStyle: CSSProperties = {
   letterSpacing: "-0.055em",
   textAlign: "center",
   maxWidth: "100%",
-  background: "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  WebkitTextFillColor: "transparent",
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
   ...safeTextStyle,
 };
@@ -3560,7 +4383,7 @@ const statusBadgeStyle: CSSProperties = {
   borderRadius: 0,
   background: "transparent",
   border: "none",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 850,
   textAlign: "center",
@@ -3569,8 +4392,27 @@ const statusBadgeStyle: CSSProperties = {
 
 const statusLinkBadgeStyle: CSSProperties = {
   ...statusBadgeStyle,
-  color: "#FFFFFF",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   textDecoration: "none",
+};
+
+const metaAuthorLinkStyle: CSSProperties = {
+  ...statusLinkBadgeStyle,
+  fontSize: "11px",
+  lineHeight: 1.35,
+  fontWeight: 750,
+};
+
+const statusMetaLineStyle: CSSProperties = {
+  ...statusRowStyle,
+  margin: 0,
+  gap: "4px",
+};
+
+const metaReadingStatsStyle: CSSProperties = {
+  ...metaStyle,
+  fontSize: "9px",
+  fontWeight: 850,
 };
 
 const chapterHeroTopStyle: CSSProperties = {
@@ -3590,7 +4432,7 @@ const readingProgressBadgeStyle: CSSProperties = {
   borderRadius: 0,
   background: "transparent",
   border: "none",
-  color: "#FFFFFF",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
   fontWeight: 900,
   textAlign: "center",
@@ -3924,192 +4766,12 @@ const focusActiveCommentButtonStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.18)",
 };
 
-const commentBoxStyle: CSSProperties = {
-  marginTop: "10px",
-  display: "grid",
-  gap: "8px",
-  padding: "10px",
-  borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-const focusCommentBoxStyle: CSSProperties = {
-  ...commentBoxStyle,
-  background: "rgba(9,9,11,0.72)",
-  border: "1px solid rgba(255,255,255,0.07)",
-};
-
-const commentHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const commentTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "18px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
-  ...safeTextStyle,
-};
-
 const commentStatusStyle: CSSProperties = {
   margin: 0,
   color: "#86EFAC",
   fontSize: "11px",
   fontWeight: 850,
   ...safeTextStyle,
-};
-
-const commentProfileRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "9px",
-  minWidth: 0,
-};
-
-const commentProfileAvatarStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  flex: "0 0 auto",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "12px",
-  background: "#04000A",
-  color: "#FFFFFF",
-  fontSize: "19px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  textDecoration: "none",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
-  boxShadow: "none",
-};
-
-const commentProfileTextStyle: CSSProperties = {
-  display: "grid",
-  gap: "2px",
-  minWidth: 0,
-};
-
-const commentProfileNameStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 950,
-  textDecoration: "none",
-  ...safeTextStyle,
-};
-
-const commentProfileCaptionStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const commentListStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  padding: "9px",
-  borderRadius: "16px",
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid rgba(255,255,255,0.055)",
-  minWidth: 0,
-};
-
-const commentListHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-};
-
-const commentListTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const commentListCountStyle: CSSProperties = {
-  minWidth: "24px",
-  height: "24px",
-  display: "grid",
-  placeItems: "center",
-  borderRadius: "999px",
-  background: "rgba(249,115,22,0.14)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  fontWeight: 950,
-};
-
-const commentPublicItemStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr)",
-  gap: "9px",
-  minWidth: 0,
-};
-
-const commentPublicContentStyle: CSSProperties = {
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-};
-
-const commentPublicTopStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "6px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
-
-const commentPublicNameStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 950,
-  textDecoration: "none",
-  ...safeTextStyle,
-};
-
-const commentMineBadgeStyle: CSSProperties = {
-  padding: "3px 7px",
-  borderRadius: "999px",
-  background: "rgba(34,197,94,0.09)",
-  border: "1px solid rgba(34,197,94,0.13)",
-  color: "#86EFAC",
-  fontSize: "9px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
-
-const commentPublicTextStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "12px",
-  lineHeight: 1.45,
-  fontWeight: 650,
-  whiteSpace: "pre-wrap",
-  overflowWrap: "anywhere",
-};
-
-const commentFormStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
 };
 
 const commentInputStyle: CSSProperties = {
@@ -4129,40 +4791,391 @@ const commentInputStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const commentButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 950,
+const commentsSheetOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 90,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  pointerEvents: "none",
+};
+
+const commentsSheetBackdropStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  border: "none",
+  background: "rgba(3, 2, 8, 0.28)",
+  pointerEvents: "auto",
   cursor: "pointer",
+};
+
+const commentsSheetStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  width: "min(680px, 100%)",
+  maxHeight: "calc(100dvh - env(safe-area-inset-top) - 10px)",
+  display: "grid",
+  gridTemplateRows: "auto auto minmax(0, 1fr) auto auto",
+  gap: "7px",
+  padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
+  borderRadius: "28px 28px 0 0",
+  background: "#070212",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  borderBottom: "none",
+  pointerEvents: "auto",
+  overflow: "hidden",
+  willChange: "height",
+};
+
+const commentsSheetCompactStyle: CSSProperties = {
+  height: "min(64dvh, 540px)",
+};
+
+const commentsSheetExpandedStyle: CSSProperties = {
+  height: "min(90dvh, 760px)",
+};
+
+const commentsSheetHandleWrapStyle: CSSProperties = {
+  minHeight: "24px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  touchAction: "none",
+  cursor: "grab",
+  willChange: "transform",
+};
+
+const commentsSheetHandleStyle: CSSProperties = {
+  width: "44px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "var(--historietas-border-soft, rgba(255,255,255,0.34))",
+};
+
+const commentsSheetHeaderStyle: CSSProperties = {
+  minHeight: "32px",
+  display: "grid",
+  gridTemplateColumns: "40px minmax(0, 1fr) 40px",
+  alignItems: "center",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const commentsSheetHeaderSpacerStyle: CSSProperties = {
+  width: "40px",
+  height: "1px",
+};
+
+const commentsSheetTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "14.5px",
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.02em",
+};
+
+const commentsSheetCloseStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  justifySelf: "end",
+  borderRadius: "999px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "27px",
+  lineHeight: 1,
+  fontWeight: 500,
   fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentsSheetListStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "start",
+  gap: "10px",
+  minHeight: 0,
+  overflowY: "auto",
+  padding: "6px 2px 9px",
+  WebkitOverflowScrolling: "touch",
+};
+
+const commentsSheetEmptyStyle: CSSProperties = {
+  minHeight: "100%",
+  display: "grid",
+  alignContent: "center",
+  justifyItems: "center",
+  gap: "4px",
+  padding: "16px 16px",
+  textAlign: "center",
+};
+
+const commentsSheetEmptyTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "14.5px",
+  fontWeight: 950,
+};
+
+const commentsSheetEmptyTextStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "11.5px",
+  fontWeight: 800,
+};
+
+const commentSheetItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr) 26px",
+  gap: "10px",
+  alignItems: "start",
+  minWidth: 0,
+};
+
+const commentSheetAvatarStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#04000A",
+  color: "#FFFFFF",
+  fontSize: "12.5px",
+  fontWeight: 950,
+  flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   boxShadow: "none",
 };
 
-const focusCommentButtonStyle: CSSProperties = {
-  ...commentButtonStyle,
+const commentSheetAvatarLinkStyle: CSSProperties = {
+  ...commentSheetAvatarStyle,
+  textDecoration: "none",
+  cursor: "pointer",
 };
 
-const deleteCommentButtonStyle: CSSProperties = {
-  minHeight: "30px",
-  padding: "0 9px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
-  color: "#FFFFFF",
-  fontSize: "10px",
-  fontWeight: 900,
+const commentSheetContentStyle: CSSProperties = {
+  display: "grid",
+  gap: "2px",
+  minWidth: 0,
+};
+
+const commentSheetTopLineStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const commentSheetAuthorStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "12px",
+  fontWeight: 950,
+};
+
+const commentSheetAuthorLinkStyle: CSSProperties = {
+  ...commentSheetAuthorStyle,
+  textDecoration: "none",
   cursor: "pointer",
-  fontFamily: "inherit",
-  lineHeight: 1.15,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
+};
+
+const commentSheetTimeStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 750,
+};
+
+const commentSheetTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12.5px",
+  lineHeight: 1.38,
+  fontWeight: 750,
   ...safeTextStyle,
 };
+
+const commentSheetActionsRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+};
+
+const commentSheetReplyButtonStyle: CSSProperties = {
+  width: "fit-content",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0 0",
+  cursor: "pointer",
+};
+
+const commentSheetRemoveButtonStyle: CSSProperties = {
+  width: "fit-content",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  fontSize: "10.5px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: "1px 0 0",
+  cursor: "pointer",
+};
+
+const commentSheetReportButtonStyle: CSSProperties = {
+  width: "fit-content",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0 0",
+  cursor: "pointer",
+};
+
+const commentSheetLikeWrapStyle: CSSProperties = {
+  minWidth: "28px",
+  display: "grid",
+  justifyItems: "center",
+  alignContent: "start",
+  gap: "2px",
+};
+
+const commentSheetLikeButtonStyle: CSSProperties = {
+  width: "28px",
+  height: "28px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentSheetLikeCountStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  lineHeight: 1,
+  minHeight: "10px",
+  textAlign: "center",
+};
+
+const commentSheetHeartIconStyle: CSSProperties = {
+  width: "19px",
+  height: "19px",
+  display: "block",
+};
+
+
+const commentsToolsStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  padding: "5px 0 0",
+  borderTop: "none",
+};
+
+const commentsQuickReactionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "6px",
+  width: "100%",
+  overflowX: "auto",
+  padding: "0 1px",
+  scrollbarWidth: "none",
+  WebkitOverflowScrolling: "touch",
+};
+
+const commentsQuickReactionButtonStyle: CSSProperties = {
+  width: "30px",
+  height: "28px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  fontSize: "18px",
+  lineHeight: 1,
+  padding: 0,
+  cursor: "pointer",
+  flex: "0 0 auto",
+};
+
+const commentsSheetFormStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "30px minmax(0, 1fr) 28px 38px",
+  alignItems: "center",
+  gap: "7px",
+  padding: "7px 0 0",
+  minWidth: 0,
+  background: "transparent",
+};
+
+const commentsInputBoxStyle: CSSProperties = {
+  minWidth: 0,
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+};
+
+const commentsInputAvatarStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "11px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#04000A",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  color: "#FFFFFF",
+  fontSize: "11.5px",
+  fontWeight: 950,
+  boxShadow: "none",
+};
+
+const commentsSheetInputStyle: CSSProperties = {
+  ...commentInputStyle,
+  minHeight: "38px",
+  maxHeight: "82px",
+  borderRadius: "999px",
+  padding: "9px 12px",
+  fontSize: "12.5px",
+  lineHeight: 1.32,
+  resize: "none",
+  overflowY: "auto",
+};
+
+const commentsInputIconButtonStyle: CSSProperties = {
+  width: "26px",
+  height: "30px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "16px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentsSheetSendStyle: CSSProperties = {
+  width: "36px",
+  height: "36px",
+  borderRadius: "999px",
+  border: "none",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  fontSize: "18px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+};
+
 
 const chapterNavigationStyle: CSSProperties = {
   marginTop: "10px",
@@ -4421,19 +5434,6 @@ const desktopReaderActionsStyle: CSSProperties = {
 
 const desktopFocusReaderActionsStyle: CSSProperties = {
   ...desktopReaderActionsStyle,
-};
-
-const desktopCommentBoxStyle: CSSProperties = {
-  ...commentBoxStyle,
-  marginTop: "12px",
-  padding: "12px",
-  borderRadius: "22px",
-};
-
-const desktopFocusCommentBoxStyle: CSSProperties = {
-  ...desktopCommentBoxStyle,
-  background: "rgba(9,9,11,0.72)",
-  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const desktopChapterNavigationStyle: CSSProperties = {

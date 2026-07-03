@@ -6969,8 +6969,7 @@ const commentsSheetStyle: CSSProperties = {
   gap: "7px",
   padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
   borderRadius: "28px 28px 0 0",
-  background:
-    "linear-gradient(180deg, rgba(15,9,28,0.995) 0%, rgba(10,6,18,1) 100%)",
+  background: "#070212",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
   borderBottom: "none",
   pointerEvents: "auto",
@@ -7084,15 +7083,18 @@ const commentItemStyle: CSSProperties = {
 const commentAvatarStyle: CSSProperties = {
   width: "34px",
   height: "34px",
-  borderRadius: "999px",
+  borderRadius: "12px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "#04000A",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   color: "#FFFFFF",
-  fontSize: "12.5px",
+  fontSize: "19px",
+  lineHeight: 1,
   fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "none",
   flex: "0 0 auto",
 };
 

@@ -2051,8 +2051,8 @@ export default function ExplorarPage() {
 
   const textoBotaoFiltrosAvancados =
     totalFiltrosAvancadosAtivos > 0
-      ? `Filtrar e ordenar (${totalFiltrosAvancadosAtivos})`
-      : "Filtrar e ordenar";
+      ? `EXPLORAR (${totalFiltrosAvancadosAtivos})`
+      : "EXPLORAR";
 
   const categoriaAtiva = categoriaSelecionada.trim().length > 0;
   const temaCategoria = obterTemaCategoria(categoriaSelecionada);
@@ -2208,7 +2208,7 @@ export default function ExplorarPage() {
                 ? desktopExplorarHeaderFilterButtonStyle
                 : explorarHeaderFilterButtonStyle
             }
-            aria-label="Filtrar e ordenar"
+            aria-label="EXPLORAR"
           >
             <span>{textoBotaoFiltrosAvancados}</span>
             <span style={explorarHeaderFilterIconStyle} aria-hidden="true">
@@ -2228,28 +2228,7 @@ export default function ExplorarPage() {
                   : mobileSearchToggleStyle
               }
             >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="10.85"
-                  cy="10.85"
-                  r="6.65"
-                  stroke="currentColor"
-                  strokeWidth="2.15"
-                />
-                <path
-                  d="M16.05 16.05L20.25 20.25"
-                  stroke="currentColor"
-                  strokeWidth="2.15"
-                  strokeLinecap="round"
-                />
-              </svg>
+              ⌕
             </button>
           )}
 
@@ -2276,17 +2255,31 @@ export default function ExplorarPage() {
           ) : null}
         </header>
 
-        <section style={isDesktop ? criarDesktopSearchBoxStyle(temaPagina, categoriaAtiva) : criarSearchBoxStyle(temaPagina, categoriaAtiva)}>
-          {(isDesktop || buscaMobileAberta) && (
+        {(isDesktop || buscaMobileAberta || busca.trim()) && (
+          <label
+            style={
+              isDesktop
+                ? desktopExplorarSearchShellStyle
+                : explorarSearchShellStyle
+            }
+          >
+            <span style={explorarSearchIconStyle}>⌕</span>
+
             <input
               value={busca}
               onChange={(event) => setBusca(event.target.value)}
               placeholder="Buscar histórias..."
-              style={criarSearchInputStyle(temaPagina, isDesktop, categoriaAtiva)}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={90}
+              style={explorarSearchInputStyle}
               type="text"
             />
-          )}
+          </label>
+        )}
 
+        <section style={isDesktop ? criarDesktopSearchBoxStyle(temaPagina, categoriaAtiva) : criarSearchBoxStyle(temaPagina, categoriaAtiva)}>
           <section className="explorar-carousel" style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
             <button
               type="button"
@@ -2326,11 +2319,11 @@ export default function ExplorarPage() {
             <section
               style={isDesktop ? desktopExplorarModalSheetStyle : explorarModalSheetStyle}
               onClick={(event) => event.stopPropagation()}
-              aria-label="Filtrar e ordenar"
+              aria-label="EXPLORAR"
             >
               <span style={explorarModalHandleStyle} aria-hidden="true" />
 
-              <h2 style={explorarModalTitleStyle}>Filtrar e ordenar</h2>
+              <h2 style={explorarModalTitleStyle}>EXPLORAR</h2>
 
               <div style={explorarModalContentStyle}>
                 <p style={explorarModalSectionLabelStyle}>Mostrar</p>
@@ -3059,23 +3052,26 @@ const mobileSearchToggleStyle: CSSProperties = {
   top: "50%",
   right: 0,
   transform: "translateY(-50%)",
+  appearance: "none",
+  WebkitAppearance: "none",
   width: "34px",
   height: "34px",
-  borderRadius: 0,
-  border: 0,
+  border: "none",
   background: "transparent",
   color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "24px",
+  lineHeight: 1,
+  fontWeight: 950,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: 0,
   cursor: "pointer",
-  flex: "0 0 auto",
+  padding: 0,
   boxShadow: "none",
+  flex: "0 0 auto",
   outline: "none",
   WebkitTapHighlightColor: "transparent",
-  WebkitAppearance: "none",
-  appearance: "none",
   zIndex: 2,
 };
 
@@ -3102,7 +3098,7 @@ const explorarHeaderFilterButtonStyle: CSSProperties = {
   justifyContent: "flex-start",
   gap: "8px",
   fontSize: "16px",
-  lineHeight: 1,
+  lineHeight: 1.15,
   fontWeight: 950,
   fontFamily: "inherit",
   textAlign: "left",
@@ -3116,7 +3112,7 @@ const desktopExplorarHeaderFilterButtonStyle: CSSProperties = {
   ...explorarHeaderFilterButtonStyle,
   minHeight: "40px",
   maxWidth: "calc(100% - 52px)",
-  fontSize: "17px",
+  fontSize: "16px",
 };
 
 const explorarHeaderFilterIconStyle: CSSProperties = {
@@ -3124,9 +3120,9 @@ const explorarHeaderFilterIconStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   color: "#FFFFFF",
-  fontSize: "22px",
+  fontSize: "21px",
   lineHeight: 1,
-  fontWeight: 950,
+  fontWeight: 700,
   flex: "0 0 auto",
 };
 
@@ -3329,6 +3325,51 @@ const searchBoxStyle: CSSProperties = {
   overflow: "hidden",
   backdropFilter: "none",
   WebkitBackdropFilter: "none",
+};
+
+const explorarSearchShellStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "52px",
+  borderRadius: "22px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#000000",
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "0 16px",
+  margin: "8px 0 5px",
+  boxSizing: "border-box",
+  boxShadow: "none",
+};
+
+const desktopExplorarSearchShellStyle: CSSProperties = {
+  ...explorarSearchShellStyle,
+  margin: "8px 0 6px",
+};
+
+const explorarSearchIconStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "22px",
+  lineHeight: 1,
+  fontWeight: 700,
+  flex: "0 0 auto",
+};
+
+const explorarSearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  minWidth: 0,
+  height: "50px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  outline: "none",
+  fontFamily: "inherit",
+  fontSize: "15px",
+  fontWeight: 850,
+  letterSpacing: "-0.035em",
+  boxSizing: "border-box",
 };
 
 const searchInputStyle: CSSProperties = {
