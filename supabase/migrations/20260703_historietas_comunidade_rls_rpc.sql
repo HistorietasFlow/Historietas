@@ -129,6 +129,8 @@ grant execute on function public.usuario_e_admin() to authenticated;
 -- RPC: VISUALIZAÇÕES DE OBRAS
 -- ============================================================
 
+drop function if exists public.incrementar_visualizacao_obra(uuid);
+
 create or replace function public.incrementar_visualizacao_obra(obra_id_param uuid)
 returns integer
 language plpgsql
