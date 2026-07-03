@@ -646,17 +646,19 @@ function salvarListaIdsUsuarioExplorar(
   userId: string,
   lista: string[]
 ) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return;
+  }
+
   const listaNormalizada = Array.from(new Set(normalizarListaIdsExplorar(lista)));
 
   try {
-    localStorage.setItem(chave, JSON.stringify(listaNormalizada));
-
-    if (userId.trim()) {
-      localStorage.setItem(
-        criarStorageKeyUsuarioExplorar(chave, userId),
-        JSON.stringify(listaNormalizada)
-      );
-    }
+    localStorage.setItem(
+      criarStorageKeyUsuarioExplorar(chave, userIdLimpo),
+      JSON.stringify(listaNormalizada)
+    );
   } catch {
     // localStorage é apoio; a página continua com o estado em memória.
   }
@@ -2030,6 +2032,9 @@ export default function ExplorarPage() {
   ]);
 
   const totalResultados = obrasLocaisFiltradas.length;
+  const possuiObrasPublicadas = obrasLocais.some((obra) => {
+    return obra.publicado && obraTemConteudoPublicadoExplorar(obra);
+  });
 
   const filtrosAtivos = Boolean(
     categoriaSelecionada ||
@@ -2411,13 +2416,34 @@ export default function ExplorarPage() {
 
 
         {totalResultados === 0 && (
-          <p style={isDesktop ? desktopEmptyMessageStyle : emptyMessageStyle}>
-            Nenhuma obra encontrada no Explorar. Tente limpar os filtros ou usar
-            outra busca.
-          </p>
+          <EstadoVazioExplorar possuiObrasPublicadas={possuiObrasPublicadas} />
         )}
       </section>
     </main>
+  );
+}
+
+function EstadoVazioExplorar({
+  possuiObrasPublicadas,
+}: {
+  possuiObrasPublicadas: boolean;
+}) {
+  const titulo = possuiObrasPublicadas
+    ? "Nenhuma obra encontrada"
+    : "PUBLIQUE SUA HISTÓRIA";
+
+  return (
+    <p
+      style={{
+        margin: "10px 0 0",
+        color: "#FFFFFF",
+        fontSize: "12px",
+        fontWeight: 800,
+        textAlign: "center",
+      }}
+    >
+      {titulo}
+    </p>
   );
 }
 
@@ -4036,22 +4062,25 @@ const desktopPublishedTitleStyle: CSSProperties = {
 };
 
 
-const emptyMessageStyle: CSSProperties = {
-  margin: "22px 0 34px",
-  padding: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
-  lineHeight: 1.55,
-  fontWeight: 850,
-  textAlign: "center",
-  background: "transparent",
-  border: "none",
+const emptyStatePrimaryButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  minHeight: "48px",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "#FFFFFF",
+  color: "#070212",
+  fontSize: "13px",
+  fontWeight: 950,
+  textDecoration: "none",
+  cursor: "pointer",
   boxShadow: "none",
-  ...safeTextStyle,
+  whiteSpace: "nowrap",
 };
 
-const desktopEmptyMessageStyle: CSSProperties = {
-  ...emptyMessageStyle,
-  margin: "28px 0 44px",
-  fontSize: "15px",
+const emptyStateSecondaryButtonStyle: CSSProperties = {
+  ...emptyStatePrimaryButtonStyle,
+  background: "rgba(255,255,255,0.06)",
+  color: "#FFFFFF",
 };

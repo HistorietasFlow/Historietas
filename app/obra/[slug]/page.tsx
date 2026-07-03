@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { CSSProperties } from "react";
-import { obras } from "../../data/obras";
 import { supabase } from "../../../lib/supabase/client";
 import { useNotificacoes } from "../../../components/NotificacoesProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
@@ -157,7 +156,7 @@ type CapituloDinamico = {
 
 type ObraDinamica = {
   id: string;
-  origem: "catalogo" | "local";
+  origem: "local";
   titulo: string;
   autor: string;
   autorId?: string;
@@ -235,29 +234,6 @@ const avaliacaoObraVazia: AvaliacaoObraPublica = {
   salvando: false,
 };
 
-type CapituloModelo = {
-  numero: string;
-  titulo: string;
-  descricao: string;
-};
-
-const capitulosModelo: CapituloModelo[] = [
-  {
-    numero: "01",
-    titulo: "Capítulo inicial",
-    descricao: "Primeiro contato com o universo da obra.",
-  },
-  {
-    numero: "02",
-    titulo: "Continuação da trama",
-    descricao: "Novos conflitos, revelações e evolução dos personagens.",
-  },
-  {
-    numero: "03",
-    titulo: "Próximo passo",
-    descricao: "A história avança para uma nova fase.",
-  },
-];
 
 async function criarLoginHrefObraPublica() {
   const redirectTo =
@@ -787,39 +763,6 @@ async function carregarObraSupabasePorSlug(
   }
 }
 
-function converterObraCatalogoParaDinamica(
-  obra: (typeof obras)[number]
-): ObraDinamica {
-  return {
-    id: `catalogo-${obra.slug}`,
-    origem: "catalogo",
-    titulo: obra.titulo,
-    autor: obra.autor,
-    autorId: "",
-    genero: obra.genero,
-    formato: obra.formato,
-    classificacaoIndicativa: obra.classificacaoIndicativa,
-    status: obra.status,
-    views: obra.views,
-    likes: obra.likes,
-    comentarios: obra.comentarios,
-    disponivel: obra.disponivel,
-    slug: obra.slug,
-    link: obra.disponivel ? obra.link : criarLinkAviso(obra.titulo),
-    sinopse: obra.sinopse,
-    tags: obra.tags,
-    capa: "",
-    arquivoObra: null,
-    capitulos: capitulosModelo.map((capitulo, index) => ({
-      id: `modelo-${index + 1}`,
-      numero: capitulo.numero,
-      titulo: capitulo.titulo,
-      descricao: capitulo.descricao,
-      href: criarLinkAviso(obra.titulo, capitulo.titulo),
-      disponivel: obra.disponivel,
-    })),
-  };
-}
 
 function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
   const obraDisponivel = obra.publicado && (obra.capitulos.length > 0 || Boolean(obra.arquivoObra));
@@ -841,9 +784,7 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
     ),
     disponivel: obraDisponivel,
     slug: obra.slug,
-    link: obraDisponivel
-      ? obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`
-      : criarLinkAviso(obra.titulo),
+    link: obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`,
     sinopse: obra.sinopse,
     tags: obra.tags,
     capa: obra.capa,
@@ -853,11 +794,9 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
       numero: String(index + 1).padStart(2, "0"),
       titulo: capitulo.titulo,
       descricao: criarResumoCapitulo(capitulo.texto),
-      href: obraDisponivel
-        ? `/obra/${encodeURIComponent(
-            obra.slug || criarSlugBase(obra.titulo)
-          )}/capitulo/${index + 1}`
-        : criarLinkAviso(obra.titulo, capitulo.titulo),
+      href: `/obra/${encodeURIComponent(
+        obra.slug || criarSlugBase(obra.titulo)
+      )}/capitulo/${index + 1}`,
       disponivel: obraDisponivel,
     })),
   };
@@ -889,15 +828,6 @@ function criarDesktopCoverArtStyle(capa: string): CSSProperties {
   };
 }
 
-function criarLinkAviso(titulo: string, capitulo?: string) {
-  const obra = encodeURIComponent(titulo);
-
-  if (capitulo) {
-    return `/em-breve?obra=${obra}&capitulo=${encodeURIComponent(capitulo)}`;
-  }
-
-  return `/em-breve?obra=${obra}`;
-}
 
 function criarLinkPerfilAutor(autor: string, autorId?: string) {
   const params = new URLSearchParams();
@@ -1642,9 +1572,7 @@ export default function ObraDinamicaPage() {
       return converterObraLocalParaDinamica(obraLocal);
     }
 
-    const obraCatalogo = obras.find((item) => item.slug === slug);
-
-    return obraCatalogo ? converterObraCatalogoParaDinamica(obraCatalogo) : null;
+    return null;
   }, [slug, obrasLocais]);
 
   useEffect(() => {
@@ -1693,14 +1621,6 @@ export default function ObraDinamicaPage() {
       ? obra.sinopse.trim()
       : "";
 
-  useEffect(() => {
-    if (!obra || obraDisponivel || carregandoObras) {
-      return;
-    }
-
-    router.replace(criarLinkAviso(obra.titulo));
-  }, [obra, obraDisponivel, carregandoObras, router]);
-
   const capitulosDaObra = useMemo<CapituloDinamico[]>(() => {
     if (!obra) {
       return [];
@@ -1710,19 +1630,8 @@ export default function ObraDinamicaPage() {
       return obra.capitulos;
     }
 
-    if (obra.arquivoObra) {
-      return [];
-    }
-
-    return capitulosModelo.map((capitulo, index) => ({
-      id: `modelo-${index + 1}`,
-      numero: capitulo.numero,
-      titulo: capitulo.titulo,
-      descricao: capitulo.descricao,
-      href: criarLinkAviso(obra.titulo, capitulo.titulo),
-      disponivel: obraDisponivel,
-    }));
-  }, [obra, obraDisponivel]);
+    return [];
+  }, [obra]);
 
   useEffect(() => {
     if (!obraNormalizada) {
@@ -2015,7 +1924,7 @@ export default function ObraDinamicaPage() {
         let totalComentarios = metricasBase.comentarios;
         const idsCapitulos = capitulosDaObra
           .map((capitulo) => capitulo.id)
-          .filter((capituloId) => capituloId && !capituloId.startsWith("modelo-"));
+          .filter(Boolean);
 
         if (idsCapitulos.length > 0) {
           const { count: comentariosCount } = await supabase
@@ -2820,9 +2729,8 @@ export default function ObraDinamicaPage() {
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-        <section style={isDesktop ? desktopContainerStyle : containerStyle} />
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
       </main>
     );
   }
@@ -2832,50 +2740,21 @@ export default function ObraDinamicaPage() {
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <header style={isDesktop ? desktopTopStyle : topStyle}>
-            <Link href="/" style={logoStyle} aria-label="Historietas">
-              <span style={logoMarkStyle}>H</span>
-              </Link>
-
-            {isDesktop ? (
-              <Link
-                href="/notificacoes"
-                style={desktopNotificationButtonStyle}
-                aria-label={
-                  notificacoesNaoLidas > 0
-                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                    : "Notificações"
-                }
-              >
-                N
-
-                {notificacoesNaoLidas > 0 ? (
-                  <span style={desktopNotificationBadgeStyle}>
-                    {notificacoesNaoLidas > 99
-                      ? "99+"
-                      : notificacoesNaoLidas}
-                  </span>
-                ) : null}
-              </Link>
-            ) : null}
-          </header>
-
-          <section style={emptyBoxStyle}>
-            <span style={miniTitleStyle}>OBRA NÃO ENCONTRADA</span>
-
-            <h1 style={emptyTitleStyle}>Essa obra não existe no catálogo.</h1>
-
-            <p style={textStyle}>
-              Volte para explorar e escolha uma obra disponível na plataforma.
-            </p>
-
-            <Link href="/explorar" style={primaryLinkButtonStyle}>
-              Voltar para Explorar
-            </Link>
-          </section>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Obra não encontrada
+          </p>
         </section>
       </main>
     );
@@ -2886,9 +2765,8 @@ export default function ObraDinamicaPage() {
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
-      {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-      {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-        <section style={isDesktop ? desktopContainerStyle : containerStyle} />
+        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
+        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
       </main>
     );
   }
@@ -3316,10 +3194,10 @@ export default function ObraDinamicaPage() {
                     </Link>
                   ) : (
                     <Link
-                      href={capitulo.href || criarLinkAviso(obra.titulo, capitulo.titulo)}
+                      href={capitulo.href || `/obra/${encodeURIComponent(obra.slug)}`}
                       style={isDesktop ? desktopChapterButtonStyle : chapterButtonStyle}
                     >
-                      Avisar
+                      Indisponível
                     </Link>
                   )}
                 </article>
@@ -3595,22 +3473,6 @@ const desktopContainerStyle: CSSProperties = {
   padding: "22px 0 24px",
 };
 
-
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  marginBottom: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const desktopTopStyle: CSSProperties = {
-  ...topStyle,
-  flexWrap: "nowrap",
-  marginBottom: "14px",
-};
 
 const heroTopOverlayStyle: CSSProperties = {
   position: "absolute",
@@ -3970,21 +3832,6 @@ const primaryButtonStyle: CSSProperties = {
   boxShadow: "none",
   boxSizing: "border-box",
   ...safeTextStyle,
-};
-
-const primaryLinkButtonStyle: CSSProperties = {
-  ...primaryButtonStyle,
-  minHeight: "42px",
-  border: "1px solid rgba(249,115,22,0.30)",
-  background: "#04000A",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  fontWeight: 900,
-  textDecoration: "none",
-  textShadow: "none",
-  filter: "none",
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
 };
 
 const secondaryButtonStyle: CSSProperties = {
@@ -4423,16 +4270,6 @@ const statLabelStyle: CSSProperties = {
 };
 
 
-const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "9.5px",
-  fontWeight: 950,
-  letterSpacing: "0.075em",
-  maxWidth: "100%",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
   color: "#FFFFFF",
@@ -4449,16 +4286,6 @@ const accentSectionTitleStyle: CSSProperties = {
   ...sectionTitleStyle,
   color: "#FFFFFF",
   textTransform: "uppercase",
-};
-
-const textStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12.5px",
-  lineHeight: 1.55,
-  fontWeight: 650,
-  textAlign: "center",
-  ...safeTextStyle,
 };
 
 
@@ -5185,20 +5012,6 @@ const desktopChapterButtonStyle: CSSProperties = {
   minHeight: "37px",
 };
 
-
-const emptyBoxStyle: CSSProperties = {
-  minHeight: "60vh",
-  display: "grid",
-  alignContent: "center",
-  gap: "12px",
-  padding: "18px",
-  borderRadius: "26px",
-  background:
-    "linear-gradient(135deg, #08030F 0%, #04000A 58%, #020006 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  minWidth: 0,
-  boxShadow: "none",
-};
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,

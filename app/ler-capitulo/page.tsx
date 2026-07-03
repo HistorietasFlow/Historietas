@@ -2160,12 +2160,17 @@ function ComentariosCapituloSheet({
               );
             })
           ) : (
-            <div style={commentsSheetEmptyStyle}>
-              <strong style={commentsSheetEmptyTitleStyle}>Sem comentários ainda</strong>
-              <span style={commentsSheetEmptyTextStyle}>
-                Seja o primeiro a comentar.
-              </span>
-            </div>
+            <p
+              style={{
+                margin: "10px 0 0",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                fontWeight: 800,
+                textAlign: "center",
+              }}
+            >
+              Sem comentários ainda
+            </p>
           )}
         </section>
 
@@ -3474,7 +3479,6 @@ export default function LerCapituloPage() {
         <style>{`${historietasThemeCss}${leitorPageCss}`}</style>
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-        <section style={isDesktop ? desktopContainerStyle : containerStyle} />
       </main>
     );
   }
@@ -3486,17 +3490,17 @@ export default function LerCapituloPage() {
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <div style={emptyBoxStyle}>
-            <h1 style={emptyTitleStyle}>Capítulo não encontrado</h1>
-
-            <p style={emptyTextStyle}>
-              Volte para a obra e clique novamente em Ler capítulo.
-            </p>
-
-            <Link href="/explorar" style={emptyButtonStyle}>
-              Ir para Explorar
-            </Link>
-          </div>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Capítulo não encontrado
+          </p>
         </section>
       </main>
     );
@@ -4901,28 +4905,6 @@ const commentsSheetListStyle: CSSProperties = {
   WebkitOverflowScrolling: "touch",
 };
 
-const commentsSheetEmptyStyle: CSSProperties = {
-  minHeight: "100%",
-  display: "grid",
-  alignContent: "center",
-  justifyItems: "center",
-  gap: "4px",
-  padding: "16px 16px",
-  textAlign: "center",
-};
-
-const commentsSheetEmptyTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14.5px",
-  fontWeight: 950,
-};
-
-const commentsSheetEmptyTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11.5px",
-  fontWeight: 800,
-};
-
 const commentSheetItemStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "34px minmax(0, 1fr) 26px",
@@ -5280,63 +5262,6 @@ const readerFooterTextStyle: CSSProperties = {
   fontSize: "11px",
   lineHeight: 1.5,
   fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const emptyBoxStyle: CSSProperties = {
-  marginTop: "18px",
-  borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  padding: "20px",
-  display: "grid",
-  gap: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "30px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
-  ...safeTextStyle,
-};
-
-const emptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.5,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const emptyButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
   ...safeTextStyle,
 };
 

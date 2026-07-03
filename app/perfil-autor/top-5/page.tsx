@@ -715,36 +715,46 @@ export default function Top5PerfilAutorPage() {
       )}
 
       <section style={gridSectionStyle} aria-label="Lista de obras disponíveis">
-        {carregando ? (
-          <div style={emptyStateStyle}>Carregando obras...</div>
-        ) : obrasFiltradas.length > 0 ? (
-          <div style={worksGridStyle}>
-            {obrasFiltradas.map((obra) => {
-              const chave = criarChaveObraTop5(obra);
-              const posicaoSelecionada = idsSelecionados.indexOf(chave) + 1;
-              const selecionada = posicaoSelecionada > 0;
+        {!carregando && (
+          obrasFiltradas.length > 0 ? (
+            <div style={worksGridStyle}>
+              {obrasFiltradas.map((obra) => {
+                const chave = criarChaveObraTop5(obra);
+                const posicaoSelecionada = idsSelecionados.indexOf(chave) + 1;
+                const selecionada = posicaoSelecionada > 0;
 
-              return (
-                <button
-                  key={`obra-top-5-${chave}`}
-                  type="button"
-                  onClick={() => alternarObraTop5(obra)}
-                  style={selecionada ? top5CardSelectedStyle : top5CardStyle}
-                  aria-label={
-                    selecionada
-                      ? `Remover ${obra.titulo} do TOP 5`
-                      : `Adicionar ${obra.titulo} ao TOP 5`
-                  }
-                >
-                  <div style={criarCapaTop5Style(obra.capa)}>
-                    {selecionada && <span style={selectedBadgeStyle}>{posicaoSelecionada}</span>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <div style={emptyStateStyle}>Nenhuma obra encontrada.</div>
+                return (
+                  <button
+                    key={`obra-top-5-${chave}`}
+                    type="button"
+                    onClick={() => alternarObraTop5(obra)}
+                    style={selecionada ? top5CardSelectedStyle : top5CardStyle}
+                    aria-label={
+                      selecionada
+                        ? `Remover ${obra.titulo} do TOP 5`
+                        : `Adicionar ${obra.titulo} ao TOP 5`
+                    }
+                  >
+                    <div style={criarCapaTop5Style(obra.capa)}>
+                      {selecionada && <span style={selectedBadgeStyle}>{posicaoSelecionada}</span>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p
+              style={{
+                margin: "10px 0 0",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                fontWeight: 800,
+                textAlign: "center",
+              }}
+            >
+              Nenhuma obra encontrada
+            </p>
+          )
         )}
       </section>
 
@@ -1034,19 +1044,6 @@ const selectedBadgeStyle: CSSProperties = {
   boxShadow: "0 8px 18px rgba(0,0,0,0.32)",
 };
 
-
-const emptyStateStyle: CSSProperties = {
-  minHeight: "140px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "20px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "rgba(255,255,255,0.58)",
-  fontSize: "13px",
-  fontWeight: 750,
-};
 
 const footerActionsStyle: CSSProperties = {
   maxWidth: "980px",

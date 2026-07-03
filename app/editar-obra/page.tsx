@@ -1819,15 +1819,6 @@ export default function EditarObraPage() {
         <style>{`${historietasThemeCss}${editarObraPageCss}`}</style>
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <div style={emptyBoxStyle}>
-            <h1 style={emptyTitleStyle}>Verificando acesso...</h1>
-
-            <p style={emptyTextStyle}>
-              Confirmando sua conta antes de abrir a edição da obra.
-            </p>
-          </div>
-        </section>
       </main>
     );
   }
@@ -1838,55 +1829,19 @@ export default function EditarObraPage() {
         <style>{`${historietasThemeCss}${editarObraPageCss}`}</style>
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
-            <Link
-              href="/"
-              style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
-              aria-label="Voltar para a Home"
-            >
-              <span
-                className="historietas-theme-title"
-                style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
-              >
-                EDITAR OBRA
-              </span>
-            </Link>
-
-            {isDesktop ? (
-              <Link
-                href="/notificacoes"
-                style={desktopNotificationButtonStyle}
-                aria-label={
-                  notificacoesNaoLidas > 0
-                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                    : "Notificações"
-                }
-              >
-                N
-
-                {notificacoesNaoLidas > 0 ? (
-                  <span style={desktopNotificationBadgeStyle}>
-                    {notificacoesNaoLidas > 99
-                      ? "99+"
-                      : notificacoesNaoLidas}
-                  </span>
-                ) : null}
-              </Link>
-            ) : null}
-          </header>
-
-          <div style={emptyBoxStyle}>
-            <h1 style={emptyTitleStyle}>Obra não encontrada</h1>
-
-            <p style={emptyTextStyle}>
-              Não encontrei essa obra na sua biblioteca.
-            </p>
-
-            <Link href="/painel-autor" style={emptyButtonStyle}>
-              Voltar para Minhas Obras
-            </Link>
-          </div>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Obra não encontrada
+          </p>
         </section>
       </main>
     );

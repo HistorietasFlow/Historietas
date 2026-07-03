@@ -1616,15 +1616,6 @@ export default function PublicarPage() {
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <section style={authLoadingCardStyle}>
-            <strong style={authLoadingTitleStyle}>Verificando acesso...</strong>
-            <span style={authLoadingTextStyle}>
-              Conferindo sua conta antes de abrir a publicação.
-            </span>
-          </section>
-        </section>
       </main>
     );
   }
@@ -2324,38 +2315,6 @@ const publicarPageCss = `
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
   wordBreak: "break-word",
-};
-
-const authLoadingCardStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  width: "min(560px, 100%)",
-  margin: "40px auto 0",
-  display: "grid",
-  justifyItems: "center",
-  gap: "8px",
-  padding: "24px 16px",
-  borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  textAlign: "center",
-  boxSizing: "border-box",
-  boxShadow: "none",
-};
-
-const authLoadingTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "18px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const authLoadingTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.5,
-  fontWeight: 750,
-  ...safeTextStyle,
 };
 
 const pageDecorationLayerStyle: CSSProperties = {

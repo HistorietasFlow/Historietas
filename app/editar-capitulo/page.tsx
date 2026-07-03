@@ -1422,16 +1422,6 @@ export default function EditarCapituloPage() {
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <div style={emptyBoxStyle}>
-            <h1 style={emptyTitleStyle}>Verificando acesso...</h1>
-
-            <p style={emptyTextStyle}>
-              Confirmando sua conta antes de abrir o editor do capítulo.
-            </p>
-          </div>
-        </section>
       </main>
     );
   }
@@ -1445,17 +1435,17 @@ export default function EditarCapituloPage() {
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <div style={emptyBoxStyle}>
-            <h1 style={emptyTitleStyle}>Capítulo não encontrado</h1>
-
-            <p style={emptyTextStyle}>
-              Volte para Minhas Obras e abra o capítulo novamente.
-            </p>
-
-            <Link href="/painel-autor" style={emptyButtonStyle}>
-              Ir para Minhas Obras
-            </Link>
-          </div>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Capítulo não encontrado
+          </p>
         </section>
       </main>
     );

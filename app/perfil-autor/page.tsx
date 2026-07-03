@@ -2734,13 +2734,13 @@ function obterObraRegistroDiario(
 }
 
 const CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR: Record<string, string> = {
-  seguindo_obras: "obra_id,visibilidade,criado_em,atualizado_em",
-  favoritos: "obra_id,visibilidade,criado_em,atualizado_em",
-  concluidas: "obra_id,visibilidade,criado_em,atualizado_em",
+  seguindo_obras: "obra_id,visibilidade,criado_em",
+  favoritos: "obra_id,visibilidade,criado_em",
+  concluidas: "obra_id,visibilidade,criado_em",
   obra_avaliacoes: "obra_id,nota,criado_em,atualizado_em",
   progresso_leitura: "obra_id,capitulo_id,progresso,criado_em,atualizado_em",
   diario_atividades:
-    "id,tipo,texto,nota,obra_id,capitulo_id,obra_relacionada,metadata,visibilidade,criado_em,atualizado_em",
+    "id,tipo,texto,nota,obra_id,capitulo_id,metadata,visibilidade,criado_em",
   diario_anotacoes:
     "id,obra_id,tipo,texto,visibilidade,criado_em,atualizado_em",
 };
@@ -3119,16 +3119,23 @@ async function carregarDiarioPerfilSupabase(
     seguindoObras,
     favoritos,
     concluidas,
-    avaliacoes,
     progresso,
-    diarioAtividades,
-    diarioAnotacoes,
-  ] = await Promise.all([
-    carregarRegistrosDiarioPerfil("seguindo_obras", userId),
-    carregarRegistrosDiarioPerfil("favoritos", userId),
-    carregarRegistrosDiarioPerfil("concluidas", userId),
+  ] = incluirPrivados
+    ? await Promise.all([
+        carregarRegistrosDiarioPerfil("seguindo_obras", userId),
+        carregarRegistrosDiarioPerfil("favoritos", userId),
+        carregarRegistrosDiarioPerfil("concluidas", userId),
+        carregarRegistrosDiarioPerfil("progresso_leitura", userId),
+      ])
+    : [
+        [] as Record<string, unknown>[],
+        [] as Record<string, unknown>[],
+        [] as Record<string, unknown>[],
+        [] as Record<string, unknown>[],
+      ];
+
+  const [avaliacoes, diarioAtividades, diarioAnotacoes] = await Promise.all([
     carregarRegistrosDiarioPerfil("obra_avaliacoes", userId),
-    carregarRegistrosDiarioPerfil("progresso_leitura", userId),
     carregarRegistrosDiarioPerfil("diario_atividades", userId),
     carregarRegistrosDiarioPerfil("diario_anotacoes", userId),
   ]);
@@ -3981,53 +3988,55 @@ export default function PerfilAutorPage() {
       const estadoUsuarioSupabase = await carregarEstadoUsuarioSupabase();
       const usuarioIdAtual = estadoUsuarioSupabase?.userId || "";
 
-      try {
-        const obrasSalvasJson = carregarJsonUsuarioPerfilAutor(
-          STORAGE_KEY,
-          usuarioIdAtual,
-        );
-
-        obrasNormalizadas = Array.isArray(obrasSalvasJson)
-          ? (obrasSalvasJson as ObraSalva[]).map((obra, index) =>
-              normalizarObra(obra, index),
-            )
-          : [];
-
-        const autoresSeguidosJson = carregarJsonUsuarioPerfilAutor(
-          AUTHOR_FOLLOW_STORAGE_KEY,
-          usuarioIdAtual,
-        );
-
-        autoresSeguidosNormalizados = Array.isArray(autoresSeguidosJson)
-          ? autoresSeguidosJson
-              .filter(
-                (autor): autor is string =>
-                  typeof autor === "string" && Boolean(autor.trim()),
-              )
-              .map((autor) => normalizarNomeAutor(autor))
-          : [];
-
-        obrasFavoritasNormalizadas = carregarListaIdsPerfilBiblioteca(
-          FAVORITES_STORAGE_KEY,
-          usuarioIdAtual,
-        );
-
-        obrasConcluidasNormalizadas = carregarListaIdsPerfilBiblioteca(
-          COMPLETED_STORAGE_KEY,
-          usuarioIdAtual,
-        );
-
-        obrasSeguidasBibliotecaNormalizadas =
-          carregarListaIdsPerfilBiblioteca(
-            LIBRARY_FOLLOW_STORAGE_KEY,
+      if (usuarioIdAtual) {
+        try {
+          const obrasSalvasJson = carregarJsonUsuarioPerfilAutor(
+            STORAGE_KEY,
             usuarioIdAtual,
           );
-      } catch {
-        obrasNormalizadas = [];
-        autoresSeguidosNormalizados = [];
-        obrasFavoritasNormalizadas = [];
-        obrasConcluidasNormalizadas = [];
-        obrasSeguidasBibliotecaNormalizadas = [];
+
+          obrasNormalizadas = Array.isArray(obrasSalvasJson)
+            ? (obrasSalvasJson as ObraSalva[]).map((obra, index) =>
+                normalizarObra(obra, index),
+              )
+            : [];
+
+          const autoresSeguidosJson = carregarJsonUsuarioPerfilAutor(
+            AUTHOR_FOLLOW_STORAGE_KEY,
+            usuarioIdAtual,
+          );
+
+          autoresSeguidosNormalizados = Array.isArray(autoresSeguidosJson)
+            ? autoresSeguidosJson
+                .filter(
+                  (autor): autor is string =>
+                    typeof autor === "string" && Boolean(autor.trim()),
+                )
+                .map((autor) => normalizarNomeAutor(autor))
+            : [];
+
+          obrasFavoritasNormalizadas = carregarListaIdsPerfilBiblioteca(
+            FAVORITES_STORAGE_KEY,
+            usuarioIdAtual,
+          );
+
+          obrasConcluidasNormalizadas = carregarListaIdsPerfilBiblioteca(
+            COMPLETED_STORAGE_KEY,
+            usuarioIdAtual,
+          );
+
+          obrasSeguidasBibliotecaNormalizadas =
+            carregarListaIdsPerfilBiblioteca(
+              LIBRARY_FOLLOW_STORAGE_KEY,
+              usuarioIdAtual,
+            );
+        } catch {
+          obrasNormalizadas = [];
+          autoresSeguidosNormalizados = [];
+          obrasFavoritasNormalizadas = [];
+          obrasConcluidasNormalizadas = [];
+          obrasSeguidasBibliotecaNormalizadas = [];
+        }
       }
 
       const perfilUsuarioIdParaBuscar =
@@ -4112,8 +4121,8 @@ export default function PerfilAutorPage() {
         }
       }
 
-      try {
-        if (usuarioIdAtual) {
+      if (usuarioIdAtual) {
+        try {
           const obrasDoUsuarioParaPersistir = obrasMescladas.filter((obra) =>
             obraPertenceAoUsuarioPerfilAutor(obra, usuarioIdAtual),
           );
@@ -4128,30 +4137,30 @@ export default function PerfilAutorPage() {
             usuarioIdAtual,
             obrasParaPersistir,
           );
-        }
 
-        salvarJsonUsuarioPerfilAutor(
-          AUTHOR_FOLLOW_STORAGE_KEY,
-          usuarioIdAtual,
-          autoresSeguidosNormalizados,
-        );
-        salvarListaIdsPerfilBiblioteca(
-          FAVORITES_STORAGE_KEY,
-          usuarioIdAtual,
-          obrasFavoritasNormalizadas,
-        );
-        salvarListaIdsPerfilBiblioteca(
-          COMPLETED_STORAGE_KEY,
-          usuarioIdAtual,
-          obrasConcluidasNormalizadas,
-        );
-        salvarListaIdsPerfilBiblioteca(
-          LIBRARY_FOLLOW_STORAGE_KEY,
-          usuarioIdAtual,
-          obrasSeguidasBibliotecaNormalizadas,
-        );
-      } catch {
-        // Se o navegador bloquear localStorage, a página ainda usa o estado em memória.
+          salvarJsonUsuarioPerfilAutor(
+            AUTHOR_FOLLOW_STORAGE_KEY,
+            usuarioIdAtual,
+            autoresSeguidosNormalizados,
+          );
+          salvarListaIdsPerfilBiblioteca(
+            FAVORITES_STORAGE_KEY,
+            usuarioIdAtual,
+            obrasFavoritasNormalizadas,
+          );
+          salvarListaIdsPerfilBiblioteca(
+            COMPLETED_STORAGE_KEY,
+            usuarioIdAtual,
+            obrasConcluidasNormalizadas,
+          );
+          salvarListaIdsPerfilBiblioteca(
+            LIBRARY_FOLLOW_STORAGE_KEY,
+            usuarioIdAtual,
+            obrasSeguidasBibliotecaNormalizadas,
+          );
+        } catch {
+          // Se o navegador bloquear localStorage, a página ainda usa o estado em memória.
+        }
       }
 
       if (!componenteAtivo) {
@@ -4310,10 +4319,17 @@ export default function PerfilAutorPage() {
     );
   }, [perfisAutores, usuarioIdLogado, perfilUsuarioRemotoComoAutor]);
 
+  const perfilSemParametro =
+    !autorSelecionado.trim() && !autorIdSelecionado.trim();
+  const perfilSemLoginSemParametro =
+    perfilSemParametro && !usuarioIdLogado.trim();
+
   const perfilParaMostrar =
     autorSelecionado || autorIdSelecionado
       ? perfilAtual
-      : perfilDoUsuarioLogado || perfilUsuarioRemotoComoAutor || perfisAutores[0] || null;
+      : perfilSemLoginSemParametro
+        ? null
+        : perfilDoUsuarioLogado || perfilUsuarioRemotoComoAutor || null;
 
   useEffect(() => {
     const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
@@ -7089,34 +7105,19 @@ export default function PerfilAutorPage() {
         {!isDesktop && (
           <div style={mobileTopWaterFadeStyle} aria-hidden="true" />
         )}
-        <section style={containerStyle}>
-          <header style={topStyle}>
-            <Link href="/" style={logoStyle} aria-label="Historietas">
-              <span style={logoMarkStyle}>H</span>
-              <span
-                className="historietas-home-logo-text"
-                style={logoTextStyle}
-              >
-                istorietas
-              </span>
-            </Link>
-          </header>
 
-          <section style={emptyBoxStyle}>
-            <h1 style={emptyTitleStyle}>Perfil não encontrado</h1>
-
-            <p style={emptyTextStyle}>
-              Não encontrei nenhum perfil para{" "}
-              <strong style={safeTextStyle}>
-                {autorSelecionado || autorIdSelecionado}
-              </strong>
-              .
-            </p>
-
-            <Link href="/explorar" style={emptyButtonStyle}>
-              Ir para Explorar
-            </Link>
-          </section>
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Perfil não encontrado
+          </p>
         </section>
       </main>
     );
@@ -7133,31 +7134,21 @@ export default function PerfilAutorPage() {
         {!isDesktop && (
           <div style={mobileTopWaterFadeStyle} aria-hidden="true" />
         )}
-        <section style={containerStyle}>
-          <header style={topStyle}>
-            <Link href="/" style={logoStyle} aria-label="Historietas">
-              <span style={logoMarkStyle}>H</span>
-              <span
-                className="historietas-home-logo-text"
-                style={logoTextStyle}
-              >
-                istorietas
-              </span>
-            </Link>
-          </header>
 
-          <section style={emptyBoxStyle}>
-            <h1 style={emptyTitleStyle}>Nenhum autor encontrado</h1>
-
-            <p style={emptyTextStyle}>
-              Publique uma obra primeiro. Depois o perfil do autor aparecerá
-              aqui.
-            </p>
-
-            <Link href="/publicar" style={emptyButtonStyle}>
-              Criar obra
-            </Link>
-          </section>
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            {perfilSemLoginSemParametro
+              ? "Entre para acessar seu perfil"
+              : "Nenhum autor encontrado"}
+          </p>
         </section>
       </main>
     );
@@ -7883,9 +7874,15 @@ export default function PerfilAutorPage() {
 
               {obrasEmDestaque.length === 0 ? (
                 podeEditarPerfil ? (
-                  <div style={emptyMiniBoxStyle}>
+                  <p
+                    style={{
+                      ...emptyTextStyle,
+                      textAlign: "center",
+                      fontWeight: 800,
+                    }}
+                  >
                     Monte seu TOP 5 para destacar suas obras favoritas.
-                  </div>
+                  </p>
                 ) : (
                   <p
                     style={{
@@ -8046,24 +8043,24 @@ export default function PerfilAutorPage() {
                 : profileLibrarySectionStyle
             }
           >
-            {diarioPerfil.carregando ? (
-              <div style={emptyMiniBoxStyle}>Carregando Biblioteca...</div>
-            ) : itensBibliotecaAtivos.length === 0 ? (
-              <div style={emptyMiniBoxStyle}>
-                Sua Biblioteca ainda não tem itens em {rotuloBibliotecaAtiva}.
-              </div>
-            ) : (
-              <div
-                style={
-                  isDesktop
-                    ? desktopProfileWorksGridStyle
-                    : profileWorksGridStyle
-                }
-              >
-                {itensBibliotecaAtivos.map((item) =>
-                  renderizarItemBibliotecaPerfil(item),
-                )}
-              </div>
+            {!diarioPerfil.carregando && (
+              itensBibliotecaAtivos.length === 0 ? (
+                <div style={emptyMiniBoxStyle}>
+                  Sua Biblioteca ainda não tem itens em {rotuloBibliotecaAtiva}.
+                </div>
+              ) : (
+                <div
+                  style={
+                    isDesktop
+                      ? desktopProfileWorksGridStyle
+                      : profileWorksGridStyle
+                  }
+                >
+                  {itensBibliotecaAtivos.map((item) =>
+                    renderizarItemBibliotecaPerfil(item),
+                  )}
+                </div>
+              )
             )}
           </section>
         )}

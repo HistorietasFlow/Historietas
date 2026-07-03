@@ -31,22 +31,64 @@ function normalizarTotalNotificacoes(total: number | null | undefined) {
   return Math.max(0, Number(total || 0));
 }
 
+function erroEhSessaoAusente(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const erro = error as {
+    name?: unknown;
+    message?: unknown;
+  };
+
+  const nome = typeof erro.name === "string" ? erro.name : "";
+  const mensagem = typeof erro.message === "string" ? erro.message : "";
+
+  return (
+    nome === "AuthSessionMissingError" ||
+    mensagem.toLowerCase().includes("auth session missing")
+  );
+}
+
+async function obterUsuarioIdAtualNotificacoes() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error) {
+      return "";
+    }
+
+    return data.user?.id || "";
+  } catch (error) {
+    if (!erroEhSessaoAusente(error)) {
+      console.warn("Não consegui carregar usuário das notificações:", error);
+    }
+
+    return "";
+  }
+}
+
 async function buscarTotalNotificacoesNaoLidas(userId: string) {
   if (!userId.trim()) {
     return 0;
   }
 
-  const { count, error } = await supabase
-    .from("notificacoes")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("lida", false);
+  try {
+    const { count, error } = await supabase
+      .from("notificacoes")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("lida", false);
 
-  if (error) {
+    if (error) {
+      return 0;
+    }
+
+    return normalizarTotalNotificacoes(count);
+  } catch (error) {
+    console.warn("Não consegui buscar notificações não lidas:", error);
     return 0;
   }
-
-  return normalizarTotalNotificacoes(count);
 }
 
 export function NotificacoesProvider({ children }: { children: ReactNode }) {
@@ -97,8 +139,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     montadoRef.current = true;
 
     async function carregarUsuarioAtual() {
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id || "";
+      const userId = await obterUsuarioIdAtualNotificacoes();
 
       if (!montadoRef.current) {
         return;
@@ -108,7 +149,17 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       await atualizarNotificacoesPorUsuario(userId);
     }
 
-    void carregarUsuarioAtual();
+    void carregarUsuarioAtual().catch((error) => {
+      if (!erroEhSessaoAusente(error)) {
+        console.warn("Não consegui iniciar notificações:", error);
+      }
+
+      if (montadoRef.current) {
+        setUsuarioId("");
+        setNotificacoesNaoLidas(0);
+        setCarregandoNotificacoes(false);
+      }
+    });
 
     const {
       data: { subscription },
@@ -161,7 +212,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
         },
         () => {
           void atualizarNotificacoesPorUsuario(usuarioId);
-        }
+        },
       )
       .subscribe();
 
@@ -190,7 +241,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       carregandoNotificacoes,
       atualizarNotificacoes,
       definirNotificacoesNaoLidas,
-    ]
+    ],
   );
 
   return (
@@ -205,7 +256,7 @@ export function useNotificacoes() {
 
   if (!contexto) {
     throw new Error(
-      "useNotificacoes precisa ser usado dentro de NotificacoesProvider."
+      "useNotificacoes precisa ser usado dentro de NotificacoesProvider.",
     );
   }
 

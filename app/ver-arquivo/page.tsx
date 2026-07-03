@@ -1212,16 +1212,6 @@ export default function VerArquivoPage() {
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <section style={emptyBoxStyle}>
-            <span style={miniTitleStyle}>VERIFICANDO ACESSO</span>
-            <h1 style={emptyTitleStyle}>Verificando acesso...</h1>
-            <p style={emptyTextStyle}>
-              Aguarde enquanto confirmamos se você pode abrir este arquivo.
-            </p>
-          </section>
-        </section>
       </main>
     );
   }
@@ -1235,45 +1225,17 @@ export default function VerArquivoPage() {
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <header style={isDesktop ? desktopTopStyle : topStyle}>
-            <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-              <span style={logoMarkStyle}>H</span>
-              <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
-            </Link>
-
-            {isDesktop ? (
-              <Link
-                href="/notificacoes"
-                style={desktopNotificationButtonStyle}
-                aria-label={
-                  notificacoesNaoLidas > 0
-                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                    : "Notificações"
-                }
-              >
-                N
-
-                {notificacoesNaoLidas > 0 ? (
-                  <span style={desktopNotificationBadgeStyle}>
-                    {notificacoesNaoLidas > 99
-                      ? "99+"
-                      : notificacoesNaoLidas}
-                  </span>
-                ) : null}
-              </Link>
-            ) : null}
-          </header>
-
-          <section style={emptyBoxStyle}>
-            <span style={miniTitleStyle}>OBRA NÃO ENCONTRADA</span>
-            <h1 style={emptyTitleStyle}>Não encontrei essa obra.</h1>
-            <p style={emptyTextStyle}>
-              Volte para a obra e tente abrir o arquivo novamente.
-            </p>
-            <Link href="/painel-autor" style={primaryLinkButtonStyle}>
-              Ir para Minhas Obras
-            </Link>
-          </section>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Obra não encontrada
+          </p>
         </section>
       </main>
     );
@@ -1288,45 +1250,17 @@ export default function VerArquivoPage() {
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <header style={isDesktop ? desktopTopStyle : topStyle}>
-            <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-              <span style={logoMarkStyle}>H</span>
-              <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
-            </Link>
-
-            {isDesktop ? (
-              <Link
-                href="/notificacoes"
-                style={desktopNotificationButtonStyle}
-                aria-label={
-                  notificacoesNaoLidas > 0
-                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                    : "Notificações"
-                }
-              >
-                N
-
-                {notificacoesNaoLidas > 0 ? (
-                  <span style={desktopNotificationBadgeStyle}>
-                    {notificacoesNaoLidas > 99
-                      ? "99+"
-                      : notificacoesNaoLidas}
-                  </span>
-                ) : null}
-              </Link>
-            ) : null}
-          </header>
-
-          <section style={emptyBoxStyle}>
-            <span style={miniTitleStyle}>SEM ARQUIVO</span>
-            <h1 style={emptyTitleStyle}>Essa obra não tem arquivo anexado.</h1>
-            <p style={emptyTextStyle}>
-              O autor pode adicionar um arquivo pela tela de edição da obra.
-            </p>
-            <Link href={voltarHref} style={primaryLinkButtonStyle}>
-              Voltar para a obra
-            </Link>
-          </section>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Sem arquivo anexado
+          </p>
         </section>
       </main>
     );

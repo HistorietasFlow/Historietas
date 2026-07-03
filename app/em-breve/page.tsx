@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
-import { obras } from "../data/obras";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
@@ -44,7 +43,7 @@ type ObraEmBreveCard = {
   slug: string;
   link: string;
   capa: string;
-  origem: "catalogo" | "supabase";
+  origem: "supabase";
 };
 
 function criarStorageKeyUsuarioEmBreve(chave: string, userId: string) {
@@ -112,66 +111,8 @@ function criarLoginHrefEmBreve() {
   return `/login?${params.toString()}`;
 }
 
-function encontrarObraPorTitulo(titulo: string) {
-  const tituloNormalizado = normalizarTexto(titulo);
-
-  return (
-    obras.find((obra) => normalizarTexto(obra.titulo) === tituloNormalizado) ||
-    null
-  );
-}
-
-function criarLinkObra(titulo: string) {
-  const obraEncontrada = encontrarObraPorTitulo(titulo);
-  const obraParametro = encodeURIComponent(obraEncontrada?.titulo || titulo);
-
-  if (obraEncontrada && !obraEncontrada.disponivel) {
-    return `/em-breve?obra=${obraParametro}`;
-  }
-
-  if (obraEncontrada?.link?.trim()) {
-    return obraEncontrada.link;
-  }
-
-  if (obraEncontrada?.slug?.trim()) {
-    return `/obra/${obraEncontrada.slug}`;
-  }
-
-  return `/obra/${criarSlugBase(titulo)}`;
-}
-
-
 function obraSupabaseTemArquivoEmBreve(obra: SupabaseObraEmBreveRow) {
   return Boolean(obra.arquivo_url?.trim());
-}
-
-function normalizarObraCatalogoEmBreve(
-  obra: (typeof obras)[number]
-): ObraEmBreveCard {
-  const slug = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-  return {
-    id: slug || obra.titulo,
-    titulo: obra.titulo,
-    autor: obra.autor,
-    genero: obra.genero,
-    formato:
-      typeof obra.formato === "string" && obra.formato.trim()
-        ? obra.formato.trim()
-        : "Original",
-    views: String(obra.views || "0"),
-    likes: String(obra.likes || "0"),
-    comentarios: String(obra.comentarios || "0"),
-    slug,
-    link: obra.link?.trim() || `/obra/${slug}`,
-    capa:
-      typeof (obra as { capa?: unknown }).capa === "string"
-        ? ((obra as { capa?: string }).capa || "").trim()
-        : typeof (obra as { capaUrl?: unknown }).capaUrl === "string"
-          ? ((obra as { capaUrl?: string }).capaUrl || "").trim()
-          : "",
-    origem: "catalogo",
-  };
 }
 
 function normalizarObraSupabaseEmBreve(
@@ -283,10 +224,6 @@ function removerObrasDuplicadasEmBreve(obrasParaMostrar: ObraEmBreveCard[]) {
 }
 
 function criarLinkCardEmBreve(obra: ObraEmBreveCard) {
-  if (obra.origem === "catalogo") {
-    return criarLinkObra(obra.titulo);
-  }
-
   return `/em-breve?obra=${encodeURIComponent(obra.titulo)}`;
 }
 
@@ -550,14 +487,7 @@ export default function EmBrevePage() {
     };
   }, []);
 
-  const obrasCatalogoEmBreve = obras
-    .filter((obra) => !obra.disponivel)
-    .map((obra) => normalizarObraCatalogoEmBreve(obra));
-
-  const obrasEmBreve = removerObrasDuplicadasEmBreve([
-    ...obrasReaisEmBreve,
-    ...obrasCatalogoEmBreve,
-  ]);
+  const obrasEmBreve = removerObrasDuplicadasEmBreve(obrasReaisEmBreve);
 
   const obraConsultada = nomeObra
     ? obrasEmBreve.find(
@@ -658,7 +588,7 @@ export default function EmBrevePage() {
           ) : null}
         </header>
 
-        {outrasObrasEmBreve.length > 0 && (
+        {outrasObrasEmBreve.length > 0 ? (
           <section
             style={
               desktopLayout ? desktopRelatedSectionStyle : relatedSectionStyle
@@ -680,7 +610,7 @@ export default function EmBrevePage() {
                     <Link
                       href={criarLinkCardEmBreve(obra)}
                       style={relatedCoverLinkStyle}
-                      aria-label={`Abrir página de ${obra.titulo}`}
+                      aria-label={`Abrir aviso de ${obra.titulo}`}
                     >
                       <div
                         style={criarCoverCardEmBreveStyle(obra, desktopLayout)}
@@ -719,13 +649,13 @@ export default function EmBrevePage() {
                         }
                       >
                         <span style={relatedReleaseLabelStyle}>
-                          {obraSalva ? "AVISO ATIVADO" : "LANÇAMENTO FUTURO"}
+                          {obraSalva ? "AVISO ATIVADO" : "LANÇAMENTO REAL SEM CONTEÚDO"}
                         </span>
 
                         <span style={relatedReleaseTextStyle}>
                           {obraSalva
-                            ? "Você será avisado quando for liberada."
-                            : "Abra a página da obra ou ative o aviso."}
+                            ? "Você será avisado quando a leitura for liberada."
+                            : "Esta obra existe, mas ainda não tem capítulo ou arquivo publicado."}
                         </span>
                       </div>
 
@@ -772,16 +702,39 @@ export default function EmBrevePage() {
               })}
             </div>
           </section>
+        ) : (
+          <>
+            {avisoAcesso && <p style={accessMessageStyle}>{avisoAcesso}</p>}
+
+            <p
+              style={{
+                margin: "10px 0 0",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                fontWeight: 800,
+                textAlign: "center",
+              }}
+            >
+              {nomeObra
+                ? "Essa obra ainda não está disponível"
+                : "Ainda não há lançamentos em breve"}
+            </p>
+          </>
         )}
 
-        <section style={desktopLayout ? desktopInfoBoxStyle : infoBoxStyle}>
-          <h2 style={infoTitleStyle}>Sobre o aviso</h2>
-
-          <p style={infoTextStyle}>
-            Quando a história for liberada, ela sai desta tela de Lançamentos e
-            passa a ter leitura, capítulos e página própria.
+        {outrasObrasEmBreve.length > 0 && (
+          <p
+            style={{
+              margin: "12px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Sobre o aviso
           </p>
-        </section>
+        )}
       </section>
     </main>
   );
@@ -1253,62 +1206,6 @@ const releaseMetaStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const actionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "7px",
-  margin: "2px auto 0",
-  minWidth: 0,
-  width: "min(100%, 560px)",
-  maxWidth: "100%",
-  justifySelf: "center",
-  boxSizing: "border-box",
-};
-
-const actionsThreeColumnsStyle: CSSProperties = {
-  ...actionsStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "6px",
-};
-
-const primaryButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  border: "1px solid rgba(249,115,22,0.34)",
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...buttonBaseStyle,
-};
-
-const secondaryButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "#DDD6FE",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...buttonBaseStyle,
-};
-
 const notifyButtonStyle: CSSProperties = {
   minHeight: "40px",
   padding: "0 14px",
@@ -1709,28 +1606,6 @@ const infoBoxStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const infoTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "20px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  maxWidth: "100%",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const infoTextStyle: CSSProperties = {
-  margin: "7px auto 0",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12.5px",
-  lineHeight: 1.55,
-  fontWeight: 700,
-  maxWidth: "720px",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
@@ -1808,24 +1683,6 @@ const desktopReleaseBoxStyle: CSSProperties = {
   padding: "17px",
   borderRadius: "24px",
   background: "rgba(4, 0, 10, 0.72)",
-};
-
-const desktopActionsStyle: CSSProperties = {
-  ...actionsStyle,
-  gridColumn: "1",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  width: "min(100%, 520px)",
-  maxWidth: "520px",
-  margin: "4px auto 0",
-  justifySelf: "center",
-  gap: "9px",
-};
-
-const desktopActionsThreeColumnsStyle: CSSProperties = {
-  ...desktopActionsStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  width: "min(100%, 720px)",
-  maxWidth: "720px",
 };
 
 const desktopSavedMessageStyle: CSSProperties = {

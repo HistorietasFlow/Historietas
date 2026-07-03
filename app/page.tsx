@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Children, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { obras } from "./data/obras";
-import type { Obra } from "./data/obras";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../lib/utils";
@@ -20,6 +18,30 @@ type CapituloLocal = {
   criadoEm: string;
   lido: boolean;
   lidoEm: string;
+};
+
+type Obra = {
+  id?: string;
+  titulo: string;
+  autor: string;
+  autorId?: string;
+  genero: string;
+  classificacaoIndicativa: string;
+  status: string;
+  views: string;
+  likes: string;
+  comentarios: string;
+  link: string;
+  disponivel: boolean;
+  slug: string;
+  formato: string;
+  sinopse: string;
+  tags: string[];
+  capa?: string;
+  capaUrl?: string;
+  cover?: string;
+  imagem?: string;
+  capitulos?: CapituloLocal[];
 };
 
 type ObraLocal = {
@@ -41,6 +63,9 @@ type ObraLocal = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
+  visualizacoes: number;
+  totalCurtidas: number;
+  totalComentarios: number;
   slug: string;
   link: string;
 };
@@ -63,6 +88,7 @@ type SupabaseObraRow = {
   arquivo_tamanho: number | null;
   arquivo_categoria: string | null;
   publicado: boolean | null;
+  visualizacoes: number | null;
   slug: string | null;
   link: string | null;
   criada_em: string | null;
@@ -472,34 +498,25 @@ const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
 const THEME_STORAGE_KEY = "historietas-tema-visual";
 
-const OBRAS_HERO_COMPLEMENTARES = [
-  {
-    titulo: "Aurora de Cinzas",
-    autor: "Historietas Studio",
-    genero: "Fantasia",
-    classificacaoIndicativa: "14+",
-    sinopse:
-      "Depois da queda de uma antiga ordem mágica, uma jovem guardiã atravessa reinos em ruínas para impedir que uma chama proibida acorde outra guerra.",
-    status: "Em breve",
-    views: "4.8K",
-    likes: "920",
-    comentarios: "118",
-    disponivel: false,
-  },
-  {
-    titulo: "Marés do Abismo",
-    autor: "Historietas Studio",
-    genero: "Mistério",
-    classificacaoIndicativa: "16+",
-    sinopse:
-      "Em uma cidade costeira cercada por desaparecimentos, um investigador encontra mensagens vindas do fundo do mar e descobre uma verdade enterrada há décadas.",
-    status: "Em breve",
-    views: "3.6K",
-    likes: "740",
-    comentarios: "96",
-    disponivel: false,
-  },
-] as unknown as Obra[];
+const OBRAS_CATALOGO_HOME: Obra[] = [];
+
+const HERO_INICIAL_HOME = {
+  titulo: "PUBLIQUE SUA HISTÓRIA",
+  autor: "HISTORIETAS",
+  genero: "Plataforma nova",
+  classificacaoIndicativa: "Autores",
+  sinopse:
+    "O HISTORIETAS está formando seu primeiro catálogo de obras.",
+  status: "Em andamento",
+  slug: "inicio",
+  formato: "História em capítulos",
+  tags: ["publicação", "autores", "histórias"],
+  views: "",
+  likes: "",
+  comentarios: "",
+  disponivel: false,
+  link: "/publicar",
+} as Obra & { link: string };
 
 function obterTemaVisualHomeSeguro(valor: unknown): TemaVisualHome {
   if (typeof valor === "string" && valor in TEMAS_VISUAIS_HOME) {
@@ -739,15 +756,15 @@ function criarHrefLeituraCapituloHome(
 }
 
 function criarHrefObraCatalogoHome(obra: Obra) {
-  if (!obra.disponivel) {
-    return `/em-breve?obra=${encodeURIComponent(obra.titulo)}`;
-  }
-
   const obraComLink = obra as Obra & { link?: string; slug?: string };
   const linkObra = obraComLink.link?.trim();
 
   if (linkObra) {
     return linkObra;
+  }
+
+  if (!obra.disponivel) {
+    return "/explorar";
   }
 
   const slugObra = obraComLink.slug?.trim() || criarSlugBase(obra.titulo);
@@ -756,13 +773,6 @@ function criarHrefObraCatalogoHome(obra: Obra) {
 }
 
 function criarObraHeroLocalHome(obra: ObraLocal): Obra {
-  const totalCurtidas = contarCurtidasObraLocal(obra);
-  const totalComentarios = contarComentariosObraLocal(obra);
-  const visualizacoesEstimadas = Math.max(
-    obra.capitulos.length * 120 + totalCurtidas * 18 + totalComentarios * 10,
-    120
-  );
-
   return {
     id: obra.id,
     titulo: obra.titulo,
@@ -771,23 +781,22 @@ function criarObraHeroLocalHome(obra: ObraLocal): Obra {
     classificacaoIndicativa: obra.classificacaoIndicativa,
     sinopse: obra.sinopse || "Nenhuma sinopse informada.",
     status: obra.capitulos.length > 0 ? "Em andamento" : "Publicado",
-    views:
-      visualizacoesEstimadas >= 1000
-        ? `${(visualizacoesEstimadas / 1000).toFixed(1)}K`
-        : String(visualizacoesEstimadas),
-    likes: String(totalCurtidas),
-    comentarios: String(totalComentarios),
+    views: compactarNumeroHome(obra.visualizacoes || 0),
+    likes: compactarNumeroHome(obterTotalCurtidasObraHome(obra)),
+    comentarios: compactarNumeroHome(obterTotalComentariosObraHome(obra)),
     disponivel: true,
     capa: obra.capa,
     capaUrl: obra.capa,
     slug: obra.slug,
     link: obra.link,
+    capitulos: obra.capitulos,
   } as Obra & {
     id?: string;
     capa?: string;
     capaUrl?: string;
     slug?: string;
     link?: string;
+    capitulos?: CapituloLocal[];
   };
 }
 
@@ -924,6 +933,26 @@ function obterTotalCapitulosObraCatalogoHome(obra: Obra) {
     : 0;
 }
 
+function obraCatalogoTemArquivoAnexadoHome(obra: Obra) {
+  const obraComArquivo = obra as Obra & {
+    arquivoObra?: unknown;
+  };
+  const arquivo = obraComArquivo.arquivoObra;
+
+  if (!arquivo || typeof arquivo !== "object" || Array.isArray(arquivo)) {
+    return false;
+  }
+
+  const arquivoValidado = arquivo as Record<string, unknown>;
+
+  return Boolean(
+    typeof arquivoValidado.nome === "string" &&
+      arquivoValidado.nome.trim() &&
+      typeof arquivoValidado.conteudo === "string" &&
+      arquivoValidado.conteudo.trim(),
+  );
+}
+
 function criarMobileCoverThumbStyle(obra: Obra): CSSProperties {
   const imagemObra = obterImagemObraCatalogo(obra);
 
@@ -937,52 +966,6 @@ function criarMobileCoverThumbStyle(obra: Obra): CSSProperties {
     backgroundSize: "cover",
     backgroundPosition: obra.disponivel ? "center" : "center top",
   };
-}
-
-function formatarContadorHeroHome(valor: string | number | undefined) {
-  const textoOriginal = String(valor ?? "").trim();
-
-  if (!textoOriginal) {
-    return "0";
-  }
-
-  const textoNormalizado = textoOriginal.replace(",", ".").toUpperCase();
-  const contadorCompacto = textoNormalizado.match(/^(\d+(?:\.\d+)?)([KM])$/);
-
-  if (contadorCompacto) {
-    const numero = Number(contadorCompacto[1]);
-    const sufixo = contadorCompacto[2];
-
-    if (!Number.isFinite(numero)) {
-      return textoOriginal;
-    }
-
-    const numeroFormatado = Number.isInteger(numero)
-      ? String(numero)
-      : numero.toFixed(1).replace(/\.0$/, "");
-
-    return `${numeroFormatado}${sufixo}`;
-  }
-
-  const apenasNumero = Number(textoNormalizado.replace(/[^0-9.]/g, ""));
-
-  if (!Number.isFinite(apenasNumero)) {
-    return textoOriginal;
-  }
-
-  if (apenasNumero >= 1000000) {
-    return `${(apenasNumero / 1000000)
-      .toFixed(apenasNumero >= 10000000 ? 0 : 1)
-      .replace(/\.0$/, "")}M`;
-  }
-
-  if (apenasNumero >= 1000) {
-    return `${(apenasNumero / 1000)
-      .toFixed(apenasNumero >= 10000 ? 0 : 1)
-      .replace(/\.0$/, "")}K`;
-  }
-
-  return String(Math.round(apenasNumero));
 }
 
 function formatarSinopseHeroMobile(sinopse: string | undefined) {
@@ -1293,6 +1276,48 @@ function contarCurtidasObraLocal(obra: ObraLocal) {
 
 function contarComentariosObraLocal(obra: ObraLocal) {
   return obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length;
+}
+
+function normalizarNumeroHome(valor: unknown, fallback = 0) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return Math.max(0, Math.round(valor));
+  }
+
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
+
+    if (Number.isFinite(numero)) {
+      return Math.max(0, Math.round(numero));
+    }
+  }
+
+  return fallback;
+}
+
+function compactarNumeroHome(valor: number) {
+  const numero = Math.max(0, Math.round(valor));
+
+  if (numero >= 1000000) {
+    return `${(numero / 1000000).toLocaleString("pt-BR", {
+      maximumFractionDigits: 1,
+    })} mi`;
+  }
+
+  if (numero >= 1000) {
+    return `${(numero / 1000).toLocaleString("pt-BR", {
+      maximumFractionDigits: 1,
+    })} mil`;
+  }
+
+  return String(numero);
+}
+
+function obterTotalCurtidasObraHome(obra: ObraLocal) {
+  return Math.max(obra.totalCurtidas || 0, contarCurtidasObraLocal(obra));
+}
+
+function obterTotalComentariosObraHome(obra: ObraLocal) {
+  return Math.max(obra.totalComentarios || 0, contarComentariosObraLocal(obra));
 }
 
 function obterTempoUltimoCapitulo(obra: ObraLocal) {
@@ -1738,6 +1763,30 @@ function normalizarObraHome(
     ultimaLeituraEm:
       typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: normalizarNumeroHome(
+      obra.visualizacoes ??
+        obra.views ??
+        obra.visualizacoesTotal ??
+        obra.totalVisualizacoes ??
+        obra.total_visualizacoes,
+    ),
+    totalCurtidas: normalizarNumeroHome(
+      obra.totalCurtidas ??
+        obra.curtidas ??
+        obra.likes ??
+        obra.totalLikes ??
+        obra.total_curtidas,
+      capitulosNormalizados.filter((capitulo) => capitulo.curtiu).length,
+    ),
+    totalComentarios: normalizarNumeroHome(
+      obra.totalComentarios ??
+        obra.comentarios ??
+        obra.totalComments ??
+        obra.total_comentarios,
+      capitulosNormalizados.filter((capitulo) =>
+        capitulo.comentario.trim(),
+      ).length,
+    ),
     slug,
     link:
       typeof obra.link === "string" && obra.link.trim()
@@ -1882,6 +1931,18 @@ function normalizarObraSupabaseHome(
     ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
+    visualizacoes: normalizarNumeroHome(
+      obra.visualizacoes,
+      obraLocal?.visualizacoes || 0,
+    ),
+    totalCurtidas:
+      obraLocal?.totalCurtidas ||
+      capitulosMesclados.filter((capitulo) => capitulo.curtiu).length,
+    totalComentarios:
+      obraLocal?.totalComentarios ||
+      capitulosMesclados.filter((capitulo) =>
+        capitulo.comentario.trim(),
+      ).length,
     slug: slugObra,
     link: obra.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
   };
@@ -1892,7 +1953,7 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
       .select(
-        "id, user_id, titulo, autor, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, arquivo_url, arquivo_nome, arquivo_tipo, arquivo_tamanho, arquivo_categoria, publicado, slug, link, criada_em, atualizado_em"
+        "id, user_id, titulo, autor, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, arquivo_url, arquivo_nome, arquivo_tipo, arquivo_tamanho, arquivo_categoria, publicado, visualizacoes, slug, link, criada_em, atualizado_em"
       )
       .eq("publicado", true)
       .order("criada_em", { ascending: false })
@@ -1948,6 +2009,77 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
       }
     }
 
+    const curtidasPorObraId = new Map<string, number>();
+    const comentariosPorObraId = new Map<string, number>();
+    const capituloParaObraId = new Map<string, string>();
+
+    capitulosPorObraId.forEach((capitulosDaObra, obraId) => {
+      capitulosDaObra.forEach((capitulo) => {
+        if (capitulo.id) {
+          capituloParaObraId.set(capitulo.id, obraId);
+        }
+      });
+    });
+
+    try {
+      if (obrasIds.length > 0) {
+        const { data: curtidasBanco } = await supabase
+          .from("obra_curtidas")
+          .select("obra_id")
+          .in("obra_id", obrasIds)
+          .limit(5000);
+
+        if (Array.isArray(curtidasBanco)) {
+          curtidasBanco.forEach((registro) => {
+            const obraId =
+              typeof (registro as { obra_id?: unknown }).obra_id === "string"
+                ? ((registro as { obra_id: string }).obra_id)
+                : "";
+
+            if (obraId) {
+              curtidasPorObraId.set(
+                obraId,
+                (curtidasPorObraId.get(obraId) || 0) + 1,
+              );
+            }
+          });
+        }
+      }
+    } catch {
+      // Métricas públicas são complementares; a Home continua sem travar.
+    }
+
+    try {
+      const capituloIds = Array.from(capituloParaObraId.keys());
+
+      if (capituloIds.length > 0) {
+        const { data: comentariosBanco } = await supabase
+          .from("comentarios_capitulos")
+          .select("capitulo_id")
+          .in("capitulo_id", capituloIds)
+          .limit(5000);
+
+        if (Array.isArray(comentariosBanco)) {
+          comentariosBanco.forEach((registro) => {
+            const capituloId =
+              typeof (registro as { capitulo_id?: unknown }).capitulo_id === "string"
+                ? ((registro as { capitulo_id: string }).capitulo_id)
+                : "";
+            const obraId = capituloId ? capituloParaObraId.get(capituloId) || "" : "";
+
+            if (obraId) {
+              comentariosPorObraId.set(
+                obraId,
+                (comentariosPorObraId.get(obraId) || 0) + 1,
+              );
+            }
+          });
+        }
+      }
+    } catch {
+      // Comentários públicos são complementares; a Home continua sem travar.
+    }
+
     const obrasRemotas = obrasSupabase.map((obra, index) => {
       const obraLocal = obrasLocais.find((obraLocalAtual) => {
         const slugLocal = obraLocalAtual.slug || criarSlugBase(obraLocalAtual.titulo);
@@ -1964,12 +2096,24 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
           }
         : obra;
 
-      return normalizarObraSupabaseHome(
+      const obraNormalizada = normalizarObraSupabaseHome(
         obraComAutorProfile,
         capitulosPorObraId.get(obra.id) || [],
         obraLocal,
         index
       );
+
+      return {
+        ...obraNormalizada,
+        totalCurtidas: Math.max(
+          obraNormalizada.totalCurtidas,
+          curtidasPorObraId.get(obra.id) || 0,
+        ),
+        totalComentarios: Math.max(
+          obraNormalizada.totalComentarios,
+          comentariosPorObraId.get(obra.id) || 0,
+        ),
+      };
     });
 
     const idsRemotos = new Set(obrasRemotas.map((obra) => obra.id));
@@ -2461,7 +2605,7 @@ export default function Home() {
       );
     });
 
-    obras.forEach((obra, index) => {
+    OBRAS_CATALOGO_HOME.forEach((obra, index) => {
       const obraCatalogo = obra as Obra & {
         id?: string;
         tags?: string[];
@@ -2523,18 +2667,10 @@ export default function Home() {
   }, [obrasPublicadas, termoBusca]);
 
   const obrasHero = useMemo(() => {
-    const obrasLocaisParaHero = obrasPublicadas
+    return obrasPublicadas
       .filter((obra) => obraLocalCombinaBusca(obra, termoBusca))
-      .slice(0, Math.max(0, 6 - obras.length))
+      .slice(0, 6)
       .map((obra) => criarObraHeroLocalHome(obra));
-    const titulosUsados = new Set(
-      [...obras, ...obrasLocaisParaHero].map((obra) => normalizarTexto(obra.titulo))
-    );
-    const obrasComplementares = OBRAS_HERO_COMPLEMENTARES.filter((obra) => {
-      return !titulosUsados.has(normalizarTexto(obra.titulo));
-    });
-
-    return [...obras, ...obrasLocaisParaHero, ...obrasComplementares].slice(0, 6);
   }, [obrasPublicadas, termoBusca]);
 
   useEffect(() => {
@@ -2565,10 +2701,20 @@ export default function Home() {
     return () => window.clearInterval(intervalo);
   }, [obrasHero.length]);
 
-  const heroObra = obrasHero[heroIndex] || obrasHero[0] || obras[0];
-  const heroObraHref = heroObra ? criarHrefObraCatalogoHome(heroObra) : "/explorar";
-  const heroTemImagem = Boolean(heroObra && obterImagemObraCatalogo(heroObra));
-  const heroFavoritoId = heroObra ? obterIdentificadorFavoritoHome(heroObra) : "";
+  const usandoHeroInicial = obrasHero.length === 0;
+  const heroObra = obrasHero[heroIndex] || obrasHero[0] || HERO_INICIAL_HOME;
+  const heroObraHref = usandoHeroInicial ? "/publicar" : criarHrefObraCatalogoHome(heroObra);
+  const heroTemImagem = Boolean(!usandoHeroInicial && obterImagemObraCatalogo(heroObra));
+  const heroFavoritoId = usandoHeroInicial ? "" : obterIdentificadorFavoritoHome(heroObra);
+  const heroTotalCapitulos = usandoHeroInicial
+    ? 0
+    : obterTotalCapitulosObraCatalogoHome(heroObra);
+  void heroTotalCapitulos;
+  const metricasHeroHome = [
+    { icone: "👁", valor: heroObra.views || "0" },
+    { icone: "♥", valor: heroObra.likes || "0", destaque: true },
+    { icone: "💬", valor: heroObra.comentarios || "0" },
+  ];
   const heroEstaSalvo = Boolean(
     usuarioLogado &&
       heroObra &&
@@ -2733,7 +2879,7 @@ export default function Home() {
       return [];
     }
 
-    return obras
+    return OBRAS_CATALOGO_HOME
       .filter((obra) => {
         return (
           obraCatalogoEstaNaMinhaLista(obra, obrasFavoritas) &&
@@ -2801,7 +2947,7 @@ export default function Home() {
       obrasCatalogoMinhaLista.map((obra) => normalizarTexto(obra.titulo))
     );
 
-    const recomendadasPorTema = obras.filter((obra) => {
+    const recomendadasPorTema = OBRAS_CATALOGO_HOME.filter((obra) => {
       return (
         !titulosMinhaLista.has(normalizarTexto(obra.titulo)) &&
         obraCatalogoCombinaBuscaHome(obra, termoBusca) &&
@@ -2812,7 +2958,7 @@ export default function Home() {
     const baseRecomendacoes =
       recomendadasPorTema.length > 0
         ? recomendadasPorTema
-        : obras.filter((obra) => {
+        : OBRAS_CATALOGO_HOME.filter((obra) => {
             return (
               !titulosMinhaLista.has(normalizarTexto(obra.titulo)) &&
               obraCatalogoCombinaBuscaHome(obra, termoBusca)
@@ -2829,10 +2975,10 @@ export default function Home() {
 
   const obrasFiltradas = useMemo(() => {
     if (!termoBusca) {
-      return obras;
+      return OBRAS_CATALOGO_HOME;
     }
 
-    return obras.filter((obra) => {
+    return OBRAS_CATALOGO_HOME.filter((obra) => {
       const textoObra = normalizarTexto(
         [
           obra.titulo,
@@ -3058,7 +3204,28 @@ export default function Home() {
   }
 
   if (!heroObra) {
-    return <main style={emptyPageStyle}>Nenhuma obra cadastrada.</main>;
+    return (
+      <main
+        style={{
+          ...pageStyle,
+          display: "grid",
+          placeItems: "center",
+          padding: "40px",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            color: "#FFFFFF",
+            fontSize: "12px",
+            fontWeight: 800,
+            textAlign: "center",
+          }}
+        >
+          Nenhuma obra cadastrada
+        </p>
+      </main>
+    );
   }
 
   return (
@@ -3269,61 +3436,64 @@ export default function Home() {
                   {heroObra.sinopse || "Nenhuma sinopse informada."}
                 </p>
 
-                <div style={desktopHeroButtonsStyle}>
+                <div style={usandoHeroInicial ? desktopHeroInitialButtonsStyle : desktopHeroButtonsStyle}>
                   <Link href={heroObraHref} style={primaryButtonStyle}>
-                    {heroObra.disponivel ? "Ver obra" : "Ver detalhes"}
+                    {usandoHeroInicial ? "Publicar obra" : "Ver obra"}
                   </Link>
 
-                  <button
+                  {!usandoHeroInicial && (
+                    <button
                     type="button"
                     onClick={alternarHeroFavorito}
                     aria-pressed={heroEstaSalvo}
                     style={heroEstaSalvo ? savedHeroButtonStyle : secondaryButtonStyle}
                   >
-                    {heroEstaSalvo ? "Salvo" : "Salvar"}
-                  </button>
+                      {heroEstaSalvo ? "Salvo" : "Salvar"}
+                    </button>
+                  )}
                 </div>
 
                 {avisoLogin && <p style={heroLoginNoticeStyle}>{avisoLogin}</p>}
 
-                <div style={desktopHeroFooterStyle}>
-                  <div style={desktopHeroStatsStyle}>
-                    <span style={desktopHeroStatItemStyle}>
-                      <span style={desktopHeroStatIconStyle}>👁</span>
-                      <span style={desktopHeroStatValueStyle}>
-                        {formatarContadorHeroHome(heroObra.views)}
-                      </span>
-                    </span>
+                {!usandoHeroInicial && (
+                  <div style={desktopHeroFooterStyle}>
+                    <div style={desktopHeroStatsStyle}>
+                      {metricasHeroHome.map((metrica) => (
+                        <span
+                          key={`hero-desktop-${metrica.icone}`}
+                          style={desktopHeroStatItemStyle}
+                        >
+                          <span
+                            style={
+                              metrica.destaque
+                                ? cardStatHeartIconStyle
+                                : desktopHeroStatIconStyle
+                            }
+                          >
+                            {metrica.icone}
+                          </span>
+                          <span style={desktopHeroStatValueStyle}>
+                            {metrica.valor}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
 
-                    <span style={desktopHeroStatItemStyle}>
-                      <span style={desktopHeroStatHeartIconStyle}>♥</span>
-                      <span style={desktopHeroStatValueStyle}>
-                        {formatarContadorHeroHome(heroObra.likes)}
-                      </span>
-                    </span>
-
-                    <span style={desktopHeroStatItemStyle}>
-                      <span style={desktopHeroStatIconStyle}>💬</span>
-                      <span style={desktopHeroStatValueStyle}>
-                        {formatarContadorHeroHome(heroObra.comentarios)}
-                      </span>
-                    </span>
+                    <div style={desktopHeroDotsStyle} aria-label="Obras em destaque">
+                      {obrasHero.map((obra, index) => (
+                        <button
+                          key={`${obra.titulo}-${index}`}
+                          type="button"
+                          onClick={() => setHeroIndex(index)}
+                          aria-label={`Mostrar ${obra.titulo}`}
+                          style={
+                            index === heroIndex ? heroDotActiveStyle : heroDotStyle
+                          }
+                        />
+                      ))}
+                    </div>
                   </div>
-
-                  <div style={desktopHeroDotsStyle} aria-label="Obras em destaque">
-                    {obrasHero.map((obra, index) => (
-                      <button
-                        key={`${obra.titulo}-${index}`}
-                        type="button"
-                        onClick={() => setHeroIndex(index)}
-                        aria-label={`Mostrar ${obra.titulo}`}
-                        style={
-                          index === heroIndex ? heroDotActiveStyle : heroDotStyle
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           ) : (
@@ -3341,80 +3511,83 @@ export default function Home() {
                 </p>
               </div>
 
-              <div style={mobileHeroButtonsStyle}>
+              <div style={usandoHeroInicial ? mobileHeroInitialButtonsStyle : mobileHeroButtonsStyle}>
                 <Link href={heroObraHref} style={primaryButtonStyle}>
-                  {heroObra.disponivel ? "Ver obra" : "Ver detalhes"}
+                  {usandoHeroInicial ? "Publicar obra" : "Ver obra"}
                 </Link>
 
-                <button
+                {!usandoHeroInicial && (
+                  <button
                   type="button"
                   onClick={alternarHeroFavorito}
                   aria-pressed={heroEstaSalvo}
                   style={heroEstaSalvo ? savedHeroButtonStyle : secondaryButtonStyle}
                 >
-                  {heroEstaSalvo ? "Salvo" : "Salvar"}
-                </button>
+                    {heroEstaSalvo ? "Salvo" : "Salvar"}
+                  </button>
+                )}
               </div>
 
               {avisoLogin && <p style={heroLoginNoticeStyle}>{avisoLogin}</p>}
 
-              <div style={mobileHeroFooterStyle}>
-                <div style={mobileHeroStatsStyle}>
-                  <span style={mobileHeroStatItemStyle}>
-                    <span style={mobileHeroStatIconStyle}>👁</span>
-                    <span style={mobileHeroStatValueStyle}>
-                      {formatarContadorHeroHome(heroObra.views)}
-                    </span>
-                  </span>
+              {!usandoHeroInicial && (
+                <div style={mobileHeroFooterStyle}>
+                  <div style={mobileHeroStatsStyle}>
+                    {metricasHeroHome.map((metrica) => (
+                      <span
+                        key={`hero-mobile-${metrica.icone}`}
+                        style={mobileHeroStatItemStyle}
+                      >
+                        <span
+                          style={
+                            metrica.destaque
+                              ? cardStatHeartIconStyle
+                              : mobileHeroStatIconStyle
+                          }
+                        >
+                          {metrica.icone}
+                        </span>
+                        <span style={mobileHeroStatValueStyle}>
+                          {metrica.valor}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
 
-                  <span style={mobileHeroStatItemStyle}>
-                    <span style={mobileHeroStatHeartIconStyle}>♥</span>
-                    <span style={mobileHeroStatValueStyle}>
-                      {formatarContadorHeroHome(heroObra.likes)}
-                    </span>
-                  </span>
-
-                  <span style={mobileHeroStatItemStyle}>
-                    <span style={mobileHeroStatIconStyle}>💬</span>
-                    <span style={mobileHeroStatValueStyle}>
-                      {formatarContadorHeroHome(heroObra.comentarios)}
-                    </span>
-                  </span>
+                  <div style={mobileHeroDotsStyle} aria-label="Obras em destaque">
+                    {obrasHero.map((obra, index) => (
+                      <button
+                        key={`${obra.titulo}-${index}`}
+                        type="button"
+                        onClick={() => setHeroIndex(index)}
+                        aria-label={`Mostrar ${obra.titulo}`}
+                        style={
+                          index === heroIndex
+                            ? mobileHeroDotActiveStyle
+                            : mobileHeroDotStyle
+                        }
+                      />
+                    ))}
+                  </div>
                 </div>
-
-                <div style={mobileHeroDotsStyle} aria-label="Obras em destaque">
-                  {obrasHero.map((obra, index) => (
-                    <button
-                      key={`${obra.titulo}-${index}`}
-                      type="button"
-                      onClick={() => setHeroIndex(index)}
-                      aria-label={`Mostrar ${obra.titulo}`}
-                      style={
-                        index === heroIndex
-                          ? mobileHeroDotActiveStyle
-                          : mobileHeroDotStyle
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
           )}
         </section>
 
         <section style={isDesktop ? desktopSummaryStripStyle : summaryStripStyle} aria-label="Atalhos principais">
-          <Link href="/em-breve" style={summaryItemStyle}>
-            <strong style={summaryNumberStyle}>Em breve</strong>
+          <Link href="/em-alta" style={summaryItemStyle}>
+            <strong style={summaryNumberStyle}>Em Alta</strong>
           </Link>
 
           <span style={summaryDividerLineStyle} aria-hidden="true" />
 
-          <Link href="/em-alta" style={summaryItemStyle}>
-            <strong style={summaryNumberStyle}>Em alta</strong>
+          <Link href="/em-breve" style={summaryItemStyle}>
+            <strong style={summaryNumberStyle}>Em breve</strong>
           </Link>
         </section>
 
-        {homeSemObrasReais && <HomeEmptyState isDesktop={isDesktop} />}
+        {homeSemObrasReais && <HomeEmptyState />}
 
         {obrasParaContinuar.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
@@ -3635,19 +3808,21 @@ export default function Home() {
           </section>
         )}
 
-        <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-          <SectionHeader title="Em alta agora" subtitle="Histórias em evidência na plataforma." />
+        {(obrasFiltradas.length > 0 || Boolean(termoBusca)) && (
+          <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
+            <SectionHeader title="Catálogo" subtitle="Obras reais publicadas na plataforma." />
 
-          {obrasFiltradas.length > 0 ? (
-            <CarouselRow isDesktop={isDesktop}>
-              {obrasFiltradas.map((obra) => (
-                <MobileObraCard key={obra.titulo} obra={obra} isDesktop={isDesktop} />
-              ))}
-            </CarouselRow>
-          ) : (
-            <EmptySearch />
-          )}
-        </section>
+            {obrasFiltradas.length > 0 ? (
+              <CarouselRow isDesktop={isDesktop}>
+                {obrasFiltradas.map((obra) => (
+                  <MobileObraCard key={obra.titulo} obra={obra} isDesktop={isDesktop} />
+                ))}
+              </CarouselRow>
+            ) : (
+              <EmptySearch />
+            )}
+          </section>
+        )}
 
         {obrasFantasiaPoderes.length > 0 && (
           <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
@@ -3739,22 +3914,20 @@ export default function Home() {
           </section>
         )}
 
-        <section style={isDesktop ? desktopLastSectionStyle : lastSectionStyle}>
-          <SectionHeader
-            title="Obras em destaque"
-            subtitle="Uma vitrine final para descobrir novas histórias."
-          />
+        {obrasFiltradas.length > 0 && (
+          <section style={isDesktop ? desktopLastSectionStyle : lastSectionStyle}>
+            <SectionHeader
+              title="Obras em destaque"
+              subtitle="Obras reais disponíveis para leitura."
+            />
 
-          {obrasFiltradas.length > 0 ? (
             <CarouselRow isDesktop={isDesktop}>
               {obrasFiltradas.map((obra) => (
                 <MobileObraCard key={`destaque-${obra.titulo}`} obra={obra} isDesktop={isDesktop} />
               ))}
             </CarouselRow>
-          ) : (
-            <EmptySearch />
-          )}
-        </section>
+          </section>
+        )}
       </div>
     </main>
   );
@@ -3782,17 +3955,17 @@ function MobileObraLocalCard({
   tipo: "continuar" | "catalogo" | "novo-capitulo";
   isDesktop?: boolean;
 }) {
-  const totalCurtidas = obra.capitulos.filter((capitulo) => capitulo.curtiu)
-    .length;
-
-  const totalComentarios = obra.capitulos.filter((capitulo) =>
-    capitulo.comentario.trim()
-  ).length;
-
-  const totalVisualizacoes = Math.max(
-    obra.capitulos.length * 120 + totalCurtidas * 18 + totalComentarios * 10,
-    0
+  const visualizacoesObra = compactarNumeroHome(obra.visualizacoes || 0);
+  const totalCurtidas = compactarNumeroHome(obterTotalCurtidasObraHome(obra));
+  const totalComentarios = compactarNumeroHome(
+    obterTotalComentariosObraHome(obra),
   );
+  const obraTemArquivo = obraTemArquivoAnexado(obra);
+  const iconeConteudoObra = obraTemArquivo ? "📄" : "📚";
+  const totalConteudoObra = compactarNumeroHome(
+    obraTemArquivo ? 1 : obra.capitulos.length,
+  );
+
   const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
   const capituloParaContinuar = encontrarCapituloParaContinuar(obra);
   const ultimoCapituloPublicado =
@@ -3901,9 +4074,7 @@ function MobileObraLocalCard({
         <div style={cardStatsStyle}>
           <span style={cardStatItemStyle}>
             <span style={cardStatIconStyle}>👁</span>
-            <span style={cardStatValueStyle}>
-              {formatarContadorHeroHome(totalVisualizacoes)}
-            </span>
+            <span style={cardStatValueStyle}>{visualizacoesObra}</span>
           </span>
 
           <span style={cardStatItemStyle}>
@@ -3916,12 +4087,10 @@ function MobileObraLocalCard({
             <span style={cardStatValueStyle}>{totalComentarios}</span>
           </span>
 
-          {obra.capitulos.length > 0 && (
-            <span style={cardStatItemStyle}>
-              <span style={cardStatIconStyle}>📚</span>
-              <span style={cardStatValueStyle}>{obra.capitulos.length} cap.</span>
-            </span>
-          )}
+          <span style={cardStatItemStyle}>
+            <span style={cardStatIconStyle}>{iconeConteudoObra}</span>
+            <span style={cardStatValueStyle}>{totalConteudoObra}</span>
+          </span>
         </div>
 
         {progressoLeitura > 0 && (
@@ -4031,8 +4200,12 @@ function MobileAutorCard({ autor, isDesktop }: { autor: AutorHome; isDesktop?: b
 
 function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }) {
   const obraHref = criarHrefObraCatalogoHome(obra);
-  const totalCapitulos = obterTotalCapitulosObraCatalogoHome(obra);
-
+  const obraTemArquivo = obraCatalogoTemArquivoAnexadoHome(obra);
+  const iconeConteudoObra = obraTemArquivo ? "📄" : "📚";
+  const totalConteudoObra = compactarNumeroHome(
+    obraTemArquivo ? 1 : obterTotalCapitulosObraCatalogoHome(obra),
+  );
+ 
   const conteudoCard = (
     <>
       <div
@@ -4077,13 +4250,12 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
             <span style={cardStatValueStyle}>{obra.comentarios}</span>
           </span>
 
-          {totalCapitulos > 0 && (
-            <span style={cardStatItemStyle}>
-              <span style={cardStatIconStyle}>📚</span>
-              <span style={cardStatValueStyle}>{totalCapitulos} cap.</span>
-            </span>
-          )}
-        </div>
+          <span style={cardStatItemStyle}>
+            <span style={cardStatIconStyle}>{iconeConteudoObra}</span>
+            <span style={cardStatValueStyle}>{totalConteudoObra}</span>
+          </span>
+
+         </div>
 
         <div style={isDesktop ? desktopCardActionRowStyle : mobileCardActionRowStyle}>
           <span style={isDesktop ? desktopCardGenreBadgeStyle : mobileCardGenreBadgeStyle}>
@@ -4127,37 +4299,36 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
   );
 }
 
-function HomeEmptyState({ isDesktop }: { isDesktop: boolean }) {
+function HomeEmptyState() {
   return (
-    <section
-      style={isDesktop ? desktopHomeEmptyStateStyle : homeEmptyStateStyle}
-      aria-label="Comece na Historietas"
+    <p
+      style={{
+        margin: "10px 0 0",
+        color: "#FFFFFF",
+        fontSize: "12px",
+        fontWeight: 800,
+        textAlign: "center",
+      }}
     >
-      <span style={homeEmptyKickerStyle}>COMECE PELO PERFIL DO AUTOR</span>
-
-      <h2 style={homeEmptyTitleStyle}>Publique ou descubra sua primeira obra</h2>
-
-      <p style={homeEmptyTextStyle}>
-        Ainda não há obras publicadas pela sua conta. Quando você publicar,
-        salvar ou continuar leituras, a Home passa a mostrar recomendações,
-        capítulos recentes, autores e progresso de leitura.
-      </p>
-
-      <div style={isDesktop ? desktopHomeEmptyActionsStyle : homeEmptyActionsStyle}>
-        <Link href="/publicar" style={homeEmptyPrimaryButtonStyle}>
-          Publicar obra
-        </Link>
-
-        <Link href="/explorar" style={homeEmptySecondaryButtonStyle}>
-          Explorar catálogo
-        </Link>
-      </div>
-    </section>
+      Nenhuma obra cadastrada
+    </p>
   );
 }
 
 function EmptySearch() {
-  return <div style={emptyBoxStyle}>Nenhuma obra encontrada.</div>;
+  return (
+    <p
+      style={{
+        margin: "10px 0 0",
+        color: "#FFFFFF",
+        fontSize: "12px",
+        fontWeight: 800,
+        textAlign: "center",
+      }}
+    >
+      Nenhuma obra encontrada
+    </p>
+  );
 }
 
 function CarouselRow({
@@ -4460,16 +4631,6 @@ const heroDecorationLayerStyle: CSSProperties = {
   overflow: "hidden",
   pointerEvents: "none",
   zIndex: 0,
-};
-
-const emptyPageStyle: CSSProperties = {
-  minHeight: "100vh",
-  background: "var(--historietas-bg-mid, #12081F)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  padding: "40px",
-  maxWidth: "100vw",
-  overflowX: "hidden",
-  ...safeTextStyle,
 };
 
 const pageStyle: CSSProperties = {
@@ -5160,6 +5321,20 @@ const desktopHeroButtonsStyle: CSSProperties = {
   marginTop: "8px",
   position: "relative",
   left: "-64px",
+};
+
+const desktopHeroInitialButtonsStyle: CSSProperties = {
+  ...desktopHeroButtonsStyle,
+  gridTemplateColumns: "minmax(172px, 220px)",
+  justifyItems: "center",
+  left: 0,
+};
+
+const mobileHeroInitialButtonsStyle: CSSProperties = {
+  ...mobileHeroButtonsStyle,
+  gridTemplateColumns: "minmax(172px, 220px)",
+  justifyContent: "center",
+  justifyItems: "center",
 };
 
 const primaryButtonStyle: CSSProperties = {
@@ -6480,45 +6655,6 @@ const homeEmptyStateStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const desktopHomeEmptyStateStyle: CSSProperties = {
-  ...homeEmptyStateStyle,
-  width: "min(760px, 100%)",
-  margin: "0 auto",
-  padding: "24px",
-  borderRadius: "28px",
-};
-
-const homeEmptyKickerStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.1,
-  fontWeight: 950,
-  letterSpacing: "0.12em",
-  textTransform: "uppercase",
-  ...safeTextStyle,
-};
-
-const homeEmptyTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "clamp(24px, 6.2vw, 36px)",
-  lineHeight: 1.04,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  maxWidth: "560px",
-  ...safeTextStyle,
-};
-
-const homeEmptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.55,
-  fontWeight: 700,
-  maxWidth: "620px",
-  ...safeTextStyle,
-};
-
 const homeEmptyActionsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
@@ -6526,38 +6662,6 @@ const homeEmptyActionsStyle: CSSProperties = {
   width: "min(100%, 360px)",
   marginTop: "4px",
   boxSizing: "border-box",
-};
-
-const desktopHomeEmptyActionsStyle: CSSProperties = {
-  ...homeEmptyActionsStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  width: "min(100%, 430px)",
-};
-
-const homeEmptyPrimaryButtonStyle: CSSProperties = {
-  minHeight: "42px",
-  borderRadius: "999px",
-  background: "#08030F",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 14px",
-  boxSizing: "border-box",
-  boxShadow: "none",
-  border: "1px solid rgba(255,255,255,0.10)",
-  ...safeTextStyle,
-};
-
-const homeEmptySecondaryButtonStyle: CSSProperties = {
-  ...homeEmptyPrimaryButtonStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const emptyBoxStyle: CSSProperties = {

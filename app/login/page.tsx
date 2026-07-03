@@ -288,7 +288,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
-  const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState("");
 
   const criandoConta = modo === "criar";
@@ -311,7 +310,7 @@ export default function LoginPage() {
           );
           sincronizarStorageUsuarioLogin(data.user.id);
 
-          router.replace(obterRedirectToAtual("/"));
+          router.replace(obterRedirectToAtual("/perfil-autor"));
           router.refresh();
         }
       } catch {
@@ -439,7 +438,6 @@ export default function LoginPage() {
     event.preventDefault();
 
     setErro("");
-    setMensagem("");
 
     if (!email.trim()) {
       setErro("Digite seu e-mail.");
@@ -483,15 +481,10 @@ export default function LoginPage() {
         }
 
         if (data.user && data.session) {
-          setMensagem("Conta criada com sucesso. Redirecionando...");
-          router.replace(obterRedirectToAtual("/painel-autor"));
+          router.replace(obterRedirectToAtual("/perfil-autor"));
           router.refresh();
           return;
         }
-
-        setMensagem(
-          "Conta criada. Se for necessário, confirme pelo e-mail antes de entrar."
-        );
         setModo("entrar");
         return;
       }
@@ -510,9 +503,7 @@ export default function LoginPage() {
         await salvarProfile(data.user.id, nome, data.user.email || email, data.user.user_metadata);
         sincronizarStorageUsuarioLogin(data.user.id);
       }
-
-      setMensagem("Entrada realizada. Redirecionando...");
-      router.replace(obterRedirectToAtual("/painel-autor"));
+      router.replace(obterRedirectToAtual("/perfil-autor"));
       router.refresh();
     } catch (error) {
       setErro(formatarErroAuth(error));
@@ -542,7 +533,7 @@ export default function LoginPage() {
           <div style={heroContentStyle}>
             <div style={introStyle}>
               <h1 className="historietas-theme-title" style={titleStyle}>
-                {criandoConta ? "CRIAR CONTA" : "ENTRAR NA PLATAFORMA"}
+                {criandoConta ? "CRIAR LOGIN" : "FAZER LOGIN"}
               </h1>
 
               <p style={descriptionStyle}>
@@ -559,7 +550,6 @@ export default function LoginPage() {
                   onClick={() => {
                     setModo("entrar");
                     setErro("");
-                    setMensagem("");
                   }}
                   style={modo === "entrar" ? tabActiveStyle : tabStyle}
                 >
@@ -571,11 +561,10 @@ export default function LoginPage() {
                   onClick={() => {
                     setModo("criar");
                     setErro("");
-                    setMensagem("");
                   }}
                   style={modo === "criar" ? tabActiveStyle : tabStyle}
                 >
-                  CRIAR CONTA
+                  CRIAR LOGIN
                 </button>
               </div>
 
@@ -622,7 +611,6 @@ export default function LoginPage() {
                 </label>
 
                 {erro && <span style={errorStyle}>{erro}</span>}
-                {mensagem && <span style={messageStyle}>{mensagem}</span>}
 
                 <button
                   type="submit"
@@ -636,7 +624,7 @@ export default function LoginPage() {
                   {carregando
                     ? "Aguarde..."
                     : criandoConta
-                    ? "CRIAR CONTA"
+                    ? "CRIAR"
                     : "ENTRAR"}
                 </button>
               </form>
@@ -654,6 +642,12 @@ export default function LoginPage() {
 }
 
 const loginPageCss = `
+  html,
+  body {
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
@@ -700,10 +694,12 @@ const desktopTopWaterFadeStyle: CSSProperties = {
 
 const pageStyle: CSSProperties = {
   position: "relative",
-  minHeight: "100vh",
+  minHeight: "100dvh",
+  height: "100dvh",
+  maxHeight: "100dvh",
   width: "100%",
   maxWidth: "100vw",
-  overflowX: "hidden",
+  overflow: "hidden",
   boxSizing: "border-box",
   background: "#070212",
   color: "#FFFFFF",
@@ -716,7 +712,7 @@ const containerStyle: CSSProperties = {
   width: "min(1120px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "clamp(12px, 2vw, 22px) 0 16px",
+  padding: "clamp(8px, 1.6vw, 16px) 0 8px",
   boxSizing: "border-box",
   minWidth: 0,
 };
@@ -774,11 +770,10 @@ const logoTextStyle: CSSProperties = {
 
 const heroStyle: CSSProperties = {
   position: "relative",
-  overflow: "hidden",
-  borderRadius: "28px",
-  border: "1px solid rgba(59, 7, 100, 0.52)",
-  background:
-    "linear-gradient(135deg, #070212 0%, #04000A 56%, #020006 100%)",
+  overflow: "visible",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   boxShadow: "none",
   minWidth: 0,
 };
@@ -793,12 +788,13 @@ const heroGlowStyle: CSSProperties = {
 const heroContentStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  padding: "clamp(18px, 3.4vw, 38px) clamp(18px, 3.4vw, 38px) clamp(8px, 1.35vw, 16px)",
+  padding: "clamp(12px, 2.4vw, 26px) clamp(18px, 3.4vw, 38px) clamp(4px, 1vw, 10px)",
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr)",
   justifyItems: "center",
   alignItems: "center",
   gap: "clamp(14px, 2.8vw, 26px)",
+  transform: "translateY(clamp(8px, 1.8vh, 18px))",
   minWidth: 0,
 };
 
@@ -821,11 +817,11 @@ const titleStyle: CSSProperties = {
   width: "100%",
   maxWidth: "760px",
   textAlign: "center",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 48%, #FDBA74 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   padding: "0 0.16em 4px",
   marginLeft: "auto",
   marginRight: "auto",
@@ -889,8 +885,8 @@ const tabStyle: CSSProperties = {
 
 const tabActiveStyle: CSSProperties = {
   ...tabStyle,
-  background: "#F97316",
-  border: "1px solid rgba(249, 115, 22, 0.72)",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
 };
@@ -947,24 +943,11 @@ const primaryButtonStyle: CSSProperties = {
 
 const errorStyle: CSSProperties = {
   display: "block",
-  padding: "9px 11px",
-  borderRadius: "15px",
-  background: "rgba(127, 29, 29, 0.20)",
-  border: "1px solid rgba(239, 68, 68, 0.28)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   color: "#FCA5A5",
-  fontSize: "12px",
-  fontWeight: 850,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const messageStyle: CSSProperties = {
-  display: "block",
-  padding: "9px 11px",
-  borderRadius: "15px",
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.28)",
-  color: "#BBF7D0",
   fontSize: "12px",
   fontWeight: 850,
   textAlign: "center",

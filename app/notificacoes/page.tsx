@@ -2944,18 +2944,6 @@ export default function NotificacoesPage() {
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <section style={isDesktop ? desktopEmptyStyle : emptyStyle}>
-            <span style={emptyIconStyle}>N</span>
-
-            <h2 style={emptyTitleStyle}>Verificando acesso...</h2>
-
-            <p style={emptyTextStyle}>
-              Aguarde enquanto confirmamos sua sessão.
-            </p>
-          </section>
-        </section>
       </main>
     );
   }
@@ -3220,33 +3208,29 @@ export default function NotificacoesPage() {
         )}
 
         {notificacoes.length === 0 ? (
-          <section style={isDesktop ? desktopEmptyStyle : emptyStyle}>
-            <span style={emptyIconStyle}>N</span>
-
-            <h2 style={emptyTitleStyle}>Nenhuma notificação</h2>
-
-            <p style={emptyTextStyle}>
-              Quando uma obra seguida receber capítulo novo ou a Comunidade tiver novidades para você, o aviso aparece aqui.
-            </p>
-
-            <Link href="/seguindo" style={emptyButtonStyle}>
-              Ver obras seguidas
-            </Link>
-          </section>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Nenhuma notificação
+          </p>
         ) : notificacoesFiltradas.length === 0 ? (
-          <section style={isDesktop ? desktopEmptyStyle : emptyStyle}>
-            <span style={emptyIconStyle}>N</span>
-
-            <h2 style={emptyTitleStyle}>Nada encontrado</h2>
-
-            <p style={emptyTextStyle}>
-              Limpe a busca ou escolha outro filtro para ver suas notificações.
-            </p>
-
-            <button type="button" onClick={limparFiltros} style={emptyButtonStyle}>
-              Limpar filtros
-            </button>
-          </section>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Nada encontrado
+          </p>
         ) : (
           <section style={isDesktop ? desktopListStyle : listStyle} aria-label="Lista de notificações">
             {notificacoesFiltradas.map((notificacaoOriginal) => {
@@ -4724,59 +4708,6 @@ const emptyStyle: CSSProperties = {
   minWidth: 0,
   overflow: "hidden",
   boxShadow: "none",
-};
-
-const emptyIconStyle: CSSProperties = {
-  width: "48px",
-  height: "48px",
-  borderRadius: "18px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "#08030F",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  fontSize: "22px",
-};
-
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "26px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const emptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.55,
-  fontWeight: 700,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const emptyButtonStyle: CSSProperties = {
-  minHeight: "42px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...safeTextStyle,
 };
 
 const desktopContainerStyle: CSSProperties = {

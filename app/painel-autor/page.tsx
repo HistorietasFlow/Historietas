@@ -848,11 +848,24 @@ const CAMPOS_REGISTROS_PAINEL_AUTOR: Record<string, string> = {
   concluidas: "user_id,obra_id",
   salvos_capitulos: "user_id,capitulo_id",
   curtidas_capitulos: "user_id,capitulo_id",
-  comentarios_capitulos: "user_id,capitulo_id,comentario,texto",
+  comentarios_capitulos: "user_id,capitulo_id,texto",
   progresso_leitura: "user_id,obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
   obra_curtidas: "user_id,obra_id",
   seguindo_obras: "user_id,obra_id",
 };
+
+const TABELAS_PAINEL_POR_CAPITULO = new Set([
+  "salvos_capitulos",
+  "curtidas_capitulos",
+  "comentarios_capitulos",
+]);
+
+const TABELAS_PAINEL_POR_OBRA = new Set([
+  "favoritos",
+  "concluidas",
+  "obra_curtidas",
+  "seguindo_obras",
+]);
 
 function obterCamposRegistrosPainelAutor(tabela: string) {
   return CAMPOS_REGISTROS_PAINEL_AUTOR[tabela] || "id";
@@ -864,16 +877,25 @@ async function carregarRegistrosObraSupabase(
   userId?: string,
   capituloIds: string[] = []
 ) {
-  if (obraIds.length === 0 && capituloIds.length === 0) {
+  const deveBuscarPorObra = !TABELAS_PAINEL_POR_CAPITULO.has(tabela);
+  const deveBuscarPorCapitulo = !TABELAS_PAINEL_POR_OBRA.has(tabela);
+
+  if (
+    (!deveBuscarPorObra || obraIds.length === 0) &&
+    (!deveBuscarPorCapitulo || capituloIds.length === 0)
+  ) {
     return [] as RegistroSupabaseGenerico[];
   }
 
   async function tentarPorObraId() {
-    if (obraIds.length === 0) {
+    if (!deveBuscarPorObra || obraIds.length === 0) {
       return null as RegistroSupabaseGenerico[] | null;
     }
 
-    let query = supabase.from(tabela).select(obterCamposRegistrosPainelAutor(tabela)).in("obra_id", obraIds);
+    let query = supabase
+      .from(tabela)
+      .select(obterCamposRegistrosPainelAutor(tabela))
+      .in("obra_id", obraIds);
 
     if (userId) {
       query = query.eq("user_id", userId);
@@ -889,11 +911,14 @@ async function carregarRegistrosObraSupabase(
   }
 
   async function tentarPorCapituloId() {
-    if (capituloIds.length === 0) {
+    if (!deveBuscarPorCapitulo || capituloIds.length === 0) {
       return null as RegistroSupabaseGenerico[] | null;
     }
 
-    let query = supabase.from(tabela).select(obterCamposRegistrosPainelAutor(tabela)).in("capitulo_id", capituloIds);
+    let query = supabase
+      .from(tabela)
+      .select(obterCamposRegistrosPainelAutor(tabela))
+      .in("capitulo_id", capituloIds);
 
     if (userId) {
       query = query.eq("user_id", userId);
@@ -920,10 +945,6 @@ async function carregarRegistrosObraSupabase(
     if (porCapituloId) {
       return porCapituloId;
     }
-
-    console.warn(
-      `Não consegui carregar ${tabela} no Painel do Autor por obra_id nem capitulo_id.`
-    );
 
     return [];
   } catch (error) {
@@ -968,17 +989,20 @@ function criarMapaComentariosPorRegistro(registros: RegistroSupabaseGenerico[]) 
     const obraId = obterIdObraRegistro(registro);
     const capituloId = obterIdCapituloRegistro(registro);
 
-    if (!obraId || !capituloId) {
+    if (!capituloId) {
       return;
     }
 
-    const chave = criarChaveInteracao(obraId, capituloId);
+    const chave = obraId ? criarChaveInteracao(obraId, capituloId) : "";
     const comentario = obterTextoComentarioRegistro(registro);
 
-    contagem.set(chave, (contagem.get(chave) || 0) + 1);
+    if (chave) {
+      contagem.set(chave, (contagem.get(chave) || 0) + 1);
+    }
+
     contagem.set(capituloId, (contagem.get(capituloId) || 0) + 1);
 
-    if (comentario && !mapa.has(chave)) {
+    if (chave && comentario && !mapa.has(chave)) {
       mapa.set(chave, comentario);
     }
 
@@ -1948,20 +1972,6 @@ export default function PainelAutorPage() {
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <section style={emptyBoxStyle}>
-            <h2 style={emptyTitleStyle}>
-              {verificandoUsuario ? "Verificando acesso..." : "Redirecionando para login..."}
-            </h2>
-
-            <p style={emptyTextStyle}>
-              {verificandoUsuario
-                ? "Conferindo sua sessão antes de abrir o Estúdio do Autor."
-                : "Entre com sua conta para gerenciar suas obras."}
-            </p>
-          </section>
-        </section>
       </main>
     );
   }
@@ -2161,15 +2171,17 @@ export default function PainelAutorPage() {
         )}
 
         {obrasComMetricas.length === 0 ? (
-          <section style={emptyBoxStyle}>
-            <h2 style={emptyTitleStyle}>Nenhuma obra criada ainda</h2>
-
-            <p style={emptyTextStyle}>
-              Publique sua primeira história para começar a acompanhar seu
-              estúdio de autor.
-            </p>
-
-          </section>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Não tem obra criada
+          </p>
         ) : obrasFiltradas.length === 0 ? (
           <section style={emptyMiniBoxStyle}>
             <strong style={emptyMiniTitleStyle}>Nenhuma obra encontrada</strong>

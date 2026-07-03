@@ -677,7 +677,7 @@ async function carregarProfilesAutoresRanking(userIds: string[]) {
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id,user_id,nome,avatar_url,avatar,foto_url,imagem_url,photo_url")
+      .select("id,user_id,nome,avatar_url")
       .in("user_id", idsUnicos)
       .limit(1000);
 
@@ -703,7 +703,7 @@ async function carregarProfilesAutoresRanking(userIds: string[]) {
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id,user_id,nome,avatar_url,avatar,foto_url,imagem_url,photo_url")
+      .select("id,user_id,nome,avatar_url")
       .in("id", idsUnicos)
       .limit(1000);
 
@@ -1459,6 +1459,17 @@ function pegarTopRanking(lista: ObraRanking[], tipo: TipoRanking) {
   return ordenarRanking(lista, tipo).slice(0, 5);
 }
 
+function rankingTemInteracaoReal(obra: ObraRanking) {
+  return (
+    obra.views > 0 ||
+    obra.curtidas > 0 ||
+    obra.comentarios > 0 ||
+    obra.salvos > 0 ||
+    obra.avaliacoes > 0 ||
+    obra.mediaAvaliacao > 0
+  );
+}
+
 function criarDecoracaoPaginaStyle(index: number): CSSProperties {
   const posicoes: CSSProperties[] = [
     {
@@ -1950,6 +1961,20 @@ export default function EmAltaPage() {
     [ranking],
   );
 
+  const rankingTemAtividadeReal = useMemo(() => {
+    return ranking.some((obra) => rankingTemInteracaoReal(obra));
+  }, [ranking]);
+
+  const rankingParaCatalogoInicial = useMemo(() => {
+    return rankingMaisRecentes.length > 0 ? rankingMaisRecentes : rankingGeral;
+  }, [rankingGeral, rankingMaisRecentes]);
+
+  const tituloCabecalho = carregandoRanking
+    ? "ISTORIETAS"
+    : rankingTemAtividadeReal
+      ? "ISTORIETAS POPULARES"
+      : "ISTORIETAS PUBLICADAS";
+
   function avisarLoginRanking() {
     router.push(criarLoginHrefEmAlta());
   }
@@ -2101,7 +2126,7 @@ export default function EmAltaPage() {
                 isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle
               }
             >
-              ISTORIETAS POPULARES
+              {tituloCabecalho}
             </span>
           </Link>
 
@@ -2125,17 +2150,23 @@ export default function EmAltaPage() {
           ) : null}
         </header>
 
-        {carregandoRanking && (
-          <section style={emptyBoxStyle} aria-live="polite" aria-busy="true">
-            <h2 style={emptyTitleStyle}>Carregando rankings...</h2>
-
-            <p style={emptyTextStyle}>
-              Buscando obras, autores e métricas atualizadas.
-            </p>
-          </section>
+        {false && carregandoRanking && (
+          <p
+            aria-live="polite"
+            aria-busy="true"
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Carregando rankings
+          </p>
         )}
 
-        {!carregandoRanking && ranking.length > 0 && (
+        {!carregandoRanking && ranking.length > 0 && rankingTemAtividadeReal && (
           <>
             <AutoresEmAltaSection
               autores={rankingAutores}
@@ -2228,18 +2259,46 @@ export default function EmAltaPage() {
           </>
         )}
 
-        {!carregandoRanking && ranking.length === 0 && (
-          <section style={emptyBoxStyle}>
-            <h2 style={emptyTitleStyle}>Nenhuma obra para ranquear</h2>
-
-            <p style={emptyTextStyle}>
-              Crie e publique uma obra para ela aparecer no Em Alta.
+        {!carregandoRanking && ranking.length > 0 && !rankingTemAtividadeReal && (
+          <>
+            <p
+              style={{
+                margin: "10px 0 18px",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                fontWeight: 800,
+                textAlign: "center",
+              }}
+            >
+              Catálogo em formação
             </p>
 
-            <Link href="/publicar" style={emptyButtonStyle}>
-              Criar obra
-            </Link>
-          </section>
+            <RankingSection
+              titulo="Obras publicadas"
+              descricao="Catálogo inicial com obras publicadas no HISTORIETAS."
+              obras={rankingParaCatalogoInicial}
+              tipo="recentes"
+              obrasFavoritas={obrasFavoritasProtegidas}
+              obrasConcluidas={obrasConcluidasProtegidas}
+              onAlternarFavorito={alternarFavorito}
+              onAlternarConcluido={alternarConcluido}
+              isDesktop={isDesktop}
+            />
+          </>
+        )}
+
+        {!carregandoRanking && ranking.length === 0 && (
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Ainda não há obras publicadas
+          </p>
         )}
       </section>
     </main>
@@ -2525,7 +2584,17 @@ function RankingSection({
           )}
         </div>
       ) : (
-        <div style={emptyMiniBoxStyle}>Nada para mostrar neste ranking.</div>
+        <p
+          style={{
+            margin: "10px 0 0",
+            color: "#FFFFFF",
+            fontSize: "12px",
+            fontWeight: 800,
+            textAlign: "center",
+          }}
+        >
+          Nada para mostrar neste ranking
+        </p>
       )}
     </section>
   );
@@ -4368,49 +4437,6 @@ const authorRankingScoreRowStyle: CSSProperties = {
   marginTop: "4px",
   maxWidth: "100%",
   minWidth: 0,
-};
-
-const emptyBoxStyle: CSSProperties = {
-  marginTop: "18px",
-  padding: "22px",
-  borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  display: "grid",
-  gap: "12px",
-  minWidth: 0,
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-const emptyMiniBoxStyle: CSSProperties = {
-  padding: "15px",
-  borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  display: "grid",
-  gap: "8px",
-  textAlign: "center",
-  boxShadow: "none",
-};
-
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "24px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const emptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
-  lineHeight: 1.7,
-  fontWeight: 600,
-  maxWidth: "100%",
-  ...safeTextStyle,
 };
 
 const emptyButtonStyle: CSSProperties = {

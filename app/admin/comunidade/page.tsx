@@ -1336,15 +1336,6 @@ export default function AdminComunidadePage() {
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <div style={loadingCardStyle}>
-            <strong style={loadingTitleStyle}>Abrindo moderação...</strong>
-            <span style={loadingTextStyle}>
-              Conferindo permissão de moderação e denúncias da Comunidade.
-            </span>
-          </div>
-        </section>
       </main>
     );
   }
@@ -1358,19 +1349,19 @@ export default function AdminComunidadePage() {
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <section style={accessCardStyle}>
-            <span style={miniTitleStyle}>ÁREA RESTRITA</span>
-            <h1 style={titleStyle}>Moderação da Comunidade</h1>
-            <p style={descriptionStyle}>
-              Entre com uma conta com permissão de moderação para revisar denúncias.
-            </p>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Área restrita
+          </p>
 
-            {erro && <span style={errorStyle}>{erro}</span>}
-
-            <Link href={criarLoginHrefAdminModeracao()} style={primaryLinkStyle}>
-              Entrar
-            </Link>
-          </section>
+          {erro && <span style={errorStyle}>{erro}</span>}
         </section>
       </main>
     );
@@ -1385,20 +1376,19 @@ export default function AdminComunidadePage() {
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <section style={accessCardStyle}>
-            <span style={miniTitleStyle}>ACESSO NEGADO</span>
-            <h1 style={titleStyle}>Acesso de moderação necessário</h1>
-            <p style={descriptionStyle}>
-              Esta área exibe denúncias da Comunidade e só pode ser acessada por
-              contas com permissão de moderação.
-            </p>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Acesso negado
+          </p>
 
-            {erro && <span style={errorStyle}>{erro}</span>}
-
-            <Link href="/comunidade" style={secondaryLinkStyle}>
-              Voltar para Comunidade
-            </Link>
-          </section>
+          {erro && <span style={errorStyle}>{erro}</span>}
         </section>
       </main>
     );
@@ -2215,12 +2205,17 @@ export default function AdminComunidadePage() {
               );
             })
           ) : (
-            <article style={emptyStyle}>
-              <strong style={emptyTitleStyle}>Nenhuma denúncia encontrada.</strong>
-              <p style={emptyTextStyle}>
-                Tente limpar os filtros ou aguarde novas denúncias da Comunidade.
-              </p>
-            </article>
+            <p
+              style={{
+                margin: "10px 0 0",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                fontWeight: 800,
+                textAlign: "center",
+              }}
+            >
+              Nenhuma denúncia encontrada
+            </p>
           )}
         </section>
       </section>
@@ -2625,15 +2620,6 @@ const headerActionsStyle: CSSProperties = {
   width: "100%",
 };
 
-const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.13em",
-  textTransform: "uppercase",
-  ...safeTextStyle,
-};
-
 const titleStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
@@ -2653,14 +2639,6 @@ const titleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  margin: "0 auto",
-  fontSize: "clamp(46px, 4.7vw, 72px)",
-  lineHeight: 0.94,
-  maxWidth: "760px",
-};
-
 const descriptionStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
@@ -2672,72 +2650,6 @@ const descriptionStyle: CSSProperties = {
   maxWidth: "620px",
   textAlign: "center",
   ...safeTextStyle,
-};
-
-const desktopDescriptionStyle: CSSProperties = {
-  ...descriptionStyle,
-  margin: "10px auto 0",
-  fontSize: "15px",
-  lineHeight: 1.62,
-  maxWidth: "680px",
-};
-
-const loadingCardStyle: CSSProperties = {
-  minHeight: "220px",
-  display: "grid",
-  alignContent: "center",
-  justifyItems: "center",
-  gap: "8px",
-  padding: "28px 18px",
-  borderRadius: "28px",
-  background: "rgba(4,0,10,0.72)",
-  border: "none",
-  textAlign: "center",
-  boxShadow: "none",
-};
-
-const loadingTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "18px",
-  fontWeight: 950,
-};
-
-const loadingTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const accessCardStyle: CSSProperties = {
-  maxWidth: "680px",
-  margin: "34px auto 0",
-  display: "grid",
-  justifyItems: "center",
-  gap: "12px",
-  padding: "28px 18px",
-  borderRadius: "30px",
-  background: "rgba(4,0,10,0.72)",
-  border: "none",
-  textAlign: "center",
-  boxShadow: "none",
-};
-
-const primaryLinkStyle: CSSProperties = {
-  minHeight: "42px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 18px",
-  borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  border: "none",
-  fontSize: "13px",
-  fontWeight: 950,
-  boxSizing: "border-box",
-  textAlign: "center",
 };
 
 const secondaryLinkStyle: CSSProperties = {
@@ -3682,23 +3594,6 @@ const analysisMetaStyle: CSSProperties = {
   fontWeight: 800,
   textAlign: "right",
   ...safeTextStyle,
-};
-
-const emptyStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "8px",
-  padding: "28px 16px",
-  borderRadius: "26px",
-  background: "var(--historietas-surface, rgba(255,255,255,0.045))",
-  border: "none",
-  textAlign: "center",
-};
-
-const emptyTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "16px",
-  fontWeight: 950,
 };
 
 const emptyTextStyle: CSSProperties = {

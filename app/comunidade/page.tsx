@@ -158,8 +158,8 @@ function salvarJsonUsuarioComunidade(
 }
 
 const DESAFIO_SEMANA_COMUNIDADE = {
-  titulo: "Desafio da semana",
-  pergunta: "Qual obra da Historietas merece mais leitores agora?",
+  titulo: "Primeiros leitores",
+  pergunta: "Que tipo de história você quer encontrar no HISTORIETAS?",
 };
 
 const MIN_OPCOES_ENQUETE = 2;
@@ -823,6 +823,26 @@ function formatarErroSupabase(acao: string, erro: unknown) {
   return detalhes ? `${acao}: ${detalhes}` : `${acao}: erro desconhecido.`;
 }
 
+
+function erroEhSessaoAusenteComunidade(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const erro = error as {
+    name?: unknown;
+    message?: unknown;
+  };
+
+  const nome = typeof erro.name === "string" ? erro.name : "";
+  const mensagem = typeof erro.message === "string" ? erro.message : "";
+
+  return (
+    nome === "AuthSessionMissingError" ||
+    mensagem.toLowerCase().includes("auth session missing")
+  );
+}
+
 function idSupabaseValidoComunidade(id: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
     id.trim()
@@ -846,7 +866,7 @@ async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
   try {
     const { data } = await supabase
       .from("profiles")
-      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+      .select("id,user_id,nome,avatar_url")
       .in("user_id", idsValidos)
       .limit(1000);
 
@@ -871,7 +891,7 @@ async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+        .select("id,user_id,nome,avatar_url")
         .in("id", idsSemProfile)
         .limit(1000);
 
@@ -1443,12 +1463,17 @@ const ComentariosSheet = memo(function ComentariosSheet({
               );
             })
           ) : (
-            <div style={commentsSheetEmptyStyle}>
-              <strong style={commentsSheetEmptyTitleStyle}>Sem comentários ainda</strong>
-              <span style={commentsSheetEmptyTextStyle}>
-                Seja o primeiro a comentar.
-              </span>
-            </div>
+            <p
+              style={{
+                margin: "10px 0 0",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                fontWeight: 800,
+                textAlign: "center",
+              }}
+            >
+              Sem comentários ainda
+            </p>
           )}
         </section>
 
@@ -1741,7 +1766,21 @@ export default function ComunidadePage() {
         const { data, error: usuarioErro } = await supabase.auth.getUser();
 
         if (usuarioErro) {
-          throw usuarioErro;
+          if (!erroEhSessaoAusenteComunidade(usuarioErro)) {
+            console.warn(
+              "Não consegui carregar usuário da Comunidade:",
+              usuarioErro.message
+            );
+          }
+
+          window.setTimeout(() => {
+            if (!cancelado) {
+              setUsuario(null);
+              setUsuarioEhAdmin(false);
+            }
+          }, 0);
+
+          return;
         }
 
         const user = data.user || null;
@@ -1758,6 +1797,7 @@ export default function ComunidadePage() {
         }
 
         let nomeProfile = "";
+        let avatarProfile = "";
         let usuarioAdmin = false;
 
         try {
@@ -1767,8 +1807,10 @@ export default function ComunidadePage() {
           const profile = profilesPorUsuario.get(user.id);
 
           nomeProfile = obterNomeProfileComunidade(profile);
+          avatarProfile = obterAvatarProfileComunidade(profile);
         } catch {
           nomeProfile = "";
+          avatarProfile = "";
         }
 
         try {
@@ -1778,11 +1820,6 @@ export default function ComunidadePage() {
           usuarioAdmin = false;
         }
 
-        const profilesPorUsuario = await carregarProfilesComunidadePorUsuarios([
-          user.id,
-        ]);
-        const profile = profilesPorUsuario.get(user.id);
-
         window.setTimeout(() => {
           if (!cancelado) {
             setUsuarioEhAdmin(usuarioAdmin);
@@ -1790,8 +1827,19 @@ export default function ComunidadePage() {
               id: user.id,
               email: user.email || "",
               nome: obterNomeUsuario(user.email || "", nomeProfile),
-              avatar: obterAvatarProfileComunidade(profile),
+              avatar: avatarProfile,
             });
+          }
+        }, 0);
+      } catch (error) {
+        if (!erroEhSessaoAusenteComunidade(error)) {
+          console.warn("Não consegui iniciar usuário da Comunidade:", error);
+        }
+
+        window.setTimeout(() => {
+          if (!cancelado) {
+            setUsuario(null);
+            setUsuarioEhAdmin(false);
           }
         }, 0);
       } finally {
@@ -2383,7 +2431,7 @@ export default function ComunidadePage() {
         return;
       }
 
-      textoPostRef.current.value = `${DESAFIO_SEMANA_COMUNIDADE.pergunta} — Minha recomendação é: `;
+      textoPostRef.current.value = `${DESAFIO_SEMANA_COMUNIDADE.pergunta} — Eu gostaria de ver: `;
       textoPostRef.current.focus();
     }, 0);
   }
@@ -3408,7 +3456,7 @@ export default function ComunidadePage() {
                     onClick={abrirDesafioRapidoComunidade}
                     style={communityActionsSheetItemStyle}
                   >
-                    Desafio da semana
+                    Pedir recomendações
                   </button>
 
                   <span style={communityFiltersSheetSectionLabelStyle}>
@@ -3550,17 +3598,8 @@ export default function ComunidadePage() {
             )}
 
             <section style={postsListStyle}>
-              {carregandoFeed ? (
-                <div style={feedLoadingWrapStyle}>
-                  {[0, 1, 2].map((item) => (
-                    <article key={item} style={feedLoadingCardStyle}>
-                      <span style={feedLoadingLineLargeStyle} />
-                      <span style={feedLoadingLineStyle} />
-                      <span style={feedLoadingLineShortStyle} />
-                    </article>
-                  ))}
-                </div>
-              ) : postsVisiveis.length > 0 ? (
+              {!carregandoFeed && (
+                postsVisiveis.length > 0 ? (
                 postsVisiveis.map((post) => {
                   const usuarioCurtiu = Boolean(
                     usuario && post.curtidas.includes(usuario.id)
@@ -3913,47 +3952,22 @@ export default function ComunidadePage() {
                   );
                 })
               ) : (
-                <article style={emptyFeedStyle}>
-                  <strong style={emptyFeedTitleStyle}>
-                    {mostrarApenasSalvos
-                      ? "Nenhuma publicação salva."
-                      : filtrosAtivos
-                        ? "Nenhuma publicação encontrada."
-                        : "Nenhuma publicação ainda."}
-                  </strong>
-                  <p style={emptyFeedTextStyle}>
-                    {mostrarApenasSalvos
-                      ? "Salve publicações pelo símbolo ☆ para voltar nelas depois."
-                      : filtrosAtivos
-                        ? "Tente limpar a busca, mudar a categoria ou limpar os filtros."
-                        : "Seja o primeiro a publicar na Comunidade."}
-                  </p>
-
-                  {filtrosAtivos ? (
-                    <button
-                      type="button"
-                      onClick={limparFiltrosComunidade}
-                      style={emptyFeedButtonStyle}
-                    >
-                      Limpar filtros
-                    </button>
-                  ) : usuario ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setErro("");
-                        setComposerAberto(true);
-                      }}
-                      style={emptyFeedButtonStyle}
-                    >
-                      Criar primeira publicação
-                    </button>
-                  ) : (
-                    <Link href={criarLoginHrefComunidade()} style={emptyFeedButtonStyle}>
-                      Entrar para participar
-                    </Link>
-                  )}
-                </article>
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    color: "#FFFFFF",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    textAlign: "center",
+                  }}
+                >
+                  {mostrarApenasSalvos
+                    ? "Nenhuma publicação salva"
+                    : filtrosAtivos
+                      ? "Nenhuma publicação encontrada"
+                      : "Nenhuma publicação ainda"}
+                </p>
+              )
               )}
             </section>
 
@@ -4141,7 +4155,7 @@ export default function ComunidadePage() {
                 <textarea
                   ref={textoPostRef}
                   disabled={publicandoPost}
-                  placeholder="Fale sobre uma obra, peça indicação ou divulgue um capítulo..."
+                  placeholder="Abra uma conversa, peça indicação ou divulgue uma obra real publicada..."
                   autoComplete="off"
                   autoCorrect="off"
                   spellCheck={false}
@@ -6374,38 +6388,12 @@ const clearFiltersButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-const feedLoadingWrapStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px",
-};
-
-const feedLoadingCardStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  padding: "14px",
-  borderRadius: "20px",
-  background: "var(--historietas-surface, rgba(18,12,30,0.76))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-};
-
 const feedLoadingLineLargeStyle: CSSProperties = {
   display: "block",
   width: "64%",
   height: "14px",
   borderRadius: "999px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-};
-
-const feedLoadingLineStyle: CSSProperties = {
-  ...feedLoadingLineLargeStyle,
-  width: "92%",
-  height: "11px",
-};
-
-const feedLoadingLineShortStyle: CSSProperties = {
-  ...feedLoadingLineLargeStyle,
-  width: "42%",
-  height: "11px",
 };
 
 const typeFilterPanelStyle: CSSProperties = {
@@ -6550,53 +6538,6 @@ const loadMorePostsButtonStyle: CSSProperties = {
   textAlign: "center",
   boxShadow: "none",
   ...safeTextStyle,
-};
-
-const emptyFeedStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "8px",
-  padding: "22px 14px",
-  borderRadius: "21px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "none",
-  textAlign: "center",
-  minWidth: 0,
-};
-
-const emptyFeedTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "15px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const emptyFeedTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12.5px",
-  lineHeight: 1.45,
-  fontWeight: 800,
-  ...safeTextStyle,
-};
-
-const emptyFeedButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  textDecoration: "none",
-  padding: "0 13px",
-  cursor: "pointer",
-  boxShadow: "none",
 };
 
 const postCardStyle: CSSProperties = {
@@ -7048,28 +6989,6 @@ const commentsSheetListStyle: CSSProperties = {
   overflowY: "auto",
   padding: "6px 2px 9px",
   WebkitOverflowScrolling: "touch",
-};
-
-const commentsSheetEmptyStyle: CSSProperties = {
-  minHeight: "100%",
-  display: "grid",
-  alignContent: "center",
-  justifyItems: "center",
-  gap: "4px",
-  padding: "16px 16px",
-  textAlign: "center",
-};
-
-const commentsSheetEmptyTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14.5px",
-  fontWeight: 950,
-};
-
-const commentsSheetEmptyTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11.5px",
-  fontWeight: 800,
 };
 
 const commentItemStyle: CSSProperties = {

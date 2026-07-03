@@ -1433,16 +1433,6 @@ export default function AdicionarCapituloPage() {
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <div style={emptyBoxStyle}>
-            <h1 style={emptyTitleStyle}>Verificando acesso...</h1>
-
-            <p style={emptyTextStyle}>
-              Aguarde enquanto confirmamos sua conta.
-            </p>
-          </div>
-        </section>
       </main>
     );
   }
@@ -1456,17 +1446,17 @@ export default function AdicionarCapituloPage() {
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <div style={emptyBoxStyle}>
-            <h1 style={emptyTitleStyle}>Obra não encontrada</h1>
-
-            <p style={emptyTextStyle}>
-              Volte para Minhas Obras e clique novamente em Adicionar capítulo.
-            </p>
-
-            <Link href="/painel-autor" style={emptyButtonStyle}>
-              Ir para Minhas Obras
-            </Link>
-          </div>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            Obra não encontrada
+          </p>
         </section>
       </main>
     );

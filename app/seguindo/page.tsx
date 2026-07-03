@@ -2496,16 +2496,6 @@ export default function SeguindoPage() {
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
 
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <div style={emptyBoxStyle}>
-            <h2 style={emptyTitleStyle}>Verificando acesso...</h2>
-
-            <p style={emptyTextStyle}>
-              Aguarde enquanto confirmamos sua sessão.
-            </p>
-          </div>
-        </section>
       </main>
     );
   }
@@ -2739,57 +2729,53 @@ export default function SeguindoPage() {
         )}
 
         {totalSemFiltros === 0 ? (
-          <div style={emptyBoxStyle}>
-            <h2 style={emptyTitleStyle}>
-              {visualizandoListaSocialDoPerfil
-                ? abaSeguimento === "seguidores"
-                  ? "Nenhum seguidor ainda"
-                  : "Nenhum perfil seguido ainda"
-                : abaConteudo === "seguidores"
-                  ? "Você ainda não tem seguidores"
-                  : "Você ainda não segue nada"}
-            </h2>
-
-            <p style={emptyTextStyle}>
-              {visualizandoListaSocialDoPerfil
-                ? abaSeguimento === "seguidores"
-                  ? "Quando alguém seguir este perfil, aparecerá aqui."
-                  : "Quando este perfil seguir outras pessoas, elas aparecerão aqui."
-                : abaConteudo === "seguidores"
-                  ? "Quando alguém seguir seu perfil, aparecerá aqui."
-                  : 'Entre em uma obra e clique em "Seguir obra", ou entre no perfil de uma pessoa e clique em "Seguir".'}
-            </p>
-
-            <div style={emptyActionsStyle}>
-              <Link href="/explorar" style={exploreButtonStyle}>
-                Explorar obras
-              </Link>
-            </div>
-          </div>
+          <p
+            style={{
+              margin: "10px 0 0",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 800,
+              textAlign: "center",
+            }}
+          >
+            {visualizandoListaSocialDoPerfil
+              ? abaSeguimento === "seguidores"
+                ? "Nenhum seguidor ainda"
+                : "Nenhum perfil seguido ainda"
+              : abaConteudo === "seguidores"
+                ? "Você ainda não tem seguidores"
+                : "Você ainda não segue nada"}
+          </p>
         ) : (
           <>
             {totalSeguindo === 0 && (
-              <div style={emptyBoxStyle}>
-                <h2 style={emptyTitleStyle}>Nada encontrado</h2>
-
-                <p style={emptyTextStyle}>
-                  {visualizandoListaSocialDoPerfil
-                    ? `Nenhum perfil encontrado em ${descricaoListaSocial}.`
-                    : "Nenhuma obra, autor ou pessoa seguida combina com a busca e os filtros atuais."}
-                </p>
-
-                <button type="button" onClick={limparFiltros} style={exploreButtonStyle}>
-                  Limpar filtros
-                </button>
-              </div>
+              <p
+                style={{
+                  margin: "10px 0 0",
+                  color: "#FFFFFF",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  textAlign: "center",
+                }}
+              >
+                Nada encontrado
+              </p>
             )}
 
             {!visualizandoListaSocialDoPerfil && abaConteudo === "obras" && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
               {obrasFiltradas.length === 0 ? (
-                <div style={emptyMiniBoxStyle}>
-                  Nenhuma obra seguida encontrada com os filtros atuais.
-                </div>
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    color: "#FFFFFF",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    textAlign: "center",
+                  }}
+                >
+                  Nenhuma obra seguida encontrada
+                </p>
               ) : (
                 <div style={isDesktop ? desktopGridStyle : gridStyle}>
                   {obrasFiltradas.map((obra) => {
@@ -4707,62 +4693,6 @@ const authorNameStyle: CSSProperties = {
   letterSpacing: "-0.05em",
   maxWidth: "100%",
   ...safeTextStyle,
-};
-
-const emptyBoxStyle: CSSProperties = {
-  marginTop: "24px",
-  borderRadius: "28px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  padding: "24px",
-  display: "grid",
-  gap: "14px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none"
-};
-
-const emptyMiniBoxStyle: CSSProperties = {
-  padding: "16px",
-  borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "#D4D4D8",
-  fontSize: "13px",
-  fontWeight: 800,
-  lineHeight: 1.45,
-  boxShadow: "none",
-  ...safeTextStyle
-};
-
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "30px",
-  fontWeight: 950,
-  letterSpacing: "-0.05em",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const emptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "#D4D4D8",
-  lineHeight: 1.7,
-  fontSize: "14px",
-  fontWeight: 600,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const emptyActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
 };
 
 const exploreButtonStyle: CSSProperties = {

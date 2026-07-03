@@ -1293,13 +1293,6 @@ export default function ConfiguracoesPage() {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
-
-        <section style={containerStyle}>
-          <div style={emptyAccessBoxStyle}>
-            <h1 style={emptyAccessTitleStyle}>Verificando acesso...</h1>
-            <p style={emptyAccessTextStyle}>Aguarde enquanto confirmo sua conta.</p>
-          </div>
-        </section>
       </main>
     );
   }
@@ -2133,25 +2126,6 @@ const themeCheckStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   color: "var(--historietas-accent, #F97316)",
-};
-
-const emptyAccessBoxStyle: CSSProperties = {
-  minHeight: "70vh",
-  display: "grid",
-  alignContent: "center",
-  justifyItems: "center",
-  gap: "10px",
-  textAlign: "center",
-};
-
-const emptyAccessTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "28px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  ...safeTextStyle,
 };
 
 const emptyAccessTextStyle: CSSProperties = {
