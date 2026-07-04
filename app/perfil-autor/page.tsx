@@ -653,7 +653,7 @@ function salvarAvaliacaoAutorLocal(
   nota: number,
   userId = "",
 ) {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || !userId.trim()) {
     return;
   }
 
@@ -1004,7 +1004,7 @@ function encontrarCapituloParaContinuar(obra: ObraLocal) {
 function criarStorageKeyUsuarioPerfilBiblioteca(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function normalizarListaIdsPerfilBiblioteca(valor: unknown) {
@@ -1014,12 +1014,14 @@ function normalizarListaIdsPerfilBiblioteca(valor: unknown) {
 }
 
 function carregarListaIdsPerfilBiblioteca(chave: string, userId = "") {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return [] as string[];
   }
 
   try {
-    const chaveParaLer = criarStorageKeyUsuarioPerfilBiblioteca(chave, userId);
+    const chaveParaLer = criarStorageKeyUsuarioPerfilBiblioteca(chave, userIdLimpo);
     const listaTexto = localStorage.getItem(chaveParaLer);
     const lista = normalizarListaIdsPerfilBiblioteca(
       listaTexto ? JSON.parse(listaTexto) : [],
@@ -1036,7 +1038,9 @@ function salvarListaIdsPerfilBiblioteca(
   userId: string,
   lista: string[],
 ) {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
@@ -1044,7 +1048,7 @@ function salvarListaIdsPerfilBiblioteca(
 
   try {
     localStorage.setItem(
-      criarStorageKeyUsuarioPerfilBiblioteca(chave, userId),
+      criarStorageKeyUsuarioPerfilBiblioteca(chave, userIdLimpo),
       JSON.stringify(listaNormalizada),
     );
   } catch {
@@ -1053,13 +1057,15 @@ function salvarListaIdsPerfilBiblioteca(
 }
 
 function carregarJsonUsuarioPerfilAutor(chave: string, userId = "") {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
     const texto = localStorage.getItem(
-      criarStorageKeyUsuarioPerfilBiblioteca(chave, userId),
+      criarStorageKeyUsuarioPerfilBiblioteca(chave, userIdLimpo),
     );
 
     return texto ? JSON.parse(texto) : null;
@@ -1069,13 +1075,15 @@ function carregarJsonUsuarioPerfilAutor(chave: string, userId = "") {
 }
 
 function salvarJsonUsuarioPerfilAutor(chave: string, userId: string, valor: unknown) {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
     localStorage.setItem(
-      criarStorageKeyUsuarioPerfilBiblioteca(chave, userId),
+      criarStorageKeyUsuarioPerfilBiblioteca(chave, userIdLimpo),
       JSON.stringify(valor),
     );
   } catch {
@@ -1198,19 +1206,19 @@ function carregarCurtidasTopFiveLocais(
   usuarioId = "",
 ) {
   const chavePerfil = criarChaveCurtidaTopFivePerfil(perfilUserId);
+  const usuarioIdNormalizado = usuarioId.trim().toLowerCase();
 
-  if (!chavePerfil) {
+  if (!chavePerfil || !usuarioIdNormalizado) {
     return { total: 0, curtiu: false };
   }
 
   try {
     const curtidasJson = carregarJsonUsuarioPerfilAutor(
       TOP_FIVE_LIKES_STORAGE_KEY,
-      "",
+      usuarioIdNormalizado,
     );
     const curtidasPorPerfil = normalizarCurtidasTopFiveLocais(curtidasJson);
     const curtidasPerfil = curtidasPorPerfil[chavePerfil] || [];
-    const usuarioIdNormalizado = usuarioId.trim().toLowerCase();
 
     return {
       total: curtidasPerfil.length,
@@ -1238,7 +1246,7 @@ function salvarCurtidaTopFiveLocal(
   try {
     const curtidasJson = carregarJsonUsuarioPerfilAutor(
       TOP_FIVE_LIKES_STORAGE_KEY,
-      "",
+      usuarioIdNormalizado,
     );
     const curtidasPorPerfil = normalizarCurtidasTopFiveLocais(curtidasJson);
     const curtidasAtuais = curtidasPorPerfil[chavePerfil] || [];
@@ -1252,7 +1260,7 @@ function salvarCurtidaTopFiveLocal(
 
     salvarJsonUsuarioPerfilAutor(
       TOP_FIVE_LIKES_STORAGE_KEY,
-      "",
+      usuarioIdNormalizado,
       curtidasPorPerfil,
     );
   } catch {
@@ -1685,16 +1693,31 @@ async function salvarPerfilUsuarioSupabase({
   }
 
   try {
-    const { data: perfilExistente } = await supabase
+    const { data: perfilPorUserId, error: erroUserId } = await supabase
       .from("profiles")
       .select("id,user_id")
       .eq("user_id", userIdLimpo)
+      .limit(1)
       .maybeSingle();
 
-    const perfilId =
-      perfilExistente && typeof perfilExistente === "object"
-        ? pegarTexto((perfilExistente as Record<string, unknown>).id)
+    let perfilId =
+      !erroUserId && perfilPorUserId && typeof perfilPorUserId === "object"
+        ? pegarTexto((perfilPorUserId as Record<string, unknown>).id)
         : "";
+
+    if (!perfilId) {
+      const { data: perfilPorId, error: erroId } = await supabase
+        .from("profiles")
+        .select("id,user_id")
+        .eq("id", userIdLimpo)
+        .limit(1)
+        .maybeSingle();
+
+      perfilId =
+        !erroId && perfilPorId && typeof perfilPorId === "object"
+          ? pegarTexto((perfilPorId as Record<string, unknown>).id)
+          : "";
+    }
 
     if (perfilId) {
       const { error } = await supabase

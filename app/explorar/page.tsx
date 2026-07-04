@@ -463,9 +463,17 @@ function obterTemaVisualExplorarSeguro(valor: unknown): TemaVisualExplorar {
   return "original";
 }
 
-function carregarTemaVisualExplorarSalvo() {
+function carregarTemaVisualExplorarSalvo(userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return "original";
+  }
+
   try {
-    const texto = localStorage.getItem(THEME_STORAGE_KEY);
+    const texto = localStorage.getItem(
+      criarStorageKeyUsuarioExplorar(THEME_STORAGE_KEY, userIdLimpo)
+    );
 
     if (!texto) {
       return "original";
@@ -641,8 +649,14 @@ function normalizarListaIdsExplorar(valor: unknown) {
 }
 
 function carregarListaIdsUsuarioExplorar(chave: string, userId: string) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return [] as string[];
+  }
+
   try {
-    const chaveUsuario = criarStorageKeyUsuarioExplorar(chave, userId);
+    const chaveUsuario = criarStorageKeyUsuarioExplorar(chave, userIdLimpo);
     const texto = localStorage.getItem(chaveUsuario);
     const json: unknown = texto ? JSON.parse(texto) : [];
 
@@ -1940,11 +1954,12 @@ export default function ExplorarPage() {
   const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
-    const temaSalvo = carregarTemaVisualExplorarSalvo();
-    aplicarTemaVisualExplorar(temaSalvo);
+    const temaInicial: TemaVisualExplorar = "original";
+
+    aplicarTemaVisualExplorar(temaInicial);
 
     const aplicarTemaTimer = window.setTimeout(() => {
-      setTemaVisual(temaSalvo);
+      setTemaVisual(temaInicial);
     }, 0);
 
     return () => {
@@ -1960,13 +1975,20 @@ export default function ExplorarPage() {
         const { data } = await supabase.auth.getUser();
 
         if (componenteAtivo) {
-          setUsuarioLogado(Boolean(data.user));
-          setUsuarioIdLogado(data.user?.id || "");
+          const userId = data.user?.id || "";
+          const temaSalvo = carregarTemaVisualExplorarSalvo(userId);
+
+          setUsuarioLogado(Boolean(userId));
+          setUsuarioIdLogado(userId);
+          setTemaVisual(temaSalvo);
+          aplicarTemaVisualExplorar(temaSalvo);
         }
       } catch {
         if (componenteAtivo) {
           setUsuarioLogado(false);
           setUsuarioIdLogado("");
+          setTemaVisual("original");
+          aplicarTemaVisualExplorar("original");
         }
       }
     }
@@ -1976,8 +1998,13 @@ export default function ExplorarPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUsuarioLogado(Boolean(session?.user));
-      setUsuarioIdLogado(session?.user?.id || "");
+      const userId = session?.user?.id || "";
+      const temaSalvo = carregarTemaVisualExplorarSalvo(userId);
+
+      setUsuarioLogado(Boolean(userId));
+      setUsuarioIdLogado(userId);
+      setTemaVisual(temaSalvo);
+      aplicarTemaVisualExplorar(temaSalvo);
 
       if (session?.user) {
         setMensagemLogin("");

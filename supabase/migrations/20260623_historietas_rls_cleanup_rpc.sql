@@ -7,7 +7,7 @@
 -- - manter obras/capítulos públicos somente quando publicado = true;
 -- - deixar notificações restritas ao dono.
 --
--- Rode no Supabase SQL Editor depois da migration de comunidade já existente.
+-- Rode antes de 20260703_historietas_comunidade_rls_rpc.sql.
 
 -- ============================================================
 -- PROFILES
@@ -753,42 +753,6 @@ create policy "notificacoes_delete_proprias"
   using (auth.uid() is not null and user_id = auth.uid());
 
 -- ============================================================
--- DENÚNCIAS
--- ============================================================
-
-alter table if exists public.comunidade_denuncias enable row level security;
-
-drop policy if exists "comunidade_denuncias_select_proprias_ou_admin" on public.comunidade_denuncias;
-drop policy if exists "comunidade_denuncias_insert_propria" on public.comunidade_denuncias;
-drop policy if exists "comunidade_denuncias_update_admin" on public.comunidade_denuncias;
-drop policy if exists "comunidade_denuncias_delete_admin" on public.comunidade_denuncias;
-
-create policy "comunidade_denuncias_select_proprias_ou_admin"
-  on public.comunidade_denuncias
-  for select
-  using (
-    denunciante_id = auth.uid()
-    or usuario_e_admin()
-  );
-
-create policy "comunidade_denuncias_insert_propria"
-  on public.comunidade_denuncias
-  for insert
-  with check (auth.uid() is not null and denunciante_id = auth.uid());
-
-create policy "comunidade_denuncias_update_admin"
-  on public.comunidade_denuncias
-  for update
-  using (usuario_e_admin())
-  with check (usuario_e_admin());
-
-create policy "comunidade_denuncias_delete_admin"
-  on public.comunidade_denuncias
-  for delete
-  using (usuario_e_admin());
-
-
--- ============================================================
 -- FIM DA PARTE ANTERIOR
 -- ============================================================
 
@@ -880,11 +844,7 @@ values
   ('notificacoes', 'notificacoes_insert_proprias'),
   ('notificacoes', 'notificacoes_insert_autor_para_seguidor'),
   ('notificacoes', 'notificacoes_update_proprias'),
-  ('notificacoes', 'notificacoes_delete_proprias'),
-  ('comunidade_denuncias', 'comunidade_denuncias_select_proprias_ou_admin'),
-  ('comunidade_denuncias', 'comunidade_denuncias_insert_propria'),
-  ('comunidade_denuncias', 'comunidade_denuncias_update_admin'),
-  ('comunidade_denuncias', 'comunidade_denuncias_delete_admin');
+  ('notificacoes', 'notificacoes_delete_proprias');
 
 do $$
 declare

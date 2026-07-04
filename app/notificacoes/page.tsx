@@ -136,13 +136,15 @@ function criarStorageKeyUsuarioNotificacoes(chave: string, userId: string) {
 }
 
 function lerStorageUsuarioNotificacoes(chave: string, userId: string) {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
     return localStorage.getItem(
-      criarStorageKeyUsuarioNotificacoes(chave, userId)
+      criarStorageKeyUsuarioNotificacoes(chave, userIdLimpo)
     );
   } catch {
     return null;
@@ -154,13 +156,15 @@ function salvarJsonStorageUsuarioNotificacoes(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
     localStorage.setItem(
-      criarStorageKeyUsuarioNotificacoes(chave, userId),
+      criarStorageKeyUsuarioNotificacoes(chave, userIdLimpo),
       JSON.stringify(valor)
     );
   } catch {
@@ -392,16 +396,18 @@ function normalizarNotificacao(
 }
 
 function carregarObras(userId = ""): ObraLocal[] {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return [];
   }
 
   try {
-    const dados = lerStorageUsuarioNotificacoes(CHAVE_OBRAS, userId);
+    const dados = lerStorageUsuarioNotificacoes(CHAVE_OBRAS, userIdLimpo);
     const obras = dados ? JSON.parse(dados) : [];
 
     if (!Array.isArray(obras)) {
-      salvarJsonStorageUsuarioNotificacoes(CHAVE_OBRAS, userId, []);
+      salvarJsonStorageUsuarioNotificacoes(CHAVE_OBRAS, userIdLimpo, []);
       return [];
     }
 
@@ -411,28 +417,30 @@ function carregarObras(userId = ""): ObraLocal[] {
 
     salvarJsonStorageUsuarioNotificacoes(
       CHAVE_OBRAS,
-      userId,
+      userIdLimpo,
       obrasNormalizadas
     );
 
     return obrasNormalizadas;
   } catch {
-    salvarJsonStorageUsuarioNotificacoes(CHAVE_OBRAS, userId, []);
+    salvarJsonStorageUsuarioNotificacoes(CHAVE_OBRAS, userIdLimpo, []);
     return [];
   }
 }
 
 function carregarNotificacoes(userId = ""): NotificacaoLocal[] {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return [];
   }
 
   try {
-    const dados = lerStorageUsuarioNotificacoes(CHAVE_NOTIFICACOES, userId);
+    const dados = lerStorageUsuarioNotificacoes(CHAVE_NOTIFICACOES, userIdLimpo);
     const notificacoes = dados ? JSON.parse(dados) : [];
 
     if (!Array.isArray(notificacoes)) {
-      salvarJsonStorageUsuarioNotificacoes(CHAVE_NOTIFICACOES, userId, []);
+      salvarJsonStorageUsuarioNotificacoes(CHAVE_NOTIFICACOES, userIdLimpo, []);
       return [];
     }
 
@@ -442,21 +450,27 @@ function carregarNotificacoes(userId = ""): NotificacaoLocal[] {
 
     salvarJsonStorageUsuarioNotificacoes(
       CHAVE_NOTIFICACOES,
-      userId,
+      userIdLimpo,
       notificacoesNormalizadas
     );
 
     return notificacoesNormalizadas;
   } catch {
-    salvarJsonStorageUsuarioNotificacoes(CHAVE_NOTIFICACOES, userId, []);
+    salvarJsonStorageUsuarioNotificacoes(CHAVE_NOTIFICACOES, userIdLimpo, []);
     return [];
   }
 }
 
 function salvarNotificacoes(notificacoes: NotificacaoLocal[], userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return;
+  }
+
   salvarJsonStorageUsuarioNotificacoes(
     CHAVE_NOTIFICACOES,
-    userId,
+    userIdLimpo,
     notificacoes
   );
 
@@ -468,16 +482,24 @@ function salvarNotificacoes(notificacoes: NotificacaoLocal[], userId = "") {
 }
 
 function criarChaveNotificacoesApagadas(usuarioId: string) {
-  return `${CHAVE_NOTIFICACOES_APAGADAS}-${usuarioId || "anon"}`;
+  return criarStorageKeyUsuarioNotificacoes(
+    CHAVE_NOTIFICACOES_APAGADAS,
+    usuarioId
+  );
 }
 
 function carregarIdsNotificacoesApagadas(usuarioId: string) {
-  if (typeof window === "undefined") {
+  const usuarioIdLimpo = usuarioId.trim();
+
+  if (typeof window === "undefined" || !usuarioIdLimpo) {
     return new Set<string>();
   }
 
   try {
-    const texto = localStorage.getItem(criarChaveNotificacoesApagadas(usuarioId));
+    const texto = lerStorageUsuarioNotificacoes(
+      CHAVE_NOTIFICACOES_APAGADAS,
+      usuarioIdLimpo
+    );
     const json: unknown = texto ? JSON.parse(texto) : [];
 
     if (!Array.isArray(json)) {
@@ -493,12 +515,13 @@ function carregarIdsNotificacoesApagadas(usuarioId: string) {
 }
 
 function registrarNotificacoesApagadas(usuarioId: string, ids: string[]) {
-  if (typeof window === "undefined" || ids.length === 0) {
+  const usuarioIdLimpo = usuarioId.trim();
+
+  if (typeof window === "undefined" || !usuarioIdLimpo || ids.length === 0) {
     return;
   }
 
-  const chave = criarChaveNotificacoesApagadas(usuarioId);
-  const idsAtuais = carregarIdsNotificacoesApagadas(usuarioId);
+  const idsAtuais = carregarIdsNotificacoesApagadas(usuarioIdLimpo);
 
   ids.forEach((id) => {
     if (id.trim()) {
@@ -506,7 +529,11 @@ function registrarNotificacoesApagadas(usuarioId: string, ids: string[]) {
     }
   });
 
-  localStorage.setItem(chave, JSON.stringify(Array.from(idsAtuais).slice(-500)));
+  salvarJsonStorageUsuarioNotificacoes(
+    CHAVE_NOTIFICACOES_APAGADAS,
+    usuarioIdLimpo,
+    Array.from(idsAtuais).slice(-500)
+  );
 }
 
 function filtrarNotificacoesApagadas(
@@ -1089,12 +1116,14 @@ function mesclarNotificacoes(
 }
 
 function lerIdsLocalStorage(chave: string, userId = ""): string[] {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return [];
   }
 
   try {
-    const texto = lerStorageUsuarioNotificacoes(chave, userId);
+    const texto = lerStorageUsuarioNotificacoes(chave, userIdLimpo);
     const json = texto ? JSON.parse(texto) : [];
 
     return Array.isArray(json)
@@ -1641,6 +1670,7 @@ async function carregarNotificacoesComunidadeSupabase(
         .from("capitulos")
         .select("id, obra_id, titulo, ordem, publicado, criado_em")
         .in("obra_id", obraIds)
+        .eq("publicado", true)
         .order("ordem", { ascending: true })
         .limit(600);
 
@@ -2510,7 +2540,7 @@ export default function NotificacoesPage() {
   const [ordenacao, setOrdenacao] = useState<OrdenacaoNotificacao>("recentes");
   const [isDesktop, setIsDesktop] = useState(false);
   const [carregando, setCarregando] = useState(true);
-  const [usuarioNotificacoesId, setUsuarioNotificacoesId] = useState("anon");
+  const [usuarioNotificacoesId, setUsuarioNotificacoesId] = useState("");
   const [menuNotificacaoAbertoId, setMenuNotificacaoAbertoId] = useState("");
   const [menuAcoesGeraisAberto, setMenuAcoesGeraisAberto] = useState(false);
   const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);

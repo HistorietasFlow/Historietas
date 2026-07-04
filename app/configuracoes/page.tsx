@@ -729,6 +729,15 @@ type PerfilConfiguracoesSupabase = {
   username: string;
 };
 
+function normalizarPerfilConfiguracoesSupabase(
+  perfil: Record<string, unknown>,
+): PerfilConfiguracoesSupabase {
+  return {
+    nome: pegarTexto(perfil.nome),
+    username: normalizarUsernameConfiguracoes(pegarTexto(perfil.username)),
+  };
+}
+
 async function carregarPerfilConfiguracoesSupabase(
   userId: string,
 ): Promise<PerfilConfiguracoesSupabase | null> {
@@ -739,22 +748,43 @@ async function carregarPerfilConfiguracoesSupabase(
   }
 
   try {
-    const { data, error } = await supabase
+    const { data: perfilPorUserId, error: erroUserId } = await supabase
       .from("profiles")
-      .select("nome,username")
+      .select("id,user_id,nome,username")
       .eq("user_id", userIdLimpo)
+      .limit(1)
       .maybeSingle();
 
-    if (error || !data || typeof data !== "object" || Array.isArray(data)) {
+    if (
+      !erroUserId &&
+      perfilPorUserId &&
+      typeof perfilPorUserId === "object" &&
+      !Array.isArray(perfilPorUserId)
+    ) {
+      return normalizarPerfilConfiguracoesSupabase(
+        perfilPorUserId as Record<string, unknown>,
+      );
+    }
+
+    const { data: perfilPorId, error: erroId } = await supabase
+      .from("profiles")
+      .select("id,user_id,nome,username")
+      .eq("id", userIdLimpo)
+      .limit(1)
+      .maybeSingle();
+
+    if (
+      erroId ||
+      !perfilPorId ||
+      typeof perfilPorId !== "object" ||
+      Array.isArray(perfilPorId)
+    ) {
       return null;
     }
 
-    const perfil = data as Record<string, unknown>;
-
-    return {
-      nome: pegarTexto(perfil.nome),
-      username: normalizarUsernameConfiguracoes(pegarTexto(perfil.username)),
-    };
+    return normalizarPerfilConfiguracoesSupabase(
+      perfilPorId as Record<string, unknown>,
+    );
   } catch {
     return null;
   }
@@ -794,22 +824,42 @@ async function salvarPerfilConfiguracoesSupabase({
   const atualizadoEm = new Date().toISOString();
 
   try {
-    const { data: perfilExistente, error: erroBusca } = await supabase
+    const { data: perfilPorUserId, error: erroUserId } = await supabase
       .from("profiles")
       .select("id,user_id")
       .eq("user_id", userIdLimpo)
+      .limit(1)
       .maybeSingle();
 
-    if (erroBusca) {
-      return { ok: false, erro: erroBusca.message };
+    if (erroUserId) {
+      return { ok: false, erro: erroUserId.message };
     }
 
-    const perfilId =
-      perfilExistente && typeof perfilExistente === "object"
-        ? pegarTexto((perfilExistente as Record<string, unknown>).id)
+    let perfilId =
+      perfilPorUserId && typeof perfilPorUserId === "object"
+        ? pegarTexto((perfilPorUserId as Record<string, unknown>).id)
         : "";
 
+    if (!perfilId) {
+      const { data: perfilPorId, error: erroId } = await supabase
+        .from("profiles")
+        .select("id,user_id")
+        .eq("id", userIdLimpo)
+        .limit(1)
+        .maybeSingle();
+
+      if (erroId) {
+        return { ok: false, erro: erroId.message };
+      }
+
+      perfilId =
+        perfilPorId && typeof perfilPorId === "object"
+          ? pegarTexto((perfilPorId as Record<string, unknown>).id)
+          : "";
+    }
+
     const payload = {
+      user_id: userIdLimpo,
       nome: nomeLimpo,
       username: usernameLimpo || null,
       atualizado_em: atualizadoEm,
@@ -827,17 +877,19 @@ async function salvarPerfilConfiguracoesSupabase({
       };
     }
 
-    const { error } = await supabase.from("profiles").insert({
-      id: userIdLimpo,
-      user_id: userIdLimpo,
-      avatar_url: "",
-      bio: "",
-      tipo: "leitor",
-      criado_em: atualizadoEm,
-      is_admin: false,
-      sobre_bio: "",
-      ...payload,
-    });
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        id: userIdLimpo,
+        avatar_url: "",
+        bio: "",
+        tipo: "leitor",
+        criado_em: atualizadoEm,
+        is_admin: false,
+        sobre_bio: "",
+        ...payload,
+      },
+      { onConflict: "id" },
+    );
 
     return {
       ok: !error,

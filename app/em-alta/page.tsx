@@ -246,15 +246,14 @@ function carregarAvataresAutoresLocaisEmAlta(userIds: string[]) {
   }
 
   const chavesParaLer = Array.from(
-    new Set([
-      AUTHOR_PROFILE_STORAGE_KEY,
-      ...userIds
+    new Set(
+      userIds
         .map((userId) => userId.trim())
         .filter(Boolean)
         .map((userId) =>
           criarStorageKeyUsuarioEmAlta(AUTHOR_PROFILE_STORAGE_KEY, userId),
         ),
-    ]),
+    ),
   );
 
   chavesParaLer.forEach((chaveStorage) => {
@@ -1633,18 +1632,22 @@ export default function EmAltaPage() {
           obrasConcluidasNormalizadas,
         );
 
-        const visualizacoesTexto = localStorage.getItem(
-          criarStorageKeyUsuarioEmAlta(VIEWED_WORKS_STORAGE_KEY, userIdAtual),
-        );
+        const visualizacoesTexto = userIdAtual
+          ? localStorage.getItem(
+              criarStorageKeyUsuarioEmAlta(VIEWED_WORKS_STORAGE_KEY, userIdAtual),
+            )
+          : null;
         const visualizacoesJson = visualizacoesTexto
           ? JSON.parse(visualizacoesTexto)
           : {};
         const visualizacoesNormalizadas =
           normalizarVisualizacoesRanking(visualizacoesJson);
 
-        const avaliacoesLocaisTexto = localStorage.getItem(
-          criarStorageKeyUsuarioEmAlta(RATED_WORKS_STORAGE_KEY, userIdAtual),
-        );
+        const avaliacoesLocaisTexto = userIdAtual
+          ? localStorage.getItem(
+              criarStorageKeyUsuarioEmAlta(RATED_WORKS_STORAGE_KEY, userIdAtual),
+            )
+          : null;
         const avaliacoesLocaisJson = avaliacoesLocaisTexto
           ? JSON.parse(avaliacoesLocaisTexto)
           : {};

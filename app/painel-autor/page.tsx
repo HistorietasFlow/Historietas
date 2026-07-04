@@ -360,6 +360,10 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
 }
 
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
+  if (!userId.trim()) {
+    return {};
+  }
+
   try {
     const backupTexto = lerStorageUsuarioPainel(
       FILE_BACKUP_STORAGE_KEY,
@@ -395,6 +399,10 @@ function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
 }
 
 function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
+  if (!userId.trim()) {
+    return;
+  }
+
   try {
     const backupAtual = carregarBackupArquivosObras(userId);
 
@@ -582,12 +590,16 @@ function criarStorageKeyUsuarioPainel(chave: string, userId: string) {
 }
 
 function lerStorageUsuarioPainel(chave: string, userId: string) {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    return localStorage.getItem(criarStorageKeyUsuarioPainel(chave, userId));
+    return localStorage.getItem(
+      criarStorageKeyUsuarioPainel(chave, userIdLimpo)
+    );
   } catch {
     return null;
   }
@@ -598,13 +610,15 @@ function salvarJsonStorageUsuarioPainel(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
     localStorage.setItem(
-      criarStorageKeyUsuarioPainel(chave, userId),
+      criarStorageKeyUsuarioPainel(chave, userIdLimpo),
       JSON.stringify(valor)
     );
   } catch {
@@ -630,6 +644,10 @@ function salvarListaIdsUsuarioPainel(
   userId: string,
   listaUsuario: string[]
 ) {
+  if (!userId.trim()) {
+    return;
+  }
+
   const listaUsuarioNormalizada = normalizarListaIds(listaUsuario);
 
   salvarJsonStorageUsuarioPainel(chave, userId, listaUsuarioNormalizada);
@@ -693,6 +711,10 @@ function salvarColecaoAposExcluirPainel(
   userId: string,
   listaUsuario: string[]
 ) {
+  if (!userId.trim()) {
+    return;
+  }
+
   salvarJsonStorageUsuarioPainel(
     chave,
     userId,
@@ -1236,6 +1258,7 @@ async function carregarProfilePainelAutor(userId: string) {
       .from("profiles")
       .select(camposProfile)
       .eq("user_id", userIdLimpo)
+      .limit(1)
       .maybeSingle();
 
     if (!erroUserId && profilePorUserId) {
@@ -1246,6 +1269,7 @@ async function carregarProfilePainelAutor(userId: string) {
       .from("profiles")
       .select(camposProfile)
       .eq("id", userIdLimpo)
+      .limit(1)
       .maybeSingle();
 
     if (!erroId && profilePorId) {

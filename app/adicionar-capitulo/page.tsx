@@ -217,6 +217,7 @@ async function carregarNomeProfileAdicionarCapitulo(userId: string) {
       .from("profiles")
       .select("id, user_id, nome")
       .eq("user_id", usuarioId)
+      .limit(1)
       .maybeSingle();
 
     if (!error && data) {
@@ -236,6 +237,7 @@ async function carregarNomeProfileAdicionarCapitulo(userId: string) {
       .from("profiles")
       .select("id, user_id, nome")
       .eq("id", usuarioId)
+      .limit(1)
       .maybeSingle();
 
     if (!error && data) {

@@ -249,9 +249,7 @@ function sincronizarStorageUsuarioLogin(userId: string) {
       obrasDoUsuarioNoGlobal,
     );
 
-    if (obrasUsuarioMescladas.length > 0) {
-      salvarJsonStorageLogin(chaveObrasUsuario, obrasUsuarioMescladas);
-    }
+    salvarJsonStorageLogin(chaveObrasUsuario, obrasUsuarioMescladas);
 
     [
       FAVORITES_STORAGE_KEY,
@@ -264,16 +262,7 @@ function sincronizarStorageUsuarioLogin(userId: string) {
         lerJsonStorageLogin(chaveUsuario),
       );
 
-      if (listaUsuario.length > 0) {
-        salvarJsonStorageLogin(chaveUsuario, listaUsuario);
-        return;
-      }
-
-      const listaGlobalAntiga = normalizarListaStringsLogin(
-        lerJsonStorageLogin(chave),
-      );
-
-      salvarJsonStorageLogin(chaveUsuario, listaGlobalAntiga);
+      salvarJsonStorageLogin(chaveUsuario, listaUsuario);
     });
   } catch {
     // A sincronização local não pode bloquear autenticação.
@@ -383,6 +372,7 @@ export default function LoginPage() {
         .from("profiles")
         .select("id,user_id,nome,bio,sobre_bio,avatar_url")
         .eq("user_id", userIdLimpo)
+        .limit(1)
         .maybeSingle();
 
       const perfilAtual =
