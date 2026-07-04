@@ -33,6 +33,7 @@ type TemaVisual =
 
 type PreferenciasConta = {
   nomeExibicao: string;
+  username: string;
   emailContato: string;
   receberAvisos: boolean;
   leituraConfortavel: boolean;
@@ -53,6 +54,7 @@ type ResumoLocal = {
 type UsuarioConfiguracoes = {
   id: string;
   nome: string;
+  username: string;
   email: string;
 };
 
@@ -104,6 +106,7 @@ const CHAVES_RESUMO = [
 
 const preferenciasPadrao: PreferenciasConta = {
   nomeExibicao: "",
+  username: "",
   emailContato: "",
   receberAvisos: true,
   leituraConfortavel: true,
@@ -615,6 +618,10 @@ function carregarPreferencias(userId = ""): PreferenciasConta {
         typeof preferencias.nomeExibicao === "string"
           ? preferencias.nomeExibicao
           : "",
+      username:
+        typeof preferencias.username === "string"
+          ? normalizarUsernameConfiguracoes(preferencias.username)
+          : "",
       emailContato:
         typeof preferencias.emailContato === "string"
           ? preferencias.emailContato
@@ -698,6 +705,150 @@ function criarLoginHrefConfiguracoes() {
 
 function pegarTexto(valor: unknown, fallback = "") {
   return typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
+}
+
+function normalizarUsernameConfiguracoes(valor: string) {
+  return valor
+    .trim()
+    .replace(/^@+/, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9._]+/g, ".")
+    .replace(/[._]{2,}/g, ".")
+    .replace(/^[._]+|[._]+$/g, "")
+    .slice(0, 30);
+}
+
+function idUsuarioSupabaseValido(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
+type PerfilConfiguracoesSupabase = {
+  nome: string;
+  username: string;
+};
+
+async function carregarPerfilConfiguracoesSupabase(
+  userId: string,
+): Promise<PerfilConfiguracoesSupabase | null> {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo || !idUsuarioSupabaseValido(userIdLimpo)) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("nome,username")
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
+
+    if (error || !data || typeof data !== "object" || Array.isArray(data)) {
+      return null;
+    }
+
+    const perfil = data as Record<string, unknown>;
+
+    return {
+      nome: pegarTexto(perfil.nome),
+      username: normalizarUsernameConfiguracoes(pegarTexto(perfil.username)),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function traduzirErroUsernameConfiguracoes(mensagem: string) {
+  const mensagemNormalizada = mensagem.toLowerCase();
+
+  if (
+    mensagemNormalizada.includes("profiles_username_unique") ||
+    mensagemNormalizada.includes("duplicate") ||
+    mensagemNormalizada.includes("unique")
+  ) {
+    return "Esse @username já está em uso.";
+  }
+
+  return "Não consegui salvar esse @username agora.";
+}
+
+async function salvarPerfilConfiguracoesSupabase({
+  userId,
+  nome,
+  username,
+}: {
+  userId: string;
+  nome: string;
+  username: string;
+}) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo || !idUsuarioSupabaseValido(userIdLimpo)) {
+    return { ok: false, erro: "Usuário inválido." };
+  }
+
+  const usernameLimpo = normalizarUsernameConfiguracoes(username);
+  const nomeLimpo = nome.trim() || "Usuário";
+  const atualizadoEm = new Date().toISOString();
+
+  try {
+    const { data: perfilExistente, error: erroBusca } = await supabase
+      .from("profiles")
+      .select("id,user_id")
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
+
+    if (erroBusca) {
+      return { ok: false, erro: erroBusca.message };
+    }
+
+    const perfilId =
+      perfilExistente && typeof perfilExistente === "object"
+        ? pegarTexto((perfilExistente as Record<string, unknown>).id)
+        : "";
+
+    const payload = {
+      nome: nomeLimpo,
+      username: usernameLimpo || null,
+      atualizado_em: atualizadoEm,
+    };
+
+    if (perfilId) {
+      const { error } = await supabase
+        .from("profiles")
+        .update(payload)
+        .eq("id", perfilId);
+
+      return {
+        ok: !error,
+        erro: error?.message || "",
+      };
+    }
+
+    const { error } = await supabase.from("profiles").insert({
+      id: userIdLimpo,
+      user_id: userIdLimpo,
+      avatar_url: "",
+      bio: "",
+      tipo: "leitor",
+      criado_em: atualizadoEm,
+      is_admin: false,
+      sobre_bio: "",
+      ...payload,
+    });
+
+    return {
+      ok: !error,
+      erro: error?.message || "",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      erro: error instanceof Error ? error.message : "Erro inesperado.",
+    };
+  }
 }
 
 function obterIniciais(nome: string, email: string) {
@@ -1040,6 +1191,8 @@ function SettingsInput({
   value,
   placeholder,
   type = "text",
+  helperText,
+  error = false,
   onChange,
 }: {
   icon: IconName;
@@ -1047,6 +1200,8 @@ function SettingsInput({
   value: string;
   placeholder: string;
   type?: string;
+  helperText?: string;
+  error?: boolean;
   onChange: (valor: string) => void;
 }) {
   return (
@@ -1065,6 +1220,12 @@ function SettingsInput({
           type={type}
           style={inputStyle}
         />
+
+        {helperText ? (
+          <span style={error ? inputErrorStyle : inputHelperStyle}>
+            {helperText}
+          </span>
+        ) : null}
       </span>
     </label>
   );
@@ -1077,7 +1238,8 @@ export default function ConfiguracoesPage() {
   const [preferencias, setPreferencias] =
     useState<PreferenciasConta>(preferenciasPadrao);
   const [resumo, setResumo] = useState<ResumoLocal>(resumoPadrao);
-  const [mensagem, setMensagem] = useState("");
+  const [erroUsername, setErroUsername] = useState("");
+  const [salvando, setSalvando] = useState(false);
   const [busca, setBusca] = useState("");
   const [mostrarTemas, setMostrarTemas] = useState(false);
   const [adminLiberado, setAdminLiberado] = useState(false);
@@ -1103,15 +1265,23 @@ export default function ConfiguracoesPage() {
           return;
         }
 
+        const perfilRemoto = await carregarPerfilConfiguracoesSupabase(data.user.id);
         const nome =
+          pegarTexto(perfilRemoto?.nome) ||
           pegarTexto(data.user.user_metadata?.nome) ||
           pegarTexto(data.user.user_metadata?.name) ||
           pegarTexto(data.user.email) ||
           "Usuário";
+        const username =
+          perfilRemoto?.username ||
+          normalizarUsernameConfiguracoes(
+            pegarTexto(data.user.user_metadata?.username),
+          );
 
         const usuarioCarregado: UsuarioConfiguracoes = {
           id: data.user.id,
           nome,
+          username,
           email: data.user.email || "",
         };
         const preferenciasCarregadas = carregarPreferencias(usuarioCarregado.id);
@@ -1119,8 +1289,16 @@ export default function ConfiguracoesPage() {
         setUsuario(usuarioCarregado);
         setPreferencias({
           ...preferenciasCarregadas,
-          nomeExibicao: preferenciasCarregadas.nomeExibicao || usuarioCarregado.nome,
-          emailContato: preferenciasCarregadas.emailContato || usuarioCarregado.email,
+          nomeExibicao:
+            perfilRemoto?.nome ||
+            preferenciasCarregadas.nomeExibicao ||
+            usuarioCarregado.nome,
+          username:
+            perfilRemoto?.username ||
+            preferenciasCarregadas.username ||
+            usuarioCarregado.username,
+          emailContato:
+            preferenciasCarregadas.emailContato || usuarioCarregado.email,
         });
         aplicarTemaVisual(preferenciasCarregadas.temaVisual);
         setResumo(criarResumoLocal(usuarioCarregado.id));
@@ -1228,27 +1406,73 @@ export default function ConfiguracoesPage() {
     aplicarTemaVisual(temaVisual);
   }
 
-  function salvar() {
-    salvarPreferencias(preferencias, usuarioIdLogado);
-    setResumo(criarResumoLocal(usuarioIdLogado));
-    setMensagem("Configurações salvas.");
+  async function salvar() {
+    if (salvando) {
+      return;
+    }
 
-    window.setTimeout(() => {
-      setMensagem("");
-    }, 1800);
+    const usernameLimpo = normalizarUsernameConfiguracoes(preferencias.username);
+
+    if (preferencias.username.trim() && usernameLimpo.length < 3) {
+      setErroUsername("Use pelo menos 3 caracteres no @username.");
+      return;
+    }
+
+    const preferenciasNormalizadas: PreferenciasConta = {
+      ...preferencias,
+      nomeExibicao: preferencias.nomeExibicao.trim(),
+      username: usernameLimpo,
+      emailContato: preferencias.emailContato.trim(),
+    };
+
+    setSalvando(true);
+    setErroUsername("");
+
+    const resultadoPerfil = await salvarPerfilConfiguracoesSupabase({
+      userId: usuarioIdLogado,
+      nome: preferenciasNormalizadas.nomeExibicao || usuario?.nome || "Usuário",
+      username: usernameLimpo,
+    });
+
+    if (!resultadoPerfil.ok) {
+      setErroUsername(traduzirErroUsernameConfiguracoes(resultadoPerfil.erro));
+      setSalvando(false);
+      return;
+    }
+
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          nome: preferenciasNormalizadas.nomeExibicao || usuario?.nome || "Usuário",
+          username: usernameLimpo,
+        },
+      });
+    } catch {
+      // A tabela profiles já foi atualizada; metadata do Auth é complementar.
+    }
+
+    salvarPreferencias(preferenciasNormalizadas, usuarioIdLogado);
+    setPreferencias(preferenciasNormalizadas);
+    setUsuario((usuarioAtual) =>
+      usuarioAtual
+        ? {
+            ...usuarioAtual,
+            nome: preferenciasNormalizadas.nomeExibicao || usuarioAtual.nome,
+            username: usernameLimpo,
+            email: preferenciasNormalizadas.emailContato || usuarioAtual.email,
+          }
+        : usuarioAtual,
+    );
+    setResumo(criarResumoLocal(usuarioIdLogado));
+    setSalvando(false);
   }
 
   async function copiarBackup() {
     try {
       await copiarTexto(criarBackupLocal(usuarioIdLogado));
-      setMensagem("Dados copiados.");
     } catch {
-      setMensagem("Não consegui copiar os dados agora.");
+      // A ação de copiar não mostra bloco visual na página.
     }
-
-    window.setTimeout(() => {
-      setMensagem("");
-    }, 2200);
   }
 
   function baixarBackup() {
@@ -1268,19 +1492,12 @@ export default function ConfiguracoesPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      setMensagem("Backup baixado.");
     } catch {
-      setMensagem("Não consegui baixar o backup agora.");
+      // A ação de baixar backup não mostra bloco visual na página.
     }
-
-    window.setTimeout(() => {
-      setMensagem("");
-    }, 2200);
   }
 
   async function sairDaConta() {
-    setMensagem("Saindo da conta...");
-
     try {
       await supabase.auth.signOut();
     } finally {
@@ -1336,15 +1553,17 @@ export default function ConfiguracoesPage() {
             <strong style={profileNameStyle}>
               {preferencias.nomeExibicao || usuario?.nome || "Conta Historietas"}
             </strong>
+            <span style={profileUsernameStyle}>
+              {preferencias.username ? `@${preferencias.username}` : "@username não definido"}
+            </span>
             <span style={profileEmailStyle}>
               {preferencias.emailContato || usuario?.email || "E-mail não informado"}
             </span>
           </div>
         </section>
 
-        {mensagem ? <span style={messageStyle}>{mensagem}</span> : null}
 
-        {deveMostrar("conta", "nome", "email", "senha", "privacidade", "salvar") ? (
+        {deveMostrar("conta", "nome", "username", "usuário", "email", "senha", "privacidade", "salvar") ? (
           <SettingsSection title="Sua conta">
             {deveMostrar("nome", "exibição", "autor") ? (
               <SettingsInput
@@ -1353,6 +1572,27 @@ export default function ConfiguracoesPage() {
                 value={preferencias.nomeExibicao}
                 onChange={(valor) => atualizarPreferencia("nomeExibicao", valor)}
                 placeholder="Ex: Nome do autor"
+              />
+            ) : null}
+
+            {deveMostrar("username", "usuário", "perfil", "arroba") ? (
+              <SettingsInput
+                icon="user"
+                label="@username"
+                value={preferencias.username}
+                onChange={(valor) => {
+                  setErroUsername("");
+                  atualizarPreferencia(
+                    "username",
+                    normalizarUsernameConfiguracoes(valor),
+                  );
+                }}
+                placeholder="ex: username"
+                helperText={
+                  erroUsername ||
+                  "Nome pode repetir. @username não pode repetir."
+                }
+                error={Boolean(erroUsername)}
               />
             ) : null}
 
@@ -1370,7 +1610,7 @@ export default function ConfiguracoesPage() {
             {deveMostrar("salvar", "alterações", "configurações") ? (
               <SettingsRow
                 icon="check"
-                title="Salvar alterações"
+                title={salvando ? "Salvando..." : "Salvar alterações"}
                 subtitle="Grava suas preferências nesta conta"
                 onClick={salvar}
               />
@@ -1832,27 +2072,19 @@ const profileNameStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const profileUsernameStyle: CSSProperties = {
+  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  fontSize: "13px",
+  lineHeight: 1.15,
+  fontWeight: 760,
+  ...safeTextStyle,
+};
+
 const profileEmailStyle: CSSProperties = {
   color: "rgba(255,255,255,0.52)",
   fontSize: "13px",
   lineHeight: 1.18,
   fontWeight: 520,
-  ...safeTextStyle,
-};
-
-const messageStyle: CSSProperties = {
-  display: "block",
-  width: "fit-content",
-  maxWidth: "100%",
-  margin: "0 auto 14px",
-  padding: "8px 12px",
-  borderRadius: "999px",
-  background: "rgba(34,197,94,0.12)",
-  border: "1px solid rgba(34,197,94,0.24)",
-  color: "#86EFAC",
-  fontSize: "12px",
-  fontWeight: 850,
-  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -2022,6 +2254,19 @@ const inputStyle: CSSProperties = {
   fontFamily: "inherit",
   padding: 0,
   minWidth: 0,
+};
+
+const inputHelperStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.46)",
+  fontSize: "12px",
+  lineHeight: 1.25,
+  fontWeight: 620,
+  ...safeTextStyle,
+};
+
+const inputErrorStyle: CSSProperties = {
+  ...inputHelperStyle,
+  color: "#FCA5A5",
 };
 
 const toggleBaseStyle: CSSProperties = {

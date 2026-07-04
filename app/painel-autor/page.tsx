@@ -546,6 +546,26 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
                     : `obra-${obraIndex + 1}`
                 )
           }`,
+    totalCurtidasPainel:
+      typeof obra.totalCurtidasPainel === "number" &&
+      Number.isFinite(obra.totalCurtidasPainel)
+        ? Math.max(0, Math.round(obra.totalCurtidasPainel))
+        : undefined,
+    totalComentariosPainel:
+      typeof obra.totalComentariosPainel === "number" &&
+      Number.isFinite(obra.totalComentariosPainel)
+        ? Math.max(0, Math.round(obra.totalComentariosPainel))
+        : undefined,
+    totalSalvosPainel:
+      typeof obra.totalSalvosPainel === "number" &&
+      Number.isFinite(obra.totalSalvosPainel)
+        ? Math.max(0, Math.round(obra.totalSalvosPainel))
+        : undefined,
+    totalLidosPainel:
+      typeof obra.totalLidosPainel === "number" &&
+      Number.isFinite(obra.totalLidosPainel)
+        ? Math.max(0, Math.round(obra.totalLidosPainel))
+        : undefined,
   };
 }
 
@@ -848,7 +868,7 @@ const CAMPOS_REGISTROS_PAINEL_AUTOR: Record<string, string> = {
   concluidas: "user_id,obra_id",
   salvos_capitulos: "user_id,capitulo_id",
   curtidas_capitulos: "user_id,capitulo_id",
-  comentarios_capitulos: "user_id,capitulo_id,texto",
+  comentarios_capitulos: "user_id,capitulo_id,comentario",
   progresso_leitura: "user_id,obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
   obra_curtidas: "user_id,obra_id",
   seguindo_obras: "user_id,obra_id",
@@ -901,7 +921,7 @@ async function carregarRegistrosObraSupabase(
       query = query.eq("user_id", userId);
     }
 
-    const { data, error } = await query.limit(1000);
+    const { data, error } = await query.limit(5000);
 
     if (error) {
       return null;
@@ -924,7 +944,7 @@ async function carregarRegistrosObraSupabase(
       query = query.eq("user_id", userId);
     }
 
-    const { data, error } = await query.limit(1000);
+    const { data, error } = await query.limit(5000);
 
     if (error) {
       return null;
@@ -1353,6 +1373,7 @@ async function carregarPainelAutorSupabase(
     const [
       favoritosBanco,
       concluidasBanco,
+      favoritosObraBanco,
       salvosBanco,
       curtidasBanco,
       comentariosBanco,
@@ -1362,6 +1383,7 @@ async function carregarPainelAutorSupabase(
     ] = await Promise.all([
       carregarRegistrosObraSupabase("favoritos", obraIds, userId),
       carregarRegistrosObraSupabase("concluidas", obraIds, userId),
+      carregarRegistrosObraSupabase("favoritos", obraIds),
       carregarRegistrosObraSupabase("salvos_capitulos", obraIds, undefined, capituloIds),
       carregarRegistrosObraSupabase("curtidas_capitulos", obraIds, undefined, capituloIds),
       carregarRegistrosObraSupabase("comentarios_capitulos", obraIds, undefined, capituloIds),
@@ -1430,6 +1452,11 @@ async function carregarPainelAutorSupabase(
         obraBanco.id,
         capitulosDaObra
       );
+      const totalFavoritosObra = contarRegistrosRelacionadosObraPainel(
+        favoritosObraBanco,
+        obraBanco.id,
+        capitulosDaObra
+      );
 
       return {
         ...obraNormalizada,
@@ -1443,7 +1470,7 @@ async function carregarPainelAutorSupabase(
         ),
         totalSalvosPainel: Math.max(
           calcularSalvos(obraNormalizada),
-          totalSalvosCapitulos + totalSeguidoresObra
+          totalSalvosCapitulos + totalSeguidoresObra + totalFavoritosObra
         ),
         totalLidosPainel: Math.max(
           calcularLidos(obraNormalizada),

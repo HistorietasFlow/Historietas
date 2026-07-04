@@ -18,6 +18,10 @@ type CapituloLocal = {
   criadoEm: string;
   lido: boolean;
   lidoEm: string;
+  totalCurtidas?: number;
+  totalComentarios?: number;
+  totalSalvos?: number;
+  totalLidos?: number;
 };
 
 type ArquivoObraLocal = {
@@ -48,6 +52,10 @@ type ObraLocal = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
+  visualizacoes?: number;
+  totalCurtidas?: number;
+  totalFavoritos?: number;
+  totalConcluidas?: number;
   slug: string;
   link: string;
 };
@@ -74,6 +82,9 @@ type SupabaseObraRow = {
   link: string | null;
   criada_em: string | null;
   atualizado_em: string | null;
+  visualizacoes?: number | null;
+  views?: number | null;
+  total_visualizacoes?: number | null;
 };
 
 type SupabaseCapituloRow = {
@@ -816,20 +827,63 @@ function categoriaCombinaComGenero(categoria: string, genero: string) {
   return generoNormalizado.includes(categoriaNormalizada);
 }
 
+function normalizarContadorExplorar(valor: unknown) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return Math.max(0, Math.round(valor));
+  }
+
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
+
+    if (Number.isFinite(numero)) {
+      return Math.max(0, Math.round(numero));
+    }
+  }
+
+  return 0;
+}
+
 function totalCurtidasObra(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
+  const totalRealCapitulos = obra.capitulos.reduce(
+    (total, capitulo) => total + normalizarContadorExplorar(capitulo.totalCurtidas),
+    0
+  );
+  const totalRealObra = normalizarContadorExplorar(obra.totalCurtidas);
+  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
+
+  return Math.max(totalRealCapitulos + totalRealObra, totalLocal);
 }
 
 function totalComentariosObra(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length;
+  const totalReal = obra.capitulos.reduce(
+    (total, capitulo) => total + normalizarContadorExplorar(capitulo.totalComentarios),
+    0
+  );
+  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length;
+
+  return Math.max(totalReal, totalLocal);
 }
 
 function totalSalvosObra(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.salvo).length;
+  const totalRealCapitulos = obra.capitulos.reduce(
+    (total, capitulo) => total + normalizarContadorExplorar(capitulo.totalSalvos),
+    0
+  );
+  const totalFavoritos = normalizarContadorExplorar(obra.totalFavoritos);
+  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.salvo).length;
+
+  return Math.max(totalRealCapitulos + totalFavoritos, totalLocal);
 }
 
 function totalLidosObra(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.lido).length;
+  const totalVisualizacoes = normalizarContadorExplorar(obra.visualizacoes);
+  const totalRealLeituras = obra.capitulos.reduce(
+    (total, capitulo) => total + normalizarContadorExplorar(capitulo.totalLidos),
+    0
+  );
+  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.lido).length;
+
+  return Math.max(totalVisualizacoes, totalRealLeituras, totalLocal);
 }
 
 function obraTemAtividadeLeitura(obra: ObraLocal) {
@@ -900,6 +954,10 @@ function normalizarCapitulo(
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
+    totalCurtidas: normalizarContadorExplorar(capitulo.totalCurtidas),
+    totalComentarios: normalizarContadorExplorar(capitulo.totalComentarios),
+    totalSalvos: normalizarContadorExplorar(capitulo.totalSalvos),
+    totalLidos: normalizarContadorExplorar(capitulo.totalLidos),
   };
 }
 
@@ -1147,6 +1205,10 @@ function normalizarObra(
     ultimaLeituraEm:
       typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: normalizarContadorExplorar(obra.visualizacoes),
+    totalCurtidas: normalizarContadorExplorar(obra.totalCurtidas),
+    totalFavoritos: normalizarContadorExplorar(obra.totalFavoritos),
+    totalConcluidas: normalizarContadorExplorar(obra.totalConcluidas),
     slug,
     link:
       typeof obra.link === "string" && obra.link.trim()
@@ -1197,6 +1259,10 @@ function normalizarObraSupabase(
         criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
         lido: Boolean(capituloLocal?.lido),
         lidoEm: capituloLocal?.lidoEm || "",
+        totalCurtidas: normalizarContadorExplorar(capituloLocal?.totalCurtidas),
+        totalComentarios: normalizarContadorExplorar(capituloLocal?.totalComentarios),
+        totalSalvos: normalizarContadorExplorar(capituloLocal?.totalSalvos),
+        totalLidos: normalizarContadorExplorar(capituloLocal?.totalLidos),
       };
     }
   );
@@ -1274,6 +1340,12 @@ function normalizarObraSupabase(
     ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
+    visualizacoes: normalizarContadorExplorar(
+      obra.visualizacoes ?? obra.views ?? obra.total_visualizacoes ?? obraLocal?.visualizacoes
+    ),
+    totalCurtidas: normalizarContadorExplorar(obraLocal?.totalCurtidas),
+    totalFavoritos: normalizarContadorExplorar(obraLocal?.totalFavoritos),
+    totalConcluidas: normalizarContadorExplorar(obraLocal?.totalConcluidas),
     slug: slugObra,
     link: `/obra/${slugObra}`,
   };
@@ -1354,12 +1426,139 @@ async function carregarColecoesUsuarioExplorar(userId: string) {
   };
 }
 
+
+function separarEmLotesExplorar<T>(itens: T[], tamanho = 400) {
+  const lotes: T[][] = [];
+
+  for (let indice = 0; indice < itens.length; indice += tamanho) {
+    lotes.push(itens.slice(indice, indice + tamanho));
+  }
+
+  return lotes;
+}
+
+function incrementarContagemExplorar(mapa: Map<string, number>, id: string) {
+  const idLimpo = id.trim();
+
+  if (!idLimpo) {
+    return;
+  }
+
+  mapa.set(idLimpo, (mapa.get(idLimpo) || 0) + 1);
+}
+
+async function contarRegistrosPorColunaExplorar(
+  tabela: string,
+  coluna: string,
+  ids: string[]
+) {
+  const idsUnicos = Array.from(
+    new Set(ids.map((id) => id.trim()).filter(Boolean))
+  );
+  const contagens = new Map<string, number>();
+
+  if (idsUnicos.length === 0) {
+    return contagens;
+  }
+
+  const tamanhoPagina = 1000;
+
+  for (const loteIds of separarEmLotesExplorar(idsUnicos)) {
+    let inicio = 0;
+
+    while (inicio < 20000) {
+      try {
+        const { data, error } = await supabase
+          .from(tabela)
+          .select(coluna)
+          .in(coluna, loteIds)
+          .range(inicio, inicio + tamanhoPagina - 1);
+
+        if (error || !Array.isArray(data) || data.length === 0) {
+          break;
+        }
+
+        data.forEach((registro) => {
+          if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+            return;
+          }
+
+          const valor = (registro as Record<string, unknown>)[coluna];
+
+          if (typeof valor === "string") {
+            incrementarContagemExplorar(contagens, valor);
+          }
+        });
+
+        if (data.length < tamanhoPagina) {
+          break;
+        }
+
+        inicio += tamanhoPagina;
+      } catch {
+        break;
+      }
+    }
+  }
+
+  return contagens;
+}
+
+async function aplicarTotaisReaisExplorar(obrasParaAtualizar: ObraLocal[]) {
+  const capituloIds = Array.from(
+    new Set(
+      obrasParaAtualizar.flatMap((obra) =>
+        obra.capitulos.map((capitulo) => capitulo.id.trim()).filter(Boolean)
+      )
+    )
+  );
+  const obraIds = Array.from(
+    new Set(obrasParaAtualizar.map((obra) => obra.id.trim()).filter(Boolean))
+  );
+
+  if (capituloIds.length === 0 && obraIds.length === 0) {
+    return obrasParaAtualizar;
+  }
+
+  const [
+    curtidasPorCapitulo,
+    comentariosPorCapitulo,
+    salvosPorCapitulo,
+    lidosPorCapitulo,
+    curtidasPorObra,
+    favoritosPorObra,
+    concluidasPorObra,
+  ] = await Promise.all([
+    contarRegistrosPorColunaExplorar("curtidas_capitulos", "capitulo_id", capituloIds),
+    contarRegistrosPorColunaExplorar("comentarios_capitulos", "capitulo_id", capituloIds),
+    contarRegistrosPorColunaExplorar("salvos_capitulos", "capitulo_id", capituloIds),
+    contarRegistrosPorColunaExplorar("progresso_leitura", "capitulo_id", capituloIds),
+    contarRegistrosPorColunaExplorar("obra_curtidas", "obra_id", obraIds),
+    contarRegistrosPorColunaExplorar("favoritos", "obra_id", obraIds),
+    contarRegistrosPorColunaExplorar("concluidas", "obra_id", obraIds),
+  ]);
+
+  return obrasParaAtualizar.map((obra) => ({
+    ...obra,
+    totalCurtidas: curtidasPorObra.get(obra.id) || 0,
+    totalFavoritos: favoritosPorObra.get(obra.id) || 0,
+    totalConcluidas: concluidasPorObra.get(obra.id) || 0,
+    capitulos: obra.capitulos.map((capitulo) => ({
+      ...capitulo,
+      totalCurtidas: curtidasPorCapitulo.get(capitulo.id) || 0,
+      totalComentarios: comentariosPorCapitulo.get(capitulo.id) || 0,
+      totalSalvos: salvosPorCapitulo.get(capitulo.id) || 0,
+      totalLidos: lidosPorCapitulo.get(capitulo.id) || 0,
+    })),
+  }));
+}
+
 async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId = "") {
   try {
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
       .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
       )
       .eq("publicado", true)
       .order("criada_em", { ascending: false })
@@ -1370,7 +1569,7 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
         "Não consegui carregar obras publicadas do Supabase:",
         erroObras.message
       );
-      return obrasLocais;
+      return aplicarTotaisReaisExplorar(obrasLocais);
     }
 
     const obrasSupabase = ((obrasBanco || []) as unknown as SupabaseObraRow[]).filter(
@@ -1387,7 +1586,7 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
     );
 
     if (obrasSupabase.length === 0) {
-      return obrasLocaisComProfiles;
+      return aplicarTotaisReaisExplorar(obrasLocaisComProfiles);
     }
 
     const idsObras = obrasSupabase.map((obra) => obra.id);
@@ -1448,19 +1647,20 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
       obrasLocaisComProfiles,
       obrasSupabaseNormalizadas
     );
+    const obrasComTotaisReais = await aplicarTotaisReaisExplorar(obrasMescladas);
 
-    salvarBackupsArquivosObras(obrasMescladas, userId);
+    salvarBackupsArquivosObras(obrasComTotaisReais, userId);
     if (userId.trim()) {
       localStorage.setItem(
         criarStorageKeyUsuarioExplorar(STORAGE_KEY, userId),
-        JSON.stringify(obrasMescladas)
+        JSON.stringify(obrasComTotaisReais)
       );
     }
 
-    return obrasMescladas;
+    return obrasComTotaisReais;
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Explorar:", error);
-    return obrasLocais;
+    return aplicarTotaisReaisExplorar(obrasLocais);
   }
 }
 

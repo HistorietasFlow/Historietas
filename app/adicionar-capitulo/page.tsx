@@ -51,6 +51,11 @@ type ObraLocal = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
+  visualizacoes?: number;
+  totalCurtidas?: number;
+  totalComentarios?: number;
+  totalSalvos?: number;
+  totalLidos?: number;
   slug: string;
   link: string;
 };
@@ -103,6 +108,13 @@ type SupabaseObraRow = {
   arquivo_tamanho: number | null;
   arquivo_categoria: string | null;
   publicado: boolean | null;
+  visualizacoes?: number | null;
+  views?: number | null;
+  total_visualizacoes?: number | null;
+  total_curtidas?: number | null;
+  total_comentarios?: number | null;
+  total_salvos?: number | null;
+  total_lidos?: number | null;
   slug: string | null;
   link: string | null;
   criada_em: string | null;
@@ -514,6 +526,39 @@ function restaurarArquivoObraComBackup(
   };
 }
 
+function normalizarNumeroAdicionarCapitulo(valor: unknown, fallback = 0) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return Math.max(0, Math.round(valor));
+  }
+
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
+
+    if (Number.isFinite(numero)) {
+      return Math.max(0, Math.round(numero));
+    }
+  }
+
+  return Math.max(0, Math.round(fallback));
+}
+
+function obterCampoNumericoObraAdicionarCapitulo(
+  obra: Partial<ObraLocal> & Record<string, unknown>,
+  campos: string[],
+  fallback = 0
+) {
+  const valorEncontrado = campos
+    .map((campo) => obra[campo])
+    .find((valor) => {
+      return (
+        (typeof valor === "number" && Number.isFinite(valor)) ||
+        (typeof valor === "string" && Boolean(valor.trim()))
+      );
+    });
+
+  return normalizarNumeroAdicionarCapitulo(valorEncontrado, fallback);
+}
+
 function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
   const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
     ? obra.capitulos.map((capitulo, capituloIndex) =>
@@ -526,6 +571,13 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
         .filter((tag): tag is string => typeof tag === "string" && Boolean(tag.trim()))
         .map((tag) => tag.trim())
     : [];
+  const obraComMetricas = obra as Partial<ObraLocal> & Record<string, unknown>;
+  const totalCurtidasLocal = capitulosNormalizados.filter((capitulo) => capitulo.curtiu).length;
+  const totalComentariosLocal = capitulosNormalizados.filter((capitulo) =>
+    capitulo.comentario.trim()
+  ).length;
+  const totalSalvosLocal = capitulosNormalizados.filter((capitulo) => capitulo.salvo).length;
+  const totalLidosLocal = capitulosNormalizados.filter((capitulo) => capitulo.lido).length;
 
   return {
     id:
@@ -584,6 +636,42 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
     ultimaLeituraEm:
       typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: obterCampoNumericoObraAdicionarCapitulo(
+      obraComMetricas,
+      [
+        "visualizacoes",
+        "views",
+        "visualizacoesTotal",
+        "totalVisualizacoes",
+        "total_visualizacoes",
+      ]
+    ),
+    totalCurtidas: obterCampoNumericoObraAdicionarCapitulo(
+      obraComMetricas,
+      ["totalCurtidas", "curtidas", "likes", "totalLikes", "total_curtidas"],
+      totalCurtidasLocal
+    ),
+    totalComentarios: obterCampoNumericoObraAdicionarCapitulo(
+      obraComMetricas,
+      [
+        "totalComentarios",
+        "comentarios",
+        "comments",
+        "totalComments",
+        "total_comentarios",
+      ],
+      totalComentariosLocal
+    ),
+    totalSalvos: obterCampoNumericoObraAdicionarCapitulo(
+      obraComMetricas,
+      ["totalSalvos", "salvos", "favoritos", "totalFavoritos", "total_salvos"],
+      totalSalvosLocal
+    ),
+    totalLidos: obterCampoNumericoObraAdicionarCapitulo(
+      obraComMetricas,
+      ["totalLidos", "lidos", "leituras", "totalLeituras", "total_lidos"],
+      totalLidosLocal
+    ),
     slug:
       typeof obra.slug === "string" && obra.slug.trim()
         ? obra.slug
@@ -685,6 +773,12 @@ function normalizarObraSupabase(
 
   const titulo = obra.titulo?.trim() || "Obra sem título";
   const slug = obra.slug?.trim() || criarSlugBase(titulo || `obra-${index + 1}`);
+  const totalCurtidasLocal = capitulosNormalizados.filter((capitulo) => capitulo.curtiu).length;
+  const totalComentariosLocal = capitulosNormalizados.filter((capitulo) =>
+    capitulo.comentario.trim()
+  ).length;
+  const totalSalvosLocal = capitulosNormalizados.filter((capitulo) => capitulo.salvo).length;
+  const totalLidosLocal = capitulosNormalizados.filter((capitulo) => capitulo.lido).length;
 
   return {
     id: obra.id,
@@ -713,6 +807,26 @@ function normalizarObraSupabase(
     ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: normalizarNumeroAdicionarCapitulo(
+      obra.visualizacoes ?? obra.views ?? obra.total_visualizacoes,
+      obraLocal?.visualizacoes || 0
+    ),
+    totalCurtidas: normalizarNumeroAdicionarCapitulo(
+      obra.total_curtidas,
+      Math.max(obraLocal?.totalCurtidas || 0, totalCurtidasLocal)
+    ),
+    totalComentarios: normalizarNumeroAdicionarCapitulo(
+      obra.total_comentarios,
+      Math.max(obraLocal?.totalComentarios || 0, totalComentariosLocal)
+    ),
+    totalSalvos: normalizarNumeroAdicionarCapitulo(
+      obra.total_salvos,
+      Math.max(obraLocal?.totalSalvos || 0, totalSalvosLocal)
+    ),
+    totalLidos: normalizarNumeroAdicionarCapitulo(
+      obra.total_lidos,
+      Math.max(obraLocal?.totalLidos || 0, totalLidosLocal)
+    ),
     slug,
     link: obra.link?.trim() || `/obra/${slug}`,
   };
@@ -753,6 +867,26 @@ function mesclarObrasComSupabase(
       ultimoCapituloLidoId: obraLocal.ultimoCapituloLidoId,
       ultimaLeituraEm: obraLocal.ultimaLeituraEm,
       progressoLeitura: calcularProgressoLeitura(obraSupabase.capitulos),
+      visualizacoes: Math.max(
+        obraSupabase.visualizacoes || 0,
+        obraLocal.visualizacoes || 0
+      ),
+      totalCurtidas: Math.max(
+        obraSupabase.totalCurtidas || 0,
+        obraLocal.totalCurtidas || 0
+      ),
+      totalComentarios: Math.max(
+        obraSupabase.totalComentarios || 0,
+        obraLocal.totalComentarios || 0
+      ),
+      totalSalvos: Math.max(
+        obraSupabase.totalSalvos || 0,
+        obraLocal.totalSalvos || 0
+      ),
+      totalLidos: Math.max(
+        obraSupabase.totalLidos || 0,
+        obraLocal.totalLidos || 0
+      ),
     };
   });
 
@@ -958,6 +1092,104 @@ async function registrarDiarioNovoCapitulo({
   }
 }
 
+async function registrarNotificacoesNovoCapituloSupabase({
+  userId,
+  obra,
+  capitulo,
+  numeroCapitulo,
+  criadoEm,
+}: {
+  userId: string;
+  obra: ObraLocal;
+  capitulo: CapituloLocal;
+  numeroCapitulo: number;
+  criadoEm: string;
+}) {
+  if (!obra.publicado) {
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("seguindo_obras")
+      .select("user_id")
+      .eq("obra_id", obra.id)
+      .limit(1000);
+
+    if (error || !Array.isArray(data)) {
+      return;
+    }
+
+    const usuariosNotificar = Array.from(
+      new Set(
+        data
+          .map((registro) => {
+            if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+              return "";
+            }
+
+            const usuarioNotificado = (registro as Record<string, unknown>).user_id;
+
+            return typeof usuarioNotificado === "string"
+              ? usuarioNotificado.trim()
+              : "";
+          })
+          .filter((usuarioNotificado) =>
+            Boolean(usuarioNotificado && usuarioNotificado !== userId)
+          )
+      )
+    );
+
+    if (usuariosNotificar.length === 0) {
+      return;
+    }
+
+    const href = criarHrefLeituraCapitulo(obra, capitulo, numeroCapitulo);
+    const tituloNotificacao = "Novo capítulo publicado";
+    const mensagemNotificacao = `${capitulo.titulo} foi adicionado em ${obra.titulo}.`;
+    const payloadCompleto = usuariosNotificar.map((usuarioNotificado) => ({
+      user_id: usuarioNotificado,
+      tipo: "novo-capitulo",
+      titulo: tituloNotificacao,
+      mensagem: mensagemNotificacao,
+      obra_id: obra.id,
+      capitulo_id: capitulo.id,
+      href,
+      lida: false,
+      metadata: {
+        obra_titulo: obra.titulo,
+        capitulo_titulo: capitulo.titulo,
+        numero_capitulo: numeroCapitulo,
+        autor: obra.autor,
+        capa: obra.capa,
+      },
+      criada_em: criadoEm,
+    }));
+
+    const { error: erroCompleto } = await supabase
+      .from("notificacoes")
+      .insert(payloadCompleto);
+
+    if (!erroCompleto) {
+      return;
+    }
+
+    const payloadBasico = usuariosNotificar.map((usuarioNotificado) => ({
+      user_id: usuarioNotificado,
+      tipo: "novo-capitulo",
+      titulo: tituloNotificacao,
+      mensagem: mensagemNotificacao,
+      href,
+      lida: false,
+      criada_em: criadoEm,
+    }));
+
+    await supabase.from("notificacoes").insert(payloadBasico);
+  } catch (error) {
+    console.warn("Não consegui notificar seguidores do novo capítulo:", error);
+  }
+}
+
 function registrarNotificacaoNovoCapituloLocal(
   notificacao: NotificacaoLocal
 ) {
@@ -1064,7 +1296,7 @@ export default function AdicionarCapituloPage() {
           const { data, error } = await supabase
             .from("obras")
             .select(
-              "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em,capitulos(id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em)"
+              "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em,capitulos(id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em)"
             )
             .eq("user_id", user.id)
             .order("criada_em", { ascending: false })
@@ -1400,6 +1632,14 @@ export default function AdicionarCapituloPage() {
       salvarObras(novasObras);
 
       void registrarDiarioNovoCapitulo({
+        userId: user.id,
+        obra: obraAtualComAutorProfile,
+        capitulo: novoCapitulo,
+        numeroCapitulo: obraAtual.capitulos.length + 1,
+        criadoEm: novoCapitulo.criadoEm || criadoEm,
+      });
+
+      void registrarNotificacoesNovoCapituloSupabase({
         userId: user.id,
         obra: obraAtualComAutorProfile,
         capitulo: novoCapitulo,

@@ -157,6 +157,128 @@ function salvarJsonUsuarioComunidade(
   }
 }
 
+function erroTabelaOpcionalComunidadeIgnoravel(erro: unknown) {
+  if (!erro || typeof erro !== "object") {
+    return false;
+  }
+
+  const supabaseErro = erro as { code?: string; message?: string };
+  const codigo = supabaseErro.code || "";
+  const mensagem = (supabaseErro.message || "").toLowerCase();
+
+  return (
+    codigo === "42P01" ||
+    codigo === "42703" ||
+    mensagem.includes("does not exist") ||
+    mensagem.includes("schema cache") ||
+    mensagem.includes("could not find")
+  );
+}
+
+function extrairPostIdSalvoComunidade(registro: Record<string, unknown>) {
+  const valor = registro.post_id ?? registro.publicacao_id ?? registro.comunidade_post_id;
+
+  return typeof valor === "string" && valor.trim() ? valor.trim() : "";
+}
+
+async function carregarPostsSalvosSupabaseComunidade(userId: string) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return null as string[] | null;
+  }
+
+  const tabelas = ["comunidade_salvos", "comunidade_post_salvos"] as const;
+
+  for (const tabela of tabelas) {
+    try {
+      const { data, error } = await supabase
+        .from(tabela)
+        .select("post_id")
+        .eq("user_id", userIdLimpo)
+        .limit(5000);
+
+      if (error) {
+        if (erroTabelaOpcionalComunidadeIgnoravel(error)) {
+          continue;
+        }
+
+        return null;
+      }
+
+      if (!Array.isArray(data)) {
+        return [] as string[];
+      }
+
+      return Array.from(
+        new Set(
+          (data as Record<string, unknown>[])
+            .map((registro) => extrairPostIdSalvoComunidade(registro))
+            .filter(Boolean)
+        )
+      );
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+async function salvarPostSalvoSupabaseComunidade(
+  userId: string,
+  postId: string,
+  ativo: boolean
+) {
+  const userIdLimpo = userId.trim();
+  const postIdLimpo = postId.trim();
+
+  if (!userIdLimpo || !postIdLimpo) {
+    return false;
+  }
+
+  const tabelas = ["comunidade_salvos", "comunidade_post_salvos"] as const;
+
+  for (const tabela of tabelas) {
+    try {
+      const { error: erroDelete } = await supabase
+        .from(tabela)
+        .delete()
+        .eq("user_id", userIdLimpo)
+        .eq("post_id", postIdLimpo);
+
+      if (erroDelete) {
+        if (erroTabelaOpcionalComunidadeIgnoravel(erroDelete)) {
+          continue;
+        }
+
+        return false;
+      }
+
+      if (!ativo) {
+        return true;
+      }
+
+      const { error: erroInsert } = await supabase.from(tabela).insert({
+        user_id: userIdLimpo,
+        post_id: postIdLimpo,
+      });
+
+      if (!erroInsert) {
+        return true;
+      }
+
+      if (!erroTabelaOpcionalComunidadeIgnoravel(erroInsert)) {
+        return false;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return false;
+}
+
 const DESAFIO_SEMANA_COMUNIDADE = {
   titulo: "Primeiros leitores",
   pergunta: "Que tipo de história você quer encontrar no HISTORIETAS?",
@@ -1648,6 +1770,8 @@ export default function ComunidadePage() {
 
   useEffect(() => {
     const userId = usuario?.id || "";
+    let cancelado = false;
+
     const carregarLocaisTimer = window.setTimeout(() => {
       try {
         const postsSalvosParseados =
@@ -1668,9 +1792,27 @@ export default function ComunidadePage() {
       }
 
       setVotosEnquetes(carregarVotosEnquetesLocais(userId));
+
+      if (!userId) {
+        return;
+      }
+
+      void carregarPostsSalvosSupabaseComunidade(userId).then((postsSalvosReais) => {
+        if (cancelado || !postsSalvosReais) {
+          return;
+        }
+
+        setPostsSalvosIds(postsSalvosReais);
+        salvarJsonUsuarioComunidade(
+          CHAVE_POSTS_SALVOS_COMUNIDADE,
+          userId,
+          postsSalvosReais
+        );
+      });
     }, 0);
 
     return () => {
+      cancelado = true;
       window.clearTimeout(carregarLocaisTimer);
     };
   }, [usuario?.id]);
@@ -2452,7 +2594,7 @@ export default function ComunidadePage() {
     responderDesafioSemana();
   }
 
-  function alternarPostSalvo(postId: string) {
+  async function alternarPostSalvo(postId: string) {
     const chaveAcao = `salvar-post:${postId}`;
 
     if (!iniciarAcaoComunidade(chaveAcao)) {
@@ -2473,17 +2615,40 @@ export default function ComunidadePage() {
         ? postsSalvosIds.filter((postSalvoId) => postSalvoId !== postId)
         : [...postsSalvosIds, postId];
 
+      setPostsSalvosIds(postsSalvosAtualizados);
       salvarJsonUsuarioComunidade(
         CHAVE_POSTS_SALVOS_COMUNIDADE,
         usuario.id,
         postsSalvosAtualizados
       );
 
-      setPostsSalvosIds(postsSalvosAtualizados);
+      const salvouNoSupabase = await salvarPostSalvoSupabaseComunidade(
+        usuario.id,
+        postId,
+        !postJaSalvo
+      );
+
+      if (salvouNoSupabase) {
+        const postsSalvosReais = await carregarPostsSalvosSupabaseComunidade(
+          usuario.id
+        );
+
+        if (postsSalvosReais) {
+          setPostsSalvosIds(postsSalvosReais);
+          salvarJsonUsuarioComunidade(
+            CHAVE_POSTS_SALVOS_COMUNIDADE,
+            usuario.id,
+            postsSalvosReais
+          );
+        }
+      }
+
       emitirFeedbackAcao(
         postJaSalvo
           ? "Publicação removida dos salvos."
-          : "Publicação salva neste navegador."
+          : salvouNoSupabase
+            ? "Publicação salva."
+            : "Publicação salva neste navegador."
       );
     } finally {
       finalizarAcaoComunidade(chaveAcao);

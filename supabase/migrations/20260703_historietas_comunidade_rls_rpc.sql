@@ -7,6 +7,26 @@ begin;
 create extension if not exists pgcrypto;
 
 -- ============================================================
+-- BASE: OBRAS / MÉTRICAS PÚBLICAS
+-- ============================================================
+
+alter table if exists public.obras
+  add column if not exists visualizacoes integer default 0;
+
+update public.obras
+set visualizacoes = 0
+where visualizacoes is null;
+
+alter table if exists public.obras
+  alter column visualizacoes set default 0;
+
+alter table if exists public.obras
+  alter column visualizacoes set not null;
+
+create index if not exists obras_visualizacoes_idx
+  on public.obras (visualizacoes desc);
+
+-- ============================================================
 -- RPC: ADMIN
 -- ============================================================
 
@@ -235,6 +255,40 @@ alter table if exists public.comunidade_enquete_votos add column if not exists u
 alter table if exists public.comunidade_enquete_votos add column if not exists opcao text;
 alter table if exists public.comunidade_enquete_votos add column if not exists criado_em timestamptz default now();
 
+
+create table if not exists public.comunidade_salvos (
+  post_id uuid not null references public.comunidade_posts(id) on delete cascade,
+  usuario_id uuid not null references auth.users(id) on delete cascade,
+  criado_em timestamptz not null default now(),
+  primary key (post_id, usuario_id)
+);
+
+alter table if exists public.comunidade_salvos add column if not exists post_id uuid;
+alter table if exists public.comunidade_salvos add column if not exists usuario_id uuid;
+alter table if exists public.comunidade_salvos add column if not exists criado_em timestamptz default now();
+
+create table if not exists public.comunidade_post_salvos (
+  post_id uuid not null references public.comunidade_posts(id) on delete cascade,
+  usuario_id uuid not null references auth.users(id) on delete cascade,
+  criado_em timestamptz not null default now(),
+  primary key (post_id, usuario_id)
+);
+
+alter table if exists public.comunidade_post_salvos add column if not exists post_id uuid;
+alter table if exists public.comunidade_post_salvos add column if not exists usuario_id uuid;
+alter table if exists public.comunidade_post_salvos add column if not exists criado_em timestamptz default now();
+
+create table if not exists public.comunidade_comentarios_salvos (
+  comentario_id uuid not null references public.comunidade_comentarios(id) on delete cascade,
+  usuario_id uuid not null references auth.users(id) on delete cascade,
+  criado_em timestamptz not null default now(),
+  primary key (comentario_id, usuario_id)
+);
+
+alter table if exists public.comunidade_comentarios_salvos add column if not exists comentario_id uuid;
+alter table if exists public.comunidade_comentarios_salvos add column if not exists usuario_id uuid;
+alter table if exists public.comunidade_comentarios_salvos add column if not exists criado_em timestamptz default now();
+
 create table if not exists public.comunidade_denuncias (
   id uuid primary key default gen_random_uuid(),
   alvo_tipo text not null,
@@ -306,6 +360,64 @@ alter table if exists public.denuncias_perfis add column if not exists atualizad
 -- ÍNDICES / CONSTRAINTS SEM QUEBRAR TABELAS EXISTENTES
 -- ============================================================
 
+
+-- Limpeza defensiva antes dos índices únicos. Evita migration quebrar
+-- se já existir dado duplicado de versões antigas/fallbacks.
+delete from public.comunidade_curtidas a
+using public.comunidade_curtidas b
+where a.ctid < b.ctid
+  and a.post_id = b.post_id
+  and a.usuario_id = b.usuario_id;
+
+delete from public.comunidade_comentario_curtidas a
+using public.comunidade_comentario_curtidas b
+where a.ctid < b.ctid
+  and a.comentario_id = b.comentario_id
+  and a.usuario_id = b.usuario_id;
+
+delete from public.comunidade_enquete_votos a
+using public.comunidade_enquete_votos b
+where a.ctid < b.ctid
+  and a.post_id = b.post_id
+  and a.user_id = b.user_id;
+
+delete from public.comunidade_salvos a
+using public.comunidade_salvos b
+where a.ctid < b.ctid
+  and a.post_id = b.post_id
+  and a.usuario_id = b.usuario_id;
+
+delete from public.comunidade_post_salvos a
+using public.comunidade_post_salvos b
+where a.ctid < b.ctid
+  and a.post_id = b.post_id
+  and a.usuario_id = b.usuario_id;
+
+delete from public.comunidade_comentarios_salvos a
+using public.comunidade_comentarios_salvos b
+where a.ctid < b.ctid
+  and a.comentario_id = b.comentario_id
+  and a.usuario_id = b.usuario_id;
+
+delete from public.comunidade_denuncias a
+using public.comunidade_denuncias b
+where a.ctid < b.ctid
+  and a.alvo_tipo = b.alvo_tipo
+  and a.alvo_id = b.alvo_id
+  and a.denunciante_id = b.denunciante_id;
+
+delete from public.denuncias_perfis a
+using public.denuncias_perfis b
+where a.ctid < b.ctid
+  and a.denunciante_id = b.denunciante_id
+  and a.denunciado_id = b.denunciado_id;
+
+delete from public.top5_curtidas a
+using public.top5_curtidas b
+where a.ctid < b.ctid
+  and a.perfil_user_id = b.perfil_user_id
+  and a.usuario_id = b.usuario_id;
+
 create index if not exists comunidade_posts_criado_em_idx on public.comunidade_posts (criado_em desc);
 create index if not exists comunidade_posts_autor_id_idx on public.comunidade_posts (autor_id);
 create index if not exists comunidade_posts_fixado_idx on public.comunidade_posts (fixado, fixado_em desc);
@@ -315,10 +427,16 @@ create index if not exists comunidade_comentarios_autor_id_idx on public.comunid
 create index if not exists comunidade_curtidas_post_id_idx on public.comunidade_curtidas (post_id);
 create index if not exists comunidade_comentario_curtidas_comentario_id_idx on public.comunidade_comentario_curtidas (comentario_id);
 create index if not exists comunidade_enquete_votos_post_id_idx on public.comunidade_enquete_votos (post_id);
+create index if not exists comunidade_salvos_post_id_idx on public.comunidade_salvos (post_id);
+create index if not exists comunidade_post_salvos_post_id_idx on public.comunidade_post_salvos (post_id);
+create index if not exists comunidade_comentarios_salvos_comentario_id_idx on public.comunidade_comentarios_salvos (comentario_id);
 
 create unique index if not exists comunidade_curtidas_unica_idx on public.comunidade_curtidas (post_id, usuario_id);
 create unique index if not exists comunidade_comentario_curtidas_unica_idx on public.comunidade_comentario_curtidas (comentario_id, usuario_id);
 create unique index if not exists comunidade_enquete_votos_unico_idx on public.comunidade_enquete_votos (post_id, user_id);
+create unique index if not exists comunidade_salvos_unico_idx on public.comunidade_salvos (post_id, usuario_id);
+create unique index if not exists comunidade_post_salvos_unico_idx on public.comunidade_post_salvos (post_id, usuario_id);
+create unique index if not exists comunidade_comentarios_salvos_unico_idx on public.comunidade_comentarios_salvos (comentario_id, usuario_id);
 create unique index if not exists comunidade_denuncias_unica_idx on public.comunidade_denuncias (alvo_tipo, alvo_id, denunciante_id);
 
 create index if not exists denuncias_perfis_status_idx on public.denuncias_perfis (status, criado_em desc);
@@ -369,6 +487,9 @@ alter table public.comunidade_comentarios enable row level security;
 alter table public.comunidade_curtidas enable row level security;
 alter table public.comunidade_comentario_curtidas enable row level security;
 alter table public.comunidade_enquete_votos enable row level security;
+alter table public.comunidade_salvos enable row level security;
+alter table public.comunidade_post_salvos enable row level security;
+alter table public.comunidade_comentarios_salvos enable row level security;
 alter table public.comunidade_denuncias enable row level security;
 alter table public.top5_curtidas enable row level security;
 alter table public.denuncias_perfis enable row level security;
@@ -526,6 +647,68 @@ create policy "comunidade_enquete_votos_delete_proprio_ou_admin"
     or (auth.uid() is not null and user_id::text = auth.uid()::text)
   );
 
+
+-- comunidade_salvos / comunidade_post_salvos / comunidade_comentarios_salvos
+
+-- As três tabelas existem por compatibilidade com versões diferentes da tela
+-- Comunidade/Admin. Select público permite contagem; insert/delete continuam próprios.
+drop policy if exists "comunidade_salvos_select_publico" on public.comunidade_salvos;
+drop policy if exists "comunidade_salvos_insert_proprio" on public.comunidade_salvos;
+drop policy if exists "comunidade_salvos_delete_proprio" on public.comunidade_salvos;
+
+create policy "comunidade_salvos_select_publico"
+  on public.comunidade_salvos
+  for select
+  using (true);
+
+create policy "comunidade_salvos_insert_proprio"
+  on public.comunidade_salvos
+  for insert
+  with check (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+
+create policy "comunidade_salvos_delete_proprio"
+  on public.comunidade_salvos
+  for delete
+  using (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+
+drop policy if exists "comunidade_post_salvos_select_publico" on public.comunidade_post_salvos;
+drop policy if exists "comunidade_post_salvos_insert_proprio" on public.comunidade_post_salvos;
+drop policy if exists "comunidade_post_salvos_delete_proprio" on public.comunidade_post_salvos;
+
+create policy "comunidade_post_salvos_select_publico"
+  on public.comunidade_post_salvos
+  for select
+  using (true);
+
+create policy "comunidade_post_salvos_insert_proprio"
+  on public.comunidade_post_salvos
+  for insert
+  with check (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+
+create policy "comunidade_post_salvos_delete_proprio"
+  on public.comunidade_post_salvos
+  for delete
+  using (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+
+drop policy if exists "comunidade_comentarios_salvos_select_publico" on public.comunidade_comentarios_salvos;
+drop policy if exists "comunidade_comentarios_salvos_insert_proprio" on public.comunidade_comentarios_salvos;
+drop policy if exists "comunidade_comentarios_salvos_delete_proprio" on public.comunidade_comentarios_salvos;
+
+create policy "comunidade_comentarios_salvos_select_publico"
+  on public.comunidade_comentarios_salvos
+  for select
+  using (true);
+
+create policy "comunidade_comentarios_salvos_insert_proprio"
+  on public.comunidade_comentarios_salvos
+  for insert
+  with check (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+
+create policy "comunidade_comentarios_salvos_delete_proprio"
+  on public.comunidade_comentarios_salvos
+  for delete
+  using (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+
 -- comunidade_denuncias
 
 drop policy if exists "comunidade_denuncias_select_proprias_ou_admin" on public.comunidade_denuncias;
@@ -646,6 +829,15 @@ values
   ('comunidade_enquete_votos', 'comunidade_enquete_votos_select_publico'),
   ('comunidade_enquete_votos', 'comunidade_enquete_votos_insert_proprio'),
   ('comunidade_enquete_votos', 'comunidade_enquete_votos_delete_proprio_ou_admin'),
+  ('comunidade_salvos', 'comunidade_salvos_select_publico'),
+  ('comunidade_salvos', 'comunidade_salvos_insert_proprio'),
+  ('comunidade_salvos', 'comunidade_salvos_delete_proprio'),
+  ('comunidade_post_salvos', 'comunidade_post_salvos_select_publico'),
+  ('comunidade_post_salvos', 'comunidade_post_salvos_insert_proprio'),
+  ('comunidade_post_salvos', 'comunidade_post_salvos_delete_proprio'),
+  ('comunidade_comentarios_salvos', 'comunidade_comentarios_salvos_select_publico'),
+  ('comunidade_comentarios_salvos', 'comunidade_comentarios_salvos_insert_proprio'),
+  ('comunidade_comentarios_salvos', 'comunidade_comentarios_salvos_delete_proprio'),
   ('comunidade_denuncias', 'comunidade_denuncias_select_proprias_ou_admin'),
   ('comunidade_denuncias', 'comunidade_denuncias_insert_propria'),
   ('comunidade_denuncias', 'comunidade_denuncias_update_admin'),
@@ -698,6 +890,9 @@ grant select on public.comunidade_comentarios to anon, authenticated;
 grant select on public.comunidade_curtidas to anon, authenticated;
 grant select on public.comunidade_comentario_curtidas to anon, authenticated;
 grant select on public.comunidade_enquete_votos to anon, authenticated;
+grant select on public.comunidade_salvos to anon, authenticated;
+grant select on public.comunidade_post_salvos to anon, authenticated;
+grant select on public.comunidade_comentarios_salvos to anon, authenticated;
 grant select on public.top5_curtidas to anon, authenticated;
 
 grant insert, update, delete on public.comunidade_posts to authenticated;
@@ -705,6 +900,9 @@ grant insert, update, delete on public.comunidade_comentarios to authenticated;
 grant insert, delete on public.comunidade_curtidas to authenticated;
 grant insert, delete on public.comunidade_comentario_curtidas to authenticated;
 grant insert, delete on public.comunidade_enquete_votos to authenticated;
+grant insert, delete on public.comunidade_salvos to authenticated;
+grant insert, delete on public.comunidade_post_salvos to authenticated;
+grant insert, delete on public.comunidade_comentarios_salvos to authenticated;
 grant insert, delete on public.top5_curtidas to authenticated;
 
 grant select, insert, update, delete on public.comunidade_denuncias to authenticated;

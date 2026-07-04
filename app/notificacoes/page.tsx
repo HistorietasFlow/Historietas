@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 type CapituloLocal = {
   id: string;
@@ -76,6 +77,26 @@ const CHAVE_OBRAS = "historietas-obras";
 const CHAVE_NOTIFICACOES = "historietas-notificacoes";
 const CHAVE_OBRAS_SEGUIDAS = "historietas-obras-seguidas";
 const CHAVE_NOTIFICACOES_APAGADAS = "historietas-notificacoes-apagadas";
+
+function NotificacoesOverlayPortal({ children }: { children: ReactNode }) {
+  const [montado, setMontado] = useState(false);
+
+  useEffect(() => {
+    const montarPortalTimer = window.setTimeout(() => {
+      setMontado(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(montarPortalTimer);
+    };
+  }, []);
+
+  if (!montado || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(children, document.body);
+}
 
 function corrigirTextoQuebrado(texto: string) {
   let textoCorrigido = texto;
@@ -2937,6 +2958,46 @@ export default function NotificacoesPage() {
     setOrdenacao("recentes");
   }
 
+  const notificacaoMenuAberta = menuNotificacaoAbertoId
+    ? notificacoes.find((notificacao) => notificacao.id === menuNotificacaoAbertoId) || null
+    : null;
+
+  const menuOverlayAberto = Boolean(
+    menuAcoesGeraisAberto ||
+      mostrarPainelOrdenacao ||
+      notificacaoMenuAberta
+  );
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const raiz = document.documentElement;
+    const corpo = document.body;
+
+    if (!menuOverlayAberto) {
+      raiz.removeAttribute("data-historietas-notificacoes-overlay-aberto");
+      corpo.removeAttribute("data-historietas-notificacoes-overlay-aberto");
+      return;
+    }
+
+    const overflowAnterior = corpo.style.overflow;
+    const htmlOverflowAnterior = raiz.style.overflow;
+
+    raiz.setAttribute("data-historietas-notificacoes-overlay-aberto", "true");
+    corpo.setAttribute("data-historietas-notificacoes-overlay-aberto", "true");
+    raiz.style.overflow = "hidden";
+    corpo.style.overflow = "hidden";
+
+    return () => {
+      raiz.removeAttribute("data-historietas-notificacoes-overlay-aberto");
+      corpo.removeAttribute("data-historietas-notificacoes-overlay-aberto");
+      raiz.style.overflow = htmlOverflowAnterior;
+      corpo.style.overflow = overflowAnterior;
+    };
+  }, [menuOverlayAberto]);
+
   if (carregando) {
     return (
       <main style={pageThemeStyle}>
@@ -2983,7 +3044,8 @@ export default function NotificacoesPage() {
                     fecharMenusNotificacoes();
                     setBusca(event.target.value);
                   }}
-                  placeholder="Buscar notificação..."
+                  className="notificacoes-search-input"
+                  placeholder="Buscar notificações..."
                   style={notificationSearchInputStyle}
                   type="text"
                 />
@@ -3040,17 +3102,18 @@ export default function NotificacoesPage() {
             </section>
 
             {menuAcoesGeraisAberto && (
-              <div
+              <NotificacoesOverlayPortal>
+                <div
                 style={notificationSortingBackdropStyle}
                 onClick={fecharMenuAcoesGerais}
               >
                 <div
-                  style={notificationActionsSheetStyle}
+                  style={isDesktop ? desktopNotificationActionsSheetStyle : notificationActionsSheetStyle}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <span style={notificationSortingHandleStyle} />
 
-                  <h2 style={notificationSortingTitleStyle}>Ações</h2>
+                  <h2 style={notificationSortingTitleStyle}>AÇÕES</h2>
 
                   <div style={notificationSortingOptionsListStyle}>
                     <button
@@ -3119,20 +3182,22 @@ export default function NotificacoesPage() {
                   </div>
                 </div>
               </div>
+              </NotificacoesOverlayPortal>
             )}
 
             {mostrarPainelOrdenacao && (
-              <div
+              <NotificacoesOverlayPortal>
+                <div
                 style={notificationSortingBackdropStyle}
                 onClick={() => setMostrarPainelOrdenacao(false)}
               >
                 <div
-                  style={notificationSortingSheetStyle}
+                  style={isDesktop ? desktopNotificationSortingSheetStyle : notificationSortingSheetStyle}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <span style={notificationSortingHandleStyle} />
 
-                  <h2 style={notificationSortingTitleStyle}>Filtrar e classificar</h2>
+                  <h2 style={notificationSortingTitleStyle}>FILTRAR E CLASSIFICAR</h2>
 
                   <div style={notificationSortingOptionsListStyle}>
                     <span style={notificationSortingSectionLabelStyle}>Mostrar</span>
@@ -3201,6 +3266,7 @@ export default function NotificacoesPage() {
                   </div>
                 </div>
               </div>
+              </NotificacoesOverlayPortal>
             )}
 
 
@@ -3233,7 +3299,7 @@ export default function NotificacoesPage() {
           </p>
         ) : (
           <section style={isDesktop ? desktopListStyle : listStyle} aria-label="Lista de notificações">
-            {notificacoesFiltradas.map((notificacaoOriginal) => {
+            {notificacoesFiltradas.map((notificacaoOriginal, notificacaoIndex) => {
               const notificacao = prepararNotificacaoTexto(notificacaoOriginal);
               const obra = encontrarObra(notificacao.obraId);
               const capitulo = encontrarCapitulo(
@@ -3255,8 +3321,6 @@ export default function NotificacoesPage() {
                 autorNotificacaoNome
               );
 
-              const linkCapitulo = montarLinkNotificacao(notificacao, obra);
-              const labelAcaoPrincipal = obterAcaoPrincipalNotificacao(notificacao);
               const menuEstaAberto = menuNotificacaoAbertoId === notificacao.id;
 
               const cardVisualStyle = notificacao.lida
@@ -3284,9 +3348,16 @@ export default function NotificacoesPage() {
                 notificacao,
                 iconVisualStyle
               );
+              const cardSeparadorStyle: CSSProperties =
+                notificacaoIndex < notificacoesFiltradas.length - 1
+                  ? {}
+                  : { borderBottom: "0" };
 
               return (
-                <article key={notificacao.id} style={cardVisualStyle}>
+                <article
+                  key={notificacao.id}
+                  style={{ ...cardVisualStyle, ...cardSeparadorStyle }}
+                >
                   <div style={cardHeaderStyle}>
                     {notificacao.autorId ? (
                       <Link
@@ -3321,90 +3392,7 @@ export default function NotificacoesPage() {
                             ⋮
                           </button>
 
-                          {menuEstaAberto && (
-                            <div
-                              style={notificationSortingBackdropStyle}
-                              onClick={fecharMenuNotificacao}
-                            >
-                              <div
-                                style={notificationActionsSheetStyle}
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                <span style={notificationSortingHandleStyle} />
-
-                                <h2 style={notificationSortingTitleStyle}>Ações da notificação</h2>
-
-                                <div style={notificationSortingOptionsListStyle}>
-                                  <Link
-                                    href={linkCapitulo}
-                                    style={notificationActionsOptionLinkStyle}
-                                    onClick={() => {
-                                      abrirNotificacao(notificacao.id);
-                                      fecharMenuNotificacao();
-                                    }}
-                                  >
-                                    {labelAcaoPrincipal}
-                                  </Link>
-
-                                  {notificacao.autorId && (
-                                    <Link
-                                      href={autorNotificacaoHref}
-                                      style={notificationActionsOptionLinkStyle}
-                                      onClick={fecharMenuNotificacao}
-                                    >
-                                      Abrir perfil
-                                    </Link>
-                                  )}
-
-                                  {notificacao.lida ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        marcarComoNaoLida(notificacao.id);
-                                        fecharMenuNotificacao();
-                                      }}
-                                      style={notificationActionsOptionStyle}
-                                    >
-                                      Marcar como nova
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        marcarComoLida(notificacao.id);
-                                        fecharMenuNotificacao();
-                                      }}
-                                      style={notificationActionsOptionStyle}
-                                    >
-                                      Marcar como lida
-                                    </button>
-                                  )}
-
-                                  {obra && !ehComunidade && (
-                                    <Link
-                                      href={`/obra/${obra.slug || criarSlugBase(obra.titulo)}`}
-                                      style={notificationActionsOptionLinkStyle}
-                                      onClick={fecharMenuNotificacao}
-                                    >
-                                      Abrir obra
-                                    </Link>
-                                  )}
-
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      apagarNotificacao(notificacao.id);
-                                      fecharMenuNotificacao();
-                                    }}
-                                    style={notificationActionsDangerOptionStyle}
-                                  >
-                                    Apagar
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                                                  </div>
                       </div>
 
                       <span style={communityDateTextStyle}>
@@ -3449,7 +3437,7 @@ export default function NotificacoesPage() {
                               Comentário de {autorComentarioComunidade}
                             </Link>
                           ) : (
-                            <span style={metaLabelStyle}>
+                            <span style={notificationAuthorInlineLinkStyle}>
                               Comentário de {autorComentarioComunidade}
                             </span>
                           )
@@ -3487,6 +3475,107 @@ export default function NotificacoesPage() {
             })}
           </section>
         )}
+
+        {notificacaoMenuAberta && (
+          <NotificacoesOverlayPortal>
+            {(() => {
+              const notificacao = prepararNotificacaoTexto(notificacaoMenuAberta);
+              const obra = encontrarObra(notificacao.obraId);
+              const ehComunidade = notificacaoEhComunidade(notificacao);
+              const autorNotificacaoNome = obterNomeAutorNotificacao(notificacao);
+              const autorNotificacaoHref = criarPerfilHrefNotificacao(
+                notificacao.autorId || "",
+                autorNotificacaoNome
+              );
+              const linkNotificacao = montarLinkNotificacao(notificacao, obra);
+              const labelAcaoPrincipal = obterAcaoPrincipalNotificacao(notificacao);
+
+              return (
+                <div
+                  style={notificationSortingBackdropStyle}
+                  onClick={fecharMenuNotificacao}
+                >
+                  <div
+                    style={isDesktop ? desktopNotificationActionsSheetStyle : notificationActionsSheetStyle}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <span style={notificationSortingHandleStyle} />
+
+                    <h2 style={notificationSortingTitleStyle}>AÇÕES DA NOTIFICAÇÃO</h2>
+
+                    <div style={notificationSortingOptionsListStyle}>
+                      <Link
+                        href={linkNotificacao}
+                        style={notificationActionsOptionLinkStyle}
+                        onClick={() => {
+                          abrirNotificacao(notificacao.id);
+                          fecharMenuNotificacao();
+                        }}
+                      >
+                        {labelAcaoPrincipal}
+                      </Link>
+
+                      {notificacao.autorId && (
+                        <Link
+                          href={autorNotificacaoHref}
+                          style={notificationActionsOptionLinkStyle}
+                          onClick={fecharMenuNotificacao}
+                        >
+                          Abrir perfil
+                        </Link>
+                      )}
+
+                      {notificacao.lida ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            marcarComoNaoLida(notificacao.id);
+                            fecharMenuNotificacao();
+                          }}
+                          style={notificationActionsOptionStyle}
+                        >
+                          Marcar como nova
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            marcarComoLida(notificacao.id);
+                            fecharMenuNotificacao();
+                          }}
+                          style={notificationActionsOptionStyle}
+                        >
+                          Marcar como lida
+                        </button>
+                      )}
+
+                      {obra && !ehComunidade && (
+                        <Link
+                          href={`/obra/${obra.slug || criarSlugBase(obra.titulo)}`}
+                          style={notificationActionsOptionLinkStyle}
+                          onClick={fecharMenuNotificacao}
+                        >
+                          Abrir obra
+                        </Link>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          apagarNotificacao(notificacao.id);
+                          fecharMenuNotificacao();
+                        }}
+                        style={notificationActionsDangerOptionStyle}
+                      >
+                        Apagar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </NotificacoesOverlayPortal>
+        )}
       </section>
     </main>
   );
@@ -3504,6 +3593,19 @@ const notificacoesPageCss = `
   html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
+  }
+
+  html[data-historietas-notificacoes-overlay-aberto="true"] body {
+    overflow: hidden !important;
+  }
+
+  html[data-historietas-notificacoes-overlay-aberto="true"] nav,
+  html[data-historietas-notificacoes-overlay-aberto="true"] [data-bottom-nav],
+  html[data-historietas-notificacoes-overlay-aberto="true"] [data-mobile-nav],
+  html[data-historietas-notificacoes-overlay-aberto="true"] nav:has(a[href="/publicar"]),
+  html[data-historietas-notificacoes-overlay-aberto="true"] div:has(> a[href="/publicar"]):has(> a[href="/perfil-autor?aba=biblioteca"]) {
+    z-index: 1 !important;
+    pointer-events: none !important;
   }
 
   html[data-historietas-tema-visual] nav,
@@ -3535,6 +3637,11 @@ const notificacoesPageCss = `
     border-color: transparent !important;
     color: var(--historietas-bottom-nav-text, #9980D8) !important;
     box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual] .notificacoes-search-input::placeholder {
+    color: #FFFFFF !important;
+    opacity: 1 !important;
   }
 
   html[data-historietas-tema-visual] input::placeholder {
@@ -3862,8 +3969,8 @@ const notificationSearchShellStyle: CSSProperties = {
   width: "100%",
   minHeight: "48px",
   borderRadius: "14px",
-  background: "rgba(39, 39, 42, 0.88)",
-  border: "1px solid rgba(255,255,255,0.045)",
+  background: "#000000",
+  border: "1px solid rgba(255,255,255,0.10)",
   padding: "0 14px",
   boxSizing: "border-box",
   minWidth: 0,
@@ -3871,7 +3978,7 @@ const notificationSearchShellStyle: CSSProperties = {
 
 const notificationSearchIconStyle: CSSProperties = {
   flex: "0 0 auto",
-  color: "rgba(212,212,216,0.72)",
+  color: "#FFFFFF",
   fontSize: "25px",
   lineHeight: 1,
   fontWeight: 400,
@@ -3988,18 +4095,16 @@ const notificationClearButtonStyle: CSSProperties = {
 
 const notificationSortingBackdropStyle: CSSProperties = {
   position: "fixed",
-  left: 0,
-  right: 0,
-  top: 0,
-  bottom: 0,
+  inset: 0,
   height: "100dvh",
-  zIndex: 240,
+  zIndex: 2147483646,
+  background: "rgba(0,0,0,0.68)",
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "center",
-  background: "rgba(0,0,0,0.68)",
   padding: 0,
   boxSizing: "border-box",
+  overflow: "hidden",
   overscrollBehavior: "none",
   touchAction: "none",
 };
@@ -4009,22 +4114,42 @@ const notificationSortingSheetStyle: CSSProperties = {
   left: "50%",
   bottom: 0,
   transform: "translateX(-50%)",
-  width: "min(760px, calc(100% - 12px))",
+  zIndex: 2147483647,
+  width: "min(820px, calc(100% - 4px))",
   maxHeight: "calc(100dvh - 116px)",
+  display: "grid",
+  gap: 0,
+  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
+  borderRadius: "24px 24px 0 0",
+  background: "var(--historietas-bg-start, #070212)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderBottom: "0",
   overflowY: "auto",
   overflowX: "hidden",
   overscrollBehavior: "none",
-  borderRadius: "24px 24px 0 0",
-  background: "#15191C",
-  border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
-  padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   touchAction: "none",
 };
 
+const desktopNotificationSortingSheetStyle: CSSProperties = {
+  ...notificationSortingSheetStyle,
+  left: "50%",
+  right: "auto",
+  bottom: "24px",
+  width: "min(560px, calc(100vw - 24px))",
+  maxWidth: "560px",
+  maxHeight: "82vh",
+  transform: "translateX(-50%)",
+  borderRadius: "24px",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
+  margin: 0,
+  paddingBottom: "18px",
+};
+
 const notificationSortingHandleStyle: CSSProperties = {
   display: "block",
+  justifySelf: "center",
   width: "72px",
   height: "5px",
   borderRadius: "999px",
@@ -4033,31 +4158,34 @@ const notificationSortingHandleStyle: CSSProperties = {
 };
 
 const notificationSortingTitleStyle: CSSProperties = {
+  display: "block",
   margin: "0 0 12px",
+  padding: 0,
   color: "#FFFFFF",
   fontSize: "21px",
   lineHeight: 1.1,
   fontWeight: 950,
   letterSpacing: "-0.04em",
   textAlign: "center",
+  ...safeTextStyle,
 };
 
 const notificationSortingOptionsListStyle: CSSProperties = {
   display: "grid",
   gap: 0,
-  borderTop: "1px solid rgba(255,255,255,0.045)",
 };
 
 const notificationSortingSectionLabelStyle: CSSProperties = {
+  margin: 0,
   display: "block",
+  padding: "11px 30px 5px",
+  borderTop: "none",
   color: "rgba(244,244,245,0.56)",
   fontSize: "11px",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "0.08em",
   textTransform: "uppercase",
-  padding: "15px 30px 8px",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
   ...safeTextStyle,
 };
 
@@ -4065,23 +4193,24 @@ const notificationSortingOptionStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
   width: "100%",
-  minHeight: "48px",
+  minHeight: "44px",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   gap: "16px",
   border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.045)",
   background: "transparent",
   color: "#FFFFFF",
   fontFamily: "inherit",
   fontSize: "18px",
+  lineHeight: 1,
   fontWeight: 650,
   letterSpacing: "-0.035em",
   textAlign: "left",
   padding: "0 30px",
   cursor: "pointer",
   boxSizing: "border-box",
+  ...safeTextStyle,
 };
 
 const notificationSortingOptionActiveStyle: CSSProperties = {
@@ -4091,28 +4220,32 @@ const notificationSortingOptionActiveStyle: CSSProperties = {
 
 const notificationSortingOptionRadioStyle: CSSProperties = {
   flex: "0 0 auto",
-  width: "28px",
-  height: "28px",
+  width: "23px",
+  height: "23px",
   borderRadius: "999px",
-  border: "3px solid rgba(161,161,170,0.72)",
+  border: "2.5px solid rgba(161,161,170,0.72)",
+  background: "transparent",
   boxSizing: "border-box",
 };
 
 const notificationSortingOptionRadioActiveStyle: CSSProperties = {
   ...notificationSortingOptionRadioStyle,
-  border: "8px solid #FFFFFF",
-  background: "transparent",
+  border: "6.5px solid #FFFFFF",
 };
 
 const notificationActionsSheetStyle: CSSProperties = {
   ...notificationSortingSheetStyle,
-  maxHeight: "calc(100dvh - 150px)",
+  maxHeight: "calc(100dvh - 116px)",
+};
+
+const desktopNotificationActionsSheetStyle: CSSProperties = {
+  ...desktopNotificationSortingSheetStyle,
+  maxHeight: "82vh",
 };
 
 const notificationActionsOptionStyle: CSSProperties = {
   ...notificationSortingOptionStyle,
   justifyContent: "flex-start",
-  minHeight: "54px",
   fontWeight: 900,
 };
 
@@ -4322,17 +4455,18 @@ const dangerButtonStyle: CSSProperties = {
 const listStyle: CSSProperties = {
   marginTop: "9px",
   display: "grid",
-  gap: "7px",
+  gap: 0,
   minWidth: 0,
   maxWidth: "100%",
 };
 
 const cardStyle: CSSProperties = {
   position: "relative",
-  borderRadius: "18px",
-  padding: "6px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: 0,
+  padding: "8px 0",
+  background: "transparent",
+  border: "0",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -4342,22 +4476,27 @@ const cardStyle: CSSProperties = {
 
 const readCardStyle: CSSProperties = {
   ...cardStyle,
-  background: "rgba(4, 0, 10, 0.52)",
-  border: "1px solid rgba(255,255,255,0.05)",
+  background: "transparent",
+  border: "0",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
+  opacity: 0.78,
   boxShadow: "none",
 };
 
 const communityCardStyle: CSSProperties = {
   ...cardStyle,
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  background: "transparent",
+  border: "0",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
 };
 
 const readCommunityCardStyle: CSSProperties = {
   ...communityCardStyle,
-  background: "rgba(4, 0, 10, 0.52)",
-  border: "1px solid rgba(255,255,255,0.05)",
+  background: "transparent",
+  border: "0",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
+  opacity: 0.78,
   boxShadow: "none",
 };
 
@@ -4386,6 +4525,7 @@ const notificationIconStyle: CSSProperties = {
   textDecoration: "none",
   boxShadow: "none",
   flex: "0 0 auto",
+  transform: "translateY(-2px)",
 };
 
 const unreadNotificationIconStyle: CSSProperties = {
@@ -4558,8 +4698,8 @@ const notificationMessageStyle: CSSProperties = {
 const metaGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: "4px",
-  marginTop: "4px",
+  gap: 0,
+  marginTop: "3px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -4572,10 +4712,11 @@ const communityMetaGridStyle: CSSProperties = {
 const metaBoxStyle: CSSProperties = {
   display: "grid",
   gap: "2px",
-  borderRadius: "12px",
-  padding: "6px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: 0,
+  padding: "4px 0",
+  background: "transparent",
+  border: "0",
+  borderTop: "0",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -4593,7 +4734,7 @@ const metaLabelStyle: CSSProperties = {
 
 const notificationAuthorInlineLinkStyle: CSSProperties = {
   ...metaLabelStyle,
-  color: "#DDD6FE",
+  color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
 };
 
@@ -4606,11 +4747,12 @@ const metaValueStyle: CSSProperties = {
 
 const communityCommentBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "2px",
-  borderRadius: "12px",
-  padding: "6px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  gap: "3px",
+  borderRadius: 0,
+  padding: "4px 0 0",
+  background: "transparent",
+  border: "0",
+  borderTop: "0",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -4620,7 +4762,11 @@ const communityCommentBoxStyle: CSSProperties = {
 
 const communityUpdateBoxStyle: CSSProperties = {
   display: "grid",
-  gap: "2px",
+  gap: "3px",
+  padding: "4px 0 0",
+  background: "transparent",
+  border: "0",
+  borderTop: "0",
   minWidth: 0,
   maxWidth: "100%",
   overflow: "hidden",
@@ -4666,7 +4812,7 @@ const cardActionsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "5px",
-  marginTop: "7px",
+  marginTop: "3px",
   minWidth: 0,
   maxWidth: "100%",
 };
@@ -4782,45 +4928,45 @@ const desktopActionBarStyle: CSSProperties = {
 
 const desktopListStyle: CSSProperties = {
   ...listStyle,
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 430px), 1fr))",
-  gap: "12px",
+  gridTemplateColumns: "1fr",
+  gap: 0,
   alignItems: "stretch",
 };
 
 const desktopCardStyle: CSSProperties = {
   ...cardStyle,
-  padding: "8px",
-  borderRadius: "20px",
+  padding: "10px 0",
+  borderRadius: 0,
 };
 
 const desktopReadCardStyle: CSSProperties = {
   ...readCardStyle,
-  padding: "8px",
-  borderRadius: "20px",
+  padding: "10px 0",
+  borderRadius: 0,
 };
 
 const desktopCommunityCardStyle: CSSProperties = {
   ...communityCardStyle,
-  padding: "8px",
-  borderRadius: "20px",
+  padding: "10px 0",
+  borderRadius: 0,
 };
 
 const desktopReadCommunityCardStyle: CSSProperties = {
   ...readCommunityCardStyle,
-  padding: "8px",
-  borderRadius: "20px",
+  padding: "10px 0",
+  borderRadius: 0,
 };
 
 const desktopMetaGridStyle: CSSProperties = {
   ...metaGridStyle,
   gridTemplateColumns: "1fr",
-  gap: "6px",
+  gap: 0,
 };
 
 const desktopCommunityMetaGridStyle: CSSProperties = {
   ...communityMetaGridStyle,
   gridTemplateColumns: "1fr",
-  gap: "6px",
+  gap: 0,
 };
 
 const desktopCardActionsStyle: CSSProperties = {

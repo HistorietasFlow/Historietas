@@ -1,4 +1,5 @@
--- 20260623_rls_core_policies_historietas.sql
+-- 20260623_historietas_rls_cleanup_rpc.sql
+-- Arquivo auditado/corrigido para o fluxo atual do HISTORIETAS.
 -- HISTORIETAS - RLS principal do app.
 -- Objetivo:
 -- - deixar leitura pública só onde o app precisa mostrar conteúdo público;
@@ -368,13 +369,14 @@ create policy "curtidas_capitulos_delete_proprio"
   using (auth.uid() is not null and user_id = auth.uid());
 
 drop policy if exists "salvos_capitulos_select_proprio" on public.salvos_capitulos;
+drop policy if exists "salvos_capitulos_select_publico" on public.salvos_capitulos;
 drop policy if exists "salvos_capitulos_insert_proprio" on public.salvos_capitulos;
 drop policy if exists "salvos_capitulos_delete_proprio" on public.salvos_capitulos;
 
-create policy "salvos_capitulos_select_proprio"
+create policy "salvos_capitulos_select_publico"
   on public.salvos_capitulos
   for select
-  using (auth.uid() is not null and user_id = auth.uid());
+  using (true);
 
 create policy "salvos_capitulos_insert_proprio"
   on public.salvos_capitulos
@@ -459,13 +461,14 @@ alter table if exists public.seguindo_autores enable row level security;
 alter table if exists public.seguindo_usuarios enable row level security;
 
 drop policy if exists "favoritos_select_proprio" on public.favoritos;
+drop policy if exists "favoritos_select_publico" on public.favoritos;
 drop policy if exists "favoritos_insert_proprio" on public.favoritos;
 drop policy if exists "favoritos_delete_proprio" on public.favoritos;
 
-create policy "favoritos_select_proprio"
+create policy "favoritos_select_publico"
   on public.favoritos
   for select
-  using (auth.uid() is not null and user_id = auth.uid());
+  using (true);
 
 create policy "favoritos_insert_proprio"
   on public.favoritos
@@ -478,13 +481,14 @@ create policy "favoritos_delete_proprio"
   using (auth.uid() is not null and user_id = auth.uid());
 
 drop policy if exists "concluidas_select_proprio" on public.concluidas;
+drop policy if exists "concluidas_select_publico" on public.concluidas;
 drop policy if exists "concluidas_insert_proprio" on public.concluidas;
 drop policy if exists "concluidas_delete_proprio" on public.concluidas;
 
-create policy "concluidas_select_proprio"
+create policy "concluidas_select_publico"
   on public.concluidas
   for select
-  using (auth.uid() is not null and user_id = auth.uid());
+  using (true);
 
 create policy "concluidas_insert_proprio"
   on public.concluidas
@@ -497,13 +501,14 @@ create policy "concluidas_delete_proprio"
   using (auth.uid() is not null and user_id = auth.uid());
 
 drop policy if exists "seguindo_obras_select_proprio" on public.seguindo_obras;
+drop policy if exists "seguindo_obras_select_publico" on public.seguindo_obras;
 drop policy if exists "seguindo_obras_insert_proprio" on public.seguindo_obras;
 drop policy if exists "seguindo_obras_delete_proprio" on public.seguindo_obras;
 
-create policy "seguindo_obras_select_proprio"
+create policy "seguindo_obras_select_publico"
   on public.seguindo_obras
   for select
-  using (auth.uid() is not null and user_id = auth.uid());
+  using (true);
 
 create policy "seguindo_obras_insert_proprio"
   on public.seguindo_obras
@@ -696,6 +701,7 @@ alter table if exists public.notificacoes enable row level security;
 drop policy if exists "notificacoes_select_proprias" on public.notificacoes;
 drop policy if exists "notificacoes_insert_autenticado" on public.notificacoes;
 drop policy if exists "notificacoes_insert_proprias" on public.notificacoes;
+drop policy if exists "notificacoes_insert_autor_para_seguidor" on public.notificacoes;
 drop policy if exists "notificacoes_update_proprias" on public.notificacoes;
 drop policy if exists "notificacoes_delete_proprias" on public.notificacoes;
 
@@ -704,14 +710,35 @@ create policy "notificacoes_select_proprias"
   for select
   using (auth.uid() is not null and user_id = auth.uid());
 
--- INSERT restrito ao próprio usuário.
--- Notificações para terceiros devem ser criadas depois via RPC/Edge Function/server.
+-- INSERT próprio continua restrito ao dono.
+-- Autor também pode criar notificação para seguidores da própria obra.
 create policy "notificacoes_insert_proprias"
   on public.notificacoes
   for insert
   with check (
     auth.uid() is not null
     and user_id = auth.uid()
+  );
+
+-- Autor pode notificar seguidores da própria obra quando publicar capítulo.
+create policy "notificacoes_insert_autor_para_seguidor"
+  on public.notificacoes
+  for insert
+  with check (
+    auth.uid() is not null
+    and user_id <> auth.uid()
+    and exists (
+      select 1
+      from public.obras o
+      where o.id = notificacoes.obra_id
+        and o.user_id = auth.uid()
+    )
+    and exists (
+      select 1
+      from public.seguindo_obras so
+      where so.obra_id = notificacoes.obra_id
+        and so.user_id = notificacoes.user_id
+    )
   );
 
 create policy "notificacoes_update_proprias"
@@ -808,7 +835,7 @@ values
   ('curtidas_capitulos', 'curtidas_capitulos_select_publico'),
   ('curtidas_capitulos', 'curtidas_capitulos_insert_proprio'),
   ('curtidas_capitulos', 'curtidas_capitulos_delete_proprio'),
-  ('salvos_capitulos', 'salvos_capitulos_select_proprio'),
+  ('salvos_capitulos', 'salvos_capitulos_select_publico'),
   ('salvos_capitulos', 'salvos_capitulos_insert_proprio'),
   ('salvos_capitulos', 'salvos_capitulos_delete_proprio'),
   ('comentarios_capitulos', 'comentarios_capitulos_select_publico_ou_proprio'),
@@ -819,10 +846,10 @@ values
   ('progresso_leitura', 'progresso_leitura_insert_proprio'),
   ('progresso_leitura', 'progresso_leitura_update_proprio'),
   ('progresso_leitura', 'progresso_leitura_delete_proprio'),
-  ('favoritos', 'favoritos_select_proprio'),
+  ('favoritos', 'favoritos_select_publico'),
   ('favoritos', 'favoritos_insert_proprio'),
   ('favoritos', 'favoritos_delete_proprio'),
-  ('concluidas', 'concluidas_select_proprio'),
+  ('concluidas', 'concluidas_select_publico'),
   ('concluidas', 'concluidas_insert_proprio'),
   ('concluidas', 'concluidas_delete_proprio'),
   ('seguindo_obras', 'seguindo_obras_select_publico'),
@@ -851,6 +878,7 @@ values
   ('diario_anotacao_comentarios', 'diario_anotacao_comentarios_delete_proprio'),
   ('notificacoes', 'notificacoes_select_proprias'),
   ('notificacoes', 'notificacoes_insert_proprias'),
+  ('notificacoes', 'notificacoes_insert_autor_para_seguidor'),
   ('notificacoes', 'notificacoes_update_proprias'),
   ('notificacoes', 'notificacoes_delete_proprias'),
   ('comunidade_denuncias', 'comunidade_denuncias_select_proprias_ou_admin'),
@@ -929,22 +957,58 @@ set search_path = public
 as $$
 declare
   total_afetadas integer := 0;
+  tem_notificacao_id boolean := false;
+  tem_updated_at boolean := false;
+  tem_atualizado_em boolean := false;
+  sql_update text;
 begin
   if auth.uid() is null then
     raise exception 'Usuário não autenticado.';
   end if;
 
-  update public.notificacoes
-  set
-    lida = novo_estado,
-    updated_at = now()
-  where user_id = auth.uid()
-    and (
-      notificacao_ids is null
-      or cardinality(notificacao_ids) = 0
-      or id::text = any(notificacao_ids)
-      or notificacao_id = any(notificacao_ids)
-    );
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'notificacoes'
+      and column_name = 'notificacao_id'
+  ) into tem_notificacao_id;
+
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'notificacoes'
+      and column_name = 'updated_at'
+  ) into tem_updated_at;
+
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'notificacoes'
+      and column_name = 'atualizado_em'
+  ) into tem_atualizado_em;
+
+  sql_update := 'update public.notificacoes set lida = $1';
+
+  if tem_updated_at then
+    sql_update := sql_update || ', updated_at = now()';
+  end if;
+
+  if tem_atualizado_em then
+    sql_update := sql_update || ', atualizado_em = now()';
+  end if;
+
+  sql_update := sql_update || ' where user_id = auth.uid() and ($2 is null or cardinality($2) = 0 or id::text = any($2)';
+
+  if tem_notificacao_id then
+    sql_update := sql_update || ' or notificacao_id = any($2)';
+  end if;
+
+  sql_update := sql_update || ')';
+
+  execute sql_update using novo_estado, notificacao_ids;
 
   get diagnostics total_afetadas = row_count;
 

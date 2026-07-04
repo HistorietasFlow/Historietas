@@ -50,6 +50,11 @@ type ObraLocal = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
+  visualizacoes: number;
+  totalCurtidas: number;
+  totalComentarios: number;
+  totalSalvos: number;
+  totalLidos: number;
   slug: string;
   link: string;
   arquivoObra?: ArquivoObraLocal | null;
@@ -81,6 +86,7 @@ type SupabaseObraRow = {
   arquivo_tamanho: number | null;
   arquivo_categoria: string | null;
   publicado: boolean | null;
+  visualizacoes: number | null;
   slug: string | null;
   link: string | null;
   criada_em: string | null;
@@ -297,6 +303,22 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
+function normalizarNumeroVerArquivo(valor: unknown, fallback = 0) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return Math.max(0, Math.round(valor));
+  }
+
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
+
+    if (Number.isFinite(numero)) {
+      return Math.max(0, Math.round(numero));
+    }
+  }
+
+  return Math.max(0, Math.round(fallback));
+}
+
 function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
   const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
     ? obra.capitulos.map((capitulo, capituloIndex) =>
@@ -364,6 +386,29 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
     ultimaLeituraEm:
       typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: normalizarNumeroVerArquivo(
+      obra.visualizacoes ??
+        obra.views ??
+        obra.visualizacoesTotal ??
+        obra.totalVisualizacoes ??
+        obra.total_visualizacoes
+    ),
+    totalCurtidas: normalizarNumeroVerArquivo(
+      obra.totalCurtidas ?? obra.curtidas ?? obra.likes ?? obra.total_curtidas,
+      capitulosNormalizados.filter((capitulo) => capitulo.curtiu).length
+    ),
+    totalComentarios: normalizarNumeroVerArquivo(
+      obra.totalComentarios ?? obra.comentarios ?? obra.total_comentarios,
+      capitulosNormalizados.filter((capitulo) => capitulo.comentario.trim()).length
+    ),
+    totalSalvos: normalizarNumeroVerArquivo(
+      obra.totalSalvos ?? obra.salvos ?? obra.total_salvos,
+      capitulosNormalizados.filter((capitulo) => capitulo.salvo).length
+    ),
+    totalLidos: normalizarNumeroVerArquivo(
+      obra.totalLidos ?? obra.lidos ?? obra.total_lidos,
+      capitulosNormalizados.filter((capitulo) => capitulo.lido).length
+    ),
     slug,
     link:
       typeof obra.link === "string" && obra.link.trim()
@@ -781,6 +826,26 @@ function normalizarObraSupabase(
     ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
+    visualizacoes: normalizarNumeroVerArquivo(
+      obra.visualizacoes,
+      obraLocal?.visualizacoes || 0
+    ),
+    totalCurtidas: normalizarNumeroVerArquivo(
+      obraLocal?.totalCurtidas,
+      capitulosMesclados.filter((capitulo) => capitulo.curtiu).length
+    ),
+    totalComentarios: normalizarNumeroVerArquivo(
+      obraLocal?.totalComentarios,
+      capitulosMesclados.filter((capitulo) => capitulo.comentario.trim()).length
+    ),
+    totalSalvos: normalizarNumeroVerArquivo(
+      obraLocal?.totalSalvos,
+      capitulosMesclados.filter((capitulo) => capitulo.salvo).length
+    ),
+    totalLidos: normalizarNumeroVerArquivo(
+      obraLocal?.totalLidos,
+      capitulosMesclados.filter((capitulo) => capitulo.lido).length
+    ),
     slug,
     link: obra.link?.trim() || obraLocal?.link || `/obra/${slug}`,
     arquivoObra: arquivoUrl
@@ -819,7 +884,7 @@ async function carregarObraSupabaseComFallback(
       ? await supabase
           .from("obras")
           .select(
-            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
           )
           .eq("id", obraIdBusca)
           .eq("user_id", userId)
@@ -827,7 +892,7 @@ async function carregarObraSupabaseComFallback(
       : await supabase
           .from("obras")
           .select(
-            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
           )
           .eq("slug", slugBusca)
           .eq("user_id", userId)

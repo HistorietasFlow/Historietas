@@ -76,6 +76,7 @@ type AutorPerfil = {
 type PerfilUsuarioRemoto = {
   userId: string;
   nome: string;
+  username: string;
   avatar: string;
   bio: string;
   sobreBio: string;
@@ -284,10 +285,58 @@ const avaliacaoAutorVazia: AvaliacaoAutorPublica = {
   salvando: false,
 };
 
+
+type TotaisInteracoesObrasPerfilAutor = {
+  curtidasPorObra: Record<string, number>;
+  comentariosPorObra: Record<string, number>;
+  curtidasPorCapitulo: Record<string, number>;
+  comentariosPorCapitulo: Record<string, number>;
+  salvosPorObra: Record<string, number>;
+  salvosPorCapitulo: Record<string, number>;
+  concluidasPorObra: Record<string, number>;
+};
+
+const totaisInteracoesObrasPerfilVazio: TotaisInteracoesObrasPerfilAutor = {
+  curtidasPorObra: {},
+  comentariosPorObra: {},
+  curtidasPorCapitulo: {},
+  comentariosPorCapitulo: {},
+  salvosPorObra: {},
+  salvosPorCapitulo: {},
+  concluidasPorObra: {},
+};
+
 type PerfisAutoresSalvos = Record<string, PerfilAutorSalvo>;
 
 function normalizarNomeAutor(nome: string) {
   return nome.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizarUsernamePerfilAutor(valor: string) {
+  return valor
+    .trim()
+    .replace(/^@+/, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9._]+/g, ".")
+    .replace(/[._]{2,}/g, ".")
+    .replace(/^[._]+|[._]+$/g, "")
+    .slice(0, 30);
+}
+
+function criarUsernameSugeridoPerfilAutor(nomeAutor: string, autorId: string) {
+  const base = normalizarUsernamePerfilAutor(nomeAutor);
+  const sufixo = autorId
+    .replace(/[^a-z0-9]/gi, "")
+    .slice(0, 4)
+    .toLowerCase();
+
+  if (base) {
+    return base;
+  }
+
+  return sufixo ? `autor.${sufixo}` : "autor.historietas";
 }
 
 function criarChaveAutorPerfil(autorId: string, nomeAutor: string) {
@@ -349,21 +398,18 @@ function criarHrefListaSeguimentoPerfilAutor(
   return `/seguindo?${params.toString()}`;
 }
 
-function criarHandlePerfilAutor(nomeAutor: string, autorId: string) {
-  const base = normalizarTexto(nomeAutor)
-    .replace(/[^a-z0-9]+/g, ".")
-    .replace(/\.+/g, ".")
-    .replace(/^\.|\.$/g, "");
-  const sufixo = autorId
-    .replace(/[^a-z0-9]/gi, "")
-    .slice(0, 4)
-    .toLowerCase();
+function criarHandlePerfilAutor(
+  nomeAutor: string,
+  autorId: string,
+  username = "",
+) {
+  const usernameLimpo = normalizarUsernamePerfilAutor(username);
 
-  if (base) {
-    return `@${base}`;
+  if (usernameLimpo) {
+    return `@${usernameLimpo}`;
   }
 
-  return sufixo ? `@autor.${sufixo}` : "@autor.historietas";
+  return `@${criarUsernameSugeridoPerfilAutor(nomeAutor, autorId)}`;
 }
 
 function criarHrefLeituraCapituloPerfilAutor(
@@ -1524,6 +1570,8 @@ function normalizarPerfilUsuarioSupabase(
     nomeFallback.trim() ||
     "Usuário";
 
+  const username = normalizarUsernamePerfilAutor(pegarTexto(row?.username));
+
   const avatar =
     pegarTexto(row?.avatar_url) ||
     pegarTexto(row?.avatar) ||
@@ -1547,6 +1595,7 @@ function normalizarPerfilUsuarioSupabase(
   return {
     userId,
     nome: nome.slice(0, 80),
+    username,
     avatar,
     bio: bio.slice(0, BIO_MAX_LENGTH),
     sobreBio: sobreBio.slice(0, SOBRE_BIO_MAX_LENGTH),
@@ -1607,10 +1656,12 @@ async function salvarPerfilUsuarioSupabase({
   userId,
   nome,
   perfil,
+  username,
 }: {
   userId: string;
   nome: string;
   perfil: PerfilAutorSalvo;
+  username?: string | null;
 }) {
   const userIdLimpo = userId.trim();
 
@@ -1619,7 +1670,7 @@ async function salvarPerfilUsuarioSupabase({
   }
 
   const atualizadoEm = new Date().toISOString();
-  const payloadPerfil = {
+  const payloadPerfil: Record<string, unknown> = {
     user_id: userIdLimpo,
     nome: nome.trim() || "Usuário",
     avatar_url: perfil.avatar,
@@ -1627,6 +1678,11 @@ async function salvarPerfilUsuarioSupabase({
     sobre_bio: perfil.sobreBio.slice(0, SOBRE_BIO_MAX_LENGTH),
     atualizado_em: atualizadoEm,
   };
+
+  if (username !== undefined) {
+    payloadPerfil.username =
+      username === null ? null : normalizarUsernamePerfilAutor(username);
+  }
 
   try {
     const { data: perfilExistente } = await supabase
@@ -2009,6 +2065,219 @@ function aplicarInteracoesNasObras(
       progressoLeitura: calcularProgressoLeitura(capitulos),
     };
   });
+}
+
+function mesclarContagensPerfilAutor(
+  ...contagens: Record<string, number>[]
+) {
+  return contagens.reduce<Record<string, number>>((resultado, contagem) => {
+    Object.entries(contagem).forEach(([id, total]) => {
+      if (!id.trim()) {
+        return;
+      }
+
+      resultado[id] = Math.max(resultado[id] || 0, total);
+    });
+
+    return resultado;
+  }, {});
+}
+
+function somarContagensCapitulosPerfilAutor(
+  obra: Pick<ObraLocal, "capitulos">,
+  contagensPorCapitulo: Record<string, number>,
+) {
+  return obra.capitulos.reduce((total, capitulo) => {
+    const capituloId = capitulo.id.trim();
+
+    if (!capituloId) {
+      return total;
+    }
+
+    return total + normalizarNumeroPerfilAutor(contagensPorCapitulo[capituloId], 0);
+  }, 0);
+}
+
+function obterTotalCurtidasObraPerfilAutor(
+  obra: Pick<ObraLocal, "id" | "capitulos">,
+  totais: TotaisInteracoesObrasPerfilAutor,
+) {
+  const obraId = obra.id.trim();
+  const totalDiretoObra = obraId
+    ? normalizarNumeroPerfilAutor(totais.curtidasPorObra[obraId], 0)
+    : 0;
+  const totalCapitulos = somarContagensCapitulosPerfilAutor(
+    obra,
+    totais.curtidasPorCapitulo,
+  );
+  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
+
+  return Math.max(totalDiretoObra, totalCapitulos, totalLocal);
+}
+
+function obterTotalComentariosObraPerfilAutor(
+  obra: Pick<ObraLocal, "id" | "capitulos">,
+  totais: TotaisInteracoesObrasPerfilAutor,
+) {
+  const obraId = obra.id.trim();
+  const totalDiretoObra = obraId
+    ? normalizarNumeroPerfilAutor(totais.comentariosPorObra[obraId], 0)
+    : 0;
+  const totalCapitulos = somarContagensCapitulosPerfilAutor(
+    obra,
+    totais.comentariosPorCapitulo,
+  );
+  const totalLocal = obra.capitulos.filter((capitulo) =>
+    capitulo.comentario.trim(),
+  ).length;
+
+  return Math.max(totalDiretoObra, totalCapitulos, totalLocal);
+}
+
+function obterTotalSalvosObraPerfilAutor(
+  obra: Pick<ObraLocal, "id" | "capitulos">,
+  totais: TotaisInteracoesObrasPerfilAutor,
+) {
+  const obraId = obra.id.trim();
+  const totalDiretoObra = obraId
+    ? normalizarNumeroPerfilAutor(totais.salvosPorObra[obraId], 0)
+    : 0;
+  const totalCapitulos = somarContagensCapitulosPerfilAutor(
+    obra,
+    totais.salvosPorCapitulo,
+  );
+  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.salvo).length;
+
+  return Math.max(totalDiretoObra, totalCapitulos, totalLocal);
+}
+
+function obterTotalConcluidasObraPerfilAutor(
+  obra: Pick<ObraLocal, "id">,
+  totais: TotaisInteracoesObrasPerfilAutor,
+) {
+  const obraId = obra.id.trim();
+
+  return obraId
+    ? normalizarNumeroPerfilAutor(totais.concluidasPorObra[obraId], 0)
+    : 0;
+}
+
+function obterIdsUnicosPerfilAutor(ids: string[]) {
+  return Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean)));
+}
+
+async function carregarContagensTabelaPerfilAutor(
+  tabela: string,
+  coluna: string,
+  ids: string[],
+) {
+  const idsUnicos = obterIdsUnicosPerfilAutor(ids);
+  const contagens: Record<string, number> = {};
+
+  if (idsUnicos.length === 0) {
+    return contagens;
+  }
+
+  const tamanhoChunk = 80;
+  const tamanhoPagina = 1000;
+
+  for (let inicioChunk = 0; inicioChunk < idsUnicos.length; inicioChunk += tamanhoChunk) {
+    const idsChunk = idsUnicos.slice(inicioChunk, inicioChunk + tamanhoChunk);
+    let inicioPagina = 0;
+
+    while (true) {
+      try {
+        const { data, error } = await supabase
+          .from(tabela)
+          .select(coluna)
+          .in(coluna, idsChunk)
+          .range(inicioPagina, inicioPagina + tamanhoPagina - 1);
+
+        if (error || !Array.isArray(data) || data.length === 0) {
+          break;
+        }
+
+        data.forEach((item: unknown) => {
+          if (!item || typeof item !== "object" || Array.isArray(item)) {
+            return;
+          }
+
+          const id = pegarTexto((item as Record<string, unknown>)[coluna]);
+
+          if (id) {
+            contagens[id] = (contagens[id] || 0) + 1;
+          }
+        });
+
+        if (data.length < tamanhoPagina) {
+          break;
+        }
+
+        inicioPagina += tamanhoPagina;
+      } catch {
+        break;
+      }
+    }
+  }
+
+  return contagens;
+}
+
+async function carregarTotaisInteracoesObrasPerfilAutor(
+  obrasParaContar: ObraLocal[],
+): Promise<TotaisInteracoesObrasPerfilAutor> {
+  const obraIds = obterIdsUnicosPerfilAutor(
+    obrasParaContar.map((obra) => obra.id),
+  );
+  const capituloIds = obterIdsUnicosPerfilAutor(
+    obrasParaContar.flatMap((obra) =>
+      obra.capitulos.map((capitulo) => capitulo.id),
+    ),
+  );
+
+  if (obraIds.length === 0 && capituloIds.length === 0) {
+    return totaisInteracoesObrasPerfilVazio;
+  }
+
+  const [
+    curtidasCapitulos,
+    comentariosCapitulos,
+    salvosCapitulos,
+    curtidasObras,
+    obrasSeguidas,
+    obrasFavoritas,
+    obrasConcluidas,
+  ] = await Promise.all([
+    carregarContagensTabelaPerfilAutor(
+      "curtidas_capitulos",
+      "capitulo_id",
+      capituloIds,
+    ),
+    carregarContagensTabelaPerfilAutor(
+      "comentarios_capitulos",
+      "capitulo_id",
+      capituloIds,
+    ),
+    carregarContagensTabelaPerfilAutor(
+      "salvos_capitulos",
+      "capitulo_id",
+      capituloIds,
+    ),
+    carregarContagensTabelaPerfilAutor("obra_curtidas", "obra_id", obraIds),
+    carregarContagensTabelaPerfilAutor("seguindo_obras", "obra_id", obraIds),
+    carregarContagensTabelaPerfilAutor("favoritos", "obra_id", obraIds),
+    carregarContagensTabelaPerfilAutor("concluidas", "obra_id", obraIds),
+  ]);
+
+  return {
+    curtidasPorObra: curtidasObras,
+    comentariosPorObra: {},
+    curtidasPorCapitulo: mesclarContagensPerfilAutor(curtidasCapitulos),
+    comentariosPorCapitulo: mesclarContagensPerfilAutor(comentariosCapitulos),
+    salvosPorObra: mesclarContagensPerfilAutor(obrasSeguidas, obrasFavoritas),
+    salvosPorCapitulo: mesclarContagensPerfilAutor(salvosCapitulos),
+    concluidasPorObra: mesclarContagensPerfilAutor(obrasConcluidas),
+  };
 }
 
 async function carregarObrasPublicadasSupabase() {
@@ -3851,6 +4120,8 @@ function erroCompartilhamentoFoiCanceladoPerfilAutor(error: unknown) {
 export default function PerfilAutorPage() {
   const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
+  const [totaisInteracoesObras, setTotaisInteracoesObras] =
+    useState<TotaisInteracoesObrasPerfilAutor>(totaisInteracoesObrasPerfilVazio);
   const [autorSelecionado, setAutorSelecionado] = useState("");
   const [autorIdSelecionado, setAutorIdSelecionado] = useState("");
   const [autoresSeguidos, setAutoresSeguidos] = useState<string[]>([]);
@@ -3864,7 +4135,7 @@ export default function PerfilAutorPage() {
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
   const [avatarErro, setAvatarErro] = useState("");
-  const [mensagemAcao, setMensagemAcao] = useState("");
+  const [, setMensagemAcao] = useState("");
   const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
     useState<PerfilUsuarioRemoto | null>(null);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
@@ -3873,6 +4144,7 @@ export default function PerfilAutorPage() {
   const [menuPerfilAberto, setMenuPerfilAberto] = useState(false);
   const [editorPerfilAberto, setEditorPerfilAberto] = useState(false);
   const [nomePerfilEditor, setNomePerfilEditor] = useState("");
+  const [usernamePerfilEditor, setUsernamePerfilEditor] = useState("");
   const [editorSobreAberto, setEditorSobreAberto] = useState(false);
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>("obras");
   const [abaBibliotecaPerfil] = useState<AbaBibliotecaPerfil>("quero-ler");
@@ -3961,6 +4233,29 @@ export default function PerfilAutorPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarTotaisReaisPerfil() {
+      if (obras.length === 0) {
+        setTotaisInteracoesObras(totaisInteracoesObrasPerfilVazio);
+        return;
+      }
+
+      const totaisReais = await carregarTotaisInteracoesObrasPerfilAutor(obras);
+
+      if (!cancelado) {
+        setTotaisInteracoesObras(totaisReais);
+      }
+    }
+
+    void carregarTotaisReaisPerfil();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obras]);
 
 
   useEffect(() => {
@@ -4222,19 +4517,23 @@ export default function PerfilAutorPage() {
           0,
         );
 
-        const totalCurtidas = obrasDoAutor.reduce((total, obra) => {
-          return (
-            total + obra.capitulos.filter((capitulo) => capitulo.curtiu).length
-          );
-        }, 0);
+        const totalCurtidas = obrasDoAutor.reduce(
+          (total, obra) =>
+            total + obterTotalCurtidasObraPerfilAutor(
+              obra,
+              totaisInteracoesObras,
+            ),
+          0,
+        );
 
-        const totalComentarios = obrasDoAutor.reduce((total, obra) => {
-          return (
-            total +
-            obra.capitulos.filter((capitulo) => capitulo.comentario.trim())
-              .length
-          );
-        }, 0);
+        const totalComentarios = obrasDoAutor.reduce(
+          (total, obra) =>
+            total + obterTotalComentariosObraPerfilAutor(
+              obra,
+              totaisInteracoesObras,
+            ),
+          0,
+        );
 
         return {
           autorId: grupoAutor.autorId,
@@ -4247,7 +4546,7 @@ export default function PerfilAutorPage() {
         };
       })
       .sort((autorA, autorB) => autorA.nome.localeCompare(autorB.nome));
-  }, [obras]);
+  }, [obras, totaisInteracoesObras]);
 
   const perfilUsuarioRemotoComoAutor = useMemo(() => {
     if (!perfilUsuarioRemoto?.userId) {
@@ -4590,9 +4889,20 @@ export default function PerfilAutorPage() {
       );
   const obrasSeguidasPerfilHref = "/seguindo?conteudo=obras";
   const obrasConcluidasPerfilPorObrasDoAutor = perfilParaMostrar
-    ? perfilParaMostrar.obras.filter((obra) =>
-        colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra),
-      ).length
+    ? perfilParaMostrar.obras.reduce((total, obra) => {
+        const totalConcluidasReais = obterTotalConcluidasObraPerfilAutor(
+          obra,
+          totaisInteracoesObras,
+        );
+        const concluidaLocal = colecaoTemObraPerfilBiblioteca(
+          obrasConcluidas,
+          obra,
+        )
+          ? 1
+          : 0;
+
+        return total + Math.max(totalConcluidasReais, concluidaLocal);
+      }, 0)
     : 0;
   const perfilSalvoAutor = autorChavePerfil
     ? perfisAutoresSalvos[autorChavePerfil] ||
@@ -4629,7 +4939,11 @@ export default function PerfilAutorPage() {
     "";
   const bioSobreAutor = bioSobrePersonalizada || bioAutor;
   const autorHandlePerfil = perfilParaMostrar
-    ? criarHandlePerfilAutor(perfilParaMostrar.nome, perfilParaMostrar.autorId)
+    ? criarHandlePerfilAutor(
+        perfilParaMostrar.nome,
+        perfilParaMostrar.autorId,
+        perfilUsuarioRemotoAtivo?.username || "",
+      )
     : "@autor.historietas";
   const avatarAutor = perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "";
 
@@ -4641,12 +4955,14 @@ export default function PerfilAutorPage() {
     setNomePerfilEditor(
       (perfilUsuarioRemotoAtivo?.nome || perfilParaMostrar.nome || "").trim(),
     );
+    setUsernamePerfilEditor(perfilUsuarioRemotoAtivo?.username || "");
   }, [
     editorPerfilAberto,
     podeEditarPerfil,
     perfilParaMostrar?.autorId,
     perfilParaMostrar?.nome,
     perfilUsuarioRemotoAtivo?.nome,
+    perfilUsuarioRemotoAtivo?.username,
   ]);
 
   const caracteresRestantesBio = BIO_MAX_LENGTH - bioAutorPersonalizada.length;
@@ -5377,6 +5693,7 @@ export default function PerfilAutorPage() {
       setPerfilUsuarioRemoto({
         userId: perfilUserId,
         nome: nomePerfil,
+        username: perfilUsuarioRemotoAtivo?.username || "",
         avatar: perfilNormalizado.avatar,
         bio: perfilNormalizado.bio,
         sobreBio: perfilNormalizado.sobreBio,
@@ -5387,6 +5704,7 @@ export default function PerfilAutorPage() {
         userId: perfilUserId,
         nome: nomePerfil,
         perfil: perfilNormalizado,
+        username: perfilUsuarioRemotoAtivo?.username || undefined,
       }).then((resultado) => {
         if (!resultado.ok && resultado.erro) {
           setMensagemAcao(`Perfil salvo neste aparelho. Supabase: ${resultado.erro}`);
@@ -5432,6 +5750,7 @@ export default function PerfilAutorPage() {
     setPerfilUsuarioRemoto({
       userId: perfilUserId,
       nome: nomeFinal,
+      username: perfilUsuarioRemotoAtivo?.username || "",
       avatar: avatarAutor,
       bio: bioAutorPersonalizada,
       sobreBio: bioSobrePersonalizada,
@@ -5476,6 +5795,7 @@ export default function PerfilAutorPage() {
         userId: perfilUserId,
         nome: nomeFinal,
         perfil: perfilNormalizado,
+        username: perfilUsuarioRemotoAtivo?.username || undefined,
       }),
       sincronizarNomeAutorObrasSupabase(perfilUserId, nomeFinal),
     ]);
@@ -5495,6 +5815,86 @@ export default function PerfilAutorPage() {
     }
 
     setMensagemAcao("Nome do perfil atualizado.");
+  }
+
+  async function salvarUsernamePerfilAutor(usernameAtualizado: string) {
+    const usernameDigitado = usernameAtualizado.trim();
+    const usernameFinal = usernameDigitado
+      ? normalizarUsernamePerfilAutor(usernameDigitado)
+      : "";
+    const usernameAtual = perfilUsuarioRemotoAtivo?.username || "";
+    const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
+    const usuarioIdAtual = usuarioIdLogado.trim();
+
+    if (!podeEditarPerfil || !perfilParaMostrar || !perfilUserId || !usuarioIdAtual) {
+      return;
+    }
+
+    if (perfilUserId.toLowerCase() !== usuarioIdAtual.toLowerCase()) {
+      return;
+    }
+
+    if (usernameDigitado && usernameFinal.length < 3) {
+      setMensagemAcao("O @username precisa ter pelo menos 3 caracteres.");
+      setUsernamePerfilEditor(usernameAtual);
+      return;
+    }
+
+    if (usernameFinal === usernameAtual) {
+      setUsernamePerfilEditor(usernameFinal);
+      return;
+    }
+
+    setUsernamePerfilEditor(usernameFinal);
+    setMensagemAcao(usernameFinal ? "Salvando @username..." : "Removendo @username...");
+
+    const nomePerfil = nomePerfilEditor.trim().replace(/\s+/g, " ").slice(0, 80) ||
+      perfilUsuarioRemotoAtivo?.nome ||
+      perfilParaMostrar.nome ||
+      "Usuário";
+    const perfilNormalizado: PerfilAutorSalvo = {
+      avatar: avatarAutor,
+      avatarNome: perfilSalvoAutor.avatarNome,
+      bio: bioAutorPersonalizada,
+      sobreBio: bioSobrePersonalizada,
+      mostrarDestaques: perfilSalvoAutor.mostrarDestaques,
+    };
+
+    const resultado = await salvarPerfilUsuarioSupabase({
+      userId: perfilUserId,
+      nome: nomePerfil,
+      perfil: perfilNormalizado,
+      username: usernameFinal || null,
+    });
+
+    if (!resultado.ok) {
+      const erro = resultado.erro.toLowerCase();
+
+      if (
+        erro.includes("profiles_username_unique") ||
+        erro.includes("duplicate key") ||
+        erro.includes("unique")
+      ) {
+        setMensagemAcao("Esse @username já está em uso.");
+      } else {
+        setMensagemAcao(`Não consegui salvar o @username. Supabase: ${resultado.erro}`);
+      }
+
+      setUsernamePerfilEditor(usernameAtual);
+      return;
+    }
+
+    setPerfilUsuarioRemoto({
+      userId: perfilUserId,
+      nome: nomePerfil,
+      username: usernameFinal,
+      avatar: avatarAutor,
+      bio: bioAutorPersonalizada,
+      sobreBio: bioSobrePersonalizada,
+      criadoEm: perfilUsuarioRemotoAtivo?.criadoEm || "",
+    });
+
+    setMensagemAcao(usernameFinal ? "@username atualizado." : "@username removido.");
   }
 
   function atualizarBioAutor(novaBio: string) {
@@ -6799,10 +7199,12 @@ export default function PerfilAutorPage() {
       : isDesktop
         ? desktopDiaryVisualCardStyle
         : diaryVisualCardStyle;
-    const totalCurtidasDiario =
-      obra?.capitulos.filter((capitulo) => capitulo.curtiu).length || 0;
-    const totalComentariosDiario =
-      obra?.capitulos.filter((capitulo) => capitulo.comentario.trim()).length || 0;
+    const totalCurtidasDiario = obra
+      ? obterTotalCurtidasObraPerfilAutor(obra, totaisInteracoesObras)
+      : 0;
+    const totalComentariosDiario = obra
+      ? obterTotalComentariosObraPerfilAutor(obra, totaisInteracoesObras)
+      : 0;
     const visualizacoesDiario = compactarNumeroPerfilAutor(
       obra?.visualizacoes || 0,
     );
@@ -6874,12 +7276,14 @@ export default function PerfilAutorPage() {
           item.numeroCapitulo || 1,
         )
       : obraHref;
-    const totalCurtidasBiblioteca = item.obra.capitulos.filter(
-      (capitulo) => capitulo.curtiu,
-    ).length;
-    const totalComentariosBiblioteca = item.obra.capitulos.filter(
-      (capitulo) => capitulo.comentario.trim(),
-    ).length;
+    const totalCurtidasBiblioteca = obterTotalCurtidasObraPerfilAutor(
+      item.obra,
+      totaisInteracoesObras,
+    );
+    const totalComentariosBiblioteca = obterTotalComentariosObraPerfilAutor(
+      item.obra,
+      totaisInteracoesObras,
+    );
     const visualizacoesBiblioteca = compactarNumeroPerfilAutor(
       item.obra.visualizacoes || 0,
     );
@@ -7481,8 +7885,6 @@ export default function PerfilAutorPage() {
           </div>
         )}
 
-        {mensagemAcao && <span style={actionMessageStyle}>{mensagemAcao}</span>}
-
         <section style={heroAtualStyle}>
           <div style={authorTopRowAtualStyle}>
             {podeEditarPerfil ? (
@@ -7740,6 +8142,32 @@ export default function PerfilAutorPage() {
                   }}
                   placeholder="Seu nome no Historietas"
                   maxLength={80}
+                  style={profileNameInputStyle}
+                  type="text"
+                />
+              </label>
+
+              <label style={profileEditorFieldStyle}>
+                <span style={profileEditorLabelStyle}>@username público</span>
+
+                <input
+                  value={usernamePerfilEditor}
+                  onChange={(event) =>
+                    setUsernamePerfilEditor(
+                      normalizarUsernamePerfilAutor(event.target.value),
+                    )
+                  }
+                  onBlur={() =>
+                    void salvarUsernamePerfilAutor(usernamePerfilEditor)
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      event.currentTarget.blur();
+                    }
+                  }}
+                  placeholder="ex: username"
+                  maxLength={30}
                   style={profileNameInputStyle}
                   type="text"
                 />
@@ -8422,12 +8850,14 @@ export default function PerfilAutorPage() {
                     : "";
                   const obraFavorita = colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra);
                   const obraConcluida = colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra);
-                  const totalCurtidas = obra.capitulos.filter(
-                    (capitulo) => capitulo.curtiu,
-                  ).length;
-                  const totalComentarios = obra.capitulos.filter(
-                    (capitulo) => capitulo.comentario.trim(),
-                  ).length;
+                  const totalCurtidas = obterTotalCurtidasObraPerfilAutor(
+                    obra,
+                    totaisInteracoesObras,
+                  );
+                  const totalComentarios = obterTotalComentariosObraPerfilAutor(
+                    obra,
+                    totaisInteracoesObras,
+                  );
                   const visualizacoesObra = compactarNumeroPerfilAutor(
                     obra.visualizacoes,
                   );
@@ -8503,12 +8933,18 @@ export default function PerfilAutorPage() {
               : "";
             const obraFavorita = colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra);
             const obraConcluida = colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra);
-            const totalCurtidas = obra.capitulos.filter(
-              (capitulo) => capitulo.curtiu,
-            ).length;
-            const totalComentarios = obra.capitulos.filter(
-              (capitulo) => capitulo.comentario.trim(),
-            ).length;
+            const totalCurtidas = obterTotalCurtidasObraPerfilAutor(
+              obra,
+              totaisInteracoesObras,
+            );
+            const totalComentarios = obterTotalComentariosObraPerfilAutor(
+              obra,
+              totaisInteracoesObras,
+            );
+            const totalSalvos = obterTotalSalvosObraPerfilAutor(
+              obra,
+              totaisInteracoesObras,
+            );
             const visualizacoesObra = compactarNumeroPerfilAutor(
               obra.visualizacoes,
             );
@@ -8526,6 +8962,7 @@ export default function PerfilAutorPage() {
               `👁 ${visualizacoesObra}`,
               `♥ ${totalCurtidas}`,
               `💬 ${totalComentarios}`,
+              `＋ ${totalSalvos}`,
               `${obra.capitulos.length} ${
                 obra.capitulos.length === 1 ? "cap" : "caps"
               }`,
@@ -10363,19 +10800,6 @@ const avatarErrorStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const actionMessageStyle: CSSProperties = {
-  display: "block",
-  margin: "0 0 12px",
-  padding: "10px 12px",
-  borderRadius: "16px",
-  background: "rgba(249,115,22,0.10)",
-  border: "1px solid rgba(249,115,22,0.22)",
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "12px",
-  fontWeight: 850,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const denunciaPerfilOverlayStyle: CSSProperties = {
   position: "fixed",

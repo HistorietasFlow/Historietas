@@ -51,6 +51,13 @@ type ObraLocal = {
   ultimoCapituloLidoId?: string;
   ultimaLeituraEm?: string;
   progressoLeitura?: number;
+  visualizacoes?: number;
+  totalCurtidas?: number;
+  totalComentarios?: number;
+  totalSalvos?: number;
+  totalLidos?: number;
+  totalFavoritos?: number;
+  totalConcluidas?: number;
   slug: string;
   link: string;
 };
@@ -73,6 +80,7 @@ type ObraSupabaseRow = {
   arquivo_tamanho: number | null;
   arquivo_categoria: string | null;
   publicado: boolean | null;
+  visualizacoes: number | null;
   slug: string | null;
   link: string | null;
   criada_em: string | null;
@@ -140,6 +148,22 @@ function contarLetrasNumeros(texto: string) {
 
 function contarPalavras(texto: string) {
   return texto.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function normalizarNumeroEditarCapitulo(valor: unknown, fallback = 0) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return Math.max(0, Math.round(valor));
+  }
+
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
+
+    if (Number.isFinite(numero)) {
+      return Math.max(0, Math.round(numero));
+    }
+  }
+
+  return Math.max(0, Math.round(fallback));
 }
 
 function criarTituloPorNomeArquivo(nomeArquivo: string) {
@@ -459,6 +483,53 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
     ultimaLeituraEm:
       typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: normalizarNumeroEditarCapitulo(
+      (obra as Record<string, unknown>).visualizacoes ??
+        (obra as Record<string, unknown>).views ??
+        (obra as Record<string, unknown>).visualizacoesTotal ??
+        (obra as Record<string, unknown>).totalVisualizacoes ??
+        (obra as Record<string, unknown>).total_visualizacoes,
+    ),
+    totalCurtidas: normalizarNumeroEditarCapitulo(
+      (obra as Record<string, unknown>).totalCurtidas ??
+        (obra as Record<string, unknown>).curtidas ??
+        (obra as Record<string, unknown>).likes ??
+        (obra as Record<string, unknown>).totalLikes ??
+        (obra as Record<string, unknown>).total_curtidas,
+      capitulosNormalizados.filter((capitulo) => capitulo.curtiu).length,
+    ),
+    totalComentarios: normalizarNumeroEditarCapitulo(
+      (obra as Record<string, unknown>).totalComentarios ??
+        (obra as Record<string, unknown>).comentarios ??
+        (obra as Record<string, unknown>).totalComments ??
+        (obra as Record<string, unknown>).total_comentarios,
+      capitulosNormalizados.filter((capitulo) =>
+        capitulo.comentario.trim(),
+      ).length,
+    ),
+    totalSalvos: normalizarNumeroEditarCapitulo(
+      (obra as Record<string, unknown>).totalSalvos ??
+        (obra as Record<string, unknown>).salvos ??
+        (obra as Record<string, unknown>).total_salvos,
+      capitulosNormalizados.filter((capitulo) => capitulo.salvo).length,
+    ),
+    totalLidos: normalizarNumeroEditarCapitulo(
+      (obra as Record<string, unknown>).totalLidos ??
+        (obra as Record<string, unknown>).lidos ??
+        (obra as Record<string, unknown>).leituras ??
+        (obra as Record<string, unknown>).total_lidos,
+      capitulosNormalizados.filter((capitulo) => capitulo.lido).length,
+    ),
+    totalFavoritos: normalizarNumeroEditarCapitulo(
+      (obra as Record<string, unknown>).totalFavoritos ??
+        (obra as Record<string, unknown>).favoritos ??
+        (obra as Record<string, unknown>).total_favoritos,
+    ),
+    totalConcluidas: normalizarNumeroEditarCapitulo(
+      (obra as Record<string, unknown>).totalConcluidas ??
+        (obra as Record<string, unknown>).concluidas ??
+        (obra as Record<string, unknown>).total_concluidas,
+    ),
     slug:
       typeof obra.slug === "string" && obra.slug.trim()
         ? obra.slug
@@ -675,6 +746,48 @@ function mapearObraSupabase(
     ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulos),
+    visualizacoes: normalizarNumeroEditarCapitulo(
+      obra.visualizacoes ??
+        (obra as unknown as Record<string, unknown>).views ??
+        (obra as unknown as Record<string, unknown>).visualizacoes_total ??
+        (obra as unknown as Record<string, unknown>).total_visualizacoes ??
+        obraLocal?.visualizacoes,
+    ),
+    totalCurtidas: normalizarNumeroEditarCapitulo(
+      (obra as unknown as Record<string, unknown>).total_curtidas ??
+        (obra as unknown as Record<string, unknown>).curtidas ??
+        (obra as unknown as Record<string, unknown>).likes ??
+        obraLocal?.totalCurtidas,
+      capitulos.filter((capitulo) => capitulo.curtiu).length,
+    ),
+    totalComentarios: normalizarNumeroEditarCapitulo(
+      (obra as unknown as Record<string, unknown>).total_comentarios ??
+        (obra as unknown as Record<string, unknown>).comentarios ??
+        obraLocal?.totalComentarios,
+      capitulos.filter((capitulo) => capitulo.comentario.trim()).length,
+    ),
+    totalSalvos: normalizarNumeroEditarCapitulo(
+      (obra as unknown as Record<string, unknown>).total_salvos ??
+        (obra as unknown as Record<string, unknown>).salvos ??
+        obraLocal?.totalSalvos,
+      capitulos.filter((capitulo) => capitulo.salvo).length,
+    ),
+    totalLidos: normalizarNumeroEditarCapitulo(
+      (obra as unknown as Record<string, unknown>).total_lidos ??
+        (obra as unknown as Record<string, unknown>).leituras ??
+        obraLocal?.totalLidos,
+      capitulos.filter((capitulo) => capitulo.lido).length,
+    ),
+    totalFavoritos: normalizarNumeroEditarCapitulo(
+      (obra as unknown as Record<string, unknown>).total_favoritos ??
+        (obra as unknown as Record<string, unknown>).favoritos ??
+        obraLocal?.totalFavoritos,
+    ),
+    totalConcluidas: normalizarNumeroEditarCapitulo(
+      (obra as unknown as Record<string, unknown>).total_concluidas ??
+        (obra as unknown as Record<string, unknown>).concluidas ??
+        obraLocal?.totalConcluidas,
+    ),
     slug,
     link: obra.link?.trim() || obraLocal?.link || `/obra/${slug}`,
   };
@@ -1005,7 +1118,7 @@ export default function EditarCapituloPage() {
             await supabase
               .from("obras")
               .select(
-                "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+                "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
               )
               .eq("id", obraIdParam)
               .eq("user_id", userId)

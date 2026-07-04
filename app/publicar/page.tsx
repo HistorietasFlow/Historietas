@@ -49,6 +49,11 @@ type ObraLocal = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
+  visualizacoes: number;
+  totalCurtidas: number;
+  totalComentarios: number;
+  totalSalvos: number;
+  totalLidos: number;
   slug: string;
   link: string;
 };
@@ -547,6 +552,11 @@ function normalizarObraSalva(obra: ObraSalva, obraIndex: number): ObraLocal {
     ultimaLeituraEm:
       typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: 0,
+    totalCurtidas: 0,
+    totalComentarios: 0,
+    totalSalvos: 0,
+    totalLidos: 0,
     slug:
       typeof obra.slug === "string" && obra.slug.trim()
         ? obra.slug
@@ -1495,6 +1505,7 @@ export default function PublicarPage() {
         arquivo_tamanho: arquivoObra?.tamanho || 0,
         arquivo_categoria: arquivoObra?.categoria || "outro",
         publicado: true,
+        visualizacoes: 0,
         slug,
         link,
         criada_em: criadaEm,
@@ -1552,6 +1563,11 @@ export default function PublicarPage() {
         ultimoCapituloLidoId: "",
         ultimaLeituraEm: "",
         progressoLeitura: calcularProgressoLeitura(capitulosIniciais),
+        visualizacoes: 0,
+        totalCurtidas: 0,
+        totalComentarios: 0,
+        totalSalvos: 0,
+        totalLidos: 0,
         slug,
         link,
       };

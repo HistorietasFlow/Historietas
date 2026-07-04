@@ -66,6 +66,10 @@ type CapituloLocal = {
   criadoEm: string;
   lido: boolean;
   lidoEm: string;
+  totalCurtidas?: number;
+  totalComentarios?: number;
+  totalSalvos?: number;
+  totalLidos?: number;
 };
 
 type ArquivoObraLocal = {
@@ -98,6 +102,10 @@ type ObraLocal = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
+  visualizacoes?: number;
+  totalCurtidas?: number;
+  totalFavoritos?: number;
+  totalConcluidas?: number;
   slug: string;
   link: string;
 };
@@ -120,6 +128,8 @@ type SupabaseObraRow = {
   arquivo_tamanho: number | null;
   arquivo_categoria: string | null;
   visualizacoes: number | null;
+  views?: number | null;
+  total_visualizacoes?: number | null;
   publicado: boolean | null;
   slug: string | null;
   link: string | null;
@@ -428,6 +438,22 @@ function normalizarCapituloLocal(
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
+    totalCurtidas: normalizarContadorObraPublica(
+      (capitulo as Record<string, unknown>).totalCurtidas ??
+        (capitulo as Record<string, unknown>).total_curtidas
+    ),
+    totalComentarios: normalizarContadorObraPublica(
+      (capitulo as Record<string, unknown>).totalComentarios ??
+        (capitulo as Record<string, unknown>).total_comentarios
+    ),
+    totalSalvos: normalizarContadorObraPublica(
+      (capitulo as Record<string, unknown>).totalSalvos ??
+        (capitulo as Record<string, unknown>).total_salvos
+    ),
+    totalLidos: normalizarContadorObraPublica(
+      (capitulo as Record<string, unknown>).totalLidos ??
+        (capitulo as Record<string, unknown>).total_lidos
+    ),
   };
 }
 
@@ -509,6 +535,22 @@ function normalizarObraLocal(
     ultimaLeituraEm:
       typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: normalizarContadorObraPublica(
+      obra.visualizacoes ??
+        obra.views ??
+        obra.visualizacoesTotal ??
+        obra.totalVisualizacoes ??
+        obra.total_visualizacoes
+    ),
+    totalCurtidas: normalizarContadorObraPublica(
+      obra.totalCurtidas ?? obra.total_curtidas
+    ),
+    totalFavoritos: normalizarContadorObraPublica(
+      obra.totalFavoritos ?? obra.total_favoritos
+    ),
+    totalConcluidas: normalizarContadorObraPublica(
+      obra.totalConcluidas ?? obra.total_concluidas
+    ),
     slug,
     link:
       typeof obra.link === "string" && obra.link.trim()
@@ -601,6 +643,10 @@ function normalizarObraSupabase(
       criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
       lido: Boolean(capituloLocal?.lido),
       lidoEm: capituloLocal?.lidoEm || "",
+      totalCurtidas: normalizarContadorObraPublica(capituloLocal?.totalCurtidas),
+      totalComentarios: normalizarContadorObraPublica(capituloLocal?.totalComentarios),
+      totalSalvos: normalizarContadorObraPublica(capituloLocal?.totalSalvos),
+      totalLidos: normalizarContadorObraPublica(capituloLocal?.totalLidos),
     } satisfies CapituloLocal;
   });
 
@@ -675,6 +721,12 @@ function normalizarObraSupabase(
     ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
+    visualizacoes: normalizarContadorObraPublica(
+      obra.visualizacoes ?? obra.views ?? obra.total_visualizacoes ?? obraLocal?.visualizacoes
+    ),
+    totalCurtidas: normalizarContadorObraPublica(obraLocal?.totalCurtidas),
+    totalFavoritos: normalizarContadorObraPublica(obraLocal?.totalFavoritos),
+    totalConcluidas: normalizarContadorObraPublica(obraLocal?.totalConcluidas),
     slug: slugObra,
     link: obra.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
   };
@@ -735,12 +787,15 @@ async function carregarObraSupabasePorSlug(
       return obraLocalAtual.id === obraBanco.id || slugLocal === slugLimpo;
     });
 
-    const obraNormalizada = normalizarObraSupabase(
+    const obraNormalizadaSemTotais = normalizarObraSupabase(
       obraBanco,
       erroCapitulos ? [] : ((capitulosBanco || []) as unknown as SupabaseCapituloRow[]),
       obraLocal,
       0
     );
+    const [obraNormalizada] = await aplicarTotaisReaisObraPublica([
+      obraNormalizadaSemTotais,
+    ]);
 
     const obraJaExiste = obrasLocais.some(
       (obraLocalAtual) => obraLocalAtual.id === obraNormalizada.id
@@ -764,6 +819,174 @@ async function carregarObraSupabasePorSlug(
 }
 
 
+function normalizarContadorObraPublica(valor: unknown) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return Math.max(0, Math.round(valor));
+  }
+
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
+
+    if (Number.isFinite(numero)) {
+      return Math.max(0, Math.round(numero));
+    }
+  }
+
+  return 0;
+}
+
+function incrementarContagemObraPublica(
+  mapa: Map<string, number>,
+  chave: string,
+) {
+  const chaveLimpa = chave.trim();
+
+  if (!chaveLimpa) {
+    return;
+  }
+
+  mapa.set(chaveLimpa, (mapa.get(chaveLimpa) || 0) + 1);
+}
+
+async function contarRegistrosPorColunaObraPublica(
+  tabela: string,
+  coluna: string,
+  ids: string[],
+) {
+  const idsUnicos = Array.from(
+    new Set(ids.map((id) => id.trim()).filter(Boolean)),
+  );
+  const contagens = new Map<string, number>();
+  const tamanhoPagina = 1000;
+
+  if (idsUnicos.length === 0) {
+    return contagens;
+  }
+
+  for (let inicioIds = 0; inicioIds < idsUnicos.length; inicioIds += 80) {
+    const loteIds = idsUnicos.slice(inicioIds, inicioIds + 80);
+    let inicio = 0;
+
+    while (true) {
+      try {
+        const { data, error } = await supabase
+          .from(tabela)
+          .select(coluna)
+          .in(coluna, loteIds)
+          .range(inicio, inicio + tamanhoPagina - 1);
+
+        if (error || !Array.isArray(data) || data.length === 0) {
+          break;
+        }
+
+        data.forEach((registro) => {
+          if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+            return;
+          }
+
+          const valor = (registro as Record<string, unknown>)[coluna];
+
+          if (typeof valor === "string") {
+            incrementarContagemObraPublica(contagens, valor);
+          }
+        });
+
+        if (data.length < tamanhoPagina) {
+          break;
+        }
+
+        inicio += tamanhoPagina;
+      } catch {
+        break;
+      }
+    }
+  }
+
+  return contagens;
+}
+
+function totalCurtidasObraPublica(obra: ObraLocal) {
+  const totalCapitulos = obra.capitulos.reduce(
+    (total, capitulo) => total + normalizarContadorObraPublica(capitulo.totalCurtidas),
+    0,
+  );
+  const totalObra = normalizarContadorObraPublica(obra.totalCurtidas);
+  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
+
+  return Math.max(totalCapitulos + totalObra, totalLocal);
+}
+
+function totalComentariosObraPublica(obra: ObraLocal) {
+  const totalCapitulos = obra.capitulos.reduce(
+    (total, capitulo) => total + normalizarContadorObraPublica(capitulo.totalComentarios),
+    0,
+  );
+  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length;
+
+  return Math.max(totalCapitulos, totalLocal);
+}
+
+function totalVisualizacoesObraPublica(obra: ObraLocal) {
+  const totalObra = normalizarContadorObraPublica(obra.visualizacoes);
+  const totalLidosCapitulos = obra.capitulos.reduce(
+    (total, capitulo) => total + normalizarContadorObraPublica(capitulo.totalLidos),
+    0,
+  );
+  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.lido).length;
+
+  return Math.max(totalObra, totalLidosCapitulos, totalLocal);
+}
+
+async function aplicarTotaisReaisObraPublica(obrasParaAtualizar: ObraLocal[]) {
+  const capituloIds = Array.from(
+    new Set(
+      obrasParaAtualizar.flatMap((obra) =>
+        obra.capitulos.map((capitulo) => capitulo.id.trim()).filter(Boolean),
+      ),
+    ),
+  );
+  const obraIds = Array.from(
+    new Set(obrasParaAtualizar.map((obra) => obra.id.trim()).filter(Boolean)),
+  );
+
+  if (capituloIds.length === 0 && obraIds.length === 0) {
+    return obrasParaAtualizar;
+  }
+
+  const [
+    curtidasPorCapitulo,
+    comentariosPorCapitulo,
+    salvosPorCapitulo,
+    lidosPorCapitulo,
+    curtidasPorObra,
+    favoritosPorObra,
+    concluidasPorObra,
+  ] = await Promise.all([
+    contarRegistrosPorColunaObraPublica("curtidas_capitulos", "capitulo_id", capituloIds),
+    contarRegistrosPorColunaObraPublica("comentarios_capitulos", "capitulo_id", capituloIds),
+    contarRegistrosPorColunaObraPublica("salvos_capitulos", "capitulo_id", capituloIds),
+    contarRegistrosPorColunaObraPublica("progresso_leitura", "capitulo_id", capituloIds),
+    contarRegistrosPorColunaObraPublica("obra_curtidas", "obra_id", obraIds),
+    contarRegistrosPorColunaObraPublica("favoritos", "obra_id", obraIds),
+    contarRegistrosPorColunaObraPublica("concluidas", "obra_id", obraIds),
+  ]);
+
+  return obrasParaAtualizar.map((obra) => ({
+    ...obra,
+    totalCurtidas: curtidasPorObra.get(obra.id) || 0,
+    totalFavoritos: favoritosPorObra.get(obra.id) || 0,
+    totalConcluidas: concluidasPorObra.get(obra.id) || 0,
+    capitulos: obra.capitulos.map((capitulo) => ({
+      ...capitulo,
+      totalCurtidas: curtidasPorCapitulo.get(capitulo.id) || 0,
+      totalComentarios: comentariosPorCapitulo.get(capitulo.id) || 0,
+      totalSalvos: salvosPorCapitulo.get(capitulo.id) || 0,
+      totalLidos: lidosPorCapitulo.get(capitulo.id) || 0,
+    })),
+  }));
+}
+
+
 function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
   const obraDisponivel = obra.publicado && (obra.capitulos.length > 0 || Boolean(obra.arquivoObra));
 
@@ -777,11 +1000,9 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
     formato: obra.formato,
     classificacaoIndicativa: obra.classificacaoIndicativa,
     status: obra.publicado ? "Publicado" : "Rascunho",
-    views: String(obra.capitulos.filter((capitulo) => capitulo.lido).length),
-    likes: String(obra.capitulos.filter((capitulo) => capitulo.curtiu).length),
-    comentarios: String(
-      obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length
-    ),
+    views: String(totalVisualizacoesObraPublica(obra)),
+    likes: String(totalCurtidasObraPublica(obra)),
+    comentarios: String(totalComentariosObraPublica(obra)),
     disponivel: obraDisponivel,
     slug: obra.slug,
     link: obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`,
@@ -1909,7 +2130,7 @@ export default function ObraDinamicaPage() {
           visualizacoes = proximaVisualizacao;
         }
 
-        const [{ count: totalCurtidas }, { count: totalSeguidores }] =
+        const [{ count: totalCurtidasObra }, { count: totalSeguidores }] =
           await Promise.all([
             supabase
               .from("obra_curtidas")
@@ -1921,19 +2142,31 @@ export default function ObraDinamicaPage() {
               .eq("obra_id", obraId),
           ]);
 
+        let totalCurtidasCapitulos = 0;
         let totalComentarios = metricasBase.comentarios;
         const idsCapitulos = capitulosDaObra
           .map((capitulo) => capitulo.id)
           .filter(Boolean);
 
         if (idsCapitulos.length > 0) {
-          const { count: comentariosCount } = await supabase
-            .from("comentarios_capitulos")
-            .select("id", { count: "exact", head: true })
-            .in("capitulo_id", idsCapitulos);
+          const [{ count: curtidasCapitulosCount }, { count: comentariosCount }] =
+            await Promise.all([
+              supabase
+                .from("curtidas_capitulos")
+                .select("id", { count: "exact", head: true })
+                .in("capitulo_id", idsCapitulos),
+              supabase
+                .from("comentarios_capitulos")
+                .select("id", { count: "exact", head: true })
+                .in("capitulo_id", idsCapitulos),
+            ]);
 
+          totalCurtidasCapitulos = curtidasCapitulosCount ?? 0;
           totalComentarios = comentariosCount ?? totalComentarios;
         }
+
+        const totalCurtidas =
+          (totalCurtidasObra ?? 0) + totalCurtidasCapitulos;
 
         let curtidaAtiva = false;
         let seguindoAtivo = false;

@@ -41,6 +41,13 @@ type ObraLocal = {
   progressoLeitura: number;
   slug: string;
   link: string;
+  totalCurtidas?: number;
+  totalComentarios?: number;
+  totalSalvos?: number;
+  totalLidos?: number;
+  totalSeguidores?: number;
+  totalFavoritas?: number;
+  totalConcluidas?: number;
 };
 
 type CapituloSalvo = Partial<CapituloLocal> & Record<string, unknown>;
@@ -121,6 +128,28 @@ type SupabaseCapituloRow = {
   publicado: boolean | null;
   criado_em: string | null;
   atualizado_em: string | null;
+};
+
+type TotaisInteracoesSeguindo = {
+  curtidasPorObra: Record<string, number>;
+  seguidoresPorObra: Record<string, number>;
+  favoritasPorObra: Record<string, number>;
+  concluidasPorObra: Record<string, number>;
+  curtidasPorCapitulo: Record<string, number>;
+  comentariosPorCapitulo: Record<string, number>;
+  salvosPorCapitulo: Record<string, number>;
+  lidosPorCapitulo: Record<string, number>;
+};
+
+const totaisInteracoesSeguindoVazios: TotaisInteracoesSeguindo = {
+  curtidasPorObra: {},
+  seguidoresPorObra: {},
+  favoritasPorObra: {},
+  concluidasPorObra: {},
+  curtidasPorCapitulo: {},
+  comentariosPorCapitulo: {},
+  salvosPorCapitulo: {},
+  lidosPorCapitulo: {},
 };
 
 type RegistroSupabaseGenerico = Record<string, unknown>;
@@ -391,6 +420,83 @@ function normalizarListaTexto(lista: string[]) {
   );
 }
 
+function normalizarNumeroSeguindo(valor: unknown, fallback = 0) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return Math.max(0, Math.round(valor));
+  }
+
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
+
+    if (Number.isFinite(numero)) {
+      return Math.max(0, Math.round(numero));
+    }
+  }
+
+  return fallback;
+}
+
+function contarCapitulosComFlagSeguindo(
+  obra: Pick<ObraLocal, "capitulos">,
+  campo: "curtiu" | "salvo" | "lido",
+) {
+  return obra.capitulos.filter((capitulo) => Boolean(capitulo[campo])).length;
+}
+
+function contarComentariosLocaisSeguindo(obra: Pick<ObraLocal, "capitulos">) {
+  return obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length;
+}
+
+function obterTotalCurtidasObraSeguindo(
+  obra: Pick<ObraLocal, "capitulos" | "totalCurtidas">,
+) {
+  return Math.max(
+    normalizarNumeroSeguindo(obra.totalCurtidas, 0),
+    contarCapitulosComFlagSeguindo(obra, "curtiu"),
+  );
+}
+
+function obterTotalComentariosObraSeguindo(
+  obra: Pick<ObraLocal, "capitulos" | "totalComentarios">,
+) {
+  return Math.max(
+    normalizarNumeroSeguindo(obra.totalComentarios, 0),
+    contarComentariosLocaisSeguindo(obra),
+  );
+}
+
+function obterTotalSalvosObraSeguindo(
+  obra: Pick<
+    ObraLocal,
+    | "capitulos"
+    | "totalSalvos"
+    | "totalSeguidores"
+    | "totalFavoritas"
+  >,
+) {
+  return Math.max(
+    normalizarNumeroSeguindo(obra.totalSalvos, 0),
+    normalizarNumeroSeguindo(obra.totalSeguidores, 0),
+    normalizarNumeroSeguindo(obra.totalFavoritas, 0),
+    contarCapitulosComFlagSeguindo(obra, "salvo"),
+  );
+}
+
+function obterTotalLidosObraSeguindo(
+  obra: Pick<ObraLocal, "capitulos" | "totalLidos">,
+) {
+  return Math.max(
+    normalizarNumeroSeguindo(obra.totalLidos, 0),
+    contarCapitulosComFlagSeguindo(obra, "lido"),
+  );
+}
+
+function obterTotalConcluidasObraSeguindo(
+  obra: Pick<ObraLocal, "totalConcluidas">,
+) {
+  return normalizarNumeroSeguindo(obra.totalConcluidas, 0);
+}
+
 function criarChavesObra(obra: Pick<ObraLocal, "id" | "titulo" | "slug" | "link">) {
   return normalizarListaTexto([
     obra.id,
@@ -611,6 +717,34 @@ function normalizarObraSalva(obra: ObraSalva, obraIndex: number): ObraLocal {
       typeof obra.link === "string" && obra.link.trim()
         ? obra.link
         : `/obra/${slug}`,
+    totalCurtidas: normalizarNumeroSeguindo(
+      obra.totalCurtidas ?? obra.curtidas ?? obra.likes ?? obra.total_curtidas,
+      capitulosNormalizados.filter((capitulo) => capitulo.curtiu).length,
+    ),
+    totalComentarios: normalizarNumeroSeguindo(
+      obra.totalComentarios ?? obra.comentarios ?? obra.total_comentarios,
+      capitulosNormalizados.filter((capitulo) => capitulo.comentario.trim()).length,
+    ),
+    totalSalvos: normalizarNumeroSeguindo(
+      obra.totalSalvos ?? obra.salvos ?? obra.total_salvos,
+      capitulosNormalizados.filter((capitulo) => capitulo.salvo).length,
+    ),
+    totalLidos: normalizarNumeroSeguindo(
+      obra.totalLidos ?? obra.lidos ?? obra.total_lidos,
+      capitulosNormalizados.filter((capitulo) => capitulo.lido).length,
+    ),
+    totalSeguidores: normalizarNumeroSeguindo(
+      obra.totalSeguidores ?? obra.seguidores ?? obra.total_seguidores,
+      0,
+    ),
+    totalFavoritas: normalizarNumeroSeguindo(
+      obra.totalFavoritas ?? obra.favoritas ?? obra.total_favoritas,
+      0,
+    ),
+    totalConcluidas: normalizarNumeroSeguindo(
+      obra.totalConcluidas ?? obra.concluidas ?? obra.total_concluidas,
+      0,
+    ),
   };
 }
 
@@ -751,30 +885,121 @@ async function carregarRegistrosCapitulosUsuarioSupabase(
   }
 
   const camposPorTabela = {
-    salvos_capitulos: "capitulo_id",
-    curtidas_capitulos: "capitulo_id",
-    comentarios_capitulos: "capitulo_id,comentario",
-    progresso_leitura: "capitulo_id,lido",
-  } satisfies Record<typeof tabela, string>;
+    salvos_capitulos: ["capitulo_id"],
+    curtidas_capitulos: ["capitulo_id"],
+    comentarios_capitulos: [
+      "capitulo_id,texto",
+      "capitulo_id,comentario",
+      "capitulo_id,conteudo",
+    ],
+    progresso_leitura: ["capitulo_id,lido"],
+  } satisfies Record<typeof tabela, string[]>;
 
-  try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select(camposPorTabela[tabela])
-      .eq("user_id", userId)
-      .in("capitulo_id", capituloIds)
-      .limit(1000);
+  for (const campos of camposPorTabela[tabela]) {
+    try {
+      const { data, error } = await supabase
+        .from(tabela)
+        .select(campos)
+        .eq("user_id", userId)
+        .in("capitulo_id", capituloIds)
+        .limit(1000);
 
-    if (error) {
-      console.warn(`Não consegui carregar ${tabela} no Supabase:`, error.message);
-      return [];
+      if (!error) {
+        return normalizarRegistrosSupabaseGenericos(data);
+      }
+
+      if (tabela !== "comentarios_capitulos") {
+        console.warn(`Não consegui carregar ${tabela} no Supabase:`, error.message);
+        return [];
+      }
+    } catch (error) {
+      if (tabela !== "comentarios_capitulos") {
+        console.warn(`Não consegui acessar ${tabela} no Supabase:`, error);
+        return [];
+      }
     }
-
-    return normalizarRegistrosSupabaseGenericos(data);
-  } catch (error) {
-    console.warn(`Não consegui acessar ${tabela} no Supabase:`, error);
-    return [];
   }
+
+  return [] as RegistroSupabaseGenerico[];
+}
+
+
+async function contarRegistrosTabelaSeguindo(
+  tabela: string,
+  coluna: string,
+  ids: string[],
+) {
+  const idsUnicos = Array.from(
+    new Set(ids.map((id) => id.trim()).filter(Boolean)),
+  );
+  const contagens: Record<string, number> = {};
+
+  if (idsUnicos.length === 0) {
+    return contagens;
+  }
+
+  const tamanhoLote = 80;
+  const tamanhoPagina = 1000;
+
+  for (let inicioLote = 0; inicioLote < idsUnicos.length; inicioLote += tamanhoLote) {
+    const idsLote = idsUnicos.slice(inicioLote, inicioLote + tamanhoLote);
+    let inicioPagina = 0;
+
+    while (true) {
+      try {
+        const { data, error } = await supabase
+          .from(tabela)
+          .select(coluna)
+          .in(coluna, idsLote)
+          .range(inicioPagina, inicioPagina + tamanhoPagina - 1);
+
+        if (error || !Array.isArray(data) || data.length === 0) {
+          break;
+        }
+
+        data.forEach((registro) => {
+          if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+            return;
+          }
+
+          const id = obterTextoRegistro(
+            registro as RegistroSupabaseGenerico,
+            coluna,
+          );
+
+          if (id) {
+            contagens[id] = (contagens[id] || 0) + 1;
+          }
+        });
+
+        if (data.length < tamanhoPagina) {
+          break;
+        }
+
+        inicioPagina += tamanhoPagina;
+      } catch {
+        break;
+      }
+    }
+  }
+
+  return contagens;
+}
+
+function somarTotaisCapitulosSeguindo(
+  capitulos: Pick<SupabaseCapituloRow, "id">[],
+  contagens: Record<string, number>,
+) {
+  return capitulos.reduce((total, capitulo) => {
+    return total + normalizarNumeroSeguindo(contagens[capitulo.id], 0);
+  }, 0);
+}
+
+function obterTotalRegistroObraSeguindo(
+  obraId: string,
+  contagens: Record<string, number>,
+) {
+  return normalizarNumeroSeguindo(contagens[obraId], 0);
 }
 
 function converterObraSupabaseParaLocal({
@@ -785,6 +1010,7 @@ function converterObraSupabaseParaLocal({
   capitulosCurtidos,
   capitulosLidos,
   comentariosCapitulos,
+  totaisReais = totaisInteracoesSeguindoVazios,
   index,
 }: {
   obraBanco: SupabaseObraRow;
@@ -794,6 +1020,7 @@ function converterObraSupabaseParaLocal({
   capitulosCurtidos: Set<string>;
   capitulosLidos: Set<string>;
   comentariosCapitulos: Map<string, string>;
+  totaisReais?: TotaisInteracoesSeguindo;
   index: number;
 }): ObraLocal {
   const capitulosLocaisPorId = new Map(
@@ -836,6 +1063,38 @@ function converterObraSupabaseParaLocal({
     obraBanco.slug?.trim() ||
     obraLocal?.slug ||
     criarSlugBase(tituloObra || `obra-${index + 1}`);
+  const totalCurtidasObra = obterTotalRegistroObraSeguindo(
+    obraBanco.id,
+    totaisReais.curtidasPorObra,
+  );
+  const totalSeguidoresObra = obterTotalRegistroObraSeguindo(
+    obraBanco.id,
+    totaisReais.seguidoresPorObra,
+  );
+  const totalFavoritasObra = obterTotalRegistroObraSeguindo(
+    obraBanco.id,
+    totaisReais.favoritasPorObra,
+  );
+  const totalConcluidasObra = obterTotalRegistroObraSeguindo(
+    obraBanco.id,
+    totaisReais.concluidasPorObra,
+  );
+  const totalCurtidasCapitulos = somarTotaisCapitulosSeguindo(
+    capitulosBanco,
+    totaisReais.curtidasPorCapitulo,
+  );
+  const totalComentariosCapitulos = somarTotaisCapitulosSeguindo(
+    capitulosBanco,
+    totaisReais.comentariosPorCapitulo,
+  );
+  const totalSalvosCapitulos = somarTotaisCapitulosSeguindo(
+    capitulosBanco,
+    totaisReais.salvosPorCapitulo,
+  );
+  const totalLidosCapitulos = somarTotaisCapitulosSeguindo(
+    capitulosBanco,
+    totaisReais.lidosPorCapitulo,
+  );
 
   return {
     id: obraBanco.id || obraLocal?.id || `obra-${index + 1}`,
@@ -866,6 +1125,34 @@ function converterObraSupabaseParaLocal({
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
     slug: slugObra,
     link: obraBanco.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
+    totalCurtidas: Math.max(
+      normalizarNumeroSeguindo(obraLocal?.totalCurtidas, 0),
+      totalCurtidasObra + totalCurtidasCapitulos,
+    ),
+    totalComentarios: Math.max(
+      normalizarNumeroSeguindo(obraLocal?.totalComentarios, 0),
+      totalComentariosCapitulos,
+    ),
+    totalSalvos: Math.max(
+      normalizarNumeroSeguindo(obraLocal?.totalSalvos, 0),
+      totalSalvosCapitulos + totalSeguidoresObra + totalFavoritasObra,
+    ),
+    totalLidos: Math.max(
+      normalizarNumeroSeguindo(obraLocal?.totalLidos, 0),
+      totalLidosCapitulos,
+    ),
+    totalSeguidores: Math.max(
+      normalizarNumeroSeguindo(obraLocal?.totalSeguidores, 0),
+      totalSeguidoresObra,
+    ),
+    totalFavoritas: Math.max(
+      normalizarNumeroSeguindo(obraLocal?.totalFavoritas, 0),
+      totalFavoritasObra,
+    ),
+    totalConcluidas: Math.max(
+      normalizarNumeroSeguindo(obraLocal?.totalConcluidas, 0),
+      totalConcluidasObra,
+    ),
   };
 }
 
@@ -978,6 +1265,14 @@ async function carregarSeguindoSupabase(
       curtidasCapitulosBanco,
       comentariosCapitulosBanco,
       progressoLeituraBanco,
+      curtidasPublicasCapitulos,
+      comentariosPublicosCapitulos,
+      salvosPublicosCapitulos,
+      leiturasPublicasCapitulos,
+      curtidasPublicasObras,
+      seguidoresPublicosObras,
+      favoritasPublicasObras,
+      concluidasPublicasObras,
     ] = await Promise.all([
       carregarIdsObrasUsuarioSupabase("seguindo_obras", userId),
       carregarIdsObrasUsuarioSupabase("favoritos", userId),
@@ -1002,6 +1297,14 @@ async function carregarSeguindoSupabase(
         userId,
         capituloIds
       ),
+      contarRegistrosTabelaSeguindo("curtidas_capitulos", "capitulo_id", capituloIds),
+      contarRegistrosTabelaSeguindo("comentarios_capitulos", "capitulo_id", capituloIds),
+      contarRegistrosTabelaSeguindo("salvos_capitulos", "capitulo_id", capituloIds),
+      contarRegistrosTabelaSeguindo("progresso_leitura", "capitulo_id", capituloIds),
+      contarRegistrosTabelaSeguindo("obra_curtidas", "obra_id", obraIds),
+      contarRegistrosTabelaSeguindo("seguindo_obras", "obra_id", obraIds),
+      contarRegistrosTabelaSeguindo("favoritos", "obra_id", obraIds),
+      contarRegistrosTabelaSeguindo("concluidas", "obra_id", obraIds),
     ]);
 
     const seguidasSupabase = criarSetObrasPorRegistro(seguidasBanco);
@@ -1013,6 +1316,16 @@ async function carregarSeguindoSupabase(
     const comentariosCapitulos = criarMapaComentariosPorCapitulo(
       comentariosCapitulosBanco
     );
+    const totaisReais: TotaisInteracoesSeguindo = {
+      curtidasPorObra: curtidasPublicasObras,
+      seguidoresPorObra: seguidoresPublicosObras,
+      favoritasPorObra: favoritasPublicasObras,
+      concluidasPorObra: concluidasPublicasObras,
+      curtidasPorCapitulo: curtidasPublicasCapitulos,
+      comentariosPorCapitulo: comentariosPublicosCapitulos,
+      salvosPorCapitulo: salvosPublicosCapitulos,
+      lidosPorCapitulo: leiturasPublicasCapitulos,
+    };
 
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
       const obraLocal = obrasLocais.find((obraAtual) => {
@@ -1034,6 +1347,7 @@ async function carregarSeguindoSupabase(
         capitulosCurtidos,
         capitulosLidos,
         comentariosCapitulos,
+        totaisReais,
         index,
       });
     });
@@ -2098,23 +2412,15 @@ export default function SeguindoPage() {
         );
 
         const totalCurtidas = obrasDoAutor.reduce((total, obra) => {
-          return (
-            total + obra.capitulos.filter((capitulo) => capitulo.curtiu).length
-          );
+          return total + obterTotalCurtidasObraSeguindo(obra);
         }, 0);
 
         const totalComentarios = obrasDoAutor.reduce((total, obra) => {
-          return (
-            total +
-            obra.capitulos.filter((capitulo) => capitulo.comentario.trim())
-              .length
-          );
+          return total + obterTotalComentariosObraSeguindo(obra);
         }, 0);
 
         const totalSalvos = obrasDoAutor.reduce((total, obra) => {
-          return (
-            total + obra.capitulos.filter((capitulo) => capitulo.salvo).length
-          );
+          return total + obterTotalSalvosObraSeguindo(obra);
         }, 0);
 
         const totalFavoritas = obrasDoAutor.filter((obra) =>
@@ -2130,7 +2436,7 @@ export default function SeguindoPage() {
         ).length;
 
         const totalLidos = obrasDoAutor.reduce((total, obra) => {
-          return total + obra.capitulos.filter((capitulo) => capitulo.lido).length;
+          return total + obterTotalLidosObraSeguindo(obra);
         }, 0);
 
         const totalEmLeitura = obrasDoAutor.filter((obra) =>

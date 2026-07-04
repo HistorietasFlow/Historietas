@@ -49,6 +49,11 @@ type ObraLocal = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
+  visualizacoes?: number;
+  totalCurtidas?: number;
+  totalComentarios?: number;
+  totalSalvos?: number;
+  totalLidos?: number;
   slug: string;
   link: string;
 };
@@ -71,6 +76,7 @@ type ObraSupabaseRow = {
   arquivo_tamanho: number | null;
   arquivo_categoria: string | null;
   publicado: boolean | null;
+  visualizacoes?: number | null;
   slug: string | null;
   link: string | null;
   criada_em: string | null;
@@ -192,6 +198,22 @@ function salvarJsonStorageUsuarioEditarObra(
 
 function contarLetrasNumeros(texto: string) {
   return (texto.match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9]/g) || []).length;
+}
+
+function normalizarContadorEdicaoObra(valor: unknown, fallback = 0) {
+  if (typeof valor === "number" && Number.isFinite(valor)) {
+    return Math.max(0, Math.round(valor));
+  }
+
+  if (typeof valor === "string" && valor.trim()) {
+    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
+
+    if (Number.isFinite(numero)) {
+      return Math.max(0, Math.round(numero));
+    }
+  }
+
+  return Math.max(0, Math.round(fallback));
 }
 
 function opcaoExiste(opcoes: readonly string[], valor: string) {
@@ -512,6 +534,26 @@ function normalizarObraSupabase(
     ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
+    visualizacoes: normalizarContadorEdicaoObra(
+      obraSupabase.visualizacoes,
+      obraLocal?.visualizacoes || 0
+    ),
+    totalCurtidas: normalizarContadorEdicaoObra(
+      obraLocal?.totalCurtidas,
+      capitulosMesclados.filter((capitulo) => capitulo.curtiu).length
+    ),
+    totalComentarios: normalizarContadorEdicaoObra(
+      obraLocal?.totalComentarios,
+      capitulosMesclados.filter((capitulo) => capitulo.comentario.trim()).length
+    ),
+    totalSalvos: normalizarContadorEdicaoObra(
+      obraLocal?.totalSalvos,
+      capitulosMesclados.filter((capitulo) => capitulo.salvo).length
+    ),
+    totalLidos: normalizarContadorEdicaoObra(
+      obraLocal?.totalLidos,
+      capitulosMesclados.filter((capitulo) => capitulo.lido).length
+    ),
     slug,
     link: obraSupabase.link?.trim() || obraLocal?.link || `/obra/${slug}`,
   };
@@ -851,6 +893,23 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
     ultimaLeituraEm:
       typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes: normalizarContadorEdicaoObra(obra.visualizacoes, 0),
+    totalCurtidas: normalizarContadorEdicaoObra(
+      obra.totalCurtidas,
+      capitulosNormalizados.filter((capitulo) => capitulo.curtiu).length
+    ),
+    totalComentarios: normalizarContadorEdicaoObra(
+      obra.totalComentarios,
+      capitulosNormalizados.filter((capitulo) => capitulo.comentario.trim()).length
+    ),
+    totalSalvos: normalizarContadorEdicaoObra(
+      obra.totalSalvos,
+      capitulosNormalizados.filter((capitulo) => capitulo.salvo).length
+    ),
+    totalLidos: normalizarContadorEdicaoObra(
+      obra.totalLidos,
+      capitulosNormalizados.filter((capitulo) => capitulo.lido).length
+    ),
     slug:
       typeof obra.slug === "string" && obra.slug.trim()
         ? obra.slug
@@ -1210,7 +1269,7 @@ export default function EditarObraPage() {
         const { data: obraSupabase, error: erroObraSupabase } = await supabase
           .from("obras")
           .select(
-            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
           )
           .eq("id", obraIdParam)
           .eq("user_id", userId)
@@ -1371,7 +1430,14 @@ export default function EditarObraPage() {
     sinopse,
   ]);
 
-  const minhaObraHref = "/painel-autor";
+  const obraPublicaHref =
+    obraAtual?.link ||
+    (obraAtual?.slug
+      ? `/obra/${obraAtual.slug}`
+      : titulo.trim()
+        ? `/obra/${criarSlugBase(titulo.trim())}`
+        : "/painel-autor");
+  const minhaObraHref = obraAtual?.publicado ? obraPublicaHref : "/painel-autor";
   const autorProfileAtivo = nomeAutorProfile.trim();
   const autorPreview = autorProfileAtivo || autor.trim();
   function marcarAlteracao() {

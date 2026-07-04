@@ -24,11 +24,19 @@ type NotificacoesContextValue = {
 const NotificacoesContext = createContext<NotificacoesContextValue | null>(null);
 
 function normalizarTotalNotificacoes(total: number | null | undefined) {
-  if (!Number.isFinite(total || 0)) {
+  const totalNumerico = Number(total || 0);
+
+  if (!Number.isFinite(totalNumerico)) {
     return 0;
   }
 
-  return Math.max(0, Number(total || 0));
+  return Math.max(0, totalNumerico);
+}
+
+function idUsuarioSupabaseValido(userId: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    userId.trim(),
+  );
 }
 
 function erroEhSessaoAusente(error: unknown) {
@@ -58,7 +66,9 @@ async function obterUsuarioIdAtualNotificacoes() {
       return "";
     }
 
-    return data.user?.id || "";
+    const userId = data.user?.id || "";
+
+    return idUsuarioSupabaseValido(userId) ? userId : "";
   } catch (error) {
     if (!erroEhSessaoAusente(error)) {
       console.warn("Não consegui carregar usuário das notificações:", error);
@@ -69,7 +79,9 @@ async function obterUsuarioIdAtualNotificacoes() {
 }
 
 async function buscarTotalNotificacoesNaoLidas(userId: string) {
-  if (!userId.trim()) {
+  const userIdSeguro = userId.trim();
+
+  if (!idUsuarioSupabaseValido(userIdSeguro)) {
     return 0;
   }
 
@@ -77,7 +89,7 @@ async function buscarTotalNotificacoesNaoLidas(userId: string) {
     const { count, error } = await supabase
       .from("notificacoes")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
+      .eq("user_id", userIdSeguro)
       .eq("lida", false);
 
     if (error) {
@@ -97,6 +109,14 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   const [carregandoNotificacoes, setCarregandoNotificacoes] = useState(true);
   const canalRef = useRef<RealtimeChannel | null>(null);
   const montadoRef = useRef(true);
+  const atualizarTimerRef = useRef<number | null>(null);
+
+  const limparAtualizacaoAgendada = useCallback(() => {
+    if (atualizarTimerRef.current !== null) {
+      window.clearTimeout(atualizarTimerRef.current);
+      atualizarTimerRef.current = null;
+    }
+  }, []);
 
   const limparCanal = useCallback(() => {
     if (canalRef.current) {
@@ -110,7 +130,9 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const atualizarNotificacoesPorUsuario = useCallback(async (userId: string) => {
-    if (!userId.trim()) {
+    const userIdSeguro = userId.trim();
+
+    if (!idUsuarioSupabaseValido(userIdSeguro)) {
       if (montadoRef.current) {
         setNotificacoesNaoLidas(0);
         setCarregandoNotificacoes(false);
@@ -123,13 +145,31 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       setCarregandoNotificacoes(true);
     }
 
-    const total = await buscarTotalNotificacoesNaoLidas(userId);
+    const total = await buscarTotalNotificacoesNaoLidas(userIdSeguro);
 
     if (montadoRef.current) {
       setNotificacoesNaoLidas(total);
       setCarregandoNotificacoes(false);
     }
   }, []);
+
+  const agendarAtualizacaoNotificacoes = useCallback(
+    (userId: string) => {
+      const userIdSeguro = userId.trim();
+
+      if (!idUsuarioSupabaseValido(userIdSeguro)) {
+        return;
+      }
+
+      limparAtualizacaoAgendada();
+
+      atualizarTimerRef.current = window.setTimeout(() => {
+        atualizarTimerRef.current = null;
+        void atualizarNotificacoesPorUsuario(userIdSeguro);
+      }, 250);
+    },
+    [atualizarNotificacoesPorUsuario, limparAtualizacaoAgendada],
+  );
 
   const atualizarNotificacoes = useCallback(async () => {
     await atualizarNotificacoesPorUsuario(usuarioId);
@@ -165,29 +205,39 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       const userId = session?.user?.id || "";
+      const userIdSeguro = idUsuarioSupabaseValido(userId) ? userId : "";
 
       window.setTimeout(() => {
         if (!montadoRef.current) {
           return;
         }
 
+        limparAtualizacaoAgendada();
         limparCanal();
-        setUsuarioId(userId);
-        void atualizarNotificacoesPorUsuario(userId);
+        setUsuarioId(userIdSeguro);
+        void atualizarNotificacoesPorUsuario(userIdSeguro);
       }, 0);
     });
 
     return () => {
       montadoRef.current = false;
+      limparAtualizacaoAgendada();
       subscription.unsubscribe();
       limparCanal();
     };
-  }, [atualizarNotificacoesPorUsuario, limparCanal]);
+  }, [
+    atualizarNotificacoesPorUsuario,
+    limparAtualizacaoAgendada,
+    limparCanal,
+  ]);
 
   useEffect(() => {
+    limparAtualizacaoAgendada();
     limparCanal();
 
-    if (!usuarioId.trim()) {
+    const userIdSeguro = usuarioId.trim();
+
+    if (!idUsuarioSupabaseValido(userIdSeguro)) {
       const resetNotificacoesTimer = window.setTimeout(() => {
         if (montadoRef.current) {
           setNotificacoesNaoLidas(0);
@@ -201,17 +251,17 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     }
 
     const canal = supabase
-      .channel(`notificacoes-provider-${usuarioId}`)
+      .channel(`notificacoes-provider-${userIdSeguro}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "notificacoes",
-          filter: `user_id=eq.${usuarioId}`,
+          filter: `user_id=eq.${userIdSeguro}`,
         },
         () => {
-          void atualizarNotificacoesPorUsuario(usuarioId);
+          agendarAtualizacaoNotificacoes(userIdSeguro);
         },
       )
       .subscribe();
@@ -219,13 +269,20 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     canalRef.current = canal;
 
     return () => {
+      limparAtualizacaoAgendada();
+
       if (canalRef.current === canal) {
         canalRef.current = null;
       }
 
       void supabase.removeChannel(canal);
     };
-  }, [atualizarNotificacoesPorUsuario, limparCanal, usuarioId]);
+  }, [
+    agendarAtualizacaoNotificacoes,
+    limparAtualizacaoAgendada,
+    limparCanal,
+    usuarioId,
+  ]);
 
   const valor = useMemo(
     () => ({

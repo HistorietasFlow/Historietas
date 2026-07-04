@@ -986,7 +986,7 @@ function calcularAvaliacoesPorObra(linhas: SupabaseAvaliacaoObraRow[]) {
 }
 
 async function buscarContagemInteracoesObras(
-  tabela: "obra_curtidas" | "seguindo_obras",
+  tabela: "obra_curtidas" | "seguindo_obras" | "favoritos",
   obraIds: string[],
 ) {
   if (obraIds.length === 0) {
@@ -1086,6 +1086,7 @@ function converterObraSupabaseParaLocal(
   comentariosPorCapitulo: Record<string, number>,
   curtidasPorObra: Record<string, number>,
   seguidoresPorObra: Record<string, number>,
+  favoritosPorObra: Record<string, number>,
   avaliacoesPorObra: Record<string, AvaliacaoRankingObra>,
   profilesAutores: Map<string, SupabaseProfileAutorRankingRow>,
   seguidoresAutores: Record<string, number>,
@@ -1136,8 +1137,21 @@ function converterObraSupabaseParaLocal(
     criarSlugBase(titulo || `obra-${index + 1}`);
   const arquivoUrl = obra.arquivo_url?.trim() || "";
   const arquivoTipo = normalizarTipoArquivoSupabase(obra.arquivo_categoria);
+  const totalCurtidasCapitulos = somarContagensCapitulos(
+    capitulos,
+    curtidasPorCapitulo,
+  );
+  const totalComentariosCapitulos = somarContagensCapitulos(
+    capitulos,
+    comentariosPorCapitulo,
+  );
+  const totalSalvosCapitulos = somarContagensCapitulos(
+    capitulos,
+    salvosPorCapitulo,
+  );
   const totalCurtidasObra = curtidasPorObra[obra.id] || 0;
   const totalSeguidoresObra = seguidoresPorObra[obra.id] || 0;
+  const totalFavoritosObra = favoritosPorObra[obra.id] || 0;
   const avaliacaoObra = avaliacoesPorObra[obra.id] || { total: 0, media: 0 };
   const autorId = obra.user_id?.trim() || obraLocal?.autorId || "";
   const profileAutor = autorId ? profilesAutores.get(autorId) || null : null;
@@ -1208,17 +1222,15 @@ function converterObraSupabaseParaLocal(
       : obraLocal?.arquivoObra || null,
     totalCurtidasRanking: Math.max(
       obraLocal?.totalCurtidasRanking || 0,
-      somarContagensCapitulos(capitulos, curtidasPorCapitulo),
-      totalCurtidasObra,
+      totalCurtidasObra + totalCurtidasCapitulos,
     ),
     totalComentariosRanking: Math.max(
       obraLocal?.totalComentariosRanking || 0,
-      somarContagensCapitulos(capitulos, comentariosPorCapitulo),
+      totalComentariosCapitulos,
     ),
     totalSalvosRanking: Math.max(
       obraLocal?.totalSalvosRanking || 0,
-      somarContagensCapitulos(capitulos, salvosPorCapitulo),
-      totalSeguidoresObra,
+      totalSalvosCapitulos + totalSeguidoresObra + totalFavoritosObra,
     ),
     totalViewsRanking: Math.max(
       obraLocal?.totalViewsRanking || 0,
@@ -1307,6 +1319,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
       comentariosPorCapitulo,
       curtidasPorObra,
       seguidoresPorObra,
+      favoritosPorObra,
       avaliacoesPorObra,
       profilesAutores,
       seguidoresAutores,
@@ -1316,6 +1329,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
       buscarContagemInteracoesCapitulos("comentarios_capitulos", capituloIds),
       buscarContagemInteracoesObras("obra_curtidas", obraIds),
       buscarContagemInteracoesObras("seguindo_obras", obraIds),
+      buscarContagemInteracoesObras("favoritos", obraIds),
       buscarAvaliacoesObras(obraIds),
       carregarProfilesAutoresRanking(autorIds),
       buscarSeguidoresAutoresRanking(autorIds),
@@ -1356,6 +1370,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
         comentariosPorCapitulo,
         curtidasPorObra,
         seguidoresPorObra,
+        favoritosPorObra,
         avaliacoesPorObra,
         profilesAutores,
         seguidoresAutores,

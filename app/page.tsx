@@ -2013,6 +2013,20 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
     const comentariosPorObraId = new Map<string, number>();
     const capituloParaObraId = new Map<string, string>();
 
+    function incrementarMetricaObraHome(
+      mapa: Map<string, number>,
+      obraId: string,
+      incremento = 1,
+    ) {
+      const obraIdLimpo = obraId.trim();
+
+      if (!obraIdLimpo || incremento <= 0) {
+        return;
+      }
+
+      mapa.set(obraIdLimpo, (mapa.get(obraIdLimpo) || 0) + incremento);
+    }
+
     capitulosPorObraId.forEach((capitulosDaObra, obraId) => {
       capitulosDaObra.forEach((capitulo) => {
         if (capitulo.id) {
@@ -2037,16 +2051,41 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
                 : "";
 
             if (obraId) {
-              curtidasPorObraId.set(
-                obraId,
-                (curtidasPorObraId.get(obraId) || 0) + 1,
-              );
+              incrementarMetricaObraHome(curtidasPorObraId, obraId);
             }
           });
         }
       }
     } catch {
       // Métricas públicas são complementares; a Home continua sem travar.
+    }
+
+    try {
+      const capituloIds = Array.from(capituloParaObraId.keys());
+
+      if (capituloIds.length > 0) {
+        const { data: curtidasCapitulosBanco } = await supabase
+          .from("curtidas_capitulos")
+          .select("capitulo_id")
+          .in("capitulo_id", capituloIds)
+          .limit(5000);
+
+        if (Array.isArray(curtidasCapitulosBanco)) {
+          curtidasCapitulosBanco.forEach((registro) => {
+            const capituloId =
+              typeof (registro as { capitulo_id?: unknown }).capitulo_id === "string"
+                ? ((registro as { capitulo_id: string }).capitulo_id)
+                : "";
+            const obraId = capituloId ? capituloParaObraId.get(capituloId) || "" : "";
+
+            if (obraId) {
+              incrementarMetricaObraHome(curtidasPorObraId, obraId);
+            }
+          });
+        }
+      }
+    } catch {
+      // Curtidas de capítulos são complementares; a Home continua sem travar.
     }
 
     try {
@@ -2068,10 +2107,7 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
             const obraId = capituloId ? capituloParaObraId.get(capituloId) || "" : "";
 
             if (obraId) {
-              comentariosPorObraId.set(
-                obraId,
-                (comentariosPorObraId.get(obraId) || 0) + 1,
-              );
+              incrementarMetricaObraHome(comentariosPorObraId, obraId);
             }
           });
         }
@@ -3003,15 +3039,15 @@ export default function Home() {
 
   const obrasMaisCurtidas = useMemo(() => {
     return obrasPublicadas
-      .filter((obra) => contarCurtidasObraLocal(obra) > 0 && obraLocalCombinaBusca(obra, termoBusca))
-      .sort((obraA, obraB) => contarCurtidasObraLocal(obraB) - contarCurtidasObraLocal(obraA))
+      .filter((obra) => obterTotalCurtidasObraHome(obra) > 0 && obraLocalCombinaBusca(obra, termoBusca))
+      .sort((obraA, obraB) => obterTotalCurtidasObraHome(obraB) - obterTotalCurtidasObraHome(obraA))
       .slice(0, 12);
   }, [obrasPublicadas, termoBusca]);
 
   const obrasMaisComentadas = useMemo(() => {
     return obrasPublicadas
-      .filter((obra) => contarComentariosObraLocal(obra) > 0 && obraLocalCombinaBusca(obra, termoBusca))
-      .sort((obraA, obraB) => contarComentariosObraLocal(obraB) - contarComentariosObraLocal(obraA))
+      .filter((obra) => obterTotalComentariosObraHome(obra) > 0 && obraLocalCombinaBusca(obra, termoBusca))
+      .sort((obraA, obraB) => obterTotalComentariosObraHome(obraB) - obterTotalComentariosObraHome(obraA))
       .slice(0, 12);
   }, [obrasPublicadas, termoBusca]);
 
@@ -3095,8 +3131,8 @@ export default function Home() {
           obra.autorId || "",
           obra.genero,
           obra.capitulos.length,
-          contarCurtidasObraLocal(obra),
-          contarComentariosObraLocal(obra)
+          obterTotalCurtidasObraHome(obra),
+          obterTotalComentariosObraHome(obra)
         );
       });
 

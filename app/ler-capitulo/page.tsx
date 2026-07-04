@@ -143,6 +143,24 @@ type PreferenciasLeitura = {
   mostrarLinhaProgresso: boolean;
 };
 
+type MetricasCapituloLeitor = {
+  totalCurtidas: number;
+  totalSalvos: number;
+  totalComentarios: number;
+  curtiu: boolean;
+  salvo: boolean;
+  carregado: boolean;
+};
+
+const metricasCapituloVazias: MetricasCapituloLeitor = {
+  totalCurtidas: 0,
+  totalSalvos: 0,
+  totalComentarios: 0,
+  curtiu: false,
+  salvo: false,
+  carregado: false,
+};
+
 const FONT_SCALE_VALUES: TamanhoFonte[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const STORAGE_KEY = "historietas-obras";
@@ -1261,6 +1279,113 @@ async function salvarRegistroCapituloSupabase(
 }
 
 
+function criarMetricasCapituloLocais(
+  capitulo: CapituloLocal | null,
+  totalComentarios = 0
+): MetricasCapituloLeitor {
+  if (!capitulo) {
+    return metricasCapituloVazias;
+  }
+
+  return {
+    totalCurtidas: capitulo.curtiu ? 1 : 0,
+    totalSalvos: capitulo.salvo ? 1 : 0,
+    totalComentarios,
+    curtiu: capitulo.curtiu,
+    salvo: capitulo.salvo,
+    carregado: false,
+  };
+}
+
+async function contarRegistrosCapituloLeitor(
+  tabela: "curtidas_capitulos" | "salvos_capitulos" | "comentarios_capitulos",
+  capituloId: string
+) {
+  try {
+    const { count, error } = await supabase
+      .from(tabela)
+      .select("capitulo_id", { count: "exact", head: true })
+      .eq("capitulo_id", capituloId);
+
+    if (error) {
+      return 0;
+    }
+
+    return Math.max(0, count ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+async function usuarioTemRegistroCapituloLeitor(
+  tabela: "curtidas_capitulos" | "salvos_capitulos",
+  capituloId: string,
+  userId: string
+) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return false;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(tabela)
+      .select("capitulo_id")
+      .eq("capitulo_id", capituloId)
+      .eq("user_id", userIdLimpo)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return false;
+    }
+
+    return Boolean(data);
+  } catch {
+    return false;
+  }
+}
+
+async function carregarMetricasCapituloSupabase(
+  capitulo: CapituloLocal,
+  userId: string,
+  totalComentariosFallback: number
+): Promise<MetricasCapituloLeitor> {
+  const capituloId = capitulo.id.trim();
+
+  if (!capituloId) {
+    return criarMetricasCapituloLocais(capitulo, totalComentariosFallback);
+  }
+
+  const [
+    totalCurtidas,
+    totalSalvos,
+    totalComentarios,
+    curtiu,
+    salvo,
+  ] = await Promise.all([
+    contarRegistrosCapituloLeitor("curtidas_capitulos", capituloId),
+    contarRegistrosCapituloLeitor("salvos_capitulos", capituloId),
+    contarRegistrosCapituloLeitor("comentarios_capitulos", capituloId),
+    usuarioTemRegistroCapituloLeitor("curtidas_capitulos", capituloId, userId),
+    usuarioTemRegistroCapituloLeitor("salvos_capitulos", capituloId, userId),
+  ]);
+
+  return {
+    totalCurtidas: Math.max(totalCurtidas, capitulo.curtiu ? 1 : 0),
+    totalSalvos: Math.max(totalSalvos, capitulo.salvo ? 1 : 0),
+    totalComentarios: Math.max(totalComentarios, totalComentariosFallback),
+    curtiu: curtiu || capitulo.curtiu,
+    salvo: salvo || capitulo.salvo,
+    carregado: true,
+  };
+}
+
+function formatarContadorCapituloLeitor(valor: number) {
+  return Math.max(0, Math.round(valor)).toLocaleString("pt-BR");
+}
+
 async function salvarComentarioCapituloSupabase(
   capituloId: string,
   comentario: string
@@ -2259,6 +2384,8 @@ export default function LerCapituloPage() {
   const [, setComentarioDigitado] = useState("");
   const [, setComentarioStatus] = useState("");
   const [comentariosCapitulo, setComentariosCapitulo] = useState<ComentarioCapituloPublico[]>([]);
+  const [metricasCapitulo, setMetricasCapitulo] =
+    useState<MetricasCapituloLeitor>(metricasCapituloVazias);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
   const [perfilComentarioLeitor, setPerfilComentarioLeitor] =
     useState<PerfilComentarioLeitor>({
@@ -2564,10 +2691,13 @@ export default function LerCapituloPage() {
         window.setTimeout(() => {
           if (!cancelado) {
             setComentariosCapitulo([]);
+            setComentariosCarregando(false);
           }
         }, 0);
         return;
       }
+
+      setComentariosCarregando(true);
 
       const comentarios = await carregarComentariosCapituloSupabase(
         capituloAtual.id,
@@ -2586,6 +2716,58 @@ export default function LerCapituloPage() {
       cancelado = true;
     };
   }, [capituloAtual?.id, usuarioIdLogado]);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarMetricasCapituloAtual() {
+      if (!capituloAtual) {
+        setMetricasCapitulo(metricasCapituloVazias);
+        return;
+      }
+
+      const metricasLocais = criarMetricasCapituloLocais(
+        capituloAtual,
+        comentariosCapitulo.length
+      );
+
+      setMetricasCapitulo(metricasLocais);
+
+      const metricasReais = await carregarMetricasCapituloSupabase(
+        capituloAtual,
+        usuarioIdLogado,
+        comentariosCapitulo.length
+      );
+
+      if (cancelado) {
+        return;
+      }
+
+      setMetricasCapitulo(metricasReais);
+
+      if (
+        metricasReais.curtiu !== capituloAtual.curtiu ||
+        metricasReais.salvo !== capituloAtual.salvo
+      ) {
+        atualizarCapitulo({
+          curtiu: metricasReais.curtiu,
+          salvo: metricasReais.salvo,
+        });
+      }
+    }
+
+    void carregarMetricasCapituloAtual();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [
+    capituloAtual?.id,
+    capituloAtual?.curtiu,
+    capituloAtual?.salvo,
+    comentariosCapitulo.length,
+    usuarioIdLogado,
+  ]);
 
   const indiceCapitulo = useMemo(() => {
     if (!obraAtual || !capituloAtual) {
@@ -2835,8 +3017,12 @@ export default function LerCapituloPage() {
   async function recarregarComentariosCapituloAtual() {
     if (!capituloAtual?.id) {
       setComentariosCapitulo([]);
+      setComentariosCarregando(false);
+      setMetricasCapitulo(metricasCapituloVazias);
       return;
     }
+
+    setComentariosCarregando(true);
 
     const comentarios = await carregarComentariosCapituloSupabase(
       capituloAtual.id,
@@ -2845,6 +3031,49 @@ export default function LerCapituloPage() {
 
     setComentariosCapitulo(comentarios);
     setComentariosCarregando(false);
+
+    const metricas = await carregarMetricasCapituloSupabase(
+      capituloAtual,
+      usuarioIdLogado,
+      comentarios.length
+    );
+
+    setMetricasCapitulo(metricas);
+
+    if (
+      metricas.curtiu !== capituloAtual.curtiu ||
+      metricas.salvo !== capituloAtual.salvo
+    ) {
+      atualizarCapitulo({
+        curtiu: metricas.curtiu,
+        salvo: metricas.salvo,
+      });
+    }
+  }
+
+  async function recarregarMetricasCapituloAtual() {
+    if (!capituloAtual) {
+      setMetricasCapitulo(metricasCapituloVazias);
+      return;
+    }
+
+    const metricas = await carregarMetricasCapituloSupabase(
+      capituloAtual,
+      usuarioIdLogado,
+      comentariosCapitulo.length
+    );
+
+    setMetricasCapitulo(metricas);
+
+    if (
+      metricas.curtiu !== capituloAtual.curtiu ||
+      metricas.salvo !== capituloAtual.salvo
+    ) {
+      atualizarCapitulo({
+        curtiu: metricas.curtiu,
+        salvo: metricas.salvo,
+      });
+    }
   }
 
   async function alternarComentarioVisivel() {
@@ -2921,11 +3150,20 @@ export default function LerCapituloPage() {
       return;
     }
 
-    const novoStatusCurtida = !capituloAtual.curtiu;
+    const novoStatusCurtida = !metricasCapitulo.curtiu;
 
     atualizarCapitulo({
       curtiu: novoStatusCurtida,
     });
+    setMetricasCapitulo((metricasAtuais) => ({
+      ...metricasAtuais,
+      curtiu: novoStatusCurtida,
+      totalCurtidas: Math.max(
+        0,
+        metricasAtuais.totalCurtidas + (novoStatusCurtida ? 1 : -1)
+      ),
+      carregado: true,
+    }));
 
     const curtidaSalva = await salvarRegistroCapituloSupabase(
       "curtidas_capitulos",
@@ -2938,6 +3176,10 @@ export default function LerCapituloPage() {
         ? ""
         : "A curtida ficou salva no aparelho, mas não foi sincronizada agora."
     );
+
+    if (curtidaSalva) {
+      void recarregarMetricasCapituloAtual();
+    }
   }
 
   async function alternarSalvo() {
@@ -2949,11 +3191,20 @@ export default function LerCapituloPage() {
       return;
     }
 
-    const novoStatusSalvo = !capituloAtual.salvo;
+    const novoStatusSalvo = !metricasCapitulo.salvo;
 
     atualizarCapitulo({
       salvo: novoStatusSalvo,
     });
+    setMetricasCapitulo((metricasAtuais) => ({
+      ...metricasAtuais,
+      salvo: novoStatusSalvo,
+      totalSalvos: Math.max(
+        0,
+        metricasAtuais.totalSalvos + (novoStatusSalvo ? 1 : -1)
+      ),
+      carregado: true,
+    }));
 
     const salvoSincronizado = await salvarRegistroCapituloSupabase(
       "salvos_capitulos",
@@ -2966,6 +3217,10 @@ export default function LerCapituloPage() {
         ? ""
         : "O capítulo ficou salvo no aparelho, mas não foi sincronizado agora."
     );
+
+    if (salvoSincronizado) {
+      void recarregarMetricasCapituloAtual();
+    }
 
     const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
 
@@ -3263,7 +3518,13 @@ export default function LerCapituloPage() {
         ...comentariosAtuais,
         novoComentario,
       ]);
+      setMetricasCapitulo((metricasAtuais) => ({
+        ...metricasAtuais,
+        totalComentarios: metricasAtuais.totalComentarios + 1,
+        carregado: true,
+      }));
       setMostrarComentario(true);
+      void recarregarComentariosCapituloAtual();
       return true;
     } finally {
       finalizarAcaoComentariosCapitulo(chaveAcao);
@@ -3327,6 +3588,11 @@ export default function LerCapituloPage() {
       setComentariosCapitulo((comentariosAtuais) =>
         comentariosAtuais.filter((comentario) => comentario.id !== comentarioId)
       );
+      setMetricasCapitulo((metricasAtuais) => ({
+        ...metricasAtuais,
+        totalComentarios: Math.max(0, metricasAtuais.totalComentarios - 1),
+        carregado: true,
+      }));
       await recarregarComentariosCapituloAtual();
     } finally {
       finalizarAcaoComentariosCapitulo(chaveAcao);
@@ -3774,15 +4040,16 @@ export default function LerCapituloPage() {
             onClick={alternarCurtida}
             style={
               modoFoco
-                ? capituloAtual.curtiu
+                ? metricasCapitulo.curtiu
                   ? focusActiveActionButtonStyle
                   : focusActionButtonStyle
-                : capituloAtual.curtiu
+                : metricasCapitulo.curtiu
                 ? activeActionButtonStyle
                 : actionButtonStyle
             }
           >
-            {capituloAtual.curtiu ? "♥ Curtido" : "♡ Curtir"}
+            {metricasCapitulo.curtiu ? "♥ Curtido" : "♡ Curtir"}{" "}
+            {formatarContadorCapituloLeitor(metricasCapitulo.totalCurtidas)}
           </button>
 
           <button
@@ -3790,15 +4057,16 @@ export default function LerCapituloPage() {
             onClick={alternarSalvo}
             style={
               modoFoco
-                ? capituloAtual.salvo
+                ? metricasCapitulo.salvo
                   ? focusActiveSaveButtonStyle
                   : focusActionButtonStyle
-                : capituloAtual.salvo
+                : metricasCapitulo.salvo
                 ? activeSaveButtonStyle
                 : actionButtonStyle
             }
           >
-            {capituloAtual.salvo ? "✓ Salvo" : "Salvar capítulo"}
+            {metricasCapitulo.salvo ? "✓ Salvo" : "Salvar capítulo"}{" "}
+            {formatarContadorCapituloLeitor(metricasCapitulo.totalSalvos)}
           </button>
 
           <button
@@ -3806,15 +4074,15 @@ export default function LerCapituloPage() {
             onClick={() => void alternarComentarioVisivel()}
             style={
               modoFoco
-                ? mostrarComentario || comentariosCapitulo.length > 0
+                ? mostrarComentario || metricasCapitulo.totalComentarios > 0
                   ? focusActiveCommentButtonStyle
                   : focusActionButtonStyle
-                : mostrarComentario || comentariosCapitulo.length > 0
+                : mostrarComentario || metricasCapitulo.totalComentarios > 0
                 ? activeCommentButtonStyle
                 : actionButtonStyle
             }
           >
-            💬 {comentariosCapitulo.length}
+            💬 {formatarContadorCapituloLeitor(metricasCapitulo.totalComentarios)}
           </button>
         </section>
 
