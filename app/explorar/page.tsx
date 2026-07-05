@@ -1266,7 +1266,7 @@ function normalizarObraSupabase(
           capitulo.titulo?.trim() ||
           capituloLocal?.titulo ||
           `Capítulo ${capituloIndex + 1}`,
-        texto: capituloLocal?.texto || "",
+        texto: "",
         curtiu: Boolean(capituloLocal?.curtiu),
         salvo: Boolean(capituloLocal?.salvo),
         comentario: capituloLocal?.comentario || "",
@@ -1281,19 +1281,10 @@ function normalizarObraSupabase(
     }
   );
 
-  const capitulosRemotosIds = new Set(
-    capitulosRemotos.map((capitulo) => capitulo.id)
-  );
-
-  const capitulosApenasLocais = (obraLocal?.capitulos || []).filter(
-    (capitulo) => !capitulosRemotosIds.has(capitulo.id)
-  );
-
-  const capitulosMesclados = [...capitulosRemotos, ...capitulosApenasLocais];
-  const tituloObra = obra.titulo?.trim() || obraLocal?.titulo || "Obra sem título";
+  const capitulosMesclados = capitulosRemotos;
+  const tituloObra = obra.titulo?.trim() || "Obra sem título";
   const slugObra =
     obra.slug?.trim() ||
-    obraLocal?.slug ||
     criarSlugBase(tituloObra || `obra-${index + 1}`);
   const arquivoUrl = obra.arquivo_url?.trim() || "";
   const arquivoCategoria = normalizarCategoriaArquivoSupabase(
@@ -1301,7 +1292,6 @@ function normalizarObraSupabase(
   );
   const arquivoTipo =
     obra.arquivo_tipo?.trim() ||
-    obraLocal?.arquivoObra?.tipo ||
     (arquivoCategoria === "documento"
       ? "application/pdf"
       : arquivoCategoria === "imagem"
@@ -1311,46 +1301,43 @@ function normalizarObraSupabase(
           : "");
 
   return {
-    id: obra.id || obraLocal?.id || `obra-${index + 1}`,
+    id: obra.id || `obra-${index + 1}`,
     titulo: tituloObra,
-    autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
-    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
-    genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
-    formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
+    autor: obra.autor?.trim() || "Autor não informado",
+    autorId: obra.user_id?.trim() || "",
+    genero: obra.genero?.trim() || "Não informado",
+    formato: obra.formato?.trim() || "Não informado",
     classificacaoIndicativa:
       obra.classificacao_indicativa?.trim() ||
-      obraLocal?.classificacaoIndicativa ||
       "Não informada",
     sinopse:
       obra.sinopse?.trim() ||
-      obraLocal?.sinopse ||
       "Nenhuma sinopse informada.",
     tags:
       Array.isArray(obra.tags) && obra.tags.length > 0
         ? obra.tags.filter((tag) => typeof tag === "string" && Boolean(tag.trim()))
-        : obraLocal?.tags || ["sem tags"],
-    capa: obra.capa_url?.trim() || obraLocal?.capa || "",
-    capaNome: obra.capa_nome?.trim() || obraLocal?.capaNome || "",
+        : ["sem tags"],
+    capa: obra.capa_url?.trim() || "",
+    capaNome: obra.capa_nome?.trim() || "",
     arquivoObra: arquivoUrl
       ? {
           nome:
             obra.arquivo_nome?.trim() ||
-            obraLocal?.arquivoObra?.nome ||
             "Arquivo da obra",
           tipo: arquivoTipo,
           tamanho:
             typeof obra.arquivo_tamanho === "number" &&
             Number.isFinite(obra.arquivo_tamanho)
               ? obra.arquivo_tamanho
-              : obraLocal?.arquivoObra?.tamanho || 0,
+              : 0,
           conteudo: arquivoUrl,
           categoria: arquivoCategoria,
-          criadoEm: obra.criada_em || obraLocal?.arquivoObra?.criadoEm || "",
+          criadoEm: obra.criada_em || "",
         }
-      : obraLocal?.arquivoObra || null,
+      : null,
     publicado: Boolean(obra.publicado),
     capitulos: capitulosMesclados,
-    criadaEm: obra.criada_em || obraLocal?.criadaEm || "",
+    criadaEm: obra.criada_em || "",
     ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
@@ -2226,7 +2213,6 @@ export default function ExplorarPage() {
           obra.capaNome,
           obra.arquivoObra?.nome || "",
           obra.capitulos.map((capitulo) => capitulo.titulo).join(" "),
-          obra.capitulos.map((capitulo) => capitulo.texto).join(" "),
         ].join(" ")
       );
 
