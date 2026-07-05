@@ -19,6 +19,7 @@ type CapituloLocal = {
   criadoEm: string;
   lido: boolean;
   lidoEm: string;
+  publicado?: boolean;
 };
 
 type ArquivoObraLocal = {
@@ -162,16 +163,20 @@ type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 function criarStorageKeyUsuarioEditarObra(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerStorageUsuarioEditarObra(chave: string, userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    return localStorage.getItem(criarStorageKeyUsuarioEditarObra(chave, userId));
+    const chaveStorage = criarStorageKeyUsuarioEditarObra(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
@@ -182,15 +187,20 @@ function salvarJsonStorageUsuarioEditarObra(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioEditarObra(chave, userId),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioEditarObra(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; a edição continua com o estado em memória.
   }
@@ -486,6 +496,7 @@ function normalizarObraSupabase(
       criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
       lido: Boolean(capituloLocal?.lido),
       lidoEm: capituloLocal?.lidoEm || "",
+      publicado: capitulo.publicado !== false,
     } satisfies CapituloLocal;
   });
 
@@ -786,6 +797,11 @@ function salvarObrasDoUsuarioPreservandoOutrasContas(
   }
 
   const usuarioId = userId.trim();
+
+  if (!usuarioId) {
+    return [] as ObraLocal[];
+  }
+
   const obrasDoUsuarioComDono = obrasDoUsuario.map((obra, index) =>
     normalizarObra(
       {
@@ -794,7 +810,7 @@ function salvarObrasDoUsuarioPreservandoOutrasContas(
       },
       index
     )
-  );
+  ).filter((obra) => usuarioPodeEditarObraLocal(obra, usuarioId));
 
   salvarJsonStorageUsuarioEditarObra(
     STORAGE_KEY,
@@ -827,6 +843,8 @@ function normalizarCapitulo(
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
+    publicado:
+      typeof capitulo.publicado === "boolean" ? capitulo.publicado : undefined,
   };
 }
 
@@ -956,6 +974,11 @@ function carregarObrasLocalStorageEdicaoObra(userId: string) {
   }
 
   const usuarioId = userId.trim();
+
+  if (!usuarioId) {
+    return [] as ObraLocal[];
+  }
+
   const backupArquivosObras = carregarBackupArquivosObras(usuarioId);
 
   function normalizarLista(valor: unknown) {
