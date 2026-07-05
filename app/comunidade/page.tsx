@@ -733,6 +733,57 @@ function obterLinkPublicacaoComunidade(postId: string) {
   return url.toString();
 }
 
+async function criarNotificacaoComunidadeSupabase({
+  destinatarioId,
+  tipo,
+  titulo,
+  mensagem,
+  link,
+  notificacaoId,
+}: {
+  destinatarioId: string;
+  tipo: string;
+  titulo: string;
+  mensagem: string;
+  link: string;
+  notificacaoId: string;
+}) {
+  const destinatarioIdLimpo = destinatarioId.trim();
+  const tipoLimpo = tipo.trim();
+  const tituloLimpo = titulo.trim();
+  const mensagemLimpa = mensagem.trim();
+  const linkLimpo = link.trim();
+  const notificacaoIdLimpo = notificacaoId.trim();
+
+  if (
+    !idSupabaseValidoComunidade(destinatarioIdLimpo) ||
+    !tipoLimpo ||
+    !tituloLimpo ||
+    !mensagemLimpa ||
+    !linkLimpo ||
+    !notificacaoIdLimpo
+  ) {
+    return false;
+  }
+
+  try {
+    const { error } = await supabase.rpc("criar_notificacao_social", {
+      p_user_id: destinatarioIdLimpo,
+      p_tipo: tipoLimpo,
+      p_titulo: tituloLimpo,
+      p_mensagem: mensagemLimpa,
+      p_link: linkLimpo,
+      p_notificacao_id: notificacaoIdLimpo,
+      p_obra_id: null,
+      p_capitulo_id: null,
+    });
+
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 async function copiarTextoComFallback(texto: string) {
   try {
     if (
@@ -3044,6 +3095,17 @@ export default function ComunidadePage() {
           setErro(formatarErroSupabase("Erro ao curtir", erroInserirCurtida));
           return;
         }
+
+        if (postAtual?.autorId) {
+          await criarNotificacaoComunidadeSupabase({
+            destinatarioId: postAtual.autorId,
+            tipo: "comunidade-curtida-post",
+            titulo: "Nova curtida na Comunidade",
+            mensagem: `${usuario.nome} curtiu sua publicação.`,
+            link: `/comunidade?post=${encodeURIComponent(postId)}`,
+            notificacaoId: `comunidade-curtida-post:${postId}:${usuario.id}`,
+          });
+        }
       }
 
       setPosts((postsAtuais) => {
@@ -3112,6 +3174,7 @@ export default function ComunidadePage() {
       }
 
       const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
+      const postAtual = posts.find((post) => post.id === postId) || null;
 
       const { data, error } = await supabase
         .from("comunidade_comentarios")
@@ -3147,6 +3210,17 @@ export default function ComunidadePage() {
         new Map<string, string[]>(),
         profilesComentarioNovo
       );
+
+      if (postAtual?.autorId) {
+        await criarNotificacaoComunidadeSupabase({
+          destinatarioId: postAtual.autorId,
+          tipo: "comunidade-comentario-post",
+          titulo: "Novo comentário na Comunidade",
+          mensagem: `${autorNomeSeguro} comentou na sua publicação.`,
+          link: `/comunidade?post=${encodeURIComponent(postId)}`,
+          notificacaoId: `comunidade-comentario-post:${postId}:${novoComentario.id}`,
+        });
+      }
 
       setPosts((postsAtuais) =>
         postsAtuais.map((post) =>
@@ -3318,6 +3392,17 @@ export default function ComunidadePage() {
         if (erroInserirCurtida) {
           setErro(formatarErroSupabase("Erro ao curtir comentário", erroInserirCurtida));
           return;
+        }
+
+        if (comentarioAtual?.autorId) {
+          await criarNotificacaoComunidadeSupabase({
+            destinatarioId: comentarioAtual.autorId,
+            tipo: "comunidade-curtida-comentario",
+            titulo: "Nova curtida no seu comentário",
+            mensagem: `${usuario.nome} curtiu seu comentário na Comunidade.`,
+            link: `/comunidade?post=${encodeURIComponent(postId)}`,
+            notificacaoId: `comunidade-curtida-comentario:${comentarioId}:${usuario.id}`,
+          });
         }
       }
 
