@@ -180,16 +180,20 @@ const CURTIDAS_COMENTARIOS_CAPITULOS_STORAGE_KEY = "historietas-comentarios-capi
 function criarStorageKeyUsuarioLeitor(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerStorageUsuarioLeitor(chave: string, userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    return localStorage.getItem(criarStorageKeyUsuarioLeitor(chave, userId));
+    const chaveStorage = criarStorageKeyUsuarioLeitor(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
@@ -200,15 +204,20 @@ function salvarJsonStorageUsuarioLeitor(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioLeitor(chave, userId),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioLeitor(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; a leitura continua com estado em memória.
   }
@@ -659,16 +668,21 @@ function normalizarListaIds(valor: unknown): string[] {
 }
 
 function carregarListaIdsStorage(chave: string, userId = ""): string[] {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [];
+  }
+
   try {
-    const listaTexto = lerStorageUsuarioLeitor(chave, userId);
+    const listaTexto = lerStorageUsuarioLeitor(chave, userIdLimpo);
     const listaJson: unknown = listaTexto ? JSON.parse(listaTexto) : [];
     const listaNormalizada = normalizarListaIds(listaJson);
 
-    salvarJsonStorageUsuarioLeitor(chave, userId, listaNormalizada);
+    salvarJsonStorageUsuarioLeitor(chave, userIdLimpo, listaNormalizada);
 
     return listaNormalizada;
   } catch {
-    salvarJsonStorageUsuarioLeitor(chave, userId, []);
     return [];
   }
 }
@@ -702,6 +716,12 @@ function incrementarVisualizacaoObraLocal(
   obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
   userId = ""
 ) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return;
+  }
+
   try {
     const chaveObra = obra.id || obra.slug || normalizarTexto(obra.titulo);
 
@@ -711,7 +731,7 @@ function incrementarVisualizacaoObraLocal(
 
     const visualizacoesTexto = lerStorageUsuarioLeitor(
       VIEWED_WORKS_STORAGE_KEY,
-      userId
+      userIdLimpo
     );
     const visualizacoesJson: unknown = visualizacoesTexto
       ? JSON.parse(visualizacoesTexto)
@@ -726,7 +746,7 @@ function incrementarVisualizacaoObraLocal(
 
     salvarJsonStorageUsuarioLeitor(
       VIEWED_WORKS_STORAGE_KEY,
-      userId,
+      userIdLimpo,
       {
         ...visualizacoesPorObra,
         [chaveObra]: visualizacoesAtuais + 1,
@@ -921,7 +941,13 @@ function mesclarObraSupabaseComLocal(
 }
 
 function carregarObrasLocaisNormalizadas(userId = "") {
-  const obrasSalvasTexto = lerStorageUsuarioLeitor(STORAGE_KEY, userId);
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [] as ObraLocal[];
+  }
+
+  const obrasSalvasTexto = lerStorageUsuarioLeitor(STORAGE_KEY, userIdLimpo);
   const obrasSalvasJson: unknown = obrasSalvasTexto
     ? JSON.parse(obrasSalvasTexto)
     : [];
@@ -932,7 +958,7 @@ function carregarObrasLocaisNormalizadas(userId = "") {
       )
     : [];
 
-  salvarJsonStorageUsuarioLeitor(STORAGE_KEY, userId, obrasNormalizadas);
+  salvarJsonStorageUsuarioLeitor(STORAGE_KEY, userIdLimpo, obrasNormalizadas);
 
   return obrasNormalizadas;
 }
@@ -959,6 +985,11 @@ function salvarObrasPreservandoContas(
 ) {
   try {
     const userIdLimpo = userId.trim();
+
+    if (!userIdLimpo) {
+      return;
+    }
+
     const obrasAtuais = carregarObrasLocaisNormalizadas(userIdLimpo);
     const obrasAtualizadasPorId = new Map(
       obrasAtualizadas.map((obra, index) => [
