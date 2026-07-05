@@ -18,6 +18,7 @@ type CapituloLocal = {
   criadoEm: string;
   lido: boolean;
   lidoEm: string;
+  publicado?: boolean;
 };
 
 type Obra = {
@@ -1684,6 +1685,7 @@ function normalizarCapituloHome(
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
+    publicado: capitulo.publicado !== false,
   };
 }
 
@@ -1691,7 +1693,7 @@ function normalizarObraHome(
   obra: Partial<ObraLocal> & Record<string, unknown>,
   index: number
 ): ObraLocal {
-  const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
+  const capitulosNormalizadosTodos: CapituloLocal[] = Array.isArray(obra.capitulos)
     ? obra.capitulos.map((capitulo, capituloIndex) =>
         normalizarCapituloHome(
           capitulo as Partial<CapituloLocal>,
@@ -1699,6 +1701,10 @@ function normalizarObraHome(
         )
       )
     : [];
+
+  const capitulosNormalizados = capitulosNormalizadosTodos.filter(
+    (capitulo) => capitulo.publicado !== false
+  );
 
   const titulo =
     typeof obra.titulo === "string" && obra.titulo.trim()
@@ -1796,14 +1802,18 @@ function normalizarObraHome(
 }
 
 function normalizarObrasHomeSalvas(valor: unknown) {
-  return Array.isArray(valor)
-    ? valor.map((obra, index) =>
-        normalizarObraHome(
-          obra as Partial<ObraLocal> & Record<string, unknown>,
-          index
-        )
+  if (!Array.isArray(valor)) {
+    return [];
+  }
+
+  return valor
+    .map((obra, index) =>
+      normalizarObraHome(
+        obra as Partial<ObraLocal> & Record<string, unknown>,
+        index
       )
-    : [];
+    )
+    .filter((obra) => obra.publicado && obraTemConteudoPublicoHome(obra));
 }
 
 function normalizarCategoriaArquivoHome(categoria: string | null) {
@@ -1819,14 +1829,11 @@ function normalizarCategoriaArquivoHome(categoria: string | null) {
   return "outro";
 }
 
-function criarArquivoObraSupabaseHome(
-  obra: SupabaseObraRow,
-  obraLocal: ObraLocal | undefined
-) {
+function criarArquivoObraSupabaseHome(obra: SupabaseObraRow) {
   const arquivoUrl = obra.arquivo_url?.trim() || "";
 
   if (!arquivoUrl) {
-    return obraLocal?.arquivoObra || null;
+    return null;
   }
 
   const categoriaArquivo = normalizarCategoriaArquivoHome(
@@ -1877,74 +1884,58 @@ function normalizarObraSupabaseHome(
       id: capitulo.id,
       titulo:
         capitulo.titulo?.trim() ||
-        capituloLocal?.titulo ||
         `Capítulo ${capituloIndex + 1}`,
       texto: "",
       curtiu: Boolean(capituloLocal?.curtiu),
       salvo: Boolean(capituloLocal?.salvo),
       comentario: capituloLocal?.comentario || "",
-      criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
+      criadoEm: capitulo.criado_em || "",
       lido: Boolean(capituloLocal?.lido),
       lidoEm: capituloLocal?.lidoEm || "",
+      publicado: true,
     } satisfies CapituloLocal;
   });
 
-  const capitulosRemotosIds = new Set(
-    capitulosRemotos.map((capitulo) => capitulo.id)
-  );
-  const capitulosApenasLocais = (obraLocal?.capitulos || []).filter(
-    (capitulo) => !capitulosRemotosIds.has(capitulo.id)
-  );
-  const capitulosMesclados = [...capitulosRemotos, ...capitulosApenasLocais];
+  const capitulosMesclados = capitulosRemotos;
 
-  const tituloObra = obra.titulo?.trim() || obraLocal?.titulo || "Obra sem título";
+  const tituloObra = obra.titulo?.trim() || "Obra sem título";
   const slugObra =
     obra.slug?.trim() ||
-    obraLocal?.slug ||
     criarSlugBase(tituloObra || `obra-${index + 1}`);
 
   return {
-    id: obra.id || obraLocal?.id || `obra-${index + 1}`,
+    id: obra.id || `obra-${index + 1}`,
     titulo: tituloObra,
-    autor: obra.autor?.trim() || obraLocal?.autor || "Autor não informado",
-    autorId: obra.user_id?.trim() || obraLocal?.autorId || "",
-    genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
-    formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
+    autor: obra.autor?.trim() || "Autor não informado",
+    autorId: obra.user_id?.trim() || "",
+    genero: obra.genero?.trim() || "Não informado",
+    formato: obra.formato?.trim() || "Não informado",
     classificacaoIndicativa:
       obra.classificacao_indicativa?.trim() ||
-      obraLocal?.classificacaoIndicativa ||
       "Não informada",
     sinopse:
       obra.sinopse?.trim() ||
-      obraLocal?.sinopse ||
       "Nenhuma sinopse informada.",
     tags:
       Array.isArray(obra.tags) && obra.tags.length > 0
         ? obra.tags.filter((tag) => typeof tag === "string" && Boolean(tag.trim()))
-        : obraLocal?.tags || ["sem tags"],
-    capa: obra.capa_url?.trim() || obraLocal?.capa || "",
-    capaNome: obra.capa_nome?.trim() || obraLocal?.capaNome || "",
-    arquivoObra: criarArquivoObraSupabaseHome(obra, obraLocal),
+        : ["sem tags"],
+    capa: obra.capa_url?.trim() || "",
+    capaNome: obra.capa_nome?.trim() || "",
+    arquivoObra: criarArquivoObraSupabaseHome(obra),
     publicado: Boolean(obra.publicado),
     capitulos: capitulosMesclados,
-    criadaEm: obra.criada_em || obraLocal?.criadaEm || "",
+    criadaEm: obra.criada_em || "",
     ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
-    visualizacoes: normalizarNumeroHome(
-      obra.visualizacoes,
-      obraLocal?.visualizacoes || 0,
-    ),
-    totalCurtidas:
-      obraLocal?.totalCurtidas ||
-      capitulosMesclados.filter((capitulo) => capitulo.curtiu).length,
-    totalComentarios:
-      obraLocal?.totalComentarios ||
-      capitulosMesclados.filter((capitulo) =>
-        capitulo.comentario.trim(),
-      ).length,
+    visualizacoes: normalizarNumeroHome(obra.visualizacoes),
+    totalCurtidas: capitulosMesclados.filter((capitulo) => capitulo.curtiu).length,
+    totalComentarios: capitulosMesclados.filter((capitulo) =>
+      capitulo.comentario.trim(),
+    ).length,
     slug: slugObra,
-    link: obra.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
+    link: obra.link?.trim() || `/obra/${slugObra}`,
   };
 }
 
@@ -2163,7 +2154,9 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
       return !idsRemotos.has(obraLocalAtual.id) && !slugsRemotos.has(slugLocal);
     });
 
-    const obrasAtualizadas = [...obrasRemotas, ...obrasApenasLocais];
+    const obrasAtualizadas = [...obrasRemotas, ...obrasApenasLocais].filter(
+      (obra) => obra.publicado && obraTemConteudoPublicoHome(obra)
+    );
 
     return obrasAtualizadas;
   } catch (error) {
