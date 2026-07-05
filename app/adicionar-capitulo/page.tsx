@@ -1094,90 +1094,6 @@ async function registrarDiarioNovoCapitulo({
   }
 }
 
-function extrairUsuariosNotificacaoAdicionarCapitulo(
-  registros: unknown,
-  coluna: string
-) {
-  if (!Array.isArray(registros)) {
-    return [] as string[];
-  }
-
-  return registros
-    .map((registro) => {
-      if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
-        return "";
-      }
-
-      const usuarioId = (registro as Record<string, unknown>)[coluna];
-
-      return typeof usuarioId === "string" ? usuarioId.trim() : "";
-    })
-    .filter(Boolean);
-}
-
-async function carregarUsuariosObraNotificacaoAdicionarCapitulo(
-  tabela: "seguindo_obras" | "favoritos",
-  obraId: string
-) {
-  const obraIdLimpo = obraId.trim();
-
-  if (!obraIdLimpo) {
-    return [] as string[];
-  }
-
-  const tentativas = [
-    { select: "user_id", coluna: "user_id" },
-    { select: "usuario_id", coluna: "usuario_id" },
-  ];
-
-  for (const tentativa of tentativas) {
-    try {
-      const { data, error } = await supabase
-        .from(tabela)
-        .select(tentativa.select)
-        .eq("obra_id", obraIdLimpo)
-        .limit(1000);
-
-      if (!error) {
-        return extrairUsuariosNotificacaoAdicionarCapitulo(
-          data,
-          tentativa.coluna
-        );
-      }
-    } catch {
-      // Tenta o próximo nome de coluna para manter compatibilidade com schemas antigos.
-    }
-  }
-
-  return [] as string[];
-}
-
-async function carregarSeguidoresAutorNotificacaoAdicionarCapitulo(
-  autorId: string
-) {
-  const autorIdLimpo = autorId.trim();
-
-  if (!autorIdLimpo) {
-    return [] as string[];
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("seguindo_usuarios")
-      .select("seguidor_id")
-      .eq("seguido_id", autorIdLimpo)
-      .limit(1000);
-
-    if (error) {
-      return [];
-    }
-
-    return extrairUsuariosNotificacaoAdicionarCapitulo(data, "seguidor_id");
-  } catch {
-    return [];
-  }
-}
-
 async function registrarNotificacoesNovoCapituloSupabase({
   userId,
   obra,
@@ -1191,88 +1107,39 @@ async function registrarNotificacoesNovoCapituloSupabase({
   numeroCapitulo: number;
   criadoEm: string;
 }) {
-  const autorId = userId.trim();
+  const usuarioId = userId.trim();
 
-  if (!obra.publicado || !autorId) {
+  if (
+    !usuarioId ||
+    !obra.publicado ||
+    !idObraSupabaseValido(obra.id) ||
+    !idObraSupabaseValido(capitulo.id)
+  ) {
     return;
   }
 
   try {
-    const [
-      seguidoresObra,
-      obrasNaLista,
-      seguidoresAutor,
-    ] = await Promise.all([
-      carregarUsuariosObraNotificacaoAdicionarCapitulo(
-        "seguindo_obras",
-        obra.id
-      ),
-      carregarUsuariosObraNotificacaoAdicionarCapitulo("favoritos", obra.id),
-      carregarSeguidoresAutorNotificacaoAdicionarCapitulo(autorId),
-    ]);
-
-    const usuariosNotificar = Array.from(
-      new Set([...seguidoresObra, ...obrasNaLista, ...seguidoresAutor])
-    ).filter((usuarioNotificado) => {
-      const usuarioNotificadoLimpo = usuarioNotificado.trim();
-
-      return Boolean(
-        usuarioNotificadoLimpo &&
-          usuarioNotificadoLimpo !== autorId &&
-          usuarioNotificadoLimpo !== obra.autorId?.trim()
-      );
-    });
-
-    if (usuariosNotificar.length === 0) {
-      return;
-    }
-
     const href = criarHrefLeituraCapitulo(obra, capitulo, numeroCapitulo);
     const tituloNotificacao = "Novo capítulo publicado";
     const mensagemNotificacao = `${capitulo.titulo} foi adicionado em ${obra.titulo}.`;
-    const payloadCompleto = usuariosNotificar.map((usuarioNotificado) => ({
-      user_id: usuarioNotificado,
-      tipo: "novo-capitulo",
-      titulo: tituloNotificacao,
-      mensagem: mensagemNotificacao,
-      obra_id: obra.id,
-      capitulo_id: capitulo.id,
-      href,
-      lida: false,
-      metadata: {
-        obra_titulo: obra.titulo,
-        capitulo_titulo: capitulo.titulo,
-        numero_capitulo: numeroCapitulo,
-        autor: obra.autor,
-        capa: obra.capa,
-      },
-      criada_em: criadoEm,
-    }));
 
-    const { error: erroCompleto } = await supabase
-      .from("notificacoes")
-      .insert(payloadCompleto);
+    const { error } = await supabase.rpc("criar_notificacoes_capitulo", {
+      p_obra_id: obra.id,
+      p_capitulo_id: capitulo.id,
+      p_titulo: tituloNotificacao,
+      p_mensagem: mensagemNotificacao,
+      p_href: href,
+      p_tipo: "novo-capitulo",
+      p_criado_em: criadoEm,
+    });
 
-    if (!erroCompleto) {
-      return;
+    if (error) {
+      console.warn("Não consegui criar notificações do novo capítulo:", error.message);
     }
-
-    const payloadBasico = usuariosNotificar.map((usuarioNotificado) => ({
-      user_id: usuarioNotificado,
-      tipo: "novo-capitulo",
-      titulo: tituloNotificacao,
-      mensagem: mensagemNotificacao,
-      href,
-      lida: false,
-      criada_em: criadoEm,
-    }));
-
-    await supabase.from("notificacoes").insert(payloadBasico);
   } catch (error) {
-    console.warn("Não consegui notificar seguidores do novo capítulo:", error);
+    console.warn("Não consegui notificar leitores do novo capítulo:", error);
   }
 }
-
 
 function registrarNotificacaoNovoCapituloLocal(
   notificacao: NotificacaoLocal

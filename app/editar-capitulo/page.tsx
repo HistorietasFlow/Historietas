@@ -951,166 +951,37 @@ async function atualizarNotificacaoCapituloSupabase({
   numeroCapitulo: number;
   atualizadoEm: string;
 }) {
-  const autorId = userId.trim();
-  const obraId = obra.id.trim();
-  const capituloIdLimpo = capituloId.trim();
+  const usuarioId = userId.trim();
 
-  if (!autorId || !obraId || !capituloIdLimpo || !obra.publicado) {
-    return;
-  }
-
-  const usuariosParaNotificar = new Set<string>();
-
-  function adicionarUsuarioParaNotificar(valor: unknown) {
-    if (typeof valor !== "string") {
-      return;
-    }
-
-    const usuarioId = valor.trim();
-
-    if (!usuarioId || usuarioId === autorId) {
-      return;
-    }
-
-    usuariosParaNotificar.add(usuarioId);
-  }
-
-  try {
-    const { data } = await supabase
-      .from("seguindo_obras")
-      .select("user_id")
-      .eq("obra_id", obraId)
-      .limit(1000);
-
-    if (Array.isArray(data)) {
-      data.forEach((registro) => {
-        adicionarUsuarioParaNotificar(
-          (registro as Record<string, unknown>).user_id
-        );
-      });
-    }
-  } catch {
-    // Seguir obra é uma origem opcional de notificação.
-  }
-
-  try {
-    const { data } = await supabase
-      .from("favoritos")
-      .select("user_id")
-      .eq("obra_id", obraId)
-      .limit(1000);
-
-    if (Array.isArray(data)) {
-      data.forEach((registro) => {
-        adicionarUsuarioParaNotificar(
-          (registro as Record<string, unknown>).user_id
-        );
-      });
-    }
-  } catch {
-    // Obra em lista/favoritos é uma origem opcional de notificação.
-  }
-
-  try {
-    const { data } = await supabase
-      .from("seguindo_usuarios")
-      .select("seguidor_id")
-      .eq("seguido_id", autorId)
-      .limit(1000);
-
-    if (Array.isArray(data)) {
-      data.forEach((registro) => {
-        adicionarUsuarioParaNotificar(
-          (registro as Record<string, unknown>).seguidor_id
-        );
-      });
-    }
-  } catch {
-    // Seguir autor é uma origem opcional de notificação.
-  }
-
-  const usuariosNotificar = Array.from(usuariosParaNotificar);
-
-  if (usuariosNotificar.length === 0) {
+  if (
+    !usuarioId ||
+    !obra.publicado ||
+    !idObraSupabaseValido(obra.id) ||
+    !idObraSupabaseValido(capituloId)
+  ) {
     return;
   }
 
   const hrefCapitulo = criarHrefLeituraCapitulo(
     obra,
-    capituloIdLimpo,
+    capituloId,
     numeroCapitulo
   );
-  const tituloNotificacao = "Capítulo atualizado";
-  const mensagemNotificacao = `${tituloCapitulo} foi atualizado em ${obra.titulo}.`;
-  const notificacaoIdBase = `capitulo-atualizado-${obraId}-${capituloIdLimpo}-${new Date(
-    atualizadoEm
-  ).getTime() || Date.now()}`;
 
   try {
-    const payloadCompleto = usuariosNotificar.map((usuarioNotificado) => ({
-      user_id: usuarioNotificado,
-      notificacao_id: `${notificacaoIdBase}-${usuarioNotificado}`,
-      tipo: "novo-capitulo",
-      titulo: tituloNotificacao,
-      mensagem: mensagemNotificacao,
-      obra_id: obraId,
-      capitulo_id: capituloIdLimpo,
-      link: hrefCapitulo,
-      href: hrefCapitulo,
-      lida: false,
-      metadata: {
-        obra_titulo: obra.titulo,
-        autor: obra.autor,
-        capitulo_titulo: tituloCapitulo,
-        numero_capitulo: numeroCapitulo,
-        tipo_evento: "capitulo_atualizado",
-      },
-      criada_em: atualizadoEm,
-      atualizado_em: atualizadoEm,
-      updated_at: atualizadoEm,
-      autor_id: autorId,
-      autor_nome: obra.autor,
-    }));
+    const { error } = await supabase.rpc("criar_notificacoes_capitulo", {
+      p_obra_id: obra.id,
+      p_capitulo_id: capituloId,
+      p_titulo: "Capítulo atualizado",
+      p_mensagem: `${tituloCapitulo} foi atualizado em ${obra.titulo}.`,
+      p_href: hrefCapitulo,
+      p_tipo: "novo-capitulo",
+      p_criado_em: atualizadoEm,
+    });
 
-    const { error: erroCompleto } = await supabase
-      .from("notificacoes")
-      .insert(payloadCompleto);
-
-    if (!erroCompleto) {
-      return;
+    if (error) {
+      console.warn("Não consegui criar notificações da edição do capítulo:", error.message);
     }
-
-    const payloadBasico = usuariosNotificar.map((usuarioNotificado) => ({
-      user_id: usuarioNotificado,
-      tipo: "novo-capitulo",
-      titulo: tituloNotificacao,
-      mensagem: mensagemNotificacao,
-      obra_id: obraId,
-      capitulo_id: capituloIdLimpo,
-      href: hrefCapitulo,
-      lida: false,
-      criada_em: atualizadoEm,
-    }));
-
-    const { error: erroBasico } = await supabase
-      .from("notificacoes")
-      .insert(payloadBasico);
-
-    if (!erroBasico) {
-      return;
-    }
-
-    const payloadMinimo = usuariosNotificar.map((usuarioNotificado) => ({
-      user_id: usuarioNotificado,
-      tipo: "novo-capitulo",
-      titulo: tituloNotificacao,
-      mensagem: mensagemNotificacao,
-      href: hrefCapitulo,
-      lida: false,
-      criada_em: atualizadoEm,
-    }));
-
-    await supabase.from("notificacoes").insert(payloadMinimo);
   } catch (error) {
     console.warn("Não consegui notificar leitores da edição do capítulo:", error);
   }
