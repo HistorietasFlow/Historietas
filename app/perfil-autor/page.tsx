@@ -85,10 +85,12 @@ type PerfilUsuarioRemoto = {
 
 type AbaPerfilAutor = "obras" | "diario" | "comunidade" | "sobre" | "biblioteca";
 type AbaBibliotecaPerfil =
+  | "tudo"
   | "quero-ler"
   | "lendo-agora"
   | "favoritas"
   | "concluidas"
+  | "salvos"
   | "historico";
 
 const STORAGE_KEY = "historietas-obras";
@@ -1438,6 +1440,61 @@ function converterItensDiarioParaBiblioteca(
     (itemA, itemB) => itemB.tempoAtividade - itemA.tempoAtividade,
   );
 }
+
+function converterCapitulosSalvosParaBiblioteca(
+  obrasDisponiveis: ObraLocal[],
+): ItemBibliotecaPerfil[] {
+  const itens: ItemBibliotecaPerfil[] = [];
+
+  obrasDisponiveis.forEach((obra) => {
+    obra.capitulos.forEach((capitulo, capituloIndex) => {
+      if (!capitulo.salvo) {
+        return;
+      }
+
+      itens.push({
+        chave: `salvo-${obra.id || obra.slug}-${capitulo.id}`,
+        obra,
+        capitulo,
+        numeroCapitulo: capituloIndex + 1,
+        tempoAtividade:
+          obterTimestampData(capitulo.lidoEm) ||
+          obterTimestampData(capitulo.criadoEm) ||
+          obterTempoAtividadeBibliotecaPerfil(obra),
+        tipoDiario: "quero_ler",
+        descricao: "Capítulo salvo na Biblioteca",
+      });
+    });
+  });
+
+  return itens.sort(
+    (itemA, itemB) => itemB.tempoAtividade - itemA.tempoAtividade,
+  );
+}
+
+function mesclarItensBibliotecaPerfil(
+  ...listas: ItemBibliotecaPerfil[][]
+): ItemBibliotecaPerfil[] {
+  const itensPorChave = new Map<string, ItemBibliotecaPerfil>();
+
+  listas.flat().forEach((item) => {
+    const chave =
+      item.capitulo?.id.trim()
+        ? `${item.obra.id || item.obra.slug}::${item.capitulo.id}`
+        : item.obra.id || item.obra.slug || normalizarTexto(item.obra.titulo);
+
+    if (!chave || itensPorChave.has(chave)) {
+      return;
+    }
+
+    itensPorChave.set(chave, item);
+  });
+
+  return Array.from(itensPorChave.values()).sort(
+    (itemA, itemB) => itemB.tempoAtividade - itemA.tempoAtividade,
+  );
+}
+
 
 function criarCapaBibliotecaPerfilStyle(capa: string, desktop: boolean): CSSProperties {
   const baseStyle = desktop
@@ -4170,7 +4227,8 @@ export default function PerfilAutorPage() {
   const [usernamePerfilEditor, setUsernamePerfilEditor] = useState("");
   const [editorSobreAberto, setEditorSobreAberto] = useState(false);
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>("obras");
-  const [abaBibliotecaPerfil] = useState<AbaBibliotecaPerfil>("quero-ler");
+  const [abaBibliotecaPerfil, setAbaBibliotecaPerfil] =
+    useState<AbaBibliotecaPerfil>("tudo");
   const [obrasSeguidasBiblioteca, setObrasSeguidasBiblioteca] = useState<string[]>([]);
   const [versaoSincronizacaoBiblioteca, setVersaoSincronizacaoBiblioteca] =
     useState(0);
@@ -5505,6 +5563,14 @@ export default function PerfilAutorPage() {
     );
   }, [bibliotecaPerfilVisivel, diarioPerfil.atividades]);
 
+  const itensBibliotecaSalvos = useMemo(() => {
+    if (!bibliotecaPerfilVisivel) {
+      return [] as ItemBibliotecaPerfil[];
+    }
+
+    return converterCapitulosSalvosParaBiblioteca(obras);
+  }, [bibliotecaPerfilVisivel, obras]);
+
   const obrasSeguidasPerfilTotal = useMemo(() => {
     const totalPorObrasCarregadas = obras.filter((obra) =>
       colecaoTemObraPerfilBiblioteca(obrasSeguidasBiblioteca, obra),
@@ -5531,6 +5597,10 @@ export default function PerfilAutorPage() {
   ]);
 
   const itensBibliotecaAtivos = useMemo(() => {
+    if (abaBibliotecaPerfil === "quero-ler") {
+      return itensBibliotecaQueroLer;
+    }
+
     if (abaBibliotecaPerfil === "lendo-agora") {
       return itensBibliotecaLendoAgora;
     }
@@ -5543,11 +5613,22 @@ export default function PerfilAutorPage() {
       return itensBibliotecaConcluidas;
     }
 
+    if (abaBibliotecaPerfil === "salvos") {
+      return itensBibliotecaSalvos;
+    }
+
     if (abaBibliotecaPerfil === "historico") {
       return itensBibliotecaHistorico;
     }
 
-    return itensBibliotecaQueroLer;
+    return mesclarItensBibliotecaPerfil(
+      itensBibliotecaQueroLer,
+      itensBibliotecaLendoAgora,
+      itensBibliotecaFavoritas,
+      itensBibliotecaConcluidas,
+      itensBibliotecaSalvos,
+      itensBibliotecaHistorico,
+    );
   }, [
     abaBibliotecaPerfil,
     itensBibliotecaConcluidas,
@@ -5555,6 +5636,7 @@ export default function PerfilAutorPage() {
     itensBibliotecaHistorico,
     itensBibliotecaLendoAgora,
     itensBibliotecaQueroLer,
+    itensBibliotecaSalvos,
   ]);
 
   const bibliotecaMenuAberto = useMemo(() => {
@@ -5570,15 +5652,19 @@ export default function PerfilAutorPage() {
   }, [bibliotecaMenuAbertoChave, itensBibliotecaAtivos]);
 
   const rotuloBibliotecaAtiva =
-    abaBibliotecaPerfil === "quero-ler"
-      ? "quero ler"
-      : abaBibliotecaPerfil === "lendo-agora"
-        ? "lendo agora"
-        : abaBibliotecaPerfil === "favoritas"
-          ? "favoritas"
-          : abaBibliotecaPerfil === "concluidas"
-            ? "concluídas"
-            : "histórico";
+    abaBibliotecaPerfil === "tudo"
+      ? "todos os itens"
+      : abaBibliotecaPerfil === "quero-ler"
+        ? "quero ler"
+        : abaBibliotecaPerfil === "lendo-agora"
+          ? "lendo agora"
+          : abaBibliotecaPerfil === "favoritas"
+            ? "na lista"
+            : abaBibliotecaPerfil === "concluidas"
+              ? "concluídas"
+              : abaBibliotecaPerfil === "salvos"
+                ? "capítulos salvos"
+                : "histórico";
 
   const containerAtualStyle = isDesktop
     ? desktopContainerStyle
@@ -6675,6 +6761,45 @@ export default function PerfilAutorPage() {
   }
 
   async function removerItemBibliotecaPerfil(item: ItemBibliotecaPerfil) {
+    if (
+      item.capitulo?.salvo &&
+      (abaBibliotecaPerfil === "tudo" || abaBibliotecaPerfil === "salvos")
+    ) {
+      await alternarSalvoCapituloBibliotecaPerfil(
+        item.obra.id,
+        item.capitulo.id,
+        false,
+      );
+      return;
+    }
+
+    if (
+      abaBibliotecaPerfil === "tudo" &&
+      item.tipoDiario === "quero_ler" &&
+      colecaoTemObraPerfilBiblioteca(obrasSeguidasBiblioteca, item.obra)
+    ) {
+      await alternarObraSeguindoBibliotecaPerfil(item.obra, false);
+      return;
+    }
+
+    if (
+      abaBibliotecaPerfil === "tudo" &&
+      item.tipoDiario === "favorita" &&
+      colecaoTemObraPerfilBiblioteca(obrasFavoritas, item.obra)
+    ) {
+      await alternarFavoritoObra(item.obra.id);
+      return;
+    }
+
+    if (
+      abaBibliotecaPerfil === "tudo" &&
+      item.tipoDiario === "concluida" &&
+      colecaoTemObraPerfilBiblioteca(obrasConcluidas, item.obra)
+    ) {
+      await alternarConcluidoObra(item.obra.id);
+      return;
+    }
+
     if (abaBibliotecaPerfil === "quero-ler") {
       await alternarObraSeguindoBibliotecaPerfil(item.obra, false);
       return;
@@ -6691,6 +6816,15 @@ export default function PerfilAutorPage() {
       if (colecaoTemObraPerfilBiblioteca(obrasConcluidas, item.obra)) {
         await alternarConcluidoObra(item.obra.id);
       }
+      return;
+    }
+
+    if (abaBibliotecaPerfil === "salvos" && item.capitulo) {
+      await alternarSalvoCapituloBibliotecaPerfil(
+        item.obra.id,
+        item.capitulo.id,
+        false,
+      );
       return;
     }
 
@@ -8494,6 +8628,31 @@ export default function PerfilAutorPage() {
                 : profileLibrarySectionStyle
             }
           >
+            <div style={profileLibraryTabsStyle}>
+              {[
+                ["tudo", "Tudo"],
+                ["quero-ler", "Quero ler"],
+                ["favoritas", "Na lista"],
+                ["salvos", "Salvos"],
+                ["lendo-agora", "Lendo"],
+                ["concluidas", "Concluídas"],
+                ["historico", "Histórico"],
+              ].map(([valor, rotulo]) => (
+                <button
+                  key={valor}
+                  type="button"
+                  onClick={() => setAbaBibliotecaPerfil(valor as AbaBibliotecaPerfil)}
+                  style={
+                    abaBibliotecaPerfil === valor
+                      ? profileLibraryTabActiveStyle
+                      : profileLibraryTabStyle
+                  }
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+
             {!diarioPerfil.carregando && (
               itensBibliotecaAtivos.length === 0 ? (
                 <div style={emptyMiniBoxStyle}>
@@ -9852,6 +10011,42 @@ const desktopProfileLibrarySectionStyle: CSSProperties = {
   ...profileLibrarySectionStyle,
   gap: "18px",
   marginTop: "18px",
+};
+
+
+const profileLibraryTabsStyle: CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  overflowX: "auto",
+  overflowY: "hidden",
+  WebkitOverflowScrolling: "touch",
+  scrollbarWidth: "none",
+  padding: "0 2px 4px",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
+const profileLibraryTabStyle: CSSProperties = {
+  flex: "0 0 auto",
+  minHeight: "34px",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "rgba(255,255,255,0.055)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10.5px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  padding: "0 12px",
+  boxSizing: "border-box",
+  whiteSpace: "nowrap",
+};
+
+const profileLibraryTabActiveStyle: CSSProperties = {
+  ...profileLibraryTabStyle,
+  background: "var(--historietas-active-surface, rgba(124,58,237,0.18))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.14)",
 };
 
 const profileLibraryStatsGridStyle: CSSProperties = {
