@@ -452,16 +452,20 @@ const ORDEM_TEMAS_VISUAIS: TemaVisual[] = [
 function criarStorageKeyUsuarioConfiguracoes(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerStorageUsuarioConfiguracoes(chave: string, userId = "") {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    return localStorage.getItem(criarStorageKeyUsuarioConfiguracoes(chave, userId));
+    const chaveStorage = criarStorageKeyUsuarioConfiguracoes(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
@@ -472,15 +476,20 @@ function salvarJsonStorageUsuarioConfiguracoes(
   userId: string,
   valor: unknown,
 ) {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioConfiguracoes(chave, userId),
-      JSON.stringify(valor),
-    );
+    const chaveStorage = criarStorageKeyUsuarioConfiguracoes(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; as configurações continuam em memória.
   }
@@ -658,21 +667,30 @@ function salvarPreferencias(preferencias: PreferenciasConta, userId = "") {
 }
 
 function criarBackupLocal(userId = "") {
+  const userIdLimpo = userId.trim();
   const backup: Record<string, unknown> = {};
+
+  if (!userIdLimpo) {
+    backup.exportadoEm = new Date().toISOString();
+    backup.projeto = "Historietas";
+    backup.userId = "";
+
+    return JSON.stringify(backup, null, 2);
+  }
 
   CHAVES_RESUMO.forEach((chave) => {
     try {
-      const valor = lerStorageUsuarioConfiguracoes(chave, userId);
+      const valor = lerStorageUsuarioConfiguracoes(chave, userIdLimpo);
       backup[chave] = valor ? JSON.parse(valor) : null;
     } catch {
       backup[chave] = null;
     }
   });
 
-  backup[CONFIG_STORAGE_KEY] = carregarPreferencias(userId);
+  backup[CONFIG_STORAGE_KEY] = carregarPreferencias(userIdLimpo);
   backup.exportadoEm = new Date().toISOString();
   backup.projeto = "Historietas";
-  backup.userId = userId;
+  backup.userId = userIdLimpo;
 
   return JSON.stringify(backup, null, 2);
 }
