@@ -216,7 +216,7 @@ function normalizarListaIdsEmAlta(valor: unknown) {
 function criarStorageKeyUsuarioEmAlta(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function normalizarChaveAutorEmAlta(valor: string) {
@@ -257,6 +257,10 @@ function carregarAvataresAutoresLocaisEmAlta(userIds: string[]) {
   );
 
   chavesParaLer.forEach((chaveStorage) => {
+    if (!chaveStorage) {
+      return;
+    }
+
     try {
       const texto = localStorage.getItem(chaveStorage);
       const perfis = texto ? JSON.parse(texto) : null;
@@ -323,14 +327,20 @@ function obterAvatarAutorLocalEmAlta(
 }
 
 function carregarListaIdsLocalEmAlta(chave: string, userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return [];
   }
 
   try {
-    const textoLista = localStorage.getItem(
-      criarStorageKeyUsuarioEmAlta(chave, userId),
-    );
+    const chaveStorage = criarStorageKeyUsuarioEmAlta(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return [];
+    }
+
+    const textoLista = localStorage.getItem(chaveStorage);
     const jsonLista: unknown = textoLista ? JSON.parse(textoLista) : [];
 
     return normalizarListaIdsEmAlta(jsonLista);
@@ -344,16 +354,25 @@ function salvarListaIdsLocalEmAlta(
   userId: string,
   lista: string[],
 ) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
-  const listaNormalizada = normalizarListaIdsEmAlta(lista);
+  try {
+    const chaveStorage = criarStorageKeyUsuarioEmAlta(chave, userIdLimpo);
 
-  localStorage.setItem(
-    criarStorageKeyUsuarioEmAlta(chave, userId),
-    JSON.stringify(listaNormalizada),
-  );
+    if (!chaveStorage) {
+      return;
+    }
+
+    const listaNormalizada = normalizarListaIdsEmAlta(lista);
+
+    localStorage.setItem(chaveStorage, JSON.stringify(listaNormalizada));
+  } catch {
+    // localStorage é fallback; o ranking continua com estado em memória.
+  }
 }
 
 async function carregarIdsColecaoUsuarioSupabaseEmAlta(
@@ -1593,10 +1612,11 @@ export default function EmAltaPage() {
           obrasConcluidasNormalizadas,
         );
 
-        const visualizacoesTexto = userIdAtual
-          ? localStorage.getItem(
-              criarStorageKeyUsuarioEmAlta(VIEWED_WORKS_STORAGE_KEY, userIdAtual),
-            )
+        const chaveVisualizacoesUsuario = userIdAtual
+          ? criarStorageKeyUsuarioEmAlta(VIEWED_WORKS_STORAGE_KEY, userIdAtual)
+          : "";
+        const visualizacoesTexto = chaveVisualizacoesUsuario
+          ? localStorage.getItem(chaveVisualizacoesUsuario)
           : null;
         const visualizacoesJson = visualizacoesTexto
           ? JSON.parse(visualizacoesTexto)
@@ -1604,10 +1624,11 @@ export default function EmAltaPage() {
         const visualizacoesNormalizadas =
           normalizarVisualizacoesRanking(visualizacoesJson);
 
-        const avaliacoesLocaisTexto = userIdAtual
-          ? localStorage.getItem(
-              criarStorageKeyUsuarioEmAlta(RATED_WORKS_STORAGE_KEY, userIdAtual),
-            )
+        const chaveAvaliacoesUsuario = userIdAtual
+          ? criarStorageKeyUsuarioEmAlta(RATED_WORKS_STORAGE_KEY, userIdAtual)
+          : "";
+        const avaliacoesLocaisTexto = chaveAvaliacoesUsuario
+          ? localStorage.getItem(chaveAvaliacoesUsuario)
           : null;
         const avaliacoesLocaisJson = avaliacoesLocaisTexto
           ? JSON.parse(avaliacoesLocaisTexto)
