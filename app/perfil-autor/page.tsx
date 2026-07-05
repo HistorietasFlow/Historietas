@@ -3960,6 +3960,55 @@ async function sincronizarUsuarioSeguidoSupabase(
   }
 }
 
+
+type NotificacaoSocialPerfilAutorPayload = {
+  receptorId: string;
+  tipo: string;
+  titulo: string;
+  mensagem: string;
+  link: string;
+  notificacaoId: string;
+};
+
+async function criarNotificacaoSocialPerfilAutor({
+  receptorId,
+  tipo,
+  titulo,
+  mensagem,
+  link,
+  notificacaoId,
+}: NotificacaoSocialPerfilAutorPayload) {
+  const receptorIdLimpo = receptorId.trim();
+  const tipoLimpo = tipo.trim();
+
+  if (!receptorIdLimpo || !idAutorSupabaseValido(receptorIdLimpo) || !tipoLimpo) {
+    return false;
+  }
+
+  try {
+    const { error } = await supabase.rpc("criar_notificacao_social", {
+      p_user_id: receptorIdLimpo,
+      p_tipo: tipoLimpo,
+      p_titulo: titulo.trim() || "Nova notificação",
+      p_mensagem: mensagem.trim() || "Você recebeu uma nova notificação.",
+      p_link: link.trim() || "/notificacoes",
+      p_notificacao_id: notificacaoId.trim() || null,
+      p_obra_id: null,
+      p_capitulo_id: null,
+    });
+
+    if (error) {
+      console.warn("Não consegui criar notificação social:", error.message);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn("Não consegui criar notificação social:", error);
+    return false;
+  }
+}
+
 function DiaryCarouselRow({
   children,
   isDesktop,
@@ -6474,6 +6523,21 @@ export default function PerfilAutorPage() {
         });
         setMensagemAcao("Não consegui atualizar este seguimento agora.");
         return;
+      }
+
+      if (proximoEstadoSeguindo) {
+        const nomeSeguidor =
+          perfilDoUsuarioLogado?.nome.trim() || "Um leitor";
+        const linkSeguidor = criarPerfilAutorHref(nomeSeguidor, userIdAtual);
+
+        void criarNotificacaoSocialPerfilAutor({
+          receptorId: userIdPerfil,
+          tipo: "seguir-usuario",
+          titulo: "Novo seguidor",
+          mensagem: `${nomeSeguidor} começou a seguir você.`,
+          link: linkSeguidor,
+          notificacaoId: `seguir-usuario:${userIdAtual}:${userIdPerfil}`,
+        });
       }
 
       setMensagemAcao(
