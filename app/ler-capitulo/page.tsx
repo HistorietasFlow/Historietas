@@ -135,6 +135,11 @@ type ComentarioCapituloCurtidaRow = {
   usuario_id: string;
 };
 
+type TipoNotificacaoInteracaoCapitulo =
+  | "curtida-capitulo"
+  | "comentario-capitulo"
+  | "curtida-comentario-capitulo";
+
 type TamanhoFonte = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 type PreferenciasLeitura = {
@@ -322,6 +327,58 @@ async function marcarNotificacaoCapituloComoLidaSupabase(
       .eq("capitulo_id", capituloIdLimpo);
   } catch {
     // A leitura continua mesmo se a notificação remota não atualizar.
+  }
+}
+
+async function registrarNotificacaoInteracaoCapituloSupabase({
+  tipo,
+  obra,
+  capitulo,
+  comentarioId,
+  titulo,
+  mensagem,
+  link,
+}: {
+  tipo: TipoNotificacaoInteracaoCapitulo;
+  obra: ObraLocal | null;
+  capitulo: CapituloLocal | null;
+  comentarioId?: string;
+  titulo: string;
+  mensagem: string;
+  link: string;
+}) {
+  const obraId = obra?.id?.trim() || "";
+  const capituloId = capitulo?.id?.trim() || "";
+  const comentarioIdLimpo = comentarioId?.trim() || null;
+  const tituloLimpo = titulo.trim();
+  const mensagemLimpa = mensagem.trim();
+  const linkLimpo = link.trim();
+
+  if (!idObraSupabaseValido(obraId) || !idObraSupabaseValido(capituloId)) {
+    return false;
+  }
+
+  try {
+    const { error } = await supabase.rpc(
+      "criar_notificacao_interacao_capitulo",
+      {
+        p_capitulo_id: capituloId,
+        p_comentario_id: comentarioIdLimpo,
+        p_tipo: tipo,
+        p_titulo: tituloLimpo,
+        p_mensagem: mensagemLimpa,
+        p_link: linkLimpo || (obra ? criarHrefLeituraCapituloLeitor(obra, capituloId) : "/notificacoes"),
+      }
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn("Não consegui criar notificação da interação do capítulo:", error);
+    return false;
   }
 }
 
@@ -3148,6 +3205,10 @@ export default function LerCapituloPage() {
       return;
     }
 
+    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
+    const perfilAtual = userIdAtual
+      ? await carregarPerfilComentarioLeitor(userIdAtual)
+      : null;
     const novoStatusCurtida = !metricasCapitulo.curtiu;
 
     atualizarCapitulo({
@@ -3177,6 +3238,17 @@ export default function LerCapituloPage() {
 
     if (curtidaSalva) {
       void recarregarMetricasCapituloAtual();
+    }
+
+    if (curtidaSalva && novoStatusCurtida && obraAtual) {
+      void registrarNotificacaoInteracaoCapituloSupabase({
+        tipo: "curtida-capitulo",
+        obra: obraAtual,
+        capitulo: capituloAtual,
+        titulo: "Nova curtida no capítulo",
+        mensagem: `${perfilAtual?.nome || "Um leitor"} curtiu ${capituloAtual.titulo}.`,
+        link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
+      });
     }
   }
 
@@ -3522,6 +3594,19 @@ export default function LerCapituloPage() {
         carregado: true,
       }));
       setMostrarComentario(true);
+
+      if (obraAtual && capituloAtual) {
+        void registrarNotificacaoInteracaoCapituloSupabase({
+          tipo: "comentario-capitulo",
+          obra: obraAtual,
+          capitulo: capituloAtual,
+          comentarioId,
+          titulo: "Novo comentário no capítulo",
+          mensagem: `${perfilAtual.nome || "Um leitor"} comentou em ${capituloAtual.titulo}: ${textoLimpo.slice(0, 120)}`,
+          link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
+        });
+      }
+
       void recarregarComentariosCapituloAtual();
       return true;
     } finally {
@@ -3660,6 +3745,20 @@ export default function LerCapituloPage() {
 
           if (erroInserirCurtida) {
             throw erroInserirCurtida;
+          }
+
+          if (obraAtual && capituloAtual && comentarioAtual) {
+            const perfilAtual = await carregarPerfilComentarioLeitor(userIdAtual);
+
+            void registrarNotificacaoInteracaoCapituloSupabase({
+              tipo: "curtida-comentario-capitulo",
+              obra: obraAtual,
+              capitulo: capituloAtual,
+              comentarioId,
+              titulo: "Nova curtida no comentário",
+              mensagem: `${perfilAtual.nome || "Um leitor"} curtiu seu comentário em ${capituloAtual.titulo}.`,
+              link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
+            });
           }
         }
         await recarregarComentariosCapituloAtual();
