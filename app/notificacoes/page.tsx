@@ -1321,8 +1321,9 @@ async function carregarNotificacoesDiretasSupabase(
   try {
     const { data, error } = await supabase
       .from("notificacoes")
-      .select("id,notificacao_id,obra_id,capitulo_id,link,href,titulo,mensagem,texto,descricao,tipo,lida,criado_em,criada_em,created_at,updated_at,atualizado_em,autor_id,autorId,remetente_id,autor_nome,autorNome,remetente_nome,autor_avatar,autorAvatar,remetente_avatar")
+      .select("id,notificacao_id,obra_id,capitulo_id,link,titulo,mensagem,tipo,lida,criada_em,created_at,updated_at,autor_id,autor_nome,autor_avatar")
       .eq("user_id", userId)
+      .order("criada_em", { ascending: false })
       .limit(120);
 
     if (error || !Array.isArray(data)) {
