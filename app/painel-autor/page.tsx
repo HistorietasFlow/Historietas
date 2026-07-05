@@ -18,6 +18,7 @@ type CapituloLocal = {
   criadoEm: string;
   lido: boolean;
   lidoEm: string;
+  publicado?: boolean;
 };
 
 type ArquivoObraLocal = {
@@ -466,6 +467,8 @@ function normalizarCapitulo(
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
+    publicado:
+      typeof capitulo.publicado === "boolean" ? capitulo.publicado : undefined,
   };
 }
 
@@ -586,7 +589,7 @@ function normalizarListaIds(valor: unknown): string[] {
 function criarStorageKeyUsuarioPainel(chave: string, userId: string) {
   const usuarioId = userId.trim();
 
-  return usuarioId ? `${chave}:${usuarioId}` : chave;
+  return usuarioId ? `${chave}:${usuarioId}` : "";
 }
 
 function lerStorageUsuarioPainel(chave: string, userId: string) {
@@ -597,9 +600,9 @@ function lerStorageUsuarioPainel(chave: string, userId: string) {
   }
 
   try {
-    return localStorage.getItem(
-      criarStorageKeyUsuarioPainel(chave, userIdLimpo)
-    );
+    const chaveStorage = criarStorageKeyUsuarioPainel(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
@@ -617,10 +620,13 @@ function salvarJsonStorageUsuarioPainel(
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioPainel(chave, userIdLimpo),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioPainel(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; o painel continua com estado em memória.
   }
@@ -795,6 +801,19 @@ function filtrarObrasDoUsuarioPainel(obras: ObraLocal[], userId: string) {
   }
 
   return obras.filter((obra) => obraPertenceAoUsuarioPainel(obra, userId));
+}
+
+function marcarObrasComDonoPainel(obras: ObraLocal[], userId: string) {
+  const usuarioId = userId.trim();
+
+  if (!usuarioId) {
+    return [] as ObraLocal[];
+  }
+
+  return obras.map((obra) => ({
+    ...obra,
+    autorId: obra.autorId?.trim() || usuarioId,
+  }));
 }
 
 function filtrarListaPorObrasDoUsuario(listaIds: string[], obrasUsuario: ObraLocal[]) {
@@ -1142,6 +1161,7 @@ function converterObraSupabaseParaLocalPainel({
       lidoEm:
         capituloLocal?.lidoEm ||
         (lidoSupabase ? capitulo.atualizado_em || capitulo.criado_em || "" : ""),
+      publicado: capitulo.publicado !== false,
     } satisfies CapituloLocal;
   });
 
@@ -1325,8 +1345,9 @@ async function carregarPainelAutorSupabase(
 
     const profileAutor = await carregarProfilePainelAutor(userId);
     const nomeProfileAutor = obterNomeProfilePainelAutor(profileAutor);
+    const obrasLocaisComDono = marcarObrasComDonoPainel(obrasLocais, userId);
     const obrasLocaisUsuario = aplicarNomeProfileNasObrasPainel(
-      filtrarObrasDoUsuarioPainel(obrasLocais, userId),
+      filtrarObrasDoUsuarioPainel(obrasLocaisComDono, userId),
       userId,
       nomeProfileAutor
     );
@@ -1672,8 +1693,12 @@ export default function PainelAutorPage() {
           : [];
         const profileAutorPainel = await carregarProfilePainelAutor(usuarioIdLogado);
         const nomeProfileAutorPainel = obterNomeProfilePainelAutor(profileAutorPainel);
+        const obrasNormalizadasComDono = marcarObrasComDonoPainel(
+          obrasNormalizadas,
+          usuarioIdLogado
+        );
         const obrasUsuarioLogado = aplicarNomeProfileNasObrasPainel(
-          filtrarObrasDoUsuarioPainel(obrasNormalizadas, usuarioIdLogado),
+          filtrarObrasDoUsuarioPainel(obrasNormalizadasComDono, usuarioIdLogado),
           usuarioIdLogado,
           nomeProfileAutorPainel
         );
