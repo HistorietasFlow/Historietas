@@ -535,9 +535,7 @@ function carregarTemaVisualHomeSalvo(userId = "") {
   }
 
   try {
-    const texto = localStorage.getItem(
-      criarStorageKeyUsuarioHome(THEME_STORAGE_KEY, userIdLimpo)
-    );
+    const texto = lerStorageUsuarioHome(THEME_STORAGE_KEY, userIdLimpo);
 
     if (!texto) {
       return "original";
@@ -1030,23 +1028,58 @@ function normalizarListaIdsHome(lista: string[]) {
 function criarStorageKeyUsuarioHome(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
-function carregarListaIdsHome(chave: string, userId: string, fallback: string[] = []) {
-  if (typeof window === "undefined") {
-    return normalizarListaIdsHome(fallback);
+function lerStorageUsuarioHome(chave: string, userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return null;
   }
 
   try {
-    const userIdLimpo = userId.trim();
+    const chaveStorage = criarStorageKeyUsuarioHome(chave, userIdLimpo);
 
-    if (!userIdLimpo) {
-      return normalizarListaIdsHome(fallback);
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioHome(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return;
+  }
+
+  try {
+    const chaveStorage = criarStorageKeyUsuarioHome(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
     }
 
-    const chaveParaLer = criarStorageKeyUsuarioHome(chave, userIdLimpo);
-    const listaTexto = localStorage.getItem(chaveParaLer);
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
+  } catch {
+    // A Home continua funcionando mesmo se o navegador bloquear o localStorage.
+  }
+}
+
+function carregarListaIdsHome(chave: string, userId: string, fallback: string[] = []) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return [] as string[];
+  }
+
+  try {
+    const listaTexto = lerStorageUsuarioHome(chave, userIdLimpo);
     const listaJson: unknown = listaTexto ? JSON.parse(listaTexto) : [];
     const listaSalva = Array.isArray(listaJson)
       ? listaJson.filter((id): id is string => typeof id === "string")
@@ -1059,19 +1092,15 @@ function carregarListaIdsHome(chave: string, userId: string, fallback: string[] 
 }
 
 function salvarListaIdsHome(chave: string, userId: string, lista: string[]) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   const listaNormalizada = normalizarListaIdsHome(lista);
 
-  try {
-    const chaveParaSalvar = criarStorageKeyUsuarioHome(chave, userId);
-
-    localStorage.setItem(chaveParaSalvar, JSON.stringify(listaNormalizada));
-  } catch {
-    // A Home continua funcionando mesmo se o navegador bloquear o localStorage.
-  }
+  salvarJsonStorageUsuarioHome(chave, userIdLimpo, listaNormalizada);
 }
 
 function criarIdentificadoresObraLocalHome(
@@ -1490,13 +1519,16 @@ function normalizarPerfilSupabaseHome(
 }
 
 function carregarPerfisAutoresHomeSalvos(userId = "") {
-  if (!userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
     return {};
   }
 
   try {
-    const perfisAutoresTexto = localStorage.getItem(
-      criarStorageKeyUsuarioHome(AUTHOR_PROFILE_STORAGE_KEY, userId)
+    const perfisAutoresTexto = lerStorageUsuarioHome(
+      AUTHOR_PROFILE_STORAGE_KEY,
+      userIdLimpo
     );
     const perfisAutoresJson: unknown = perfisAutoresTexto
       ? JSON.parse(perfisAutoresTexto)
@@ -1512,12 +1544,14 @@ function salvarPerfisSupabaseHomeNoStorage(
   perfis: PerfilSupabaseHome[],
   userId = ""
 ) {
-  if (perfis.length === 0 || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (perfis.length === 0 || !userIdLimpo) {
     return;
   }
 
   try {
-    const perfisSalvos = carregarPerfisAutoresHomeSalvos(userId);
+    const perfisSalvos = carregarPerfisAutoresHomeSalvos(userIdLimpo);
     const perfisAtualizados: PerfisAutoresSalvos = { ...perfisSalvos };
 
     perfis.forEach((perfil) => {
@@ -1542,9 +1576,10 @@ function salvarPerfisSupabaseHomeNoStorage(
       });
     });
 
-    localStorage.setItem(
-      criarStorageKeyUsuarioHome(AUTHOR_PROFILE_STORAGE_KEY, userId),
-      JSON.stringify(perfisAtualizados)
+    salvarJsonStorageUsuarioHome(
+      AUTHOR_PROFILE_STORAGE_KEY,
+      userIdLimpo,
+      perfisAtualizados
     );
   } catch {
     // Profiles são apoio visual. A Home continua funcionando com os dados da obra.
@@ -2431,19 +2466,17 @@ export default function Home() {
           }
         }
 
-        const chaveObrasUsuario = criarStorageKeyUsuarioHome(STORAGE_KEY, userIdHome);
-        const obrasSalvasTexto = userIdHome
-          ? localStorage.getItem(chaveObrasUsuario)
-          : null;
+        const obrasSalvasTexto = lerStorageUsuarioHome(
+          STORAGE_KEY,
+          userIdHome
+        );
         const obrasSalvasJson = obrasSalvasTexto
           ? JSON.parse(obrasSalvasTexto)
           : [];
 
         const obrasNormalizadas = normalizarObrasHomeSalvas(obrasSalvasJson);
 
-        if (userIdHome) {
-          localStorage.setItem(chaveObrasUsuario, JSON.stringify(obrasNormalizadas));
-        }
+        salvarJsonStorageUsuarioHome(STORAGE_KEY, userIdHome, obrasNormalizadas);
 
         let obrasFavoritasNormalizadas = carregarListaIdsHome(
           FAVORITES_STORAGE_KEY,
