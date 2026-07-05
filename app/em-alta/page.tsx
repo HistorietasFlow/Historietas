@@ -1105,34 +1105,21 @@ function converterObraSupabaseParaLocal(
       id: capitulo.id,
       titulo:
         capitulo.titulo?.trim() ||
-        capituloLocal?.titulo ||
         `Capítulo ${capituloIndex + 1}`,
-      texto: capituloLocal?.texto || "",
+      texto: "",
       curtiu: Boolean(capituloLocal?.curtiu) || totalCurtidas > 0,
       salvo: Boolean(capituloLocal?.salvo) || totalSalvos > 0,
-      comentario:
-        capituloLocal?.comentario ||
-        (totalComentarios > 0 ? `${totalComentarios} comentário(s)` : ""),
-      criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
+      comentario: totalComentarios > 0 ? `${totalComentarios} comentário(s)` : "",
+      criadoEm: capitulo.criado_em || "",
       lido: Boolean(capituloLocal?.lido),
       lidoEm: capituloLocal?.lidoEm || "",
     } satisfies CapituloLocal;
   });
 
-  const capitulosRemotosIds = new Set(
-    capitulosNormalizados.map((capitulo) => capitulo.id),
-  );
-  const capitulosApenasLocais = (obraLocal?.capitulos || []).filter(
-    (capitulo) => !capitulosRemotosIds.has(capitulo.id),
-  );
-  const capitulosMesclados = [
-    ...capitulosNormalizados,
-    ...capitulosApenasLocais,
-  ];
-  const titulo = obra.titulo?.trim() || obraLocal?.titulo || "Obra sem título";
+  const capitulosMesclados = capitulosNormalizados;
+  const titulo = obra.titulo?.trim() || "Obra sem título";
   const slug =
     obra.slug?.trim() ||
-    obraLocal?.slug ||
     criarSlugBase(titulo || `obra-${index + 1}`);
   const arquivoUrl = obra.arquivo_url?.trim() || "";
   const arquivoTipo = normalizarTipoArquivoSupabase(obra.arquivo_categoria);
@@ -1152,10 +1139,10 @@ function converterObraSupabaseParaLocal(
   const totalSeguidoresObra = seguidoresPorObra[obra.id] || 0;
   const totalFavoritosObra = favoritosPorObra[obra.id] || 0;
   const avaliacaoObra = avaliacoesPorObra[obra.id] || { total: 0, media: 0 };
-  const autorId = obra.user_id?.trim() || obraLocal?.autorId || "";
+  const autorId = obra.user_id?.trim() || "";
   const profileAutor = autorId ? profilesAutores.get(autorId) || null : null;
   const nomeAutorProfile = obterNomeProfileAutorRanking(profileAutor);
-  const nomeAutorObra = obra.autor?.trim() || obraLocal?.autor || "";
+  const nomeAutorObra = obra.autor?.trim() || "";
   const nomeAutor = nomeAutorProfile || nomeAutorObra || "Autor não informado";
   const avatarAutor =
     obterAvatarProfileAutorRanking(profileAutor) ||
@@ -1165,95 +1152,67 @@ function converterObraSupabaseParaLocal(
       nomeAutorObra,
       autorId,
     ) ||
-    obraLocal?.autorAvatarRanking ||
     "";
-  const totalSeguidoresAutor = autorId
-    ? seguidoresAutores[autorId] || obraLocal?.totalSeguidoresAutorRanking || 0
-    : obraLocal?.totalSeguidoresAutorRanking || 0;
+  const totalSeguidoresAutor = autorId ? seguidoresAutores[autorId] || 0 : 0;
 
   return {
-    id: obra.id || obraLocal?.id || `obra-${index + 1}`,
+    id: obra.id || `obra-${index + 1}`,
     titulo,
     autor: nomeAutor,
     autorId,
     autorAvatarRanking: avatarAutor,
-    genero: obra.genero?.trim() || obraLocal?.genero || "Não informado",
-    formato: obra.formato?.trim() || obraLocal?.formato || "Não informado",
+    genero: obra.genero?.trim() || "Não informado",
+    formato: obra.formato?.trim() || "Não informado",
     classificacaoIndicativa:
       obra.classificacao_indicativa?.trim() ||
-      obraLocal?.classificacaoIndicativa ||
       "Não informada",
     sinopse:
       obra.sinopse?.trim() ||
-      obraLocal?.sinopse ||
       "Nenhuma sinopse informada.",
     tags:
       Array.isArray(obra.tags) && obra.tags.length > 0
         ? obra.tags.filter(
             (tag) => typeof tag === "string" && Boolean(tag.trim()),
           )
-        : obraLocal?.tags || ["sem tags"],
-    capa: obra.capa_url?.trim() || obraLocal?.capa || "",
-    capaNome: obra.capa_nome?.trim() || obraLocal?.capaNome || "",
+        : ["sem tags"],
+    capa: obra.capa_url?.trim() || "",
+    capaNome: obra.capa_nome?.trim() || "",
     publicado: Boolean(obra.publicado),
     capitulos: capitulosMesclados,
-    criadaEm: obra.criada_em || obraLocal?.criadaEm || "",
-    ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
-    ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
+    criadaEm: obra.criada_em || "",
+    ultimoCapituloLidoId: "",
+    ultimaLeituraEm: "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
     slug,
-    link: obra.link?.trim() || obraLocal?.link || `/obra/${slug}`,
+    link: obra.link?.trim() || `/obra/${slug}`,
     arquivoObra: arquivoUrl
       ? {
           nome:
             obra.arquivo_nome?.trim() ||
-            obraLocal?.arquivoObra?.nome ||
             "Arquivo da obra",
           tipo: arquivoTipo,
           tamanho:
             typeof obra.arquivo_tamanho === "number" &&
             Number.isFinite(obra.arquivo_tamanho)
               ? obra.arquivo_tamanho
-              : obraLocal?.arquivoObra?.tamanho || 0,
+              : 0,
           conteudo: arquivoUrl,
-          enviadoEm: obra.criada_em || obraLocal?.arquivoObra?.enviadoEm || "",
+          enviadoEm: obra.criada_em || "",
         }
-      : obraLocal?.arquivoObra || null,
-    totalCurtidasRanking: Math.max(
-      obraLocal?.totalCurtidasRanking || 0,
-      totalCurtidasObra + totalCurtidasCapitulos,
-    ),
-    totalComentariosRanking: Math.max(
-      obraLocal?.totalComentariosRanking || 0,
-      totalComentariosCapitulos,
-    ),
-    totalSalvosRanking: Math.max(
-      obraLocal?.totalSalvosRanking || 0,
+      : null,
+    totalCurtidasRanking: totalCurtidasObra + totalCurtidasCapitulos,
+    totalComentariosRanking: totalComentariosCapitulos,
+    totalSalvosRanking:
       totalSalvosCapitulos + totalSeguidoresObra + totalFavoritosObra,
-    ),
-    totalViewsRanking: Math.max(
-      obraLocal?.totalViewsRanking || 0,
+    totalViewsRanking:
       typeof obra.visualizacoes === "number" &&
-        Number.isFinite(obra.visualizacoes)
+      Number.isFinite(obra.visualizacoes)
         ? obra.visualizacoes
         : 0,
-    ),
-    totalSeguidoresRanking: Math.max(
-      obraLocal?.totalSeguidoresRanking || 0,
-      totalSeguidoresObra,
-    ),
-    totalSeguidoresAutorRanking: Math.max(
-      obraLocal?.totalSeguidoresAutorRanking || 0,
-      totalSeguidoresAutor,
-    ),
-    totalAvaliacoesRanking: Math.max(
-      obraLocal?.totalAvaliacoesRanking || 0,
-      avaliacaoObra.total,
-    ),
-    mediaAvaliacoesRanking: Math.max(
-      obraLocal?.mediaAvaliacoesRanking || 0,
-      avaliacaoObra.media,
-    ),
+    totalSeguidoresRanking: totalSeguidoresObra,
+    totalSeguidoresAutorRanking: totalSeguidoresAutor,
+    totalAvaliacoesRanking: avaliacaoObra.total,
+    mediaAvaliacoesRanking: avaliacaoObra.media,
   };
 }
 
@@ -1353,29 +1312,31 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
       obrasLocais.map((obra) => [obra.slug, obra]),
     );
 
-    return obrasSupabase.map((obra, index) => {
-      const slug =
-        obra.slug?.trim() || criarSlugBase(obra.titulo || `obra-${index + 1}`);
-      const obraLocal =
-        obrasLocaisPorId.get(obra.id) || obrasLocaisPorSlug.get(slug);
+    return obrasSupabase
+      .map((obra, index) => {
+        const slug =
+          obra.slug?.trim() || criarSlugBase(obra.titulo || `obra-${index + 1}`);
+        const obraLocal =
+          obrasLocaisPorId.get(obra.id) || obrasLocaisPorSlug.get(slug);
 
-      return converterObraSupabaseParaLocal(
-        obra,
-        capitulosPorObra[obra.id] || [],
-        obraLocal,
-        index,
-        curtidasPorCapitulo,
-        salvosPorCapitulo,
-        comentariosPorCapitulo,
-        curtidasPorObra,
-        seguidoresPorObra,
-        favoritosPorObra,
-        avaliacoesPorObra,
-        profilesAutores,
-        seguidoresAutores,
-        avataresLocaisAutores,
-      );
-    });
+        return converterObraSupabaseParaLocal(
+          obra,
+          capitulosPorObra[obra.id] || [],
+          obraLocal,
+          index,
+          curtidasPorCapitulo,
+          salvosPorCapitulo,
+          comentariosPorCapitulo,
+          curtidasPorObra,
+          seguidoresPorObra,
+          favoritosPorObra,
+          avaliacoesPorObra,
+          profilesAutores,
+          seguidoresAutores,
+          avataresLocaisAutores,
+        );
+      })
+      .filter((obra) => obra.capitulos.length > 0 || Boolean(obra.arquivoObra));
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Em Alta agora:", error);
     return [] as ObraLocal[];
