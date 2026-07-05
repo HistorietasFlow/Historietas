@@ -610,6 +610,12 @@ function montarLinkNotificacao(
     return criarPerfilHrefNotificacao(notificacao.autorId, notificacao.autorNome || "Usuário");
   }
 
+  const linkDireto = notificacao.link.trim();
+
+  if (linkDireto && linkDiretoValido(linkDireto)) {
+    return linkDireto;
+  }
+
   if (
     notificacaoEhCapitulo(notificacao) &&
     obra &&
@@ -626,12 +632,6 @@ function montarLinkNotificacao(
       notificacao.capituloId,
       numeroCapitulo
     );
-  }
-
-  const linkDireto = notificacao.link.trim();
-
-  if (linkDireto && linkDiretoValido(linkDireto)) {
-    return linkDireto;
   }
 
   if (notificacao.obraId && notificacao.capituloId) {
@@ -1150,7 +1150,7 @@ async function carregarObrasPublicadasSupabase() {
     }
 
     const obrasSupabase = obrasData.map((obra, index) =>
-      normalizarObraSupabase(obra as SupabaseObraRow, index)
+      normalizarObraSupabase(obra as unknown as SupabaseObraRow, index)
     );
 
     const idsObras = obrasSupabase.map((obra) => obra.id).filter(Boolean);
@@ -1176,7 +1176,7 @@ async function carregarObrasPublicadasSupabase() {
 
       capitulosData.forEach((capitulo, index) => {
         const capituloNormalizado = normalizarCapituloSupabase(
-          capitulo as SupabaseCapituloRow,
+          capitulo as unknown as SupabaseCapituloRow,
           index
         );
 
@@ -1350,6 +1350,97 @@ async function carregarNotificacoesDiretasSupabase(
   }
 }
 
+function extrairSlugObraDeLinkNotificacao(link: string) {
+  const match = /\/obra\/([^/?#]+)(?:\/|$)/i.exec(link.trim());
+
+  return match?.[1] ? decodeURIComponent(match[1]) : "";
+}
+
+function formatarTituloSlugNotificacao(slug: string) {
+  const texto = slug
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!texto) {
+    return "Obra";
+  }
+
+  return texto
+    .split(" ")
+    .map((parte) => parte.slice(0, 1).toUpperCase() + parte.slice(1))
+    .join(" ");
+}
+
+function extrairTituloObraDeMensagemNotificacao(notificacao: NotificacaoLocal) {
+  const mensagem = notificacao.mensagem.trim();
+  const match = /\bem\s+(.+?)\.?$/i.exec(mensagem);
+  const titulo = match?.[1]?.trim() || "";
+
+  if (!titulo || /^sua obra$/i.test(titulo)) {
+    return "";
+  }
+
+  return titulo.replace(/[.!?]+$/g, "").trim();
+}
+
+function extrairTituloCapituloDeMensagemNotificacao(notificacao: NotificacaoLocal) {
+  const mensagem = notificacao.mensagem.trim();
+  const match = /^(.+?)\s+foi\s+adicionado/i.exec(mensagem);
+
+  return match?.[1]?.trim() || "Capítulo";
+}
+
+function criarObraFallbackNotificacaoDireta(notificacao: NotificacaoLocal): ObraLocal | null {
+  const obraId = notificacao.obraId.trim();
+
+  if (!obraId) {
+    return null;
+  }
+
+  const slugLink = extrairSlugObraDeLinkNotificacao(notificacao.link);
+  const tituloMensagem = extrairTituloObraDeMensagemNotificacao(notificacao);
+  const slug = slugLink || criarSlugBase(tituloMensagem || obraId);
+  const titulo = tituloMensagem || formatarTituloSlugNotificacao(slug);
+  const capitulos: CapituloLocal[] = notificacao.capituloId
+    ? [
+        {
+          id: notificacao.capituloId,
+          titulo: extrairTituloCapituloDeMensagemNotificacao(notificacao),
+          texto: "",
+          curtiu: false,
+          salvo: false,
+          comentario: "",
+          criadoEm: notificacao.criadaEm,
+          lido: false,
+          lidoEm: "",
+        },
+      ]
+    : [];
+
+  return {
+    id: obraId,
+    titulo,
+    autor: "Autor não informado",
+    autorId: notificacao.autorId || "",
+    genero: "Não informado",
+    formato: "Não informado",
+    classificacaoIndicativa: "Não informada",
+    sinopse: "Nenhuma sinopse informada.",
+    tags: ["sem tags"],
+    capa: "",
+    capaNome: "",
+    publicado: true,
+    capitulos,
+    criadaEm: notificacao.criadaEm,
+    ultimoCapituloLidoId: "",
+    ultimaLeituraEm: "",
+    progressoLeitura: calcularProgressoLeitura(capitulos),
+    slug,
+    link: slug ? `/obra/${slug}` : notificacao.link,
+  };
+}
+
 async function carregarObrasDasNotificacoesDiretasSupabase(
   notificacoesDiretas: NotificacaoLocal[]
 ): Promise<ObraLocal[]> {
@@ -1376,19 +1467,29 @@ async function carregarObrasDasNotificacoesDiretasSupabase(
   const capitulosPorObra = new Map<string, CapituloLocal[]>();
 
   if (obraIds.length > 0) {
-    try {
-      const { data: obrasData, error: obrasError } = await supabase
-        .from("obras")
-        .select(
-          "id, titulo, autor, nome_autor, autor_nome, user_id, autor_id, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, slug, publicado, criada_em, created_at"
-        )
-        .in("id", obraIds)
-        .limit(obraIds.length);
+    const selecoesObras = [
+      "id,titulo,autor,user_id,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,slug,publicado,criada_em",
+      "id,titulo,autor,user_id,slug,publicado,criada_em",
+      "id,titulo,slug,publicado,user_id",
+      "id,titulo,slug,publicado",
+      "id,titulo,slug",
+    ];
 
-      if (!obrasError && Array.isArray(obrasData)) {
+    for (const campos of selecoesObras) {
+      try {
+        const { data: obrasData, error: obrasError } = await supabase
+          .from("obras")
+          .select(campos)
+          .in("id", obraIds)
+          .limit(obraIds.length);
+
+        if (obrasError || !Array.isArray(obrasData)) {
+          continue;
+        }
+
         obrasData.forEach((obra, index) => {
           const obraNormalizada = normalizarObraSupabase(
-            obra as SupabaseObraRow,
+            obra as unknown as SupabaseObraRow,
             index
           );
 
@@ -1396,24 +1497,38 @@ async function carregarObrasDasNotificacoesDiretasSupabase(
             obrasPorId.set(obraNormalizada.id, obraNormalizada);
           }
         });
+
+        break;
+      } catch {
+        // Tenta uma seleção menor abaixo.
       }
-    } catch {
-      // Se falhar, mantém a página funcionando e usa os dados locais disponíveis.
     }
   }
 
   if (capituloIds.length > 0) {
-    try {
-      const { data: capitulosData, error: capitulosError } = await supabase
-        .from("capitulos")
-        .select("id, obra_id, titulo, ordem, publicado, criado_em, created_at")
-        .in("id", capituloIds)
-        .limit(capituloIds.length);
+    const selecoesCapitulos = [
+      "id,obra_id,titulo,ordem,numero,publicado,criado_em",
+      "id,obra_id,titulo,numero,publicado,criado_em",
+      "id,obra_id,titulo,ordem,publicado,criado_em",
+      "id,obra_id,titulo,publicado,criado_em",
+      "id,obra_id,titulo",
+    ];
 
-      if (!capitulosError && Array.isArray(capitulosData)) {
+    for (const campos of selecoesCapitulos) {
+      try {
+        const { data: capitulosData, error: capitulosError } = await supabase
+          .from("capitulos")
+          .select(campos)
+          .in("id", capituloIds)
+          .limit(capituloIds.length);
+
+        if (capitulosError || !Array.isArray(capitulosData)) {
+          continue;
+        }
+
         capitulosData.forEach((capitulo, index) => {
           const capituloNormalizado = normalizarCapituloSupabase(
-            capitulo as SupabaseCapituloRow,
+            capitulo as unknown as SupabaseCapituloRow,
             index
           );
 
@@ -1436,11 +1551,25 @@ async function carregarObrasDasNotificacoesDiretasSupabase(
             ]);
           }
         });
+
+        break;
+      } catch {
+        // Tenta uma seleção menor abaixo.
       }
-    } catch {
-      // Se falhar, a notificação ainda aparece sem quebrar a página.
     }
   }
+
+  notificacoesDiretas.forEach((notificacao) => {
+    if (!notificacao.obraId || obrasPorId.has(notificacao.obraId)) {
+      return;
+    }
+
+    const obraFallback = criarObraFallbackNotificacaoDireta(notificacao);
+
+    if (obraFallback) {
+      obrasPorId.set(obraFallback.id, obraFallback);
+    }
+  });
 
   return Array.from(obrasPorId.values()).map((obra) => {
     const capitulosDiretos = capitulosPorObra.get(obra.id) || [];
@@ -1451,6 +1580,26 @@ async function carregarObrasDasNotificacoesDiretasSupabase(
         capitulos.push(capituloDireto);
       }
     });
+
+    notificacoesDiretas
+      .filter((notificacao) => notificacao.obraId === obra.id && notificacao.capituloId)
+      .forEach((notificacao) => {
+        if (capitulos.some((capitulo) => capitulo.id === notificacao.capituloId)) {
+          return;
+        }
+
+        capitulos.push({
+          id: notificacao.capituloId,
+          titulo: extrairTituloCapituloDeMensagemNotificacao(notificacao),
+          texto: "",
+          curtiu: false,
+          salvo: false,
+          comentario: "",
+          criadoEm: notificacao.criadaEm,
+          lido: false,
+          lidoEm: "",
+        });
+      });
 
     return {
       ...obra,
