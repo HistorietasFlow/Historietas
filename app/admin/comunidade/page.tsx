@@ -137,18 +137,23 @@ const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
 function criarStorageKeyUsuarioAdminComunidade(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerStorageUsuarioAdminComunidade(chave: string, userId = "") {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    return localStorage.getItem(
-      criarStorageKeyUsuarioAdminComunidade(chave, userId)
+    const chaveStorage = criarStorageKeyUsuarioAdminComunidade(
+      chave,
+      userIdLimpo
     );
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
