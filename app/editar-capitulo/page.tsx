@@ -19,6 +19,7 @@ type CapituloLocal = {
   criadoEm: string;
   lido?: boolean;
   lidoEm?: string;
+  publicado?: boolean;
 };
 
 type ArquivoObraLocal = {
@@ -106,18 +107,20 @@ const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 function criarStorageKeyUsuarioEditarCapitulo(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerStorageUsuarioEditarCapitulo(chave: string, userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    return localStorage.getItem(
-      criarStorageKeyUsuarioEditarCapitulo(chave, userId)
-    );
+    const chaveStorage = criarStorageKeyUsuarioEditarCapitulo(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
@@ -128,15 +131,20 @@ function salvarJsonStorageUsuarioEditarCapitulo(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioEditarCapitulo(chave, userId),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioEditarCapitulo(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; a edição continua com o estado em memória.
   }
@@ -297,6 +305,8 @@ function normalizarCapitulo(
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
+    publicado:
+      typeof capitulo.publicado === "boolean" ? capitulo.publicado : undefined,
   };
 }
 
@@ -341,10 +351,16 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
 }
 
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return {};
+  }
+
   try {
     const backupTexto = lerStorageUsuarioEditarCapitulo(
       FILE_BACKUP_STORAGE_KEY,
-      userId
+      userIdLimpo
     );
     const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
 
@@ -364,20 +380,25 @@ function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
 
     salvarJsonStorageUsuarioEditarCapitulo(
       FILE_BACKUP_STORAGE_KEY,
-      userId,
+      userIdLimpo,
       backupNormalizado
     );
 
     return backupNormalizado;
   } catch {
-    salvarJsonStorageUsuarioEditarCapitulo(FILE_BACKUP_STORAGE_KEY, userId, {});
     return {};
   }
 }
 
 function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return;
+  }
+
   try {
-    const backupAtual = carregarBackupArquivosObras(userId);
+    const backupAtual = carregarBackupArquivosObras(userIdLimpo);
 
     obras.forEach((obra) => {
       const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
@@ -391,7 +412,7 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
 
     salvarJsonStorageUsuarioEditarCapitulo(
       FILE_BACKUP_STORAGE_KEY,
-      userId,
+      userIdLimpo,
       backupAtual
     );
   } catch {
@@ -676,6 +697,7 @@ function mapearCapituloSupabase(
     criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
     lido: Boolean(capituloLocal?.lido),
     lidoEm: typeof capituloLocal?.lidoEm === "string" ? capituloLocal.lidoEm : "",
+    publicado: capitulo.publicado !== false,
   };
 }
 
@@ -795,6 +817,11 @@ function mapearObraSupabase(
 
 function carregarObrasLocaisNormalizadas(userId = "") {
   const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [] as ObraLocal[];
+  }
+
   const obrasSalvasTexto = lerStorageUsuarioEditarCapitulo(
     STORAGE_KEY,
     userIdLimpo
@@ -845,6 +872,11 @@ function salvarObrasEditarCapituloStorage(
   userId: string
 ) {
   const usuarioId = userId.trim();
+
+  if (!usuarioId) {
+    return [] as ObraLocal[];
+  }
+
   const obrasDoUsuarioNormalizadas = obrasDoUsuario
     .map((obra, index) =>
       normalizarObra(
@@ -855,9 +887,7 @@ function salvarObrasEditarCapituloStorage(
         index
       )
     )
-    .filter((obra) =>
-      usuarioId ? obraPertenceAoUsuarioEditarCapitulo(obra, usuarioId) : true
-    );
+    .filter((obra) => obraPertenceAoUsuarioEditarCapitulo(obra, usuarioId));
 
   sincronizarBackupArquivosObras(obrasDoUsuarioNormalizadas, usuarioId);
   salvarJsonStorageUsuarioEditarCapitulo(
