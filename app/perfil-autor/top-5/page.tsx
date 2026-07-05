@@ -300,16 +300,58 @@ function criarChaveObraTop5(obra: Pick<ObraTop5, "id" | "slug" | "titulo">) {
 function criarStorageKeyUsuarioTop5(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
-function carregarObrasLocaisTop5() {
-  if (typeof window === "undefined") {
+function lerStorageUsuarioTop5(chave: string, userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return null;
+  }
+
+  try {
+    const chaveStorage = criarStorageKeyUsuarioTop5(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioTop5(
+  chave: string,
+  userId: string,
+  valor: unknown,
+) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return;
+  }
+
+  try {
+    const chaveStorage = criarStorageKeyUsuarioTop5(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
+  } catch {
+    // localStorage é apoio; a página continua com o estado em memória.
+  }
+}
+
+function carregarObrasLocaisTop5(userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return [] as ObraTop5[];
   }
 
   try {
-    const texto = localStorage.getItem(STORAGE_KEY);
+    const texto = lerStorageUsuarioTop5(STORAGE_KEY, userIdLimpo);
     const obrasSalvas = texto ? JSON.parse(texto) : [];
 
     if (!Array.isArray(obrasSalvas)) {
@@ -386,14 +428,14 @@ function mesclarObrasTop5(obras: ObraTop5[]) {
 }
 
 function carregarTop5Salvo(userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return [] as string[];
   }
 
   try {
-    const texto = localStorage.getItem(
-      criarStorageKeyUsuarioTop5(TOP_FIVE_STORAGE_KEY, userId),
-    );
+    const texto = lerStorageUsuarioTop5(TOP_FIVE_STORAGE_KEY, userIdLimpo);
     const ids = texto ? JSON.parse(texto) : [];
 
     if (!Array.isArray(ids)) {
@@ -409,13 +451,16 @@ function carregarTop5Salvo(userId: string) {
 }
 
 function salvarTop5(userId: string, ids: string[]) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
-  localStorage.setItem(
-    criarStorageKeyUsuarioTop5(TOP_FIVE_STORAGE_KEY, userId),
-    JSON.stringify(ids.slice(0, TOP_FIVE_MAXIMO)),
+  salvarJsonStorageUsuarioTop5(
+    TOP_FIVE_STORAGE_KEY,
+    userIdLimpo,
+    ids.slice(0, TOP_FIVE_MAXIMO),
   );
 }
 
@@ -479,12 +524,12 @@ export default function Top5PerfilAutorPage() {
           "Usuário";
 
         setUsuario(userId ? { id: userId, nome: nomeUsuario } : null);
-        setObras(mesclarObrasTop5([...obrasSupabase, ...carregarObrasLocaisTop5()]));
+        setObras(mesclarObrasTop5([...obrasSupabase, ...carregarObrasLocaisTop5(userId)]));
         setIdsSelecionados(userId ? carregarTop5Salvo(userId) : []);
       } catch {
         if (!cancelado) {
           setUsuario(null);
-          setObras(carregarObrasLocaisTop5());
+          setObras([]);
           setIdsSelecionados([]);
         }
       } finally {

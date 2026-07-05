@@ -194,16 +194,19 @@ const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 function criarStorageKeyUsuarioSeguindo(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerJsonStorageUsuarioSeguindo(chave: string, userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    const texto = localStorage.getItem(criarStorageKeyUsuarioSeguindo(chave, userId));
+    const chaveStorage = criarStorageKeyUsuarioSeguindo(chave, userIdLimpo);
+    const texto = chaveStorage ? localStorage.getItem(chaveStorage) : null;
 
     return texto ? JSON.parse(texto) : null;
   } catch {
@@ -212,15 +215,20 @@ function lerJsonStorageUsuarioSeguindo(chave: string, userId: string) {
 }
 
 function salvarJsonStorageUsuarioSeguindo(chave: string, userId: string, valor: unknown) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioSeguindo(chave, userId),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioSeguindo(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é apoio; a página continua com o estado em memória.
   }

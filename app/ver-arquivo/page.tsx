@@ -122,16 +122,20 @@ type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 function criarStorageKeyUsuarioVerArquivo(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerStorageUsuarioVerArquivo(chave: string, userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    return localStorage.getItem(criarStorageKeyUsuarioVerArquivo(chave, userId));
+    const chaveStorage = criarStorageKeyUsuarioVerArquivo(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
@@ -142,15 +146,20 @@ function salvarJsonStorageUsuarioVerArquivo(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioVerArquivo(chave, userId),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioVerArquivo(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; a página continua com o estado em memória.
   }
@@ -586,9 +595,7 @@ function carregarObrasLocais(userId = "") {
   let obrasNormalizadas: ObraLocal[] = [];
 
   try {
-    const obrasTexto = userIdLimpo
-      ? lerStorageUsuarioVerArquivo(STORAGE_KEY, userIdLimpo)
-      : lerStorageUsuarioVerArquivo(STORAGE_KEY, "");
+    const obrasTexto = lerStorageUsuarioVerArquivo(STORAGE_KEY, userIdLimpo);
     const obrasJson: unknown = obrasTexto ? JSON.parse(obrasTexto) : [];
 
     obrasNormalizadas = normalizarLista(obrasJson);
