@@ -1350,6 +1350,116 @@ async function carregarNotificacoesDiretasSupabase(
   }
 }
 
+async function carregarObrasDasNotificacoesDiretasSupabase(
+  notificacoesDiretas: NotificacaoLocal[]
+): Promise<ObraLocal[]> {
+  const obraIds = Array.from(
+    new Set(
+      notificacoesDiretas
+        .map((notificacao) => notificacao.obraId.trim())
+        .filter(Boolean)
+    )
+  );
+  const capituloIds = Array.from(
+    new Set(
+      notificacoesDiretas
+        .map((notificacao) => notificacao.capituloId.trim())
+        .filter(Boolean)
+    )
+  );
+
+  if (obraIds.length === 0 && capituloIds.length === 0) {
+    return [];
+  }
+
+  const obrasPorId = new Map<string, ObraLocal>();
+  const capitulosPorObra = new Map<string, CapituloLocal[]>();
+
+  if (obraIds.length > 0) {
+    try {
+      const { data: obrasData, error: obrasError } = await supabase
+        .from("obras")
+        .select(
+          "id, titulo, autor, nome_autor, autor_nome, user_id, autor_id, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, slug, publicado, criada_em, created_at"
+        )
+        .in("id", obraIds)
+        .limit(obraIds.length);
+
+      if (!obrasError && Array.isArray(obrasData)) {
+        obrasData.forEach((obra, index) => {
+          const obraNormalizada = normalizarObraSupabase(
+            obra as SupabaseObraRow,
+            index
+          );
+
+          if (obraNormalizada.id) {
+            obrasPorId.set(obraNormalizada.id, obraNormalizada);
+          }
+        });
+      }
+    } catch {
+      // Se falhar, mantém a página funcionando e usa os dados locais disponíveis.
+    }
+  }
+
+  if (capituloIds.length > 0) {
+    try {
+      const { data: capitulosData, error: capitulosError } = await supabase
+        .from("capitulos")
+        .select("id, obra_id, titulo, ordem, publicado, criado_em, created_at")
+        .in("id", capituloIds)
+        .limit(capituloIds.length);
+
+      if (!capitulosError && Array.isArray(capitulosData)) {
+        capitulosData.forEach((capitulo, index) => {
+          const capituloNormalizado = normalizarCapituloSupabase(
+            capitulo as SupabaseCapituloRow,
+            index
+          );
+
+          if (!capituloNormalizado.obraId) {
+            return;
+          }
+
+          const capitulosAtuais = capitulosPorObra.get(capituloNormalizado.obraId) || [];
+          const { obraId: _obraId, ...capituloSemObraId } = capituloNormalizado;
+          void _obraId;
+
+          if (
+            !capitulosAtuais.some(
+              (capituloAtual) => capituloAtual.id === capituloSemObraId.id
+            )
+          ) {
+            capitulosPorObra.set(capituloNormalizado.obraId, [
+              ...capitulosAtuais,
+              capituloSemObraId,
+            ]);
+          }
+        });
+      }
+    } catch {
+      // Se falhar, a notificação ainda aparece sem quebrar a página.
+    }
+  }
+
+  return Array.from(obrasPorId.values()).map((obra) => {
+    const capitulosDiretos = capitulosPorObra.get(obra.id) || [];
+    const capitulos = [...obra.capitulos];
+
+    capitulosDiretos.forEach((capituloDireto) => {
+      if (!capitulos.some((capitulo) => capitulo.id === capituloDireto.id)) {
+        capitulos.push(capituloDireto);
+      }
+    });
+
+    return {
+      ...obra,
+      capitulos,
+      progressoLeitura: calcularProgressoLeitura(capitulos),
+    };
+  });
+}
+
 async function carregarNotificacoesLidasSupabase(userId: string): Promise<string[]> {
   try {
     const { data, error } = await supabase
@@ -2597,9 +2707,17 @@ export default function NotificacoesPage() {
         const notificacoesLocais = carregarNotificacoes(usuarioAtualId);
         const obrasSupabase = await carregarObrasPublicadasSupabase();
         const estadoSupabase = await carregarEstadoSupabaseNotificacoes();
+        const notificacoesDiretasSupabase = estadoSupabase?.notificacoesDiretas || [];
+        const obrasDiretasSupabase =
+          await carregarObrasDasNotificacoesDiretasSupabase(
+            notificacoesDiretasSupabase
+          );
         const idsNotificacoesApagadas =
           carregarIdsNotificacoesApagadas(usuarioAtualId);
-        const obrasMescladas = mesclarObrasPorIdSlug(obrasLocais, obrasSupabase);
+        const obrasMescladas = mesclarObrasPorIdSlug(obrasLocais, [
+          ...obrasSupabase,
+          ...obrasDiretasSupabase,
+        ]);
         const obrasSeguidasLocais = lerIdsLocalStorage(
           CHAVE_OBRAS_SEGUIDAS,
           usuarioAtualId
@@ -2629,7 +2747,6 @@ export default function NotificacoesPage() {
             )
           );
         const notificacoesLidasIds = estadoSupabase?.notificacoesLidasIds || [];
-        const notificacoesDiretasSupabase = estadoSupabase?.notificacoesDiretas || [];
         const notificacoesCapitulosSupabase = criarNotificacoesDeCapitulos(
           obrasMescladas,
           obrasSeguidasIds,
