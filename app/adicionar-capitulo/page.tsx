@@ -1094,6 +1094,90 @@ async function registrarDiarioNovoCapitulo({
   }
 }
 
+function extrairUsuariosNotificacaoAdicionarCapitulo(
+  registros: unknown,
+  coluna: string
+) {
+  if (!Array.isArray(registros)) {
+    return [] as string[];
+  }
+
+  return registros
+    .map((registro) => {
+      if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+        return "";
+      }
+
+      const usuarioId = (registro as Record<string, unknown>)[coluna];
+
+      return typeof usuarioId === "string" ? usuarioId.trim() : "";
+    })
+    .filter(Boolean);
+}
+
+async function carregarUsuariosObraNotificacaoAdicionarCapitulo(
+  tabela: "seguindo_obras" | "favoritos",
+  obraId: string
+) {
+  const obraIdLimpo = obraId.trim();
+
+  if (!obraIdLimpo) {
+    return [] as string[];
+  }
+
+  const tentativas = [
+    { select: "user_id", coluna: "user_id" },
+    { select: "usuario_id", coluna: "usuario_id" },
+  ];
+
+  for (const tentativa of tentativas) {
+    try {
+      const { data, error } = await supabase
+        .from(tabela)
+        .select(tentativa.select)
+        .eq("obra_id", obraIdLimpo)
+        .limit(1000);
+
+      if (!error) {
+        return extrairUsuariosNotificacaoAdicionarCapitulo(
+          data,
+          tentativa.coluna
+        );
+      }
+    } catch {
+      // Tenta o próximo nome de coluna para manter compatibilidade com schemas antigos.
+    }
+  }
+
+  return [] as string[];
+}
+
+async function carregarSeguidoresAutorNotificacaoAdicionarCapitulo(
+  autorId: string
+) {
+  const autorIdLimpo = autorId.trim();
+
+  if (!autorIdLimpo) {
+    return [] as string[];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("seguindo_usuarios")
+      .select("seguidor_id")
+      .eq("seguido_id", autorIdLimpo)
+      .limit(1000);
+
+    if (error) {
+      return [];
+    }
+
+    return extrairUsuariosNotificacaoAdicionarCapitulo(data, "seguidor_id");
+  } catch {
+    return [];
+  }
+}
+
 async function registrarNotificacoesNovoCapituloSupabase({
   userId,
   obra,
@@ -1107,40 +1191,37 @@ async function registrarNotificacoesNovoCapituloSupabase({
   numeroCapitulo: number;
   criadoEm: string;
 }) {
-  if (!obra.publicado) {
+  const autorId = userId.trim();
+
+  if (!obra.publicado || !autorId) {
     return;
   }
 
   try {
-    const { data, error } = await supabase
-      .from("seguindo_obras")
-      .select("user_id")
-      .eq("obra_id", obra.id)
-      .limit(1000);
-
-    if (error || !Array.isArray(data)) {
-      return;
-    }
+    const [
+      seguidoresObra,
+      obrasNaLista,
+      seguidoresAutor,
+    ] = await Promise.all([
+      carregarUsuariosObraNotificacaoAdicionarCapitulo(
+        "seguindo_obras",
+        obra.id
+      ),
+      carregarUsuariosObraNotificacaoAdicionarCapitulo("favoritos", obra.id),
+      carregarSeguidoresAutorNotificacaoAdicionarCapitulo(autorId),
+    ]);
 
     const usuariosNotificar = Array.from(
-      new Set(
-        data
-          .map((registro) => {
-            if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
-              return "";
-            }
+      new Set([...seguidoresObra, ...obrasNaLista, ...seguidoresAutor])
+    ).filter((usuarioNotificado) => {
+      const usuarioNotificadoLimpo = usuarioNotificado.trim();
 
-            const usuarioNotificado = (registro as Record<string, unknown>).user_id;
-
-            return typeof usuarioNotificado === "string"
-              ? usuarioNotificado.trim()
-              : "";
-          })
-          .filter((usuarioNotificado) =>
-            Boolean(usuarioNotificado && usuarioNotificado !== userId)
-          )
-      )
-    );
+      return Boolean(
+        usuarioNotificadoLimpo &&
+          usuarioNotificadoLimpo !== autorId &&
+          usuarioNotificadoLimpo !== obra.autorId?.trim()
+      );
+    });
 
     if (usuariosNotificar.length === 0) {
       return;
@@ -1191,6 +1272,7 @@ async function registrarNotificacoesNovoCapituloSupabase({
     console.warn("Não consegui notificar seguidores do novo capítulo:", error);
   }
 }
+
 
 function registrarNotificacaoNovoCapituloLocal(
   notificacao: NotificacaoLocal
