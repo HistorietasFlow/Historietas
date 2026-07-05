@@ -19,6 +19,7 @@ type CapituloLocal = {
   criadoEm: string;
   lido: boolean;
   lidoEm: string;
+  publicado?: boolean;
 };
 
 type ArquivoObraLocal = {
@@ -129,18 +130,20 @@ const MAX_TEXT_FILE_SIZE_BYTES = 700 * 1024;
 function criarStorageKeyUsuarioAdicionarCapitulo(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerStorageUsuarioAdicionarCapitulo(chave: string, userId: string) {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    return localStorage.getItem(
-      criarStorageKeyUsuarioAdicionarCapitulo(chave, userId)
-    );
+    const chaveStorage = criarStorageKeyUsuarioAdicionarCapitulo(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
@@ -151,15 +154,20 @@ function salvarJsonStorageUsuarioAdicionarCapitulo(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioAdicionarCapitulo(chave, userId),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioAdicionarCapitulo(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; a criação do capítulo continua em memória.
   }
@@ -388,6 +396,8 @@ function normalizarCapitulo(
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
+    publicado:
+      typeof capitulo.publicado === "boolean" ? capitulo.publicado : undefined,
   };
 }
 
@@ -432,10 +442,16 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
 }
 
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return {};
+  }
+
   try {
     const backupTexto = lerStorageUsuarioAdicionarCapitulo(
       FILE_BACKUP_STORAGE_KEY,
-      userId
+      userIdLimpo
     );
     const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
 
@@ -455,13 +471,12 @@ function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
 
     salvarJsonStorageUsuarioAdicionarCapitulo(
       FILE_BACKUP_STORAGE_KEY,
-      userId,
+      userIdLimpo,
       backupNormalizado
     );
 
     return backupNormalizado;
   } catch {
-    salvarJsonStorageUsuarioAdicionarCapitulo(FILE_BACKUP_STORAGE_KEY, userId, {});
     return {};
   }
 }
@@ -483,8 +498,14 @@ function obterChavesBackupArquivoAdicionarCapitulo(
 }
 
 function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return;
+  }
+
   try {
-    const backupAtual = carregarBackupArquivosObras(userId);
+    const backupAtual = carregarBackupArquivosObras(userIdLimpo);
 
     obras.forEach((obra) => {
       const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
@@ -498,7 +519,7 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
 
     salvarJsonStorageUsuarioAdicionarCapitulo(
       FILE_BACKUP_STORAGE_KEY,
-      userId,
+      userIdLimpo,
       backupAtual
     );
   } catch {
@@ -1023,15 +1044,18 @@ function salvarObrasAdicionarCapituloStorage(
   userId = ""
 ) {
   const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return;
+  }
+
   const obrasSemArquivosPesados = obrasParaSalvar.map(
     prepararObraAdicionarCapituloParaStorage
   );
 
-  const obrasParaStorage = userIdLimpo
-    ? obrasSemArquivosPesados.filter((obra) =>
-        obraPertenceAoUsuario(obra, userIdLimpo)
-      )
-    : obrasSemArquivosPesados;
+  const obrasParaStorage = obrasSemArquivosPesados.filter((obra) =>
+    obraPertenceAoUsuario(obra, userIdLimpo)
+  );
 
   salvarJsonStorageUsuarioAdicionarCapitulo(
     STORAGE_KEY,
@@ -1527,6 +1551,7 @@ export default function AdicionarCapituloPage() {
         criadoEm,
         lido: false,
         lidoEm: "",
+        publicado: true,
       };
 
       try {
