@@ -60,6 +60,7 @@ type CapituloLocal = {
   id: string;
   titulo: string;
   texto: string;
+  publicado?: boolean;
   curtiu: boolean;
   salvo: boolean;
   comentario: string;
@@ -431,6 +432,7 @@ function normalizarCapituloLocal(
         ? capitulo.titulo
         : "Capítulo sem título",
     texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
+    publicado: capitulo.publicado !== false,
     curtiu: Boolean(capitulo.curtiu),
     salvo: Boolean(capitulo.salvo),
     comentario:
@@ -461,7 +463,7 @@ function normalizarObraLocal(
   obra: Partial<ObraLocal> & Record<string, unknown>,
   index: number
 ): ObraLocal {
-  const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
+  const capitulosNormalizadosTodos: CapituloLocal[] = Array.isArray(obra.capitulos)
     ? obra.capitulos.map((capitulo, capituloIndex) =>
         normalizarCapituloLocal(
           capitulo as Partial<CapituloLocal>,
@@ -469,6 +471,9 @@ function normalizarObraLocal(
         )
       )
     : [];
+  const capitulosNormalizados = capitulosNormalizadosTodos.filter(
+    (capitulo) => capitulo.publicado !== false
+  );
 
   const titulo =
     typeof obra.titulo === "string" && obra.titulo.trim()
@@ -559,16 +564,6 @@ function normalizarObraLocal(
   };
 }
 
-function criarResumoCapitulo(texto: string) {
-  const textoLimpo = texto.trim().replace(/\s+/g, " ");
-
-  if (!textoLimpo) {
-    return "";
-  }
-
-  return textoLimpo.length > 120 ? `${textoLimpo.slice(0, 120)}...` : textoLimpo;
-}
-
 function carregarObrasLocaisComBackup(userId = "") {
   const obrasLocaisTexto = lerStorageUsuarioObraPublica(
     LOCAL_WORKS_STORAGE_KEY,
@@ -636,7 +631,7 @@ function normalizarObraSupabase(
         capitulo.titulo?.trim() ||
         capituloLocal?.titulo ||
         `Capítulo ${capituloIndex + 1}`,
-      texto: capituloLocal?.texto || "",
+      texto: "",
       curtiu: Boolean(capituloLocal?.curtiu),
       salvo: Boolean(capituloLocal?.salvo),
       comentario: capituloLocal?.comentario || "",
@@ -650,13 +645,7 @@ function normalizarObraSupabase(
     } satisfies CapituloLocal;
   });
 
-  const capitulosRemotosIds = new Set(
-    capitulosRemotos.map((capitulo) => capitulo.id)
-  );
-  const capitulosApenasLocais = (obraLocal?.capitulos || []).filter(
-    (capitulo) => !capitulosRemotosIds.has(capitulo.id)
-  );
-  const capitulosMesclados = [...capitulosRemotos, ...capitulosApenasLocais];
+  const capitulosMesclados = capitulosRemotos;
   const tituloObra = obra.titulo?.trim() || obraLocal?.titulo || "Obra sem título";
   const slugObra =
     obra.slug?.trim() ||
@@ -1014,7 +1003,7 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
       id: capitulo.id,
       numero: String(index + 1).padStart(2, "0"),
       titulo: capitulo.titulo,
-      descricao: criarResumoCapitulo(capitulo.texto),
+      descricao: "",
       href: `/obra/${encodeURIComponent(
         obra.slug || criarSlugBase(obra.titulo)
       )}/capitulo/${index + 1}`,
