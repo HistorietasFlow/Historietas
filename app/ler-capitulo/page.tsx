@@ -19,6 +19,7 @@ type CapituloLocal = {
   criadoEm: string;
   lido: boolean;
   lidoEm: string;
+  publicado?: boolean;
 };
 
 type ArquivoObraLocal = {
@@ -422,6 +423,10 @@ function normalizarCapitulo(
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
+    publicado:
+      typeof (capitulo as Record<string, unknown>).publicado === "boolean"
+        ? Boolean((capitulo as Record<string, unknown>).publicado)
+        : undefined,
   };
 }
 
@@ -831,13 +836,15 @@ function mesclarCapituloSupabaseComLocal(
     criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
     lido: Boolean(capituloLocal?.lido),
     lidoEm: capituloLocal?.lidoEm || "",
+    publicado: Boolean(capitulo.publicado),
   };
 }
 
 function mesclarObraSupabaseComLocal(
   obraSupabase: ObraSupabaseRow,
   capitulosSupabase: CapituloSupabaseRow[],
-  obraLocal?: ObraLocal | null
+  obraLocal?: ObraLocal | null,
+  incluirCapitulosApenasLocais = false
 ): ObraLocal {
   const capitulosLocaisPorId = new Map(
     (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
@@ -854,9 +861,11 @@ function mesclarObraSupabaseComLocal(
   const idsCapitulosRemotos = new Set(
     capitulosRemotos.map((capitulo) => capitulo.id)
   );
-  const capitulosApenasLocais = (obraLocal?.capitulos || []).filter(
-    (capitulo) => !idsCapitulosRemotos.has(capitulo.id)
-  );
+  const capitulosApenasLocais = incluirCapitulosApenasLocais
+    ? (obraLocal?.capitulos || []).filter(
+        (capitulo) => !idsCapitulosRemotos.has(capitulo.id)
+      )
+    : [];
   const capitulosMesclados = [...capitulosRemotos, ...capitulosApenasLocais];
   const tagsSupabase = Array.isArray(obraSupabase.tags)
     ? obraSupabase.tags.filter(
@@ -1039,7 +1048,8 @@ async function carregarObraSupabase(
     erroCapitulos
       ? []
       : ((capitulosSupabase || []) as unknown as CapituloSupabaseRow[]),
-    obraLocal
+    obraLocal,
+    usuarioEhDono
   );
 }
 
@@ -2629,9 +2639,23 @@ export default function LerCapituloPage() {
         const { data: dadosUsuario } = await supabase.auth.getUser();
         const userId = dadosUsuario.user?.id || "";
         const obrasLocaisTodas = carregarObrasLocaisNormalizadas(userId);
-        const obrasLocais = obrasLocaisTodas.filter((obra) =>
-          usuarioPodeAbrirObraNoLeitor(obra, userId)
-        );
+        const obrasLocais = obrasLocaisTodas
+          .filter((obra) => usuarioPodeAbrirObraNoLeitor(obra, userId))
+          .map((obra) => {
+            const autorId = obterAutorIdSeguro(obra);
+            const usuarioEhDono = Boolean(userId && autorId === userId);
+
+            if (usuarioEhDono) {
+              return obra;
+            }
+
+            return {
+              ...obra,
+              capitulos: obra.capitulos.filter(
+                (capitulo) => capitulo.publicado !== false
+              ),
+            };
+          });
         let obrasAtualizadas = obrasLocais;
         let obrasFavoritasNormalizadas = carregarListaIdsStorage(
           FAVORITES_STORAGE_KEY,
@@ -2656,6 +2680,11 @@ export default function LerCapituloPage() {
               obraSupabase,
               ...obrasLocais.filter((obra) => obra.id !== obraSupabase.id),
             ];
+          } else if (
+            idObraSupabaseValido(obraIdParam) &&
+            !Boolean(obraLocal && userId && obterAutorIdSeguro(obraLocal) === userId)
+          ) {
+            obrasAtualizadas = obrasLocais.filter((obra) => obra.id !== obraIdParam);
           }
         }
 
