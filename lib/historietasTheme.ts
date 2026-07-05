@@ -9,7 +9,7 @@ export const THEME_STORAGE_KEY = "historietas-tema-visual";
 export function criarStorageKeyUsuarioTema(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 export type TemaVisualHistorietas =
@@ -586,20 +586,17 @@ export function obterTemaVisualSeguro(valor: unknown): TemaVisualHistorietas {
 
 export function carregarTemaVisualSalvo(
   userId = "",
-  permitirLegadoGlobal = false
+  _permitirLegadoGlobal = false
 ): TemaVisualHistorietas {
-  if (typeof localStorage === "undefined") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof localStorage === "undefined" || !userIdLimpo) {
     return "original";
   }
 
   try {
-    const userIdLimpo = userId.trim();
     const chaveTema = criarStorageKeyUsuarioTema(THEME_STORAGE_KEY, userIdLimpo);
-    const texto = userIdLimpo
-      ? localStorage.getItem(chaveTema)
-      : permitirLegadoGlobal
-        ? localStorage.getItem(THEME_STORAGE_KEY)
-        : null;
+    const texto = chaveTema ? localStorage.getItem(chaveTema) : null;
 
     if (!texto) {
       return "original";
