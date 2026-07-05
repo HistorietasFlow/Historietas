@@ -2835,9 +2835,7 @@ export default function LerCapituloPage() {
       setComentarioDigitado(capituloAtual?.comentario || "");
       setComentarioStatus("");
       setMensagemAcao("");
-      setMostrarComentario(
-        Boolean(usuarioIdLogado && capituloAtual?.comentario.trim())
-      );
+      setMostrarComentario(false);
     }, 0);
 
     return () => {
