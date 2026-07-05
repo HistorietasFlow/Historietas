@@ -132,7 +132,7 @@ function limparTextoExibicao(valor: string) {
 function criarStorageKeyUsuarioNotificacoes(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerStorageUsuarioNotificacoes(chave: string, userId: string) {
@@ -143,9 +143,9 @@ function lerStorageUsuarioNotificacoes(chave: string, userId: string) {
   }
 
   try {
-    return localStorage.getItem(
-      criarStorageKeyUsuarioNotificacoes(chave, userIdLimpo)
-    );
+    const chaveStorage = criarStorageKeyUsuarioNotificacoes(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
@@ -163,10 +163,13 @@ function salvarJsonStorageUsuarioNotificacoes(
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioNotificacoes(chave, userIdLimpo),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioNotificacoes(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; as notificações continuam em memória.
   }
