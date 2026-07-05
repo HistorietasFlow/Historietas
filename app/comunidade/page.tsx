@@ -119,18 +119,24 @@ const POSTS_COMUNIDADE_POR_PAGINA = 50;
 function criarStorageKeyUsuarioComunidade(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function carregarJsonUsuarioComunidade(chave: string, userId = "") {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    const texto = window.localStorage.getItem(
-      criarStorageKeyUsuarioComunidade(chave, userId)
-    );
+    const chaveStorage = criarStorageKeyUsuarioComunidade(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return null;
+    }
+
+    const texto = window.localStorage.getItem(chaveStorage);
 
     return texto ? JSON.parse(texto) : null;
   } catch {
@@ -143,15 +149,20 @@ function salvarJsonUsuarioComunidade(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    window.localStorage.setItem(
-      criarStorageKeyUsuarioComunidade(chave, userId),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioComunidade(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    window.localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; a Comunidade continua em memória.
   }
