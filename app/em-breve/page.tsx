@@ -49,18 +49,24 @@ type ObraEmBreveCard = {
 function criarStorageKeyUsuarioEmBreve(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function carregarJsonUsuarioEmBreve(chave: string, userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    const texto = localStorage.getItem(
-      criarStorageKeyUsuarioEmBreve(chave, userId)
-    );
+    const chaveStorage = criarStorageKeyUsuarioEmBreve(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return null;
+    }
+
+    const texto = localStorage.getItem(chaveStorage);
 
     return texto ? JSON.parse(texto) : null;
   } catch {
@@ -73,15 +79,20 @@ function salvarJsonUsuarioEmBreve(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioEmBreve(chave, userId),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioEmBreve(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; a tela continua com estado em memória.
   }

@@ -22,16 +22,20 @@ const VERSAO_INTERACOES_OBRA_PUBLICA = "fix-interacoes-obra-2026-06-16-0022";
 function criarStorageKeyUsuarioObraPublica(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function lerStorageUsuarioObraPublica(chave: string, userId: string) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return null;
   }
 
   try {
-    return localStorage.getItem(criarStorageKeyUsuarioObraPublica(chave, userId));
+    const chaveStorage = criarStorageKeyUsuarioObraPublica(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
   } catch {
     return null;
   }
@@ -42,15 +46,20 @@ function salvarStorageUsuarioObraPublica(
   userId: string,
   valor: unknown
 ) {
-  if (typeof window === "undefined" || !userId.trim()) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
     return;
   }
 
   try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioObraPublica(chave, userId),
-      JSON.stringify(valor)
-    );
+    const chaveStorage = criarStorageKeyUsuarioObraPublica(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
   } catch {
     // localStorage é fallback; a página continua com o estado em memória.
   }
@@ -565,15 +574,21 @@ function normalizarObraLocal(
 }
 
 function carregarObrasLocaisComBackup(userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [];
+  }
+
   const obrasLocaisTexto = lerStorageUsuarioObraPublica(
     LOCAL_WORKS_STORAGE_KEY,
-    userId
+    userIdLimpo
   );
   const obrasLocaisJson: unknown = obrasLocaisTexto
     ? JSON.parse(obrasLocaisTexto)
     : [];
 
-  const backupArquivosObras = carregarBackupArquivosObras(userId);
+  const backupArquivosObras = carregarBackupArquivosObras(userIdLimpo);
 
   const obrasNormalizadas = Array.isArray(obrasLocaisJson)
     ? obrasLocaisJson
@@ -592,7 +607,7 @@ function carregarObrasLocaisComBackup(userId = "") {
     return obraLocal.publicado && obraLocal.capitulos.length > 0;
   });
 
-  sincronizarBackupArquivosObras(obrasNormalizadas, userId);
+  sincronizarBackupArquivosObras(obrasNormalizadas, userIdLimpo);
 
   return obrasPublicasLocais;
 }
@@ -723,7 +738,8 @@ function normalizarObraSupabase(
 
 async function carregarObraSupabasePorSlug(
   slugBusca: string,
-  obrasLocais: ObraLocal[]
+  obrasLocais: ObraLocal[],
+  userId = ""
 ) {
   const slugLimpo = slugBusca.trim();
 
@@ -798,7 +814,7 @@ async function carregarObraSupabasePorSlug(
         )
       : [obraNormalizada, ...obrasLocais];
 
-    sincronizarBackupArquivosObras(obrasAtualizadas);
+    sincronizarBackupArquivosObras(obrasAtualizadas, userId);
 
     return obrasAtualizadas;
   } catch (error) {
@@ -1250,8 +1266,14 @@ function obterChavesInteracaoObraPublica(obra: ObraDinamica) {
 }
 
 function carregarListaLocalObraPublica(chaveStorage: string, userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [] as string[];
+  }
+
   try {
-    const texto = lerStorageUsuarioObraPublica(chaveStorage, userId);
+    const texto = lerStorageUsuarioObraPublica(chaveStorage, userIdLimpo);
     const json: unknown = texto ? JSON.parse(texto) : [];
 
     return Array.isArray(json)
@@ -1280,7 +1302,13 @@ function salvarListaLocalObraPublica(
   ativo: boolean,
   userId = ""
 ) {
-  const listaAtual = carregarListaLocalObraPublica(chaveStorage, userId);
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [] as string[];
+  }
+
+  const listaAtual = carregarListaLocalObraPublica(chaveStorage, userIdLimpo);
   const chavesObra = obterChavesInteracaoObraPublica(obra);
   const chavesSet = new Set(chavesObra);
   const listaSemObra = listaAtual.filter((item) => !chavesSet.has(item.trim()));
@@ -1288,7 +1316,7 @@ function salvarListaLocalObraPublica(
     ? Array.from(new Set([...listaSemObra, ...chavesObra]))
     : listaSemObra;
 
-  salvarStorageUsuarioObraPublica(chaveStorage, userId, proximaLista);
+  salvarStorageUsuarioObraPublica(chaveStorage, userIdLimpo, proximaLista);
 
   return proximaLista;
 }
@@ -1379,10 +1407,16 @@ async function salvarCurtidaObraPublicaSupabase(
 }
 
 function carregarAvaliacoesLocais(userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return {};
+  }
+
   try {
     const avaliacoesTexto = lerStorageUsuarioObraPublica(
       RATED_WORKS_STORAGE_KEY,
-      userId
+      userIdLimpo
     );
     const avaliacoesJson: unknown = avaliacoesTexto
       ? JSON.parse(avaliacoesTexto)
@@ -1413,6 +1447,12 @@ function obterAvaliacaoLocal(obra: ObraDinamica, userId = "") {
 }
 
 function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return;
+  }
+
   try {
     const chaveAvaliacao = obterChaveAvaliacaoObra(obra);
 
@@ -1420,7 +1460,7 @@ function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
       return;
     }
 
-    const avaliacoesLocais = carregarAvaliacoesLocais(userId);
+    const avaliacoesLocais = carregarAvaliacoesLocais(userIdLimpo);
 
     if (nota <= 0) {
       delete avaliacoesLocais[chaveAvaliacao];
@@ -1430,7 +1470,7 @@ function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
 
     salvarStorageUsuarioObraPublica(
       RATED_WORKS_STORAGE_KEY,
-      userId,
+      userIdLimpo,
       avaliacoesLocais
     );
   } catch {
@@ -1743,7 +1783,8 @@ export default function ObraDinamicaPage() {
 
         const obrasComSupabase = await carregarObraSupabasePorSlug(
           slug,
-          obrasNormalizadas
+          obrasNormalizadas,
+          usuarioIdLogado
         );
 
         window.setTimeout(() => {

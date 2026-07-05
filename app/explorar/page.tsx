@@ -471,9 +471,7 @@ function carregarTemaVisualExplorarSalvo(userId = "") {
   }
 
   try {
-    const texto = localStorage.getItem(
-      criarStorageKeyUsuarioExplorar(THEME_STORAGE_KEY, userIdLimpo)
-    );
+    const texto = lerStorageUsuarioExplorar(THEME_STORAGE_KEY, userIdLimpo);
 
     if (!texto) {
       return "original";
@@ -637,7 +635,47 @@ function aplicarTemaVisualExplorar(temaVisual: TemaVisualExplorar) {
 function criarStorageKeyUsuarioExplorar(chave: string, userId: string) {
   const usuarioId = userId.trim();
 
-  return usuarioId ? `${chave}:${usuarioId}` : chave;
+  return usuarioId ? `${chave}:${usuarioId}` : "";
+}
+
+function lerStorageUsuarioExplorar(chave: string, userId = "") {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return null;
+  }
+
+  try {
+    const chaveStorage = criarStorageKeyUsuarioExplorar(chave, userIdLimpo);
+
+    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
+  } catch {
+    return null;
+  }
+}
+
+function salvarJsonStorageUsuarioExplorar(
+  chave: string,
+  userId: string,
+  valor: unknown
+) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return;
+  }
+
+  try {
+    const chaveStorage = criarStorageKeyUsuarioExplorar(chave, userIdLimpo);
+
+    if (!chaveStorage) {
+      return;
+    }
+
+    localStorage.setItem(chaveStorage, JSON.stringify(valor));
+  } catch {
+    // localStorage é apoio; a página continua com o estado em memória.
+  }
 }
 
 function normalizarListaIdsExplorar(valor: unknown) {
@@ -656,8 +694,7 @@ function carregarListaIdsUsuarioExplorar(chave: string, userId: string) {
   }
 
   try {
-    const chaveUsuario = criarStorageKeyUsuarioExplorar(chave, userIdLimpo);
-    const texto = localStorage.getItem(chaveUsuario);
+    const texto = lerStorageUsuarioExplorar(chave, userIdLimpo);
     const json: unknown = texto ? JSON.parse(texto) : [];
 
     return normalizarListaIdsExplorar(json);
@@ -679,14 +716,7 @@ function salvarListaIdsUsuarioExplorar(
 
   const listaNormalizada = Array.from(new Set(normalizarListaIdsExplorar(lista)));
 
-  try {
-    localStorage.setItem(
-      criarStorageKeyUsuarioExplorar(chave, userIdLimpo),
-      JSON.stringify(listaNormalizada)
-    );
-  } catch {
-    // localStorage é apoio; a página continua com o estado em memória.
-  }
+  salvarJsonStorageUsuarioExplorar(chave, userIdLimpo, listaNormalizada);
 }
 
 function obterIdentificadoresObraExplorar(
@@ -1033,8 +1063,9 @@ function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   }
 
   try {
-    const backupTexto = localStorage.getItem(
-      criarStorageKeyUsuarioExplorar(FILE_BACKUP_STORAGE_KEY, userId)
+    const backupTexto = lerStorageUsuarioExplorar(
+      FILE_BACKUP_STORAGE_KEY,
+      userId
     );
     const backupJson: unknown = backupTexto ? JSON.parse(backupTexto) : {};
 
@@ -1133,9 +1164,10 @@ function salvarBackupsArquivosObras(obrasParaSalvar: ObraLocal[], userId = "") {
     });
   });
 
-  localStorage.setItem(
-    criarStorageKeyUsuarioExplorar(FILE_BACKUP_STORAGE_KEY, userId),
-    JSON.stringify(proximoBackup)
+  salvarJsonStorageUsuarioExplorar(
+    FILE_BACKUP_STORAGE_KEY,
+    userId,
+    proximoBackup
   );
 }
 
@@ -1651,12 +1683,7 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
     const obrasComTotaisReais = await aplicarTotaisReaisExplorar(obrasMescladas);
 
     salvarBackupsArquivosObras(obrasComTotaisReais, userId);
-    if (userId.trim()) {
-      localStorage.setItem(
-        criarStorageKeyUsuarioExplorar(STORAGE_KEY, userId),
-        JSON.stringify(obrasComTotaisReais)
-      );
-    }
+    salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userId, obrasComTotaisReais);
 
     return obrasComTotaisReais;
   } catch (error) {
@@ -2072,11 +2099,10 @@ export default function ExplorarPage() {
           setUsuarioIdLogado(userIdAtual);
         }
 
-        const obrasSalvasTexto = userIdAtual
-          ? localStorage.getItem(
-              criarStorageKeyUsuarioExplorar(STORAGE_KEY, userIdAtual)
-            )
-          : null;
+        const obrasSalvasTexto = lerStorageUsuarioExplorar(
+          STORAGE_KEY,
+          userIdAtual
+        );
         const obrasSalvasJson = obrasSalvasTexto
           ? JSON.parse(obrasSalvasTexto)
           : [];
@@ -2088,12 +2114,7 @@ export default function ExplorarPage() {
           : [];
 
         salvarBackupsArquivosObras(obrasNormalizadas, userIdAtual);
-        if (userIdAtual) {
-          localStorage.setItem(
-            criarStorageKeyUsuarioExplorar(STORAGE_KEY, userIdAtual),
-            JSON.stringify(obrasNormalizadas)
-          );
-        }
+        salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userIdAtual, obrasNormalizadas);
 
         const favoritasGlobais: string[] = [];
         const favoritasDoUsuario = userIdAtual

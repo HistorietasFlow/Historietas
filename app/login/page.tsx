@@ -130,7 +130,7 @@ function obterRedirectToAtual(fallback: string) {
 function criarStorageUsuarioLoginKey(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : chave;
+  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
 }
 
 function criarStorageObrasUsuarioLoginKey(userId: string) {
@@ -146,12 +146,14 @@ function normalizarListaStringsLogin(valor: unknown) {
 }
 
 function lerJsonStorageLogin(chave: string): unknown {
-  if (typeof window === "undefined") {
+  const chaveLimpa = chave.trim();
+
+  if (typeof window === "undefined" || !chaveLimpa) {
     return null;
   }
 
   try {
-    const texto = localStorage.getItem(chave);
+    const texto = localStorage.getItem(chaveLimpa);
 
     return texto ? JSON.parse(texto) : null;
   } catch {
@@ -160,12 +162,14 @@ function lerJsonStorageLogin(chave: string): unknown {
 }
 
 function salvarJsonStorageLogin(chave: string, valor: unknown) {
-  if (typeof window === "undefined") {
+  const chaveLimpa = chave.trim();
+
+  if (typeof window === "undefined" || !chaveLimpa) {
     return;
   }
 
   try {
-    localStorage.setItem(chave, JSON.stringify(valor));
+    localStorage.setItem(chaveLimpa, JSON.stringify(valor));
   } catch {
     // localStorage é apoio. O login não deve falhar por causa dele.
   }
@@ -234,22 +238,17 @@ function sincronizarStorageUsuarioLogin(userId: string) {
   }
 
   try {
-    const obrasGlobais = normalizarObrasStorageLogin(
-      lerJsonStorageLogin(STORAGE_KEY),
-    );
     const chaveObrasUsuario = criarStorageObrasUsuarioLoginKey(userIdLimpo);
     const obrasUsuarioAtuais = normalizarObrasStorageLogin(
       lerJsonStorageLogin(chaveObrasUsuario),
     );
-    const obrasDoUsuarioNoGlobal = obrasGlobais.filter((obra) =>
-      obraPertenceAoUsuarioLogin(obra, userIdLimpo),
-    );
-    const obrasUsuarioMescladas = mesclarObrasLogin(
-      obrasUsuarioAtuais,
-      obrasDoUsuarioNoGlobal,
-    );
+    const obrasUsuarioFiltradas = obrasUsuarioAtuais.filter((obra) => {
+      const autorId = obterAutorIdObraLogin(obra);
 
-    salvarJsonStorageLogin(chaveObrasUsuario, obrasUsuarioMescladas);
+      return !autorId || obraPertenceAoUsuarioLogin(obra, userIdLimpo);
+    });
+
+    salvarJsonStorageLogin(chaveObrasUsuario, obrasUsuarioFiltradas);
 
     [
       FAVORITES_STORAGE_KEY,
