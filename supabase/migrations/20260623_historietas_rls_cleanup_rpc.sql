@@ -520,24 +520,35 @@ create policy "seguindo_obras_delete_proprio"
   for delete
   using (auth.uid() is not null and user_id = auth.uid());
 
-drop policy if exists "seguindo_autores_select_publico" on public.seguindo_autores;
-drop policy if exists "seguindo_autores_insert_proprio" on public.seguindo_autores;
-drop policy if exists "seguindo_autores_delete_proprio" on public.seguindo_autores;
+do $$
+begin
+  if to_regclass('public.seguindo_autores') is not null then
+    execute 'drop policy if exists "seguindo_autores_select_publico" on public.seguindo_autores';
+    execute 'drop policy if exists "seguindo_autores_insert_proprio" on public.seguindo_autores';
+    execute 'drop policy if exists "seguindo_autores_delete_proprio" on public.seguindo_autores';
 
-create policy "seguindo_autores_select_publico"
-  on public.seguindo_autores
-  for select
-  using (true);
+    execute $policy$
+      create policy "seguindo_autores_select_publico"
+        on public.seguindo_autores
+        for select
+        using (true)
+    $policy$;
 
-create policy "seguindo_autores_insert_proprio"
-  on public.seguindo_autores
-  for insert
-  with check (auth.uid() is not null and user_id = auth.uid());
+    execute $policy$
+      create policy "seguindo_autores_insert_proprio"
+        on public.seguindo_autores
+        for insert
+        with check (auth.uid() is not null and user_id = auth.uid())
+    $policy$;
 
-create policy "seguindo_autores_delete_proprio"
-  on public.seguindo_autores
-  for delete
-  using (auth.uid() is not null and user_id = auth.uid());
+    execute $policy$
+      create policy "seguindo_autores_delete_proprio"
+        on public.seguindo_autores
+        for delete
+        using (auth.uid() is not null and user_id = auth.uid())
+    $policy$;
+  end if;
+end $$;
 
 drop policy if exists "seguindo_usuarios_select_publico" on public.seguindo_usuarios;
 drop policy if exists "seguindo_usuarios_insert_proprio" on public.seguindo_usuarios;
@@ -625,72 +636,96 @@ create policy "diario_anotacoes_delete_proprio"
   for delete
   using (auth.uid() is not null and user_id = auth.uid());
 
-drop policy if exists "diario_anotacao_curtidas_select_visiveis" on public.diario_anotacao_curtidas;
-drop policy if exists "diario_anotacao_curtidas_insert_proprio" on public.diario_anotacao_curtidas;
-drop policy if exists "diario_anotacao_curtidas_delete_proprio" on public.diario_anotacao_curtidas;
+do $$
+begin
+  if to_regclass('public.diario_anotacao_curtidas') is not null then
+    execute 'drop policy if exists "diario_anotacao_curtidas_select_visiveis" on public.diario_anotacao_curtidas';
+    execute 'drop policy if exists "diario_anotacao_curtidas_insert_proprio" on public.diario_anotacao_curtidas';
+    execute 'drop policy if exists "diario_anotacao_curtidas_delete_proprio" on public.diario_anotacao_curtidas';
 
-create policy "diario_anotacao_curtidas_select_visiveis"
-  on public.diario_anotacao_curtidas
-  for select
-  using (
-    user_id = auth.uid()
-    or exists (
-      select 1
-      from public.diario_anotacoes a
-      where a.id = diario_anotacao_curtidas.anotacao_id
-        and (
-          a.user_id = auth.uid()
-          or coalesce(a.visibilidade, 'privado') in ('publico', 'parcial')
+    execute $policy$
+      create policy "diario_anotacao_curtidas_select_visiveis"
+        on public.diario_anotacao_curtidas
+        for select
+        using (
+          user_id = auth.uid()
+          or exists (
+            select 1
+            from public.diario_anotacoes a
+            where a.id = diario_anotacao_curtidas.anotacao_id
+              and (
+                a.user_id = auth.uid()
+                or coalesce(a.visibilidade, 'privado') in ('publico', 'parcial')
+              )
+          )
         )
-    )
-  );
+    $policy$;
 
-create policy "diario_anotacao_curtidas_insert_proprio"
-  on public.diario_anotacao_curtidas
-  for insert
-  with check (auth.uid() is not null and user_id = auth.uid());
+    execute $policy$
+      create policy "diario_anotacao_curtidas_insert_proprio"
+        on public.diario_anotacao_curtidas
+        for insert
+        with check (auth.uid() is not null and user_id = auth.uid())
+    $policy$;
 
-create policy "diario_anotacao_curtidas_delete_proprio"
-  on public.diario_anotacao_curtidas
-  for delete
-  using (auth.uid() is not null and user_id = auth.uid());
+    execute $policy$
+      create policy "diario_anotacao_curtidas_delete_proprio"
+        on public.diario_anotacao_curtidas
+        for delete
+        using (auth.uid() is not null and user_id = auth.uid())
+    $policy$;
+  end if;
+end $$;
 
-drop policy if exists "diario_anotacao_comentarios_select_visiveis" on public.diario_anotacao_comentarios;
-drop policy if exists "diario_anotacao_comentarios_insert_proprio" on public.diario_anotacao_comentarios;
-drop policy if exists "diario_anotacao_comentarios_update_proprio" on public.diario_anotacao_comentarios;
-drop policy if exists "diario_anotacao_comentarios_delete_proprio" on public.diario_anotacao_comentarios;
+do $$
+begin
+  if to_regclass('public.diario_anotacao_comentarios') is not null then
+    execute 'drop policy if exists "diario_anotacao_comentarios_select_visiveis" on public.diario_anotacao_comentarios';
+    execute 'drop policy if exists "diario_anotacao_comentarios_insert_proprio" on public.diario_anotacao_comentarios';
+    execute 'drop policy if exists "diario_anotacao_comentarios_update_proprio" on public.diario_anotacao_comentarios';
+    execute 'drop policy if exists "diario_anotacao_comentarios_delete_proprio" on public.diario_anotacao_comentarios';
 
-create policy "diario_anotacao_comentarios_select_visiveis"
-  on public.diario_anotacao_comentarios
-  for select
-  using (
-    user_id = auth.uid()
-    or exists (
-      select 1
-      from public.diario_anotacoes a
-      where a.id = diario_anotacao_comentarios.anotacao_id
-        and (
-          a.user_id = auth.uid()
-          or coalesce(a.visibilidade, 'privado') in ('publico', 'parcial')
+    execute $policy$
+      create policy "diario_anotacao_comentarios_select_visiveis"
+        on public.diario_anotacao_comentarios
+        for select
+        using (
+          user_id = auth.uid()
+          or exists (
+            select 1
+            from public.diario_anotacoes a
+            where a.id = diario_anotacao_comentarios.anotacao_id
+              and (
+                a.user_id = auth.uid()
+                or coalesce(a.visibilidade, 'privado') in ('publico', 'parcial')
+              )
+          )
         )
-    )
-  );
+    $policy$;
 
-create policy "diario_anotacao_comentarios_insert_proprio"
-  on public.diario_anotacao_comentarios
-  for insert
-  with check (auth.uid() is not null and user_id = auth.uid());
+    execute $policy$
+      create policy "diario_anotacao_comentarios_insert_proprio"
+        on public.diario_anotacao_comentarios
+        for insert
+        with check (auth.uid() is not null and user_id = auth.uid())
+    $policy$;
 
-create policy "diario_anotacao_comentarios_update_proprio"
-  on public.diario_anotacao_comentarios
-  for update
-  using (auth.uid() is not null and user_id = auth.uid())
-  with check (auth.uid() is not null and user_id = auth.uid());
+    execute $policy$
+      create policy "diario_anotacao_comentarios_update_proprio"
+        on public.diario_anotacao_comentarios
+        for update
+        using (auth.uid() is not null and user_id = auth.uid())
+        with check (auth.uid() is not null and user_id = auth.uid())
+    $policy$;
 
-create policy "diario_anotacao_comentarios_delete_proprio"
-  on public.diario_anotacao_comentarios
-  for delete
-  using (auth.uid() is not null and user_id = auth.uid());
+    execute $policy$
+      create policy "diario_anotacao_comentarios_delete_proprio"
+        on public.diario_anotacao_comentarios
+        for delete
+        using (auth.uid() is not null and user_id = auth.uid())
+    $policy$;
+  end if;
+end $$;
 
 -- ============================================================
 -- NOTIFICAÇÕES
@@ -963,7 +998,7 @@ begin
   sql_update := sql_update || ' where user_id = auth.uid() and ($2 is null or cardinality($2) = 0 or id::text = any($2)';
 
   if tem_notificacao_id then
-    sql_update := sql_update || ' or notificacao_id = any($2)';
+    sql_update := sql_update || ' or notificacao_id::text = any($2)';
   end if;
 
   sql_update := sql_update || ')';

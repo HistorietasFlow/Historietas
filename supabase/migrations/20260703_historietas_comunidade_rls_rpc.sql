@@ -101,6 +101,7 @@ begin
       where table_schema = 'public'
         and table_name = 'profiles'
         and column_name = coluna
+        and data_type = 'boolean'
     ) then
       execute format(
         'select exists (select 1 from public.profiles where %s and coalesce(%I, false) = true)',
@@ -521,7 +522,13 @@ create policy "comunidade_posts_insert_proprio"
 create policy "comunidade_posts_update_proprio"
   on public.comunidade_posts
   for update
-  using (auth.uid() is not null and autor_id::text = auth.uid()::text)
+  using (
+    auth.uid() is not null
+    and autor_id::text = auth.uid()::text
+    and coalesce(fixado, false) = false
+    and fixado_em is null
+    and fixado_por is null
+  )
   with check (
     auth.uid() is not null
     and autor_id::text = auth.uid()::text
@@ -541,7 +548,13 @@ create policy "comunidade_posts_delete_proprio_ou_admin"
   for delete
   using (
     public.usuario_e_admin()
-    or (auth.uid() is not null and autor_id::text = auth.uid()::text)
+    or (
+      auth.uid() is not null
+      and autor_id::text = auth.uid()::text
+      and coalesce(fixado, false) = false
+      and fixado_em is null
+      and fixado_por is null
+    )
   );
 
 -- comunidade_comentarios
