@@ -2767,6 +2767,16 @@ async function apagarNotificacoesSupabase(
       .delete()
       .eq("user_id", userId)
       .in("notificacao_id", ids);
+
+    const idsUuid = ids.filter((id) => idObraSupabaseValido(id));
+
+    if (idsUuid.length > 0) {
+      await supabase
+        .from("notificacoes")
+        .delete()
+        .eq("user_id", userId)
+        .in("id", idsUuid);
+    }
   } catch {
     // A remoção local continua funcionando se o Supabase falhar.
   }
@@ -3221,10 +3231,14 @@ export default function NotificacoesPage() {
       notificacoesLidas.map((notificacao) => notificacao.id)
     );
     atualizarNotificacoes(novasNotificacoes);
-    void apagarNotificacoesSupabase(
-      notificacoesLidas,
-      usuarioNotificacoesId
-    );
+    void excluirNotificacoesLidasSupabase(usuarioNotificacoesId).then((excluiu) => {
+      if (!excluiu) {
+        void apagarNotificacoesSupabase(
+          notificacoesLidas,
+          usuarioNotificacoesId
+        );
+      }
+    });
   }
 
   function alternarMenuNotificacao(id: string) {

@@ -1554,7 +1554,34 @@ export default function AdicionarCapituloPage() {
         publicado: true,
       };
 
-      try {
+      const obraEhSupabase = idObraSupabaseValido(obraAtual.id);
+
+      if (obraEhSupabase) {
+        const { data: obraAutorizada, error: erroObraAutorizada } = await supabase
+          .from("obras")
+          .select("id")
+          .eq("id", obraAtual.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (erroObraAutorizada) {
+          throw new Error(
+            `Não consegui confirmar a autoria da obra: ${erroObraAutorizada.message}`
+          );
+        }
+
+        if (!obraAutorizada) {
+          setProcessando(false);
+          setErro("Você não tem permissão para adicionar capítulo nesta obra.");
+
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          });
+
+          return;
+        }
+
         const { data, error } = await supabase
           .from("capitulos")
           .insert({
@@ -1569,8 +1596,10 @@ export default function AdicionarCapituloPage() {
           .single();
 
         if (error) {
-          console.warn("Não consegui salvar capítulo no Supabase:", error.message);
-        } else if (data?.id) {
+          throw new Error(`Não consegui salvar capítulo no Supabase: ${error.message}`);
+        }
+
+        if (data?.id) {
           novoCapitulo = {
             ...novoCapitulo,
             id: data.id,
@@ -1578,8 +1607,6 @@ export default function AdicionarCapituloPage() {
               typeof data.criado_em === "string" ? data.criado_em : criadoEm,
           };
         }
-      } catch {
-        // Se o Supabase falhar, mantém o salvamento local como backup do autor logado.
       }
 
       const novaNotificacao = criarNotificacaoNovoCapitulo(
@@ -1633,12 +1660,18 @@ export default function AdicionarCapituloPage() {
       setArquivoImportadoNome("");
       setArquivoImportadoErro("");
       setProcessando(false);
-    } catch {
+    } catch (erroDesconhecido) {
       setProcessando(false);
-
-      alert(
-        "Não consegui salvar esse capítulo. Tente atualizar a página e criar novamente."
+      setErro(
+        erroDesconhecido instanceof Error
+          ? erroDesconhecido.message
+          : "Não consegui salvar esse capítulo. Tente atualizar a página e criar novamente."
       );
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     }
   }
 

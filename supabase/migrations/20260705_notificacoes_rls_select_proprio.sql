@@ -12,6 +12,7 @@ drop policy if exists "notificacoes_select_proprias" on public.notificacoes;
 drop policy if exists "notificacoes_insert_proprio" on public.notificacoes;
 drop policy if exists "notificacoes_insert_proprias" on public.notificacoes;
 drop policy if exists "notificacoes_insert_autenticado" on public.notificacoes;
+drop policy if exists "notificacoes_insert_autor_para_seguidor" on public.notificacoes;
 drop policy if exists "notificacoes_update_proprio" on public.notificacoes;
 drop policy if exists "notificacoes_update_proprias" on public.notificacoes;
 drop policy if exists "notificacoes_delete_proprio" on public.notificacoes;
@@ -57,11 +58,12 @@ create policy "notificacoes_delete_proprio"
     and user_id::text = auth.uid()::text
   );
 
--- Garante permissões SQL para o papel autenticado.
+-- Remove acesso direto de anônimos/público.
 -- A proteção real continua sendo feita pelas policies acima.
-grant select, insert, update, delete on public.notificacoes to authenticated;
-
--- Anônimos não devem acessar notificações.
 revoke all on public.notificacoes from anon;
+revoke all on public.notificacoes from public;
+
+-- Garante permissões SQL para o papel autenticado.
+grant select, insert, update, delete on public.notificacoes to authenticated;
 
 commit;

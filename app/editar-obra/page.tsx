@@ -113,7 +113,8 @@ const OPCOES_FORMATO_OBRA = [
   "Romance",
   "Conto",
   "Poesia",
-  "HQ/Mangá",
+  "HQ",
+  "Mangá",
   "Fanfic",
 ] as const;
 
@@ -278,6 +279,26 @@ function prepararValorEditavel(
     selecionado: outroValue,
     personalizado: limparTextoPersonalizado(valorLimpo, limite).trim(),
   };
+}
+
+function formatarFormatoEdicaoObra(formato: string) {
+  const formatoLimpo = formato.trim();
+  const formatoSemAcento = formatoLimpo
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (
+    formatoSemAcento === "hq/manga" ||
+    formatoSemAcento === "hq manga" ||
+    formatoSemAcento === "hq-manga"
+  ) {
+    return "HQ";
+  }
+
+  return formatoLimpo || "Não informado";
 }
 
 function formatarGeneroEdicaoObra(genero: string) {
@@ -1169,7 +1190,7 @@ export default function EditarObraPage() {
     ) {
       const autorProfile = nomeAutorProfileAtual.trim();
       const formatoEditavel = prepararValorEditavel(
-        obraAtual.formato,
+        formatarFormatoEdicaoObra(obraAtual.formato),
         OPCOES_FORMATO_OBRA,
         OUTRO_FORMATO_VALUE,
         LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO
@@ -1756,6 +1777,29 @@ export default function EditarObraPage() {
         return;
       }
 
+      const { data: obraAutorizadaSupabase, error: erroConfirmarObra } =
+        await supabase
+          .from("obras")
+          .select("id")
+          .eq("id", obraId)
+          .eq("user_id", userId)
+          .limit(1)
+          .maybeSingle();
+
+      if (erroConfirmarObra) {
+        setErro(
+          `Não consegui confirmar sua permissão para editar esta obra: ${erroConfirmarObra.message}`
+        );
+        setSalvou(false);
+        return;
+      }
+
+      if (!obraAutorizadaSupabase?.id) {
+        setErro("Você não tem permissão para editar esta obra.");
+        setSalvou(false);
+        return;
+      }
+
       let capaFinal = capa;
       let capaNomeFinal = capaNome;
       let arquivoObraFinal: ArquivoObraLocal | null = arquivoObra
@@ -1793,7 +1837,7 @@ export default function EditarObraPage() {
           };
         }
 
-        const { error: erroAtualizarObra } = await supabase
+        const { data: obraAtualizadaSupabase, error: erroAtualizarObra } = await supabase
           .from("obras")
           .update({
             titulo: tituloFinal,
@@ -1813,19 +1857,26 @@ export default function EditarObraPage() {
             atualizado_em: agora,
           })
           .eq("id", obraId)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .select("id")
+          .maybeSingle();
 
         if (erroAtualizarObra) {
-          console.warn(
-            "A obra foi salva no navegador, mas não atualizou no Supabase:",
-            erroAtualizarObra.message
+          throw new Error(
+            `Não consegui atualizar a obra no Supabase: ${erroAtualizarObra.message}`
           );
         }
+
+        if (!obraAtualizadaSupabase?.id) {
+          throw new Error("Não consegui confirmar a atualização da obra no Supabase.");
+        }
       } catch (erroSupabase) {
-        console.warn(
-          "A obra foi salva no navegador, mas houve falha no Supabase:",
-          erroSupabase
-        );
+        const mensagemSupabase =
+          erroSupabase instanceof Error
+            ? erroSupabase.message
+            : "Não consegui atualizar a obra no Supabase.";
+
+        throw new Error(mensagemSupabase);
       }
 
       const novasObras = obras.map((obra, index) => {
@@ -1893,10 +1944,19 @@ export default function EditarObraPage() {
       setSalvou(true);
 
 
-    } catch {
-      alert(
-        "Não consegui salvar as alterações. Tente usar uma capa/arquivo menor ou atualizar a página e salvar novamente."
-      );
+    } catch (erroDesconhecido) {
+      const mensagem =
+        erroDesconhecido instanceof Error
+          ? erroDesconhecido.message
+          : "Não consegui salvar as alterações. Tente usar uma capa/arquivo menor ou atualizar a página e salvar novamente.";
+
+      setErro(mensagem);
+      setSalvou(false);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     } finally {
       setProcessando(false);
     }

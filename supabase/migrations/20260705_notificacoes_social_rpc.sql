@@ -1,11 +1,14 @@
 -- 20260705_notificacoes_social_rpc.sql
--- RPC genérica para notificações sociais reutilizável em seguir, comunidade e próximas interações.
--- Versão auditada/corrigida:
+-- RPC genérica para notificações sociais reutilizável em seguir e comunidade.
+-- Versão corrigida:
 -- - restringe EXECUTE somente a authenticated;
--- - não quebra se algumas colunas opcionais de notificacoes não existirem;
+-- - valida tipos permitidos;
+-- - valida seguir-usuario em seguindo_usuarios;
+-- - valida curtida/comentário da comunidade nas tabelas reais;
+-- - valida ator_id embutido no notificacao_id das curtidas;
+-- - impede usuário autenticado de criar notificação falsa para qualquer pessoa;
 -- - evita duplicidade usando notificacao_id quando existir;
--- - valida seguir-usuario antes de criar notificação;
--- - evita que erro interno derrube a ação principal.
+-- - não quebra se algumas colunas opcionais de notificacoes não existirem.
 
 begin;
 
@@ -32,6 +35,11 @@ declare
   v_mensagem text := nullif(trim(coalesce(p_mensagem, '')), '');
   v_link text := nullif(trim(coalesce(p_link, '')), '');
   v_notificacao_id text := nullif(trim(coalesce(p_notificacao_id, '')), '');
+
+  v_post_id uuid := null;
+  v_comentario_id uuid := null;
+  v_parte_2 text := '';
+  v_parte_3 text := '';
 
   v_tem_obra_id boolean := false;
   v_tem_capitulo_id boolean := false;
@@ -62,6 +70,15 @@ begin
     return 0;
   end if;
 
+  if v_tipo not in (
+    'seguir-usuario',
+    'comunidade-curtida-post',
+    'comunidade-comentario-post',
+    'comunidade-curtida-comentario'
+  ) then
+    return 0;
+  end if;
+
   -- Colunas obrigatórias da tabela notificacoes.
   if not exists (
     select 1
@@ -75,22 +92,19 @@ begin
     return 0;
   end if;
 
-  -- Proteção específica: notificação de seguir usuário só é criada se
-  -- realmente existir vínculo em seguindo_usuarios.
+  if v_notificacao_id is null then
+    v_notificacao_id :=
+      v_tipo || ':' || v_ator_id::text || ':' || v_receptor_id::text ||
+      coalesce(':' || p_obra_id::text, '') ||
+      coalesce(':' || p_capitulo_id::text, '');
+  end if;
+
+  v_parte_2 := split_part(v_notificacao_id, ':', 2);
+  v_parte_3 := split_part(v_notificacao_id, ':', 3);
+
+  -- Seguir usuário: só cria se o vínculo existir.
   if v_tipo = 'seguir-usuario' then
     if to_regclass('public.seguindo_usuarios') is null then
-      return 0;
-    end if;
-
-    if not exists (
-      select 1
-      from information_schema.columns
-      where table_schema = 'public'
-        and table_name = 'seguindo_usuarios'
-        and column_name in ('seguidor_id', 'seguido_id')
-      group by table_schema, table_name
-      having count(*) = 2
-    ) then
       return 0;
     end if;
 
@@ -105,11 +119,113 @@ begin
     end if;
   end if;
 
-  if v_notificacao_id is null then
-    v_notificacao_id :=
-      v_tipo || ':' || v_ator_id::text || ':' || v_receptor_id::text ||
-      coalesce(':' || p_obra_id::text, '') ||
-      coalesce(':' || p_capitulo_id::text, '');
+  -- Curtida em post da comunidade:
+  -- notificacao_id esperado: comunidade-curtida-post:{postId}:{atorId}
+  if v_tipo = 'comunidade-curtida-post' then
+    if to_regclass('public.comunidade_posts') is null
+      or to_regclass('public.comunidade_curtidas') is null
+      or v_parte_2 !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      or v_parte_3 !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    then
+      return 0;
+    end if;
+
+    if v_parte_3::uuid <> v_ator_id then
+      return 0;
+    end if;
+
+    v_post_id := v_parte_2::uuid;
+
+    select cp.autor_id
+    into v_receptor_id
+    from public.comunidade_posts cp
+    where cp.id = v_post_id
+    limit 1;
+
+    if v_receptor_id is null or v_receptor_id <> p_user_id then
+      return 0;
+    end if;
+
+    if not exists (
+      select 1
+      from public.comunidade_curtidas cc
+      where cc.post_id = v_post_id
+        and cc.usuario_id = v_ator_id
+      limit 1
+    ) then
+      return 0;
+    end if;
+  end if;
+
+  -- Comentário em post da comunidade:
+  -- notificacao_id esperado: comunidade-comentario-post:{postId}:{comentarioId}
+  if v_tipo = 'comunidade-comentario-post' then
+    if to_regclass('public.comunidade_posts') is null
+      or to_regclass('public.comunidade_comentarios') is null
+      or v_parte_2 !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      or v_parte_3 !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    then
+      return 0;
+    end if;
+
+    v_post_id := v_parte_2::uuid;
+    v_comentario_id := v_parte_3::uuid;
+
+    select cp.autor_id
+    into v_receptor_id
+    from public.comunidade_posts cp
+    join public.comunidade_comentarios ccoment
+      on ccoment.post_id = cp.id
+    where cp.id = v_post_id
+      and ccoment.id = v_comentario_id
+      and ccoment.autor_id = v_ator_id
+    limit 1;
+
+    if v_receptor_id is null or v_receptor_id <> p_user_id then
+      return 0;
+    end if;
+  end if;
+
+  -- Curtida em comentário da comunidade:
+  -- notificacao_id esperado: comunidade-curtida-comentario:{comentarioId}:{atorId}
+  if v_tipo = 'comunidade-curtida-comentario' then
+    if to_regclass('public.comunidade_comentarios') is null
+      or to_regclass('public.comunidade_comentario_curtidas') is null
+      or v_parte_2 !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      or v_parte_3 !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    then
+      return 0;
+    end if;
+
+    if v_parte_3::uuid <> v_ator_id then
+      return 0;
+    end if;
+
+    v_comentario_id := v_parte_2::uuid;
+
+    select ccoment.autor_id
+    into v_receptor_id
+    from public.comunidade_comentarios ccoment
+    where ccoment.id = v_comentario_id
+    limit 1;
+
+    if v_receptor_id is null or v_receptor_id <> p_user_id then
+      return 0;
+    end if;
+
+    if not exists (
+      select 1
+      from public.comunidade_comentario_curtidas ccc
+      where ccc.comentario_id = v_comentario_id
+        and ccc.usuario_id = v_ator_id
+      limit 1
+    ) then
+      return 0;
+    end if;
+  end if;
+
+  if v_receptor_id is null or v_receptor_id = v_ator_id then
+    return 0;
   end if;
 
   v_titulo := coalesce(v_titulo, 'Nova notificação');

@@ -876,8 +876,7 @@ async function salvarPerfilConfiguracoesSupabase({
           : "";
     }
 
-    const payload = {
-      user_id: userIdLimpo,
+    const payloadAtualizacao = {
       nome: nomeLimpo,
       username: usernameLimpo || null,
       atualizado_em: atualizadoEm,
@@ -886,7 +885,7 @@ async function salvarPerfilConfiguracoesSupabase({
     if (perfilId) {
       const { error } = await supabase
         .from("profiles")
-        .update(payload)
+        .update(payloadAtualizacao)
         .eq("id", perfilId);
 
       return {
@@ -895,19 +894,17 @@ async function salvarPerfilConfiguracoesSupabase({
       };
     }
 
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        id: userIdLimpo,
-        avatar_url: "",
-        bio: "",
-        tipo: "leitor",
-        criado_em: atualizadoEm,
-        is_admin: false,
-        sobre_bio: "",
-        ...payload,
-      },
-      { onConflict: "id" },
-    );
+    const { error } = await supabase.from("profiles").insert({
+      id: userIdLimpo,
+      user_id: userIdLimpo,
+      avatar_url: "",
+      bio: "",
+      tipo: "leitor",
+      criado_em: atualizadoEm,
+      is_admin: false,
+      sobre_bio: "",
+      ...payloadAtualizacao,
+    });
 
     return {
       ok: !error,

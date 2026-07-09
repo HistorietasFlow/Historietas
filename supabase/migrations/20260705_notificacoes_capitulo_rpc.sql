@@ -4,6 +4,7 @@
 -- - restringe EXECUTE somente a authenticated;
 -- - exige obra e capítulo publicados;
 -- - evita duplicar notificações do mesmo capítulo;
+-- - aceita somente tipo novo-capitulo;
 -- - não quebra se algumas colunas opcionais de notificacoes não existirem.
 
 begin;
@@ -28,11 +29,12 @@ declare
   v_capitulo record;
   v_total integer := 0;
 
-  v_tipo text := coalesce(nullif(p_tipo, ''), 'novo-capitulo');
-  v_titulo text := coalesce(nullif(p_titulo, ''), 'Atualização de capítulo');
-  v_mensagem text := coalesce(nullif(p_mensagem, ''), 'Um capítulo recebeu uma atualização.');
-  v_href text := coalesce(nullif(p_href, ''), '/notificacoes');
+  v_tipo text := coalesce(nullif(trim(coalesce(p_tipo, '')), ''), 'novo-capitulo');
+  v_titulo text := coalesce(nullif(trim(coalesce(p_titulo, '')), ''), 'Atualização de capítulo');
+  v_mensagem text := coalesce(nullif(trim(coalesce(p_mensagem, '')), ''), 'Um capítulo recebeu uma atualização.');
+  v_href text := coalesce(nullif(trim(coalesce(p_href, '')), ''), '/notificacoes');
   v_criado_em timestamptz := coalesce(p_criado_em, now());
+  v_notificacao_id text;
   v_metadata jsonb;
 
   v_colunas text[] := array['user_id', 'tipo', 'titulo', 'mensagem'];
@@ -47,20 +49,29 @@ declare
   v_tem_href boolean := false;
   v_tem_link boolean := false;
   v_tem_lida boolean := false;
+  v_tem_notificacao_id boolean := false;
   v_tem_metadata boolean := false;
   v_tem_criada_em boolean := false;
   v_tem_criado_em boolean := false;
+  v_tem_created_at boolean := false;
   v_tem_atualizado_em boolean := false;
+  v_tem_updated_at boolean := false;
 begin
   if v_autor_id is null then
     return 0;
   end if;
 
-  if to_regclass('public.notificacoes') is null then
+  if v_tipo <> 'novo-capitulo' then
     return 0;
   end if;
 
-  -- Colunas obrigatórias da tabela notificacoes.
+  if to_regclass('public.obras') is null
+    or to_regclass('public.capitulos') is null
+    or to_regclass('public.notificacoes') is null
+  then
+    return 0;
+  end if;
+
   if not exists (
     select 1
     from information_schema.columns
@@ -106,11 +117,14 @@ begin
     return 0;
   end if;
 
+  v_notificacao_id := 'novo-capitulo:' || p_capitulo_id::text;
+
   v_metadata := jsonb_build_object(
     'obra_titulo', coalesce(v_obra.titulo, ''),
     'autor', coalesce(v_obra.autor, ''),
     'capitulo_titulo', coalesce(v_capitulo.titulo, ''),
-    'origem', 'criar_notificacoes_capitulo'
+    'origem', 'criar_notificacoes_capitulo',
+    'notificacao_id', v_notificacao_id
   );
 
   select exists (
@@ -158,6 +172,14 @@ begin
     from information_schema.columns
     where table_schema = 'public'
       and table_name = 'notificacoes'
+      and column_name = 'notificacao_id'
+  ) into v_tem_notificacao_id;
+
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'notificacoes'
       and column_name = 'metadata'
   ) into v_tem_metadata;
 
@@ -182,19 +204,41 @@ begin
     from information_schema.columns
     where table_schema = 'public'
       and table_name = 'notificacoes'
+      and column_name = 'created_at'
+  ) into v_tem_created_at;
+
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'notificacoes'
       and column_name = 'atualizado_em'
   ) into v_tem_atualizado_em;
+
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'notificacoes'
+      and column_name = 'updated_at'
+  ) into v_tem_updated_at;
 
   if v_tem_obra_id then
     v_colunas := array_append(v_colunas, 'obra_id');
     v_valores := array_append(v_valores, '$5');
-    v_where_duplicada := v_where_duplicada || ' and n.obra_id = $5';
+
+    if not v_tem_notificacao_id then
+      v_where_duplicada := v_where_duplicada || ' and n.obra_id = $5';
+    end if;
   end if;
 
   if v_tem_capitulo_id then
     v_colunas := array_append(v_colunas, 'capitulo_id');
     v_valores := array_append(v_valores, '$6');
-    v_where_duplicada := v_where_duplicada || ' and n.capitulo_id = $6';
+
+    if not v_tem_notificacao_id then
+      v_where_duplicada := v_where_duplicada || ' and n.capitulo_id = $6';
+    end if;
   end if;
 
   if v_tem_href then
@@ -212,6 +256,12 @@ begin
     v_valores := array_append(v_valores, 'false');
   end if;
 
+  if v_tem_notificacao_id then
+    v_colunas := array_append(v_colunas, 'notificacao_id');
+    v_valores := array_append(v_valores, '$10');
+    v_where_duplicada := v_where_duplicada || ' and n.notificacao_id = $10';
+  end if;
+
   if v_tem_metadata then
     v_colunas := array_append(v_colunas, 'metadata');
     v_valores := array_append(v_valores, '$8::jsonb');
@@ -227,8 +277,18 @@ begin
     v_valores := array_append(v_valores, '$9::timestamptz');
   end if;
 
+  if v_tem_created_at then
+    v_colunas := array_append(v_colunas, 'created_at');
+    v_valores := array_append(v_valores, '$9::timestamptz');
+  end if;
+
   if v_tem_atualizado_em then
     v_colunas := array_append(v_colunas, 'atualizado_em');
+    v_valores := array_append(v_valores, '$9::timestamptz');
+  end if;
+
+  if v_tem_updated_at then
+    v_colunas := array_append(v_colunas, 'updated_at');
     v_valores := array_append(v_valores, '$9::timestamptz');
   end if;
 
@@ -308,11 +368,24 @@ begin
   );
 
   execute v_sql
-    using v_autor_id, v_tipo, v_titulo, v_mensagem, p_obra_id, p_capitulo_id, v_href, v_metadata, v_criado_em;
+    using
+      v_autor_id,
+      v_tipo,
+      v_titulo,
+      v_mensagem,
+      p_obra_id,
+      p_capitulo_id,
+      v_href,
+      v_metadata,
+      v_criado_em,
+      v_notificacao_id;
 
   get diagnostics v_total = row_count;
 
   return v_total;
+exception
+  when others then
+    return 0;
 end;
 $$;
 
@@ -325,6 +398,16 @@ revoke all on function public.criar_notificacoes_capitulo(
   text,
   timestamptz
 ) from public;
+
+revoke all on function public.criar_notificacoes_capitulo(
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  timestamptz
+) from anon;
 
 grant execute on function public.criar_notificacoes_capitulo(
   uuid,

@@ -1,6 +1,10 @@
 -- 20260705_notificacoes_comunidade_triggers_v2.sql
 -- Corrige triggers da comunidade removendo referências frágeis a colunas opcionais em profiles.
 -- Rode depois de 20260705_notificacoes_comunidade_triggers.sql.
+-- Versão corrigida:
+-- - não quebra se as tabelas da comunidade ainda não existirem;
+-- - instala triggers só quando as colunas obrigatórias existirem;
+-- - remove execução direta de anon/authenticated nas funções internas.
 
 begin;
 
@@ -90,7 +94,8 @@ end;
 $$;
 
 revoke all on function public.obter_nome_usuario_notificacao(uuid) from public;
-grant execute on function public.obter_nome_usuario_notificacao(uuid) to authenticated;
+revoke all on function public.obter_nome_usuario_notificacao(uuid) from anon;
+revoke all on function public.obter_nome_usuario_notificacao(uuid) from authenticated;
 
 create or replace function public.notificar_curtida_post_comunidade()
 returns trigger
@@ -136,6 +141,8 @@ end;
 $$;
 
 revoke all on function public.notificar_curtida_post_comunidade() from public;
+revoke all on function public.notificar_curtida_post_comunidade() from anon;
+revoke all on function public.notificar_curtida_post_comunidade() from authenticated;
 
 create or replace function public.notificar_comentario_post_comunidade()
 returns trigger
@@ -182,6 +189,8 @@ end;
 $$;
 
 revoke all on function public.notificar_comentario_post_comunidade() from public;
+revoke all on function public.notificar_comentario_post_comunidade() from anon;
+revoke all on function public.notificar_comentario_post_comunidade() from authenticated;
 
 create or replace function public.notificar_curtida_comentario_comunidade()
 returns trigger
@@ -227,24 +236,74 @@ end;
 $$;
 
 revoke all on function public.notificar_curtida_comentario_comunidade() from public;
+revoke all on function public.notificar_curtida_comentario_comunidade() from anon;
+revoke all on function public.notificar_curtida_comentario_comunidade() from authenticated;
 
 -- Garante que os triggers continuem apontando para as funções corrigidas.
-drop trigger if exists trg_notificar_curtida_post_comunidade on public.comunidade_curtidas;
-create trigger trg_notificar_curtida_post_comunidade
-after insert on public.comunidade_curtidas
-for each row
-execute function public.notificar_curtida_post_comunidade();
+do $$
+begin
+  if to_regclass('public.comunidade_curtidas') is not null
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_curtidas'
+        and column_name in ('post_id', 'usuario_id')
+      group by table_schema, table_name
+      having count(*) = 2
+    )
+  then
+    drop trigger if exists trg_notificar_curtida_post_comunidade on public.comunidade_curtidas;
 
-drop trigger if exists trg_notificar_comentario_post_comunidade on public.comunidade_comentarios;
-create trigger trg_notificar_comentario_post_comunidade
-after insert on public.comunidade_comentarios
-for each row
-execute function public.notificar_comentario_post_comunidade();
+    create trigger trg_notificar_curtida_post_comunidade
+    after insert on public.comunidade_curtidas
+    for each row
+    execute function public.notificar_curtida_post_comunidade();
+  end if;
+end $$;
 
-drop trigger if exists trg_notificar_curtida_comentario_comunidade on public.comunidade_comentario_curtidas;
-create trigger trg_notificar_curtida_comentario_comunidade
-after insert on public.comunidade_comentario_curtidas
-for each row
-execute function public.notificar_curtida_comentario_comunidade();
+do $$
+begin
+  if to_regclass('public.comunidade_comentarios') is not null
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_comentarios'
+        and column_name in ('id', 'post_id', 'autor_id')
+      group by table_schema, table_name
+      having count(*) = 3
+    )
+  then
+    drop trigger if exists trg_notificar_comentario_post_comunidade on public.comunidade_comentarios;
+
+    create trigger trg_notificar_comentario_post_comunidade
+    after insert on public.comunidade_comentarios
+    for each row
+    execute function public.notificar_comentario_post_comunidade();
+  end if;
+end $$;
+
+do $$
+begin
+  if to_regclass('public.comunidade_comentario_curtidas') is not null
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_comentario_curtidas'
+        and column_name in ('comentario_id', 'usuario_id')
+      group by table_schema, table_name
+      having count(*) = 2
+    )
+  then
+    drop trigger if exists trg_notificar_curtida_comentario_comunidade on public.comunidade_comentario_curtidas;
+
+    create trigger trg_notificar_curtida_comentario_comunidade
+    after insert on public.comunidade_comentario_curtidas
+    for each row
+    execute function public.notificar_curtida_comentario_comunidade();
+  end if;
+end $$;
 
 commit;

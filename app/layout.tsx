@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import AdminBottomNavItem from "../components/AdminBottomNavItem";
+import { NotificacoesBottomNavItem } from "../components/NotificacoesBottomNavItem";
 import { NotificacoesProvider } from "../components/NotificacoesProvider";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
@@ -17,14 +18,43 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://historietas.com.br";
+const SITE_NAME = "Historietas";
+const SITE_DESCRIPTION =
+  "Plataforma para descobrir, ler e publicar webnovels, fanfics, mangás e histórias originais.";
+const DEFAULT_OG_IMAGE = "/favicon.ico";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Historietas",
-    template: "%s | Historietas",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Plataforma para descobrir, ler e publicar webnovels, fanfics, mangás e histórias originais.",
-  applicationName: "Historietas",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  icons: {
+    icon: "/favicon.ico",
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: "/",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE,
+        alt: SITE_NAME,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
+  },
 };
 
 export const viewport: Viewport = {
@@ -146,6 +176,8 @@ export default function RootLayout({
               </span>
               <span className="historietas-bottom-nav-label">Comunidade</span>
             </Link>
+
+            <NotificacoesBottomNavItem />
 
             <Link href="/perfil-autor" className="historietas-bottom-nav-item" aria-label="Perfil">
               <span

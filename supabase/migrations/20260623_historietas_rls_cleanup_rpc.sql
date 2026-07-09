@@ -734,58 +734,59 @@ end $$;
 alter table if exists public.notificacoes enable row level security;
 
 drop policy if exists "notificacoes_select_proprias" on public.notificacoes;
+drop policy if exists "notificacoes_select_proprio" on public.notificacoes;
 drop policy if exists "notificacoes_insert_autenticado" on public.notificacoes;
 drop policy if exists "notificacoes_insert_proprias" on public.notificacoes;
+drop policy if exists "notificacoes_insert_proprio" on public.notificacoes;
 drop policy if exists "notificacoes_insert_autor_para_seguidor" on public.notificacoes;
 drop policy if exists "notificacoes_update_proprias" on public.notificacoes;
+drop policy if exists "notificacoes_update_proprio" on public.notificacoes;
 drop policy if exists "notificacoes_delete_proprias" on public.notificacoes;
+drop policy if exists "notificacoes_delete_proprio" on public.notificacoes;
 
-create policy "notificacoes_select_proprias"
+create policy "notificacoes_select_proprio"
   on public.notificacoes
   for select
-  using (auth.uid() is not null and user_id = auth.uid());
-
--- INSERT próprio continua restrito ao dono.
--- Autor também pode criar notificação para seguidores da própria obra.
-create policy "notificacoes_insert_proprias"
-  on public.notificacoes
-  for insert
-  with check (
+  to authenticated
+  using (
     auth.uid() is not null
-    and user_id = auth.uid()
+    and user_id::text = auth.uid()::text
   );
 
--- Autor pode notificar seguidores da própria obra quando publicar capítulo.
-create policy "notificacoes_insert_autor_para_seguidor"
+create policy "notificacoes_insert_proprio"
   on public.notificacoes
   for insert
+  to authenticated
   with check (
     auth.uid() is not null
-    and user_id <> auth.uid()
-    and exists (
-      select 1
-      from public.obras o
-      where o.id = notificacoes.obra_id
-        and o.user_id = auth.uid()
-    )
-    and exists (
-      select 1
-      from public.seguindo_obras so
-      where so.obra_id = notificacoes.obra_id
-        and so.user_id = notificacoes.user_id
-    )
+    and user_id::text = auth.uid()::text
   );
 
-create policy "notificacoes_update_proprias"
+create policy "notificacoes_update_proprio"
   on public.notificacoes
   for update
-  using (auth.uid() is not null and user_id = auth.uid())
-  with check (auth.uid() is not null and user_id = auth.uid());
+  to authenticated
+  using (
+    auth.uid() is not null
+    and user_id::text = auth.uid()::text
+  )
+  with check (
+    auth.uid() is not null
+    and user_id::text = auth.uid()::text
+  );
 
-create policy "notificacoes_delete_proprias"
+create policy "notificacoes_delete_proprio"
   on public.notificacoes
   for delete
-  using (auth.uid() is not null and user_id = auth.uid());
+  to authenticated
+  using (
+    auth.uid() is not null
+    and user_id::text = auth.uid()::text
+  );
+
+revoke all on public.notificacoes from public;
+revoke all on public.notificacoes from anon;
+grant select, insert, update, delete on public.notificacoes to authenticated;
 
 -- ============================================================
 -- FIM DA PARTE ANTERIOR
@@ -875,11 +876,10 @@ values
   ('diario_anotacao_comentarios', 'diario_anotacao_comentarios_insert_proprio'),
   ('diario_anotacao_comentarios', 'diario_anotacao_comentarios_update_proprio'),
   ('diario_anotacao_comentarios', 'diario_anotacao_comentarios_delete_proprio'),
-  ('notificacoes', 'notificacoes_select_proprias'),
-  ('notificacoes', 'notificacoes_insert_proprias'),
-  ('notificacoes', 'notificacoes_insert_autor_para_seguidor'),
-  ('notificacoes', 'notificacoes_update_proprias'),
-  ('notificacoes', 'notificacoes_delete_proprias');
+  ('notificacoes', 'notificacoes_select_proprio'),
+  ('notificacoes', 'notificacoes_insert_proprio'),
+  ('notificacoes', 'notificacoes_update_proprio'),
+  ('notificacoes', 'notificacoes_delete_proprio');
 
 do $$
 declare
@@ -1035,7 +1035,9 @@ end;
 $$;
 
 revoke all on function public.marcar_notificacoes_lidas(text[], boolean) from public;
+revoke all on function public.marcar_notificacoes_lidas(text[], boolean) from anon;
 revoke all on function public.excluir_notificacoes_lidas() from public;
+revoke all on function public.excluir_notificacoes_lidas() from anon;
 
 grant execute on function public.marcar_notificacoes_lidas(text[], boolean) to authenticated;
 grant execute on function public.excluir_notificacoes_lidas() to authenticated;

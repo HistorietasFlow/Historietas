@@ -1735,8 +1735,7 @@ async function salvarPerfilUsuarioSupabase({
   }
 
   const atualizadoEm = new Date().toISOString();
-  const payloadPerfil: Record<string, unknown> = {
-    user_id: userIdLimpo,
+  const payloadPerfilUpdate: Record<string, unknown> = {
     nome: nome.trim() || "Usuário",
     avatar_url: perfil.avatar,
     bio: perfil.bio.slice(0, BIO_MAX_LENGTH),
@@ -1745,9 +1744,15 @@ async function salvarPerfilUsuarioSupabase({
   };
 
   if (username !== undefined) {
-    payloadPerfil.username =
+    payloadPerfilUpdate.username =
       username === null ? null : normalizarUsernamePerfilAutor(username);
   }
+
+  const payloadPerfilCriacao: Record<string, unknown> = {
+    id: userIdLimpo,
+    user_id: userIdLimpo,
+    ...payloadPerfilUpdate,
+  };
 
   try {
     const { data: perfilPorUserId, error: erroUserId } = await supabase
@@ -1779,7 +1784,7 @@ async function salvarPerfilUsuarioSupabase({
     if (perfilId) {
       const { error } = await supabase
         .from("profiles")
-        .update(payloadPerfil)
+        .update(payloadPerfilUpdate)
         .eq("id", perfilId);
 
       return {
@@ -1788,13 +1793,9 @@ async function salvarPerfilUsuarioSupabase({
       };
     }
 
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        id: userIdLimpo,
-        ...payloadPerfil,
-      },
-      { onConflict: "id" }
-    );
+    const { error } = await supabase
+      .from("profiles")
+      .insert(payloadPerfilCriacao);
 
     return {
       ok: !error,

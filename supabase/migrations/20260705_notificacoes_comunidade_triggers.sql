@@ -515,6 +515,10 @@ begin
   );
 
   return new;
+exception
+  when others then
+    raise notice 'Falha no trigger notificar_curtida_post_comunidade: %', sqlerrm;
+    return new;
 end;
 $$;
 
@@ -542,7 +546,7 @@ begin
     return new;
   end if;
 
-  v_nome := nullif(trim(coalesce(new.autor_nome, '')), '');
+  v_nome := nullif(trim(coalesce(to_jsonb(new) ->> 'autor_nome', '')), '');
 
   if v_nome is null then
     v_nome := public.historietas_nome_publico_usuario(new.autor_id);
@@ -559,6 +563,10 @@ begin
   );
 
   return new;
+exception
+  when others then
+    raise notice 'Falha no trigger notificar_comentario_post_comunidade: %', sqlerrm;
+    return new;
 end;
 $$;
 
@@ -599,6 +607,10 @@ begin
   );
 
   return new;
+exception
+  when others then
+    raise notice 'Falha no trigger notificar_curtida_comentario_comunidade: %', sqlerrm;
+    return new;
 end;
 $$;
 
@@ -608,7 +620,27 @@ $$;
 
 do $$
 begin
-  if to_regclass('public.comunidade_curtidas') is not null then
+  if to_regclass('public.comunidade_curtidas') is not null
+    and to_regclass('public.comunidade_posts') is not null
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_curtidas'
+        and column_name in ('post_id', 'usuario_id')
+      group by table_schema, table_name
+      having count(*) = 2
+    )
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_posts'
+        and column_name in ('id', 'autor_id')
+      group by table_schema, table_name
+      having count(*) = 2
+    )
+  then
     drop trigger if exists trg_notificar_curtida_post_comunidade on public.comunidade_curtidas;
 
     create trigger trg_notificar_curtida_post_comunidade
@@ -620,7 +652,27 @@ end $$;
 
 do $$
 begin
-  if to_regclass('public.comunidade_comentarios') is not null then
+  if to_regclass('public.comunidade_comentarios') is not null
+    and to_regclass('public.comunidade_posts') is not null
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_comentarios'
+        and column_name in ('id', 'post_id', 'autor_id')
+      group by table_schema, table_name
+      having count(*) = 3
+    )
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_posts'
+        and column_name in ('id', 'autor_id')
+      group by table_schema, table_name
+      having count(*) = 2
+    )
+  then
     drop trigger if exists trg_notificar_comentario_post_comunidade on public.comunidade_comentarios;
 
     create trigger trg_notificar_comentario_post_comunidade
@@ -632,7 +684,27 @@ end $$;
 
 do $$
 begin
-  if to_regclass('public.comunidade_comentario_curtidas') is not null then
+  if to_regclass('public.comunidade_comentario_curtidas') is not null
+    and to_regclass('public.comunidade_comentarios') is not null
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_comentario_curtidas'
+        and column_name in ('comentario_id', 'usuario_id')
+      group by table_schema, table_name
+      having count(*) = 2
+    )
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_comentarios'
+        and column_name in ('id', 'post_id', 'autor_id')
+      group by table_schema, table_name
+      having count(*) = 3
+    )
+  then
     drop trigger if exists trg_notificar_curtida_comentario_comunidade on public.comunidade_comentario_curtidas;
 
     create trigger trg_notificar_curtida_comentario_comunidade
@@ -647,6 +719,8 @@ end $$;
 -- ============================================================
 
 revoke all on function public.historietas_nome_publico_usuario(uuid) from public;
+revoke all on function public.historietas_nome_publico_usuario(uuid) from anon;
+revoke all on function public.historietas_nome_publico_usuario(uuid) from authenticated;
 
 revoke all on function public.criar_notificacao_comunidade_interna(
   uuid,
@@ -658,8 +732,36 @@ revoke all on function public.criar_notificacao_comunidade_interna(
   text
 ) from public;
 
+revoke all on function public.criar_notificacao_comunidade_interna(
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  text
+) from anon;
+
+revoke all on function public.criar_notificacao_comunidade_interna(
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  text
+) from authenticated;
+
 revoke all on function public.notificar_curtida_post_comunidade() from public;
+revoke all on function public.notificar_curtida_post_comunidade() from anon;
+revoke all on function public.notificar_curtida_post_comunidade() from authenticated;
+
 revoke all on function public.notificar_comentario_post_comunidade() from public;
+revoke all on function public.notificar_comentario_post_comunidade() from anon;
+revoke all on function public.notificar_comentario_post_comunidade() from authenticated;
+
 revoke all on function public.notificar_curtida_comentario_comunidade() from public;
+revoke all on function public.notificar_curtida_comentario_comunidade() from anon;
+revoke all on function public.notificar_curtida_comentario_comunidade() from authenticated;
 
 commit;

@@ -1,7 +1,7 @@
 -- 20260705_notificacoes_interacoes_capitulo_rpc.sql
 -- Cria notificações reais para curtida/comentário de capítulo usando SECURITY DEFINER.
 -- Resolve o bloqueio de RLS quando um leitor precisa notificar o autor ou outro usuário.
--- Versão corrigida: insert defensivo em notificacoes e execução restrita a authenticated.
+-- Versão corrigida: insert defensivo em notificacoes, execução restrita a authenticated e tipos permitidos validados.
 
 begin;
 
@@ -52,6 +52,14 @@ begin
     return 0;
   end if;
 
+  if v_tipo not in (
+    'curtida-capitulo',
+    'comentario-capitulo',
+    'curtida-comentario-capitulo'
+  ) then
+    return 0;
+  end if;
+
   select
     c.obra_id,
     coalesce(o.user_id, c.user_id)
@@ -67,6 +75,22 @@ begin
 
   if v_obra_id is null or v_receptor_id is null then
     return 0;
+  end if;
+
+  if v_tipo = 'curtida-capitulo' then
+    if to_regclass('public.curtidas_capitulos') is null then
+      return 0;
+    end if;
+
+    if not exists (
+      select 1
+      from public.curtidas_capitulos cc
+      where cc.capitulo_id = p_capitulo_id
+        and cc.user_id = v_ator_id
+      limit 1
+    ) then
+      return 0;
+    end if;
   end if;
 
   if v_tipo = 'comentario-capitulo' then
@@ -99,6 +123,20 @@ begin
     limit 1;
 
     if v_receptor_id is null then
+      return 0;
+    end if;
+
+    if to_regclass('public.comentarios_capitulos_curtidas') is null then
+      return 0;
+    end if;
+
+    if not exists (
+      select 1
+      from public.comentarios_capitulos_curtidas ccc
+      where ccc.comentario_id = p_comentario_id
+        and ccc.usuario_id = v_ator_id
+      limit 1
+    ) then
       return 0;
     end if;
   end if;

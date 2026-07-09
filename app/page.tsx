@@ -502,21 +502,21 @@ const THEME_STORAGE_KEY = "historietas-tema-visual";
 const OBRAS_CATALOGO_HOME: Obra[] = [];
 
 const HERO_INICIAL_HOME = {
-  titulo: "PUBLIQUE SUA HISTÓRIA",
+  titulo: "DESCUBRA NOVAS HISTÓRIAS",
   autor: "HISTORIETAS",
-  genero: "Plataforma nova",
-  classificacaoIndicativa: "Autores",
+  genero: "Catálogo em formação",
+  classificacaoIndicativa: "Leitores",
   sinopse:
-    "O HISTORIETAS está formando seu primeiro catálogo de obras.",
-  status: "Em andamento",
+    "O HISTORIETAS está formando seu catálogo inicial. Explore obras publicadas, acompanhe autores e publique sua história quando quiser.",
+  status: "Catálogo aberto",
   slug: "inicio",
-  formato: "História em capítulos",
-  tags: ["publicação", "autores", "histórias"],
+  formato: "Leitura online",
+  tags: ["leitura", "autores", "histórias"],
   views: "",
   likes: "",
   comentarios: "",
   disponivel: false,
-  link: "/publicar",
+  link: "/explorar",
 } as Obra & { link: string };
 
 function obterTemaVisualHomeSeguro(valor: unknown): TemaVisualHome {
@@ -2765,7 +2765,7 @@ export default function Home() {
 
   const usandoHeroInicial = obrasHero.length === 0;
   const heroObra = obrasHero[heroIndex] || obrasHero[0] || HERO_INICIAL_HOME;
-  const heroObraHref = usandoHeroInicial ? "/publicar" : criarHrefObraCatalogoHome(heroObra);
+  const heroObraHref = usandoHeroInicial ? "/explorar" : criarHrefObraCatalogoHome(heroObra);
   const heroTemImagem = Boolean(!usandoHeroInicial && obterImagemObraCatalogo(heroObra));
   const heroFavoritoId = usandoHeroInicial ? "" : obterIdentificadorFavoritoHome(heroObra);
   const heroTotalCapitulos = usandoHeroInicial
@@ -3500,8 +3500,14 @@ export default function Home() {
 
                 <div style={usandoHeroInicial ? desktopHeroInitialButtonsStyle : desktopHeroButtonsStyle}>
                   <Link href={heroObraHref} style={primaryButtonStyle}>
-                    {usandoHeroInicial ? "Publicar obra" : "Ver obra"}
+                    {usandoHeroInicial ? "Explorar obras" : "Ver obra"}
                   </Link>
+
+                  {usandoHeroInicial && (
+                    <Link href="/publicar" style={secondaryButtonStyle}>
+                      Publicar obra
+                    </Link>
+                  )}
 
                   {!usandoHeroInicial && (
                     <button
@@ -3575,8 +3581,14 @@ export default function Home() {
 
               <div style={usandoHeroInicial ? mobileHeroInitialButtonsStyle : mobileHeroButtonsStyle}>
                 <Link href={heroObraHref} style={primaryButtonStyle}>
-                  {usandoHeroInicial ? "Publicar obra" : "Ver obra"}
+                  {usandoHeroInicial ? "Explorar obras" : "Ver obra"}
                 </Link>
+
+                {usandoHeroInicial && (
+                  <Link href="/publicar" style={secondaryButtonStyle}>
+                    Publicar obra
+                  </Link>
+                )}
 
                 {!usandoHeroInicial && (
                   <button
@@ -5387,16 +5399,16 @@ const desktopHeroButtonsStyle: CSSProperties = {
 
 const desktopHeroInitialButtonsStyle: CSSProperties = {
   ...desktopHeroButtonsStyle,
-  gridTemplateColumns: "minmax(172px, 220px)",
-  justifyItems: "center",
+  gridTemplateColumns: "repeat(2, minmax(150px, 190px))",
+  justifyItems: "stretch",
   left: 0,
 };
 
 const mobileHeroInitialButtonsStyle: CSSProperties = {
   ...mobileHeroButtonsStyle,
-  gridTemplateColumns: "minmax(172px, 220px)",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   justifyContent: "center",
-  justifyItems: "center",
+  justifyItems: "stretch",
 };
 
 const primaryButtonStyle: CSSProperties = {

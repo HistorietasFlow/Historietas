@@ -32,115 +32,21 @@ create index if not exists obras_visualizacoes_idx
 
 create or replace function public.usuario_e_admin()
 returns boolean
-language plpgsql
+language sql
+stable
 security definer
 set search_path = public
 as $$
-declare
-  usuario_atual uuid := auth.uid();
-  jwt_atual jsonb := coalesce(auth.jwt(), '{}'::jsonb);
-  predicados_usuario text[] := array[]::text[];
-  where_usuario text := '';
-  coluna text;
-  eh_admin boolean := false;
-begin
-  if usuario_atual is null then
-    return false;
-  end if;
-
-  if lower(coalesce(jwt_atual -> 'app_metadata' ->> 'role', '')) in ('admin', 'moderador', 'moderator') then
-    return true;
-  end if;
-
-  if lower(coalesce(jwt_atual -> 'app_metadata' ->> 'cargo', '')) in ('admin', 'moderador', 'moderator') then
-    return true;
-  end if;
-
-  if lower(coalesce(jwt_atual -> 'app_metadata' ->> 'tipo_usuario', '')) in ('admin', 'moderador', 'moderator') then
-    return true;
-  end if;
-
-  if lower(coalesce(jwt_atual -> 'user_metadata' ->> 'role', '')) in ('admin', 'moderador', 'moderator') then
-    return true;
-  end if;
-
-  if to_regclass('public.profiles') is null then
-    return false;
-  end if;
-
-  if exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'profiles'
-      and column_name = 'id'
-  ) then
-    predicados_usuario := array_append(predicados_usuario, 'id::text = $1::text');
-  end if;
-
-  if exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = 'profiles'
-      and column_name = 'user_id'
-  ) then
-    predicados_usuario := array_append(predicados_usuario, 'user_id::text = $1::text');
-  end if;
-
-  if array_length(predicados_usuario, 1) is null then
-    return false;
-  end if;
-
-  where_usuario := '(' || array_to_string(predicados_usuario, ' or ') || ')';
-
-  foreach coluna in array array['is_admin', 'admin', 'eh_admin', 'moderador', 'is_moderator'] loop
-    if exists (
-      select 1
-      from information_schema.columns
-      where table_schema = 'public'
-        and table_name = 'profiles'
-        and column_name = coluna
-        and data_type = 'boolean'
-    ) then
-      execute format(
-        'select exists (select 1 from public.profiles where %s and coalesce(%I, false) = true)',
-        where_usuario,
-        coluna
-      )
-      into eh_admin
-      using usuario_atual;
-
-      if eh_admin then
-        return true;
-      end if;
-    end if;
-  end loop;
-
-  foreach coluna in array array['role', 'cargo', 'tipo_usuario', 'papel'] loop
-    if exists (
-      select 1
-      from information_schema.columns
-      where table_schema = 'public'
-        and table_name = 'profiles'
-        and column_name = coluna
-    ) then
-      execute format(
-        'select exists (select 1 from public.profiles where %s and lower(coalesce(%I::text, '''')) in (''admin'', ''moderador'', ''moderator''))',
-        where_usuario,
-        coluna
-      )
-      into eh_admin
-      using usuario_atual;
-
-      if eh_admin then
-        return true;
-      end if;
-    end if;
-  end loop;
-
-  return false;
-end;
+  select coalesce(
+    lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '')) in ('admin', 'moderador', 'moderator')
+    or lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'cargo', '')) in ('admin', 'moderador', 'moderator')
+    or lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'tipo_usuario', '')) in ('admin', 'moderador', 'moderator')
+    or lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'admin', '')) in ('true', '1', 'yes')
+    or lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'is_admin', '')) in ('true', '1', 'yes')
+    or lower(coalesce(auth.jwt() -> 'app_metadata' ->> 'moderator', '')) in ('true', '1', 'yes')
+    or coalesce(auth.jwt() -> 'app_metadata' -> 'roles', '[]'::jsonb) ?| array['admin', 'moderador', 'moderator'],
+    false
+  );
 $$;
 
 revoke all on function public.usuario_e_admin() from public;
@@ -259,25 +165,97 @@ alter table if exists public.comunidade_enquete_votos add column if not exists c
 
 create table if not exists public.comunidade_salvos (
   post_id uuid not null references public.comunidade_posts(id) on delete cascade,
-  usuario_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
   criado_em timestamptz not null default now(),
-  primary key (post_id, usuario_id)
+  primary key (post_id, user_id)
 );
 
 alter table if exists public.comunidade_salvos add column if not exists post_id uuid;
-alter table if exists public.comunidade_salvos add column if not exists usuario_id uuid;
+alter table if exists public.comunidade_salvos add column if not exists user_id uuid;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'comunidade_salvos'
+      and column_name = 'usuario_id'
+  ) then
+    execute 'update public.comunidade_salvos set user_id = usuario_id where user_id is null and usuario_id is not null';
+  end if;
+end $$;
 alter table if exists public.comunidade_salvos add column if not exists criado_em timestamptz default now();
 
 create table if not exists public.comunidade_post_salvos (
   post_id uuid not null references public.comunidade_posts(id) on delete cascade,
-  usuario_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
   criado_em timestamptz not null default now(),
-  primary key (post_id, usuario_id)
+  primary key (post_id, user_id)
 );
 
 alter table if exists public.comunidade_post_salvos add column if not exists post_id uuid;
-alter table if exists public.comunidade_post_salvos add column if not exists usuario_id uuid;
+alter table if exists public.comunidade_post_salvos add column if not exists user_id uuid;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'comunidade_post_salvos'
+      and column_name = 'usuario_id'
+  ) then
+    execute 'update public.comunidade_post_salvos set user_id = usuario_id where user_id is null and usuario_id is not null';
+  end if;
+end $$;
 alter table if exists public.comunidade_post_salvos add column if not exists criado_em timestamptz default now();
+
+create or replace function public.sincronizar_comunidade_salvos_user_id()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.user_id is null and new.usuario_id is not null then
+    new.user_id := new.usuario_id;
+  end if;
+
+  if new.usuario_id is null and new.user_id is not null then
+    new.usuario_id := new.user_id;
+  end if;
+
+  return new;
+end;
+$$;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'comunidade_salvos'
+      and column_name = 'usuario_id'
+  ) then
+    drop trigger if exists comunidade_salvos_sync_user_id on public.comunidade_salvos;
+    create trigger comunidade_salvos_sync_user_id
+    before insert or update on public.comunidade_salvos
+    for each row
+    execute function public.sincronizar_comunidade_salvos_user_id();
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'comunidade_post_salvos'
+      and column_name = 'usuario_id'
+  ) then
+    drop trigger if exists comunidade_post_salvos_sync_user_id on public.comunidade_post_salvos;
+    create trigger comunidade_post_salvos_sync_user_id
+    before insert or update on public.comunidade_post_salvos
+    for each row
+    execute function public.sincronizar_comunidade_salvos_user_id();
+  end if;
+end $$;
+
 
 create table if not exists public.comunidade_comentarios_salvos (
   comentario_id uuid not null references public.comunidade_comentarios(id) on delete cascade,
@@ -386,13 +364,13 @@ delete from public.comunidade_salvos a
 using public.comunidade_salvos b
 where a.ctid < b.ctid
   and a.post_id = b.post_id
-  and a.usuario_id = b.usuario_id;
+  and a.user_id = b.user_id;
 
 delete from public.comunidade_post_salvos a
 using public.comunidade_post_salvos b
 where a.ctid < b.ctid
   and a.post_id = b.post_id
-  and a.usuario_id = b.usuario_id;
+  and a.user_id = b.user_id;
 
 delete from public.comunidade_comentarios_salvos a
 using public.comunidade_comentarios_salvos b
@@ -435,8 +413,10 @@ create index if not exists comunidade_comentarios_salvos_comentario_id_idx on pu
 create unique index if not exists comunidade_curtidas_unica_idx on public.comunidade_curtidas (post_id, usuario_id);
 create unique index if not exists comunidade_comentario_curtidas_unica_idx on public.comunidade_comentario_curtidas (comentario_id, usuario_id);
 create unique index if not exists comunidade_enquete_votos_unico_idx on public.comunidade_enquete_votos (post_id, user_id);
-create unique index if not exists comunidade_salvos_unico_idx on public.comunidade_salvos (post_id, usuario_id);
-create unique index if not exists comunidade_post_salvos_unico_idx on public.comunidade_post_salvos (post_id, usuario_id);
+drop index if exists public.comunidade_salvos_unico_idx;
+create unique index if not exists comunidade_salvos_unico_idx on public.comunidade_salvos (post_id, user_id);
+drop index if exists public.comunidade_post_salvos_unico_idx;
+create unique index if not exists comunidade_post_salvos_unico_idx on public.comunidade_post_salvos (post_id, user_id);
 create unique index if not exists comunidade_comentarios_salvos_unico_idx on public.comunidade_comentarios_salvos (comentario_id, usuario_id);
 create unique index if not exists comunidade_denuncias_unica_idx on public.comunidade_denuncias (alvo_tipo, alvo_id, denunciante_id);
 
@@ -677,12 +657,12 @@ create policy "comunidade_salvos_select_publico"
 create policy "comunidade_salvos_insert_proprio"
   on public.comunidade_salvos
   for insert
-  with check (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+  with check (auth.uid() is not null and user_id::text = auth.uid()::text);
 
 create policy "comunidade_salvos_delete_proprio"
   on public.comunidade_salvos
   for delete
-  using (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+  using (auth.uid() is not null and user_id::text = auth.uid()::text);
 
 drop policy if exists "comunidade_post_salvos_select_publico" on public.comunidade_post_salvos;
 drop policy if exists "comunidade_post_salvos_insert_proprio" on public.comunidade_post_salvos;
@@ -696,12 +676,12 @@ create policy "comunidade_post_salvos_select_publico"
 create policy "comunidade_post_salvos_insert_proprio"
   on public.comunidade_post_salvos
   for insert
-  with check (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+  with check (auth.uid() is not null and user_id::text = auth.uid()::text);
 
 create policy "comunidade_post_salvos_delete_proprio"
   on public.comunidade_post_salvos
   for delete
-  using (auth.uid() is not null and usuario_id::text = auth.uid()::text);
+  using (auth.uid() is not null and user_id::text = auth.uid()::text);
 
 drop policy if exists "comunidade_comentarios_salvos_select_publico" on public.comunidade_comentarios_salvos;
 drop policy if exists "comunidade_comentarios_salvos_insert_proprio" on public.comunidade_comentarios_salvos;
@@ -725,16 +705,17 @@ create policy "comunidade_comentarios_salvos_delete_proprio"
 -- comunidade_denuncias
 
 drop policy if exists "comunidade_denuncias_select_proprias_ou_admin" on public.comunidade_denuncias;
+drop policy if exists "comunidade_denuncias_select_admin" on public.comunidade_denuncias;
 drop policy if exists "comunidade_denuncias_insert_propria" on public.comunidade_denuncias;
 drop policy if exists "comunidade_denuncias_update_admin" on public.comunidade_denuncias;
 drop policy if exists "comunidade_denuncias_delete_admin" on public.comunidade_denuncias;
 
-create policy "comunidade_denuncias_select_proprias_ou_admin"
+create policy "comunidade_denuncias_select_admin"
   on public.comunidade_denuncias
   for select
   using (
-    public.usuario_e_admin()
-    or (auth.uid() is not null and denunciante_id::text = auth.uid()::text)
+    auth.uid() is not null
+    and public.usuario_e_admin()
   );
 
 create policy "comunidade_denuncias_insert_propria"
@@ -781,16 +762,17 @@ create policy "top5_curtidas_delete_proprio"
 -- denuncias_perfis
 
 drop policy if exists "denuncias_perfis_select_proprias_ou_admin" on public.denuncias_perfis;
+drop policy if exists "denuncias_perfis_select_admin" on public.denuncias_perfis;
 drop policy if exists "denuncias_perfis_insert_propria" on public.denuncias_perfis;
 drop policy if exists "denuncias_perfis_update_admin" on public.denuncias_perfis;
 drop policy if exists "denuncias_perfis_delete_admin" on public.denuncias_perfis;
 
-create policy "denuncias_perfis_select_proprias_ou_admin"
+create policy "denuncias_perfis_select_admin"
   on public.denuncias_perfis
   for select
   using (
-    public.usuario_e_admin()
-    or (auth.uid() is not null and denunciante_id::text = auth.uid()::text)
+    auth.uid() is not null
+    and public.usuario_e_admin()
   );
 
 create policy "denuncias_perfis_insert_propria"
@@ -851,14 +833,14 @@ values
   ('comunidade_comentarios_salvos', 'comunidade_comentarios_salvos_select_publico'),
   ('comunidade_comentarios_salvos', 'comunidade_comentarios_salvos_insert_proprio'),
   ('comunidade_comentarios_salvos', 'comunidade_comentarios_salvos_delete_proprio'),
-  ('comunidade_denuncias', 'comunidade_denuncias_select_proprias_ou_admin'),
+  ('comunidade_denuncias', 'comunidade_denuncias_select_admin'),
   ('comunidade_denuncias', 'comunidade_denuncias_insert_propria'),
   ('comunidade_denuncias', 'comunidade_denuncias_update_admin'),
   ('comunidade_denuncias', 'comunidade_denuncias_delete_admin'),
   ('top5_curtidas', 'top5_curtidas_select_publico'),
   ('top5_curtidas', 'top5_curtidas_insert_proprio'),
   ('top5_curtidas', 'top5_curtidas_delete_proprio'),
-  ('denuncias_perfis', 'denuncias_perfis_select_proprias_ou_admin'),
+  ('denuncias_perfis', 'denuncias_perfis_select_admin'),
   ('denuncias_perfis', 'denuncias_perfis_insert_propria'),
   ('denuncias_perfis', 'denuncias_perfis_update_admin'),
   ('denuncias_perfis', 'denuncias_perfis_delete_admin');

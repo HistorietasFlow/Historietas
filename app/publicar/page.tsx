@@ -77,6 +77,30 @@ const LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO = 14;
 const LIMITE_CARACTERES_TAG_PERSONALIZADA = 10;
 
 const LIMITE_TAGS_OBRA = 1;
+const OPCOES_FORMATO_OBRA = [
+  "Webnovel",
+  "Light novel",
+  "Romance",
+  "Conto",
+  "Poesia",
+  "HQ",
+  "Mangá",
+  "Fanfic",
+] as const;
+
+const OPCOES_GENERO_OBRA = [
+  "Fantasia",
+  "Terror",
+  "Ficção",
+  "Romance",
+  "Drama",
+  "Ação",
+  "Mistério",
+  "Suspense",
+  "Aventura",
+  "Comédia",
+] as const;
+
 const OPCOES_TAGS_OBRA = [
   "Sombria",
   "Psicológico",
@@ -1813,14 +1837,9 @@ export default function PublicarPage() {
                   style={inputStyle}
                 >
                   <option value="">Escolha o formato</option>
-                  <option>Webnovel</option>
-                  <option>Light novel</option>
-                  <option>Romance</option>
-                  <option>Conto</option>
-                  <option>Poesia</option>
-                  <option>HQ</option>
-                  <option>Mangá</option>
-                  <option>Fanfic</option>
+                  {OPCOES_FORMATO_OBRA.map((opcao) => (
+                    <option key={opcao}>{opcao}</option>
+                  ))}
                   <option value={OUTRO_FORMATO_VALUE}>Outro formato</option>
                 </select>
 
@@ -1863,16 +1882,9 @@ export default function PublicarPage() {
                   style={inputStyle}
                 >
                   <option value="">Escolha um gênero</option>
-                  <option>Fantasia</option>
-                  <option>Terror</option>
-                  <option>Ficção</option>
-                  <option>Romance</option>
-                  <option>Drama</option>
-                  <option>Ação</option>
-                  <option>Mistério</option>
-                  <option>Suspense</option>
-                  <option>Aventura</option>
-                  <option>Comédia</option>
+                  {OPCOES_GENERO_OBRA.map((opcao) => (
+                    <option key={opcao}>{opcao}</option>
+                  ))}
                   <option value={OUTRO_GENERO_VALUE}>Outro gênero</option>
                 </select>
 

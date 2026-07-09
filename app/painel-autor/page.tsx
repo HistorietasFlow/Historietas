@@ -1925,6 +1925,7 @@ export default function PainelAutorPage() {
   }
 
   const usuarioLogado = Boolean(usuarioIdLogado);
+  const bibliotecaHref = "/perfil-autor?aba=biblioteca";
   function copiarTextoComFallback(texto: string) {
     const campoTemporario = document.createElement("textarea");
     campoTemporario.value = texto;
@@ -2161,6 +2162,9 @@ export default function PainelAutorPage() {
           </div>
         </section>
 
+          <Link href={bibliotecaHref} style={studioLibraryButtonStyle}>
+            Biblioteca
+          </Link>
 
           {filtrosAtivos && (
             <button type="button" onClick={limparFiltros} style={studioClearButtonStyle}>
@@ -2918,6 +2922,26 @@ const studioSearchInputStyle: CSSProperties = {
   fontWeight: 850,
   letterSpacing: "-0.035em",
   boxSizing: "border-box",
+};
+
+const studioLibraryButtonStyle: CSSProperties = {
+  minHeight: "34px",
+  borderRadius: "999px",
+  border: "1px solid rgba(124,58,237,0.34)",
+  background: "rgba(124,58,237,0.14)",
+  color: "#FFFFFF",
+  fontSize: "11px",
+  fontWeight: 950,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textAlign: "center",
+  padding: "0 14px",
+  boxShadow: "none",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  ...safeTextStyle,
 };
 
 const studioClearButtonStyle: CSSProperties = {
