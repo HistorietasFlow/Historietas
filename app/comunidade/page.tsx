@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, TouchEvent } from "react";
@@ -681,30 +682,67 @@ async function carregarVotosEnquetesSupabase(
   postIds: string[],
   usuarioId: string
 ) {
-  if (postIds.length === 0 || !usuarioId) {
+  const postIdsUnicos = Array.from(
+    new Set(postIds.map((postId) => postId.trim()).filter(Boolean))
+  );
+  const usuarioIdLimpo = usuarioId.trim();
+
+  if (postIdsUnicos.length === 0 || !usuarioIdLimpo) {
     return null;
   }
 
   try {
-    const { data, error } = await supabase
+    const { data: meusVotosData, error: meusVotosError } = await supabase
       .from("comunidade_enquete_votos")
       .select("post_id, user_id, opcao")
-      .in("post_id", postIds)
+      .in("post_id", postIdsUnicos)
+      .eq("user_id", usuarioIdLimpo)
       .limit(5000);
 
-    if (error || !Array.isArray(data)) {
+    if (meusVotosError || !Array.isArray(meusVotosData)) {
       return null;
     }
 
-    const resultados: ResultadoVotosEnquete = {};
     const meusVotos: Record<string, string> = {};
+
+    (meusVotosData as unknown as SupabaseEnqueteVotoRow[]).forEach((voto) => {
+      const postId = typeof voto.post_id === "string" ? voto.post_id : "";
+      const opcao = typeof voto.opcao === "string" ? voto.opcao : "";
+
+      if (postId && opcao) {
+        meusVotos[postId] = opcao;
+      }
+    });
+
+    const postIdsJaVotados = Object.keys(meusVotos);
+
+    if (postIdsJaVotados.length === 0) {
+      return {
+        resultados: {},
+        meusVotos,
+      };
+    }
+
+    const { data, error } = await supabase
+      .from("comunidade_enquete_votos")
+      .select("post_id, user_id, opcao")
+      .in("post_id", postIdsJaVotados)
+      .limit(5000);
+
+    if (error || !Array.isArray(data)) {
+      return {
+        resultados: {},
+        meusVotos,
+      };
+    }
+
+    const resultados: ResultadoVotosEnquete = {};
 
     (data as unknown as SupabaseEnqueteVotoRow[]).forEach((voto) => {
       const postId = typeof voto.post_id === "string" ? voto.post_id : "";
       const opcao = typeof voto.opcao === "string" ? voto.opcao : "";
-      const userId = typeof voto.user_id === "string" ? voto.user_id : "";
 
-      if (!postId || !opcao) {
+      if (!postId || !opcao || !postIdsJaVotados.includes(postId)) {
         return;
       }
 
@@ -712,10 +750,6 @@ async function carregarVotosEnquetesSupabase(
         ...(resultados[postId] || {}),
         [opcao]: (resultados[postId]?.[opcao] || 0) + 1,
       };
-
-      if (userId === usuarioId) {
-        meusVotos[postId] = opcao;
-      }
     });
 
     return {
@@ -2595,13 +2629,36 @@ export default function ComunidadePage() {
         return votosAtualizados;
       });
 
-      setResultadosEnquetes((resultadosAtuais) => ({
-        ...resultadosAtuais,
-        [postId]: {
-          ...(resultadosAtuais[postId] || {}),
-          [opcao]: (resultadosAtuais[postId]?.[opcao] || 0) + 1,
-        },
-      }));
+      const votosReais = await carregarVotosEnquetesSupabase(
+        [postId],
+        usuario.id
+      );
+
+      if (votosReais) {
+        setResultadosEnquetes((resultadosAtuais) => ({
+          ...resultadosAtuais,
+          ...votosReais.resultados,
+        }));
+
+        setVotosEnquetes((votosAtuais) => {
+          const votosAtualizados = {
+            ...votosAtuais,
+            ...votosReais.meusVotos,
+          };
+
+          salvarVotosEnquetesLocais(votosAtualizados, usuario.id);
+
+          return votosAtualizados;
+        });
+      } else {
+        setResultadosEnquetes((resultadosAtuais) => ({
+          ...resultadosAtuais,
+          [postId]: {
+            ...(resultadosAtuais[postId] || {}),
+            [opcao]: (resultadosAtuais[postId]?.[opcao] || 0) + 1,
+          },
+        }));
+      }
 
       emitirFeedbackAcao("Voto registrado.");
     } finally {
@@ -3898,7 +3955,8 @@ export default function ComunidadePage() {
                         ⋮
                       </button>
 
-                      {postMenuAbertoId === post.id && (
+                      {postMenuAbertoId === post.id && typeof document !== "undefined"
+                        ? createPortal(
                         <section
                           style={communityFiltersSheetOverlayStyle}
                           aria-label="Ações da publicação"
@@ -4016,8 +4074,10 @@ export default function ComunidadePage() {
                               </button>
                             )}
                           </article>
-                        </section>
-                      )}
+                        </section>,
+                            document.body
+                          )
+                        : null}
                     </div>
                   );
 
@@ -4106,19 +4166,24 @@ export default function ComunidadePage() {
                                 {obterOpcoesEnquete(post.texto).map((opcao) => {
                                   const votoAtual = votosEnquetes[post.id] || "";
                                   const selecionada = votoAtual === opcao;
-                                  const totalVotos = calcularTotalVotosEnquete(
-                                    resultadosEnquetes,
-                                    post.id
-                                  );
-                                  const porcentagem = calcularPorcentagemOpcaoEnquete(
-                                    resultadosEnquetes,
-                                    post.id,
-                                    opcao
-                                  );
+                                  const usuarioVotouNaEnquete = Boolean(votoAtual);
+                                  const totalVotos = usuarioVotouNaEnquete
+                                    ? calcularTotalVotosEnquete(
+                                        resultadosEnquetes,
+                                        post.id
+                                      )
+                                    : 0;
+                                  const porcentagem = usuarioVotouNaEnquete
+                                    ? calcularPorcentagemOpcaoEnquete(
+                                        resultadosEnquetes,
+                                        post.id,
+                                        opcao
+                                      )
+                                    : 0;
                                   const larguraResultado =
-                                    totalVotos > 0
+                                    usuarioVotouNaEnquete && totalVotos > 0
                                       ? `${porcentagem}%`
-                                      : selecionada
+                                      : usuarioVotouNaEnquete && selecionada
                                         ? "100%"
                                         : "0%";
 
@@ -4138,6 +4203,7 @@ export default function ComunidadePage() {
                                         style={{
                                           ...pollPostResultBarStyle,
                                           width: larguraResultado,
+                                          opacity: usuarioVotouNaEnquete ? 1 : 0,
                                         }}
                                       />
 
@@ -4158,10 +4224,12 @@ export default function ComunidadePage() {
                                           WebkitTextFillColor: "#FFFFFF",
                                         }}
                                       >
-                                        {selecionada
-                                          ? `${totalVotos > 0 ? porcentagem : 100}%`
-                                          : totalVotos > 0
-                                            ? `${porcentagem}%`
+                                        {usuarioVotouNaEnquete
+                                          ? selecionada
+                                            ? `${totalVotos > 0 ? porcentagem : 100}%`
+                                            : `${porcentagem}%`
+                                          : votandoEnqueteId === post.id
+                                            ? "..."
                                             : "Votar"}
                                       </span>
                                     </button>

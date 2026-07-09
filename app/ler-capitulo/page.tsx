@@ -1740,7 +1740,7 @@ async function carregarProfilesPorUsuariosLeitor(userIds: string[]) {
   try {
     const { data } = await supabase
       .from("profiles")
-      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+      .select("id,user_id,nome,avatar_url")
       .in("user_id", idsValidos)
       .limit(1000);
 
@@ -1765,7 +1765,7 @@ async function carregarProfilesPorUsuariosLeitor(userIds: string[]) {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+        .select("id,user_id,nome,avatar_url")
         .in("id", idsSemProfile)
         .limit(1000);
 
