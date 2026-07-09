@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import AdminBottomNavItem from "../components/AdminBottomNavItem";
-import { NotificacoesBottomNavItem } from "../components/NotificacoesBottomNavItem";
 import { NotificacoesProvider } from "../components/NotificacoesProvider";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
@@ -76,8 +75,65 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable}`}
       data-scroll-behavior="smooth"
+      data-historietas-bottom-nav-oculto="false"
+      suppressHydrationWarning
     >
       <body>
+        <Script
+          id="historietas-bottom-nav-visibility"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (() => {
+                function normalizarCaminhoBottomNav(pathname) {
+                  const caminho = pathname || window.location.pathname || "/";
+
+                  if (caminho.length > 1 && caminho.endsWith("/")) {
+                    return caminho.slice(0, -1);
+                  }
+
+                  return caminho;
+                }
+
+                function deveOcultarBottomNav(pathname) {
+                  const caminho = normalizarCaminhoBottomNav(pathname);
+
+                  return caminho === "/login" || caminho.startsWith("/login/");
+                }
+
+                function aplicarVisibilidadeBottomNav() {
+                  document.documentElement.setAttribute(
+                    "data-historietas-bottom-nav-oculto",
+                    deveOcultarBottomNav(window.location.pathname) ? "true" : "false"
+                  );
+                }
+
+                aplicarVisibilidadeBottomNav();
+
+                const pushStateOriginalBottomNav = window.history.pushState;
+                const replaceStateOriginalBottomNav = window.history.replaceState;
+
+                window.history.pushState = function historietasBottomNavPushState() {
+                  const resultado = pushStateOriginalBottomNav.apply(this, arguments);
+                  window.setTimeout(aplicarVisibilidadeBottomNav, 0);
+                  window.setTimeout(aplicarVisibilidadeBottomNav, 120);
+                  return resultado;
+                };
+
+                window.history.replaceState = function historietasBottomNavReplaceState() {
+                  const resultado = replaceStateOriginalBottomNav.apply(this, arguments);
+                  window.setTimeout(aplicarVisibilidadeBottomNav, 0);
+                  window.setTimeout(aplicarVisibilidadeBottomNav, 120);
+                  return resultado;
+                };
+
+                window.addEventListener("popstate", aplicarVisibilidadeBottomNav);
+                window.addEventListener("pageshow", aplicarVisibilidadeBottomNav);
+              })();
+            `,
+          }}
+        />
+
         <NotificacoesProvider>
           <div className="historietas-app-shell">{children}</div>
 
@@ -177,7 +233,6 @@ export default function RootLayout({
               <span className="historietas-bottom-nav-label">Comunidade</span>
             </Link>
 
-            <NotificacoesBottomNavItem />
 
             <Link href="/perfil-autor" className="historietas-bottom-nav-item" aria-label="Perfil">
               <span
@@ -373,7 +428,7 @@ export default function RootLayout({
                   if (caminho === "/comunidade" || caminho.startsWith("/comunidade/")) return "/comunidade";
                   if (caminho === "/perfil-autor" || caminho.startsWith("/perfil-autor/")) return "/perfil-autor";
                   if (caminho === "/admin/comunidade" || caminho.startsWith("/admin/comunidade/")) return "/admin/comunidade";
-                  if (caminho === "/notificacoes" || caminho.startsWith("/notificacoes/")) return "/notificacoes";
+                  if (caminho === "/notificacoes" || caminho.startsWith("/notificacoes/")) return "/perfil-autor";
                   if (caminho === "/configuracoes" || caminho.startsWith("/configuracoes/")) return "/perfil-autor";
                   if (caminho === "/painel-autor" || caminho.startsWith("/painel-autor/")) return "/perfil-autor";
 
@@ -1050,6 +1105,21 @@ export default function RootLayout({
                 color: #FFFFFF !important;
                 -webkit-text-fill-color: #FFFFFF !important;
                 border-color: rgba(173, 149, 234, 0.86) !important;
+              }
+
+
+
+              /* Mantém o Bottom Nav como carrossel: 5 botões visíveis e o Admin aparece ao deslizar. */
+              html[data-historietas-bottom-nav-oculto="true"] .historietas-app-shell,
+              html[data-historietas-bottom-nav-oculto="true"] body .historietas-app-shell {
+                padding-bottom: 0 !important;
+              }
+
+              html[data-historietas-bottom-nav-oculto="true"] .historietas-bottom-nav,
+              html[data-historietas-bottom-nav-oculto="true"] body .historietas-bottom-nav,
+              html[data-historietas-bottom-nav-oculto="true"] [data-bottom-nav],
+              html[data-historietas-bottom-nav-oculto="true"] [data-mobile-nav] {
+                display: none !important;
               }
 
               @media (min-width: 768px) {

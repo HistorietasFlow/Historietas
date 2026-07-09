@@ -7889,12 +7889,29 @@ export default function PerfilAutorPage() {
                       href="/notificacoes"
                       style={menuItemStyle}
                       onClick={() => setMenuPerfilAberto(false)}
+                      aria-label={
+                        notificacoesNaoLidas > 0
+                          ? `Notificações: ${notificacoesNaoLidas} não lidas`
+                          : "Notificações"
+                      }
                     >
                       <span style={menuItemIconStyle}>
                         <MenuPerfilIcone tipo="notificacoes" />
                       </span>
                       <strong style={menuItemTextStyle}>Notificações</strong>
-                      <span style={menuChevronStyle}>›</span>
+                      <span style={menuNotificationRightStyle}>
+                        {notificacoesNaoLidas > 0 ? (
+                          <span
+                            style={menuNotificationBadgeStyle}
+                            aria-label={`${notificacoesNaoLidas > 99 ? "99+" : notificacoesNaoLidas} notificações não lidas`}
+                          >
+                            {notificacoesNaoLidas > 99
+                              ? "99+"
+                              : notificacoesNaoLidas}
+                          </span>
+                        ) : null}
+                        <span style={menuChevronStyle}>›</span>
+                      </span>
                     </Link>
 
                     <Link
@@ -10831,7 +10848,7 @@ const menuItemStyle: CSSProperties = {
   color: "#FFFFFF",
   textDecoration: "none",
   display: "grid",
-  gridTemplateColumns: "32px minmax(0, 1fr) 16px",
+  gridTemplateColumns: "32px minmax(0, 1fr) auto",
   alignItems: "center",
   gap: "10px",
   padding: "0",
@@ -10872,6 +10889,32 @@ const menuChevronStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 700,
   textAlign: "right",
+};
+
+const menuNotificationRightStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const menuNotificationBadgeStyle: CSSProperties = {
+  minWidth: "18px",
+  height: "18px",
+  borderRadius: "999px",
+  padding: "0 5px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "10px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  boxShadow: "0 0 0 2px #070212",
+  pointerEvents: "none",
 };
 
 const menuCancelButtonStyle: CSSProperties = {
