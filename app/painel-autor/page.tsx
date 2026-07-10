@@ -770,6 +770,7 @@ async function removerReferenciasSupabaseObraExcluidaPainel(
       supabase.from("obra_avaliacoes").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
       supabase.from("progresso_leitura").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
       supabase.from("diario_atividades").delete().eq("user_id", usuarioId).eq("obra_id", obraIdLimpo),
+      supabase.from("comentarios_obras").delete().eq("obra_id", obraIdLimpo),
     ]);
 
     if (capitulosValidos.length > 0) {
@@ -910,6 +911,7 @@ const CAMPOS_REGISTROS_PAINEL_AUTOR: Record<string, string> = {
   salvos_capitulos: "user_id,capitulo_id",
   curtidas_capitulos: "user_id,capitulo_id",
   comentarios_capitulos: "user_id,capitulo_id,comentario",
+  comentarios_obras: "user_id,obra_id,comentario",
   progresso_leitura: "user_id,obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
   obra_curtidas: "user_id,obra_id",
   seguindo_obras: "user_id,obra_id",
@@ -926,6 +928,7 @@ const TABELAS_PAINEL_POR_OBRA = new Set([
   "concluidas",
   "obra_curtidas",
   "seguindo_obras",
+  "comentarios_obras",
 ]);
 
 function obterCamposRegistrosPainelAutor(tabela: string) {
@@ -1422,6 +1425,7 @@ async function carregarPainelAutorSupabase(
       salvosBanco,
       curtidasBanco,
       comentariosBanco,
+      comentariosObrasBanco,
       progressoBanco,
       curtidasObraBanco,
       seguidoresObraBanco,
@@ -1432,6 +1436,7 @@ async function carregarPainelAutorSupabase(
       carregarRegistrosObraSupabase("salvos_capitulos", obraIds, undefined, capituloIds),
       carregarRegistrosObraSupabase("curtidas_capitulos", obraIds, undefined, capituloIds),
       carregarRegistrosObraSupabase("comentarios_capitulos", obraIds, undefined, capituloIds),
+      carregarRegistrosObraSupabase("comentarios_obras", obraIds),
       carregarRegistrosObraSupabase("progresso_leitura", obraIds, undefined, capituloIds),
       carregarRegistrosObraSupabase("obra_curtidas", obraIds),
       carregarRegistrosObraSupabase("seguindo_obras", obraIds),
@@ -1482,6 +1487,11 @@ async function carregarPainelAutorSupabase(
         obraBanco.id,
         capitulosDaObra
       );
+      const totalComentariosObra = contarRegistrosRelacionadosObraPainel(
+        comentariosObrasBanco,
+        obraBanco.id,
+        capitulosDaObra
+      );
       const totalLeiturasCapitulos = contarRegistrosRelacionadosObraPainel(
         progressoBanco,
         obraBanco.id,
@@ -1509,10 +1519,11 @@ async function carregarPainelAutorSupabase(
           calcularCurtidas(obraNormalizada),
           totalCurtidasCapitulos + totalCurtidasObra
         ),
-        totalComentariosPainel: Math.max(
-          calcularComentarios(obraNormalizada),
-          totalComentariosCapitulos
-        ),
+        totalComentariosPainel:
+          Math.max(
+            calcularComentarios(obraNormalizada),
+            totalComentariosCapitulos
+          ) + totalComentariosObra,
         totalSalvosPainel: Math.max(
           calcularSalvos(obraNormalizada),
           totalSalvosCapitulos + totalSeguidoresObra + totalFavoritosObra
@@ -1925,7 +1936,6 @@ export default function PainelAutorPage() {
   }
 
   const usuarioLogado = Boolean(usuarioIdLogado);
-  const bibliotecaHref = "/perfil-autor?aba=biblioteca";
   function copiarTextoComFallback(texto: string) {
     const campoTemporario = document.createElement("textarea");
     campoTemporario.value = texto;
@@ -2162,10 +2172,6 @@ export default function PainelAutorPage() {
           </div>
         </section>
 
-          <Link href={bibliotecaHref} style={studioLibraryButtonStyle}>
-            Biblioteca
-          </Link>
-
           {filtrosAtivos && (
             <button type="button" onClick={limparFiltros} style={studioClearButtonStyle}>
               Limpar filtros
@@ -2375,7 +2381,6 @@ function ObraPainelCard({
   const obraHref = linkObraPainel || `/obra/${encodeURIComponent(slugObraPainel)}`;
   const editarHref = `/editar-obra?obraId=${obra.id}`;
   const capituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
-  const verArquivoHref = `/ver-arquivo?obraId=${obra.id}`;
   const capituloParaLer = obra.ultimoCapituloLido || obra.capitulos[0] || null;
   const editarCapituloHref = capituloParaLer
     ? `/editar-capitulo?obraId=${obra.id}&capituloId=${capituloParaLer.id}`
@@ -2600,13 +2605,15 @@ function ObraPainelCard({
 
 
               {obra.arquivoObra && (
-                <Link
-                  href={verArquivoHref}
+                <a
+                  href={obra.arquivoObra.conteudo}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setAcoesAbertas(false)}
                   style={fileButtonStyle}
                 >
                   Ver arquivo
-                </Link>
+                </a>
               )}
 
               <button
@@ -2922,26 +2929,6 @@ const studioSearchInputStyle: CSSProperties = {
   fontWeight: 850,
   letterSpacing: "-0.035em",
   boxSizing: "border-box",
-};
-
-const studioLibraryButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  border: "1px solid rgba(124,58,237,0.34)",
-  background: "rgba(124,58,237,0.14)",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 14px",
-  boxShadow: "none",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  ...safeTextStyle,
 };
 
 const studioClearButtonStyle: CSSProperties = {

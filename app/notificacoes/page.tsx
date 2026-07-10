@@ -53,6 +53,8 @@ type NotificacaoLocal = {
   mensagem: string;
   tipo:
     | "novo-capitulo"
+    | "comentario-obra"
+    | "curtida-obra"
     | "comentario-capitulo"
     | "curtida-capitulo"
     | "curtida-comentario-capitulo"
@@ -361,6 +363,8 @@ function normalizarTipoNotificacao(valor: unknown): NotificacaoLocal["tipo"] {
 
   if (
     tipoOriginal === "novo-capitulo" ||
+    tipoOriginal === "comentario-obra" ||
+    tipoOriginal === "curtida-obra" ||
     tipoOriginal === "comentario-capitulo" ||
     tipoOriginal === "curtida-capitulo" ||
     tipoOriginal === "curtida-comentario-capitulo" ||
@@ -651,6 +655,16 @@ function montarLinkNotificacao(
   }
 
   if (
+    (notificacao.tipo === "comentario-obra" ||
+      notificacao.tipo === "curtida-obra") &&
+    obra
+  ) {
+    const slugObra = obra.slug?.trim() || criarSlugBase(obra.titulo);
+
+    return obra.link?.trim() || `/obra/${encodeURIComponent(slugObra)}`;
+  }
+
+  if (
     notificacaoEhCapitulo(notificacao) &&
     obra &&
     notificacao.obraId &&
@@ -707,6 +721,14 @@ function normalizarNotificacaoParaExibicao(notificacao: NotificacaoLocal) {
 }
 
 function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
+  if (notificacao.tipo === "comentario-obra") {
+    return "Comentário na obra";
+  }
+
+  if (notificacao.tipo === "curtida-obra") {
+    return "Curtida na obra";
+  }
+
   if (notificacao.tipo === "comentario-comunidade") {
     return "Comentário em publicação";
   }
@@ -767,6 +789,13 @@ function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
     return "Ver perfil";
   }
 
+  if (
+    notificacao.tipo === "comentario-obra" ||
+    notificacao.tipo === "curtida-obra"
+  ) {
+    return "Ver obra";
+  }
+
   if (notificacaoEhDiario(notificacao)) {
     return "Ver Diário";
   }
@@ -790,12 +819,17 @@ function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
     return "💬";
   }
 
+  if (notificacao.tipo === "comentario-obra") {
+    return "💬";
+  }
+
   if (notificacao.tipo === "comentario-capitulo") {
     return "💬";
   }
 
   if (
     notificacaoPareceCurtidaComunidade(notificacao) ||
+    notificacao.tipo === "curtida-obra" ||
     notificacao.tipo === "curtida-capitulo" ||
     notificacao.tipo === "curtida-comentario-capitulo"
   ) {
@@ -839,6 +873,14 @@ function obterTituloExibicaoNotificacao(notificacao: NotificacaoLocal) {
 
   const tituloSemNovo =
     notificacao.titulo.replace(/^Novo\s+/i, "").trim() || notificacao.titulo;
+
+  if (notificacao.tipo === "comentario-obra") {
+    return "Comentário na sua obra";
+  }
+
+  if (notificacao.tipo === "curtida-obra") {
+    return "Curtida na sua obra";
+  }
 
   if (notificacao.tipo === "comentario-comunidade") {
     return tituloSemNovo.replace(/\bna publicação\b/i, "da publicação");
@@ -934,6 +976,8 @@ function notificacaoTemAutorSocial(notificacao: NotificacaoLocal) {
   return (
     notificacaoPareceComentarioComunidade(notificacao) ||
     notificacaoPareceCurtidaComunidade(notificacao) ||
+    notificacao.tipo === "comentario-obra" ||
+    notificacao.tipo === "curtida-obra" ||
     notificacao.tipo === "comentario-capitulo" ||
     notificacao.tipo === "curtida-capitulo" ||
     notificacao.tipo === "curtida-comentario-capitulo" ||
@@ -948,6 +992,7 @@ function obterTituloBlocoSocialNotificacao(notificacao: NotificacaoLocal) {
 
   if (
     notificacaoPareceComentarioComunidade(notificacao) ||
+    notificacao.tipo === "comentario-obra" ||
     notificacao.tipo === "comentario-capitulo" ||
     notificacao.tipo === "comentario-diario"
   ) {
@@ -956,6 +1001,7 @@ function obterTituloBlocoSocialNotificacao(notificacao: NotificacaoLocal) {
 
   if (
     notificacaoPareceCurtidaComunidade(notificacao) ||
+    notificacao.tipo === "curtida-obra" ||
     notificacao.tipo === "curtida-capitulo" ||
     notificacao.tipo === "curtida-comentario-capitulo" ||
     notificacao.tipo === "curtida-diario"
@@ -3905,6 +3951,7 @@ export default function NotificacoesPage() {
                       <div
                         style={
                           notificacao.tipo === "comentario-comunidade" ||
+                          notificacao.tipo === "comentario-obra" ||
                           notificacao.tipo === "comentario-capitulo" ||
                           notificacao.tipo === "comentario-diario"
                             ? communityCommentBoxStyle

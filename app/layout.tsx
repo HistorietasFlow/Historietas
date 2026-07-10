@@ -439,8 +439,6 @@ export default function RootLayout({
                     caminho.startsWith("/editar-capitulo/") ||
                     caminho === "/adicionar-capitulo" ||
                     caminho.startsWith("/adicionar-capitulo/") ||
-                    caminho === "/ver-arquivo" ||
-                    caminho.startsWith("/ver-arquivo/") ||
                     caminho === "/configuracoes" ||
                     caminho.startsWith("/configuracoes/")
                   ) {

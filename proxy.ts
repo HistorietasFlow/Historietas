@@ -11,7 +11,6 @@ const rotasProtegidas = [
   "/painel-autor",
   "/publicar",
   "/seguindo",
-  "/ver-arquivo",
 ];
 
 type CookieParaSalvar = {

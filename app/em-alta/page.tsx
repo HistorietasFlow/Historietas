@@ -107,15 +107,30 @@ type SupabaseCapituloRow = {
 
 type SupabaseInteracaoCapituloRow = {
   capitulo_id: string | null;
+  user_id: string | null;
 };
 
 type SupabaseInteracaoObraRow = {
   obra_id: string | null;
+  user_id: string | null;
 };
 
 type SupabaseAvaliacaoObraRow = {
   obra_id: string | null;
+  user_id: string | null;
   nota: number | null;
+};
+
+type UsuariosPorObraRanking = Record<string, string[]>;
+
+type ResultadoInteracoesCapitulosRanking = {
+  porCapitulo: Record<string, number>;
+  usuariosPorObra: UsuariosPorObraRanking;
+};
+
+type ResultadoInteracoesObrasRanking = {
+  porObra: Record<string, number>;
+  usuariosPorObra: UsuariosPorObraRanking;
 };
 
 type SupabaseProfileAutorRankingRow = {
@@ -756,7 +771,7 @@ async function buscarSeguidoresAutoresRanking(autorIds: string[]) {
   try {
     const { data, error } = await supabase
       .from("seguindo_usuarios")
-      .select("seguido_id")
+      .select("seguido_id,seguidor_id")
       .in("seguido_id", idsUnicos)
       .limit(3000);
 
@@ -771,24 +786,41 @@ async function buscarSeguidoresAutoresRanking(autorIds: string[]) {
       return {} as Record<string, number>;
     }
 
-    return data.reduce<Record<string, number>>((contagem, registro) => {
+    const usuariosPorAutor = new Map<string, Set<string>>();
+
+    data.forEach((registro) => {
       if (
         !registro ||
         typeof registro !== "object" ||
         Array.isArray(registro)
       ) {
+        return;
+      }
+
+      const linha = registro as Record<string, unknown>;
+      const autorId =
+        typeof linha.seguido_id === "string" ? linha.seguido_id.trim() : "";
+      const seguidorId =
+        typeof linha.seguidor_id === "string"
+          ? linha.seguidor_id.trim()
+          : "";
+
+      if (!autorId || !seguidorId) {
+        return;
+      }
+
+      const usuarios = usuariosPorAutor.get(autorId) || new Set<string>();
+      usuarios.add(seguidorId);
+      usuariosPorAutor.set(autorId, usuarios);
+    });
+
+    return Array.from(usuariosPorAutor.entries()).reduce<Record<string, number>>(
+      (contagem, [autorId, usuarios]) => {
+        contagem[autorId] = usuarios.size;
         return contagem;
-      }
-
-      const seguidoId = (registro as Record<string, unknown>).seguido_id;
-      const autorId = typeof seguidoId === "string" ? seguidoId.trim() : "";
-
-      if (autorId) {
-        contagem[autorId] = (contagem[autorId] || 0) + 1;
-      }
-
-      return contagem;
-    }, {});
+      },
+      {},
+    );
   } catch (error) {
     console.warn("Não consegui acessar seguindo_usuarios no ranking:", error);
     return {} as Record<string, number>;
@@ -942,46 +974,142 @@ function normalizarTipoArquivoSupabase(
   return "outro";
 }
 
-function contarPorCapitulo(linhas: SupabaseInteracaoCapituloRow[]) {
-  return linhas.reduce<Record<string, number>>((contagem, linha) => {
-    const capituloId = linha.capitulo_id?.trim();
+function adicionarUsuarioRanking(
+  usuariosPorChave: Map<string, Set<string>>,
+  chave: string,
+  userId: string,
+) {
+  const chaveLimpa = chave.trim();
+  const userIdLimpo = userId.trim();
 
-    if (!capituloId) {
-      return contagem;
-    }
+  if (!chaveLimpa || !userIdLimpo) {
+    return;
+  }
 
-    contagem[capituloId] = (contagem[capituloId] || 0) + 1;
-
-    return contagem;
-  }, {});
+  const usuarios = usuariosPorChave.get(chaveLimpa) || new Set<string>();
+  usuarios.add(userIdLimpo);
+  usuariosPorChave.set(chaveLimpa, usuarios);
 }
 
-function contarPorObra(linhas: SupabaseInteracaoObraRow[]) {
-  return linhas.reduce<Record<string, number>>((contagem, linha) => {
-    const obraId = linha.obra_id?.trim();
+function converterMapaUsuariosRanking(
+  usuariosPorChave: Map<string, Set<string>>,
+) {
+  return Array.from(usuariosPorChave.entries()).reduce<UsuariosPorObraRanking>(
+    (resultado, [chave, usuarios]) => {
+      resultado[chave] = Array.from(usuarios);
+      return resultado;
+    },
+    {},
+  );
+}
 
-    if (!obraId) {
+function contarUsuariosRanking(usuariosPorObra: UsuariosPorObraRanking) {
+  return Object.entries(usuariosPorObra).reduce<Record<string, number>>(
+    (contagem, [obraId, usuarios]) => {
+      contagem[obraId] = new Set(
+        usuarios.map((userId) => userId.trim()).filter(Boolean),
+      ).size;
+
       return contagem;
-    }
+    },
+    {},
+  );
+}
 
-    contagem[obraId] = (contagem[obraId] || 0) + 1;
+function combinarUsuariosRanking(
+  ...fontes: UsuariosPorObraRanking[]
+): UsuariosPorObraRanking {
+  const usuariosCombinados = new Map<string, Set<string>>();
 
+  fontes.forEach((fonte) => {
+    Object.entries(fonte).forEach(([obraId, usuarios]) => {
+      usuarios.forEach((userId) => {
+        adicionarUsuarioRanking(usuariosCombinados, obraId, userId);
+      });
+    });
+  });
+
+  return converterMapaUsuariosRanking(usuariosCombinados);
+}
+
+function contarPorCapitulo(
+  linhas: SupabaseInteracaoCapituloRow[],
+  obraIdPorCapitulo: Record<string, string>,
+): ResultadoInteracoesCapitulosRanking {
+  const usuariosPorCapitulo = new Map<string, Set<string>>();
+  const usuariosPorObra = new Map<string, Set<string>>();
+
+  linhas.forEach((linha) => {
+    const capituloId = linha.capitulo_id?.trim() || "";
+    const userId = linha.user_id?.trim() || "";
+    const obraId = capituloId ? obraIdPorCapitulo[capituloId] || "" : "";
+
+    adicionarUsuarioRanking(usuariosPorCapitulo, capituloId, userId);
+    adicionarUsuarioRanking(usuariosPorObra, obraId, userId);
+  });
+
+  const porCapitulo = Array.from(usuariosPorCapitulo.entries()).reduce<
+    Record<string, number>
+  >((contagem, [capituloId, usuarios]) => {
+    contagem[capituloId] = usuarios.size;
     return contagem;
   }, {});
+
+  return {
+    porCapitulo,
+    usuariosPorObra: converterMapaUsuariosRanking(usuariosPorObra),
+  };
+}
+
+function contarPorObra(
+  linhas: SupabaseInteracaoObraRow[],
+): ResultadoInteracoesObrasRanking {
+  const usuariosPorObra = new Map<string, Set<string>>();
+
+  linhas.forEach((linha) => {
+    adicionarUsuarioRanking(
+      usuariosPorObra,
+      linha.obra_id?.trim() || "",
+      linha.user_id?.trim() || "",
+    );
+  });
+
+  const usuariosNormalizados = converterMapaUsuariosRanking(usuariosPorObra);
+
+  return {
+    porObra: contarUsuariosRanking(usuariosNormalizados),
+    usuariosPorObra: usuariosNormalizados,
+  };
 }
 
 function calcularAvaliacoesPorObra(linhas: SupabaseAvaliacaoObraRow[]) {
-  const somaPorObra: Record<string, number> = {};
-  const totalPorObra: Record<string, number> = {};
+  const notasPorUsuarioObra = new Map<string, number>();
+  const obraPorChave = new Map<string, string>();
 
   linhas.forEach((linha) => {
-    const obraId = linha.obra_id?.trim();
+    const obraId = linha.obra_id?.trim() || "";
+    const userId = linha.user_id?.trim() || "";
     const nota =
       typeof linha.nota === "number" && Number.isFinite(linha.nota)
         ? linha.nota
         : 0;
 
-    if (!obraId || nota <= 0) {
+    if (!obraId || !userId || nota <= 0) {
+      return;
+    }
+
+    const chave = `${obraId}::${userId}`;
+    notasPorUsuarioObra.set(chave, nota);
+    obraPorChave.set(chave, obraId);
+  });
+
+  const somaPorObra: Record<string, number> = {};
+  const totalPorObra: Record<string, number> = {};
+
+  notasPorUsuarioObra.forEach((nota, chave) => {
+    const obraId = obraPorChave.get(chave) || "";
+
+    if (!obraId) {
       return;
     }
 
@@ -1004,29 +1132,42 @@ function calcularAvaliacoesPorObra(linhas: SupabaseAvaliacaoObraRow[]) {
 }
 
 async function buscarContagemInteracoesObras(
-  tabela: "obra_curtidas" | "seguindo_obras" | "favoritos",
+  tabela:
+    | "obra_curtidas"
+    | "seguindo_obras"
+    | "favoritos"
+    | "comentarios_obras",
   obraIds: string[],
-) {
+): Promise<ResultadoInteracoesObrasRanking> {
   if (obraIds.length === 0) {
-    return {};
+    return {
+      porObra: {},
+      usuariosPorObra: {},
+    };
   }
 
   try {
     const { data, error } = await supabase
       .from(tabela)
-      .select("obra_id")
+      .select("obra_id,user_id")
       .in("obra_id", obraIds)
-      .limit(3000);
+      .limit(5000);
 
     if (error) {
       console.warn(`Não consegui carregar ${tabela}:`, error.message);
-      return {};
+      return {
+        porObra: {},
+        usuariosPorObra: {},
+      };
     }
 
     return contarPorObra((data || []) as unknown as SupabaseInteracaoObraRow[]);
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} agora:`, error);
-    return {};
+    return {
+      porObra: {},
+      usuariosPorObra: {},
+    };
   }
 }
 
@@ -1038,7 +1179,7 @@ async function buscarAvaliacoesObras(obraIds: string[]) {
   try {
     const { data, error } = await supabase
       .from("obra_avaliacoes")
-      .select("obra_id, nota")
+      .select("obra_id,user_id,nota")
       .in("obra_id", obraIds)
       .limit(3000);
 
@@ -1059,39 +1200,41 @@ async function buscarAvaliacoesObras(obraIds: string[]) {
 async function buscarContagemInteracoesCapitulos(
   tabela: "curtidas_capitulos" | "salvos_capitulos" | "comentarios_capitulos",
   capituloIds: string[],
-) {
+  obraIdPorCapitulo: Record<string, string>,
+): Promise<ResultadoInteracoesCapitulosRanking> {
   if (capituloIds.length === 0) {
-    return {};
+    return {
+      porCapitulo: {},
+      usuariosPorObra: {},
+    };
   }
 
   try {
     const { data, error } = await supabase
       .from(tabela)
-      .select("capitulo_id")
+      .select("capitulo_id,user_id")
       .in("capitulo_id", capituloIds)
       .limit(5000);
 
     if (error) {
       console.warn(`Não consegui carregar ${tabela}:`, error.message);
-      return {};
+      return {
+        porCapitulo: {},
+        usuariosPorObra: {},
+      };
     }
 
     return contarPorCapitulo(
       (data || []) as unknown as SupabaseInteracaoCapituloRow[],
+      obraIdPorCapitulo,
     );
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} agora:`, error);
-    return {};
+    return {
+      porCapitulo: {},
+      usuariosPorObra: {},
+    };
   }
-}
-
-function somarContagensCapitulos(
-  capitulos: SupabaseCapituloRow[],
-  contagem: Record<string, number>,
-) {
-  return capitulos.reduce((total, capitulo) => {
-    return total + (contagem[capitulo.id] || 0);
-  }, 0);
 }
 
 function converterObraSupabaseParaLocal(
@@ -1102,9 +1245,10 @@ function converterObraSupabaseParaLocal(
   curtidasPorCapitulo: Record<string, number>,
   salvosPorCapitulo: Record<string, number>,
   comentariosPorCapitulo: Record<string, number>,
-  curtidasPorObra: Record<string, number>,
+  curtidasUnicasPorObra: Record<string, number>,
+  comentariosUnicosPorObra: Record<string, number>,
+  salvosUnicosPorObra: Record<string, number>,
   seguidoresPorObra: Record<string, number>,
-  favoritosPorObra: Record<string, number>,
   avaliacoesPorObra: Record<string, AvaliacaoRankingObra>,
   profilesAutores: Map<string, SupabaseProfileAutorRankingRow>,
   seguidoresAutores: Record<string, number>,
@@ -1142,21 +1286,7 @@ function converterObraSupabaseParaLocal(
     criarSlugBase(titulo || `obra-${index + 1}`);
   const arquivoUrl = obra.arquivo_url?.trim() || "";
   const arquivoTipo = normalizarTipoArquivoSupabase(obra.arquivo_categoria);
-  const totalCurtidasCapitulos = somarContagensCapitulos(
-    capitulos,
-    curtidasPorCapitulo,
-  );
-  const totalComentariosCapitulos = somarContagensCapitulos(
-    capitulos,
-    comentariosPorCapitulo,
-  );
-  const totalSalvosCapitulos = somarContagensCapitulos(
-    capitulos,
-    salvosPorCapitulo,
-  );
-  const totalCurtidasObra = curtidasPorObra[obra.id] || 0;
   const totalSeguidoresObra = seguidoresPorObra[obra.id] || 0;
-  const totalFavoritosObra = favoritosPorObra[obra.id] || 0;
   const avaliacaoObra = avaliacoesPorObra[obra.id] || { total: 0, media: 0 };
   const autorId = obra.user_id?.trim() || "";
   const profileAutor = autorId ? profilesAutores.get(autorId) || null : null;
@@ -1219,10 +1349,9 @@ function converterObraSupabaseParaLocal(
           enviadoEm: obra.criada_em || "",
         }
       : null,
-    totalCurtidasRanking: totalCurtidasObra + totalCurtidasCapitulos,
-    totalComentariosRanking: totalComentariosCapitulos,
-    totalSalvosRanking:
-      totalSalvosCapitulos + totalSeguidoresObra + totalFavoritosObra,
+    totalCurtidasRanking: curtidasUnicasPorObra[obra.id] || 0,
+    totalComentariosRanking: comentariosUnicosPorObra[obra.id] || 0,
+    totalSalvosRanking: salvosUnicosPorObra[obra.id] || 0,
     totalViewsRanking:
       typeof obra.visualizacoes === "number" &&
       Number.isFinite(obra.visualizacoes)
@@ -1289,28 +1418,73 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
     const capituloIds = capitulosSupabase
       .map((capitulo) => capitulo.id)
       .filter(Boolean);
+    const obraIdPorCapitulo = capitulosSupabase.reduce<Record<string, string>>(
+      (mapa, capitulo) => {
+        if (capitulo.id && capitulo.obra_id) {
+          mapa[capitulo.id] = capitulo.obra_id;
+        }
+
+        return mapa;
+      },
+      {},
+    );
 
     const [
-      curtidasPorCapitulo,
-      salvosPorCapitulo,
-      comentariosPorCapitulo,
-      curtidasPorObra,
-      seguidoresPorObra,
-      favoritosPorObra,
+      curtidasCapitulosResultado,
+      salvosCapitulosResultado,
+      comentariosCapitulosResultado,
+      curtidasObraResultado,
+      seguidoresObraResultado,
+      favoritosObraResultado,
+      comentariosObraResultado,
       avaliacoesPorObra,
       profilesAutores,
       seguidoresAutores,
     ] = await Promise.all([
-      buscarContagemInteracoesCapitulos("curtidas_capitulos", capituloIds),
-      buscarContagemInteracoesCapitulos("salvos_capitulos", capituloIds),
-      buscarContagemInteracoesCapitulos("comentarios_capitulos", capituloIds),
+      buscarContagemInteracoesCapitulos(
+        "curtidas_capitulos",
+        capituloIds,
+        obraIdPorCapitulo,
+      ),
+      buscarContagemInteracoesCapitulos(
+        "salvos_capitulos",
+        capituloIds,
+        obraIdPorCapitulo,
+      ),
+      buscarContagemInteracoesCapitulos(
+        "comentarios_capitulos",
+        capituloIds,
+        obraIdPorCapitulo,
+      ),
       buscarContagemInteracoesObras("obra_curtidas", obraIds),
       buscarContagemInteracoesObras("seguindo_obras", obraIds),
       buscarContagemInteracoesObras("favoritos", obraIds),
+      buscarContagemInteracoesObras("comentarios_obras", obraIds),
       buscarAvaliacoesObras(obraIds),
       carregarProfilesAutoresRanking(autorIds),
       buscarSeguidoresAutoresRanking(autorIds),
     ]);
+
+    const usuariosCurtidasPorObra = combinarUsuariosRanking(
+      curtidasCapitulosResultado.usuariosPorObra,
+      curtidasObraResultado.usuariosPorObra,
+    );
+    const usuariosComentariosPorObra = combinarUsuariosRanking(
+      comentariosCapitulosResultado.usuariosPorObra,
+      comentariosObraResultado.usuariosPorObra,
+    );
+    const usuariosSalvosPorObra = combinarUsuariosRanking(
+      salvosCapitulosResultado.usuariosPorObra,
+      seguidoresObraResultado.usuariosPorObra,
+      favoritosObraResultado.usuariosPorObra,
+    );
+    const curtidasUnicasPorObra = contarUsuariosRanking(
+      usuariosCurtidasPorObra,
+    );
+    const comentariosUnicosPorObra = contarUsuariosRanking(
+      usuariosComentariosPorObra,
+    );
+    const salvosUnicosPorObra = contarUsuariosRanking(usuariosSalvosPorObra);
 
     const capitulosPorObra = capitulosSupabase.reduce<
       Record<string, SupabaseCapituloRow[]>
@@ -1343,12 +1517,13 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
           capitulosPorObra[obra.id] || [],
           obraLocal,
           index,
-          curtidasPorCapitulo,
-          salvosPorCapitulo,
-          comentariosPorCapitulo,
-          curtidasPorObra,
-          seguidoresPorObra,
-          favoritosPorObra,
+          curtidasCapitulosResultado.porCapitulo,
+          salvosCapitulosResultado.porCapitulo,
+          comentariosCapitulosResultado.porCapitulo,
+          curtidasUnicasPorObra,
+          comentariosUnicosPorObra,
+          salvosUnicosPorObra,
+          seguidoresObraResultado.porObra,
           avaliacoesPorObra,
           profilesAutores,
           seguidoresAutores,

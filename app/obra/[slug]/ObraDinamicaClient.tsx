@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
-import type { CSSProperties } from "react";
+import type { CSSProperties, FormEvent } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { useNotificacoes } from "../../../components/NotificacoesProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
@@ -17,6 +18,7 @@ const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const LOCAL_WORKS_STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
+const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const VERSAO_INTERACOES_OBRA_PUBLICA = "fix-interacoes-obra-2026-06-16-0022";
 
 function criarStorageKeyUsuarioObraPublica(chave: string, userId: string) {
@@ -202,6 +204,25 @@ type PerfilPublicoObra = {
   nome: string;
   avatar: string;
   bio: string;
+};
+
+type ComentarioObraPublico = {
+  id: string;
+  obraId: string;
+  userId: string;
+  nome: string;
+  avatar: string;
+  texto: string;
+  criadoEm: string;
+  local: boolean;
+};
+
+type SupabaseComentarioObraRow = {
+  id: string;
+  obra_id: string;
+  user_id: string;
+  comentario: string | null;
+  criado_em: string | null;
 };
 
 type MetricasObraPublica = {
@@ -1663,6 +1684,179 @@ async function registrarAtividadeDiarioObra({
   }
 }
 
+
+function criarComentarioObraId() {
+  const cryptoGlobal =
+    typeof globalThis !== "undefined" && "crypto" in globalThis
+      ? globalThis.crypto
+      : null;
+
+  if (cryptoGlobal && typeof cryptoGlobal.randomUUID === "function") {
+    return cryptoGlobal.randomUUID();
+  }
+
+  return `comentario-obra-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function carregarComentariosObraLocais(userId: string, obraId: string) {
+  const userIdLimpo = userId.trim();
+  const obraIdLimpo = obraId.trim();
+
+  if (!userIdLimpo || !obraIdLimpo) {
+    return [] as ComentarioObraPublico[];
+  }
+
+  try {
+    const textoComentarios = lerStorageUsuarioObraPublica(
+      WORK_COMMENTS_STORAGE_KEY,
+      userIdLimpo
+    );
+    const json: unknown = textoComentarios ? JSON.parse(textoComentarios) : {};
+    const comentariosPorObra =
+      json && typeof json === "object" && !Array.isArray(json)
+        ? (json as Record<string, unknown>)
+        : {};
+    const comentarios = comentariosPorObra[obraIdLimpo];
+
+    if (!Array.isArray(comentarios)) {
+      return [] as ComentarioObraPublico[];
+    }
+
+    return comentarios
+      .map((comentario): ComentarioObraPublico | null => {
+        if (
+          !comentario ||
+          typeof comentario !== "object" ||
+          Array.isArray(comentario)
+        ) {
+          return null;
+        }
+
+        const registro = comentario as Partial<ComentarioObraPublico>;
+        const id = typeof registro.id === "string" ? registro.id.trim() : "";
+        const texto =
+          typeof registro.texto === "string" ? registro.texto.trim() : "";
+
+        if (!id || !texto) {
+          return null;
+        }
+
+        return {
+          id,
+          obraId: obraIdLimpo,
+          userId:
+            typeof registro.userId === "string"
+              ? registro.userId.trim()
+              : userIdLimpo,
+          nome:
+            typeof registro.nome === "string" && registro.nome.trim()
+              ? registro.nome.trim()
+              : "Você",
+          avatar:
+            typeof registro.avatar === "string" ? registro.avatar.trim() : "",
+          texto,
+          criadoEm:
+            typeof registro.criadoEm === "string" && registro.criadoEm.trim()
+              ? registro.criadoEm
+              : new Date().toISOString(),
+          local: true,
+        };
+      })
+      .filter(
+        (comentario): comentario is ComentarioObraPublico => Boolean(comentario)
+      );
+  } catch {
+    return [] as ComentarioObraPublico[];
+  }
+}
+
+function salvarComentariosObraLocais(
+  userId: string,
+  obraId: string,
+  comentarios: ComentarioObraPublico[]
+) {
+  const userIdLimpo = userId.trim();
+  const obraIdLimpo = obraId.trim();
+
+  if (!userIdLimpo || !obraIdLimpo) {
+    return;
+  }
+
+  try {
+    const textoComentarios = lerStorageUsuarioObraPublica(
+      WORK_COMMENTS_STORAGE_KEY,
+      userIdLimpo
+    );
+    const json: unknown = textoComentarios ? JSON.parse(textoComentarios) : {};
+    const comentariosPorObra =
+      json && typeof json === "object" && !Array.isArray(json)
+        ? (json as Record<string, unknown>)
+        : {};
+    const comentariosLocais = comentarios
+      .filter((comentario) => comentario.local)
+      .slice(0, 120);
+
+    salvarStorageUsuarioObraPublica(WORK_COMMENTS_STORAGE_KEY, userIdLimpo, {
+      ...comentariosPorObra,
+      [obraIdLimpo]: comentariosLocais,
+    });
+  } catch {
+    salvarStorageUsuarioObraPublica(WORK_COMMENTS_STORAGE_KEY, userIdLimpo, {
+      [obraIdLimpo]: comentarios
+        .filter((comentario) => comentario.local)
+        .slice(0, 120),
+    });
+  }
+}
+
+async function normalizarComentariosObraSupabase(
+  comentarios: SupabaseComentarioObraRow[]
+) {
+  const usuariosIds = Array.from(
+    new Set(
+      comentarios
+        .map((comentario) => comentario.user_id?.trim() || "")
+        .filter(Boolean)
+    )
+  );
+  const perfis = await Promise.all(
+    usuariosIds.map(async (userId) => {
+      const perfil = await carregarPerfilPublicoObra(userId, "Leitor");
+
+      return [userId, perfil] as const;
+    })
+  );
+  const perfisPorUsuario = new Map(perfis);
+
+  return comentarios
+    .map((comentario): ComentarioObraPublico | null => {
+      const id = comentario.id?.trim() || "";
+      const obraId = comentario.obra_id?.trim() || "";
+      const userId = comentario.user_id?.trim() || "";
+      const texto = comentario.comentario?.trim() || "";
+
+      if (!id || !obraId || !userId || !texto) {
+        return null;
+      }
+
+      const perfil = perfisPorUsuario.get(userId) || null;
+
+      return {
+        id,
+        obraId,
+        userId,
+        nome: perfil?.nome || "Leitor",
+        avatar: perfil?.avatar || "",
+        texto,
+        criadoEm: comentario.criado_em || new Date().toISOString(),
+        local: false,
+      };
+    })
+    .filter(
+      (comentario): comentario is ComentarioObraPublico => Boolean(comentario)
+    );
+}
+
 export default function ObraDinamicaPage() {
   const router = useRouter();
   const params = useParams<{ slug?: string | string[] }>();
@@ -1693,6 +1887,13 @@ export default function ObraDinamicaPage() {
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [acoesObraAbertas, setAcoesObraAbertas] = useState(false);
+  const [comentariosObra, setComentariosObra] = useState<ComentarioObraPublico[]>([]);
+  const [comentariosCarregando, setComentariosCarregando] = useState(false);
+  const [comentariosAbertos, setComentariosAbertos] = useState(false);
+  const [comentarioTexto, setComentarioTexto] = useState("");
+  const [comentarioStatus, setComentarioStatus] = useState("");
+  const [comentarioEnviando, setComentarioEnviando] = useState(false);
+  const [comentarioRemovendoId, setComentarioRemovendoId] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -1731,6 +1932,24 @@ export default function ObraDinamicaPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+
+  useEffect(() => {
+    if (!comentariosAbertos) {
+      return;
+    }
+
+    const overflowAnterior = document.body.style.overflow;
+    const overscrollAnterior = document.body.style.overscrollBehavior;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      document.body.style.overscrollBehavior = overscrollAnterior;
+    };
+  }, [comentariosAbertos]);
 
 
   useEffect(() => {
@@ -1883,6 +2102,98 @@ export default function ObraDinamicaPage() {
 
     return [];
   }, [obra]);
+
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarComentariosObra() {
+      const obraId = obra?.id?.trim() || "";
+
+      setComentarioStatus("");
+
+      if (!obraId) {
+        setComentariosObra([]);
+        setComentariosCarregando(false);
+        return;
+      }
+
+      const comentariosLocais = usuarioIdLogado
+        ? carregarComentariosObraLocais(usuarioIdLogado, obraId)
+        : [];
+
+      if (!idObraSupabaseValido(obraId)) {
+        setComentariosObra(comentariosLocais);
+        setMetricasObra((metricasAtuais) => ({
+          ...metricasAtuais,
+          comentarios: comentariosLocais.length,
+        }));
+        setComentariosCarregando(false);
+        return;
+      }
+
+      setComentariosCarregando(true);
+      setComentariosObra([]);
+
+      try {
+        const { data, error, count } = await supabase
+          .from("comentarios_obras")
+          .select("id,obra_id,user_id,comentario,criado_em", {
+            count: "exact",
+          })
+          .eq("obra_id", obraId)
+          .order("criado_em", { ascending: false })
+          .limit(120);
+
+        if (error || !Array.isArray(data)) {
+          throw error || new Error("Comentários inválidos retornados pelo Supabase.");
+        }
+
+        const comentariosRemotos = await normalizarComentariosObraSupabase(
+          data as unknown as SupabaseComentarioObraRow[]
+        );
+
+        if (cancelado) {
+          return;
+        }
+
+        setComentariosObra(comentariosRemotos);
+        setMetricasObra((metricasAtuais) => ({
+          ...metricasAtuais,
+          comentarios: count ?? comentariosRemotos.length,
+        }));
+
+        if (usuarioIdLogado) {
+          salvarComentariosObraLocais(
+            usuarioIdLogado,
+            obraId,
+            comentariosRemotos
+          );
+        }
+      } catch {
+        if (!cancelado) {
+          setComentariosObra(comentariosLocais);
+          setMetricasObra((metricasAtuais) => ({
+            ...metricasAtuais,
+            comentarios: comentariosLocais.length,
+          }));
+          setComentarioStatus(
+            "Não foi possível carregar os comentários agora."
+          );
+        }
+      } finally {
+        if (!cancelado) {
+          setComentariosCarregando(false);
+        }
+      }
+    }
+
+    void carregarComentariosObra();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obra?.id, usuarioIdLogado]);
 
   useEffect(() => {
     if (!obraNormalizada) {
@@ -2160,39 +2471,37 @@ export default function ObraDinamicaPage() {
           visualizacoes = proximaVisualizacao;
         }
 
-        const [{ count: totalCurtidasObra }, { count: totalSeguidores }] =
-          await Promise.all([
-            supabase
-              .from("obra_curtidas")
-              .select("id", { count: "exact", head: true })
-              .eq("obra_id", obraId),
-            supabase
-              .from("seguindo_obras")
-              .select("id", { count: "exact", head: true })
-              .eq("obra_id", obraId),
-          ]);
+        const [
+          { count: totalCurtidasObra },
+          { count: totalSeguidores },
+          { count: totalComentariosObra },
+        ] = await Promise.all([
+          supabase
+            .from("obra_curtidas")
+            .select("id", { count: "exact", head: true })
+            .eq("obra_id", obraId),
+          supabase
+            .from("seguindo_obras")
+            .select("id", { count: "exact", head: true })
+            .eq("obra_id", obraId),
+          supabase
+            .from("comentarios_obras")
+            .select("id", { count: "exact", head: true })
+            .eq("obra_id", obraId),
+        ]);
 
         let totalCurtidasCapitulos = 0;
-        let totalComentarios = metricasBase.comentarios;
         const idsCapitulos = capitulosDaObra
           .map((capitulo) => capitulo.id)
           .filter(Boolean);
 
         if (idsCapitulos.length > 0) {
-          const [{ count: curtidasCapitulosCount }, { count: comentariosCount }] =
-            await Promise.all([
-              supabase
-                .from("curtidas_capitulos")
-                .select("id", { count: "exact", head: true })
-                .in("capitulo_id", idsCapitulos),
-              supabase
-                .from("comentarios_capitulos")
-                .select("id", { count: "exact", head: true })
-                .in("capitulo_id", idsCapitulos),
-            ]);
+          const { count: curtidasCapitulosCount } = await supabase
+            .from("curtidas_capitulos")
+            .select("id", { count: "exact", head: true })
+            .in("capitulo_id", idsCapitulos);
 
           totalCurtidasCapitulos = curtidasCapitulosCount ?? 0;
-          totalComentarios = comentariosCount ?? totalComentarios;
         }
 
         const totalCurtidas =
@@ -2252,7 +2561,7 @@ export default function ObraDinamicaPage() {
         setMetricasObra({
           visualizacoes,
           curtidas: totalCurtidas ?? metricasBase.curtidas,
-          comentarios: totalComentarios,
+          comentarios: totalComentariosObra ?? 0,
           seguidores: totalSeguidores ?? metricasBase.seguidores,
           curtidaAtiva,
           carregado: true,
@@ -2687,6 +2996,180 @@ export default function ObraDinamicaPage() {
     }
   }
 
+
+  async function enviarComentarioObra(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!obra || comentarioEnviando) {
+      return;
+    }
+
+    const texto = comentarioTexto.replace(/\s+/g, " ").trim();
+
+    if (texto.length < 2) {
+      setComentarioStatus("Escreva um comentário antes de enviar.");
+      return;
+    }
+
+    const userId = await obterUsuarioLogadoParaAcao(
+      "Entre na sua conta para comentar esta obra."
+    );
+
+    if (!userId) {
+      return;
+    }
+
+    const perfil = await carregarPerfilPublicoObra(userId, "Você");
+    const comentarioTemporario: ComentarioObraPublico = {
+      id: criarComentarioObraId(),
+      obraId: obra.id,
+      userId,
+      nome: perfil?.nome || "Você",
+      avatar: perfil?.avatar || "",
+      texto: texto.slice(0, 600),
+      criadoEm: new Date().toISOString(),
+      local: true,
+    };
+
+    setComentarioEnviando(true);
+    setComentarioStatus("");
+    setComentarioTexto("");
+    setComentariosObra((comentariosAtuais) =>
+      [comentarioTemporario, ...comentariosAtuais].slice(0, 120)
+    );
+    setMetricasObra((metricasAtuais) => ({
+      ...metricasAtuais,
+      comentarios: metricasAtuais.comentarios + 1,
+    }));
+
+    if (!idObraSupabaseValido(obra.id)) {
+      const comentariosLocais = [
+        comentarioTemporario,
+        ...comentariosObra,
+      ].slice(0, 120);
+
+      salvarComentariosObraLocais(userId, obra.id, comentariosLocais);
+      setComentarioStatus("Comentário salvo neste aparelho.");
+      setComentarioEnviando(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("comentarios_obras")
+        .insert({
+          obra_id: obra.id,
+          user_id: userId,
+          comentario: comentarioTemporario.texto,
+        })
+        .select("id,obra_id,user_id,comentario,criado_em")
+        .single();
+
+      if (error || !data) {
+        throw error || new Error("Comentário não retornado pelo Supabase.");
+      }
+
+      const [comentarioSincronizado] = await normalizarComentariosObraSupabase([
+        data as unknown as SupabaseComentarioObraRow,
+      ]);
+
+      if (!comentarioSincronizado) {
+        throw new Error("Comentário inválido retornado pelo Supabase.");
+      }
+
+      setComentariosObra((comentariosAtuais) => {
+        const proximosComentarios = comentariosAtuais.map((comentario) =>
+          comentario.id === comentarioTemporario.id
+            ? comentarioSincronizado
+            : comentario
+        );
+
+        salvarComentariosObraLocais(userId, obra.id, proximosComentarios);
+        return proximosComentarios;
+      });
+      setComentarioStatus("");
+    } catch {
+      setComentariosObra((comentariosAtuais) =>
+        comentariosAtuais.filter(
+          (comentario) => comentario.id !== comentarioTemporario.id
+        )
+      );
+      setMetricasObra((metricasAtuais) => ({
+        ...metricasAtuais,
+        comentarios: Math.max(0, metricasAtuais.comentarios - 1),
+      }));
+      setComentarioTexto(texto);
+      setComentarioStatus("Não foi possível enviar o comentário agora.");
+    } finally {
+      setComentarioEnviando(false);
+    }
+  }
+
+  function inserirNoComentarioObra(valor: string) {
+    setComentarioTexto((textoAtual) => `${textoAtual}${valor}`.slice(0, 600));
+    setComentarioStatus("");
+  }
+
+  function responderComentarioObra(nomeAutor: string) {
+    const nomeLimpo = nomeAutor.replace(/\s+/g, " ").trim();
+
+    if (!nomeLimpo) {
+      return;
+    }
+
+    setComentarioTexto(`@${nomeLimpo} `);
+    setComentarioStatus("");
+  }
+
+  async function removerComentarioObra(comentario: ComentarioObraPublico) {
+    if (!obra || comentarioRemovendoId) {
+      return;
+    }
+
+    const userId = await obterUsuarioLogadoParaAcao(
+      "Entre na sua conta para remover este comentário."
+    );
+
+    if (!userId || comentario.userId !== userId) {
+      return;
+    }
+
+    setComentarioRemovendoId(comentario.id);
+    setComentarioStatus("");
+
+    try {
+      if (!comentario.local && idObraSupabaseValido(obra.id)) {
+        const { error } = await supabase
+          .from("comentarios_obras")
+          .delete()
+          .eq("id", comentario.id)
+          .eq("obra_id", obra.id)
+          .eq("user_id", userId);
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      setComentariosObra((comentariosAtuais) => {
+        const proximosComentarios = comentariosAtuais.filter(
+          (comentarioAtual) => comentarioAtual.id !== comentario.id
+        );
+
+        salvarComentariosObraLocais(userId, obra.id, proximosComentarios);
+        return proximosComentarios;
+      });
+      setMetricasObra((metricasAtuais) => ({
+        ...metricasAtuais,
+        comentarios: Math.max(0, metricasAtuais.comentarios - 1),
+      }));
+    } catch {
+      setComentarioStatus("Não foi possível remover o comentário agora.");
+    } finally {
+      setComentarioRemovendoId("");
+    }
+  }
+
   async function alternarFavoritoObra() {
     if (!obra) {
       return;
@@ -2987,6 +3470,228 @@ export default function ObraDinamicaPage() {
     </div>
   );
 
+
+  const painelComentariosObra =
+    obra && comentariosAbertos && typeof document !== "undefined"
+      ? createPortal(
+          <section
+            style={commentsSheetOverlayStyle}
+            aria-label={`Comentários de ${obra.titulo}`}
+          >
+            <button
+              type="button"
+              aria-label="Fechar comentários"
+              onClick={() => setComentariosAbertos(false)}
+              style={commentsSheetBackdropStyle}
+            />
+
+            <article
+              style={
+                isDesktop ? desktopCommentsSheetStyle : commentsSheetStyle
+              }
+            >
+              <div style={commentsSheetHandleWrapStyle}>
+                <div style={commentsSheetHandleStyle} />
+              </div>
+
+              <header style={commentsSheetHeaderStyle}>
+                <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
+
+                <strong style={commentsSheetTitleStyle}>
+                  {comentariosObra.length === 1
+                    ? "1 comentário"
+                    : `${comentariosObra.length} comentários`}
+                </strong>
+
+                <button
+                  type="button"
+                  onClick={() => setComentariosAbertos(false)}
+                  style={commentsSheetCloseStyle}
+                  aria-label="Fechar comentários"
+                >
+                  ×
+                </button>
+              </header>
+
+              <section style={commentsSheetListStyle}>
+                {comentariosCarregando ? (
+                  <p style={emptyCommentsStyle}>Carregando comentários...</p>
+                ) : comentariosObra.length > 0 ? (
+                  comentariosObra.map((comentario) => {
+                    const podeRemover = Boolean(
+                      usuarioIdLogado && comentario.userId === usuarioIdLogado
+                    );
+                    const removendo = comentarioRemovendoId === comentario.id;
+                    const avatarStyle = comentario.avatar
+                      ? {
+                          ...commentSheetAvatarLinkStyle,
+                          backgroundImage: `url(${comentario.avatar})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : commentSheetAvatarLinkStyle;
+
+                    return (
+                      <article key={comentario.id} style={commentSheetItemStyle}>
+                        <Link
+                          href={criarLinkPerfilAutor(
+                            comentario.nome,
+                            comentario.userId
+                          )}
+                          aria-label={`Abrir perfil de ${comentario.nome}`}
+                          style={avatarStyle}
+                        >
+                          {!comentario.avatar
+                            ? comentario.nome.slice(0, 1).toUpperCase() || "L"
+                            : null}
+                        </Link>
+
+                        <div style={commentSheetContentStyle}>
+                          <div style={commentSheetTopLineStyle}>
+                            <Link
+                              href={criarLinkPerfilAutor(
+                                comentario.nome,
+                                comentario.userId
+                              )}
+                              style={commentSheetAuthorLinkStyle}
+                            >
+                              {comentario.nome}
+                            </Link>
+
+                            <span style={commentSheetTimeStyle}>
+                              {formatarData(comentario.criadoEm)}
+                            </span>
+                          </div>
+
+                          <p style={commentSheetTextStyle}>{comentario.texto}</p>
+
+                          <div style={commentSheetActionsRowStyle}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                responderComentarioObra(comentario.nome)
+                              }
+                              style={commentSheetReplyButtonStyle}
+                            >
+                              Responder
+                            </button>
+
+                            {podeRemover ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void removerComentarioObra(comentario)
+                                }
+                                disabled={removendo}
+                                style={{
+                                  ...commentSheetRemoveButtonStyle,
+                                  opacity: removendo ? 0.58 : 1,
+                                  cursor: removendo
+                                    ? "not-allowed"
+                                    : "pointer",
+                                }}
+                              >
+                                {removendo ? "Removendo..." : "Remover"}
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })
+                ) : (
+                  <p style={emptyCommentsStyle}>Sem comentários ainda</p>
+                )}
+              </section>
+
+              <section style={commentsToolsStyle}>
+                <div style={commentsQuickReactionsStyle}>
+                  {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => inserirNoComentarioObra(emoji)}
+                      style={commentsQuickReactionButtonStyle}
+                      aria-label={`Adicionar ${emoji} ao comentário`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <form
+                onSubmit={enviarComentarioObra}
+                style={commentsSheetFormStyle}
+              >
+                <div
+                  style={
+                    perfilAutorObra?.avatar &&
+                    perfilAutorObra.userId === usuarioIdLogado
+                      ? {
+                          ...commentsInputAvatarStyle,
+                          backgroundImage: `url(${perfilAutorObra.avatar})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : commentsInputAvatarStyle
+                  }
+                >
+                  {usuarioIdLogado ? "V" : "H"}
+                </div>
+
+                <div style={commentsInputBoxStyle}>
+                  <textarea
+                    value={comentarioTexto}
+                    onChange={(event) => {
+                      setComentarioTexto(event.target.value.slice(0, 600));
+                      setComentarioStatus("");
+                    }}
+                    style={commentsSheetInputStyle}
+                    placeholder={
+                      usuarioIdLogado
+                        ? "Adicionar comentário..."
+                        : "Entre para comentar."
+                    }
+                    maxLength={600}
+                    rows={1}
+                    disabled={comentarioEnviando}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => inserirNoComentarioObra("@")}
+                  disabled={comentarioEnviando}
+                  style={commentsInputIconButtonStyle}
+                  aria-label="Adicionar menção"
+                >
+                  @
+                </button>
+
+                <button
+                  type="submit"
+                  aria-label="Enviar comentário"
+                  disabled={comentarioEnviando}
+                  style={{
+                    ...commentsSheetSendStyle,
+                    opacity: comentarioEnviando ? 0.58 : 1,
+                    cursor: comentarioEnviando ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {comentarioEnviando ? "..." : "↑"}
+                </button>
+              </form>
+
+              {comentarioStatus ? (
+                <span style={commentStatusStyle}>{comentarioStatus}</span>
+              ) : null}
+            </article>
+          </section>,
+          document.body
+        )
+      : null;
+
   if (carregandoObras && !obra) {
     return (
       <main style={pageThemeStyle}>
@@ -3035,7 +3740,8 @@ export default function ObraDinamicaPage() {
   }
 
   return (
-    <main style={pageThemeStyle}>
+    <>
+      <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
@@ -3414,11 +4120,13 @@ export default function ObraDinamicaPage() {
             numero={formatarNumeroCompacto(metricasObra.curtidas)}
             rotulo="curtidas"
             ativo={metricasObra.curtidaAtiva}
+            mostrarCoracao
             onClick={alternarCurtidaObra}
           />
           <MetricCard
             numero={formatarNumeroCompacto(metricasObra.comentarios)}
             rotulo="comentários"
+            onClick={() => setComentariosAbertos(true)}
           />
           <MetricCard
             numero={formatarNumeroCompacto(metricasObra.seguidores)}
@@ -3476,7 +4184,10 @@ export default function ObraDinamicaPage() {
 
 
       </section>
-    </main>
+      </main>
+
+      {painelComentariosObra}
+    </>
   );
 }
 
@@ -3588,19 +4299,48 @@ function MetricCard({
   numero,
   rotulo,
   ativo = false,
+  mostrarCoracao = false,
   onClick,
 }: {
   numero: string;
   rotulo: string;
   ativo?: boolean;
+  mostrarCoracao?: boolean;
   onClick?: () => void;
 }) {
   const cardStyle = ativo ? activeStatCardStyle : statCardStyle;
+  const conteudoNumero = (
+    <div style={statNumberRowStyle}>
+      {mostrarCoracao ? (
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          style={{
+            ...statHeartIconStyle,
+            animation: ativo
+              ? "historietas-stat-heart-pop 260ms ease-out"
+              : "none",
+          }}
+        >
+          <path
+            d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+            fill={ativo ? "#EF4444" : "none"}
+            stroke={ativo ? "#EF4444" : "#FFFFFF"}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : null}
+
+      <strong style={statNumberStyle}>{numero}</strong>
+    </div>
+  );
 
   if (!onClick) {
     return (
       <div style={cardStyle}>
-        <strong style={statNumberStyle}>{numero}</strong>
+        {conteudoNumero}
         <span style={statLabelStyle}>{rotulo}</span>
       </div>
     );
@@ -3611,8 +4351,14 @@ function MetricCard({
       type="button"
       onClick={onClick}
       style={ativo ? activeStatButtonStyle : statButtonStyle}
+      aria-pressed={mostrarCoracao ? ativo : undefined}
+      aria-label={
+        mostrarCoracao
+          ? `${ativo ? "Remover curtida" : "Curtir"}. ${numero} curtidas`
+          : `Abrir ${rotulo}. Total: ${numero}`
+      }
     >
-      <strong style={statNumberStyle}>{numero}</strong>
+      {conteudoNumero}
       <span style={statLabelStyle}>{rotulo}</span>
     </button>
   );
@@ -3640,6 +4386,12 @@ function CommunityItem({
 }
 
 const obraPageCss = `
+  @keyframes historietas-stat-heart-pop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.28); }
+    100% { transform: scale(1); }
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
@@ -4521,6 +5273,22 @@ const statNumberStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const statNumberRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "5px",
+  minWidth: 0,
+};
+
+const statHeartIconStyle: CSSProperties = {
+  width: "18px",
+  height: "18px",
+  display: "block",
+  flex: "0 0 auto",
+  transformOrigin: "center",
+};
+
 const statLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "7.8px",
@@ -4529,6 +5297,338 @@ const statLabelStyle: CSSProperties = {
   letterSpacing: "0.025em",
   lineHeight: 1.1,
   whiteSpace: "nowrap",
+  ...safeTextStyle,
+};
+
+
+const commentsSheetOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 2147483647,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  pointerEvents: "none",
+  isolation: "isolate",
+};
+
+const commentsSheetBackdropStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  zIndex: 0,
+  border: "none",
+  background: "rgba(3, 2, 8, 0.42)",
+  backdropFilter: "blur(4px)",
+  WebkitBackdropFilter: "blur(4px)",
+  pointerEvents: "auto",
+  cursor: "pointer",
+  padding: 0,
+};
+
+const commentsSheetStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  width: "min(680px, 100%)",
+  height: "min(64dvh, 540px)",
+  maxHeight: "calc(100dvh - env(safe-area-inset-top) - 10px)",
+  display: "grid",
+  gridTemplateRows: "auto auto minmax(0, 1fr) auto auto auto",
+  gap: "7px",
+  padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
+  borderRadius: "28px 28px 0 0",
+  background: "#070212",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  borderBottom: "none",
+  boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
+  pointerEvents: "auto",
+  overflow: "hidden",
+};
+
+const desktopCommentsSheetStyle: CSSProperties = {
+  ...commentsSheetStyle,
+  width: "min(760px, calc(100% - 48px))",
+  height: "min(76dvh, 720px)",
+};
+
+const commentsSheetHandleWrapStyle: CSSProperties = {
+  minHeight: "24px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const commentsSheetHandleStyle: CSSProperties = {
+  width: "44px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "var(--historietas-border-soft, rgba(255,255,255,0.34))",
+};
+
+const commentsSheetHeaderStyle: CSSProperties = {
+  minHeight: "32px",
+  display: "grid",
+  gridTemplateColumns: "40px minmax(0, 1fr) 40px",
+  alignItems: "center",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const commentsSheetHeaderSpacerStyle: CSSProperties = {
+  width: "40px",
+  height: "1px",
+};
+
+const commentsSheetTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "14.5px",
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.02em",
+};
+
+const commentsSheetCloseStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  justifySelf: "end",
+  borderRadius: "999px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "27px",
+  lineHeight: 1,
+  fontWeight: 500,
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentsSheetListStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "start",
+  gap: "12px",
+  minHeight: 0,
+  overflowY: "auto",
+  padding: "6px 2px 9px",
+  WebkitOverflowScrolling: "touch",
+};
+
+const commentSheetItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr)",
+  gap: "10px",
+  alignItems: "start",
+  minWidth: 0,
+};
+
+const commentSheetAvatarLinkStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#04000A",
+  color: "#FFFFFF",
+  fontSize: "12.5px",
+  fontWeight: 950,
+  textDecoration: "none",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const commentSheetContentStyle: CSSProperties = {
+  display: "grid",
+  gap: "3px",
+  minWidth: 0,
+};
+
+const commentSheetTopLineStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const commentSheetAuthorLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "12px",
+  fontWeight: 950,
+  textDecoration: "none",
+  ...safeTextStyle,
+};
+
+const commentSheetTimeStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 750,
+  whiteSpace: "nowrap",
+};
+
+const commentSheetTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12.5px",
+  lineHeight: 1.38,
+  fontWeight: 750,
+  whiteSpace: "pre-wrap",
+  ...safeTextStyle,
+};
+
+const commentSheetActionsRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+};
+
+const commentSheetReplyButtonStyle: CSSProperties = {
+  width: "fit-content",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0 0",
+  cursor: "pointer",
+};
+
+const commentSheetRemoveButtonStyle: CSSProperties = {
+  width: "fit-content",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  fontSize: "10.5px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: "1px 0 0",
+  cursor: "pointer",
+};
+
+const emptyCommentsStyle: CSSProperties = {
+  margin: "10px 0 0",
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 800,
+  textAlign: "center",
+};
+
+const commentsToolsStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  padding: "5px 0 0",
+};
+
+const commentsQuickReactionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "6px",
+  width: "100%",
+  overflowX: "auto",
+  padding: "0 1px",
+  scrollbarWidth: "none",
+  WebkitOverflowScrolling: "touch",
+};
+
+const commentsQuickReactionButtonStyle: CSSProperties = {
+  width: "30px",
+  height: "28px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  fontSize: "18px",
+  lineHeight: 1,
+  padding: 0,
+  cursor: "pointer",
+  flex: "0 0 auto",
+};
+
+const commentsSheetFormStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "30px minmax(0, 1fr) 28px 38px",
+  alignItems: "center",
+  gap: "7px",
+  padding: "7px 0 0",
+  minWidth: 0,
+};
+
+const commentsInputAvatarStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "11px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#04000A",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  color: "#FFFFFF",
+  fontSize: "11.5px",
+  fontWeight: 950,
+  overflow: "hidden",
+};
+
+const commentsInputBoxStyle: CSSProperties = {
+  minWidth: 0,
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+};
+
+const commentsSheetInputStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "38px",
+  maxHeight: "82px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "9px 12px",
+  outline: "none",
+  fontSize: "12.5px",
+  lineHeight: 1.32,
+  fontWeight: 650,
+  resize: "none",
+  overflowY: "auto",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+};
+
+const commentsInputIconButtonStyle: CSSProperties = {
+  width: "26px",
+  height: "30px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "16px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentsSheetSendStyle: CSSProperties = {
+  width: "36px",
+  height: "36px",
+  borderRadius: "999px",
+  border: "none",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  fontSize: "18px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+};
+
+const commentStatusStyle: CSSProperties = {
+  display: "block",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10.5px",
+  lineHeight: 1.35,
+  fontWeight: 800,
+  textAlign: "center",
   ...safeTextStyle,
 };
 

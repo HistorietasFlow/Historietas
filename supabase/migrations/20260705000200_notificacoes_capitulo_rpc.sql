@@ -1,4 +1,4 @@
-﻿-- 20260705_notificacoes_capitulo_rpc.sql
+-- 20260705_notificacoes_capitulo_rpc.sql
 -- Cria notificações reais de capítulo pelo banco, sem depender de insert client-side bloqueado por RLS.
 -- Versão auditada/corrigida:
 -- - restringe EXECUTE somente a authenticated;

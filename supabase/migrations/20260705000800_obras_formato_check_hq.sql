@@ -1,4 +1,4 @@
-﻿-- 20260705_obras_formato_check_hq.sql
+-- 20260705_obras_formato_check_hq.sql
 -- Permite formato "HQ" na tabela obras.
 -- Versão auditada/corrigida:
 -- - não quebra se a tabela public.obras não existir;
