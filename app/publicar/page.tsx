@@ -2243,11 +2243,6 @@ export default function PublicarPage() {
                     </span>
                   </div>
 
-                  {sinopse.trim() && (
-                    <p style={previewSinopseStyle}>
-                      {sinopse.trim()}
-                    </p>
-                  )}
 
                   {temCapituloImportado && (
                     <div style={previewImportedChapterStyle}>

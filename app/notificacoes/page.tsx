@@ -54,7 +54,10 @@ type NotificacaoLocal = {
   tipo:
     | "novo-capitulo"
     | "comentario-capitulo"
+    | "curtida-capitulo"
+    | "curtida-comentario-capitulo"
     | "comentario-comunidade"
+    | "curtida-comunidade"
     | "review-comunidade"
     | "atividade-comunidade"
     | "curtida-diario"
@@ -331,20 +334,48 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
 }
 
 function normalizarTipoNotificacao(valor: unknown): NotificacaoLocal["tipo"] {
+  const tipoOriginal = typeof valor === "string" ? valor.trim() : "";
+  const tipoAlias = tipoOriginal.toLowerCase().replace(/[ _]+/g, "-");
+
   if (
-    valor === "novo-capitulo" ||
-    valor === "comentario-capitulo" ||
-    valor === "comentario-comunidade" ||
-    valor === "review-comunidade" ||
-    valor === "atividade-comunidade" ||
-    valor === "curtida-diario" ||
-    valor === "comentario-diario" ||
-    valor === "atividade-diario" ||
-    valor === "novo-seguidor" ||
-    valor === "denuncia-comunidade" ||
-    valor === "moderacao-comunidade"
+    tipoAlias === "comunidade-curtida-post" ||
+    tipoAlias === "comunidade-post-curtida" ||
+    tipoAlias === "curtida-post-comunidade" ||
+    tipoAlias === "curtida-comunidade-post" ||
+    tipoAlias === "curtida-publicacao-comunidade" ||
+    tipoAlias === "curtida-publicacao"
   ) {
-    return valor;
+    return "curtida-comunidade";
+  }
+
+  if (
+    tipoAlias === "comunidade-comentario-post" ||
+    tipoAlias === "comunidade-post-comentario" ||
+    tipoAlias === "comentario-post-comunidade" ||
+    tipoAlias === "comentario-comunidade-post" ||
+    tipoAlias === "comentario-publicacao-comunidade" ||
+    tipoAlias === "comentario-publicacao"
+  ) {
+    return "comentario-comunidade";
+  }
+
+  if (
+    tipoOriginal === "novo-capitulo" ||
+    tipoOriginal === "comentario-capitulo" ||
+    tipoOriginal === "curtida-capitulo" ||
+    tipoOriginal === "curtida-comentario-capitulo" ||
+    tipoOriginal === "comentario-comunidade" ||
+    tipoOriginal === "curtida-comunidade" ||
+    tipoOriginal === "review-comunidade" ||
+    tipoOriginal === "atividade-comunidade" ||
+    tipoOriginal === "curtida-diario" ||
+    tipoOriginal === "comentario-diario" ||
+    tipoOriginal === "atividade-diario" ||
+    tipoOriginal === "novo-seguidor" ||
+    tipoOriginal === "denuncia-comunidade" ||
+    tipoOriginal === "moderacao-comunidade"
+  ) {
+    return tipoOriginal;
   }
 
   return "novo-capitulo";
@@ -649,12 +680,26 @@ function montarLinkNotificacao(
 function notificacaoEhCapitulo(notificacao: NotificacaoLocal) {
   return (
     notificacao.tipo === "novo-capitulo" ||
-    notificacao.tipo === "comentario-capitulo"
+    notificacao.tipo === "comentario-capitulo" ||
+    notificacao.tipo === "curtida-capitulo" ||
+    notificacao.tipo === "curtida-comentario-capitulo"
+  );
+}
+
+function notificacaoEhInteracaoCapitulo(notificacao: NotificacaoLocal) {
+  return (
+    notificacao.tipo === "comentario-capitulo" ||
+    notificacao.tipo === "curtida-capitulo" ||
+    notificacao.tipo === "curtida-comentario-capitulo"
   );
 }
 
 function notificacaoEhComunidade(notificacao: NotificacaoLocal) {
   return !notificacaoEhCapitulo(notificacao);
+}
+
+function notificacaoUsaCardSocial(notificacao: NotificacaoLocal) {
+  return notificacaoEhComunidade(notificacao) || notificacaoEhInteracaoCapitulo(notificacao);
 }
 
 function normalizarNotificacaoParaExibicao(notificacao: NotificacaoLocal) {
@@ -664,6 +709,10 @@ function normalizarNotificacaoParaExibicao(notificacao: NotificacaoLocal) {
 function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
   if (notificacao.tipo === "comentario-comunidade") {
     return "Comentário em publicação";
+  }
+
+  if (notificacao.tipo === "curtida-comunidade") {
+    return "Curtida em publicação";
   }
 
   if (notificacao.tipo === "review-comunidade") {
@@ -702,6 +751,14 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
     return "Comentário em capítulo";
   }
 
+  if (notificacao.tipo === "curtida-capitulo") {
+    return "Curtida no capítulo";
+  }
+
+  if (notificacao.tipo === "curtida-comentario-capitulo") {
+    return "Curtida no comentário";
+  }
+
   return "Capítulo";
 }
 
@@ -718,7 +775,8 @@ function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
     return "Ver comunidade";
   }
 
-  return notificacao.tipo === "comentario-capitulo"
+  return notificacao.tipo === "comentario-capitulo" ||
+    notificacao.tipo === "curtida-comentario-capitulo"
     ? "Ver comentário"
     : "Ver capítulo";
 }
@@ -728,12 +786,20 @@ function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
     return "✓";
   }
 
-  if (notificacao.tipo === "comentario-comunidade") {
+  if (notificacaoPareceComentarioComunidade(notificacao)) {
     return "💬";
   }
 
   if (notificacao.tipo === "comentario-capitulo") {
     return "💬";
+  }
+
+  if (
+    notificacaoPareceCurtidaComunidade(notificacao) ||
+    notificacao.tipo === "curtida-capitulo" ||
+    notificacao.tipo === "curtida-comentario-capitulo"
+  ) {
+    return "♥";
   }
 
   if (notificacao.tipo === "review-comunidade") {
@@ -821,16 +887,121 @@ function extrairTextoComentarioComunidade(notificacao: NotificacaoLocal) {
   return "Comentou na sua publicação.";
 }
 
+function extrairTextoComentarioCapitulo(notificacao: NotificacaoLocal) {
+  if (notificacao.tipo !== "comentario-capitulo") {
+    return notificacao.mensagem;
+  }
+
+  const mensagem = notificacao.mensagem.trim();
+  const indiceDoisPontos = mensagem.indexOf(": ");
+
+  if (indiceDoisPontos >= 0) {
+    const comentario = mensagem.slice(indiceDoisPontos + 2).trim();
+
+    return comentario || "Comentou no capítulo.";
+  }
+
+  return "Comentou no capítulo.";
+}
+
+function notificacaoPareceComentarioComunidade(notificacao: NotificacaoLocal) {
+  const titulo = normalizarTexto(notificacao.titulo);
+  const mensagem = normalizarTexto(notificacao.mensagem);
+
+  return (
+    notificacao.tipo === "comentario-comunidade" ||
+    (notificacao.tipo === "atividade-comunidade" &&
+      ((titulo.includes("comentario") && titulo.includes("comunidade")) ||
+        (mensagem.includes("comentou") &&
+          (mensagem.includes("publicacao") || mensagem.includes("comunidade")))))
+  );
+}
+
+function notificacaoPareceCurtidaComunidade(notificacao: NotificacaoLocal) {
+  const titulo = normalizarTexto(notificacao.titulo);
+  const mensagem = normalizarTexto(notificacao.mensagem);
+
+  return (
+    notificacao.tipo === "curtida-comunidade" ||
+    (notificacao.tipo === "atividade-comunidade" &&
+      ((titulo.includes("curtida") && titulo.includes("comunidade")) ||
+        (mensagem.includes("curtiu") &&
+          (mensagem.includes("publicacao") || mensagem.includes("comunidade")))))
+  );
+}
+
+function notificacaoTemAutorSocial(notificacao: NotificacaoLocal) {
+  return (
+    notificacaoPareceComentarioComunidade(notificacao) ||
+    notificacaoPareceCurtidaComunidade(notificacao) ||
+    notificacao.tipo === "comentario-capitulo" ||
+    notificacao.tipo === "curtida-capitulo" ||
+    notificacao.tipo === "curtida-comentario-capitulo" ||
+    notificacao.tipo === "comentario-diario" ||
+    notificacao.tipo === "curtida-diario" ||
+    notificacao.tipo === "novo-seguidor"
+  );
+}
+
+function obterTituloBlocoSocialNotificacao(notificacao: NotificacaoLocal) {
+  const nomeAutor = obterNomeAutorNotificacao(notificacao);
+
+  if (
+    notificacaoPareceComentarioComunidade(notificacao) ||
+    notificacao.tipo === "comentario-capitulo" ||
+    notificacao.tipo === "comentario-diario"
+  ) {
+    return `Comentário de ${nomeAutor}`;
+  }
+
+  if (
+    notificacaoPareceCurtidaComunidade(notificacao) ||
+    notificacao.tipo === "curtida-capitulo" ||
+    notificacao.tipo === "curtida-comentario-capitulo" ||
+    notificacao.tipo === "curtida-diario"
+  ) {
+    return `Curtida de ${nomeAutor}`;
+  }
+
+  if (notificacao.tipo === "novo-seguidor") {
+    return `Novo seguidor: ${nomeAutor}`;
+  }
+
+  return obterDetalheNotificacao(notificacao);
+}
+
+function obterTextoBlocoSocialNotificacao(notificacao: NotificacaoLocal) {
+  if (
+    notificacaoPareceComentarioComunidade(notificacao) ||
+    notificacaoPareceCurtidaComunidade(notificacao) ||
+    notificacao.tipo === "comentario-capitulo" ||
+    notificacao.tipo === "curtida-capitulo" ||
+    notificacao.tipo === "curtida-comentario-capitulo"
+  ) {
+    return "";
+  }
+
+  return notificacao.mensagem;
+}
+
 function prepararNotificacaoTexto(notificacao: NotificacaoLocal) {
   return normalizarNotificacaoParaExibicao(notificacao);
+}
+
+function extrairAutorMensagemNotificacao(notificacao: NotificacaoLocal) {
+  const mensagem = notificacao.mensagem.trim();
+  const match = /^(.+?)\s+(comentou|curtiu|publicou|começou)\b/i.exec(mensagem);
+
+  return match?.[1]?.trim() || "";
 }
 
 function obterNomeAutorNotificacao(notificacao: NotificacaoLocal) {
   return (
     notificacao.autorNome?.trim() ||
-    (notificacao.tipo === "comentario-comunidade"
+    (notificacaoPareceComentarioComunidade(notificacao)
       ? extrairAutorComentarioComunidade(notificacao)
-      : "Usuário")
+      : extrairAutorMensagemNotificacao(notificacao)) ||
+    "Usuário"
   );
 }
 
@@ -3621,14 +3792,12 @@ export default function NotificacoesPage() {
                 notificacao.capituloId
               );
 
-              const ehComunidade = notificacaoEhComunidade(notificacao);
+              const usaCardSocial = notificacaoUsaCardSocial(notificacao);
               const tituloObra = obra?.titulo || "Obra não encontrada";
               const tituloCapitulo = capitulo?.titulo || "Capítulo não encontrado";
               const tituloExibicao = obterTituloExibicaoNotificacao(notificacao);
-              const autorComentarioComunidade =
-                extrairAutorComentarioComunidade(notificacao);
-              const textoComentarioComunidade =
-                extrairTextoComentarioComunidade(notificacao);
+              const tituloBlocoSocial = obterTituloBlocoSocialNotificacao(notificacao);
+              const textoBlocoSocial = obterTextoBlocoSocialNotificacao(notificacao);
               const autorNotificacaoNome = obterNomeAutorNotificacao(notificacao);
               const autorNotificacaoHref = criarPerfilHrefNotificacao(
                 notificacao.autorId || "",
@@ -3638,14 +3807,14 @@ export default function NotificacoesPage() {
               const menuEstaAberto = menuNotificacaoAbertoId === notificacao.id;
 
               const cardVisualStyle = notificacao.lida
-                ? ehComunidade
+                ? usaCardSocial
                   ? isDesktop
                     ? desktopReadCommunityCardStyle
                     : readCommunityCardStyle
                   : isDesktop
                     ? desktopReadCardStyle
                     : readCardStyle
-                : ehComunidade
+                : usaCardSocial
                   ? isDesktop
                     ? desktopCommunityCardStyle
                     : communityCardStyle
@@ -3655,7 +3824,7 @@ export default function NotificacoesPage() {
 
               const iconVisualStyle = notificacao.lida
                 ? readNotificationIconStyle
-                : ehComunidade
+                : usaCardSocial
                   ? communityNotificationIconStyle
                   : unreadNotificationIconStyle;
               const avatarVisualStyle = criarAvatarNotificacaoStyle(
@@ -3713,7 +3882,7 @@ export default function NotificacoesPage() {
                         DATA: {formatarData(notificacao.criadaEm)}
                       </span>
 
-                      {!ehComunidade && (
+                      {!usaCardSocial && (
                         <p style={notificationMessageStyle}>
                           {notificacao.mensagem}
                         </p>
@@ -3723,7 +3892,7 @@ export default function NotificacoesPage() {
 
                   <div
                     style={
-                      ehComunidade
+                      usaCardSocial
                         ? isDesktop
                           ? desktopCommunityMetaGridStyle
                           : communityMetaGridStyle
@@ -3732,27 +3901,27 @@ export default function NotificacoesPage() {
                           : metaGridStyle
                     }
                   >
-                    {ehComunidade ? (
+                    {usaCardSocial ? (
                       <div
                         style={
                           notificacao.tipo === "comentario-comunidade" ||
+                          notificacao.tipo === "comentario-capitulo" ||
                           notificacao.tipo === "comentario-diario"
                             ? communityCommentBoxStyle
                             : communityUpdateBoxStyle
                         }
                       >
-                        {notificacao.tipo === "comentario-comunidade" ||
-                        notificacao.tipo === "comentario-diario" ? (
+                        {notificacaoTemAutorSocial(notificacao) ? (
                           notificacao.autorId ? (
                             <Link
                               href={autorNotificacaoHref}
                               style={notificationAuthorInlineLinkStyle}
                             >
-                              Comentário de {autorComentarioComunidade}
+                              {tituloBlocoSocial}
                             </Link>
                           ) : (
                             <span style={notificationAuthorInlineLinkStyle}>
-                              Comentário de {autorComentarioComunidade}
+                              {tituloBlocoSocial}
                             </span>
                           )
                         ) : (
@@ -3763,11 +3932,11 @@ export default function NotificacoesPage() {
                           </span>
                         )}
 
-                        <p style={communityCommentTextStyle}>
-                          {notificacao.tipo === "comentario-comunidade"
-                            ? textoComentarioComunidade
-                            : notificacao.mensagem}
-                        </p>
+                        {textoBlocoSocial.trim() ? (
+                          <p style={communityCommentTextStyle}>
+                            {textoBlocoSocial}
+                          </p>
+                        ) : null}
                       </div>
                     ) : (
                       <>

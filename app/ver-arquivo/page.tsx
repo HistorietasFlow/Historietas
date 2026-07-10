@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, FormEvent, ReactNode } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { criarSlugBase, formatarData, formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
+import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 
@@ -67,6 +68,15 @@ type ObraSalva = Partial<ObraLocal> & {
   arquivoObra?: unknown;
 } & Record<string, unknown>;
 
+type ComentarioArquivoObra = {
+  id: string;
+  obraId: string;
+  userId: string;
+  nome: string;
+  texto: string;
+  criadoEm: string;
+};
+
 
 type SupabaseObraRow = {
   id: string;
@@ -116,8 +126,33 @@ type PerfilAutorArquivoRow = {
 
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
+const FILE_LIKES_STORAGE_KEY = "historietas-arquivos-obras-curtidas";
+const FILE_SAVED_STORAGE_KEY = "historietas-arquivos-obras-salvos";
+const FILE_COMMENTS_STORAGE_KEY = "historietas-arquivos-obras-comentarios";
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
+
+
+function ComentariosArquivoPortal({ children }: { children: ReactNode }) {
+  const [montado, setMontado] = useState(false);
+
+  useEffect(() => {
+    const montarPortalTimer = window.setTimeout(() => {
+      setMontado(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(montarPortalTimer);
+    };
+  }, []);
+
+  if (!montado || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(children, document.body);
+}
+
 
 function criarStorageKeyUsuarioVerArquivo(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
@@ -167,8 +202,7 @@ function salvarJsonStorageUsuarioVerArquivo(
 
 function criarLoginHrefVerArquivo(
   obraId?: string,
-  slug?: string,
-  telaCheia = false
+  slug?: string
 ) {
   const obraIdLimpo = obraId?.trim() || "";
   const slugLimpo = slug?.trim() || "";
@@ -180,10 +214,6 @@ function criarLoginHrefVerArquivo(
 
   if (slugLimpo) {
     paramsArquivo.set("slug", slugLimpo);
-  }
-
-  if (telaCheia) {
-    paramsArquivo.set("tela", "cheia");
   }
 
   const queryArquivo = paramsArquivo.toString();
@@ -860,7 +890,7 @@ function normalizarObraSupabase(
           nome:
             obra.arquivo_nome?.trim() ||
             obraLocal?.arquivoObra?.nome ||
-            "Arquivo da obra",
+            "Arquivo",
           tipo: arquivoTipo,
           tamanho:
             typeof obra.arquivo_tamanho === "number" &&
@@ -894,7 +924,6 @@ async function carregarObraSupabaseComFallback(
             "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
           )
           .eq("id", obraIdBusca)
-          .eq("user_id", userId)
           .limit(1)
       : await supabase
           .from("obras")
@@ -902,7 +931,6 @@ async function carregarObraSupabaseComFallback(
             "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
           )
           .eq("slug", slugBusca)
-          .eq("user_id", userId)
           .limit(1);
 
     if (resultadoObra.error) {
@@ -920,13 +948,26 @@ async function carregarObraSupabaseComFallback(
       return obrasLocais;
     }
 
-    const { data: capitulosSupabase, error: erroCapitulos } = await supabase
+    const autorIdBanco = obraBanco.user_id?.trim() || "";
+    const usuarioEhDono = Boolean(userId && autorIdBanco === userId);
+
+    if (!obraBanco.publicado && !usuarioEhDono) {
+      return obrasLocais;
+    }
+
+    let capitulosQuery = supabase
       .from("capitulos")
       .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
       .eq("obra_id", obraBanco.id)
-      .eq("user_id", userId)
       .order("ordem", { ascending: true })
       .limit(300);
+
+    if (!usuarioEhDono) {
+      capitulosQuery = capitulosQuery.eq("publicado", true);
+    }
+
+    const { data: capitulosSupabase, error: erroCapitulos } =
+      await capitulosQuery;
 
     const capitulosBanco = erroCapitulos
       ? []
@@ -946,9 +987,10 @@ async function carregarObraSupabaseComFallback(
       return obra.id === obraBanco.id || slugLocal === slugBanco;
     });
 
-    const nomeProfileAutor =
-      nomeAutorProfile.trim() ||
-      (await buscarNomeProfileVerArquivo(obraBanco.user_id || userId));
+    const nomeProfileAutor = usuarioEhDono
+      ? nomeAutorProfile.trim() ||
+        (await buscarNomeProfileVerArquivo(autorIdBanco || userId))
+      : await buscarNomeProfileVerArquivo(autorIdBanco);
 
     const obraNormalizada = normalizarObraSupabase(
       obraBanco,
@@ -974,21 +1016,6 @@ async function carregarObraSupabaseComFallback(
   }
 }
 
-function obterTipoVisualArquivo(arquivo: ArquivoObraLocal) {
-  if (arquivo.categoria === "imagem") {
-    return "Imagem";
-  }
-
-  if (arquivo.categoria === "documento") {
-    return "PDF";
-  }
-
-  if (arquivo.categoria === "texto") {
-    return "Texto";
-  }
-
-  return "Arquivo";
-}
 
 function extrairTextoDeDataUrl(conteudo: string) {
   if (!conteudo.startsWith("data:")) {
@@ -1021,6 +1048,308 @@ function extrairTextoDeDataUrl(conteudo: string) {
   }
 }
 
+function usuarioPodeAbrirArquivoObra(obra: ObraLocal, userId: string) {
+  const autorId = obra.autorId?.trim() || "";
+
+  return obra.publicado || !autorId || Boolean(userId && autorId === userId);
+}
+
+function criarComentarioArquivoId() {
+  const cryptoGlobal =
+    typeof globalThis !== "undefined" && "crypto" in globalThis
+      ? globalThis.crypto
+      : null;
+
+  if (cryptoGlobal && typeof cryptoGlobal.randomUUID === "function") {
+    return cryptoGlobal.randomUUID();
+  }
+
+  return `comentario-arquivo-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+}
+
+function carregarListaIdsStorageVerArquivo(chave: string, userId: string) {
+  const texto = lerStorageUsuarioVerArquivo(chave, userId);
+
+  try {
+    const json: unknown = texto ? JSON.parse(texto) : [];
+
+    return Array.isArray(json)
+      ? json.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function salvarListaIdsStorageVerArquivo(
+  chave: string,
+  userId: string,
+  ids: string[]
+) {
+  salvarJsonStorageUsuarioVerArquivo(
+    chave,
+    userId,
+    Array.from(new Set(ids.filter((id) => Boolean(id.trim()))))
+  );
+}
+
+function carregarComentariosArquivoStorage(userId: string, obraId: string) {
+  const obraIdLimpo = obraId.trim();
+  const texto = lerStorageUsuarioVerArquivo(FILE_COMMENTS_STORAGE_KEY, userId);
+
+  if (!obraIdLimpo) {
+    return [] as ComentarioArquivoObra[];
+  }
+
+  try {
+    const json: unknown = texto ? JSON.parse(texto) : {};
+    const comentariosPorObra =
+      json && typeof json === "object" && !Array.isArray(json)
+        ? (json as Record<string, unknown>)
+        : {};
+    const comentarios = comentariosPorObra[obraIdLimpo];
+
+    return Array.isArray(comentarios)
+      ? comentarios
+          .map((comentario): ComentarioArquivoObra | null => {
+            if (
+              !comentario ||
+              typeof comentario !== "object" ||
+              Array.isArray(comentario)
+            ) {
+              return null;
+            }
+
+            const registro = comentario as Partial<ComentarioArquivoObra>;
+
+            if (
+              typeof registro.id !== "string" ||
+              typeof registro.texto !== "string" ||
+              !registro.texto.trim()
+            ) {
+              return null;
+            }
+
+            return {
+              id: registro.id,
+              obraId: obraIdLimpo,
+              userId:
+                typeof registro.userId === "string" ? registro.userId.trim() : "",
+              nome:
+                typeof registro.nome === "string" && registro.nome.trim()
+                  ? registro.nome.trim()
+                  : "Leitor",
+              texto: registro.texto.trim(),
+              criadoEm:
+                typeof registro.criadoEm === "string" && registro.criadoEm.trim()
+                  ? registro.criadoEm
+                  : new Date().toISOString(),
+            };
+          })
+          .filter(
+            (comentario): comentario is ComentarioArquivoObra =>
+              Boolean(comentario)
+          )
+      : [];
+  } catch {
+    return [] as ComentarioArquivoObra[];
+  }
+}
+
+function salvarComentariosArquivoStorage(
+  userId: string,
+  obraId: string,
+  comentarios: ComentarioArquivoObra[]
+) {
+  const obraIdLimpo = obraId.trim();
+
+  if (!obraIdLimpo) {
+    return;
+  }
+
+  try {
+    const texto = lerStorageUsuarioVerArquivo(FILE_COMMENTS_STORAGE_KEY, userId);
+    const json: unknown = texto ? JSON.parse(texto) : {};
+    const comentariosPorObra =
+      json && typeof json === "object" && !Array.isArray(json)
+        ? (json as Record<string, unknown>)
+        : {};
+
+    salvarJsonStorageUsuarioVerArquivo(FILE_COMMENTS_STORAGE_KEY, userId, {
+      ...comentariosPorObra,
+      [obraIdLimpo]: comentarios.slice(0, 120),
+    });
+  } catch {
+    salvarJsonStorageUsuarioVerArquivo(FILE_COMMENTS_STORAGE_KEY, userId, {
+      [obraIdLimpo]: comentarios.slice(0, 120),
+    });
+  }
+}
+
+async function contarCurtidasObraSupabase(obraId: string) {
+  if (!idObraSupabaseValido(obraId)) {
+    return 0;
+  }
+
+  try {
+    const { count, error } = await supabase
+      .from("obra_curtidas")
+      .select("obra_id", { count: "exact", head: true })
+      .eq("obra_id", obraId);
+
+    if (error) {
+      return 0;
+    }
+
+    return Math.max(0, count ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+async function usuarioCurtiuObraSupabase(obraId: string, userId: string) {
+  if (!idObraSupabaseValido(obraId) || !userId.trim()) {
+    return false;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("obra_curtidas")
+      .select("obra_id")
+      .eq("obra_id", obraId)
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+
+    return !error && Boolean(data);
+  } catch {
+    return false;
+  }
+}
+
+async function salvarCurtidaObraSupabase(
+  obraId: string,
+  userId: string,
+  ativo: boolean
+) {
+  if (!idObraSupabaseValido(obraId) || !userId.trim()) {
+    return false;
+  }
+
+  try {
+    const { error: erroDelete } = await supabase
+      .from("obra_curtidas")
+      .delete()
+      .eq("obra_id", obraId)
+      .eq("user_id", userId);
+
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
+    if (!ativo) {
+      return true;
+    }
+
+    const { error: erroComVisibilidade } = await supabase
+      .from("obra_curtidas")
+      .insert({
+        obra_id: obraId,
+        user_id: userId,
+        visibilidade: "publico",
+      });
+
+    if (!erroComVisibilidade) {
+      return true;
+    }
+
+    const { error: erroSemVisibilidade } = await supabase
+      .from("obra_curtidas")
+      .insert({
+        obra_id: obraId,
+        user_id: userId,
+      });
+
+    return !erroSemVisibilidade;
+  } catch (error) {
+    console.warn("Não consegui salvar a curtida do arquivo:", error);
+    return false;
+  }
+}
+
+async function usuarioSalvouObraSupabase(obraId: string, userId: string) {
+  if (!idObraSupabaseValido(obraId) || !userId.trim()) {
+    return false;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("favoritos")
+      .select("obra_id")
+      .eq("obra_id", obraId)
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+
+    return !error && Boolean(data);
+  } catch {
+    return false;
+  }
+}
+
+async function salvarFavoritoObraSupabase(
+  obraId: string,
+  userId: string,
+  ativo: boolean
+) {
+  if (!idObraSupabaseValido(obraId) || !userId.trim()) {
+    return false;
+  }
+
+  try {
+    const { error: erroDelete } = await supabase
+      .from("favoritos")
+      .delete()
+      .eq("obra_id", obraId)
+      .eq("user_id", userId);
+
+    if (erroDelete) {
+      throw erroDelete;
+    }
+
+    if (!ativo) {
+      return true;
+    }
+
+    const { error: erroComVisibilidade } = await supabase
+      .from("favoritos")
+      .insert({
+        obra_id: obraId,
+        user_id: userId,
+        visibilidade: "publico",
+      });
+
+    if (!erroComVisibilidade) {
+      return true;
+    }
+
+    const { error: erroSemVisibilidade } = await supabase
+      .from("favoritos")
+      .insert({
+        obra_id: obraId,
+        user_id: userId,
+      });
+
+    return !erroSemVisibilidade;
+  } catch (error) {
+    console.warn("Não consegui salvar o arquivo na lista:", error);
+    return false;
+  }
+}
+
+
 
 export default function VerArquivoPage() {
   const router = useRouter();
@@ -1029,10 +1358,18 @@ export default function VerArquivoPage() {
   const [redirecionandoLogin, setRedirecionandoLogin] = useState(false);
   const [obraIdBusca, setObraIdBusca] = useState("");
   const [slugBusca, setSlugBusca] = useState("");
-  const [telaCheia, setTelaCheia] = useState(false);
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [curtidaAtiva, setCurtidaAtiva] = useState(false);
+  const [salvoAtivo, setSalvoAtivo] = useState(false);
+  const [totalCurtidasArquivo, setTotalCurtidasArquivo] = useState(0);
+  const [comentariosArquivo, setComentariosArquivo] = useState<ComentarioArquivoObra[]>([]);
+  const [comentarioTexto, setComentarioTexto] = useState("");
+  const [comentarioStatus, setComentarioStatus] = useState("");
+  const [mostrarComentariosArquivo, setMostrarComentariosArquivo] = useState(false);
+  const [mensagemAcao, setMensagemAcao] = useState("");
+  const [salvandoInteracao, setSalvandoInteracao] = useState(false);
   const [urlBusca, setUrlBusca] = useState(() =>
     typeof window === "undefined" ? "" : window.location.search
   );
@@ -1074,7 +1411,6 @@ export default function VerArquivoPage() {
 
       setObraIdBusca(params.get("obraId") || "");
       setSlugBusca(params.get("slug") || "");
-      setTelaCheia(params.get("tela") === "cheia");
       setUrlBusca(buscaAtual);
     };
 
@@ -1106,13 +1442,10 @@ export default function VerArquivoPage() {
       const params = new URLSearchParams(urlBusca);
       const obraIdParam = params.get("obraId") || "";
       const slugParam = params.get("slug") || "";
-      const telaCheiaParam = params.get("tela") === "cheia";
-
       window.setTimeout(() => {
         if (!cancelado) {
           setObraIdBusca(obraIdParam);
           setSlugBusca(slugParam);
-          setTelaCheia(telaCheiaParam);
         }
       }, 0);
 
@@ -1125,7 +1458,7 @@ export default function VerArquivoPage() {
             if (!cancelado) {
               setRedirecionandoLogin(true);
               router.replace(
-                criarLoginHrefVerArquivo(obraIdParam, slugParam, telaCheiaParam)
+                criarLoginHrefVerArquivo(obraIdParam, slugParam)
               );
             }
           }, 0);
@@ -1144,9 +1477,7 @@ export default function VerArquivoPage() {
 
         const nomeProfileAutor = await buscarNomeProfileVerArquivo(userId);
         const obrasLocais = aplicarNomeProfileVerArquivo(
-          carregarObrasLocais(userId).filter((obra) => {
-            return obraPertenceAoUsuarioLogado(obra, userId);
-          }),
+          carregarObrasLocais(userId),
           userId,
           nomeProfileAutor
         );
@@ -1169,9 +1500,7 @@ export default function VerArquivoPage() {
           if (!cancelado) {
             setObras(
               aplicarNomeProfileVerArquivo(
-                obrasAtualizadas.filter((obra) => {
-                  return obraPertenceAoUsuarioLogado(obra, userId);
-                }),
+                obrasAtualizadas,
                 userId,
                 nomeProfileAutor
               )
@@ -1208,16 +1537,11 @@ export default function VerArquivoPage() {
     return (
       obras.find((obra) => {
         const slugObra = obra.slug || criarSlugBase(obra.titulo);
-        const obraPertenceAoUsuario = obraPertenceAoUsuarioLogado(
-          obra,
-          usuarioIdLogado
-        );
+        const obraEncontrada =
+          (obraIdBusca && obra.id === obraIdBusca) ||
+          (slugBusca && slugObra === slugBusca);
 
-        return (
-          obraPertenceAoUsuario &&
-          ((obraIdBusca && obra.id === obraIdBusca) ||
-            (slugBusca && slugObra === slugBusca))
-        );
+        return obraEncontrada && usuarioPodeAbrirArquivoObra(obra, usuarioIdLogado);
       }) || null
     );
   }, [obras, obraIdBusca, slugBusca, usuarioIdLogado]);
@@ -1232,49 +1556,246 @@ export default function VerArquivoPage() {
     return extrairTextoDeDataUrl(arquivo.conteudo);
   }, [arquivo]);
 
-  const voltarHref = obraAtual
-    ? obraIdBusca
-      ? "/painel-autor"
-      : obraAtual.link || `/obra/${obraAtual.slug || criarSlugBase(obraAtual.titulo)}`
-    : "/painel-autor";
-  const obraPublicaHref = obraAtual
-    ? obraAtual.link || `/obra/${obraAtual.slug || criarSlugBase(obraAtual.titulo)}`
-    : "/explorar";
   const perfilAutorHref = obraAtual
     ? criarPerfilAutorHrefVerArquivo(obraAtual.autor, obraAtual.autorId)
     : "/perfil-autor";
-  const arquivoTipoVisual = arquivo ? obterTipoVisualArquivo(arquivo) : "Arquivo";
+  const totalComentariosArquivo = comentariosArquivo.length;
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarInteracoesArquivo() {
+      if (!obraAtual || !usuarioIdLogado) {
+        setCurtidaAtiva(false);
+        setSalvoAtivo(false);
+        setTotalCurtidasArquivo(0);
+        setComentariosArquivo([]);
+        setComentarioTexto("");
+        setComentarioStatus("");
+        setMensagemAcao("");
+        return;
+      }
+
+      const obraId = obraAtual.id.trim();
+      const curtidasLocais = carregarListaIdsStorageVerArquivo(
+        FILE_LIKES_STORAGE_KEY,
+        usuarioIdLogado
+      );
+      const salvosLocais = carregarListaIdsStorageVerArquivo(
+        FILE_SAVED_STORAGE_KEY,
+        usuarioIdLogado
+      );
+      const comentariosLocais = carregarComentariosArquivoStorage(
+        usuarioIdLogado,
+        obraId
+      );
+      const curtiuLocal = curtidasLocais.includes(obraId);
+      const salvoLocal = salvosLocais.includes(obraId);
+
+      let curtiuFinal = curtiuLocal;
+      let salvoFinal = salvoLocal;
+      let totalCurtidasFinal = Math.max(
+        obraAtual.totalCurtidas || 0,
+        curtiuLocal ? 1 : 0
+      );
+
+      if (idObraSupabaseValido(obraId)) {
+        const [totalCurtidasRemoto, curtiuRemoto, salvoRemoto] =
+          await Promise.all([
+            contarCurtidasObraSupabase(obraId),
+            usuarioCurtiuObraSupabase(obraId, usuarioIdLogado),
+            usuarioSalvouObraSupabase(obraId, usuarioIdLogado),
+          ]);
+
+        curtiuFinal = curtiuRemoto || curtiuLocal;
+        salvoFinal = salvoRemoto || salvoLocal;
+        totalCurtidasFinal = Math.max(
+          totalCurtidasFinal,
+          totalCurtidasRemoto,
+          curtiuFinal ? 1 : 0
+        );
+      }
+
+      if (cancelado) {
+        return;
+      }
+
+      setCurtidaAtiva(curtiuFinal);
+      setSalvoAtivo(salvoFinal);
+      setTotalCurtidasArquivo(totalCurtidasFinal);
+      setComentariosArquivo(comentariosLocais);
+      setComentarioStatus("");
+      setMensagemAcao("");
+    }
+
+    void carregarInteracoesArquivo();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obraAtual, usuarioIdLogado]);
+
+  async function alternarCurtidaArquivo() {
+    if (!obraAtual || salvandoInteracao) {
+      return;
+    }
+
+    const obraId = obraAtual.id.trim();
+    const novoStatus = !curtidaAtiva;
+    const curtidasLocais = carregarListaIdsStorageVerArquivo(
+      FILE_LIKES_STORAGE_KEY,
+      usuarioIdLogado
+    );
+    const proximasCurtidasLocais = novoStatus
+      ? Array.from(new Set([...curtidasLocais, obraId]))
+      : curtidasLocais.filter((id) => id !== obraId);
+
+    setSalvandoInteracao(true);
+    setMensagemAcao("");
+    setCurtidaAtiva(novoStatus);
+    setTotalCurtidasArquivo((totalAtual) =>
+      Math.max(0, totalAtual + (novoStatus ? 1 : -1))
+    );
+    salvarListaIdsStorageVerArquivo(
+      FILE_LIKES_STORAGE_KEY,
+      usuarioIdLogado,
+      proximasCurtidasLocais
+    );
+
+    const sincronizado = await salvarCurtidaObraSupabase(
+      obraId,
+      usuarioIdLogado,
+      novoStatus
+    );
+
+    if (!sincronizado && idObraSupabaseValido(obraId)) {
+      setMensagemAcao("A curtida ficou salva neste aparelho, mas não sincronizou agora.");
+    }
+
+    setSalvandoInteracao(false);
+  }
+
+  async function alternarSalvoArquivo() {
+    if (!obraAtual || salvandoInteracao) {
+      return;
+    }
+
+    const obraId = obraAtual.id.trim();
+    const novoStatus = !salvoAtivo;
+    const salvosLocais = carregarListaIdsStorageVerArquivo(
+      FILE_SAVED_STORAGE_KEY,
+      usuarioIdLogado
+    );
+    const proximosSalvosLocais = novoStatus
+      ? Array.from(new Set([...salvosLocais, obraId]))
+      : salvosLocais.filter((id) => id !== obraId);
+
+    setSalvandoInteracao(true);
+    setMensagemAcao("");
+    setSalvoAtivo(novoStatus);
+    salvarListaIdsStorageVerArquivo(
+      FILE_SAVED_STORAGE_KEY,
+      usuarioIdLogado,
+      proximosSalvosLocais
+    );
+
+    const sincronizado = await salvarFavoritoObraSupabase(
+      obraId,
+      usuarioIdLogado,
+      novoStatus
+    );
+
+    if (!sincronizado && idObraSupabaseValido(obraId)) {
+      setMensagemAcao("O salvamento ficou neste aparelho, mas não sincronizou agora.");
+    }
+
+    setSalvandoInteracao(false);
+  }
+
+  async function enviarComentarioArquivo(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!obraAtual || salvandoInteracao) {
+      return;
+    }
+
+    const textoComentario = comentarioTexto.trim();
+
+    if (textoComentario.length < 2) {
+      setComentarioStatus("Escreva um comentário antes de enviar.");
+      return;
+    }
+
+    setSalvandoInteracao(true);
+    setComentarioStatus("");
+    setMensagemAcao("");
+
+    const nomeProfile = await buscarNomeProfileVerArquivo(usuarioIdLogado);
+    const novoComentario: ComentarioArquivoObra = {
+      id: criarComentarioArquivoId(),
+      obraId: obraAtual.id,
+      userId: usuarioIdLogado,
+      nome: nomeProfile || "Você",
+      texto: textoComentario.slice(0, 600),
+      criadoEm: new Date().toISOString(),
+    };
+    const proximosComentarios = [novoComentario, ...comentariosArquivo].slice(0, 120);
+
+    setComentariosArquivo(proximosComentarios);
+    setComentarioTexto("");
+    salvarComentariosArquivoStorage(
+      usuarioIdLogado,
+      obraAtual.id,
+      proximosComentarios
+    );
+    setSalvandoInteracao(false);
+  }
 
   function abrirArquivoEmNovaAba() {
-    if (!arquivo || !obraAtual) {
+    const arquivoHref = arquivo?.conteudo?.trim() || "";
+
+    if (!arquivoHref) {
       return;
     }
 
-    const parametros = new URLSearchParams();
-    const slugObra = obraAtual.slug || criarSlugBase(obraAtual.titulo);
-
-    if (obraIdBusca) {
-      parametros.set("obraId", obraAtual.id);
-    } else {
-      parametros.set("slug", slugObra);
-    }
-
-    parametros.set("tela", "cheia");
-
-    const urlTelaCheia = `/ver-arquivo?${parametros.toString()}`;
-
-    if (!isDesktop) {
-      window.history.pushState(null, "", urlTelaCheia);
-      setTelaCheia(true);
-      setUrlBusca(window.location.search);
-      return;
-    }
-
-    const novaJanela = window.open(urlTelaCheia, "_blank", "noopener,noreferrer");
+    const novaJanela = window.open(arquivoHref, "_blank", "noopener,noreferrer");
 
     if (!novaJanela) {
-      window.location.href = urlTelaCheia;
+      window.location.href = arquivoHref;
     }
+  }
+
+  function inserirNoComentarioArquivo(valor: string) {
+    setComentarioTexto((textoAtual) => `${textoAtual}${valor}`);
+    setComentarioStatus("");
+  }
+
+  function responderComentarioArquivo(nomeAutor: string) {
+    const nomeLimpo = nomeAutor.replace(/\s+/g, " ").trim();
+
+    if (!nomeLimpo) {
+      return;
+    }
+
+    setComentarioTexto(`@${nomeLimpo} `);
+    setComentarioStatus("");
+  }
+
+  function removerComentarioArquivo(comentarioId: string) {
+    if (!obraAtual || !usuarioIdLogado) {
+      return;
+    }
+
+    const proximosComentarios = comentariosArquivo.filter(
+      (comentario) => comentario.id !== comentarioId
+    );
+
+    setComentariosArquivo(proximosComentarios);
+    salvarComentariosArquivoStorage(
+      usuarioIdLogado,
+      obraAtual.id,
+      proximosComentarios
+    );
   }
 
   if (carregando || redirecionandoLogin) {
@@ -1338,46 +1859,6 @@ export default function VerArquivoPage() {
     );
   }
 
-  if (telaCheia) {
-    return (
-      <main style={fullPageStyle}>
-        <section style={fullContainerStyle}>
-          <section style={fullViewerStyle}>
-            {arquivo.categoria === "imagem" && (
-              <img
-                src={arquivo.conteudo}
-                alt={`Arquivo da obra ${obraAtual.titulo}`}
-                style={fullImageStyle}
-              />
-            )}
-
-            {arquivo.categoria === "texto" && (
-              <pre style={fullTextContentStyle}>{textoArquivo}</pre>
-            )}
-
-            {arquivo.categoria === "documento" && (
-              <iframe
-                src={arquivo.conteudo}
-                title={`PDF da obra ${obraAtual.titulo}`}
-                style={fullPdfFrameStyle}
-              />
-            )}
-
-            {arquivo.categoria === "outro" && (
-              <section style={isDesktop ? desktopGenericFileBoxStyle : genericFileBoxStyle}>
-                <span style={miniTitleStyle}>ARQUIVO ANEXADO</span>
-                <h2 style={viewerTitleStyle}>Prévia indisponível para este formato</h2>
-                <p style={emptyTextStyle}>
-                  Esse tipo de arquivo não tem prévia direta no navegador.
-                </p>
-              </section>
-            )}
-          </section>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${verArquivoPageCss}`}</style>
@@ -1386,13 +1867,10 @@ export default function VerArquivoPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
-          </Link>
+        {isDesktop ? (
+          <header style={desktopTopStyle}>
+            <span aria-hidden="true" />
 
-          {isDesktop ? (
             <Link
               href="/notificacoes"
               style={desktopNotificationButtonStyle}
@@ -1412,8 +1890,8 @@ export default function VerArquivoPage() {
                 </span>
               ) : null}
             </Link>
-          ) : null}
-        </header>
+          </header>
+        ) : null}
 
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
           <div style={heroGlowStyle} />
@@ -1428,23 +1906,13 @@ export default function VerArquivoPage() {
               Por {obraAtual.autor}
             </Link>
 
-            <div style={isDesktop ? desktopFileInfoBoxStyle : fileInfoBoxStyle}>
-              <div style={fileInfoContentStyle}>
-                <div style={fileMetaGridStyle}>
-                  <span style={fileMetaBadgeStyle}>{arquivoTipoVisual}</span>
-                  <span style={fileMetaBadgeStyle}>{formatarTamanhoArquivo(arquivo.tamanho)}</span>
-                  <span style={fileMetaBadgeStyle}>{formatarData(arquivo.criadoEm)}</span>
-                </div>
-              </div>
-            </div>
-
             <div style={isDesktop ? desktopActionsGridStyle : actionsGridStyle}>
               <button
                 type="button"
                 onClick={abrirArquivoEmNovaAba}
                 style={primaryActionButtonStyle}
               >
-                Abrir em nova aba
+                Abrir arquivo
               </button>
 
               <a
@@ -1452,13 +1920,41 @@ export default function VerArquivoPage() {
                 download={arquivo.nome}
                 style={secondaryActionStyle}
               >
-                Baixar arquivo
+                Baixar
               </a>
-
-              <Link href={obraPublicaHref} style={ghostActionStyle}>
-                Abrir obra
-              </Link>
             </div>
+
+            <div style={isDesktop ? desktopSocialActionsStyle : socialActionsStyle}>
+              <button
+                type="button"
+                onClick={alternarCurtidaArquivo}
+                disabled={salvandoInteracao}
+                style={curtidaAtiva ? activeSocialButtonStyle : socialButtonStyle}
+              >
+                ♥ {curtidaAtiva ? "Curtido" : "Curtir"} · {totalCurtidasArquivo}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMostrarComentariosArquivo(true)}
+                style={socialButtonStyle}
+              >
+                💬 Comentários · {totalComentariosArquivo}
+              </button>
+
+              <button
+                type="button"
+                onClick={alternarSalvoArquivo}
+                disabled={salvandoInteracao}
+                style={salvoAtivo ? activeSocialButtonStyle : socialButtonStyle}
+              >
+                {salvoAtivo ? "Salvo" : "Salvar"}
+              </button>
+            </div>
+
+            {mensagemAcao ? (
+              <span style={actionMessageStyle}>{mensagemAcao}</span>
+            ) : null}
           </div>
         </section>
 
@@ -1475,11 +1971,6 @@ export default function VerArquivoPage() {
 
           {arquivo.categoria === "texto" && (
             <article style={isDesktop ? desktopTextViewerStyle : textViewerStyle}>
-              <div style={viewerHeaderStyle}>
-                <span style={miniTitleStyle}>LEITURA EM TEXTO</span>
-                <h2 style={viewerTitleStyle}>{arquivo.nome}</h2>
-              </div>
-
               <pre style={isDesktop ? desktopTextContentStyle : textContentStyle}>{textoArquivo}</pre>
             </article>
           )}
@@ -1496,7 +1987,6 @@ export default function VerArquivoPage() {
 
           {arquivo.categoria === "outro" && (
             <section style={isDesktop ? desktopGenericFileBoxStyle : genericFileBoxStyle}>
-              <span style={miniTitleStyle}>ARQUIVO ANEXADO</span>
               <h2 style={viewerTitleStyle}>Prévia indisponível para este formato</h2>
               <p style={emptyTextStyle}>
                 Esse tipo de arquivo pode ser aberto em outra aba ou baixado no
@@ -1509,7 +1999,7 @@ export default function VerArquivoPage() {
                   onClick={abrirArquivoEmNovaAba}
                   style={primaryActionButtonStyle}
                 >
-                  Abrir em nova aba
+                  Abrir arquivo
                 </button>
 
                 <a
@@ -1517,16 +2007,735 @@ export default function VerArquivoPage() {
                   download={arquivo.nome}
                   style={secondaryActionStyle}
                 >
-                  Baixar arquivo
+                  Baixar
                 </a>
               </div>
             </section>
           )}
         </section>
+
+        {mostrarComentariosArquivo ? (
+          <ComentariosArquivoPortal>
+            <section style={commentsSheetOverlayStyle} aria-label="Comentários">
+              <button
+                type="button"
+                aria-label="Fechar comentários"
+                onClick={() => setMostrarComentariosArquivo(false)}
+                style={commentsSheetBackdropStyle}
+              />
+
+            <article style={isDesktop ? desktopCommentsSheetStyle : commentsSheetStyle}>
+              <div style={commentsSheetHandleWrapStyle}>
+                <div style={commentsSheetHandleStyle} />
+              </div>
+
+              <header style={commentsSheetHeaderStyle}>
+                <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
+
+                <strong style={commentsSheetTitleStyle}>
+                  {totalComentariosArquivo === 1
+                    ? "1 comentário"
+                    : `${totalComentariosArquivo} comentários`}
+                </strong>
+
+                <button
+                  type="button"
+                  onClick={() => setMostrarComentariosArquivo(false)}
+                  style={commentsSheetCloseStyle}
+                >
+                  ×
+                </button>
+              </header>
+
+              <section style={commentsSheetListStyle}>
+                {comentariosArquivo.length > 0 ? (
+                  comentariosArquivo.map((comentario) => {
+                    const podeRemoverComentario = Boolean(
+                      usuarioIdLogado && comentario.userId === usuarioIdLogado
+                    );
+
+                    return (
+                      <article key={comentario.id} style={commentSheetItemStyle}>
+                        <Link
+                          href={criarPerfilAutorHrefVerArquivo(comentario.nome, comentario.userId)}
+                          aria-label={`Abrir perfil de ${comentario.nome}`}
+                          style={commentSheetAvatarLinkStyle}
+                        >
+                          {comentario.nome.slice(0, 1).toUpperCase() || "L"}
+                        </Link>
+
+                        <div style={commentSheetContentStyle}>
+                          <div style={commentSheetTopLineStyle}>
+                            <Link
+                              href={criarPerfilAutorHrefVerArquivo(comentario.nome, comentario.userId)}
+                              style={commentSheetAuthorLinkStyle}
+                            >
+                              {comentario.nome}
+                            </Link>
+
+                            <span style={commentSheetTimeStyle}>
+                              {formatarData(comentario.criadoEm)}
+                            </span>
+                          </div>
+
+                          <p style={commentSheetTextStyle}>{comentario.texto}</p>
+
+                          <div style={commentSheetActionsRowStyle}>
+                            <button
+                              type="button"
+                              onClick={() => responderComentarioArquivo(comentario.nome)}
+                              style={commentSheetReplyButtonStyle}
+                            >
+                              Responder
+                            </button>
+
+                            {podeRemoverComentario ? (
+                              <button
+                                type="button"
+                                onClick={() => removerComentarioArquivo(comentario.id)}
+                                style={commentSheetRemoveButtonStyle}
+                              >
+                                Remover
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })
+                ) : (
+                  <p style={emptyCommentsStyle}>Sem comentários ainda</p>
+                )}
+              </section>
+
+              <section style={commentsToolsStyle}>
+                <div style={commentsQuickReactionsStyle}>
+                  {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => inserirNoComentarioArquivo(emoji)}
+                      style={commentsQuickReactionButtonStyle}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <form onSubmit={enviarComentarioArquivo} style={commentsSheetFormStyle}>
+                <div style={commentInputAvatarStyle}>
+                  {(usuarioIdLogado ? "H" : "H").slice(0, 1).toUpperCase()}
+                </div>
+
+                <div style={commentsInputBoxStyle}>
+                  <textarea
+                    value={comentarioTexto}
+                    onChange={(event) => {
+                      setComentarioTexto(event.target.value);
+                      setComentarioStatus("");
+                    }}
+                    style={commentsSheetInputStyle}
+                    placeholder="Adicionar comentário..."
+                    maxLength={600}
+                    rows={1}
+                    disabled={salvandoInteracao}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => inserirNoComentarioArquivo("@")}
+                  disabled={salvandoInteracao}
+                  style={commentsInputIconButtonStyle}
+                >
+                  @
+                </button>
+
+                <button
+                  type="submit"
+                  aria-label="Enviar comentário"
+                  disabled={salvandoInteracao}
+                  style={{
+                    ...commentsSheetSendStyle,
+                    opacity: salvandoInteracao ? 0.58 : 1,
+                    cursor: salvandoInteracao ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {salvandoInteracao ? "..." : "↑"}
+                </button>
+              </form>
+
+              {comentarioStatus ? (
+                <span style={commentStatusStyle}>{comentarioStatus}</span>
+              ) : null}
+            </article>
+          </section>
+          </ComentariosArquivoPortal>
+        ) : null}
       </section>
     </main>
   );
 }
+
+const socialActionsStyle: CSSProperties = {
+marginTop: "10px",
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "6px",
+  width: "100%",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+const desktopSocialActionsStyle: CSSProperties = {
+...socialActionsStyle,
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  maxWidth: "100%",
+};
+
+const safeTextStyle: CSSProperties = {
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
+};
+
+const socialButtonStyle: CSSProperties = {
+minHeight: "38px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0 8px",
+  fontSize: "10.5px",
+  fontWeight: 950,
+  textDecoration: "none",
+  cursor: "pointer",
+  boxSizing: "border-box",
+  fontFamily: "inherit",
+  textAlign: "center",
+  lineHeight: 1.05,
+  whiteSpace: "normal",
+  boxShadow: "none",
+  ...safeTextStyle,
+};
+
+const activeSocialButtonStyle: CSSProperties = {
+...socialButtonStyle,
+  border: "1px solid rgba(255,255,255,0.18)",
+  background: "#08030F",
+  color: "#FFFFFF",
+};
+
+const actionMessageStyle: CSSProperties = {
+display: "block",
+  marginTop: "4px",
+  color: "#86EFAC",
+  fontSize: "11px",
+  fontWeight: 850,
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const commentsSheetOverlayStyle: CSSProperties = {
+position: "fixed",
+  inset: 0,
+  zIndex: 2147483647,
+  isolation: "isolate",
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  background: "rgba(0, 0, 0, 0.46)",
+  backdropFilter: "blur(8px)",
+  pointerEvents: "auto",
+};
+
+const commentsSheetBackdropStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  zIndex: 0,
+  border: 0,
+  background: "transparent",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentsSheetStyle: CSSProperties = {
+position: "relative",
+  zIndex: 2147483647,
+  width: "100%",
+  maxHeight: "82vh",
+  borderTopLeftRadius: "28px",
+  borderTopRightRadius: "28px",
+  border: "1px solid rgba(255, 255, 255, 0.10)",
+  borderBottom: 0,
+  background: "linear-gradient(180deg, rgba(10, 3, 20, 0.99), rgba(5, 0, 12, 1))",
+  boxShadow: "0 -28px 70px rgba(0, 0, 0, 0.84)",
+  padding: "8px 12px calc(26px + env(safe-area-inset-bottom))",
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+  overflow: "hidden",
+};
+
+const desktopCommentsSheetStyle: CSSProperties = {
+  ...commentsSheetStyle,
+  width: "min(760px, calc(100% - 48px))",
+  maxHeight: "76vh",
+  borderRadius: "28px 28px 0 0",
+  padding: "10px 18px 18px",
+};
+
+const commentsSheetHandleWrapStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  padding: "4px 0 2px",
+};
+
+const commentsSheetHandleStyle: CSSProperties = {
+  width: "44px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "rgba(255, 255, 255, 0.22)",
+};
+
+const commentsSheetHeaderStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "40px 1fr 40px",
+  alignItems: "center",
+  gap: "8px",
+};
+
+const commentsSheetHeaderSpacerStyle: CSSProperties = {
+  width: "40px",
+  height: "40px",
+};
+
+const commentsSheetTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "16px",
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.02em",
+};
+
+const commentsSheetCloseStyle: CSSProperties = {
+  width: "40px",
+  height: "40px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255, 255, 255, 0.12)",
+  background: "rgba(255, 255, 255, 0.06)",
+  color: "#FFFFFF",
+  fontSize: "24px",
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const commentsSheetListStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+  minHeight: "120px",
+  overflowY: "auto",
+  padding: "2px 2px 4px",
+};
+
+const commentSheetItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "40px 1fr",
+  gap: "10px",
+  alignItems: "flex-start",
+};
+
+const commentSheetAvatarLinkStyle: CSSProperties = {
+  width: "40px",
+  height: "40px",
+  borderRadius: "999px",
+  border: "1px solid rgba(168, 85, 247, 0.24)",
+  background: "rgba(255, 255, 255, 0.06)",
+  color: "#FFFFFF",
+  display: "grid",
+  placeItems: "center",
+  fontSize: "15px",
+  fontWeight: 950,
+  textDecoration: "none",
+  overflow: "hidden",
+};
+
+const commentSheetContentStyle: CSSProperties = {
+  minWidth: 0,
+  display: "flex",
+  flexDirection: "column",
+  gap: "4px",
+};
+
+const commentSheetTopLineStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const commentSheetAuthorLinkStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 950,
+  textDecoration: "none",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const commentSheetTimeStyle: CSSProperties = {
+  color: "rgba(255, 255, 255, 0.42)",
+  fontSize: "11px",
+  fontWeight: 800,
+  whiteSpace: "nowrap",
+};
+
+const commentSheetTextStyle: CSSProperties = {
+  margin: 0,
+  color: "rgba(255, 255, 255, 0.88)",
+  fontSize: "13px",
+  lineHeight: 1.45,
+  fontWeight: 650,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
+const commentSheetActionsRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  marginTop: "2px",
+};
+
+const commentSheetReplyButtonStyle: CSSProperties = {
+  border: 0,
+  background: "transparent",
+  color: "rgba(255, 255, 255, 0.56)",
+  fontSize: "11px",
+  fontWeight: 900,
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentSheetRemoveButtonStyle: CSSProperties = {
+  ...commentSheetReplyButtonStyle,
+  color: "rgba(248, 113, 113, 0.9)",
+};
+
+const commentsSheetFormStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "34px 1fr 34px 38px",
+  gap: "8px",
+  alignItems: "center",
+  paddingTop: "8px",
+  borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+};
+
+const commentsSheetInputStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "38px",
+  maxHeight: "92px",
+  border: 0,
+  outline: "none",
+  resize: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontSize: "13px",
+  lineHeight: 1.35,
+  fontWeight: 750,
+  padding: "10px 12px",
+  fontFamily: "inherit",
+};
+
+const commentsSheetSendStyle: CSSProperties = {
+  width: "38px",
+  height: "38px",
+  borderRadius: "999px",
+  border: "1px solid rgba(168, 85, 247, 0.42)",
+  background: "rgba(88, 28, 135, 0.78)",
+  color: "#FFFFFF",
+  fontSize: "17px",
+  fontWeight: 950,
+  display: "grid",
+  placeItems: "center",
+  cursor: "pointer",
+};
+
+const commentsShellStyle: CSSProperties = {
+  marginTop: "12px",
+  display: "grid",
+  gridTemplateRows: "auto minmax(0, auto) auto auto auto",
+  gap: "7px",
+  padding: "6px 12px calc(12px + env(safe-area-inset-bottom))",
+  borderRadius: "26px",
+  background: "#070212",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  boxShadow: "none",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "hidden",
+};
+
+const desktopCommentsShellStyle: CSSProperties = {
+  ...commentsShellStyle,
+  width: "min(680px, 100%)",
+  margin: "14px auto 0",
+  borderRadius: "28px",
+  padding: "8px 14px 14px",
+};
+
+const commentsHeaderStyle: CSSProperties = {
+  minHeight: "32px",
+  display: "grid",
+  gridTemplateColumns: "40px minmax(0, 1fr) 40px",
+  alignItems: "center",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const commentsHeaderSpacerStyle: CSSProperties = {
+  width: "40px",
+  height: "1px",
+};
+
+const commentsTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "14.5px",
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.02em",
+};
+
+const commentsListStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "start",
+  gap: "10px",
+  minHeight: 0,
+  maxHeight: "min(44dvh, 420px)",
+  overflowY: "auto",
+  padding: "6px 2px 9px",
+  WebkitOverflowScrolling: "touch",
+};
+
+const commentCardStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr)",
+  gap: "10px",
+  alignItems: "start",
+  minWidth: 0,
+};
+
+const commentAvatarStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#04000A",
+  color: "#FFFFFF",
+  fontSize: "12.5px",
+  fontWeight: 950,
+  flex: "0 0 auto",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  boxShadow: "none",
+};
+
+const commentBodyStyle: CSSProperties = {
+  display: "grid",
+  gap: "2px",
+  minWidth: 0,
+};
+
+const commentTopStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const commentAuthorStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "12px",
+  fontWeight: 950,
+  ...safeTextStyle,
+};
+
+const commentDateStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 750,
+  flex: "0 0 auto",
+};
+
+const commentTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12.5px",
+  lineHeight: 1.38,
+  fontWeight: 750,
+  whiteSpace: "pre-wrap",
+  ...safeTextStyle,
+};
+
+const commentActionsRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+};
+
+const commentReplyButtonStyle: CSSProperties = {
+  width: "fit-content",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0 0",
+  cursor: "pointer",
+};
+
+const commentRemoveButtonStyle: CSSProperties = {
+  ...commentReplyButtonStyle,
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  fontWeight: 950,
+};
+
+const commentsToolsStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  padding: "5px 0 0",
+  borderTop: "none",
+};
+
+const commentsQuickReactionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "6px",
+  width: "100%",
+  overflowX: "auto",
+  padding: "0 1px",
+  scrollbarWidth: "none",
+  WebkitOverflowScrolling: "touch",
+};
+
+const commentsQuickReactionButtonStyle: CSSProperties = {
+  width: "30px",
+  height: "28px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  fontSize: "18px",
+  lineHeight: 1,
+  padding: 0,
+  cursor: "pointer",
+  flex: "0 0 auto",
+};
+
+const commentFormStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "30px minmax(0, 1fr) 28px 38px",
+  alignItems: "center",
+  gap: "7px",
+  padding: "7px 0 0",
+  minWidth: 0,
+  background: "transparent",
+};
+
+const commentInputAvatarStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "11px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#04000A",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  color: "#FFFFFF",
+  fontSize: "11.5px",
+  fontWeight: 950,
+  boxShadow: "none",
+};
+
+const commentsInputBoxStyle: CSSProperties = {
+  minWidth: 0,
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+};
+
+const commentTextareaStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "38px",
+  maxHeight: "82px",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "#04000A",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  padding: "9px 12px",
+  fontSize: "12.5px",
+  lineHeight: 1.32,
+  outline: "none",
+  boxSizing: "border-box",
+  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+  resize: "none",
+  overflowY: "auto",
+  ...safeTextStyle,
+};
+
+const commentsInputIconButtonStyle: CSSProperties = {
+  width: "26px",
+  height: "30px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "16px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentSubmitButtonStyle: CSSProperties = {
+  width: "36px",
+  height: "36px",
+  borderRadius: "999px",
+  border: "none",
+  background: "var(--historietas-accent, #6D28D9)",
+  color: "#FFFFFF",
+  fontSize: "18px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+};
+
+const commentStatusStyle: CSSProperties = {
+  color: "#FDE68A",
+  fontSize: "11px",
+  fontWeight: 850,
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const emptyCommentsStyle: CSSProperties = {
+  margin: "10px 0 0",
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 800,
+  textAlign: "center",
+  ...safeTextStyle,
+};
 
 const verArquivoPageCss = `  html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
@@ -1541,11 +2750,6 @@ const verArquivoPageCss = `  html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] iframe {
     background: #04000A;
   }`;
-
-const safeTextStyle: CSSProperties = {
-  overflowWrap: "anywhere",
-  wordBreak: "break-word",
-};
 
 const mobileTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
@@ -1571,285 +2775,146 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   opacity: 0,
 };
 
-const fullPageStyle: CSSProperties = {
-  minHeight: "100vh",
+
+
+
+
+
+
+
+
+const pageStyle: CSSProperties = {
+position: "relative",
   width: "100%",
+  minHeight: "100vh",
   maxWidth: "100vw",
   overflowX: "hidden",
   background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const fullContainerStyle: CSSProperties = {
-  width: "100%",
-  maxWidth: "100%",
-  minHeight: "100dvh",
-  margin: 0,
-  padding: "10px 10px calc(18px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
-  display: "grid",
-  gridTemplateRows: "minmax(0, 1fr)",
-  gap: 0,
-  minWidth: 0,
-};
-
-
-const fullViewerStyle: CSSProperties = {
-  width: "100%",
-  maxWidth: "100%",
-  minHeight: 0,
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  boxShadow: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-
-const fullImageStyle: CSSProperties = {
-  width: "100%",
-  maxWidth: "100%",
-  maxHeight: "calc(100dvh - 36px - env(safe-area-inset-bottom))",
-  height: "auto",
-  objectFit: "contain",
-  display: "block",
-  borderRadius: "14px",
-};
-
-const fullTextContentStyle: CSSProperties = {
-  width: "100%",
-  maxHeight: "calc(100dvh - 36px - env(safe-area-inset-bottom))",
-  margin: 0,
-  whiteSpace: "pre-wrap",
-  overflow: "auto",
-  color: "var(--historietas-text-primary, #F4F4F5)",
-  fontSize: "15px",
-  lineHeight: 1.75,
-  fontFamily: "Georgia, 'Times New Roman', serif",
-  background: "#05020A",
-  border: "none",
-  borderRadius: 0,
-  padding: "14px",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
-const fullPdfFrameStyle: CSSProperties = {
-  width: "100%",
-  height: "calc(100dvh - 36px - env(safe-area-inset-bottom))",
-  minHeight: "calc(100dvh - 36px - env(safe-area-inset-bottom))",
-  border: "none",
-  borderRadius: "14px",
-  background: "#111111",
-};
-
-
-const pageStyle: CSSProperties = {
-  position: "relative",
-  minHeight: "100vh",
-  width: "100%",
-  maxWidth: "100vw",
-  overflowX: "hidden",
-  boxSizing: "border-box",
-  background: "var(--historietas-bg-start, #070212)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
 const containerStyle: CSSProperties = {
-  position: "relative",
+position: "relative",
   zIndex: 1,
-  width: "min(900px, calc(100% - 24px))",
+  width: "min(900px, calc(100% - 28px))",
   maxWidth: "100%",
   margin: "0 auto",
-  padding: "14px 0 calc(18px + env(safe-area-inset-bottom))",
+  padding: "18px 0 calc(28px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
   minWidth: 0,
 };
 
 const topStyle: CSSProperties = {
-  display: "flex",
+display: "flex",
   alignItems: "center",
-  justifyContent: "center",
-  gap: "10px",
-  marginBottom: "12px",
+  justifyContent: "space-between",
+  gap: "12px",
+  flexWrap: "nowrap",
+  marginBottom: "14px",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "min(100%, calc(100% - 96px))",
-  ...safeTextStyle,
-};
 
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "#04000A",
-  color: "#FFFFFF",
-  fontSize: "19px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
-  boxShadow: "none",
-};
 
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-};
 
 
 const heroStyle: CSSProperties = {
-  position: "relative",
-  overflow: "hidden",
-  borderRadius: "22px",
-  border: "1px solid rgba(255,255,255,0.075)",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
-  boxShadow: "none",
-  minWidth: 0,
-};
-
-const heroGlowStyle: CSSProperties = {
-  display: "none",
-};
-
-const heroContentStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  padding: "10px 11px",
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-  gap: "5px",
-  minWidth: 0,
-};
-
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "clamp(28px, 7.5vw, 42px)",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.045em",
-  maxWidth: "100%",
-  textAlign: "center",
-  padding: "2px 0",
-  overflow: "visible",
-  ...safeTextStyle,
-};
-
-const fileAuthorLinkStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12.5px",
-  lineHeight: 1.1,
-  fontWeight: 950,
-  textDecoration: "none",
-  textAlign: "center",
-  justifySelf: "center",
-  ...safeTextStyle,
-};
-
-
-const fileInfoBoxStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  gap: "6px",
-  alignItems: "center",
-  justifyItems: "center",
-  textAlign: "center",
+display: "grid",
+  gap: "8px",
   padding: 0,
   borderRadius: 0,
   background: "transparent",
   border: "none",
+  boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
+  boxSizing: "border-box",
   overflow: "visible",
 };
 
+const heroGlowStyle: CSSProperties = {
+display: "none",
+};
 
-const fileInfoContentStyle: CSSProperties = {
+const heroContentStyle: CSSProperties = {
+position: "relative",
+  zIndex: 1,
   display: "grid",
+  gap: "8px",
   justifyItems: "center",
   textAlign: "center",
-  gap: "3px",
+  padding: 0,
   minWidth: 0,
   maxWidth: "100%",
 };
 
 
-const fileMetaGridStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  justifyContent: "center",
-  gap: "4px",
-  minWidth: 0,
-};
-
-const fileMetaBadgeStyle: CSSProperties = {
-  width: "fit-content",
+const titleStyle: CSSProperties = {
+margin: 0,
+  fontSize: "clamp(28px, 8vw, 42px)",
+  lineHeight: 1.02,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  textAlign: "center",
   maxWidth: "100%",
-  padding: "5px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.055)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9.5px",
-  fontWeight: 900,
+  background: "none",
+  WebkitBackgroundClip: "initial",
+  backgroundClip: "initial",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  textShadow: "none",
   ...safeTextStyle,
 };
 
+const fileAuthorLinkStyle: CSSProperties = {
+margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  lineHeight: 1.35,
+  fontWeight: 750,
+  textAlign: "center",
+  textDecoration: "none",
+  maxWidth: "100%",
+  ...safeTextStyle,
+};
+
+
 const actionsGridStyle: CSSProperties = {
+marginTop: "10px",
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "5px",
-  marginTop: "2px",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "6px",
   width: "100%",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const primaryActionStyle: CSSProperties = {
-  minHeight: "36px",
+minHeight: "38px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "9.5px",
+  fontSize: "10.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
+  padding: "0 8px",
+  lineHeight: 1.05,
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
   boxShadow: "none",
-  lineHeight: 1.08,
   ...safeTextStyle,
 };
 
@@ -1861,79 +2926,74 @@ const primaryActionButtonStyle: CSSProperties = {
 };
 
 const secondaryActionStyle: CSSProperties = {
-  minHeight: "36px",
+minHeight: "38px",
   borderRadius: "999px",
-  background: "var(--historietas-secondary, #7C3AED)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "9.5px",
+  fontSize: "10.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 6px",
+  padding: "0 8px",
+  lineHeight: 1.05,
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
   boxShadow: "none",
-  lineHeight: 1.08,
   ...safeTextStyle,
 };
 
-const ghostActionStyle: CSSProperties = {
-  minHeight: "36px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.045)",
-  border: "none",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "9.5px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 6px",
-  lineHeight: 1.08,
-  ...safeTextStyle,
-};
 
 const viewerShellStyle: CSSProperties = {
-  marginTop: "10px",
+marginTop: "10px",
   minWidth: 0,
   maxWidth: "100%",
 };
 
 const imageViewerStyle: CSSProperties = {
-  padding: "10px",
-  borderRadius: "24px",
-  background: "linear-gradient(135deg, rgba(18,12,30,0.90) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid rgba(255,255,255,0.075)",
+display: "grid",
+  gap: "10px",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   boxShadow: "none",
-  overflow: "hidden",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "visible",
 };
 
 const imageStyle: CSSProperties = {
-  width: "100%",
+width: "100%",
   height: "auto",
   maxWidth: "100%",
   display: "block",
-  borderRadius: "18px",
+  borderRadius: "16px",
   objectFit: "contain",
 };
 
 const textViewerStyle: CSSProperties = {
-  display: "grid",
+display: "grid",
   gap: "10px",
-  padding: "14px",
-  borderRadius: "24px",
-  background: "linear-gradient(135deg, rgba(18,12,30,0.90) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid rgba(255,255,255,0.075)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   boxShadow: "none",
   minWidth: 0,
-  overflow: "hidden",
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "visible",
 };
 
 const viewerHeaderStyle: CSSProperties = {
-  display: "grid",
+display: "grid",
   gap: "5px",
   minWidth: 0,
   textAlign: "center",
@@ -1941,19 +3001,21 @@ const viewerHeaderStyle: CSSProperties = {
 };
 
 const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
-  fontSize: "10px",
+color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "9px",
   fontWeight: 950,
   letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  textAlign: "center",
   maxWidth: "100%",
   ...safeTextStyle,
 };
 
 const viewerTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "24px",
-  lineHeight: 1,
+margin: 0,
+  color: "#FFFFFF",
+  fontSize: "clamp(22px, 6vw, 32px)",
+  lineHeight: 1.05,
   fontWeight: 950,
   letterSpacing: "-0.045em",
   maxWidth: "100%",
@@ -1962,73 +3024,76 @@ const viewerTitleStyle: CSSProperties = {
 };
 
 const textContentStyle: CSSProperties = {
-  margin: 0,
+margin: 0,
   whiteSpace: "pre-wrap",
   color: "var(--historietas-text-primary, #F4F4F5)",
-  fontSize: "15px",
-  lineHeight: 1.78,
-  fontFamily: "Georgia, 'Times New Roman', serif",
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid rgba(255,255,255,0.065)",
-  borderRadius: "18px",
-  padding: "14px",
+  fontSize: "17px",
+  lineHeight: 1.9,
+  fontWeight: 550,
+  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+  background: "transparent",
+  border: "none",
+  borderRadius: 0,
+  padding: 0,
   minWidth: 0,
   maxWidth: "100%",
   overflowX: "auto",
+  overflowWrap: "break-word",
+  wordBreak: "break-word",
+  textAlign: "left",
   ...safeTextStyle,
 };
 
 const pdfViewerStyle: CSSProperties = {
-  height: "min(78vh, 760px)",
+height: "min(78vh, 760px)",
   minHeight: "520px",
-  borderRadius: "24px",
-  background: "#04000A",
-  border: "1px solid rgba(255,255,255,0.075)",
+  borderRadius: "18px",
+  background: "transparent",
+  border: "none",
   boxShadow: "none",
   overflow: "hidden",
 };
 
 const pdfFrameStyle: CSSProperties = {
-  width: "100%",
+width: "100%",
   height: "100%",
   border: "none",
   display: "block",
-  background: "#111111",
+  background: "#04000A",
 };
 
 const genericFileBoxStyle: CSSProperties = {
-  display: "grid",
+display: "grid",
   gap: "10px",
-  padding: "16px",
-  borderRadius: "24px",
-  background: "linear-gradient(135deg, rgba(18,12,30,0.90) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid rgba(255,255,255,0.075)",
+  padding: "10px 0",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   boxShadow: "none",
   minWidth: 0,
-  overflow: "hidden",
-  textAlign: "center",
-  justifyItems: "center",
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  overflow: "visible",
 };
 
 const emptyBoxStyle: CSSProperties = {
-  minHeight: "60vh",
-  display: "grid",
-  alignContent: "center",
-  justifyItems: "center",
-  textAlign: "center",
-  gap: "12px",
-  padding: "18px",
-  borderRadius: "26px",
-  background: "linear-gradient(135deg, rgba(18,12,30,0.90) 0%, rgba(12,7,23,0.96) 100%)",
-  border: "1px solid rgba(255,255,255,0.075)",
+display: "grid",
+  gap: "10px",
+  padding: "14px 12px",
+  borderRadius: "20px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
   overflow: "hidden",
 };
 
 const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #F97316)",
-  fontSize: "clamp(30px, 8vw, 46px)",
+margin: 0,
+  color: "#FFFFFF",
+  fontSize: "clamp(28px, 8vw, 42px)",
   lineHeight: 1.02,
   fontWeight: 950,
   letterSpacing: "-0.055em",
@@ -2037,27 +3102,34 @@ const emptyTitleStyle: CSSProperties = {
 };
 
 const emptyTextStyle: CSSProperties = {
-  margin: 0,
+margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "13px",
   lineHeight: 1.6,
   fontWeight: 700,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
 const primaryLinkButtonStyle: CSSProperties = {
-  minHeight: "44px",
+minHeight: "38px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "13px",
+  fontSize: "10.5px",
   fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 8px",
+  lineHeight: 1.05,
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  whiteSpace: "normal",
   boxShadow: "none",
   ...safeTextStyle,
 };
@@ -2075,26 +3147,22 @@ const desktopTopStyle: CSSProperties = {
 };
 
 const desktopNotificationButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: 0,
-  transform: "translateY(-50%)",
-  width: "34px",
-  height: "34px",
+position: "relative",
+  width: "40px",
+  height: "40px",
   borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "#08030F",
+  color: "#FFFFFF",
   textDecoration: "none",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
+  flex: "0 0 auto",
   fontSize: "14px",
   lineHeight: 1,
   fontWeight: 950,
   boxShadow: "none",
-  zIndex: 2,
 };
 
 const desktopNotificationBadgeStyle: CSSProperties = {
@@ -2120,54 +3188,37 @@ const desktopNotificationBadgeStyle: CSSProperties = {
 };
 
 const desktopHeroStyle: CSSProperties = {
-  ...heroStyle,
-  borderRadius: "26px",
+...heroStyle,
+  borderRadius: "28px",
 };
 
 const desktopHeroContentStyle: CSSProperties = {
-  ...heroContentStyle,
-  gridTemplateColumns: "minmax(0, 1fr) 330px",
-  gridTemplateRows: "auto auto auto",
+...heroContentStyle,
+  gridTemplateColumns: "minmax(0, 1fr)",
+  gridTemplateRows: "auto",
   alignItems: "center",
-  gap: "6px 22px",
-  padding: "14px 18px",
+  gap: "8px",
+  padding: 0,
 };
 
 
 const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  gridColumn: "1",
-  fontSize: "clamp(36px, 4vw, 54px)",
-  lineHeight: 1.08,
-  maxWidth: "680px",
+...titleStyle,
+  fontSize: "clamp(34px, 4vw, 48px)",
+  lineHeight: 1.04,
+  maxWidth: "780px",
   justifySelf: "center",
 };
 
 const desktopFileAuthorLinkStyle: CSSProperties = {
-  ...fileAuthorLinkStyle,
-  gridColumn: "1",
-  gridRow: "2",
-  fontSize: "13.5px",
-};
-
-
-const desktopFileInfoBoxStyle: CSSProperties = {
-  ...fileInfoBoxStyle,
-  gridColumn: "2",
-  gridRow: "1 / span 2",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  padding: 0,
-  borderRadius: 0,
-  alignSelf: "center",
+...fileAuthorLinkStyle,
+  fontSize: "12px",
 };
 
 
 const desktopActionsGridStyle: CSSProperties = {
-  ...actionsGridStyle,
-  gridColumn: "1 / -1",
-  gridRow: "3",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  alignSelf: "start",
+...actionsGridStyle,
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "8px",
 };
 
@@ -2177,9 +3228,9 @@ const desktopViewerShellStyle: CSSProperties = {
 };
 
 const desktopImageViewerStyle: CSSProperties = {
-  ...imageViewerStyle,
-  padding: "14px",
-  borderRadius: "28px",
+...imageViewerStyle,
+  padding: "18px",
+  borderRadius: "24px",
 };
 
 const desktopImageStyle: CSSProperties = {
@@ -2189,25 +3240,24 @@ const desktopImageStyle: CSSProperties = {
 };
 
 const desktopTextViewerStyle: CSSProperties = {
-  ...textViewerStyle,
-  padding: "18px",
-  borderRadius: "28px",
+...textViewerStyle,
+  padding: "20px",
+  borderRadius: "24px",
   gap: "12px",
 };
 
 const desktopTextContentStyle: CSSProperties = {
-  ...textContentStyle,
-  padding: "20px",
-  fontSize: "16px",
-  lineHeight: 1.82,
+...textContentStyle,
+  fontSize: "18px",
+  lineHeight: 1.94,
   maxHeight: "760px",
 };
 
 const desktopPdfViewerStyle: CSSProperties = {
-  ...pdfViewerStyle,
+...pdfViewerStyle,
   height: "min(82vh, 900px)",
   minHeight: "650px",
-  borderRadius: "28px",
+  borderRadius: "24px",
 };
 
 const desktopPdfFrameStyle: CSSProperties = {
@@ -2215,7 +3265,7 @@ const desktopPdfFrameStyle: CSSProperties = {
 };
 
 const desktopGenericFileBoxStyle: CSSProperties = {
-  ...genericFileBoxStyle,
+...genericFileBoxStyle,
   padding: "22px",
-  borderRadius: "28px",
+  borderRadius: "24px",
 };
