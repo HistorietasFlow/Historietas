@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CSSProperties, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
@@ -122,9 +123,17 @@ type ComentarioCapituloPublico = {
   avatar: string;
   texto: string;
   criadoEm: string;
+  comentarioPaiId: string;
   meuComentario: boolean;
   curtidas: string[];
 };
+
+type RespostaComentarioCapitulo = {
+  comentarioPaiId: string;
+  autorNome: string;
+};
+
+type OrdenacaoComentariosCapitulo = "relevantes" | "recentes";
 
 type ComentariosCapituloPost = {
   id: string;
@@ -1521,13 +1530,15 @@ function formatarContadorCapituloLeitor(valor: number) {
 
 async function salvarComentarioCapituloSupabase(
   capituloId: string,
-  comentario: string
+  comentario: string,
+  comentarioPaiId = ""
 ): Promise<Record<string, unknown> | null> {
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
     const userId = dadosUsuario.user?.id || "";
     const capituloIdLimpo = capituloId.trim();
     const comentarioLimpo = comentario.trim();
+    const comentarioPaiIdLimpo = comentarioPaiId.trim();
     const agora = new Date().toISOString();
 
     if (!userId || !capituloIdLimpo || !comentarioLimpo) {
@@ -1539,15 +1550,21 @@ async function salvarComentarioCapituloSupabase(
       capitulo_id: capituloIdLimpo,
       comentario: comentarioLimpo.slice(0, 420),
     };
+    const payloadComResposta = {
+      ...payloadBase,
+      comentario_pai_id: comentarioPaiIdLimpo || null,
+    };
 
     const { data: comentarioComAtualizacao, error: erroComAtualizacao } =
       await supabase
         .from("comentarios_capitulos")
         .insert({
-          ...payloadBase,
+          ...payloadComResposta,
           atualizado_em: agora,
         })
-        .select("id,user_id,comentario,atualizado_em,criado_em")
+        .select(
+          "id,user_id,comentario,comentario_pai_id,atualizado_em,criado_em"
+        )
         .single();
 
     if (!erroComAtualizacao && comentarioComAtualizacao) {
@@ -1557,15 +1574,29 @@ async function salvarComentarioCapituloSupabase(
     const { data: comentarioSemAtualizacao, error: erroSemAtualizacao } =
       await supabase
         .from("comentarios_capitulos")
-        .insert(payloadBase)
-        .select("id,user_id,comentario,criado_em")
+        .insert(payloadComResposta)
+        .select("id,user_id,comentario,comentario_pai_id,criado_em")
         .single();
 
     if (!erroSemAtualizacao && comentarioSemAtualizacao) {
       return comentarioSemAtualizacao as Record<string, unknown>;
     }
 
-    throw erroSemAtualizacao || erroComAtualizacao;
+    if (comentarioPaiIdLimpo) {
+      throw erroSemAtualizacao || erroComAtualizacao;
+    }
+
+    const { data: comentarioLegado, error: erroLegado } = await supabase
+      .from("comentarios_capitulos")
+      .insert(payloadBase)
+      .select("id,user_id,comentario,criado_em")
+      .single();
+
+    if (!erroLegado && comentarioLegado) {
+      return comentarioLegado as Record<string, unknown>;
+    }
+
+    throw erroLegado || erroSemAtualizacao || erroComAtualizacao;
   } catch (error) {
     console.warn("Não consegui salvar comentário do capítulo no Supabase:", error);
     return null;
@@ -1874,38 +1905,57 @@ async function carregarComentariosCapituloSupabase(
     let data: Record<string, unknown>[] | null = null;
     let error: unknown = null;
 
-    const comentariosComAtualizacao = await supabase
-      .from("comentarios_capitulos")
-      .select("id,user_id,comentario,atualizado_em,criado_em")
-      .eq("capitulo_id", capituloIdLimpo)
-      .order("atualizado_em", { ascending: true })
-      .limit(500);
+    const consultasComentarios = [
+      () =>
+        supabase
+          .from("comentarios_capitulos")
+          .select(
+            "id,user_id,comentario,comentario_pai_id,atualizado_em,criado_em"
+          )
+          .eq("capitulo_id", capituloIdLimpo)
+          .order("atualizado_em", { ascending: true })
+          .limit(500),
+      () =>
+        supabase
+          .from("comentarios_capitulos")
+          .select("id,user_id,comentario,comentario_pai_id,criado_em")
+          .eq("capitulo_id", capituloIdLimpo)
+          .order("criado_em", { ascending: true })
+          .limit(500),
+      () =>
+        supabase
+          .from("comentarios_capitulos")
+          .select("id,user_id,comentario,atualizado_em,criado_em")
+          .eq("capitulo_id", capituloIdLimpo)
+          .order("atualizado_em", { ascending: true })
+          .limit(500),
+      () =>
+        supabase
+          .from("comentarios_capitulos")
+          .select("id,user_id,comentario,criado_em")
+          .eq("capitulo_id", capituloIdLimpo)
+          .order("criado_em", { ascending: true })
+          .limit(500),
+    ];
 
-    data = Array.isArray(comentariosComAtualizacao.data)
-      ? (comentariosComAtualizacao.data as Record<string, unknown>[])
-      : null;
-    error = comentariosComAtualizacao.error;
+    for (const consultar of consultasComentarios) {
+      const resposta = await consultar();
 
-    if (error || !Array.isArray(data)) {
-      const comentariosSemAtualizacao = await supabase
-        .from("comentarios_capitulos")
-        .select("id,user_id,comentario,criado_em")
-        .eq("capitulo_id", capituloIdLimpo)
-        .order("criado_em", { ascending: true })
-        .limit(500);
+      if (!resposta.error && Array.isArray(resposta.data)) {
+        data = resposta.data as Record<string, unknown>[];
+        error = null;
+        break;
+      }
 
-      data = Array.isArray(comentariosSemAtualizacao.data)
-        ? (comentariosSemAtualizacao.data as Record<string, unknown>[])
-        : null;
-      error = comentariosSemAtualizacao.error;
+      error = resposta.error;
     }
 
     if (error || !Array.isArray(data)) {
       return [];
     }
 
-    const registros = (data as Record<string, unknown>[]).filter(
-      (registro) => Boolean(obterTextoRegistroLeitor(registro, "comentario"))
+    const registros = data.filter((registro) =>
+      Boolean(obterTextoRegistroLeitor(registro, "comentario"))
     );
     const comentarioIds = registros
       .map((registro) => obterTextoRegistroLeitor(registro, "id"))
@@ -1962,9 +2012,9 @@ async function carregarComentariosCapituloSupabase(
         const avatarUsuarioLogado =
           perfilUsuarioLogado?.userId === userId ? perfilUsuarioLogado.avatar : "";
         const nome = nomeProfile || nomeUsuarioLogado || "Usuário";
-        const texto = obterTextoRegistroLeitor(registro, "comentario");
+        const textoComentario = obterTextoRegistroLeitor(registro, "comentario");
 
-        if (!userId || !texto) {
+        if (!userId || !textoComentario) {
           return null;
         }
 
@@ -1973,10 +2023,14 @@ async function carregarComentariosCapituloSupabase(
           userId,
           nome: nome.slice(0, 80),
           avatar: obterAvatarProfileLeitor(profile) || avatarUsuarioLogado,
-          texto: texto.slice(0, 420),
+          texto: textoComentario.slice(0, 420),
           criadoEm:
             obterTextoRegistroLeitor(registro, "atualizado_em") ||
             obterTextoRegistroLeitor(registro, "criado_em"),
+          comentarioPaiId: obterTextoRegistroLeitor(
+            registro,
+            "comentario_pai_id"
+          ),
           meuComentario: Boolean(usuarioLogadoId && usuarioLogadoId === userId),
           curtidas: curtidasPorComentario.get(idComentario) || [],
         } satisfies ComentarioCapituloPublico;
@@ -1995,6 +2049,150 @@ async function carregarComentariosCapituloSupabase(
   }
 }
 
+function dataComentarioCapitulo(comentario: ComentarioCapituloPublico) {
+  const data = new Date(comentario.criadoEm).getTime();
+
+  return Number.isNaN(data) ? 0 : data;
+}
+
+function formatarTempoRelativoComentarioCapitulo(
+  criadaEm: string,
+  agora = Date.now()
+) {
+  const dataComentario = new Date(criadaEm).getTime();
+
+  if (Number.isNaN(dataComentario)) {
+    return "agora";
+  }
+
+  const segundos = Math.max(0, Math.floor((agora - dataComentario) / 1000));
+
+  if (segundos < 5) {
+    return "agora";
+  }
+
+  if (segundos < 60) {
+    return `há ${segundos} ${segundos === 1 ? "segundo" : "segundos"}`;
+  }
+
+  const minutos = Math.floor(segundos / 60);
+
+  if (minutos < 60) {
+    return `há ${minutos} ${minutos === 1 ? "minuto" : "minutos"}`;
+  }
+
+  const horas = Math.floor(minutos / 60);
+
+  if (horas < 24) {
+    return `há ${horas} ${horas === 1 ? "hora" : "horas"}`;
+  }
+
+  const dias = Math.floor(horas / 24);
+
+  return `há ${dias} ${dias === 1 ? "dia" : "dias"}`;
+}
+
+function criarEstruturaComentariosCapitulo(
+  comentarios: ComentarioCapituloPublico[],
+  ordenacao: OrdenacaoComentariosCapitulo
+) {
+  const comentariosPorId = new Map(
+    comentarios.map((comentario) => [comentario.id, comentario])
+  );
+  const respostasPorRaiz = new Map<string, ComentarioCapituloPublico[]>();
+  const comentariosRaiz: ComentarioCapituloPublico[] = [];
+
+  function obterRaiz(comentario: ComentarioCapituloPublico) {
+    let atual = comentario;
+    const visitados = new Set<string>([comentario.id]);
+
+    while (atual.comentarioPaiId) {
+      const pai = comentariosPorId.get(atual.comentarioPaiId);
+
+      if (!pai || visitados.has(pai.id)) {
+        break;
+      }
+
+      visitados.add(pai.id);
+      atual = pai;
+    }
+
+    return atual;
+  }
+
+  comentarios.forEach((comentario) => {
+    const paiExiste = Boolean(
+      comentario.comentarioPaiId &&
+        comentariosPorId.has(comentario.comentarioPaiId)
+    );
+
+    if (!paiExiste) {
+      comentariosRaiz.push(comentario);
+      return;
+    }
+
+    const raiz = obterRaiz(comentario);
+    const respostasAtuais = respostasPorRaiz.get(raiz.id) || [];
+
+    respostasPorRaiz.set(raiz.id, [...respostasAtuais, comentario]);
+  });
+
+  respostasPorRaiz.forEach((respostas, raizId) => {
+    respostasPorRaiz.set(
+      raizId,
+      [...respostas].sort(
+        (a, b) => dataComentarioCapitulo(a) - dataComentarioCapitulo(b)
+      )
+    );
+  });
+
+  comentariosRaiz.sort((a, b) => {
+    if (ordenacao === "recentes") {
+      return dataComentarioCapitulo(b) - dataComentarioCapitulo(a);
+    }
+
+    const relevanciaA =
+      a.curtidas.length * 3 + (respostasPorRaiz.get(a.id)?.length || 0);
+    const relevanciaB =
+      b.curtidas.length * 3 + (respostasPorRaiz.get(b.id)?.length || 0);
+
+    return (
+      relevanciaB - relevanciaA ||
+      dataComentarioCapitulo(b) - dataComentarioCapitulo(a)
+    );
+  });
+
+  return {
+    comentariosRaiz,
+    respostasPorRaiz,
+  };
+}
+
+function obterIdsComentarioCapituloComRespostas(
+  comentarios: ComentarioCapituloPublico[],
+  comentarioId: string
+) {
+  const ids = new Set<string>([comentarioId]);
+  let encontrouNovos = true;
+
+  while (encontrouNovos) {
+    encontrouNovos = false;
+
+    comentarios.forEach((comentario) => {
+      if (
+        comentario.comentarioPaiId &&
+        ids.has(comentario.comentarioPaiId) &&
+        !ids.has(comentario.id)
+      ) {
+        ids.add(comentario.id);
+        encontrouNovos = true;
+      }
+    });
+  }
+
+  return ids;
+}
+
 
 type ComentariosCapituloSheetProps = {
   post: ComentariosCapituloPost | null;
@@ -2002,8 +2200,15 @@ type ComentariosCapituloSheetProps = {
   usuarioId: string;
   usuarioNome: string;
   usuarioAvatar: string;
+  carregando: boolean;
+  isDesktop: boolean;
+  status: string;
   onFechar: () => void;
-  onEnviar: (postId: string, texto: string) => boolean | Promise<boolean>;
+  onEnviar: (
+    postId: string,
+    texto: string,
+    comentarioPaiId?: string
+  ) => boolean | Promise<boolean>;
   onCurtirComentario: (postId: string, comentarioId: string) => void | Promise<void>;
   onRemoverComentario: (postId: string, comentarioId: string) => void | Promise<void>;
   onDenunciarComentario: (comentarioId: string) => void | Promise<void>;
@@ -2015,6 +2220,9 @@ function ComentariosCapituloSheet({
   usuarioId,
   usuarioNome,
   usuarioAvatar,
+  carregando,
+  isDesktop,
+  status,
   onFechar,
   onEnviar,
   onCurtirComentario,
@@ -2025,6 +2233,8 @@ function ComentariosCapituloSheet({
   const sheetRef = useRef<HTMLElement | null>(null);
   const dragStartYRef = useRef(0);
   const dragOffsetYRef = useRef(0);
+  const dragIgnorarCliqueRef = useRef(false);
+  const dragResetTimerRef = useRef<number | null>(null);
   const [sheetExpandido, setSheetExpandido] = useState(false);
   const [comentarioEnviando, setComentarioEnviando] = useState(false);
   const [comentarioCurtindoId, setComentarioCurtindoId] = useState<string | null>(null);
@@ -2034,7 +2244,84 @@ function ComentariosCapituloSheet({
   const [comentarioDenunciandoId, setComentarioDenunciandoId] = useState<
     string | null
   >(null);
+  const [respostaComentario, setRespostaComentario] =
+    useState<RespostaComentarioCapitulo | null>(null);
+  const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
+    useState<Record<string, number>>({});
+  const [ordenacaoComentarios, setOrdenacaoComentarios] =
+    useState<OrdenacaoComentariosCapitulo>("relevantes");
+  const [menuOrdenacaoAberto, setMenuOrdenacaoAberto] = useState(false);
+  const [agoraComentarios, setAgoraComentarios] = useState(() => Date.now());
   const comentarioAcoesRef = useRef<Set<string>>(new Set<string>());
+
+  useEffect(() => {
+    if (!post || typeof document === "undefined") {
+      return;
+    }
+
+    const overflowAnterior = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    function fecharComEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onFechar();
+      }
+    }
+
+    window.addEventListener("keydown", fecharComEscape);
+
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      window.removeEventListener("keydown", fecharComEscape);
+    };
+  }, [post, onFechar]);
+
+  useEffect(() => {
+    if (!post) {
+      return;
+    }
+
+    const intervalo = window.setInterval(() => {
+      setAgoraComentarios(Date.now());
+    }, 30000);
+
+    return () => window.clearInterval(intervalo);
+  }, [post]);
+
+  useEffect(() => {
+    const resetTimer = window.setTimeout(() => {
+      setSheetExpandido(false);
+      setMenuOrdenacaoAberto(false);
+      setRespostaComentario(null);
+      setRespostasVisiveisPorComentario({});
+      setAgoraComentarios(Date.now());
+      dragOffsetYRef.current = 0;
+
+      if (comentarioRef.current) {
+        comentarioRef.current.value = "";
+      }
+    }, 0);
+
+    return () => window.clearTimeout(resetTimer);
+  }, [post?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (dragResetTimerRef.current !== null) {
+        window.clearTimeout(dragResetTimerRef.current);
+      }
+    };
+  }, []);
+
+  const estruturaComentarios = useMemo(
+    () =>
+      criarEstruturaComentariosCapitulo(
+        post?.comentarios || [],
+        ordenacaoComentarios
+      ),
+    [post?.comentarios, ordenacaoComentarios]
+  );
 
   function inserirNoComentario(valor: string) {
     if (!podeComentar || !comentarioRef.current) {
@@ -2046,10 +2333,13 @@ function ComentariosCapituloSheet({
     const fim = campo.selectionEnd ?? campo.value.length;
     const textoAtual = campo.value;
 
-    campo.value = `${textoAtual.slice(0, inicio)}${valor}${textoAtual.slice(fim)}`;
+    campo.value = `${textoAtual.slice(0, inicio)}${valor}${textoAtual.slice(fim)}`.slice(
+      0,
+      420
+    );
     campo.focus();
 
-    const novaPosicao = inicio + valor.length;
+    const novaPosicao = Math.min(420, inicio + valor.length);
     campo.setSelectionRange(novaPosicao, novaPosicao);
   }
 
@@ -2123,17 +2413,32 @@ function ComentariosCapituloSheet({
     }
   }
 
-  function responderComentario(nomeAutor: string) {
+  function responderComentario(
+    comentario: ComentarioCapituloPublico,
+    comentarioRaizId: string
+  ) {
     if (!podeComentar) {
       return;
     }
 
-    const mencao = `@${nomeAutor.replace(/\s+/g, " ").trim()} `;
+    const nomeLimpo = comentario.nome.replace(/\s+/g, " ").trim();
+    const raizIdLimpo = comentarioRaizId.trim();
+
+    if (!nomeLimpo || !raizIdLimpo) {
+      return;
+    }
+
+    setRespostaComentario({
+      comentarioPaiId: raizIdLimpo,
+      autorNome: nomeLimpo,
+    });
 
     window.setTimeout(() => {
       if (!comentarioRef.current) {
         return;
       }
+
+      const mencao = `@${nomeLimpo} `;
 
       comentarioRef.current.value = mencao;
       comentarioRef.current.focus();
@@ -2142,8 +2447,18 @@ function ComentariosCapituloSheet({
   }
 
   function iniciarArraste(event: TouchEvent<HTMLDivElement>) {
+    if (isDesktop) {
+      return;
+    }
+
     dragStartYRef.current = event.touches[0]?.clientY || 0;
     dragOffsetYRef.current = 0;
+    dragIgnorarCliqueRef.current = false;
+
+    if (dragResetTimerRef.current !== null) {
+      window.clearTimeout(dragResetTimerRef.current);
+      dragResetTimerRef.current = null;
+    }
 
     if (sheetRef.current) {
       sheetRef.current.style.transition = "none";
@@ -2151,6 +2466,10 @@ function ComentariosCapituloSheet({
   }
 
   function moverArraste(event: TouchEvent<HTMLDivElement>) {
+    if (isDesktop) {
+      return;
+    }
+
     const posicaoAtual = event.touches[0]?.clientY || dragStartYRef.current;
     const limiteSuperior = sheetExpandido ? -46 : -58;
     const limiteInferior = sheetExpandido ? 112 : 132;
@@ -2160,6 +2479,10 @@ function ComentariosCapituloSheet({
     );
 
     dragOffsetYRef.current = deslocamento;
+
+    if (Math.abs(deslocamento) > 6) {
+      dragIgnorarCliqueRef.current = true;
+    }
 
     if (sheetRef.current) {
       const handle = sheetRef.current.querySelector(
@@ -2173,9 +2496,15 @@ function ComentariosCapituloSheet({
   }
 
   function finalizarArraste() {
+    if (isDesktop) {
+      return;
+    }
+
     const deslocamento = dragOffsetYRef.current;
 
     if (sheetRef.current) {
+      sheetRef.current.style.transition = "height 220ms ease";
+
       const handle = sheetRef.current.querySelector(
         "[data-comments-sheet-handle='true']"
       ) as HTMLElement | null;
@@ -2184,6 +2513,13 @@ function ComentariosCapituloSheet({
         handle.style.transition = "transform 160ms ease";
         handle.style.transform = "";
       }
+    }
+
+    if (dragIgnorarCliqueRef.current) {
+      dragResetTimerRef.current = window.setTimeout(() => {
+        dragIgnorarCliqueRef.current = false;
+        dragResetTimerRef.current = null;
+      }, 350);
     }
 
     if (deslocamento < -34) {
@@ -2201,8 +2537,12 @@ function ComentariosCapituloSheet({
     }
   }
 
-  if (!post) {
-    return null;
+  function alternarExpansao() {
+    if (isDesktop || dragIgnorarCliqueRef.current) {
+      return;
+    }
+
+    setSheetExpandido((expandidoAtual) => !expandidoAtual);
   }
 
   async function enviarComentario(event: FormEvent<HTMLFormElement>) {
@@ -2222,10 +2562,26 @@ function ComentariosCapituloSheet({
 
     try {
       const conteudoComentario = comentarioRef.current?.value || "";
-      const enviado = await onEnviar(post.id, conteudoComentario);
+      const comentarioPaiId = respostaComentario?.comentarioPaiId || "";
+      const enviado = await onEnviar(
+        post.id,
+        conteudoComentario,
+        comentarioPaiId
+      );
 
       if (enviado && comentarioRef.current) {
         comentarioRef.current.value = "";
+        setRespostaComentario(null);
+
+        if (comentarioPaiId) {
+          setRespostasVisiveisPorComentario((estadoAtual) => ({
+            ...estadoAtual,
+            [comentarioPaiId]: Math.max(
+              5,
+              (estadoAtual[comentarioPaiId] || 0) + 1
+            ),
+          }));
+        }
       }
     } finally {
       finalizarAcaoComentario(chaveAcao);
@@ -2233,7 +2589,170 @@ function ComentariosCapituloSheet({
     }
   }
 
-  return (
+  function renderizarComentario(
+    comentario: ComentarioCapituloPublico,
+    comentarioRaizId: string,
+    resposta = false
+  ) {
+    const usuarioCurtiuComentario = Boolean(
+      usuarioId && comentario.curtidas.includes(usuarioId)
+    );
+    const podeRemoverComentario = Boolean(
+      usuarioId && comentario.userId === usuarioId
+    );
+    const podeDenunciarComentario = Boolean(
+      usuarioId && comentario.userId !== usuarioId
+    );
+    const comentarioCurtindo = comentarioCurtindoId === comentario.id;
+    const comentarioRemovendo = comentarioRemovendoId === comentario.id;
+    const comentarioDenunciando = comentarioDenunciandoId === comentario.id;
+    const avatarBaseStyle = resposta
+      ? commentSheetReplyAvatarLinkStyle
+      : commentSheetAvatarLinkStyle;
+
+    return (
+      <article
+        key={comentario.id}
+        style={resposta ? commentSheetReplyItemStyle : commentSheetItemStyle}
+      >
+        <Link
+          href={criarHrefPerfilUsuarioLeitor(
+            comentario.userId,
+            comentario.nome
+          )}
+          aria-label={`Abrir perfil de ${comentario.nome}`}
+          style={criarAvatarComentarioBaseStyle(
+            avatarBaseStyle,
+            comentario.avatar
+          )}
+        >
+          {!comentario.avatar && comentario.nome.slice(0, 1).toUpperCase()}
+        </Link>
+
+        <div style={commentSheetContentStyle}>
+          <div style={commentSheetTopLineStyle}>
+            <Link
+              href={criarHrefPerfilUsuarioLeitor(
+                comentario.userId,
+                comentario.nome
+              )}
+              style={commentSheetAuthorLinkStyle}
+            >
+              {comentario.nome}
+            </Link>
+
+            <span style={commentSheetTimeStyle}>
+              {formatarTempoRelativoComentarioCapitulo(
+                comentario.criadoEm,
+                agoraComentarios
+              )}
+            </span>
+          </div>
+
+          <p style={commentSheetTextStyle}>{comentario.texto}</p>
+
+          <div style={commentSheetActionsRowStyle}>
+            <button
+              type="button"
+              onClick={() => responderComentario(comentario, comentarioRaizId)}
+              disabled={!podeComentar}
+              style={{
+                ...commentSheetReplyButtonStyle,
+                opacity: podeComentar ? 1 : 0.52,
+                cursor: podeComentar ? "pointer" : "not-allowed",
+              }}
+            >
+              Responder
+            </button>
+
+            {podeRemoverComentario ? (
+              <button
+                type="button"
+                onClick={() =>
+                  void removerComentarioSeguro(post?.id || "", comentario.id)
+                }
+                disabled={comentarioRemovendo}
+                style={{
+                  ...commentSheetRemoveButtonStyle,
+                  opacity: comentarioRemovendo ? 0.58 : 1,
+                  cursor: comentarioRemovendo ? "not-allowed" : "pointer",
+                }}
+              >
+                {comentarioRemovendo ? "Removendo..." : "Remover"}
+              </button>
+            ) : null}
+
+            {podeDenunciarComentario ? (
+              <button
+                type="button"
+                onClick={() => void denunciarComentarioSeguro(comentario.id)}
+                disabled={comentarioDenunciando}
+                style={{
+                  ...commentSheetReportButtonStyle,
+                  opacity: comentarioDenunciando ? 0.58 : 1,
+                  cursor: comentarioDenunciando ? "not-allowed" : "pointer",
+                }}
+              >
+                {comentarioDenunciando ? "Enviando..." : "Denunciar"}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div style={commentSheetLikeWrapStyle}>
+          <button
+            type="button"
+            aria-label={
+              usuarioCurtiuComentario
+                ? "Remover curtida do comentário"
+                : "Curtir comentário"
+            }
+            onClick={() =>
+              void curtirComentarioSeguro(post?.id || "", comentario.id)
+            }
+            disabled={!podeComentar || comentarioCurtindo}
+            style={{
+              ...commentSheetLikeButtonStyle,
+              opacity: podeComentar && !comentarioCurtindo ? 1 : 0.58,
+              cursor:
+                podeComentar && !comentarioCurtindo
+                  ? "pointer"
+                  : "not-allowed",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              style={commentSheetHeartIconStyle}
+            >
+              <path
+                d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                fill={usuarioCurtiuComentario ? "#F43F5E" : "none"}
+                stroke={
+                  usuarioCurtiuComentario
+                    ? "#F43F5E"
+                    : "var(--historietas-text-secondary, #D4D4D8)"
+                }
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          <span style={commentSheetLikeCountStyle}>
+            {comentario.curtidas.length}
+          </span>
+        </div>
+      </article>
+    );
+  }
+
+  if (!post || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <section style={commentsSheetOverlayStyle} aria-label="Comentários">
       <button
         type="button"
@@ -2244,20 +2763,36 @@ function ComentariosCapituloSheet({
 
       <article
         ref={sheetRef}
-        style={{
-          ...commentsSheetStyle,
-          ...(sheetExpandido
-            ? commentsSheetExpandedStyle
-            : commentsSheetCompactStyle),
-        }}
+        style={
+          isDesktop
+            ? desktopCommentsSheetStyle
+            : {
+                ...commentsSheetStyle,
+                ...(sheetExpandido
+                  ? commentsSheetExpandedStyle
+                  : commentsSheetCompactStyle),
+              }
+        }
       >
         <div
           data-comments-sheet-handle="true"
           style={commentsSheetHandleWrapStyle}
+          onClick={alternarExpansao}
           onTouchStart={iniciarArraste}
           onTouchMove={moverArraste}
           onTouchEnd={finalizarArraste}
           onTouchCancel={finalizarArraste}
+          role="button"
+          tabIndex={0}
+          aria-label={
+            sheetExpandido ? "Recolher comentários" : "Expandir comentários"
+          }
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              alternarExpansao();
+            }
+          }}
         >
           <div style={commentsSheetHandleStyle} />
         </div>
@@ -2271,169 +2806,176 @@ function ComentariosCapituloSheet({
               : `${post.comentarios.length} comentários`}
           </strong>
 
-          <button type="button" onClick={onFechar} style={commentsSheetCloseStyle}>
-            ×
-          </button>
+          <div style={commentsSortMenuWrapStyle}>
+            <button
+              type="button"
+              onClick={() => setMenuOrdenacaoAberto((aberto) => !aberto)}
+              style={commentsSortMenuTriggerStyle}
+              aria-label="Ordenar comentários"
+              aria-haspopup="menu"
+              aria-expanded={menuOrdenacaoAberto}
+            >
+              +
+            </button>
+
+            {menuOrdenacaoAberto ? (
+              <div style={commentsSortMenuStyle} role="menu">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrdenacaoComentarios("relevantes");
+                    setMenuOrdenacaoAberto(false);
+                  }}
+                  style={
+                    ordenacaoComentarios === "relevantes"
+                      ? commentsSortMenuItemActiveStyle
+                      : commentsSortMenuItemStyle
+                  }
+                  role="menuitem"
+                >
+                  Relevantes
+                </button>
+
+                <div style={commentsSortMenuDividerStyle} aria-hidden="true" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrdenacaoComentarios("recentes");
+                    setMenuOrdenacaoAberto(false);
+                  }}
+                  style={
+                    ordenacaoComentarios === "recentes"
+                      ? commentsSortMenuItemActiveStyle
+                      : commentsSortMenuItemStyle
+                  }
+                  role="menuitem"
+                >
+                  Recentes
+                </button>
+              </div>
+            ) : null}
+          </div>
         </header>
 
         <section style={commentsSheetListStyle}>
-          {post.comentarios.length > 0 ? (
-            post.comentarios.map((comentario) => {
-              const usuarioCurtiuComentario = Boolean(
-                usuarioId && comentario.curtidas.includes(usuarioId)
+          {carregando ? (
+            <p style={emptyCommentsStyle}>Carregando comentários...</p>
+          ) : estruturaComentarios.comentariosRaiz.length > 0 ? (
+            estruturaComentarios.comentariosRaiz.map((comentario) => {
+              const respostas =
+                estruturaComentarios.respostasPorRaiz.get(comentario.id) || [];
+              const quantidadeVisivel = Math.min(
+                respostas.length,
+                respostasVisiveisPorComentario[comentario.id] || 0
               );
-              const podeRemoverComentario = Boolean(
-                usuarioId && comentario.userId === usuarioId
+              const respostasVisiveis = respostas.slice(0, quantidadeVisivel);
+              const respostasOcultas = Math.max(
+                0,
+                respostas.length - quantidadeVisivel
               );
-              const podeDenunciarComentario = Boolean(
-                usuarioId && comentario.userId !== usuarioId
-              );
-              const comentarioCurtindo = comentarioCurtindoId === comentario.id;
-              const comentarioRemovendo = comentarioRemovendoId === comentario.id;
-              const comentarioDenunciando =
-                comentarioDenunciandoId === comentario.id;
+              const respostasExpandidas = quantidadeVisivel > 0;
 
               return (
-                <article key={comentario.id} style={commentSheetItemStyle}>
-                  <Link
-                    href={criarHrefPerfilUsuarioLeitor(
-                      comentario.userId,
-                      comentario.nome
-                    )}
-                    aria-label={`Abrir perfil de ${comentario.nome}`}
-                    style={criarAvatarComentarioBaseStyle(
-                      commentSheetAvatarLinkStyle,
-                      comentario.avatar
-                    )}
-                  >
-                    {!comentario.avatar && comentario.nome.slice(0, 1).toUpperCase()}
-                  </Link>
+                <section key={comentario.id} style={commentThreadStyle}>
+                  {renderizarComentario(comentario, comentario.id)}
 
-                  <div style={commentSheetContentStyle}>
-                    <div style={commentSheetTopLineStyle}>
-                      <Link
-                        href={criarHrefPerfilUsuarioLeitor(
-                          comentario.userId,
-                          comentario.nome
-                        )}
-                        style={commentSheetAuthorLinkStyle}
-                      >
-                        {comentario.nome}
-                      </Link>
-                      <span style={commentSheetTimeStyle}>agora</span>
-                    </div>
-
-                    <p style={commentSheetTextStyle}>{comentario.texto}</p>
-
-                    <div style={commentSheetActionsRowStyle}>
-                      <button
-                        type="button"
-                        onClick={() => responderComentario(comentario.nome)}
-                        disabled={!podeComentar}
-                        style={{
-                          ...commentSheetReplyButtonStyle,
-                          opacity: podeComentar ? 1 : 0.52,
-                          cursor: podeComentar ? "pointer" : "not-allowed",
-                        }}
-                      >
-                        Responder
-                      </button>
-
-                      {podeRemoverComentario && (
-                        <button
-                          type="button"
-                          onClick={() => removerComentarioSeguro(post.id, comentario.id)}
-                          disabled={comentarioRemovendo}
-                          style={{
-                            ...commentSheetRemoveButtonStyle,
-                            opacity: comentarioRemovendo ? 0.58 : 1,
-                            cursor: comentarioRemovendo ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          Remover
-                        </button>
-                      )}
-
-                      {podeDenunciarComentario && (
-                        <button
-                          type="button"
-                          onClick={() => denunciarComentarioSeguro(comentario.id)}
-                          disabled={comentarioDenunciando}
-                          style={{
-                            ...commentSheetReportButtonStyle,
-                            opacity: comentarioDenunciando ? 0.58 : 1,
-                            cursor: comentarioDenunciando ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          Denunciar
-                        </button>
+                  {respostasVisiveis.length > 0 ? (
+                    <div style={commentRepliesListStyle}>
+                      {respostasVisiveis.map((resposta) =>
+                        renderizarComentario(
+                          resposta,
+                          comentario.id,
+                          true
+                        )
                       )}
                     </div>
-                  </div>
+                  ) : null}
 
-                  <div style={commentSheetLikeWrapStyle}>
+                  {respostas.length > 0 && !respostasExpandidas ? (
                     <button
                       type="button"
-                      aria-label={
-                        usuarioCurtiuComentario
-                          ? "Remover curtida do comentário"
-                          : "Curtir comentário"
+                      onClick={() =>
+                        setRespostasVisiveisPorComentario((estadoAtual) => ({
+                          ...estadoAtual,
+                          [comentario.id]: Math.min(5, respostas.length),
+                        }))
                       }
-                      onClick={() => curtirComentarioSeguro(post.id, comentario.id)}
-                      disabled={!podeComentar || comentarioCurtindo}
-                      style={{
-                        ...commentSheetLikeButtonStyle,
-                        opacity: podeComentar && !comentarioCurtindo ? 1 : 0.58,
-                        cursor:
-                          podeComentar && !comentarioCurtindo
-                            ? "pointer"
-                            : "not-allowed",
-                      }}
+                      style={commentRepliesToggleStyle}
                     >
-                      <svg
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                        style={commentSheetHeartIconStyle}
-                      >
-                        <path
-                          d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                          fill={usuarioCurtiuComentario ? "#F43F5E" : "none"}
-                          stroke={
-                            usuarioCurtiuComentario
-                              ? "#F43F5E"
-                              : "var(--historietas-text-secondary, #D4D4D8)"
-                          }
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                      <span style={commentRepliesLineStyle} />
+                      {`Ver ${respostas.length} ${
+                        respostas.length === 1 ? "resposta" : "respostas"
+                      }`}
                     </button>
+                  ) : null}
 
-                    <span style={commentSheetLikeCountStyle}>
-                      {comentario.curtidas.length}
-                    </span>
-                  </div>
-                </article>
+                  {respostasExpandidas ? (
+                    <div style={commentRepliesControlsStyle}>
+                      {respostasOcultas > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setRespostasVisiveisPorComentario((estadoAtual) => ({
+                              ...estadoAtual,
+                              [comentario.id]: Math.min(
+                                respostas.length,
+                                (estadoAtual[comentario.id] || 0) + 5
+                              ),
+                            }))
+                          }
+                          style={commentRepliesToggleStyle}
+                        >
+                          <span style={commentRepliesLineStyle} />
+                          {`Ver mais ${respostasOcultas} ${
+                            respostasOcultas === 1 ? "resposta" : "respostas"
+                          }`}
+                        </button>
+                      ) : null}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRespostasVisiveisPorComentario((estadoAtual) => ({
+                            ...estadoAtual,
+                            [comentario.id]: 0,
+                          }))
+                        }
+                        style={commentRepliesHideButtonStyle}
+                      >
+                        Ocultar respostas
+                      </button>
+                    </div>
+                  ) : null}
+                </section>
               );
             })
           ) : (
-            <p
-              style={{
-                margin: "10px 0 0",
-                color: "#FFFFFF",
-                fontSize: "12px",
-                fontWeight: 800,
-                textAlign: "center",
-              }}
-            >
-              Sem comentários ainda
-            </p>
+            <p style={emptyCommentsStyle}>Sem comentários ainda</p>
           )}
         </section>
 
-
         <section style={commentsToolsStyle}>
+          {respostaComentario ? (
+            <div style={commentsReplyingStyle}>
+              <span>{`Respondendo a @${respostaComentario.autorNome}`}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setRespostaComentario(null);
+
+                  if (comentarioRef.current) {
+                    comentarioRef.current.value = "";
+                    comentarioRef.current.focus();
+                  }
+                }}
+                style={commentsReplyingCancelStyle}
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : null}
+
           <div style={commentsQuickReactionsStyle}>
             {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
               <button
@@ -2441,7 +2983,12 @@ function ComentariosCapituloSheet({
                 type="button"
                 onClick={() => inserirNoComentario(emoji)}
                 disabled={!podeComentar}
-                style={commentsQuickReactionButtonStyle}
+                style={{
+                  ...commentsQuickReactionButtonStyle,
+                  opacity: podeComentar ? 1 : 0.52,
+                  cursor: podeComentar ? "pointer" : "not-allowed",
+                }}
+                aria-label={`Adicionar ${emoji} ao comentário`}
               >
                 {emoji}
               </button>
@@ -2464,7 +3011,11 @@ function ComentariosCapituloSheet({
             <textarea
               ref={comentarioRef}
               placeholder={
-                podeComentar ? "Adicionar comentário..." : "Entre para comentar."
+                podeComentar
+                  ? respostaComentario
+                    ? `Responder a @${respostaComentario.autorNome}...`
+                    : "Adicionar comentário..."
+                  : "Entre para comentar."
               }
               disabled={!podeComentar || comentarioEnviando}
               autoComplete="off"
@@ -2481,8 +3032,9 @@ function ComentariosCapituloSheet({
           <button
             type="button"
             onClick={() => inserirNoComentario("@")}
-            disabled={!podeComentar}
+            disabled={!podeComentar || comentarioEnviando}
             style={commentsInputIconButtonStyle}
+            aria-label="Adicionar menção"
           >
             @
           </button>
@@ -2495,14 +3047,19 @@ function ComentariosCapituloSheet({
               ...commentsSheetSendStyle,
               opacity: podeComentar && !comentarioEnviando ? 1 : 0.58,
               cursor:
-                podeComentar && !comentarioEnviando ? "pointer" : "not-allowed",
+                podeComentar && !comentarioEnviando
+                  ? "pointer"
+                  : "not-allowed",
             }}
           >
             {comentarioEnviando ? "..." : "↑"}
           </button>
         </form>
+
+        {status ? <span style={commentsPanelStatusStyle}>{status}</span> : null}
       </article>
-    </section>
+    </section>,
+    document.body
   );
 }
 
@@ -2515,7 +3072,7 @@ export default function LerCapituloPage() {
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [, setComentarioDigitado] = useState("");
-  const [, setComentarioStatus] = useState("");
+  const [comentarioStatus, setComentarioStatus] = useState("");
   const [comentariosCapitulo, setComentariosCapitulo] = useState<ComentarioCapituloPublico[]>([]);
   const [metricasCapitulo, setMetricasCapitulo] =
     useState<MetricasCapituloLeitor>(metricasCapituloVazias);
@@ -3630,7 +4187,11 @@ export default function LerCapituloPage() {
     }
   }
 
-  async function enviarComentarioCapitulo(postId: string, textoRecebido: string) {
+  async function enviarComentarioCapitulo(
+    postId: string,
+    textoRecebido: string,
+    comentarioPaiId = ""
+  ) {
     const chaveAcao = `enviar-comentario-capitulo:${postId}`;
 
     if (!iniciarAcaoComentariosCapitulo(chaveAcao)) {
@@ -3658,14 +4219,21 @@ export default function LerCapituloPage() {
       const perfilAtual = await carregarPerfilComentarioLeitor(userIdAtual);
       setPerfilComentarioLeitor(perfilAtual);
 
+      const comentarioPaiIdLimpo = comentarioPaiId.trim();
       const comentarioSalvo = await salvarComentarioCapituloSupabase(
         postId,
-        textoLimpo
+        textoLimpo,
+        comentarioPaiIdLimpo
       );
       const agora = new Date().toISOString();
       const comentarioId = obterTextoRegistroLeitor(comentarioSalvo, "id");
 
       if (!comentarioId) {
+        setComentarioStatus(
+          comentarioPaiIdLimpo
+            ? "Não foi possível enviar a resposta agora."
+            : "Não foi possível enviar o comentário agora."
+        );
         return false;
       }
 
@@ -3680,6 +4248,9 @@ export default function LerCapituloPage() {
         avatar: perfilAtual.avatar,
         texto: textoLimpo.slice(0, 420),
         criadoEm,
+        comentarioPaiId:
+          obterTextoRegistroLeitor(comentarioSalvo, "comentario_pai_id") ||
+          comentarioPaiIdLimpo,
         meuComentario: true,
         curtidas: [],
       };
@@ -3689,8 +4260,8 @@ export default function LerCapituloPage() {
       });
       setComentarioDigitado(textoLimpo);
       setComentariosCapitulo((comentariosAtuais) => [
-        ...comentariosAtuais,
         novoComentario,
+        ...comentariosAtuais,
       ]);
       setMetricasCapitulo((metricasAtuais) => ({
         ...metricasAtuais,
@@ -3746,12 +4317,10 @@ export default function LerCapituloPage() {
         return;
       }
 
-
-      atualizarCapitulo({
-        comentario: "",
-      });
-      setComentarioDigitado("");
-
+      const idsParaRemover = obterIdsComentarioCapituloComRespostas(
+        comentariosCapitulo,
+        comentarioId
+      );
       const { error } = await supabase
         .from("comentarios_capitulos")
         .delete()
@@ -3759,28 +4328,33 @@ export default function LerCapituloPage() {
         .eq("user_id", userIdAtual);
 
       if (error) {
-        const comentarioSincronizado = await salvarComentarioCapituloSupabase(
-          postId,
-          ""
-        );
+        setComentarioStatus("Não foi possível remover o comentário agora.");
+        return;
+      }
 
-        if (!comentarioSincronizado) {
-          setComentarioStatus(
-            "Comentário apagado do aparelho, mas não sincronizado agora."
-          );
-          return;
-        }
+      if (!comentarioAtual.comentarioPaiId) {
+        atualizarCapitulo({
+          comentario: "",
+        });
+        setComentarioDigitado("");
       }
 
       setComentariosCapitulo((comentariosAtuais) =>
-        comentariosAtuais.filter((comentario) => comentario.id !== comentarioId)
+        comentariosAtuais.filter(
+          (comentario) => !idsParaRemover.has(comentario.id)
+        )
       );
       setMetricasCapitulo((metricasAtuais) => ({
         ...metricasAtuais,
-        totalComentarios: Math.max(0, metricasAtuais.totalComentarios - 1),
+        totalComentarios: Math.max(
+          0,
+          metricasAtuais.totalComentarios - idsParaRemover.size
+        ),
         carregado: true,
       }));
       await recarregarComentariosCapituloAtual();
+
+      void postId;
     } finally {
       finalizarAcaoComentariosCapitulo(chaveAcao);
     }
@@ -4335,6 +4909,9 @@ export default function LerCapituloPage() {
         usuarioId={usuarioIdLogado}
         usuarioNome={perfilComentarioLeitor.nome}
         usuarioAvatar={perfilComentarioLeitor.avatar}
+        carregando={comentariosCarregando}
+        isDesktop={isDesktop}
+        status={comentarioStatus}
         onFechar={fecharComentariosCapitulo}
         onEnviar={enviarComentarioCapitulo}
         onCurtirComentario={alternarCurtidaComentarioCapitulo}
@@ -5267,38 +5844,46 @@ const commentInputStyle: CSSProperties = {
 const commentsSheetOverlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
-  zIndex: 90,
+  zIndex: 2147483647,
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "center",
   pointerEvents: "none",
+  isolation: "isolate",
 };
 
 const commentsSheetBackdropStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
+  zIndex: 0,
   border: "none",
-  background: "rgba(3, 2, 8, 0.28)",
+  background: "rgba(3, 2, 8, 0.42)",
+  backdropFilter: "blur(4px)",
+  WebkitBackdropFilter: "blur(4px)",
   pointerEvents: "auto",
   cursor: "pointer",
+  padding: 0,
 };
 
 const commentsSheetStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  width: "min(680px, 100%)",
+  width: "min(720px, 100%)",
   maxHeight: "calc(100dvh - env(safe-area-inset-top) - 10px)",
   display: "grid",
-  gridTemplateRows: "auto auto minmax(0, 1fr) auto auto",
+  gridTemplateRows: "auto auto minmax(0, 1fr) auto auto auto",
   gap: "7px",
   padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
   borderRadius: "28px 28px 0 0",
   background: "#070212",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  border: "none",
   borderBottom: "none",
+  boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
   pointerEvents: "auto",
   overflow: "hidden",
+  boxSizing: "border-box",
   willChange: "height",
+  transition: "height 220ms ease",
 };
 
 const commentsSheetCompactStyle: CSSProperties = {
@@ -5309,6 +5894,12 @@ const commentsSheetExpandedStyle: CSSProperties = {
   height: "min(90dvh, 760px)",
 };
 
+const desktopCommentsSheetStyle: CSSProperties = {
+  ...commentsSheetStyle,
+  width: "min(800px, calc(100% - 40px))",
+  height: "min(76dvh, 720px)",
+};
+
 const commentsSheetHandleWrapStyle: CSSProperties = {
   minHeight: "24px",
   display: "flex",
@@ -5317,6 +5908,7 @@ const commentsSheetHandleWrapStyle: CSSProperties = {
   touchAction: "none",
   cursor: "grab",
   willChange: "transform",
+  outline: "none",
 };
 
 const commentsSheetHandleStyle: CSSProperties = {
@@ -5348,10 +5940,19 @@ const commentsSheetTitleStyle: CSSProperties = {
   letterSpacing: "-0.02em",
 };
 
-const commentsSheetCloseStyle: CSSProperties = {
-  width: "34px",
+const commentsSortMenuWrapStyle: CSSProperties = {
+  position: "relative",
+  width: "40px",
   height: "34px",
   justifySelf: "end",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+};
+
+const commentsSortMenuTriggerStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
   borderRadius: "999px",
   border: "none",
   background: "transparent",
@@ -5360,14 +5961,59 @@ const commentsSheetCloseStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 500,
   fontFamily: "inherit",
-  padding: 0,
+  padding: "0 0 2px",
   cursor: "pointer",
+};
+
+const commentsSortMenuStyle: CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 6px)",
+  right: 0,
+  zIndex: 12,
+  width: "132px",
+  maxWidth: "calc(100vw - 24px)",
+  display: "grid",
+  gap: 0,
+  padding: "4px 8px",
+  boxSizing: "border-box",
+  borderRadius: "12px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(18, 9, 35, 0.98)",
+  boxShadow: "0 16px 36px rgba(0,0,0,0.48)",
+  backdropFilter: "blur(14px)",
+  WebkitBackdropFilter: "blur(14px)",
+};
+
+const commentsSortMenuItemStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "36px",
+  border: "none",
+  borderRadius: 0,
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  padding: "0 4px",
+  textAlign: "center",
+  fontSize: "11.5px",
+  fontWeight: 850,
+  fontFamily: "inherit",
+  cursor: "pointer",
+};
+
+const commentsSortMenuItemActiveStyle: CSSProperties = {
+  ...commentsSortMenuItemStyle,
+  color: "#FFFFFF",
+};
+
+const commentsSortMenuDividerStyle: CSSProperties = {
+  width: "100%",
+  height: "1px",
+  background: "rgba(255,255,255,0.12)",
 };
 
 const commentsSheetListStyle: CSSProperties = {
   display: "grid",
   alignContent: "start",
-  gap: "10px",
+  gap: "12px",
   minHeight: 0,
   overflowY: "auto",
   padding: "6px 2px 9px",
@@ -5376,10 +6022,76 @@ const commentsSheetListStyle: CSSProperties = {
 
 const commentSheetItemStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr) 26px",
+  gridTemplateColumns: "34px minmax(0, 1fr) 28px",
   gap: "10px",
   alignItems: "start",
   minWidth: 0,
+};
+
+const commentThreadStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const commentRepliesListStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  marginLeft: "34px",
+  paddingLeft: "10px",
+  borderLeft: "1px solid rgba(255,255,255,0.08)",
+  minWidth: 0,
+};
+
+const commentSheetReplyItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "28px minmax(0, 1fr) 28px",
+  gap: "8px",
+  alignItems: "start",
+  minWidth: 0,
+};
+
+const commentRepliesToggleStyle: CSSProperties = {
+  width: "fit-content",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
+
+const commentRepliesControlsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  flexWrap: "wrap",
+  minWidth: 0,
+};
+
+const commentRepliesHideButtonStyle: CSSProperties = {
+  width: "fit-content",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
+
+const commentRepliesLineStyle: CSSProperties = {
+  width: "22px",
+  height: "1px",
+  background: "rgba(255,255,255,0.22)",
 };
 
 const commentSheetAvatarStyle: CSSProperties = {
@@ -5396,6 +6108,8 @@ const commentSheetAvatarStyle: CSSProperties = {
   flex: "0 0 auto",
   border: "1px solid rgba(59, 7, 100, 0.58)",
   boxShadow: "none",
+  overflow: "hidden",
+  boxSizing: "border-box",
 };
 
 const commentSheetAvatarLinkStyle: CSSProperties = {
@@ -5404,9 +6118,18 @@ const commentSheetAvatarLinkStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+const commentSheetReplyAvatarLinkStyle: CSSProperties = {
+  ...commentSheetAvatarLinkStyle,
+  width: "28px",
+  height: "28px",
+  borderRadius: "10px",
+  fontSize: "10.5px",
+};
+
 const commentSheetContentStyle: CSSProperties = {
+  position: "relative",
   display: "grid",
-  gap: "2px",
+  gap: "3px",
   minWidth: 0,
 };
 
@@ -5427,12 +6150,14 @@ const commentSheetAuthorLinkStyle: CSSProperties = {
   ...commentSheetAuthorStyle,
   textDecoration: "none",
   cursor: "pointer",
+  ...safeTextStyle,
 };
 
 const commentSheetTimeStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10.5px",
   fontWeight: 750,
+  whiteSpace: "nowrap",
 };
 
 const commentSheetTextStyle: CSSProperties = {
@@ -5441,6 +6166,7 @@ const commentSheetTextStyle: CSSProperties = {
   fontSize: "12.5px",
   lineHeight: 1.38,
   fontWeight: 750,
+  whiteSpace: "pre-wrap",
   ...safeTextStyle,
 };
 
@@ -5523,12 +6249,41 @@ const commentSheetHeartIconStyle: CSSProperties = {
   display: "block",
 };
 
+const emptyCommentsStyle: CSSProperties = {
+  margin: "10px 0 0",
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 800,
+  textAlign: "center",
+};
 
 const commentsToolsStyle: CSSProperties = {
   display: "grid",
   gap: "6px",
   padding: "5px 0 0",
-  borderTop: "none",
+};
+
+const commentsReplyingStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  minWidth: 0,
+  padding: "0 2px",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10.5px",
+  fontWeight: 850,
+};
+
+const commentsReplyingCancelStyle: CSSProperties = {
+  border: "none",
+  background: "transparent",
+  color: "#C4B5FD",
+  fontSize: "10.5px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
 };
 
 const commentsQuickReactionsStyle: CSSProperties = {
@@ -5586,6 +6341,7 @@ const commentsInputAvatarStyle: CSSProperties = {
   fontSize: "11.5px",
   fontWeight: 950,
   boxShadow: "none",
+  overflow: "hidden",
 };
 
 const commentsSheetInputStyle: CSSProperties = {
@@ -5617,14 +6373,26 @@ const commentsSheetSendStyle: CSSProperties = {
   width: "36px",
   height: "36px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border:
+    "1px solid var(--historietas-bottom-nav-publish-border, rgba(167, 139, 250, 0.34))",
+  background:
+    "var(--historietas-bottom-nav-publish-bg, rgba(59, 7, 100, 0.72))",
   color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
   fontWeight: 950,
   fontFamily: "inherit",
   padding: 0,
+};
+
+const commentsPanelStatusStyle: CSSProperties = {
+  display: "block",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10.5px",
+  lineHeight: 1.35,
+  fontWeight: 800,
+  textAlign: "center",
+  ...safeTextStyle,
 };
 
 
