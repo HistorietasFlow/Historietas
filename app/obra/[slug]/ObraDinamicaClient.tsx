@@ -4832,7 +4832,7 @@ export default function ObraDinamicaPage() {
                       : obraMenuItemButtonStyle
                   }
                 >
-                  <span>{obraFavoritada ? "Na lista" : "Salvar"}</span>
+                  <span>{obraFavoritada ? "Salvo" : "Salvar"}</span>
                   <span
                     style={
                       obraFavoritada
@@ -4877,13 +4877,6 @@ export default function ObraDinamicaPage() {
                   }
                 >
                   <span>{linkCopiado ? "Link copiado!" : "Copiar link"}</span>
-                  <span
-                    style={
-                      linkCopiado
-                        ? obraMenuItemDotActiveStyle
-                        : obraMenuItemDotStyle
-                    }
-                  />
                 </button>
 
                 {sinopseObraMenu ? (
@@ -5006,8 +4999,13 @@ export default function ObraDinamicaPage() {
             </div>
 
             <div style={isDesktop ? desktopChaptersListStyle : chaptersListStyle}>
-              {capitulosDaObra.map((capitulo, index) => (
-                <article key={capitulo.id || capitulo.numero} style={isDesktop ? desktopChapterCardStyle : chapterCardStyle}>
+              {capitulosDaObra.map((capitulo) => (
+                <Link
+                  key={capitulo.id || capitulo.numero}
+                  href={capitulo.href}
+                  style={isDesktop ? desktopChapterCardStyle : chapterCardStyle}
+                  aria-label={`Abrir ${capitulo.titulo}`}
+                >
                   <div style={chapterNumberStyle}>{capitulo.numero}</div>
 
                   <div style={chapterContentStyle}>
@@ -5017,20 +5015,7 @@ export default function ObraDinamicaPage() {
                       <p style={chapterMetaStyle}>{capitulo.descricao}</p>
                     ) : null}
                   </div>
-
-                  {obraDisponivel && capitulo.disponivel ? (
-                    <Link href={capitulo.href} style={isDesktop ? desktopChapterButtonStyle : chapterButtonStyle}>
-                      Ler capítulo
-                    </Link>
-                  ) : (
-                    <Link
-                      href={capitulo.href || `/obra/${encodeURIComponent(obra.slug)}`}
-                      style={isDesktop ? desktopChapterButtonStyle : chapterButtonStyle}
-                    >
-                      Indisponível
-                    </Link>
-                  )}
-                </article>
+                </Link>
               ))}
             </div>
           </section>
@@ -5038,7 +5023,11 @@ export default function ObraDinamicaPage() {
 
 
         {obra.arquivoObra && (
-          <ArquivoObraPublico arquivo={obra.arquivoObra} isDesktop={isDesktop} />
+          <ArquivoObraPublico
+            arquivo={obra.arquivoObra}
+            tituloObra={obra.titulo}
+            isDesktop={isDesktop}
+          />
         )}
 
 
@@ -5052,9 +5041,11 @@ export default function ObraDinamicaPage() {
 
 function ArquivoObraPublico({
   arquivo,
+  tituloObra,
   isDesktop,
 }: {
   arquivo: ArquivoObraLocal;
+  tituloObra: string;
   isDesktop: boolean;
 }) {
   const tamanhoArquivo = formatarTamanhoArquivo(arquivo.tamanho);
@@ -5127,7 +5118,7 @@ function ArquivoObraPublico({
 
         <div style={fileInfoTextStyle}>
           <span style={fileMetaStyle}>
-            Arquivo anexado • {tamanhoArquivo} • {dataArquivo}
+            {tituloObra} • {tamanhoArquivo} • {dataArquivo}
           </span>
 
           <div style={isDesktop ? desktopFileActionsStyle : fileActionsStyle}>
@@ -5825,14 +5816,14 @@ const obraActionsMenuStyle: CSSProperties = {
   left: "50%",
   bottom: 0,
   transform: "translateX(-50%)",
-  width: "min(820px, calc(100% - 4px))",
+  width: "min(820px, 100%)",
   maxHeight: "calc(100dvh - 116px)",
   overflowX: "hidden",
   overflowY: "auto",
   overscrollBehavior: "none",
   borderRadius: "24px 24px 0 0",
   background: "#070212",
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "none",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
   padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
   display: "grid",
@@ -7178,6 +7169,9 @@ const chapterCardStyle: CSSProperties = {
   minWidth: 0,
   overflow: "hidden",
   boxShadow: "none",
+  color: "inherit",
+  textDecoration: "none",
+  cursor: "pointer",
 };
 
 const chapterNumberStyle: CSSProperties = {
@@ -7251,27 +7245,6 @@ const chapterMetaStyle: CSSProperties = {
   overflow: "hidden",
   ...safeTextStyle,
 };
-
-const chapterButtonStyle: CSSProperties = {
-  gridColumn: "1 / -1",
-  minHeight: "38px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 10px",
-  boxShadow: "none",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
 
 const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
@@ -7407,13 +7380,6 @@ const desktopChapterCardStyle: CSSProperties = {
   padding: "10px",
   gap: "10px",
 };
-
-const desktopChapterButtonStyle: CSSProperties = {
-  ...chapterButtonStyle,
-  gridColumn: "auto",
-  minHeight: "37px",
-};
-
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,

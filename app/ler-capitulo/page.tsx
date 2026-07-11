@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CSSProperties, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
@@ -130,6 +130,7 @@ type ComentarioCapituloPublico = {
 
 type RespostaComentarioCapitulo = {
   comentarioPaiId: string;
+  autorId: string;
   autorNome: string;
 };
 
@@ -2200,29 +2201,29 @@ type ComentariosCapituloSheetProps = {
   usuarioId: string;
   usuarioNome: string;
   usuarioAvatar: string;
+  erroInteracao: string;
   carregando: boolean;
   isDesktop: boolean;
-  status: string;
   onFechar: () => void;
   onEnviar: (
     postId: string,
     texto: string,
-    comentarioPaiId?: string
+    comentarioPaiId: string
   ) => boolean | Promise<boolean>;
   onCurtirComentario: (postId: string, comentarioId: string) => void | Promise<void>;
   onRemoverComentario: (postId: string, comentarioId: string) => void | Promise<void>;
   onDenunciarComentario: (comentarioId: string) => void | Promise<void>;
 };
 
-function ComentariosCapituloSheet({
+const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
   post,
   podeComentar,
   usuarioId,
   usuarioNome,
   usuarioAvatar,
+  erroInteracao,
   carregando,
   isDesktop,
-  status,
   onFechar,
   onEnviar,
   onCurtirComentario,
@@ -2238,12 +2239,8 @@ function ComentariosCapituloSheet({
   const [sheetExpandido, setSheetExpandido] = useState(false);
   const [comentarioEnviando, setComentarioEnviando] = useState(false);
   const [comentarioCurtindoId, setComentarioCurtindoId] = useState<string | null>(null);
-  const [comentarioRemovendoId, setComentarioRemovendoId] = useState<
-    string | null
-  >(null);
-  const [comentarioDenunciandoId, setComentarioDenunciandoId] = useState<
-    string | null
-  >(null);
+  const [comentarioRemovendoId, setComentarioRemovendoId] = useState<string | null>(null);
+  const [comentarioDenunciandoId, setComentarioDenunciandoId] = useState<string | null>(null);
   const [respostaComentario, setRespostaComentario] =
     useState<RespostaComentarioCapitulo | null>(null);
   const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
@@ -2255,59 +2252,13 @@ function ComentariosCapituloSheet({
   const comentarioAcoesRef = useRef<Set<string>>(new Set<string>());
 
   useEffect(() => {
-    if (!post || typeof document === "undefined") {
-      return;
-    }
-
-    const overflowAnterior = document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-
-    function fecharComEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onFechar();
-      }
-    }
-
-    window.addEventListener("keydown", fecharComEscape);
-
-    return () => {
-      document.body.style.overflow = overflowAnterior;
-      window.removeEventListener("keydown", fecharComEscape);
-    };
-  }, [post, onFechar]);
-
-  useEffect(() => {
-    if (!post) {
-      return;
-    }
-
-    const intervalo = window.setInterval(() => {
+    const timer = window.setInterval(() => {
       setAgoraComentarios(Date.now());
     }, 30000);
 
-    return () => window.clearInterval(intervalo);
-  }, [post]);
-
-  useEffect(() => {
-    const resetTimer = window.setTimeout(() => {
-      setSheetExpandido(false);
-      setMenuOrdenacaoAberto(false);
-      setRespostaComentario(null);
-      setRespostasVisiveisPorComentario({});
-      setAgoraComentarios(Date.now());
-      dragOffsetYRef.current = 0;
-
-      if (comentarioRef.current) {
-        comentarioRef.current.value = "";
-      }
-    }, 0);
-
-    return () => window.clearTimeout(resetTimer);
-  }, [post?.id]);
-
-  useEffect(() => {
     return () => {
+      window.clearInterval(timer);
+
       if (dragResetTimerRef.current !== null) {
         window.clearTimeout(dragResetTimerRef.current);
       }
@@ -2320,8 +2271,16 @@ function ComentariosCapituloSheet({
         post?.comentarios || [],
         ordenacaoComentarios
       ),
-    [post?.comentarios, ordenacaoComentarios]
+    [ordenacaoComentarios, post?.comentarios]
   );
+
+  function fecharComentarios() {
+    setSheetExpandido(false);
+    setMenuOrdenacaoAberto(false);
+    setRespostaComentario(null);
+    dragOffsetYRef.current = 0;
+    onFechar();
+  }
 
   function inserirNoComentario(valor: string) {
     if (!podeComentar || !comentarioRef.current) {
@@ -2339,7 +2298,7 @@ function ComentariosCapituloSheet({
     );
     campo.focus();
 
-    const novaPosicao = Math.min(420, inicio + valor.length);
+    const novaPosicao = Math.min(inicio + valor.length, campo.value.length);
     campo.setSelectionRange(novaPosicao, novaPosicao);
   }
 
@@ -2430,6 +2389,7 @@ function ComentariosCapituloSheet({
 
     setRespostaComentario({
       comentarioPaiId: raizIdLimpo,
+      autorId: comentario.userId,
       autorNome: nomeLimpo,
     });
 
@@ -2439,7 +2399,6 @@ function ComentariosCapituloSheet({
       }
 
       const mencao = `@${nomeLimpo} `;
-
       comentarioRef.current.value = mencao;
       comentarioRef.current.focus();
       comentarioRef.current.setSelectionRange(mencao.length, mencao.length);
@@ -2533,11 +2492,11 @@ function ComentariosCapituloSheet({
     }
 
     if (deslocamento > 118 && !sheetExpandido) {
-      onFechar();
+      fecharComentarios();
     }
   }
 
-  function alternarExpansao() {
+  function alternarExpansaoComentarios() {
     if (isDesktop || dragIgnorarCliqueRef.current) {
       return;
     }
@@ -2562,23 +2521,23 @@ function ComentariosCapituloSheet({
 
     try {
       const conteudoComentario = comentarioRef.current?.value || "";
-      const comentarioPaiId = respostaComentario?.comentarioPaiId || "";
+      const respostaAnterior = respostaComentario;
       const enviado = await onEnviar(
         post.id,
         conteudoComentario,
-        comentarioPaiId
+        respostaAnterior?.comentarioPaiId || ""
       );
 
       if (enviado && comentarioRef.current) {
         comentarioRef.current.value = "";
         setRespostaComentario(null);
 
-        if (comentarioPaiId) {
+        if (respostaAnterior?.comentarioPaiId) {
           setRespostasVisiveisPorComentario((estadoAtual) => ({
             ...estadoAtual,
-            [comentarioPaiId]: Math.max(
+            [respostaAnterior.comentarioPaiId]: Math.max(
               5,
-              (estadoAtual[comentarioPaiId] || 0) + 1
+              estadoAtual[respostaAnterior.comentarioPaiId] || 0
             ),
           }));
         }
@@ -2607,13 +2566,13 @@ function ComentariosCapituloSheet({
     const comentarioRemovendo = comentarioRemovendoId === comentario.id;
     const comentarioDenunciando = comentarioDenunciandoId === comentario.id;
     const avatarBaseStyle = resposta
-      ? commentSheetReplyAvatarLinkStyle
-      : commentSheetAvatarLinkStyle;
+      ? commentReplyAvatarLinkStyle
+      : commentAvatarLinkStyle;
 
     return (
       <article
         key={comentario.id}
-        style={resposta ? commentSheetReplyItemStyle : commentSheetItemStyle}
+        style={resposta ? commentReplyItemStyle : commentItemStyle}
       >
         <Link
           href={criarHrefPerfilUsuarioLeitor(
@@ -2626,22 +2585,23 @@ function ComentariosCapituloSheet({
             comentario.avatar
           )}
         >
-          {!comentario.avatar && comentario.nome.slice(0, 1).toUpperCase()}
+          {!comentario.avatar &&
+            (comentario.nome.slice(0, 1).toUpperCase() || "U")}
         </Link>
 
-        <div style={commentSheetContentStyle}>
-          <div style={commentSheetTopLineStyle}>
+        <div style={commentContentStyle}>
+          <div style={commentTopLineStyle}>
             <Link
               href={criarHrefPerfilUsuarioLeitor(
                 comentario.userId,
                 comentario.nome
               )}
-              style={commentSheetAuthorLinkStyle}
+              style={commentAuthorLinkStyle}
             >
               {comentario.nome}
             </Link>
 
-            <span style={commentSheetTimeStyle}>
+            <span style={commentTimeStyle}>
               {formatarTempoRelativoComentarioCapitulo(
                 comentario.criadoEm,
                 agoraComentarios
@@ -2649,15 +2609,17 @@ function ComentariosCapituloSheet({
             </span>
           </div>
 
-          <p style={commentSheetTextStyle}>{comentario.texto}</p>
+          <p style={commentTextStyle}>{comentario.texto}</p>
 
-          <div style={commentSheetActionsRowStyle}>
+          <div style={commentActionsRowStyle}>
             <button
               type="button"
-              onClick={() => responderComentario(comentario, comentarioRaizId)}
+              onClick={() =>
+                responderComentario(comentario, comentarioRaizId)
+              }
               disabled={!podeComentar}
               style={{
-                ...commentSheetReplyButtonStyle,
+                ...commentReplyButtonStyle,
                 opacity: podeComentar ? 1 : 0.52,
                 cursor: podeComentar ? "pointer" : "not-allowed",
               }}
@@ -2669,11 +2631,11 @@ function ComentariosCapituloSheet({
               <button
                 type="button"
                 onClick={() =>
-                  void removerComentarioSeguro(post?.id || "", comentario.id)
+                  removerComentarioSeguro(post?.id || "", comentario.id)
                 }
                 disabled={comentarioRemovendo}
                 style={{
-                  ...commentSheetRemoveButtonStyle,
+                  ...commentRemoveButtonStyle,
                   opacity: comentarioRemovendo ? 0.58 : 1,
                   cursor: comentarioRemovendo ? "not-allowed" : "pointer",
                 }}
@@ -2685,10 +2647,10 @@ function ComentariosCapituloSheet({
             {podeDenunciarComentario ? (
               <button
                 type="button"
-                onClick={() => void denunciarComentarioSeguro(comentario.id)}
+                onClick={() => denunciarComentarioSeguro(comentario.id)}
                 disabled={comentarioDenunciando}
                 style={{
-                  ...commentSheetReportButtonStyle,
+                  ...commentReportButtonStyle,
                   opacity: comentarioDenunciando ? 0.58 : 1,
                   cursor: comentarioDenunciando ? "not-allowed" : "pointer",
                 }}
@@ -2699,7 +2661,7 @@ function ComentariosCapituloSheet({
           </div>
         </div>
 
-        <div style={commentSheetLikeWrapStyle}>
+        <div style={commentLikeWrapStyle}>
           <button
             type="button"
             aria-label={
@@ -2708,11 +2670,11 @@ function ComentariosCapituloSheet({
                 : "Curtir comentário"
             }
             onClick={() =>
-              void curtirComentarioSeguro(post?.id || "", comentario.id)
+              curtirComentarioSeguro(post?.id || "", comentario.id)
             }
             disabled={!podeComentar || comentarioCurtindo}
             style={{
-              ...commentSheetLikeButtonStyle,
+              ...commentLikeButtonStyle,
               opacity: podeComentar && !comentarioCurtindo ? 1 : 0.58,
               cursor:
                 podeComentar && !comentarioCurtindo
@@ -2723,7 +2685,7 @@ function ComentariosCapituloSheet({
             <svg
               viewBox="0 0 24 24"
               aria-hidden="true"
-              style={commentSheetHeartIconStyle}
+              style={commentHeartIconStyle}
             >
               <path
                 d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
@@ -2740,7 +2702,7 @@ function ComentariosCapituloSheet({
             </svg>
           </button>
 
-          <span style={commentSheetLikeCountStyle}>
+          <span style={commentLikeCountStyle}>
             {comentario.curtidas.length}
           </span>
         </div>
@@ -2757,7 +2719,7 @@ function ComentariosCapituloSheet({
       <button
         type="button"
         aria-label="Fechar comentários"
-        onClick={onFechar}
+        onClick={fecharComentarios}
         style={commentsSheetBackdropStyle}
       />
 
@@ -2777,7 +2739,7 @@ function ComentariosCapituloSheet({
         <div
           data-comments-sheet-handle="true"
           style={commentsSheetHandleWrapStyle}
-          onClick={alternarExpansao}
+          onClick={alternarExpansaoComentarios}
           onTouchStart={iniciarArraste}
           onTouchMove={moverArraste}
           onTouchEnd={finalizarArraste}
@@ -2790,7 +2752,7 @@ function ComentariosCapituloSheet({
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
-              alternarExpansao();
+              alternarExpansaoComentarios();
             }
           }}
         >
@@ -2859,9 +2821,7 @@ function ComentariosCapituloSheet({
         </header>
 
         <section style={commentsSheetListStyle}>
-          {carregando ? (
-            <p style={emptyCommentsStyle}>Carregando comentários...</p>
-          ) : estruturaComentarios.comentariosRaiz.length > 0 ? (
+          {estruturaComentarios.comentariosRaiz.length > 0 ? (
             estruturaComentarios.comentariosRaiz.map((comentario) => {
               const respostas =
                 estruturaComentarios.respostasPorRaiz.get(comentario.id) || [];
@@ -2883,11 +2843,7 @@ function ComentariosCapituloSheet({
                   {respostasVisiveis.length > 0 ? (
                     <div style={commentRepliesListStyle}>
                       {respostasVisiveis.map((resposta) =>
-                        renderizarComentario(
-                          resposta,
-                          comentario.id,
-                          true
-                        )
+                        renderizarComentario(resposta, comentario.id, true)
                       )}
                     </div>
                   ) : null}
@@ -2950,32 +2906,16 @@ function ComentariosCapituloSheet({
                 </section>
               );
             })
-          ) : (
+          ) : carregando ? null : (
             <p style={emptyCommentsStyle}>Sem comentários ainda</p>
           )}
         </section>
 
+        {erroInteracao ? (
+          <span style={commentsSheetErrorStyle}>{erroInteracao}</span>
+        ) : null}
+
         <section style={commentsToolsStyle}>
-          {respostaComentario ? (
-            <div style={commentsReplyingStyle}>
-              <span>{`Respondendo a @${respostaComentario.autorNome}`}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setRespostaComentario(null);
-
-                  if (comentarioRef.current) {
-                    comentarioRef.current.value = "";
-                    comentarioRef.current.focus();
-                  }
-                }}
-                style={commentsReplyingCancelStyle}
-              >
-                Cancelar
-              </button>
-            </div>
-          ) : null}
-
           <div style={commentsQuickReactionsStyle}>
             {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
               <button
@@ -2983,11 +2923,7 @@ function ComentariosCapituloSheet({
                 type="button"
                 onClick={() => inserirNoComentario(emoji)}
                 disabled={!podeComentar}
-                style={{
-                  ...commentsQuickReactionButtonStyle,
-                  opacity: podeComentar ? 1 : 0.52,
-                  cursor: podeComentar ? "pointer" : "not-allowed",
-                }}
+                style={commentsQuickReactionButtonStyle}
                 aria-label={`Adicionar ${emoji} ao comentário`}
               >
                 {emoji}
@@ -3011,11 +2947,7 @@ function ComentariosCapituloSheet({
             <textarea
               ref={comentarioRef}
               placeholder={
-                podeComentar
-                  ? respostaComentario
-                    ? `Responder a @${respostaComentario.autorNome}...`
-                    : "Adicionar comentário..."
-                  : "Entre para comentar."
+                podeComentar ? "Adicionar comentário..." : "Entre para comentar."
               }
               disabled={!podeComentar || comentarioEnviando}
               autoComplete="off"
@@ -3032,7 +2964,7 @@ function ComentariosCapituloSheet({
           <button
             type="button"
             onClick={() => inserirNoComentario("@")}
-            disabled={!podeComentar || comentarioEnviando}
+            disabled={!podeComentar}
             style={commentsInputIconButtonStyle}
             aria-label="Adicionar menção"
           >
@@ -3055,13 +2987,11 @@ function ComentariosCapituloSheet({
             {comentarioEnviando ? "..." : "↑"}
           </button>
         </form>
-
-        {status ? <span style={commentsPanelStatusStyle}>{status}</span> : null}
       </article>
     </section>,
     document.body
   );
-}
+});
 
 export default function LerCapituloPage() {
   const router = useRouter();
@@ -3077,6 +3007,7 @@ export default function LerCapituloPage() {
   const [metricasCapitulo, setMetricasCapitulo] =
     useState<MetricasCapituloLeitor>(metricasCapituloVazias);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
+  const comentariosCapituloCarregadoIdRef = useRef("");
   const [perfilComentarioLeitor, setPerfilComentarioLeitor] =
     useState<PerfilComentarioLeitor>({
       userId: "",
@@ -3098,6 +3029,37 @@ export default function LerCapituloPage() {
   const visualizacaoObraRegistradaRef = useRef("");
   const atividadeDiarioRegistradaRef = useRef("");
   const acoesComentariosCapituloRef = useRef<Set<string>>(new Set<string>());
+
+  useEffect(() => {
+    if (!mostrarComentario) {
+      return;
+    }
+
+    const overflowAnterior = document.body.style.getPropertyValue("overflow");
+    const overscrollAnterior = document.documentElement.style.getPropertyValue(
+      "overscroll-behavior"
+    );
+
+    document.body.style.setProperty("overflow", "hidden");
+    document.documentElement.style.setProperty("overscroll-behavior", "none");
+
+    return () => {
+      if (overflowAnterior) {
+        document.body.style.setProperty("overflow", overflowAnterior);
+      } else {
+        document.body.style.removeProperty("overflow");
+      }
+
+      if (overscrollAnterior) {
+        document.documentElement.style.setProperty(
+          "overscroll-behavior",
+          overscrollAnterior
+        );
+      } else {
+        document.documentElement.style.removeProperty("overscroll-behavior");
+      }
+    };
+  }, [mostrarComentario]);
 
   useEffect(() => {
     let cancelado = false;
@@ -3406,7 +3368,12 @@ export default function LerCapituloPage() {
         return;
       }
 
-      setComentariosCarregando(true);
+      const deveExibirCarregamentoInicial =
+        comentariosCapituloCarregadoIdRef.current !== capituloAtual.id;
+
+      if (deveExibirCarregamentoInicial) {
+        setComentariosCarregando(true);
+      }
 
       const comentarios = await carregarComentariosCapituloSupabase(
         capituloAtual.id,
@@ -3414,6 +3381,7 @@ export default function LerCapituloPage() {
       );
 
       if (!cancelado) {
+        comentariosCapituloCarregadoIdRef.current = capituloAtual.id;
         setComentariosCapitulo(comentarios);
         setComentariosCarregando(false);
       }
@@ -3728,43 +3696,6 @@ export default function LerCapituloPage() {
     setMensagemAcao(mensagem);
     router.push(criarLoginHrefLeitor(obraId, capituloId));
     return false;
-  }
-
-  async function recarregarComentariosCapituloAtual() {
-    if (!capituloAtual?.id) {
-      setComentariosCapitulo([]);
-      setComentariosCarregando(false);
-      setMetricasCapitulo(metricasCapituloVazias);
-      return;
-    }
-
-    setComentariosCarregando(true);
-
-    const comentarios = await carregarComentariosCapituloSupabase(
-      capituloAtual.id,
-      usuarioIdLogado,
-    );
-
-    setComentariosCapitulo(comentarios);
-    setComentariosCarregando(false);
-
-    const metricas = await carregarMetricasCapituloSupabase(
-      capituloAtual,
-      usuarioIdLogado,
-      comentarios.length
-    );
-
-    setMetricasCapitulo(metricas);
-
-    if (
-      metricas.curtiu !== capituloAtual.curtiu ||
-      metricas.salvo !== capituloAtual.salvo
-    ) {
-      atualizarCapitulo({
-        curtiu: metricas.curtiu,
-        salvo: metricas.salvo,
-      });
-    }
   }
 
   async function recarregarMetricasCapituloAtual() {
@@ -4282,7 +4213,6 @@ export default function LerCapituloPage() {
         });
       }
 
-      void recarregarComentariosCapituloAtual();
       return true;
     } finally {
       finalizarAcaoComentariosCapitulo(chaveAcao);
@@ -4352,8 +4282,6 @@ export default function LerCapituloPage() {
         ),
         carregado: true,
       }));
-      await recarregarComentariosCapituloAtual();
-
       void postId;
     } finally {
       finalizarAcaoComentariosCapitulo(chaveAcao);
@@ -4439,8 +4367,31 @@ export default function LerCapituloPage() {
             });
           }
         }
-        await recarregarComentariosCapituloAtual();
       } catch (error) {
+        setComentariosCapitulo((comentariosAtuais) =>
+          comentariosAtuais.map((comentario) => {
+            if (comentario.id !== comentarioId) {
+              return comentario;
+            }
+
+            return {
+              ...comentario,
+              curtidas: jaCurtiu
+                ? Array.from(new Set([...comentario.curtidas, userIdAtual]))
+                : comentario.curtidas.filter(
+                    (curtidaId) => curtidaId !== userIdAtual
+                  ),
+            };
+          })
+        );
+        salvarCurtidaComentarioCapituloLocal(
+          userIdAtual,
+          comentarioId,
+          jaCurtiu
+        );
+        setComentarioStatus(
+          "Não foi possível atualizar a curtida do comentário agora."
+        );
         console.warn("Não consegui sincronizar a curtida do comentário:", error);
       }
 
@@ -4904,14 +4855,15 @@ export default function LerCapituloPage() {
       </section>
 
       <ComentariosCapituloSheet
+        key={mostrarComentario ? postComentariosCapitulo?.id || "comentarios-fechados" : "comentarios-fechados"}
         post={mostrarComentario ? postComentariosCapitulo : null}
         podeComentar={Boolean(usuarioIdLogado)}
         usuarioId={usuarioIdLogado}
         usuarioNome={perfilComentarioLeitor.nome}
         usuarioAvatar={perfilComentarioLeitor.avatar}
+        erroInteracao={comentarioStatus}
         carregando={comentariosCarregando}
         isDesktop={isDesktop}
-        status={comentarioStatus}
         onFechar={fecharComentariosCapitulo}
         onEnviar={enviarComentarioCapitulo}
         onCurtirComentario={alternarCurtidaComentarioCapitulo}
@@ -5824,23 +5776,6 @@ const commentStatusStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const commentInputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "92px",
-  borderRadius: "14px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  color: "#FFFFFF",
-  padding: "10px",
-  outline: "none",
-  fontSize: "13px",
-  lineHeight: 1.55,
-  fontWeight: 650,
-  resize: "vertical",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-};
-
 const commentsSheetOverlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
@@ -6020,17 +5955,17 @@ const commentsSheetListStyle: CSSProperties = {
   WebkitOverflowScrolling: "touch",
 };
 
-const commentSheetItemStyle: CSSProperties = {
+const commentThreadStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const commentItemStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "34px minmax(0, 1fr) 28px",
   gap: "10px",
   alignItems: "start",
-  minWidth: 0,
-};
-
-const commentThreadStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
   minWidth: 0,
 };
 
@@ -6043,7 +5978,7 @@ const commentRepliesListStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const commentSheetReplyItemStyle: CSSProperties = {
+const commentReplyItemStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "28px minmax(0, 1fr) 28px",
   gap: "8px",
@@ -6094,7 +6029,7 @@ const commentRepliesLineStyle: CSSProperties = {
   background: "rgba(255,255,255,0.22)",
 };
 
-const commentSheetAvatarStyle: CSSProperties = {
+const commentAvatarStyle: CSSProperties = {
   width: "34px",
   height: "34px",
   borderRadius: "12px",
@@ -6102,65 +6037,67 @@ const commentSheetAvatarStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   background: "#04000A",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
   color: "#FFFFFF",
   fontSize: "12.5px",
+  lineHeight: 1,
   fontWeight: 950,
-  flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  letterSpacing: "-0.03em",
   boxShadow: "none",
+  flex: "0 0 auto",
   overflow: "hidden",
   boxSizing: "border-box",
 };
 
-const commentSheetAvatarLinkStyle: CSSProperties = {
-  ...commentSheetAvatarStyle,
+const commentAvatarLinkStyle: CSSProperties = {
+  ...commentAvatarStyle,
   textDecoration: "none",
   cursor: "pointer",
 };
 
-const commentSheetReplyAvatarLinkStyle: CSSProperties = {
-  ...commentSheetAvatarLinkStyle,
+const commentReplyAvatarLinkStyle: CSSProperties = {
+  ...commentAvatarLinkStyle,
   width: "28px",
   height: "28px",
   borderRadius: "10px",
   fontSize: "10.5px",
 };
 
-const commentSheetContentStyle: CSSProperties = {
+const commentContentStyle: CSSProperties = {
   position: "relative",
   display: "grid",
   gap: "3px",
   minWidth: 0,
 };
 
-const commentSheetTopLineStyle: CSSProperties = {
+const commentTopLineStyle: CSSProperties = {
   display: "flex",
   alignItems: "baseline",
   gap: "6px",
   minWidth: 0,
 };
 
-const commentSheetAuthorStyle: CSSProperties = {
+const commentAuthorStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "12px",
   fontWeight: 950,
 };
 
-const commentSheetAuthorLinkStyle: CSSProperties = {
-  ...commentSheetAuthorStyle,
+const commentAuthorLinkStyle: CSSProperties = {
+  ...commentAuthorStyle,
   textDecoration: "none",
   cursor: "pointer",
   ...safeTextStyle,
 };
 
-const commentSheetTimeStyle: CSSProperties = {
+const commentTimeStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10.5px",
   fontWeight: 750,
   whiteSpace: "nowrap",
 };
 
-const commentSheetTextStyle: CSSProperties = {
+const commentTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12.5px",
@@ -6170,14 +6107,14 @@ const commentSheetTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const commentSheetActionsRowStyle: CSSProperties = {
+const commentActionsRowStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: "10px",
   flexWrap: "wrap",
 };
 
-const commentSheetReplyButtonStyle: CSSProperties = {
+const commentReplyButtonStyle: CSSProperties = {
   width: "fit-content",
   border: "none",
   background: "transparent",
@@ -6189,19 +6126,19 @@ const commentSheetReplyButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-const commentSheetRemoveButtonStyle: CSSProperties = {
+const commentRemoveButtonStyle: CSSProperties = {
   width: "fit-content",
   border: "none",
   background: "transparent",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "10.5px",
-  fontWeight: 950,
+  fontWeight: 900,
   fontFamily: "inherit",
   padding: "1px 0 0",
   cursor: "pointer",
 };
 
-const commentSheetReportButtonStyle: CSSProperties = {
+const commentReportButtonStyle: CSSProperties = {
   width: "fit-content",
   border: "none",
   background: "transparent",
@@ -6213,7 +6150,7 @@ const commentSheetReportButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-const commentSheetLikeWrapStyle: CSSProperties = {
+const commentLikeWrapStyle: CSSProperties = {
   minWidth: "28px",
   display: "grid",
   justifyItems: "center",
@@ -6221,7 +6158,7 @@ const commentSheetLikeWrapStyle: CSSProperties = {
   gap: "2px",
 };
 
-const commentSheetLikeButtonStyle: CSSProperties = {
+const commentLikeButtonStyle: CSSProperties = {
   width: "28px",
   height: "28px",
   border: "none",
@@ -6234,7 +6171,7 @@ const commentSheetLikeButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-const commentSheetLikeCountStyle: CSSProperties = {
+const commentLikeCountStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10px",
   fontWeight: 900,
@@ -6243,7 +6180,7 @@ const commentSheetLikeCountStyle: CSSProperties = {
   textAlign: "center",
 };
 
-const commentSheetHeartIconStyle: CSSProperties = {
+const commentHeartIconStyle: CSSProperties = {
   width: "19px",
   height: "19px",
   display: "block",
@@ -6257,33 +6194,24 @@ const emptyCommentsStyle: CSSProperties = {
   textAlign: "center",
 };
 
+const commentsSheetErrorStyle: CSSProperties = {
+  display: "block",
+  padding: "8px 10px",
+  borderRadius: "14px",
+  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
+  border: "1px solid rgba(248,113,113,0.24)",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  fontSize: "11px",
+  fontWeight: 850,
+  lineHeight: 1.35,
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
 const commentsToolsStyle: CSSProperties = {
   display: "grid",
   gap: "6px",
   padding: "5px 0 0",
-};
-
-const commentsReplyingStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  minWidth: 0,
-  padding: "0 2px",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10.5px",
-  fontWeight: 850,
-};
-
-const commentsReplyingCancelStyle: CSSProperties = {
-  border: "none",
-  background: "transparent",
-  color: "#C4B5FD",
-  fontSize: "10.5px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: 0,
-  cursor: "pointer",
 };
 
 const commentsQuickReactionsStyle: CSSProperties = {
@@ -6318,14 +6246,6 @@ const commentsSheetFormStyle: CSSProperties = {
   gap: "7px",
   padding: "7px 0 0",
   minWidth: 0,
-  background: "transparent",
-};
-
-const commentsInputBoxStyle: CSSProperties = {
-  minWidth: 0,
-  minHeight: "38px",
-  display: "flex",
-  alignItems: "center",
 };
 
 const commentsInputAvatarStyle: CSSProperties = {
@@ -6340,20 +6260,33 @@ const commentsInputAvatarStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
-  boxShadow: "none",
   overflow: "hidden",
 };
 
+const commentsInputBoxStyle: CSSProperties = {
+  minWidth: 0,
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+};
+
 const commentsSheetInputStyle: CSSProperties = {
-  ...commentInputStyle,
+  width: "100%",
   minHeight: "38px",
   maxHeight: "82px",
   borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "9px 12px",
+  outline: "none",
   fontSize: "12.5px",
   lineHeight: 1.32,
+  fontWeight: 650,
   resize: "none",
   overflowY: "auto",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
 };
 
 const commentsInputIconButtonStyle: CSSProperties = {
@@ -6383,16 +6316,6 @@ const commentsSheetSendStyle: CSSProperties = {
   fontWeight: 950,
   fontFamily: "inherit",
   padding: 0,
-};
-
-const commentsPanelStatusStyle: CSSProperties = {
-  display: "block",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10.5px",
-  lineHeight: 1.35,
-  fontWeight: 800,
-  textAlign: "center",
-  ...safeTextStyle,
 };
 
 
