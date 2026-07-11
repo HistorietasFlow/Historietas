@@ -761,8 +761,25 @@ async function carregarVotosEnquetesSupabase(
   }
 }
 
+function contarCurtidasUnicasPostComunidade(post: PostComunidade) {
+  return new Set(
+    post.curtidas.map((userId) => userId.trim()).filter(Boolean)
+  ).size;
+}
+
+function contarComentaristasUnicosPostComunidade(post: PostComunidade) {
+  return new Set(
+    post.comentarios
+      .map((comentario) => comentario.autorId.trim())
+      .filter(Boolean)
+  ).size;
+}
+
 function obterPontuacaoPost(post: PostComunidade) {
-  return post.curtidas.length * 2 + post.comentarios.length * 3;
+  return (
+    contarCurtidasUnicasPostComunidade(post) * 2 +
+    contarComentaristasUnicosPostComunidade(post) * 3
+  );
 }
 
 function obterLinkPublicacaoComunidade(postId: string) {
@@ -2343,7 +2360,8 @@ export default function ComunidadePage() {
 
       if (ordenacaoAtiva === "Mais comentadas") {
         const diferencaComentarios =
-          postB.comentarios.length - postA.comentarios.length;
+          contarComentaristasUnicosPostComunidade(postB) -
+          contarComentaristasUnicosPostComunidade(postA);
 
         return diferencaComentarios || dataOrdenacaoB - dataOrdenacaoA;
       }
@@ -4256,7 +4274,9 @@ export default function ComunidadePage() {
                             cursor: postCurtindo ? "not-allowed" : "pointer",
                           }}
                         >
-                          {postCurtindo ? "♥ ..." : `♥ ${post.curtidas.length}`}
+                          {postCurtindo
+                        ? "♥ ..."
+                        : `♥ ${contarCurtidasUnicasPostComunidade(post)}`}
                         </button>
 
                         <button
@@ -4264,7 +4284,7 @@ export default function ComunidadePage() {
                           onClick={() => abrirComentarios(post.id)}
                           style={actionButtonStyle}
                         >
-                          💬 {post.comentarios.length}
+                          💬 {contarComentaristasUnicosPostComunidade(post)}
                         </button>
 
                         {post.temSpoiler && (

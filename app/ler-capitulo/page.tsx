@@ -712,21 +712,21 @@ function criarHrefLeituraCapituloLeitor(
   )}&capituloId=${encodeURIComponent(capituloId)}`;
 }
 
-function incrementarVisualizacaoObraLocal(
+function registrarVisualizacaoObraLocalUnica(
   obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
   userId = ""
 ) {
   const userIdLimpo = userId.trim();
 
   if (!userIdLimpo) {
-    return;
+    return false;
   }
 
   try {
     const chaveObra = obra.id || obra.slug || normalizarTexto(obra.titulo);
 
     if (!chaveObra) {
-      return;
+      return false;
     }
 
     const visualizacoesTexto = lerStorageUsuarioLeitor(
@@ -742,30 +742,65 @@ function incrementarVisualizacaoObraLocal(
       !Array.isArray(visualizacoesJson)
         ? (visualizacoesJson as Record<string, unknown>)
         : {};
-    const visualizacoesAtuais = obterNumeroSeguro(visualizacoesPorObra[chaveObra], 0);
+    const jaVisualizou =
+      visualizacoesPorObra[chaveObra] === true ||
+      obterNumeroSeguro(visualizacoesPorObra[chaveObra], 0) > 0;
+
+    if (jaVisualizou) {
+      return false;
+    }
 
     salvarJsonStorageUsuarioLeitor(
       VIEWED_WORKS_STORAGE_KEY,
       userIdLimpo,
       {
         ...visualizacoesPorObra,
-        [chaveObra]: visualizacoesAtuais + 1,
+        [chaveObra]: 1,
       }
     );
+
+    return true;
   } catch {
     // Visualização local é fallback e não deve travar a leitura.
+    return false;
   }
 }
 
-async function incrementarVisualizacaoObraSupabase(obraId: string) {
-  if (!idObraSupabaseValido(obraId)) {
+async function incrementarVisualizacaoObraSupabase(
+  obraId: string,
+  userId: string,
+  visualizacaoLocalNova: boolean
+) {
+  const obraIdLimpo = obraId.trim();
+  const userIdLimpo = userId.trim();
+
+  if (
+    !idObraSupabaseValido(obraIdLimpo) ||
+    !idObraSupabaseValido(userIdLimpo)
+  ) {
     return;
   }
 
   try {
+    const { data: progressoExistente, error: erroProgresso } = await supabase
+      .from("progresso_leitura")
+      .select("obra_id")
+      .eq("user_id", userIdLimpo)
+      .eq("obra_id", obraIdLimpo)
+      .limit(1)
+      .maybeSingle();
+
+    if (!erroProgresso && progressoExistente) {
+      return;
+    }
+
+    if (erroProgresso && !visualizacaoLocalNova) {
+      return;
+    }
+
     const { error: erroRpc } = await supabase.rpc(
       "incrementar_visualizacao_obra",
-      { obra_id_param: obraId }
+      { obra_id_param: obraIdLimpo }
     );
 
     if (!erroRpc) {
@@ -775,7 +810,7 @@ async function incrementarVisualizacaoObraSupabase(obraId: string) {
     const { data: obraAtual } = await supabase
       .from("obras")
       .select("visualizacoes")
-      .eq("id", obraId)
+      .eq("id", obraIdLimpo)
       .limit(1)
       .maybeSingle();
 
@@ -787,7 +822,7 @@ async function incrementarVisualizacaoObraSupabase(obraId: string) {
     await supabase
       .from("obras")
       .update({ visualizacoes: visualizacoesAtuais + 1 })
-      .eq("id", obraId);
+      .eq("id", obraIdLimpo);
   } catch {
     // A leitura continua mesmo se a contagem remota falhar.
   }
@@ -2943,8 +2978,17 @@ export default function LerCapituloPage() {
     }
 
     visualizacaoObraRegistradaRef.current = chaveVisualizacao;
-    incrementarVisualizacaoObraLocal(obraAtual, usuarioIdLogado);
-    void incrementarVisualizacaoObraSupabase(obraAtual.id);
+
+    const visualizacaoLocalNova = registrarVisualizacaoObraLocalUnica(
+      obraAtual,
+      usuarioIdLogado
+    );
+
+    void incrementarVisualizacaoObraSupabase(
+      obraAtual.id,
+      usuarioIdLogado,
+      visualizacaoLocalNova
+    );
   }, [obraAtual?.id, obraAtual?.slug, obraAtual?.titulo, usuarioIdLogado]);
 
   useEffect(() => {

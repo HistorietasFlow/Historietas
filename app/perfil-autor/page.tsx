@@ -2148,20 +2148,92 @@ function aplicarInteracoesNasObras(
   });
 }
 
-function mesclarContagensPerfilAutor(
-  ...contagens: Record<string, number>[]
-) {
-  return contagens.reduce<Record<string, number>>((resultado, contagem) => {
-    Object.entries(contagem).forEach(([id, total]) => {
-      if (!id.trim()) {
-        return;
-      }
+type UsuariosPorChavePerfilAutor = Record<string, string[]>;
 
-      resultado[id] = Math.max(resultado[id] || 0, total);
-    });
+function adicionarUsuarioUnicoPerfilAutor(
+  usuariosPorChave: Map<string, Set<string>>,
+  chave: string,
+  userId: string,
+) {
+  const chaveLimpa = chave.trim();
+  const userIdLimpo = userId.trim();
+
+  if (!chaveLimpa || !userIdLimpo) {
+    return;
+  }
+
+  const usuarios = usuariosPorChave.get(chaveLimpa) || new Set<string>();
+
+  usuarios.add(userIdLimpo);
+  usuariosPorChave.set(chaveLimpa, usuarios);
+}
+
+function converterUsuariosPerfilAutor(
+  usuariosPorChave: Map<string, Set<string>>,
+): UsuariosPorChavePerfilAutor {
+  return Array.from(usuariosPorChave.entries()).reduce<
+    UsuariosPorChavePerfilAutor
+  >((resultado, [chave, usuarios]) => {
+    resultado[chave] = Array.from(usuarios);
 
     return resultado;
   }, {});
+}
+
+function combinarUsuariosPerfilAutor(
+  ...fontes: UsuariosPorChavePerfilAutor[]
+): UsuariosPorChavePerfilAutor {
+  const usuariosCombinados = new Map<string, Set<string>>();
+
+  fontes.forEach((fonte) => {
+    Object.entries(fonte).forEach(([chave, usuarios]) => {
+      usuarios.forEach((userId) => {
+        adicionarUsuarioUnicoPerfilAutor(
+          usuariosCombinados,
+          chave,
+          userId,
+        );
+      });
+    });
+  });
+
+  return converterUsuariosPerfilAutor(usuariosCombinados);
+}
+
+function contarUsuariosPerfilAutor(
+  usuariosPorChave: UsuariosPorChavePerfilAutor,
+) {
+  return Object.entries(usuariosPorChave).reduce<Record<string, number>>(
+    (contagens, [chave, usuarios]) => {
+      contagens[chave] = new Set(
+        usuarios.map((userId) => userId.trim()).filter(Boolean),
+      ).size;
+
+      return contagens;
+    },
+    {},
+  );
+}
+
+function mapearUsuariosCapitulosParaObrasPerfilAutor(
+  usuariosPorCapitulo: UsuariosPorChavePerfilAutor,
+  obraIdPorCapitulo: Record<string, string>,
+) {
+  const usuariosPorObra = new Map<string, Set<string>>();
+
+  Object.entries(usuariosPorCapitulo).forEach(([capituloId, usuarios]) => {
+    const obraId = obraIdPorCapitulo[capituloId]?.trim() || "";
+
+    usuarios.forEach((userId) => {
+      adicionarUsuarioUnicoPerfilAutor(
+        usuariosPorObra,
+        obraId,
+        userId,
+      );
+    });
+  });
+
+  return converterUsuariosPerfilAutor(usuariosPorObra);
 }
 
 function somarContagensCapitulosPerfilAutor(
@@ -2184,16 +2256,21 @@ function obterTotalCurtidasObraPerfilAutor(
   totais: TotaisInteracoesObrasPerfilAutor,
 ) {
   const obraId = obra.id.trim();
-  const totalDiretoObra = obraId
+  const totalUsuariosUnicos = obraId
     ? normalizarNumeroPerfilAutor(totais.curtidasPorObra[obraId], 0)
     : 0;
+
+  if (totalUsuariosUnicos > 0) {
+    return totalUsuariosUnicos;
+  }
+
   const totalCapitulos = somarContagensCapitulosPerfilAutor(
     obra,
     totais.curtidasPorCapitulo,
   );
   const totalLocal = obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
 
-  return Math.max(totalDiretoObra, totalCapitulos, totalLocal);
+  return Math.max(totalCapitulos, totalLocal);
 }
 
 function obterTotalComentariosObraPerfilAutor(
@@ -2201,9 +2278,14 @@ function obterTotalComentariosObraPerfilAutor(
   totais: TotaisInteracoesObrasPerfilAutor,
 ) {
   const obraId = obra.id.trim();
-  const totalDiretoObra = obraId
+  const totalUsuariosUnicos = obraId
     ? normalizarNumeroPerfilAutor(totais.comentariosPorObra[obraId], 0)
     : 0;
+
+  if (totalUsuariosUnicos > 0) {
+    return totalUsuariosUnicos;
+  }
+
   const totalCapitulos = somarContagensCapitulosPerfilAutor(
     obra,
     totais.comentariosPorCapitulo,
@@ -2212,7 +2294,7 @@ function obterTotalComentariosObraPerfilAutor(
     capitulo.comentario.trim(),
   ).length;
 
-  return Math.max(totalDiretoObra, totalCapitulos, totalLocal);
+  return Math.max(totalCapitulos, totalLocal);
 }
 
 function obterTotalSalvosObraPerfilAutor(
@@ -2220,16 +2302,21 @@ function obterTotalSalvosObraPerfilAutor(
   totais: TotaisInteracoesObrasPerfilAutor,
 ) {
   const obraId = obra.id.trim();
-  const totalDiretoObra = obraId
+  const totalUsuariosUnicos = obraId
     ? normalizarNumeroPerfilAutor(totais.salvosPorObra[obraId], 0)
     : 0;
+
+  if (totalUsuariosUnicos > 0) {
+    return totalUsuariosUnicos;
+  }
+
   const totalCapitulos = somarContagensCapitulosPerfilAutor(
     obra,
     totais.salvosPorCapitulo,
   );
   const totalLocal = obra.capitulos.filter((capitulo) => capitulo.salvo).length;
 
-  return Math.max(totalDiretoObra, totalCapitulos, totalLocal);
+  return Math.max(totalCapitulos, totalLocal);
 }
 
 function obterTotalConcluidasObraPerfilAutor(
@@ -2247,22 +2334,26 @@ function obterIdsUnicosPerfilAutor(ids: string[]) {
   return Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean)));
 }
 
-async function carregarContagensTabelaPerfilAutor(
+async function carregarUsuariosTabelaPerfilAutor(
   tabela: string,
   coluna: string,
   ids: string[],
-) {
+): Promise<UsuariosPorChavePerfilAutor> {
   const idsUnicos = obterIdsUnicosPerfilAutor(ids);
-  const contagens: Record<string, number> = {};
+  const usuariosPorChave = new Map<string, Set<string>>();
 
   if (idsUnicos.length === 0) {
-    return contagens;
+    return {};
   }
 
   const tamanhoChunk = 80;
   const tamanhoPagina = 1000;
 
-  for (let inicioChunk = 0; inicioChunk < idsUnicos.length; inicioChunk += tamanhoChunk) {
+  for (
+    let inicioChunk = 0;
+    inicioChunk < idsUnicos.length;
+    inicioChunk += tamanhoChunk
+  ) {
     const idsChunk = idsUnicos.slice(inicioChunk, inicioChunk + tamanhoChunk);
     let inicioPagina = 0;
 
@@ -2270,7 +2361,7 @@ async function carregarContagensTabelaPerfilAutor(
       try {
         const { data, error } = await supabase
           .from(tabela)
-          .select(coluna)
+          .select(`${coluna},user_id`)
           .in(coluna, idsChunk)
           .range(inicioPagina, inicioPagina + tamanhoPagina - 1);
 
@@ -2283,11 +2374,15 @@ async function carregarContagensTabelaPerfilAutor(
             return;
           }
 
-          const id = pegarTexto((item as Record<string, unknown>)[coluna]);
+          const registro = item as Record<string, unknown>;
+          const id = pegarTexto(registro[coluna]);
+          const userId = pegarTexto(registro.user_id);
 
-          if (id) {
-            contagens[id] = (contagens[id] || 0) + 1;
-          }
+          adicionarUsuarioUnicoPerfilAutor(
+            usuariosPorChave,
+            id,
+            userId,
+          );
         });
 
         if (data.length < tamanhoPagina) {
@@ -2301,7 +2396,7 @@ async function carregarContagensTabelaPerfilAutor(
     }
   }
 
-  return contagens;
+  return converterUsuariosPerfilAutor(usuariosPorChave);
 }
 
 async function carregarTotaisInteracoesObrasPerfilAutor(
@@ -2315,49 +2410,107 @@ async function carregarTotaisInteracoesObrasPerfilAutor(
       obra.capitulos.map((capitulo) => capitulo.id),
     ),
   );
+  const obraIdPorCapitulo = obrasParaContar.reduce<Record<string, string>>(
+    (mapa, obra) => {
+      const obraId = obra.id.trim();
+
+      obra.capitulos.forEach((capitulo) => {
+        const capituloId = capitulo.id.trim();
+
+        if (obraId && capituloId) {
+          mapa[capituloId] = obraId;
+        }
+      });
+
+      return mapa;
+    },
+    {},
+  );
 
   if (obraIds.length === 0 && capituloIds.length === 0) {
     return totaisInteracoesObrasPerfilVazio;
   }
 
   const [
-    curtidasCapitulos,
-    comentariosCapitulos,
-    salvosCapitulos,
-    curtidasObras,
-    obrasSeguidas,
-    obrasFavoritas,
-    obrasConcluidas,
+    usuariosCurtidasCapitulos,
+    usuariosComentariosCapitulos,
+    usuariosSalvosCapitulos,
+    usuariosCurtidasObras,
+    usuariosComentariosObras,
+    usuariosObrasSeguidas,
+    usuariosObrasFavoritas,
+    usuariosObrasConcluidas,
   ] = await Promise.all([
-    carregarContagensTabelaPerfilAutor(
+    carregarUsuariosTabelaPerfilAutor(
       "curtidas_capitulos",
       "capitulo_id",
       capituloIds,
     ),
-    carregarContagensTabelaPerfilAutor(
+    carregarUsuariosTabelaPerfilAutor(
       "comentarios_capitulos",
       "capitulo_id",
       capituloIds,
     ),
-    carregarContagensTabelaPerfilAutor(
+    carregarUsuariosTabelaPerfilAutor(
       "salvos_capitulos",
       "capitulo_id",
       capituloIds,
     ),
-    carregarContagensTabelaPerfilAutor("obra_curtidas", "obra_id", obraIds),
-    carregarContagensTabelaPerfilAutor("seguindo_obras", "obra_id", obraIds),
-    carregarContagensTabelaPerfilAutor("favoritos", "obra_id", obraIds),
-    carregarContagensTabelaPerfilAutor("concluidas", "obra_id", obraIds),
+    carregarUsuariosTabelaPerfilAutor("obra_curtidas", "obra_id", obraIds),
+    carregarUsuariosTabelaPerfilAutor("comentarios_obras", "obra_id", obraIds),
+    carregarUsuariosTabelaPerfilAutor("seguindo_obras", "obra_id", obraIds),
+    carregarUsuariosTabelaPerfilAutor("favoritos", "obra_id", obraIds),
+    carregarUsuariosTabelaPerfilAutor("concluidas", "obra_id", obraIds),
   ]);
 
+  const usuariosCurtidasCapitulosPorObra =
+    mapearUsuariosCapitulosParaObrasPerfilAutor(
+      usuariosCurtidasCapitulos,
+      obraIdPorCapitulo,
+    );
+  const usuariosComentariosCapitulosPorObra =
+    mapearUsuariosCapitulosParaObrasPerfilAutor(
+      usuariosComentariosCapitulos,
+      obraIdPorCapitulo,
+    );
+  const usuariosSalvosCapitulosPorObra =
+    mapearUsuariosCapitulosParaObrasPerfilAutor(
+      usuariosSalvosCapitulos,
+      obraIdPorCapitulo,
+    );
+
+  const usuariosCurtidasPorObra = combinarUsuariosPerfilAutor(
+    usuariosCurtidasObras,
+    usuariosCurtidasCapitulosPorObra,
+  );
+  const usuariosComentariosPorObra = combinarUsuariosPerfilAutor(
+    usuariosComentariosObras,
+    usuariosComentariosCapitulosPorObra,
+  );
+  const usuariosSalvosPorObra = combinarUsuariosPerfilAutor(
+    usuariosObrasSeguidas,
+    usuariosObrasFavoritas,
+    usuariosSalvosCapitulosPorObra,
+  );
+
   return {
-    curtidasPorObra: curtidasObras,
-    comentariosPorObra: {},
-    curtidasPorCapitulo: mesclarContagensPerfilAutor(curtidasCapitulos),
-    comentariosPorCapitulo: mesclarContagensPerfilAutor(comentariosCapitulos),
-    salvosPorObra: mesclarContagensPerfilAutor(obrasSeguidas, obrasFavoritas),
-    salvosPorCapitulo: mesclarContagensPerfilAutor(salvosCapitulos),
-    concluidasPorObra: mesclarContagensPerfilAutor(obrasConcluidas),
+    curtidasPorObra: contarUsuariosPerfilAutor(usuariosCurtidasPorObra),
+    comentariosPorObra: contarUsuariosPerfilAutor(
+      usuariosComentariosPorObra,
+    ),
+    curtidasPorCapitulo: contarUsuariosPerfilAutor(
+      usuariosCurtidasCapitulos,
+    ),
+    comentariosPorCapitulo: contarUsuariosPerfilAutor(
+      usuariosComentariosCapitulos,
+    ),
+    salvosPorObra: contarUsuariosPerfilAutor(usuariosSalvosPorObra),
+    salvosPorCapitulo: contarUsuariosPerfilAutor(
+      usuariosSalvosCapitulos,
+    ),
+    concluidasPorObra: contarUsuariosPerfilAutor(
+      usuariosObrasConcluidas,
+    ),
   };
 }
 

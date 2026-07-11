@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ChangeEvent, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -20,6 +20,7 @@ type CapituloLocal = {
   lido: boolean;
   lidoEm: string;
   publicado?: boolean;
+  ordem?: number;
 };
 
 type ArquivoObraLocal = {
@@ -173,20 +174,46 @@ function salvarJsonStorageUsuarioAdicionarCapitulo(
   }
 }
 
-function criarId() {
-  if (
-    typeof window !== "undefined" &&
-    window.crypto &&
-    typeof window.crypto.randomUUID === "function"
-  ) {
-    return window.crypto.randomUUID();
+function gerarUuidFallbackAdicionarCapitulo() {
+  const bytes = new Uint8Array(16);
+  const cryptoGlobal =
+    typeof globalThis !== "undefined" && "crypto" in globalThis
+      ? globalThis.crypto
+      : null;
+
+  if (cryptoGlobal && typeof cryptoGlobal.getRandomValues === "function") {
+    cryptoGlobal.getRandomValues(bytes);
+  } else {
+    for (let index = 0; index < bytes.length; index += 1) {
+      bytes[index] = Math.floor(Math.random() * 256);
+    }
   }
 
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hexadecimal = Array.from(bytes, (byte) =>
+    byte.toString(16).padStart(2, "0")
+  );
+
+  return `${hexadecimal[0]}${hexadecimal[1]}${hexadecimal[2]}${hexadecimal[3]}-${hexadecimal[4]}${hexadecimal[5]}-${hexadecimal[6]}${hexadecimal[7]}-${hexadecimal[8]}${hexadecimal[9]}-${hexadecimal[10]}${hexadecimal[11]}${hexadecimal[12]}${hexadecimal[13]}${hexadecimal[14]}${hexadecimal[15]}`;
+}
+
+function criarId() {
+  const cryptoGlobal =
+    typeof globalThis !== "undefined" && "crypto" in globalThis
+      ? globalThis.crypto
+      : null;
+
+  if (cryptoGlobal && typeof cryptoGlobal.randomUUID === "function") {
+    return cryptoGlobal.randomUUID();
+  }
+
+  return gerarUuidFallbackAdicionarCapitulo();
 }
 
 function contarLetrasNumeros(texto: string) {
-  return (texto.match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9]/g) || []).length;
+  return texto.match(/[\p{L}\p{N}]/gu)?.length || 0;
 }
 
 function criarTituloPorNomeArquivo(nomeArquivo: string) {
@@ -375,6 +402,38 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
+function obterOrdemCapitulo(
+  capitulo: Pick<CapituloLocal, "ordem">,
+  fallback: number
+) {
+  return typeof capitulo.ordem === "number" &&
+    Number.isInteger(capitulo.ordem) &&
+    capitulo.ordem >= 1
+    ? capitulo.ordem
+    : Math.max(1, fallback);
+}
+
+function obterProximaOrdemCapitulo(capitulos: CapituloLocal[]) {
+  const maiorOrdem = capitulos.reduce((maior, capitulo, index) => {
+    return Math.max(maior, obterOrdemCapitulo(capitulo, index + 1));
+  }, 0);
+
+  return maiorOrdem + 1;
+}
+
+function ordenarCapitulosPorOrdem(capitulos: CapituloLocal[]) {
+  return [...capitulos].sort((capituloA, capituloB) => {
+    const ordemA = obterOrdemCapitulo(capituloA, Number.MAX_SAFE_INTEGER);
+    const ordemB = obterOrdemCapitulo(capituloB, Number.MAX_SAFE_INTEGER);
+
+    if (ordemA !== ordemB) {
+      return ordemA - ordemB;
+    }
+
+    return capituloA.criadoEm.localeCompare(capituloB.criadoEm);
+  });
+}
+
 function normalizarCapitulo(
   capitulo: Partial<CapituloLocal>,
   index: number
@@ -398,6 +457,12 @@ function normalizarCapitulo(
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
     publicado:
       typeof capitulo.publicado === "boolean" ? capitulo.publicado : undefined,
+    ordem:
+      typeof capitulo.ordem === "number" &&
+      Number.isInteger(capitulo.ordem) &&
+      capitulo.ordem >= 1
+        ? capitulo.ordem
+        : index + 1,
   };
 }
 
@@ -748,6 +813,13 @@ function normalizarCapituloSupabase(
     criadoEm: capitulo.criado_em || "",
     lido: Boolean(capituloLocal?.lido),
     lidoEm: capituloLocal?.lidoEm || "",
+    publicado: Boolean(capitulo.publicado),
+    ordem:
+      typeof capitulo.ordem === "number" &&
+      Number.isInteger(capitulo.ordem) &&
+      capitulo.ordem >= 1
+        ? capitulo.ordem
+        : index + 1,
   };
 }
 
@@ -1192,6 +1264,7 @@ export default function AdicionarCapituloPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
+  const criandoCapituloRef = useRef(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -1338,7 +1411,9 @@ export default function AdicionarCapituloPage() {
     return obras.find((obra) => obra.id === obraId) || null;
   }, [obras, obraId]);
 
-  const numeroNovoCapitulo = obraAtual ? obraAtual.capitulos.length + 1 : 1;
+  const numeroNovoCapitulo = obraAtual
+    ? obterProximaOrdemCapitulo(obraAtual.capitulos)
+    : 1;
 
   const tituloPreview = titulo.trim() || `Capítulo ${numeroNovoCapitulo}`;
 
@@ -1477,7 +1552,7 @@ export default function AdicionarCapituloPage() {
   async function criarCapitulo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!obraAtual || processando) {
+    if (!obraAtual || processando || criandoCapituloRef.current) {
       return;
     }
 
@@ -1496,6 +1571,7 @@ export default function AdicionarCapituloPage() {
       return;
     }
 
+    criandoCapituloRef.current = true;
     setProcessando(true);
     setErro("");
 
@@ -1506,13 +1582,11 @@ export default function AdicionarCapituloPage() {
       } = await supabase.auth.getUser();
 
       if (erroUsuario || !user) {
-        setProcessando(false);
         router.replace(criarLoginHrefAdicionarCapitulo(obraAtual.id || obraId));
         return;
       }
 
       if (obraAtual.autorId && obraAtual.autorId !== user.id) {
-        setProcessando(false);
         setErro("Você não tem permissão para adicionar capítulo nesta obra.");
 
         window.scrollTo({
@@ -1537,8 +1611,9 @@ export default function AdicionarCapituloPage() {
       );
 
       const criadoEm = new Date().toISOString();
+      let ordemNovoCapitulo = obterProximaOrdemCapitulo(obraAtual.capitulos);
       const tituloFinal =
-        titulo.trim() || `Capítulo ${obraAtual.capitulos.length + 1}`;
+        titulo.trim() || `Capítulo ${ordemNovoCapitulo}`;
       const textoFinal = texto.trim();
 
       let novoCapitulo: CapituloLocal = {
@@ -1552,6 +1627,7 @@ export default function AdicionarCapituloPage() {
         lido: false,
         lidoEm: "",
         publicado: true,
+        ordem: ordemNovoCapitulo,
       };
 
       const obraEhSupabase = idObraSupabaseValido(obraAtual.id);
@@ -1571,7 +1647,6 @@ export default function AdicionarCapituloPage() {
         }
 
         if (!obraAutorizada) {
-          setProcessando(false);
           setErro("Você não tem permissão para adicionar capítulo nesta obra.");
 
           window.scrollTo({
@@ -1582,17 +1657,52 @@ export default function AdicionarCapituloPage() {
           return;
         }
 
+        const {
+          data: ultimoCapituloBanco,
+          error: erroUltimoCapituloBanco,
+        } = await supabase
+          .from("capitulos")
+          .select("ordem")
+          .eq("obra_id", obraAtual.id)
+          .order("ordem", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (erroUltimoCapituloBanco) {
+          throw new Error(
+            `Não consegui calcular a ordem do novo capítulo: ${erroUltimoCapituloBanco.message}`
+          );
+        }
+
+        const ultimaOrdemBanco =
+          typeof ultimoCapituloBanco?.ordem === "number" &&
+          Number.isInteger(ultimoCapituloBanco.ordem) &&
+          ultimoCapituloBanco.ordem >= 1
+            ? ultimoCapituloBanco.ordem
+            : 0;
+
+        ordemNovoCapitulo = Math.max(
+          ordemNovoCapitulo,
+          ultimaOrdemBanco + 1
+        );
+        novoCapitulo = {
+          ...novoCapitulo,
+          titulo:
+            titulo.trim() || `Capítulo ${ordemNovoCapitulo}`,
+          ordem: ordemNovoCapitulo,
+        };
+
         const { data, error } = await supabase
           .from("capitulos")
           .insert({
             obra_id: obraAtual.id,
             user_id: user.id,
-            titulo: tituloFinal,
+            titulo: novoCapitulo.titulo,
             texto: textoFinal,
-            ordem: obraAtual.capitulos.length + 1,
+            ordem: ordemNovoCapitulo,
             publicado: true,
           })
-          .select("id, criado_em")
+          .select("id, criado_em, ordem")
           .single();
 
         if (error) {
@@ -1605,14 +1715,24 @@ export default function AdicionarCapituloPage() {
             id: data.id,
             criadoEm:
               typeof data.criado_em === "string" ? data.criado_em : criadoEm,
+            ordem:
+              typeof data.ordem === "number" &&
+              Number.isInteger(data.ordem) &&
+              data.ordem >= 1
+                ? data.ordem
+                : ordemNovoCapitulo,
           };
         }
       }
 
+      const numeroCapituloCriado = obterOrdemCapitulo(
+        novoCapitulo,
+        ordemNovoCapitulo
+      );
       const novaNotificacao = criarNotificacaoNovoCapitulo(
         obraAtualComAutorProfile,
         novoCapitulo,
-        obraAtual.capitulos.length + 1,
+        numeroCapituloCriado,
         novoCapitulo.criadoEm || criadoEm
       );
 
@@ -1621,7 +1741,10 @@ export default function AdicionarCapituloPage() {
           return obra;
         }
 
-        const capitulosAtualizados = [...obra.capitulos, novoCapitulo];
+        const capitulosAtualizados = ordenarCapitulosPorOrdem([
+          ...obra.capitulos,
+          novoCapitulo,
+        ]);
 
         return {
           ...obra,
@@ -1638,7 +1761,7 @@ export default function AdicionarCapituloPage() {
         userId: user.id,
         obra: obraAtualComAutorProfile,
         capitulo: novoCapitulo,
-        numeroCapitulo: obraAtual.capitulos.length + 1,
+        numeroCapitulo: numeroCapituloCriado,
         criadoEm: novoCapitulo.criadoEm || criadoEm,
       });
 
@@ -1646,7 +1769,7 @@ export default function AdicionarCapituloPage() {
         userId: user.id,
         obra: obraAtualComAutorProfile,
         capitulo: novoCapitulo,
-        numeroCapitulo: obraAtual.capitulos.length + 1,
+        numeroCapitulo: numeroCapituloCriado,
         criadoEm: novoCapitulo.criadoEm || criadoEm,
       });
 
@@ -1659,9 +1782,7 @@ export default function AdicionarCapituloPage() {
       setTexto("");
       setArquivoImportadoNome("");
       setArquivoImportadoErro("");
-      setProcessando(false);
     } catch (erroDesconhecido) {
-      setProcessando(false);
       setErro(
         erroDesconhecido instanceof Error
           ? erroDesconhecido.message
@@ -1672,6 +1793,9 @@ export default function AdicionarCapituloPage() {
         top: 0,
         behavior: "smooth",
       });
+    } finally {
+      criandoCapituloRef.current = false;
+      setProcessando(false);
     }
   }
 
@@ -1716,7 +1840,12 @@ export default function AdicionarCapituloPage() {
     ? criarHrefLeituraCapitulo(
         obraAtual,
         capituloCriado,
-        obraAtual.capitulos.length
+        obterOrdemCapitulo(
+          capituloCriado,
+          obraAtual.capitulos.findIndex(
+            (capitulo) => capitulo.id === capituloCriado.id
+          ) + 1
+        )
       )
     : "";
 

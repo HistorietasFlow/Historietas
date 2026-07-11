@@ -20,6 +20,7 @@ type CapituloLocal = {
   lido?: boolean;
   lidoEm?: string;
   publicado?: boolean;
+  ordem?: number;
 };
 
 type ArquivoObraLocal = {
@@ -307,6 +308,12 @@ function normalizarCapitulo(
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
     publicado:
       typeof capitulo.publicado === "boolean" ? capitulo.publicado : undefined,
+    ordem:
+      typeof capitulo.ordem === "number" &&
+      Number.isInteger(capitulo.ordem) &&
+      capitulo.ordem > 0
+        ? capitulo.ordem
+        : index + 1,
   };
 }
 
@@ -698,6 +705,12 @@ function mapearCapituloSupabase(
     lido: Boolean(capituloLocal?.lido),
     lidoEm: typeof capituloLocal?.lidoEm === "string" ? capituloLocal.lidoEm : "",
     publicado: capitulo.publicado !== false,
+    ordem:
+      typeof capitulo.ordem === "number" &&
+      Number.isInteger(capitulo.ordem) &&
+      capitulo.ordem > 0
+        ? capitulo.ordem
+        : index + 1,
   };
 }
 
@@ -716,15 +729,9 @@ function mapearObraSupabase(
     return mapearCapituloSupabase(capitulo, index, capituloLocal);
   });
 
-  const idsCapitulosSupabase = new Set(
-    capitulosMapeados.map((capitulo) => capitulo.id)
-  );
-
-  const capitulosLocaisExtras = capitulosLocais.filter(
-    (capitulo) => !idsCapitulosSupabase.has(capitulo.id)
-  );
-
-  const capitulos = [...capitulosMapeados, ...capitulosLocaisExtras];
+  // Para obras do Supabase, a lista remota é a fonte de verdade.
+  // Isso impede capítulos locais antigos/removidos de reaparecerem no editor.
+  const capitulos = capitulosMapeados;
   const titulo = obra.titulo?.trim() || obraLocal?.titulo || "Obra sem título";
   const slug = obra.slug?.trim() || obraLocal?.slug || criarSlugBase(titulo);
   const arquivoObra = obra.arquivo_url
@@ -916,7 +923,11 @@ async function registrarDiarioEdicaoCapitulo({
 }) {
   const usuarioId = userId.trim();
 
-  if (!usuarioId || !obra.id || !capituloId) {
+  if (
+    !usuarioId ||
+    !idObraSupabaseValido(obra.id) ||
+    !idObraSupabaseValido(capituloId)
+  ) {
     return;
   }
 
@@ -1155,6 +1166,12 @@ export default function EditarCapituloPage() {
                 "Não consegui buscar capítulos no Supabase:",
                 erroCapitulosSupabase.message
               );
+
+              if (!cancelado) {
+                setObras(obrasLocais);
+              }
+
+              return;
             }
 
             const obraNormalizadaSupabase = mapearObraSupabase(
@@ -1246,6 +1263,14 @@ export default function EditarCapituloPage() {
   const numeroCapitulo = useMemo(() => {
     if (!obraAtual || !capituloAtual) {
       return 0;
+    }
+
+    if (
+      typeof capituloAtual.ordem === "number" &&
+      Number.isInteger(capituloAtual.ordem) &&
+      capituloAtual.ordem > 0
+    ) {
+      return capituloAtual.ordem;
     }
 
     return (
@@ -1377,108 +1402,97 @@ export default function EditarCapituloPage() {
       return;
     }
 
-    if (!usuarioIdLogado) {
-      router.replace(criarLoginHrefEditarCapitulo(obraId, capituloId));
-      return;
-    }
-
-    const autorIdObra = obraAtual.autorId?.trim() || "";
-
-    if (autorIdObra && autorIdObra !== usuarioIdLogado) {
-      setErro("Você não tem permissão para editar este capítulo.");
-      setSalvou(false);
-      return;
-    }
-
     const erroValidacao = validarCapitulo();
 
     if (erroValidacao) {
       setErro(erroValidacao);
       setSalvou(false);
-
       return;
     }
 
     setProcessando(true);
     setErro("");
+    setSalvou(false);
 
-    const tituloFinal = titulo.trim() || `Capítulo ${numeroCapitulo}`;
+    const tituloFinal = titulo.trim() || `Capítulo ${numeroCapitulo || 1}`;
     const textoFinal = texto.trim();
 
     try {
-      const nomeProfileAutor = await carregarNomeProfileEditarCapitulo(usuarioIdLogado);
+      const { data: dadosUsuario, error: erroUsuario } =
+        await supabase.auth.getUser();
+      const userId = dadosUsuario.user?.id || "";
+
+      if (erroUsuario || !userId) {
+        router.replace(criarLoginHrefEditarCapitulo(obraId, capituloId));
+        throw new Error("Entre na sua conta antes de editar o capítulo.");
+      }
+
+      const autorIdObra = obraAtual.autorId?.trim() || "";
+
+      if (autorIdObra && autorIdObra !== userId) {
+        throw new Error("Você não tem permissão para editar este capítulo.");
+      }
+
+      const nomeProfileAutor = await carregarNomeProfileEditarCapitulo(userId);
       const autorFinalObra = nomeProfileAutor || obraAtual.autor;
-      let obraAtualizadaParaNotificacao: ObraLocal | null = null;
-      const novasObras = obras.map((obra, obraIndex) => {
-        const obraNormalizada = normalizarObra(obra, obraIndex);
+      const atualizadoEm = new Date().toISOString();
+      const registroSupabase =
+        idObraSupabaseValido(obraId) && idObraSupabaseValido(capituloId);
+      let numeroCapituloFinal = numeroCapitulo || 1;
 
-        if (obraNormalizada.id !== obraId) {
-          return obraNormalizada;
+      if (registroSupabase) {
+        const { data: obraAutorizada, error: erroObraAutorizada } =
+          await supabase
+            .from("obras")
+            .select("id")
+            .eq("id", obraId)
+            .eq("user_id", userId)
+            .limit(1)
+            .maybeSingle();
+
+        if (erroObraAutorizada) {
+          throw new Error(
+            `Não consegui confirmar sua permissão para editar o capítulo: ${erroObraAutorizada.message}`
+          );
         }
 
-        const capitulosAtualizados = obraNormalizada.capitulos.map((capitulo) => {
-          if (capitulo.id !== capituloId) {
-            return capitulo;
-          }
-
-          return {
-            ...capitulo,
-            titulo: tituloFinal,
-            texto: textoFinal,
-          };
-        });
-
-        const obraAtualizada = {
-          ...obraNormalizada,
-          autor: autorFinalObra,
-          autorId: obraNormalizada.autorId || usuarioIdLogado,
-          capitulos: capitulosAtualizados,
-          progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
-        };
-
-        obraAtualizadaParaNotificacao = obraAtualizada;
-
-        return obraAtualizada;
-      });
-
-      const backupArquivos = carregarBackupArquivosObras(usuarioIdLogado);
-      const novasObrasComBackup = novasObras.map((obra, index) =>
-        restaurarArquivoObraComBackup(normalizarObra(obra, index), backupArquivos)
-      );
-
-      const novasObrasDoUsuario = salvarObrasEditarCapituloStorage(
-        novasObrasComBackup,
-        usuarioIdLogado
-      );
-      const obraAtualizadaFinal =
-        novasObrasDoUsuario.find((obra) => obra.id === obraId) ||
-        obraAtualizadaParaNotificacao || {
-          ...obraAtual,
-          autor: autorFinalObra,
-        };
-
-      setObras(novasObrasDoUsuario);
-
-      try {
-        const { data: dadosUsuario, error: erroUsuario } =
-          await supabase.auth.getUser();
-        const userId = dadosUsuario.user?.id || usuarioIdLogado;
-
-        if (erroUsuario || !userId) {
-          throw new Error("Usuário não autenticado.");
+        if (!obraAutorizada?.id) {
+          throw new Error("Você não tem permissão para editar este capítulo.");
         }
 
-        const atualizadoEm = new Date().toISOString();
-        const { error: erroSupabase } = await supabase
-          .from("capitulos")
-          .update({
-            titulo: tituloFinal,
-            texto: textoFinal,
-            atualizado_em: atualizadoEm,
-          })
-          .eq("id", capituloId)
-          .eq("obra_id", obraId)
-          .eq("user_id", userId);
+        const { data: capituloAtualizado, error: erroAtualizarCapitulo } =
+          await supabase
+            .from("capitulos")
+            .update({
+              titulo: tituloFinal,
+              texto: textoFinal,
+              atualizado_em: atualizadoEm,
+            })
+            .eq("id", capituloId)
+            .eq("obra_id", obraId)
+            .eq("user_id", userId)
+            .select("id, ordem")
+            .maybeSingle();
+
+        if (erroAtualizarCapitulo) {
+          throw new Error(
+            `Não consegui atualizar o capítulo no Supabase: ${erroAtualizarCapitulo.message}`
+          );
+        }
+
+        if (!capituloAtualizado?.id) {
+          throw new Error(
+            "Não consegui confirmar a atualização do capítulo no Supabase."
+          );
+        }
+
+        if (
+          typeof capituloAtualizado.ordem === "number" &&
+          Number.isInteger(capituloAtualizado.ordem) &&
+          capituloAtualizado.ordem > 0
+        ) {
+          numeroCapituloFinal = capituloAtualizado.ordem;
+        }
 
         if (nomeProfileAutor) {
           const { error: erroAutorObra } = await supabase
@@ -1497,13 +1511,69 @@ export default function EditarCapituloPage() {
             );
           }
         }
+      }
 
+      let obraAtualizadaParaAcoes: ObraLocal | null = null;
+      const novasObras = obras.map((obra, obraIndex) => {
+        const obraNormalizada = normalizarObra(obra, obraIndex);
+
+        if (obraNormalizada.id !== obraId) {
+          return obraNormalizada;
+        }
+
+        const capitulosAtualizados = obraNormalizada.capitulos.map((capitulo) => {
+          if (capitulo.id !== capituloId) {
+            return capitulo;
+          }
+
+          return {
+            ...capitulo,
+            titulo: tituloFinal,
+            texto: textoFinal,
+            ordem: numeroCapituloFinal,
+          };
+        });
+
+        const obraAtualizada: ObraLocal = {
+          ...obraNormalizada,
+          autor: autorFinalObra,
+          autorId: obraNormalizada.autorId || userId,
+          capitulos: capitulosAtualizados,
+          progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
+        };
+
+        obraAtualizadaParaAcoes = obraAtualizada;
+        return obraAtualizada;
+      });
+
+      const backupArquivos = carregarBackupArquivosObras(userId);
+      const novasObrasComBackup = novasObras.map((obra, index) =>
+        restaurarArquivoObraComBackup(
+          normalizarObra(obra, index),
+          backupArquivos
+        )
+      );
+      const novasObrasDoUsuario = salvarObrasEditarCapituloStorage(
+        novasObrasComBackup,
+        userId
+      );
+      const obraAtualizadaFinal =
+        novasObrasDoUsuario.find((obra) => obra.id === obraId) ||
+        obraAtualizadaParaAcoes || {
+          ...obraAtual,
+          autor: autorFinalObra,
+        };
+
+      setUsuarioIdLogado(userId);
+      setObras(novasObrasDoUsuario);
+
+      if (registroSupabase) {
         await registrarDiarioEdicaoCapitulo({
           userId,
           obra: obraAtualizadaFinal,
           capituloId,
           tituloCapitulo: tituloFinal,
-          numeroCapitulo: numeroCapitulo || 1,
+          numeroCapitulo: numeroCapituloFinal,
           atualizadoEm,
         });
 
@@ -1512,28 +1582,25 @@ export default function EditarCapituloPage() {
           obra: obraAtualizadaFinal,
           capituloId,
           tituloCapitulo: tituloFinal,
-          numeroCapitulo: numeroCapitulo || 1,
+          numeroCapitulo: numeroCapituloFinal,
           atualizadoEm,
         });
-
-        if (erroSupabase) {
-          console.warn(
-            "O capítulo foi salvo no navegador, mas não atualizou no Supabase:",
-            erroSupabase.message
-          );
-        }
-      } catch (erroSupabase) {
-        console.warn(
-          "O capítulo foi salvo no navegador, mas houve falha no Supabase:",
-          erroSupabase
-        );
       }
 
       setSalvou(true);
-    } catch {
-      alert(
-        "Não consegui salvar as alterações. Tente atualizar a página e salvar novamente."
-      );
+    } catch (erroDesconhecido) {
+      const mensagem =
+        erroDesconhecido instanceof Error
+          ? erroDesconhecido.message
+          : "Não consegui salvar as alterações. Atualize a página e tente novamente.";
+
+      setErro(mensagem);
+      setSalvou(false);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     } finally {
       setProcessando(false);
     }

@@ -24,13 +24,13 @@ type NotificacoesContextValue = {
 const NotificacoesContext = createContext<NotificacoesContextValue | null>(null);
 
 function normalizarTotalNotificacoes(total: number | null | undefined) {
-  const totalNumerico = Number(total || 0);
+  const totalNumerico = Number(total ?? 0);
 
   if (!Number.isFinite(totalNumerico)) {
     return 0;
   }
 
-  return Math.max(0, totalNumerico);
+  return Math.max(0, Math.trunc(totalNumerico));
 }
 
 function idUsuarioSupabaseValido(userId: string) {
@@ -93,13 +93,14 @@ async function buscarTotalNotificacoesNaoLidas(userId: string) {
       .eq("lida", false);
 
     if (error) {
-      return 0;
+      console.warn("Não consegui buscar notificações não lidas:", error.message);
+      return null;
     }
 
     return normalizarTotalNotificacoes(count);
   } catch (error) {
     console.warn("Não consegui buscar notificações não lidas:", error);
-    return 0;
+    return null;
   }
 }
 
@@ -108,8 +109,11 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   const [notificacoesNaoLidas, setNotificacoesNaoLidas] = useState(0);
   const [carregandoNotificacoes, setCarregandoNotificacoes] = useState(true);
   const canalRef = useRef<RealtimeChannel | null>(null);
-  const montadoRef = useRef(true);
+  const montadoRef = useRef(false);
+  const usuarioIdRef = useRef("");
   const atualizarTimerRef = useRef<number | null>(null);
+  const authTimerRef = useRef<number | null>(null);
+  const requisicaoAtualRef = useRef(0);
 
   const limparAtualizacaoAgendada = useCallback(() => {
     if (atualizarTimerRef.current !== null) {
@@ -118,46 +122,79 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const limparAtualizacaoAuth = useCallback(() => {
+    if (authTimerRef.current !== null) {
+      window.clearTimeout(authTimerRef.current);
+      authTimerRef.current = null;
+    }
+  }, []);
+
   const limparCanal = useCallback(() => {
     if (canalRef.current) {
-      void supabase.removeChannel(canalRef.current);
+      const canalAtual = canalRef.current;
       canalRef.current = null;
+      void supabase.removeChannel(canalAtual);
     }
   }, []);
 
   const definirNotificacoesNaoLidas = useCallback((total: number) => {
-    setNotificacoesNaoLidas(normalizarTotalNotificacoes(total));
-  }, []);
-
-  const atualizarNotificacoesPorUsuario = useCallback(async (userId: string) => {
-    const userIdSeguro = userId.trim();
-
-    if (!idUsuarioSupabaseValido(userIdSeguro)) {
-      if (montadoRef.current) {
-        setNotificacoesNaoLidas(0);
-        setCarregandoNotificacoes(false);
-      }
-
+    if (!montadoRef.current) {
       return;
     }
 
-    if (montadoRef.current) {
-      setCarregandoNotificacoes(true);
-    }
-
-    const total = await buscarTotalNotificacoesNaoLidas(userIdSeguro);
-
-    if (montadoRef.current) {
-      setNotificacoesNaoLidas(total);
-      setCarregandoNotificacoes(false);
-    }
+    setNotificacoesNaoLidas(normalizarTotalNotificacoes(total));
   }, []);
+
+  const atualizarNotificacoesPorUsuario = useCallback(
+    async (userId: string, mostrarCarregamento = false) => {
+      const userIdSeguro = userId.trim();
+      const requisicaoId = requisicaoAtualRef.current + 1;
+      requisicaoAtualRef.current = requisicaoId;
+
+      if (!idUsuarioSupabaseValido(userIdSeguro)) {
+        if (montadoRef.current && usuarioIdRef.current === userIdSeguro) {
+          setNotificacoesNaoLidas(0);
+          setCarregandoNotificacoes(false);
+        }
+
+        return;
+      }
+
+      if (
+        mostrarCarregamento &&
+        montadoRef.current &&
+        usuarioIdRef.current === userIdSeguro
+      ) {
+        setCarregandoNotificacoes(true);
+      }
+
+      const total = await buscarTotalNotificacoesNaoLidas(userIdSeguro);
+
+      if (
+        !montadoRef.current ||
+        requisicaoAtualRef.current !== requisicaoId ||
+        usuarioIdRef.current !== userIdSeguro
+      ) {
+        return;
+      }
+
+      if (total !== null) {
+        setNotificacoesNaoLidas(total);
+      }
+
+      setCarregandoNotificacoes(false);
+    },
+    [],
+  );
 
   const agendarAtualizacaoNotificacoes = useCallback(
     (userId: string) => {
       const userIdSeguro = userId.trim();
 
-      if (!idUsuarioSupabaseValido(userIdSeguro)) {
+      if (
+        !idUsuarioSupabaseValido(userIdSeguro) ||
+        usuarioIdRef.current !== userIdSeguro
+      ) {
         return;
       }
 
@@ -172,8 +209,9 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   );
 
   const atualizarNotificacoes = useCallback(async () => {
-    await atualizarNotificacoesPorUsuario(usuarioId);
-  }, [atualizarNotificacoesPorUsuario, usuarioId]);
+    const userIdSeguro = usuarioIdRef.current;
+    await atualizarNotificacoesPorUsuario(userIdSeguro);
+  }, [atualizarNotificacoesPorUsuario]);
 
   useEffect(() => {
     montadoRef.current = true;
@@ -185,8 +223,9 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      usuarioIdRef.current = userId;
       setUsuarioId(userId);
-      await atualizarNotificacoesPorUsuario(userId);
+      await atualizarNotificacoesPorUsuario(userId, true);
     }
 
     void carregarUsuarioAtual().catch((error) => {
@@ -195,6 +234,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       }
 
       if (montadoRef.current) {
+        usuarioIdRef.current = "";
         setUsuarioId("");
         setNotificacoesNaoLidas(0);
         setCarregandoNotificacoes(false);
@@ -207,27 +247,35 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       const userId = session?.user?.id || "";
       const userIdSeguro = idUsuarioSupabaseValido(userId) ? userId : "";
 
-      window.setTimeout(() => {
+      limparAtualizacaoAuth();
+      authTimerRef.current = window.setTimeout(() => {
+        authTimerRef.current = null;
+
         if (!montadoRef.current) {
           return;
         }
 
+        requisicaoAtualRef.current += 1;
         limparAtualizacaoAgendada();
         limparCanal();
+        usuarioIdRef.current = userIdSeguro;
         setUsuarioId(userIdSeguro);
-        void atualizarNotificacoesPorUsuario(userIdSeguro);
+        void atualizarNotificacoesPorUsuario(userIdSeguro, true);
       }, 0);
     });
 
     return () => {
       montadoRef.current = false;
+      requisicaoAtualRef.current += 1;
       limparAtualizacaoAgendada();
+      limparAtualizacaoAuth();
       subscription.unsubscribe();
       limparCanal();
     };
   }, [
     atualizarNotificacoesPorUsuario,
     limparAtualizacaoAgendada,
+    limparAtualizacaoAuth,
     limparCanal,
   ]);
 
@@ -239,7 +287,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
 
     if (!idUsuarioSupabaseValido(userIdSeguro)) {
       const resetNotificacoesTimer = window.setTimeout(() => {
-        if (montadoRef.current) {
+        if (montadoRef.current && usuarioIdRef.current === userIdSeguro) {
           setNotificacoesNaoLidas(0);
           setCarregandoNotificacoes(false);
         }
@@ -283,6 +331,40 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     limparCanal,
     usuarioId,
   ]);
+
+  useEffect(() => {
+    function atualizarAoReceberEventoLocal() {
+      const userIdSeguro = usuarioIdRef.current;
+
+      if (idUsuarioSupabaseValido(userIdSeguro)) {
+        agendarAtualizacaoNotificacoes(userIdSeguro);
+      }
+    }
+
+    function atualizarAoRetomarPagina() {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      atualizarAoReceberEventoLocal();
+    }
+
+    window.addEventListener(
+      "historietas:notificacoes-atualizadas",
+      atualizarAoReceberEventoLocal,
+    );
+    window.addEventListener("focus", atualizarAoReceberEventoLocal);
+    document.addEventListener("visibilitychange", atualizarAoRetomarPagina);
+
+    return () => {
+      window.removeEventListener(
+        "historietas:notificacoes-atualizadas",
+        atualizarAoReceberEventoLocal,
+      );
+      window.removeEventListener("focus", atualizarAoReceberEventoLocal);
+      document.removeEventListener("visibilitychange", atualizarAoRetomarPagina);
+    };
+  }, [agendarAtualizacaoNotificacoes]);
 
   const valor = useMemo(
     () => ({

@@ -360,6 +360,26 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
+function obterChavesBackupArquivoPainel(
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo"> &
+    Partial<Pick<ObraLocal, "link">>
+) {
+  return Array.from(
+    new Set(
+      [
+        obra.id ? `id:${obra.id}` : "",
+        obra.id || "",
+        obra.slug ? `slug:${obra.slug}` : "",
+        `slug:${obra.slug || criarSlugBase(obra.titulo)}`,
+        `titulo:${normalizarTexto(obra.titulo)}`,
+        obra.link ? `link:${obra.link}` : "",
+      ]
+        .map((chave) => chave.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   if (!userId.trim()) {
     return {};
@@ -411,7 +431,9 @@ function sincronizarBackupArquivosObras(obras: ObraLocal[], userId = "") {
       const arquivoNormalizado = normalizarArquivoObra(obra.arquivoObra);
 
       if (arquivoNormalizado) {
-        backupAtual[obra.id] = arquivoNormalizado;
+        obterChavesBackupArquivoPainel(obra).forEach((chave) => {
+          backupAtual[chave] = arquivoNormalizado;
+        });
       }
     });
 
@@ -433,7 +455,9 @@ function restaurarArquivoObraComBackup(
     return obra;
   }
 
-  const arquivoBackup = normalizarArquivoObra(backup[obra.id]);
+  const arquivoBackup = obterChavesBackupArquivoPainel(obra)
+    .map((chave) => normalizarArquivoObra(backup[chave]))
+    .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo));
 
   if (!arquivoBackup) {
     return obra;
@@ -581,9 +605,18 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
 }
 
 function normalizarListaIds(valor: unknown): string[] {
-  return Array.isArray(valor)
-    ? valor.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
-    : [];
+  if (!Array.isArray(valor)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      valor
+        .filter((id): id is string => typeof id === "string")
+        .map((id) => id.trim())
+        .filter(Boolean)
+    )
+  );
 }
 
 function criarStorageKeyUsuarioPainel(chave: string, userId: string) {
@@ -729,7 +762,8 @@ function salvarColecaoAposExcluirPainel(
 }
 
 function limparReferenciasLocaisObraExcluidaPainel(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
+  obra: Pick<ObraLocal, "id" | "slug" | "titulo"> &
+    Partial<Pick<ObraLocal, "link">>,
   userId: string
 ) {
   [FOLLOW_STORAGE_KEY, FAVORITES_STORAGE_KEY, COMPLETED_STORAGE_KEY].forEach(
@@ -746,6 +780,22 @@ function limparReferenciasLocaisObraExcluidaPainel(
       }
     }
   );
+
+  try {
+    const backupAtual = carregarBackupArquivosObras(userId);
+
+    obterChavesBackupArquivoPainel(obra).forEach((chave) => {
+      delete backupAtual[chave];
+    });
+
+    salvarJsonStorageUsuarioPainel(
+      FILE_BACKUP_STORAGE_KEY,
+      userId,
+      backupAtual
+    );
+  } catch {
+    // O backup antigo não pode impedir a exclusão da obra.
+  }
 }
 
 async function removerReferenciasSupabaseObraExcluidaPainel(
@@ -903,6 +953,39 @@ function obterTextoComentarioRegistro(registro: RegistroSupabaseGenerico) {
   );
 
   return typeof valorEncontrado === "string" ? valorEncontrado : "";
+}
+
+function obterIdUsuarioRegistro(registro: RegistroSupabaseGenerico) {
+  const possiveisCampos = [
+    registro.user_id,
+    registro.usuario_id,
+    registro.userId,
+    registro.autor_id,
+    registro.leitor_id,
+  ];
+
+  const valorEncontrado = possiveisCampos.find(
+    (valor) => typeof valor === "string" && Boolean(valor.trim())
+  );
+
+  return typeof valorEncontrado === "string"
+    ? valorEncontrado.trim().toLowerCase()
+    : "";
+}
+
+function filtrarRegistrosPorUsuarioPainel(
+  registros: RegistroSupabaseGenerico[],
+  userId: string
+) {
+  const userIdLimpo = userId.trim().toLowerCase();
+
+  if (!userIdLimpo) {
+    return [] as RegistroSupabaseGenerico[];
+  }
+
+  return registros.filter(
+    (registro) => obterIdUsuarioRegistro(registro) === userIdLimpo
+  );
 }
 
 const CAMPOS_REGISTROS_PAINEL_AUTOR: Record<string, string> = {
@@ -1084,7 +1167,21 @@ function criarMapaComentariosPorRegistro(registros: RegistroSupabaseGenerico[]) 
   return mapa;
 }
 
-function contarRegistrosRelacionadosObraPainel(
+function registroPertenceAObraPainel(
+  registro: RegistroSupabaseGenerico,
+  obraId: string,
+  capituloIds: Set<string>
+) {
+  const obraRegistro = obterIdObraRegistro(registro).trim();
+  const capituloRegistro = obterIdCapituloRegistro(registro).trim();
+
+  return (
+    Boolean(obraId && obraRegistro === obraId) ||
+    Boolean(capituloRegistro && capituloIds.has(capituloRegistro))
+  );
+}
+
+function criarSetUsuariosRelacionadosObraPainel(
   registros: RegistroSupabaseGenerico[],
   obraId: string,
   capitulos: SupabaseCapituloRow[]
@@ -1095,16 +1192,53 @@ function contarRegistrosRelacionadosObraPainel(
       .map((capitulo) => capitulo.id.trim())
       .filter(Boolean)
   );
+  const usuarios = new Set<string>();
 
-  return registros.filter((registro) => {
-    const obraRegistro = obterIdObraRegistro(registro);
-    const capituloRegistro = obterIdCapituloRegistro(registro);
+  registros.forEach((registro, index) => {
+    if (!registroPertenceAObraPainel(registro, obraIdLimpo, capituloIds)) {
+      return;
+    }
 
-    return (
-      Boolean(obraIdLimpo && obraRegistro === obraIdLimpo) ||
-      Boolean(capituloRegistro && capituloIds.has(capituloRegistro))
+    const userId = obterIdUsuarioRegistro(registro);
+
+    if (userId) {
+      usuarios.add(userId);
+      return;
+    }
+
+    const idRegistro =
+      typeof registro.id === "string" && registro.id.trim()
+        ? registro.id.trim()
+        : "";
+    const obraRegistro = obterIdObraRegistro(registro).trim();
+    const capituloRegistro = obterIdCapituloRegistro(registro).trim();
+
+    usuarios.add(
+      `registro:${idRegistro || `${obraRegistro}:${capituloRegistro}:${index}`}`
     );
-  }).length;
+  });
+
+  return usuarios;
+}
+
+function contarUsuariosUnicosRelacionadosObraPainel(
+  fontes: RegistroSupabaseGenerico[][],
+  obraId: string,
+  capitulos: SupabaseCapituloRow[]
+) {
+  const usuarios = new Set<string>();
+
+  fontes.forEach((registros) => {
+    criarSetUsuariosRelacionadosObraPainel(
+      registros,
+      obraId,
+      capitulos
+    ).forEach((userId) => {
+      usuarios.add(userId);
+    });
+  });
+
+  return usuarios.size;
 }
 
 function converterObraSupabaseParaLocalPainel({
@@ -1444,10 +1578,32 @@ async function carregarPainelAutorSupabase(
 
     const favoritosSupabase = criarSetObrasPorRegistro(favoritosBanco);
     const concluidasSupabase = criarSetObrasPorRegistro(concluidasBanco);
-    const capitulosSalvos = criarSetCapitulosPorRegistro(salvosBanco);
-    const capitulosCurtidos = criarSetCapitulosPorRegistro(curtidasBanco);
-    const capitulosLidos = criarSetCapitulosPorRegistro(progressoBanco);
-    const comentariosCapitulos = criarMapaComentariosPorRegistro(comentariosBanco);
+    const salvosUsuarioBanco = filtrarRegistrosPorUsuarioPainel(
+      salvosBanco,
+      userId
+    );
+    const curtidasUsuarioBanco = filtrarRegistrosPorUsuarioPainel(
+      curtidasBanco,
+      userId
+    );
+    const comentariosUsuarioBanco = filtrarRegistrosPorUsuarioPainel(
+      comentariosBanco,
+      userId
+    );
+    const progressoUsuarioBanco = filtrarRegistrosPorUsuarioPainel(
+      progressoBanco,
+      userId
+    );
+    const capitulosSalvos = criarSetCapitulosPorRegistro(salvosUsuarioBanco);
+    const capitulosCurtidos = criarSetCapitulosPorRegistro(
+      curtidasUsuarioBanco
+    );
+    const capitulosLidos = criarSetCapitulosPorRegistro(
+      progressoUsuarioBanco
+    );
+    const comentariosCapitulos = criarMapaComentariosPorRegistro(
+      comentariosUsuarioBanco
+    );
 
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
       const obraLocal = obrasLocaisUsuario.find((obraAtual) => {
@@ -1472,66 +1628,37 @@ async function carregarPainelAutorSupabase(
         index,
       });
 
-      const totalCurtidasCapitulos = contarRegistrosRelacionadosObraPainel(
-        curtidasBanco,
-        obraBanco.id,
-        capitulosDaObra
-      );
-      const totalSalvosCapitulos = contarRegistrosRelacionadosObraPainel(
-        salvosBanco,
-        obraBanco.id,
-        capitulosDaObra
-      );
-      const totalComentariosCapitulos = contarRegistrosRelacionadosObraPainel(
-        comentariosBanco,
-        obraBanco.id,
-        capitulosDaObra
-      );
-      const totalComentariosObra = contarRegistrosRelacionadosObraPainel(
-        comentariosObrasBanco,
-        obraBanco.id,
-        capitulosDaObra
-      );
-      const totalLeiturasCapitulos = contarRegistrosRelacionadosObraPainel(
-        progressoBanco,
-        obraBanco.id,
-        capitulosDaObra
-      );
-      const totalCurtidasObra = contarRegistrosRelacionadosObraPainel(
-        curtidasObraBanco,
-        obraBanco.id,
-        capitulosDaObra
-      );
-      const totalSeguidoresObra = contarRegistrosRelacionadosObraPainel(
-        seguidoresObraBanco,
-        obraBanco.id,
-        capitulosDaObra
-      );
-      const totalFavoritosObra = contarRegistrosRelacionadosObraPainel(
-        favoritosObraBanco,
-        obraBanco.id,
-        capitulosDaObra
-      );
+      const totalCurtidasUsuarios =
+        contarUsuariosUnicosRelacionadosObraPainel(
+          [curtidasBanco, curtidasObraBanco],
+          obraBanco.id,
+          capitulosDaObra
+        );
+      const totalComentariosUsuarios =
+        contarUsuariosUnicosRelacionadosObraPainel(
+          [comentariosBanco, comentariosObrasBanco],
+          obraBanco.id,
+          capitulosDaObra
+        );
+      const totalSalvosUsuarios =
+        contarUsuariosUnicosRelacionadosObraPainel(
+          [salvosBanco, seguidoresObraBanco, favoritosObraBanco],
+          obraBanco.id,
+          capitulosDaObra
+        );
+      const totalLeitoresUsuarios =
+        contarUsuariosUnicosRelacionadosObraPainel(
+          [progressoBanco],
+          obraBanco.id,
+          capitulosDaObra
+        );
 
       return {
         ...obraNormalizada,
-        totalCurtidasPainel: Math.max(
-          calcularCurtidas(obraNormalizada),
-          totalCurtidasCapitulos + totalCurtidasObra
-        ),
-        totalComentariosPainel:
-          Math.max(
-            calcularComentarios(obraNormalizada),
-            totalComentariosCapitulos
-          ) + totalComentariosObra,
-        totalSalvosPainel: Math.max(
-          calcularSalvos(obraNormalizada),
-          totalSalvosCapitulos + totalSeguidoresObra + totalFavoritosObra
-        ),
-        totalLidosPainel: Math.max(
-          calcularLidos(obraNormalizada),
-          totalLeiturasCapitulos
-        ),
+        totalCurtidasPainel: totalCurtidasUsuarios,
+        totalComentariosPainel: totalComentariosUsuarios,
+        totalSalvosPainel: totalSalvosUsuarios,
+        totalLidosPainel: totalLeitoresUsuarios,
       };
     });
 
@@ -1557,9 +1684,9 @@ async function carregarPainelAutorSupabase(
     console.warn("Não consegui acessar o Supabase no Painel do Autor:", error);
 
     return {
-      obras: [],
-      favoritas: [],
-      concluidas: [],
+      obras: obrasLocais,
+      favoritas: normalizarListaIds(obrasFavoritasLocais),
+      concluidas: normalizarListaIds(obrasConcluidasLocais),
     };
   }
 }
@@ -1771,14 +1898,12 @@ export default function PainelAutorPage() {
         setObras(obrasFinais);
         setObrasFavoritas(dadosSupabase.favoritas);
         setObrasConcluidas(dadosSupabase.concluidas);
-      } catch {
+      } catch (error) {
         if (!componenteAtivo) {
           return;
         }
 
-        setObras([]);
-        setObrasFavoritas([]);
-        setObrasConcluidas([]);
+        console.warn("Não consegui atualizar o Painel do Autor:", error);
       }
     }
 
@@ -1792,22 +1917,22 @@ export default function PainelAutorPage() {
   const obrasComMetricas = useMemo<ObraComMetricas[]>(() => {
     return obras
       .map((obra) => {
-        const totalCurtidas = Math.max(
-          calcularCurtidas(obra),
-          obra.totalCurtidasPainel || 0
-        );
-        const totalComentarios = Math.max(
-          calcularComentarios(obra),
-          obra.totalComentariosPainel || 0
-        );
-        const totalSalvos = Math.max(
-          calcularSalvos(obra),
-          obra.totalSalvosPainel || 0
-        );
-        const totalLidos = Math.max(
-          calcularLidos(obra),
-          obra.totalLidosPainel || 0
-        );
+        const totalCurtidas =
+          typeof obra.totalCurtidasPainel === "number"
+            ? obra.totalCurtidasPainel
+            : calcularCurtidas(obra);
+        const totalComentarios =
+          typeof obra.totalComentariosPainel === "number"
+            ? obra.totalComentariosPainel
+            : calcularComentarios(obra);
+        const totalSalvos =
+          typeof obra.totalSalvosPainel === "number"
+            ? obra.totalSalvosPainel
+            : calcularSalvos(obra);
+        const totalLidos =
+          typeof obra.totalLidosPainel === "number"
+            ? obra.totalLidosPainel
+            : calcularLidos(obra);
         const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
         const ultimoCapituloLido = encontrarCapituloParaContinuar(obra);
 
@@ -1986,10 +2111,11 @@ export default function PainelAutorPage() {
     }
 
     try {
-      const { data: dadosUsuario } = await supabase.auth.getUser();
+      const { data: dadosUsuario, error: erroUsuario } =
+        await supabase.auth.getUser();
       const userId = dadosUsuario.user?.id || usuarioIdLogado;
 
-      if (!userId) {
+      if (erroUsuario || !userId) {
         router.replace(criarLoginHrefPainelAutor());
         return;
       }
@@ -1998,8 +2124,68 @@ export default function PainelAutorPage() {
         id: obraId,
         slug: criarSlugBase(tituloObra),
         titulo: tituloObra,
+        link: `/obra/${criarSlugBase(tituloObra)}`,
         capitulos: [] as CapituloLocal[],
       };
+
+      if (idObraSupabaseValido(obraId)) {
+        const { data: obraAutorizada, error: erroAutorizacao } = await supabase
+          .from("obras")
+          .select("id")
+          .eq("id", obraId)
+          .eq("user_id", userId)
+          .limit(1)
+          .maybeSingle();
+
+        if (erroAutorizacao) {
+          throw new Error(
+            `Não consegui confirmar sua permissão para excluir esta obra: ${erroAutorizacao.message}`
+          );
+        }
+
+        if (!obraAutorizada?.id) {
+          throw new Error("Você não tem permissão para excluir esta obra.");
+        }
+
+        await removerReferenciasSupabaseObraExcluidaPainel(
+          userId,
+          obraId,
+          obraExcluida.capitulos.map((capitulo) => capitulo.id)
+        );
+
+        const { error: erroCapitulos } = await supabase
+          .from("capitulos")
+          .delete()
+          .eq("obra_id", obraId)
+          .eq("user_id", userId);
+
+        if (erroCapitulos) {
+          throw new Error(
+            `Não consegui excluir os capítulos da obra: ${erroCapitulos.message}`
+          );
+        }
+
+        const { data: obraRemovida, error: erroObra } = await supabase
+          .from("obras")
+          .delete()
+          .eq("id", obraId)
+          .eq("user_id", userId)
+          .select("id")
+          .maybeSingle();
+
+        if (erroObra) {
+          throw new Error(
+            `Não consegui concluir a exclusão da obra: ${erroObra.message}`
+          );
+        }
+
+        if (!obraRemovida?.id) {
+          throw new Error(
+            "A exclusão da obra não foi confirmada pelo banco de dados."
+          );
+        }
+      }
+
       const novasObras = obras.filter((obra) => obra.id !== obraId);
       const novasObrasFavoritas = removerObraDaColecaoPainel(
         obrasFavoritas,
@@ -2009,6 +2195,7 @@ export default function PainelAutorPage() {
         obrasConcluidas,
         obraExcluida
       );
+
       limparReferenciasLocaisObraExcluidaPainel(obraExcluida, userId);
       salvarJsonStorageUsuarioPainel(STORAGE_KEY, userId, novasObras);
       salvarColecaoAposExcluirPainel(
@@ -2025,30 +2212,14 @@ export default function PainelAutorPage() {
       setObras(novasObras);
       setObrasFavoritas(novasObrasFavoritas);
       setObrasConcluidas(novasObrasConcluidas);
-
-      await removerReferenciasSupabaseObraExcluidaPainel(
-        userId,
-        obraId,
-        obraExcluida.capitulos.map((capitulo) => capitulo.id)
-      );
-
-      await supabase
-        .from("capitulos")
-        .delete()
-        .eq("obra_id", obraId)
-        .eq("user_id", userId);
-
-      const { error } = await supabase
-        .from("obras")
-        .delete()
-        .eq("id", obraId)
-        .eq("user_id", userId);
-
-      if (error) {
-        console.warn("Não consegui concluir a exclusão remota no Estúdio:", error.message);
-      }
     } catch (error) {
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : "Não consegui excluir a obra agora.";
+
       console.warn("Não consegui excluir a obra no Estúdio:", error);
+      window.alert(mensagem);
     }
   }
 

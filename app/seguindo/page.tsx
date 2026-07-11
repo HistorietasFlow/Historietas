@@ -132,6 +132,9 @@ type SupabaseCapituloRow = {
 
 type TotaisInteracoesSeguindo = {
   curtidasPorObra: Record<string, number>;
+  comentariosPorObra: Record<string, number>;
+  salvosPorObra: Record<string, number>;
+  lidosPorObra: Record<string, number>;
   seguidoresPorObra: Record<string, number>;
   favoritasPorObra: Record<string, number>;
   concluidasPorObra: Record<string, number>;
@@ -143,6 +146,9 @@ type TotaisInteracoesSeguindo = {
 
 const totaisInteracoesSeguindoVazios: TotaisInteracoesSeguindo = {
   curtidasPorObra: {},
+  comentariosPorObra: {},
+  salvosPorObra: {},
+  lidosPorObra: {},
   seguidoresPorObra: {},
   favoritasPorObra: {},
   concluidasPorObra: {},
@@ -151,6 +157,8 @@ const totaisInteracoesSeguindoVazios: TotaisInteracoesSeguindo = {
   salvosPorCapitulo: {},
   lidosPorCapitulo: {},
 };
+
+type UsuariosPorChaveSeguindo = Record<string, string[]>;
 
 type RegistroSupabaseGenerico = Record<string, unknown>;
 
@@ -932,24 +940,106 @@ async function carregarRegistrosCapitulosUsuarioSupabase(
 }
 
 
-async function contarRegistrosTabelaSeguindo(
+function adicionarUsuarioUnicoSeguindo(
+  usuariosPorChave: Map<string, Set<string>>,
+  chave: string,
+  userId: string,
+) {
+  const chaveLimpa = chave.trim();
+  const userIdLimpo = userId.trim();
+
+  if (!chaveLimpa || !userIdLimpo) {
+    return;
+  }
+
+  const usuarios = usuariosPorChave.get(chaveLimpa) || new Set<string>();
+
+  usuarios.add(userIdLimpo);
+  usuariosPorChave.set(chaveLimpa, usuarios);
+}
+
+function converterUsuariosSeguindo(
+  usuariosPorChave: Map<string, Set<string>>,
+): UsuariosPorChaveSeguindo {
+  return Array.from(usuariosPorChave.entries()).reduce<
+    UsuariosPorChaveSeguindo
+  >((resultado, [chave, usuarios]) => {
+    resultado[chave] = Array.from(usuarios);
+
+    return resultado;
+  }, {});
+}
+
+function combinarUsuariosSeguindo(
+  ...fontes: UsuariosPorChaveSeguindo[]
+): UsuariosPorChaveSeguindo {
+  const usuariosCombinados = new Map<string, Set<string>>();
+
+  fontes.forEach((fonte) => {
+    Object.entries(fonte).forEach(([chave, usuarios]) => {
+      usuarios.forEach((userId) => {
+        adicionarUsuarioUnicoSeguindo(usuariosCombinados, chave, userId);
+      });
+    });
+  });
+
+  return converterUsuariosSeguindo(usuariosCombinados);
+}
+
+function contarUsuariosSeguindo(
+  usuariosPorChave: UsuariosPorChaveSeguindo,
+) {
+  return Object.entries(usuariosPorChave).reduce<Record<string, number>>(
+    (contagens, [chave, usuarios]) => {
+      contagens[chave] = new Set(
+        usuarios.map((userId) => userId.trim()).filter(Boolean),
+      ).size;
+
+      return contagens;
+    },
+    {},
+  );
+}
+
+function mapearUsuariosCapitulosParaObrasSeguindo(
+  usuariosPorCapitulo: UsuariosPorChaveSeguindo,
+  obraIdPorCapitulo: Record<string, string>,
+) {
+  const usuariosPorObra = new Map<string, Set<string>>();
+
+  Object.entries(usuariosPorCapitulo).forEach(([capituloId, usuarios]) => {
+    const obraId = obraIdPorCapitulo[capituloId]?.trim() || "";
+
+    usuarios.forEach((userId) => {
+      adicionarUsuarioUnicoSeguindo(usuariosPorObra, obraId, userId);
+    });
+  });
+
+  return converterUsuariosSeguindo(usuariosPorObra);
+}
+
+async function carregarUsuariosTabelaSeguindo(
   tabela: string,
   coluna: string,
   ids: string[],
-) {
+): Promise<UsuariosPorChaveSeguindo> {
   const idsUnicos = Array.from(
     new Set(ids.map((id) => id.trim()).filter(Boolean)),
   );
-  const contagens: Record<string, number> = {};
+  const usuariosPorChave = new Map<string, Set<string>>();
 
   if (idsUnicos.length === 0) {
-    return contagens;
+    return {};
   }
 
   const tamanhoLote = 80;
   const tamanhoPagina = 1000;
 
-  for (let inicioLote = 0; inicioLote < idsUnicos.length; inicioLote += tamanhoLote) {
+  for (
+    let inicioLote = 0;
+    inicioLote < idsUnicos.length;
+    inicioLote += tamanhoLote
+  ) {
     const idsLote = idsUnicos.slice(inicioLote, inicioLote + tamanhoLote);
     let inicioPagina = 0;
 
@@ -957,7 +1047,7 @@ async function contarRegistrosTabelaSeguindo(
       try {
         const { data, error } = await supabase
           .from(tabela)
-          .select(coluna)
+          .select(`${coluna},user_id`)
           .in(coluna, idsLote)
           .range(inicioPagina, inicioPagina + tamanhoPagina - 1);
 
@@ -966,18 +1056,23 @@ async function contarRegistrosTabelaSeguindo(
         }
 
         data.forEach((registro) => {
-          if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+          if (
+            !registro ||
+            typeof registro !== "object" ||
+            Array.isArray(registro)
+          ) {
             return;
           }
 
-          const id = obterTextoRegistro(
-            registro as RegistroSupabaseGenerico,
-            coluna,
-          );
+          const linha = registro as RegistroSupabaseGenerico;
+          const id = obterTextoRegistro(linha, coluna);
+          const userId = obterTextoRegistro(linha, "user_id");
 
-          if (id) {
-            contagens[id] = (contagens[id] || 0) + 1;
-          }
+          adicionarUsuarioUnicoSeguindo(
+            usuariosPorChave,
+            id,
+            userId,
+          );
         });
 
         if (data.length < tamanhoPagina) {
@@ -991,8 +1086,9 @@ async function contarRegistrosTabelaSeguindo(
     }
   }
 
-  return contagens;
+  return converterUsuariosSeguindo(usuariosPorChave);
 }
+
 
 function somarTotaisCapitulosSeguindo(
   capitulos: Pick<SupabaseCapituloRow, "id">[],
@@ -1071,9 +1167,21 @@ function converterObraSupabaseParaLocal({
     obraBanco.slug?.trim() ||
     obraLocal?.slug ||
     criarSlugBase(tituloObra || `obra-${index + 1}`);
-  const totalCurtidasObra = obterTotalRegistroObraSeguindo(
+  const totalCurtidasUsuariosObra = obterTotalRegistroObraSeguindo(
     obraBanco.id,
     totaisReais.curtidasPorObra,
+  );
+  const totalComentariosUsuariosObra = obterTotalRegistroObraSeguindo(
+    obraBanco.id,
+    totaisReais.comentariosPorObra,
+  );
+  const totalSalvosUsuariosObra = obterTotalRegistroObraSeguindo(
+    obraBanco.id,
+    totaisReais.salvosPorObra,
+  );
+  const totalLidosUsuariosObra = obterTotalRegistroObraSeguindo(
+    obraBanco.id,
+    totaisReais.lidosPorObra,
   );
   const totalSeguidoresObra = obterTotalRegistroObraSeguindo(
     obraBanco.id,
@@ -1135,18 +1243,24 @@ function converterObraSupabaseParaLocal({
     link: obraBanco.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
     totalCurtidas: Math.max(
       normalizarNumeroSeguindo(obraLocal?.totalCurtidas, 0),
-      totalCurtidasObra + totalCurtidasCapitulos,
+      totalCurtidasUsuariosObra,
+      totalCurtidasCapitulos,
     ),
     totalComentarios: Math.max(
       normalizarNumeroSeguindo(obraLocal?.totalComentarios, 0),
+      totalComentariosUsuariosObra,
       totalComentariosCapitulos,
     ),
     totalSalvos: Math.max(
       normalizarNumeroSeguindo(obraLocal?.totalSalvos, 0),
-      totalSalvosCapitulos + totalSeguidoresObra + totalFavoritasObra,
+      totalSalvosUsuariosObra,
+      totalSalvosCapitulos,
+      totalSeguidoresObra,
+      totalFavoritasObra,
     ),
     totalLidos: Math.max(
       normalizarNumeroSeguindo(obraLocal?.totalLidos, 0),
+      totalLidosUsuariosObra,
       totalLidosCapitulos,
     ),
     totalSeguidores: Math.max(
@@ -1264,6 +1378,15 @@ async function carregarSeguindoSupabase(
     const capituloIds = capitulosSupabaseBanco
       .map((capitulo) => capitulo.id)
       .filter((capituloId) => Boolean(capituloId));
+    const obraIdPorCapitulo = capitulosSupabaseBanco.reduce<
+      Record<string, string>
+    >((mapa, capitulo) => {
+      if (capitulo.id && capitulo.obra_id) {
+        mapa[capitulo.id] = capitulo.obra_id;
+      }
+
+      return mapa;
+    }, {});
 
     const [
       seguidasBanco,
@@ -1273,14 +1396,15 @@ async function carregarSeguindoSupabase(
       curtidasCapitulosBanco,
       comentariosCapitulosBanco,
       progressoLeituraBanco,
-      curtidasPublicasCapitulos,
-      comentariosPublicosCapitulos,
-      salvosPublicosCapitulos,
-      leiturasPublicasCapitulos,
-      curtidasPublicasObras,
-      seguidoresPublicosObras,
-      favoritasPublicasObras,
-      concluidasPublicasObras,
+      usuariosCurtidasPublicasCapitulos,
+      usuariosComentariosPublicosCapitulos,
+      usuariosSalvosPublicosCapitulos,
+      usuariosLeiturasPublicasCapitulos,
+      usuariosCurtidasPublicasObras,
+      usuariosComentariosPublicosObras,
+      usuariosSeguidoresPublicosObras,
+      usuariosFavoritasPublicasObras,
+      usuariosConcluidasPublicasObras,
     ] = await Promise.all([
       carregarIdsObrasUsuarioSupabase("seguindo_obras", userId),
       carregarIdsObrasUsuarioSupabase("favoritos", userId),
@@ -1305,14 +1429,31 @@ async function carregarSeguindoSupabase(
         userId,
         capituloIds
       ),
-      contarRegistrosTabelaSeguindo("curtidas_capitulos", "capitulo_id", capituloIds),
-      contarRegistrosTabelaSeguindo("comentarios_capitulos", "capitulo_id", capituloIds),
-      contarRegistrosTabelaSeguindo("salvos_capitulos", "capitulo_id", capituloIds),
-      contarRegistrosTabelaSeguindo("progresso_leitura", "capitulo_id", capituloIds),
-      contarRegistrosTabelaSeguindo("obra_curtidas", "obra_id", obraIds),
-      contarRegistrosTabelaSeguindo("seguindo_obras", "obra_id", obraIds),
-      contarRegistrosTabelaSeguindo("favoritos", "obra_id", obraIds),
-      contarRegistrosTabelaSeguindo("concluidas", "obra_id", obraIds),
+      carregarUsuariosTabelaSeguindo(
+        "curtidas_capitulos",
+        "capitulo_id",
+        capituloIds,
+      ),
+      carregarUsuariosTabelaSeguindo(
+        "comentarios_capitulos",
+        "capitulo_id",
+        capituloIds,
+      ),
+      carregarUsuariosTabelaSeguindo(
+        "salvos_capitulos",
+        "capitulo_id",
+        capituloIds,
+      ),
+      carregarUsuariosTabelaSeguindo(
+        "progresso_leitura",
+        "capitulo_id",
+        capituloIds,
+      ),
+      carregarUsuariosTabelaSeguindo("obra_curtidas", "obra_id", obraIds),
+      carregarUsuariosTabelaSeguindo("comentarios_obras", "obra_id", obraIds),
+      carregarUsuariosTabelaSeguindo("seguindo_obras", "obra_id", obraIds),
+      carregarUsuariosTabelaSeguindo("favoritos", "obra_id", obraIds),
+      carregarUsuariosTabelaSeguindo("concluidas", "obra_id", obraIds),
     ]);
 
     const seguidasSupabase = criarSetObrasPorRegistro(seguidasBanco);
@@ -1324,15 +1465,69 @@ async function carregarSeguindoSupabase(
     const comentariosCapitulos = criarMapaComentariosPorCapitulo(
       comentariosCapitulosBanco
     );
+    const curtidasCapitulosPorObra =
+      mapearUsuariosCapitulosParaObrasSeguindo(
+        usuariosCurtidasPublicasCapitulos,
+        obraIdPorCapitulo,
+      );
+    const comentariosCapitulosPorObra =
+      mapearUsuariosCapitulosParaObrasSeguindo(
+        usuariosComentariosPublicosCapitulos,
+        obraIdPorCapitulo,
+      );
+    const salvosCapitulosPorObra =
+      mapearUsuariosCapitulosParaObrasSeguindo(
+        usuariosSalvosPublicosCapitulos,
+        obraIdPorCapitulo,
+      );
+    const leiturasCapitulosPorObra =
+      mapearUsuariosCapitulosParaObrasSeguindo(
+        usuariosLeiturasPublicasCapitulos,
+        obraIdPorCapitulo,
+      );
+
+    const usuariosCurtidasPorObra = combinarUsuariosSeguindo(
+      usuariosCurtidasPublicasObras,
+      curtidasCapitulosPorObra,
+    );
+    const usuariosComentariosPorObra = combinarUsuariosSeguindo(
+      usuariosComentariosPublicosObras,
+      comentariosCapitulosPorObra,
+    );
+    const usuariosSalvosPorObra = combinarUsuariosSeguindo(
+      usuariosSeguidoresPublicosObras,
+      usuariosFavoritasPublicasObras,
+      salvosCapitulosPorObra,
+    );
+
     const totaisReais: TotaisInteracoesSeguindo = {
-      curtidasPorObra: curtidasPublicasObras,
-      seguidoresPorObra: seguidoresPublicosObras,
-      favoritasPorObra: favoritasPublicasObras,
-      concluidasPorObra: concluidasPublicasObras,
-      curtidasPorCapitulo: curtidasPublicasCapitulos,
-      comentariosPorCapitulo: comentariosPublicosCapitulos,
-      salvosPorCapitulo: salvosPublicosCapitulos,
-      lidosPorCapitulo: leiturasPublicasCapitulos,
+      curtidasPorObra: contarUsuariosSeguindo(usuariosCurtidasPorObra),
+      comentariosPorObra: contarUsuariosSeguindo(
+        usuariosComentariosPorObra,
+      ),
+      salvosPorObra: contarUsuariosSeguindo(usuariosSalvosPorObra),
+      lidosPorObra: contarUsuariosSeguindo(leiturasCapitulosPorObra),
+      seguidoresPorObra: contarUsuariosSeguindo(
+        usuariosSeguidoresPublicosObras,
+      ),
+      favoritasPorObra: contarUsuariosSeguindo(
+        usuariosFavoritasPublicasObras,
+      ),
+      concluidasPorObra: contarUsuariosSeguindo(
+        usuariosConcluidasPublicasObras,
+      ),
+      curtidasPorCapitulo: contarUsuariosSeguindo(
+        usuariosCurtidasPublicasCapitulos,
+      ),
+      comentariosPorCapitulo: contarUsuariosSeguindo(
+        usuariosComentariosPublicosCapitulos,
+      ),
+      salvosPorCapitulo: contarUsuariosSeguindo(
+        usuariosSalvosPublicosCapitulos,
+      ),
+      lidosPorCapitulo: contarUsuariosSeguindo(
+        usuariosLeiturasPublicasCapitulos,
+      ),
     };
 
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {

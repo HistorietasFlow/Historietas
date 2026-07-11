@@ -8,16 +8,34 @@ type NotificacoesBottomNavItemProps = {
   className?: string;
 };
 
+function normalizarTotalNaoLidas(total: number) {
+  if (!Number.isFinite(total)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.trunc(total));
+}
+
 export function NotificacoesBottomNavItem({
   href = "/notificacoes",
   className = "historietas-bottom-nav-item",
 }: NotificacoesBottomNavItemProps) {
-  const { notificacoesNaoLidas } = useNotificacoes();
-  const totalFormatado =
-    notificacoesNaoLidas > 99 ? "99+" : String(notificacoesNaoLidas);
+  const { notificacoesNaoLidas, carregandoNotificacoes } = useNotificacoes();
+  const totalNaoLidas = normalizarTotalNaoLidas(notificacoesNaoLidas);
+  const totalFormatado = totalNaoLidas > 99 ? "99+" : String(totalNaoLidas);
+  const rotuloAcessivel = carregandoNotificacoes
+    ? "Notificações, carregando"
+    : totalNaoLidas > 0
+      ? `Notificações, ${totalFormatado} não lidas`
+      : "Notificações";
 
   return (
-    <Link href={href} className={className} aria-label="Notificações">
+    <Link
+      href={href}
+      className={className}
+      aria-label={rotuloAcessivel}
+      title={rotuloAcessivel}
+    >
       <span
         className="historietas-bottom-nav-icon"
         aria-hidden="true"
@@ -45,13 +63,14 @@ export function NotificacoesBottomNavItem({
           />
         </svg>
 
-        {notificacoesNaoLidas > 0 ? (
+        {totalNaoLidas > 0 ? (
           <span
-            aria-label={`${totalFormatado} notificações não lidas`}
+            aria-hidden="true"
             style={{
               position: "absolute",
               top: "-9px",
               right: "-12px",
+              zIndex: 1,
               minWidth: "18px",
               height: "18px",
               borderRadius: "999px",
@@ -59,12 +78,15 @@ export function NotificacoesBottomNavItem({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
+              boxSizing: "border-box",
               background: "#dc2626",
               color: "#fff",
               fontSize: "10px",
               fontWeight: 900,
               lineHeight: 1,
+              whiteSpace: "nowrap",
               boxShadow: "0 0 0 2px #04000A",
+              pointerEvents: "none",
             }}
           >
             {totalFormatado}

@@ -64,6 +64,12 @@ type ObraSalva = Partial<ObraLocal> & {
   capitulos?: CapituloSalvo[];
 } & Record<string, unknown>;
 
+type ArquivoStoragePublicar = {
+  bucket: "capas-obras" | "arquivos-obras";
+  caminho: string;
+  publicUrl: string;
+};
+
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
@@ -264,7 +270,7 @@ async function enviarArquivoStorage(
   bucket: "capas-obras" | "arquivos-obras",
   userId: string,
   arquivo: File
-) {
+): Promise<ArquivoStoragePublicar> {
   const caminho = `${userId}/${Date.now()}-${criarId()}-${limparNomeArquivoStorage(
     arquivo.name
   )}`;
@@ -280,7 +286,65 @@ async function enviarArquivoStorage(
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(caminho);
 
-  return data.publicUrl;
+  return {
+    bucket,
+    caminho,
+    publicUrl: data.publicUrl,
+  };
+}
+
+async function removerArquivosStoragePublicar(
+  arquivos: ArquivoStoragePublicar[]
+) {
+  const arquivosUnicos = Array.from(
+    new Map(
+      arquivos.map((arquivo) => [
+        `${arquivo.bucket}:${arquivo.caminho}`,
+        arquivo,
+      ])
+    ).values()
+  );
+
+  await Promise.allSettled(
+    arquivosUnicos.map(async (arquivo) => {
+      try {
+        await supabase.storage
+          .from(arquivo.bucket)
+          .remove([arquivo.caminho]);
+      } catch {
+        // Limpeza de arquivo órfão é uma proteção extra.
+      }
+    })
+  );
+}
+
+async function desfazerPublicacaoParcialPublicar(
+  obraId: string,
+  arquivos: ArquivoStoragePublicar[]
+) {
+  const obraIdLimpo = obraId.trim();
+  let obraRemovida = !obraIdLimpo;
+
+  if (obraIdLimpo) {
+    try {
+      await supabase.from("capitulos").delete().eq("obra_id", obraIdLimpo);
+
+      const { error: erroRemoverObra } = await supabase
+        .from("obras")
+        .delete()
+        .eq("id", obraIdLimpo);
+
+      obraRemovida = !erroRemoverObra;
+    } catch {
+      obraRemovida = false;
+    }
+  }
+
+  if (obraRemovida) {
+    await removerArquivosStoragePublicar(arquivos);
+  }
+
+  return obraRemovida;
 }
 
 async function criarSlugUnicoSupabase(
@@ -1446,6 +1510,10 @@ export default function PublicarPage() {
     jaSalvouRef.current = true;
     setProcessando(true);
 
+    const arquivosEnviados: ArquivoStoragePublicar[] = [];
+    let obraCriadaId = "";
+    let publicacaoConcluida = false;
+
     try {
       const { data: dadosUsuario, error: erroUsuario } =
         await supabase.auth.getUser();
@@ -1505,19 +1573,29 @@ export default function PublicarPage() {
           ]
         : [];
 
-      const capaUrlSupabase = capaArquivo
+      const capaEnviada = capaArquivo
         ? await enviarArquivoStorage("capas-obras", userId, capaArquivo)
-        : "";
+        : null;
 
-      const arquivoObraUrlSupabase =
+      if (capaEnviada) {
+        arquivosEnviados.push(capaEnviada);
+      }
+
+      const arquivoObraEnviado =
         arquivoObra && arquivoObraArquivo
           ? await enviarArquivoStorage(
               "arquivos-obras",
               userId,
               arquivoObraArquivo
             )
-          : "";
+          : null;
 
+      if (arquivoObraEnviado) {
+        arquivosEnviados.push(arquivoObraEnviado);
+      }
+
+      const capaUrlSupabase = capaEnviada?.publicUrl || "";
+      const arquivoObraUrlSupabase = arquivoObraEnviado?.publicUrl || "";
       const link = `/obra/${slug}`;
 
       const { error: erroObra } = await supabase.from("obras").insert({
@@ -1537,7 +1615,7 @@ export default function PublicarPage() {
         arquivo_tipo: arquivoObra?.tipo || "",
         arquivo_tamanho: arquivoObra?.tamanho || 0,
         arquivo_categoria: arquivoObra?.categoria || "outro",
-        publicado: true,
+        publicado: false,
         visualizacoes: 0,
         slug,
         link,
@@ -1548,6 +1626,8 @@ export default function PublicarPage() {
       if (erroObra) {
         throw new Error(`Não consegui salvar a obra agora: ${erroObra.message}`);
       }
+
+      obraCriadaId = obraId;
 
       if (capitulosIniciais.length > 0) {
         const { error: erroCapitulo } = await supabase.from("capitulos").insert(
@@ -1566,9 +1646,24 @@ export default function PublicarPage() {
 
         if (erroCapitulo) {
           throw new Error(
-            `A obra foi criada, mas o capítulo inicial não foi salvo: ${erroCapitulo.message}`
+            `Não consegui salvar o capítulo inicial: ${erroCapitulo.message}`
           );
         }
+      }
+
+      const { error: erroPublicarObra } = await supabase
+        .from("obras")
+        .update({
+          publicado: true,
+          atualizado_em: criadaEm,
+        })
+        .eq("id", obraId)
+        .eq("user_id", userId);
+
+      if (erroPublicarObra) {
+        throw new Error(
+          `A obra foi preparada, mas não pôde ser publicada: ${erroPublicarObra.message}`
+        );
       }
 
       const novaObra: ObraLocal = {
@@ -1635,19 +1730,32 @@ export default function PublicarPage() {
 
       salvarObrasLocalmente(novasObrasDoUsuario, userId);
 
+      publicacaoConcluida = true;
       router.replace("/painel-autor");
       router.refresh();
     } catch (erroDesconhecido) {
-      jaSalvouRef.current = false;
+      const publicacaoDesfeita = publicacaoConcluida
+        ? false
+        : await desfazerPublicacaoParcialPublicar(
+            obraCriadaId,
+            arquivosEnviados
+          );
+
+      jaSalvouRef.current = publicacaoConcluida || !publicacaoDesfeita;
       setProcessando(false);
 
-      const mensagem =
+      const mensagemBase =
         erroDesconhecido instanceof Error &&
         erroDesconhecido.name === "QuotaExceededError"
-          ? "O navegador recusou salvar dados locais porque o armazenamento está cheio. A capa e o arquivo já foram enviados; limpe obras antigas salvas localmente e tente novamente."
+          ? "O navegador recusou salvar dados locais porque o armazenamento está cheio."
           : erroDesconhecido instanceof Error
           ? erroDesconhecido.message
           : "Não consegui salvar a obra agora. Tente novamente.";
+      const mensagem = publicacaoConcluida
+        ? "A obra foi publicada, mas não consegui abrir o Painel do Autor. Acesse o painel antes de tentar publicar novamente."
+        : publicacaoDesfeita
+        ? mensagemBase
+        : `${mensagemBase} A publicação parcial não pôde ser removida automaticamente. Confira o Painel do Autor antes de tentar novamente.`;
 
       setErro(mensagem);
 

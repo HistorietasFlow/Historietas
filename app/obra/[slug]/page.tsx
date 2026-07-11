@@ -17,13 +17,38 @@ type ObraMetadataRow = {
 };
 
 const SITE_NAME = "HISTORIETAS";
-const DEFAULT_TITLE = "HISTORIETAS";
 const DEFAULT_DESCRIPTION =
   "Leia histórias, contos, mangás, webnovels e publique suas próprias obras no HISTORIETAS.";
 
+function normalizarSlugParametro(valor: string) {
+  const valorLimpo = valor.trim();
+
+  if (!valorLimpo) {
+    return "";
+  }
+
+  try {
+    const slugDecodificado = decodeURIComponent(valorLimpo).trim();
+
+    if (
+      !slugDecodificado ||
+      slugDecodificado.includes("/") ||
+      slugDecodificado.includes("\\") ||
+      slugDecodificado.length > 180
+    ) {
+      return "";
+    }
+
+    return slugDecodificado;
+  } catch {
+    return "";
+  }
+}
+
 async function obterSlug(params: PageProps["params"]) {
   const paramsResolvidos = await params;
-  return paramsResolvidos.slug.trim();
+
+  return normalizarSlugParametro(paramsResolvidos.slug);
 }
 
 function limitarTexto(texto: string, limite: number) {
@@ -33,22 +58,26 @@ function limitarTexto(texto: string, limite: number) {
     return textoLimpo;
   }
 
-  return `${textoLimpo.slice(0, limite - 1).trim()}…`;
+  return `${textoLimpo.slice(0, Math.max(0, limite - 1)).trim()}…`;
+}
+
+function criarHrefCanonicoObra(slug: string) {
+  return `/obra/${encodeURIComponent(slug)}`;
 }
 
 function criarMetadataPadrao(): Metadata {
   return {
-    title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
     openGraph: {
-      title: DEFAULT_TITLE,
+      title: SITE_NAME,
       description: DEFAULT_DESCRIPTION,
       siteName: SITE_NAME,
+      locale: "pt_BR",
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: DEFAULT_TITLE,
+      title: SITE_NAME,
       description: DEFAULT_DESCRIPTION,
     },
   };
@@ -79,9 +108,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const tituloObra = obra.titulo?.trim() || "Obra no HISTORIETAS";
     const autorObra = obra.autor?.trim() || "Autor não informado";
     const sinopseObra = obra.sinopse?.trim() || DEFAULT_DESCRIPTION;
-    const title = `${tituloObra} | ${SITE_NAME}`;
     const description = limitarTexto(`${sinopseObra} — por ${autorObra}`, 160);
     const capaUrl = obra.capa_url?.trim() || "";
+    const slugCanonico = normalizarSlugParametro(obra.slug || "") || slug;
+    const hrefCanonico = criarHrefCanonicoObra(slugCanonico);
+    const tituloSocial = `${tituloObra} | ${SITE_NAME}`;
     const images = capaUrl
       ? [
           {
@@ -92,18 +123,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : undefined;
 
     return {
-      title,
+      title: tituloObra,
       description,
+      authors: [{ name: autorObra }],
+      alternates: {
+        canonical: hrefCanonico,
+      },
       openGraph: {
-        title,
+        title: tituloSocial,
         description,
         siteName: SITE_NAME,
+        locale: "pt_BR",
         type: "article",
+        url: hrefCanonico,
         images,
       },
       twitter: {
         card: "summary_large_image",
-        title,
+        title: tituloSocial,
         description,
         images: capaUrl ? [capaUrl] : undefined,
       },

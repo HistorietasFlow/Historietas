@@ -205,31 +205,6 @@ function obraPertenceAoUsuarioLogin(obra: Record<string, unknown>, userId: strin
   return Boolean(userIdLimpo && autorId && autorId === userIdLimpo);
 }
 
-function criarChaveObraLogin(obra: Record<string, unknown>) {
-  const id = obterTextoRegistroLogin(obra, "id");
-  const slug = obterTextoRegistroLogin(obra, "slug");
-  const titulo = obterTextoRegistroLogin(obra, "titulo");
-
-  return id || slug || titulo.trim().toLowerCase() || JSON.stringify(obra).slice(0, 80);
-}
-
-function mesclarObrasLogin(
-  obrasBase: Record<string, unknown>[],
-  obrasNovas: Record<string, unknown>[],
-) {
-  const mapa = new Map<string, Record<string, unknown>>();
-
-  obrasBase.forEach((obra) => {
-    mapa.set(criarChaveObraLogin(obra), obra);
-  });
-
-  obrasNovas.forEach((obra) => {
-    mapa.set(criarChaveObraLogin(obra), obra);
-  });
-
-  return Array.from(mapa.values());
-}
-
 function sincronizarStorageUsuarioLogin(userId: string) {
   const userIdLimpo = userId.trim();
 
@@ -242,11 +217,20 @@ function sincronizarStorageUsuarioLogin(userId: string) {
     const obrasUsuarioAtuais = normalizarObrasStorageLogin(
       lerJsonStorageLogin(chaveObrasUsuario),
     );
-    const obrasUsuarioFiltradas = obrasUsuarioAtuais.filter((obra) => {
-      const autorId = obterAutorIdObraLogin(obra);
+    const obrasUsuarioFiltradas = obrasUsuarioAtuais
+      .filter((obra) => {
+        const autorId = obterAutorIdObraLogin(obra);
 
-      return !autorId || obraPertenceAoUsuarioLogin(obra, userIdLimpo);
-    });
+        return !autorId || obraPertenceAoUsuarioLogin(obra, userIdLimpo);
+      })
+      .map((obra) => {
+        return obterAutorIdObraLogin(obra)
+          ? obra
+          : {
+              ...obra,
+              autorId: userIdLimpo,
+            };
+      });
 
     salvarJsonStorageLogin(chaveObrasUsuario, obrasUsuarioFiltradas);
 
@@ -277,6 +261,7 @@ export default function LoginPage() {
   const [senha, setSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
+  const [aviso, setAviso] = useState("");
 
   const criandoConta = modo === "criar";
   const [isDesktop, setIsDesktop] = useState(false);
@@ -341,7 +326,7 @@ export default function LoginPage() {
     userId: string,
     nomeInformado: string,
     emailInformado = email,
-    userMetadata?: Record<string, unknown> | null
+    userMetadata?: Record<string, unknown> | null,
   ) {
     const userIdLimpo = userId.trim();
 
@@ -355,7 +340,7 @@ export default function LoginPage() {
       [metadata.nome, metadata.name, metadata.full_name]
         .find(
           (valor): valor is string =>
-            typeof valor === "string" && Boolean(valor.trim())
+            typeof valor === "string" && Boolean(valor.trim()),
         )
         ?.trim() || "";
     const emailLimpo = emailInformado.trim() || email.trim();
@@ -366,24 +351,42 @@ export default function LoginPage() {
       "Usuário";
     const agora = new Date().toISOString();
 
+    type PerfilExistenteLogin = {
+      id?: string | null;
+      user_id?: string | null;
+      nome?: string | null;
+      bio?: string | null;
+      sobre_bio?: string | null;
+      avatar_url?: string | null;
+    };
+
     try {
-      const { data: perfilExistente } = await supabase
+      let perfilAtual: PerfilExistenteLogin | null = null;
+
+      const { data: perfilPorUserId, error: erroPorUserId } = await supabase
         .from("profiles")
         .select("id,user_id,nome,bio,sobre_bio,avatar_url")
         .eq("user_id", userIdLimpo)
         .limit(1)
         .maybeSingle();
 
-      const perfilAtual =
-        perfilExistente && typeof perfilExistente === "object"
-          ? (perfilExistente as {
-              id?: string | null;
-              nome?: string | null;
-              bio?: string | null;
-              sobre_bio?: string | null;
-              avatar_url?: string | null;
-            })
-          : null;
+      if (!erroPorUserId && perfilPorUserId) {
+        perfilAtual = perfilPorUserId as PerfilExistenteLogin;
+      }
+
+      if (!perfilAtual) {
+        const { data: perfilPorId, error: erroPorId } = await supabase
+          .from("profiles")
+          .select("id,user_id,nome,bio,sobre_bio,avatar_url")
+          .eq("id", userIdLimpo)
+          .limit(1)
+          .maybeSingle();
+
+        if (!erroPorId && perfilPorId) {
+          perfilAtual = perfilPorId as PerfilExistenteLogin;
+        }
+      }
+
       const perfilPayload = {
         user_id: userIdLimpo,
         nome: perfilAtual?.nome?.trim() || nomeFinal,
@@ -401,34 +404,32 @@ export default function LoginPage() {
           .from("profiles")
           .update(perfilPayload)
           .eq("id", perfilAtual.id);
-
         return;
       }
 
-      const { error: erroUpsert } = await supabase.from("profiles").upsert(
-        {
-          id: userIdLimpo,
-          ...perfilPayload,
-        },
-        { onConflict: "id" }
-      );
-
-      if (!erroUpsert) {
-        return;
-      }
-
-      await supabase.from("profiles").insert(perfilPayload);
+      await supabase.from("profiles").insert({
+        id: userIdLimpo,
+        ...perfilPayload,
+      });
     } catch {
-      // O login não pode falhar só porque o perfil não salvou.
+      // O login não pode falhar só porque o perfil não sincronizou.
     }
   }
 
   async function enviarFormulario(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setErro("");
+    if (carregando) {
+      return;
+    }
 
-    if (!email.trim()) {
+    setErro("");
+    setAviso("");
+
+    const emailFinal = email.trim().toLowerCase();
+    const nomeFinal = nome.trim();
+
+    if (!emailFinal) {
       setErro("Digite seu e-mail.");
       return;
     }
@@ -438,8 +439,8 @@ export default function LoginPage() {
       return;
     }
 
-    if (criandoConta && !nome.trim()) {
-      setErro("Digite seu nome de exibição.");
+    if (criandoConta && nomeFinal.length < 2) {
+      setErro("Digite um nome de exibição com pelo menos 2 caracteres.");
       return;
     }
 
@@ -448,13 +449,13 @@ export default function LoginPage() {
     try {
       if (criandoConta) {
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: emailFinal,
           password: senha,
           options: {
             data: {
-              nome: nome.trim(),
-              name: nome.trim(),
-              full_name: nome.trim(),
+              nome: nomeFinal,
+              name: nomeFinal,
+              full_name: nomeFinal,
             },
           },
         });
@@ -464,22 +465,34 @@ export default function LoginPage() {
           return;
         }
 
-        if (data.user) {
-          await salvarProfile(data.user.id, nome, data.user.email || email, data.user.user_metadata);
-          sincronizarStorageUsuarioLogin(data.user.id);
+        if (!data.user) {
+          setErro("Não consegui confirmar a criação da conta.");
+          return;
         }
 
-        if (data.user && data.session) {
+        if (data.session) {
+          await salvarProfile(
+            data.user.id,
+            nomeFinal,
+            data.user.email || emailFinal,
+            data.user.user_metadata,
+          );
+          sincronizarStorageUsuarioLogin(data.user.id);
           router.replace(obterRedirectToAtual("/perfil-autor"));
           router.refresh();
           return;
         }
+
         setModo("entrar");
+        setSenha("");
+        setAviso(
+          "Conta criada. Confira seu e-mail para confirmar o cadastro e depois entre.",
+        );
         return;
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: emailFinal,
         password: senha,
       });
 
@@ -488,10 +501,18 @@ export default function LoginPage() {
         return;
       }
 
-      if (data.user) {
-        await salvarProfile(data.user.id, nome, data.user.email || email, data.user.user_metadata);
-        sincronizarStorageUsuarioLogin(data.user.id);
+      if (!data.user) {
+        setErro("Não consegui confirmar sua sessão.");
+        return;
       }
+
+      await salvarProfile(
+        data.user.id,
+        "",
+        data.user.email || emailFinal,
+        data.user.user_metadata,
+      );
+      sincronizarStorageUsuarioLogin(data.user.id);
       router.replace(obterRedirectToAtual("/perfil-autor"));
       router.refresh();
     } catch (error) {
@@ -539,8 +560,10 @@ export default function LoginPage() {
                   onClick={() => {
                     setModo("entrar");
                     setErro("");
+                    setAviso("");
                   }}
                   style={modo === "entrar" ? tabActiveStyle : tabStyle}
+                  aria-pressed={modo === "entrar"}
                 >
                   ENTRAR
                 </button>
@@ -550,8 +573,10 @@ export default function LoginPage() {
                   onClick={() => {
                     setModo("criar");
                     setErro("");
+                    setAviso("");
                   }}
                   style={modo === "criar" ? tabActiveStyle : tabStyle}
+                  aria-pressed={modo === "criar"}
                 >
                   CRIAR LOGIN
                 </button>
@@ -564,11 +589,17 @@ export default function LoginPage() {
 
                     <input
                       value={nome}
-                      onChange={(event) => setNome(event.target.value)}
+                      onChange={(event) => {
+                        setNome(event.target.value.slice(0, 80));
+                        setErro("");
+                        setAviso("");
+                      }}
                       placeholder="Ex: Nome do Autor"
                       style={inputStyle}
                       type="text"
                       autoComplete="name"
+                      maxLength={80}
+                      required
                     />
                   </label>
                 )}
@@ -578,11 +609,18 @@ export default function LoginPage() {
 
                   <input
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => {
+                    setEmail(event.target.value.slice(0, 254));
+                    setErro("");
+                    setAviso("");
+                  }}
                     placeholder="seuemail@email.com"
                     style={inputStyle}
                     type="email"
                     autoComplete="email"
+                    inputMode="email"
+                    maxLength={254}
+                    required
                   />
                 </label>
 
@@ -591,15 +629,31 @@ export default function LoginPage() {
 
                   <input
                     value={senha}
-                    onChange={(event) => setSenha(event.target.value)}
+                    onChange={(event) => {
+                    setSenha(event.target.value);
+                    setErro("");
+                    setAviso("");
+                  }}
                     placeholder="Mínimo 6 caracteres"
                     style={inputStyle}
                     type="password"
                     autoComplete={criandoConta ? "new-password" : "current-password"}
+                    minLength={6}
+                    required
                   />
                 </label>
 
-                {erro && <span style={errorStyle}>{erro}</span>}
+                {aviso && (
+                  <span role="status" aria-live="polite" style={successStyle}>
+                    {aviso}
+                  </span>
+                )}
+
+                {erro && (
+                  <span role="alert" aria-live="assertive" style={errorStyle}>
+                    {erro}
+                  </span>
+                )}
 
                 <button
                   type="submit"
@@ -633,8 +687,9 @@ export default function LoginPage() {
 const loginPageCss = `
   html,
   body {
-    overflow: hidden !important;
-    overscroll-behavior: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
   }
 
   html[data-historietas-tema-visual="original"] body,
@@ -684,11 +739,11 @@ const desktopTopWaterFadeStyle: CSSProperties = {
 const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100dvh",
-  height: "100dvh",
-  maxHeight: "100dvh",
+  height: "auto",
   width: "100%",
   maxWidth: "100vw",
-  overflow: "hidden",
+  overflowX: "hidden",
+  overflowY: "auto",
   boxSizing: "border-box",
   background: "#070212",
   color: "#FFFFFF",
@@ -938,6 +993,20 @@ const errorStyle: CSSProperties = {
   border: "none",
   color: "#FCA5A5",
   fontSize: "12px",
+  fontWeight: 850,
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const successStyle: CSSProperties = {
+  display: "block",
+  padding: "9px 12px",
+  borderRadius: "14px",
+  background: "rgba(34,197,94,0.10)",
+  border: "1px solid rgba(34,197,94,0.24)",
+  color: "#86EFAC",
+  fontSize: "12px",
+  lineHeight: 1.45,
   fontWeight: 850,
   textAlign: "center",
   ...safeTextStyle,

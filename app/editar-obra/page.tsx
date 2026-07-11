@@ -84,6 +84,20 @@ type ObraSupabaseRow = {
   atualizado_em: string | null;
 };
 
+type ObraArquivosSupabaseRow = Pick<
+  ObraSupabaseRow,
+  | "id"
+  | "user_id"
+  | "capa_url"
+  | "capa_nome"
+  | "arquivo_url"
+  | "arquivo_nome"
+  | "arquivo_tipo"
+  | "arquivo_tamanho"
+  | "arquivo_categoria"
+  | "criada_em"
+>;
+
 type CapituloSupabaseRow = {
   id: string;
   obra_id: string;
@@ -99,7 +113,7 @@ type CapituloSupabaseRow = {
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
-const TAMANHO_MAXIMO_ARQUIVO_OBRA = 2 * 1024 * 1024;
+const TAMANHO_MAXIMO_ARQUIVO_OBRA = 5 * 1024 * 1024;
 const LIMITE_TAGS_OBRA = 1;
 const OUTRO_FORMATO_VALUE = "__outro_formato__";
 const OUTRO_GENERO_VALUE = "__outro_genero__";
@@ -681,6 +695,54 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
   };
 }
 
+function ehDataUrlEdicaoObra(valor: string) {
+  return valor.trim().startsWith("data:");
+}
+
+function normalizarArquivoObraPersistivel(
+  valor: unknown
+): ArquivoObraLocal | null {
+  const arquivo = normalizarArquivoObra(valor);
+
+  if (!arquivo || ehDataUrlEdicaoObra(arquivo.conteudo)) {
+    return null;
+  }
+
+  return arquivo;
+}
+
+function prepararObraEdicaoParaStorage(obra: ObraLocal): ObraLocal {
+  return {
+    ...obra,
+    capa: ehDataUrlEdicaoObra(obra.capa) ? "" : obra.capa,
+    arquivoObra: normalizarArquivoObraPersistivel(obra.arquivoObra),
+  };
+}
+
+function criarArquivoRemotoEdicaoObra(
+  obra: ObraArquivosSupabaseRow
+): ArquivoObraLocal | null {
+  const conteudo = obra.arquivo_url?.trim() || "";
+  const nome = obra.arquivo_nome?.trim() || "";
+
+  if (!conteudo || !nome) {
+    return null;
+  }
+
+  return {
+    nome,
+    tipo: obra.arquivo_tipo || "",
+    tamanho:
+      typeof obra.arquivo_tamanho === "number" &&
+      Number.isFinite(obra.arquivo_tamanho)
+        ? obra.arquivo_tamanho
+        : 0,
+    conteudo,
+    categoria: normalizarCategoriaArquivoSupabase(obra.arquivo_categoria),
+    criadoEm: obra.criada_em || "",
+  };
+}
+
 function carregarBackupArquivosObras(userId = ""): ArquivosObrasBackup {
   if (typeof window === "undefined" || !userId.trim()) {
     return {};
@@ -836,7 +898,7 @@ function salvarObrasDoUsuarioPreservandoOutrasContas(
   salvarJsonStorageUsuarioEditarObra(
     STORAGE_KEY,
     usuarioId,
-    obrasDoUsuarioComDono
+    obrasDoUsuarioComDono.map(prepararObraEdicaoParaStorage)
   );
   sincronizarBackupArquivosObras(obrasDoUsuarioComDono, usuarioId);
 
@@ -1028,7 +1090,11 @@ function carregarObrasLocalStorageEdicaoObra(userId: string) {
     obrasDoUsuario = [];
   }
 
-  salvarJsonStorageUsuarioEditarObra(STORAGE_KEY, usuarioId, obrasDoUsuario);
+  salvarJsonStorageUsuarioEditarObra(
+    STORAGE_KEY,
+    usuarioId,
+    obrasDoUsuario.map(prepararObraEdicaoParaStorage)
+  );
   sincronizarBackupArquivosObras(obrasDoUsuario, usuarioId);
 
   return obrasDoUsuario;
@@ -1139,6 +1205,8 @@ export default function EditarObraPage() {
   const [capaNome, setCapaNome] = useState("");
   const [capaArquivo, setCapaArquivo] = useState<File | null>(null);
   const [capaErro, setCapaErro] = useState("");
+  const [capaRemovidaManualmente, setCapaRemovidaManualmente] =
+    useState(false);
   const [arquivoObra, setArquivoObra] = useState<ArquivoObraLocal | null>(null);
   const [arquivoObraArquivo, setArquivoObraArquivo] = useState<File | null>(null);
   const [arquivoObraErro, setArquivoObraErro] = useState("");
@@ -1228,6 +1296,7 @@ export default function EditarObraPage() {
       setCapa(obraAtual.capa);
       setCapaNome(obraAtual.capaNome);
       setCapaArquivo(null);
+      setCapaRemovidaManualmente(false);
       setArquivoObra(obraAtual.arquivoObra || null);
       setArquivoObraArquivo(null);
       setArquivoObraRemovidoManualmente(false);
@@ -1576,6 +1645,7 @@ export default function EditarObraPage() {
       setCapa(resultado);
       setCapaNome(arquivo.name);
       setCapaArquivo(arquivo);
+      setCapaRemovidaManualmente(false);
     };
 
     leitor.onerror = () => {
@@ -1589,6 +1659,7 @@ export default function EditarObraPage() {
     setCapa("");
     setCapaNome("");
     setCapaArquivo(null);
+    setCapaRemovidaManualmente(true);
     setCapaErro("");
     marcarAlteracao();
 
@@ -1617,7 +1688,7 @@ export default function EditarObraPage() {
 
     if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_OBRA) {
       setArquivoObraErro(
-        "O arquivo completo precisa ter no máximo 2 MB."
+        "O arquivo completo precisa ter no máximo 5 MB."
       );
       event.target.value = "";
       return;
@@ -1780,7 +1851,9 @@ export default function EditarObraPage() {
       const { data: obraAutorizadaSupabase, error: erroConfirmarObra } =
         await supabase
           .from("obras")
-          .select("id")
+          .select(
+            "id,user_id,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,criada_em"
+          )
           .eq("id", obraId)
           .eq("user_id", userId)
           .limit(1)
@@ -1800,18 +1873,38 @@ export default function EditarObraPage() {
         return;
       }
 
-      let capaFinal = capa;
-      let capaNomeFinal = capaNome;
-      let arquivoObraFinal: ArquivoObraLocal | null = arquivoObra
-        ? {
-            ...arquivoObra,
-            categoria: arquivoObra.categoria || "outro",
-          }
-        : arquivoObraRemovidoManualmente
+      const obraRemotaAtual =
+        obraAutorizadaSupabase as unknown as ObraArquivosSupabaseRow;
+      const capaLocalPersistivel =
+        capa && !ehDataUrlEdicaoObra(capa) ? capa.trim() : "";
+      const capaRemotaAtual = obraRemotaAtual.capa_url?.trim() || "";
+      const capaNomeRemotoAtual = obraRemotaAtual.capa_nome?.trim() || "";
+      const arquivoRemotoAtual = criarArquivoRemotoEdicaoObra(obraRemotaAtual);
+      const arquivoBackupAtual = obraLocalAtual
+        ? obterChavesBackupArquivoEdicaoObra(obraLocalAtual)
+            .map((chave) =>
+              normalizarArquivoObraPersistivel(backupArquivosObras[chave])
+            )
+            .find((arquivo): arquivo is ArquivoObraLocal => Boolean(arquivo)) ||
+          null
+        : null;
+      const arquivoLocalPersistivel =
+        normalizarArquivoObraPersistivel(arquivoObra) ||
+        normalizarArquivoObraPersistivel(obraLocalAtual?.arquivoObra) ||
+        null;
+
+      let capaFinal = capaRemovidaManualmente
+        ? ""
+        : capaRemotaAtual || capaLocalPersistivel;
+      let capaNomeFinal = capaRemovidaManualmente
+        ? ""
+        : capaNomeRemotoAtual || capaNome.trim();
+      let arquivoObraFinal: ArquivoObraLocal | null =
+        arquivoObraRemovidoManualmente
           ? null
-          : normalizarArquivoObra(backupArquivosObras[obraId]) ||
-            obraLocalAtual?.arquivoObra ||
-            null;
+          : arquivoRemotoAtual ||
+            arquivoLocalPersistivel ||
+            arquivoBackupAtual;
 
       try {
         if (capaArquivo) {
@@ -1938,6 +2031,7 @@ export default function EditarObraPage() {
       setCapa(capaFinal);
       setCapaNome(capaNomeFinal);
       setCapaArquivo(null);
+      setCapaRemovidaManualmente(false);
       setArquivoObra(arquivoObraFinal);
       setArquivoObraArquivo(null);
       setArquivoObraRemovidoManualmente(false);
@@ -2127,7 +2221,7 @@ export default function EditarObraPage() {
                   </strong>
 
                   <span style={hintStyle}>
-                    Opcional. Anexe PDF, texto, imagem ou página de mangá.
+                    Opcional. Anexe PDF, texto, imagem ou página de mangá. Máximo: 5 MB.
                   </span>
 
                   {arquivoObra && (

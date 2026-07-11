@@ -12,7 +12,6 @@ import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArq
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
-const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const RATED_WORKS_STORAGE_KEY = "historietas-obras-avaliacoes";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
@@ -116,6 +115,7 @@ type ObraLocal = {
   progressoLeitura: number;
   visualizacoes?: number;
   totalCurtidas?: number;
+  totalComentarios?: number;
   totalFavoritos?: number;
   totalConcluidas?: number;
   slug: string;
@@ -580,6 +580,9 @@ function normalizarObraLocal(
     totalCurtidas: normalizarContadorObraPublica(
       obra.totalCurtidas ?? obra.total_curtidas
     ),
+    totalComentarios: normalizarContadorObraPublica(
+      obra.totalComentarios ?? obra.total_comentarios
+    ),
     totalFavoritos: normalizarContadorObraPublica(
       obra.totalFavoritos ?? obra.total_favoritos
     ),
@@ -750,6 +753,9 @@ function normalizarObraSupabase(
       obra.visualizacoes ?? obra.views ?? obra.total_visualizacoes ?? obraLocal?.visualizacoes
     ),
     totalCurtidas: normalizarContadorObraPublica(obraLocal?.totalCurtidas),
+    totalComentarios: normalizarContadorObraPublica(
+      obraLocal?.totalComentarios
+    ),
     totalFavoritos: normalizarContadorObraPublica(obraLocal?.totalFavoritos),
     totalConcluidas: normalizarContadorObraPublica(obraLocal?.totalConcluidas),
     slug: slugObra,
@@ -861,32 +867,39 @@ function normalizarContadorObraPublica(valor: unknown) {
   return 0;
 }
 
-function incrementarContagemObraPublica(
-  mapa: Map<string, number>,
+function adicionarUsuarioUnicoObraPublica(
+  usuariosPorRegistro: Map<string, Set<string>>,
   chave: string,
+  userId: string,
 ) {
   const chaveLimpa = chave.trim();
+  const userIdLimpo = userId.trim();
 
-  if (!chaveLimpa) {
+  if (!chaveLimpa || !userIdLimpo) {
     return;
   }
 
-  mapa.set(chaveLimpa, (mapa.get(chaveLimpa) || 0) + 1);
+  const usuariosAtuais =
+    usuariosPorRegistro.get(chaveLimpa) || new Set<string>();
+
+  usuariosAtuais.add(userIdLimpo);
+  usuariosPorRegistro.set(chaveLimpa, usuariosAtuais);
 }
 
-async function contarRegistrosPorColunaObraPublica(
+async function carregarUsuariosUnicosPorColunaObraPublica(
   tabela: string,
   coluna: string,
   ids: string[],
+  colunaUsuario = "user_id",
 ) {
   const idsUnicos = Array.from(
     new Set(ids.map((id) => id.trim()).filter(Boolean)),
   );
-  const contagens = new Map<string, number>();
+  const usuariosPorRegistro = new Map<string, Set<string>>();
   const tamanhoPagina = 1000;
 
   if (idsUnicos.length === 0) {
-    return contagens;
+    return usuariosPorRegistro;
   }
 
   for (let inicioIds = 0; inicioIds < idsUnicos.length; inicioIds += 80) {
@@ -897,7 +910,7 @@ async function contarRegistrosPorColunaObraPublica(
       try {
         const { data, error } = await supabase
           .from(tabela)
-          .select(coluna)
+          .select(`${coluna},${colunaUsuario}`)
           .in(coluna, loteIds)
           .range(inicio, inicio + tamanhoPagina - 1);
 
@@ -906,14 +919,24 @@ async function contarRegistrosPorColunaObraPublica(
         }
 
         data.forEach((registro) => {
-          if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
+          if (
+            !registro ||
+            typeof registro !== "object" ||
+            Array.isArray(registro)
+          ) {
             return;
           }
 
-          const valor = (registro as Record<string, unknown>)[coluna];
+          const registroNormalizado = registro as Record<string, unknown>;
+          const chave = registroNormalizado[coluna];
+          const userId = registroNormalizado[colunaUsuario];
 
-          if (typeof valor === "string") {
-            incrementarContagemObraPublica(contagens, valor);
+          if (typeof chave === "string" && typeof userId === "string") {
+            adicionarUsuarioUnicoObraPublica(
+              usuariosPorRegistro,
+              chave,
+              userId,
+            );
           }
         });
 
@@ -928,39 +951,28 @@ async function contarRegistrosPorColunaObraPublica(
     }
   }
 
-  return contagens;
+  return usuariosPorRegistro;
+}
+
+function totalUsuariosUnicosObraPublica(
+  usuariosPorRegistro: Map<string, Set<string>>,
+  chave: string,
+) {
+  const chaveLimpa = chave.trim();
+
+  return chaveLimpa ? usuariosPorRegistro.get(chaveLimpa)?.size || 0 : 0;
 }
 
 function totalCurtidasObraPublica(obra: ObraLocal) {
-  const totalCapitulos = obra.capitulos.reduce(
-    (total, capitulo) => total + normalizarContadorObraPublica(capitulo.totalCurtidas),
-    0,
-  );
-  const totalObra = normalizarContadorObraPublica(obra.totalCurtidas);
-  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
-
-  return Math.max(totalCapitulos + totalObra, totalLocal);
+  return normalizarContadorObraPublica(obra.totalCurtidas);
 }
 
 function totalComentariosObraPublica(obra: ObraLocal) {
-  const totalCapitulos = obra.capitulos.reduce(
-    (total, capitulo) => total + normalizarContadorObraPublica(capitulo.totalComentarios),
-    0,
-  );
-  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.comentario.trim()).length;
-
-  return Math.max(totalCapitulos, totalLocal);
+  return normalizarContadorObraPublica(obra.totalComentarios);
 }
 
 function totalVisualizacoesObraPublica(obra: ObraLocal) {
-  const totalObra = normalizarContadorObraPublica(obra.visualizacoes);
-  const totalLidosCapitulos = obra.capitulos.reduce(
-    (total, capitulo) => total + normalizarContadorObraPublica(capitulo.totalLidos),
-    0,
-  );
-  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.lido).length;
-
-  return Math.max(totalObra, totalLidosCapitulos, totalLocal);
+  return normalizarContadorObraPublica(obra.visualizacoes);
 }
 
 async function aplicarTotaisReaisObraPublica(obrasParaAtualizar: ObraLocal[]) {
@@ -985,29 +997,88 @@ async function aplicarTotaisReaisObraPublica(obrasParaAtualizar: ObraLocal[]) {
     salvosPorCapitulo,
     lidosPorCapitulo,
     curtidasPorObra,
+    comentariosPorObra,
     favoritosPorObra,
     concluidasPorObra,
   ] = await Promise.all([
-    contarRegistrosPorColunaObraPublica("curtidas_capitulos", "capitulo_id", capituloIds),
-    contarRegistrosPorColunaObraPublica("comentarios_capitulos", "capitulo_id", capituloIds),
-    contarRegistrosPorColunaObraPublica("salvos_capitulos", "capitulo_id", capituloIds),
-    contarRegistrosPorColunaObraPublica("progresso_leitura", "capitulo_id", capituloIds),
-    contarRegistrosPorColunaObraPublica("obra_curtidas", "obra_id", obraIds),
-    contarRegistrosPorColunaObraPublica("favoritos", "obra_id", obraIds),
-    contarRegistrosPorColunaObraPublica("concluidas", "obra_id", obraIds),
+    carregarUsuariosUnicosPorColunaObraPublica(
+      "curtidas_capitulos",
+      "capitulo_id",
+      capituloIds,
+    ),
+    carregarUsuariosUnicosPorColunaObraPublica(
+      "comentarios_capitulos",
+      "capitulo_id",
+      capituloIds,
+    ),
+    carregarUsuariosUnicosPorColunaObraPublica(
+      "salvos_capitulos",
+      "capitulo_id",
+      capituloIds,
+    ),
+    carregarUsuariosUnicosPorColunaObraPublica(
+      "progresso_leitura",
+      "capitulo_id",
+      capituloIds,
+    ),
+    carregarUsuariosUnicosPorColunaObraPublica(
+      "obra_curtidas",
+      "obra_id",
+      obraIds,
+    ),
+    carregarUsuariosUnicosPorColunaObraPublica(
+      "comentarios_obras",
+      "obra_id",
+      obraIds,
+    ),
+    carregarUsuariosUnicosPorColunaObraPublica(
+      "favoritos",
+      "obra_id",
+      obraIds,
+    ),
+    carregarUsuariosUnicosPorColunaObraPublica(
+      "concluidas",
+      "obra_id",
+      obraIds,
+    ),
   ]);
 
   return obrasParaAtualizar.map((obra) => ({
     ...obra,
-    totalCurtidas: curtidasPorObra.get(obra.id) || 0,
-    totalFavoritos: favoritosPorObra.get(obra.id) || 0,
-    totalConcluidas: concluidasPorObra.get(obra.id) || 0,
+    totalCurtidas: totalUsuariosUnicosObraPublica(
+      curtidasPorObra,
+      obra.id,
+    ),
+    totalComentarios: totalUsuariosUnicosObraPublica(
+      comentariosPorObra,
+      obra.id,
+    ),
+    totalFavoritos: totalUsuariosUnicosObraPublica(
+      favoritosPorObra,
+      obra.id,
+    ),
+    totalConcluidas: totalUsuariosUnicosObraPublica(
+      concluidasPorObra,
+      obra.id,
+    ),
     capitulos: obra.capitulos.map((capitulo) => ({
       ...capitulo,
-      totalCurtidas: curtidasPorCapitulo.get(capitulo.id) || 0,
-      totalComentarios: comentariosPorCapitulo.get(capitulo.id) || 0,
-      totalSalvos: salvosPorCapitulo.get(capitulo.id) || 0,
-      totalLidos: lidosPorCapitulo.get(capitulo.id) || 0,
+      totalCurtidas: totalUsuariosUnicosObraPublica(
+        curtidasPorCapitulo,
+        capitulo.id,
+      ),
+      totalComentarios: totalUsuariosUnicosObraPublica(
+        comentariosPorCapitulo,
+        capitulo.id,
+      ),
+      totalSalvos: totalUsuariosUnicosObraPublica(
+        salvosPorCapitulo,
+        capitulo.id,
+      ),
+      totalLidos: totalUsuariosUnicosObraPublica(
+        lidosPorCapitulo,
+        capitulo.id,
+      ),
     })),
   }));
 }
@@ -1898,7 +1969,6 @@ export default function ObraDinamicaPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
-  const visualizacaoRegistradaRef = useRef("");
 
   useEffect(() => {
     let cancelado = false;
@@ -2124,9 +2194,12 @@ export default function ObraDinamicaPage() {
 
       if (!idObraSupabaseValido(obraId)) {
         setComentariosObra(comentariosLocais);
+        const totalUsuariosComentariosLocais = new Set(
+          comentariosLocais.map((comentario) => comentario.userId)
+        ).size;
         setMetricasObra((metricasAtuais) => ({
           ...metricasAtuais,
-          comentarios: comentariosLocais.length,
+          comentarios: totalUsuariosComentariosLocais,
         }));
         setComentariosCarregando(false);
         return;
@@ -2136,7 +2209,7 @@ export default function ObraDinamicaPage() {
       setComentariosObra([]);
 
       try {
-        const { data, error, count } = await supabase
+        const { data, error } = await supabase
           .from("comentarios_obras")
           .select("id,obra_id,user_id,comentario,criado_em", {
             count: "exact",
@@ -2158,9 +2231,14 @@ export default function ObraDinamicaPage() {
         }
 
         setComentariosObra(comentariosRemotos);
+        const totalUsuariosComentariosRemotos = new Set(
+          comentariosRemotos.map((comentario) => comentario.userId)
+        ).size;
         setMetricasObra((metricasAtuais) => ({
           ...metricasAtuais,
-          comentarios: count ?? comentariosRemotos.length,
+          comentarios: metricasAtuais.carregado
+            ? metricasAtuais.comentarios
+            : totalUsuariosComentariosRemotos,
         }));
 
         if (usuarioIdLogado) {
@@ -2173,9 +2251,14 @@ export default function ObraDinamicaPage() {
       } catch {
         if (!cancelado) {
           setComentariosObra(comentariosLocais);
+          const totalUsuariosComentariosLocais = new Set(
+            comentariosLocais.map((comentario) => comentario.userId)
+          ).size;
           setMetricasObra((metricasAtuais) => ({
             ...metricasAtuais,
-            comentarios: comentariosLocais.length,
+            comentarios: metricasAtuais.carregado
+              ? metricasAtuais.comentarios
+              : totalUsuariosComentariosLocais,
           }));
           setComentarioStatus(
             "Não foi possível carregar os comentários agora."
@@ -2325,62 +2408,17 @@ export default function ObraDinamicaPage() {
     const obraAtual = obra;
     const obraId = obraAtual.id;
     const metricasBase = criarMetricasBaseObra(obraAtual);
-    const chaveMetricaObra =
-      obraId || obraAtual.slug || obraNormalizada || normalizarTexto(obraAtual.titulo);
-    let visualizacoesLocais = metricasBase.visualizacoes;
     let curtidaLocalAtiva = false;
     let seguindoLocalAtivo = false;
-
-    try {
-      const visualizacoesTexto = lerStorageUsuarioObraPublica(
-        VIEWED_WORKS_STORAGE_KEY,
-        usuarioIdLogado
-      );
-      const visualizacoesJson: unknown = visualizacoesTexto
-        ? JSON.parse(visualizacoesTexto)
-        : {};
-      const visualizacoesPorObra =
-        visualizacoesJson &&
-        typeof visualizacoesJson === "object" &&
-        !Array.isArray(visualizacoesJson)
-          ? (visualizacoesJson as Record<string, unknown>)
-          : {};
-      const visualizacoesAtuais = obterNumeroSeguro(
-        visualizacoesPorObra[chaveMetricaObra],
-        metricasBase.visualizacoes
-      );
-      const jaRegistrouVisualizacao =
-        visualizacaoRegistradaRef.current === chaveMetricaObra;
-      const proximasVisualizacoes = jaRegistrouVisualizacao
-        ? visualizacoesAtuais
-        : visualizacoesAtuais + 1;
-
-      if (!jaRegistrouVisualizacao) {
-        salvarStorageUsuarioObraPublica(
-          VIEWED_WORKS_STORAGE_KEY,
-          usuarioIdLogado,
-          {
-            ...visualizacoesPorObra,
-            [chaveMetricaObra]: proximasVisualizacoes,
-          }
-        );
-        visualizacaoRegistradaRef.current = chaveMetricaObra;
-      }
-
-      visualizacoesLocais = Math.max(
-        metricasBase.visualizacoes,
-        proximasVisualizacoes
-      );
-    } catch {
-      visualizacoesLocais = metricasBase.visualizacoes;
-    }
 
     try {
       const curtidasTexto = lerStorageUsuarioObraPublica(
         LIKED_WORKS_STORAGE_KEY,
         usuarioIdLogado
       );
-      const curtidasJson: unknown = curtidasTexto ? JSON.parse(curtidasTexto) : [];
+      const curtidasJson: unknown = curtidasTexto
+        ? JSON.parse(curtidasTexto)
+        : [];
       const obrasCurtidas = Array.isArray(curtidasJson)
         ? curtidasJson.filter(
             (titulo): titulo is string =>
@@ -2398,7 +2436,9 @@ export default function ObraDinamicaPage() {
         FOLLOWED_WORKS_STORAGE_KEY,
         usuarioIdLogado
       );
-      const seguidasJson: unknown = seguidasTexto ? JSON.parse(seguidasTexto) : [];
+      const seguidasJson: unknown = seguidasTexto
+        ? JSON.parse(seguidasTexto)
+        : [];
       const obrasSeguidas = Array.isArray(seguidasJson)
         ? seguidasJson.filter(
             (titulo): titulo is string =>
@@ -2415,15 +2455,24 @@ export default function ObraDinamicaPage() {
       setObraSeguida(seguindoLocalAtivo);
       setMetricasObra({
         ...metricasBase,
-        visualizacoes: visualizacoesLocais,
         curtidaAtiva: curtidaLocalAtiva,
-        curtidas: metricasBase.curtidas + (curtidaLocalAtiva ? 1 : 0),
-        seguidores: seguindoLocalAtivo ? 1 : metricasBase.seguidores,
+        curtidas: Math.max(
+          metricasBase.curtidas,
+          curtidaLocalAtiva ? 1 : 0
+        ),
+        seguidores: Math.max(
+          metricasBase.seguidores,
+          seguindoLocalAtivo ? 1 : 0
+        ),
         carregado: true,
       });
     }, 0);
 
-    if (obraAtual.origem !== "local" || !obraId || !idObraSupabaseValido(obraId)) {
+    if (
+      obraAtual.origem !== "local" ||
+      !obraId ||
+      !idObraSupabaseValido(obraId)
+    ) {
       return () => {
         window.clearTimeout(aplicarMetricasLocaisTimer);
       };
@@ -2436,99 +2485,54 @@ export default function ObraDinamicaPage() {
         const { data: usuarioData } = await supabase.auth.getUser();
         const userId = usuarioData.user?.id || "";
 
-        const { data: obraMetricas } = await supabase
-          .from("obras")
-          .select("visualizacoes")
-          .eq("id", obraId)
-          .limit(1)
-          .maybeSingle();
+        const [
+          { data: obraMetricas },
+          curtidasUsuarios,
+          seguidoresUsuarios,
+          comentariosUsuarios,
+        ] = await Promise.all([
+          supabase
+            .from("obras")
+            .select("visualizacoes")
+            .eq("id", obraId)
+            .limit(1)
+            .maybeSingle(),
+          carregarUsuariosUnicosPorColunaObraPublica(
+            "obra_curtidas",
+            "obra_id",
+            [obraId],
+          ),
+          carregarUsuariosUnicosPorColunaObraPublica(
+            "seguindo_obras",
+            "obra_id",
+            [obraId],
+          ),
+          carregarUsuariosUnicosPorColunaObraPublica(
+            "comentarios_obras",
+            "obra_id",
+            [obraId],
+          ),
+        ]);
 
-        let visualizacoes = obterNumeroSeguro(
+        const visualizacoes = obterNumeroSeguro(
           (obraMetricas as { visualizacoes?: number } | null)?.visualizacoes,
           metricasBase.visualizacoes
         );
+        const totalCurtidas = totalUsuariosUnicosObraPublica(
+          curtidasUsuarios,
+          obraId,
+        );
+        const totalSeguidores = totalUsuariosUnicosObraPublica(
+          seguidoresUsuarios,
+          obraId,
+        );
+        const totalComentarios = totalUsuariosUnicosObraPublica(
+          comentariosUsuarios,
+          obraId,
+        );
 
-        const chaveVisualizacao = `supabase-${obraId}`;
-        const jaContouVisualizacao =
-          visualizacaoRegistradaRef.current === chaveVisualizacao;
-
-        if (!jaContouVisualizacao) {
-          const proximaVisualizacao = visualizacoes + 1;
-
-          const { error: erroRpc } = await supabase.rpc(
-            "incrementar_visualizacao_obra",
-            { obra_id_param: obraId }
-          );
-
-          if (erroRpc) {
-            await supabase
-              .from("obras")
-              .update({ visualizacoes: proximaVisualizacao })
-              .eq("id", obraId);
-          }
-
-          visualizacaoRegistradaRef.current = chaveVisualizacao;
-          visualizacoes = proximaVisualizacao;
-        }
-
-        const [
-          { count: totalCurtidasObra },
-          { count: totalSeguidores },
-          { count: totalComentariosObra },
-        ] = await Promise.all([
-          supabase
-            .from("obra_curtidas")
-            .select("id", { count: "exact", head: true })
-            .eq("obra_id", obraId),
-          supabase
-            .from("seguindo_obras")
-            .select("id", { count: "exact", head: true })
-            .eq("obra_id", obraId),
-          supabase
-            .from("comentarios_obras")
-            .select("id", { count: "exact", head: true })
-            .eq("obra_id", obraId),
-        ]);
-
-        let totalCurtidasCapitulos = 0;
-        const idsCapitulos = capitulosDaObra
-          .map((capitulo) => capitulo.id)
-          .filter(Boolean);
-
-        if (idsCapitulos.length > 0) {
-          const { count: curtidasCapitulosCount } = await supabase
-            .from("curtidas_capitulos")
-            .select("id", { count: "exact", head: true })
-            .in("capitulo_id", idsCapitulos);
-
-          totalCurtidasCapitulos = curtidasCapitulosCount ?? 0;
-        }
-
-        const totalCurtidas =
-          (totalCurtidasObra ?? 0) + totalCurtidasCapitulos;
-
-        let curtidaAtiva = false;
-        let seguindoAtivo = false;
-
-        try {
-          const obrasSeguidasTexto = lerStorageUsuarioObraPublica(
-            FOLLOWED_WORKS_STORAGE_KEY,
-            usuarioIdLogado
-          );
-          const obrasSeguidasJson: unknown = obrasSeguidasTexto
-            ? JSON.parse(obrasSeguidasTexto)
-            : [];
-          const obrasSeguidas = Array.isArray(obrasSeguidasJson)
-            ? obrasSeguidasJson.filter(
-                (titulo): titulo is string =>
-                  typeof titulo === "string" && Boolean(titulo.trim())
-              )
-            : [];
-
-          seguindoAtivo = obrasSeguidas.includes(obraNormalizada);
-        } catch {
-          seguindoAtivo = false;
-        }
+        let curtidaAtiva = curtidaLocalAtiva;
+        let seguindoAtivo = seguindoLocalAtivo;
 
         if (userId) {
           const [{ data: curtidaUsuario }, { data: seguidorUsuario }] =
@@ -2549,7 +2553,7 @@ export default function ObraDinamicaPage() {
                 .maybeSingle(),
             ]);
 
-          curtidaAtiva = Boolean(curtidaUsuario);
+          curtidaAtiva = Boolean(curtidaUsuario) || curtidaAtiva;
           seguindoAtivo = Boolean(seguidorUsuario) || seguindoAtivo;
         }
 
@@ -2560,9 +2564,9 @@ export default function ObraDinamicaPage() {
         setObraSeguida(seguindoAtivo);
         setMetricasObra({
           visualizacoes,
-          curtidas: totalCurtidas ?? metricasBase.curtidas,
-          comentarios: totalComentariosObra ?? 0,
-          seguidores: totalSeguidores ?? metricasBase.seguidores,
+          curtidas: totalCurtidas,
+          comentarios: totalComentarios,
+          seguidores: totalSeguidores,
           curtidaAtiva,
           carregado: true,
         });
@@ -2582,7 +2586,7 @@ export default function ObraDinamicaPage() {
       cancelado = true;
       window.clearTimeout(aplicarMetricasLocaisTimer);
     };
-  }, [obra, capitulosDaObra, obraNormalizada, usuarioIdLogado]);
+  }, [obra, obraNormalizada, usuarioIdLogado]);
 
   useEffect(() => {
     if (!obra) {
@@ -3031,6 +3035,10 @@ export default function ObraDinamicaPage() {
       local: true,
     };
 
+    const usuarioJaComentou = comentariosObra.some(
+      (comentario) => comentario.userId === userId
+    );
+
     setComentarioEnviando(true);
     setComentarioStatus("");
     setComentarioTexto("");
@@ -3039,7 +3047,8 @@ export default function ObraDinamicaPage() {
     );
     setMetricasObra((metricasAtuais) => ({
       ...metricasAtuais,
-      comentarios: metricasAtuais.comentarios + 1,
+      comentarios:
+        metricasAtuais.comentarios + (usuarioJaComentou ? 0 : 1),
     }));
 
     if (!idObraSupabaseValido(obra.id)) {
@@ -3096,7 +3105,10 @@ export default function ObraDinamicaPage() {
       );
       setMetricasObra((metricasAtuais) => ({
         ...metricasAtuais,
-        comentarios: Math.max(0, metricasAtuais.comentarios - 1),
+        comentarios: Math.max(
+          0,
+          metricasAtuais.comentarios - (usuarioJaComentou ? 0 : 1)
+        ),
       }));
       setComentarioTexto(texto);
       setComentarioStatus("Não foi possível enviar o comentário agora.");
@@ -3134,6 +3146,12 @@ export default function ObraDinamicaPage() {
       return;
     }
 
+    const usuarioTemOutroComentario = comentariosObra.some(
+      (comentarioAtual) =>
+        comentarioAtual.id !== comentario.id &&
+        comentarioAtual.userId === comentario.userId
+    );
+
     setComentarioRemovendoId(comentario.id);
     setComentarioStatus("");
 
@@ -3161,7 +3179,11 @@ export default function ObraDinamicaPage() {
       });
       setMetricasObra((metricasAtuais) => ({
         ...metricasAtuais,
-        comentarios: Math.max(0, metricasAtuais.comentarios - 1),
+        comentarios: Math.max(
+          0,
+          metricasAtuais.comentarios -
+            (usuarioTemOutroComentario ? 0 : 1)
+        ),
       }));
     } catch {
       setComentarioStatus("Não foi possível remover o comentário agora.");

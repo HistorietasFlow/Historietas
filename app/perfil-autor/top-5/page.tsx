@@ -293,8 +293,25 @@ function normalizarObraSupabaseTop5(row: SupabaseObraTop5Row, index: number): Ob
   };
 }
 
+function obterIdentificadoresObraTop5(
+  obra: Pick<ObraTop5, "id" | "slug" | "titulo">,
+) {
+  return Array.from(
+    new Set(
+      [
+        obra.id,
+        obra.slug,
+        criarSlugBase(obra.titulo),
+        normalizarTexto(obra.titulo),
+      ]
+        .map((identificador) => identificador.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
 function criarChaveObraTop5(obra: Pick<ObraTop5, "id" | "slug" | "titulo">) {
-  return obra.id.trim() || obra.slug.trim() || normalizarTexto(obra.titulo);
+  return obterIdentificadoresObraTop5(obra)[0] || "";
 }
 
 function criarStorageKeyUsuarioTop5(chave: string, userId: string) {
@@ -390,41 +407,50 @@ async function carregarObrasSupabaseTop5() {
 }
 
 function mesclarObrasTop5(obras: ObraTop5[]) {
-  const mapa = new Map<string, ObraTop5>();
+  const obrasMescladas: ObraTop5[] = [];
+  const indicePorIdentificador = new Map<string, number>();
 
   obras.forEach((obra) => {
-    const chaves = Array.from(
-      new Set(
-        [obra.id, obra.slug, normalizarTexto(obra.titulo)].filter(
-          (valor): valor is string => typeof valor === "string" && Boolean(valor.trim()),
-        ),
-      ),
-    );
+    if (!obra.publicado) {
+      return;
+    }
 
-    const chaveExistente = chaves.find((chave) => mapa.has(chave));
+    const identificadores = obterIdentificadoresObraTop5(obra);
+    const indiceExistente = identificadores
+      .map((identificador) => indicePorIdentificador.get(identificador))
+      .find((indice): indice is number => typeof indice === "number");
 
-    if (chaveExistente) {
-      const obraExistente = mapa.get(chaveExistente);
+    if (typeof indiceExistente === "number") {
+      const obraExistente = obrasMescladas[indiceExistente];
+      const obraAtualizada: ObraTop5 = {
+        ...obraExistente,
+        ...obra,
+        capa: obra.capa || obraExistente.capa,
+        capaNome: obra.capaNome || obraExistente.capaNome,
+        capitulos:
+          obra.capitulos.length > 0 ? obra.capitulos : obraExistente.capitulos,
+        arquivoObra: obra.arquivoObra || obraExistente.arquivoObra,
+        link: obra.link || obraExistente.link,
+      };
 
-      if (obraExistente) {
-        const obraAtualizada = {
-          ...obraExistente,
-          ...obra,
-          capa: obra.capa || obraExistente.capa,
-          capitulos: obra.capitulos.length > 0 ? obra.capitulos : obraExistente.capitulos,
-          arquivoObra: obra.arquivoObra || obraExistente.arquivoObra,
-        };
+      obrasMescladas[indiceExistente] = obraAtualizada;
 
-        chaves.forEach((chave) => mapa.set(chave, obraAtualizada));
-      }
+      obterIdentificadoresObraTop5(obraAtualizada).forEach((identificador) => {
+        indicePorIdentificador.set(identificador, indiceExistente);
+      });
 
       return;
     }
 
-    chaves.forEach((chave) => mapa.set(chave, obra));
+    const novoIndice = obrasMescladas.length;
+    obrasMescladas.push(obra);
+
+    identificadores.forEach((identificador) => {
+      indicePorIdentificador.set(identificador, novoIndice);
+    });
   });
 
-  return Array.from(new Map(Array.from(mapa.values()).map((obra) => [criarChaveObraTop5(obra), obra])).values());
+  return obrasMescladas;
 }
 
 function carregarTop5Salvo(userId: string) {
@@ -442,9 +468,16 @@ function carregarTop5Salvo(userId: string) {
       return [] as string[];
     }
 
-    return ids
-      .filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
-      .slice(0, TOP_FIVE_MAXIMO);
+    return Array.from(
+      new Set(
+        ids
+          .filter(
+            (id): id is string =>
+              typeof id === "string" && Boolean(id.trim()),
+          )
+          .map((id) => id.trim()),
+      ),
+    ).slice(0, TOP_FIVE_MAXIMO);
   } catch {
     return [] as string[];
   }
@@ -462,6 +495,41 @@ function salvarTop5(userId: string, ids: string[]) {
     userIdLimpo,
     ids.slice(0, TOP_FIVE_MAXIMO),
   );
+}
+
+function normalizarIdsSelecionadosTop5(
+  ids: string[],
+  obrasDisponiveis: ObraTop5[],
+) {
+  const obrasPorIdentificador = new Map<string, ObraTop5>();
+
+  obrasDisponiveis.forEach((obra) => {
+    obterIdentificadoresObraTop5(obra).forEach((identificador) => {
+      obrasPorIdentificador.set(identificador, obra);
+    });
+  });
+
+  const idsNormalizados: string[] = [];
+  const chavesUsadas = new Set<string>();
+
+  ids.forEach((id) => {
+    const obra = obrasPorIdentificador.get(id.trim());
+
+    if (!obra) {
+      return;
+    }
+
+    const chaveCanonica = criarChaveObraTop5(obra);
+
+    if (!chaveCanonica || chavesUsadas.has(chaveCanonica)) {
+      return;
+    }
+
+    chavesUsadas.add(chaveCanonica);
+    idsNormalizados.push(chaveCanonica);
+  });
+
+  return idsNormalizados.slice(0, TOP_FIVE_MAXIMO);
 }
 
 function criarCapaTop5Style(capa: string): CSSProperties {
@@ -523,9 +591,26 @@ export default function Top5PerfilAutorPage() {
           pegarTexto(authData.user?.email) ||
           "Usuário";
 
+        const obrasMescladas = mesclarObrasTop5([
+          ...carregarObrasLocaisTop5(userId),
+          ...obrasSupabase,
+        ]);
+        const idsSalvos = userId ? carregarTop5Salvo(userId) : [];
+        const idsNormalizados = normalizarIdsSelecionadosTop5(
+          idsSalvos,
+          obrasMescladas,
+        );
+
         setUsuario(userId ? { id: userId, nome: nomeUsuario } : null);
-        setObras(mesclarObrasTop5([...obrasSupabase, ...carregarObrasLocaisTop5(userId)]));
-        setIdsSelecionados(userId ? carregarTop5Salvo(userId) : []);
+        setObras(obrasMescladas);
+        setIdsSelecionados(idsNormalizados);
+
+        if (
+          userId &&
+          JSON.stringify(idsSalvos) !== JSON.stringify(idsNormalizados)
+        ) {
+          salvarTop5(userId, idsNormalizados);
+        }
       } catch {
         if (!cancelado) {
           setUsuario(null);
@@ -550,9 +635,9 @@ export default function Top5PerfilAutorPage() {
     const mapa = new Map<string, ObraTop5>();
 
     obras.forEach((obra) => {
-      [obra.id, obra.slug, normalizarTexto(obra.titulo)]
-        .filter(Boolean)
-        .forEach((chave) => mapa.set(chave, obra));
+      obterIdentificadoresObraTop5(obra).forEach((chave) => {
+        mapa.set(chave, obra);
+      });
     });
 
     return mapa;
@@ -566,9 +651,10 @@ export default function Top5PerfilAutorPage() {
   const obrasFiltradas = useMemo(() => {
     const buscaNormalizada = normalizarTexto(busca);
 
+    const idsSelecionadosSet = new Set(idsSelecionados);
     const obrasOrdenadas = [...obras].sort((obraA, obraB) => {
-      const selecionadaA = idsSelecionados.includes(criarChaveObraTop5(obraA));
-      const selecionadaB = idsSelecionados.includes(criarChaveObraTop5(obraB));
+      const selecionadaA = idsSelecionadosSet.has(criarChaveObraTop5(obraA));
+      const selecionadaB = idsSelecionadosSet.has(criarChaveObraTop5(obraB));
 
       if (selecionadaA !== selecionadaB) {
         return Number(selecionadaB) - Number(selecionadaA);
@@ -644,14 +730,17 @@ export default function Top5PerfilAutorPage() {
     setMensagem("");
 
     try {
-      salvarTop5(usuario.id, idsSelecionados);
-      window.setTimeout(() => {
-        router.push("/perfil-autor");
-      }, 350);
+      const idsValidos = normalizarIdsSelecionadosTop5(
+        idsSelecionados,
+        obras,
+      );
+
+      salvarTop5(usuario.id, idsValidos);
+      setIdsSelecionados(idsValidos);
+      router.push("/perfil-autor");
     } catch {
-      setMensagem("Não foi possível salvar agora. Tente novamente.");
-    } finally {
       setSalvando(false);
+      setMensagem("Não foi possível salvar agora. Tente novamente.");
     }
   }
 

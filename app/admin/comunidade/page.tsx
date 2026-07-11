@@ -437,7 +437,9 @@ async function removerDependenciasConteudoComunidade(
 
   const comentariosDoPost = await buscarIdsComentariosDoPost(alvoId);
 
+  await apagarRegistrosOpcionais("comunidade_curtidas", "post_id", alvoId);
   await apagarRegistrosOpcionais("comunidade_post_curtidas", "post_id", alvoId);
+  await apagarRegistrosOpcionais("comunidade_enquete_votos", "post_id", alvoId);
   await apagarRegistrosOpcionais("comunidade_post_salvos", "post_id", alvoId);
   await apagarRegistrosOpcionais("comunidade_salvos", "post_id", alvoId);
 
@@ -865,8 +867,26 @@ export default function AdminComunidadePage() {
 
   const denunciasPerfisFiltradas = useMemo(() => {
     const buscaNormalizada = normalizarTexto(busca);
+    const statusPerfilCorrespondente: StatusDenunciaPerfil | null =
+      statusFiltro === "pendente"
+        ? "pendente"
+        : statusFiltro === "em_analise"
+          ? "analisada"
+          : statusFiltro === "resolvida"
+            ? "resolvida"
+            : statusFiltro === "rejeitada"
+              ? "ignorada"
+              : null;
+
+    if (statusFiltro === "arquivadas") {
+      return [];
+    }
 
     return denunciasPerfis.filter((denuncia) => {
+      if (statusPerfilCorrespondente && denuncia.status !== statusPerfilCorrespondente) {
+        return false;
+      }
+
       if (!buscaNormalizada) {
         return true;
       }
@@ -887,7 +907,7 @@ export default function AdminComunidadePage() {
 
       return conteudoBusca.includes(buscaNormalizada);
     });
-  }, [busca, denunciasPerfis]);
+  }, [busca, denunciasPerfis, statusFiltro]);
 
   useEffect(() => {
     const fecharMenuTimer = window.setTimeout(() => {

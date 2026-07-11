@@ -339,50 +339,55 @@ function normalizarTipoNotificacao(valor: unknown): NotificacaoLocal["tipo"] {
   const tipoOriginal = typeof valor === "string" ? valor.trim() : "";
   const tipoAlias = tipoOriginal.toLowerCase().replace(/[ _]+/g, "-");
 
-  if (
-    tipoAlias === "comunidade-curtida-post" ||
-    tipoAlias === "comunidade-post-curtida" ||
-    tipoAlias === "curtida-post-comunidade" ||
-    tipoAlias === "curtida-comunidade-post" ||
-    tipoAlias === "curtida-publicacao-comunidade" ||
-    tipoAlias === "curtida-publicacao"
-  ) {
-    return "curtida-comunidade";
+  const aliases: Record<string, NotificacaoLocal["tipo"]> = {
+    "capitulo-novo": "novo-capitulo",
+    "novo-capitulo-publicado": "novo-capitulo",
+    "comunidade-curtida-post": "curtida-comunidade",
+    "comunidade-post-curtida": "curtida-comunidade",
+    "curtida-post-comunidade": "curtida-comunidade",
+    "curtida-comunidade-post": "curtida-comunidade",
+    "curtida-publicacao-comunidade": "curtida-comunidade",
+    "curtida-publicacao": "curtida-comunidade",
+    "comunidade-comentario-post": "comentario-comunidade",
+    "comunidade-post-comentario": "comentario-comunidade",
+    "comentario-post-comunidade": "comentario-comunidade",
+    "comentario-comunidade-post": "comentario-comunidade",
+    "comentario-publicacao-comunidade": "comentario-comunidade",
+    "comentario-publicacao": "comentario-comunidade",
+    "review": "review-comunidade",
+    "avaliacao-comunidade": "review-comunidade",
+  };
+
+  const tipoPeloAlias = aliases[tipoAlias];
+
+  if (tipoPeloAlias) {
+    return tipoPeloAlias;
   }
 
-  if (
-    tipoAlias === "comunidade-comentario-post" ||
-    tipoAlias === "comunidade-post-comentario" ||
-    tipoAlias === "comentario-post-comunidade" ||
-    tipoAlias === "comentario-comunidade-post" ||
-    tipoAlias === "comentario-publicacao-comunidade" ||
-    tipoAlias === "comentario-publicacao"
-  ) {
-    return "comentario-comunidade";
+  const tiposValidos = new Set<NotificacaoLocal["tipo"]>([
+    "novo-capitulo",
+    "comentario-obra",
+    "curtida-obra",
+    "comentario-capitulo",
+    "curtida-capitulo",
+    "curtida-comentario-capitulo",
+    "comentario-comunidade",
+    "curtida-comunidade",
+    "review-comunidade",
+    "atividade-comunidade",
+    "curtida-diario",
+    "comentario-diario",
+    "atividade-diario",
+    "novo-seguidor",
+    "denuncia-comunidade",
+    "moderacao-comunidade",
+  ]);
+
+  if (tiposValidos.has(tipoAlias as NotificacaoLocal["tipo"])) {
+    return tipoAlias as NotificacaoLocal["tipo"];
   }
 
-  if (
-    tipoOriginal === "novo-capitulo" ||
-    tipoOriginal === "comentario-obra" ||
-    tipoOriginal === "curtida-obra" ||
-    tipoOriginal === "comentario-capitulo" ||
-    tipoOriginal === "curtida-capitulo" ||
-    tipoOriginal === "curtida-comentario-capitulo" ||
-    tipoOriginal === "comentario-comunidade" ||
-    tipoOriginal === "curtida-comunidade" ||
-    tipoOriginal === "review-comunidade" ||
-    tipoOriginal === "atividade-comunidade" ||
-    tipoOriginal === "curtida-diario" ||
-    tipoOriginal === "comentario-diario" ||
-    tipoOriginal === "atividade-diario" ||
-    tipoOriginal === "novo-seguidor" ||
-    tipoOriginal === "denuncia-comunidade" ||
-    tipoOriginal === "moderacao-comunidade"
-  ) {
-    return tipoOriginal;
-  }
-
-  return "novo-capitulo";
+  return "atividade-comunidade";
 }
 
 function normalizarNotificacao(
@@ -519,13 +524,6 @@ function salvarNotificacoes(notificacoes: NotificacaoLocal[], userId = "") {
   }
 }
 
-function criarChaveNotificacoesApagadas(usuarioId: string) {
-  return criarStorageKeyUsuarioNotificacoes(
-    CHAVE_NOTIFICACOES_APAGADAS,
-    usuarioId
-  );
-}
-
 function carregarIdsNotificacoesApagadas(usuarioId: string) {
   const usuarioIdLimpo = usuarioId.trim();
 
@@ -588,7 +586,13 @@ function filtrarNotificacoesApagadas(
 }
 
 function linkDiretoValido(link: string) {
-  return link.startsWith("/") || link.startsWith("http://") || link.startsWith("https://");
+  const linkLimpo = link.trim();
+
+  return (
+    linkLimpo.startsWith("/") &&
+    !linkLimpo.startsWith("//") &&
+    !linkLimpo.includes("\\")
+  );
 }
 
 function criarPerfilHrefNotificacao(userId: string, nomeUsuario: string) {
@@ -903,49 +907,6 @@ function extrairAutorComentarioComunidade(notificacao: NotificacaoLocal) {
   return match?.[1]?.trim() || "Leitor";
 }
 
-function extrairTextoComentarioComunidade(notificacao: NotificacaoLocal) {
-  if (notificacao.tipo !== "comentario-comunidade") {
-    return notificacao.mensagem;
-  }
-
-  const mensagem = notificacao.mensagem.trim();
-  const marcadorComentario = '": ';
-  const indiceMarcador = mensagem.indexOf(marcadorComentario);
-
-  if (indiceMarcador >= 0) {
-    const comentario = mensagem.slice(indiceMarcador + marcadorComentario.length).trim();
-
-    return comentario || "Comentou na sua publicação.";
-  }
-
-  const indiceDoisPontos = mensagem.indexOf(": ");
-
-  if (indiceDoisPontos >= 0) {
-    const comentario = mensagem.slice(indiceDoisPontos + 2).trim();
-
-    return comentario || "Comentou na sua publicação.";
-  }
-
-  return "Comentou na sua publicação.";
-}
-
-function extrairTextoComentarioCapitulo(notificacao: NotificacaoLocal) {
-  if (notificacao.tipo !== "comentario-capitulo") {
-    return notificacao.mensagem;
-  }
-
-  const mensagem = notificacao.mensagem.trim();
-  const indiceDoisPontos = mensagem.indexOf(": ");
-
-  if (indiceDoisPontos >= 0) {
-    const comentario = mensagem.slice(indiceDoisPontos + 2).trim();
-
-    return comentario || "Comentou no capítulo.";
-  }
-
-  return "Comentou no capítulo.";
-}
-
 function notificacaoPareceComentarioComunidade(notificacao: NotificacaoLocal) {
   const titulo = normalizarTexto(notificacao.titulo);
   const mensagem = normalizarTexto(notificacao.mensagem);
@@ -1147,7 +1108,7 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+      .select("*")
       .in("user_id", ids)
       .limit(1000);
 
@@ -1171,7 +1132,7 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url")
+        .select("*")
         .in("id", idsFaltantes)
         .limit(1000);
 
@@ -1257,7 +1218,7 @@ function normalizarObraSupabase(row: SupabaseObraRow, index: number): ObraLocal 
     ultimaLeituraEm: "",
     progressoLeitura: 0,
     slug,
-    link: `/obra/${slug}`,
+    link: pegarTexto(row.link ?? row.href, `/obra/${slug}`),
   };
 }
 
@@ -1280,34 +1241,91 @@ function normalizarCapituloSupabase(
 }
 
 function mesclarObrasPorIdSlug(obrasBase: ObraLocal[], obrasNovas: ObraLocal[]) {
-  const mapa = new Map<string, ObraLocal>();
+  const obrasMescladas: ObraLocal[] = [];
+
+  function obterIdentificadores(obra: ObraLocal) {
+    return new Set(
+      [
+        obra.id,
+        obra.slug,
+        criarSlugBase(obra.titulo),
+        normalizarTexto(obra.titulo),
+      ]
+        .map((valor) => valor.trim())
+        .filter(Boolean)
+    );
+  }
 
   [...obrasBase, ...obrasNovas].forEach((obra) => {
-    const chave = obra.id || obra.slug || criarSlugBase(obra.titulo);
-    const existente = mapa.get(chave);
+    const identificadoresObra = obterIdentificadores(obra);
+    const indiceExistente = obrasMescladas.findIndex((obraExistente) => {
+      const identificadoresExistentes = obterIdentificadores(obraExistente);
 
-    if (!existente) {
-      mapa.set(chave, obra);
+      return Array.from(identificadoresObra).some((identificador) =>
+        identificadoresExistentes.has(identificador)
+      );
+    });
+
+    if (indiceExistente < 0) {
+      obrasMescladas.push(obra);
       return;
     }
 
-    mapa.set(chave, {
+    const existente = obrasMescladas[indiceExistente];
+    const capitulosPorId = new Map<string, CapituloLocal>();
+
+    [...existente.capitulos, ...obra.capitulos].forEach((capitulo) => {
+      const capituloExistente = capitulosPorId.get(capitulo.id);
+
+      capitulosPorId.set(
+        capitulo.id,
+        capituloExistente
+          ? {
+              ...capituloExistente,
+              ...capitulo,
+              curtiu: capituloExistente.curtiu || capitulo.curtiu,
+              salvo: capituloExistente.salvo || capitulo.salvo,
+              comentario: capitulo.comentario || capituloExistente.comentario,
+              lido: capituloExistente.lido || capitulo.lido,
+              lidoEm: capitulo.lidoEm || capituloExistente.lidoEm,
+            }
+          : capitulo
+      );
+    });
+
+    const capitulos = Array.from(capitulosPorId.values());
+
+    obrasMescladas[indiceExistente] = {
       ...existente,
       ...obra,
       autorId: obra.autorId || existente.autorId || "",
-      capitulos: obra.capitulos.length > 0 ? obra.capitulos : existente.capitulos,
+      capitulos,
       capa: obra.capa || existente.capa,
       capaNome: obra.capaNome || existente.capaNome,
-      ultimoCapituloLidoId: obra.ultimoCapituloLidoId || existente.ultimoCapituloLidoId,
+      link: obra.link || existente.link,
+      ultimoCapituloLidoId:
+        obra.ultimoCapituloLidoId || existente.ultimoCapituloLidoId,
       ultimaLeituraEm: obra.ultimaLeituraEm || existente.ultimaLeituraEm,
-      progressoLeitura:
-        obra.capitulos.length > 0
-          ? calcularProgressoLeitura(obra.capitulos)
-          : existente.progressoLeitura,
-    });
+      progressoLeitura: calcularProgressoLeitura(capitulos),
+    };
   });
 
-  return Array.from(mapa.values());
+  return obrasMescladas;
+}
+
+function notificacaoSinteticaDeCapitulo(notificacao: NotificacaoLocal) {
+  return (
+    notificacao.tipo === "novo-capitulo" &&
+    notificacao.id.startsWith("capitulo-")
+  );
+}
+
+function criarChaveMesclagemNotificacao(notificacao: NotificacaoLocal) {
+  if (notificacao.tipo === "novo-capitulo" && notificacao.capituloId.trim()) {
+    return `novo-capitulo:${notificacao.capituloId.trim()}`;
+  }
+
+  return notificacao.id.trim();
 }
 
 function mesclarNotificacoes(
@@ -1316,23 +1334,52 @@ function mesclarNotificacoes(
 ) {
   const mapa = new Map<string, NotificacaoLocal>();
 
-  notificacoesLocais.forEach((notificacao) => {
-    const notificacaoNormalizada = normalizarNotificacaoParaExibicao(notificacao);
+  [...notificacoesLocais, ...notificacoesSupabase].forEach((notificacao) => {
+    const notificacaoNormalizada =
+      normalizarNotificacaoParaExibicao(notificacao);
+    const chave = criarChaveMesclagemNotificacao(notificacaoNormalizada);
 
-    mapa.set(notificacaoNormalizada.id, notificacaoNormalizada);
-  });
+    if (!chave) {
+      return;
+    }
 
-  notificacoesSupabase.forEach((notificacao) => {
-    const notificacaoNormalizada = normalizarNotificacaoParaExibicao(notificacao);
-    const existente = mapa.get(notificacaoNormalizada.id);
+    const existente = mapa.get(chave);
 
-    mapa.set(notificacaoNormalizada.id, {
-      ...notificacaoNormalizada,
-      lida: existente?.lida || notificacaoNormalizada.lida,
+    if (!existente) {
+      mapa.set(chave, notificacaoNormalizada);
+      return;
+    }
+
+    const existenteSintetica = notificacaoSinteticaDeCapitulo(existente);
+    const novaSintetica = notificacaoSinteticaDeCapitulo(
+      notificacaoNormalizada
+    );
+    const preferida =
+      existenteSintetica && !novaSintetica
+        ? notificacaoNormalizada
+        : !existenteSintetica && novaSintetica
+          ? existente
+          : notificacaoNormalizada;
+    const secundaria = preferida === notificacaoNormalizada
+      ? existente
+      : notificacaoNormalizada;
+
+    mapa.set(chave, {
+      ...secundaria,
+      ...preferida,
+      obraId: preferida.obraId || secundaria.obraId,
+      capituloId: preferida.capituloId || secundaria.capituloId,
+      link: preferida.link || secundaria.link,
+      autorId: preferida.autorId || secundaria.autorId,
+      autorNome: preferida.autorNome || secundaria.autorNome,
+      autorAvatar: preferida.autorAvatar || secundaria.autorAvatar,
+      lida: existente.lida || notificacaoNormalizada.lida,
     });
   });
 
-  return Array.from(mapa.values()).sort((a, b) => dataNotificacao(b) - dataNotificacao(a));
+  return Array.from(mapa.values()).sort(
+    (a, b) => dataNotificacao(b) - dataNotificacao(a)
+  );
 }
 
 function lerIdsLocalStorage(chave: string, userId = ""): string[] {
@@ -1359,11 +1406,11 @@ async function carregarObrasPublicadasSupabase() {
     const { data: obrasData, error: obrasError } = await supabase
       .from("obras")
       .select(
-        "id, titulo, autor, nome_autor, autor_nome, user_id, autor_id, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, slug, publicado, criada_em, created_at"
+        "id,titulo,autor,user_id,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,slug,link,publicado,criada_em"
       )
       .eq("publicado", true)
       .order("criada_em", { ascending: false })
-      .limit(80);
+      .limit(120);
 
     if (obrasError || !Array.isArray(obrasData)) {
       return [];
@@ -1379,53 +1426,50 @@ async function carregarObrasPublicadasSupabase() {
       return obrasSupabase;
     }
 
-    try {
-      const { data: capitulosData } = await supabase
-        .from("capitulos")
-        .select("id, obra_id, titulo, ordem, publicado, criado_em, created_at")
-        .in("obra_id", idsObras)
-        .eq("publicado", true)
-        .order("ordem", { ascending: true })
-        .limit(600);
+    const { data: capitulosData, error: capitulosError } = await supabase
+      .from("capitulos")
+      .select("id,obra_id,titulo,ordem,publicado,criado_em")
+      .in("obra_id", idsObras)
+      .eq("publicado", true)
+      .order("ordem", { ascending: true })
+      .limit(1000);
 
-      if (!Array.isArray(capitulosData)) {
-        return obrasSupabase;
-      }
-
-      const capitulosPorObra = new Map<string, CapituloLocal[]>();
-
-      capitulosData.forEach((capitulo, index) => {
-        const capituloNormalizado = normalizarCapituloSupabase(
-          capitulo as unknown as SupabaseCapituloRow,
-          index
-        );
-
-        if (!capituloNormalizado.obraId) {
-          return;
-        }
-
-        const capitulosAtuais = capitulosPorObra.get(capituloNormalizado.obraId) || [];
-        const { obraId: _obraId, ...capituloSemObraId } = capituloNormalizado;
-        void _obraId;
-
-        capitulosPorObra.set(capituloNormalizado.obraId, [
-          ...capitulosAtuais,
-          capituloSemObraId,
-        ]);
-      });
-
-      return obrasSupabase.map((obra) => {
-        const capitulos = capitulosPorObra.get(obra.id) || [];
-
-        return {
-          ...obra,
-          capitulos,
-          progressoLeitura: calcularProgressoLeitura(capitulos),
-        };
-      });
-    } catch {
+    if (capitulosError || !Array.isArray(capitulosData)) {
       return obrasSupabase;
     }
+
+    const capitulosPorObra = new Map<string, CapituloLocal[]>();
+
+    capitulosData.forEach((capitulo, index) => {
+      const capituloNormalizado = normalizarCapituloSupabase(
+        capitulo as unknown as SupabaseCapituloRow,
+        index
+      );
+
+      if (!capituloNormalizado.obraId) {
+        return;
+      }
+
+      const capitulosAtuais =
+        capitulosPorObra.get(capituloNormalizado.obraId) || [];
+      const { obraId: _obraId, ...capituloSemObraId } = capituloNormalizado;
+      void _obraId;
+
+      capitulosPorObra.set(capituloNormalizado.obraId, [
+        ...capitulosAtuais,
+        capituloSemObraId,
+      ]);
+    });
+
+    return obrasSupabase.map((obra) => {
+      const capitulos = capitulosPorObra.get(obra.id) || [];
+
+      return {
+        ...obra,
+        capitulos,
+        progressoLeitura: calcularProgressoLeitura(capitulos),
+      };
+    });
   } catch {
     return [];
   }
@@ -1472,8 +1516,16 @@ function normalizarNotificacaoSupabase(
   registro: Record<string, unknown>,
   index: number
 ): NotificacaoLocal | null {
+  const metadata =
+    registro.metadata &&
+    typeof registro.metadata === "object" &&
+    !Array.isArray(registro.metadata)
+      ? (registro.metadata as Record<string, unknown>)
+      : {};
+
   const id =
     pegarTexto(registro.notificacao_id) ||
+    pegarTexto(metadata.notificacao_id) ||
     pegarTexto(registro.id) ||
     `notificacao-supabase-${index + 1}`;
 
@@ -1486,45 +1538,80 @@ function normalizarNotificacaoSupabase(
       registro.criado_em ??
         registro.criada_em ??
         registro.created_at ??
-        registro.updated_at ??
-        registro.atualizado_em
+        registro.atualizado_em ??
+        registro.updated_at
     ) || new Date().toISOString();
-  const tipo = normalizarTipoNotificacao(registro.tipo);
-  const titulo = pegarTexto(registro.titulo, obterDetalheNotificacao({
-    id,
-    obraId: "",
-    capituloId: "",
-    link: "",
-    titulo: "Nova notificação",
-    mensagem: "Você recebeu uma nova notificação.",
-    tipo,
-    lida: false,
-    criadaEm,
-  }));
+  const tipo = normalizarTipoNotificacao(
+    registro.tipo ?? metadata.tipo
+  );
+  const titulo = pegarTexto(
+    registro.titulo ?? metadata.titulo,
+    obterDetalheNotificacao({
+      id,
+      obraId: "",
+      capituloId: "",
+      link: "",
+      titulo: "Nova notificação",
+      mensagem: "Você recebeu uma nova notificação.",
+      tipo,
+      lida: false,
+      criadaEm,
+    })
+  );
   const mensagem = pegarTexto(
-    registro.mensagem ?? registro.texto ?? registro.descricao,
+    registro.mensagem ??
+      registro.texto ??
+      registro.descricao ??
+      metadata.mensagem ??
+      metadata.texto,
     "Você recebeu uma nova notificação."
   );
 
   return normalizarNotificacao(
     {
       id,
-      obraId: pegarTexto(registro.obra_id ?? registro.obraId),
-      capituloId: pegarTexto(registro.capitulo_id ?? registro.capituloId),
-      link: pegarTexto(registro.link ?? registro.href),
+      obraId: pegarTexto(
+        registro.obra_id ?? registro.obraId ?? metadata.obra_id
+      ),
+      capituloId: pegarTexto(
+        registro.capitulo_id ??
+          registro.capituloId ??
+          metadata.capitulo_id
+      ),
+      link: pegarTexto(
+        registro.link ??
+          registro.href ??
+          metadata.link ??
+          metadata.href
+      ),
       titulo,
       mensagem,
       tipo,
-      lida: registro.lida === true,
+      lida: registro.lida === true || registro.lida === "true",
       criadaEm,
       autorId: pegarTexto(
-        registro.autor_id ?? registro.autorId ?? registro.remetente_id
+        registro.autor_id ??
+          registro.autorId ??
+          registro.remetente_id ??
+          registro.ator_id ??
+          metadata.autor_id ??
+          metadata.remetente_id ??
+          metadata.ator_id
       ),
       autorNome: pegarTexto(
-        registro.autor_nome ?? registro.autorNome ?? registro.remetente_nome
+        registro.autor_nome ??
+          registro.autorNome ??
+          registro.remetente_nome ??
+          metadata.autor_nome ??
+          metadata.remetente_nome ??
+          metadata.ator_nome
       ),
       autorAvatar: pegarTexto(
-        registro.autor_avatar ?? registro.autorAvatar ?? registro.remetente_avatar
+        registro.autor_avatar ??
+          registro.autorAvatar ??
+          registro.remetente_avatar ??
+          metadata.autor_avatar ??
+          metadata.remetente_avatar
       ),
     },
     index
@@ -1534,23 +1621,24 @@ function normalizarNotificacaoSupabase(
 async function carregarNotificacoesDiretasSupabase(
   userId: string
 ): Promise<NotificacaoLocal[]> {
-  if (!userId) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
     return [];
   }
 
   try {
     const { data, error } = await supabase
       .from("notificacoes")
-      .select("id,notificacao_id,obra_id,capitulo_id,link,titulo,mensagem,tipo,lida,criada_em,created_at,updated_at,autor_id,autor_nome,autor_avatar")
-      .eq("user_id", userId)
-      .order("criada_em", { ascending: false })
-      .limit(120);
+      .select("*")
+      .eq("user_id", userIdLimpo)
+      .limit(300);
 
     if (error || !Array.isArray(data)) {
       return [];
     }
 
-    return data
+    const notificacoesNormalizadas = data
       .map((item, index) => {
         if (!item || typeof item !== "object" || Array.isArray(item)) {
           return null;
@@ -1563,7 +1651,28 @@ async function carregarNotificacoesDiretasSupabase(
       })
       .filter(
         (notificacao): notificacao is NotificacaoLocal => Boolean(notificacao)
-      )
+      );
+
+    const perfis = await carregarPerfisNotificacoes(
+      notificacoesNormalizadas
+        .map((notificacao) => notificacao.autorId || "")
+        .filter(Boolean)
+    );
+
+    return notificacoesNormalizadas
+      .map((notificacao) => {
+        const perfil = notificacao.autorId
+          ? perfis.get(notificacao.autorId)
+          : null;
+
+        return {
+          ...notificacao,
+          autorNome:
+            notificacao.autorNome || perfil?.nome || "",
+          autorAvatar:
+            notificacao.autorAvatar || perfil?.avatar || "",
+        };
+      })
       .sort((a, b) => dataNotificacao(b) - dataNotificacao(a));
   } catch {
     return [];
@@ -1572,8 +1681,17 @@ async function carregarNotificacoesDiretasSupabase(
 
 function extrairSlugObraDeLinkNotificacao(link: string) {
   const match = /\/obra\/([^/?#]+)(?:\/|$)/i.exec(link.trim());
+  const slugCodificado = match?.[1] || "";
 
-  return match?.[1] ? decodeURIComponent(match[1]) : "";
+  if (!slugCodificado) {
+    return "";
+  }
+
+  try {
+    return decodeURIComponent(slugCodificado);
+  } catch {
+    return slugCodificado;
+  }
 }
 
 function formatarTituloSlugNotificacao(slug: string) {
@@ -1830,19 +1948,25 @@ async function carregarObrasDasNotificacoesDiretasSupabase(
 }
 
 async function carregarNotificacoesLidasSupabase(userId: string): Promise<string[]> {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from("notificacoes")
-      .select("notificacao_id, id, lida")
-      .eq("user_id", userId)
+      .select("*")
+      .eq("user_id", userIdLimpo)
       .eq("lida", true)
-      .limit(1000);
+      .limit(2000);
 
     if (error || !Array.isArray(data)) {
       return [];
     }
 
-    const ids: string[] = [];
+    const ids = new Set<string>();
 
     data.forEach((item: unknown) => {
       if (!item || typeof item !== "object" || Array.isArray(item)) {
@@ -1850,14 +1974,23 @@ async function carregarNotificacoesLidasSupabase(userId: string): Promise<string
       }
 
       const registro = item as Record<string, unknown>;
-      const id = pegarTexto(registro.notificacao_id ?? registro.id);
+      const metadata =
+        registro.metadata &&
+        typeof registro.metadata === "object" &&
+        !Array.isArray(registro.metadata)
+          ? (registro.metadata as Record<string, unknown>)
+          : {};
+      const id =
+        pegarTexto(registro.notificacao_id) ||
+        pegarTexto(metadata.notificacao_id) ||
+        pegarTexto(registro.id);
 
       if (id) {
-        ids.push(id);
+        ids.add(id);
       }
     });
 
-    return ids;
+    return Array.from(ids);
   } catch {
     return [];
   }
@@ -1966,27 +2099,35 @@ function criarNotificacoesDeCapitulos(
       return;
     }
 
-    obra.capitulos.forEach((capitulo, index) => {
-      const id = `capitulo-${obra.id}-${capitulo.id}`;
+    const indiceCapitulo = obra.capitulos.length - 1;
+    const capitulo = indiceCapitulo >= 0 ? obra.capitulos[indiceCapitulo] : null;
 
-      notificacoesCriadas.push({
-        id,
-        obraId: obra.id,
-        capituloId: capitulo.id,
-        link: criarHrefLeituraCapitulo(obra, capitulo.id, index + 1),
-        titulo: "Novo capítulo publicado",
-        mensagem: `${capitulo.titulo} chegou em ${obra.titulo}.`,
-        tipo: "novo-capitulo",
-        lida: idsLidos.has(id),
-        criadaEm: capitulo.criadoEm || obra.criadaEm || new Date().toISOString(),
-        autorId: obra.autorId || "",
-        autorNome: obra.autor,
-        autorAvatar: "",
-      });
+    if (!capitulo) {
+      return;
+    }
+
+    const id = `capitulo-${obra.id}-${capitulo.id}`;
+    const idCanonico = `novo-capitulo:${capitulo.id}`;
+
+    notificacoesCriadas.push({
+      id,
+      obraId: obra.id,
+      capituloId: capitulo.id,
+      link: criarHrefLeituraCapitulo(obra, capitulo.id, indiceCapitulo + 1),
+      titulo: "Novo capítulo publicado",
+      mensagem: `${capitulo.titulo} chegou em ${obra.titulo}.`,
+      tipo: "novo-capitulo",
+      lida: idsLidos.has(id) || idsLidos.has(idCanonico),
+      criadaEm: capitulo.criadoEm || obra.criadaEm || new Date().toISOString(),
+      autorId: obra.autorId || "",
+      autorNome: obra.autor,
+      autorAvatar: "",
     });
   });
 
-  return notificacoesCriadas.sort((a, b) => dataNotificacao(b) - dataNotificacao(a));
+  return notificacoesCriadas.sort(
+    (a, b) => dataNotificacao(b) - dataNotificacao(a)
+  );
 }
 
 async function carregarNotificacoesComunidadeSupabase(
@@ -2826,42 +2967,6 @@ async function carregarNotificacoesDiarioSupabase(
   );
 }
 
-function criarPayloadNotificacaoSupabase(
-  userId: string,
-  notificacao: NotificacaoLocal,
-  lida: boolean
-) {
-  return {
-    user_id: userId,
-    notificacao_id: notificacao.id,
-    obra_id: notificacao.obraId || null,
-    capitulo_id: notificacao.capituloId || null,
-    titulo: notificacao.titulo,
-    mensagem: notificacao.mensagem,
-    link: montarLinkNotificacao(notificacao),
-    tipo: notificacao.tipo,
-    lida,
-    created_at: notificacao.criadaEm,
-    updated_at: new Date().toISOString(),
-  };
-}
-
-function criarPayloadMinimoNotificacaoSupabase(
-  userId: string,
-  notificacao: NotificacaoLocal,
-  lida: boolean
-) {
-  return {
-    user_id: userId,
-    notificacao_id: notificacao.id,
-    titulo: notificacao.titulo,
-    mensagem: notificacao.mensagem,
-    link: montarLinkNotificacao(notificacao),
-    tipo: notificacao.tipo,
-    lida,
-  };
-}
-
 async function obterUserIdAtualNotificacoes(fallbackUserId = "") {
   const fallbackLimpo = fallbackUserId.trim();
 
@@ -2883,11 +2988,12 @@ async function sincronizarNotificacoesLidasSupabase(
   lida: boolean,
   userIdAtual = ""
 ) {
-  const notificacoesValidas = notificacoesParaSincronizar.filter((notificacao) =>
-    Boolean(notificacao.id.trim())
-  );
   const idsNotificacoes = Array.from(
-    new Set(notificacoesValidas.map((notificacao) => notificacao.id.trim()))
+    new Set(
+      notificacoesParaSincronizar
+        .map((notificacao) => notificacao.id.trim())
+        .filter(Boolean)
+    )
   );
 
   if (idsNotificacoes.length === 0) {
@@ -2910,41 +3016,29 @@ async function sincronizarNotificacoesLidasSupabase(
       return;
     }
 
-    const payloadCompleto = notificacoesValidas.map((notificacao) =>
-      criarPayloadNotificacaoSupabase(userId, notificacao, lida)
-    );
-
-    const { error: erroUpsert } = await supabase
+    const { error: erroPorNotificacaoId } = await supabase
       .from("notificacoes")
-      .upsert(payloadCompleto, { onConflict: "user_id,notificacao_id" });
-
-    if (!erroUpsert) {
-      return;
-    }
-
-    await supabase
-      .from("notificacoes")
-      .delete()
+      .update({ lida })
       .eq("user_id", userId)
       .in("notificacao_id", idsNotificacoes);
 
-    const { error: erroInsertCompleto } = await supabase
-      .from("notificacoes")
-      .insert(payloadCompleto);
-
-    if (!erroInsertCompleto) {
+    if (!erroPorNotificacaoId) {
       return;
     }
 
-    await supabase
-      .from("notificacoes")
-      .insert(
-        notificacoesValidas.map((notificacao) =>
-          criarPayloadMinimoNotificacaoSupabase(userId, notificacao, lida)
-        )
-      );
+    const idsUuid = idsNotificacoes.filter((id) =>
+      idObraSupabaseValido(id)
+    );
+
+    if (idsUuid.length > 0) {
+      await supabase
+        .from("notificacoes")
+        .update({ lida })
+        .eq("user_id", userId)
+        .in("id", idsUuid);
+    }
   } catch {
-    // Se a RPC/tabela falhar, o localStorage mantém funcionando.
+    // O estado local continua funcionando se a sincronização remota falhar.
   }
 }
 
@@ -3066,6 +3160,8 @@ export default function NotificacoesPage() {
 
     async function carregarDados() {
       let manterCarregando = false;
+      let usuarioAutenticado = false;
+      let usuarioAtualId = "";
 
       try {
         const { data: dadosUsuario, error: erroUsuario } =
@@ -3081,7 +3177,8 @@ export default function NotificacoesPage() {
           return;
         }
 
-        const usuarioAtualId = dadosUsuario.user.id;
+        usuarioAtualId = dadosUsuario.user.id;
+        usuarioAutenticado = true;
         const obrasLocais = carregarObras(usuarioAtualId);
         const notificacoesLocais = carregarNotificacoes(usuarioAtualId);
         const obrasSupabase = await carregarObrasPublicadasSupabase();
@@ -3115,16 +3212,16 @@ export default function NotificacoesPage() {
         const obrasPorIdMescladas = new Map(
           obrasMescladas.map((obra) => [obra.id, obra])
         );
-        const notificacoesLocaisFiltradas = notificacoesLocais
-          .filter((notificacao) => !notificacaoEhComunidade(notificacao))
-          .filter((notificacao) =>
+        const notificacoesLocaisFiltradas = notificacoesLocais.filter(
+          (notificacao) =>
+            !notificacaoEhCapitulo(notificacao) ||
             notificacaoCapituloPertenceAObraSeguida(
               notificacao,
               obrasPorIdMescladas,
               idsSeguidos,
               usuarioAtualId
             )
-          );
+        );
         const notificacoesLidasIds = estadoSupabase?.notificacoesLidasIds || [];
         const notificacoesCapitulosSupabase = criarNotificacoesDeCapitulos(
           obrasMescladas,
@@ -3147,8 +3244,8 @@ export default function NotificacoesPage() {
         ]);
         const notificacoesMescladas = filtrarNotificacoesApagadas(
           mesclarNotificacoes(notificacoesLocaisFiltradas, [
-            ...notificacoesDiretasSupabase,
             ...notificacoesCapitulosSupabase,
+            ...notificacoesDiretasSupabase,
             ...notificacoesComunidadeSupabase,
             ...notificacoesDiarioSupabase,
           ]),
@@ -3177,10 +3274,25 @@ export default function NotificacoesPage() {
           notificacoesMescladas.filter((notificacao) => !notificacao.lida).length
         );
       } catch {
-        if (componenteAtivo) {
+        if (!componenteAtivo) {
+          return;
+        }
+
+        if (!usuarioAutenticado || !usuarioAtualId) {
           manterCarregando = true;
           router.replace(criarLoginHrefNotificacoes());
+          return;
         }
+
+        const obrasLocais = carregarObras(usuarioAtualId);
+        const notificacoesLocais = carregarNotificacoes(usuarioAtualId);
+
+        setUsuarioNotificacoesId(usuarioAtualId);
+        setObras(obrasLocais);
+        setNotificacoes(notificacoesLocais);
+        definirNotificacoesNaoLidas(
+          notificacoesLocais.filter((notificacao) => !notificacao.lida).length
+        );
       } finally {
         if (componenteAtivo && !manterCarregando) {
           setCarregando(false);

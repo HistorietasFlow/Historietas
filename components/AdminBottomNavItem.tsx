@@ -17,6 +17,16 @@ function valorTextoAdmin(valor: unknown) {
   return typeof valor === "string" ? valor.trim().toLowerCase() : "";
 }
 
+function valorBooleanoAdmin(valor: unknown) {
+  if (valor === true) {
+    return true;
+  }
+
+  const texto = valorTextoAdmin(valor);
+
+  return texto === "true" || texto === "1" || texto === "sim" || texto === "yes";
+}
+
 function metadataTemAdmin(appMetadata: AppMetadataAdmin | null | undefined) {
   if (!appMetadata || typeof appMetadata !== "object") {
     return false;
@@ -36,8 +46,8 @@ function metadataTemAdmin(appMetadata: AppMetadataAdmin | null | undefined) {
     tipoUsuario === "admin" ||
     tipoUsuario === "moderador" ||
     tipoUsuario === "moderator" ||
-    appMetadata.admin === true ||
-    appMetadata.is_admin === true
+    valorBooleanoAdmin(appMetadata.admin) ||
+    valorBooleanoAdmin(appMetadata.is_admin)
   );
 }
 
@@ -52,6 +62,10 @@ export default function AdminBottomNavItem() {
 
   useEffect(() => {
     let cancelado = false;
+
+    function invalidarVerificacaoAtual() {
+      verificacaoAtualRef.current += 1;
+    }
 
     async function verificarAdmin() {
       const verificacaoId = verificacaoAtualRef.current + 1;
@@ -82,7 +96,9 @@ export default function AdminBottomNavItem() {
           return;
         }
 
-        setMostrarAdmin(adminPeloToken || (!adminError && adminLiberado === true));
+        setMostrarAdmin(
+          adminError ? adminPeloToken : adminLiberado === true,
+        );
       } catch {
         if (!cancelado && verificacaoAtualRef.current === verificacaoId) {
           setMostrarAdmin(false);
@@ -95,16 +111,17 @@ export default function AdminBottomNavItem() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
-        setMostrarAdmin(false);
-        return;
-      }
+      invalidarVerificacaoAtual();
+      setMostrarAdmin(false);
 
-      void verificarAdmin();
+      if (event !== "SIGNED_OUT") {
+        void verificarAdmin();
+      }
     });
 
     return () => {
       cancelado = true;
+      invalidarVerificacaoAtual();
       subscription.unsubscribe();
     };
   }, []);

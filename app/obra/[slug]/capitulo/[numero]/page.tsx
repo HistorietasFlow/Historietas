@@ -10,55 +10,66 @@ type PageProps = {
 
 type ObraCapituloRouteRow = {
   id: string;
-  slug: string | null;
-  publicado: boolean | null;
 };
 
 type CapituloRouteRow = {
   id: string;
-  obra_id: string;
-  ordem: number | null;
-  publicado: boolean | null;
 };
+
+function decodificarSlugSeguro(valor: string) {
+  const slug = valor.trim();
+
+  if (!slug) {
+    return "";
+  }
+
+  try {
+    return decodeURIComponent(slug).trim();
+  } catch {
+    return "";
+  }
+}
 
 function obterNumeroCapituloSeguro(valor: string) {
   const numero = Number(valor);
 
-  if (!Number.isInteger(numero) || numero < 1) {
-    return 1;
-  }
-
-  return numero;
+  return Number.isInteger(numero) && numero >= 1 ? numero : null;
 }
 
 export default async function CapituloCanonicoPage({ params }: PageProps) {
   const { slug, numero } = await params;
-  const slugSeguro = decodeURIComponent(slug || "").trim();
+  const slugSeguro = decodificarSlugSeguro(slug || "");
   const numeroCapitulo = obterNumeroCapituloSeguro(numero);
 
   if (!slugSeguro) {
     redirect("/explorar");
   }
 
+  const obraHref = `/obra/${encodeURIComponent(slugSeguro)}`;
+
+  if (numeroCapitulo === null) {
+    redirect(obraHref);
+  }
+
   const supabase = await criarSupabaseServerClient();
 
   const { data: obraData, error: obraError } = await supabase
     .from("obras")
-    .select("id, slug, publicado")
+    .select("id")
     .eq("slug", slugSeguro)
     .eq("publicado", true)
     .limit(1)
     .maybeSingle();
 
   if (obraError || !obraData) {
-    redirect(`/obra/${encodeURIComponent(slugSeguro)}`);
+    redirect(obraHref);
   }
 
-  const obra = obraData as unknown as ObraCapituloRouteRow;
+  const obra = obraData as ObraCapituloRouteRow;
 
   const { data: capituloData, error: capituloError } = await supabase
     .from("capitulos")
-    .select("id, obra_id, ordem, publicado")
+    .select("id")
     .eq("obra_id", obra.id)
     .eq("ordem", numeroCapitulo)
     .eq("publicado", true)
@@ -66,14 +77,14 @@ export default async function CapituloCanonicoPage({ params }: PageProps) {
     .maybeSingle();
 
   if (capituloError || !capituloData) {
-    redirect(`/obra/${encodeURIComponent(slugSeguro)}`);
+    redirect(obraHref);
   }
 
-  const capitulo = capituloData as unknown as CapituloRouteRow;
+  const capitulo = capituloData as CapituloRouteRow;
 
   redirect(
     `/ler-capitulo?obraId=${encodeURIComponent(
-      obra.id
-    )}&capituloId=${encodeURIComponent(capitulo.id)}`
+      obra.id,
+    )}&capituloId=${encodeURIComponent(capitulo.id)}`,
   );
 }

@@ -58,6 +58,14 @@ type UsuarioConfiguracoes = {
   email: string;
 };
 
+type AppMetadataAdminConfiguracoes = {
+  role?: unknown;
+  cargo?: unknown;
+  tipo_usuario?: unknown;
+  admin?: unknown;
+  is_admin?: unknown;
+};
+
 type IconName =
   | "user"
   | "mail"
@@ -592,8 +600,51 @@ function carregarJsonArray(chave: string, userId = "") {
   }
 }
 
+function criarChaveItemResumo(item: unknown, index: number) {
+  if (typeof item === "string" || typeof item === "number") {
+    const valor = String(item).trim();
+
+    return valor || `item-${index}`;
+  }
+
+  if (item && typeof item === "object" && !Array.isArray(item)) {
+    const registro = item as Record<string, unknown>;
+    const identificadores = [
+      registro.id,
+      registro.obra_id,
+      registro.obraId,
+      registro.capitulo_id,
+      registro.capituloId,
+      registro.user_id,
+      registro.userId,
+      registro.autor_id,
+      registro.autorId,
+      registro.notificacao_id,
+    ];
+    const identificador = identificadores.find(
+      (valor) => typeof valor === "string" && Boolean(valor.trim()),
+    );
+
+    if (typeof identificador === "string") {
+      return identificador.trim();
+    }
+
+    try {
+      return JSON.stringify(registro) || `item-${index}`;
+    } catch {
+      return `item-${index}`;
+    }
+  }
+
+  return `item-${index}`;
+}
+
 function contarItens(chave: string, userId = "") {
-  return carregarJsonArray(chave, userId).length;
+  const itens = carregarJsonArray(chave, userId);
+
+  return new Set(
+    itens.map((item, index) => criarChaveItemResumo(item, index)),
+  ).size;
 }
 
 function criarResumoLocal(userId = ""): ResumoLocal {
@@ -663,7 +714,6 @@ function salvarPreferencias(preferencias: PreferenciasConta, userId = "") {
   salvarJsonStorageUsuarioConfiguracoes(CONFIG_STORAGE_KEY, userId, preferencias);
   salvarTemaVisual(preferencias.temaVisual, userId);
   aplicarTemaVisual(preferencias.temaVisual);
-  dispararEventoTemaVisualAtualizado();
 }
 
 function criarBackupLocal(userId = "") {
@@ -697,8 +747,12 @@ function criarBackupLocal(userId = "") {
 
 async function copiarTexto(texto: string) {
   if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(texto);
-    return;
+    try {
+      await navigator.clipboard.writeText(texto);
+      return;
+    } catch {
+      // Em alguns navegadores o Clipboard API existe, mas é bloqueado.
+    }
   }
 
   const campoTemporario = document.createElement("textarea");
@@ -708,9 +762,16 @@ async function copiarTexto(texto: string) {
   campoTemporario.style.position = "fixed";
   campoTemporario.style.left = "-9999px";
   document.body.appendChild(campoTemporario);
-  campoTemporario.select();
-  document.execCommand("copy");
-  document.body.removeChild(campoTemporario);
+
+  try {
+    campoTemporario.select();
+
+    if (!document.execCommand("copy")) {
+      throw new Error("Não foi possível copiar os dados.");
+    }
+  } finally {
+    campoTemporario.remove();
+  }
 }
 
 function criarLoginHrefConfiguracoes() {
@@ -740,6 +801,36 @@ function normalizarUsernameConfiguracoes(valor: string) {
 
 function idUsuarioSupabaseValido(id: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
+function valorTextoAdminConfiguracoes(valor: unknown) {
+  return typeof valor === "string" ? valor.trim().toLowerCase() : "";
+}
+
+function metadataTemAdminConfiguracoes(
+  appMetadata: AppMetadataAdminConfiguracoes | null | undefined,
+) {
+  if (!appMetadata || typeof appMetadata !== "object") {
+    return false;
+  }
+
+  const role = valorTextoAdminConfiguracoes(appMetadata.role);
+  const cargo = valorTextoAdminConfiguracoes(appMetadata.cargo);
+  const tipoUsuario = valorTextoAdminConfiguracoes(appMetadata.tipo_usuario);
+
+  return (
+    role === "admin" ||
+    role === "moderador" ||
+    role === "moderator" ||
+    cargo === "admin" ||
+    cargo === "moderador" ||
+    cargo === "moderator" ||
+    tipoUsuario === "admin" ||
+    tipoUsuario === "moderador" ||
+    tipoUsuario === "moderator" ||
+    appMetadata.admin === true ||
+    appMetadata.is_admin === true
+  );
 }
 
 type PerfilConfiguracoesSupabase = {
@@ -842,6 +933,9 @@ async function salvarPerfilConfiguracoesSupabase({
   const atualizadoEm = new Date().toISOString();
 
   try {
+    let perfilId = "";
+    let erroBusca = "";
+
     const { data: perfilPorUserId, error: erroUserId } = await supabase
       .from("profiles")
       .select("id,user_id")
@@ -850,13 +944,12 @@ async function salvarPerfilConfiguracoesSupabase({
       .maybeSingle();
 
     if (erroUserId) {
-      return { ok: false, erro: erroUserId.message };
+      erroBusca = erroUserId.message;
+    } else if (perfilPorUserId && typeof perfilPorUserId === "object") {
+      perfilId = pegarTexto(
+        (perfilPorUserId as Record<string, unknown>).id,
+      );
     }
-
-    let perfilId =
-      perfilPorUserId && typeof perfilPorUserId === "object"
-        ? pegarTexto((perfilPorUserId as Record<string, unknown>).id)
-        : "";
 
     if (!perfilId) {
       const { data: perfilPorId, error: erroId } = await supabase
@@ -867,13 +960,10 @@ async function salvarPerfilConfiguracoesSupabase({
         .maybeSingle();
 
       if (erroId) {
-        return { ok: false, erro: erroId.message };
+        erroBusca = erroBusca || erroId.message;
+      } else if (perfilPorId && typeof perfilPorId === "object") {
+        perfilId = pegarTexto((perfilPorId as Record<string, unknown>).id);
       }
-
-      perfilId =
-        perfilPorId && typeof perfilPorId === "object"
-          ? pegarTexto((perfilPorId as Record<string, unknown>).id)
-          : "";
     }
 
     const payloadAtualizacao = {
@@ -883,33 +973,59 @@ async function salvarPerfilConfiguracoesSupabase({
     };
 
     if (perfilId) {
-      const { error } = await supabase
+      const { data: perfilAtualizado, error } = await supabase
         .from("profiles")
         .update(payloadAtualizacao)
-        .eq("id", perfilId);
+        .eq("id", perfilId)
+        .select("id")
+        .maybeSingle();
 
+      if (error) {
+        return { ok: false, erro: error.message };
+      }
+
+      if (!perfilAtualizado) {
+        return {
+          ok: false,
+          erro: "A atualização do perfil não foi confirmada.",
+        };
+      }
+
+      return { ok: true, erro: "" };
+    }
+
+    if (erroBusca) {
+      return { ok: false, erro: erroBusca };
+    }
+
+    const { data: perfilCriado, error } = await supabase
+      .from("profiles")
+      .insert({
+        id: userIdLimpo,
+        user_id: userIdLimpo,
+        avatar_url: "",
+        bio: "",
+        tipo: "leitor",
+        criado_em: atualizadoEm,
+        is_admin: false,
+        sobre_bio: "",
+        ...payloadAtualizacao,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      return { ok: false, erro: error.message };
+    }
+
+    if (!perfilCriado) {
       return {
-        ok: !error,
-        erro: error?.message || "",
+        ok: false,
+        erro: "A criação do perfil não foi confirmada.",
       };
     }
 
-    const { error } = await supabase.from("profiles").insert({
-      id: userIdLimpo,
-      user_id: userIdLimpo,
-      avatar_url: "",
-      bio: "",
-      tipo: "leitor",
-      criado_em: atualizadoEm,
-      is_admin: false,
-      sobre_bio: "",
-      ...payloadAtualizacao,
-    });
-
-    return {
-      ok: !error,
-      erro: error?.message || "",
-    };
+    return { ok: true, erro: "" };
   } catch (error) {
     return {
       ok: false,
@@ -1405,12 +1521,17 @@ export default function ConfiguracoesPage() {
           return;
         }
 
+        const adminPeloToken = metadataTemAdminConfiguracoes(
+          user.app_metadata as AppMetadataAdminConfiguracoes | null | undefined,
+        );
         const { data: adminLiberadoResposta, error } = await supabase.rpc(
           "usuario_e_admin",
         );
 
         if (!cancelado) {
-          setAdminLiberado(!error && adminLiberadoResposta === true);
+          setAdminLiberado(
+            adminPeloToken || (!error && adminLiberadoResposta === true),
+          );
         }
       } catch {
         if (!cancelado) {
@@ -1478,7 +1599,13 @@ export default function ConfiguracoesPage() {
       return;
     }
 
+    const userIdSeguro = usuarioIdLogado.trim();
     const usernameLimpo = normalizarUsernameConfiguracoes(preferencias.username);
+
+    if (!idUsuarioSupabaseValido(userIdSeguro)) {
+      router.replace(criarLoginHrefConfiguracoes());
+      return;
+    }
 
     if (preferencias.username.trim() && usernameLimpo.length < 3) {
       setErroUsername("Use pelo menos 3 caracteres no @username.");
@@ -1495,43 +1622,72 @@ export default function ConfiguracoesPage() {
     setSalvando(true);
     setErroUsername("");
 
-    const resultadoPerfil = await salvarPerfilConfiguracoesSupabase({
-      userId: usuarioIdLogado,
-      nome: preferenciasNormalizadas.nomeExibicao || usuario?.nome || "Usuário",
-      username: usernameLimpo,
-    });
-
-    if (!resultadoPerfil.ok) {
-      setErroUsername(traduzirErroUsernameConfiguracoes(resultadoPerfil.erro));
-      setSalvando(false);
-      return;
-    }
-
     try {
-      await supabase.auth.updateUser({
+      const { data: dadosUsuarioAtual, error: erroUsuarioAtual } =
+        await supabase.auth.getUser();
+      const usuarioAtualId = dadosUsuarioAtual.user?.id || "";
+
+      if (
+        erroUsuarioAtual ||
+        !idUsuarioSupabaseValido(usuarioAtualId) ||
+        usuarioAtualId !== userIdSeguro
+      ) {
+        router.replace(criarLoginHrefConfiguracoes());
+        return;
+      }
+
+      const resultadoPerfil = await salvarPerfilConfiguracoesSupabase({
+        userId: userIdSeguro,
+        nome:
+          preferenciasNormalizadas.nomeExibicao || usuario?.nome || "Usuário",
+        username: usernameLimpo,
+      });
+
+      if (!resultadoPerfil.ok) {
+        setErroUsername(
+          traduzirErroUsernameConfiguracoes(resultadoPerfil.erro),
+        );
+        return;
+      }
+
+      const { error: erroMetadata } = await supabase.auth.updateUser({
         data: {
-          nome: preferenciasNormalizadas.nomeExibicao || usuario?.nome || "Usuário",
+          nome:
+            preferenciasNormalizadas.nomeExibicao ||
+            usuario?.nome ||
+            "Usuário",
           username: usernameLimpo,
         },
       });
-    } catch {
-      // A tabela profiles já foi atualizada; metadata do Auth é complementar.
-    }
 
-    salvarPreferencias(preferenciasNormalizadas, usuarioIdLogado);
-    setPreferencias(preferenciasNormalizadas);
-    setUsuario((usuarioAtual) =>
-      usuarioAtual
-        ? {
-            ...usuarioAtual,
-            nome: preferenciasNormalizadas.nomeExibicao || usuarioAtual.nome,
-            username: usernameLimpo,
-            email: preferenciasNormalizadas.emailContato || usuarioAtual.email,
-          }
-        : usuarioAtual,
-    );
-    setResumo(criarResumoLocal(usuarioIdLogado));
-    setSalvando(false);
+      if (erroMetadata) {
+        console.warn(
+          "O perfil foi salvo, mas os metadados da autenticação não sincronizaram:",
+          erroMetadata.message,
+        );
+      }
+
+      salvarPreferencias(preferenciasNormalizadas, userIdSeguro);
+      setPreferencias(preferenciasNormalizadas);
+      setUsuario((usuarioAtual) =>
+        usuarioAtual
+          ? {
+              ...usuarioAtual,
+              nome:
+                preferenciasNormalizadas.nomeExibicao || usuarioAtual.nome,
+              username: usernameLimpo,
+              email:
+                preferenciasNormalizadas.emailContato || usuarioAtual.email,
+            }
+          : usuarioAtual,
+      );
+      setResumo(criarResumoLocal(userIdSeguro));
+    } catch (error) {
+      console.warn("Não consegui salvar as configurações da conta:", error);
+      setErroUsername("Não consegui salvar suas alterações agora.");
+    } finally {
+      setSalvando(false);
+    }
   }
 
   async function copiarBackup() {

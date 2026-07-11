@@ -7,7 +7,7 @@ import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
-import { criarSlugBase, normalizarTexto } from "../../lib/utils";
+import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 
 const SAVED_RELEASES_STORAGE_KEY = "historietas-lancamentos-salvos";
 
@@ -196,10 +196,37 @@ function adicionarObraNaListaEmBreve(
   obra: Pick<ObraEmBreveCard, "id" | "slug" | "titulo">,
   lista: string[]
 ) {
+  const obraId = obra.id.trim();
+
   return normalizarListaIdsEmBreve([
     ...removerObraDaListaEmBreve(obra, lista),
-    ...obterIdentificadoresObraEmBreve(obra),
+    ...(obraId ? [obraId] : obterIdentificadoresObraEmBreve(obra)),
   ]);
+}
+
+function normalizarLancamentosSalvosComObrasEmBreve(
+  lista: string[],
+  obras: ObraEmBreveCard[]
+) {
+  const obraIdPorIdentificador = new Map<string, string>();
+
+  obras.forEach((obra) => {
+    const obraId = obra.id.trim();
+
+    if (!obraId) {
+      return;
+    }
+
+    obterIdentificadoresObraEmBreve(obra).forEach((identificador) => {
+      obraIdPorIdentificador.set(identificador, obraId);
+    });
+  });
+
+  return normalizarListaIdsEmBreve(
+    normalizarListaIdsEmBreve(lista).map(
+      (identificador) => obraIdPorIdentificador.get(identificador) || identificador
+    )
+  );
 }
 
 async function carregarLancamentosSalvosSupabaseEmBreve(userId: string) {
@@ -244,6 +271,19 @@ async function carregarLancamentosSalvosSupabaseEmBreve(userId: string) {
   }
 }
 
+function erroEhRegistroDuplicadoEmBreve(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const registro = error as { code?: unknown; message?: unknown };
+  const codigo = typeof registro.code === "string" ? registro.code : "";
+  const mensagem =
+    typeof registro.message === "string" ? registro.message.toLowerCase() : "";
+
+  return codigo === "23505" || mensagem.includes("duplicate");
+}
+
 async function sincronizarAvisoLancamentoSupabaseEmBreve(
   userId: string,
   obraId: string,
@@ -253,22 +293,35 @@ async function sincronizarAvisoLancamentoSupabaseEmBreve(
   const obraIdLimpo = obraId.trim();
 
   if (!userIdLimpo || !obraIdLimpo) {
-    return;
+    return false;
   }
 
   try {
-    const { error: erroDelete } = await supabase
-      .from("seguindo_obras")
-      .delete()
-      .eq("user_id", userIdLimpo)
-      .eq("obra_id", obraIdLimpo);
+    if (!ativo) {
+      const { error } = await supabase
+        .from("seguindo_obras")
+        .delete()
+        .eq("user_id", userIdLimpo)
+        .eq("obra_id", obraIdLimpo);
 
-    if (erroDelete) {
-      throw erroDelete;
+      if (error) {
+        console.warn("Não consegui remover o aviso real do Em breve:", error.message);
+        return false;
+      }
+
+      return true;
     }
 
-    if (!ativo) {
-      return;
+    const { data: registroExistente, error: erroConsulta } = await supabase
+      .from("seguindo_obras")
+      .select("obra_id")
+      .eq("user_id", userIdLimpo)
+      .eq("obra_id", obraIdLimpo)
+      .limit(1)
+      .maybeSingle();
+
+    if (!erroConsulta && registroExistente) {
+      return true;
     }
 
     const payloadBase = {
@@ -283,19 +336,26 @@ async function sincronizarAvisoLancamentoSupabaseEmBreve(
         visibilidade: "publico",
       });
 
-    if (!erroComVisibilidade) {
-      return;
+    if (!erroComVisibilidade || erroEhRegistroDuplicadoEmBreve(erroComVisibilidade)) {
+      return true;
     }
 
     const { error: erroSemVisibilidade } = await supabase
       .from("seguindo_obras")
       .insert(payloadBase);
 
-    if (erroSemVisibilidade) {
-      throw erroSemVisibilidade;
+    if (!erroSemVisibilidade || erroEhRegistroDuplicadoEmBreve(erroSemVisibilidade)) {
+      return true;
     }
+
+    console.warn(
+      "Não consegui ativar o aviso real do Em breve:",
+      erroSemVisibilidade.message
+    );
+    return false;
   } catch (error) {
     console.warn("Não consegui sincronizar aviso real do Em breve:", error);
+    return false;
   }
 }
 
@@ -387,7 +447,12 @@ function removerObrasDuplicadasEmBreve(obrasParaMostrar: ObraEmBreveCard[]) {
 }
 
 function criarLinkCardEmBreve(obra: ObraEmBreveCard) {
-  return `/em-breve?obra=${encodeURIComponent(obra.titulo)}`;
+  const params = new URLSearchParams({
+    obraId: obra.id,
+    obra: obra.titulo,
+  });
+
+  return `/em-breve?${params.toString()}`;
 }
 
 function criarLinkObraPublicadaEmBreve(obra: Pick<SupabaseObraEmBreveRow, "titulo" | "slug" | "link">) {
@@ -398,30 +463,54 @@ function criarLinkObraPublicadaEmBreve(obra: Pick<SupabaseObraEmBreveRow, "titul
   return link && !link.startsWith("/em-breve") ? link : `/obra/${slug}`;
 }
 
-async function encontrarLinkObraComConteudoEmBreve(tituloBusca: string) {
+async function encontrarLinkObraComConteudoEmBreve(
+  obraIdBusca: string,
+  tituloBusca: string
+) {
+  const obraIdLimpo = obraIdBusca.trim();
   const tituloLimpo = tituloBusca.trim();
 
-  if (!tituloLimpo) {
+  if (!obraIdLimpo && !tituloLimpo) {
     return "";
   }
 
   try {
-    const { data: obrasBanco, error: erroObras } = await supabase
-      .from("obras")
-      .select("id,titulo,slug,link,arquivo_url,publicado")
-      .ilike("titulo", tituloLimpo)
-      .eq("publicado", true)
-      .limit(5);
+    let obraEncontrada: SupabaseObraEmBreveRow | null = null;
 
-    if (erroObras || !Array.isArray(obrasBanco)) {
-      return "";
+    if (idObraSupabaseValido(obraIdLimpo)) {
+      const { data, error } = await supabase
+        .from("obras")
+        .select("id,titulo,slug,link,arquivo_url,publicado")
+        .eq("id", obraIdLimpo)
+        .eq("publicado", true)
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        obraEncontrada = data as unknown as SupabaseObraEmBreveRow;
+      }
     }
 
-    const obrasEncontradas = obrasBanco as unknown as SupabaseObraEmBreveRow[];
-    const obraEncontrada =
-      obrasEncontradas.find(
-        (obra) => normalizarTexto(obra.titulo || "") === normalizarTexto(tituloLimpo)
-      ) || obrasEncontradas[0] || null;
+    if (!obraEncontrada && tituloLimpo) {
+      const { data: obrasBanco, error: erroObras } = await supabase
+        .from("obras")
+        .select("id,titulo,slug,link,arquivo_url,publicado")
+        .ilike("titulo", tituloLimpo)
+        .eq("publicado", true)
+        .limit(5);
+
+      if (erroObras || !Array.isArray(obrasBanco)) {
+        return "";
+      }
+
+      const obrasEncontradas =
+        obrasBanco as unknown as SupabaseObraEmBreveRow[];
+      obraEncontrada =
+        obrasEncontradas.find(
+          (obra) =>
+            normalizarTexto(obra.titulo || "") === normalizarTexto(tituloLimpo)
+        ) || obrasEncontradas[0] || null;
+    }
 
     if (!obraEncontrada?.id) {
       return "";
@@ -442,7 +531,9 @@ async function encontrarLinkObraComConteudoEmBreve(tituloBusca: string) {
       return "";
     }
 
-    return capitulosBanco.length > 0 ? criarLinkObraPublicadaEmBreve(obraEncontrada) : "";
+    return capitulosBanco.length > 0
+      ? criarLinkObraPublicadaEmBreve(obraEncontrada)
+      : "";
   } catch {
     return "";
   }
@@ -519,10 +610,12 @@ function criarCoverCardEmBreveStyle(
 export default function EmBrevePage() {
   const router = useRouter();
   const [nomeObra, setNomeObra] = useState("");
+  const [obraIdConsultada, setObraIdConsultada] = useState("");
   const [obrasSalvas, setObrasSalvas] = useState<string[]>([]);
   const [obrasReaisEmBreve, setObrasReaisEmBreve] = useState<ObraEmBreveCard[]>([]);
   const [avisoAcesso, setAvisoAcesso] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const [obraProcessandoId, setObraProcessandoId] = useState("");
   const [desktopLayout, setDesktopLayout] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
@@ -539,11 +632,20 @@ export default function EmBrevePage() {
       0
     );
 
-    consultaDesktop.addEventListener("change", atualizarLayoutDesktop);
+    if (typeof consultaDesktop.addEventListener === "function") {
+      consultaDesktop.addEventListener("change", atualizarLayoutDesktop);
+
+      return () => {
+        window.clearTimeout(atualizarLayoutDesktopTimer);
+        consultaDesktop.removeEventListener("change", atualizarLayoutDesktop);
+      };
+    }
+
+    consultaDesktop.addListener(atualizarLayoutDesktop);
 
     return () => {
       window.clearTimeout(atualizarLayoutDesktopTimer);
-      consultaDesktop.removeEventListener("change", atualizarLayoutDesktop);
+      consultaDesktop.removeListener(atualizarLayoutDesktop);
     };
   }, []);
 
@@ -572,16 +674,19 @@ export default function EmBrevePage() {
 
     async function carregarLancamentosSalvos() {
       const parametros = new URLSearchParams(window.location.search);
+      const obraIdParam = pegarParametro(parametros.get("obraId"));
       const nomeObraParam = pegarParametro(parametros.get("obra"));
 
       window.setTimeout(() => {
         if (componenteAtivo) {
+          setObraIdConsultada(obraIdParam);
           setNomeObra(nomeObraParam);
         }
       }, 0);
 
-      if (nomeObraParam) {
+      if (obraIdParam || nomeObraParam) {
         const linkObraComConteudo = await encontrarLinkObraComConteudoEmBreve(
+          obraIdParam,
           nomeObraParam
         );
 
@@ -649,14 +754,42 @@ export default function EmBrevePage() {
     return () => {
       componenteAtivo = false;
     };
-  }, []);
+  }, [router]);
 
   const obrasEmBreve = removerObrasDuplicadasEmBreve(obrasReaisEmBreve);
 
-  const obraConsultada = nomeObra
-    ? obrasEmBreve.find(
-        (obra) => normalizarTexto(obra.titulo) === normalizarTexto(nomeObra)
-      ) || null
+  useEffect(() => {
+    if (!usuarioIdLogado || obrasReaisEmBreve.length === 0) {
+      return;
+    }
+
+    setObrasSalvas((obrasAtuais) => {
+      const obrasNormalizadas = normalizarLancamentosSalvosComObrasEmBreve(
+        obrasAtuais,
+        obrasReaisEmBreve
+      );
+
+      salvarJsonUsuarioEmBreve(
+        SAVED_RELEASES_STORAGE_KEY,
+        usuarioIdLogado,
+        obrasNormalizadas
+      );
+
+      return obrasNormalizadas;
+    });
+  }, [obrasReaisEmBreve, usuarioIdLogado]);
+
+  const obraConsultada = obraIdConsultada || nomeObra
+    ? obrasEmBreve.find((obra) => {
+        if (obraIdConsultada && obra.id === obraIdConsultada) {
+          return true;
+        }
+
+        return (
+          Boolean(nomeObra) &&
+          normalizarTexto(obra.titulo) === normalizarTexto(nomeObra)
+        );
+      }) || null
     : null;
 
   const outrasObrasEmBreve = obraConsultada
@@ -669,48 +802,59 @@ export default function EmBrevePage() {
   async function salvarLancamento(obra: ObraEmBreveCard) {
     const identificadoresObra = obterIdentificadoresObraEmBreve(obra);
 
-    if (identificadoresObra.length === 0) {
+    if (identificadoresObra.length === 0 || obraProcessandoId) {
       return;
     }
 
     setAvisoAcesso("");
+    setObraProcessandoId(obra.id);
 
     try {
-      const { data } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
 
-      if (!data.user) {
+      if (error || !data.user) {
         setAvisoAcesso("Entre na sua conta para ativar aviso de lançamento.");
         router.push(criarLoginHrefEmBreve());
         return;
       }
 
-      setUsuarioIdLogado(data.user.id);
-
       const avisoAtivo = listaTemObraEmBreve(obra, obrasSalvas);
-      const novasObrasSalvas = avisoAtivo
-        ? removerObraDaListaEmBreve(obra, obrasSalvas)
-        : adicionarObraNaListaEmBreve(obra, obrasSalvas);
+      const deveAtivar = !avisoAtivo;
+      const sincronizou = await sincronizarAvisoLancamentoSupabaseEmBreve(
+        data.user.id,
+        obra.id,
+        deveAtivar
+      );
 
+      if (!sincronizou) {
+        setAvisoAcesso(
+          "Não consegui salvar o aviso agora. Tente novamente em instantes."
+        );
+        return;
+      }
+
+      const novasObrasSalvas = deveAtivar
+        ? adicionarObraNaListaEmBreve(obra, obrasSalvas)
+        : removerObraDaListaEmBreve(obra, obrasSalvas);
+      const obrasNormalizadas = normalizarLancamentosSalvosComObrasEmBreve(
+        novasObrasSalvas,
+        obrasReaisEmBreve
+      );
+
+      setUsuarioIdLogado(data.user.id);
       salvarJsonUsuarioEmBreve(
         SAVED_RELEASES_STORAGE_KEY,
         data.user.id,
-        novasObrasSalvas
+        obrasNormalizadas
       );
-
-      setObrasSalvas(novasObrasSalvas);
-
-      void sincronizarAvisoLancamentoSupabaseEmBreve(
-        data.user.id,
-        obra.id,
-        !avisoAtivo
-      );
-      return;
+      setObrasSalvas(obrasNormalizadas);
     } catch {
       setAvisoAcesso("Não consegui confirmar sua conta agora. Tente novamente.");
-      router.push(criarLoginHrefEmBreve());
-      return;
+    } finally {
+      setObraProcessandoId("");
     }
   }
+
 
   return (
     <main style={pageThemeStyle}>
@@ -853,14 +997,25 @@ export default function EmBrevePage() {
                         <button
                           type="button"
                           onClick={() => salvarLancamento(obra)}
-                          style={
-                            obraSalva
+                          disabled={Boolean(obraProcessandoId)}
+                          style={{
+                            ...(obraSalva
                               ? relatedSavedButtonStyle
-                              : relatedSaveButtonStyle
-                          }
+                              : relatedSaveButtonStyle),
+                            opacity:
+                              obraProcessandoId && obraProcessandoId !== obra.id
+                                ? 0.55
+                                : 1,
+                            cursor: obraProcessandoId ? "wait" : "pointer",
+                          }}
                           aria-pressed={obraSalva}
+                          aria-busy={obraProcessandoId === obra.id}
                         >
-                          {obraSalva ? "✓ Aviso ativo" : "Avisar"}
+                          {obraProcessandoId === obra.id
+                            ? "Salvando..."
+                            : obraSalva
+                              ? "✓ Aviso ativo"
+                              : "Avisar"}
                         </button>
                       </div>
                     </div>

@@ -107,6 +107,16 @@ type SupabaseCapituloRow = {
   atualizado_em: string | null;
 };
 
+type SupabaseInteracaoCapituloHomeRow = {
+  capitulo_id: string | null;
+  user_id: string | null;
+};
+
+type SupabaseInteracaoObraHomeRow = {
+  obra_id: string | null;
+  user_id: string | null;
+};
+
 type PerfilSupabaseHome = {
   userId: string;
   nome: string;
@@ -2035,22 +2045,25 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
       }
     }
 
-    const curtidasPorObraId = new Map<string, number>();
-    const comentariosPorObraId = new Map<string, number>();
+    const usuariosCurtidasPorObraId = new Map<string, Set<string>>();
+    const usuariosComentariosPorObraId = new Map<string, Set<string>>();
     const capituloParaObraId = new Map<string, string>();
 
-    function incrementarMetricaObraHome(
-      mapa: Map<string, number>,
+    function registrarUsuarioMetricaObraHome(
+      mapa: Map<string, Set<string>>,
       obraId: string,
-      incremento = 1,
+      userId: string,
     ) {
       const obraIdLimpo = obraId.trim();
+      const userIdLimpo = userId.trim();
 
-      if (!obraIdLimpo || incremento <= 0) {
+      if (!obraIdLimpo || !userIdLimpo) {
         return;
       }
 
-      mapa.set(obraIdLimpo, (mapa.get(obraIdLimpo) || 0) + incremento);
+      const usuarios = mapa.get(obraIdLimpo) || new Set<string>();
+      usuarios.add(userIdLimpo);
+      mapa.set(obraIdLimpo, usuarios);
     }
 
     capitulosPorObraId.forEach((capitulosDaObra, obraId) => {
@@ -2065,21 +2078,20 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
       if (obrasIds.length > 0) {
         const { data: curtidasBanco } = await supabase
           .from("obra_curtidas")
-          .select("obra_id")
+          .select("obra_id,user_id")
           .in("obra_id", obrasIds)
           .limit(5000);
 
         if (Array.isArray(curtidasBanco)) {
-          curtidasBanco.forEach((registro) => {
-            const obraId =
-              typeof (registro as { obra_id?: unknown }).obra_id === "string"
-                ? ((registro as { obra_id: string }).obra_id)
-                : "";
-
-            if (obraId) {
-              incrementarMetricaObraHome(curtidasPorObraId, obraId);
-            }
-          });
+          (curtidasBanco as unknown as SupabaseInteracaoObraHomeRow[]).forEach(
+            (registro) => {
+              registrarUsuarioMetricaObraHome(
+                usuariosCurtidasPorObraId,
+                registro.obra_id || "",
+                registro.user_id || "",
+              );
+            },
+          );
         }
       }
     } catch {
@@ -2092,21 +2104,24 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
       if (capituloIds.length > 0) {
         const { data: curtidasCapitulosBanco } = await supabase
           .from("curtidas_capitulos")
-          .select("capitulo_id")
+          .select("capitulo_id,user_id")
           .in("capitulo_id", capituloIds)
           .limit(5000);
 
         if (Array.isArray(curtidasCapitulosBanco)) {
-          curtidasCapitulosBanco.forEach((registro) => {
-            const capituloId =
-              typeof (registro as { capitulo_id?: unknown }).capitulo_id === "string"
-                ? ((registro as { capitulo_id: string }).capitulo_id)
-                : "";
-            const obraId = capituloId ? capituloParaObraId.get(capituloId) || "" : "";
+          (
+            curtidasCapitulosBanco as unknown as SupabaseInteracaoCapituloHomeRow[]
+          ).forEach((registro) => {
+            const capituloId = registro.capitulo_id || "";
+            const obraId = capituloId
+              ? capituloParaObraId.get(capituloId) || ""
+              : "";
 
-            if (obraId) {
-              incrementarMetricaObraHome(curtidasPorObraId, obraId);
-            }
+            registrarUsuarioMetricaObraHome(
+              usuariosCurtidasPorObraId,
+              obraId,
+              registro.user_id || "",
+            );
           });
         }
       }
@@ -2120,26 +2135,53 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
       if (capituloIds.length > 0) {
         const { data: comentariosBanco } = await supabase
           .from("comentarios_capitulos")
-          .select("capitulo_id")
+          .select("capitulo_id,user_id")
           .in("capitulo_id", capituloIds)
           .limit(5000);
 
         if (Array.isArray(comentariosBanco)) {
-          comentariosBanco.forEach((registro) => {
-            const capituloId =
-              typeof (registro as { capitulo_id?: unknown }).capitulo_id === "string"
-                ? ((registro as { capitulo_id: string }).capitulo_id)
-                : "";
-            const obraId = capituloId ? capituloParaObraId.get(capituloId) || "" : "";
+          (
+            comentariosBanco as unknown as SupabaseInteracaoCapituloHomeRow[]
+          ).forEach((registro) => {
+            const capituloId = registro.capitulo_id || "";
+            const obraId = capituloId
+              ? capituloParaObraId.get(capituloId) || ""
+              : "";
 
-            if (obraId) {
-              incrementarMetricaObraHome(comentariosPorObraId, obraId);
-            }
+            registrarUsuarioMetricaObraHome(
+              usuariosComentariosPorObraId,
+              obraId,
+              registro.user_id || "",
+            );
           });
         }
       }
     } catch {
       // Comentários públicos são complementares; a Home continua sem travar.
+    }
+
+    try {
+      if (obrasIds.length > 0) {
+        const { data: comentariosObrasBanco } = await supabase
+          .from("comentarios_obras")
+          .select("obra_id,user_id")
+          .in("obra_id", obrasIds)
+          .limit(5000);
+
+        if (Array.isArray(comentariosObrasBanco)) {
+          (
+            comentariosObrasBanco as unknown as SupabaseInteracaoObraHomeRow[]
+          ).forEach((registro) => {
+            registrarUsuarioMetricaObraHome(
+              usuariosComentariosPorObraId,
+              registro.obra_id || "",
+              registro.user_id || "",
+            );
+          });
+        }
+      }
+    } catch {
+      // Comentários diretos da obra são complementares; a Home continua sem travar.
     }
 
     const obrasRemotas = obrasSupabase.map((obra, index) => {
@@ -2169,11 +2211,11 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
         ...obraNormalizada,
         totalCurtidas: Math.max(
           obraNormalizada.totalCurtidas,
-          curtidasPorObraId.get(obra.id) || 0,
+          usuariosCurtidasPorObraId.get(obra.id)?.size || 0,
         ),
         totalComentarios: Math.max(
           obraNormalizada.totalComentarios,
-          comentariosPorObraId.get(obra.id) || 0,
+          usuariosComentariosPorObraId.get(obra.id)?.size || 0,
         ),
       };
     });
