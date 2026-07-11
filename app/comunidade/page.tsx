@@ -43,6 +43,7 @@ type ComentarioComunidade = {
   autorAvatar: string;
   texto: string;
   criadoEm: string;
+  comentarioPaiId: string;
   curtidas: string[];
 };
 
@@ -919,6 +920,7 @@ type SupabaseComentarioRow = {
   autor_id: string;
   autor_nome: string;
   texto: string;
+  comentario_pai_id: string | null;
   criado_em: string;
 };
 
@@ -931,6 +933,14 @@ type SupabaseComentarioCurtidaRow = {
   comentario_id: string;
   usuario_id: string;
 };
+
+type RespostaComentarioComunidade = {
+  comentarioPaiId: string;
+  autorId: string;
+  autorNome: string;
+};
+
+type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
 
 function mapearComentarioSupabase(
   comentario: SupabaseComentarioRow,
@@ -948,6 +958,7 @@ function mapearComentarioSupabase(
     autorAvatar: obterAvatarProfileComunidade(profile),
     texto: comentario.texto.trim().slice(0, 420),
     criadoEm: comentario.criado_em,
+    comentarioPaiId: comentario.comentario_pai_id?.trim() || "",
     curtidas: curtidasPorComentario.get(comentario.id) || [],
   };
 }
@@ -1273,6 +1284,150 @@ async function registrarReviewComunidadeNoDiario({
   }
 }
 
+function dataComentarioComunidade(comentario: ComentarioComunidade) {
+  const data = new Date(comentario.criadoEm).getTime();
+
+  return Number.isNaN(data) ? 0 : data;
+}
+
+function formatarTempoRelativoComentarioComunidade(
+  criadaEm: string,
+  agora = Date.now()
+) {
+  const dataComentario = new Date(criadaEm).getTime();
+
+  if (Number.isNaN(dataComentario)) {
+    return "agora";
+  }
+
+  const segundos = Math.max(0, Math.floor((agora - dataComentario) / 1000));
+
+  if (segundos < 5) {
+    return "agora";
+  }
+
+  if (segundos < 60) {
+    return `há ${segundos} ${segundos === 1 ? "segundo" : "segundos"}`;
+  }
+
+  const minutos = Math.floor(segundos / 60);
+
+  if (minutos < 60) {
+    return `há ${minutos} ${minutos === 1 ? "minuto" : "minutos"}`;
+  }
+
+  const horas = Math.floor(minutos / 60);
+
+  if (horas < 24) {
+    return `há ${horas} ${horas === 1 ? "hora" : "horas"}`;
+  }
+
+  const dias = Math.floor(horas / 24);
+
+  return `há ${dias} ${dias === 1 ? "dia" : "dias"}`;
+}
+
+function criarEstruturaComentariosComunidade(
+  comentarios: ComentarioComunidade[],
+  ordenacao: OrdenacaoComentariosComunidade
+) {
+  const comentariosPorId = new Map(
+    comentarios.map((comentario) => [comentario.id, comentario])
+  );
+  const respostasPorRaiz = new Map<string, ComentarioComunidade[]>();
+  const comentariosRaiz: ComentarioComunidade[] = [];
+
+  function obterRaiz(comentario: ComentarioComunidade) {
+    let atual = comentario;
+    const visitados = new Set<string>([comentario.id]);
+
+    while (atual.comentarioPaiId) {
+      const pai = comentariosPorId.get(atual.comentarioPaiId);
+
+      if (!pai || visitados.has(pai.id)) {
+        break;
+      }
+
+      visitados.add(pai.id);
+      atual = pai;
+    }
+
+    return atual;
+  }
+
+  comentarios.forEach((comentario) => {
+    const paiExiste = Boolean(
+      comentario.comentarioPaiId &&
+        comentariosPorId.has(comentario.comentarioPaiId)
+    );
+
+    if (!paiExiste) {
+      comentariosRaiz.push(comentario);
+      return;
+    }
+
+    const raiz = obterRaiz(comentario);
+    const respostasAtuais = respostasPorRaiz.get(raiz.id) || [];
+
+    respostasPorRaiz.set(raiz.id, [...respostasAtuais, comentario]);
+  });
+
+  respostasPorRaiz.forEach((respostas, raizId) => {
+    respostasPorRaiz.set(
+      raizId,
+      [...respostas].sort(
+        (a, b) => dataComentarioComunidade(a) - dataComentarioComunidade(b)
+      )
+    );
+  });
+
+  comentariosRaiz.sort((a, b) => {
+    if (ordenacao === "recentes") {
+      return dataComentarioComunidade(b) - dataComentarioComunidade(a);
+    }
+
+    const relevanciaA =
+      a.curtidas.length * 3 + (respostasPorRaiz.get(a.id)?.length || 0);
+    const relevanciaB =
+      b.curtidas.length * 3 + (respostasPorRaiz.get(b.id)?.length || 0);
+
+    return (
+      relevanciaB - relevanciaA ||
+      dataComentarioComunidade(b) - dataComentarioComunidade(a)
+    );
+  });
+
+  return {
+    comentariosRaiz,
+    respostasPorRaiz,
+  };
+}
+
+function obterIdsComentarioComRespostasComunidade(
+  comentarios: ComentarioComunidade[],
+  comentarioId: string
+) {
+  const ids = new Set<string>([comentarioId]);
+  let encontrouNovos = true;
+
+  while (encontrouNovos) {
+    encontrouNovos = false;
+
+    comentarios.forEach((comentario) => {
+      if (
+        comentario.comentarioPaiId &&
+        ids.has(comentario.comentarioPaiId) &&
+        !ids.has(comentario.id)
+      ) {
+        ids.add(comentario.id);
+        encontrouNovos = true;
+      }
+    });
+  }
+
+  return ids;
+}
+
 type ComentariosSheetProps = {
   post: PostComunidade | null;
   podeComentar: boolean;
@@ -1280,8 +1435,13 @@ type ComentariosSheetProps = {
   usuarioNome: string;
   usuarioAvatar: string;
   erroInteracao: string;
+  isDesktop: boolean;
   onFechar: () => void;
-  onEnviar: (postId: string, texto: string) => boolean | Promise<boolean>;
+  onEnviar: (
+    postId: string,
+    texto: string,
+    comentarioPaiId: string
+  ) => boolean | Promise<boolean>;
   onCurtirComentario: (postId: string, comentarioId: string) => void | Promise<void>;
   onRemoverComentario: (postId: string, comentarioId: string) => void | Promise<void>;
   onDenunciarComentario: (comentarioId: string) => void | Promise<void>;
@@ -1294,6 +1454,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
   usuarioNome,
   usuarioAvatar,
   erroInteracao,
+  isDesktop,
   onFechar,
   onEnviar,
   onCurtirComentario,
@@ -1304,17 +1465,53 @@ const ComentariosSheet = memo(function ComentariosSheet({
   const sheetRef = useRef<HTMLElement | null>(null);
   const dragStartYRef = useRef(0);
   const dragOffsetYRef = useRef(0);
+  const dragIgnorarCliqueRef = useRef(false);
+  const dragResetTimerRef = useRef<number | null>(null);
   const [sheetExpandido, setSheetExpandido] = useState(false);
   const [comentarioEnviando, setComentarioEnviando] = useState(false);
   const [comentarioCurtindoId, setComentarioCurtindoId] = useState<string | null>(null);
-  const [comentarioRemovendoId, setComentarioRemovendoId] = useState<
-    string | null
-  >(null);
-  const [comentarioDenunciandoId, setComentarioDenunciandoId] = useState<
-    string | null
-  >(null);
+  const [comentarioRemovendoId, setComentarioRemovendoId] = useState<string | null>(null);
+  const [comentarioDenunciandoId, setComentarioDenunciandoId] = useState<string | null>(null);
+  const [respostaComentario, setRespostaComentario] =
+    useState<RespostaComentarioComunidade | null>(null);
+  const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
+    useState<Record<string, number>>({});
+  const [ordenacaoComentarios, setOrdenacaoComentarios] =
+    useState<OrdenacaoComentariosComunidade>("relevantes");
+  const [menuOrdenacaoAberto, setMenuOrdenacaoAberto] = useState(false);
+  const [agoraComentarios, setAgoraComentarios] = useState(() => Date.now());
   const comentarioAcoesRef = useRef<Set<string>>(new Set<string>());
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setAgoraComentarios(Date.now());
+    }, 30000);
+
+    return () => {
+      window.clearInterval(timer);
+
+      if (dragResetTimerRef.current !== null) {
+        window.clearTimeout(dragResetTimerRef.current);
+      }
+    };
+  }, []);
+
+  const estruturaComentarios = useMemo(
+    () =>
+      criarEstruturaComentariosComunidade(
+        post?.comentarios || [],
+        ordenacaoComentarios
+      ),
+    [ordenacaoComentarios, post?.comentarios]
+  );
+
+  function fecharComentarios() {
+    setSheetExpandido(false);
+    setMenuOrdenacaoAberto(false);
+    setRespostaComentario(null);
+    dragOffsetYRef.current = 0;
+    onFechar();
+  }
 
   function inserirNoComentario(valor: string) {
     if (!podeComentar || !comentarioRef.current) {
@@ -1326,10 +1523,13 @@ const ComentariosSheet = memo(function ComentariosSheet({
     const fim = campo.selectionEnd ?? campo.value.length;
     const textoAtual = campo.value;
 
-    campo.value = `${textoAtual.slice(0, inicio)}${valor}${textoAtual.slice(fim)}`;
+    campo.value = `${textoAtual.slice(0, inicio)}${valor}${textoAtual.slice(fim)}`.slice(
+      0,
+      420
+    );
     campo.focus();
 
-    const novaPosicao = inicio + valor.length;
+    const novaPosicao = Math.min(inicio + valor.length, campo.value.length);
     campo.setSelectionRange(novaPosicao, novaPosicao);
   }
 
@@ -1403,18 +1603,33 @@ const ComentariosSheet = memo(function ComentariosSheet({
     }
   }
 
-  function responderComentario(nomeAutor: string) {
+  function responderComentario(
+    comentario: ComentarioComunidade,
+    comentarioRaizId: string
+  ) {
     if (!podeComentar) {
       return;
     }
 
-    const mencao = `@${nomeAutor.replace(/\s+/g, " ").trim()} `;
+    const nomeLimpo = comentario.autorNome.replace(/\s+/g, " ").trim();
+    const raizIdLimpo = comentarioRaizId.trim();
+
+    if (!nomeLimpo || !raizIdLimpo) {
+      return;
+    }
+
+    setRespostaComentario({
+      comentarioPaiId: raizIdLimpo,
+      autorId: comentario.autorId,
+      autorNome: nomeLimpo,
+    });
 
     window.setTimeout(() => {
       if (!comentarioRef.current) {
         return;
       }
 
+      const mencao = `@${nomeLimpo} `;
       comentarioRef.current.value = mencao;
       comentarioRef.current.focus();
       comentarioRef.current.setSelectionRange(mencao.length, mencao.length);
@@ -1422,8 +1637,18 @@ const ComentariosSheet = memo(function ComentariosSheet({
   }
 
   function iniciarArraste(event: TouchEvent<HTMLDivElement>) {
+    if (isDesktop) {
+      return;
+    }
+
     dragStartYRef.current = event.touches[0]?.clientY || 0;
     dragOffsetYRef.current = 0;
+    dragIgnorarCliqueRef.current = false;
+
+    if (dragResetTimerRef.current !== null) {
+      window.clearTimeout(dragResetTimerRef.current);
+      dragResetTimerRef.current = null;
+    }
 
     if (sheetRef.current) {
       sheetRef.current.style.transition = "none";
@@ -1431,6 +1656,10 @@ const ComentariosSheet = memo(function ComentariosSheet({
   }
 
   function moverArraste(event: TouchEvent<HTMLDivElement>) {
+    if (isDesktop) {
+      return;
+    }
+
     const posicaoAtual = event.touches[0]?.clientY || dragStartYRef.current;
     const limiteSuperior = sheetExpandido ? -46 : -58;
     const limiteInferior = sheetExpandido ? 112 : 132;
@@ -1440,6 +1669,10 @@ const ComentariosSheet = memo(function ComentariosSheet({
     );
 
     dragOffsetYRef.current = deslocamento;
+
+    if (Math.abs(deslocamento) > 6) {
+      dragIgnorarCliqueRef.current = true;
+    }
 
     if (sheetRef.current) {
       const handle = sheetRef.current.querySelector(
@@ -1453,9 +1686,15 @@ const ComentariosSheet = memo(function ComentariosSheet({
   }
 
   function finalizarArraste() {
+    if (isDesktop) {
+      return;
+    }
+
     const deslocamento = dragOffsetYRef.current;
 
     if (sheetRef.current) {
+      sheetRef.current.style.transition = "height 220ms ease";
+
       const handle = sheetRef.current.querySelector(
         "[data-comments-sheet-handle='true']"
       ) as HTMLElement | null;
@@ -1464,6 +1703,13 @@ const ComentariosSheet = memo(function ComentariosSheet({
         handle.style.transition = "transform 160ms ease";
         handle.style.transform = "";
       }
+    }
+
+    if (dragIgnorarCliqueRef.current) {
+      dragResetTimerRef.current = window.setTimeout(() => {
+        dragIgnorarCliqueRef.current = false;
+        dragResetTimerRef.current = null;
+      }, 350);
     }
 
     if (deslocamento < -34) {
@@ -1477,12 +1723,16 @@ const ComentariosSheet = memo(function ComentariosSheet({
     }
 
     if (deslocamento > 118 && !sheetExpandido) {
-      onFechar();
+      fecharComentarios();
     }
   }
 
-  if (!post) {
-    return null;
+  function alternarExpansaoComentarios() {
+    if (isDesktop || dragIgnorarCliqueRef.current) {
+      return;
+    }
+
+    setSheetExpandido((expandidoAtual) => !expandidoAtual);
   }
 
   async function enviarComentario(event: FormEvent<HTMLFormElement>) {
@@ -1502,10 +1752,26 @@ const ComentariosSheet = memo(function ComentariosSheet({
 
     try {
       const conteudoComentario = comentarioRef.current?.value || "";
-      const enviado = await onEnviar(post.id, conteudoComentario);
+      const respostaAnterior = respostaComentario;
+      const enviado = await onEnviar(
+        post.id,
+        conteudoComentario,
+        respostaAnterior?.comentarioPaiId || ""
+      );
 
       if (enviado && comentarioRef.current) {
         comentarioRef.current.value = "";
+        setRespostaComentario(null);
+
+        if (respostaAnterior?.comentarioPaiId) {
+          setRespostasVisiveisPorComentario((estadoAtual) => ({
+            ...estadoAtual,
+            [respostaAnterior.comentarioPaiId]: Math.max(
+              5,
+              estadoAtual[respostaAnterior.comentarioPaiId] || 0
+            ),
+          }));
+        }
       }
     } finally {
       finalizarAcaoComentario(chaveAcao);
@@ -1513,31 +1779,213 @@ const ComentariosSheet = memo(function ComentariosSheet({
     }
   }
 
-  return (
+  function renderizarComentario(
+    comentario: ComentarioComunidade,
+    comentarioRaizId: string,
+    resposta = false
+  ) {
+    const usuarioCurtiuComentario = Boolean(
+      usuarioId && comentario.curtidas.includes(usuarioId)
+    );
+    const podeRemoverComentario = Boolean(
+      usuarioId && comentario.autorId === usuarioId
+    );
+    const podeDenunciarComentario = Boolean(
+      usuarioId && comentario.autorId !== usuarioId
+    );
+    const comentarioCurtindo = comentarioCurtindoId === comentario.id;
+    const comentarioRemovendo = comentarioRemovendoId === comentario.id;
+    const comentarioDenunciando = comentarioDenunciandoId === comentario.id;
+    const avatarBaseStyle = resposta
+      ? commentReplyAvatarLinkStyle
+      : commentAvatarLinkStyle;
+
+    return (
+      <article
+        key={comentario.id}
+        style={resposta ? commentReplyItemStyle : commentItemStyle}
+      >
+        <Link
+          href={criarPerfilHrefComunidade(
+            comentario.autorId,
+            comentario.autorNome
+          )}
+          aria-label={`Abrir perfil de ${comentario.autorNome}`}
+          style={criarAvatarComunidadeStyle(
+            avatarBaseStyle,
+            comentario.autorAvatar
+          )}
+        >
+          {!comentario.autorAvatar &&
+            (comentario.autorNome.slice(0, 1).toUpperCase() || "U")}
+        </Link>
+
+        <div style={commentContentStyle}>
+          <div style={commentTopLineStyle}>
+            <Link
+              href={criarPerfilHrefComunidade(
+                comentario.autorId,
+                comentario.autorNome
+              )}
+              style={commentAuthorLinkStyle}
+            >
+              {comentario.autorNome}
+            </Link>
+
+            <span style={commentTimeStyle}>
+              {formatarTempoRelativoComentarioComunidade(
+                comentario.criadoEm,
+                agoraComentarios
+              )}
+            </span>
+          </div>
+
+          <p style={commentTextStyle}>{comentario.texto}</p>
+
+          <div style={commentActionsRowStyle}>
+            <button
+              type="button"
+              onClick={() =>
+                responderComentario(comentario, comentarioRaizId)
+              }
+              disabled={!podeComentar}
+              style={{
+                ...commentReplyButtonStyle,
+                opacity: podeComentar ? 1 : 0.52,
+                cursor: podeComentar ? "pointer" : "not-allowed",
+              }}
+            >
+              Responder
+            </button>
+
+            {podeRemoverComentario ? (
+              <button
+                type="button"
+                onClick={() =>
+                  removerComentarioSeguro(post?.id || "", comentario.id)
+                }
+                disabled={comentarioRemovendo}
+                style={{
+                  ...commentRemoveButtonStyle,
+                  opacity: comentarioRemovendo ? 0.58 : 1,
+                  cursor: comentarioRemovendo ? "not-allowed" : "pointer",
+                }}
+              >
+                {comentarioRemovendo ? "Removendo..." : "Remover"}
+              </button>
+            ) : null}
+
+            {podeDenunciarComentario ? (
+              <button
+                type="button"
+                onClick={() => denunciarComentarioSeguro(comentario.id)}
+                disabled={comentarioDenunciando}
+                style={{
+                  ...commentReportButtonStyle,
+                  opacity: comentarioDenunciando ? 0.58 : 1,
+                  cursor: comentarioDenunciando ? "not-allowed" : "pointer",
+                }}
+              >
+                {comentarioDenunciando ? "Enviando..." : "Denunciar"}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div style={commentLikeWrapStyle}>
+          <button
+            type="button"
+            aria-label={
+              usuarioCurtiuComentario
+                ? "Remover curtida do comentário"
+                : "Curtir comentário"
+            }
+            onClick={() =>
+              curtirComentarioSeguro(post?.id || "", comentario.id)
+            }
+            disabled={!podeComentar || comentarioCurtindo}
+            style={{
+              ...commentLikeButtonStyle,
+              opacity: podeComentar && !comentarioCurtindo ? 1 : 0.58,
+              cursor:
+                podeComentar && !comentarioCurtindo
+                  ? "pointer"
+                  : "not-allowed",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              style={commentHeartIconStyle}
+            >
+              <path
+                d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                fill={usuarioCurtiuComentario ? "#F43F5E" : "none"}
+                stroke={
+                  usuarioCurtiuComentario
+                    ? "#F43F5E"
+                    : "var(--historietas-text-secondary, #D4D4D8)"
+                }
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          <span style={commentLikeCountStyle}>
+            {comentario.curtidas.length}
+          </span>
+        </div>
+      </article>
+    );
+  }
+
+  if (!post || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <section style={commentsSheetOverlayStyle} aria-label="Comentários">
       <button
         type="button"
         aria-label="Fechar comentários"
-        onClick={onFechar}
+        onClick={fecharComentarios}
         style={commentsSheetBackdropStyle}
       />
 
       <article
         ref={sheetRef}
-        style={{
-          ...commentsSheetStyle,
-          ...(sheetExpandido
-            ? commentsSheetExpandedStyle
-            : commentsSheetCompactStyle),
-        }}
+        style={
+          isDesktop
+            ? desktopCommentsSheetStyle
+            : {
+                ...commentsSheetStyle,
+                ...(sheetExpandido
+                  ? commentsSheetExpandedStyle
+                  : commentsSheetCompactStyle),
+              }
+        }
       >
         <div
           data-comments-sheet-handle="true"
           style={commentsSheetHandleWrapStyle}
+          onClick={alternarExpansaoComentarios}
           onTouchStart={iniciarArraste}
           onTouchMove={moverArraste}
           onTouchEnd={finalizarArraste}
           onTouchCancel={finalizarArraste}
+          role="button"
+          tabIndex={0}
+          aria-label={
+            sheetExpandido ? "Recolher comentários" : "Expandir comentários"
+          }
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              alternarExpansaoComentarios();
+            }
+          }}
         >
           <div style={commentsSheetHandleStyle} />
         </div>
@@ -1551,170 +1999,152 @@ const ComentariosSheet = memo(function ComentariosSheet({
               : `${post.comentarios.length} comentários`}
           </strong>
 
-          <button type="button" onClick={onFechar} style={commentsSheetCloseStyle}>
-            ×
-          </button>
+          <div style={commentsSortMenuWrapStyle}>
+            <button
+              type="button"
+              onClick={() => setMenuOrdenacaoAberto((aberto) => !aberto)}
+              style={commentsSortMenuTriggerStyle}
+              aria-label="Ordenar comentários"
+              aria-haspopup="menu"
+              aria-expanded={menuOrdenacaoAberto}
+            >
+              +
+            </button>
+
+            {menuOrdenacaoAberto ? (
+              <div style={commentsSortMenuStyle} role="menu">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrdenacaoComentarios("relevantes");
+                    setMenuOrdenacaoAberto(false);
+                  }}
+                  style={
+                    ordenacaoComentarios === "relevantes"
+                      ? commentsSortMenuItemActiveStyle
+                      : commentsSortMenuItemStyle
+                  }
+                  role="menuitem"
+                >
+                  Relevantes
+                </button>
+
+                <div style={commentsSortMenuDividerStyle} aria-hidden="true" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrdenacaoComentarios("recentes");
+                    setMenuOrdenacaoAberto(false);
+                  }}
+                  style={
+                    ordenacaoComentarios === "recentes"
+                      ? commentsSortMenuItemActiveStyle
+                      : commentsSortMenuItemStyle
+                  }
+                  role="menuitem"
+                >
+                  Recentes
+                </button>
+              </div>
+            ) : null}
+          </div>
         </header>
 
         <section style={commentsSheetListStyle}>
-          {post.comentarios.length > 0 ? (
-            post.comentarios.map((comentario) => {
-              const usuarioCurtiuComentario = Boolean(
-                usuarioId && comentario.curtidas.includes(usuarioId)
+          {estruturaComentarios.comentariosRaiz.length > 0 ? (
+            estruturaComentarios.comentariosRaiz.map((comentario) => {
+              const respostas =
+                estruturaComentarios.respostasPorRaiz.get(comentario.id) || [];
+              const quantidadeVisivel = Math.min(
+                respostas.length,
+                respostasVisiveisPorComentario[comentario.id] || 0
               );
-              const podeRemoverComentario = Boolean(
-                usuarioId && comentario.autorId === usuarioId
+              const respostasVisiveis = respostas.slice(0, quantidadeVisivel);
+              const respostasOcultas = Math.max(
+                0,
+                respostas.length - quantidadeVisivel
               );
-              const podeDenunciarComentario = Boolean(
-                usuarioId && comentario.autorId !== usuarioId
-              );
-              const comentarioCurtindo = comentarioCurtindoId === comentario.id;
-              const comentarioRemovendo = comentarioRemovendoId === comentario.id;
-              const comentarioDenunciando =
-                comentarioDenunciandoId === comentario.id;
+              const respostasExpandidas = quantidadeVisivel > 0;
 
               return (
-              <article key={comentario.id} style={commentItemStyle}>
-                <Link
-                  href={criarPerfilHrefComunidade(
-                    comentario.autorId,
-                    comentario.autorNome
-                  )}
-                  aria-label={`Abrir perfil de ${comentario.autorNome}`}
-                  style={criarAvatarComunidadeStyle(
-                    commentAvatarLinkStyle,
-                    comentario.autorAvatar
-                  )}
-                >
-                  {!comentario.autorAvatar && comentario.autorNome.slice(0, 1).toUpperCase()}
-                </Link>
+                <section key={comentario.id} style={commentThreadStyle}>
+                  {renderizarComentario(comentario, comentario.id)}
 
-                <div style={commentContentStyle}>
-                  <div style={commentTopLineStyle}>
-                    <Link
-                      href={criarPerfilHrefComunidade(
-                        comentario.autorId,
-                        comentario.autorNome
+                  {respostasVisiveis.length > 0 ? (
+                    <div style={commentRepliesListStyle}>
+                      {respostasVisiveis.map((resposta) =>
+                        renderizarComentario(resposta, comentario.id, true)
                       )}
-                      style={commentAuthorLinkStyle}
-                    >
-                      {comentario.autorNome}
-                    </Link>
-                    <span style={commentTimeStyle}>agora</span>
-                  </div>
+                    </div>
+                  ) : null}
 
-                  <p style={commentTextStyle}>{comentario.texto}</p>
-
-                  <div style={commentActionsRowStyle}>
+                  {respostas.length > 0 && !respostasExpandidas ? (
                     <button
                       type="button"
-                      onClick={() => responderComentario(comentario.autorNome)}
-                      disabled={!podeComentar}
-                      style={{
-                        ...commentReplyButtonStyle,
-                        opacity: podeComentar ? 1 : 0.52,
-                        cursor: podeComentar ? "pointer" : "not-allowed",
-                      }}
+                      onClick={() =>
+                        setRespostasVisiveisPorComentario((estadoAtual) => ({
+                          ...estadoAtual,
+                          [comentario.id]: Math.min(5, respostas.length),
+                        }))
+                      }
+                      style={commentRepliesToggleStyle}
                     >
-                      Responder
+                      <span style={commentRepliesLineStyle} />
+                      {`Ver ${respostas.length} ${
+                        respostas.length === 1 ? "resposta" : "respostas"
+                      }`}
                     </button>
+                  ) : null}
 
-                    {podeRemoverComentario && (
+                  {respostasExpandidas ? (
+                    <div style={commentRepliesControlsStyle}>
+                      {respostasOcultas > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setRespostasVisiveisPorComentario((estadoAtual) => ({
+                              ...estadoAtual,
+                              [comentario.id]: Math.min(
+                                respostas.length,
+                                (estadoAtual[comentario.id] || 0) + 5
+                              ),
+                            }))
+                          }
+                          style={commentRepliesToggleStyle}
+                        >
+                          <span style={commentRepliesLineStyle} />
+                          {`Ver mais ${respostasOcultas} ${
+                            respostasOcultas === 1 ? "resposta" : "respostas"
+                          }`}
+                        </button>
+                      ) : null}
+
                       <button
                         type="button"
-                        onClick={() => removerComentarioSeguro(post.id, comentario.id)}
-                        disabled={comentarioRemovendo}
-                        style={{
-                          ...commentRemoveButtonStyle,
-                          opacity: comentarioRemovendo ? 0.58 : 1,
-                          cursor: comentarioRemovendo ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        {comentarioRemovendo ? "Removendo..." : "Remover"}
-                      </button>
-                    )}
-
-                    {podeDenunciarComentario && (
-                      <button
-                        type="button"
-                        onClick={() => denunciarComentarioSeguro(comentario.id)}
-                        disabled={comentarioDenunciando}
-                        style={{
-                          ...commentReportButtonStyle,
-                          opacity: comentarioDenunciando ? 0.58 : 1,
-                          cursor: comentarioDenunciando ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        {comentarioDenunciando ? "Enviando..." : "Denunciar"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div style={commentLikeWrapStyle}>
-                  <button
-                    type="button"
-                    aria-label={
-                      usuarioCurtiuComentario
-                        ? "Remover curtida do comentário"
-                        : "Curtir comentário"
-                    }
-                    onClick={() => curtirComentarioSeguro(post.id, comentario.id)}
-                    disabled={!podeComentar || comentarioCurtindo}
-                    style={{
-                      ...commentLikeButtonStyle,
-                      opacity: podeComentar && !comentarioCurtindo ? 1 : 0.58,
-                      cursor:
-                        podeComentar && !comentarioCurtindo
-                          ? "pointer"
-                          : "not-allowed",
-                    }}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                      style={commentHeartIconStyle}
-                    >
-                      <path
-                        d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                        fill={usuarioCurtiuComentario ? "#F43F5E" : "none"}
-                        stroke={
-                          usuarioCurtiuComentario
-                            ? "#F43F5E"
-                            : "var(--historietas-text-secondary, #D4D4D8)"
+                        onClick={() =>
+                          setRespostasVisiveisPorComentario((estadoAtual) => ({
+                            ...estadoAtual,
+                            [comentario.id]: 0,
+                          }))
                         }
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-
-                  <span style={commentLikeCountStyle}>
-                    {comentario.curtidas.length}
-                  </span>
-                </div>
-              </article>
+                        style={commentRepliesHideButtonStyle}
+                      >
+                        Ocultar respostas
+                      </button>
+                    </div>
+                  ) : null}
+                </section>
               );
             })
           ) : (
-            <p
-              style={{
-                margin: "10px 0 0",
-                color: "#FFFFFF",
-                fontSize: "12px",
-                fontWeight: 800,
-                textAlign: "center",
-              }}
-            >
-              Sem comentários ainda
-            </p>
+            <p style={emptyCommentsStyle}>Sem comentários ainda</p>
           )}
         </section>
 
-        {erroInteracao && (
+        {erroInteracao ? (
           <span style={commentsSheetErrorStyle}>{erroInteracao}</span>
-        )}
+        ) : null}
 
         <section style={commentsToolsStyle}>
           <div style={commentsQuickReactionsStyle}>
@@ -1725,6 +2155,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                 onClick={() => inserirNoComentario(emoji)}
                 disabled={!podeComentar}
                 style={commentsQuickReactionButtonStyle}
+                aria-label={`Adicionar ${emoji} ao comentário`}
               >
                 {emoji}
               </button>
@@ -1766,6 +2197,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
             onClick={() => inserirNoComentario("@")}
             disabled={!podeComentar}
             style={commentsInputIconButtonStyle}
+            aria-label="Adicionar menção"
           >
             @
           </button>
@@ -1778,14 +2210,17 @@ const ComentariosSheet = memo(function ComentariosSheet({
               ...commentsSheetSendStyle,
               opacity: podeComentar && !comentarioEnviando ? 1 : 0.58,
               cursor:
-                podeComentar && !comentarioEnviando ? "pointer" : "not-allowed",
+                podeComentar && !comentarioEnviando
+                  ? "pointer"
+                  : "not-allowed",
             }}
           >
             {comentarioEnviando ? "..." : "↑"}
           </button>
         </form>
       </article>
-    </section>
+    </section>,
+    document.body
   );
 });
 
@@ -2889,7 +3324,7 @@ export default function ComunidadePage() {
       const [comentariosResposta, curtidasResposta] = await Promise.all([
         supabase
           .from("comunidade_comentarios")
-          .select("id, post_id, autor_id, autor_nome, texto, criado_em")
+          .select("id, post_id, autor_id, autor_nome, texto, comentario_pai_id, criado_em")
           .in("post_id", postIds)
           .order("criado_em", { ascending: true })
           .limit(2500),
@@ -3238,7 +3673,11 @@ export default function ComunidadePage() {
     setComentariosPostId(null);
   }
 
-  async function comentarPost(postId: string, textoRecebido: string) {
+  async function comentarPost(
+    postId: string,
+    textoRecebido: string,
+    comentarioPaiId = ""
+  ) {
     const chaveAcao = `comentar-post:${postId}`;
 
     if (!iniciarAcaoComunidade(chaveAcao)) {
@@ -3261,6 +3700,17 @@ export default function ComunidadePage() {
 
       const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
       const postAtual = posts.find((post) => post.id === postId) || null;
+      const comentarioPaiIdLimpo = comentarioPaiId.trim();
+      const comentarioPai = comentarioPaiIdLimpo
+        ? postAtual?.comentarios.find(
+            (comentario) => comentario.id === comentarioPaiIdLimpo
+          ) || null
+        : null;
+
+      if (comentarioPaiIdLimpo && !comentarioPai) {
+        setErro("O comentário respondido não foi encontrado.");
+        return false;
+      }
 
       const { data, error } = await supabase
         .from("comunidade_comentarios")
@@ -3269,8 +3719,11 @@ export default function ComunidadePage() {
           autor_id: usuario.id,
           autor_nome: autorNomeSeguro,
           texto: textoComentario.slice(0, 420),
+          comentario_pai_id: comentarioPaiIdLimpo || null,
         })
-        .select("id, post_id, autor_id, autor_nome, texto, criado_em")
+        .select(
+          "id, post_id, autor_id, autor_nome, texto, comentario_pai_id, criado_em"
+        )
         .single();
 
       if (error || !data) {
@@ -3297,7 +3750,7 @@ export default function ComunidadePage() {
         profilesComentarioNovo
       );
 
-      if (postAtual?.autorId) {
+      if (!comentarioPaiIdLimpo && postAtual?.autorId) {
         await criarNotificacaoComunidadeSupabase({
           destinatarioId: postAtual.autorId,
           tipo: "comunidade-comentario-post",
@@ -3388,9 +3841,11 @@ export default function ComunidadePage() {
         return;
       }
 
-      const comentarioAtual = posts
-        .find((post) => post.id === postId)
-        ?.comentarios.find((comentario) => comentario.id === comentarioId);
+      const comentariosDoPost =
+        posts.find((post) => post.id === postId)?.comentarios || [];
+      const comentarioAtual = comentariosDoPost.find(
+        (comentario) => comentario.id === comentarioId
+      );
 
       if (!comentarioAtual || comentarioAtual.autorId !== usuario.id) {
         setErro("Você só pode remover seus próprios comentários.");
@@ -3400,6 +3855,11 @@ export default function ComunidadePage() {
       if (!window.confirm("Remover este comentário?")) {
         return;
       }
+
+      const idsParaRemover = obterIdsComentarioComRespostasComunidade(
+        comentariosDoPost,
+        comentarioId
+      );
 
       const { error } = await supabase
         .from("comunidade_comentarios")
@@ -3418,7 +3878,7 @@ export default function ComunidadePage() {
             ? {
                 ...post,
                 comentarios: post.comentarios.filter(
-                  (comentario) => comentario.id !== comentarioId
+                  (comentario) => !idsParaRemover.has(comentario.id)
                 ),
               }
             : post
@@ -4563,12 +5023,14 @@ export default function ComunidadePage() {
       )}
 
       <ComentariosSheet
+        key={postComentariosAberto?.id || "comentarios-fechados"}
         post={postComentariosAberto}
         podeComentar={Boolean(usuario)}
         usuarioId={usuario?.id || ""}
         usuarioNome={usuario?.nome || "Usuário"}
         usuarioAvatar={usuario?.avatar || ""}
         erroInteracao={erro}
+        isDesktop={isDesktop}
         onFechar={fecharComentarios}
         onEnviar={comentarPost}
         onCurtirComentario={alternarCurtidaComentario}
@@ -7233,38 +7695,46 @@ const commentsBoxStyle: CSSProperties = {
 const commentsSheetOverlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
-  zIndex: 90,
+  zIndex: 2147483647,
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "center",
   pointerEvents: "none",
+  isolation: "isolate",
 };
 
 const commentsSheetBackdropStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
+  zIndex: 0,
   border: "none",
-  background: "rgba(3, 2, 8, 0.28)",
+  background: "rgba(3, 2, 8, 0.42)",
+  backdropFilter: "blur(4px)",
+  WebkitBackdropFilter: "blur(4px)",
   pointerEvents: "auto",
   cursor: "pointer",
+  padding: 0,
 };
 
 const commentsSheetStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  width: "min(680px, 100%)",
+  width: "min(720px, 100%)",
   maxHeight: "calc(100dvh - env(safe-area-inset-top) - 10px)",
   display: "grid",
-  gridTemplateRows: "auto auto minmax(0, 1fr) auto auto",
+  gridTemplateRows: "auto auto minmax(0, 1fr) auto auto auto",
   gap: "7px",
   padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
   borderRadius: "28px 28px 0 0",
   background: "#070212",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  border: "none",
   borderBottom: "none",
+  boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
   pointerEvents: "auto",
   overflow: "hidden",
+  boxSizing: "border-box",
   willChange: "height",
+  transition: "height 220ms ease",
 };
 
 const commentsSheetCompactStyle: CSSProperties = {
@@ -7275,6 +7745,12 @@ const commentsSheetExpandedStyle: CSSProperties = {
   height: "min(90dvh, 760px)",
 };
 
+const desktopCommentsSheetStyle: CSSProperties = {
+  ...commentsSheetStyle,
+  width: "min(800px, calc(100% - 40px))",
+  height: "min(76dvh, 720px)",
+};
+
 const commentsSheetHandleWrapStyle: CSSProperties = {
   minHeight: "24px",
   display: "flex",
@@ -7283,6 +7759,7 @@ const commentsSheetHandleWrapStyle: CSSProperties = {
   touchAction: "none",
   cursor: "grab",
   willChange: "transform",
+  outline: "none",
 };
 
 const commentsSheetHandleStyle: CSSProperties = {
@@ -7314,10 +7791,19 @@ const commentsSheetTitleStyle: CSSProperties = {
   letterSpacing: "-0.02em",
 };
 
-const commentsSheetCloseStyle: CSSProperties = {
-  width: "34px",
+const commentsSortMenuWrapStyle: CSSProperties = {
+  position: "relative",
+  width: "40px",
   height: "34px",
   justifySelf: "end",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+};
+
+const commentsSortMenuTriggerStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
   borderRadius: "999px",
   border: "none",
   background: "transparent",
@@ -7326,26 +7812,137 @@ const commentsSheetCloseStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 500,
   fontFamily: "inherit",
-  padding: 0,
+  padding: "0 0 2px",
   cursor: "pointer",
+};
+
+const commentsSortMenuStyle: CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 6px)",
+  right: 0,
+  zIndex: 12,
+  width: "132px",
+  maxWidth: "calc(100vw - 24px)",
+  display: "grid",
+  gap: 0,
+  padding: "4px 8px",
+  boxSizing: "border-box",
+  borderRadius: "12px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(18, 9, 35, 0.98)",
+  boxShadow: "0 16px 36px rgba(0,0,0,0.48)",
+  backdropFilter: "blur(14px)",
+  WebkitBackdropFilter: "blur(14px)",
+};
+
+const commentsSortMenuItemStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "36px",
+  border: "none",
+  borderRadius: 0,
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  padding: "0 4px",
+  textAlign: "center",
+  fontSize: "11.5px",
+  fontWeight: 850,
+  fontFamily: "inherit",
+  cursor: "pointer",
+};
+
+const commentsSortMenuItemActiveStyle: CSSProperties = {
+  ...commentsSortMenuItemStyle,
+  color: "#FFFFFF",
+};
+
+const commentsSortMenuDividerStyle: CSSProperties = {
+  width: "100%",
+  height: "1px",
+  background: "rgba(255,255,255,0.12)",
 };
 
 const commentsSheetListStyle: CSSProperties = {
   display: "grid",
   alignContent: "start",
-  gap: "10px",
+  gap: "12px",
   minHeight: 0,
   overflowY: "auto",
   padding: "6px 2px 9px",
   WebkitOverflowScrolling: "touch",
 };
 
+const commentThreadStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+};
+
 const commentItemStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr) 26px",
+  gridTemplateColumns: "34px minmax(0, 1fr) 28px",
   gap: "10px",
   alignItems: "start",
   minWidth: 0,
+};
+
+const commentRepliesListStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  marginLeft: "34px",
+  paddingLeft: "10px",
+  borderLeft: "1px solid rgba(255,255,255,0.08)",
+  minWidth: 0,
+};
+
+const commentReplyItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "28px minmax(0, 1fr) 28px",
+  gap: "8px",
+  alignItems: "start",
+  minWidth: 0,
+};
+
+const commentRepliesToggleStyle: CSSProperties = {
+  width: "fit-content",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
+
+const commentRepliesControlsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  flexWrap: "wrap",
+  minWidth: 0,
+};
+
+const commentRepliesHideButtonStyle: CSSProperties = {
+  width: "fit-content",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
+
+const commentRepliesLineStyle: CSSProperties = {
+  width: "22px",
+  height: "1px",
+  background: "rgba(255,255,255,0.22)",
 };
 
 const commentAvatarStyle: CSSProperties = {
@@ -7358,12 +7955,14 @@ const commentAvatarStyle: CSSProperties = {
   background: "#04000A",
   border: "1px solid rgba(59, 7, 100, 0.58)",
   color: "#FFFFFF",
-  fontSize: "19px",
+  fontSize: "12.5px",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.03em",
   boxShadow: "none",
   flex: "0 0 auto",
+  overflow: "hidden",
+  boxSizing: "border-box",
 };
 
 const commentAvatarLinkStyle: CSSProperties = {
@@ -7372,10 +7971,18 @@ const commentAvatarLinkStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+const commentReplyAvatarLinkStyle: CSSProperties = {
+  ...commentAvatarLinkStyle,
+  width: "28px",
+  height: "28px",
+  borderRadius: "10px",
+  fontSize: "10.5px",
+};
 
 const commentContentStyle: CSSProperties = {
+  position: "relative",
   display: "grid",
-  gap: "2px",
+  gap: "3px",
   minWidth: 0,
 };
 
@@ -7396,13 +8003,14 @@ const commentAuthorLinkStyle: CSSProperties = {
   ...commentAuthorStyle,
   textDecoration: "none",
   cursor: "pointer",
+  ...safeTextStyle,
 };
-
 
 const commentTimeStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10.5px",
   fontWeight: 750,
+  whiteSpace: "nowrap",
 };
 
 const commentTextStyle: CSSProperties = {
@@ -7411,9 +8019,9 @@ const commentTextStyle: CSSProperties = {
   fontSize: "12.5px",
   lineHeight: 1.38,
   fontWeight: 750,
+  whiteSpace: "pre-wrap",
   ...safeTextStyle,
 };
-
 
 const commentActionsRowStyle: CSSProperties = {
   display: "flex",
@@ -7440,7 +8048,7 @@ const commentRemoveButtonStyle: CSSProperties = {
   background: "transparent",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "10.5px",
-  fontWeight: 950,
+  fontWeight: 900,
   fontFamily: "inherit",
   padding: "1px 0 0",
   cursor: "pointer",
@@ -7494,13 +8102,20 @@ const commentHeartIconStyle: CSSProperties = {
   display: "block",
 };
 
+const emptyCommentsStyle: CSSProperties = {
+  margin: "10px 0 0",
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 800,
+  textAlign: "center",
+};
+
 const commentsSheetErrorStyle: CSSProperties = {
   display: "block",
   padding: "8px 10px",
   borderRadius: "14px",
   background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
-  border:
-    "1px solid rgba(248,113,113,0.24)",
+  border: "1px solid rgba(248,113,113,0.24)",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "11px",
   fontWeight: 850,
@@ -7513,7 +8128,6 @@ const commentsToolsStyle: CSSProperties = {
   display: "grid",
   gap: "6px",
   padding: "5px 0 0",
-  borderTop: "none",
 };
 
 const commentsQuickReactionsStyle: CSSProperties = {
@@ -7541,15 +8155,6 @@ const commentsQuickReactionButtonStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
-
-
-
-
-
-
-
-
-
 const commentsSheetFormStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "30px minmax(0, 1fr) 28px 38px",
@@ -7557,7 +8162,21 @@ const commentsSheetFormStyle: CSSProperties = {
   gap: "7px",
   padding: "7px 0 0",
   minWidth: 0,
-  background: "transparent",
+};
+
+const commentsInputAvatarStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "11px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#04000A",
+  border: "1px solid rgba(59, 7, 100, 0.58)",
+  color: "#FFFFFF",
+  fontSize: "11.5px",
+  fontWeight: 950,
+  overflow: "hidden",
 };
 
 const commentsInputBoxStyle: CSSProperties = {
@@ -7567,34 +8186,23 @@ const commentsInputBoxStyle: CSSProperties = {
   alignItems: "center",
 };
 
-
-
-
-const commentsInputAvatarStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
-  borderRadius: "999px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "#04000A",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
-  color: "#FFFFFF",
-  fontSize: "11.5px",
-  fontWeight: 950,
-  boxShadow: "none",
-};
-
 const commentsSheetInputStyle: CSSProperties = {
-  ...inputStyle,
+  width: "100%",
   minHeight: "38px",
   maxHeight: "82px",
   borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#04000A",
+  color: "#FFFFFF",
   padding: "9px 12px",
+  outline: "none",
   fontSize: "12.5px",
   lineHeight: 1.32,
+  fontWeight: 650,
   resize: "none",
   overflowY: "auto",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
 };
 
 const commentsInputIconButtonStyle: CSSProperties = {
@@ -7614,8 +8222,10 @@ const commentsSheetSendStyle: CSSProperties = {
   width: "36px",
   height: "36px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border:
+    "1px solid var(--historietas-bottom-nav-publish-border, rgba(167, 139, 250, 0.34))",
+  background:
+    "var(--historietas-bottom-nav-publish-bg, rgba(59, 7, 100, 0.72))",
   color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
