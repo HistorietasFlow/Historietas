@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
-import type { CSSProperties, FormEvent } from "react";
+import type { CSSProperties, FormEvent, TouchEvent } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { useNotificacoes } from "../../../components/NotificacoesProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
@@ -18,6 +18,7 @@ const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const LOCAL_WORKS_STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
+const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const VERSAO_INTERACOES_OBRA_PUBLICA = "fix-interacoes-obra-2026-06-16-0022";
 
 function criarStorageKeyUsuarioObraPublica(chave: string, userId: string) {
@@ -214,7 +215,9 @@ type ComentarioObraPublico = {
   avatar: string;
   texto: string;
   criadoEm: string;
+  comentarioPaiId: string;
   local: boolean;
+  curtidas: string[];
 };
 
 type SupabaseComentarioObraRow = {
@@ -222,7 +225,21 @@ type SupabaseComentarioObraRow = {
   obra_id: string;
   user_id: string;
   comentario: string | null;
+  comentario_pai_id: string | null;
   criado_em: string | null;
+};
+
+type RespostaComentarioObra = {
+  comentarioPaiId: string;
+  autorId: string;
+  autorNome: string;
+};
+
+type OrdenacaoComentariosObra = "relevantes" | "recentes";
+
+type SupabaseCurtidaComentarioObraRow = {
+  comentario_id: string | null;
+  usuario_id: string | null;
 };
 
 type MetricasObraPublica = {
@@ -1227,55 +1244,142 @@ function normalizarPerfilPublicoObra(
   };
 }
 
+async function carregarPerfisPublicosObra(userIds: string[]) {
+  const ids = Array.from(
+    new Set(
+      userIds
+        .map((userId) => userId.trim())
+        .filter((userId) => idObraSupabaseValido(userId))
+    )
+  );
+  const perfis = new Map<string, PerfilPublicoObra>();
+
+  if (ids.length === 0) {
+    return perfis;
+  }
+
+  const selecoesPerfis = [
+    "id,user_id,nome,avatar_url,bio",
+    "id,user_id,nome,avatar_url",
+    "id,user_id,nome",
+  ];
+
+  for (const campos of selecoesPerfis) {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(campos)
+        .in("user_id", ids)
+        .limit(1000);
+
+      if (error || !Array.isArray(data)) {
+        continue;
+      }
+
+      (data as unknown as Record<string, unknown>[]).forEach((profile) => {
+        const userId =
+          obterTextoPerfilObra(profile, "user_id") ||
+          obterTextoPerfilObra(profile, "id");
+
+        if (userId) {
+          perfis.set(
+            userId,
+            normalizarPerfilPublicoObra(profile, userId, "Usuário")
+          );
+        }
+      });
+      break;
+    } catch {
+      // Tenta uma seleção menor abaixo.
+    }
+  }
+
+  const idsFaltantes = ids.filter((userId) => !perfis.has(userId));
+
+  if (idsFaltantes.length > 0) {
+    for (const campos of selecoesPerfis) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(campos)
+          .in("id", idsFaltantes)
+          .limit(1000);
+
+        if (error || !Array.isArray(data)) {
+          continue;
+        }
+
+        (data as unknown as Record<string, unknown>[]).forEach((profile) => {
+          const userId =
+            obterTextoPerfilObra(profile, "user_id") ||
+            obterTextoPerfilObra(profile, "id");
+
+          if (userId) {
+            perfis.set(
+              userId,
+              normalizarPerfilPublicoObra(profile, userId, "Usuário")
+            );
+          }
+        });
+        break;
+      } catch {
+        // Tenta uma seleção menor abaixo.
+      }
+    }
+  }
+
+  return perfis;
+}
+
 async function carregarPerfilPublicoObra(
   userId: string,
   nomeFallback: string
 ): Promise<PerfilPublicoObra | null> {
   const userIdLimpo = userId.trim();
 
-  if (!userIdLimpo || !idObraSupabaseValido(userIdLimpo)) {
+  if (!idObraSupabaseValido(userIdLimpo)) {
     return null;
   }
 
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobre,descricao")
-      .eq("user_id", userIdLimpo)
-      .limit(1)
-      .maybeSingle();
+  const perfis = await carregarPerfisPublicosObra([userIdLimpo]);
+  const perfil = perfis.get(userIdLimpo);
 
-    if (!error && data && typeof data === "object" && !Array.isArray(data)) {
-      return normalizarPerfilPublicoObra(
-        data as Record<string, unknown>,
-        userIdLimpo,
-        nomeFallback
-      );
-    }
-  } catch {
-    // Bases antigas podem usar id no lugar de user_id.
+  if (perfil) {
+    return perfil;
   }
 
   try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar,foto_url,imagem_url,photo_url,bio,sobre_bio,sobre,descricao")
-      .eq("id", userIdLimpo)
-      .limit(1)
-      .maybeSingle();
+    const { data } = await supabase.auth.getUser();
+    const usuario = data.user;
 
-    if (!error && data && typeof data === "object" && !Array.isArray(data)) {
-      return normalizarPerfilPublicoObra(
-        data as Record<string, unknown>,
-        userIdLimpo,
-        nomeFallback
-      );
+    if (usuario?.id === userIdLimpo) {
+      const metadata =
+        usuario.user_metadata && typeof usuario.user_metadata === "object"
+          ? (usuario.user_metadata as Record<string, unknown>)
+          : {};
+      const nomeMetadata =
+        obterTextoPerfilObra(metadata, "nome") ||
+        obterTextoPerfilObra(metadata, "name") ||
+        obterTextoPerfilObra(metadata, "full_name") ||
+        usuario.email?.split("@")[0]?.trim() ||
+        nomeFallback;
+      const avatarMetadata =
+        obterTextoPerfilObra(metadata, "avatar_url") ||
+        obterTextoPerfilObra(metadata, "avatar") ||
+        obterTextoPerfilObra(metadata, "picture");
+
+      return {
+        userId: userIdLimpo,
+        nome: (nomeMetadata || "Usuário").slice(0, 80),
+        avatar: avatarMetadata,
+        bio: "",
+      };
     }
   } catch {
-    // Profiles é camada social complementar; a página deve continuar abrindo.
+    // O fallback de autenticação não deve bloquear o perfil.
   }
 
-  return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback);
+  return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback || "Usuário");
 }
 
 function criarLinkComunidadeObra(titulo: string, tipo?: "Teoria" | "Review") {
@@ -1803,7 +1907,8 @@ function carregarComentariosObraLocais(userId: string, obraId: string) {
           return null;
         }
 
-        const registro = comentario as Partial<ComentarioObraPublico>;
+        const registro = comentario as Partial<ComentarioObraPublico> &
+          Record<string, unknown>;
         const id = typeof registro.id === "string" ? registro.id.trim() : "";
         const texto =
           typeof registro.texto === "string" ? registro.texto.trim() : "";
@@ -1830,7 +1935,23 @@ function carregarComentariosObraLocais(userId: string, obraId: string) {
             typeof registro.criadoEm === "string" && registro.criadoEm.trim()
               ? registro.criadoEm
               : new Date().toISOString(),
+          comentarioPaiId:
+            typeof registro.comentarioPaiId === "string"
+              ? registro.comentarioPaiId.trim()
+              : typeof registro.comentario_pai_id === "string"
+                ? registro.comentario_pai_id.trim()
+                : "",
           local: true,
+          curtidas: Array.isArray(registro.curtidas)
+            ? Array.from(
+                new Set(
+                  registro.curtidas
+                    .filter((id): id is string => typeof id === "string")
+                    .map((id) => id.trim())
+                    .filter(Boolean)
+                )
+              )
+            : [],
         };
       })
       .filter(
@@ -1890,14 +2011,46 @@ async function normalizarComentariosObraSupabase(
         .filter(Boolean)
     )
   );
-  const perfis = await Promise.all(
-    usuariosIds.map(async (userId) => {
-      const perfil = await carregarPerfilPublicoObra(userId, "Leitor");
-
-      return [userId, perfil] as const;
-    })
+  const comentariosIds = Array.from(
+    new Set(
+      comentarios
+        .map((comentario) => comentario.id?.trim() || "")
+        .filter(Boolean)
+    )
   );
-  const perfisPorUsuario = new Map(perfis);
+  const perfisPorUsuario = await carregarPerfisPublicosObra(usuariosIds);
+  const curtidasPorComentario = new Map<string, string[]>();
+
+  if (comentariosIds.length > 0) {
+    try {
+      const { data, error } = await supabase
+        .from(WORK_COMMENT_LIKES_TABLE)
+        .select("comentario_id,usuario_id")
+        .in("comentario_id", comentariosIds)
+        .limit(5000);
+
+      if (!error && Array.isArray(data)) {
+        (data as unknown as SupabaseCurtidaComentarioObraRow[]).forEach(
+          (curtida) => {
+            const comentarioId = curtida.comentario_id?.trim() || "";
+            const usuarioId = curtida.usuario_id?.trim() || "";
+
+            if (!comentarioId || !usuarioId) {
+              return;
+            }
+
+            const usuarios = curtidasPorComentario.get(comentarioId) || [];
+
+            if (!usuarios.includes(usuarioId)) {
+              curtidasPorComentario.set(comentarioId, [...usuarios, usuarioId]);
+            }
+          }
+        );
+      }
+    } catch {
+      // Curtidas são complementares; os comentários continuam visíveis.
+    }
+  }
 
   return comentarios
     .map((comentario): ComentarioObraPublico | null => {
@@ -1916,16 +2069,159 @@ async function normalizarComentariosObraSupabase(
         id,
         obraId,
         userId,
-        nome: perfil?.nome || "Leitor",
+        nome: perfil?.nome || "Usuário",
         avatar: perfil?.avatar || "",
         texto,
         criadoEm: comentario.criado_em || new Date().toISOString(),
+        comentarioPaiId: comentario.comentario_pai_id?.trim() || "",
         local: false,
+        curtidas: curtidasPorComentario.get(id) || [],
       };
     })
     .filter(
       (comentario): comentario is ComentarioObraPublico => Boolean(comentario)
     );
+}
+
+function dataComentarioObra(comentario: ComentarioObraPublico) {
+  const data = new Date(comentario.criadoEm).getTime();
+
+  return Number.isNaN(data) ? 0 : data;
+}
+
+function formatarTempoRelativoComentarioObra(
+  criadaEm: string,
+  agora = Date.now()
+) {
+  const dataComentario = new Date(criadaEm).getTime();
+
+  if (Number.isNaN(dataComentario)) {
+    return "agora";
+  }
+
+  const segundos = Math.max(0, Math.floor((agora - dataComentario) / 1000));
+
+  if (segundos < 5) {
+    return "agora";
+  }
+
+  if (segundos < 60) {
+    return `há ${segundos} ${segundos === 1 ? "segundo" : "segundos"}`;
+  }
+
+  const minutos = Math.floor(segundos / 60);
+
+  if (minutos < 60) {
+    return `há ${minutos} ${minutos === 1 ? "minuto" : "minutos"}`;
+  }
+
+  const horas = Math.floor(minutos / 60);
+
+  if (horas < 24) {
+    return `há ${horas} ${horas === 1 ? "hora" : "horas"}`;
+  }
+
+  const dias = Math.floor(horas / 24);
+
+  return `há ${dias} ${dias === 1 ? "dia" : "dias"}`;
+}
+
+function criarEstruturaComentariosObra(
+  comentarios: ComentarioObraPublico[],
+  ordenacao: OrdenacaoComentariosObra
+) {
+  const comentariosPorId = new Map(
+    comentarios.map((comentario) => [comentario.id, comentario])
+  );
+  const respostasPorRaiz = new Map<string, ComentarioObraPublico[]>();
+  const comentariosRaiz: ComentarioObraPublico[] = [];
+
+  function obterRaiz(comentario: ComentarioObraPublico) {
+    let atual = comentario;
+    const visitados = new Set<string>([comentario.id]);
+
+    while (atual.comentarioPaiId) {
+      const pai = comentariosPorId.get(atual.comentarioPaiId);
+
+      if (!pai || visitados.has(pai.id)) {
+        break;
+      }
+
+      visitados.add(pai.id);
+      atual = pai;
+    }
+
+    return atual;
+  }
+
+  comentarios.forEach((comentario) => {
+    const paiExiste = Boolean(
+      comentario.comentarioPaiId &&
+        comentariosPorId.has(comentario.comentarioPaiId)
+    );
+
+    if (!paiExiste) {
+      comentariosRaiz.push(comentario);
+      return;
+    }
+
+    const raiz = obterRaiz(comentario);
+    const respostasAtuais = respostasPorRaiz.get(raiz.id) || [];
+
+    respostasPorRaiz.set(raiz.id, [...respostasAtuais, comentario]);
+  });
+
+  respostasPorRaiz.forEach((respostas, raizId) => {
+    respostasPorRaiz.set(
+      raizId,
+      [...respostas].sort(
+        (a, b) => dataComentarioObra(a) - dataComentarioObra(b)
+      )
+    );
+  });
+
+  comentariosRaiz.sort((a, b) => {
+    if (ordenacao === "recentes") {
+      return dataComentarioObra(b) - dataComentarioObra(a);
+    }
+
+    const relevanciaA =
+      a.curtidas.length * 3 + (respostasPorRaiz.get(a.id)?.length || 0);
+    const relevanciaB =
+      b.curtidas.length * 3 + (respostasPorRaiz.get(b.id)?.length || 0);
+
+    return relevanciaB - relevanciaA || dataComentarioObra(b) - dataComentarioObra(a);
+  });
+
+  return {
+    comentariosRaiz,
+    respostasPorRaiz,
+  };
+}
+
+function obterIdsComentarioComRespostas(
+  comentarios: ComentarioObraPublico[],
+  comentarioId: string
+) {
+  const ids = new Set<string>([comentarioId]);
+  let encontrouNovos = true;
+
+  while (encontrouNovos) {
+    encontrouNovos = false;
+
+    comentarios.forEach((comentario) => {
+      if (
+        comentario.comentarioPaiId &&
+        ids.has(comentario.comentarioPaiId) &&
+        !ids.has(comentario.id)
+      ) {
+        ids.add(comentario.id);
+        encontrouNovos = true;
+      }
+    });
+  }
+
+  return ids;
 }
 
 export default function ObraDinamicaPage() {
@@ -1959,13 +2255,33 @@ export default function ObraDinamicaPage() {
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [acoesObraAbertas, setAcoesObraAbertas] = useState(false);
   const [comentariosObra, setComentariosObra] = useState<ComentarioObraPublico[]>([]);
+  const [totalComentariosObra, setTotalComentariosObra] = useState(0);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
   const [comentariosAbertos, setComentariosAbertos] = useState(false);
+  const [comentariosSheetExpandido, setComentariosSheetExpandido] = useState(false);
   const [comentarioTexto, setComentarioTexto] = useState("");
   const [comentarioStatus, setComentarioStatus] = useState("");
   const [comentarioEnviando, setComentarioEnviando] = useState(false);
   const [comentarioRemovendoId, setComentarioRemovendoId] = useState("");
+  const [comentarioCurtindoId, setComentarioCurtindoId] = useState("");
+  const [respostaComentario, setRespostaComentario] =
+    useState<RespostaComentarioObra | null>(null);
+  const [respostasVisiveisPorComentario, setRespostasVisiveisPorComentario] =
+    useState<Record<string, number>>({});
+  const [ordenacaoComentarios, setOrdenacaoComentarios] =
+    useState<OrdenacaoComentariosObra>("relevantes");
+  const [menuOrdenacaoComentariosAberto, setMenuOrdenacaoComentariosAberto] =
+    useState(false);
+  const [agoraComentarios, setAgoraComentarios] = useState(() => Date.now());
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const [perfilUsuarioLogado, setPerfilUsuarioLogado] =
+    useState<PerfilPublicoObra | null>(null);
+  const comentarioInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const comentariosSheetRef = useRef<HTMLElement | null>(null);
+  const comentariosDragStartYRef = useRef(0);
+  const comentariosDragOffsetYRef = useRef(0);
+  const comentariosDragIgnorarCliqueRef = useRef(false);
+  const comentariosDragResetTimerRef = useRef<number | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
@@ -2005,6 +2321,33 @@ export default function ObraDinamicaPage() {
 
 
   useEffect(() => {
+    let cancelado = false;
+
+    async function carregarPerfilUsuarioAtual() {
+      if (!usuarioIdLogado) {
+        setPerfilUsuarioLogado(null);
+        return;
+      }
+
+      const perfil = await carregarPerfilPublicoObra(
+        usuarioIdLogado,
+        "Você"
+      );
+
+      if (!cancelado) {
+        setPerfilUsuarioLogado(perfil);
+      }
+    }
+
+    void carregarPerfilUsuarioAtual();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [usuarioIdLogado]);
+
+
+  useEffect(() => {
     if (!comentariosAbertos) {
       return;
     }
@@ -2018,6 +2361,28 @@ export default function ObraDinamicaPage() {
     return () => {
       document.body.style.overflow = overflowAnterior;
       document.body.style.overscrollBehavior = overscrollAnterior;
+
+      if (comentariosDragResetTimerRef.current !== null) {
+        window.clearTimeout(comentariosDragResetTimerRef.current);
+        comentariosDragResetTimerRef.current = null;
+      }
+    };
+  }, [comentariosAbertos]);
+
+
+  useEffect(() => {
+    if (!comentariosAbertos) {
+      return;
+    }
+
+    setAgoraComentarios(Date.now());
+
+    const relogioComentarios = window.setInterval(() => {
+      setAgoraComentarios(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(relogioComentarios);
     };
   }, [comentariosAbertos]);
 
@@ -2184,6 +2549,7 @@ export default function ObraDinamicaPage() {
 
       if (!obraId) {
         setComentariosObra([]);
+        setTotalComentariosObra(0);
         setComentariosCarregando(false);
         return;
       }
@@ -2194,13 +2560,7 @@ export default function ObraDinamicaPage() {
 
       if (!idObraSupabaseValido(obraId)) {
         setComentariosObra(comentariosLocais);
-        const totalUsuariosComentariosLocais = new Set(
-          comentariosLocais.map((comentario) => comentario.userId)
-        ).size;
-        setMetricasObra((metricasAtuais) => ({
-          ...metricasAtuais,
-          comentarios: totalUsuariosComentariosLocais,
-        }));
+        setTotalComentariosObra(comentariosLocais.length);
         setComentariosCarregando(false);
         return;
       }
@@ -2209,9 +2569,9 @@ export default function ObraDinamicaPage() {
       setComentariosObra([]);
 
       try {
-        const { data, error } = await supabase
+        const { data, error, count } = await supabase
           .from("comentarios_obras")
-          .select("id,obra_id,user_id,comentario,criado_em", {
+          .select("id,obra_id,user_id,comentario,comentario_pai_id,criado_em", {
             count: "exact",
           })
           .eq("obra_id", obraId)
@@ -2231,15 +2591,9 @@ export default function ObraDinamicaPage() {
         }
 
         setComentariosObra(comentariosRemotos);
-        const totalUsuariosComentariosRemotos = new Set(
-          comentariosRemotos.map((comentario) => comentario.userId)
-        ).size;
-        setMetricasObra((metricasAtuais) => ({
-          ...metricasAtuais,
-          comentarios: metricasAtuais.carregado
-            ? metricasAtuais.comentarios
-            : totalUsuariosComentariosRemotos,
-        }));
+        setTotalComentariosObra(
+          Math.max(comentariosRemotos.length, count ?? 0)
+        );
 
         if (usuarioIdLogado) {
           salvarComentariosObraLocais(
@@ -2251,15 +2605,7 @@ export default function ObraDinamicaPage() {
       } catch {
         if (!cancelado) {
           setComentariosObra(comentariosLocais);
-          const totalUsuariosComentariosLocais = new Set(
-            comentariosLocais.map((comentario) => comentario.userId)
-          ).size;
-          setMetricasObra((metricasAtuais) => ({
-            ...metricasAtuais,
-            comentarios: metricasAtuais.carregado
-              ? metricasAtuais.comentarios
-              : totalUsuariosComentariosLocais,
-          }));
+          setTotalComentariosObra(comentariosLocais.length);
           setComentarioStatus(
             "Não foi possível carregar os comentários agora."
           );
@@ -3008,21 +3354,25 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const texto = comentarioTexto.replace(/\s+/g, " ").trim();
+    const textoDigitado = comentarioTexto.replace(/\s+/g, " ").trim();
 
-    if (texto.length < 2) {
+    if (textoDigitado.length < 2) {
       setComentarioStatus("Escreva um comentário antes de enviar.");
       return;
     }
 
     const userId = await obterUsuarioLogadoParaAcao(
-      "Entre na sua conta para comentar esta obra."
+      respostaComentario
+        ? "Entre na sua conta para responder este comentário."
+        : "Entre na sua conta para comentar esta obra."
     );
 
     if (!userId) {
       return;
     }
 
+    const respostaAnterior = respostaComentario;
+    const textoFinal = textoDigitado.slice(0, 600);
     const perfil = await carregarPerfilPublicoObra(userId, "Você");
     const comentarioTemporario: ComentarioObraPublico = {
       id: criarComentarioObraId(),
@@ -3030,26 +3380,32 @@ export default function ObraDinamicaPage() {
       userId,
       nome: perfil?.nome || "Você",
       avatar: perfil?.avatar || "",
-      texto: texto.slice(0, 600),
+      texto: textoFinal,
       criadoEm: new Date().toISOString(),
+      comentarioPaiId: respostaAnterior?.comentarioPaiId || "",
       local: true,
+      curtidas: [],
     };
-
-    const usuarioJaComentou = comentariosObra.some(
-      (comentario) => comentario.userId === userId
-    );
 
     setComentarioEnviando(true);
     setComentarioStatus("");
     setComentarioTexto("");
+    setRespostaComentario(null);
+
+    if (comentarioTemporario.comentarioPaiId) {
+      setRespostasVisiveisPorComentario((estadoAtual) => ({
+        ...estadoAtual,
+        [comentarioTemporario.comentarioPaiId]: Math.max(
+          5,
+          estadoAtual[comentarioTemporario.comentarioPaiId] || 0
+        ),
+      }));
+    }
+
     setComentariosObra((comentariosAtuais) =>
       [comentarioTemporario, ...comentariosAtuais].slice(0, 120)
     );
-    setMetricasObra((metricasAtuais) => ({
-      ...metricasAtuais,
-      comentarios:
-        metricasAtuais.comentarios + (usuarioJaComentou ? 0 : 1),
-    }));
+    setTotalComentariosObra((totalAtual) => totalAtual + 1);
 
     if (!idObraSupabaseValido(obra.id)) {
       const comentariosLocais = [
@@ -3058,7 +3414,11 @@ export default function ObraDinamicaPage() {
       ].slice(0, 120);
 
       salvarComentariosObraLocais(userId, obra.id, comentariosLocais);
-      setComentarioStatus("Comentário salvo neste aparelho.");
+      setComentarioStatus(
+        respostaAnterior
+          ? "Resposta salva neste aparelho."
+          : "Comentário salvo neste aparelho."
+      );
       setComentarioEnviando(false);
       return;
     }
@@ -3070,8 +3430,11 @@ export default function ObraDinamicaPage() {
           obra_id: obra.id,
           user_id: userId,
           comentario: comentarioTemporario.texto,
+          comentario_pai_id: comentarioTemporario.comentarioPaiId || null,
         })
-        .select("id,obra_id,user_id,comentario,criado_em")
+        .select(
+          "id,obra_id,user_id,comentario,comentario_pai_id,criado_em"
+        )
         .single();
 
       if (error || !data) {
@@ -3103,15 +3466,16 @@ export default function ObraDinamicaPage() {
           (comentario) => comentario.id !== comentarioTemporario.id
         )
       );
-      setMetricasObra((metricasAtuais) => ({
-        ...metricasAtuais,
-        comentarios: Math.max(
-          0,
-          metricasAtuais.comentarios - (usuarioJaComentou ? 0 : 1)
-        ),
-      }));
-      setComentarioTexto(texto);
-      setComentarioStatus("Não foi possível enviar o comentário agora.");
+      setTotalComentariosObra((totalAtual) =>
+        Math.max(0, totalAtual - 1)
+      );
+      setComentarioTexto(textoDigitado);
+      setRespostaComentario(respostaAnterior);
+      setComentarioStatus(
+        respostaAnterior
+          ? "Não foi possível enviar a resposta agora."
+          : "Não foi possível enviar o comentário agora."
+      );
     } finally {
       setComentarioEnviando(false);
     }
@@ -3122,15 +3486,28 @@ export default function ObraDinamicaPage() {
     setComentarioStatus("");
   }
 
-  function responderComentarioObra(nomeAutor: string) {
-    const nomeLimpo = nomeAutor.replace(/\s+/g, " ").trim();
+  function responderComentarioObra(
+    comentario: ComentarioObraPublico,
+    comentarioRaizId: string
+  ) {
+    const nomeLimpo = comentario.nome.replace(/\s+/g, " ").trim();
+    const raizIdLimpo = comentarioRaizId.trim();
 
-    if (!nomeLimpo) {
+    if (!nomeLimpo || !raizIdLimpo) {
       return;
     }
 
+    setRespostaComentario({
+      comentarioPaiId: raizIdLimpo,
+      autorId: comentario.userId,
+      autorNome: nomeLimpo,
+    });
     setComentarioTexto(`@${nomeLimpo} `);
     setComentarioStatus("");
+
+    window.setTimeout(() => {
+      comentarioInputRef.current?.focus();
+    }, 0);
   }
 
   async function removerComentarioObra(comentario: ComentarioObraPublico) {
@@ -3146,10 +3523,9 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    const usuarioTemOutroComentario = comentariosObra.some(
-      (comentarioAtual) =>
-        comentarioAtual.id !== comentario.id &&
-        comentarioAtual.userId === comentario.userId
+    const idsParaRemover = obterIdsComentarioComRespostas(
+      comentariosObra,
+      comentario.id
     );
 
     setComentarioRemovendoId(comentario.id);
@@ -3171,24 +3547,122 @@ export default function ObraDinamicaPage() {
 
       setComentariosObra((comentariosAtuais) => {
         const proximosComentarios = comentariosAtuais.filter(
-          (comentarioAtual) => comentarioAtual.id !== comentario.id
+          (comentarioAtual) => !idsParaRemover.has(comentarioAtual.id)
         );
 
         salvarComentariosObraLocais(userId, obra.id, proximosComentarios);
+
         return proximosComentarios;
       });
-      setMetricasObra((metricasAtuais) => ({
-        ...metricasAtuais,
-        comentarios: Math.max(
-          0,
-          metricasAtuais.comentarios -
-            (usuarioTemOutroComentario ? 0 : 1)
-        ),
-      }));
+
+      setTotalComentariosObra((totalAtual) =>
+        Math.max(0, totalAtual - idsParaRemover.size)
+      );
+
+      if (
+        respostaComentario &&
+        (idsParaRemover.has(respostaComentario.comentarioPaiId) ||
+          idsParaRemover.has(comentario.id))
+      ) {
+        setRespostaComentario(null);
+      }
     } catch {
       setComentarioStatus("Não foi possível remover o comentário agora.");
     } finally {
       setComentarioRemovendoId("");
+    }
+  }
+
+  async function alternarCurtidaComentarioObra(
+    comentario: ComentarioObraPublico
+  ) {
+    if (!obra || comentarioCurtindoId) {
+      return;
+    }
+
+    const userId = await obterUsuarioLogadoParaAcao(
+      "Entre na sua conta para curtir comentários."
+    );
+
+    if (!userId) {
+      return;
+    }
+
+    const jaCurtiu = comentario.curtidas.includes(userId);
+
+    setComentarioCurtindoId(comentario.id);
+    setComentarioStatus("");
+    setComentariosObra((comentariosAtuais) =>
+      comentariosAtuais.map((comentarioAtual) =>
+        comentarioAtual.id === comentario.id
+          ? {
+              ...comentarioAtual,
+              curtidas: jaCurtiu
+                ? comentarioAtual.curtidas.filter(
+                    (usuarioCurtidaId) => usuarioCurtidaId !== userId
+                  )
+                : Array.from(
+                    new Set([...comentarioAtual.curtidas, userId])
+                  ),
+            }
+          : comentarioAtual
+      )
+    );
+
+    if (comentario.local || !idObraSupabaseValido(obra.id)) {
+      setComentariosObra((comentariosAtuais) => {
+        salvarComentariosObraLocais(userId, obra.id, comentariosAtuais);
+        return comentariosAtuais;
+      });
+      setComentarioCurtindoId("");
+      return;
+    }
+
+    try {
+      const { error: erroRemoverCurtida } = await supabase
+        .from(WORK_COMMENT_LIKES_TABLE)
+        .delete()
+        .eq("comentario_id", comentario.id)
+        .eq("usuario_id", userId);
+
+      if (erroRemoverCurtida) {
+        throw erroRemoverCurtida;
+      }
+
+      if (!jaCurtiu) {
+        const { error: erroInserirCurtida } = await supabase
+          .from(WORK_COMMENT_LIKES_TABLE)
+          .insert({
+            comentario_id: comentario.id,
+            usuario_id: userId,
+          });
+
+        if (erroInserirCurtida) {
+          throw erroInserirCurtida;
+        }
+      }
+    } catch {
+      setComentariosObra((comentariosAtuais) =>
+        comentariosAtuais.map((comentarioAtual) =>
+          comentarioAtual.id === comentario.id
+            ? {
+                ...comentarioAtual,
+                curtidas: jaCurtiu
+                  ? Array.from(
+                      new Set([...comentarioAtual.curtidas, userId])
+                    )
+                  : comentarioAtual.curtidas.filter(
+                      (usuarioCurtidaId) => usuarioCurtidaId !== userId
+                    ),
+              }
+            : comentarioAtual
+        )
+      );
+      setComentarioStatus(
+        "Não foi possível atualizar a curtida do comentário agora."
+      );
+    } finally {
+      setComentarioCurtindoId("");
     }
   }
 
@@ -3493,6 +3967,268 @@ export default function ObraDinamicaPage() {
   );
 
 
+  function abrirComentariosObra() {
+    setComentariosSheetExpandido(false);
+    setMenuOrdenacaoComentariosAberto(false);
+    setComentariosAbertos(true);
+  }
+
+  function fecharComentariosObra() {
+    setComentariosAbertos(false);
+    setComentariosSheetExpandido(false);
+    setMenuOrdenacaoComentariosAberto(false);
+    setRespostaComentario(null);
+    comentariosDragOffsetYRef.current = 0;
+  }
+
+  function iniciarArrasteComentariosObra(
+    event: TouchEvent<HTMLDivElement>
+  ) {
+    if (isDesktop) {
+      return;
+    }
+
+    comentariosDragStartYRef.current = event.touches[0]?.clientY || 0;
+    comentariosDragOffsetYRef.current = 0;
+    comentariosDragIgnorarCliqueRef.current = false;
+
+    if (comentariosDragResetTimerRef.current !== null) {
+      window.clearTimeout(comentariosDragResetTimerRef.current);
+      comentariosDragResetTimerRef.current = null;
+    }
+
+    if (comentariosSheetRef.current) {
+      comentariosSheetRef.current.style.transition = "none";
+    }
+  }
+
+  function moverArrasteComentariosObra(
+    event: TouchEvent<HTMLDivElement>
+  ) {
+    if (isDesktop) {
+      return;
+    }
+
+    const posicaoAtual =
+      event.touches[0]?.clientY || comentariosDragStartYRef.current;
+    const limiteSuperior = comentariosSheetExpandido ? -46 : -58;
+    const limiteInferior = comentariosSheetExpandido ? 112 : 132;
+    const deslocamento = Math.max(
+      limiteSuperior,
+      Math.min(
+        limiteInferior,
+        posicaoAtual - comentariosDragStartYRef.current
+      )
+    );
+
+    comentariosDragOffsetYRef.current = deslocamento;
+
+    if (Math.abs(deslocamento) > 6) {
+      comentariosDragIgnorarCliqueRef.current = true;
+    }
+
+    if (comentariosSheetRef.current) {
+      const handle = comentariosSheetRef.current.querySelector(
+        "[data-comments-sheet-handle='true']"
+      ) as HTMLElement | null;
+
+      if (handle) {
+        handle.style.transform = `translate3d(0, ${deslocamento}px, 0)`;
+      }
+    }
+  }
+
+  function finalizarArrasteComentariosObra() {
+    if (isDesktop) {
+      return;
+    }
+
+    const deslocamento = comentariosDragOffsetYRef.current;
+
+    if (comentariosSheetRef.current) {
+      comentariosSheetRef.current.style.transition = "height 220ms ease";
+
+      const handle = comentariosSheetRef.current.querySelector(
+        "[data-comments-sheet-handle='true']"
+      ) as HTMLElement | null;
+
+      if (handle) {
+        handle.style.transition = "transform 160ms ease";
+        handle.style.transform = "";
+      }
+    }
+
+    if (comentariosDragIgnorarCliqueRef.current) {
+      comentariosDragResetTimerRef.current = window.setTimeout(() => {
+        comentariosDragIgnorarCliqueRef.current = false;
+        comentariosDragResetTimerRef.current = null;
+      }, 350);
+    }
+
+    if (deslocamento < -34) {
+      setComentariosSheetExpandido(true);
+      return;
+    }
+
+    if (deslocamento > 52 && comentariosSheetExpandido) {
+      setComentariosSheetExpandido(false);
+      return;
+    }
+
+    if (deslocamento > 118 && !comentariosSheetExpandido) {
+      fecharComentariosObra();
+    }
+  }
+
+  function alternarExpansaoComentariosObra() {
+    if (isDesktop || comentariosDragIgnorarCliqueRef.current) {
+      return;
+    }
+
+    setComentariosSheetExpandido((expandidoAtual) => !expandidoAtual);
+  }
+
+
+  const estruturaComentariosObra = useMemo(
+    () => criarEstruturaComentariosObra(comentariosObra, ordenacaoComentarios),
+    [comentariosObra, ordenacaoComentarios]
+  );
+
+  function renderizarComentarioObra(
+    comentario: ComentarioObraPublico,
+    comentarioRaizId: string,
+    resposta = false
+  ) {
+    const podeRemover = Boolean(
+      usuarioIdLogado && comentario.userId === usuarioIdLogado
+    );
+    const removendo = comentarioRemovendoId === comentario.id;
+    const curtindo = comentarioCurtindoId === comentario.id;
+    const usuarioCurtiu = Boolean(
+      usuarioIdLogado && comentario.curtidas.includes(usuarioIdLogado)
+    );
+    const avatarStyle = comentario.avatar
+      ? {
+          ...(resposta
+            ? commentSheetReplyAvatarLinkStyle
+            : commentSheetAvatarLinkStyle),
+          backgroundImage: `url(${comentario.avatar})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }
+      : resposta
+        ? commentSheetReplyAvatarLinkStyle
+        : commentSheetAvatarLinkStyle;
+
+    return (
+      <article
+        key={comentario.id}
+        style={
+          resposta ? commentSheetReplyItemStyle : commentSheetItemStyle
+        }
+      >
+        <Link
+          href={criarLinkPerfilAutor(comentario.nome, comentario.userId)}
+          aria-label={`Abrir perfil de ${comentario.nome}`}
+          style={avatarStyle}
+        >
+          {!comentario.avatar
+            ? comentario.nome.slice(0, 1).toUpperCase() || "U"
+            : null}
+        </Link>
+
+        <div style={commentSheetContentStyle}>
+          <div style={commentSheetTopLineStyle}>
+            <Link
+              href={criarLinkPerfilAutor(comentario.nome, comentario.userId)}
+              style={commentSheetAuthorLinkStyle}
+            >
+              {comentario.nome}
+            </Link>
+
+            <span style={commentSheetTimeStyle}>
+              {formatarTempoRelativoComentarioObra(
+                comentario.criadoEm,
+                agoraComentarios
+              )}
+            </span>
+          </div>
+
+          <p style={commentSheetTextStyle}>{comentario.texto}</p>
+
+          <div style={commentSheetActionsRowStyle}>
+            <button
+              type="button"
+              onClick={() =>
+                responderComentarioObra(comentario, comentarioRaizId)
+              }
+              style={commentSheetReplyButtonStyle}
+            >
+              Responder
+            </button>
+
+            {podeRemover ? (
+              <button
+                type="button"
+                onClick={() => void removerComentarioObra(comentario)}
+                disabled={removendo}
+                style={{
+                  ...commentSheetRemoveButtonStyle,
+                  opacity: removendo ? 0.58 : 1,
+                  cursor: removendo ? "not-allowed" : "pointer",
+                }}
+              >
+                {removendo ? "Removendo..." : "Remover"}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div style={commentSheetLikeWrapStyle}>
+          <button
+            type="button"
+            aria-label={
+              usuarioCurtiu
+                ? "Remover curtida do comentário"
+                : "Curtir comentário"
+            }
+            onClick={() => void alternarCurtidaComentarioObra(comentario)}
+            disabled={curtindo}
+            style={{
+              ...commentSheetLikeButtonStyle,
+              opacity: curtindo ? 0.58 : 1,
+              cursor: curtindo ? "not-allowed" : "pointer",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              style={commentSheetHeartIconStyle}
+            >
+              <path
+                d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                fill={usuarioCurtiu ? "#F43F5E" : "none"}
+                stroke={
+                  usuarioCurtiu
+                    ? "#F43F5E"
+                    : "var(--historietas-text-secondary, #D4D4D8)"
+                }
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          <span style={commentSheetLikeCountStyle}>
+            {comentario.curtidas.length}
+          </span>
+        </div>
+      </article>
+    );
+  }
+
+
   const painelComentariosObra =
     obra && comentariosAbertos && typeof document !== "undefined"
       ? createPortal(
@@ -3503,16 +4239,45 @@ export default function ObraDinamicaPage() {
             <button
               type="button"
               aria-label="Fechar comentários"
-              onClick={() => setComentariosAbertos(false)}
+              onClick={fecharComentariosObra}
               style={commentsSheetBackdropStyle}
             />
 
             <article
+              ref={comentariosSheetRef}
               style={
-                isDesktop ? desktopCommentsSheetStyle : commentsSheetStyle
+                isDesktop
+                  ? desktopCommentsSheetStyle
+                  : {
+                      ...commentsSheetStyle,
+                      ...(comentariosSheetExpandido
+                        ? commentsSheetExpandedStyle
+                        : commentsSheetCompactStyle),
+                    }
               }
             >
-              <div style={commentsSheetHandleWrapStyle}>
+              <div
+                data-comments-sheet-handle="true"
+                style={commentsSheetHandleWrapStyle}
+                onClick={alternarExpansaoComentariosObra}
+                onTouchStart={iniciarArrasteComentariosObra}
+                onTouchMove={moverArrasteComentariosObra}
+                onTouchEnd={finalizarArrasteComentariosObra}
+                onTouchCancel={finalizarArrasteComentariosObra}
+                role="button"
+                tabIndex={0}
+                aria-label={
+                  comentariosSheetExpandido
+                    ? "Recolher comentários"
+                    : "Expandir comentários"
+                }
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    alternarExpansaoComentariosObra();
+                  }
+                }}
+              >
                 <div style={commentsSheetHandleStyle} />
               </div>
 
@@ -3520,105 +4285,173 @@ export default function ObraDinamicaPage() {
                 <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
 
                 <strong style={commentsSheetTitleStyle}>
-                  {comentariosObra.length === 1
+                  {totalComentariosObra === 1
                     ? "1 comentário"
-                    : `${comentariosObra.length} comentários`}
+                    : `${totalComentariosObra} comentários`}
                 </strong>
 
-                <button
-                  type="button"
-                  onClick={() => setComentariosAbertos(false)}
-                  style={commentsSheetCloseStyle}
-                  aria-label="Fechar comentários"
-                >
-                  ×
-                </button>
+                <div style={commentsSortMenuWrapStyle}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMenuOrdenacaoComentariosAberto((aberto) => !aberto)
+                    }
+                    style={commentsSortMenuTriggerStyle}
+                    aria-label="Ordenar comentários"
+                    aria-haspopup="menu"
+                    aria-expanded={menuOrdenacaoComentariosAberto}
+                  >
+                    +
+                  </button>
+
+                  {menuOrdenacaoComentariosAberto ? (
+                    <div style={commentsSortMenuStyle} role="menu">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOrdenacaoComentarios("relevantes");
+                          setMenuOrdenacaoComentariosAberto(false);
+                        }}
+                        style={
+                          ordenacaoComentarios === "relevantes"
+                            ? commentsSortMenuItemActiveStyle
+                            : commentsSortMenuItemStyle
+                        }
+                        role="menuitem"
+                        aria-pressed={ordenacaoComentarios === "relevantes"}
+                      >
+                        Relevantes
+                      </button>
+
+                      <div style={commentsSortMenuDividerStyle} aria-hidden="true" />
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOrdenacaoComentarios("recentes");
+                          setMenuOrdenacaoComentariosAberto(false);
+                        }}
+                        style={
+                          ordenacaoComentarios === "recentes"
+                            ? commentsSortMenuItemActiveStyle
+                            : commentsSortMenuItemStyle
+                        }
+                        role="menuitem"
+                        aria-pressed={ordenacaoComentarios === "recentes"}
+                      >
+                        Recentes
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </header>
 
               <section style={commentsSheetListStyle}>
                 {comentariosCarregando ? (
                   <p style={emptyCommentsStyle}>Carregando comentários...</p>
-                ) : comentariosObra.length > 0 ? (
-                  comentariosObra.map((comentario) => {
-                    const podeRemover = Boolean(
-                      usuarioIdLogado && comentario.userId === usuarioIdLogado
+                ) : estruturaComentariosObra.comentariosRaiz.length > 0 ? (
+                  estruturaComentariosObra.comentariosRaiz.map((comentario) => {
+                    const respostas =
+                      estruturaComentariosObra.respostasPorRaiz.get(
+                        comentario.id
+                      ) || [];
+                    const quantidadeVisivel = Math.min(
+                      respostas.length,
+                      respostasVisiveisPorComentario[comentario.id] || 0
                     );
-                    const removendo = comentarioRemovendoId === comentario.id;
-                    const avatarStyle = comentario.avatar
-                      ? {
-                          ...commentSheetAvatarLinkStyle,
-                          backgroundImage: `url(${comentario.avatar})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }
-                      : commentSheetAvatarLinkStyle;
+                    const respostasVisiveis = respostas.slice(
+                      0,
+                      quantidadeVisivel
+                    );
+                    const respostasOcultas = Math.max(
+                      0,
+                      respostas.length - quantidadeVisivel
+                    );
+                    const respostasExpandidas = quantidadeVisivel > 0;
 
                     return (
-                      <article key={comentario.id} style={commentSheetItemStyle}>
-                        <Link
-                          href={criarLinkPerfilAutor(
-                            comentario.nome,
-                            comentario.userId
-                          )}
-                          aria-label={`Abrir perfil de ${comentario.nome}`}
-                          style={avatarStyle}
-                        >
-                          {!comentario.avatar
-                            ? comentario.nome.slice(0, 1).toUpperCase() || "L"
-                            : null}
-                        </Link>
+                      <section key={comentario.id} style={commentThreadStyle}>
+                        {renderizarComentarioObra(
+                          comentario,
+                          comentario.id
+                        )}
 
-                        <div style={commentSheetContentStyle}>
-                          <div style={commentSheetTopLineStyle}>
-                            <Link
-                              href={criarLinkPerfilAutor(
-                                comentario.nome,
-                                comentario.userId
-                              )}
-                              style={commentSheetAuthorLinkStyle}
-                            >
-                              {comentario.nome}
-                            </Link>
-
-                            <span style={commentSheetTimeStyle}>
-                              {formatarData(comentario.criadoEm)}
-                            </span>
+                        {respostasVisiveis.length > 0 ? (
+                          <div style={commentRepliesListStyle}>
+                            {respostasVisiveis.map((resposta) =>
+                              renderizarComentarioObra(
+                                resposta,
+                                comentario.id,
+                                true
+                              )
+                            )}
                           </div>
+                        ) : null}
 
-                          <p style={commentSheetTextStyle}>{comentario.texto}</p>
+                        {respostas.length > 0 && !respostasExpandidas ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRespostasVisiveisPorComentario(
+                                (estadoAtual) => ({
+                                  ...estadoAtual,
+                                  [comentario.id]: Math.min(5, respostas.length),
+                                })
+                              )
+                            }
+                            style={commentRepliesToggleStyle}
+                          >
+                            <span style={commentRepliesLineStyle} />
+                            {`Ver ${respostas.length} ${
+                              respostas.length === 1 ? "resposta" : "respostas"
+                            }`}
+                          </button>
+                        ) : null}
 
-                          <div style={commentSheetActionsRowStyle}>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                responderComentarioObra(comentario.nome)
-                              }
-                              style={commentSheetReplyButtonStyle}
-                            >
-                              Responder
-                            </button>
-
-                            {podeRemover ? (
+                        {respostasExpandidas ? (
+                          <div style={commentRepliesControlsStyle}>
+                            {respostasOcultas > 0 ? (
                               <button
                                 type="button"
                                 onClick={() =>
-                                  void removerComentarioObra(comentario)
+                                  setRespostasVisiveisPorComentario(
+                                    (estadoAtual) => ({
+                                      ...estadoAtual,
+                                      [comentario.id]: Math.min(
+                                        respostas.length,
+                                        (estadoAtual[comentario.id] || 0) + 5
+                                      ),
+                                    })
+                                  )
                                 }
-                                disabled={removendo}
-                                style={{
-                                  ...commentSheetRemoveButtonStyle,
-                                  opacity: removendo ? 0.58 : 1,
-                                  cursor: removendo
-                                    ? "not-allowed"
-                                    : "pointer",
-                                }}
+                                style={commentRepliesToggleStyle}
                               >
-                                {removendo ? "Removendo..." : "Remover"}
+                                <span style={commentRepliesLineStyle} />
+                                {`Ver mais ${respostasOcultas} ${
+                                  respostasOcultas === 1
+                                    ? "resposta"
+                                    : "respostas"
+                                }`}
                               </button>
                             ) : null}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRespostasVisiveisPorComentario(
+                                  (estadoAtual) => ({
+                                    ...estadoAtual,
+                                    [comentario.id]: 0,
+                                  })
+                                )
+                              }
+                              style={commentRepliesHideButtonStyle}
+                            >
+                              Ocultar respostas
+                            </button>
                           </div>
-                        </div>
-                      </article>
+                        ) : null}
+                      </section>
                     );
                   })
                 ) : (
@@ -3648,22 +4481,26 @@ export default function ObraDinamicaPage() {
               >
                 <div
                   style={
-                    perfilAutorObra?.avatar &&
-                    perfilAutorObra.userId === usuarioIdLogado
+                    perfilUsuarioLogado?.avatar
                       ? {
                           ...commentsInputAvatarStyle,
-                          backgroundImage: `url(${perfilAutorObra.avatar})`,
+                          backgroundImage: `url(${perfilUsuarioLogado.avatar})`,
                           backgroundSize: "cover",
                           backgroundPosition: "center",
                         }
                       : commentsInputAvatarStyle
                   }
                 >
-                  {usuarioIdLogado ? "V" : "H"}
+                  {!perfilUsuarioLogado?.avatar
+                    ? usuarioIdLogado
+                      ? perfilUsuarioLogado?.nome.slice(0, 1).toUpperCase() || "V"
+                      : "H"
+                    : null}
                 </div>
 
                 <div style={commentsInputBoxStyle}>
                   <textarea
+                    ref={comentarioInputRef}
                     value={comentarioTexto}
                     onChange={(event) => {
                       setComentarioTexto(event.target.value.slice(0, 600));
@@ -3878,7 +4715,7 @@ export default function ObraDinamicaPage() {
                     </span>
                   </span>
                   <span style={heroBottomMetricStyle}>
-                    💬 {formatarNumeroCompacto(metricasObra.comentarios)}
+                    💬 {formatarNumeroCompacto(totalComentariosObra)}
                   </span>
                 </div>
               </div>
@@ -3975,7 +4812,7 @@ export default function ObraDinamicaPage() {
                     </span>
                   </span>
                   <span style={obraMenuMetricStyle}>
-                    💬 {formatarNumeroCompacto(metricasObra.comentarios)}
+                    💬 {formatarNumeroCompacto(totalComentariosObra)}
                   </span>
                 </div>
               </div>
@@ -4146,9 +4983,9 @@ export default function ObraDinamicaPage() {
             onClick={alternarCurtidaObra}
           />
           <MetricCard
-            numero={formatarNumeroCompacto(metricasObra.comentarios)}
+            numero={formatarNumeroCompacto(totalComentariosObra)}
             rotulo="comentários"
-            onClick={() => setComentariosAbertos(true)}
+            onClick={abrirComentariosObra}
           />
           <MetricCard
             numero={formatarNumeroCompacto(metricasObra.seguidores)}
@@ -5350,8 +6187,7 @@ const commentsSheetBackdropStyle: CSSProperties = {
 const commentsSheetStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
-  width: "min(680px, 100%)",
-  height: "min(64dvh, 540px)",
+  width: "min(720px, 100%)",
   maxHeight: "calc(100dvh - env(safe-area-inset-top) - 10px)",
   display: "grid",
   gridTemplateRows: "auto auto minmax(0, 1fr) auto auto auto",
@@ -5359,16 +6195,27 @@ const commentsSheetStyle: CSSProperties = {
   padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
   borderRadius: "28px 28px 0 0",
   background: "#070212",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  border: "none",
   borderBottom: "none",
   boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
   pointerEvents: "auto",
   overflow: "hidden",
+  boxSizing: "border-box",
+  willChange: "height",
+  transition: "height 220ms ease",
+};
+
+const commentsSheetCompactStyle: CSSProperties = {
+  height: "min(64dvh, 540px)",
+};
+
+const commentsSheetExpandedStyle: CSSProperties = {
+  height: "min(90dvh, 760px)",
 };
 
 const desktopCommentsSheetStyle: CSSProperties = {
   ...commentsSheetStyle,
-  width: "min(760px, calc(100% - 48px))",
+  width: "min(800px, calc(100% - 40px))",
   height: "min(76dvh, 720px)",
 };
 
@@ -5377,6 +6224,10 @@ const commentsSheetHandleWrapStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+  touchAction: "none",
+  cursor: "grab",
+  willChange: "transform",
+  outline: "none",
 };
 
 const commentsSheetHandleStyle: CSSProperties = {
@@ -5408,10 +6259,19 @@ const commentsSheetTitleStyle: CSSProperties = {
   letterSpacing: "-0.02em",
 };
 
-const commentsSheetCloseStyle: CSSProperties = {
-  width: "34px",
+const commentsSortMenuWrapStyle: CSSProperties = {
+  position: "relative",
+  width: "40px",
   height: "34px",
   justifySelf: "end",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+};
+
+const commentsSortMenuTriggerStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
   borderRadius: "999px",
   border: "none",
   background: "transparent",
@@ -5420,8 +6280,53 @@ const commentsSheetCloseStyle: CSSProperties = {
   lineHeight: 1,
   fontWeight: 500,
   fontFamily: "inherit",
-  padding: 0,
+  padding: "0 0 2px",
   cursor: "pointer",
+};
+
+const commentsSortMenuStyle: CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 6px)",
+  right: 0,
+  zIndex: 12,
+  width: "132px",
+  maxWidth: "calc(100vw - 24px)",
+  display: "grid",
+  gap: 0,
+  padding: "4px 8px",
+  boxSizing: "border-box",
+  borderRadius: "12px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(18, 9, 35, 0.98)",
+  boxShadow: "0 16px 36px rgba(0,0,0,0.48)",
+  backdropFilter: "blur(14px)",
+  WebkitBackdropFilter: "blur(14px)",
+};
+
+const commentsSortMenuItemStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "36px",
+  border: "none",
+  borderRadius: 0,
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  padding: "0 4px",
+  textAlign: "center",
+  fontSize: "11.5px",
+  fontWeight: 850,
+  fontFamily: "inherit",
+  cursor: "pointer",
+};
+
+const commentsSortMenuItemActiveStyle: CSSProperties = {
+  ...commentsSortMenuItemStyle,
+  color: "#FFFFFF",
+};
+
+const commentsSortMenuDividerStyle: CSSProperties = {
+  width: "100%",
+  height: "1px",
+  background: "rgba(255,255,255,0.12)",
 };
 
 const commentsSheetListStyle: CSSProperties = {
@@ -5436,10 +6341,76 @@ const commentsSheetListStyle: CSSProperties = {
 
 const commentSheetItemStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr)",
+  gridTemplateColumns: "34px minmax(0, 1fr) 28px",
   gap: "10px",
   alignItems: "start",
   minWidth: 0,
+};
+
+const commentThreadStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const commentRepliesListStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  marginLeft: "34px",
+  paddingLeft: "10px",
+  borderLeft: "1px solid rgba(255,255,255,0.08)",
+  minWidth: 0,
+};
+
+const commentSheetReplyItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "28px minmax(0, 1fr) 28px",
+  gap: "8px",
+  alignItems: "start",
+  minWidth: 0,
+};
+
+const commentRepliesToggleStyle: CSSProperties = {
+  width: "fit-content",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
+
+const commentRepliesControlsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  flexWrap: "wrap",
+  minWidth: 0,
+};
+
+const commentRepliesHideButtonStyle: CSSProperties = {
+  width: "fit-content",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
+
+const commentRepliesLineStyle: CSSProperties = {
+  width: "22px",
+  height: "1px",
+  background: "rgba(255,255,255,0.22)",
 };
 
 const commentSheetAvatarLinkStyle: CSSProperties = {
@@ -5459,7 +6430,16 @@ const commentSheetAvatarLinkStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+const commentSheetReplyAvatarLinkStyle: CSSProperties = {
+  ...commentSheetAvatarLinkStyle,
+  width: "28px",
+  height: "28px",
+  borderRadius: "10px",
+  fontSize: "10.5px",
+};
+
 const commentSheetContentStyle: CSSProperties = {
+  position: "relative",
   display: "grid",
   gap: "3px",
   minWidth: 0,
@@ -5522,10 +6502,47 @@ const commentSheetRemoveButtonStyle: CSSProperties = {
   background: "transparent",
   color: "var(--historietas-danger-button-text, #FCA5A5)",
   fontSize: "10.5px",
-  fontWeight: 950,
+  fontWeight: 900,
   fontFamily: "inherit",
   padding: "1px 0 0",
   cursor: "pointer",
+};
+
+
+const commentSheetLikeWrapStyle: CSSProperties = {
+  minWidth: "28px",
+  display: "grid",
+  justifyItems: "center",
+  alignContent: "start",
+  gap: "2px",
+};
+
+const commentSheetLikeButtonStyle: CSSProperties = {
+  width: "28px",
+  height: "28px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentSheetLikeCountStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  lineHeight: 1,
+  minHeight: "10px",
+  textAlign: "center",
+};
+
+const commentSheetHeartIconStyle: CSSProperties = {
+  width: "19px",
+  height: "19px",
+  display: "block",
 };
 
 const emptyCommentsStyle: CSSProperties = {
@@ -5634,8 +6651,8 @@ const commentsSheetSendStyle: CSSProperties = {
   width: "36px",
   height: "36px",
   borderRadius: "999px",
-  border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  border: "1px solid var(--historietas-bottom-nav-publish-border, rgba(167, 139, 250, 0.34))",
+  background: "var(--historietas-bottom-nav-publish-bg, rgba(59, 7, 100, 0.72))",
   color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
