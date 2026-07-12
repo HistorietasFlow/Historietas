@@ -1304,7 +1304,7 @@ async function carregarCurtidasTopFivePerfil(
         .maybeSingle();
 
       if (!erroMinhaCurtida) {
-        curtiu = Boolean(minhaCurtida);
+        curtiu = estadoLocal.curtiu || Boolean(minhaCurtida);
       }
     }
 
@@ -2918,7 +2918,7 @@ function dataDiarioPerfilFormatada(dataIso: string) {
 
   return data.toLocaleDateString("pt-BR", {
     day: "2-digit",
-    month: "short",
+    month: "2-digit",
     year: "numeric",
   });
 }
@@ -2929,7 +2929,7 @@ function obterApresentacaoTipoDiarioPerfil(tipo: DiarioPerfilItem["tipo"]) {
   }
 
   if (tipo === "favorita") {
-    return { icone: "♥", texto: "Favorita", cor: "#FB7185", fundo: "rgba(251,113,133,0.14)" };
+    return { icone: "❤️", texto: "Favorita", cor: "#FB7185", fundo: "rgba(251,113,133,0.14)" };
   }
 
   if (tipo === "concluida") {
@@ -5236,9 +5236,7 @@ export default function PerfilAutorPage() {
       return;
     }
 
-    setNomePerfilEditor(
-      (perfilUsuarioRemotoAtivo?.nome || perfilParaMostrar.nome || "").trim(),
-    );
+    setNomePerfilEditor("");
     setUsernamePerfilEditor(perfilUsuarioRemotoAtivo?.username || "");
   }, [
     editorPerfilAberto,
@@ -6040,15 +6038,15 @@ export default function PerfilAutorPage() {
 
     if (nomeFinal.length < 3) {
       setMensagemAcao("O nome do perfil precisa ter pelo menos 3 caracteres.");
-      setNomePerfilEditor(perfilParaMostrar.nome);
+      setNomePerfilEditor("");
       return;
     }
 
     if (nomeFinal === perfilParaMostrar.nome && nomeFinal === perfilUsuarioRemotoAtivo?.nome) {
+      setNomePerfilEditor("");
       return;
     }
 
-    setNomePerfilEditor(nomeFinal);
     setMensagemAcao("Salvando nome do perfil...");
 
     const perfilNormalizado: PerfilAutorSalvo = {
@@ -6113,6 +6111,7 @@ export default function PerfilAutorPage() {
     ]);
 
     if (!resultadoPerfil.ok) {
+      setNomePerfilEditor("");
       setMensagemAcao(
         `Nome salvo neste aparelho. Supabase: ${resultadoPerfil.erro}`,
       );
@@ -6120,12 +6119,14 @@ export default function PerfilAutorPage() {
     }
 
     if (!resultadoObras.ok) {
+      setNomePerfilEditor("");
       setMensagemAcao(
         `Nome do perfil atualizado. Obras locais atualizadas; Supabase obras: ${resultadoObras.erro}`,
       );
       return;
     }
 
+    setNomePerfilEditor("");
     setMensagemAcao("Nome do perfil atualizado.");
   }
 
@@ -7602,7 +7603,7 @@ export default function PerfilAutorPage() {
               <span style={diaryCardCoverMetaStyle}>
                 <span>👁 {visualizacoesDiario}</span>
                 <span>
-                  <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
+                  <span style={diaryCardHeartMetaStyle}>❤️</span>{" "}
                   {totalCurtidasDiario}
                 </span>
                 {item.tipo === "avaliacao" && nota > 0 ? (
@@ -7680,7 +7681,7 @@ export default function PerfilAutorPage() {
               <span style={diaryCardCoverMetaStyle}>
                 <span>👁 {visualizacoesBiblioteca}</span>
                 <span>
-                  <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
+                  <span style={diaryCardHeartMetaStyle}>❤️</span>{" "}
                   {totalCurtidasBiblioteca}
                 </span>
                 <span>
@@ -8520,19 +8521,25 @@ export default function PerfilAutorPage() {
           {podeEditarPerfil && editorPerfilAberto && (
             <>
               <label style={profileEditorFieldStyle}>
-                <span style={profileEditorLabelStyle}>Nome de exibição</span>
+                <span style={profileEditorLabelStyle}>Nome de usuário</span>
 
                 <input
                   value={nomePerfilEditor}
                   onChange={(event) => setNomePerfilEditor(event.target.value)}
-                  onBlur={() => void salvarNomePerfilAutor(nomePerfilEditor)}
+                  onBlur={() => {
+                    const nomeDigitado = nomePerfilEditor.trim();
+
+                    if (nomeDigitado) {
+                      void salvarNomePerfilAutor(nomeDigitado);
+                    }
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault();
                       event.currentTarget.blur();
                     }
                   }}
-                  placeholder="Seu nome no Historietas"
+                  placeholder="ex: nome de usuário"
                   maxLength={80}
                   style={profileNameInputStyle}
                   type="text"
@@ -8628,19 +8635,28 @@ export default function PerfilAutorPage() {
                           : "Curtir TOP 5"
                       }
                     >
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill={topFiveCurtidoPorMim ? "currentColor" : "none"}
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
-                      </svg>
+                      {topFiveCurtidoPorMim ? (
+                        <span
+                          style={authorHighlightsLikeHeartEmojiStyle}
+                          aria-hidden="true"
+                        >
+                          ❤️
+                        </span>
+                      ) : (
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+                        </svg>
+                      )}
                       <span style={authorHighlightsLikeCountStyle}>{compactarNumeroPerfilAutor(topFiveCurtidasTotal)}</span>
                     </button>
                   )}
@@ -8672,19 +8688,28 @@ export default function PerfilAutorPage() {
                             : "Curtir TOP 5"
                         }
                       >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill={topFiveCurtidoPorMim ? "currentColor" : "none"}
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
-                        </svg>
+                        {topFiveCurtidoPorMim ? (
+                          <span
+                            style={authorHighlightsLikeHeartEmojiStyle}
+                            aria-hidden="true"
+                          >
+                            ❤️
+                          </span>
+                        ) : (
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+                          </svg>
+                        )}
                         <span style={authorHighlightsLikeCountStyle}>{compactarNumeroPerfilAutor(topFiveCurtidasTotal)}</span>
                       </button>
                     )
@@ -9294,7 +9319,7 @@ export default function PerfilAutorPage() {
                             <span style={diaryCardCoverMetaStyle}>
                               <span>👁 {visualizacoesObra}</span>
                               <span>
-                                <span style={diaryCardHeartMetaStyle}>♥</span>{" "}
+                                <span style={diaryCardHeartMetaStyle}>❤️</span>{" "}
                                 {totalCurtidas}
                               </span>
                               <span>
@@ -9377,12 +9402,10 @@ export default function PerfilAutorPage() {
               .join(" • ");
             const metricasObraSheet = [
               `👁 ${visualizacoesObra}`,
-              `♥ ${totalCurtidas}`,
+              `❤️ ${totalCurtidas}`,
               `💬 ${totalComentarios}`,
-              `＋ ${totalSalvos}`,
-              `${obra.capitulos.length} ${
-                obra.capitulos.length === 1 ? "cap" : "caps"
-              }`,
+              `🔖 ${totalSalvos}`,
+              `📚 ${obra.capitulos.length}`,
             ]
               .filter(Boolean)
               .join(" • ");
@@ -9874,7 +9897,7 @@ export default function PerfilAutorPage() {
                               }}
                               aria-hidden="true"
                             >
-                              ♥
+                              ❤️
                             </span>
                             <span style={diaryActionSheetAnnotationLikeCountStyle}>
                               {totalCurtidasAnotacao}
@@ -11953,6 +11976,17 @@ const authorHighlightsLikeButtonStyle: CSSProperties = {
 const authorHighlightsLikeButtonActiveStyle: CSSProperties = {
   ...authorHighlightsLikeButtonStyle,
   color: "#EF4444",
+};
+
+const authorHighlightsLikeHeartEmojiStyle: CSSProperties = {
+  width: "16px",
+  height: "16px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+  fontSize: "14px",
+  lineHeight: 1,
 };
 
 const authorHighlightsLikeCountStyle: CSSProperties = {

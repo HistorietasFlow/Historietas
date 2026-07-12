@@ -4726,25 +4726,32 @@ export default function ComunidadePage() {
                           type="button"
                           onClick={() => alternarCurtida(post.id)}
                           disabled={postCurtindo}
-                          style={{
-                            ...(usuarioCurtiu
-                              ? likedActionButtonStyle
-                              : actionButtonStyle),
-                            opacity: postCurtindo ? 0.58 : 1,
-                            cursor: postCurtindo ? "not-allowed" : "pointer",
-                          }}
+                          style={postReactionButtonStyle}
+                          aria-label={
+                            usuarioCurtiu
+                              ? "Remover curtida da publicação"
+                              : "Curtir publicação"
+                          }
                         >
-                          {postCurtindo
-                        ? "♥ ..."
-                        : `♥ ${contarCurtidasUnicasPostComunidade(post)}`}
+                          <span style={postReactionIconStyle} aria-hidden="true">
+                            {usuarioCurtiu ? "❤️" : "🤍"}
+                          </span>
+                          <span style={postReactionCountStyle}>
+                            {contarCurtidasUnicasPostComunidade(post)}
+                          </span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => abrirComentarios(post.id)}
-                          style={actionButtonStyle}
+                          style={postReactionButtonStyle}
                         >
-                          💬 {contarComentaristasUnicosPostComunidade(post)}
+                          <span style={postReactionIconStyle} aria-hidden="true">
+                            💬
+                          </span>
+                          <span style={postReactionCountStyle}>
+                            {contarComentaristasUnicosPostComunidade(post)}
+                          </span>
                         </button>
 
                         {post.temSpoiler && (
@@ -7678,9 +7685,27 @@ const actionButtonStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const likedActionButtonStyle: CSSProperties = {
+const postReactionButtonStyle: CSSProperties = {
   ...actionButtonStyle,
-  color: "var(--historietas-accent, #FDBA74)",
+  gap: "4px",
+};
+
+const postReactionIconStyle: CSSProperties = {
+  width: "14px",
+  height: "14px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 14px",
+  fontSize: "13px",
+  lineHeight: 1,
+};
+
+const postReactionCountStyle: CSSProperties = {
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "12px",
+  lineHeight: 1,
 };
 
 const commentsBoxStyle: CSSProperties = {

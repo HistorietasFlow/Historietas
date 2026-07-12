@@ -2538,6 +2538,18 @@ export default function ObraDinamicaPage() {
     return [];
   }, [obra]);
 
+  const obraTemCapitulos = capitulosDaObra.length > 0;
+  const indicadorConteudoIcone = obraTemCapitulos
+    ? "📚"
+    : obra?.arquivoObra
+      ? "📄"
+      : "📚";
+  const indicadorConteudoValor = obraTemCapitulos
+    ? capitulosDaObra.length
+    : obra?.arquivoObra
+      ? 1
+      : 0;
+
 
   useEffect(() => {
     let cancelado = false;
@@ -4703,20 +4715,32 @@ export default function ObraDinamicaPage() {
 
                 <div style={heroBottomMetricsStyle}>
                   <span style={heroBottomMetricStyle}>
-                    📚 {capitulosDaObra.length}
-                  </span>
-                  <span style={heroBottomMetricStyle}>
-                    👁 {formatarNumeroCompacto(metricasObra.visualizacoes)}
-                  </span>
-                  <span style={heroBottomLikeMetricStyle}>
-                    <span style={metricHeartIconStyle}>♥</span>{" "}
-                    <span style={metricWhiteNumberStyle}>
-                      {formatarNumeroCompacto(metricasObra.curtidas)}
+                    <span style={metricInlineContentStyle}>
+                      <span style={metricEmojiIconStyle}>👁</span>
+                      <span style={metricWhiteNumberStyle}>
+                        {formatarNumeroCompacto(metricasObra.visualizacoes)}
+                      </span>
                     </span>
                   </span>
+
                   <span style={heroBottomMetricStyle}>
-                    💬 {formatarNumeroCompacto(totalComentariosObra)}
+                    <span style={metricInlineContentStyle}>
+                      <span style={metricEmojiIconStyle}>❤️</span>
+                      <span style={metricWhiteNumberStyle}>
+                        {formatarNumeroCompacto(metricasObra.curtidas)}
+                      </span>
+                    </span>
                   </span>
+
+                  <span style={heroBottomMetricStyle}>
+                    <span style={metricInlineContentStyle}>
+                      <span style={metricEmojiIconStyle}>💬</span>
+                      <span style={metricWhiteNumberStyle}>
+                        {formatarNumeroCompacto(totalComentariosObra)}
+                      </span>
+                    </span>
+                  </span>
+
                 </div>
               </div>
 
@@ -4800,19 +4824,50 @@ export default function ObraDinamicaPage() {
 
                 <div style={obraMenuMetricsStyle}>
                   <span style={obraMenuMetricStyle}>
-                    📚 {capitulosDaObra.length}
-                  </span>
-                  <span style={obraMenuMetricStyle}>
-                    👁 {formatarNumeroCompacto(metricasObra.visualizacoes)}
-                  </span>
-                  <span style={obraMenuLikeMetricStyle}>
-                    <span style={metricHeartIconStyle}>♥</span>{" "}
-                    <span style={metricWhiteNumberStyle}>
-                      {formatarNumeroCompacto(metricasObra.curtidas)}
+                    <span style={metricInlineContentStyle}>
+                      <span style={metricEmojiIconStyle}>👁</span>
+                      <span style={metricWhiteNumberStyle}>
+                        {formatarNumeroCompacto(metricasObra.visualizacoes)}
+                      </span>
                     </span>
                   </span>
+
                   <span style={obraMenuMetricStyle}>
-                    💬 {formatarNumeroCompacto(totalComentariosObra)}
+                    <span style={metricInlineContentStyle}>
+                      <span style={metricEmojiIconStyle}>❤️</span>
+                      <span style={metricWhiteNumberStyle}>
+                        {formatarNumeroCompacto(metricasObra.curtidas)}
+                      </span>
+                    </span>
+                  </span>
+
+                  <span style={obraMenuMetricStyle}>
+                    <span style={metricInlineContentStyle}>
+                      <span style={metricEmojiIconStyle}>💬</span>
+                      <span style={metricWhiteNumberStyle}>
+                        {formatarNumeroCompacto(totalComentariosObra)}
+                      </span>
+                    </span>
+                  </span>
+
+                  <span style={obraMenuMetricStyle}>
+                    <span style={metricInlineContentStyle}>
+                      <span style={metricEmojiIconStyle}>🔖</span>
+                      <span style={metricWhiteNumberStyle}>
+                        {formatarNumeroCompacto(metricasObra.seguidores)}
+                      </span>
+                    </span>
+                  </span>
+
+                  <span style={obraMenuMetricStyle}>
+                    <span style={metricInlineContentStyle}>
+                      <span style={metricEmojiIconStyle}>
+                        {indicadorConteudoIcone}
+                      </span>
+                      <span style={metricWhiteNumberStyle}>
+                        {indicadorConteudoValor}
+                      </span>
+                    </span>
                   </span>
                 </div>
               </div>
@@ -5603,12 +5658,28 @@ const heroActionsStyle: CSSProperties = {
   maxWidth: "428px",
 };
 
-const metricHeartIconStyle: CSSProperties = {
-  color: "#FB7185",
+const metricInlineContentStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "4px",
+  minWidth: 0,
+  whiteSpace: "nowrap",
+};
+
+const metricEmojiIconStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+  fontSize: "1em",
+  lineHeight: 1,
 };
 
 const metricWhiteNumberStyle: CSSProperties = {
   color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  lineHeight: 1,
 };
 
 const metricStarIconStyle: CSSProperties = {
@@ -5670,12 +5741,6 @@ const heroBottomMetricStyle: CSSProperties = {
   textShadow: "0 1px 0 rgba(0,0,0,0.28)",
   ...safeTextStyle,
 };
-
-const heroBottomLikeMetricStyle: CSSProperties = {
-  ...heroBottomMetricStyle,
-  color: "#FFFFFF",
-};
-
 
 const primaryButtonStyle: CSSProperties = {
   gridColumn: "1 / -1",
@@ -5899,11 +5964,6 @@ const obraMenuMetricsStyle: CSSProperties = {
 };
 
 const obraMenuMetricStyle: CSSProperties = {
-  color: "#FFFFFF",
-};
-
-const obraMenuLikeMetricStyle: CSSProperties = {
-  ...obraMenuMetricStyle,
   color: "#FFFFFF",
 };
 

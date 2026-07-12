@@ -153,6 +153,7 @@ const ORDENACOES_PAINEL: { valor: OrdenacaoPainel; rotulo: string }[] = [
 ];
 
 const STORAGE_KEY = "historietas-obras";
+const PANEL_SUMMARY_STORAGE_KEY = "historietas-painel-resumo-visivel";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
@@ -1706,6 +1707,7 @@ export default function PainelAutorPage() {
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [verificandoUsuario, setVerificandoUsuario] = useState(true);
   const [mostrarFiltrosPainel, setMostrarFiltrosPainel] = useState(false);
+  const [mostrarResumoPainel, setMostrarResumoPainel] = useState(true);
 
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -1769,6 +1771,25 @@ export default function PainelAutorPage() {
       router.replace(criarLoginHrefPainelAutor());
     }
   }, [router, usuarioIdLogado, verificandoUsuario]);
+
+  useEffect(() => {
+    if (!usuarioIdLogado) {
+      return;
+    }
+
+    try {
+      const preferenciaSalva = lerStorageUsuarioPainel(
+        PANEL_SUMMARY_STORAGE_KEY,
+        usuarioIdLogado
+      );
+
+      setMostrarResumoPainel(
+        preferenciaSalva === null ? true : JSON.parse(preferenciaSalva) !== false
+      );
+    } catch {
+      setMostrarResumoPainel(true);
+    }
+  }, [usuarioIdLogado]);
 
   useEffect(() => {
     if (!mostrarFiltrosPainel) {
@@ -2060,6 +2081,20 @@ export default function PainelAutorPage() {
     setOrdenacao("pontuacao");
   }
 
+  function alternarResumoPainel() {
+    setMostrarResumoPainel((mostrarAtual) => {
+      const proximoValor = !mostrarAtual;
+
+      salvarJsonStorageUsuarioPainel(
+        PANEL_SUMMARY_STORAGE_KEY,
+        usuarioIdLogado,
+        proximoValor
+      );
+
+      return proximoValor;
+    });
+  }
+
   const usuarioLogado = Boolean(usuarioIdLogado);
   function copiarTextoComFallback(texto: string) {
     const campoTemporario = document.createElement("textarea");
@@ -2248,9 +2283,10 @@ export default function PainelAutorPage() {
             type="button"
             onClick={() => setMostrarFiltrosPainel(true)}
             style={topFilterButtonStyle}
+            aria-label="Abrir painel do autor"
           >
-            <span>Filtrar e ordenar{filtrosAtivos ? " (1)" : ""}</span>
-            <span style={topFilterIconStyle}>⇅</span>
+            <span>Painel do autor</span>
+            <span style={topFilterIconStyle}>+</span>
           </button>
 
           <button
@@ -2284,7 +2320,8 @@ export default function PainelAutorPage() {
           )}
 
 
-          <section style={isDesktop ? desktopStatsBoxStyle : statsBoxStyle}>
+          {mostrarResumoPainel && (
+            <section style={isDesktop ? desktopStatsBoxStyle : statsBoxStyle}>
           <div style={statCardStyle}>
             <strong style={statNumberStyle}>{obrasComMetricas.length}</strong>
             <span style={statLabelStyle}>
@@ -2341,7 +2378,8 @@ export default function PainelAutorPage() {
               {totalArquivos === 1 ? "arquivo" : "arquivos"}
             </span>
           </div>
-        </section>
+            </section>
+          )}
 
           {filtrosAtivos && (
             <button type="button" onClick={limparFiltros} style={studioClearButtonStyle}>
@@ -2358,11 +2396,11 @@ export default function PainelAutorPage() {
             <section
               style={isDesktop ? desktopFilterSheetStyle : filterSheetStyle}
               onClick={(event) => event.stopPropagation()}
-              aria-label="Filtrar e ordenar"
+              aria-label="Painel do autor"
             >
               <span style={filterSheetHandleStyle} aria-hidden="true" />
 
-              <h2 style={filterSheetTitleStyle}>Filtrar e ordenar</h2>
+              <h2 style={filterSheetTitleStyle}>Painel do autor</h2>
 
               <div style={filterSheetContentStyle}>
                 <p style={filterSheetSectionLabelStyle}>MOSTRAR</p>
@@ -2412,6 +2450,21 @@ export default function PainelAutorPage() {
                     </button>
                   );
                 })}
+
+                <p style={filterSheetSectionLabelStyle}>RESUMO</p>
+
+                <button
+                  type="button"
+                  onClick={alternarResumoPainel}
+                  style={criarFilterSheetOptionStyle(mostrarResumoPainel)}
+                  aria-pressed={mostrarResumoPainel}
+                >
+                  <span>Mostrar os 8 mini cards</span>
+                  <span
+                    style={criarFilterSheetRadioStyle(mostrarResumoPainel)}
+                    aria-hidden="true"
+                  />
+                </button>
 
                 {filtrosAtivos && (
                   <>
@@ -2507,10 +2560,6 @@ function PainelSecao({
 
   return (
     <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-      <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-        <h2 style={sectionTitleStyle}>OBRAS</h2>
-      </div>
-
       <div style={isDesktop ? desktopWorksGridStyle : worksGridStyle}>
         {obras.map((obra) => (
           <ObraPainelCard
@@ -2564,26 +2613,12 @@ function ObraPainelCard({
     ? criarHrefLeituraCapituloPainel(obra, capituloParaLer, numeroCapituloParaLer)
     : "";
   const perfilAutorHref = criarPerfilAutorHref(obra.autor, obra.autorId, obra.autorId);
-  const progressoVisual = Math.min(100, Math.max(0, obra.progressoLeitura));
   const visualizacoesPainel = Math.max(0, obra.totalLidos);
   const statusTexto = obterStatusPainelAutor(obra);
   const obraComStatusPublicado = obraPublicadaComConteudoPainel(obra);
-  const totalCapitulosTexto = `${obra.capitulos.length} ${
-    obra.capitulos.length === 1 ? "cap" : "caps"
-  }`;
-  const metaSheet = [
-    statusTexto,
-    favoritada ? "Na lista" : "",
-    totalCapitulosTexto,
-  ]
-    .filter(Boolean)
-    .join(" • ");
-  const indicadoresTexto = [
-    obra.arquivoObra ? "Arquivo" : "",
-    concluida ? "Concluída" : "",
-  ]
-    .filter(Boolean)
-    .join(" • ");
+  const obraTemCapitulos = obra.capitulos.length > 0;
+  const indicadorPrimarioIcone = obraTemCapitulos ? "📚" : obra.arquivoObra ? "📄" : "📚";
+  const indicadorPrimarioValor = obraTemCapitulos ? obra.capitulos.length : obra.arquivoObra ? 1 : 0;
 
   useEffect(() => {
     if (!acoesAbertas || typeof document === "undefined") {
@@ -2644,15 +2679,17 @@ function ObraPainelCard({
               <h3 style={workTitleStyle}>{obra.titulo}</h3>
 
               <span style={workMetaLineStyle}>
-                <span>{totalCapitulosTexto}</span>
                 <span>👁 {visualizacoesPainel}</span>
                 <span>
-                  <span style={workCardHeartMetaStyle}>♥</span>{" "}
+                  <span style={workCardHeartMetaStyle}>❤️</span>{" "}
                   {obra.totalCurtidas}
                 </span>
                 <span>
                   <span style={workCardCommentMetaStyle}>💬</span>{" "}
                   {obra.totalComentarios}
+                </span>
+                <span>
+                  {indicadorPrimarioIcone} {indicadorPrimarioValor}
                 </span>
               </span>
             </div>
@@ -2696,47 +2733,35 @@ function ObraPainelCard({
                   Por {obra.autor}
                 </Link>
 
-                <span style={workActionSheetMetaStyle}>{metaSheet}</span>
 
-                {indicadoresTexto && (
-                  <span style={panelTinyInfoStyle}>{indicadoresTexto}</span>
-                )}
               </div>
             </div>
 
-            <div style={isDesktop ? desktopMetricGridStyle : metricGridStyle}>
-              <div style={metricItemStyle}>
-                <strong style={metricNumberStyle}>{obra.capitulos.length}</strong>
-                <span style={metricLabelStyle}>caps.</span>
-              </div>
+            <div style={isDesktop ? desktopSheetStatsRowStyle : sheetStatsRowStyle}>
+              <span style={sheetStatInlineStyle}>
+                <span style={sheetStatIconStyle}>👁</span>
+                <span style={sheetStatValueStyle}>{visualizacoesPainel}</span>
+              </span>
 
-              <div style={metricItemStyle}>
-                <strong style={metricNumberStyle}>{obra.totalCurtidas}</strong>
-                <span style={metricLabelStyle}>curt.</span>
-              </div>
+              <span style={sheetStatInlineStyle}>
+                <span style={sheetStatHeartIconStyle}>❤️</span>
+                <span style={sheetStatValueStyle}>{obra.totalCurtidas}</span>
+              </span>
 
-              <div style={metricItemStyle}>
-                <strong style={metricNumberStyle}>{obra.totalComentarios}</strong>
-                <span style={metricLabelStyle}>coment.</span>
-              </div>
+              <span style={sheetStatInlineStyle}>
+                <span style={sheetStatIconStyle}>💬</span>
+                <span style={sheetStatValueStyle}>{obra.totalComentarios}</span>
+              </span>
 
-              <div style={metricItemStyle}>
-                <strong style={metricNumberStyle}>{obra.totalSalvos}</strong>
-                <span style={metricLabelStyle}>salvos</span>
-              </div>
-            </div>
+              <span style={sheetStatInlineStyle}>
+                <span style={sheetStatIconStyle}>🔖</span>
+                <span style={sheetStatValueStyle}>{obra.totalSalvos}</span>
+              </span>
 
-            <div style={progressInlineStyle}>
-              <div style={progressTrackStyle}>
-                <div
-                  style={{
-                    ...progressFillStyle,
-                    width: `${progressoVisual}%`,
-                  }}
-                />
-              </div>
-
-              <strong style={progressValueStyle}>{progressoVisual}%</strong>
+              <span style={sheetStatInlineStyle}>
+                <span style={sheetStatIconStyle}>{indicadorPrimarioIcone}</span>
+                <span style={sheetStatValueStyle}>{indicadorPrimarioValor}</span>
+              </span>
             </div>
 
             <div style={isDesktop ? desktopCardActionsGridStyle : actionsGridStyle}>
@@ -3147,7 +3172,7 @@ const filterSheetStyle: CSSProperties = {
   maxHeight: "calc(100dvh - 116px)",
   display: "grid",
   gap: "0",
-  padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
+  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
   background: "#070212",
   border: "none",
@@ -3497,78 +3522,49 @@ const workCardCommentMetaStyle: CSSProperties = {
   fontWeight: 950,
 };
 
-const metricGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  padding: "12px 16px 8px",
-};
-
-const metricItemStyle: CSSProperties = {
-  padding: "8px 4px",
-  borderRadius: "12px",
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid rgba(255,255,255,0.055)",
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-const metricNumberStyle: CSSProperties = {
-  color: "#DDD6FE",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const metricLabelStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.62)",
-  fontSize: "8px",
-  lineHeight: 1,
-  fontWeight: 850,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const progressInlineStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  gap: "10px",
+const sheetStatsRowStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
   alignItems: "center",
+  justifyContent: "center",
+  gap: "12px",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  padding: "0 22px 13px",
+  padding: "8px 22px 14px",
 };
 
-const progressValueStyle: CSSProperties = {
-  color: "#FB923C",
+const sheetStatInlineStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "4px",
+  minWidth: 0,
+  color: "#FFFFFF",
+};
+
+const sheetStatIconStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 900,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  ...safeTextStyle,
+};
+
+const sheetStatHeartIconStyle: CSSProperties = {
+  ...sheetStatIconStyle,
+  color: "#F43F5E",
+};
+
+const sheetStatValueStyle: CSSProperties = {
+  color: "#FFFFFF",
   fontSize: "14px",
   lineHeight: 1,
   fontWeight: 950,
   ...safeTextStyle,
-};
-
-const progressTrackStyle: CSSProperties = {
-  height: "7px",
-  borderRadius: "999px",
-  overflow: "hidden",
-  background: "rgba(255,255,255,0.07)",
-  minWidth: 0,
-};
-
-const progressFillStyle: CSSProperties = {
-  height: "100%",
-  borderRadius: "999px",
-  background: "linear-gradient(90deg, #F97316 0%, #A855F7 100%)",
 };
 
 const actionsGridStyle: CSSProperties = {
@@ -3806,10 +3802,10 @@ const desktopWorkContentStyle: CSSProperties = {
   padding: "28px 42px 9px 10px",
 };
 
-const desktopMetricGridStyle: CSSProperties = {
-  ...metricGridStyle,
-  padding: "14px 22px 10px",
-  gap: "8px",
+const desktopSheetStatsRowStyle: CSSProperties = {
+  ...sheetStatsRowStyle,
+  padding: "10px 22px 16px",
+  gap: "14px",
 };
 
 const desktopCardActionsGridStyle: CSSProperties = {

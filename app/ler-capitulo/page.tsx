@@ -91,10 +91,6 @@ type CapituloSupabaseRow = {
   atualizado_em: string | null;
 };
 
-type RegistroObraId = {
-  obra_id?: unknown;
-};
-
 type RegistroCapituloId = {
   capitulo_id?: unknown;
 };
@@ -108,6 +104,7 @@ type RegistroProgressoLeitura = {
   capitulo_id?: unknown;
   lido?: unknown;
   progresso?: unknown;
+  atualizado_em?: unknown;
 };
 
 type PerfilComentarioLeitor = {
@@ -151,12 +148,13 @@ type TipoNotificacaoInteracaoCapitulo =
   | "comentario-capitulo"
   | "curtida-comentario-capitulo";
 
-type TamanhoFonte = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+type TamanhoFonte = 1 | 2 | 3 | 4 | 5;
 
 type PreferenciasLeitura = {
   tamanhoFonte: TamanhoFonte;
   modoFoco: boolean;
   mostrarLinhaProgresso: boolean;
+  versaoTamanhoFonte: 2;
 };
 
 type MetricasCapituloLeitor = {
@@ -177,11 +175,16 @@ const metricasCapituloVazias: MetricasCapituloLeitor = {
   carregado: false,
 };
 
-const FONT_SCALE_VALUES: TamanhoFonte[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const FONT_SCALE_VALUES: TamanhoFonte[] = [1, 2, 3, 4, 5];
+const FONT_SCALE_LEGACY_VALUES: Record<TamanhoFonte, 1 | 3 | 5 | 7 | 10> = {
+  1: 1,
+  2: 3,
+  3: 5,
+  4: 7,
+  5: 10,
+};
 
 const STORAGE_KEY = "historietas-obras";
-const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
-const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const READER_PREFERENCES_STORAGE_KEY = "historietas-preferencias-leitura";
 const TABELA_COMENTARIOS_CAPITULOS_CURTIDAS = "comentarios_capitulos_curtidas";
@@ -572,21 +575,37 @@ function contarPalavras(texto: string) {
   return texto.trim().split(/\s+/).filter(Boolean).length;
 }
 
-function calcularTempoLeitura(texto: string) {
-  const palavras = contarPalavras(texto);
-
-  if (palavras <= 0) {
-    return 0;
-  }
-
-  return Math.max(1, Math.ceil(palavras / 220));
-}
-
-function normalizarTamanhoFonte(valor: unknown): TamanhoFonte {
+function normalizarTamanhoFonte(
+  valor: unknown,
+  versaoAtual = false
+): TamanhoFonte {
   const numero = Number(valor);
 
-  if (FONT_SCALE_VALUES.includes(numero as TamanhoFonte)) {
+  if (
+    versaoAtual &&
+    FONT_SCALE_VALUES.includes(numero as TamanhoFonte)
+  ) {
     return numero as TamanhoFonte;
+  }
+
+  if (!Number.isFinite(numero)) {
+    return 3;
+  }
+
+  if (numero <= 1) {
+    return 1;
+  }
+
+  if (numero <= 3) {
+    return 2;
+  }
+
+  if (numero <= 5) {
+    return 3;
+  }
+
+  if (numero <= 8) {
+    return 4;
   }
 
   return 5;
@@ -595,9 +614,10 @@ function normalizarTamanhoFonte(valor: unknown): TamanhoFonte {
 function carregarPreferenciasLeitura(userId = ""): PreferenciasLeitura {
   if (typeof window === "undefined" || !userId.trim()) {
     return {
-      tamanhoFonte: 5,
+      tamanhoFonte: 3,
       modoFoco: false,
       mostrarLinhaProgresso: false,
+      versaoTamanhoFonte: 2,
     };
   }
 
@@ -616,24 +636,30 @@ function carregarPreferenciasLeitura(userId = ""): PreferenciasLeitura {
       Array.isArray(preferenciasJson)
     ) {
       return {
-        tamanhoFonte: 5,
+        tamanhoFonte: 3,
         modoFoco: false,
         mostrarLinhaProgresso: false,
+        versaoTamanhoFonte: 2,
       };
     }
 
     const preferencias = preferenciasJson as Partial<PreferenciasLeitura>;
 
     return {
-      tamanhoFonte: normalizarTamanhoFonte(preferencias.tamanhoFonte),
+      tamanhoFonte: normalizarTamanhoFonte(
+        preferencias.tamanhoFonte,
+        preferencias.versaoTamanhoFonte === 2
+      ),
       modoFoco: Boolean(preferencias.modoFoco),
       mostrarLinhaProgresso: Boolean(preferencias.mostrarLinhaProgresso),
+      versaoTamanhoFonte: 2,
     };
   } catch {
     return {
-      tamanhoFonte: 5,
+      tamanhoFonte: 3,
       modoFoco: false,
       mostrarLinhaProgresso: false,
+      versaoTamanhoFonte: 2,
     };
   }
 }
@@ -650,8 +676,10 @@ function salvarPreferenciasLeitura(
 }
 
 function criarTextoLeituraStyle(tamanhoFonte: TamanhoFonte): CSSProperties {
-  const fontSize = 12 + tamanhoFonte;
-  const lineHeight = tamanhoFonte <= 3 ? 1.78 : tamanhoFonte <= 7 ? 1.9 : 1.98;
+  const tamanhoLegado = FONT_SCALE_LEGACY_VALUES[tamanhoFonte];
+  const fontSize = 12 + tamanhoLegado;
+  const lineHeight =
+    tamanhoLegado <= 3 ? 1.78 : tamanhoLegado <= 7 ? 1.9 : 1.98;
 
   return {
     ...chapterTextStyle,
@@ -661,40 +689,16 @@ function criarTextoLeituraStyle(tamanhoFonte: TamanhoFonte): CSSProperties {
 }
 
 function criarTextoLeituraDesktopStyle(tamanhoFonte: TamanhoFonte): CSSProperties {
-  const fontSize = 14 + tamanhoFonte;
-  const lineHeight = tamanhoFonte <= 3 ? 1.82 : tamanhoFonte <= 7 ? 1.94 : 2.02;
+  const tamanhoLegado = FONT_SCALE_LEGACY_VALUES[tamanhoFonte];
+  const fontSize = 14 + tamanhoLegado;
+  const lineHeight =
+    tamanhoLegado <= 3 ? 1.82 : tamanhoLegado <= 7 ? 1.94 : 2.02;
 
   return {
     ...desktopChapterTextStyle,
     fontSize: `${fontSize}px`,
     lineHeight,
   };
-}
-
-function normalizarListaIds(valor: unknown): string[] {
-  return Array.isArray(valor)
-    ? valor.filter((id): id is string => typeof id === "string" && Boolean(id.trim()))
-    : [];
-}
-
-function carregarListaIdsStorage(chave: string, userId = ""): string[] {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return [];
-  }
-
-  try {
-    const listaTexto = lerStorageUsuarioLeitor(chave, userIdLimpo);
-    const listaJson: unknown = listaTexto ? JSON.parse(listaTexto) : [];
-    const listaNormalizada = normalizarListaIds(listaJson);
-
-    salvarJsonStorageUsuarioLeitor(chave, userIdLimpo, listaNormalizada);
-
-    return listaNormalizada;
-  } catch {
-    return [];
-  }
 }
 
 function criarHrefLeituraCapituloLeitor(
@@ -1129,28 +1133,6 @@ async function carregarObraSupabase(
   );
 }
 
-async function carregarIdsTabelaUsuario(
-  tabela: "favoritos" | "concluidas",
-  userId: string
-) {
-  const { data, error } = await supabase
-    .from(tabela)
-    .select("obra_id")
-    .eq("user_id", userId)
-    .limit(1000);
-
-  if (error || !Array.isArray(data)) {
-    return [];
-  }
-
-  return data
-    .map((item) => {
-      const registro = item as RegistroObraId;
-      return typeof registro.obra_id === "string" ? registro.obra_id : "";
-    })
-    .filter(Boolean);
-}
-
 async function aplicarInteracoesCapitulosSupabase(
   obra: ObraLocal,
   userId: string
@@ -1183,7 +1165,7 @@ async function aplicarInteracoesCapitulosSupabase(
         .limit(1000),
       supabase
         .from("progresso_leitura")
-        .select("capitulo_id, lido, progresso")
+        .select("capitulo_id, lido, progresso, atualizado_em")
         .eq("user_id", userId)
         .eq("obra_id", obra.id)
         .limit(1),
@@ -1227,18 +1209,31 @@ async function aplicarInteracoesCapitulosSupabase(
       ? progressoAtual.capitulo_id
       : "";
   const capituloProgressoLido = Boolean(progressoAtual?.lido);
+  const capituloProgressoAtualizadoEm =
+    typeof progressoAtual?.atualizado_em === "string"
+      ? progressoAtual.atualizado_em
+      : "";
 
-  const capitulos = obra.capitulos.map((capitulo) => ({
-    ...capitulo,
-    curtiu: capitulo.curtiu || curtidas.has(capitulo.id),
-    salvo: capitulo.salvo || salvos.has(capitulo.id),
-    comentario: comentarios.has(capitulo.id)
-      ? comentarios.get(capitulo.id) || ""
-      : capitulo.comentario,
-    lido:
-      capitulo.lido ||
-      (capituloProgressoId === capitulo.id && capituloProgressoLido),
-  }));
+  const capitulos = obra.capitulos.map((capitulo) => {
+    const correspondeAoProgresso = capituloProgressoId === capitulo.id;
+
+    return {
+      ...capitulo,
+      curtiu: capitulo.curtiu || curtidas.has(capitulo.id),
+      salvo: capitulo.salvo || salvos.has(capitulo.id),
+      comentario: comentarios.has(capitulo.id)
+        ? comentarios.get(capitulo.id) || ""
+        : capitulo.comentario,
+      lido: correspondeAoProgresso
+        ? capituloProgressoLido
+        : capitulo.lido,
+      lidoEm: correspondeAoProgresso
+        ? capituloProgressoLido
+          ? capituloProgressoAtualizadoEm || capitulo.lidoEm
+          : ""
+        : capitulo.lidoEm,
+    };
+  });
 
   return {
     ...obra,
@@ -1443,7 +1438,7 @@ function criarMetricasCapituloLocais(
 async function contarRegistrosCapituloLeitor(
   tabela: "curtidas_capitulos" | "salvos_capitulos" | "comentarios_capitulos",
   capituloId: string
-) {
+): Promise<number | null> {
   try {
     const { count, error } = await supabase
       .from(tabela)
@@ -1451,12 +1446,12 @@ async function contarRegistrosCapituloLeitor(
       .eq("capitulo_id", capituloId);
 
     if (error) {
-      return 0;
+      return null;
     }
 
     return Math.max(0, count ?? 0);
   } catch {
-    return 0;
+    return null;
   }
 }
 
@@ -1464,11 +1459,11 @@ async function usuarioTemRegistroCapituloLeitor(
   tabela: "curtidas_capitulos" | "salvos_capitulos",
   capituloId: string,
   userId: string
-) {
+): Promise<boolean | null> {
   const userIdLimpo = userId.trim();
 
   if (!userIdLimpo) {
-    return false;
+    return null;
   }
 
   try {
@@ -1481,12 +1476,12 @@ async function usuarioTemRegistroCapituloLeitor(
       .maybeSingle();
 
     if (error) {
-      return false;
+      return null;
     }
 
     return Boolean(data);
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -1516,11 +1511,16 @@ async function carregarMetricasCapituloSupabase(
   ]);
 
   return {
-    totalCurtidas: Math.max(totalCurtidas, capitulo.curtiu ? 1 : 0),
-    totalSalvos: Math.max(totalSalvos, capitulo.salvo ? 1 : 0),
-    totalComentarios: Math.max(totalComentarios, totalComentariosFallback),
-    curtiu: curtiu || capitulo.curtiu,
-    salvo: salvo || capitulo.salvo,
+    totalCurtidas:
+      totalCurtidas === null ? (capitulo.curtiu ? 1 : 0) : totalCurtidas,
+    totalSalvos:
+      totalSalvos === null ? (capitulo.salvo ? 1 : 0) : totalSalvos,
+    totalComentarios: Math.max(
+      totalComentarios === null ? 0 : totalComentarios,
+      totalComentariosFallback
+    ),
+    curtiu: curtiu === null ? capitulo.curtiu : curtiu,
+    salvo: salvo === null ? capitulo.salvo : salvo,
     carregado: true,
   };
 }
@@ -1604,76 +1604,6 @@ async function salvarComentarioCapituloSupabase(
   }
 }
 
-
-async function salvarRegistroObraSupabase(
-  tabela: "favoritos" | "concluidas",
-  obraId: string,
-  ativo: boolean
-) {
-  try {
-    const { data: dadosUsuario } = await supabase.auth.getUser();
-    const userId = dadosUsuario.user?.id || "";
-
-    if (!userId || !idObraSupabaseValido(obraId)) {
-      return false;
-    }
-
-    const { error: erroDelete } = await supabase
-      .from(tabela)
-      .delete()
-      .eq("user_id", userId)
-      .eq("obra_id", obraId);
-
-    if (erroDelete) {
-      throw erroDelete;
-    }
-
-    if (!ativo) {
-      return true;
-    }
-
-    const payloadBase = {
-      user_id: userId,
-      obra_id: obraId,
-    };
-
-    const { error: erroComVisibilidade } = await supabase.from(tabela).insert({
-      ...payloadBase,
-      visibilidade: "publico",
-    });
-
-    if (!erroComVisibilidade) {
-      return true;
-    }
-
-    const { error: erroSemVisibilidade } = await supabase
-      .from(tabela)
-      .insert(payloadBase);
-
-    if (erroSemVisibilidade) {
-      throw erroSemVisibilidade;
-    }
-
-    return true;
-  } catch (error) {
-    console.warn(`Não consegui salvar registro em ${tabela}:`, error);
-    return false;
-  }
-}
-
-function criarPerfilAutorHref(autor: string, autorId?: string) {
-  const autorLimpo = autor.trim() || "Autor não informado";
-  const autorIdLimpo = typeof autorId === "string" ? autorId.trim() : "";
-  const params = new URLSearchParams({
-    autor: autorLimpo,
-  });
-
-  if (autorIdLimpo) {
-    params.set("autorId", autorIdLimpo);
-  }
-
-  return `/perfil-autor?${params.toString()}`;
-}
 
 function obterTextoRegistroLeitor(
   registro: Record<string, unknown> | null | undefined,
@@ -2998,14 +2928,15 @@ export default function LerCapituloPage() {
   const [obraId, setObraId] = useState("");
   const [capituloId, setCapituloId] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
-  const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
-  const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [, setComentarioDigitado] = useState("");
   const [comentarioStatus, setComentarioStatus] = useState("");
   const [comentariosCapitulo, setComentariosCapitulo] = useState<ComentarioCapituloPublico[]>([]);
   const [metricasCapitulo, setMetricasCapitulo] =
     useState<MetricasCapituloLeitor>(metricasCapituloVazias);
+  const [curtidaCapituloSalvando, setCurtidaCapituloSalvando] = useState(false);
+  const [salvoCapituloSalvando, setSalvoCapituloSalvando] = useState(false);
+  const [lidoCapituloSalvando, setLidoCapituloSalvando] = useState(false);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
   const comentariosCapituloCarregadoIdRef = useRef("");
   const [perfilComentarioLeitor, setPerfilComentarioLeitor] =
@@ -3017,7 +2948,7 @@ export default function LerCapituloPage() {
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const { notificacoesNaoLidas } = useNotificacoes();
-  const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(5);
+  const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(3);
   const [modoFoco, setModoFoco] = useState(false);
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
   const [mostrarLinhaProgresso, setMostrarLinhaProgresso] = useState(false);
@@ -3028,6 +2959,9 @@ export default function LerCapituloPage() {
   const { temaVisual, pageThemeStyle, aplicarTemaVisual } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
   const atividadeDiarioRegistradaRef = useRef("");
+  const curtidaCapituloSalvandoRef = useRef(false);
+  const salvoCapituloSalvandoRef = useRef(false);
+  const lidoCapituloSalvandoRef = useRef(false);
   const acoesComentariosCapituloRef = useRef<Set<string>>(new Set<string>());
 
   useEffect(() => {
@@ -3156,6 +3090,7 @@ export default function LerCapituloPage() {
         tamanhoFonte,
         modoFoco,
         mostrarLinhaProgresso,
+        versaoTamanhoFonte: 2,
       },
       usuarioIdLogado
     );
@@ -3242,14 +3177,6 @@ export default function LerCapituloPage() {
             };
           });
         let obrasAtualizadas = obrasLocais;
-        let obrasFavoritasNormalizadas = carregarListaIdsStorage(
-          FAVORITES_STORAGE_KEY,
-          userId
-        );
-        let obrasConcluidasNormalizadas = carregarListaIdsStorage(
-          COMPLETED_STORAGE_KEY,
-          userId
-        );
 
         if (obraIdParam) {
           const obraLocal =
@@ -3274,18 +3201,6 @@ export default function LerCapituloPage() {
         }
 
         if (dadosUsuario.user) {
-          const [favoritasSupabase, concluidasSupabase] = await Promise.all([
-            carregarIdsTabelaUsuario("favoritos", dadosUsuario.user.id),
-            carregarIdsTabelaUsuario("concluidas", dadosUsuario.user.id),
-          ]);
-
-          obrasFavoritasNormalizadas = Array.from(
-            new Set([...obrasFavoritasNormalizadas, ...favoritasSupabase])
-          );
-          obrasConcluidasNormalizadas = Array.from(
-            new Set([...obrasConcluidasNormalizadas, ...concluidasSupabase])
-          );
-
           const obraParaInteracoes = obrasAtualizadas.find(
             (obra) => obra.id === obraIdParam
           );
@@ -3306,27 +3221,13 @@ export default function LerCapituloPage() {
         }
 
         salvarObrasPreservandoContas(obrasAtualizadas, userId);
-        salvarJsonStorageUsuarioLeitor(
-          FAVORITES_STORAGE_KEY,
-          userId,
-          obrasFavoritasNormalizadas
-        );
-        salvarJsonStorageUsuarioLeitor(
-          COMPLETED_STORAGE_KEY,
-          userId,
-          obrasConcluidasNormalizadas
-        );
 
         if (!cancelado) {
           setObras(obrasAtualizadas);
-          setObrasFavoritas(obrasFavoritasNormalizadas);
-          setObrasConcluidas(obrasConcluidasNormalizadas);
         }
       } catch {
         if (!cancelado) {
           setObras([]);
-          setObrasFavoritas([]);
-          setObrasConcluidas([]);
         }
       } finally {
         if (!cancelado) {
@@ -3398,6 +3299,13 @@ export default function LerCapituloPage() {
     let cancelado = false;
 
     async function carregarMetricasCapituloAtual() {
+      if (
+        curtidaCapituloSalvandoRef.current ||
+        salvoCapituloSalvandoRef.current
+      ) {
+        return;
+      }
+
       if (!capituloAtual) {
         setMetricasCapitulo(metricasCapituloVazias);
         return;
@@ -3474,12 +3382,7 @@ export default function LerCapituloPage() {
     return obraAtual.capitulos[indiceCapitulo + 1] || null;
   }, [obraAtual, indiceCapitulo]);
 
-  const obraFavorita = obraAtual ? obrasFavoritas.includes(obraAtual.id) : false;
-  const obraConcluida = obraAtual
-    ? obrasConcluidas.includes(obraAtual.id)
-    : false;
   const totalPalavras = capituloAtual ? contarPalavras(capituloAtual.texto) : 0;
-  const tempoLeitura = capituloAtual ? calcularTempoLeitura(capituloAtual.texto) : 0;
   const progressoLeitura = obraAtual
     ? calcularProgressoLeitura(obraAtual.capitulos)
     : 0;
@@ -3570,101 +3473,35 @@ export default function LerCapituloPage() {
 
     atividadeDiarioRegistradaRef.current = chaveAtividade;
 
-    const agora = new Date().toISOString();
-    const capituloJaLido = capituloAtual.lido;
-    const obraJaIniciada =
-      obraAtual.progressoLeitura > 0 ||
-      Boolean(obraAtual.ultimoCapituloLidoId) ||
-      obraAtual.capitulos.some((capitulo) => capitulo.lido);
-    let obraAtualizadaParaSupabase: ObraLocal | null = null;
-
-    const novasObras = obras.map((obra, obraIndex) => {
-      const obraNormalizada = normalizarObra(obra, obraIndex);
-
-      if (obraNormalizada.id !== obraAtual.id) {
-        return obraNormalizada;
-      }
-
-      const capitulosAtualizados = obraNormalizada.capitulos.map((capitulo) => {
-        if (capitulo.id !== capituloAtual.id) {
-          return capitulo;
-        }
-
-        return {
-          ...capitulo,
-          lido: true,
-          lidoEm: capitulo.lidoEm || agora,
-        };
-      });
-
-      obraAtualizadaParaSupabase = {
-        ...obraNormalizada,
-        capitulos: capitulosAtualizados,
-        ultimoCapituloLidoId: capituloAtual.id,
-        ultimaLeituraEm: agora,
-        progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
-      };
-
-      return obraAtualizadaParaSupabase;
-    });
-
-    salvarObrasPreservandoContas(novasObras, usuarioIdLogado);
     void marcarNotificacaoCapituloComoLidaSupabase(
       usuarioIdLogado,
       obraAtual.id,
       capituloAtual.id
     );
-    window.setTimeout(() => {
-      setObras(novasObras);
-    }, 0);
 
-    if (!obraAtualizadaParaSupabase) {
+    const obraJaIniciada =
+      obraAtual.progressoLeitura > 0 ||
+      Boolean(obraAtual.ultimoCapituloLidoId) ||
+      obraAtual.capitulos.some((capitulo) => capitulo.lido);
+
+    if (obraJaIniciada) {
       return;
     }
 
-    const obraAtualizadaDiario = obraAtualizadaParaSupabase as ObraLocal;
-
-    void salvarProgressoLeituraSupabase(
-      obraAtualizadaDiario,
-      capituloAtual.id,
-      true
-    );
-
-    if (!capituloJaLido) {
-      void (async () => {
-        if (!obraJaIniciada) {
-          await registrarAtividadeDiarioLeitor({
-            userId: usuarioIdLogado,
-            tipo: "comecou_ler",
-            obra: obraAtualizadaDiario,
-            capituloId: capituloAtual.id,
-            visibilidade: "privado",
-            texto: `Começou a ler ${obraAtualizadaDiario.titulo}`,
-            metadata: {
-              capitulo_titulo: capituloAtual.titulo,
-              capitulo_numero: numeroCapitulo,
-              progresso_obra: obraAtualizadaDiario.progressoLeitura,
-              origem: "primeira_abertura_capitulo",
-            },
-          });
-        }
-
-        await registrarAtividadeDiarioLeitor({
-          userId: usuarioIdLogado,
-          tipo: "leu_capitulo",
-          obra: obraAtualizadaDiario,
-          capituloId: capituloAtual.id,
-          visibilidade: "privado",
-          texto: `Leu ${capituloAtual.titulo}`,
-          metadata: {
-            capitulo_titulo: capituloAtual.titulo,
-            capitulo_numero: numeroCapitulo,
-            progresso_obra: obraAtualizadaDiario.progressoLeitura,
-            origem: "abertura_capitulo",
-          },
-        });
-      })();
-    }
+    void registrarAtividadeDiarioLeitor({
+      userId: usuarioIdLogado,
+      tipo: "comecou_ler",
+      obra: obraAtual,
+      capituloId: capituloAtual.id,
+      visibilidade: "privado",
+      texto: `Começou a ler ${obraAtual.titulo}`,
+      metadata: {
+        capitulo_titulo: capituloAtual.titulo,
+        capitulo_numero: numeroCapitulo,
+        progresso_obra: obraAtual.progressoLeitura,
+        origem: "abertura_capitulo",
+      },
+    });
   }, [usuarioIdLogado, obraAtual?.id, capituloAtual?.id]);
 
   async function obterUsuarioLogadoIdAtual() {
@@ -3698,7 +3535,7 @@ export default function LerCapituloPage() {
     return false;
   }
 
-  async function recarregarMetricasCapituloAtual() {
+  async function recarregarMetricasCapituloAtual(userId = usuarioIdLogado) {
     if (!capituloAtual) {
       setMetricasCapitulo(metricasCapituloVazias);
       return;
@@ -3706,7 +3543,7 @@ export default function LerCapituloPage() {
 
     const metricas = await carregarMetricasCapituloSupabase(
       capituloAtual,
-      usuarioIdLogado,
+      userId,
       comentariosCapitulo.length
     );
 
@@ -3789,7 +3626,7 @@ export default function LerCapituloPage() {
   }
 
   async function alternarCurtida() {
-    if (!capituloAtual) {
+    if (!capituloAtual || curtidaCapituloSalvandoRef.current) {
       return;
     }
 
@@ -3798,10 +3635,18 @@ export default function LerCapituloPage() {
     }
 
     const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
-    const perfilAtual = userIdAtual
-      ? await carregarPerfilComentarioLeitor(userIdAtual)
-      : null;
-    const novoStatusCurtida = !metricasCapitulo.curtiu;
+
+    if (!userIdAtual) {
+      return;
+    }
+
+    const estadoAnteriorCurtida = metricasCapitulo.curtiu;
+    const totalAnteriorCurtidas = metricasCapitulo.totalCurtidas;
+    const novoStatusCurtida = !estadoAnteriorCurtida;
+
+    curtidaCapituloSalvandoRef.current = true;
+    setCurtidaCapituloSalvando(true);
+    setMensagemAcao("");
 
     atualizarCapitulo({
       curtiu: novoStatusCurtida,
@@ -3816,36 +3661,50 @@ export default function LerCapituloPage() {
       carregado: true,
     }));
 
-    const curtidaSalva = await salvarRegistroCapituloSupabase(
-      "curtidas_capitulos",
-      capituloAtual.id,
-      novoStatusCurtida
-    );
+    try {
+      const curtidaSalva = await salvarRegistroCapituloSupabase(
+        "curtidas_capitulos",
+        capituloAtual.id,
+        novoStatusCurtida
+      );
 
-    setMensagemAcao(
-      curtidaSalva
-        ? ""
-        : "A curtida ficou salva no aparelho, mas não foi sincronizada agora."
-    );
+      if (!curtidaSalva) {
+        atualizarCapitulo({
+          curtiu: estadoAnteriorCurtida,
+        });
+        setMetricasCapitulo((metricasAtuais) => ({
+          ...metricasAtuais,
+          curtiu: estadoAnteriorCurtida,
+          totalCurtidas: totalAnteriorCurtidas,
+          carregado: true,
+        }));
+        setMensagemAcao("Não foi possível atualizar a curtida agora.");
+        return;
+      }
 
-    if (curtidaSalva) {
-      void recarregarMetricasCapituloAtual();
-    }
+      await recarregarMetricasCapituloAtual(userIdAtual);
+      setMensagemAcao("");
 
-    if (curtidaSalva && novoStatusCurtida && obraAtual) {
-      void registrarNotificacaoInteracaoCapituloSupabase({
-        tipo: "curtida-capitulo",
-        obra: obraAtual,
-        capitulo: capituloAtual,
-        titulo: "Nova curtida no capítulo",
-        mensagem: `${perfilAtual?.nome || "Um leitor"} curtiu ${capituloAtual.titulo}.`,
-        link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
-      });
+      if (novoStatusCurtida && obraAtual) {
+        const perfilAtual = await carregarPerfilComentarioLeitor(userIdAtual);
+
+        void registrarNotificacaoInteracaoCapituloSupabase({
+          tipo: "curtida-capitulo",
+          obra: obraAtual,
+          capitulo: capituloAtual,
+          titulo: "Nova curtida no capítulo",
+          mensagem: `${perfilAtual.nome || "Um leitor"} curtiu ${capituloAtual.titulo}.`,
+          link: criarHrefLeituraCapituloLeitor(obraAtual, capituloAtual.id),
+        });
+      }
+    } finally {
+      curtidaCapituloSalvandoRef.current = false;
+      setCurtidaCapituloSalvando(false);
     }
   }
 
   async function alternarSalvo() {
-    if (!capituloAtual) {
+    if (!capituloAtual || salvoCapituloSalvandoRef.current) {
       return;
     }
 
@@ -3853,7 +3712,19 @@ export default function LerCapituloPage() {
       return;
     }
 
-    const novoStatusSalvo = !metricasCapitulo.salvo;
+    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
+
+    if (!userIdAtual) {
+      return;
+    }
+
+    const estadoAnteriorSalvo = metricasCapitulo.salvo;
+    const totalAnteriorSalvos = metricasCapitulo.totalSalvos;
+    const novoStatusSalvo = !estadoAnteriorSalvo;
+
+    salvoCapituloSalvandoRef.current = true;
+    setSalvoCapituloSalvando(true);
+    setMensagemAcao("");
 
     atualizarCapitulo({
       salvo: novoStatusSalvo,
@@ -3868,253 +3739,166 @@ export default function LerCapituloPage() {
       carregado: true,
     }));
 
-    const salvoSincronizado = await salvarRegistroCapituloSupabase(
-      "salvos_capitulos",
-      capituloAtual.id,
-      novoStatusSalvo
-    );
+    try {
+      const salvoSincronizado = await salvarRegistroCapituloSupabase(
+        "salvos_capitulos",
+        capituloAtual.id,
+        novoStatusSalvo
+      );
 
-    setMensagemAcao(
-      salvoSincronizado
-        ? ""
-        : "O capítulo ficou salvo no aparelho, mas não foi sincronizado agora."
-    );
-
-    if (salvoSincronizado) {
-      void recarregarMetricasCapituloAtual();
-    }
-
-    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
-
-    if (novoStatusSalvo && obraAtual && userIdAtual) {
-      void registrarAtividadeDiarioLeitor({
-        userId: userIdAtual,
-        tipo: "salvou_obra",
-        obra: obraAtual,
-        capituloId: capituloAtual.id,
-        visibilidade: "privado",
-        texto: `Salvou ${capituloAtual.titulo}`,
-        metadata: {
-          capitulo_titulo: capituloAtual.titulo,
-          capitulo_numero: numeroCapitulo,
-          origem: "salvar_capitulo",
-        },
-      });
-    }
-  }
-
-  async function alternarLidoManual() {
-    if (!obraAtual || !capituloAtual) {
-      return;
-    }
-
-    if (!(await exigirLogin("Entre na sua conta para marcar progresso de leitura."))) {
-      return;
-    }
-
-    const novoStatusLido = !capituloAtual.lido;
-    const capitulosAtualizados = obraAtual.capitulos.map((capitulo) => {
-      if (capitulo.id !== capituloAtual.id) {
-        return capitulo;
+      if (!salvoSincronizado) {
+        atualizarCapitulo({
+          salvo: estadoAnteriorSalvo,
+        });
+        setMetricasCapitulo((metricasAtuais) => ({
+          ...metricasAtuais,
+          salvo: estadoAnteriorSalvo,
+          totalSalvos: totalAnteriorSalvos,
+          carregado: true,
+        }));
+        setMensagemAcao("Não foi possível atualizar o capítulo salvo agora.");
+        return;
       }
 
-      return {
-        ...capitulo,
-        lido: novoStatusLido,
-        lidoEm: novoStatusLido ? new Date().toISOString() : "",
+      await recarregarMetricasCapituloAtual(userIdAtual);
+      setMensagemAcao("");
+
+      if (novoStatusSalvo && obraAtual) {
+        void registrarAtividadeDiarioLeitor({
+          userId: userIdAtual,
+          tipo: "salvou_obra",
+          obra: obraAtual,
+          capituloId: capituloAtual.id,
+          visibilidade: "privado",
+          texto: `Salvou ${capituloAtual.titulo}`,
+          metadata: {
+            capitulo_titulo: capituloAtual.titulo,
+            capitulo_numero: numeroCapitulo,
+            origem: "salvar_capitulo",
+          },
+        });
+      }
+    } finally {
+      salvoCapituloSalvandoRef.current = false;
+      setSalvoCapituloSalvando(false);
+    }
+  }
+
+  async function alternarLido() {
+    if (
+      !obraAtual ||
+      !capituloAtual ||
+      lidoCapituloSalvandoRef.current
+    ) {
+      return;
+    }
+
+    if (!(await exigirLogin("Entre na sua conta para marcar este capítulo como lido."))) {
+      return;
+    }
+
+    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
+
+    if (!userIdAtual) {
+      return;
+    }
+
+    const obrasAnteriores = obras;
+    const novoStatusLido = !capituloAtual.lido;
+    const novaDataLeitura = novoStatusLido ? new Date().toISOString() : "";
+    let obraAtualizadaParaSupabase: ObraLocal | null = null;
+
+    lidoCapituloSalvandoRef.current = true;
+    setLidoCapituloSalvando(true);
+    setMensagemAcao("");
+
+    const novasObras = obras.map((obra, obraIndex) => {
+      const obraNormalizada = normalizarObra(obra, obraIndex);
+
+      if (obraNormalizada.id !== obraAtual.id) {
+        return obraNormalizada;
+      }
+
+      const capitulosAtualizados = obraNormalizada.capitulos.map((capitulo) =>
+        capitulo.id === capituloAtual.id
+          ? {
+              ...capitulo,
+              lido: novoStatusLido,
+              lidoEm: novaDataLeitura,
+            }
+          : capitulo
+      );
+
+      const outroUltimoCapituloLido = [...capitulosAtualizados]
+        .reverse()
+        .find((capitulo) => capitulo.lido) || null;
+      const ultimoCapituloLido = novoStatusLido
+        ? capitulosAtualizados.find(
+            (capitulo) => capitulo.id === capituloAtual.id
+          ) || null
+        : outroUltimoCapituloLido;
+
+      obraAtualizadaParaSupabase = {
+        ...obraNormalizada,
+        capitulos: capitulosAtualizados,
+        ultimoCapituloLidoId: ultimoCapituloLido?.id || "",
+        ultimaLeituraEm: ultimoCapituloLido?.lidoEm || "",
+        progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
       };
-    });
-    const obraAtualizada = {
-      ...obraAtual,
-      capitulos: capitulosAtualizados,
-      ultimoCapituloLidoId: novoStatusLido
-        ? capituloAtual.id
-        : obraAtual.ultimoCapituloLidoId,
-      ultimaLeituraEm: novoStatusLido
-        ? new Date().toISOString()
-        : obraAtual.ultimaLeituraEm,
-      progressoLeitura: calcularProgressoLeitura(capitulosAtualizados),
-    };
 
-    atualizarCapitulo({
-      lido: novoStatusLido,
-      lidoEm: novoStatusLido ? new Date().toISOString() : "",
+      return obraAtualizadaParaSupabase;
     });
 
-    const progressoSincronizado = await salvarProgressoLeituraSupabase(
-      obraAtualizada,
-      capituloAtual.id,
-      novoStatusLido
-    );
+    const obraAtualizada = obraAtualizadaParaSupabase as ObraLocal | null;
 
-    setMensagemAcao(
-      progressoSincronizado
-        ? ""
-        : "O progresso ficou salvo no aparelho, mas não foi sincronizado agora."
-    );
-
-    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
-
-    if (novoStatusLido && userIdAtual) {
-      void registrarAtividadeDiarioLeitor({
-        userId: userIdAtual,
-        tipo: "leu_capitulo",
-        obra: obraAtualizada,
-        capituloId: capituloAtual.id,
-        visibilidade: "privado",
-        texto: `Leu ${capituloAtual.titulo}`,
-        metadata: {
-          capitulo_titulo: capituloAtual.titulo,
-          capitulo_numero: numeroCapitulo,
-          progresso_obra: calcularProgressoLeitura(obraAtualizada.capitulos),
-          origem: "marcar_lido_manual",
-        },
-      });
-    }
-  }
-
-  async function alternarFavorito() {
-    if (!obraAtual) {
+    if (!obraAtualizada) {
+      lidoCapituloSalvandoRef.current = false;
+      setLidoCapituloSalvando(false);
       return;
     }
 
-    if (!(await exigirLogin("Entre na sua conta para adicionar esta obra à lista."))) {
-      return;
-    }
+    salvarObras(novasObras);
 
-    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
-
-    if (!userIdAtual) {
-      return;
-    }
-
-    const novoStatusFavorito = !obraFavorita;
-    const novasObrasFavoritas = obraFavorita
-      ? obrasFavoritas.filter((id) => id !== obraAtual.id)
-      : [...obrasFavoritas, obraAtual.id];
-
-    salvarJsonStorageUsuarioLeitor(
-      FAVORITES_STORAGE_KEY,
-      userIdAtual,
-      novasObrasFavoritas
-    );
-
-    setObrasFavoritas(novasObrasFavoritas);
-    const favoritoSincronizado = await salvarRegistroObraSupabase(
-      "favoritos",
-      obraAtual.id,
-      novoStatusFavorito
-    );
-
-    setMensagemAcao(
-      favoritoSincronizado
-        ? ""
-        : "A lista ficou salva no aparelho, mas não foi sincronizada agora."
-    );
-
-    if (novoStatusFavorito) {
-      void registrarAtividadeDiarioLeitor({
-        userId: userIdAtual,
-        tipo: "favoritou_obra",
-        obra: obraAtual,
-        visibilidade: "parcial",
-        texto: `Adicionou ${obraAtual.titulo} à lista`,
-        metadata: {
-          origem: "adicionar_lista_leitor",
-        },
-      });
-    }
-  }
-
-  async function alternarConcluido() {
-    if (!obraAtual) {
-      return;
-    }
-
-    if (!(await exigirLogin("Entre na sua conta para marcar esta obra como concluída."))) {
-      return;
-    }
-
-    const userIdAtual = usuarioIdLogado || (await obterUsuarioLogadoIdAtual());
-
-    if (!userIdAtual) {
-      return;
-    }
-
-    const novoStatusConcluido = !obraConcluida;
-    const agora = new Date().toISOString();
-    const ultimoCapitulo =
-      obraAtual.capitulos[obraAtual.capitulos.length - 1] || null;
-    const obraAtualizada: ObraLocal = novoStatusConcluido
-      ? {
-          ...obraAtual,
-          capitulos: obraAtual.capitulos.map((capitulo) => ({
-            ...capitulo,
-            lido: true,
-            lidoEm: capitulo.lidoEm || agora,
-          })),
-          ultimoCapituloLidoId:
-            ultimoCapitulo?.id || obraAtual.ultimoCapituloLidoId,
-          ultimaLeituraEm: agora,
-          progressoLeitura: obraAtual.capitulos.length > 0 ? 100 : 0,
-        }
-      : obraAtual;
-    const novasObrasConcluidas = obraConcluida
-      ? obrasConcluidas.filter((id) => id !== obraAtual.id)
-      : [...obrasConcluidas, obraAtual.id];
-
-    if (novoStatusConcluido) {
-      salvarObras(
-        obras.map((obra) =>
-          obra.id === obraAtual.id ? obraAtualizada : obra
-        )
-      );
-    }
-
-    salvarJsonStorageUsuarioLeitor(
-      COMPLETED_STORAGE_KEY,
-      userIdAtual,
-      novasObrasConcluidas
-    );
-
-    setObrasConcluidas(novasObrasConcluidas);
-
-    const concluidoSincronizado = await salvarRegistroObraSupabase(
-      "concluidas",
-      obraAtual.id,
-      novoStatusConcluido
-    );
-
-    let progressoSincronizado = true;
-
-    if (novoStatusConcluido && ultimoCapitulo) {
-      progressoSincronizado = await salvarProgressoLeituraSupabase(
+    try {
+      const progressoSincronizado = await salvarProgressoLeituraSupabase(
         obraAtualizada,
-        ultimoCapitulo.id,
-        true
+        capituloAtual.id,
+        novoStatusLido
       );
-    }
 
-    setMensagemAcao(
-      concluidoSincronizado && progressoSincronizado
-        ? ""
-        : "A conclusão ficou salva no aparelho, mas não foi sincronizada agora."
-    );
+      if (!progressoSincronizado) {
+        salvarObras(obrasAnteriores);
+        setMensagemAcao("Não foi possível atualizar o status de leitura agora.");
+        return;
+      }
 
-    if (novoStatusConcluido) {
-      void registrarAtividadeDiarioLeitor({
-        userId: userIdAtual,
-        tipo: "concluiu_obra",
-        obra: obraAtualizada,
-        capituloId: ultimoCapitulo?.id,
-        visibilidade: "parcial",
-        texto: `Concluiu ${obraAtualizada.titulo}`,
-        metadata: {
-          total_capitulos: obraAtualizada.capitulos.length,
-          progresso_obra: obraAtualizada.progressoLeitura,
-          origem: "concluir_obra_leitor",
-        },
-      });
+      setMensagemAcao("");
+
+      if (novoStatusLido) {
+        void marcarNotificacaoCapituloComoLidaSupabase(
+          userIdAtual,
+          obraAtual.id,
+          capituloAtual.id
+        );
+
+        void registrarAtividadeDiarioLeitor({
+          userId: userIdAtual,
+          tipo: "leu_capitulo",
+          obra: obraAtualizada,
+          capituloId: capituloAtual.id,
+          visibilidade: "privado",
+          texto: `Leu ${capituloAtual.titulo}`,
+          metadata: {
+            capitulo_titulo: capituloAtual.titulo,
+            capitulo_numero: numeroCapitulo,
+            progresso_obra: obraAtualizada.progressoLeitura,
+            origem: "botao_lido",
+          },
+        });
+      }
+    } finally {
+      lidoCapituloSalvandoRef.current = false;
+      setLidoCapituloSalvando(false);
     }
   }
 
@@ -4499,13 +4283,10 @@ export default function LerCapituloPage() {
   }
 
   const voltarHref = `/obra/${obraAtual.slug || criarSlugBase(obraAtual.titulo)}`;
-  const editarHref = `/editar-capitulo?obraId=${obraAtual.id}&capituloId=${capituloAtual.id}`;
-  const perfilAutorHref = criarPerfilAutorHref(obraAtual.autor, obraAtual.autorId);
-  const progressoCapitulo = Math.round(
-    (numeroCapitulo / Math.max(obraAtual.capitulos.length, 1)) * 100
-  );
   const statusLeituraTexto = capituloAtual.lido
-    ? `Lido em ${formatarData(capituloAtual.lidoEm)}`
+    ? capituloAtual.lidoEm
+      ? `Lido em ${formatarData(capituloAtual.lidoEm)}`
+      : "Lido"
     : "Leitura em andamento";
 
   return (
@@ -4600,31 +4381,7 @@ export default function LerCapituloPage() {
               : chapterHeaderStyle
           }
         >
-          <div style={chapterHeroTopStyle}>
-            <span style={miniTitleStyle}>
-              Capítulo {numeroCapitulo} de {obraAtual.capitulos.length}
-            </span>
-
-            <span style={readingProgressBadgeStyle}>
-              {progressoCapitulo}% da obra
-            </span>
-          </div>
-
           <h1 style={titleStyle}>{capituloAtual.titulo}</h1>
-
-          <p style={metaStyle}>
-            {obraAtual.titulo}{" "}
-            <Link href={perfilAutorHref} style={metaAuthorLinkStyle}>
-              Por {obraAtual.autor}
-            </Link>
-          </p>
-
-          <p style={statusMetaLineStyle}>
-            <span style={statusBadgeStyle}>{statusLeituraTexto}</span>{" "}
-            <span style={metaReadingStatsStyle}>
-              {tempoLeitura > 0 ? `${tempoLeitura}min` : "tempo não informado"} {totalPalavras} palavras
-            </span>
-          </p>
         </section>
 
         {mostrarAjustes && (
@@ -4639,6 +4396,17 @@ export default function LerCapituloPage() {
                 : settingsPanelStyle
             }
           >
+            <div style={settingsInfoStyle}>
+              <p style={settingsInfoPrimaryStyle}>
+                {obraAtual.titulo} · {obraAtual.autor}
+              </p>
+
+              <p style={settingsInfoSecondaryStyle}>
+                {statusLeituraTexto} · {totalPalavras}{" "}
+                {totalPalavras === 1 ? "palavra" : "palavras"}
+              </p>
+            </div>
+
             <select
               value={capituloAtual.id}
               onChange={(event) => trocarCapitulo(event.target.value)}
@@ -4701,45 +4469,6 @@ export default function LerCapituloPage() {
                 {mostrarLinhaProgresso ? "Barra ativa" : "Barra de progresso"}
               </button>
 
-              <button
-                type="button"
-                onClick={alternarLidoManual}
-                style={modoFoco ? focusMutedSettingsActionStyle : settingsActionStyle}
-              >
-                {capituloAtual.lido ? "Marcar não lido" : "Marcar lido"}
-              </button>
-
-              <Link href={editarHref} style={modoFoco ? focusSettingsLinkStyle : settingsLinkStyle}>
-                Editar capítulo
-              </Link>
-
-              <button
-                type="button"
-                onClick={alternarFavorito}
-                style={
-                  obraFavorita
-                    ? focusActionActiveStyle
-                    : modoFoco
-                    ? focusMutedSettingsActionStyle
-                    : settingsActionStyle
-                }
-              >
-                {obraFavorita ? "✓ Na lista" : "Adicionar à lista"}
-              </button>
-
-              <button
-                type="button"
-                onClick={alternarConcluido}
-                style={
-                  obraConcluida
-                    ? settingsActionActiveStyle
-                    : modoFoco
-                    ? focusMutedSettingsActionStyle
-                    : settingsActionStyle
-                }
-              >
-                {obraConcluida ? "Concluída" : "Concluir"}
-              </button>
             </div>
           </section>
         )}
@@ -4763,35 +4492,53 @@ export default function LerCapituloPage() {
         >
           <button
             type="button"
-            onClick={alternarCurtida}
-            style={
-              modoFoco
+            onClick={() => void alternarCurtida()}
+            disabled={curtidaCapituloSalvando}
+            aria-pressed={metricasCapitulo.curtiu}
+            aria-label={
+              metricasCapitulo.curtiu
+                ? "Remover curtida do capítulo"
+                : "Curtir capítulo"
+            }
+            style={{
+              ...(modoFoco
                 ? metricasCapitulo.curtiu
                   ? focusActiveActionButtonStyle
                   : focusActionButtonStyle
                 : metricasCapitulo.curtiu
                 ? activeActionButtonStyle
-                : actionButtonStyle
-            }
+                : actionButtonStyle),
+              opacity: curtidaCapituloSalvando ? 0.72 : 1,
+              cursor: curtidaCapituloSalvando ? "wait" : "pointer",
+            }}
           >
-            {metricasCapitulo.curtiu ? "♥ Curtido" : "♡ Curtir"}{" "}
+            {metricasCapitulo.curtiu ? "❤️" : "🤍"}{" "}
             {formatarContadorCapituloLeitor(metricasCapitulo.totalCurtidas)}
           </button>
 
           <button
             type="button"
-            onClick={alternarSalvo}
-            style={
-              modoFoco
+            onClick={() => void alternarSalvo()}
+            disabled={salvoCapituloSalvando}
+            aria-pressed={metricasCapitulo.salvo}
+            aria-label={
+              metricasCapitulo.salvo
+                ? "Remover capítulo dos salvos"
+                : "Salvar capítulo"
+            }
+            style={{
+              ...(modoFoco
                 ? metricasCapitulo.salvo
                   ? focusActiveSaveButtonStyle
                   : focusActionButtonStyle
                 : metricasCapitulo.salvo
                 ? activeSaveButtonStyle
-                : actionButtonStyle
-            }
+                : actionButtonStyle),
+              opacity: salvoCapituloSalvando ? 0.72 : 1,
+              cursor: salvoCapituloSalvando ? "wait" : "pointer",
+            }}
           >
-            {metricasCapitulo.salvo ? "✓ Salvo" : "Salvar capítulo"}{" "}
+            {metricasCapitulo.salvo ? "Salvo ✓" : "Salvar"}{" "}
             {formatarContadorCapituloLeitor(metricasCapitulo.totalSalvos)}
           </button>
 
@@ -4809,6 +4556,35 @@ export default function LerCapituloPage() {
             }
           >
             💬 {formatarContadorCapituloLeitor(metricasCapitulo.totalComentarios)}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void alternarLido()}
+            disabled={lidoCapituloSalvando}
+            aria-pressed={capituloAtual.lido}
+            aria-label={
+              capituloAtual.lido
+                ? "Marcar capítulo como não lido"
+                : "Marcar capítulo como lido"
+            }
+            style={{
+              ...(modoFoco
+                ? capituloAtual.lido
+                  ? focusActiveActionButtonStyle
+                  : focusActionButtonStyle
+                : capituloAtual.lido
+                ? activeActionButtonStyle
+                : actionButtonStyle),
+              opacity: lidoCapituloSalvando ? 0.72 : 1,
+              cursor: lidoCapituloSalvando ? "wait" : "pointer",
+            }}
+          >
+            {lidoCapituloSalvando
+              ? "Salvando..."
+              : capituloAtual.lido
+              ? "Lido ✓"
+              : "Lido"}
           </button>
         </section>
 
@@ -5084,7 +4860,7 @@ const fixedReadingProgressOuterStyle: CSSProperties = {
 const fixedReadingProgressInnerStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "#4C1D95",
   transition: "width 0.16s ease",
 };
 
@@ -5330,16 +5106,6 @@ const focusChapterHeaderStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.07)",
 };
 
-const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
 const titleStyle: CSSProperties = {
   margin: 0,
   fontSize: "clamp(28px, 8vw, 42px)",
@@ -5389,56 +5155,6 @@ const statusBadgeStyle: CSSProperties = {
   fontSize: "9px",
   fontWeight: 850,
   textAlign: "center",
-  ...safeTextStyle,
-};
-
-const statusLinkBadgeStyle: CSSProperties = {
-  ...statusBadgeStyle,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  textDecoration: "none",
-};
-
-const metaAuthorLinkStyle: CSSProperties = {
-  ...statusLinkBadgeStyle,
-  fontSize: "11px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-};
-
-const statusMetaLineStyle: CSSProperties = {
-  ...statusRowStyle,
-  margin: 0,
-  gap: "4px",
-};
-
-const metaReadingStatsStyle: CSSProperties = {
-  ...metaStyle,
-  fontSize: "9px",
-  fontWeight: 850,
-};
-
-const chapterHeroTopStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "7px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const readingProgressBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 900,
-  textAlign: "center",
-  boxShadow: "none",
   ...safeTextStyle,
 };
 
@@ -5508,6 +5224,32 @@ const focusSettingsPanelStyle: CSSProperties = {
   ...settingsPanelStyle,
   background: "rgba(9,9,11,0.78)",
   border: "1px solid rgba(255,255,255,0.07)",
+};
+
+const settingsInfoStyle: CSSProperties = {
+  display: "grid",
+  gap: "2px",
+  margin: "0 2px 2px",
+  minWidth: 0,
+  textAlign: "center",
+};
+
+const settingsInfoPrimaryStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "11px",
+  lineHeight: 1.35,
+  fontWeight: 900,
+  ...safeTextStyle,
+};
+
+const settingsInfoSecondaryStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "9px",
+  lineHeight: 1.35,
+  fontWeight: 800,
+  ...safeTextStyle,
 };
 
 const chapterSelectStyle: CSSProperties = {
@@ -5656,40 +5398,28 @@ const focusActionActiveStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.18)",
 };
 
-const settingsLinkStyle: CSSProperties = {
-  ...settingsActionStyle,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textDecoration: "none",
-};
-
-const focusSettingsLinkStyle: CSSProperties = {
-  ...settingsLinkStyle,
-};
-
 const textCardStyle: CSSProperties = {
   marginTop: "10px",
   padding: "14px 12px",
-  borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const focusTextCardStyle: CSSProperties = {
   ...textCardStyle,
-  background: "rgba(3,3,6,0.52)",
-  border: "1px solid rgba(255,255,255,0.055)",
+  background: "transparent",
+  border: "none",
 };
 
 const chapterTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-primary, #F4F4F5)",
+  color: "#FFFFFF",
   fontSize: "17px",
   lineHeight: 1.9,
   fontWeight: 550,
@@ -5702,7 +5432,7 @@ const chapterTextStyle: CSSProperties = {
 const readerActionsStyle: CSSProperties = {
   marginTop: "10px",
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: "6px",
   minWidth: 0,
   maxWidth: "100%",
@@ -6488,7 +6218,7 @@ const desktopChapterSelectStyle: CSSProperties = {
 
 const desktopSettingsGridStyle: CSSProperties = {
   ...settingsGridStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
   gap: "8px",
 };
 
@@ -6496,13 +6226,13 @@ const desktopTextCardStyle: CSSProperties = {
   ...textCardStyle,
   marginTop: "12px",
   padding: "24px 28px",
-  borderRadius: "22px",
+  borderRadius: 0,
 };
 
 const desktopFocusTextCardStyle: CSSProperties = {
   ...desktopTextCardStyle,
-  background: "rgba(3,3,6,0.52)",
-  border: "1px solid rgba(255,255,255,0.055)",
+  background: "transparent",
+  border: "none",
 };
 
 const desktopChapterTextStyle: CSSProperties = {

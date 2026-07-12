@@ -155,6 +155,18 @@ type AutorHome = {
   href: string;
 };
 
+type AvaliacaoAutorHome = {
+  media: number;
+  total: number;
+};
+
+type AvaliacoesAutoresHome = Record<string, AvaliacaoAutorHome>;
+
+type SupabaseAvaliacaoAutorHomeRow = {
+  autor_id: string | null;
+  nota: number | null;
+};
+
 type ResultadoBuscaHome = {
   id: string;
   titulo: string;
@@ -1352,6 +1364,24 @@ function compactarNumeroHome(valor: number) {
   return String(numero);
 }
 
+function formatarMediaAvaliacaoAutorHome(
+  avaliacao: AvaliacaoAutorHome | undefined
+) {
+  if (
+    !avaliacao ||
+    avaliacao.total <= 0 ||
+    !Number.isFinite(avaliacao.media) ||
+    avaliacao.media <= 0
+  ) {
+    return "—";
+  }
+
+  return avaliacao.media.toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+}
+
 function obterTotalCurtidasObraHome(obra: ObraLocal) {
   return Math.max(obra.totalCurtidas || 0, contarCurtidasObraLocal(obra));
 }
@@ -2400,6 +2430,8 @@ export default function Home() {
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [perfisAutores, setPerfisAutores] = useState<PerfisAutoresSalvos>({});
+  const [avaliacoesAutoresHome, setAvaliacoesAutoresHome] =
+    useState<AvaliacoesAutoresHome>({});
   const { notificacoesNaoLidas } = useNotificacoes();
   const [heroIndex, setHeroIndex] = useState(0);
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
@@ -2816,7 +2848,7 @@ export default function Home() {
   void heroTotalCapitulos;
   const metricasHeroHome = [
     { icone: "👁", valor: heroObra.views || "0" },
-    { icone: "♥", valor: heroObra.likes || "0", destaque: true },
+    { icone: "❤️", valor: heroObra.likes || "0", destaque: true },
     { icone: "💬", valor: heroObra.comentarios || "0" },
   ];
   const heroEstaSalvo = Boolean(
@@ -3231,6 +3263,101 @@ export default function Home() {
       .slice(0, 12);
   }, [obrasPublicadas, obrasFiltradas, perfisAutores, termoBusca]);
 
+  useEffect(() => {
+    const autorIds = Array.from(
+      new Set(
+        autoresParaConhecer
+          .map((autor) => autor.autorId.trim())
+          .filter((autorId) => idObraSupabaseValido(autorId))
+      )
+    );
+
+    if (autorIds.length === 0) {
+      setAvaliacoesAutoresHome({});
+      return;
+    }
+
+    let cancelado = false;
+
+    async function carregarAvaliacoesAutoresHome() {
+      try {
+        const { data, error } = await supabase
+          .from("autor_avaliacoes")
+          .select("autor_id, nota")
+          .in("autor_id", autorIds)
+          .limit(5000);
+
+        if (error || !Array.isArray(data)) {
+          if (!cancelado) {
+            setAvaliacoesAutoresHome({});
+          }
+          return;
+        }
+
+        const acumuladoPorAutor = new Map<
+          string,
+          { soma: number; total: number }
+        >();
+
+        (data as unknown as SupabaseAvaliacaoAutorHomeRow[]).forEach(
+          (avaliacao) => {
+            const autorId = avaliacao.autor_id?.trim() || "";
+            const nota = Number(avaliacao.nota);
+
+            if (
+              !autorId ||
+              !Number.isFinite(nota) ||
+              nota < 0.5 ||
+              nota > 5
+            ) {
+              return;
+            }
+
+            const acumuladoAtual = acumuladoPorAutor.get(autorId) || {
+              soma: 0,
+              total: 0,
+            };
+
+            acumuladoPorAutor.set(autorId, {
+              soma: acumuladoAtual.soma + nota,
+              total: acumuladoAtual.total + 1,
+            });
+          }
+        );
+
+        const avaliacoesAtualizadas = autorIds.reduce<AvaliacoesAutoresHome>(
+          (resultado, autorId) => {
+            const acumulado = acumuladoPorAutor.get(autorId);
+
+            if (acumulado && acumulado.total > 0) {
+              resultado[autorId] = {
+                media: acumulado.soma / acumulado.total,
+                total: acumulado.total,
+              };
+            }
+
+            return resultado;
+          },
+          {}
+        );
+
+        if (!cancelado) {
+          setAvaliacoesAutoresHome(avaliacoesAtualizadas);
+        }
+      } catch {
+        if (!cancelado) {
+          setAvaliacoesAutoresHome({});
+        }
+      }
+    }
+
+    void carregarAvaliacoesAutoresHome();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [autoresParaConhecer]);
+
   const obrasFantasiaPoderes = useMemo(() => {
     return obrasFiltradas.filter((obra) =>
       obraCatalogoCombinaTemas(obra, ["fantasia", "sobrenatural", "poder", "magia"])
@@ -3304,6 +3431,14 @@ export default function Home() {
           </Link>
         ))}
       </div>
+    );
+  }
+
+  if (!dadosHomeCarregados) {
+    return (
+      <main style={pageStyle} aria-busy="true">
+        <style>{themePageCss}</style>
+      </main>
     );
   }
 
@@ -3556,7 +3691,7 @@ export default function Home() {
                     type="button"
                     onClick={alternarHeroFavorito}
                     aria-pressed={heroEstaSalvo}
-                    style={heroEstaSalvo ? savedHeroButtonStyle : secondaryButtonStyle}
+                    style={heroSaveButtonStyle}
                   >
                       {heroEstaSalvo ? "Salvo" : "Salvar"}
                     </button>
@@ -3637,7 +3772,7 @@ export default function Home() {
                   type="button"
                   onClick={alternarHeroFavorito}
                   aria-pressed={heroEstaSalvo}
-                  style={heroEstaSalvo ? savedHeroButtonStyle : secondaryButtonStyle}
+                  style={heroSaveButtonStyle}
                 >
                     {heroEstaSalvo ? "Salvo" : "Salvar"}
                   </button>
@@ -3692,14 +3827,14 @@ export default function Home() {
         </section>
 
         <section style={isDesktop ? desktopSummaryStripStyle : summaryStripStyle} aria-label="Atalhos principais">
-          <Link href="/em-alta" style={summaryItemStyle}>
-            <strong style={summaryNumberStyle}>Em Alta</strong>
+          <Link href="/em-breve" style={summaryItemStyle}>
+            <strong style={summaryNumberStyle}>Em breve</strong>
           </Link>
 
           <span style={summaryDividerLineStyle} aria-hidden="true" />
 
-          <Link href="/em-breve" style={summaryItemStyle}>
-            <strong style={summaryNumberStyle}>Em breve</strong>
+          <Link href="/em-alta" style={summaryItemStyle}>
+            <strong style={summaryNumberStyle}>Em Alta</strong>
           </Link>
         </section>
 
@@ -3746,6 +3881,26 @@ export default function Home() {
                 <MobileObraCard
                   key={`minha-lista-catalogo-${obra.titulo}`}
                   obra={obra}
+                  isDesktop={isDesktop}
+                />
+              ))}
+            </CarouselRow>
+          </section>
+        )}
+
+        {autoresParaConhecer.length > 0 && (
+          <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
+            <SectionHeader
+              title="Autores para conhecer"
+              subtitle="Perfis que dão vida ao catálogo."
+            />
+
+            <CarouselRow isDesktop={isDesktop} variant="autor">
+              {autoresParaConhecer.map((autor) => (
+                <MobileAutorCard
+                  key={`autor-${autor.chave}`}
+                  autor={autor}
+                  avaliacao={avaliacoesAutoresHome[autor.autorId]}
                   isDesktop={isDesktop}
                 />
               ))}
@@ -3904,21 +4059,6 @@ export default function Home() {
                   tipo="catalogo"
                   isDesktop={isDesktop}
                 />
-              ))}
-            </CarouselRow>
-          </section>
-        )}
-
-        {autoresParaConhecer.length > 0 && (
-          <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
-              title="Autores para conhecer"
-              subtitle="Perfis que dão vida ao catálogo."
-            />
-
-            <CarouselRow isDesktop={isDesktop} variant="autor">
-              {autoresParaConhecer.map((autor) => (
-                <MobileAutorCard key={`autor-${autor.chave}`} autor={autor} isDesktop={isDesktop} />
               ))}
             </CarouselRow>
           </section>
@@ -4194,7 +4334,7 @@ function MobileObraLocalCard({
           </span>
 
           <span style={cardStatItemStyle}>
-            <span style={cardStatHeartIconStyle}>♥</span>
+            <span style={cardStatHeartIconStyle}>❤️</span>
             <span style={cardStatValueStyle}>{totalCurtidas}</span>
           </span>
 
@@ -4248,7 +4388,15 @@ function MobileObraLocalCard({
   );
 }
 
-function MobileAutorCard({ autor, isDesktop }: { autor: AutorHome; isDesktop?: boolean }) {
+function MobileAutorCard({
+  autor,
+  avaliacao,
+  isDesktop,
+}: {
+  autor: AutorHome;
+  avaliacao?: AvaliacaoAutorHome;
+  isDesktop?: boolean;
+}) {
   const generosAutor = autor.generos.length > 0 ? autor.generos : ["Historietas"];
 
   return (
@@ -4282,16 +4430,35 @@ function MobileAutorCard({ autor, isDesktop }: { autor: AutorHome; isDesktop?: b
       </div>
 
       <div style={authorMetaRowStyle}>
-        <span style={authorMetaBadgeStyle}>
-          {autor.totalObras} {autor.totalObras === 1 ? "obra" : "obras"}
+        <span
+          style={authorMetaBadgeStyle}
+          aria-label={`${autor.totalObras} ${
+            autor.totalObras === 1 ? "obra publicada" : "obras publicadas"
+          }`}
+        >
+          📚 {autor.totalObras}
         </span>
 
-        {autor.totalCapitulos > 0 && (
-          <span style={authorMetaBadgeStyle}>{autor.totalCapitulos} cap.</span>
-        )}
+        <span
+          style={authorMetaBadgeStyle}
+          aria-label={
+            avaliacao && avaliacao.total > 0
+              ? `Avaliação média ${formatarMediaAvaliacaoAutorHome(
+                  avaliacao
+                )} de 5, com ${avaliacao.total} ${
+                  avaliacao.total === 1 ? "avaliação" : "avaliações"
+                }`
+              : "Autor ainda sem avaliações"
+          }
+        >
+          <span style={authorRatingStarStyle} aria-hidden="true">
+            ★
+          </span>
+          {formatarMediaAvaliacaoAutorHome(avaliacao)}
+        </span>
 
         {autor.totalCurtidas > 0 && (
-          <span style={authorMetaBadgeStyle}>♥ {autor.totalCurtidas}</span>
+          <span style={authorMetaBadgeStyle}>❤️ {autor.totalCurtidas}</span>
         )}
 
         {autor.totalComentarios > 0 && (
@@ -4357,7 +4524,7 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
           </span>
 
           <span style={cardStatItemStyle}>
-            <span style={cardStatHeartIconStyle}>♥</span>
+            <span style={cardStatHeartIconStyle}>❤️</span>
             <span style={cardStatValueStyle}>{obra.likes}</span>
           </span>
 
@@ -5341,7 +5508,7 @@ const heroPillStyle: CSSProperties = {
   fontSize: "12.5px",
   fontWeight: 950,
   boxShadow: "none",
-  textShadow: "none",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28)",
   ...safeTextStyle,
 };
 
@@ -5352,6 +5519,8 @@ const heroTitleStyle: CSSProperties = {
   fontWeight: 950,
   letterSpacing: 0,
   maxWidth: "100%",
+  textShadow:
+    "0 1px 0 rgba(0,0,0,0.34), 0 2px 12px rgba(0,0,0,0.34)",
   ...safeTextStyle,
 };
 
@@ -5375,6 +5544,8 @@ const heroDescriptionStyle: CSSProperties = {
   lineHeight: 1.55,
   fontWeight: 650,
   maxWidth: "100%",
+  textShadow:
+    "0 1px 0 rgba(0,0,0,0.32), 0 2px 10px rgba(0,0,0,0.30)",
   ...safeTextStyle,
 };
 
@@ -5502,11 +5673,11 @@ const secondaryButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const savedHeroButtonStyle: CSSProperties = {
-  ...secondaryButtonStyle,
-  background: "rgba(4, 0, 10, 0.82)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
+const heroSaveButtonStyle: CSSProperties = {
+  ...primaryButtonStyle,
+  fontFamily: "inherit",
+  appearance: "none",
+  cursor: "pointer",
 };
 
 const heroLoginNoticeStyle: CSSProperties = {
@@ -5585,6 +5756,7 @@ const desktopHeroStatItemStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.08)",
   boxSizing: "border-box",
   whiteSpace: "nowrap",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28)",
   ...safeTextStyle,
 };
 
@@ -5645,7 +5817,7 @@ const mobileHeroPillStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   boxShadow: "none",
-  textShadow: "none",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28)",
 };
 
 const mobileHeroTextBlockStyle: CSSProperties = {
@@ -5668,7 +5840,8 @@ const mobileHeroTitleStyle: CSSProperties = {
   textAlign: "center",
   fontSize: "clamp(34px, 10.2vw, 60px)",
   lineHeight: 0.96,
-  textShadow: "0 2px 16px rgba(0,0,0,0.72)",
+  textShadow:
+    "0 1px 0 rgba(0,0,0,0.34), 0 2px 12px rgba(0,0,0,0.34)",
   overflowWrap: "anywhere",
   wordBreak: "break-word",
 };
@@ -5680,7 +5853,8 @@ const mobileHeroDescriptionStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "14px",
   lineHeight: 1.5,
-  textShadow: "0 2px 14px rgba(0,0,0,0.78)",
+  textShadow:
+    "0 1px 0 rgba(0,0,0,0.32), 0 2px 10px rgba(0,0,0,0.30)",
   display: "-webkit-box",
   WebkitLineClamp: 3,
   WebkitBoxOrient: "vertical",
@@ -5732,6 +5906,7 @@ const mobileHeroStatItemStyle: CSSProperties = {
   minWidth: 0,
   width: "100%",
   whiteSpace: "nowrap",
+  textShadow: "0 1px 0 rgba(0,0,0,0.28)",
 };
 
 const mobileHeroStatIconStyle: CSSProperties = {
@@ -6145,6 +6320,15 @@ const authorMetaBadgeStyle: CSSProperties = {
   justifyContent: "center",
   textAlign: "center",
   ...safeTextStyle,
+};
+
+const authorRatingStarStyle: CSSProperties = {
+  color: "#FACC15",
+  fontSize: "13px",
+  lineHeight: 1,
+  marginRight: "3px",
+  textShadow: "0 0 8px rgba(250,204,21,0.22)",
+  flex: "0 0 auto",
 };
 
 const authorBottomRowStyle: CSSProperties = {

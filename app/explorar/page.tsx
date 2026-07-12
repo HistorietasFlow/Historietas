@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
+import { Children, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
@@ -106,6 +106,45 @@ type PerfilExplorarRow = {
   id?: string | null;
   user_id?: string | null;
   nome?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
+  sobre_bio?: string | null;
+};
+
+type ModoConteudoExplorar = "obras" | "autores";
+
+type PerfilAutorExplorar = {
+  nome: string;
+  avatar: string;
+  bio: string;
+};
+
+type PerfisAutoresExplorar = Record<string, PerfilAutorExplorar>;
+
+type AvaliacaoAutorExplorar = {
+  media: number;
+  total: number;
+};
+
+type AvaliacoesAutoresExplorar = Record<string, AvaliacaoAutorExplorar>;
+
+type AutorExplorar = {
+  chave: string;
+  nome: string;
+  autorId: string;
+  avatar: string;
+  bio: string;
+  totalObras: number;
+  totalCurtidas: number;
+  totalComentarios: number;
+  generos: string[];
+  href: string;
+  avaliacao?: AvaliacaoAutorExplorar;
+};
+
+type AvaliacaoAutorExplorarRow = {
+  autor_id?: string | null;
+  nota?: number | null;
 };
 
 type OrdenacaoExplorar =
@@ -458,6 +497,54 @@ const categorias = [
   "Biografia",
 ];
 
+const TITULOS_CRIATIVOS_OBRAS_EXPLORAR: Record<string, string> = {
+  acao: "Ação do começo ao fim",
+  aventura: "Aventuras sem limites",
+  comedia: "Para rir agora",
+  drama: "Histórias que deixam marcas",
+  fantasia: "Mundos além da imaginação",
+  ficcao: "Além do que é possível",
+  misterio: "Mistérios para desvendar",
+  romance: "Amores que deixam marcas",
+  suspense: "Tensão até a última página",
+  terror: "Histórias para perder o sono",
+  sobrenatural: "Entre este mundo e o outro",
+  historico: "Viagens por outros tempos",
+  biografia: "Vidas que merecem ser contadas",
+  outros: "Descobertas fora do comum",
+};
+
+const TITULOS_CRIATIVOS_AUTORES_EXPLORAR: Record<string, string> = {
+  acao: "Autores que aceleram o coração",
+  aventura: "Autores de grandes jornadas",
+  comedia: "Autores para arrancar risadas",
+  drama: "Autores que tocam fundo",
+  fantasia: "Criadores de mundos impossíveis",
+  ficcao: "Autores que enxergam além",
+  misterio: "Mestres dos enigmas",
+  romance: "Autores que escrevem sentimentos",
+  suspense: "Mestres da tensão",
+  terror: "Autores que dominam o medo",
+  sobrenatural: "Vozes do desconhecido",
+  historico: "Autores que revivem o passado",
+  biografia: "Autores de vidas reais",
+  outros: "Novas vozes para descobrir",
+};
+
+function obterTituloCriativoObrasExplorar(genero: string) {
+  return (
+    TITULOS_CRIATIVOS_OBRAS_EXPLORAR[normalizarTexto(genero)] ||
+    "Histórias para descobrir"
+  );
+}
+
+function obterTituloCriativoAutoresExplorar(genero: string) {
+  return (
+    TITULOS_CRIATIVOS_AUTORES_EXPLORAR[normalizarTexto(genero)] ||
+    "Autores para descobrir"
+  );
+}
+
 function obterTemaVisualExplorarSeguro(valor: unknown): TemaVisualExplorar {
   if (typeof valor === "string" && valor in TEMAS_VISUAIS_EXPLORAR) {
     return valor as TemaVisualExplorar;
@@ -803,7 +890,7 @@ async function carregarNomesProfilesExplorar(userIds: string[]) {
     const filtroIds = idsUnicos.join(",");
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, user_id, nome")
+      .select("id, user_id, nome, avatar_url, bio, sobre_bio")
       .or(`user_id.in.(${filtroIds}),id.in.(${filtroIds})`)
       .limit(Math.max(idsUnicos.length * 2, 1));
 
@@ -853,6 +940,174 @@ function aplicarNomesProfilesEmObrasExplorar(
       autor: nomeProfile,
     };
   });
+}
+
+function criarIniciaisAutorExplorar(nome: string) {
+  const partes = nome
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (partes.length === 0) {
+    return "H";
+  }
+
+  return partes
+    .slice(0, 2)
+    .map((parte) => parte[0])
+    .join("")
+    .toUpperCase();
+}
+
+function criarBioAutorExplorar(nome: string, generos: string[]) {
+  const generosValidos = generos.filter(Boolean).slice(0, 2);
+
+  if (generosValidos.length === 0) {
+    return `${nome} publica histórias na Historietas.`;
+  }
+
+  return `Autor de ${generosValidos.join(" e ").toLowerCase()} na Historietas.`;
+}
+
+function formatarMediaAvaliacaoAutorExplorar(
+  avaliacao: AvaliacaoAutorExplorar | undefined
+) {
+  if (
+    !avaliacao ||
+    avaliacao.total <= 0 ||
+    !Number.isFinite(avaliacao.media) ||
+    avaliacao.media <= 0
+  ) {
+    return "—";
+  }
+
+  return avaliacao.media.toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+}
+
+async function carregarPerfisAutoresExplorar(
+  userIds: string[]
+): Promise<PerfisAutoresExplorar> {
+  const idsUnicos = Array.from(
+    new Set(userIds.map((id) => id.trim()).filter(Boolean))
+  );
+  const perfis: PerfisAutoresExplorar = {};
+
+  if (idsUnicos.length === 0) {
+    return perfis;
+  }
+
+  const linhas: PerfilExplorarRow[] = [];
+
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, user_id, nome, avatar_url, bio, sobre_bio")
+      .in("user_id", idsUnicos)
+      .limit(1000);
+
+    if (Array.isArray(data)) {
+      linhas.push(...(data as PerfilExplorarRow[]));
+    }
+  } catch {
+    // Tenta também pela coluna id abaixo.
+  }
+
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, user_id, nome, avatar_url, bio, sobre_bio")
+      .in("id", idsUnicos)
+      .limit(1000);
+
+    if (Array.isArray(data)) {
+      linhas.push(...(data as PerfilExplorarRow[]));
+    }
+  } catch {
+    // Avatar e bio são complementares; os cards usam fallback.
+  }
+
+  linhas.forEach((perfil) => {
+    const nome = typeof perfil.nome === "string" ? perfil.nome.trim() : "";
+    const avatar =
+      typeof perfil.avatar_url === "string" ? perfil.avatar_url.trim() : "";
+    const bioBase =
+      (typeof perfil.bio === "string" && perfil.bio.trim()) ||
+      (typeof perfil.sobre_bio === "string" && perfil.sobre_bio.trim()) ||
+      "";
+    const perfilNormalizado: PerfilAutorExplorar = {
+      nome,
+      avatar,
+      bio: bioBase.slice(0, 140),
+    };
+
+    [perfil.user_id, perfil.id].forEach((id) => {
+      const idLimpo = typeof id === "string" ? id.trim() : "";
+
+      if (idLimpo) {
+        perfis[idLimpo] = perfilNormalizado;
+      }
+    });
+  });
+
+  return perfis;
+}
+
+async function carregarAvaliacoesAutoresExplorar(
+  autorIds: string[]
+): Promise<AvaliacoesAutoresExplorar> {
+  const idsUnicos = Array.from(
+    new Set(autorIds.map((id) => id.trim()).filter(Boolean))
+  );
+  const resultado: AvaliacoesAutoresExplorar = {};
+
+  if (idsUnicos.length === 0) {
+    return resultado;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("autor_avaliacoes")
+      .select("autor_id, nota")
+      .in("autor_id", idsUnicos)
+      .limit(5000);
+
+    if (error || !Array.isArray(data)) {
+      return resultado;
+    }
+
+    const acumulado = new Map<string, { soma: number; total: number }>();
+
+    (data as AvaliacaoAutorExplorarRow[]).forEach((avaliacao) => {
+      const autorId = avaliacao.autor_id?.trim() || "";
+      const nota = Number(avaliacao.nota);
+
+      if (!autorId || !Number.isFinite(nota) || nota < 0.5 || nota > 5) {
+        return;
+      }
+
+      const atual = acumulado.get(autorId) || { soma: 0, total: 0 };
+      acumulado.set(autorId, {
+        soma: atual.soma + nota,
+        total: atual.total + 1,
+      });
+    });
+
+    acumulado.forEach((valor, autorId) => {
+      if (valor.total > 0) {
+        resultado[autorId] = {
+          media: valor.soma / valor.total,
+          total: valor.total,
+        };
+      }
+    });
+  } catch {
+    // Avaliação é complementar; o card continua com traço.
+  }
+
+  return resultado;
 }
 
 function categoriaCombinaComGenero(categoria: string, genero: string) {
@@ -971,6 +1226,27 @@ function dataCriacaoObra(obra: ObraLocal) {
   const data = new Date(obra.criadaEm).getTime();
 
   return Number.isNaN(data) ? 0 : data;
+}
+
+function dataUltimoCapituloObraExplorar(obra: ObraLocal) {
+  return obra.capitulos.reduce((tempoMaisRecente, capitulo) => {
+    const tempoCapitulo = new Date(capitulo.criadoEm).getTime();
+
+    return Number.isNaN(tempoCapitulo)
+      ? tempoMaisRecente
+      : Math.max(tempoMaisRecente, tempoCapitulo);
+  }, dataCriacaoObra(obra));
+}
+
+function pontuacaoRecomendacaoObraExplorar(obra: ObraLocal) {
+  return (
+    normalizarContadorExplorar(obra.visualizacoes) +
+    totalCurtidasObra(obra) * 8 +
+    totalComentariosObra(obra) * 5 +
+    totalSalvosObra(obra) * 6 +
+    totalLidosObra(obra) * 3 +
+    obra.capitulos.length * 2
+  );
 }
 
 function normalizarCapitulo(
@@ -2126,7 +2402,13 @@ export default function ExplorarPage() {
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
+  const [modoConteudo, setModoConteudo] =
+    useState<ModoConteudoExplorar>("obras");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
+  const [perfisAutores, setPerfisAutores] =
+    useState<PerfisAutoresExplorar>({});
+  const [avaliacoesAutores, setAvaliacoesAutores] =
+    useState<AvaliacoesAutoresExplorar>({});
   const [busca, setBusca] = useState("");
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
   const [filtroFormato, setFiltroFormato] = useState("todos");
@@ -2257,7 +2539,9 @@ export default function ExplorarPage() {
     async function carregarExplorar() {
       const params = new URLSearchParams(window.location.search);
       const categoriaParam = params.get("categoria") || "";
+      const tipoParam = params.get("tipo") === "autores" ? "autores" : "obras";
 
+      setModoConteudo(tipoParam);
       setCategoriaSelecionada(categoriaParam.trim());
 
       try {
@@ -2362,14 +2646,50 @@ export default function ExplorarPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const autorIds = Array.from(
+      new Set(
+        obrasLocais
+          .filter(
+            (obra) =>
+              obra.publicado && obraTemConteudoPublicadoExplorar(obra)
+          )
+          .map((obra) => obra.autorId?.trim() || "")
+          .filter(Boolean)
+      )
+    );
+
+    if (autorIds.length === 0) {
+      setPerfisAutores({});
+      setAvaliacoesAutores({});
+      return;
+    }
+
+    let cancelado = false;
+
+    async function carregarDadosAutores() {
+      const [perfis, avaliacoes] = await Promise.all([
+        carregarPerfisAutoresExplorar(autorIds),
+        carregarAvaliacoesAutoresExplorar(autorIds),
+      ]);
+
+      if (!cancelado) {
+        setPerfisAutores(perfis);
+        setAvaliacoesAutores(avaliacoes);
+      }
+    }
+
+    void carregarDadosAutores();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [obrasLocais]);
+
   const termoBusca = normalizarTexto(busca);
 
-  const obrasLocaisFiltradas = useMemo(() => {
+  const obrasBaseFiltradas = useMemo(() => {
     const filtradas = obrasLocais.filter((obra) => {
-      const passaCategoria = categoriaSelecionada
-        ? categoriaCombinaComGenero(categoriaSelecionada, obra.genero)
-        : true;
-
       const passaFormato =
         filtroFormato === "todos" ? true : obra.formato === filtroFormato;
 
@@ -2378,7 +2698,8 @@ export default function ExplorarPage() {
           ? true
           : obra.classificacaoIndicativa === filtroClassificacao;
 
-      const passaPublicacao = obra.publicado && obraTemConteudoPublicadoExplorar(obra);
+      const passaPublicacao =
+        obra.publicado && obraTemConteudoPublicadoExplorar(obra);
 
       const passaCapitulos =
         filtroCapitulos === "todos"
@@ -2398,6 +2719,34 @@ export default function ExplorarPage() {
                 ? obraTemAtividadeLeitura(obra)
                 : !obraTemAtividadeLeitura(obra);
 
+      return (
+        passaFormato &&
+        passaClassificacao &&
+        passaPublicacao &&
+        passaCapitulos &&
+        passaColecao
+      );
+    });
+
+    return ordenarObrasLocais(filtradas, ordenacao);
+  }, [
+    obrasLocais,
+    filtroFormato,
+    filtroClassificacao,
+    filtroCapitulos,
+    filtroColecao,
+    usuarioLogado,
+    ordenacao,
+    obrasFavoritas,
+    obrasConcluidas,
+  ]);
+
+  const obrasLocaisFiltradas = useMemo(() => {
+    return obrasBaseFiltradas.filter((obra) => {
+      const passaCategoria = categoriaSelecionada
+        ? categoriaCombinaComGenero(categoriaSelecionada, obra.genero)
+        : true;
+
       const textoBusca = normalizarTexto(
         [
           obra.titulo,
@@ -2415,33 +2764,280 @@ export default function ExplorarPage() {
 
       const passaBusca = termoBusca ? textoBusca.includes(termoBusca) : true;
 
-      return (
-        passaCategoria &&
-        passaFormato &&
-        passaClassificacao &&
-        passaPublicacao &&
-        passaCapitulos &&
-        passaColecao &&
-        passaBusca
-      );
+      return passaCategoria && passaBusca;
+    });
+  }, [obrasBaseFiltradas, categoriaSelecionada, termoBusca]);
+
+  const autoresExplorar = useMemo(() => {
+    type AutorAcumulado = {
+      chave: string;
+      nome: string;
+      autorId: string;
+      obrasIds: Set<string>;
+      totalCurtidas: number;
+      totalComentarios: number;
+      generos: Set<string>;
+    };
+
+    const autores = new Map<string, AutorAcumulado>();
+
+    obrasBaseFiltradas.forEach((obra) => {
+      const autorId = obra.autorId?.trim() || "";
+      const perfil = autorId ? perfisAutores[autorId] : undefined;
+      const nome = perfil?.nome.trim() || obra.autor.trim() || "Autor não informado";
+      const chave = autorId || normalizarTexto(nome);
+
+      if (!chave) {
+        return;
+      }
+
+      const atual = autores.get(chave) || {
+        chave,
+        nome,
+        autorId,
+        obrasIds: new Set<string>(),
+        totalCurtidas: 0,
+        totalComentarios: 0,
+        generos: new Set<string>(),
+      };
+
+      atual.nome = perfil?.nome.trim() || atual.nome;
+      atual.obrasIds.add(obra.id || obra.slug || criarSlugBase(obra.titulo));
+      atual.totalCurtidas += totalCurtidasObra(obra);
+      atual.totalComentarios += totalComentariosObra(obra);
+
+      categorias.forEach((categoria) => {
+        if (categoriaCombinaComGenero(categoria, obra.genero)) {
+          atual.generos.add(categoria);
+        }
+      });
+
+      autores.set(chave, atual);
     });
 
-    return ordenarObrasLocais(filtradas, ordenacao);
+    return Array.from(autores.values())
+      .map<AutorExplorar>((autor) => {
+        const perfil = autor.autorId
+          ? perfisAutores[autor.autorId]
+          : undefined;
+        const generos = Array.from(autor.generos);
+
+        return {
+          chave: autor.chave,
+          nome: autor.nome,
+          autorId: autor.autorId,
+          avatar: perfil?.avatar || "",
+          bio:
+            perfil?.bio ||
+            criarBioAutorExplorar(autor.nome, generos),
+          totalObras: autor.obrasIds.size,
+          totalCurtidas: autor.totalCurtidas,
+          totalComentarios: autor.totalComentarios,
+          generos,
+          href: criarPerfilAutorHrefExplorar(autor.nome, autor.autorId),
+          avaliacao: autor.autorId
+            ? avaliacoesAutores[autor.autorId]
+            : undefined,
+        };
+      })
+      .sort(
+        (autorA, autorB) =>
+          autorB.totalObras - autorA.totalObras ||
+          autorB.totalCurtidas - autorA.totalCurtidas ||
+          autorA.nome.localeCompare(autorB.nome, "pt-BR")
+      );
   }, [
-    obrasLocais,
-    categoriaSelecionada,
-    filtroFormato,
-    filtroClassificacao,
-    filtroCapitulos,
-    filtroColecao,
-    usuarioLogado,
-    termoBusca,
-    ordenacao,
-    obrasFavoritas,
-    obrasConcluidas,
+    obrasBaseFiltradas,
+    perfisAutores,
+    avaliacoesAutores,
   ]);
 
-  const totalResultados = obrasLocaisFiltradas.length;
+  const autoresFiltrados = useMemo(() => {
+    return autoresExplorar.filter((autor) => {
+      const passaCategoria = categoriaSelecionada
+        ? autor.generos.some(
+            (genero) =>
+              normalizarTexto(genero) === normalizarTexto(categoriaSelecionada)
+          )
+        : true;
+      const passaBusca = termoBusca
+        ? normalizarTexto(autor.nome).includes(termoBusca)
+        : true;
+
+      return passaCategoria && passaBusca;
+    });
+  }, [autoresExplorar, categoriaSelecionada, termoBusca]);
+
+  const secoesCriativasObras = useMemo(() => {
+    if (categoriaSelecionada || termoBusca) {
+      return [] as Array<{ titulo: string; obras: ObraLocal[] }>;
+    }
+
+    const limitar = (lista: ObraLocal[]) => lista.slice(0, 12);
+    const recomendacoes = limitar(
+      [...obrasBaseFiltradas].sort(
+        (obraA, obraB) =>
+          pontuacaoRecomendacaoObraExplorar(obraB) -
+            pontuacaoRecomendacaoObraExplorar(obraA) ||
+          dataUltimoCapituloObraExplorar(obraB) -
+            dataUltimoCapituloObraExplorar(obraA)
+      )
+    );
+    const publicacoesRecentes = limitar(
+      [...obrasBaseFiltradas]
+        .filter((obra) => dataCriacaoObra(obra) > 0)
+        .sort((obraA, obraB) => dataCriacaoObra(obraB) - dataCriacaoObra(obraA))
+    );
+    const novosCapitulos = limitar(
+      [...obrasBaseFiltradas]
+        .filter(
+          (obra) =>
+            obra.capitulos.length > 0 &&
+            dataUltimoCapituloObraExplorar(obra) > 0
+        )
+        .sort(
+          (obraA, obraB) =>
+            dataUltimoCapituloObraExplorar(obraB) -
+            dataUltimoCapituloObraExplorar(obraA)
+        )
+    );
+    const maisCurtidas = limitar(
+      [...obrasBaseFiltradas]
+        .filter((obra) => totalCurtidasObra(obra) > 0)
+        .sort(
+          (obraA, obraB) =>
+            totalCurtidasObra(obraB) - totalCurtidasObra(obraA)
+        )
+    );
+    const maisComentadas = limitar(
+      [...obrasBaseFiltradas]
+        .filter((obra) => totalComentariosObra(obra) > 0)
+        .sort(
+          (obraA, obraB) =>
+            totalComentariosObra(obraB) - totalComentariosObra(obraA)
+        )
+    );
+    const paraLerAgora = limitar(
+      [...obrasBaseFiltradas]
+        .filter(
+          (obra) =>
+            obra.capitulos.length > 0 && obra.capitulos.length <= 3
+        )
+        .sort(
+          (obraA, obraB) =>
+            obraA.capitulos.length - obraB.capitulos.length ||
+            pontuacaoRecomendacaoObraExplorar(obraB) -
+              pontuacaoRecomendacaoObraExplorar(obraA)
+        )
+    );
+
+    return [
+      { titulo: "Recomendações para você", obras: recomendacoes },
+      { titulo: "Publicações recentes", obras: publicacoesRecentes },
+      { titulo: "Novos capítulos", obras: novosCapitulos },
+      { titulo: "Mais curtidas", obras: maisCurtidas },
+      { titulo: "Mais comentadas", obras: maisComentadas },
+      { titulo: "Para ler agora", obras: paraLerAgora },
+    ].filter((secao) => secao.obras.length > 0);
+  }, [obrasBaseFiltradas, categoriaSelecionada, termoBusca]);
+
+  const secoesCriativasAutores = useMemo(() => {
+    if (categoriaSelecionada || termoBusca) {
+      return [] as Array<{ titulo: string; autores: AutorExplorar[] }>;
+    }
+
+    const autoresParaConhecer = autoresExplorar.slice(0, 12);
+    const autoresEmDestaque = [...autoresExplorar]
+      .sort(
+        (autorA, autorB) =>
+          autorB.totalObras * 12 +
+            autorB.totalCurtidas * 4 +
+            autorB.totalComentarios * 3 -
+          (autorA.totalObras * 12 +
+            autorA.totalCurtidas * 4 +
+            autorA.totalComentarios * 3)
+      )
+      .slice(0, 12);
+    const maisBemAvaliados = [...autoresExplorar]
+      .filter(
+        (autor) =>
+          Boolean(autor.avaliacao) &&
+          (autor.avaliacao?.total || 0) > 0 &&
+          (autor.avaliacao?.media || 0) > 0
+      )
+      .sort(
+        (autorA, autorB) =>
+          (autorB.avaliacao?.media || 0) -
+            (autorA.avaliacao?.media || 0) ||
+          (autorB.avaliacao?.total || 0) -
+            (autorA.avaliacao?.total || 0)
+      )
+      .slice(0, 12);
+
+    return [
+      { titulo: "Autores para conhecer", autores: autoresParaConhecer },
+      { titulo: "Autores em destaque", autores: autoresEmDestaque },
+      { titulo: "Mais bem avaliados", autores: maisBemAvaliados },
+    ].filter((secao) => secao.autores.length > 0);
+  }, [autoresExplorar, categoriaSelecionada, termoBusca]);
+
+  const secoesObrasPorGenero = useMemo(() => {
+    if (categoriaSelecionada || termoBusca) {
+      return [] as Array<{ genero: string; obras: ObraLocal[] }>;
+    }
+
+    const secoes = categorias
+      .map((genero) => ({
+        genero,
+        obras: obrasBaseFiltradas.filter((obra) =>
+          categoriaCombinaComGenero(genero, obra.genero)
+        ),
+      }))
+      .filter((secao) => secao.obras.length > 0);
+    const obrasCategorizadas = new Set(
+      secoes.flatMap((secao) => secao.obras.map((obra) => obra.id))
+    );
+    const obrasOutros = obrasBaseFiltradas.filter(
+      (obra) => !obrasCategorizadas.has(obra.id)
+    );
+
+    return obrasOutros.length > 0
+      ? [...secoes, { genero: "Outros", obras: obrasOutros }]
+      : secoes;
+  }, [obrasBaseFiltradas, categoriaSelecionada, termoBusca]);
+
+  const secoesAutoresPorGenero = useMemo(() => {
+    if (categoriaSelecionada || termoBusca) {
+      return [] as Array<{ genero: string; autores: AutorExplorar[] }>;
+    }
+
+    const secoes = categorias
+      .map((genero) => ({
+        genero,
+        autores: autoresExplorar.filter((autor) =>
+          autor.generos.some(
+            (generoAutor) =>
+              normalizarTexto(generoAutor) === normalizarTexto(genero)
+          )
+        ),
+      }))
+      .filter((secao) => secao.autores.length > 0);
+    const autoresCategorizados = new Set(
+      secoes.flatMap((secao) => secao.autores.map((autor) => autor.chave))
+    );
+    const autoresOutros = autoresExplorar.filter(
+      (autor) => !autoresCategorizados.has(autor.chave)
+    );
+
+    return autoresOutros.length > 0
+      ? [...secoes, { genero: "Outros", autores: autoresOutros }]
+      : secoes;
+  }, [autoresExplorar, categoriaSelecionada, termoBusca]);
+
+  const totalResultados =
+    modoConteudo === "autores"
+      ? autoresFiltrados.length
+      : obrasLocaisFiltradas.length;
   const possuiObrasPublicadas = obrasLocais.some((obra) => {
     return obra.publicado && obraTemConteudoPublicadoExplorar(obra);
   });
@@ -2556,17 +3152,35 @@ export default function ExplorarPage() {
     raiz.style.setProperty("--historietas-bottom-nav-shine", "none");
   }, [categoriaAtiva, categoriaSelecionada, temaVisual]);
 
-  function atualizarUrl(categoria: string) {
-    const novaUrl = categoria
-      ? `/explorar?categoria=${encodeURIComponent(categoria)}`
-      : "/explorar";
+  function atualizarUrl(
+    categoria: string,
+    modo: ModoConteudoExplorar = modoConteudo
+  ) {
+    const params = new URLSearchParams();
 
-    window.history.pushState(null, "", novaUrl);
+    if (modo === "autores") {
+      params.set("tipo", "autores");
+    }
+
+    if (categoria.trim()) {
+      params.set("categoria", categoria.trim());
+    }
+
+    const query = params.toString();
+    window.history.pushState(null, "", query ? `/explorar?${query}` : "/explorar");
+  }
+
+  function selecionarModoConteudo(modo: ModoConteudoExplorar) {
+    setModoConteudo(modo);
+    setCategoriaSelecionada("");
+    setMensagemLogin("");
+    setMostrarFiltrosAvancados(false);
+    atualizarUrl("", modo);
   }
 
   function selecionarCategoria(categoria: string) {
     setCategoriaSelecionada(categoria);
-    atualizarUrl(categoria);
+    atualizarUrl(categoria, modoConteudo);
   }
 
   function selecionarFiltroColecao(filtro: FiltroColecaoExplorar) {
@@ -2588,6 +3202,7 @@ export default function ExplorarPage() {
   }
 
   function limparFiltros() {
+    setModoConteudo("obras");
     setCategoriaSelecionada("");
     setBusca("");
     setFiltroFormato("todos");
@@ -2683,7 +3298,7 @@ export default function ExplorarPage() {
             <input
               value={busca}
               onChange={(event) => setBusca(event.target.value)}
-              placeholder="Buscar histórias..."
+              placeholder={modoConteudo === "autores" ? "Buscar autores..." : "Buscar histórias..."}
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
@@ -2698,10 +3313,26 @@ export default function ExplorarPage() {
           <section className="explorar-carousel" style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
             <button
               type="button"
-              onClick={() => selecionarCategoria("")}
-              style={!categoriaSelecionada ? criarActiveCategoryStyle(temaPagina) : categoryStyle}
+              onClick={() => selecionarModoConteudo("obras")}
+              style={
+                modoConteudo === "obras" && !categoriaSelecionada
+                  ? criarActiveCategoryStyle(temaPagina)
+                  : categoryStyle
+              }
             >
-              Todas
+              Tudo
+            </button>
+
+            <button
+              type="button"
+              onClick={() => selecionarModoConteudo("autores")}
+              style={
+                modoConteudo === "autores" && !categoriaSelecionada
+                  ? criarActiveCategoryStyle(temaPagina)
+                  : categoryStyle
+              }
+            >
+              Autores
             </button>
 
             {categorias.map((categoria) => (
@@ -2797,36 +3428,217 @@ export default function ExplorarPage() {
           </div>
         )}
 
-        {obrasLocaisFiltradas.length > 0 && (
-          <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-            <SectionHeader
-              title={
-                categoriaSelecionada
-                  ? `Publicações em ${categoriaSelecionada}`
-                  : "Publicações recentes"
-              }
-              tema={temaPagina}
-              isDesktop={isDesktop}
-            />
+        {modoConteudo === "obras" &&
+          !categoriaSelecionada &&
+          !termoBusca &&
+          secoesCriativasObras.map((secao) => (
+            <section
+              key={`obras-criativas-${normalizarTexto(secao.titulo)}`}
+              style={isDesktop ? desktopSectionStyle : sectionStyle}
+            >
+              <SectionHeader
+                title={secao.titulo}
+                tema={temaPagina}
+                isDesktop={isDesktop}
+              />
 
-            <div style={isDesktop ? desktopPublishedGridStyle : gridStyle}>
-              {obrasLocaisFiltradas.map((obra) => (
-                <ObraPublicadaCard
-                  key={obra.id}
-                  obra={obra}
-                  favorita={usuarioLogado && colecaoTemObraExplorar(obrasFavoritas, obra)}
-                  concluida={usuarioLogado && colecaoTemObraExplorar(obrasConcluidas, obra)}
-                  tema={temaPagina}
-                  isDesktop={isDesktop}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+              <ExplorarCarouselRow isDesktop={isDesktop} variant="obra">
+                {secao.obras.map((obra) => (
+                  <div
+                    key={`${secao.titulo}-${obra.id}`}
+                    style={
+                      isDesktop
+                        ? desktopExplorarObraCarouselItemStyle
+                        : explorarObraCarouselItemStyle
+                    }
+                  >
+                    <ObraPublicadaCard
+                      obra={obra}
+                      favorita={
+                        usuarioLogado &&
+                        colecaoTemObraExplorar(obrasFavoritas, obra)
+                      }
+                      concluida={
+                        usuarioLogado &&
+                        colecaoTemObraExplorar(obrasConcluidas, obra)
+                      }
+                      tema={temaPagina}
+                      isDesktop={isDesktop}
+                    />
+                  </div>
+                ))}
+              </ExplorarCarouselRow>
+            </section>
+          ))}
 
+        {modoConteudo === "obras" &&
+          !categoriaSelecionada &&
+          !termoBusca &&
+          secoesObrasPorGenero.map((secao) => (
+            <section
+              key={`obras-${normalizarTexto(secao.genero)}`}
+              style={isDesktop ? desktopSectionStyle : sectionStyle}
+            >
+              <SectionHeader
+                title={obterTituloCriativoObrasExplorar(secao.genero)}
+                tema={obterTemaCategoria(secao.genero)}
+                isDesktop={isDesktop}
+              />
+
+              <ExplorarCarouselRow isDesktop={isDesktop} variant="obra">
+                {secao.obras.map((obra) => (
+                  <div
+                    key={`${secao.genero}-${obra.id}`}
+                    style={
+                      isDesktop
+                        ? desktopExplorarObraCarouselItemStyle
+                        : explorarObraCarouselItemStyle
+                    }
+                  >
+                    <ObraPublicadaCard
+                      obra={obra}
+                      favorita={
+                        usuarioLogado &&
+                        colecaoTemObraExplorar(obrasFavoritas, obra)
+                      }
+                      concluida={
+                        usuarioLogado &&
+                        colecaoTemObraExplorar(obrasConcluidas, obra)
+                      }
+                      tema={obterTemaCategoria(secao.genero)}
+                      isDesktop={isDesktop}
+                    />
+                  </div>
+                ))}
+              </ExplorarCarouselRow>
+            </section>
+          ))}
+
+        {modoConteudo === "obras" &&
+          (Boolean(categoriaSelecionada) || Boolean(termoBusca)) &&
+          obrasLocaisFiltradas.length > 0 && (
+            <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
+              <SectionHeader
+                title={
+                  categoriaSelecionada
+                    ? `Publicações em ${categoriaSelecionada}`
+                    : "Resultados da busca"
+                }
+                tema={temaPagina}
+                isDesktop={isDesktop}
+              />
+
+              <div style={isDesktop ? desktopPublishedGridStyle : gridStyle}>
+                {obrasLocaisFiltradas.map((obra) => (
+                  <ObraPublicadaCard
+                    key={obra.id}
+                    obra={obra}
+                    favorita={
+                      usuarioLogado &&
+                      colecaoTemObraExplorar(obrasFavoritas, obra)
+                    }
+                    concluida={
+                      usuarioLogado &&
+                      colecaoTemObraExplorar(obrasConcluidas, obra)
+                    }
+                    tema={temaPagina}
+                    isDesktop={isDesktop}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+        {modoConteudo === "autores" &&
+          !categoriaSelecionada &&
+          !termoBusca &&
+          secoesCriativasAutores.map((secao) => (
+            <section
+              key={`autores-criativos-${normalizarTexto(secao.titulo)}`}
+              style={isDesktop ? desktopSectionStyle : sectionStyle}
+            >
+              <SectionHeader
+                title={secao.titulo}
+                tema={temaPagina}
+                isDesktop={isDesktop}
+              />
+
+              <ExplorarCarouselRow isDesktop={isDesktop} variant="autor">
+                {secao.autores.map((autor) => (
+                  <AutorExplorarCard
+                    key={`${secao.titulo}-${autor.chave}`}
+                    autor={autor}
+                    isDesktop={isDesktop}
+                  />
+                ))}
+              </ExplorarCarouselRow>
+            </section>
+          ))}
+
+        {modoConteudo === "autores" &&
+          !categoriaSelecionada &&
+          !termoBusca &&
+          secoesAutoresPorGenero.map((secao) => (
+            <section
+              key={`autores-${normalizarTexto(secao.genero)}`}
+              style={isDesktop ? desktopSectionStyle : sectionStyle}
+            >
+              <SectionHeader
+                title={obterTituloCriativoAutoresExplorar(secao.genero)}
+                tema={obterTemaCategoria(secao.genero)}
+                isDesktop={isDesktop}
+              />
+
+              <ExplorarCarouselRow isDesktop={isDesktop} variant="autor">
+                {secao.autores.map((autor) => (
+                  <AutorExplorarCard
+                    key={`${secao.genero}-${autor.chave}`}
+                    autor={autor}
+                    isDesktop={isDesktop}
+                  />
+                ))}
+              </ExplorarCarouselRow>
+            </section>
+          ))}
+
+        {modoConteudo === "autores" &&
+          (Boolean(categoriaSelecionada) || Boolean(termoBusca)) &&
+          autoresFiltrados.length > 0 && (
+            <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
+              <SectionHeader
+                title={
+                  categoriaSelecionada
+                    ? `Autores de ${categoriaSelecionada}`
+                    : "Autores encontrados"
+                }
+                tema={temaPagina}
+                isDesktop={isDesktop}
+              />
+
+              <div
+                style={
+                  isDesktop
+                    ? desktopAutoresExplorarGridStyle
+                    : autoresExplorarGridStyle
+                }
+              >
+                {autoresFiltrados.map((autor) => (
+                  <AutorExplorarCard
+                    key={autor.chave}
+                    autor={autor}
+                    isDesktop={isDesktop}
+                    emGrade
+                  />
+                ))}
+              </div>
+            </section>
+          )}
 
         {totalResultados === 0 && (
-          <EstadoVazioExplorar possuiObrasPublicadas={possuiObrasPublicadas} />
+          <EstadoVazioExplorar
+            possuiObrasPublicadas={possuiObrasPublicadas}
+            modoConteudo={modoConteudo}
+          />
         )}
       </section>
     </main>
@@ -2835,12 +3647,17 @@ export default function ExplorarPage() {
 
 function EstadoVazioExplorar({
   possuiObrasPublicadas,
+  modoConteudo,
 }: {
   possuiObrasPublicadas: boolean;
+  modoConteudo: ModoConteudoExplorar;
 }) {
-  const titulo = possuiObrasPublicadas
-    ? "Nenhuma obra encontrada"
-    : "PUBLIQUE SUA HISTÓRIA";
+  const titulo =
+    modoConteudo === "autores"
+      ? "Nenhum autor encontrado"
+      : possuiObrasPublicadas
+        ? "Nenhuma obra encontrada"
+        : "PUBLIQUE SUA HISTÓRIA";
 
   return (
     <p
@@ -2876,6 +3693,185 @@ function SectionHeader({
   return (
     <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
       <h2 style={titleStyleTema}>{title}</h2>
+    </div>
+  );
+}
+
+function AutorExplorarCard({
+  autor,
+  isDesktop,
+  emGrade = false,
+}: {
+  autor: AutorExplorar;
+  isDesktop?: boolean;
+  emGrade?: boolean;
+}) {
+  const generos = autor.generos.length > 0 ? autor.generos : ["Historietas"];
+
+  return (
+    <Link
+      href={autor.href}
+      style={
+        emGrade
+          ? isDesktop
+            ? desktopAutorExplorarGridCardStyle
+            : autorExplorarGridCardStyle
+          : isDesktop
+            ? desktopAutorExplorarCardStyle
+            : autorExplorarCardStyle
+      }
+      aria-label={`Abrir perfil do autor ${autor.nome}`}
+    >
+      <span style={autorExplorarCardGlowStyle} aria-hidden="true" />
+
+      <div style={autorExplorarTopStyle}>
+        <div style={autorExplorarAvatarShellStyle}>
+          {autor.avatar ? (
+            <img
+              src={autor.avatar}
+              alt={`Avatar de ${autor.nome}`}
+              style={autorExplorarAvatarImageStyle}
+            />
+          ) : (
+            <span style={autorExplorarAvatarInitialsStyle}>
+              {criarIniciaisAutorExplorar(autor.nome)}
+            </span>
+          )}
+        </div>
+
+        <div style={autorExplorarIdentityStyle}>
+          <h3 style={autorExplorarNameStyle}>{autor.nome}</h3>
+          <p style={autorExplorarBioStyle}>{autor.bio}</p>
+        </div>
+      </div>
+
+      <div style={autorExplorarMetaRowStyle}>
+        <span
+          style={autorExplorarMetaBadgeStyle}
+          aria-label={`${autor.totalObras} ${
+            autor.totalObras === 1 ? "obra publicada" : "obras publicadas"
+          }`}
+        >
+          📚 {autor.totalObras}
+        </span>
+
+        <span
+          style={autorExplorarMetaBadgeStyle}
+          aria-label={
+            autor.avaliacao && autor.avaliacao.total > 0
+              ? `Avaliação média ${formatarMediaAvaliacaoAutorExplorar(
+                  autor.avaliacao
+                )} de 5, com ${autor.avaliacao.total} ${
+                  autor.avaliacao.total === 1 ? "avaliação" : "avaliações"
+                }`
+              : "Autor ainda sem avaliações"
+          }
+        >
+          <span style={autorExplorarRatingStarStyle} aria-hidden="true">
+            ★
+          </span>
+          {formatarMediaAvaliacaoAutorExplorar(autor.avaliacao)}
+        </span>
+
+        {autor.totalCurtidas > 0 && (
+          <span style={autorExplorarMetaBadgeStyle}>
+            ❤️ {autor.totalCurtidas}
+          </span>
+        )}
+
+        {autor.totalComentarios > 0 && (
+          <span style={autorExplorarMetaBadgeStyle}>
+            💬 {autor.totalComentarios}
+          </span>
+        )}
+      </div>
+
+      <div style={autorExplorarBottomStyle}>
+        <div style={autorExplorarGenresStyle}>
+          {generos.slice(0, 2).map((genero) => (
+            <span
+              key={`${autor.chave}-${genero}`}
+              style={autorExplorarGenreBadgeStyle}
+            >
+              {genero}
+            </span>
+          ))}
+        </div>
+
+        <span style={autorExplorarProfileButtonStyle}>Ver perfil</span>
+      </div>
+    </Link>
+  );
+}
+
+function ExplorarCarouselRow({
+  children,
+  isDesktop,
+  variant,
+}: {
+  children: ReactNode;
+  isDesktop: boolean;
+  variant: "obra" | "autor";
+}) {
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const totalItems = Children.count(children);
+  const precisaSetas = isDesktop && totalItems > 3;
+  const listStyle = isDesktop
+    ? variant === "autor"
+      ? desktopAutoresExplorarCarouselStyle
+      : desktopObrasExplorarCarouselStyle
+    : variant === "autor"
+      ? autoresExplorarCarouselStyle
+      : obrasExplorarCarouselStyle;
+
+  useEffect(() => {
+    const row = rowRef.current;
+
+    if (!row) {
+      return;
+    }
+
+    row.scrollLeft = 0;
+  }, [isDesktop, totalItems, variant]);
+
+  function rolar(direcao: -1 | 1) {
+    rowRef.current?.scrollBy({
+      left: direcao * 460,
+      behavior: "smooth",
+    });
+  }
+
+  if (!precisaSetas) {
+    return (
+      <div ref={rowRef} style={listStyle}>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div style={explorarCarouselShellStyle}>
+      <button
+        type="button"
+        onClick={() => rolar(-1)}
+        style={explorarCarouselArrowLeftStyle}
+        aria-label="Rolar carrossel para a esquerda"
+      >
+        ‹
+      </button>
+
+      <div ref={rowRef} style={listStyle}>
+        {children}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => rolar(1)}
+        style={explorarCarouselArrowRightStyle}
+        aria-label="Rolar carrossel para a direita"
+      >
+        ›
+      </button>
     </div>
   );
 }
@@ -2922,11 +3918,6 @@ function ObraPublicadaCard({
               {obra.classificacaoIndicativa}
             </span>
 
-            {obra.arquivoObra && <span style={fileStatusBadgeStyle}>Arquivo</span>}
-
-            {favorita && <span style={favoriteBadgeStyle}>★</span>}
-
-            {concluida && <span style={completedBadgeStyle}>✓</span>}
           </div>
         </div>
 
@@ -2945,7 +3936,7 @@ function ObraPublicadaCard({
           </span>
 
           <span style={metricItemStyle}>
-            <span style={heartMetricIconStyle}>♥</span>
+            <span style={heartMetricIconStyle}>❤️</span>
             {totalCurtidas}
           </span>
 
@@ -2955,8 +3946,14 @@ function ObraPublicadaCard({
           </span>
 
           <span style={metricItemStyle}>
-            <span style={metricIconStyle}>📚</span>
-            {obra.capitulos.length} cap.
+            <span style={metricIconStyle}>
+              {obra.capitulos.length > 0 ? "📚" : obra.arquivoObra ? "📄" : "📚"}
+            </span>
+            {obra.capitulos.length > 0
+              ? `${obra.capitulos.length}`
+              : obra.arquivoObra
+                ? "1"
+                : "0"}
           </span>
         </div>
 
@@ -3272,7 +4269,11 @@ const explorarBuscaToggleCss = `
   input[placeholder="Buscar histórias..."],
   input[placeholder="Buscar histórias..."]:hover,
   input[placeholder="Buscar histórias..."]:focus,
-  input[placeholder="Buscar histórias..."]:focus-visible {
+  input[placeholder="Buscar histórias..."]:focus-visible,
+  input[placeholder="Buscar autores..."],
+  input[placeholder="Buscar autores..."]:hover,
+  input[placeholder="Buscar autores..."]:focus,
+  input[placeholder="Buscar autores..."]:focus-visible {
     box-shadow: none !important;
     outline: none !important;
     filter: none !important;
@@ -3993,15 +4994,19 @@ const explorarModalClearButtonStyle: CSSProperties = {
 
 
 const sectionStyle: CSSProperties = {
-  marginTop: "30px",
+  marginTop: "24px",
+  maxWidth: "100%",
+  boxSizing: "border-box",
   minWidth: 0,
 };
 
 const sectionHeaderStyle: CSSProperties = {
   display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
   justifyItems: "center",
-  gap: "7px",
-  marginBottom: "15px",
+  gap: "6px",
+  marginBottom: "14px",
+  maxWidth: "100%",
   minWidth: 0,
   textAlign: "center",
 };
@@ -4009,12 +5014,335 @@ const sectionHeaderStyle: CSSProperties = {
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-accent, #F97316)",
-  fontSize: "clamp(28px, 7vw, 38px)",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.065em",
+  fontSize: "clamp(18px, 4.8vw, 23px)",
+  lineHeight: 1.08,
+  fontWeight: 900,
+  letterSpacing: "-0.035em",
   maxWidth: "100%",
   textAlign: "center",
+  ...safeTextStyle,
+};
+
+const obrasExplorarCarouselStyle: CSSProperties = {
+  display: "flex",
+  gap: "14px",
+  width: "calc(100% + 24px)",
+  maxWidth: "calc(100% + 24px)",
+  minWidth: 0,
+  boxSizing: "border-box",
+  overflowX: "auto",
+  overflowY: "hidden",
+  padding: "2px 12px 8px",
+  margin: "0 -12px",
+  scrollSnapType: "x mandatory",
+  scrollPaddingLeft: "12px",
+  scrollPaddingRight: "12px",
+  scrollbarWidth: "none",
+  msOverflowStyle: "none",
+};
+
+const desktopObrasExplorarCarouselStyle: CSSProperties = {
+  ...obrasExplorarCarouselStyle,
+  gap: "18px",
+  width: "100%",
+  maxWidth: "100%",
+  padding: "6px 0 20px",
+  margin: 0,
+  scrollPaddingLeft: "0px",
+  scrollPaddingRight: "0px",
+};
+
+const explorarObraCarouselItemStyle: CSSProperties = {
+  flex: "0 0 min(350px, 90vw)",
+  width: "min(350px, 90vw)",
+  scrollSnapAlign: "start",
+  minWidth: 0,
+};
+
+const desktopExplorarObraCarouselItemStyle: CSSProperties = {
+  ...explorarObraCarouselItemStyle,
+  flex: "0 0 410px",
+  width: "410px",
+  maxWidth: "410px",
+};
+
+const autoresExplorarCarouselStyle: CSSProperties = {
+  ...obrasExplorarCarouselStyle,
+  gap: "12px",
+  padding: "2px 12px 8px",
+};
+
+const desktopAutoresExplorarCarouselStyle: CSSProperties = {
+  ...autoresExplorarCarouselStyle,
+  gap: "16px",
+  width: "100%",
+  maxWidth: "100%",
+  padding: "6px 0 18px",
+  margin: 0,
+  scrollPaddingLeft: "0px",
+  scrollPaddingRight: "0px",
+};
+
+const explorarCarouselShellStyle: CSSProperties = {
+  position: "relative",
+  width: "100%",
+  minWidth: 0,
+};
+
+const explorarCarouselArrowBaseStyle: CSSProperties = {
+  position: "absolute",
+  zIndex: 5,
+  top: "50%",
+  width: "42px",
+  height: "42px",
+  marginTop: "-21px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(4,0,10,0.92)",
+  color: "#FFFFFF",
+  fontSize: "28px",
+  lineHeight: 1,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  boxShadow: "0 10px 24px rgba(0,0,0,0.28)",
+};
+
+const explorarCarouselArrowLeftStyle: CSSProperties = {
+  ...explorarCarouselArrowBaseStyle,
+  left: "-12px",
+};
+
+const explorarCarouselArrowRightStyle: CSSProperties = {
+  ...explorarCarouselArrowBaseStyle,
+  right: "-12px",
+};
+
+const autoresExplorarGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "14px",
+  minWidth: 0,
+};
+
+const desktopAutoresExplorarGridStyle: CSSProperties = {
+  ...autoresExplorarGridStyle,
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "16px",
+};
+
+const autorExplorarCardStyle: CSSProperties = {
+  position: "relative",
+  flex: "0 0 min(318px, 84vw)",
+  width: "min(318px, 84vw)",
+  scrollSnapAlign: "start",
+  padding: "12px",
+  borderRadius: "24px",
+  background: "rgba(4, 0, 10, 0.72)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "grid",
+  gap: "10px",
+  boxShadow: "none",
+  boxSizing: "border-box",
+  overflow: "hidden",
+};
+
+const desktopAutorExplorarCardStyle: CSSProperties = {
+  ...autorExplorarCardStyle,
+  flex: "0 0 356px",
+  width: "356px",
+  maxWidth: "356px",
+  padding: "14px",
+  borderRadius: "26px",
+};
+
+const autorExplorarGridCardStyle: CSSProperties = {
+  ...autorExplorarCardStyle,
+  flex: "none",
+  width: "100%",
+  maxWidth: "100%",
+};
+
+const desktopAutorExplorarGridCardStyle: CSSProperties = {
+  ...desktopAutorExplorarCardStyle,
+  flex: "none",
+  width: "100%",
+  maxWidth: "100%",
+};
+
+const autorExplorarCardGlowStyle: CSSProperties = {
+  display: "none",
+};
+
+const autorExplorarTopStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  display: "grid",
+  gridTemplateColumns: "68px minmax(0, 1fr)",
+  gap: "11px",
+  alignItems: "center",
+  minWidth: 0,
+};
+
+const autorExplorarAvatarShellStyle: CSSProperties = {
+  width: "68px",
+  height: "68px",
+  borderRadius: "21px",
+  padding: "3px",
+  background: "rgba(255,255,255,0.08)",
+  boxShadow: "none",
+  overflow: "hidden",
+  flex: "0 0 auto",
+};
+
+const autorExplorarAvatarImageStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  display: "block",
+  objectFit: "cover",
+  borderRadius: "18px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+};
+
+const autorExplorarAvatarInitialsStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "18px",
+  background: "#08030F",
+  color: "#FFFFFF",
+  fontSize: "22px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.06em",
+};
+
+const autorExplorarIdentityStyle: CSSProperties = {
+  display: "grid",
+  gap: "5px",
+  alignContent: "center",
+  minWidth: 0,
+};
+
+const autorExplorarNameStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "24px",
+  lineHeight: 0.98,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  display: "-webkit-box",
+  WebkitLineClamp: 1,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
+const autorExplorarBioStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12px",
+  lineHeight: 1.35,
+  fontWeight: 750,
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  ...safeTextStyle,
+};
+
+const autorExplorarMetaRowStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const autorExplorarMetaBadgeStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "32px",
+  padding: "0 6px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #E4E4E7)",
+  fontSize: "10px",
+  lineHeight: 1,
+  fontWeight: 900,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const autorExplorarRatingStarStyle: CSSProperties = {
+  color: "#FACC15",
+  fontSize: "13px",
+  lineHeight: 1,
+  marginRight: "3px",
+  textShadow: "0 0 8px rgba(250,204,21,0.22)",
+  flex: "0 0 auto",
+};
+
+const autorExplorarBottomStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const autorExplorarGenresStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const autorExplorarGenreBadgeStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "30px",
+  padding: "0 8px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "10px",
+  lineHeight: 1,
+  fontWeight: 950,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  ...safeTextStyle,
+};
+
+const autorExplorarProfileButtonStyle: CSSProperties = {
+  width: "100%",
+  maxWidth: "100%",
+  minHeight: "40px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  background: "#08030F",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 950,
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  whiteSpace: "nowrap",
   ...safeTextStyle,
 };
 
@@ -4149,35 +5477,6 @@ const fileStatusBadgeStyle: CSSProperties = {
   whiteSpace: "normal",
   ...safeTextStyle,
 };
-
-const favoriteBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
-  fontSize: "9px",
-  fontWeight: 900,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const completedBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.22)",
-  color: "#86EFAC",
-  fontSize: "9px",
-  fontWeight: 900,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
 
 const authorLinkStyle: CSSProperties = {
   width: "fit-content",
@@ -4422,16 +5721,11 @@ const desktopSectionStyle: CSSProperties = {
 
 const desktopSectionHeaderStyle: CSSProperties = {
   ...sectionHeaderStyle,
-  gridTemplateColumns: "minmax(0, 1fr)",
-  alignItems: "center",
-  justifyItems: "center",
-  gap: "6px",
-  marginBottom: "12px",
 };
 
 const desktopSectionTitleStyle: CSSProperties = {
   ...sectionTitleStyle,
-  fontSize: "34px",
+  fontSize: "24px",
 };
 
 

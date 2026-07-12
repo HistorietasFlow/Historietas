@@ -749,6 +749,24 @@ export default function Top5PerfilAutorPage() {
       <section style={selectedSectionStyle} aria-label="Obras escolhidas para o TOP 5">
         <div style={selectedHeaderStyle}>
           <span style={selectedTitleStyle}>Seu TOP 5</span>
+
+          <div style={footerActionsStyle}>
+            <Link href="/perfil-autor" style={cancelButtonStyle}>
+              Cancelar
+            </Link>
+            <button
+              type="button"
+              onClick={salvarEscolhasTop5}
+              disabled={salvando || !usuario?.id}
+              style={
+                salvando || !usuario?.id
+                  ? saveButtonDisabledStyle
+                  : saveButtonStyle
+              }
+            >
+              {salvando ? "Salvando..." : "Salvar TOP 5"}
+            </button>
+          </div>
         </div>
 
         <div style={selectedListStyle}>
@@ -800,20 +818,6 @@ export default function Top5PerfilAutorPage() {
           })}
         </div>
       </section>
-
-      <div style={footerActionsStyle}>
-        <Link href="/perfil-autor" style={cancelButtonStyle}>
-          Cancelar
-        </Link>
-        <button
-          type="button"
-          onClick={salvarEscolhasTop5}
-          disabled={salvando || !usuario?.id}
-          style={salvando || !usuario?.id ? saveButtonDisabledStyle : saveButtonStyle}
-        >
-          {salvando ? "Salvando..." : "Salvar TOP 5"}
-        </button>
-      </div>
 
       <section style={searchSectionStyle} aria-label="Buscar obras">
         <label style={searchShellStyle} htmlFor="buscar-obra-top-5">
@@ -915,15 +919,20 @@ const selectedHeaderStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
+  gap: "8px",
+  minWidth: 0,
   marginBottom: "8px",
 };
 
 const selectedTitleStyle: CSSProperties = {
+  flex: "1 1 auto",
+  minWidth: 0,
   color: "#FFFFFF",
-  fontSize: "14px",
+  fontSize: "17px",
   fontWeight: 950,
-  letterSpacing: "0",
+  letterSpacing: "-0.02em",
   textTransform: "uppercase",
+  whiteSpace: "nowrap",
   opacity: 1,
   filter: "none",
   textShadow: "none",
@@ -1035,8 +1044,8 @@ const searchSectionStyle: CSSProperties = {
 
 const searchShellStyle: CSSProperties = {
   width: "100%",
-  minHeight: "52px",
-  borderRadius: "22px",
+  minHeight: "48px",
+  borderRadius: "0",
   border: "1px solid rgba(255,255,255,0.08)",
   background: "#000000",
   display: "flex",
@@ -1060,7 +1069,7 @@ const searchInputStyle: CSSProperties = {
   WebkitAppearance: "none",
   width: "100%",
   minWidth: 0,
-  height: "50px",
+  height: "46px",
   border: "none",
   background: "transparent",
   color: "#FFFFFF",
@@ -1165,30 +1174,31 @@ const selectedBadgeStyle: CSSProperties = {
   position: "absolute",
   top: "7px",
   left: "7px",
-  width: "24px",
-  height: "24px",
+  width: "28px",
+  height: "28px",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   borderRadius: "999px",
-  background: "#FFFFFF",
-  color: "#000000",
-  fontSize: "12px",
+  background: "rgba(0,0,0,0.76)",
+  color: "#FFFFFF",
+  fontSize: "13px",
   fontWeight: 950,
   boxShadow: "0 8px 18px rgba(0,0,0,0.32)",
 };
 
 
 const footerActionsStyle: CSSProperties = {
-  maxWidth: "980px",
-  margin: "0 auto 14px",
+  flex: "0 0 auto",
   display: "flex",
-  gap: "10px",
+  alignItems: "center",
+  gap: "6px",
+  margin: 0,
 };
 
 const cancelButtonStyle: CSSProperties = {
-  flex: 1,
-  minHeight: "46px",
+  minHeight: "32px",
+  padding: "0 10px",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1197,19 +1207,21 @@ const cancelButtonStyle: CSSProperties = {
   border: "1px solid #2A2A2A",
   color: "#FFFFFF",
   textDecoration: "none",
-  fontSize: "13px",
+  fontSize: "10px",
   fontWeight: 900,
+  whiteSpace: "nowrap",
 };
 
 const saveButtonStyle: CSSProperties = {
-  flex: 1,
-  minHeight: "46px",
+  minHeight: "32px",
+  padding: "0 10px",
   border: "1px solid #2A2A2A",
   borderRadius: "999px",
   background: "#0B0B0B",
   color: "#FFFFFF",
-  fontSize: "13px",
+  fontSize: "10px",
   fontWeight: 900,
+  whiteSpace: "nowrap",
   cursor: "pointer",
 };
 

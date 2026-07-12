@@ -2977,7 +2977,7 @@ function AutorRankingCard({
           </span>
         </div>
 
-        <div style={statsStyle}>
+        <div style={ratingStatsStyle}>
           <span style={statsItemStyle}>
             <span style={metricIconStyle} aria-hidden="true">
               👁
@@ -2987,7 +2987,7 @@ function AutorRankingCard({
 
           <span style={statsItemStyle}>
             <span style={heartMetricIconStyle} aria-hidden="true">
-              ♥
+              ❤️
             </span>
             <span style={metricValueStyle}>
               {formatarNumero(autor.curtidas)}
@@ -3169,7 +3169,7 @@ function RankingCard({
           </span>
         </div>
 
-        <div style={statsStyle}>
+        <div style={ratingStatsStyle}>
           <span style={statsItemStyle}>
             <span style={metricIconStyle} aria-hidden="true">
               👁
@@ -3179,7 +3179,7 @@ function RankingCard({
 
           <span style={statsItemStyle}>
             <span style={heartMetricIconStyle} aria-hidden="true">
-              ♥
+              ❤️
             </span>
             <span style={metricValueStyle}>
               {formatarNumero(obra.curtidas)}
@@ -4321,6 +4321,11 @@ const statsStyle: CSSProperties = {
   minWidth: 0,
 };
 
+const ratingStatsStyle: CSSProperties = {
+  ...statsStyle,
+  flexWrap: "nowrap",
+};
+
 const statsItemStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
@@ -4350,7 +4355,10 @@ const metricValueStyle: CSSProperties = {
 
 const heartMetricIconStyle: CSSProperties = {
   ...metricIconStyle,
-  color: "#BE123C",
+  width: "16px",
+  minWidth: "16px",
+  fontSize: "13px",
+  color: "#EF4444",
 };
 
 const starMetricIconStyle: CSSProperties = {

@@ -837,7 +837,7 @@ function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
     notificacao.tipo === "curtida-capitulo" ||
     notificacao.tipo === "curtida-comentario-capitulo"
   ) {
-    return "♥";
+    return "❤️";
   }
 
   if (notificacao.tipo === "review-comunidade") {
@@ -845,7 +845,7 @@ function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
   }
 
   if (notificacao.tipo === "curtida-diario") {
-    return "♥";
+    return "❤️";
   }
 
   if (notificacao.tipo === "comentario-diario") {
