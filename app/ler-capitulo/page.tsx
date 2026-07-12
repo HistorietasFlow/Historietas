@@ -1168,7 +1168,9 @@ async function aplicarInteracoesCapitulosSupabase(
         .select("capitulo_id, lido, progresso, atualizado_em")
         .eq("user_id", userId)
         .eq("obra_id", obra.id)
-        .limit(1),
+        .in("capitulo_id", capituloIds)
+        .order("atualizado_em", { ascending: false })
+        .limit(1000),
     ]);
 
   const curtidas = new Set(
@@ -1200,22 +1202,48 @@ async function aplicarInteracoesCapitulosSupabase(
     });
   }
 
-  const progressoRegistros = Array.isArray(progressoResposta.data)
+  const progressoCarregado =
+    !progressoResposta.error && Array.isArray(progressoResposta.data);
+  const progressoRegistros = progressoCarregado
     ? (progressoResposta.data as RegistroProgressoLeitura[])
     : [];
-  const progressoAtual = progressoRegistros[0] || null;
-  const capituloProgressoId =
-    typeof progressoAtual?.capitulo_id === "string"
-      ? progressoAtual.capitulo_id
+  const progressoPorCapitulo = new Map<string, RegistroProgressoLeitura>();
+
+  progressoRegistros.forEach((registro) => {
+    const capituloIdRegistro =
+      typeof registro.capitulo_id === "string"
+        ? registro.capitulo_id.trim()
+        : "";
+
+    if (capituloIdRegistro && !progressoPorCapitulo.has(capituloIdRegistro)) {
+      progressoPorCapitulo.set(capituloIdRegistro, registro);
+    }
+  });
+
+  const ultimoProgressoLido =
+    progressoRegistros.find((registro) => {
+      return (
+        Boolean(registro.lido) &&
+        typeof registro.capitulo_id === "string" &&
+        Boolean(registro.capitulo_id.trim())
+      );
+    }) || null;
+  const ultimoCapituloLidoId =
+    typeof ultimoProgressoLido?.capitulo_id === "string"
+      ? ultimoProgressoLido.capitulo_id.trim()
       : "";
-  const capituloProgressoLido = Boolean(progressoAtual?.lido);
-  const capituloProgressoAtualizadoEm =
-    typeof progressoAtual?.atualizado_em === "string"
-      ? progressoAtual.atualizado_em
+  const ultimaLeituraEm =
+    typeof ultimoProgressoLido?.atualizado_em === "string"
+      ? ultimoProgressoLido.atualizado_em
       : "";
 
   const capitulos = obra.capitulos.map((capitulo) => {
-    const correspondeAoProgresso = capituloProgressoId === capitulo.id;
+    const progressoCapitulo = progressoPorCapitulo.get(capitulo.id);
+    const lidoRemoto = Boolean(progressoCapitulo?.lido);
+    const lidoEmRemoto =
+      typeof progressoCapitulo?.atualizado_em === "string"
+        ? progressoCapitulo.atualizado_em
+        : "";
 
     return {
       ...capitulo,
@@ -1224,12 +1252,10 @@ async function aplicarInteracoesCapitulosSupabase(
       comentario: comentarios.has(capitulo.id)
         ? comentarios.get(capitulo.id) || ""
         : capitulo.comentario,
-      lido: correspondeAoProgresso
-        ? capituloProgressoLido
-        : capitulo.lido,
-      lidoEm: correspondeAoProgresso
-        ? capituloProgressoLido
-          ? capituloProgressoAtualizadoEm || capitulo.lidoEm
+      lido: progressoCarregado ? lidoRemoto : capitulo.lido,
+      lidoEm: progressoCarregado
+        ? lidoRemoto
+          ? lidoEmRemoto || capitulo.lidoEm
           : ""
         : capitulo.lidoEm,
     };
@@ -1238,11 +1264,15 @@ async function aplicarInteracoesCapitulosSupabase(
   return {
     ...obra,
     capitulos,
-    ultimoCapituloLidoId: obra.ultimoCapituloLidoId || capituloProgressoId,
+    ultimoCapituloLidoId: progressoCarregado
+      ? ultimoCapituloLidoId
+      : obra.ultimoCapituloLidoId,
+    ultimaLeituraEm: progressoCarregado
+      ? ultimaLeituraEm
+      : obra.ultimaLeituraEm,
     progressoLeitura: calcularProgressoLeitura(capitulos),
   };
 }
-
 
 async function salvarProgressoLeituraSupabase(
   obra: ObraLocal,
@@ -1252,46 +1282,48 @@ async function salvarProgressoLeituraSupabase(
   try {
     const { data: dadosUsuario } = await supabase.auth.getUser();
     const userId = dadosUsuario.user?.id || "";
+    const capituloIdLimpo = capituloId.trim();
 
-    if (!userId || !idObraSupabaseValido(obra.id)) {
+    if (
+      !userId ||
+      !idObraSupabaseValido(obra.id) ||
+      !capituloIdLimpo
+    ) {
       return false;
+    }
+
+    if (!lido) {
+      const { error: erroDelete } = await supabase
+        .from("progresso_leitura")
+        .delete()
+        .eq("user_id", userId)
+        .eq("obra_id", obra.id)
+        .eq("capitulo_id", capituloIdLimpo);
+
+      if (erroDelete) {
+        throw erroDelete;
+      }
+
+      return true;
     }
 
     const payload = {
       user_id: userId,
       obra_id: obra.id,
-      capitulo_id: capituloId,
+      capitulo_id: capituloIdLimpo,
       progresso: calcularProgressoLeitura(obra.capitulos),
-      lido,
+      lido: true,
       atualizado_em: new Date().toISOString(),
     };
 
     const { error: erroUpsert } = await supabase
       .from("progresso_leitura")
       .upsert(payload, {
-        onConflict: "user_id,obra_id",
+        onConflict: "user_id,obra_id,capitulo_id",
       });
 
-    if (!erroUpsert) {
-      return true;
-    }
-
-    const { error: erroDelete } = await supabase
-      .from("progresso_leitura")
-      .delete()
-      .eq("user_id", userId)
-      .eq("obra_id", obra.id);
-
-    if (erroDelete) {
-      throw erroDelete;
-    }
-
-    const { error: erroInsert } = await supabase
-      .from("progresso_leitura")
-      .insert(payload);
-
-    if (erroInsert) {
-      throw erroInsert;
+    if (erroUpsert) {
+      throw erroUpsert;
     }
 
     return true;
@@ -1300,7 +1332,6 @@ async function salvarProgressoLeituraSupabase(
     return false;
   }
 }
-
 
 type TipoAtividadeDiarioLeitor =
   | "comecou_ler"

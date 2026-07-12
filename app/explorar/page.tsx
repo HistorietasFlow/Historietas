@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Children, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 
 type CapituloLocal = {
@@ -18,6 +17,7 @@ type CapituloLocal = {
   criadoEm: string;
   lido: boolean;
   lidoEm: string;
+  publicado?: boolean;
   totalCurtidas?: number;
   totalComentarios?: number;
   totalSalvos?: number;
@@ -99,6 +99,13 @@ type SupabaseCapituloRow = {
   ordem: number | null;
   publicado: boolean | null;
   criado_em: string | null;
+  atualizado_em: string | null;
+};
+
+type SupabaseProgressoLeituraExplorarRow = {
+  obra_id: string | null;
+  capitulo_id: string | null;
+  lido: boolean | null;
   atualizado_em: string | null;
 };
 
@@ -1179,14 +1186,7 @@ function totalLidosObra(obra: ObraLocal) {
 }
 
 function obraTemAtividadeLeitura(obra: ObraLocal) {
-  return obra.capitulos.some((capitulo) => {
-    return (
-      capitulo.lido ||
-      capitulo.salvo ||
-      capitulo.curtiu ||
-      Boolean(capitulo.comentario.trim())
-    );
-  });
+  return obra.capitulos.some((capitulo) => capitulo.lido);
 }
 
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
@@ -1200,26 +1200,29 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
 }
 
 function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const capituloRegistrado = obra.ultimoCapituloLidoId
-    ? obra.capitulos.find(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
-      )
-    : null;
+  const temCapituloLido = obra.capitulos.some((capitulo) => capitulo.lido);
 
-  if (capituloRegistrado) {
-    return capituloRegistrado;
+  if (!temCapituloLido) {
+    return null;
   }
 
-  const capitulosAtivos = obra.capitulos.filter((capitulo) => {
-    return (
-      capitulo.lido ||
-      capitulo.salvo ||
-      capitulo.curtiu ||
-      Boolean(capitulo.comentario.trim())
-    );
-  });
+  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
+    ? obra.capitulos.findIndex(
+        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
+      )
+    : -1;
 
-  return capitulosAtivos[capitulosAtivos.length - 1] || null;
+  if (indiceUltimoCapituloLido >= 0) {
+    const proximoCapituloNaoLido = obra.capitulos
+      .slice(indiceUltimoCapituloLido + 1)
+      .find((capitulo) => !capitulo.lido);
+
+    if (proximoCapituloNaoLido) {
+      return proximoCapituloNaoLido;
+    }
+  }
+
+  return obra.capitulos.find((capitulo) => !capitulo.lido) || null;
 }
 
 function dataCriacaoObra(obra: ObraLocal) {
@@ -1267,6 +1270,7 @@ function normalizarCapitulo(
     criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
     lido: Boolean(capitulo.lido),
     lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
+    publicado: capitulo.publicado !== false,
     totalCurtidas: normalizarContadorExplorar(capitulo.totalCurtidas),
     totalComentarios: normalizarContadorExplorar(capitulo.totalComentarios),
     totalSalvos: normalizarContadorExplorar(capitulo.totalSalvos),
@@ -1445,11 +1449,14 @@ function normalizarObra(
   index: number,
   userId = ""
 ): ObraLocal {
-  const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
+  const capitulosNormalizadosTodos: CapituloLocal[] = Array.isArray(obra.capitulos)
     ? obra.capitulos.map((capitulo, capituloIndex) =>
         normalizarCapitulo(capitulo, capituloIndex)
       )
     : [];
+  const capitulosNormalizados = capitulosNormalizadosTodos.filter(
+    (capitulo) => capitulo.publicado !== false
+  );
 
   const tagsNormalizadas = Array.isArray(obra.tags)
     ? obra.tags
@@ -1583,6 +1590,7 @@ function normalizarObraSupabase(
         criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
         lido: Boolean(capituloLocal?.lido),
         lidoEm: capituloLocal?.lidoEm || "",
+        publicado: true,
         totalCurtidas: normalizarContadorExplorar(capituloLocal?.totalCurtidas),
         totalComentarios: normalizarContadorExplorar(capituloLocal?.totalComentarios),
         totalSalvos: normalizarContadorExplorar(capituloLocal?.totalSalvos),
@@ -2038,6 +2046,112 @@ async function aplicarTotaisReaisExplorar(obrasParaAtualizar: ObraLocal[]) {
   }));
 }
 
+async function aplicarProgressoUsuarioExplorar(
+  obrasParaAtualizar: ObraLocal[],
+  userId: string
+) {
+  const userIdLimpo = userId.trim();
+  const obraIdPorCapitulo = new Map<string, string>();
+
+  obrasParaAtualizar.forEach((obra) => {
+    obra.capitulos.forEach((capitulo) => {
+      const obraId = obra.id.trim();
+      const capituloId = capitulo.id.trim();
+
+      if (obraId && capituloId) {
+        obraIdPorCapitulo.set(capituloId, obraId);
+      }
+    });
+  });
+
+  const obraIds = Array.from(
+    new Set(Array.from(obraIdPorCapitulo.values()))
+  );
+
+  if (!userIdLimpo || obraIds.length === 0) {
+    return obrasParaAtualizar;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("progresso_leitura")
+      .select("obra_id,capitulo_id,lido,atualizado_em")
+      .eq("user_id", userIdLimpo)
+      .in("obra_id", obraIds)
+      .order("atualizado_em", { ascending: false })
+      .limit(5000);
+
+    if (error || !Array.isArray(data)) {
+      return obrasParaAtualizar;
+    }
+
+    const progressoPorCapitulo =
+      new Map<string, SupabaseProgressoLeituraExplorarRow>();
+
+    (data as unknown as SupabaseProgressoLeituraExplorarRow[]).forEach(
+      (registro) => {
+        const obraId = registro.obra_id?.trim() || "";
+        const capituloId = registro.capitulo_id?.trim() || "";
+        const obraDoCapitulo = obraIdPorCapitulo.get(capituloId) || "";
+
+        if (
+          obraId &&
+          capituloId &&
+          obraDoCapitulo === obraId &&
+          !progressoPorCapitulo.has(capituloId)
+        ) {
+          progressoPorCapitulo.set(capituloId, registro);
+        }
+      }
+    );
+
+    return obrasParaAtualizar.map((obra) => {
+      let ultimoCapituloLidoId = "";
+      let ultimaLeituraEm = "";
+
+      const capitulos = obra.capitulos.map((capitulo) => {
+        const registro = progressoPorCapitulo.get(capitulo.id);
+        const lido = registro?.lido === true;
+        const lidoEm =
+          lido && typeof registro?.atualizado_em === "string"
+            ? registro.atualizado_em
+            : "";
+
+        if (lido) {
+          const tempoAtual = new Date(lidoEm).getTime();
+          const tempoUltimo = new Date(ultimaLeituraEm).getTime();
+          const tempoAtualSeguro = Number.isNaN(tempoAtual) ? 0 : tempoAtual;
+          const tempoUltimoSeguro = Number.isNaN(tempoUltimo) ? 0 : tempoUltimo;
+
+          if (
+            !ultimoCapituloLidoId ||
+            tempoAtualSeguro >= tempoUltimoSeguro
+          ) {
+            ultimoCapituloLidoId = capitulo.id;
+            ultimaLeituraEm = lidoEm;
+          }
+        }
+
+        return {
+          ...capitulo,
+          lido,
+          lidoEm,
+        };
+      });
+
+      return {
+        ...obra,
+        capitulos,
+        ultimoCapituloLidoId,
+        ultimaLeituraEm,
+        progressoLeitura: calcularProgressoLeitura(capitulos),
+      };
+    });
+  } catch {
+    return obrasParaAtualizar;
+  }
+}
+
 async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId = "") {
   try {
     const { data: obrasBanco, error: erroObras } = await supabase
@@ -2054,7 +2168,9 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
         "Não consegui carregar obras publicadas do Supabase:",
         erroObras.message
       );
-      return aplicarTotaisReaisExplorar(obrasLocais);
+      const obrasComTotais = await aplicarTotaisReaisExplorar(obrasLocais);
+
+      return aplicarProgressoUsuarioExplorar(obrasComTotais, userId);
     }
 
     const obrasSupabase = ((obrasBanco || []) as unknown as SupabaseObraRow[]).filter(
@@ -2071,7 +2187,11 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
     );
 
     if (obrasSupabase.length === 0) {
-      return aplicarTotaisReaisExplorar(obrasLocaisComProfiles);
+      const obrasComTotais = await aplicarTotaisReaisExplorar(
+        obrasLocaisComProfiles
+      );
+
+      return aplicarProgressoUsuarioExplorar(obrasComTotais, userId);
     }
 
     const idsObras = obrasSupabase.map((obra) => obra.id);
@@ -2133,14 +2253,20 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
       obrasSupabaseNormalizadas
     );
     const obrasComTotaisReais = await aplicarTotaisReaisExplorar(obrasMescladas);
+    const obrasComProgresso = await aplicarProgressoUsuarioExplorar(
+      obrasComTotaisReais,
+      userId
+    );
 
-    salvarBackupsArquivosObras(obrasComTotaisReais, userId);
-    salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userId, obrasComTotaisReais);
+    salvarBackupsArquivosObras(obrasComProgresso, userId);
+    salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userId, obrasComProgresso);
 
-    return obrasComTotaisReais;
+    return obrasComProgresso;
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Explorar:", error);
-    return aplicarTotaisReaisExplorar(obrasLocais);
+    const obrasComTotais = await aplicarTotaisReaisExplorar(obrasLocais);
+
+    return aplicarProgressoUsuarioExplorar(obrasComTotais, userId);
   }
 }
 
@@ -2423,7 +2549,6 @@ export default function ExplorarPage() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [mensagemLogin, setMensagemLogin] = useState("");
-  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     const temaInicial: TemaVisualExplorar = "original";
@@ -3062,8 +3187,8 @@ export default function ExplorarPage() {
 
   const textoBotaoFiltrosAvancados =
     totalFiltrosAvancadosAtivos > 0
-      ? `EXPLORAR (${totalFiltrosAvancadosAtivos})`
-      : "EXPLORAR";
+      ? `Explorar (${totalFiltrosAvancadosAtivos})`
+      : "Explorar";
 
   const categoriaAtiva = categoriaSelecionada.trim().length > 0;
   const temaCategoria = obterTemaCategoria(categoriaSelecionada);
@@ -3238,76 +3363,108 @@ export default function ExplorarPage() {
                 ? desktopExplorarHeaderFilterButtonStyle
                 : explorarHeaderFilterButtonStyle
             }
-            aria-label="EXPLORAR"
+            aria-label="Abrir funções do Explorar"
           >
             <span>{textoBotaoFiltrosAvancados}</span>
             <span style={explorarHeaderFilterIconStyle} aria-hidden="true">
-              ⇅
+              +
             </span>
           </button>
 
-          {!isDesktop && (
+          {buscaMobileAberta ? (
+            <>
+              <label
+                style={
+                  isDesktop
+                    ? desktopExplorarHeaderSearchShellStyle
+                    : explorarHeaderSearchShellStyle
+                }
+              >
+                <input
+                  value={busca}
+                  onChange={(event) => setBusca(event.target.value)}
+                  placeholder={
+                    modoConteudo === "autores"
+                      ? "Buscar autores..."
+                      : "Buscar histórias..."
+                  }
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={90}
+                  style={explorarHeaderSearchInputStyle}
+                  type="text"
+                  autoFocus
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setBusca("");
+                  setBuscaMobileAberta(false);
+                }}
+                aria-label="Fechar busca"
+                aria-expanded="true"
+                style={mobileSearchToggleStyle}
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="10.85"
+                    cy="10.85"
+                    r="6.65"
+                    stroke="currentColor"
+                    strokeWidth="2.15"
+                  />
+                  <path
+                    d="M16.05 16.05L20.25 20.25"
+                    stroke="currentColor"
+                    strokeWidth="2.15"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </>
+          ) : (
             <button
               type="button"
-              onClick={() => setBuscaMobileAberta((aberta) => !aberta)}
-              aria-label={buscaMobileAberta ? "Fechar busca" : "Abrir busca"}
-              aria-pressed={buscaMobileAberta}
-              style={
-                buscaMobileAberta
-                  ? mobileSearchToggleActiveStyle
-                  : mobileSearchToggleStyle
-              }
+              onClick={() => setBuscaMobileAberta(true)}
+              aria-label="Abrir busca"
+              aria-expanded="false"
+              style={mobileSearchToggleStyle}
             >
-              ⌕
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="10.85"
+                  cy="10.85"
+                  r="6.65"
+                  stroke="currentColor"
+                  strokeWidth="2.15"
+                />
+                <path
+                  d="M16.05 16.05L20.25 20.25"
+                  stroke="currentColor"
+                  strokeWidth="2.15"
+                  strokeLinecap="round"
+                />
+              </svg>
             </button>
           )}
-
-          {isDesktop ? (
-            <Link
-              href="/notificacoes"
-              style={desktopNotificationButtonStyle}
-              aria-label={
-                notificacoesNaoLidas > 0
-                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                  : "Notificações"
-              }
-            >
-              N
-
-              {usuarioLogado && notificacoesNaoLidas > 0 ? (
-                <span style={desktopNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99
-                    ? "99+"
-                    : notificacoesNaoLidas}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
         </header>
-
-        {(isDesktop || buscaMobileAberta || busca.trim()) && (
-          <label
-            style={
-              isDesktop
-                ? desktopExplorarSearchShellStyle
-                : explorarSearchShellStyle
-            }
-          >
-            <span style={explorarSearchIconStyle}>⌕</span>
-
-            <input
-              value={busca}
-              onChange={(event) => setBusca(event.target.value)}
-              placeholder={modoConteudo === "autores" ? "Buscar autores..." : "Buscar histórias..."}
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              maxLength={90}
-              style={explorarSearchInputStyle}
-              type="text"
-            />
-          </label>
-        )}
 
         <section style={isDesktop ? criarDesktopSearchBoxStyle(temaPagina, categoriaAtiva) : criarSearchBoxStyle(temaPagina, categoriaAtiva)}>
           <section className="explorar-carousel" style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
@@ -3891,7 +4048,7 @@ function ObraPublicadaCard({
 }) {
   const totalCurtidas = totalCurtidasObra(obra);
   const totalComentarios = totalComentariosObra(obra);
-  const totalLidos = totalLidosObra(obra);
+  const totalVisualizacoes = normalizarContadorExplorar(obra.visualizacoes);
   const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
   const paginaPublicaHref = `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
   const perfilAutorHref = criarPerfilAutorHrefExplorar(
@@ -3932,7 +4089,7 @@ function ObraPublicadaCard({
         <div style={statsStyle}>
           <span style={metricItemStyle}>
             <span style={metricIconStyle}>👁</span>
-            {totalLidos}
+            {totalVisualizacoes}
           </span>
 
           <span style={metricItemStyle}>
@@ -4463,32 +4620,22 @@ const desktopSoonTopButtonStyle: CSSProperties = {
 };
 
 const titleHeaderStyle: CSSProperties = {
-  position: "relative",
   display: "flex",
   alignItems: "center",
-  justifyContent: "flex-start",
-  marginTop: "0",
+  justifyContent: "space-between",
+  gap: "10px",
+  flexWrap: "nowrap",
   marginBottom: "10px",
-  padding: 0,
   minWidth: 0,
-  minHeight: "38px",
   maxWidth: "100%",
-  textAlign: "left",
   boxSizing: "border-box",
 };
+
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
-  position: "relative",
-  marginTop: "0",
-  marginBottom: "12px",
-  minHeight: "40px",
 };
 
 const mobileSearchToggleStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: 0,
-  transform: "translateY(-50%)",
   appearance: "none",
   WebkitAppearance: "none",
   width: "34px",
@@ -4509,37 +4656,30 @@ const mobileSearchToggleStyle: CSSProperties = {
   flex: "0 0 auto",
   outline: "none",
   WebkitTapHighlightColor: "transparent",
-  zIndex: 2,
-};
-
-const mobileSearchToggleActiveStyle: CSSProperties = {
-  ...mobileSearchToggleStyle,
-  border: 0,
-  background: "transparent",
-  color: "#FFFFFF",
-  boxShadow: "none",
-  outline: "none",
 };
 
 const explorarHeaderFilterButtonStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
-  border: 0,
+  border: "none",
   background: "transparent",
   color: "#FFFFFF",
-  minHeight: "38px",
-  maxWidth: "calc(100% - 46px)",
   padding: 0,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "flex-start",
   gap: "8px",
+  minWidth: 0,
+  maxWidth: "46%",
+  flex: "0 1 auto",
   fontSize: "16px",
   lineHeight: 1.15,
   fontWeight: 950,
   fontFamily: "inherit",
-  textAlign: "left",
   cursor: "pointer",
+  textAlign: "left",
+  letterSpacing: "-0.04em",
+  boxShadow: "none",
   outline: "none",
   WebkitTapHighlightColor: "transparent",
   ...safeTextStyle,
@@ -4547,15 +4687,9 @@ const explorarHeaderFilterButtonStyle: CSSProperties = {
 
 const desktopExplorarHeaderFilterButtonStyle: CSSProperties = {
   ...explorarHeaderFilterButtonStyle,
-  minHeight: "40px",
-  maxWidth: "calc(100% - 52px)",
-  fontSize: "16px",
 };
 
 const explorarHeaderFilterIconStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
   color: "#FFFFFF",
   fontSize: "21px",
   lineHeight: 1,
@@ -4764,48 +4898,47 @@ const searchBoxStyle: CSSProperties = {
   WebkitBackdropFilter: "none",
 };
 
-const explorarSearchShellStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "52px",
-  borderRadius: "22px",
-  border: "1px solid rgba(255,255,255,0.08)",
+const explorarHeaderSearchShellStyle: CSSProperties = {
+  flex: "1 1 auto",
+  minWidth: 0,
+  maxWidth: "calc(100% - 104px)",
+  height: "36px",
+  marginLeft: "auto",
+  marginRight: "-6px",
+  borderRadius: "999px",
+  border: "none",
   background: "#000000",
   display: "flex",
   alignItems: "center",
-  gap: "10px",
-  padding: "0 16px",
-  margin: "8px 0 5px",
+  justifyContent: "flex-end",
+  overflow: "hidden",
+  padding: "0 0 0 13px",
   boxSizing: "border-box",
   boxShadow: "none",
+  transformOrigin: "right center",
 };
 
-const desktopExplorarSearchShellStyle: CSSProperties = {
-  ...explorarSearchShellStyle,
-  margin: "8px 0 6px",
+const desktopExplorarHeaderSearchShellStyle: CSSProperties = {
+  ...explorarHeaderSearchShellStyle,
+  flex: "0 1 480px",
+  maxWidth: "min(480px, calc(100% - 118px))",
 };
 
-const explorarSearchIconStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "22px",
-  lineHeight: 1,
-  fontWeight: 700,
-  flex: "0 0 auto",
-};
-
-const explorarSearchInputStyle: CSSProperties = {
+const explorarHeaderSearchInputStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
+  flex: "1 1 auto",
   width: "100%",
   minWidth: 0,
-  height: "50px",
+  height: "34px",
   border: "none",
   background: "transparent",
   color: "#FFFFFF",
   outline: "none",
   fontFamily: "inherit",
-  fontSize: "15px",
-  fontWeight: 850,
-  letterSpacing: "-0.035em",
+  fontSize: "14px",
+  fontWeight: 800,
+  letterSpacing: "-0.025em",
   boxSizing: "border-box",
 };
 

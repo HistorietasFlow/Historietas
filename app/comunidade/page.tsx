@@ -2284,6 +2284,7 @@ export default function ComunidadePage() {
   const [composerAberto, setComposerAberto] = useState(false);
   const [menuAcoesRapidasComunidadeAberto, setMenuAcoesRapidasComunidadeAberto] =
     useState(false);
+  const [buscaComunidadeAberta, setBuscaComunidadeAberta] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -4151,25 +4152,72 @@ export default function ComunidadePage() {
                   style={communityFilterLabelButtonStyle}
                 >
                   <span>{textoBotaoFiltrosAvancadosComunidade}</span>
+                  <span style={communityFilterActionIconStyle} aria-hidden="true">
+                    +
+                  </span>
                 </button>
 
-                <button
-                  type="button"
-                  aria-label="Abrir filtros, ordenação e ações da comunidade"
-                  aria-expanded={menuAcoesRapidasComunidadeAberto}
-                  onClick={() =>
-                    setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
-                  }
-                  style={communityQuickActionsInlinePlusButtonStyle}
-                >
-                  <span style={communityFilterActionIconStyle}>+</span>
-                </button>
+                {buscaComunidadeAberta || Boolean(termoBusca.trim()) ? (
+                  <>
+                    <label style={communitySearchShellStyle}>
+                      <input
+                        value={termoBusca}
+                        onChange={(event) => setTermoBusca(event.target.value)}
+                        placeholder="Buscar"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        maxLength={90}
+                        style={communitySearchInputStyle}
+                        autoFocus
+                      />
+                    </label>
 
-                <label style={communitySearchShellStyle}>
-                  <span style={communitySearchIconStyle}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTermoBusca("");
+                        setBuscaComunidadeAberta(false);
+                      }}
+                      aria-label="Fechar busca"
+                      aria-expanded="true"
+                      style={communitySearchToggleStyle}
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          cx="10.85"
+                          cy="10.85"
+                          r="6.65"
+                          stroke="currentColor"
+                          strokeWidth="2.15"
+                        />
+                        <path
+                          d="M16.05 16.05L20.25 20.25"
+                          stroke="currentColor"
+                          strokeWidth="2.15"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setBuscaComunidadeAberta(true)}
+                    aria-label="Abrir busca"
+                    aria-expanded="false"
+                    style={communitySearchToggleStyle}
+                  >
                     <svg
-                      width="20"
-                      height="20"
+                      width="24"
+                      height="24"
                       viewBox="0 0 24 24"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -4189,19 +4237,8 @@ export default function ComunidadePage() {
                         strokeLinecap="round"
                       />
                     </svg>
-                  </span>
-
-                  <input
-                    value={termoBusca}
-                    onChange={(event) => setTermoBusca(event.target.value)}
-                    placeholder="Buscar"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    maxLength={90}
-                    style={communitySearchInputStyle}
-                  />
-                </label>
+                  </button>
+                )}
               </div>
 
               {filtrosAtivos && (
@@ -6441,26 +6478,6 @@ const weeklyChallengeButtonDesktopStyle: CSSProperties = {
 };
 
 
-const communityQuickActionsInlinePlusButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "36px",
-  height: "44px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "22px",
-  lineHeight: 1,
-  fontWeight: 950,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  padding: 0,
-  boxShadow: "none",
-};
-
 const communityQuickActionsPanelStyle: CSSProperties = {
   position: "absolute",
   top: "calc(100% + 10px)",
@@ -6578,77 +6595,102 @@ const desktopExploreLikeSearchInputStyle: CSSProperties = {
 const communitySearchShellStyle: CSSProperties = {
   flex: "1 1 auto",
   minWidth: 0,
-  minHeight: "44px",
+  maxWidth: "calc(100% - 104px)",
+  height: "36px",
+  marginLeft: "auto",
+  marginRight: "-6px",
   borderRadius: "999px",
-  border: "1px solid transparent",
-  background: "#04000A",
+  border: "none",
+  background: "#000000",
   display: "flex",
   alignItems: "center",
-  gap: "8px",
-  padding: "0 14px",
+  justifyContent: "flex-end",
+  overflow: "hidden",
+  padding: "0 0 0 13px",
   boxSizing: "border-box",
   boxShadow: "none",
-  outline: "none",
-};
-
-const communitySearchIconStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.72)",
-  width: "22px",
-  height: "22px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  lineHeight: 1,
-  flex: "0 0 auto",
+  transformOrigin: "right center",
 };
 
 const communitySearchInputStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
+  flex: "1 1 auto",
   width: "100%",
   minWidth: 0,
-  height: "44px",
+  height: "34px",
   border: "none",
   background: "transparent",
   color: "#FFFFFF",
   outline: "none",
   fontFamily: "inherit",
   fontSize: "14px",
-  fontWeight: 700,
-  letterSpacing: 0,
+  fontWeight: 800,
+  letterSpacing: "-0.025em",
   boxSizing: "border-box",
 };
 
+const communitySearchToggleStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "34px",
+  height: "34px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "24px",
+  lineHeight: 1,
+  fontWeight: 950,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  padding: 0,
+  boxShadow: "none",
+  flex: "0 0 auto",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+};
+
 const communityFilterControlsRowStyle: CSSProperties = {
-  minHeight: "44px",
   display: "flex",
   alignItems: "center",
-  justifyContent: "flex-start",
-  gap: "8px",
+  justifyContent: "space-between",
+  gap: "10px",
+  flexWrap: "nowrap",
+  marginBottom: "10px",
   width: "100%",
   minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const communityFilterLabelButtonStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
-  flex: "0 0 auto",
-  minHeight: "44px",
   border: "none",
   background: "transparent",
   color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "15px",
-  lineHeight: 1.15,
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  textAlign: "left",
-  padding: "0 2px",
-  cursor: "pointer",
+  padding: 0,
   display: "inline-flex",
   alignItems: "center",
+  justifyContent: "flex-start",
   gap: "8px",
+  minWidth: 0,
+  maxWidth: "46%",
+  flex: "0 1 auto",
+  fontSize: "16px",
+  lineHeight: 1.15,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  textAlign: "left",
+  letterSpacing: "-0.04em",
+  boxShadow: "none",
+  outline: "none",
   whiteSpace: "nowrap",
+  WebkitTapHighlightColor: "transparent",
   ...safeTextStyle,
 };
 

@@ -764,7 +764,7 @@ export default function Top5PerfilAutorPage() {
                   : saveButtonStyle
               }
             >
-              {salvando ? "Salvando..." : "Salvar TOP 5"}
+              {salvando ? "Salvando..." : "Salvar"}
             </button>
           </div>
         </div>
@@ -827,7 +827,7 @@ export default function Top5PerfilAutorPage() {
             id="buscar-obra-top-5"
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
-            placeholder="Buscar obra..."
+            placeholder="Pesquisar obra, autor, gênero ou tag"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
@@ -1045,7 +1045,7 @@ const searchSectionStyle: CSSProperties = {
 const searchShellStyle: CSSProperties = {
   width: "100%",
   minHeight: "48px",
-  borderRadius: "0",
+  borderRadius: "18px",
   border: "1px solid rgba(255,255,255,0.08)",
   background: "#000000",
   display: "flex",

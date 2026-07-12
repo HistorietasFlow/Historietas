@@ -115,6 +115,13 @@ type SupabaseInteracaoObraRow = {
   user_id: string | null;
 };
 
+type SupabaseProgressoLeituraEmAltaRow = {
+  obra_id: string | null;
+  capitulo_id: string | null;
+  lido: boolean | null;
+  atualizado_em: string | null;
+};
+
 type SupabaseAvaliacaoObraRow = {
   obra_id: string | null;
   user_id: string | null;
@@ -1237,6 +1244,85 @@ async function buscarContagemInteracoesCapitulos(
   }
 }
 
+async function carregarProgressoUsuarioEmAlta(
+  userId: string,
+  obraIds: string[],
+  capituloIds: string[],
+) {
+  const userIdLimpo = userId.trim();
+
+  if (
+    !userIdLimpo ||
+    obraIds.length === 0 ||
+    capituloIds.length === 0
+  ) {
+    return {
+      progressoPorCapitulo:
+        new Map<string, SupabaseProgressoLeituraEmAltaRow>(),
+      carregado: Boolean(userIdLimpo),
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("progresso_leitura")
+      .select("obra_id,capitulo_id,lido,atualizado_em")
+      .eq("user_id", userIdLimpo)
+      .in("obra_id", obraIds)
+      .in("capitulo_id", capituloIds)
+      .order("atualizado_em", { ascending: false })
+      .limit(5000);
+
+    if (error || !Array.isArray(data)) {
+      if (error) {
+        console.warn(
+          "Não consegui carregar o progresso pessoal no Em Alta:",
+          error.message,
+        );
+      }
+
+      return {
+        progressoPorCapitulo:
+          new Map<string, SupabaseProgressoLeituraEmAltaRow>(),
+        carregado: false,
+      };
+    }
+
+    const progressoPorCapitulo =
+      new Map<string, SupabaseProgressoLeituraEmAltaRow>();
+
+    (data as unknown as SupabaseProgressoLeituraEmAltaRow[]).forEach(
+      (registro) => {
+        const obraId = registro.obra_id?.trim() || "";
+        const capituloId = registro.capitulo_id?.trim() || "";
+        const chave = obraId && capituloId
+          ? `${obraId}::${capituloId}`
+          : "";
+
+        if (chave && !progressoPorCapitulo.has(chave)) {
+          progressoPorCapitulo.set(chave, registro);
+        }
+      },
+    );
+
+    return {
+      progressoPorCapitulo,
+      carregado: true,
+    };
+  } catch (error) {
+    console.warn(
+      "Não consegui acessar o progresso pessoal no Em Alta:",
+      error,
+    );
+
+    return {
+      progressoPorCapitulo:
+        new Map<string, SupabaseProgressoLeituraEmAltaRow>(),
+      carregado: false,
+    };
+  }
+}
+
 function converterObraSupabaseParaLocal(
   obra: SupabaseObraRow,
   capitulos: SupabaseCapituloRow[],
@@ -1253,16 +1339,49 @@ function converterObraSupabaseParaLocal(
   profilesAutores: Map<string, SupabaseProfileAutorRankingRow>,
   seguidoresAutores: Record<string, number>,
   avataresLocaisAutores: Map<string, string>,
+  progressoPorCapitulo:
+    Map<string, SupabaseProgressoLeituraEmAltaRow>,
+  progressoCarregado: boolean,
 ): ObraLocal {
   const capitulosLocaisPorId = new Map(
     (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo]),
   );
+
+  let ultimoCapituloLidoId = progressoCarregado
+    ? ""
+    : obraLocal?.ultimoCapituloLidoId || "";
+  let ultimaLeituraEm = progressoCarregado
+    ? ""
+    : obraLocal?.ultimaLeituraEm || "";
 
   const capitulosNormalizados = capitulos.map((capitulo, capituloIndex) => {
     const capituloLocal = capitulosLocaisPorId.get(capitulo.id);
     const totalCurtidas = curtidasPorCapitulo[capitulo.id] || 0;
     const totalSalvos = salvosPorCapitulo[capitulo.id] || 0;
     const totalComentarios = comentariosPorCapitulo[capitulo.id] || 0;
+    const chaveProgresso = `${obra.id}::${capitulo.id}`;
+    const registroProgresso = progressoPorCapitulo.get(chaveProgresso);
+    const lido = progressoCarregado
+      ? registroProgresso?.lido === true
+      : Boolean(capituloLocal?.lido);
+    const lidoEm =
+      lido && typeof registroProgresso?.atualizado_em === "string"
+        ? registroProgresso.atualizado_em
+        : lido
+          ? capituloLocal?.lidoEm || ""
+          : "";
+
+    if (lido) {
+      const tempoAtual = new Date(lidoEm).getTime();
+      const tempoUltimo = new Date(ultimaLeituraEm).getTime();
+      const tempoAtualSeguro = Number.isNaN(tempoAtual) ? 0 : tempoAtual;
+      const tempoUltimoSeguro = Number.isNaN(tempoUltimo) ? 0 : tempoUltimo;
+
+      if (!ultimoCapituloLidoId || tempoAtualSeguro >= tempoUltimoSeguro) {
+        ultimoCapituloLidoId = capitulo.id;
+        ultimaLeituraEm = lidoEm;
+      }
+    }
 
     return {
       id: capitulo.id,
@@ -1270,12 +1389,12 @@ function converterObraSupabaseParaLocal(
         capitulo.titulo?.trim() ||
         `Capítulo ${capituloIndex + 1}`,
       texto: "",
-      curtiu: Boolean(capituloLocal?.curtiu) || totalCurtidas > 0,
-      salvo: Boolean(capituloLocal?.salvo) || totalSalvos > 0,
-      comentario: totalComentarios > 0 ? `${totalComentarios} comentário(s)` : "",
+      curtiu: Boolean(capituloLocal?.curtiu),
+      salvo: Boolean(capituloLocal?.salvo),
+      comentario: capituloLocal?.comentario || "",
       criadoEm: capitulo.criado_em || "",
-      lido: Boolean(capituloLocal?.lido),
-      lidoEm: capituloLocal?.lidoEm || "",
+      lido,
+      lidoEm,
     } satisfies CapituloLocal;
   });
 
@@ -1329,8 +1448,8 @@ function converterObraSupabaseParaLocal(
     publicado: Boolean(obra.publicado),
     capitulos: capitulosMesclados,
     criadaEm: obra.criada_em || "",
-    ultimoCapituloLidoId: "",
-    ultimaLeituraEm: "",
+    ultimoCapituloLidoId,
+    ultimaLeituraEm,
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
     slug,
     link: obra.link?.trim() || `/obra/${slug}`,
@@ -1364,7 +1483,10 @@ function converterObraSupabaseParaLocal(
   };
 }
 
-async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
+async function carregarObrasSupabasePublicadas(
+  obrasLocais: ObraLocal[],
+  userId = "",
+) {
   try {
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
@@ -1440,6 +1562,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
       avaliacoesPorObra,
       profilesAutores,
       seguidoresAutores,
+      progressoUsuario,
     ] = await Promise.all([
       buscarContagemInteracoesCapitulos(
         "curtidas_capitulos",
@@ -1463,6 +1586,7 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
       buscarAvaliacoesObras(obraIds),
       carregarProfilesAutoresRanking(autorIds),
       buscarSeguidoresAutoresRanking(autorIds),
+      carregarProgressoUsuarioEmAlta(userId, obraIds, capituloIds),
     ]);
 
     const usuariosCurtidasPorObra = combinarUsuariosRanking(
@@ -1528,6 +1652,8 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
           profilesAutores,
           seguidoresAutores,
           avataresLocaisAutores,
+          progressoUsuario.progressoPorCapitulo,
+          progressoUsuario.carregado,
         );
       })
       .filter((obra) => obra.capitulos.length > 0 || Boolean(obra.arquivoObra));
@@ -1538,26 +1664,29 @@ async function carregarObrasSupabasePublicadas(obrasLocais: ObraLocal[]) {
 }
 
 function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const capituloRegistrado = obra.ultimoCapituloLidoId
-    ? obra.capitulos.find(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId,
-      )
-    : null;
+  const temCapituloLido = obra.capitulos.some((capitulo) => capitulo.lido);
 
-  if (capituloRegistrado) {
-    return capituloRegistrado;
+  if (!temCapituloLido) {
+    return null;
   }
 
-  const capitulosAtivos = obra.capitulos.filter((capitulo) => {
-    return (
-      capitulo.lido ||
-      capitulo.salvo ||
-      capitulo.curtiu ||
-      Boolean(capitulo.comentario.trim())
-    );
-  });
+  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
+    ? obra.capitulos.findIndex(
+        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId,
+      )
+    : -1;
 
-  return capitulosAtivos[capitulosAtivos.length - 1] || null;
+  if (indiceUltimoCapituloLido >= 0) {
+    const proximoCapituloNaoLido = obra.capitulos
+      .slice(indiceUltimoCapituloLido + 1)
+      .find((capitulo) => !capitulo.lido);
+
+    if (proximoCapituloNaoLido) {
+      return proximoCapituloNaoLido;
+    }
+  }
+
+  return obra.capitulos.find((capitulo) => !capitulo.lido) || null;
 }
 
 function criarRankingCoverStyle(
@@ -1824,7 +1953,10 @@ export default function EmAltaPage() {
         }, 0);
 
         const obrasComSupabase =
-          await carregarObrasSupabasePublicadas(obrasNormalizadas);
+          await carregarObrasSupabasePublicadas(
+            obrasNormalizadas,
+            userIdAtual,
+          );
 
         window.setTimeout(() => {
           if (!cancelado) {
@@ -1907,8 +2039,8 @@ export default function EmAltaPage() {
           obra,
           visualizacoesRegistradas,
         );
-        const capitulosLidos = Math.max(
-          calcularCapitulosLidos(obra.capitulos),
+        const capitulosLidos = calcularCapitulosLidos(obra.capitulos);
+        const visualizacoes = Math.max(
           obra.totalViewsRanking || 0,
           visualizacoesRegistradasObra,
         );
@@ -1946,7 +2078,7 @@ export default function EmAltaPage() {
           totalCurtidas * 2 +
           totalComentarios * 3 +
           totalSalvos * 4 +
-          capitulosLidos * 1 +
+          visualizacoes * 1 +
           totalAvaliacoes * 4 +
           Math.round(mediaAvaliacoes * 4);
 
@@ -1976,7 +2108,7 @@ export default function EmAltaPage() {
           curtidas: totalCurtidas,
           comentarios: totalComentarios,
           salvos: totalSalvos,
-          views: capitulosLidos,
+          views: visualizacoes,
           avaliacoes: totalAvaliacoes,
           mediaAvaliacao: mediaAvaliacoes,
           pontuacao,

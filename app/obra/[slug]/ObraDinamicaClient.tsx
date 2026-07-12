@@ -168,6 +168,13 @@ type SupabaseComunidadePostRow = {
   obra_relacionada: string | null;
 };
 
+type SupabaseProgressoLeituraObraPublicaRow = {
+  obra_id: string | null;
+  capitulo_id: string | null;
+  lido: boolean | null;
+  atualizado_em: string | null;
+};
+
 type CapituloDinamico = {
   id: string;
   numero: string;
@@ -175,6 +182,8 @@ type CapituloDinamico = {
   descricao: string;
   href: string;
   disponivel: boolean;
+  lido: boolean;
+  lidoEm: string;
 };
 
 type ObraDinamica = {
@@ -198,6 +207,9 @@ type ObraDinamica = {
   capa: string;
   arquivoObra: ArquivoObraLocal | null;
   capitulos: CapituloDinamico[];
+  ultimoCapituloLidoId: string;
+  ultimaLeituraEm: string;
+  progressoLeitura: number;
 };
 
 type PerfilPublicoObra = {
@@ -694,6 +706,7 @@ function normalizarObraSupabase(
       criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
       lido: Boolean(capituloLocal?.lido),
       lidoEm: capituloLocal?.lidoEm || "",
+      publicado: true,
       totalCurtidas: normalizarContadorObraPublica(capituloLocal?.totalCurtidas),
       totalComentarios: normalizarContadorObraPublica(capituloLocal?.totalComentarios),
       totalSalvos: normalizarContadorObraPublica(capituloLocal?.totalSalvos),
@@ -780,6 +793,114 @@ function normalizarObraSupabase(
   };
 }
 
+async function aplicarProgressoUsuarioObraPublica(
+  obrasParaAtualizar: ObraLocal[],
+  userId: string
+) {
+  const userIdLimpo = userId.trim();
+  const obraIdPorCapitulo = new Map<string, string>();
+
+  obrasParaAtualizar.forEach((obra) => {
+    obra.capitulos.forEach((capitulo) => {
+      const obraId = obra.id.trim();
+      const capituloId = capitulo.id.trim();
+
+      if (obraId && capituloId) {
+        obraIdPorCapitulo.set(capituloId, obraId);
+      }
+    });
+  });
+
+  const obraIds = Array.from(
+    new Set(Array.from(obraIdPorCapitulo.values()))
+  );
+  const capituloIds = Array.from(obraIdPorCapitulo.keys());
+
+  if (!userIdLimpo || obraIds.length === 0 || capituloIds.length === 0) {
+    return obrasParaAtualizar;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("progresso_leitura")
+      .select("obra_id,capitulo_id,lido,atualizado_em")
+      .eq("user_id", userIdLimpo)
+      .in("obra_id", obraIds)
+      .in("capitulo_id", capituloIds)
+      .order("atualizado_em", { ascending: false })
+      .limit(5000);
+
+    if (error || !Array.isArray(data)) {
+      return obrasParaAtualizar;
+    }
+
+    const progressoPorCapitulo =
+      new Map<string, SupabaseProgressoLeituraObraPublicaRow>();
+
+    (data as unknown as SupabaseProgressoLeituraObraPublicaRow[]).forEach(
+      (registro) => {
+        const obraId = registro.obra_id?.trim() || "";
+        const capituloId = registro.capitulo_id?.trim() || "";
+        const obraDoCapitulo = obraIdPorCapitulo.get(capituloId) || "";
+
+        if (
+          obraId &&
+          capituloId &&
+          obraDoCapitulo === obraId &&
+          !progressoPorCapitulo.has(capituloId)
+        ) {
+          progressoPorCapitulo.set(capituloId, registro);
+        }
+      }
+    );
+
+    return obrasParaAtualizar.map((obra) => {
+      let ultimoCapituloLidoId = "";
+      let ultimaLeituraEm = "";
+
+      const capitulos = obra.capitulos.map((capitulo) => {
+        const registro = progressoPorCapitulo.get(capitulo.id);
+        const lido = registro?.lido === true;
+        const lidoEm =
+          lido && typeof registro?.atualizado_em === "string"
+            ? registro.atualizado_em
+            : "";
+
+        if (lido) {
+          const tempoAtual = new Date(lidoEm).getTime();
+          const tempoUltimo = new Date(ultimaLeituraEm).getTime();
+          const tempoAtualSeguro = Number.isNaN(tempoAtual) ? 0 : tempoAtual;
+          const tempoUltimoSeguro = Number.isNaN(tempoUltimo) ? 0 : tempoUltimo;
+
+          if (
+            !ultimoCapituloLidoId ||
+            tempoAtualSeguro >= tempoUltimoSeguro
+          ) {
+            ultimoCapituloLidoId = capitulo.id;
+            ultimaLeituraEm = lidoEm;
+          }
+        }
+
+        return {
+          ...capitulo,
+          lido,
+          lidoEm,
+        };
+      });
+
+      return {
+        ...obra,
+        capitulos,
+        ultimoCapituloLidoId,
+        ultimaLeituraEm,
+        progressoLeitura: calcularProgressoLeitura(capitulos),
+      };
+    });
+  } catch {
+    return obrasParaAtualizar;
+  }
+}
+
 async function carregarObraSupabasePorSlug(
   slugBusca: string,
   obrasLocais: ObraLocal[],
@@ -788,7 +909,7 @@ async function carregarObraSupabasePorSlug(
   const slugLimpo = slugBusca.trim();
 
   if (!slugLimpo) {
-    return obrasLocais;
+    return aplicarProgressoUsuarioObraPublica(obrasLocais, userId);
   }
 
   try {
@@ -806,13 +927,13 @@ async function carregarObraSupabasePorSlug(
         "Não consegui carregar a obra pública no Supabase:",
         erroObra.message
       );
-      return obrasLocais;
+      return aplicarProgressoUsuarioObraPublica(obrasLocais, userId);
     }
 
     const obraBanco = ((obrasBanco || []) as unknown as SupabaseObraRow[])[0] || null;
 
     if (!obraBanco) {
-      return obrasLocais;
+      return aplicarProgressoUsuarioObraPublica(obrasLocais, userId);
     }
 
     const { data: capitulosBanco, error: erroCapitulos } = await supabase
@@ -842,9 +963,13 @@ async function carregarObraSupabasePorSlug(
       obraLocal,
       0
     );
-    const [obraNormalizada] = await aplicarTotaisReaisObraPublica([
+    const [obraComTotais] = await aplicarTotaisReaisObraPublica([
       obraNormalizadaSemTotais,
     ]);
+    const [obraNormalizada] = await aplicarProgressoUsuarioObraPublica(
+      [obraComTotais],
+      userId
+    );
 
     const obraJaExiste = obrasLocais.some(
       (obraLocalAtual) => obraLocalAtual.id === obraNormalizada.id
@@ -863,7 +988,7 @@ async function carregarObraSupabasePorSlug(
     return obrasAtualizadas;
   } catch (error) {
     console.warn("Não consegui acessar o Supabase agora:", error);
-    return obrasLocais;
+    return aplicarProgressoUsuarioObraPublica(obrasLocais, userId);
   }
 }
 
@@ -908,6 +1033,7 @@ async function carregarUsuariosUnicosPorColunaObraPublica(
   coluna: string,
   ids: string[],
   colunaUsuario = "user_id",
+  somenteLidos = false,
 ) {
   const idsUnicos = Array.from(
     new Set(ids.map((id) => id.trim()).filter(Boolean)),
@@ -925,11 +1051,17 @@ async function carregarUsuariosUnicosPorColunaObraPublica(
 
     while (true) {
       try {
-        const { data, error } = await supabase
+        let consulta = supabase
           .from(tabela)
           .select(`${coluna},${colunaUsuario}`)
           .in(coluna, loteIds)
           .range(inicio, inicio + tamanhoPagina - 1);
+
+        if (somenteLidos) {
+          consulta = consulta.eq("lido", true);
+        }
+
+        const { data, error } = await consulta;
 
         if (error || !Array.isArray(data) || data.length === 0) {
           break;
@@ -1037,6 +1169,8 @@ async function aplicarTotaisReaisObraPublica(obrasParaAtualizar: ObraLocal[]) {
       "progresso_leitura",
       "capitulo_id",
       capituloIds,
+      "user_id",
+      true,
     ),
     carregarUsuariosUnicosPorColunaObraPublica(
       "obra_curtidas",
@@ -1133,8 +1267,44 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
         obra.slug || criarSlugBase(obra.titulo)
       )}/capitulo/${index + 1}`,
       disponivel: obraDisponivel,
+      lido: capitulo.lido,
+      lidoEm: capitulo.lidoEm,
     })),
+    ultimoCapituloLidoId: obra.ultimoCapituloLidoId,
+    ultimaLeituraEm: obra.ultimaLeituraEm,
+    progressoLeitura: calcularProgressoLeitura(obra.capitulos),
   };
+}
+
+function encontrarCapituloParaContinuarObraPublica(obra: ObraDinamica) {
+  const capitulosDisponiveis = obra.capitulos.filter(
+    (capitulo) => capitulo.disponivel
+  );
+
+  if (capitulosDisponiveis.length === 0) {
+    return null;
+  }
+
+  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
+    ? capitulosDisponiveis.findIndex(
+        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
+      )
+    : -1;
+
+  if (indiceUltimoCapituloLido >= 0) {
+    const proximoCapituloNaoLido = capitulosDisponiveis
+      .slice(indiceUltimoCapituloLido + 1)
+      .find((capitulo) => !capitulo.lido);
+
+    if (proximoCapituloNaoLido) {
+      return proximoCapituloNaoLido;
+    }
+  }
+
+  return (
+    capitulosDisponiveis.find((capitulo) => !capitulo.lido) ||
+    capitulosDisponiveis[capitulosDisponiveis.length - 1]
+  );
 }
 
 function criarCoverArtStyle(capa: string): CSSProperties {
@@ -3935,7 +4105,7 @@ export default function ObraDinamicaPage() {
   }
 
   const hrefPrincipalObra = obra
-    ? capitulosDaObra.find((capitulo) => capitulo.disponivel)?.href ||
+    ? encontrarCapituloParaContinuarObraPublica(obra)?.href ||
       obra.link ||
       `/obra/${obra.slug}`
     : "/explorar";

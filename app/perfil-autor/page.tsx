@@ -989,17 +989,27 @@ function criarBioAutor(perfil: AutorPerfil) {
 }
 
 function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const capituloRegistrado = obra.ultimoCapituloLidoId
-    ? obra.capitulos.find(
+  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
+    ? obra.capitulos.findIndex(
         (capitulo) => capitulo.id === obra.ultimoCapituloLidoId,
       )
-    : null;
+    : -1;
 
-  if (capituloRegistrado) {
-    return capituloRegistrado;
+  if (indiceUltimoCapituloLido >= 0) {
+    const proximoCapituloNaoLido = obra.capitulos
+      .slice(indiceUltimoCapituloLido + 1)
+      .find((capitulo) => !capitulo.lido);
+
+    if (proximoCapituloNaoLido) {
+      return proximoCapituloNaoLido;
+    }
   }
 
-  return obra.capitulos.find((capitulo) => !capitulo.lido) || obra.capitulos[0];
+  return (
+    obra.capitulos.find((capitulo) => !capitulo.lido) ||
+    obra.capitulos[obra.capitulos.length - 1] ||
+    null
+  );
 }
 
 
@@ -2108,14 +2118,22 @@ function aplicarInteracoesNasObras(
   idsCapitulosSalvos: Set<string>,
   comentariosPorCapitulo: Map<string, string>,
   progressoPorCapitulo: Map<string, string>,
+  progressoCarregado: boolean,
 ) {
   return obrasParaAtualizar.map((obra) => {
-    let ultimoCapituloLidoId = obra.ultimoCapituloLidoId;
-    let ultimaLeituraEm = obra.ultimaLeituraEm;
+    let ultimoCapituloLidoId = progressoCarregado
+      ? ""
+      : obra.ultimoCapituloLidoId;
+    let ultimaLeituraEm = progressoCarregado ? "" : obra.ultimaLeituraEm;
 
     const capitulos = obra.capitulos.map((capitulo) => {
-      const lidoEm = progressoPorCapitulo.get(capitulo.id) || capitulo.lidoEm;
-      const lido = Boolean(lidoEm) || capitulo.lido;
+      const lidoEmRemoto = progressoPorCapitulo.get(capitulo.id) || "";
+      const lido = progressoCarregado
+        ? Boolean(lidoEmRemoto)
+        : Boolean(lidoEmRemoto) || capitulo.lido;
+      const lidoEm = lido
+        ? lidoEmRemoto || capitulo.lidoEm
+        : "";
 
       if (lido && lidoEm) {
         const tempoAtual = obterTimestampData(lidoEm);
@@ -2768,6 +2786,7 @@ async function carregarInteracoesCapitulosSupabase(userId: string) {
   );
   const comentarios = new Map<string, string>();
   const progresso = new Map<string, string>();
+  let progressoCarregado = false;
 
   try {
     const { data } = await supabase
@@ -2792,16 +2811,21 @@ async function carregarInteracoesCapitulosSupabase(userId: string) {
   }
 
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("progresso_leitura")
-      .select("capitulo_id,atualizado_em,criado_em")
+      .select("capitulo_id,lido,atualizado_em,criado_em")
       .eq("user_id", userId)
+      .order("atualizado_em", { ascending: false })
       .limit(1000);
 
-    if (Array.isArray(data)) {
+    if (!error && Array.isArray(data)) {
+      progressoCarregado = true;
+
       data.forEach((item) => {
         const registro = item as Record<string, unknown>;
         const capituloId = pegarTexto(registro.capitulo_id);
+        const registroLido =
+          typeof registro.lido === "boolean" ? registro.lido : true;
         const lidoEm = pegarTexto(
           registro.atualizado_em ??
             registro.criado_em ??
@@ -2809,7 +2833,7 @@ async function carregarInteracoesCapitulosSupabase(userId: string) {
             registro.created_at,
         );
 
-        if (capituloId && lidoEm) {
+        if (capituloId && registroLido && lidoEm) {
           progresso.set(capituloId, lidoEm);
         }
       });
@@ -2818,7 +2842,13 @@ async function carregarInteracoesCapitulosSupabase(userId: string) {
     // Progresso continua apenas localmente se houver erro.
   }
 
-  return { curtidas, salvos, comentarios, progresso };
+  return {
+    curtidas,
+    salvos,
+    comentarios,
+    progresso,
+    progressoCarregado,
+  };
 }
 
 async function carregarEstadoUsuarioSupabase() {
@@ -3241,7 +3271,7 @@ const CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR: Record<string, string> = {
   favoritos: "obra_id,visibilidade,criado_em",
   concluidas: "obra_id,visibilidade,criado_em",
   obra_avaliacoes: "obra_id,nota,criado_em,atualizado_em",
-  progresso_leitura: "obra_id,capitulo_id,progresso,criado_em,atualizado_em",
+  progresso_leitura: "obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
   diario_atividades:
     "id,tipo,texto,nota,obra_id,capitulo_id,metadata,visibilidade,criado_em",
   diario_anotacoes:
@@ -3679,40 +3709,125 @@ async function carregarDiarioPerfilSupabase(
       .filter(Boolean),
   );
 
-  const lendoPorObra = new Map<string, DiarioPerfilItem>();
+  const progressoPorObra = new Map<
+    string,
+    {
+      obra: ObraLocal;
+      capitulosLidos: Map<string, string>;
+      ultimoCapituloLidoId: string;
+      ultimaLeituraEm: string;
+      visibilidade: VisibilidadeDiarioPerfil;
+    }
+  >();
 
   progresso.forEach((registro) => {
     if (!registroDiarioPodeAparecer(registro, incluirPrivados, "privado")) {
       return;
     }
 
-    const obra = obterObraRegistroDiario(registro, obrasPorId, obrasPorCapituloId);
+    const registroLido =
+      typeof registro.lido === "boolean" ? registro.lido : true;
+
+    if (!registroLido) {
+      return;
+    }
+
+    const obra = obterObraRegistroDiario(
+      registro,
+      obrasPorId,
+      obrasPorCapituloId,
+    );
 
     if (!obra || concluidasIds.has(obra.id)) {
       return;
     }
 
-    const data = obterDataRegistroDiario(registro) || obra.ultimaLeituraEm || obra.criadaEm;
-    const progressoObra = obra.progressoLeitura > 0 ? obra.progressoLeitura : 1;
-    const itemAtual = lendoPorObra.get(obra.id);
+    const capituloId = pegarTexto(
+      registro.capitulo_id ?? registro.capituloId,
+    );
+    const capituloPublicado = obra.capitulos.find(
+      (capitulo) => capitulo.id === capituloId,
+    );
 
-    if (itemAtual && obterTimestampData(itemAtual.data) >= obterTimestampData(data)) {
+    if (!capituloId || !capituloPublicado) {
       return;
     }
 
+    const data =
+      obterDataRegistroDiario(registro) ||
+      capituloPublicado.lidoEm ||
+      obra.ultimaLeituraEm ||
+      obra.criadaEm;
+    const grupoAtual = progressoPorObra.get(obra.id) || {
+      obra,
+      capitulosLidos: new Map<string, string>(),
+      ultimoCapituloLidoId: "",
+      ultimaLeituraEm: "",
+      visibilidade: obterVisibilidadeRegistroDiario(
+        registro,
+        "privado",
+      ),
+    };
+
+    grupoAtual.capitulosLidos.set(capituloId, data);
+
+    if (
+      obterTimestampData(data) >=
+      obterTimestampData(grupoAtual.ultimaLeituraEm)
+    ) {
+      grupoAtual.ultimoCapituloLidoId = capituloId;
+      grupoAtual.ultimaLeituraEm = data;
+      grupoAtual.visibilidade = obterVisibilidadeRegistroDiario(
+        registro,
+        "privado",
+      );
+    }
+
+    progressoPorObra.set(obra.id, grupoAtual);
+  });
+
+  const lendoPorObra = new Map<string, DiarioPerfilItem>();
+
+  progressoPorObra.forEach((grupo, obraId) => {
+    const totalCapitulos = grupo.obra.capitulos.length;
+
+    if (totalCapitulos <= 0) {
+      return;
+    }
+
+    const capitulos = grupo.obra.capitulos.map((capitulo) => {
+      const lidoEm = grupo.capitulosLidos.get(capitulo.id) || "";
+
+      return {
+        ...capitulo,
+        lido: Boolean(lidoEm),
+        lidoEm,
+      };
+    });
+    const progressoObra = calcularProgressoLeitura(capitulos);
+
+    if (progressoObra <= 0 || progressoObra >= 100) {
+      return;
+    }
+
+    const obraComProgresso: ObraLocal = {
+      ...grupo.obra,
+      capitulos,
+      ultimoCapituloLidoId: grupo.ultimoCapituloLidoId,
+      ultimaLeituraEm: grupo.ultimaLeituraEm,
+      progressoLeitura: progressoObra,
+    };
+
     lendoPorObra.set(
-      obra.id,
+      obraId,
       criarItemDiarioPerfil(
         "lendo",
-        obra,
-        data,
+        obraComProgresso,
+        grupo.ultimaLeituraEm || grupo.obra.criadaEm,
         `Leitura em andamento • ${progressoObra}% concluída`,
         {
           progresso: progressoObra,
-          visibilidade: obterVisibilidadeRegistroDiario(
-            registro,
-            "privado",
-          ),
+          visibilidade: grupo.visibilidade,
         },
       ),
     );
@@ -4668,6 +4783,7 @@ export default function PerfilAutorPage() {
           estadoUsuarioSupabase.interacoes.salvos,
           estadoUsuarioSupabase.interacoes.comentarios,
           estadoUsuarioSupabase.interacoes.progresso,
+          estadoUsuarioSupabase.interacoes.progressoCarregado,
         );
       }
 

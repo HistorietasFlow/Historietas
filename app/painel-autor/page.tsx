@@ -51,6 +51,7 @@ type ObraLocal = {
   ultimoCapituloLidoId: string;
   ultimaLeituraEm: string;
   progressoLeitura: number;
+  visualizacoes: number;
   slug: string;
   link: string;
   totalCurtidasPainel?: number;
@@ -77,6 +78,7 @@ type SupabaseObraRow = {
   arquivo_tipo: string | null;
   arquivo_tamanho: number | null;
   arquivo_categoria: string | null;
+  visualizacoes: number | null;
   publicado: boolean | null;
   slug: string | null;
   link: string | null;
@@ -222,18 +224,22 @@ function calcularSalvos(obra: ObraLocal) {
   return obra.capitulos.filter((capitulo) => capitulo.salvo).length;
 }
 
-function calcularLidos(obra: ObraLocal) {
-  return obra.capitulos.filter((capitulo) => capitulo.lido).length;
+function obterCapitulosPublicadosPainel(capitulos: CapituloLocal[]) {
+  return capitulos.filter((capitulo) => capitulo.publicado !== false);
 }
 
 function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
-  if (capitulos.length === 0) {
+  const capitulosPublicados = obterCapitulosPublicadosPainel(capitulos);
+
+  if (capitulosPublicados.length === 0) {
     return 0;
   }
 
-  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
+  const capitulosLidos = capitulosPublicados.filter(
+    (capitulo) => capitulo.lido
+  ).length;
 
-  return Math.round((capitulosLidos / capitulos.length) * 100);
+  return Math.round((capitulosLidos / capitulosPublicados.length) * 100);
 }
 
 function obraTemConteudoPainel(
@@ -245,7 +251,14 @@ function obraTemConteudoPainel(
 function obraPublicadaComConteudoPainel(
   obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">
 ) {
-  return obra.publicado && obraTemConteudoPainel(obra);
+  const temCapituloPublicado = obra.capitulos.some(
+    (capitulo) => capitulo.publicado !== false
+  );
+
+  return (
+    obra.publicado &&
+    (temCapituloPublicado || Boolean(normalizarArquivoObra(obra.arquivoObra)))
+  );
 }
 
 function obraRascunhoOuSemConteudoPainel(
@@ -265,26 +278,36 @@ function obterStatusPainelAutor(
 }
 
 function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const capituloRegistrado = obra.ultimoCapituloLidoId
-    ? obra.capitulos.find(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
-      )
-    : null;
+  const capitulosPublicados = obterCapitulosPublicadosPainel(obra.capitulos);
+  const temCapituloLido = capitulosPublicados.some(
+    (capitulo) => capitulo.lido
+  );
 
-  if (capituloRegistrado) {
-    return capituloRegistrado;
+  if (!temCapituloLido) {
+    return null;
   }
 
-  const capitulosAtivos = obra.capitulos.filter((capitulo) => {
-    return (
-      capitulo.lido ||
-      capitulo.salvo ||
-      capitulo.curtiu ||
-      Boolean(capitulo.comentario.trim())
-    );
-  });
+  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
+    ? capitulosPublicados.findIndex(
+        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
+      )
+    : -1;
 
-  return capitulosAtivos[capitulosAtivos.length - 1] || null;
+  if (indiceUltimoCapituloLido >= 0) {
+    const proximoCapituloNaoLido = capitulosPublicados
+      .slice(indiceUltimoCapituloLido + 1)
+      .find((capitulo) => !capitulo.lido);
+
+    if (proximoCapituloNaoLido) {
+      return proximoCapituloNaoLido;
+    }
+  }
+
+  return (
+    capitulosPublicados.find((capitulo) => !capitulo.lido) ||
+    capitulosPublicados[capitulosPublicados.length - 1] ||
+    null
+  );
 }
 
 function criarPainelCoverStyle(capa: string): CSSProperties {
@@ -562,6 +585,16 @@ function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
     ultimaLeituraEm:
       typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
     progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
+    visualizacoes:
+      typeof obra.visualizacoes === "number" &&
+      Number.isFinite(obra.visualizacoes)
+        ? Math.max(0, Math.round(obra.visualizacoes))
+        : typeof obra.views === "number" && Number.isFinite(obra.views)
+          ? Math.max(0, Math.round(obra.views))
+          : typeof obra.total_visualizacoes === "number" &&
+              Number.isFinite(obra.total_visualizacoes)
+            ? Math.max(0, Math.round(obra.total_visualizacoes))
+            : 0,
     slug:
       typeof obra.slug === "string" && obra.slug.trim()
         ? obra.slug
@@ -1102,6 +1135,132 @@ async function carregarRegistrosObraSupabase(
   }
 }
 
+function registroProgressoPainelEstaLido(
+  registro: RegistroSupabaseGenerico
+) {
+  if (typeof registro.lido === "boolean") {
+    return registro.lido;
+  }
+
+  if (typeof registro.lido === "string") {
+    return registro.lido.trim().toLowerCase() === "true";
+  }
+
+  return true;
+}
+
+function obterDataProgressoPainel(registro: RegistroSupabaseGenerico) {
+  const possiveisDatas = [
+    registro.atualizado_em,
+    registro.updated_at,
+    registro.criado_em,
+    registro.created_at,
+  ];
+
+  const data = possiveisDatas.find(
+    (valor) => typeof valor === "string" && Boolean(valor.trim())
+  );
+
+  return typeof data === "string" ? data.trim() : "";
+}
+
+function criarMapaProgressoLeituraPainel(
+  registros: RegistroSupabaseGenerico[]
+) {
+  const progressoPorCapitulo = new Map<string, string>();
+
+  registros.forEach((registro) => {
+    if (!registroProgressoPainelEstaLido(registro)) {
+      return;
+    }
+
+    const obraId = obterIdObraRegistro(registro);
+    const capituloId = obterIdCapituloRegistro(registro);
+
+    if (!capituloId) {
+      return;
+    }
+
+    const lidoEm = obterDataProgressoPainel(registro);
+    const chaveCompleta = obraId
+      ? criarChaveInteracao(obraId, capituloId)
+      : "";
+
+    if (chaveCompleta && !progressoPorCapitulo.has(chaveCompleta)) {
+      progressoPorCapitulo.set(chaveCompleta, lidoEm);
+    }
+
+    if (!progressoPorCapitulo.has(capituloId)) {
+      progressoPorCapitulo.set(capituloId, lidoEm);
+    }
+  });
+
+  return progressoPorCapitulo;
+}
+
+async function carregarProgressoUsuarioPainel(
+  userId: string,
+  obraIds: string[],
+  capituloIds: string[]
+) {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo || (obraIds.length === 0 && capituloIds.length === 0)) {
+    return {
+      registros: [] as RegistroSupabaseGenerico[],
+      carregado: Boolean(userIdLimpo),
+    };
+  }
+
+  try {
+    let query = supabase
+      .from("progresso_leitura")
+      .select(
+        "user_id,obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em"
+      )
+      .eq("user_id", userIdLimpo);
+
+    if (obraIds.length > 0) {
+      query = query.in("obra_id", obraIds);
+    } else {
+      query = query.in("capitulo_id", capituloIds);
+    }
+
+    const { data, error } = await query
+      .order("atualizado_em", { ascending: false })
+      .limit(5000);
+
+    if (error) {
+      console.warn(
+        "Não consegui carregar o progresso pessoal no Painel do Autor:",
+        error.message
+      );
+
+      return {
+        registros: [] as RegistroSupabaseGenerico[],
+        carregado: false,
+      };
+    }
+
+    return {
+      registros: Array.isArray(data)
+        ? (data as unknown as RegistroSupabaseGenerico[])
+        : [],
+      carregado: true,
+    };
+  } catch (error) {
+    console.warn(
+      "Não consegui acessar o progresso pessoal no Painel do Autor:",
+      error
+    );
+
+    return {
+      registros: [] as RegistroSupabaseGenerico[],
+      carregado: false,
+    };
+  }
+}
+
 function criarSetObrasPorRegistro(registros: RegistroSupabaseGenerico[]) {
   return new Set(
     registros
@@ -1248,7 +1407,8 @@ function converterObraSupabaseParaLocalPainel({
   obraLocal,
   capitulosSalvos,
   capitulosCurtidos,
-  capitulosLidos,
+  progressoPorCapitulo,
+  progressoCarregado,
   comentariosCapitulos,
   index,
 }: {
@@ -1257,13 +1417,55 @@ function converterObraSupabaseParaLocalPainel({
   obraLocal?: ObraLocal;
   capitulosSalvos: Set<string>;
   capitulosCurtidos: Set<string>;
-  capitulosLidos: Set<string>;
+  progressoPorCapitulo: Map<string, string>;
+  progressoCarregado: boolean;
   comentariosCapitulos: Map<string, string>;
   index: number;
 }): ObraLocal {
   const capitulosLocaisPorId = new Map(
     (obraLocal?.capitulos || []).map((capitulo) => [capitulo.id, capitulo])
   );
+
+  let ultimoCapituloLidoId = progressoCarregado
+    ? ""
+    : obraLocal?.ultimoCapituloLidoId || "";
+  let ultimaLeituraEm = progressoCarregado
+    ? ""
+    : obraLocal?.ultimaLeituraEm || "";
+
+  function aplicarProgressoCapitulo(
+    capitulo: CapituloLocal,
+    obraId: string
+  ): CapituloLocal {
+    const chaveInteracao = criarChaveInteracao(obraId, capitulo.id);
+    const temProgressoRemoto =
+      progressoPorCapitulo.has(chaveInteracao) ||
+      progressoPorCapitulo.has(capitulo.id);
+    const lido = progressoCarregado
+      ? temProgressoRemoto
+      : capitulo.lido;
+    const lidoEmRemoto =
+      progressoPorCapitulo.get(chaveInteracao) ||
+      progressoPorCapitulo.get(capitulo.id) ||
+      "";
+    const lidoEm = lido ? lidoEmRemoto || capitulo.lidoEm : "";
+
+    if (lido) {
+      const tempoAtual = obterTimestamp(lidoEm);
+      const tempoUltimo = obterTimestamp(ultimaLeituraEm);
+
+      if (!ultimoCapituloLidoId || tempoAtual >= tempoUltimo) {
+        ultimoCapituloLidoId = capitulo.id;
+        ultimaLeituraEm = lidoEm;
+      }
+    }
+
+    return {
+      ...capitulo,
+      lido,
+      lidoEm,
+    };
+  }
 
   const capitulosRemotos = capitulosBanco.map((capitulo, capituloIndex) => {
     const capituloLocal = capitulosLocaisPorId.get(capitulo.id);
@@ -1272,41 +1474,45 @@ function converterObraSupabaseParaLocalPainel({
       comentariosCapitulos.get(chaveInteracao) ||
       comentariosCapitulos.get(capitulo.id) ||
       "";
-    const lidoSupabase =
-      capitulosLidos.has(chaveInteracao) || capitulosLidos.has(capitulo.id);
 
-    return {
-      id: capitulo.id,
-      titulo:
-        capitulo.titulo?.trim() ||
-        capituloLocal?.titulo ||
-        `Capítulo ${capituloIndex + 1}`,
-      texto:
-        typeof capitulo.texto === "string"
-          ? capitulo.texto
-          : capituloLocal?.texto || "",
-      curtiu:
-        Boolean(capituloLocal?.curtiu) ||
-        capitulosCurtidos.has(chaveInteracao) ||
-        capitulosCurtidos.has(capitulo.id),
-      salvo:
-        Boolean(capituloLocal?.salvo) ||
-        capitulosSalvos.has(chaveInteracao) ||
-        capitulosSalvos.has(capitulo.id),
-      comentario: comentarioSupabase || capituloLocal?.comentario || "",
-      criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
-      lido: Boolean(capituloLocal?.lido) || lidoSupabase,
-      lidoEm:
-        capituloLocal?.lidoEm ||
-        (lidoSupabase ? capitulo.atualizado_em || capitulo.criado_em || "" : ""),
-      publicado: capitulo.publicado !== false,
-    } satisfies CapituloLocal;
+    return aplicarProgressoCapitulo(
+      {
+        id: capitulo.id,
+        titulo:
+          capitulo.titulo?.trim() ||
+          capituloLocal?.titulo ||
+          `Capítulo ${capituloIndex + 1}`,
+        texto:
+          typeof capitulo.texto === "string"
+            ? capitulo.texto
+            : capituloLocal?.texto || "",
+        curtiu:
+          Boolean(capituloLocal?.curtiu) ||
+          capitulosCurtidos.has(chaveInteracao) ||
+          capitulosCurtidos.has(capitulo.id),
+        salvo:
+          Boolean(capituloLocal?.salvo) ||
+          capitulosSalvos.has(chaveInteracao) ||
+          capitulosSalvos.has(capitulo.id),
+        comentario: comentarioSupabase || capituloLocal?.comentario || "",
+        criadoEm: capitulo.criado_em || capituloLocal?.criadoEm || "",
+        lido: Boolean(capituloLocal?.lido),
+        lidoEm: capituloLocal?.lidoEm || "",
+        publicado: capitulo.publicado !== false,
+      },
+      obraBanco.id
+    );
   });
 
   const idsRemotos = new Set(capitulosRemotos.map((capitulo) => capitulo.id));
-  const capitulosApenasLocais = (obraLocal?.capitulos || []).filter(
-    (capitulo) => !idsRemotos.has(capitulo.id)
-  );
+  const capitulosApenasLocais = (obraLocal?.capitulos || [])
+    .filter((capitulo) => !idsRemotos.has(capitulo.id))
+    .map((capitulo) =>
+      aplicarProgressoCapitulo(
+        capitulo,
+        obraBanco.id || obraLocal?.id || ""
+      )
+    );
   const capitulosMesclados = [...capitulosRemotos, ...capitulosApenasLocais];
 
   const tituloObra =
@@ -1361,9 +1567,14 @@ function converterObraSupabaseParaLocalPainel({
     publicado: Boolean(obraBanco.publicado),
     capitulos: capitulosMesclados,
     criadaEm: obraBanco.criada_em || obraLocal?.criadaEm || "",
-    ultimoCapituloLidoId: obraLocal?.ultimoCapituloLidoId || "",
-    ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
+    ultimoCapituloLidoId,
+    ultimaLeituraEm,
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
+    visualizacoes:
+      typeof obraBanco.visualizacoes === "number" &&
+      Number.isFinite(obraBanco.visualizacoes)
+        ? Math.max(0, Math.round(obraBanco.visualizacoes))
+        : obraLocal?.visualizacoes || 0,
     slug: slugObra,
     link: obraBanco.link?.trim() || obraLocal?.link || `/obra/${slugObra}`,
   };
@@ -1501,7 +1712,7 @@ async function carregarPainelAutorSupabase(
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
       .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em"
       )
       .eq("user_id", userId)
       .order("criada_em", { ascending: false })
@@ -1562,6 +1773,7 @@ async function carregarPainelAutorSupabase(
       comentariosBanco,
       comentariosObrasBanco,
       progressoBanco,
+      progressoUsuarioResultado,
       curtidasObraBanco,
       seguidoresObraBanco,
     ] = await Promise.all([
@@ -1573,6 +1785,7 @@ async function carregarPainelAutorSupabase(
       carregarRegistrosObraSupabase("comentarios_capitulos", obraIds, undefined, capituloIds),
       carregarRegistrosObraSupabase("comentarios_obras", obraIds),
       carregarRegistrosObraSupabase("progresso_leitura", obraIds, undefined, capituloIds),
+      carregarProgressoUsuarioPainel(userId, obraIds, capituloIds),
       carregarRegistrosObraSupabase("obra_curtidas", obraIds),
       carregarRegistrosObraSupabase("seguindo_obras", obraIds),
     ]);
@@ -1591,15 +1804,16 @@ async function carregarPainelAutorSupabase(
       comentariosBanco,
       userId
     );
-    const progressoUsuarioBanco = filtrarRegistrosPorUsuarioPainel(
-      progressoBanco,
-      userId
+    const progressoUsuarioBanco = progressoUsuarioResultado.registros;
+    const progressoCarregado = progressoUsuarioResultado.carregado;
+    const progressoLidoBanco = progressoBanco.filter(
+      registroProgressoPainelEstaLido
     );
     const capitulosSalvos = criarSetCapitulosPorRegistro(salvosUsuarioBanco);
     const capitulosCurtidos = criarSetCapitulosPorRegistro(
       curtidasUsuarioBanco
     );
-    const capitulosLidos = criarSetCapitulosPorRegistro(
+    const progressoPorCapitulo = criarMapaProgressoLeituraPainel(
       progressoUsuarioBanco
     );
     const comentariosCapitulos = criarMapaComentariosPorRegistro(
@@ -1624,7 +1838,8 @@ async function carregarPainelAutorSupabase(
         obraLocal,
         capitulosSalvos,
         capitulosCurtidos,
-        capitulosLidos,
+        progressoPorCapitulo,
+        progressoCarregado,
         comentariosCapitulos,
         index,
       });
@@ -1649,7 +1864,7 @@ async function carregarPainelAutorSupabase(
         );
       const totalLeitoresUsuarios =
         contarUsuariosUnicosRelacionadosObraPainel(
-          [progressoBanco],
+          [progressoLidoBanco],
           obraBanco.id,
           capitulosDaObra
         );
@@ -1953,7 +2168,7 @@ export default function PainelAutorPage() {
         const totalLidos =
           typeof obra.totalLidosPainel === "number"
             ? obra.totalLidosPainel
-            : calcularLidos(obra);
+            : 0;
         const progressoLeitura = calcularProgressoLeitura(obra.capitulos);
         const ultimoCapituloLido = encontrarCapituloParaContinuar(obra);
 
@@ -1966,7 +2181,7 @@ export default function PainelAutorPage() {
           progressoLeitura,
           ultimoCapituloLido,
           pontuacao:
-            obra.capitulos.length * 2 +
+            obterCapitulosPublicadosPainel(obra.capitulos).length * 2 +
             totalCurtidas * 5 +
             totalComentarios * 8 +
             totalSalvos * 4 +
@@ -2286,40 +2501,103 @@ export default function PainelAutorPage() {
             aria-label="Abrir painel do autor"
           >
             <span>Painel do autor</span>
-            <span style={topFilterIconStyle}>+</span>
+            <span style={topFilterIconStyle} aria-hidden="true">
+              +
+            </span>
           </button>
 
-          <button
-            type="button"
-            aria-label={buscaPainelAberta ? "Fechar busca" : "Abrir busca"}
-            aria-expanded={buscaPainelAberta || Boolean(busca.trim())}
-            onClick={() => setBuscaPainelAberta((aberta) => !aberta)}
-            style={topSearchButtonStyle}
-          >
-            ⌕
-          </button>
+          {buscaPainelAberta ? (
+            <>
+              <label
+                style={
+                  isDesktop
+                    ? desktopTopSearchShellStyle
+                    : topSearchShellStyle
+                }
+              >
+                <input
+                  value={busca}
+                  onChange={(event) => setBusca(event.target.value)}
+                  placeholder="Buscar obra..."
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={90}
+                  style={topSearchInputStyle}
+                  type="text"
+                  autoFocus
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setBusca("");
+                  setBuscaPainelAberta(false);
+                }}
+                aria-label="Fechar busca"
+                aria-expanded="true"
+                style={topSearchButtonStyle}
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="10.85"
+                    cy="10.85"
+                    r="6.65"
+                    stroke="currentColor"
+                    strokeWidth="2.15"
+                  />
+                  <path
+                    d="M16.05 16.05L20.25 20.25"
+                    stroke="currentColor"
+                    strokeWidth="2.15"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setBuscaPainelAberta(true)}
+              aria-label="Abrir busca"
+              aria-expanded="false"
+              style={topSearchButtonStyle}
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="10.85"
+                  cy="10.85"
+                  r="6.65"
+                  stroke="currentColor"
+                  strokeWidth="2.15"
+                />
+                <path
+                  d="M16.05 16.05L20.25 20.25"
+                  stroke="currentColor"
+                  strokeWidth="2.15"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )}
         </header>
 
         <section style={isDesktop ? desktopStudioControlsStyle : studioControlsStyle}>
-          {(buscaPainelAberta || busca.trim()) && (
-            <label style={studioSearchShellStyle}>
-              <span style={studioSearchIconStyle}>⌕</span>
-
-              <input
-                value={busca}
-                onChange={(event) => setBusca(event.target.value)}
-                placeholder="Buscar obra..."
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                maxLength={90}
-                style={studioSearchInputStyle}
-                type="text"
-              />
-            </label>
-          )}
-
-
           {mostrarResumoPainel && (
             <section style={isDesktop ? desktopStatsBoxStyle : statsBoxStyle}>
           <div style={statCardStyle}>
@@ -2601,9 +2879,13 @@ function ObraPainelCard({
   const obraHref = linkObraPainel || `/obra/${encodeURIComponent(slugObraPainel)}`;
   const editarHref = `/editar-obra?obraId=${obra.id}`;
   const capituloHref = `/adicionar-capitulo?obraId=${obra.id}`;
-  const capituloParaLer = obra.ultimoCapituloLido || obra.capitulos[0] || null;
-  const editarCapituloHref = capituloParaLer
-    ? `/editar-capitulo?obraId=${obra.id}&capituloId=${capituloParaLer.id}`
+  const capitulosPublicados = obterCapitulosPublicadosPainel(obra.capitulos);
+  const capituloParaContinuar = obra.ultimoCapituloLido;
+  const capituloParaLer =
+    capituloParaContinuar || capitulosPublicados[0] || null;
+  const capituloParaEditar = obra.capitulos[0] || null;
+  const editarCapituloHref = capituloParaEditar
+    ? `/editar-capitulo?obraId=${obra.id}&capituloId=${capituloParaEditar.id}`
     : `/editar-capitulo?obraId=${obra.id}`;
   const indiceCapituloParaLer = capituloParaLer
     ? obra.capitulos.findIndex((capitulo) => capitulo.id === capituloParaLer.id)
@@ -2613,7 +2895,7 @@ function ObraPainelCard({
     ? criarHrefLeituraCapituloPainel(obra, capituloParaLer, numeroCapituloParaLer)
     : "";
   const perfilAutorHref = criarPerfilAutorHref(obra.autor, obra.autorId, obra.autorId);
-  const visualizacoesPainel = Math.max(0, obra.totalLidos);
+  const visualizacoesPainel = Math.max(0, obra.visualizacoes);
   const statusTexto = obterStatusPainelAutor(obra);
   const obraComStatusPublicado = obraPublicadaComConteudoPainel(obra);
   const obraTemCapitulos = obra.capitulos.length > 0;
@@ -2779,7 +3061,7 @@ function ObraPainelCard({
                   onClick={() => setAcoesAbertas(false)}
                   style={readButtonStyle}
                 >
-                  {obra.ultimoCapituloLido ? "Continuar leitura" : "Ler capítulo"}
+                  {capituloParaContinuar ? "Continuar leitura" : "Ler capítulo"}
                 </Link>
               )}
 
@@ -2971,7 +3253,7 @@ const topStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: "10px",
+  gap: "6px",
   flexWrap: "nowrap",
   marginBottom: "10px",
   minWidth: 0,
@@ -2991,8 +3273,9 @@ const topFilterButtonStyle: CSSProperties = {
   justifyContent: "flex-start",
   gap: "8px",
   minWidth: 0,
-  maxWidth: "100%",
-  flex: "1 1 auto",
+  maxWidth: "none",
+  flex: "0 0 auto",
+  whiteSpace: "nowrap",
   fontSize: "16px",
   lineHeight: 1.15,
   fontWeight: 950,
@@ -3001,6 +3284,8 @@ const topFilterButtonStyle: CSSProperties = {
   textAlign: "left",
   letterSpacing: "-0.04em",
   boxShadow: "none",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
   ...safeTextStyle,
 };
 
@@ -3031,6 +3316,54 @@ const topSearchButtonStyle: CSSProperties = {
   padding: 0,
   boxShadow: "none",
   flex: "0 0 auto",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+};
+
+const topSearchShellStyle: CSSProperties = {
+  flex: "1 1 auto",
+  width: "auto",
+  minWidth: "110px",
+  maxWidth: "none",
+  height: "36px",
+  marginLeft: "0",
+  marginRight: "-4px",
+  borderRadius: "999px",
+  border: "none",
+  background: "#000000",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  overflow: "hidden",
+  padding: "0 0 0 13px",
+  boxSizing: "border-box",
+  boxShadow: "none",
+  transformOrigin: "right center",
+};
+
+const desktopTopSearchShellStyle: CSSProperties = {
+  ...topSearchShellStyle,
+  flex: "1 1 auto",
+  width: "auto",
+  maxWidth: "520px",
+};
+
+const topSearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  flex: "1 1 auto",
+  width: "100%",
+  minWidth: 0,
+  height: "34px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  outline: "none",
+  fontFamily: "inherit",
+  fontSize: "14px",
+  fontWeight: 800,
+  letterSpacing: "-0.025em",
+  boxSizing: "border-box",
 };
 
 const statsBoxStyle: CSSProperties = {
@@ -3085,45 +3418,6 @@ const studioControlsStyle: CSSProperties = {
   gap: "5px",
   minWidth: 0,
   maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const studioSearchShellStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "52px",
-  borderRadius: "22px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#000000",
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  padding: "0 16px",
-  boxSizing: "border-box",
-  boxShadow: "none",
-};
-
-const studioSearchIconStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "22px",
-  lineHeight: 1,
-  fontWeight: 700,
-  flex: "0 0 auto",
-};
-
-const studioSearchInputStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "100%",
-  minWidth: 0,
-  height: "50px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  outline: "none",
-  fontFamily: "inherit",
-  fontSize: "15px",
-  fontWeight: 850,
-  letterSpacing: "-0.035em",
   boxSizing: "border-box",
 };
 

@@ -117,6 +117,13 @@ type SupabaseInteracaoObraHomeRow = {
   user_id: string | null;
 };
 
+type SupabaseProgressoLeituraHomeRow = {
+  obra_id: string | null;
+  capitulo_id: string | null;
+  lido: boolean | null;
+  atualizado_em: string | null;
+};
+
 type PerfilSupabaseHome = {
   userId: string;
   nome: string;
@@ -165,15 +172,6 @@ type AvaliacoesAutoresHome = Record<string, AvaliacaoAutorHome>;
 type SupabaseAvaliacaoAutorHomeRow = {
   autor_id: string | null;
   nota: number | null;
-};
-
-type ResultadoBuscaHome = {
-  id: string;
-  titulo: string;
-  autor: string;
-  detalhe: string;
-  href: string;
-  origem: "Obra" | "Catálogo";
 };
 
 type TemaVisualHome =
@@ -832,26 +830,29 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
 }
 
 function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const capituloRegistrado = obra.ultimoCapituloLidoId
-    ? obra.capitulos.find(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
-      )
-    : null;
+  const temCapituloLido = obra.capitulos.some((capitulo) => capitulo.lido);
 
-  if (capituloRegistrado) {
-    return capituloRegistrado;
+  if (!temCapituloLido) {
+    return null;
   }
 
-  const capitulosAtivos = obra.capitulos.filter((capitulo) => {
-    return (
-      capitulo.lido ||
-      capitulo.salvo ||
-      capitulo.curtiu ||
-      Boolean(capitulo.comentario.trim())
-    );
-  });
+  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
+    ? obra.capitulos.findIndex(
+        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
+      )
+    : -1;
 
-  return capitulosAtivos[capitulosAtivos.length - 1] || null;
+  if (indiceUltimoCapituloLido >= 0) {
+    const proximoCapituloNaoLido = obra.capitulos
+      .slice(indiceUltimoCapituloLido + 1)
+      .find((capitulo) => !capitulo.lido);
+
+    if (proximoCapituloNaoLido) {
+      return proximoCapituloNaoLido;
+    }
+  }
+
+  return obra.capitulos.find((capitulo) => !capitulo.lido) || null;
 }
 
 function obraLocalCombinaBusca(obra: ObraLocal, termoBusca: string) {
@@ -878,16 +879,18 @@ function obraLocalCombinaBusca(obra: ObraLocal, termoBusca: string) {
 }
 
 function obterTempoUltimaLeitura(obra: ObraLocal) {
-  const capituloParaContinuar = encontrarCapituloParaContinuar(obra);
-  const dataReferencia =
-    obra.ultimaLeituraEm ||
-    capituloParaContinuar?.lidoEm ||
-    capituloParaContinuar?.criadoEm ||
-    obra.criadaEm;
+  const temposLeitura = [
+    obra.ultimaLeituraEm,
+    ...obra.capitulos
+      .filter((capitulo) => capitulo.lido)
+      .map((capitulo) => capitulo.lidoEm),
+  ].map((dataLeitura) => {
+    const tempo = new Date(dataLeitura).getTime();
 
-  const tempo = new Date(dataReferencia).getTime();
+    return Number.isNaN(tempo) ? 0 : tempo;
+  });
 
-  return Number.isNaN(tempo) ? 0 : tempo;
+  return Math.max(0, ...temposLeitura);
 }
 
 function criarCoverStyle(capa: string): CSSProperties {
@@ -2014,6 +2017,60 @@ function normalizarObraSupabaseHome(
   };
 }
 
+function aplicarProgressoLeituraHome(
+  obra: ObraLocal,
+  progressoPorCapitulo: Map<string, SupabaseProgressoLeituraHomeRow>,
+  progressoCarregado: boolean
+) {
+  if (!progressoCarregado) {
+    return obra;
+  }
+
+  let ultimoCapituloLidoId = "";
+  let ultimaLeituraEm = "";
+
+  const capitulos = obra.capitulos.map((capitulo) => {
+    const registro = progressoPorCapitulo.get(capitulo.id);
+    const lido = Boolean(registro?.lido);
+    const lidoEmRemoto =
+      typeof registro?.atualizado_em === "string"
+        ? registro.atualizado_em
+        : "";
+    const lidoEm = lido ? lidoEmRemoto || capitulo.lidoEm : "";
+
+    if (lido) {
+      const tempoAtual = new Date(lidoEm).getTime();
+      const tempoUltimaLeitura = new Date(ultimaLeituraEm).getTime();
+      const tempoAtualSeguro = Number.isNaN(tempoAtual) ? 0 : tempoAtual;
+      const tempoUltimaLeituraSeguro = Number.isNaN(tempoUltimaLeitura)
+        ? 0
+        : tempoUltimaLeitura;
+
+      if (
+        !ultimoCapituloLidoId ||
+        tempoAtualSeguro >= tempoUltimaLeituraSeguro
+      ) {
+        ultimoCapituloLidoId = capitulo.id;
+        ultimaLeituraEm = lidoEm;
+      }
+    }
+
+    return {
+      ...capitulo,
+      lido,
+      lidoEm,
+    };
+  });
+
+  return {
+    ...obra,
+    capitulos,
+    ultimoCapituloLidoId,
+    ultimaLeituraEm,
+    progressoLeitura: calcularProgressoLeitura(capitulos),
+  };
+}
+
 async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") {
   try {
     const { data: obrasBanco, error: erroObras } = await supabase
@@ -2078,6 +2135,9 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
     const usuariosCurtidasPorObraId = new Map<string, Set<string>>();
     const usuariosComentariosPorObraId = new Map<string, Set<string>>();
     const capituloParaObraId = new Map<string, string>();
+    const progressoPorCapituloId =
+      new Map<string, SupabaseProgressoLeituraHomeRow>();
+    let progressoHomeCarregado = false;
 
     function registrarUsuarioMetricaObraHome(
       mapa: Map<string, Set<string>>,
@@ -2103,6 +2163,44 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
         }
       });
     });
+
+    const capituloIdsPublicados = Array.from(capituloParaObraId.keys());
+    const userIdLimpo = userId.trim();
+
+    if (userIdLimpo && capituloIdsPublicados.length > 0) {
+      try {
+        const { data: progressoBanco, error: erroProgresso } = await supabase
+          .from("progresso_leitura")
+          .select("obra_id,capitulo_id,lido,atualizado_em")
+          .eq("user_id", userIdLimpo)
+          .in("obra_id", obrasIds)
+          .in("capitulo_id", capituloIdsPublicados)
+          .limit(5000);
+
+        if (!erroProgresso && Array.isArray(progressoBanco)) {
+          progressoHomeCarregado = true;
+
+          (
+            progressoBanco as unknown as SupabaseProgressoLeituraHomeRow[]
+          ).forEach((registro) => {
+            const obraId = registro.obra_id?.trim() || "";
+            const capituloId = registro.capitulo_id?.trim() || "";
+            const obraDoCapitulo = capituloParaObraId.get(capituloId) || "";
+
+            if (
+              capituloId &&
+              obraId &&
+              obraDoCapitulo === obraId &&
+              !progressoPorCapituloId.has(capituloId)
+            ) {
+              progressoPorCapituloId.set(capituloId, registro);
+            }
+          });
+        }
+      } catch {
+        // O estado local continua como fallback se o progresso remoto falhar.
+      }
+    }
 
     try {
       if (obrasIds.length > 0) {
@@ -2230,11 +2328,15 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
           }
         : obra;
 
-      const obraNormalizada = normalizarObraSupabaseHome(
-        obraComAutorProfile,
-        capitulosPorObraId.get(obra.id) || [],
-        obraLocal,
-        index
+      const obraNormalizada = aplicarProgressoLeituraHome(
+        normalizarObraSupabaseHome(
+          obraComAutorProfile,
+          capitulosPorObraId.get(obra.id) || [],
+          obraLocal,
+          index
+        ),
+        progressoPorCapituloId,
+        progressoHomeCarregado
       );
 
       return {
@@ -2638,176 +2740,70 @@ export default function Home() {
   const homeSemObrasReais =
     dadosHomeCarregados && !termoBusca && obrasPublicadas.length === 0;
 
-  const sugestoesBuscaHome = useMemo<ResultadoBuscaHome[]>(() => {
-    if (!termoBusca) {
-      return [];
-    }
-
-    const resultados: Array<ResultadoBuscaHome & { score: number; ordem: number }> = [];
-    const chavesRegistradas = new Set<string>();
-
-    function calcularScoreBusca(
-      titulo: string,
-      autor: string,
-      genero: string,
-      tagsBusca: string[],
-      textoCompleto: string
-    ) {
-      const tituloNormalizado = normalizarTexto(titulo);
-      const autorNormalizado = normalizarTexto(autor);
-      const generoNormalizado = normalizarTexto(genero);
-      const tagsNormalizadas = tagsBusca.map((tag) => normalizarTexto(tag));
-
-      if (tituloNormalizado.startsWith(termoBusca)) {
-        return 0;
-      }
-
-      if (tituloNormalizado.includes(termoBusca)) {
-        return 1;
-      }
-
-      if (autorNormalizado.startsWith(termoBusca)) {
-        return 2;
-      }
-
-      if (
-        generoNormalizado.startsWith(termoBusca) ||
-        tagsNormalizadas.some((tag) => tag.startsWith(termoBusca))
-      ) {
-        return 3;
-      }
-
-      return textoCompleto.includes(termoBusca) ? 4 : -1;
-    }
-
-    function registrarResultado(
-      resultado: ResultadoBuscaHome,
-      score: number,
-      ordem: number
-    ) {
-      if (score < 0) {
-        return;
-      }
-
-      const chave = `${normalizarTexto(resultado.titulo)}:${normalizarTexto(
-        resultado.autor
-      )}`;
-
-      if (chavesRegistradas.has(chave)) {
-        return;
-      }
-
-      chavesRegistradas.add(chave);
-      resultados.push({ ...resultado, score, ordem });
-    }
-
-    obrasPublicadas.forEach((obra, index) => {
-      const tagsObra = obra.tags || [];
-      const generoObra = formatarGeneroHome(obra.genero);
-      const textoCompleto = normalizarTexto(
-        [
-          obra.titulo,
-          obra.autor,
-          obra.genero,
-          generoObra,
-          obra.formato,
-          obra.classificacaoIndicativa,
-          obra.sinopse,
-          ...tagsObra,
-          ...obra.capitulos.map((capitulo) => capitulo.titulo),
-        ].join(" ")
-      );
-      const score = calcularScoreBusca(
-        obra.titulo,
-        obra.autor,
-        generoObra,
-        tagsObra,
-        textoCompleto
-      );
-
-      registrarResultado(
-        {
-          id: obra.id,
-          titulo: obra.titulo,
-          autor: obra.autor,
-          detalhe: `${generoObra} · ${obra.capitulos.length} ${
-            obra.capitulos.length === 1 ? "capítulo" : "capítulos"
-          }`,
-          href: obra.link || `/obra/${obra.slug}`,
-          origem: "Obra",
-        },
-        score,
-        index
-      );
-    });
-
-    OBRAS_CATALOGO_HOME.forEach((obra, index) => {
-      const obraCatalogo = obra as Obra & {
-        id?: string;
-        tags?: string[];
-        sinopse?: string;
-      };
-      const tagsObra = Array.isArray(obraCatalogo.tags)
-        ? obraCatalogo.tags.filter(
-            (tag): tag is string => typeof tag === "string" && Boolean(tag.trim())
-          )
-        : [];
-      const generoObra = formatarGeneroHome(obra.genero);
-      const textoCompleto = normalizarTexto(
-        [
-          obra.titulo,
-          obra.autor,
-          obra.genero,
-          generoObra,
-          obra.classificacaoIndicativa,
-          obra.status,
-          obraCatalogo.sinopse || "",
-          ...tagsObra,
-        ].join(" ")
-      );
-      const score = calcularScoreBusca(
-        obra.titulo,
-        obra.autor,
-        generoObra,
-        tagsObra,
-        textoCompleto
-      );
-
-      registrarResultado(
-        {
-          id: obraCatalogo.id || criarSlugBase(obra.titulo),
-          titulo: obra.titulo,
-          autor: obra.autor,
-          detalhe: `${generoObra} · ${obra.status}`,
-          href: criarHrefObraCatalogoHome(obra),
-          origem: "Catálogo",
-        },
-        score + 0.25,
-        obrasPublicadas.length + index
-      );
-    });
-
-    return resultados
-      .sort((resultadoA, resultadoB) => {
-        return resultadoA.score - resultadoB.score || resultadoA.ordem - resultadoB.ordem;
-      })
-      .slice(0, 8)
-      .map((resultado) => ({
-        id: resultado.id,
-        titulo: resultado.titulo,
-        autor: resultado.autor,
-        detalhe: resultado.detalhe,
-        href: resultado.href,
-        origem: resultado.origem,
-      }));
-  }, [obrasPublicadas, termoBusca]);
-
   const obrasHero = useMemo(() => {
+    if (!termoBusca) {
+      return obrasPublicadas
+        .slice(0, 6)
+        .map((obra) => criarObraHeroLocalHome(obra));
+    }
+
     return obrasPublicadas
-      .filter((obra) => obraLocalCombinaBusca(obra, termoBusca))
+      .map((obra, ordem) => {
+        const titulo = normalizarTexto(obra.titulo);
+        const autor = normalizarTexto(obra.autor);
+        const genero = normalizarTexto(formatarGeneroHome(obra.genero));
+        const tags = obra.tags.map((tag) => normalizarTexto(tag));
+        const textoCompleto = normalizarTexto(
+          [
+            obra.titulo,
+            obra.autor,
+            obra.genero,
+            formatarGeneroHome(obra.genero),
+            obra.formato,
+            obra.classificacaoIndicativa,
+            obra.sinopse,
+            ...obra.tags,
+            ...obra.capitulos.map((capitulo) => capitulo.titulo),
+          ].join(" ")
+        );
+
+        let relevancia = -1;
+
+        if (titulo.startsWith(termoBusca)) {
+          relevancia = 0;
+        } else if (titulo.includes(termoBusca)) {
+          relevancia = 1;
+        } else if (autor.startsWith(termoBusca)) {
+          relevancia = 2;
+        } else if (
+          genero.startsWith(termoBusca) ||
+          tags.some((tag) => tag.startsWith(termoBusca))
+        ) {
+          relevancia = 3;
+        } else if (textoCompleto.includes(termoBusca)) {
+          relevancia = 4;
+        }
+
+        return {
+          obra,
+          ordem,
+          relevancia,
+        };
+      })
+      .filter((resultado) => resultado.relevancia >= 0)
+      .sort((resultadoA, resultadoB) => {
+        return (
+          resultadoA.relevancia - resultadoB.relevancia ||
+          resultadoA.ordem - resultadoB.ordem
+        );
+      })
       .slice(0, 6)
-      .map((obra) => criarObraHeroLocalHome(obra));
+      .map(({ obra }) => criarObraHeroLocalHome(obra));
   }, [obrasPublicadas, termoBusca]);
+
+  useEffect(() => {
+    setHeroIndex(0);
+  }, [termoBusca]);
 
   useEffect(() => {
     if (obrasHero.length === 0) {
@@ -3392,48 +3388,6 @@ export default function Home() {
     return obrasFiltradas.filter((obra) => !obra.disponivel);
   }, [obrasFiltradas]);
 
-  function renderSugestoesBuscaHome(modo: "desktop" | "mobile") {
-    if (!termoBusca || sugestoesBuscaHome.length === 0) {
-      return null;
-    }
-
-    return (
-      <div
-        style={
-          modo === "desktop"
-            ? searchSuggestionsPanelStyle
-            : mobileSearchSuggestionsPanelStyle
-        }
-        aria-label="Sugestões de busca"
-      >
-        {sugestoesBuscaHome.map((resultado) => (
-          <Link
-            key={`${modo}-${resultado.origem}-${resultado.id}`}
-            href={resultado.href}
-            onClick={() => {
-              if (modo === "mobile") {
-                setBuscaMobileAberta(false);
-              }
-            }}
-            style={searchSuggestionItemStyle}
-          >
-            <span style={searchSuggestionContentStyle}>
-              <strong style={searchSuggestionTitleStyle}>
-                {resultado.titulo}
-              </strong>
-
-              <span style={searchSuggestionMetaStyle}>
-                {resultado.autor} · {resultado.detalhe}
-              </span>
-            </span>
-
-            <span style={searchSuggestionBadgeStyle}>{resultado.origem}</span>
-          </Link>
-        ))}
-      </div>
-    );
-  }
-
   if (!dadosHomeCarregados) {
     return (
       <main style={pageStyle} aria-busy="true">
@@ -3490,6 +3444,24 @@ export default function Home() {
               <span style={logoMarkStyle}>H</span>
               <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
+
+            {!isDesktop && buscaMobileAberta ? (
+              <div style={mobileHeaderSearchAreaStyle}>
+                <input
+                  value={busca}
+                  onChange={(event) => setBusca(event.target.value)}
+                  placeholder="Buscar..."
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={90}
+                  style={mobileHeaderSearchInputStyle}
+                  type="text"
+                  autoFocus
+                />
+
+              </div>
+            ) : null}
 
             <div style={navIconsStyle}>
               {isDesktop && (
@@ -3598,23 +3570,10 @@ export default function Home() {
                   style={inputStyle}
                 />
 
-                {renderSugestoesBuscaHome("desktop")}
               </div>
             </nav>
           )}
 
-          {!isDesktop && buscaMobileAberta && (
-            <div style={searchAreaStyle}>
-              <input
-                value={busca}
-                onChange={(event) => setBusca(event.target.value)}
-                placeholder="Buscar obras, autor, gênero..."
-                style={inputStyle}
-              />
-
-              {renderSugestoesBuscaHome("mobile")}
-            </div>
-          )}
         </div>
       </header>
 
@@ -4961,6 +4920,7 @@ const mobileNavStyle: CSSProperties = {
   background: "#070212",
   borderBottom: "0",
   boxShadow: "none",
+  overflow: "visible",
 };
 
 const navInnerStyle: CSSProperties = {
@@ -4976,6 +4936,7 @@ const navInnerStyle: CSSProperties = {
 };
 
 const navTopRowStyle: CSSProperties = {
+  position: "relative",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
@@ -5054,6 +5015,37 @@ const navIconsStyle: CSSProperties = {
   gap: "10px",
   flex: "0 0 auto",
   maxWidth: "100%",
+};
+
+const mobileHeaderSearchAreaStyle: CSSProperties = {
+  position: "absolute",
+  zIndex: 30,
+  top: "50%",
+  left: "158px",
+  right: "36px",
+  width: "auto",
+  minWidth: 0,
+  height: "34px",
+  transform: "translateY(-50%)",
+};
+
+const mobileHeaderSearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  minWidth: 0,
+  height: "34px",
+  borderRadius: "999px",
+  border: "none",
+  background: "#04000A",
+  color: "#FFFFFF",
+  padding: "0 10px",
+  outline: "none",
+  fontFamily: "inherit",
+  fontSize: "13px",
+  fontWeight: 700,
+  boxSizing: "border-box",
+  boxShadow: "none",
 };
 
 const publishSmallButtonStyle: CSSProperties = {
@@ -5197,17 +5189,6 @@ const activeLinkStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const searchAreaStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 30,
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
 const inputStyle: CSSProperties = {
   width: "100%",
   height: "44px",
@@ -5223,86 +5204,6 @@ const inputStyle: CSSProperties = {
   maxWidth: "100%",
   minWidth: 0,
   boxShadow: "none",
-};
-
-const searchSuggestionsPanelStyle: CSSProperties = {
-  position: "absolute",
-  top: "calc(100% + 8px)",
-  left: 0,
-  right: 0,
-  zIndex: 60,
-  display: "grid",
-  gap: 0,
-  padding: "0 8px",
-  borderRadius: 0,
-  border: "none",
-  background: "transparent",
-  boxSizing: "border-box",
-  maxHeight: "320px",
-  overflowY: "auto",
-  boxShadow: "none",
-};
-
-const mobileSearchSuggestionsPanelStyle: CSSProperties = {
-  ...searchSuggestionsPanelStyle,
-  position: "relative",
-  top: "auto",
-  left: "auto",
-  right: "auto",
-  zIndex: 1,
-  maxHeight: "280px",
-};
-
-const searchSuggestionItemStyle: CSSProperties = {
-  minHeight: "58px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  padding: "12px 0",
-  borderRadius: 0,
-  border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.10)",
-  background: "transparent",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  boxSizing: "border-box",
-};
-
-const searchSuggestionContentStyle: CSSProperties = {
-  display: "grid",
-  gap: "4px",
-  minWidth: 0,
-};
-
-const searchSuggestionTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
-  fontWeight: 950,
-  lineHeight: 1.15,
-  ...safeTextStyle,
-};
-
-const searchSuggestionMetaStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 750,
-  lineHeight: 1.25,
-  ...safeTextStyle,
-};
-
-const searchSuggestionBadgeStyle: CSSProperties = {
-  flex: "0 0 auto",
-  borderRadius: 0,
-  border: "none",
-  color: "#D4D4D8",
-  background: "transparent",
-  padding: 0,
-  fontSize: "10px",
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-  whiteSpace: "nowrap",
 };
 
 const heroStyle: CSSProperties = {
