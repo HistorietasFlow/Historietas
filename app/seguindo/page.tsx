@@ -288,14 +288,19 @@ function obterParametrosSociaisSeguindoUrl(userIdLogado: string) {
   }
 
   const params = new URLSearchParams(window.location.search);
-  const abaParam = params.get("aba") === "seguidores" ? "seguidores" : "seguindo";
+  const abaValor = params.get("aba");
+  const abaParam = abaValor === "seguidores" ? "seguidores" : "seguindo";
   const conteudoParam = params.get("conteudo");
   const conteudoSeguro: AbaConteudoSeguindo =
     conteudoParam === "seguidores" ||
     conteudoParam === "pessoas" ||
     conteudoParam === "obras"
       ? conteudoParam
-      : "obras";
+      : abaValor === "seguidores"
+        ? "seguidores"
+        : abaValor === "seguindo"
+          ? "pessoas"
+          : "obras";
   const perfilIdParam = (params.get("userId") || params.get("autorId") || "").trim();
   const perfilNomeParam = (params.get("autor") || params.get("nome") || "").trim();
   const perfilIdSeguro = idUsuarioSupabaseValido(perfilIdParam)
@@ -1546,7 +1551,8 @@ async function carregarSeguindoSupabase(
   obrasLocais: ObraLocal[],
   obrasSeguidasLocais: string[],
   obrasFavoritasLocais: string[],
-  obrasConcluidasLocais: string[]
+  obrasConcluidasLocais: string[],
+  perfilSocialId = ""
 ) {
   try {
     let userId = "";
@@ -1557,6 +1563,11 @@ async function carregarSeguindoSupabase(
     } catch {
       userId = "";
     }
+
+    const perfilSocialIdLimpo = perfilSocialId.trim();
+    const userIdObrasSeguidas = idUsuarioSupabaseValido(perfilSocialIdLimpo)
+      ? perfilSocialIdLimpo
+      : userId;
 
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
@@ -1642,7 +1653,7 @@ async function carregarSeguindoSupabase(
       usuariosFavoritasPublicasObras,
       usuariosConcluidasPublicasObras,
     ] = await Promise.all([
-      carregarIdsObrasUsuarioSupabase("seguindo_obras", userId),
+      carregarIdsObrasUsuarioSupabase("seguindo_obras", userIdObrasSeguidas),
       carregarIdsObrasUsuarioSupabase("favoritos", userId),
       carregarIdsObrasUsuarioSupabase("concluidas", userId),
       carregarRegistrosCapitulosUsuarioSupabase(
@@ -2727,7 +2738,7 @@ export default function SeguindoPage() {
 
     window.setTimeout(() => {
       setObras(obrasNormalizadas);
-      setObrasSeguidas(seguindoNormalizado);
+      setObrasSeguidas(perfilSocialId ? [] : seguindoNormalizado);
       setAutoresSeguidos(autoresNormalizados);
       setObrasFavoritas(favoritasNormalizadas);
       setObrasConcluidas(concluidasNormalizadas);
@@ -2742,9 +2753,10 @@ export default function SeguindoPage() {
     ] = await Promise.all([
       carregarSeguindoSupabase(
         obrasNormalizadas,
-        seguindoNormalizado,
+        perfilSocialId ? [] : seguindoNormalizado,
         favoritasNormalizadas,
-        concluidasNormalizadas
+        concluidasNormalizadas,
+        perfilSocialId
       ),
       carregarUsuariosSeguidosSupabase(perfilIdParaListaSocial),
       carregarUsuariosSeguidoresSupabase(perfilIdParaListaSocial),
@@ -2823,15 +2835,14 @@ export default function SeguindoPage() {
       !visualizandoListaSocialDoPerfil &&
       (abaConteudo === "pessoas" || abaConteudo === "seguidores")
   );
-  const usuariosBaseSocial = visualizandoListaSocialDoPerfil
-    ? abaSeguimento === "seguidores"
-      ? usuariosSeguidores
-      : usuariosSeguidos
-    : abaConteudo === "seguidores"
-      ? usuariosSeguidores
-      : usuariosSeguidos;
+  const usuariosBaseSocial =
+    abaConteudo === "seguidores" ? usuariosSeguidores : usuariosSeguidos;
   const tituloListaSocial =
-    abaSeguimento === "seguidores" ? "SEGUIDORES" : "SEGUINDO";
+    abaConteudo === "seguidores"
+      ? "SEGUIDORES"
+      : abaConteudo === "pessoas"
+        ? "PESSOAS SEGUIDAS"
+        : "OBRAS SEGUIDAS";
   const descricaoListaSocial = perfilSocialNome.trim()
     ? `${tituloListaSocial.toLowerCase()} de ${perfilSocialNome.trim()}`
     : tituloListaSocial.toLowerCase();
@@ -2994,7 +3005,7 @@ export default function SeguindoPage() {
   }, [obras, autoresSeguidos, obrasFavoritas, obrasConcluidas]);
 
   const obrasFiltradas = useMemo(() => {
-    if (visualizandoListaSocialDoPerfil || abaConteudo !== "obras") {
+    if (abaConteudo !== "obras") {
       return [] as ObraLocal[];
     }
 
@@ -3098,7 +3109,6 @@ export default function SeguindoPage() {
   const usuariosFiltrados = useMemo<UsuarioSeguido[]>(() => {
     const filtrados = usuariosBaseSocial.filter((usuarioSeguido) => {
       if (
-        !visualizandoListaSocialDoPerfil &&
         abaConteudo !== "pessoas" &&
         abaConteudo !== "seguidores"
       ) {
@@ -3138,32 +3148,31 @@ export default function SeguindoPage() {
     });
   }, [usuariosBaseSocial, termoBusca, filtro, ordenacao, abaConteudo, visualizandoListaSocialDoPerfil]);
 
-  const totalDisponivelGeral = visualizandoListaSocialDoPerfil
-    ? usuariosBaseSocial.length
-    : obrasSeguidasBase.length +
-      autoresBase.length +
-      usuariosSeguidos.length +
-      usuariosSeguidores.length;
+  const totalDisponivelGeral =
+    obrasSeguidasBase.length +
+    usuariosSeguidos.length +
+    usuariosSeguidores.length +
+    (visualizandoListaSocialDoPerfil ? 0 : autoresBase.length);
 
-  const totalSemFiltros = visualizandoListaSocialDoPerfil
-    ? usuariosBaseSocial.length
-    : abaConteudo === "seguidores"
+  const totalSemFiltros =
+    abaConteudo === "seguidores"
       ? usuariosSeguidores.length
       : abaConteudo === "obras"
         ? obrasSeguidasBase.length
-        : autoresBase.length + usuariosSeguidos.length;
+        : usuariosSeguidos.length +
+          (visualizandoListaSocialDoPerfil ? 0 : autoresBase.length);
 
-  const totalSeguindo = visualizandoListaSocialDoPerfil
-    ? usuariosFiltrados.length
-    : abaConteudo === "seguidores"
+  const totalSeguindo =
+    abaConteudo === "seguidores"
       ? usuariosFiltrados.length
       : abaConteudo === "obras"
         ? obrasFiltradas.length
-        : autoresFiltrados.length + usuariosFiltrados.length;
+        : usuariosFiltrados.length +
+          (visualizandoListaSocialDoPerfil ? 0 : autoresFiltrados.length);
 
 
   const opcoesOrdenacao: Array<{ valor: OrdenacaoSeguindo; rotulo: string }> =
-    !visualizandoListaSocialDoPerfil && abaConteudo === "obras"
+    abaConteudo === "obras"
       ? [
           { valor: "padrao", rotulo: "Padrão" },
           { valor: "recentes", rotulo: "Mais recentes" },
@@ -3179,10 +3188,14 @@ export default function SeguindoPage() {
           { valor: "titulo", rotulo: "A-Z" },
         ];
 
-  function trocarAbaSeguimento(novaAba: AbaSeguimentoPagina) {
-    setAbaSeguimento(novaAba);
+  function trocarAbaConteudo(novaAba: AbaConteudoSeguindo) {
+    setAbaConteudo(novaAba);
+    setAbaSeguimento(
+      novaAba === "seguidores" ? "seguidores" : "seguindo"
+    );
     setBusca("");
-    setFiltro("usuarios");
+    setFiltro(novaAba === "obras" ? "todos" : "usuarios");
+    setOrdenacao("padrao");
 
     if (typeof window === "undefined") {
       return;
@@ -3191,9 +3204,17 @@ export default function SeguindoPage() {
     const params = new URLSearchParams(window.location.search);
     const perfilIdParaUrl = perfilSocialId || usuarioLogadoId;
 
-    params.set("aba", novaAba);
+    params.set("conteudo", novaAba);
 
-    if (perfilIdParaUrl) {
+    if (novaAba === "seguidores") {
+      params.set("aba", "seguidores");
+    } else if (novaAba === "pessoas") {
+      params.set("aba", "seguindo");
+    } else {
+      params.delete("aba");
+    }
+
+    if (perfilIdParaUrl && visualizandoListaSocialDoPerfil) {
       params.set("userId", perfilIdParaUrl);
       params.set("autorId", perfilIdParaUrl);
     }
@@ -3502,103 +3523,58 @@ export default function SeguindoPage() {
               <div
                   style={{
                     ...socialTabsStyle,
-                    gridTemplateColumns: visualizandoListaSocialDoPerfil
-                      ? "repeat(2, minmax(0, 1fr))"
-                      : "repeat(3, minmax(0, 1fr))",
+                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
                   }}
                 >
-                {visualizandoListaSocialDoPerfil ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => trocarAbaSeguimento("seguidores")}
-                      style={
-                        abaSeguimento === "seguidores"
-                          ? socialTabActiveStyle
-                          : socialTabStyle
-                      }
-                    >
-                      Seguidores
-                    </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => trocarAbaConteudo("seguidores")}
+                    style={{
+                      ...(abaConteudo === "seguidores"
+                        ? socialTabActiveStyle
+                        : socialTabStyle),
+                      ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
+                    }}
+                  >
+                    Seguidores
+                    <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
+                      {usuariosSeguidores.length}
+                    </span>
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => trocarAbaSeguimento("seguindo")}
-                      style={
-                        abaSeguimento === "seguindo"
-                          ? socialTabActiveStyle
-                          : socialTabStyle
-                      }
-                    >
-                      Seguindo
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAbaConteudo("seguidores");
-                        setFiltro("todos");
-                        setBusca("");
-                        setOrdenacao("padrao");
-                      }}
-                      style={{
-                        ...(abaConteudo === "seguidores"
-                          ? socialTabActiveStyle
-                          : socialTabStyle),
-                        ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
-                      }}
-                    >
-                      Seguidores
-                      <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
-                        {usuariosSeguidores.length}
-                      </span>
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => trocarAbaConteudo("obras")}
+                    style={{
+                      ...(abaConteudo === "obras"
+                        ? socialTabActiveStyle
+                        : socialTabStyle),
+                      ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
+                    }}
+                  >
+                    Obras seguidas
+                    <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
+                      {obrasSeguidasBase.length}
+                    </span>
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAbaConteudo("obras");
-                        setFiltro("todos");
-                        setBusca("");
-                        setOrdenacao("padrao");
-                      }}
-                      style={{
-                        ...(abaConteudo === "obras"
-                          ? socialTabActiveStyle
-                          : socialTabStyle),
-                        ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
-                      }}
-                    >
-                      Obras seguidas
-                      <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
-                        {obrasSeguidasBase.length}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAbaConteudo("pessoas");
-                        setFiltro("todos");
-                        setBusca("");
-                        setOrdenacao("padrao");
-                      }}
-                      style={{
-                        ...(abaConteudo === "pessoas"
-                          ? socialTabActiveStyle
-                          : socialTabStyle),
-                        ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
-                      }}
-                    >
-                      Pessoas seguidas
-                      <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
-                        {usuariosSeguidos.length}
-                      </span>
-                    </button>
-                  </>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => trocarAbaConteudo("pessoas")}
+                    style={{
+                      ...(abaConteudo === "pessoas"
+                        ? socialTabActiveStyle
+                        : socialTabStyle),
+                      ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
+                    }}
+                  >
+                    Pessoas seguidas
+                    <span style={isDesktop ? socialTabCountStyle : mobileThreeSocialTabCountStyle}>
+                      {usuariosSeguidos.length}
+                    </span>
+                  </button>
+                </>
               </div>
 
             </section>
@@ -3661,13 +3637,15 @@ export default function SeguindoPage() {
               textAlign: "center",
             }}
           >
-            {visualizandoListaSocialDoPerfil
-              ? abaSeguimento === "seguidores"
+            {abaConteudo === "seguidores"
+              ? visualizandoListaSocialDoPerfil
                 ? "Nenhum seguidor ainda"
-                : "Nenhum perfil seguido ainda"
-              : abaConteudo === "seguidores"
-                ? "Você ainda não tem seguidores"
-                : "Você ainda não segue nada"}
+                : "Você ainda não tem seguidores"
+              : abaConteudo === "obras"
+                ? "Nenhuma obra seguida ainda"
+                : visualizandoListaSocialDoPerfil
+                  ? "Nenhum perfil seguido ainda"
+                  : "Você ainda não segue nada"}
           </p>
         ) : (
           <>
@@ -3687,7 +3665,7 @@ export default function SeguindoPage() {
               </p>
             )}
 
-            {!visualizandoListaSocialDoPerfil && abaConteudo === "obras" && (
+            {abaConteudo === "obras" && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
               {obrasFiltradas.length === 0 ? (
                 <p
@@ -3789,23 +3767,10 @@ export default function SeguindoPage() {
               </section>
             )}
 
-            {(visualizandoListaSocialDoPerfil ||
-              abaConteudo === "pessoas" ||
+            {(abaConteudo === "pessoas" ||
               abaConteudo === "seguidores") &&
               usuariosFiltrados.length > 0 && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
-                {visualizandoListaSocialDoPerfil && (
-                  <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-                    <div style={sectionHeaderTextStyle}>
-                      <h2 style={sectionTitleStyle}>{tituloListaSocial}</h2>
-                    </div>
-
-                    <span style={sectionCounterStyle}>
-                      {usuariosFiltrados.length}
-                    </span>
-                  </div>
-                )}
-
                 <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
                   {usuariosFiltrados.map((usuarioSeguido) => {
                     const hrefPerfilUsuario = criarHrefPerfilUsuarioSeguindo(usuarioSeguido);

@@ -4137,7 +4137,7 @@ export default function ObraDinamicaPage() {
       }
 
       setLinkCopiado(true);
-      setMensagemAcao("Link da obra copiado.");
+      setMensagemAcao("");
 
       window.setTimeout(() => {
         setLinkCopiado(false);

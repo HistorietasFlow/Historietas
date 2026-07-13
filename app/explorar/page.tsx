@@ -3419,21 +3419,20 @@ function ObraPublicadaCard({
         <div style={cardTopStyle}>
           <h3 style={isDesktop ? desktopPublishedTitleStyle : publishedTitleStyle}>{obra.titulo}</h3>
 
-          <div style={statusRowStyle}>
-            {!obra.publicado && <span style={draftStatusStyle}>Rascunho</span>}
-
-            <span style={formatBadgeStyle}>{obra.formato}</span>
-
-            <span style={classificationBadgeStyle}>
-              {obra.classificacaoIndicativa}
-            </span>
-
-          </div>
+          <Link href={perfilAutorHref} style={authorLinkStyle}>
+            Por {obra.autor}
+          </Link>
         </div>
 
-        <Link href={perfilAutorHref} style={authorLinkStyle}>
-          Por {obra.autor}
-        </Link>
+        <div style={statusRowStyle}>
+          {!obra.publicado && <span style={draftStatusStyle}>Rascunho</span>}
+
+          <span style={formatBadgeStyle}>{obra.formato}</span>
+
+          <span style={classificationBadgeStyle}>
+            {obra.classificacaoIndicativa}
+          </span>
+        </div>
 
         {isDesktop && (
           <p style={desktopPublishedSynopsisStyle}>{obra.sinopse}</p>

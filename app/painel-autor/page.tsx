@@ -1913,7 +1913,6 @@ export default function PainelAutorPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
-  const [obraComLinkCopiado, setObraComLinkCopiado] = useState("");
   const [busca, setBusca] = useState("");
   const [buscaPainelAberta, setBuscaPainelAberta] = useState(false);
   const [filtro, setFiltro] = useState<FiltroPainel>("todas");
@@ -2313,42 +2312,58 @@ export default function PainelAutorPage() {
   const usuarioLogado = Boolean(usuarioIdLogado);
   function copiarTextoComFallback(texto: string) {
     const campoTemporario = document.createElement("textarea");
+
     campoTemporario.value = texto;
     campoTemporario.setAttribute("readonly", "true");
     campoTemporario.style.position = "fixed";
     campoTemporario.style.left = "-9999px";
     document.body.appendChild(campoTemporario);
     campoTemporario.select();
-    document.execCommand("copy");
-    document.body.removeChild(campoTemporario);
-  }
-
-  async function copiarLinkObra(obra: ObraLocal) {
-    const href = obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-    const linkAbsoluto =
-      typeof window !== "undefined" ? new URL(href, window.location.origin).toString() : href;
 
     try {
-      if (navigator.clipboard?.writeText) {
-        try {
-          await navigator.clipboard.writeText(linkAbsoluto);
-        } catch {
-          copiarTextoComFallback(linkAbsoluto);
-        }
-      } else {
-        copiarTextoComFallback(linkAbsoluto);
-      }
-
-      setObraComLinkCopiado(obra.id);
-
-      window.setTimeout(() => {
-        setObraComLinkCopiado((obraIdAtual) =>
-          obraIdAtual === obra.id ? "" : obraIdAtual
-        );
-      }, 1800);
+      document.execCommand("copy");
     } catch {
-      setObraComLinkCopiado("");
+      // O compartilhamento e a cópia permanecem silenciosos.
+    } finally {
+      document.body.removeChild(campoTemporario);
     }
+  }
+
+  async function compartilharObra(obra: ObraLocal) {
+    const href =
+      obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
+    const linkAbsoluto = new URL(href, window.location.origin).toString();
+    const dadosCompartilhamento: ShareData = {
+      title: `${obra.titulo} no HISTORIETAS`,
+      text: `Confira a obra ${obra.titulo} de ${obra.autor} no HISTORIETAS.`,
+      url: linkAbsoluto,
+    };
+
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share(dadosCompartilhamento);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+      }
+    }
+
+    try {
+      if (
+        window.isSecureContext &&
+        navigator.clipboard &&
+        typeof navigator.clipboard.writeText === "function"
+      ) {
+        await navigator.clipboard.writeText(linkAbsoluto);
+        return;
+      }
+    } catch {
+      // Continua para o fallback silencioso abaixo.
+    }
+
+    copiarTextoComFallback(linkAbsoluto);
   }
 
   async function excluirObra(obraId: string, tituloObra: string) {
@@ -2786,8 +2801,7 @@ export default function PainelAutorPage() {
             obrasFavoritas={obrasFavoritas}
             obrasConcluidas={obrasConcluidas}
             isDesktop={isDesktop}
-            obraComLinkCopiado={obraComLinkCopiado}
-            onCopiarLink={copiarLinkObra}
+            onCompartilhar={compartilharObra}
             onExcluirObra={excluirObra}
           />
         )}
@@ -2820,16 +2834,14 @@ function PainelSecao({
   obrasFavoritas,
   obrasConcluidas,
   isDesktop,
-  obraComLinkCopiado,
-  onCopiarLink,
+  onCompartilhar,
   onExcluirObra,
 }: {
   obras: ObraComMetricas[];
   obrasFavoritas: string[];
   obrasConcluidas: string[];
   isDesktop: boolean;
-  obraComLinkCopiado: string;
-  onCopiarLink: (obra: ObraLocal) => void | Promise<void>;
+  onCompartilhar: (obra: ObraLocal) => void | Promise<void>;
   onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
 }) {
   if (obras.length === 0) {
@@ -2846,8 +2858,7 @@ function PainelSecao({
             favoritada={colecaoTemObraPainel(obrasFavoritas, obra)}
             concluida={colecaoTemObraPainel(obrasConcluidas, obra)}
             isDesktop={isDesktop}
-            linkCopiado={obraComLinkCopiado === obra.id}
-            onCopiarLink={onCopiarLink}
+            onCompartilhar={onCompartilhar}
             onExcluirObra={onExcluirObra}
           />
         ))}
@@ -2861,16 +2872,14 @@ function ObraPainelCard({
   favoritada,
   concluida,
   isDesktop,
-  linkCopiado,
-  onCopiarLink,
+  onCompartilhar,
   onExcluirObra,
 }: {
   obra: ObraComMetricas;
   favoritada: boolean;
   concluida: boolean;
   isDesktop: boolean;
-  linkCopiado: boolean;
-  onCopiarLink: (obra: ObraLocal) => void | Promise<void>;
+  onCompartilhar: (obra: ObraLocal) => void | Promise<void>;
   onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
 }) {
   const [acoesAbertas, setAcoesAbertas] = useState(false);
@@ -3097,11 +3106,12 @@ function ObraPainelCard({
               <button
                 type="button"
                 onClick={() => {
-                  void onCopiarLink(obra);
+                  void onCompartilhar(obra);
+                  setAcoesAbertas(false);
                 }}
-                style={linkCopiado ? copiedButtonStyle : copyButtonStyle}
+                style={shareButtonStyle}
               >
-                {linkCopiado ? "Copiado!" : "Copiar link"}
+                Compartilhar
               </button>
 
               <button
@@ -3946,13 +3956,8 @@ const fileButtonStyle: CSSProperties = {
   ...openButtonStyle,
 };
 
-const copyButtonStyle: CSSProperties = {
+const shareButtonStyle: CSSProperties = {
   ...openButtonStyle,
-};
-
-const copiedButtonStyle: CSSProperties = {
-  ...copyButtonStyle,
-  color: "var(--historietas-painel-success, #86EFAC)",
 };
 
 const deleteButtonStyle: CSSProperties = {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import {
@@ -4517,6 +4517,8 @@ function erroCompartilhamentoFoiCanceladoPerfilAutor(error: unknown) {
 
 export default function PerfilAutorPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryPerfilAtual = searchParams.toString();
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [totaisInteracoesObras, setTotaisInteracoesObras] =
     useState<TotaisInteracoesObrasPerfilAutor>(totaisInteracoesObrasPerfilVazio);
@@ -4675,7 +4677,7 @@ export default function PerfilAutorPage() {
     let componenteAtivo = true;
 
     async function carregarPerfilAutor() {
-      const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(queryPerfilAtual);
       const autorParam = params.get("autor") || "";
       const autorIdParam =
         params.get("autorId") || params.get("id") || params.get("userId") || "";
@@ -4892,7 +4894,7 @@ export default function PerfilAutorPage() {
     return () => {
       componenteAtivo = false;
     };
-  }, []);
+  }, [queryPerfilAtual]);
 
   const perfisAutores = useMemo<AutorPerfil[]>(() => {
     const mapa = new Map<
@@ -6616,7 +6618,7 @@ export default function PerfilAutorPage() {
       titulo: `${nomePerfil} no HISTORIETAS`,
       texto: `Confira o perfil de ${nomePerfil}${usernamePerfil} no HISTORIETAS.`,
       mensagemCompartilhado: "Compartilhamento do perfil aberto.",
-      mensagemCopiado: "Link do perfil copiado.",
+      mensagemCopiado: "",
       mensagemErro:
         "Não consegui compartilhar nem copiar o link do perfil neste navegador.",
     });
@@ -8186,8 +8188,9 @@ export default function PerfilAutorPage() {
                       <span style={menuItemIconStyle}>
                         <MenuPerfilIcone tipo="notificacoes" />
                       </span>
-                      <strong style={menuItemTextStyle}>Notificações</strong>
-                      <span style={menuNotificationRightStyle}>
+                      <span style={menuNotificationLabelStyle}>
+                        <strong style={menuItemTextStyle}>Notificações</strong>
+
                         {notificacoesNaoLidas > 0 ? (
                           <span
                             style={menuNotificationBadgeStyle}
@@ -8198,6 +8201,9 @@ export default function PerfilAutorPage() {
                               : notificacoesNaoLidas}
                           </span>
                         ) : null}
+                      </span>
+
+                      <span style={menuNotificationRightStyle}>
                         <span style={menuChevronStyle}>›</span>
                       </span>
                     </Link>
@@ -9142,9 +9148,7 @@ export default function PerfilAutorPage() {
               </div>
             )}
 
-            {diarioPerfil.carregando ? (
-              <div style={diaryEmptyStateStyle}>Carregando Diário...</div>
-            ) : (
+            {diarioPerfil.carregando ? null : (
               <>
                 {renderizarSecaoDiarioPerfil(
                   "",
@@ -11313,6 +11317,14 @@ const menuChevronStyle: CSSProperties = {
   textAlign: "right",
 };
 
+const menuNotificationLabelStyle: CSSProperties = {
+  minWidth: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "6px",
+};
+
 const menuNotificationRightStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
@@ -11322,20 +11334,12 @@ const menuNotificationRightStyle: CSSProperties = {
 };
 
 const menuNotificationBadgeStyle: CSSProperties = {
-  minWidth: "18px",
-  height: "18px",
-  borderRadius: "999px",
-  padding: "0 5px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-perfil-danger, #EF4444)",
-  color: "#FFFFFF",
-  fontSize: "10px",
+  display: "inline",
+  color: "var(--historietas-perfil-danger, #EF4444)",
+  fontSize: "12px",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.03em",
-  boxShadow: "0 0 0 2px var(--historietas-perfil-bg-page, #070212)",
   pointerEvents: "none",
 };
 

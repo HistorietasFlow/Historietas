@@ -3754,17 +3754,17 @@ function MobileObraLocalCard({
         <div style={cardTopRowStyle}>
           <h3 style={isDesktop ? desktopPublishedTitleStyle : publishedTitleStyle}>{obra.titulo}</h3>
 
-          <div style={statusRowStyle}>
-            <span style={formatBadgeStyle}>{obra.formato}</span>
-            <span style={classificationBadgeStyle}>
-              {obra.classificacaoIndicativa}
-            </span>
-          </div>
+          <Link href={perfilAutorHref} style={authorLinkStyle}>
+            Por {obra.autor}
+          </Link>
         </div>
 
-        <Link href={perfilAutorHref} style={authorLinkStyle}>
-          Por {obra.autor}
-        </Link>
+        <div style={statusRowStyle}>
+          <span style={formatBadgeStyle}>{obra.formato}</span>
+          <span style={classificationBadgeStyle}>
+            {obra.classificacaoIndicativa}
+          </span>
+        </div>
 
         {tipo === "novo-capitulo" && ultimoCapituloPublicado && (
           <Link href={ultimoCapituloHref} style={latestChapterInfoStyle}>
@@ -3953,15 +3953,15 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
         <div style={cardTopRowStyle}>
           <h3 style={isDesktop ? desktopObraTitleStyle : obraTitleStyle}>{obra.titulo}</h3>
 
-          <div style={statusRowStyle}>
-            <span style={formatBadgeStyle}>{obterFormatoObraCatalogoHome(obra)}</span>
-            <span style={classificationBadgeStyle}>
-              {obra.classificacaoIndicativa}
-            </span>
-          </div>
+          <p style={authorStyle}>Por {obra.autor}</p>
         </div>
 
-        <p style={authorStyle}>Por {obra.autor}</p>
+        <div style={statusRowStyle}>
+          <span style={formatBadgeStyle}>{obterFormatoObraCatalogoHome(obra)}</span>
+          <span style={classificationBadgeStyle}>
+            {obra.classificacaoIndicativa}
+          </span>
+        </div>
 
         <div style={cardStatsStyle}>
           <span style={cardStatItemStyle}>

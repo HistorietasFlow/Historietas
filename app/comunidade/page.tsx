@@ -5368,8 +5368,9 @@ export default function ComunidadePage() {
         </section>
       </section>
 
-      {composerAberto && usuario && (
-        <section style={postComposerOverlayStyle} aria-label="Criar publicação">
+      {composerAberto && usuario && typeof document !== "undefined"
+        ? createPortal(
+            <section style={postComposerOverlayStyle} aria-label="Criar publicação">
           <button
             type="button"
             aria-label="Fechar publicação"
@@ -5383,6 +5384,8 @@ export default function ComunidadePage() {
           />
 
           <article style={isDesktop ? postComposerDesktopSheetStyle : postComposerSheetStyle}>
+            <div style={communityFiltersSheetHandleStyle} />
+
             <header style={postComposerHeaderStyle}>
               <strong style={postComposerTitleStyle}>Nova publicação</strong>
             </header>
@@ -5581,8 +5584,10 @@ export default function ComunidadePage() {
               </div>
             </form>
           </article>
-        </section>
-      )}
+            </section>,
+            document.body
+          )
+        : null}
 
       <ComentariosSheet
         key={postComentariosAberto?.id || "comentarios-fechados"}
@@ -6747,76 +6752,73 @@ const textareaStyle: CSSProperties = {
 
 const postComposerOverlayStyle: CSSProperties = {
   position: "fixed",
-  inset: 0,
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
   height: "100dvh",
-  zIndex: 92,
+  zIndex: 240,
   display: "flex",
   alignItems: "flex-end",
   justifyContent: "center",
-  pointerEvents: "none",
+  background: "rgba(0,0,0,0.68)",
+  padding: 0,
+  boxSizing: "border-box",
+  overscrollBehavior: "none",
+  touchAction: "none",
 };
 
 const postComposerBackdropStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
   border: "none",
-  background: "rgba(3, 2, 8, 0.30)",
-  pointerEvents: "auto",
+  background: "transparent",
   cursor: "pointer",
 };
 
 const postComposerSheetStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  width: "min(680px, 100%)",
-  maxWidth: "100%",
-  maxHeight: "calc(92dvh - env(safe-area-inset-top))",
+  position: "fixed",
+  left: "50%",
+  bottom: 0,
+  transform: "translateX(-50%)",
+  zIndex: 241,
+  width: "min(820px, 100%)",
+  maxHeight: "calc(100dvh - 190px)",
   display: "grid",
-  gridTemplateRows: "auto minmax(0, 1fr)",
+  gridTemplateRows: "auto auto minmax(0, 1fr)",
   gap: "0",
-  padding: "10px 12px calc(12px + env(safe-area-inset-bottom))",
+  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background:
-    "linear-gradient(180deg, var(--historietas-surface-strong, var(--historietas-comunidade-dark-98, rgba(12,7,23,0.98))) 0%, var(--historietas-bg-mid, var(--historietas-comunidade-dark-alt-98, rgba(18,8,31,0.98))) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background: "var(--historietas-comunidade-bg-page, #070212)",
+  border: "none",
   borderBottom: "none",
-  boxShadow: "none",
-  pointerEvents: "auto",
+  overflowY: "auto",
+  overflowX: "hidden",
+  overscrollBehavior: "none",
+  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
   boxSizing: "border-box",
-  overflow: "hidden",
-  contain: "layout paint",
-  isolation: "isolate",
+  touchAction: "none",
 };
 
 const postComposerDesktopSheetStyle: CSSProperties = {
   ...postComposerSheetStyle,
-  width: "min(760px, calc(100% - 48px))",
-  maxHeight: "min(760px, calc(100dvh - 56px))",
-  alignSelf: "center",
-  borderRadius: "28px",
-  borderBottom: "none",
 };
 
 const postComposerHeaderStyle: CSSProperties = {
-  minHeight: "36px",
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  alignItems: "center",
-  justifyItems: "center",
-  gap: "8px",
-  borderBottom: "none",
-  paddingBottom: "8px",
+  display: "block",
   minWidth: 0,
-  textAlign: "center",
 };
 
 const postComposerTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14px",
-  lineHeight: 1,
+  display: "block",
+  margin: "0 0 12px",
+  padding: 0,
+  color: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1.1,
   fontWeight: 950,
   textAlign: "center",
-  letterSpacing: "-0.02em",
+  letterSpacing: "-0.04em",
   ...safeTextStyle,
 };
 
@@ -6826,7 +6828,7 @@ const postComposerFormStyle: CSSProperties = {
   minWidth: 0,
   overflowY: "auto",
   overscrollBehavior: "contain",
-  padding: "4px 2px 0",
+  padding: "0 12px",
   WebkitOverflowScrolling: "touch",
 };
 
