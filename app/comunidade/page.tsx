@@ -36,6 +36,13 @@ type UsuarioComunidade = {
   avatar: string;
 };
 
+type UsuarioBuscaComunidade = {
+  id: string;
+  nome: string;
+  username: string;
+  avatar: string;
+};
+
 type ComentarioComunidade = {
   id: string;
   autorId: string;
@@ -408,6 +415,246 @@ function criarPerfilHrefComunidade(userId: string, nomeUsuario: string) {
   const query = params.toString();
 
   return query ? `/perfil-autor?${query}` : "/perfil-autor";
+}
+
+function obterUsernameProfileComunidade(
+  profile: PerfilComunidadeRow | undefined
+) {
+  return (
+    obterTextoProfileComunidade(profile, "username") ||
+    obterTextoProfileComunidade(profile, "nome_usuario") ||
+    obterTextoProfileComunidade(profile, "apelido")
+  )
+    .replace(/^@+/, "")
+    .trim();
+}
+
+function normalizarUsuarioBuscaComunidade(
+  profile: PerfilComunidadeRow
+): UsuarioBuscaComunidade | null {
+  const id =
+    obterTextoProfileComunidade(profile, "user_id") ||
+    obterTextoProfileComunidade(profile, "id");
+  const nome = obterNomeProfileComunidade(profile);
+
+  if (!idSupabaseValidoComunidade(id) || !nome) {
+    return null;
+  }
+
+  return {
+    id,
+    nome: nome.slice(0, 80),
+    username: obterUsernameProfileComunidade(profile).slice(0, 80),
+    avatar: obterAvatarProfileComunidade(profile),
+  };
+}
+
+async function buscarUsuariosComunidadeSupabase(termo: string) {
+  const termoLimpo = termo.trim().replace(/^@+/, "").slice(0, 80);
+
+  if (termoLimpo.length < 2) {
+    return [] as UsuarioBuscaComunidade[];
+  }
+
+  const padrao = `%${termoLimpo.replace(/[%_]/g, "")}%`;
+  const consultas = [
+    {
+      coluna: "nome",
+      select: "id,user_id,nome,avatar_url",
+    },
+    {
+      coluna: "username",
+      select: "id,user_id,nome,avatar_url,username",
+    },
+    {
+      coluna: "nome_usuario",
+      select: "id,user_id,nome,avatar_url,nome_usuario",
+    },
+  ] as const;
+
+  const respostas = await Promise.all(
+    consultas.map(async ({ coluna, select }) => {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(select)
+          .ilike(coluna, padrao)
+          .limit(20);
+
+        if (error || !Array.isArray(data)) {
+          return [] as PerfilComunidadeRow[];
+        }
+
+        return data as unknown as PerfilComunidadeRow[];
+      } catch {
+        return [] as PerfilComunidadeRow[];
+      }
+    })
+  );
+
+  const usuariosPorId = new Map<string, UsuarioBuscaComunidade>();
+
+  respostas.flat().forEach((profile) => {
+    const usuarioBusca = normalizarUsuarioBuscaComunidade(profile);
+
+    if (usuarioBusca) {
+      usuariosPorId.set(usuarioBusca.id, usuarioBusca);
+    }
+  });
+
+  const termoNormalizado = normalizarTexto(termoLimpo);
+
+  return Array.from(usuariosPorId.values())
+    .filter((usuarioBusca) => {
+      const textoBusca = normalizarTexto(
+        [usuarioBusca.nome, usuarioBusca.username].filter(Boolean).join(" ")
+      );
+
+      return textoBusca.includes(termoNormalizado);
+    })
+    .sort((usuarioA, usuarioB) => {
+      const nomeA = normalizarTexto(usuarioA.nome);
+      const nomeB = normalizarTexto(usuarioB.nome);
+      const usernameA = normalizarTexto(usuarioA.username);
+      const usernameB = normalizarTexto(usuarioB.username);
+      const prefixoA =
+        nomeA.startsWith(termoNormalizado) ||
+        usernameA.startsWith(termoNormalizado);
+      const prefixoB =
+        nomeB.startsWith(termoNormalizado) ||
+        usernameB.startsWith(termoNormalizado);
+
+      if (prefixoA !== prefixoB) {
+        return prefixoA ? -1 : 1;
+      }
+
+      return usuarioA.nome.localeCompare(usuarioB.nome, "pt-BR");
+    })
+    .slice(0, 12);
+}
+
+function buscarUsuariosComunidadeNosPosts(
+  posts: PostComunidade[],
+  termo: string
+) {
+  const termoNormalizado = normalizarTexto(termo.replace(/^@+/, "").trim());
+
+  if (termoNormalizado.length < 2) {
+    return [] as UsuarioBuscaComunidade[];
+  }
+
+  const usuariosPorId = new Map<string, UsuarioBuscaComunidade>();
+
+  posts.forEach((post) => {
+    const candidatos = [
+      {
+        id: post.autorId,
+        nome: post.autorNome,
+        avatar: post.autorAvatar,
+      },
+      ...post.comentarios.map((comentario) => ({
+        id: comentario.autorId,
+        nome: comentario.autorNome,
+        avatar: comentario.autorAvatar,
+      })),
+    ];
+
+    candidatos.forEach((candidato) => {
+      const id = candidato.id.trim();
+      const nome = candidato.nome.trim();
+
+      if (
+        !idSupabaseValidoComunidade(id) ||
+        !nome ||
+        !normalizarTexto(nome).includes(termoNormalizado)
+      ) {
+        return;
+      }
+
+      usuariosPorId.set(id, {
+        id,
+        nome: nome.slice(0, 80),
+        username: "",
+        avatar: candidato.avatar.trim(),
+      });
+    });
+  });
+
+  return Array.from(usuariosPorId.values()).slice(0, 12);
+}
+
+async function carregarUsuariosSeguidosComunidade(seguidorId: string) {
+  const seguidorIdLimpo = seguidorId.trim();
+
+  if (!idSupabaseValidoComunidade(seguidorIdLimpo)) {
+    return [] as string[];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("seguindo_usuarios")
+      .select("seguido_id")
+      .eq("seguidor_id", seguidorIdLimpo)
+      .limit(5000);
+
+    if (error || !Array.isArray(data)) {
+      return [] as string[];
+    }
+
+    return Array.from(
+      new Set(
+        (data as unknown as Array<{ seguido_id?: string | null }>)
+          .map((registro) => registro.seguido_id?.trim() || "")
+          .filter((id) => idSupabaseValidoComunidade(id))
+      )
+    );
+  } catch {
+    return [] as string[];
+  }
+}
+
+async function salvarSeguindoUsuarioComunidade(
+  seguidorId: string,
+  seguidoId: string,
+  ativo: boolean
+) {
+  const seguidorIdLimpo = seguidorId.trim();
+  const seguidoIdLimpo = seguidoId.trim();
+
+  if (
+    !idSupabaseValidoComunidade(seguidorIdLimpo) ||
+    !idSupabaseValidoComunidade(seguidoIdLimpo) ||
+    seguidorIdLimpo === seguidoIdLimpo
+  ) {
+    return false;
+  }
+
+  try {
+    const { error: erroRemocao } = await supabase
+      .from("seguindo_usuarios")
+      .delete()
+      .eq("seguidor_id", seguidorIdLimpo)
+      .eq("seguido_id", seguidoIdLimpo);
+
+    if (erroRemocao) {
+      return false;
+    }
+
+    if (!ativo) {
+      return true;
+    }
+
+    const { error: erroInsercao } = await supabase
+      .from("seguindo_usuarios")
+      .insert({
+        seguidor_id: seguidorIdLimpo,
+        seguido_id: seguidoIdLimpo,
+      });
+
+    return !erroInsercao;
+  } catch {
+    return false;
+  }
 }
 
 
@@ -2289,6 +2536,13 @@ export default function ComunidadePage() {
   const [menuAcoesRapidasComunidadeAberto, setMenuAcoesRapidasComunidadeAberto] =
     useState(false);
   const [buscaComunidadeAberta, setBuscaComunidadeAberta] = useState(false);
+  const [usuariosBuscaComunidade, setUsuariosBuscaComunidade] = useState<
+    UsuarioBuscaComunidade[]
+  >([]);
+  const [carregandoUsuariosBuscaComunidade, setCarregandoUsuariosBuscaComunidade] =
+    useState(false);
+  const [usuariosSeguidosIds, setUsuariosSeguidosIds] = useState<string[]>([]);
+  const [usuarioSeguindoId, setUsuarioSeguindoId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -2742,6 +2996,99 @@ export default function ComunidadePage() {
     () => normalizarTexto(termoBuscaAdiado),
     [termoBuscaAdiado]
   );
+
+  useEffect(() => {
+    let cancelado = false;
+    const userId = usuario?.id || "";
+
+    if (!userId) {
+      setUsuariosSeguidosIds([]);
+      return;
+    }
+
+    void carregarUsuariosSeguidosComunidade(userId).then((idsSeguidos) => {
+      if (!cancelado) {
+        setUsuariosSeguidosIds(idsSeguidos);
+      }
+    });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [usuario?.id]);
+
+  useEffect(() => {
+    let cancelado = false;
+    const termoLimpo = termoBuscaAdiado.trim().replace(/^@+/, "");
+
+    if (!buscaComunidadeAberta || termoLimpo.length < 2) {
+      setUsuariosBuscaComunidade([]);
+      setCarregandoUsuariosBuscaComunidade(false);
+      return;
+    }
+
+    setCarregandoUsuariosBuscaComunidade(true);
+
+    const buscaTimer = window.setTimeout(() => {
+      const usuariosLocais = buscarUsuariosComunidadeNosPosts(
+        posts,
+        termoLimpo
+      );
+
+      void buscarUsuariosComunidadeSupabase(termoLimpo)
+        .then((usuariosSupabase) => {
+          if (cancelado) {
+            return;
+          }
+
+          const usuariosPorId = new Map<string, UsuarioBuscaComunidade>();
+
+          [...usuariosSupabase, ...usuariosLocais].forEach((usuarioBusca) => {
+            const usuarioExistente = usuariosPorId.get(usuarioBusca.id);
+
+            usuariosPorId.set(usuarioBusca.id, {
+              id: usuarioBusca.id,
+              nome: usuarioBusca.nome || usuarioExistente?.nome || "Usuário",
+              username:
+                usuarioBusca.username || usuarioExistente?.username || "",
+              avatar: usuarioBusca.avatar || usuarioExistente?.avatar || "",
+            });
+          });
+
+          const termoNormalizado = normalizarTexto(termoLimpo);
+          const usuariosOrdenados = Array.from(usuariosPorId.values())
+            .sort((usuarioA, usuarioB) => {
+              const textoA = normalizarTexto(
+                `${usuarioA.nome} ${usuarioA.username}`
+              );
+              const textoB = normalizarTexto(
+                `${usuarioB.nome} ${usuarioB.username}`
+              );
+              const prefixoA = textoA.startsWith(termoNormalizado);
+              const prefixoB = textoB.startsWith(termoNormalizado);
+
+              if (prefixoA !== prefixoB) {
+                return prefixoA ? -1 : 1;
+              }
+
+              return usuarioA.nome.localeCompare(usuarioB.nome, "pt-BR");
+            })
+            .slice(0, 12);
+
+          setUsuariosBuscaComunidade(usuariosOrdenados);
+        })
+        .finally(() => {
+          if (!cancelado) {
+            setCarregandoUsuariosBuscaComunidade(false);
+          }
+        });
+    }, 220);
+
+    return () => {
+      cancelado = true;
+      window.clearTimeout(buscaTimer);
+    };
+  }, [buscaComunidadeAberta, posts, termoBuscaAdiado]);
 
   const postsVisiveis = useMemo(() => {
     const postsFiltrados = posts.filter((post) => {
@@ -3442,6 +3789,61 @@ export default function ComunidadePage() {
     setErro("Entre na sua conta para participar da Comunidade.");
     router.push(criarLoginHrefComunidade());
     return false;
+  }
+
+  async function alternarSeguirUsuarioBusca(
+    usuarioAlvo: UsuarioBuscaComunidade
+  ) {
+    if (!exigirLogin() || !usuario) {
+      return;
+    }
+
+    if (usuarioAlvo.id === usuario.id) {
+      return;
+    }
+
+    const chaveAcao = `seguir-usuario:${usuarioAlvo.id}`;
+
+    if (!iniciarAcaoComunidade(chaveAcao)) {
+      return;
+    }
+
+    const estavaSeguindo = usuariosSeguidosIds.includes(usuarioAlvo.id);
+    const deveSeguir = !estavaSeguindo;
+    const idsAnteriores = usuariosSeguidosIds;
+
+    setUsuarioSeguindoId(usuarioAlvo.id);
+    setUsuariosSeguidosIds((idsAtuais) =>
+      deveSeguir
+        ? Array.from(new Set([...idsAtuais, usuarioAlvo.id]))
+        : idsAtuais.filter((id) => id !== usuarioAlvo.id)
+    );
+
+    try {
+      const salvo = await salvarSeguindoUsuarioComunidade(
+        usuario.id,
+        usuarioAlvo.id,
+        deveSeguir
+      );
+
+      if (!salvo) {
+        setUsuariosSeguidosIds(idsAnteriores);
+        setErro("Não foi possível atualizar este usuário agora.");
+        return;
+      }
+
+      setErro("");
+      emitirFeedbackAcao(
+        deveSeguir
+          ? `Você começou a seguir ${usuarioAlvo.nome}.`
+          : `Você deixou de seguir ${usuarioAlvo.nome}.`
+      );
+    } finally {
+      finalizarAcaoComunidade(chaveAcao);
+      setUsuarioSeguindoId((idAtual) =>
+        idAtual === usuarioAlvo.id ? null : idAtual
+      );
+    }
   }
 
   function selecionarObraRelacionada(titulo: string) {
@@ -4167,7 +4569,7 @@ export default function ComunidadePage() {
                       <input
                         value={termoBusca}
                         onChange={(event) => setTermoBusca(event.target.value)}
-                        placeholder="Buscar"
+                        placeholder="Buscar publicações ou usuários"
                         autoComplete="off"
                         autoCorrect="off"
                         spellCheck={false}
@@ -4245,15 +4647,6 @@ export default function ComunidadePage() {
                 )}
               </div>
 
-              {filtrosAtivos && (
-                <button
-                  type="button"
-                  onClick={limparFiltrosComunidade}
-                  style={exploreLikeClearFilterButtonStyle}
-                >
-                  Limpar filtros
-                </button>
-              )}
             </section>
 
 
@@ -4417,22 +4810,133 @@ export default function ComunidadePage() {
                     />
                   </button>
 
-                  {filtrosAtivos && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        limparFiltrosComunidade();
-                        setMenuAcoesRapidasComunidadeAberto(false);
-                      }}
-                      style={communityFiltersSheetClearButtonStyle}
-                    >
-                      Limpar filtros
-                    </button>
-                  )}
-
                 </article>
               </section>
             )}
+
+            {termoBuscaNormalizado ? (
+              <section
+                style={communityUserSearchSectionStyle}
+                aria-label="Usuários encontrados"
+              >
+                <div style={communitySearchResultsHeaderStyle}>
+                  <strong style={communitySearchResultsTitleStyle}>
+                    Usuários
+                  </strong>
+                  <span style={communitySearchResultsCountStyle}>
+                    {carregandoUsuariosBuscaComunidade
+                      ? "Buscando..."
+                      : `${usuariosBuscaComunidade.length} encontrado${
+                          usuariosBuscaComunidade.length === 1 ? "" : "s"
+                        }`}
+                  </span>
+                </div>
+
+                {termoBusca.trim().replace(/^@+/, "").length < 2 ? (
+                  <p style={communitySearchResultsEmptyStyle}>
+                    Digite pelo menos 2 caracteres para encontrar usuários.
+                  </p>
+                ) : carregandoUsuariosBuscaComunidade ? (
+                  <div style={communityUserSearchLoadingStyle}>
+                    <span style={communityUserSearchLoadingLineStyle} />
+                    <span style={communityUserSearchLoadingLineStyle} />
+                  </div>
+                ) : usuariosBuscaComunidade.length > 0 ? (
+                  <div style={communityUserSearchListStyle}>
+                    {usuariosBuscaComunidade.map((usuarioBusca) => {
+                      const ehUsuarioAtual = usuario?.id === usuarioBusca.id;
+                      const seguindoUsuario = usuariosSeguidosIds.includes(
+                        usuarioBusca.id
+                      );
+                      const atualizandoSeguindo =
+                        usuarioSeguindoId === usuarioBusca.id;
+
+                      return (
+                        <article
+                          key={usuarioBusca.id}
+                          style={communityUserSearchCardStyle}
+                        >
+                          <Link
+                            href={criarPerfilHrefComunidade(
+                              usuarioBusca.id,
+                              usuarioBusca.nome
+                            )}
+                            aria-label={`Abrir perfil de ${usuarioBusca.nome}`}
+                            style={criarAvatarComunidadeStyle(
+                              communityUserSearchAvatarStyle,
+                              usuarioBusca.avatar
+                            )}
+                          >
+                            {!usuarioBusca.avatar &&
+                              (usuarioBusca.nome.slice(0, 1).toUpperCase() ||
+                                "U")}
+                          </Link>
+
+                          <div style={communityUserSearchInfoStyle}>
+                            <Link
+                              href={criarPerfilHrefComunidade(
+                                usuarioBusca.id,
+                                usuarioBusca.nome
+                              )}
+                              style={communityUserSearchNameStyle}
+                            >
+                              {usuarioBusca.nome}
+                            </Link>
+
+                            <span style={communityUserSearchUsernameStyle}>
+                              {usuarioBusca.username
+                                ? `@${usuarioBusca.username}`
+                                : "Perfil da comunidade"}
+                            </span>
+                          </div>
+
+                          {ehUsuarioAtual ? (
+                            <span style={communityUserSearchSelfBadgeStyle}>
+                              Você
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                alternarSeguirUsuarioBusca(usuarioBusca)
+                              }
+                              disabled={atualizandoSeguindo}
+                              style={
+                                seguindoUsuario
+                                  ? communityUserSearchFollowingButtonStyle
+                                  : communityUserSearchFollowButtonStyle
+                              }
+                            >
+                              {atualizandoSeguindo
+                                ? "..."
+                                : seguindoUsuario
+                                  ? "Seguindo"
+                                  : "Seguir"}
+                            </button>
+                          )}
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p style={communitySearchResultsEmptyStyle}>
+                    Nenhum usuário encontrado.
+                  </p>
+                )}
+              </section>
+            ) : null}
+
+            {termoBuscaNormalizado ? (
+              <div style={communitySearchResultsHeaderStyle}>
+                <strong style={communitySearchResultsTitleStyle}>
+                  Publicações
+                </strong>
+                <span style={communitySearchResultsCountStyle}>
+                  {postsVisiveis.length} encontrada
+                  {postsVisiveis.length === 1 ? "" : "s"}
+                </span>
+              </div>
+            ) : null}
 
             <section style={postsListStyle}>
               {!carregandoFeed && (
@@ -6787,20 +7291,6 @@ const communityFilterLabelButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const exploreLikeClearFilterButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 900,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 12px",
-  ...safeTextStyle,
-};
 
 const communityFilterActionButtonStyle: CSSProperties = {
   width: "100%",
@@ -6957,22 +7447,6 @@ const communityFiltersSheetRadioActiveStyle: CSSProperties = {
   border: "6.5px solid #FFFFFF",
 };
 
-const communityFiltersSheetClearButtonStyle: CSSProperties = {
-  width: "calc(100% - 60px)",
-  justifySelf: "center",
-  minHeight: "46px",
-  marginTop: "12px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontSize: "15px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const communityActionsSheetStyle: CSSProperties = {
   ...communityFiltersSheetStyle,
@@ -7460,6 +7934,162 @@ const savedFilterActiveStyle: CSSProperties = {
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "var(--historietas-accent, var(--historietas-comunidade-accent-soft, #FDBA74))",
+};
+
+const communityUserSearchSectionStyle: CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  padding: "12px 0 8px",
+  borderBottom: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  minWidth: 0,
+};
+
+const communitySearchResultsHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  minWidth: 0,
+  padding: "8px 0 4px",
+};
+
+const communitySearchResultsTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "13px",
+  lineHeight: 1.2,
+  fontWeight: 950,
+  letterSpacing: "-0.02em",
+  ...safeTextStyle,
+};
+
+const communitySearchResultsCountStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  lineHeight: 1.2,
+  fontWeight: 850,
+  whiteSpace: "nowrap",
+  ...safeTextStyle,
+};
+
+const communityUserSearchListStyle: CSSProperties = {
+  display: "grid",
+  gap: "7px",
+  minWidth: 0,
+};
+
+const communityUserSearchCardStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "44px minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: "10px",
+  minWidth: 0,
+  padding: "8px 0",
+};
+
+const communityUserSearchAvatarStyle: CSSProperties = {
+  width: "44px",
+  height: "44px",
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "18px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textDecoration: "none",
+  overflow: "hidden",
+};
+
+const communityUserSearchInfoStyle: CSSProperties = {
+  display: "grid",
+  gap: "3px",
+  minWidth: 0,
+};
+
+const communityUserSearchNameStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "13px",
+  lineHeight: 1.2,
+  fontWeight: 950,
+  textDecoration: "none",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const communityUserSearchUsernameStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  lineHeight: 1.25,
+  fontWeight: 780,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const communityUserSearchFollowButtonStyle: CSSProperties = {
+  minWidth: "76px",
+  minHeight: "34px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.16))",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  padding: "0 12px",
+  fontSize: "10.5px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
+const communityUserSearchFollowingButtonStyle: CSSProperties = {
+  ...communityUserSearchFollowButtonStyle,
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+};
+
+const communityUserSearchSelfBadgeStyle: CSSProperties = {
+  minWidth: "58px",
+  minHeight: "30px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  padding: "0 10px",
+  fontSize: "10px",
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+};
+
+const communitySearchResultsEmptyStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "11px",
+  lineHeight: 1.4,
+  fontWeight: 780,
+  textAlign: "center",
+};
+
+const communityUserSearchLoadingStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+};
+
+const communityUserSearchLoadingLineStyle: CSSProperties = {
+  display: "block",
+  width: "100%",
+  height: "54px",
+  borderRadius: "16px",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
 };
 
 const postsListStyle: CSSProperties = {
