@@ -2457,6 +2457,20 @@ export default function ObraDinamicaPage() {
   const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
+    if (!mensagemAcao) {
+      return;
+    }
+
+    const timerMensagemAcao = window.setTimeout(() => {
+      setMensagemAcao("");
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timerMensagemAcao);
+    };
+  }, [mensagemAcao]);
+
+  useEffect(() => {
     let cancelado = false;
 
     async function carregarUsuarioLogado() {
@@ -4068,40 +4082,95 @@ export default function ObraDinamicaPage() {
     }
   }
 
-  async function copiarLinkAtual() {
+  async function compartilharObraAtual() {
+    if (!obra) {
+      return;
+    }
+
     const linkAtual = window.location.href;
+    const dadosCompartilhamento: ShareData = {
+      title: `${obra.titulo} no HISTORIETAS`,
+      text: `Confira a obra ${obra.titulo} de ${obra.autor} no HISTORIETAS.`,
+      url: linkAtual,
+    };
+
+    if (typeof navigator.share === "function") {
+      try {
+        const compartilhamento = navigator.share(dadosCompartilhamento);
+
+        setAcoesObraAbertas(false);
+        await compartilhamento;
+        setMensagemAcao("Compartilhamento da obra aberto.");
+        return;
+      } catch (error) {
+        if (
+          error instanceof DOMException &&
+          error.name === "AbortError"
+        ) {
+          return;
+        }
+      }
+    }
+
+    setAcoesObraAbertas(false);
 
     try {
-      if (navigator.clipboard?.writeText) {
+      let linkFoiCopiado = false;
+
+      if (
+        window.isSecureContext &&
+        navigator.clipboard &&
+        typeof navigator.clipboard.writeText === "function"
+      ) {
         try {
           await navigator.clipboard.writeText(linkAtual);
+          linkFoiCopiado = true;
         } catch {
-          copiarTextoComFallback(linkAtual);
+          linkFoiCopiado = copiarTextoComFallback(linkAtual);
         }
       } else {
-        copiarTextoComFallback(linkAtual);
+        linkFoiCopiado = copiarTextoComFallback(linkAtual);
+      }
+
+      if (!linkFoiCopiado) {
+        throw new Error("Não foi possível copiar o link.");
       }
 
       setLinkCopiado(true);
+      setMensagemAcao("Link da obra copiado.");
 
       window.setTimeout(() => {
         setLinkCopiado(false);
       }, 1800);
     } catch {
       setLinkCopiado(false);
+      setMensagemAcao(
+        "Não consegui compartilhar nem copiar o link da obra neste navegador.",
+      );
     }
   }
 
   function copiarTextoComFallback(texto: string) {
     const campoTemporario = document.createElement("textarea");
+
     campoTemporario.value = texto;
     campoTemporario.setAttribute("readonly", "true");
     campoTemporario.style.position = "fixed";
     campoTemporario.style.left = "-9999px";
     document.body.appendChild(campoTemporario);
     campoTemporario.select();
-    document.execCommand("copy");
+
+    let copiado = false;
+
+    try {
+      copiado = document.execCommand("copy");
+    } catch {
+      copiado = false;
+    }
+
     document.body.removeChild(campoTemporario);
+
+    return copiado;
   }
 
   const hrefPrincipalObra = obra
@@ -4787,6 +4856,17 @@ export default function ObraDinamicaPage() {
 
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+      {mensagemAcao ? (
+        <div
+          style={obraActionToastStyle}
+          role="status"
+          aria-live="polite"
+        >
+          {mensagemAcao}
+        </div>
+      ) : null}
+
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <section style={isDesktop ? desktopHeroStyle : heroStyle}>
           <header
@@ -5092,8 +5172,7 @@ export default function ObraDinamicaPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setAcoesObraAbertas(false);
-                    void copiarLinkAtual();
+                    void compartilharObraAtual();
                   }}
                   style={
                     linkCopiado
@@ -5101,7 +5180,7 @@ export default function ObraDinamicaPage() {
                       : obraMenuItemButtonStyle
                   }
                 >
-                  <span>{linkCopiado ? "Link copiado!" : "Copiar link"}</span>
+                  <span>{linkCopiado ? "Link copiado!" : "Compartilhar"}</span>
                 </button>
 
                 {sinopseObraMenu ? (
@@ -6094,6 +6173,31 @@ const obraMenuActionsStyle: CSSProperties = {
   overflow: "hidden",
 };
 
+
+const obraActionToastStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: "calc(92px + env(safe-area-inset-bottom))",
+  transform: "translateX(-50%)",
+  zIndex: 12000,
+  width: "max-content",
+  maxWidth: "calc(100vw - 32px)",
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  background: "var(--historietas-surface-strong, #120822)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  boxShadow: "0 14px 34px rgba(0,0,0,0.38)",
+  padding: "9px 14px",
+  fontSize: "11px",
+  lineHeight: 1.3,
+  fontWeight: 900,
+  textAlign: "center",
+  pointerEvents: "none",
+};
 
 const obraActionsMenuStyle: CSSProperties = {
   position: "fixed",

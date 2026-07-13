@@ -3594,20 +3594,28 @@ export default function ComunidadePage() {
     try {
       const linkPublicacao = obterLinkPublicacaoComunidade(post.id);
       const navegador = navigator as Navigator & {
-        share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
+        share?: (data: ShareData) => Promise<void>;
       };
+      const textoPublicacao =
+        post.texto.trim().slice(0, 160) ||
+        `Confira a publicação de ${post.autorNome} no HISTORIETAS.`;
 
       if (typeof navegador.share === "function") {
         try {
           await navegador.share({
-            title: "Comunidade Historietas",
-            text: post.texto.slice(0, 120),
+            title: `${post.autorNome} na Comunidade HISTORIETAS`,
+            text: textoPublicacao,
             url: linkPublicacao,
           });
-          emitirFeedbackAcao("Publicação pronta para compartilhar.");
+          emitirFeedbackAcao("Compartilhamento da publicação aberto.");
           return;
-        } catch {
-          // Se o compartilhamento nativo falhar ou for cancelado, tenta copiar.
+        } catch (error) {
+          if (
+            error instanceof DOMException &&
+            error.name === "AbortError"
+          ) {
+            return;
+          }
         }
       }
 
@@ -3618,7 +3626,9 @@ export default function ComunidadePage() {
         return;
       }
 
-      setErro(`Não foi possível copiar automaticamente. Link: ${linkPublicacao}`);
+      setErro(
+        "Não consegui compartilhar nem copiar o link da publicação neste navegador."
+      );
     } finally {
       finalizarAcaoComunidade(chaveAcao);
       setPostCompartilhandoId((postAtualId) =>
@@ -5033,7 +5043,7 @@ export default function ComunidadePage() {
                                 cursor: postCompartilhando ? "not-allowed" : "pointer",
                               }}
                             >
-                              {postCompartilhando ? "Copiando..." : "Copiar link"}
+                              {postCompartilhando ? "Compartilhando..." : "Compartilhar"}
                             </button>
 
                             {usuarioEhAdmin && (
