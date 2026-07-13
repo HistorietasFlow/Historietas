@@ -6,30 +6,19 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { supabase } from "../../lib/supabase/client";
 import {
+  aplicarTemaVisual,
+  carregarTemaVisualSalvo,
   historietasThemeCss,
+  obterTemaVisualSeguro,
+  salvarTemaVisualSalvo,
+  TEMAS_VISUAIS_HISTORIETAS,
+  THEME_STORAGE_KEY,
   useHistorietasTheme,
+  type TemaVisualHistorietas,
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 
-type TemaVisual =
-  | "branco"
-  | "escuro"
-  | "foco"
-  | "original"
-  | "fantasia"
-  | "romance"
-  | "terror"
-  | "acao"
-  | "scifi"
-  | "drama"
-  | "aventura"
-  | "misterio"
-  | "suspense"
-  | "sobrenatural"
-  | "historico"
-  | "biografia"
-  | "comedia"
-  | "pixel";
+type TemaVisual = TemaVisualHistorietas;
 
 type PreferenciasConta = {
   nomeExibicao: string;
@@ -98,8 +87,6 @@ type IconName =
   | "spark";
 
 const CONFIG_STORAGE_KEY = "historietas-configuracoes-conta";
-const THEME_STORAGE_KEY = "historietas-tema-visual";
-
 const CHAVES_RESUMO = [
   "historietas-obras",
   "historietas-notificacoes",
@@ -139,323 +126,25 @@ const TEMAS_VISUAIS: Record<
     descricao: string;
     accent: string;
     secondary: string;
-    bgStart: string;
-    bgMid: string;
-    bgEnd: string;
-    glowPrimary: string;
-    glowSecondary: string;
-    textPrimary?: string;
-    textSecondary?: string;
-    surface?: string;
-    surfaceStrong?: string;
-    borderSoft?: string;
-    inputBg?: string;
-    inputText?: string;
-    titleFrom?: string;
-    titleMid?: string;
-    titleTo?: string;
-    activeSurface?: string;
-    secondarySurface?: string;
-    secondaryButtonText?: string;
-    dangerSurface?: string;
-    dangerButtonText?: string;
   }
 > = {
-  branco: {
-    nome: "Branco",
-    descricao: "Modo claro limpo.",
-    accent: "#1A73E8",
-    secondary: "#01875F",
-    bgStart: "#FFFFFF",
-    bgMid: "#FFFFFF",
-    bgEnd: "#F8F9FA",
-    glowPrimary: "rgba(26,115,232,0.020)",
-    glowSecondary: "rgba(1,135,95,0.018)",
-    textPrimary: "#202124",
-    textSecondary: "#5F6368",
-    surface: "#FFFFFF",
-    surfaceStrong: "#FFFFFF",
-    borderSoft: "#DADCE0",
-    inputBg: "#FFFFFF",
-    inputText: "#202124",
-    titleFrom: "#202124",
-    titleMid: "#202124",
-    titleTo: "#202124",
-    activeSurface: "rgba(26,115,232,0.10)",
-    secondarySurface: "rgba(1,135,95,0.10)",
-    secondaryButtonText: "#188038",
-    dangerSurface: "rgba(217,48,37,0.10)",
-    dangerButtonText: "#B3261E",
-  },
-  escuro: {
-    nome: "Escuro",
-    descricao: "Fundo preto e leitura confortável.",
-    accent: "#F97316",
-    secondary: "#7C3AED",
-    bgStart: "#000000",
-    bgMid: "#000000",
-    bgEnd: "#000000",
-    glowPrimary: "rgba(249,115,22,0.030)",
-    glowSecondary: "rgba(124,58,237,0.030)",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#B3B3B3",
-    surface: "#101010",
-    surfaceStrong: "#000000",
-    borderSoft: "rgba(255,255,255,0.11)",
-    inputBg: "#0B0B0B",
-    inputText: "#FFFFFF",
-    titleFrom: "#FFFFFF",
-    titleMid: "#FFFFFF",
-    titleTo: "#FFFFFF",
-    activeSurface: "rgba(124,58,237,0.14)",
-    secondarySurface: "rgba(124,58,237,0.12)",
-    secondaryButtonText: "#FFFFFF",
-    dangerSurface: "rgba(239,68,68,0.12)",
-    dangerButtonText: "#FCA5A5",
+  original: {
+    nome: "Original",
+    descricao:
+      "Visual atual do Historietas em roxo escuro, preto e branco.",
+    accent: TEMAS_VISUAIS_HISTORIETAS.original.accent,
+    secondary: TEMAS_VISUAIS_HISTORIETAS.original.secondary,
   },
   foco: {
     nome: "Foco",
-    descricao: "Escuro suave para concentração.",
-    accent: "#A78BFA",
-    secondary: "#27272A",
-    bgStart: "#050506",
-    bgMid: "#030305",
-    bgEnd: "#020203",
-    glowPrimary: "rgba(124,58,237,0.08)",
-    glowSecondary: "rgba(255,255,255,0.045)",
-    textPrimary: "#F4F4F5",
-    textSecondary: "#D4D4D8",
-    surface: "rgba(9,9,11,0.88)",
-    surfaceStrong: "rgba(3,3,6,0.96)",
-    borderSoft: "rgba(255,255,255,0.065)",
-    inputBg: "#09090B",
-    inputText: "#F4F4F5",
-    titleFrom: "#FFFFFF",
-    titleMid: "#E4E4E7",
-    titleTo: "#A78BFA",
-  },
-  original: {
-    nome: "Original",
-    descricao: "Roxo e laranja padrão do Historietas.",
-    accent: "#F97316",
-    secondary: "#7C3AED",
-    bgStart: "#070212",
-    bgMid: "#070212",
-    bgEnd: "#070212",
-    glowPrimary: "transparent",
-    glowSecondary: "transparent",
-  },
-  fantasia: {
-    nome: "Fantasia",
-    descricao: "Violeta profundo e azul.",
-    accent: "#A855F7",
-    secondary: "#2563EB",
-    bgStart: "#090417",
-    bgMid: "#130A2A",
-    bgEnd: "#0B1028",
-    glowPrimary: "rgba(168,85,247,0.34)",
-    glowSecondary: "rgba(37,99,235,0.18)",
-  },
-  romance: {
-    nome: "Romance",
-    descricao: "Rosa e vinho suave.",
-    accent: "#EC4899",
-    secondary: "#BE123C",
-    bgStart: "#140711",
-    bgMid: "#251022",
-    bgEnd: "#1E0B16",
-    glowPrimary: "rgba(236,72,153,0.30)",
-    glowSecondary: "rgba(190,18,60,0.18)",
-  },
-  terror: {
-    nome: "Terror",
-    descricao: "Vermelho sombrio.",
-    accent: "#EF4444",
-    secondary: "#7F1D1D",
-    bgStart: "#080305",
-    bgMid: "#160707",
-    bgEnd: "#100608",
-    glowPrimary: "rgba(239,68,68,0.30)",
-    glowSecondary: "rgba(127,29,29,0.22)",
-  },
-  acao: {
-    nome: "Ação",
-    descricao: "Laranja e vermelho intenso.",
-    accent: "#F97316",
-    secondary: "#DC2626",
-    bgStart: "#100604",
-    bgMid: "#1E0B08",
-    bgEnd: "#17101B",
-    glowPrimary: "rgba(249,115,22,0.34)",
-    glowSecondary: "rgba(220,38,38,0.18)",
-  },
-  scifi: {
-    nome: "Sci-fi",
-    descricao: "Azul e ciano neon.",
-    accent: "#06B6D4",
-    secondary: "#2563EB",
-    bgStart: "#031017",
-    bgMid: "#071C2D",
-    bgEnd: "#071321",
-    glowPrimary: "rgba(6,182,212,0.30)",
-    glowSecondary: "rgba(37,99,235,0.20)",
-  },
-  drama: {
-    nome: "Drama",
-    descricao: "Roxo dramático.",
-    accent: "#C084FC",
-    secondary: "#581C87",
-    bgStart: "#0E0718",
-    bgMid: "#160A24",
-    bgEnd: "#17101F",
-    glowPrimary: "rgba(192,132,252,0.30)",
-    glowSecondary: "rgba(88,28,135,0.22)",
-  },
-  aventura: {
-    nome: "Aventura",
-    descricao: "Dourado e cobre.",
-    accent: "#EAB308",
-    secondary: "#92400E",
-    bgStart: "#0D0803",
-    bgMid: "#171006",
-    bgEnd: "#1F1308",
-    glowPrimary: "rgba(234,179,8,0.18)",
-    glowSecondary: "rgba(146,64,14,0.20)",
-    titleTo: "#FDE68A",
-    activeSurface: "rgba(234,179,8,0.15)",
-    secondarySurface: "rgba(146,64,14,0.20)",
-    secondaryButtonText: "#FDE68A",
-  },
-  misterio: {
-    nome: "Mistério",
-    descricao: "Azul investigativo.",
-    accent: "#818CF8",
-    secondary: "#312E81",
-    bgStart: "#060817",
-    bgMid: "#0B1026",
-    bgEnd: "#10112A",
-    glowPrimary: "rgba(129,140,248,0.26)",
-    glowSecondary: "rgba(49,46,129,0.24)",
-    titleTo: "#C7D2FE",
-    activeSurface: "rgba(129,140,248,0.16)",
-    secondarySurface: "rgba(49,46,129,0.22)",
-    secondaryButtonText: "#C7D2FE",
-  },
-  suspense: {
-    nome: "Suspense",
-    descricao: "Verde ácido escuro.",
-    accent: "#A3E635",
-    secondary: "#365314",
-    bgStart: "#070B05",
-    bgMid: "#101607",
-    bgEnd: "#11140A",
-    glowPrimary: "rgba(163,230,53,0.18)",
-    glowSecondary: "rgba(54,83,20,0.24)",
-    titleTo: "#D9F99D",
-    activeSurface: "rgba(163,230,53,0.14)",
-    secondarySurface: "rgba(54,83,20,0.24)",
-    secondaryButtonText: "#D9F99D",
-  },
-  sobrenatural: {
-    nome: "Sobrenatural",
-    descricao: "Verde espectral.",
-    accent: "#34D399",
-    secondary: "#065F46",
-    bgStart: "#06120D",
-    bgMid: "#0B1D1C",
-    bgEnd: "#10171A",
-    glowPrimary: "rgba(52,211,153,0.24)",
-    glowSecondary: "rgba(6,95,70,0.22)",
-  },
-  historico: {
-    nome: "Histórico",
-    descricao: "Marrom antigo e cobre.",
-    accent: "#D97706",
-    secondary: "#78350F",
-    bgStart: "#110805",
-    bgMid: "#1A0F08",
-    bgEnd: "#17100A",
-    glowPrimary: "rgba(217,119,6,0.22)",
-    glowSecondary: "rgba(120,53,15,0.25)",
-    titleTo: "#FDBA74",
-    activeSurface: "rgba(217,119,6,0.16)",
-    secondarySurface: "rgba(120,53,15,0.22)",
-    secondaryButtonText: "#FED7AA",
-  },
-  biografia: {
-    nome: "Biografia",
-    descricao: "Azul aço e grafite.",
-    accent: "#60A5FA",
-    secondary: "#334155",
-    bgStart: "#06101F",
-    bgMid: "#0B1728",
-    bgEnd: "#101827",
-    glowPrimary: "rgba(96,165,250,0.22)",
-    glowSecondary: "rgba(51,65,85,0.28)",
-    titleTo: "#BFDBFE",
-    activeSurface: "rgba(96,165,250,0.15)",
-    secondarySurface: "rgba(51,65,85,0.24)",
-    secondaryButtonText: "#BFDBFE",
-  },
-  comedia: {
-    nome: "Comédia",
-    descricao: "Amarelo e coral.",
-    accent: "#FACC15",
-    secondary: "#FB7185",
-    bgStart: "#110D04",
-    bgMid: "#1D1608",
-    bgEnd: "#1A1014",
-    glowPrimary: "rgba(250,204,21,0.24)",
-    glowSecondary: "rgba(251,113,133,0.18)",
-  },
-  pixel: {
-    nome: "Pixel",
-    descricao: "Verde arcade e azul.",
-    accent: "#22C55E",
-    secondary: "#38BDF8",
-    bgStart: "#030703",
-    bgMid: "#061106",
-    bgEnd: "#020402",
-    glowPrimary: "rgba(34,197,94,0.16)",
-    glowSecondary: "rgba(56,189,248,0.12)",
-    textPrimary: "#ECFDF5",
-    textSecondary: "#BBF7D0",
-    surface: "#07120A",
-    surfaceStrong: "#030803",
-    borderSoft: "rgba(34,197,94,0.34)",
-    inputBg: "#020602",
-    inputText: "#ECFDF5",
-    titleFrom: "#ECFDF5",
-    titleMid: "#BBF7D0",
-    titleTo: "#86EFAC",
-    activeSurface: "rgba(34,197,94,0.18)",
-    secondarySurface: "rgba(56,189,248,0.12)",
-    secondaryButtonText: "#BAE6FD",
-    dangerSurface: "rgba(239,68,68,0.14)",
-    dangerButtonText: "#FCA5A5",
+    descricao:
+      "Fundo e blocos pretos, textos brancos e secundários em cinza claro.",
+    accent: TEMAS_VISUAIS_HISTORIETAS.foco.accent,
+    secondary: TEMAS_VISUAIS_HISTORIETAS.foco.secondary,
   },
 };
 
-const ORDEM_TEMAS_VISUAIS: TemaVisual[] = [
-  "branco",
-  "escuro",
-  "foco",
-  "original",
-  "fantasia",
-  "romance",
-  "terror",
-  "acao",
-  "scifi",
-  "drama",
-  "aventura",
-  "misterio",
-  "suspense",
-  "sobrenatural",
-  "historico",
-  "biografia",
-  "comedia",
-  "pixel",
-];
+const ORDEM_TEMAS_VISUAIS: TemaVisual[] = ["original", "foco"];
 
 function criarStorageKeyUsuarioConfiguracoes(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
@@ -503,91 +192,7 @@ function salvarJsonStorageUsuarioConfiguracoes(
   }
 }
 
-function obterTemaVisualSeguro(valor: unknown): TemaVisual {
-  if (typeof valor === "string" && valor in TEMAS_VISUAIS) {
-    return valor as TemaVisual;
-  }
 
-  return "original";
-}
-
-function carregarTemaVisualSalvo(userId = "") {
-  try {
-    const texto = lerStorageUsuarioConfiguracoes(THEME_STORAGE_KEY, userId);
-
-    if (!texto) {
-      return "original";
-    }
-
-    try {
-      return obterTemaVisualSeguro(JSON.parse(texto));
-    } catch {
-      return obterTemaVisualSeguro(texto);
-    }
-  } catch {
-    return "original";
-  }
-}
-
-function dispararEventoTemaVisualAtualizado() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.dispatchEvent(new Event("historietas:tema-visual-atualizado"));
-}
-
-function salvarTemaVisual(temaVisual: TemaVisual, userId = "") {
-  salvarJsonStorageUsuarioConfiguracoes(THEME_STORAGE_KEY, userId, temaVisual);
-  dispararEventoTemaVisualAtualizado();
-}
-
-function aplicarTemaVisual(temaVisual: TemaVisual) {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const tema = TEMAS_VISUAIS[temaVisual];
-  const raiz = document.documentElement;
-  const isBranco = temaVisual === "branco";
-
-  raiz.style.setProperty("--historietas-accent", tema.accent);
-  raiz.style.setProperty("--historietas-secondary", tema.secondary);
-  raiz.style.setProperty("--historietas-bg-start", tema.bgStart);
-  raiz.style.setProperty("--historietas-bg-mid", tema.bgMid);
-  raiz.style.setProperty("--historietas-bg-end", tema.bgEnd);
-  raiz.style.setProperty("--historietas-glow-primary", tema.glowPrimary);
-  raiz.style.setProperty("--historietas-glow-secondary", tema.glowSecondary);
-  raiz.style.setProperty("--historietas-text-primary", tema.textPrimary || "#FFFFFF");
-  raiz.style.setProperty("--historietas-text-secondary", tema.textSecondary || "#D4D4D8");
-  raiz.style.setProperty("--historietas-surface", tema.surface || "rgba(255,255,255,0.055)");
-  raiz.style.setProperty("--historietas-surface-strong", tema.surfaceStrong || "#0B0B0F");
-  raiz.style.setProperty("--historietas-border-soft", tema.borderSoft || "rgba(255,255,255,0.10)");
-  raiz.style.setProperty("--historietas-input-bg", tema.inputBg || "#101014");
-  raiz.style.setProperty("--historietas-input-text", tema.inputText || "#FFFFFF");
-  raiz.style.setProperty("--historietas-title-from", tema.titleFrom || "#FFFFFF");
-  raiz.style.setProperty("--historietas-title-mid", tema.titleMid || "#F5F3FF");
-  raiz.style.setProperty("--historietas-title-to", tema.titleTo || "#FDBA74");
-  raiz.style.setProperty("--historietas-active-surface", tema.activeSurface || "rgba(124,58,237,0.18)");
-  raiz.style.setProperty("--historietas-secondary-surface", tema.secondarySurface || "rgba(255,255,255,0.06)");
-  raiz.style.setProperty("--historietas-secondary-button-text", tema.secondaryButtonText || "#DDD6FE");
-  raiz.style.setProperty("--historietas-danger-surface", tema.dangerSurface || "rgba(239,68,68,0.12)");
-  raiz.style.setProperty("--historietas-danger-button-text", tema.dangerButtonText || "#FCA5A5");
-
-  raiz.style.setProperty("--historietas-bottom-nav-bg", isBranco ? "#FFFFFF" : "#04000A");
-  raiz.style.setProperty("--historietas-bottom-nav-border", isBranco ? "#DADCE0" : "rgba(59,7,100,0.52)");
-  raiz.style.setProperty("--historietas-bottom-nav-text", isBranco ? "#5F6368" : "#9980D8");
-  raiz.style.setProperty("--historietas-bottom-nav-hover-bg", isBranco ? "#F1F3F4" : "rgba(59,7,100,0.20)");
-  raiz.style.setProperty("--historietas-bottom-nav-hover-text", isBranco ? "#202124" : "#FFFFFF");
-  raiz.style.setProperty("--historietas-bottom-nav-icon-text", isBranco ? tema.accent : "#AD95EA");
-  raiz.style.setProperty("--historietas-bottom-nav-icon-bg", isBranco ? "#F1F3F4" : "rgba(59,7,100,0.28)");
-  raiz.style.setProperty("--historietas-bottom-nav-icon-border", isBranco ? "#E0E3E7" : "rgba(76,29,149,0.34)");
-  raiz.style.setProperty("--historietas-bottom-nav-main-bg", isBranco ? tema.accent : "#08030F");
-  raiz.style.setProperty("--historietas-bottom-nav-main-border", isBranco ? tema.accent : "rgba(255,255,255,0.10)");
-
-  raiz.dataset.historietasTemaVisual = temaVisual;
-  document.body.dataset.historietasTemaVisual = temaVisual;
-}
 
 function carregarJsonArray(chave: string, userId = "") {
   try {
@@ -660,6 +265,8 @@ function criarResumoLocal(userId = ""): ResumoLocal {
 }
 
 function carregarPreferencias(userId = ""): PreferenciasConta {
+  const temaVisualSalvo = carregarTemaVisualSalvo(userId, true);
+
   try {
     const texto = lerStorageUsuarioConfiguracoes(CONFIG_STORAGE_KEY, userId);
     const json: unknown = texto ? JSON.parse(texto) : null;
@@ -667,7 +274,7 @@ function carregarPreferencias(userId = ""): PreferenciasConta {
     if (!json || typeof json !== "object") {
       return {
         ...preferenciasPadrao,
-        temaVisual: carregarTemaVisualSalvo(userId),
+        temaVisual: temaVisualSalvo,
       };
     }
 
@@ -698,22 +305,19 @@ function carregarPreferencias(userId = ""): PreferenciasConta {
         typeof preferencias.reduzirEfeitos === "boolean"
           ? preferencias.reduzirEfeitos
           : false,
-      temaVisual: obterTemaVisualSeguro(
-        preferencias.temaVisual || carregarTemaVisualSalvo(userId),
-      ),
+      temaVisual: temaVisualSalvo,
     };
   } catch {
     return {
       ...preferenciasPadrao,
-      temaVisual: carregarTemaVisualSalvo(userId),
+      temaVisual: temaVisualSalvo,
     };
   }
 }
 
 function salvarPreferencias(preferencias: PreferenciasConta, userId = "") {
   salvarJsonStorageUsuarioConfiguracoes(CONFIG_STORAGE_KEY, userId, preferencias);
-  salvarTemaVisual(preferencias.temaVisual, userId);
-  aplicarTemaVisual(preferencias.temaVisual);
+  salvarTemaVisualSalvo(preferencias.temaVisual, userId);
 }
 
 function criarBackupLocal(userId = "") {
@@ -1426,7 +1030,8 @@ export default function ConfiguracoesPage() {
   const [busca, setBusca] = useState("");
   const [mostrarTemas, setMostrarTemas] = useState(false);
   const [adminLiberado, setAdminLiberado] = useState(false);
-  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const { pageThemeStyle, setTemaVisual } =
+    useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
 
   const usuarioIdLogado = usuario?.id || "";
@@ -1483,6 +1088,11 @@ export default function ConfiguracoesPage() {
           emailContato:
             preferenciasCarregadas.emailContato || usuarioCarregado.email,
         });
+        salvarTemaVisualSalvo(
+          preferenciasCarregadas.temaVisual,
+          usuarioCarregado.id,
+        );
+        setTemaVisual(preferenciasCarregadas.temaVisual);
         aplicarTemaVisual(preferenciasCarregadas.temaVisual);
         setResumo(criarResumoLocal(usuarioCarregado.id));
         setVerificandoAcesso(false);
@@ -1498,7 +1108,7 @@ export default function ConfiguracoesPage() {
     return () => {
       cancelado = true;
     };
-  }, [router]);
+  }, [router, setTemaVisual]);
 
 
   useEffect(() => {
@@ -1585,13 +1195,22 @@ export default function ConfiguracoesPage() {
   }
 
   function atualizarTemaVisual(temaVisual: TemaVisual) {
-    setPreferencias((preferenciasAtuais) => ({
-      ...preferenciasAtuais,
-      temaVisual,
-    }));
+    const temaSeguro = obterTemaVisualSeguro(temaVisual);
+    const preferenciasAtualizadas: PreferenciasConta = {
+      ...preferencias,
+      temaVisual: temaSeguro,
+    };
 
-    salvarTemaVisual(temaVisual, usuarioIdLogado);
-    aplicarTemaVisual(temaVisual);
+    setPreferencias(preferenciasAtualizadas);
+    setTemaVisual(temaSeguro);
+    aplicarTemaVisual(temaSeguro);
+
+    if (usuarioIdLogado) {
+      salvarPreferencias(preferenciasAtualizadas, usuarioIdLogado);
+      return;
+    }
+
+    salvarTemaVisualSalvo(temaSeguro);
   }
 
   async function salvar() {
@@ -1946,7 +1565,7 @@ export default function ConfiguracoesPage() {
                 <SettingsRow
                   icon="palette"
                   title="Tema visual"
-                  subtitle="Altere as cores principais do Historietas"
+                  subtitle="Escolha entre o visual original e o modo foco"
                   right={<ValorLinha>{temaAtual.nome}</ValorLinha>}
                   onClick={() => setMostrarTemas((atual) => !atual)}
                 />
@@ -1966,6 +1585,8 @@ export default function ConfiguracoesPage() {
                           aria-pressed={ativo}
                         >
                           <span
+                            className="configuracoes-theme-swatch"
+                            data-tema-visual-opcao={temaVisual}
                             style={{
                               ...themeSwatchStyle,
                               background: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
@@ -2136,12 +1757,31 @@ export default function ConfiguracoesPage() {
 }
 
 const configuracoesPageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
-  html[data-historietas-tema-visual="original"] body,
-  html[data-historietas-tema-visual="original"] main {
-    background: var(--historietas-bg-start, #050509) !important;
-    color: var(--historietas-text-primary, #FFFFFF) !important;
+  html {
+    --configuracoes-page-bg: #050509;
+    --configuracoes-danger-text: #FCA5A5;
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --configuracoes-page-bg: #000000;
+    --configuracoes-control-bg: #000000;
+    --configuracoes-card-bg: #000000;
+    --configuracoes-border: rgba(255,255,255,0.18);
+    --configuracoes-text-secondary: #A1A1AA;
+    --configuracoes-theme-active-bg: #000000;
+    --configuracoes-theme-active-shadow: inset 0 0 0 1px #FFFFFF;
+    --configuracoes-toggle-knob-bg: #000000;
+    --configuracoes-danger-text: #FFFFFF;
+    --historietas-accent: #FFFFFF;
+    --historietas-secondary: #A1A1AA;
+    --historietas-secondary-button-text: #FFFFFF;
+    --historietas-input-text: #FFFFFF;
+  }
+
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
   }
 
   html[data-historietas-tema-visual] input::placeholder,
@@ -2149,10 +1789,33 @@ const configuracoesPageCss = `
     color: rgba(212,212,216,0.56) !important;
   }
 
+  html[data-historietas-tema-visual="foco"] input::placeholder,
+  html[data-historietas-tema-visual="foco"] textarea::placeholder {
+    color: #A1A1AA !important;
+    opacity: 1 !important;
+  }
+
   html[data-historietas-tema-visual] input,
   html[data-historietas-tema-visual] textarea,
   html[data-historietas-tema-visual] select {
     color: var(--historietas-input-text, #FFFFFF) !important;
+  }
+
+
+  html[data-historietas-tema-visual="foco"] .configuracoes-theme-swatch {
+    background: linear-gradient(135deg, #D4D4D8 0%, #A1A1AA 100%) !important;
+    border-color: rgba(255,255,255,0.22) !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .configuracoes-theme-swatch[data-tema-visual-opcao="foco"] {
+    background: linear-gradient(135deg, #FFFFFF 0%, #A1A1AA 100%) !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] button,
+  html[data-historietas-tema-visual="foco"] a,
+  html[data-historietas-tema-visual="foco"] input {
+    box-shadow: none;
   }
 
   .configuracoes-input {
@@ -2175,7 +1838,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background: "#050509",
+  background: "var(--configuracoes-page-bg, #050509)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily:
     "Inter, Poppins, Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
@@ -2203,7 +1866,7 @@ const backButtonStyle: CSSProperties = {
   height: "40px",
   border: "0",
   borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
+  background: "var(--configuracoes-control-bg, rgba(255,255,255,0.08))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   display: "inline-flex",
   alignItems: "center",
@@ -2227,9 +1890,9 @@ const pageTitleStyle: CSSProperties = {
 const searchBoxStyle: CSSProperties = {
   minHeight: "48px",
   borderRadius: "15px",
-  background: "rgba(255,255,255,0.11)",
-  border: "1px solid rgba(255,255,255,0.05)",
-  color: "rgba(255,255,255,0.55)",
+  background: "var(--configuracoes-control-bg, rgba(255,255,255,0.11))",
+  border: "1px solid var(--configuracoes-border, rgba(255,255,255,0.05))",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.55))",
   display: "grid",
   gridTemplateColumns: "23px minmax(0, 1fr)",
   alignItems: "center",
@@ -2259,8 +1922,8 @@ const profileCardStyle: CSSProperties = {
   gap: "12px",
   padding: "14px",
   borderRadius: "20px",
-  background: "rgba(255,255,255,0.09)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  background: "var(--configuracoes-card-bg, rgba(255,255,255,0.09))",
+  border: "1px solid var(--configuracoes-border, rgba(255,255,255,0.06))",
   marginBottom: "18px",
 };
 
@@ -2304,7 +1967,7 @@ const profileUsernameStyle: CSSProperties = {
 };
 
 const profileEmailStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.52)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
   fontSize: "13px",
   lineHeight: 1.18,
   fontWeight: 520,
@@ -2318,7 +1981,7 @@ const sectionStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: "0 0 8px",
-  color: "rgba(255,255,255,0.52)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
   fontSize: "13px",
   lineHeight: 1.15,
   fontWeight: 760,
@@ -2329,8 +1992,8 @@ const sectionTitleStyle: CSSProperties = {
 const listCardStyle: CSSProperties = {
   overflow: "hidden",
   borderRadius: "18px",
-  background: "rgba(255,255,255,0.09)",
-  border: "1px solid rgba(255,255,255,0.045)",
+  background: "var(--configuracoes-card-bg, rgba(255,255,255,0.09))",
+  border: "1px solid var(--configuracoes-border, rgba(255,255,255,0.045))",
 };
 
 const listCardTransparentStyle: CSSProperties = {
@@ -2349,7 +2012,7 @@ const rowBaseStyle: CSSProperties = {
   padding: "8px 12px",
   boxSizing: "border-box",
   border: "0",
-  borderBottom: "1px solid rgba(255,255,255,0.065)",
+  borderBottom: "1px solid var(--configuracoes-border, rgba(255,255,255,0.065))",
   background: "transparent",
   color: "inherit",
   fontFamily: "inherit",
@@ -2377,7 +2040,7 @@ const rowIconStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "rgba(255,255,255,0.78)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.78))",
   flex: "0 0 auto",
 };
 
@@ -2398,11 +2061,11 @@ const rowTitleStyle: CSSProperties = {
 
 const rowTitleDangerStyle: CSSProperties = {
   ...rowTitleStyle,
-  color: "#FCA5A5",
+  color: "var(--configuracoes-danger-text, #FCA5A5)",
 };
 
 const rowSubtitleStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.52)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
   fontSize: "12px",
   lineHeight: 1.22,
   fontWeight: 520,
@@ -2417,7 +2080,7 @@ const rowRightStyle: CSSProperties = {
 };
 
 const rowValueStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.56)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.56))",
   fontSize: "13px",
   lineHeight: 1,
   fontWeight: 650,
@@ -2426,7 +2089,7 @@ const rowValueStyle: CSSProperties = {
 
 const rowValueDangerStyle: CSSProperties = {
   ...rowValueStyle,
-  color: "#FCA5A5",
+  color: "var(--configuracoes-danger-text, #FCA5A5)",
 };
 
 const rowChevronStyle: CSSProperties = {
@@ -2435,7 +2098,7 @@ const rowChevronStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "rgba(255,255,255,0.46)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.46))",
 };
 
 const inputRowStyle: CSSProperties = {
@@ -2447,7 +2110,7 @@ const inputRowStyle: CSSProperties = {
   gap: "10px",
   padding: "12px 14px",
   boxSizing: "border-box",
-  borderBottom: "1px solid rgba(255,255,255,0.065)",
+  borderBottom: "1px solid var(--configuracoes-border, rgba(255,255,255,0.065))",
 };
 
 const inputTextBoxStyle: CSSProperties = {
@@ -2457,7 +2120,7 @@ const inputTextBoxStyle: CSSProperties = {
 };
 
 const inputLabelStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.60)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.60))",
   fontSize: "12px",
   lineHeight: 1,
   fontWeight: 880,
@@ -2480,7 +2143,7 @@ const inputStyle: CSSProperties = {
 };
 
 const inputHelperStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.46)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.46))",
   fontSize: "12px",
   lineHeight: 1.25,
   fontWeight: 620,
@@ -2489,7 +2152,7 @@ const inputHelperStyle: CSSProperties = {
 
 const inputErrorStyle: CSSProperties = {
   ...inputHelperStyle,
-  color: "#FCA5A5",
+  color: "var(--configuracoes-danger-text, #FCA5A5)",
 };
 
 const toggleBaseStyle: CSSProperties = {
@@ -2513,14 +2176,14 @@ const toggleOnStyle: CSSProperties = {
 const toggleOffStyle: CSSProperties = {
   ...toggleBaseStyle,
   justifyContent: "flex-start",
-  background: "rgba(255,255,255,0.18)",
+  background: "var(--configuracoes-control-bg, rgba(255,255,255,0.18))",
 };
 
 const toggleKnobBaseStyle: CSSProperties = {
   width: "25px",
   height: "25px",
   borderRadius: "999px",
-  background: "#FFFFFF",
+  background: "var(--configuracoes-toggle-knob-bg, #FFFFFF)",
   boxShadow: "0 4px 10px rgba(0,0,0,0.28)",
 };
 
@@ -2534,7 +2197,7 @@ const toggleKnobOffStyle: CSSProperties = {
 
 const themeListStyle: CSSProperties = {
   padding: "6px 0",
-  borderTop: "1px solid rgba(255,255,255,0.065)",
+  borderTop: "1px solid var(--configuracoes-border, rgba(255,255,255,0.065))",
 };
 
 const themeOptionStyle: CSSProperties = {
@@ -2546,7 +2209,7 @@ const themeOptionStyle: CSSProperties = {
   gap: "12px",
   padding: "10px 14px",
   border: "0",
-  borderBottom: "1px solid rgba(255,255,255,0.055)",
+  borderBottom: "1px solid var(--configuracoes-border, rgba(255,255,255,0.055))",
   background: "transparent",
   color: "inherit",
   fontFamily: "inherit",
@@ -2556,7 +2219,8 @@ const themeOptionStyle: CSSProperties = {
 
 const themeOptionActiveStyle: CSSProperties = {
   ...themeOptionStyle,
-  background: "rgba(255,255,255,0.055)",
+  background: "var(--configuracoes-theme-active-bg, rgba(255,255,255,0.055))",
+  boxShadow: "var(--configuracoes-theme-active-shadow, none)",
 };
 
 const themeSwatchStyle: CSSProperties = {
@@ -2580,7 +2244,7 @@ const themeNameStyle: CSSProperties = {
 };
 
 const themeDescriptionStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.52)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
   fontSize: "12px",
   lineHeight: 1.2,
   fontWeight: 620,
@@ -2598,7 +2262,7 @@ const themeCheckStyle: CSSProperties = {
 
 const emptyAccessTextStyle: CSSProperties = {
   margin: 0,
-  color: "rgba(255,255,255,0.58)",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.58))",
   fontSize: "14px",
   lineHeight: 1.45,
   fontWeight: 650,

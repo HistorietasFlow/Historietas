@@ -4224,15 +4224,62 @@ export default function NotificacoesPage() {
 }
 
 const notificacoesPageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
+  html {
+    --historietas-notificacoes-bg-page: #070212;
+    --historietas-notificacoes-bg-deep: #04000A;
+    --historietas-notificacoes-surface: #08030F;
+    --historietas-notificacoes-bg-end: #020006;
+    --historietas-notificacoes-purple-text: #DDD6FE;
+    --historietas-notificacoes-purple-soft: #A78BFA;
+    --historietas-notificacoes-accent: #F97316;
+    --historietas-notificacoes-danger-text: #FCA5A5;
+    --historietas-notificacoes-purple-border: rgba(59, 7, 100, 0.58);
+    --historietas-notificacoes-danger-border: rgba(239,68,68,0.18);
+    --historietas-notificacoes-danger-bg: rgba(239,68,68,0.075);
+    --historietas-notificacoes-danger-surface: rgba(127,29,29,0.24);
+    --historietas-notificacoes-danger-strong: rgba(248,113,113,0.36);
+    --historietas-notificacoes-success-bg: rgba(34,197,94,0.12);
+    --historietas-notificacoes-success-border: rgba(34,197,94,0.18);
+    --historietas-notificacoes-accent-bg: rgba(249,115,22,0.12);
+    --historietas-notificacoes-accent-border: rgba(249,115,22,0.20);
+    --historietas-notificacoes-secondary-bg: rgba(124,58,237,0.16);
+    --historietas-notificacoes-secondary-border: rgba(124,58,237,0.26);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-notificacoes-bg-page: #000000;
+    --historietas-notificacoes-bg-deep: #000000;
+    --historietas-notificacoes-surface: #050505;
+    --historietas-notificacoes-bg-end: #000000;
+    --historietas-notificacoes-purple-text: #FFFFFF;
+    --historietas-notificacoes-purple-soft: #FFFFFF;
+    --historietas-notificacoes-accent: #FFFFFF;
+    --historietas-notificacoes-danger-text: #FFFFFF;
+    --historietas-notificacoes-purple-border: rgba(255,255,255,0.18);
+    --historietas-notificacoes-danger-border: rgba(255,255,255,0.18);
+    --historietas-notificacoes-danger-bg: rgba(255,255,255,0.06);
+    --historietas-notificacoes-danger-surface: rgba(255,255,255,0.08);
+    --historietas-notificacoes-danger-strong: rgba(255,255,255,0.24);
+    --historietas-notificacoes-success-bg: rgba(255,255,255,0.06);
+    --historietas-notificacoes-success-border: rgba(255,255,255,0.18);
+    --historietas-notificacoes-accent-bg: rgba(255,255,255,0.06);
+    --historietas-notificacoes-accent-border: rgba(255,255,255,0.18);
+    --historietas-notificacoes-secondary-bg: rgba(255,255,255,0.06);
+    --historietas-notificacoes-secondary-border: rgba(255,255,255,0.18);
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -4259,8 +4306,14 @@ const notificacoesPageCss = `
   html[data-historietas-tema-visual] nav a[href="/notificacoes"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/notificacoes"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/notificacoes"] {
-    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
-    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    background: var(
+      --historietas-bottom-nav-active-bg,
+      rgba(59, 7, 100, 0.54)
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-border,
+      rgba(109, 40, 217, 0.48)
+    ) !important;
     color: #FFFFFF !important;
   }
 
@@ -4268,8 +4321,31 @@ const notificacoesPageCss = `
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
-    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
-    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
+    background: var(
+      --historietas-bottom-nav-active-icon-bg,
+      #3B0764
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-icon-border,
+      rgba(167, 139, 250, 0.46)
+    ) !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/notificacoes"],
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/notificacoes"],
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/notificacoes"] {
+    background: #050505 !important;
+    border-color: #FFFFFF !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/notificacoes"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon {
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.24) !important;
+    color: #FFFFFF !important;
   }
 
   html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
@@ -4335,7 +4411,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background: "#070212",
+  background: "var(--historietas-notificacoes-bg-page, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -4389,12 +4465,12 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-notificacoes-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
   letterSpacing: "-0.04em",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-notificacoes-purple-border, rgba(59, 7, 100, 0.58))",
   boxShadow: "none",
   flex: "0 0 auto",
 };
@@ -4402,7 +4478,7 @@ const logoMarkStyle: CSSProperties = {
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-notificacoes-purple-text, #DDD6FE) 44%, var(--historietas-notificacoes-purple-soft, #A78BFA) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -4494,9 +4570,9 @@ const soonTopButtonStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "#04000A",
+  background: "var(--historietas-notificacoes-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "var(--historietas-notificacoes-purple-text, #DDD6FE)",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -4516,7 +4592,7 @@ const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "30px",
   border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  background: "linear-gradient(135deg, var(--historietas-notificacoes-bg-page, #070212) 0%, var(--historietas-notificacoes-bg-deep, #04000A) 58%, var(--historietas-notificacoes-bg-end, #020006) 100%)",
   padding: "18px",
   boxShadow: "none",
   minWidth: 0,
@@ -4554,7 +4630,7 @@ const titleStyle: CSSProperties = {
   letterSpacing: "-0.085em",
   maxWidth: "100%",
   textAlign: "center",
-  color: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #F97316))",
   textShadow: "none",
   ...safeTextStyle,
 };
@@ -4763,7 +4839,7 @@ const notificationSortingSheetStyle: CSSProperties = {
   gap: 0,
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-bg-start, #070212)",
+  background: "var(--historietas-bg-start, var(--historietas-notificacoes-bg-page, #070212))",
   border: "none",
   borderBottom: "0",
   overflowY: "auto",
@@ -4904,7 +4980,7 @@ const notificationActionsOptionDisabledStyle: CSSProperties = {
 
 const notificationActionsDangerOptionStyle: CSSProperties = {
   ...notificationActionsOptionStyle,
-  color: "#FCA5A5",
+  color: "var(--historietas-notificacoes-danger-text, #FCA5A5)",
 };
 
 const notificationActionsDangerOptionDisabledStyle: CSSProperties = {
@@ -4956,7 +5032,7 @@ const desktopFilterHeaderTitleBoxStyle: CSSProperties = {
 };
 
 const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #F97316))",
   fontSize: "10px",
   lineHeight: 1,
   fontWeight: 950,
@@ -4992,7 +5068,7 @@ const searchInputStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-notificacoes-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
@@ -5020,7 +5096,7 @@ const selectStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-notificacoes-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
@@ -5062,7 +5138,7 @@ const buttonBaseStyle: CSSProperties = {
 const primaryButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-notificacoes-surface, #08030F)",
   boxShadow: "none",
 };
 
@@ -5089,9 +5165,9 @@ const fullWidthSecondaryLinkButtonStyle: CSSProperties = {
 
 const dangerButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
-  border: "1px solid rgba(239,68,68,0.18)",
-  background: "rgba(239,68,68,0.075)",
-  color: "#FCA5A5",
+  border: "1px solid var(--historietas-notificacoes-danger-border, rgba(239,68,68,0.18))",
+  background: "var(--historietas-notificacoes-danger-bg, rgba(239,68,68,0.075))",
+  color: "var(--historietas-notificacoes-danger-text, #FCA5A5)",
 };
 
 const listStyle: CSSProperties = {
@@ -5158,7 +5234,7 @@ const notificationIconStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#08030F",
+  background: "var(--historietas-notificacoes-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "18px",
@@ -5172,23 +5248,23 @@ const notificationIconStyle: CSSProperties = {
 
 const unreadNotificationIconStyle: CSSProperties = {
   ...notificationIconStyle,
-  background: "rgba(127,29,29,0.24)",
-  border: "1px solid rgba(248,113,113,0.36)",
+  background: "var(--historietas-notificacoes-danger-surface, rgba(127,29,29,0.24))",
+  border: "1px solid var(--historietas-notificacoes-danger-strong, rgba(248,113,113,0.36))",
   color: "#FFFFFF",
   boxShadow: "none",
 };
 
 const readNotificationIconStyle: CSSProperties = {
   ...notificationIconStyle,
-  background: "rgba(34,197,94,0.12)",
-  border: "1px solid rgba(34,197,94,0.18)",
+  background: "var(--historietas-notificacoes-success-bg, rgba(34,197,94,0.12))",
+  border: "1px solid var(--historietas-notificacoes-success-border, rgba(34,197,94,0.18))",
   color: "#FFFFFF",
   boxShadow: "none",
 };
 
 const communityNotificationIconStyle: CSSProperties = {
   ...notificationIconStyle,
-  background: "#08030F",
+  background: "var(--historietas-notificacoes-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
 };
@@ -5218,9 +5294,9 @@ const chapterOriginBadgeStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 8px",
   borderRadius: "999px",
-  background: "rgba(249,115,22,0.12)",
-  border: "1px solid rgba(249,115,22,0.20)",
-  color: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-notificacoes-accent-bg, rgba(249,115,22,0.12))",
+  border: "1px solid var(--historietas-notificacoes-accent-border, rgba(249,115,22,0.20))",
+  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #F97316))",
   fontSize: "9px",
   fontWeight: 950,
   textTransform: "uppercase",
@@ -5229,9 +5305,9 @@ const chapterOriginBadgeStyle: CSSProperties = {
 
 const communityOriginBadgeStyle: CSSProperties = {
   ...chapterOriginBadgeStyle,
-  background: "rgba(124,58,237,0.16)",
-  border: "1px solid rgba(124,58,237,0.26)",
-  color: "#DDD6FE",
+  background: "var(--historietas-notificacoes-secondary-bg, rgba(124,58,237,0.16))",
+  border: "1px solid var(--historietas-notificacoes-secondary-border, rgba(124,58,237,0.26))",
+  color: "var(--historietas-notificacoes-purple-text, #DDD6FE)",
 };
 
 const notificationKindBadgeStyle: CSSProperties = {
@@ -5467,7 +5543,7 @@ const communityCardActionsStyle: CSSProperties = {
 const openChapterLinkStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-notificacoes-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",

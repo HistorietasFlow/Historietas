@@ -1063,15 +1063,74 @@ export default function EmBrevePage() {
 }
 
 const emBrevePageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
+  html {
+    --historietas-em-breve-bg-page: #070212;
+    --historietas-em-breve-bg-deep: #04000A;
+    --historietas-em-breve-bg-end: #020006;
+    --historietas-em-breve-surface: #08030F;
+    --historietas-em-breve-nav-text: #9980D8;
+    --historietas-em-breve-accent: #F97316;
+    --historietas-em-breve-secondary: #7C3AED;
+    --historietas-em-breve-accent-soft: #FDBA74;
+    --historietas-em-breve-title-from: #F5F3FF;
+    --historietas-em-breve-title-mid: #C4B5FD;
+    --historietas-em-breve-secondary-text: #DDD6FE;
+    --historietas-em-breve-danger: #EF4444;
+    --historietas-em-breve-success: #86EFAC;
+    --historietas-em-breve-notification-badge-bg: #EF4444;
+    --historietas-em-breve-notification-badge-text: #FFFFFF;
+    --historietas-em-breve-accent-bg: rgba(249,115,22,0.12);
+    --historietas-em-breve-accent-border: rgba(249,115,22,0.24);
+    --historietas-em-breve-secondary-bg-soft: rgba(124,58,237,0.12);
+    --historietas-em-breve-secondary-bg: rgba(124,58,237,0.18);
+    --historietas-em-breve-secondary-border-soft: rgba(124,58,237,0.24);
+    --historietas-em-breve-secondary-border: rgba(124,58,237,0.34);
+    --historietas-em-breve-success-bg: rgba(34,197,94,0.13);
+    --historietas-em-breve-success-border: rgba(34,197,94,0.28);
+    --historietas-em-breve-panel: rgba(4, 0, 10, 0.72);
+    --historietas-em-breve-panel-strong: rgba(4,0,10,0.76);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-em-breve-bg-page: #000000;
+    --historietas-em-breve-bg-deep: #000000;
+    --historietas-em-breve-bg-end: #000000;
+    --historietas-em-breve-surface: #050505;
+    --historietas-em-breve-nav-text: #D4D4D8;
+    --historietas-em-breve-accent: #FFFFFF;
+    --historietas-em-breve-secondary: #A1A1AA;
+    --historietas-em-breve-accent-soft: #FFFFFF;
+    --historietas-em-breve-title-from: #FFFFFF;
+    --historietas-em-breve-title-mid: #D4D4D8;
+    --historietas-em-breve-secondary-text: #D4D4D8;
+    --historietas-em-breve-danger: #FFFFFF;
+    --historietas-em-breve-success: #FFFFFF;
+    --historietas-em-breve-notification-badge-bg: #FFFFFF;
+    --historietas-em-breve-notification-badge-text: #000000;
+    --historietas-em-breve-accent-bg: rgba(255,255,255,0.06);
+    --historietas-em-breve-accent-border: rgba(255,255,255,0.18);
+    --historietas-em-breve-secondary-bg-soft: rgba(255,255,255,0.06);
+    --historietas-em-breve-secondary-bg: rgba(255,255,255,0.08);
+    --historietas-em-breve-secondary-border-soft: rgba(255,255,255,0.18);
+    --historietas-em-breve-secondary-border: rgba(255,255,255,0.22);
+    --historietas-em-breve-success-bg: rgba(255,255,255,0.06);
+    --historietas-em-breve-success-border: rgba(255,255,255,0.18);
+    --historietas-em-breve-panel: rgba(5,5,5,0.92);
+    --historietas-em-breve-panel-strong: rgba(5,5,5,0.96);
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -1087,8 +1146,19 @@ const emBrevePageCss = `
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
     background: transparent !important;
     border-color: transparent !important;
-    color: var(--historietas-bottom-nav-text, #9980D8) !important;
+    color: var(
+      --historietas-bottom-nav-text,
+      var(--historietas-em-breve-nav-text, #9980D8)
+    ) !important;
     box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-theme-logo-text,
+  html[data-historietas-tema-visual="foco"] .historietas-theme-title {
+    background: none !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    text-shadow: none !important;
   }
 `;
 
@@ -1140,7 +1210,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background: "#070212",
+  background: "var(--historietas-em-breve-bg-page, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -1189,7 +1259,7 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "linear-gradient(135deg, var(--historietas-accent, var(--historietas-em-breve-accent, #F97316)) 0%, var(--historietas-secondary, var(--historietas-em-breve-secondary, #7C3AED)) 100%)",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
@@ -1200,11 +1270,11 @@ const logoMarkStyle: CSSProperties = {
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #F5F3FF) 0%, var(--historietas-title-mid, #C4B5FD) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, var(--historietas-em-breve-title-from, #F5F3FF)) 0%, var(--historietas-title-mid, var(--historietas-em-breve-title-mid, #C4B5FD)) 42%, var(--historietas-title-to, var(--historietas-em-breve-accent-soft, #FDBA74)) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(124,58,237,0.24))",
+  textShadow: "var(--historietas-logo-shadow, 0 0 26px var(--historietas-em-breve-secondary-border-soft, rgba(124,58,237,0.24)))",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -1284,7 +1354,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
+  background: "var(--historietas-surface-strong, var(--historietas-em-breve-bg-deep, #04000A))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -1308,9 +1378,11 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
-  color: "#FFFFFF",
+  border: "2px solid var(--historietas-bg-start, var(--historietas-em-breve-bg-page, #070212))",
+  background:
+    "var(--historietas-em-breve-notification-badge-bg, #EF4444)",
+  color:
+    "var(--historietas-em-breve-notification-badge-text, #FFFFFF)",
   fontSize: "9px",
   lineHeight: 1,
   fontWeight: 950,
@@ -1332,7 +1404,7 @@ const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "30px",
   border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  background: "linear-gradient(135deg, var(--historietas-em-breve-bg-page, #070212) 0%, var(--historietas-em-breve-bg-deep, #04000A) 58%, var(--historietas-em-breve-bg-end, #020006) 100%)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -1375,9 +1447,9 @@ const badgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "8px 12px",
   borderRadius: "999px",
-  background: "rgba(249,115,22,0.12)",
-  border: "1px solid rgba(249,115,22,0.24)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "var(--historietas-em-breve-accent-bg, rgba(249,115,22,0.12))",
+  border: "1px solid var(--historietas-em-breve-accent-border, rgba(249,115,22,0.24))",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "12px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -1392,9 +1464,9 @@ const classificationBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "8px 12px",
   borderRadius: "999px",
-  background: "rgba(124,58,237,0.12)",
-  border: "1px solid rgba(124,58,237,0.24)",
-  color: "var(--historietas-secondary, #DDD6FE)",
+  background: "var(--historietas-em-breve-secondary-bg-soft, rgba(124,58,237,0.12))",
+  border: "1px solid var(--historietas-em-breve-secondary-border-soft, rgba(124,58,237,0.24))",
+  color: "var(--historietas-secondary, var(--historietas-em-breve-secondary-text, #DDD6FE))",
   fontSize: "12px",
   fontWeight: 950,
   whiteSpace: "normal",
@@ -1426,7 +1498,7 @@ const titleStyle: CSSProperties = {
   maxWidth: "100%",
   textAlign: "center",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, var(--historietas-em-breve-title-from, #F5F3FF)) 48%, var(--historietas-title-to, var(--historietas-em-breve-accent-soft, #FDBA74)) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -1453,7 +1525,7 @@ const releaseBoxStyle: CSSProperties = {
   gap: "9px",
   padding: "10px",
   borderRadius: "18px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-em-breve-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   width: "min(100%, 620px)",
@@ -1469,9 +1541,9 @@ const releaseIconStyle: CSSProperties = {
   width: "36px",
   height: "36px",
   borderRadius: "12px",
-  background: "rgba(249,115,22,0.12)",
-  border: "1px solid rgba(249,115,22,0.24)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "var(--historietas-em-breve-accent-bg, rgba(249,115,22,0.12))",
+  border: "1px solid var(--historietas-em-breve-accent-border, rgba(249,115,22,0.24))",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1490,7 +1562,7 @@ const releaseContentStyle: CSSProperties = {
 };
 
 const releaseLabelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -1532,8 +1604,8 @@ const notifyButtonStyle: CSSProperties = {
   minHeight: "40px",
   padding: "0 14px",
   borderRadius: "999px",
-  border: "1px solid rgba(124,58,237,0.34)",
-  background: "rgba(124,58,237,0.18)",
+  border: "1px solid var(--historietas-em-breve-secondary-border, rgba(124,58,237,0.34))",
+  background: "var(--historietas-em-breve-secondary-bg, rgba(124,58,237,0.18))",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
@@ -1545,13 +1617,13 @@ const notifyButtonStyle: CSSProperties = {
 
 const savedButtonStyle: CSSProperties = {
   ...notifyButtonStyle,
-  background: "rgba(34,197,94,0.13)",
-  border: "1px solid rgba(34,197,94,0.28)",
-  color: "#86EFAC",
+  background: "var(--historietas-em-breve-success-bg, rgba(34,197,94,0.13))",
+  border: "1px solid var(--historietas-em-breve-success-border, rgba(34,197,94,0.28))",
+  color: "var(--historietas-em-breve-success, #86EFAC)",
 };
 
 const savedMessageStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "11px",
   lineHeight: 1.4,
   fontWeight: 800,
@@ -1562,7 +1634,7 @@ const savedMessageStyle: CSSProperties = {
 
 const accessMessageStyle: CSSProperties = {
   margin: "0 auto 10px",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "12px",
   lineHeight: 1.4,
   fontWeight: 850,
@@ -1587,7 +1659,7 @@ const summaryCardStyle: CSSProperties = {
   gap: "4px",
   padding: "13px",
   borderRadius: "18px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-em-breve-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   boxSizing: "border-box",
@@ -1595,7 +1667,7 @@ const summaryCardStyle: CSSProperties = {
 };
 
 const summaryNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "24px",
   lineHeight: 1,
   fontWeight: 950,
@@ -1612,7 +1684,7 @@ const summaryLabelStyle: CSSProperties = {
 };
 
 const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "11px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -1645,7 +1717,7 @@ const sectionTitleStyle: CSSProperties = {
   letterSpacing: "-0.058em",
   maxWidth: "100%",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 54%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, var(--historietas-em-breve-title-from, #F5F3FF)) 54%, var(--historietas-title-to, var(--historietas-em-breve-accent-soft, #FDBA74)) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -1654,7 +1726,7 @@ const sectionTitleStyle: CSSProperties = {
 
 const releaseSectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "clamp(24px, 7vw, 32px)",
   lineHeight: 1,
   fontWeight: 950,
@@ -1681,7 +1753,7 @@ const relatedCardStyle: CSSProperties = {
   alignItems: "stretch",
   padding: "11px",
   borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-em-breve-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   minWidth: 0,
@@ -1707,7 +1779,7 @@ const relatedCoverStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-em-breve-surface, #08030F) 0%, var(--historietas-em-breve-bg-deep, #04000A) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "none",
@@ -1726,7 +1798,7 @@ const relatedGenreStyle: CSSProperties = {
   maxWidth: "calc(100% - 16px)",
   padding: "6px 8px",
   borderRadius: "999px",
-  background: "rgba(4,0,10,0.76)",
+  background: "var(--historietas-em-breve-panel-strong, rgba(4,0,10,0.76))",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "9.5px",
@@ -1801,7 +1873,7 @@ const relatedReleasePanelStyle: CSSProperties = {
 };
 
 const relatedReleaseLabelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "8px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -1869,7 +1941,7 @@ const relatedThemeBadgeStyle: CSSProperties = {
 };
 
 const relatedThemeIconStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "12px",
   lineHeight: 1,
   fontWeight: 950,
@@ -1916,7 +1988,7 @@ const infoBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "13px",
   borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-em-breve-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   display: "grid",
   justifyItems: "center",
@@ -2004,7 +2076,7 @@ const desktopReleaseBoxStyle: CSSProperties = {
   gap: "14px",
   padding: "17px",
   borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-em-breve-panel, rgba(4, 0, 10, 0.72))",
 };
 
 const desktopSavedMessageStyle: CSSProperties = {
@@ -2046,7 +2118,7 @@ const desktopRelatedCardStyle: CSSProperties = {
   borderRadius: "24px",
   alignItems: "stretch",
   minHeight: "178px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-em-breve-panel, rgba(4, 0, 10, 0.72))",
   boxShadow: "none",
 };
 

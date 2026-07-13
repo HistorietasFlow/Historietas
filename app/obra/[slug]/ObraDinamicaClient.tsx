@@ -4389,10 +4389,10 @@ export default function ObraDinamicaPage() {
             >
               <path
                 d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                fill={usuarioCurtiu ? "#F43F5E" : "none"}
+                fill={usuarioCurtiu ? "var(--historietas-obra-heart, #F43F5E)" : "none"}
                 stroke={
                   usuarioCurtiu
-                    ? "#F43F5E"
+                    ? "var(--historietas-obra-heart, #F43F5E)"
                     : "var(--historietas-text-secondary, #D4D4D8)"
                 }
                 strokeWidth="2"
@@ -5399,8 +5399,8 @@ function MetricCard({
         >
           <path
             d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-            fill={ativo ? "#EF4444" : "none"}
-            stroke={ativo ? "#EF4444" : "#FFFFFF"}
+            fill={ativo ? "var(--historietas-obra-danger, #EF4444)" : "none"}
+            stroke={ativo ? "var(--historietas-obra-danger, #EF4444)" : "#FFFFFF"}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -5467,6 +5467,29 @@ const obraPageCss = `
     100% { transform: scale(1); }
   }
 
+  html {
+    --historietas-obra-bg-deep: #04000A;
+    --historietas-obra-bg-deeper: #020006;
+    --historietas-obra-surface: #08030F;
+    --historietas-obra-bg-deep-96: rgba(4, 0, 10, 0.96);
+    --historietas-obra-bg-deep-72: rgba(4, 0, 10, 0.72);
+    --historietas-obra-bg-shadow-42: rgba(3, 2, 8, 0.42);
+    --historietas-obra-menu-98: rgba(18, 9, 35, 0.98);
+    --historietas-obra-rating: #FBBF24;
+    --historietas-obra-rating-strong: #FF9C2B;
+    --historietas-obra-rating-muted: rgba(251, 191, 36, 0.34);
+    --historietas-obra-danger: #EF4444;
+    --historietas-obra-heart: #F43F5E;
+    --historietas-obra-logo-mid: #DDD6FE;
+    --historietas-obra-logo-end: #A78BFA;
+    --historietas-obra-purple-48: rgba(59, 7, 100, 0.48);
+    --historietas-obra-purple-58: rgba(59, 7, 100, 0.58);
+    --historietas-obra-purple-72: rgba(59, 7, 100, 0.72);
+    --historietas-obra-secondary-22: rgba(124, 58, 237, 0.22);
+    --historietas-obra-secondary-72: rgba(124, 58, 237, 0.72);
+    --historietas-obra-secondary-soft-34: rgba(167, 139, 250, 0.34);
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
@@ -5477,12 +5500,38 @@ const obraPageCss = `
     opacity: 0 !important;
   }
 
-  html[data-historietas-tema-visual="branco"] .historietas-home-logo-text,
-  html[data-historietas-tema-visual="branco"] .historietas-theme-title {
-    background: none !important;
-    color: #1A73E8 !important;
-    -webkit-text-fill-color: #1A73E8 !important;
-    text-shadow: none !important;
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-obra-bg-deep: #000000;
+    --historietas-obra-bg-deeper: #000000;
+    --historietas-obra-surface: #050505;
+    --historietas-obra-bg-deep-96: rgba(0, 0, 0, 0.96);
+    --historietas-obra-bg-deep-72: rgba(0, 0, 0, 0.72);
+    --historietas-obra-bg-shadow-42: rgba(0, 0, 0, 0.42);
+    --historietas-obra-menu-98: rgba(0, 0, 0, 0.98);
+    --historietas-obra-rating: #FFFFFF;
+    --historietas-obra-rating-strong: #FFFFFF;
+    --historietas-obra-rating-muted: rgba(255, 255, 255, 0.32);
+    --historietas-obra-danger: #FFFFFF;
+    --historietas-obra-heart: #FFFFFF;
+    --historietas-obra-logo-mid: #FFFFFF;
+    --historietas-obra-logo-end: #D4D4D8;
+    --historietas-obra-purple-48: rgba(255, 255, 255, 0.12);
+    --historietas-obra-purple-58: rgba(255, 255, 255, 0.16);
+    --historietas-obra-purple-72: rgba(255, 255, 255, 0.20);
+    --historietas-obra-secondary-22: rgba(255, 255, 255, 0.08);
+    --historietas-obra-secondary-72: rgba(255, 255, 255, 0.24);
+    --historietas-obra-secondary-soft-34: rgba(255, 255, 255, 0.18);
+  }
+
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] main > div[aria-hidden="true"] {
+    background: transparent !important;
+    opacity: 0 !important;
   }
 `;
 
@@ -5604,7 +5653,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
+  background: "var(--historietas-surface-strong, var(--historietas-obra-bg-deep, #04000A))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -5630,7 +5679,7 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
+  background: "var(--historietas-obra-danger, #EF4444)",
   color: "#FFFFFF",
   fontSize: "9px",
   lineHeight: 1,
@@ -5666,21 +5715,21 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "rgba(4, 0, 10, 0.96)",
+  background: "var(--historietas-obra-bg-deep-96, rgba(4, 0, 10, 0.96))",
   color: "#FFFFFF",
   fontSize: "19px",
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
-  border: "1px solid rgba(124, 58, 237, 0.72)",
+  border: "1px solid var(--historietas-obra-secondary-72, rgba(124, 58, 237, 0.72))",
   boxShadow:
-    "0 0 0 1px rgba(59, 7, 100, 0.48), 0 0 14px rgba(124, 58, 237, 0.22)",
+    "0 0 0 1px var(--historietas-obra-purple-48, rgba(59, 7, 100, 0.48)), 0 0 14px var(--historietas-obra-secondary-22, rgba(124, 58, 237, 0.22))",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-obra-logo-mid, #DDD6FE) 44%, var(--historietas-obra-logo-end, #A78BFA) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -5728,7 +5777,7 @@ const coverArtStyle: CSSProperties = {
   borderRadius: "0 0 28px 28px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage: "linear-gradient(145deg, #08030F 0%, #04000A 58%, #020006 100%)",
+  backgroundImage: "linear-gradient(145deg, var(--historietas-obra-surface, #08030F) 0%, var(--historietas-obra-bg-deep, #04000A) 58%, var(--historietas-obra-bg-deeper, #020006) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center top",
   border: "none",
@@ -5853,11 +5902,11 @@ const metricWhiteNumberStyle: CSSProperties = {
 };
 
 const metricStarIconStyle: CSSProperties = {
-  color: "#FBBF24",
+  color: "var(--historietas-obra-rating, #FBBF24)",
 };
 
 const metricStarValueStyle: CSSProperties = {
-  color: "#FBBF24",
+  color: "var(--historietas-obra-rating, #FBBF24)",
 };
 
 const heroBottomMetaBarStyle: CSSProperties = {
@@ -5963,7 +6012,7 @@ const secondaryButtonStyle: CSSProperties = {
 const copyLinkButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
-  background: "#04000A",
+  background: "var(--historietas-obra-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.28)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -6307,7 +6356,7 @@ const statsGridStyle: CSSProperties = {
 
 const statCardStyle: CSSProperties = {
   borderRadius: "14px",
-  background: "#04000A",
+  background: "var(--historietas-obra-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   padding: "7px 5px",
   display: "grid",
@@ -6323,7 +6372,7 @@ const statCardStyle: CSSProperties = {
 
 const activeStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background: "#04000A",
+  background: "var(--historietas-obra-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   filter: "none",
@@ -6397,7 +6446,7 @@ const commentsSheetBackdropStyle: CSSProperties = {
   inset: 0,
   zIndex: 0,
   border: "none",
-  background: "rgba(3, 2, 8, 0.42)",
+  background: "var(--historietas-obra-bg-shadow-42, rgba(3, 2, 8, 0.42))",
   backdropFilter: "blur(4px)",
   WebkitBackdropFilter: "blur(4px)",
   pointerEvents: "auto",
@@ -6518,7 +6567,7 @@ const commentsSortMenuStyle: CSSProperties = {
   boxSizing: "border-box",
   borderRadius: "12px",
   border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(18, 9, 35, 0.98)",
+  background: "var(--historietas-obra-menu-98, rgba(18, 9, 35, 0.98))",
   boxShadow: "0 16px 36px rgba(0,0,0,0.48)",
   backdropFilter: "blur(14px)",
   WebkitBackdropFilter: "blur(14px)",
@@ -6641,12 +6690,12 @@ const commentSheetAvatarLinkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-obra-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "12.5px",
   fontWeight: 950,
   textDecoration: "none",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-obra-purple-58, rgba(59, 7, 100, 0.58))",
   overflow: "hidden",
   boxSizing: "border-box",
 };
@@ -6821,8 +6870,8 @@ const commentsInputAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  background: "var(--historietas-obra-bg-deep, #04000A)",
+  border: "1px solid var(--historietas-obra-purple-58, rgba(59, 7, 100, 0.58))",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -6842,7 +6891,7 @@ const commentsSheetInputStyle: CSSProperties = {
   maxHeight: "82px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-obra-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "9px 12px",
   outline: "none",
@@ -6872,8 +6921,8 @@ const commentsSheetSendStyle: CSSProperties = {
   width: "36px",
   height: "36px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-bottom-nav-publish-border, rgba(167, 139, 250, 0.34))",
-  background: "var(--historietas-bottom-nav-publish-bg, rgba(59, 7, 100, 0.72))",
+  border: "1px solid var(--historietas-bottom-nav-publish-border, var(--historietas-obra-secondary-soft-34, rgba(167, 139, 250, 0.34)))",
+  background: "var(--historietas-bottom-nav-publish-bg, var(--historietas-obra-purple-72, rgba(59, 7, 100, 0.72)))",
   color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
@@ -6917,7 +6966,7 @@ const fileBoxStyle: CSSProperties = {
   padding: "15px",
   borderRadius: "22px",
   background:
-    "linear-gradient(135deg, #08030F 0%, #04000A 58%, #020006 100%)",
+    "linear-gradient(135deg, var(--historietas-obra-surface, #08030F) 0%, var(--historietas-obra-bg-deep, #04000A) 58%, var(--historietas-obra-bg-deeper, #020006) 100%)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   gap: "11px",
@@ -7009,7 +7058,7 @@ const fileActionsStyle: CSSProperties = {
 const filePrimaryButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-obra-bg-deep-72, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -7086,7 +7135,7 @@ const workRatingStarButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border: "none",
   background: "transparent",
-  color: "rgba(251, 191, 36, 0.34)",
+  color: "var(--historietas-obra-rating-muted, rgba(251, 191, 36, 0.34))",
   fontSize: "22px",
   fontWeight: 950,
   lineHeight: 1,
@@ -7106,7 +7155,7 @@ const workRatingStarActiveStyle: CSSProperties = {
   ...workRatingStarButtonStyle,
   border: "none",
   background: "transparent",
-  color: "#FBBF24",
+  color: "var(--historietas-obra-rating, #FBBF24)",
   boxShadow: "none",
   filter: "none",
   backdropFilter: "none",
@@ -7122,14 +7171,14 @@ const workRatingStarVisualStyle: CSSProperties = {
 };
 
 const workRatingStarBaseStyle: CSSProperties = {
-  color: "rgba(251, 191, 36, 0.34)",
+  color: "var(--historietas-obra-rating-muted, rgba(251, 191, 36, 0.34))",
   position: "absolute",
   inset: 0,
   lineHeight: 1,
 };
 
 const workRatingStarFillStyle: CSSProperties = {
-  color: "#FBBF24",
+  color: "var(--historietas-obra-rating, #FBBF24)",
   position: "absolute",
   inset: 0,
   overflow: "hidden",
@@ -7185,7 +7234,7 @@ const communityGridStyle: CSSProperties = {
 const communityItemStyle: CSSProperties = {
   padding: "8px 6px",
   borderRadius: "14px",
-  background: "#04000A",
+  background: "var(--historietas-obra-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   gap: "3px",
@@ -7259,7 +7308,7 @@ const ratingSummaryStyle: CSSProperties = {
 };
 
 const ratingNumberStyle: CSSProperties = {
-  color: "#FF9C2B",
+  color: "var(--historietas-obra-rating-strong, #FF9C2B)",
   fontSize: "28px",
   lineHeight: 1,
   fontWeight: 950,
@@ -7272,7 +7321,7 @@ const ratingStarsStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: "1px",
-  color: "#FBBF24",
+  color: "var(--historietas-obra-rating, #FBBF24)",
   fontSize: "12px",
   lineHeight: 1,
   letterSpacing: "-0.02em",
@@ -7292,14 +7341,14 @@ const ratingTopStarVisualStyle: CSSProperties = {
 };
 
 const ratingTopStarBaseStyle: CSSProperties = {
-  color: "rgba(251, 191, 36, 0.34)",
+  color: "var(--historietas-obra-rating-muted, rgba(251, 191, 36, 0.34))",
   position: "absolute",
   inset: 0,
   lineHeight: 1,
 };
 
 const ratingTopStarFillStyle: CSSProperties = {
-  color: "#FBBF24",
+  color: "var(--historietas-obra-rating, #FBBF24)",
   position: "absolute",
   inset: 0,
   overflow: "hidden",
@@ -7390,7 +7439,7 @@ const chapterCardStyle: CSSProperties = {
   padding: "9px",
   borderRadius: "17px",
   background:
-    "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+    "linear-gradient(135deg, var(--historietas-obra-surface, #08030F) 0%, var(--historietas-obra-bg-deep, #04000A) 100%)",
   border: "1px solid rgba(255,255,255,0.07)",
   display: "grid",
   gridTemplateColumns: "38px minmax(0, 1fr)",
@@ -7484,7 +7533,7 @@ const desktopHeroStyle: CSSProperties = {
   marginRight: 0,
   borderRadius: "30px",
   border: "1px solid rgba(255,255,255,0.06)",
-  background: "#04000A",
+  background: "var(--historietas-obra-bg-deep, #04000A)",
 };
 
 const desktopHeroContentStyle: CSSProperties = {

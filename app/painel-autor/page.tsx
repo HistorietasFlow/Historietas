@@ -3124,15 +3124,41 @@ function ObraPainelCard({
 }
 
 const painelAutorPageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
+  html {
+    --historietas-painel-bg: #070212;
+    --historietas-painel-bg-deep: #04000A;
+    --historietas-painel-surface: #08030F;
+    --historietas-painel-card-bg: rgba(4, 0, 10, 0.72);
+    --historietas-painel-status-bg: rgba(8,5,13,0.52);
+    --historietas-painel-heart-meta: #EF4444;
+    --historietas-painel-heart-icon: #F43F5E;
+    --historietas-painel-success: #86EFAC;
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-painel-bg: #000000;
+    --historietas-painel-bg-deep: #000000;
+    --historietas-painel-surface: #050505;
+    --historietas-painel-card-bg: #050505;
+    --historietas-painel-status-bg: rgba(255,255,255,0.08);
+    --historietas-painel-heart-meta: #FFFFFF;
+    --historietas-painel-heart-icon: #FFFFFF;
+    --historietas-painel-success: #FFFFFF;
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"],
+  html[data-historietas-tema-visual="foco"] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -3151,7 +3177,7 @@ const painelAutorPageCss = `
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel"] {
     background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
     border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
-    color: #FFFFFF !important;
+    color: var(--historietas-bottom-nav-active-text, #FFFFFF) !important;
     box-shadow: none !important;
   }
 
@@ -3161,7 +3187,7 @@ const painelAutorPageCss = `
   html[data-historietas-tema-visual] nav a[href="/painel"] .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel"] .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel"] .historietas-bottom-nav-icon {
-    color: #FFFFFF !important;
+    color: var(--historietas-bottom-nav-active-icon-text, #FFFFFF) !important;
     background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
     border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
   }
@@ -3177,13 +3203,18 @@ const painelAutorPageCss = `
 
   html[data-historietas-tema-visual] input::placeholder,
   html[data-historietas-tema-visual] textarea::placeholder {
-    color: rgba(212,212,216,0.68) !important;
+    color: var(--historietas-input-placeholder, rgba(212,212,216,0.68)) !important;
   }
 
   html[data-historietas-tema-visual] input,
   html[data-historietas-tema-visual] textarea,
   html[data-historietas-tema-visual] select {
-    color: #FFFFFF !important;
+    color: var(--historietas-input-text, #FFFFFF) !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] button,
+  html[data-historietas-tema-visual="foco"] a {
+    box-shadow: none !important;
   }
 
   html[data-historietas-tema-visual] button:disabled {
@@ -3234,7 +3265,7 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "#070212",
+  background: "var(--historietas-painel-bg, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -3380,7 +3411,7 @@ const statsBoxStyle: CSSProperties = {
 const statCardStyle: CSSProperties = {
   flex: "1 1 calc(25% - 5px)",
   borderRadius: "12px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-painel-card-bg, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   padding: "6px 4px",
@@ -3468,7 +3499,7 @@ const filterSheetStyle: CSSProperties = {
   gap: "0",
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "#070212",
+  background: "var(--historietas-painel-bg, #070212)",
   border: "none",
   borderBottom: "0",
   overflowY: "auto",
@@ -3670,8 +3701,8 @@ const coverStyle: CSSProperties = {
   borderRadius: "18px",
   position: "relative",
   overflow: "hidden",
-  background: "#08030F",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  background: "var(--historietas-painel-surface, #08030F)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-painel-surface, #08030F) 0%, var(--historietas-painel-bg-deep, #04000A) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "0",
@@ -3721,7 +3752,7 @@ const publishedStatusStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "0 6px",
   borderRadius: "999px",
-  background: "rgba(8,5,13,0.52)",
+  background: "var(--historietas-painel-status-bg, rgba(8,5,13,0.52))",
   border: "1px solid rgba(255,255,255,0.14)",
   color: "#FFFFFF",
   fontSize: "8px",
@@ -3739,7 +3770,7 @@ const publishedStatusStyle: CSSProperties = {
 
 const draftStatusStyle: CSSProperties = {
   ...publishedStatusStyle,
-  background: "rgba(8,5,13,0.52)",
+  background: "var(--historietas-painel-status-bg, rgba(8,5,13,0.52))",
   border: "1px solid rgba(255,255,255,0.14)",
   color: "#FFFFFF",
 };
@@ -3807,7 +3838,7 @@ const workMetaLineStyle: CSSProperties = {
 };
 
 const workCardHeartMetaStyle: CSSProperties = {
-  color: "#EF4444",
+  color: "var(--historietas-painel-heart-meta, #EF4444)",
   fontWeight: 950,
 };
 
@@ -3850,7 +3881,7 @@ const sheetStatIconStyle: CSSProperties = {
 
 const sheetStatHeartIconStyle: CSSProperties = {
   ...sheetStatIconStyle,
-  color: "#F43F5E",
+  color: "var(--historietas-painel-heart-icon, #F43F5E)",
 };
 
 const sheetStatValueStyle: CSSProperties = {
@@ -3921,12 +3952,12 @@ const copyButtonStyle: CSSProperties = {
 
 const copiedButtonStyle: CSSProperties = {
   ...copyButtonStyle,
-  color: "#86EFAC",
+  color: "var(--historietas-painel-success, #86EFAC)",
 };
 
 const deleteButtonStyle: CSSProperties = {
   ...openButtonStyle,
-  color: "#FCA5A5",
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
 };
 
 const workCardDotsButtonStyle: CSSProperties = {
@@ -3982,7 +4013,7 @@ const workActionSheetStyle: CSSProperties = {
   overflowY: "auto",
   overscrollBehavior: "contain",
   borderRadius: "24px 24px 0 0",
-  background: "#070212",
+  background: "var(--historietas-painel-bg, #070212)",
   border: "none",
   borderBottom: "0",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
@@ -4109,7 +4140,7 @@ const desktopCardActionsGridStyle: CSSProperties = {
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
   borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-painel-card-bg, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   padding: "22px",
   display: "grid",
@@ -4125,7 +4156,7 @@ const emptyMiniBoxStyle: CSSProperties = {
   marginTop: "18px",
   padding: "18px",
   borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-painel-card-bg, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "14px",

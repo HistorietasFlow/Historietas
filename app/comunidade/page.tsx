@@ -1920,10 +1920,10 @@ const ComentariosSheet = memo(function ComentariosSheet({
             >
               <path
                 d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                fill={usuarioCurtiuComentario ? "#F43F5E" : "none"}
+                fill={usuarioCurtiuComentario ? "var(--historietas-comunidade-heart, #F43F5E)" : "none"}
                 stroke={
                   usuarioCurtiuComentario
-                    ? "#F43F5E"
+                    ? "var(--historietas-comunidade-heart, #F43F5E)"
                     : "var(--historietas-text-secondary, #D4D4D8)"
                 }
                 strokeWidth="2"
@@ -1946,7 +1946,11 @@ const ComentariosSheet = memo(function ComentariosSheet({
   }
 
   return createPortal(
-    <section style={commentsSheetOverlayStyle} aria-label="Comentários">
+    <section
+      data-historietas-comunidade-sheet="true"
+      style={commentsSheetOverlayStyle}
+      aria-label="Comentários"
+    >
       <button
         type="button"
         aria-label="Fechar comentários"
@@ -4119,7 +4123,7 @@ export default function ComunidadePage() {
 
   return (
     <main style={pageThemeStyle}>
-      <style>{historietasThemeCss}</style>
+      <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
 
       {isDesktop ? (
         <div style={desktopTopWaterFadeStyle} aria-hidden="true" />
@@ -5098,13 +5102,102 @@ const safeTextStyle: CSSProperties = {
   wordBreak: "break-word",
 };
 
+
+const comunidadeThemeCss = `
+  html {
+    --historietas-comunidade-bg-page: #070212;
+    --historietas-comunidade-bg-deep: #04000A;
+    --historietas-comunidade-surface: #08030F;
+    --historietas-comunidade-surface-alt: #120B1F;
+    --historietas-comunidade-accent: #F97316;
+    --historietas-comunidade-accent-soft: #FDBA74;
+    --historietas-comunidade-secondary: #7C3AED;
+    --historietas-comunidade-secondary-soft: #A78BFA;
+    --historietas-comunidade-secondary-text: #DDD6FE;
+    --historietas-comunidade-danger-text: #FCA5A5;
+    --historietas-comunidade-heart: #F43F5E;
+    --historietas-comunidade-blue: #2563EB;
+    --historietas-comunidade-cyan: #38BDF8;
+    --historietas-comunidade-pink: #FB7185;
+    --historietas-comunidade-success: #22C55E;
+    --historietas-comunidade-purple-22: rgba(124,58,237,0.22);
+    --historietas-comunidade-purple-24: rgba(124,58,237,0.24);
+    --historietas-comunidade-purple-25: rgba(124,58,237,0.25);
+    --historietas-comunidade-purple-58: rgba(59, 7, 100, 0.58);
+    --historietas-comunidade-purple-72: rgba(59, 7, 100, 0.72);
+    --historietas-comunidade-purple-soft-34: rgba(167, 139, 250, 0.34);
+    --historietas-comunidade-danger-dark-18: rgba(127,29,29,0.18);
+    --historietas-comunidade-danger-22: rgba(248,113,113,0.22);
+    --historietas-comunidade-danger-24: rgba(248,113,113,0.24);
+    --historietas-comunidade-danger-26: rgba(248,113,113,0.26);
+    --historietas-comunidade-danger-bg-11: rgba(239,68,68,0.11);
+    --historietas-comunidade-danger-bg-12: rgba(239,68,68,0.12);
+    --historietas-comunidade-cyan-22: rgba(56,189,248,0.22);
+    --historietas-comunidade-cyan-62: rgba(56,189,248,0.62);
+    --historietas-comunidade-success-10: rgba(34,197,94,0.10);
+    --historietas-comunidade-success-70: rgba(34,197,94,0.70);
+    --historietas-comunidade-dark-72: rgba(12,7,23,0.72);
+    --historietas-comunidade-dark-98: rgba(12,7,23,0.98);
+    --historietas-comunidade-dark-alt-98: rgba(18,8,31,0.98);
+    --historietas-comunidade-surface-82: rgba(18,12,30,0.82);
+    --historietas-comunidade-surface-94: rgba(18,12,30,0.94);
+    --historietas-comunidade-sheet-98: rgba(12,8,20,0.98);
+    --historietas-comunidade-menu-98: rgba(18, 9, 35, 0.98);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-comunidade-bg-page: #000000;
+    --historietas-comunidade-bg-deep: #000000;
+    --historietas-comunidade-surface: #050505;
+    --historietas-comunidade-surface-alt: #090909;
+    --historietas-comunidade-accent: #FFFFFF;
+    --historietas-comunidade-accent-soft: #FFFFFF;
+    --historietas-comunidade-secondary: #A1A1AA;
+    --historietas-comunidade-secondary-soft: #D4D4D8;
+    --historietas-comunidade-secondary-text: #FFFFFF;
+    --historietas-comunidade-danger-text: #FFFFFF;
+    --historietas-comunidade-heart: #FFFFFF;
+    --historietas-comunidade-blue: #FFFFFF;
+    --historietas-comunidade-cyan: #D4D4D8;
+    --historietas-comunidade-pink: #FFFFFF;
+    --historietas-comunidade-success: #FFFFFF;
+    --historietas-comunidade-purple-22: rgba(255,255,255,0.08);
+    --historietas-comunidade-purple-24: rgba(255,255,255,0.08);
+    --historietas-comunidade-purple-25: rgba(255,255,255,0.10);
+    --historietas-comunidade-purple-58: rgba(255,255,255,0.10);
+    --historietas-comunidade-purple-72: rgba(255,255,255,0.12);
+    --historietas-comunidade-purple-soft-34: rgba(255,255,255,0.18);
+    --historietas-comunidade-danger-dark-18: rgba(255,255,255,0.08);
+    --historietas-comunidade-danger-22: rgba(255,255,255,0.12);
+    --historietas-comunidade-danger-24: rgba(255,255,255,0.12);
+    --historietas-comunidade-danger-26: rgba(255,255,255,0.14);
+    --historietas-comunidade-danger-bg-11: rgba(255,255,255,0.06);
+    --historietas-comunidade-danger-bg-12: rgba(255,255,255,0.08);
+    --historietas-comunidade-cyan-22: rgba(255,255,255,0.10);
+    --historietas-comunidade-cyan-62: rgba(255,255,255,0.62);
+    --historietas-comunidade-success-10: rgba(255,255,255,0.06);
+    --historietas-comunidade-success-70: rgba(255,255,255,0.70);
+    --historietas-comunidade-dark-72: rgba(0,0,0,0.72);
+    --historietas-comunidade-dark-98: rgba(0,0,0,0.98);
+    --historietas-comunidade-dark-alt-98: rgba(0,0,0,0.98);
+    --historietas-comunidade-surface-82: rgba(5,5,5,0.82);
+    --historietas-comunidade-surface-94: rgba(5,5,5,0.94);
+    --historietas-comunidade-sheet-98: rgba(0,0,0,0.98);
+    --historietas-comunidade-menu-98: rgba(0,0,0,0.98);
+  }
+
+  html[data-historietas-tema-visual="foco"] [data-historietas-comunidade-sheet="true"] {
+    color: #FFFFFF !important;
+  }
+`;
+
 const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100vh",
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "#070212",
+  background: "var(--historietas-comunidade-bg-page, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -5144,14 +5237,14 @@ const mobileNavStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
   width: "100%",
-  background: "#070212",
+  background: "var(--historietas-comunidade-bg-page, #070212)",
   borderBottom: "0",
   boxShadow: "none",
 };
 
 const desktopNavStyle: CSSProperties = {
   ...mobileNavStyle,
-  background: "#070212",
+  background: "var(--historietas-comunidade-bg-page, #070212)",
   borderBottom: "0",
   boxShadow: "none",
 };
@@ -5248,7 +5341,7 @@ const titleUserChipStyle: CSSProperties = {
   gap: "8px",
   padding: "4px 13px 4px 5px",
   borderRadius: "999px",
-  background: "var(--historietas-active-surface, rgba(124,58,237,0.22))",
+  background: "var(--historietas-active-surface, var(--historietas-comunidade-purple-22, rgba(124,58,237,0.22)))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "12px",
@@ -5265,7 +5358,7 @@ const titleUserIconStyle: CSSProperties = {
   justifyContent: "center",
   flex: "0 0 auto",
   background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+    "linear-gradient(135deg, var(--historietas-accent, var(--historietas-comunidade-accent, #F97316)) 0%, var(--historietas-secondary, var(--historietas-comunidade-secondary, #7C3AED)) 100%)",
   color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
@@ -5286,7 +5379,7 @@ const titleLoginButtonStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 14px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-comunidade-accent, #F97316))",
   border: "none",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -5316,19 +5409,19 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "19px",
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-comunidade-purple-58, rgba(59, 7, 100, 0.58))",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
-  background: "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+  background: "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-comunidade-secondary-text, #DDD6FE) 44%, var(--historietas-comunidade-secondary-soft, #A78BFA) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -5352,7 +5445,7 @@ const topLinkStyle: CSSProperties = {
   borderRadius: "999px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  color: "var(--historietas-secondary-button-text, var(--historietas-comunidade-secondary-text, #DDD6FE))",
   textDecoration: "none",
   fontSize: "11px",
   fontWeight: 950,
@@ -5367,7 +5460,7 @@ const userBadgeStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 12px",
   borderRadius: "999px",
-  background: "var(--historietas-active-surface, rgba(124,58,237,0.22))",
+  background: "var(--historietas-active-surface, var(--historietas-comunidade-purple-22, rgba(124,58,237,0.22)))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "11px",
@@ -5383,7 +5476,7 @@ const heroStyle: CSSProperties = {
   overflow: "hidden",
   borderRadius: "20px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   boxShadow: "none",
   minWidth: 0,
 };
@@ -5425,7 +5518,7 @@ const introStyle: CSSProperties = {
 };
 
 const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-comunidade-accent-soft, #FDBA74))",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.095em",
@@ -5441,7 +5534,7 @@ const titleStyle: CSSProperties = {
   letterSpacing: "-0.08em",
   maxWidth: "760px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 48%, var(--historietas-title-to, var(--historietas-comunidade-accent-soft, #FDBA74)) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -5558,7 +5651,7 @@ const focusedPostStyle: CSSProperties = {
   marginBottom: "14px",
   padding: "12px",
   borderRadius: "24px",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   minWidth: 0,
@@ -5617,7 +5710,7 @@ const focusedPostCardStyle: CSSProperties = {
   gap: "10px",
   padding: "13px",
   borderRadius: "20px",
-  background: "var(--historietas-surface, rgba(12,7,23,0.72))",
+  background: "var(--historietas-surface, var(--historietas-comunidade-dark-72, rgba(12,7,23,0.72)))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.085))",
   boxShadow: "none",
   minWidth: 0,
@@ -5640,7 +5733,7 @@ const focusedPostAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "linear-gradient(135deg, var(--historietas-secondary, #7C3AED), var(--historietas-accent, #F97316))",
+  background: "linear-gradient(135deg, var(--historietas-secondary, var(--historietas-comunidade-secondary, #7C3AED)), var(--historietas-accent, var(--historietas-comunidade-accent, #F97316)))",
   color: "#FFFFFF",
   fontSize: "15px",
   fontWeight: 950,
@@ -5696,8 +5789,8 @@ const focusedSpoilerBoxStyle: CSSProperties = {
   padding: "9px 13px",
   borderRadius: "999px",
   background:
-    "linear-gradient(135deg, rgba(127,29,29,0.18), rgba(0,0,0,0.16))",
-  border: "1px solid rgba(248,113,113,0.22)",
+    "linear-gradient(135deg, var(--historietas-comunidade-danger-dark-18, rgba(127,29,29,0.18)), rgba(0,0,0,0.16))",
+  border: "1px solid var(--historietas-comunidade-danger-22, rgba(248,113,113,0.22))",
   minWidth: 0,
   boxShadow: "none",
 };
@@ -5725,7 +5818,7 @@ const focusedPostPrimaryButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
   border: "none",
-  background: "linear-gradient(135deg, var(--historietas-secondary, #7C3AED), var(--historietas-accent, #F97316))",
+  background: "linear-gradient(135deg, var(--historietas-secondary, var(--historietas-comunidade-secondary, #7C3AED)), var(--historietas-accent, var(--historietas-comunidade-accent, #F97316)))",
   color: "#FFFFFF",
   padding: "0 11px",
   fontSize: "11px",
@@ -5745,16 +5838,16 @@ const focusedPostSecondaryButtonStyle: CSSProperties = {
 
 const focusedPostPinnedButtonStyle: CSSProperties = {
   ...focusedPostSecondaryButtonStyle,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-comunidade-accent-soft, #FDBA74))",
   border: "1px solid rgba(255,255,255,0.10)",
   background: "rgba(255,255,255,0.06)",
 };
 
 const focusedPostDangerButtonStyle: CSSProperties = {
   ...focusedPostSecondaryButtonStyle,
-  color: "#FCA5A5",
-  border: "1px solid rgba(248,113,113,0.26)",
-  background: "rgba(127,29,29,0.18)",
+  color: "var(--historietas-comunidade-danger-text, #FCA5A5)",
+  border: "1px solid var(--historietas-comunidade-danger-26, rgba(248,113,113,0.26))",
+  background: "var(--historietas-comunidade-danger-dark-18, rgba(127,29,29,0.18))",
 };
 
 const compactComposerActionsStyle: CSSProperties = {
@@ -5840,8 +5933,8 @@ const pollPostOptionStyle: CSSProperties = {
 
 const pollPostOptionSelectedStyle: CSSProperties = {
   ...pollPostOptionStyle,
-  border: "1px solid rgba(56,189,248,0.62)",
-  background: "linear-gradient(135deg, #2563EB 0%, #38BDF8 100%)",
+  border: "1px solid var(--historietas-comunidade-cyan-62, rgba(56,189,248,0.62))",
+  background: "linear-gradient(135deg, var(--historietas-comunidade-blue, #2563EB) 0%, var(--historietas-comunidade-cyan, #38BDF8) 100%)",
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
   opacity: 1,
@@ -5850,7 +5943,7 @@ const pollPostOptionSelectedStyle: CSSProperties = {
 const pollPostResultBarStyle: CSSProperties = {
   position: "absolute",
   inset: "0 auto 0 0",
-  background: "rgba(56,189,248,0.22)",
+  background: "var(--historietas-comunidade-cyan-22, rgba(56,189,248,0.22))",
   pointerEvents: "none",
 };
 
@@ -5903,8 +5996,8 @@ const focusedPollOptionStyle: CSSProperties = {
 
 const focusedPollOptionSelectedStyle: CSSProperties = {
   ...focusedPollOptionStyle,
-  border: "1px solid rgba(56,189,248,0.62)",
-  background: "linear-gradient(135deg, #2563EB 0%, #38BDF8 100%)",
+  border: "1px solid var(--historietas-comunidade-cyan-62, rgba(56,189,248,0.62))",
+  background: "linear-gradient(135deg, var(--historietas-comunidade-blue, #2563EB) 0%, var(--historietas-comunidade-cyan, #38BDF8) 100%)",
   color: "#FFFFFF",
 };
 
@@ -5947,7 +6040,7 @@ const sectionTitleStyle: CSSProperties = {
 const publishTitleStyle: CSSProperties = {
   ...sectionTitleStyle,
   width: "100%",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-comunidade-accent-soft, #FDBA74))",
   textAlign: "center",
 };
 
@@ -5995,7 +6088,7 @@ const compactComposerButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.12)",
-  background: "#08030F",
+  background: "var(--historietas-comunidade-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -6031,7 +6124,7 @@ const inputStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "15px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 12px",
   outline: "none",
@@ -6170,7 +6263,7 @@ const postComposerSheetStyle: CSSProperties = {
   padding: "10px 12px calc(12px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
   background:
-    "linear-gradient(180deg, var(--historietas-surface-strong, rgba(12,7,23,0.98)) 0%, var(--historietas-bg-mid, rgba(18,8,31,0.98)) 100%)",
+    "linear-gradient(180deg, var(--historietas-surface-strong, var(--historietas-comunidade-dark-98, rgba(12,7,23,0.98))) 0%, var(--historietas-bg-mid, var(--historietas-comunidade-dark-alt-98, rgba(18,8,31,0.98))) 100%)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   borderBottom: "none",
   boxShadow: "none",
@@ -6270,7 +6363,7 @@ const spoilerComposerStyle: CSSProperties = {
   gap: "8px",
   padding: "0 10px 0 12px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-comunidade-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.12)",
   color: "#FFFFFF",
   fontSize: "12px",
@@ -6286,7 +6379,7 @@ const spoilerComposerStyle: CSSProperties = {
 
 const spoilerComposerActiveStyle: CSSProperties = {
   ...spoilerComposerStyle,
-  background: "#08030F",
+  background: "var(--historietas-comunidade-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.12)",
   color: "#FFFFFF",
 };
@@ -6316,16 +6409,16 @@ const spoilerComposerCheckStyle: CSSProperties = {
 
 const spoilerComposerCheckActiveStyle: CSSProperties = {
   ...spoilerComposerCheckStyle,
-  border: "1px solid rgba(34,197,94,0.70)",
-  background: "rgba(34,197,94,0.10)",
-  color: "#22C55E",
+  border: "1px solid var(--historietas-comunidade-success-70, rgba(34,197,94,0.70))",
+  background: "var(--historietas-comunidade-success-10, rgba(34,197,94,0.10))",
+  color: "var(--historietas-comunidade-success, #22C55E)",
 };
 
 const primaryButtonStyle: CSSProperties = {
   minHeight: "39px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.12)",
-  background: "#08030F",
+  background: "var(--historietas-comunidade-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "12.5px",
   fontWeight: 950,
@@ -6367,10 +6460,10 @@ const errorStyle: CSSProperties = {
   display: "block",
   padding: "9px 11px",
   borderRadius: "15px",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
+  background: "var(--historietas-danger-surface, var(--historietas-comunidade-danger-bg-12, rgba(239,68,68,0.12)))",
   border:
-    "1px solid rgba(248,113,113,0.24)",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+    "1px solid var(--historietas-comunidade-danger-24, rgba(248,113,113,0.24))",
+  color: "var(--historietas-danger-button-text, var(--historietas-comunidade-danger-text, #FCA5A5))",
   fontSize: "12px",
   fontWeight: 850,
   textAlign: "center",
@@ -6396,10 +6489,10 @@ const communityErrorNoticeStyle: CSSProperties = {
   display: "block",
   padding: "10px 12px",
   borderRadius: "16px",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
+  background: "var(--historietas-danger-surface, var(--historietas-comunidade-danger-bg-12, rgba(239,68,68,0.12)))",
   border:
-    "1px solid rgba(248,113,113,0.24)",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+    "1px solid var(--historietas-comunidade-danger-24, rgba(248,113,113,0.24))",
+  color: "var(--historietas-danger-button-text, var(--historietas-comunidade-danger-text, #FCA5A5))",
   fontSize: "12px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -6410,7 +6503,7 @@ const weeklyChallengeStyle: CSSProperties = {
   gap: "10px",
   padding: "13px",
   borderRadius: "23px",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   minWidth: 0,
@@ -6435,7 +6528,7 @@ const weeklyChallengeTextStyle: CSSProperties = {
 };
 
 const weeklyChallengeKickerStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-comunidade-accent-soft, #FDBA74))",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.09em",
@@ -6461,7 +6554,7 @@ const weeklyChallengeButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.12)",
-  background: "#08030F",
+  background: "var(--historietas-comunidade-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -6774,7 +6867,7 @@ const communityFiltersSheetStyle: CSSProperties = {
   gap: "0",
   padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "#070212",
+  background: "var(--historietas-comunidade-bg-page, #070212)",
   border: "none",
   borderBottom: "none",
   overflowY: "auto",
@@ -6896,7 +6989,7 @@ const communityActionsSheetItemStyle: CSSProperties = {
 
 const communityActionsSheetDangerItemStyle: CSSProperties = {
   ...communityActionsSheetItemStyle,
-  color: "#FB7185",
+  color: "var(--historietas-comunidade-pink, #FB7185)",
 };
 
 const communityToolsStyle: CSSProperties = {
@@ -6904,7 +6997,7 @@ const communityToolsStyle: CSSProperties = {
   gap: "10px",
   padding: "12px",
   borderRadius: "22px",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   minWidth: 0,
@@ -6940,7 +7033,7 @@ const searchInputStyle: CSSProperties = {
   height: "44px",
   borderRadius: "16px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   outline: "none",
   padding: "0 14px",
@@ -6957,7 +7050,7 @@ const advancedCommunityFiltersPanelStyle: CSSProperties = {
   padding: "12px",
   borderRadius: "24px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.82)) 0%, var(--historietas-surface-strong, rgba(18,12,30,0.94)) 100%)",
+    "linear-gradient(135deg, var(--historietas-surface, var(--historietas-comunidade-surface-82, rgba(18,12,30,0.82))) 0%, var(--historietas-surface-strong, var(--historietas-comunidade-surface-94, rgba(18,12,30,0.94))) 100%)",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   boxShadow: "var(--historietas-card-shadow, none)",
   minWidth: 0,
@@ -7012,7 +7105,7 @@ const filterResultBadgeStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.10)",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-comunidade-accent-soft, #FDBA74))",
   fontSize: "10px",
   fontWeight: 950,
   textAlign: "center",
@@ -7054,7 +7147,7 @@ const quickFilterButtonStyle: CSSProperties = {
 
 const quickFilterActiveStyle: CSSProperties = {
   ...quickFilterButtonStyle,
-  background: "#08030F",
+  background: "var(--historietas-comunidade-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.14)",
   color: "#FFFFFF",
 };
@@ -7112,7 +7205,7 @@ const communityFilterSelectStyle: CSSProperties = {
   height: "40px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  background: "var(--historietas-input-bg, #120B1F)",
+  background: "var(--historietas-input-bg, var(--historietas-comunidade-surface-alt, #120B1F))",
   color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 12px",
   outline: "none",
@@ -7175,7 +7268,7 @@ const sortButtonStyle: CSSProperties = {
 
 const sortButtonActiveStyle: CSSProperties = {
   ...sortButtonStyle,
-  background: "var(--historietas-active-surface, rgba(124,58,237,0.25))",
+  background: "var(--historietas-active-surface, var(--historietas-comunidade-purple-25, rgba(124,58,237,0.25)))",
   border: "1px solid rgba(255,255,255,0.14)",
   color: "var(--historietas-text-primary, #FFFFFF)",
 };
@@ -7240,7 +7333,7 @@ const clearFiltersButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  color: "var(--historietas-secondary-button-text, var(--historietas-comunidade-secondary-text, #DDD6FE))",
   padding: "0 11px",
   fontSize: "11px",
   fontWeight: 950,
@@ -7261,7 +7354,7 @@ const typeFilterPanelStyle: CSSProperties = {
   gap: "9px",
   padding: "11px",
   borderRadius: "22px",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   minWidth: 0,
@@ -7276,7 +7369,7 @@ const typeFilterHeaderStyle: CSSProperties = {
 };
 
 const typeFilterTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-comunidade-accent-soft, #FDBA74))",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.09em",
@@ -7318,7 +7411,7 @@ const typeFilterButtonStyle: CSSProperties = {
 
 const typeFilterButtonActiveStyle: CSSProperties = {
   ...typeFilterButtonStyle,
-  background: "var(--historietas-active-surface, rgba(124,58,237,0.25))",
+  background: "var(--historietas-active-surface, var(--historietas-comunidade-purple-25, rgba(124,58,237,0.25)))",
   border:
     "1px solid rgba(255,255,255,0.14)",
   color: "var(--historietas-text-primary, #FFFFFF)",
@@ -7339,7 +7432,7 @@ const filterButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.055))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  color: "var(--historietas-secondary-button-text, var(--historietas-comunidade-secondary-text, #DDD6FE))",
   fontSize: "11.5px",
   fontWeight: 950,
   fontFamily: "inherit",
@@ -7351,7 +7444,7 @@ const filterButtonStyle: CSSProperties = {
 
 const activeFilterButtonStyle: CSSProperties = {
   ...filterButtonStyle,
-  background: "#08030F",
+  background: "var(--historietas-comunidade-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.14)",
   color: "#FFFFFF",
 };
@@ -7366,7 +7459,7 @@ const savedFilterActiveStyle: CSSProperties = {
   ...savedFilterStyle,
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.10)",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-comunidade-accent-soft, #FDBA74))",
 };
 
 const postsListStyle: CSSProperties = {
@@ -7390,7 +7483,7 @@ const loadMorePostsButtonStyle: CSSProperties = {
   padding: "0 16px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.12)",
-  background: "#08030F",
+  background: "var(--historietas-comunidade-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -7435,8 +7528,8 @@ const authorAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
+  border: "1px solid var(--historietas-comunidade-purple-58, rgba(59, 7, 100, 0.58))",
   color: "#FFFFFF",
   fontSize: "22px",
   lineHeight: 1,
@@ -7482,9 +7575,9 @@ const postSubMetaStyle: CSSProperties = {
 const removeButtonStyle: CSSProperties = {
   minHeight: "30px",
   borderRadius: "999px",
-  border: "1px solid rgba(248,113,113,0.24)",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.11))",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  border: "1px solid var(--historietas-comunidade-danger-24, rgba(248,113,113,0.24))",
+  background: "var(--historietas-danger-surface, var(--historietas-comunidade-danger-bg-11, rgba(239,68,68,0.11)))",
+  color: "var(--historietas-danger-button-text, var(--historietas-comunidade-danger-text, #FCA5A5))",
   fontSize: "10px",
   fontWeight: 950,
   fontFamily: "inherit",
@@ -7558,8 +7651,8 @@ const spoilerHiddenBoxStyle: CSSProperties = {
   padding: "8px 12px",
   borderRadius: "999px",
   background:
-    "linear-gradient(135deg, rgba(127,29,29,0.18), rgba(0,0,0,0.16))",
-  border: "1px solid rgba(248,113,113,0.22)",
+    "linear-gradient(135deg, var(--historietas-comunidade-danger-dark-18, rgba(127,29,29,0.18)), rgba(0,0,0,0.16))",
+  border: "1px solid var(--historietas-comunidade-danger-22, rgba(248,113,113,0.22))",
   minWidth: 0,
   boxShadow: "none",
 };
@@ -7569,7 +7662,7 @@ const spoilerHiddenTitleStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   margin: 0,
-  color: "#FCA5A5",
+  color: "var(--historietas-comunidade-danger-text, #FCA5A5)",
   fontSize: "13px",
   fontWeight: 950,
   lineHeight: 1.35,
@@ -7651,7 +7744,7 @@ const postOptionsMenuStyle: CSSProperties = {
   padding: "5px",
   borderRadius: "13px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "rgba(12,8,20,0.98)",
+  background: "var(--historietas-comunidade-sheet-98, rgba(12,8,20,0.98))",
   overflow: "visible",
   zIndex: 45,
   boxShadow: "none",
@@ -7683,7 +7776,7 @@ const postOptionsMenuItemStyle: CSSProperties = {
 
 const postOptionsMenuDangerItemStyle: CSSProperties = {
   ...postOptionsMenuItemStyle,
-  color: "#FB7185",
+  color: "var(--historietas-comunidade-pink, #FB7185)",
 };
 
 const postActionsStyle: CSSProperties = {
@@ -7793,7 +7886,7 @@ const commentsSheetStyle: CSSProperties = {
   gap: "7px",
   padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
   borderRadius: "28px 28px 0 0",
-  background: "#070212",
+  background: "var(--historietas-comunidade-bg-page, #070212)",
   border: "none",
   borderBottom: "none",
   boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
@@ -7896,7 +7989,7 @@ const commentsSortMenuStyle: CSSProperties = {
   boxSizing: "border-box",
   borderRadius: "12px",
   border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(18, 9, 35, 0.98)",
+  background: "var(--historietas-comunidade-menu-98, rgba(18, 9, 35, 0.98))",
   boxShadow: "0 16px 36px rgba(0,0,0,0.48)",
   backdropFilter: "blur(14px)",
   WebkitBackdropFilter: "blur(14px)",
@@ -8019,8 +8112,8 @@ const commentAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
+  border: "1px solid var(--historietas-comunidade-purple-58, rgba(59, 7, 100, 0.58))",
   color: "#FFFFFF",
   fontSize: "12.5px",
   lineHeight: 1,
@@ -8113,7 +8206,7 @@ const commentRemoveButtonStyle: CSSProperties = {
   width: "fit-content",
   border: "none",
   background: "transparent",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  color: "var(--historietas-danger-button-text, var(--historietas-comunidade-danger-text, #FCA5A5))",
   fontSize: "10.5px",
   fontWeight: 900,
   fontFamily: "inherit",
@@ -8181,9 +8274,9 @@ const commentsSheetErrorStyle: CSSProperties = {
   display: "block",
   padding: "8px 10px",
   borderRadius: "14px",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
-  border: "1px solid rgba(248,113,113,0.24)",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  background: "var(--historietas-danger-surface, var(--historietas-comunidade-danger-bg-12, rgba(239,68,68,0.12)))",
+  border: "1px solid var(--historietas-comunidade-danger-24, rgba(248,113,113,0.24))",
+  color: "var(--historietas-danger-button-text, var(--historietas-comunidade-danger-text, #FCA5A5))",
   fontSize: "11px",
   fontWeight: 850,
   lineHeight: 1.35,
@@ -8238,8 +8331,8 @@ const commentsInputAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
+  border: "1px solid var(--historietas-comunidade-purple-58, rgba(59, 7, 100, 0.58))",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -8259,7 +8352,7 @@ const commentsSheetInputStyle: CSSProperties = {
   maxHeight: "82px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "9px 12px",
   outline: "none",
@@ -8290,9 +8383,9 @@ const commentsSheetSendStyle: CSSProperties = {
   height: "36px",
   borderRadius: "999px",
   border:
-    "1px solid var(--historietas-bottom-nav-publish-border, rgba(167, 139, 250, 0.34))",
+    "1px solid var(--historietas-bottom-nav-publish-border, var(--historietas-comunidade-purple-soft-34, rgba(167, 139, 250, 0.34)))",
   background:
-    "var(--historietas-bottom-nav-publish-bg, rgba(59, 7, 100, 0.72))",
+    "var(--historietas-bottom-nav-publish-bg, var(--historietas-comunidade-purple-72, rgba(59, 7, 100, 0.72)))",
   color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
@@ -8313,7 +8406,7 @@ const commentButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
   border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-comunidade-accent, #F97316))",
   color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
@@ -8338,7 +8431,7 @@ const sideCardStyle: CSSProperties = {
   gap: "10px",
   padding: "15px",
   borderRadius: "24px",
-  background: "#04000A",
+  background: "var(--historietas-comunidade-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
 };
@@ -8368,7 +8461,7 @@ const sideCategoryButtonStyle: CSSProperties = {
 
 const sideCategoryButtonActiveStyle: CSSProperties = {
   ...sideCategoryButtonStyle,
-  background: "var(--historietas-active-surface, rgba(124,58,237,0.24))",
+  background: "var(--historietas-active-surface, var(--historietas-comunidade-purple-24, rgba(124,58,237,0.24)))",
   border: "1px solid rgba(255,255,255,0.14)",
   color: "var(--historietas-text-primary, #FFFFFF)",
 };
@@ -8481,7 +8574,7 @@ const actionFeedbackToastStyle: CSSProperties = {
   maxWidth: "min(360px, calc(100vw - 28px))",
   padding: "12px 14px",
   borderRadius: "18px",
-  background: "var(--historietas-surface-strong, rgba(12,7,23,0.98))",
+  background: "var(--historietas-surface-strong, var(--historietas-comunidade-dark-98, rgba(12,7,23,0.98)))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "12px",

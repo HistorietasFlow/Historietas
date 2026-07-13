@@ -2650,10 +2650,10 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
             >
               <path
                 d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                fill={usuarioCurtiuComentario ? "#F43F5E" : "none"}
+                fill={usuarioCurtiuComentario ? "var(--historietas-reader-heart, #F43F5E)" : "none"}
                 stroke={
                   usuarioCurtiuComentario
-                    ? "#F43F5E"
+                    ? "var(--historietas-reader-heart, #F43F5E)"
                     : "var(--historietas-text-secondary, #D4D4D8)"
                 }
                 strokeWidth="2"
@@ -2987,7 +2987,7 @@ export default function LerCapituloPage() {
   const [progressoRolagem, setProgressoRolagem] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
-  const { temaVisual, pageThemeStyle, aplicarTemaVisual } = useHistorietasTheme(pageStyle);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const visualizacaoObraRegistradaRef = useRef("");
   const atividadeDiarioRegistradaRef = useRef("");
   const curtidaCapituloSalvandoRef = useRef(false);
@@ -3159,17 +3159,10 @@ export default function LerCapituloPage() {
   useEffect(() => {
     document.body.dataset.historietasReaderFocus = modoFoco ? "true" : "false";
 
-    if (modoFoco) {
-      aplicarTemaVisual("foco");
-    } else {
-      aplicarTemaVisual(temaVisual);
-    }
-
     return () => {
       delete document.body.dataset.historietasReaderFocus;
-      aplicarTemaVisual(temaVisual);
     };
-  }, [modoFoco, temaVisual]);
+  }, [modoFoco]);
 
   useEffect(() => {
     let cancelado = false;
@@ -4683,15 +4676,66 @@ export default function LerCapituloPage() {
 }
 
 const leitorPageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
+  html {
+    --historietas-reader-bg-page: #070212;
+    --historietas-reader-bg-deep: #04000A;
+    --historietas-reader-surface: #08030F;
+    --historietas-reader-bg-end: #020006;
+    --historietas-reader-progress: #4C1D95;
+    --historietas-reader-danger: #EF4444;
+    --historietas-reader-heart: #F43F5E;
+    --historietas-reader-logo-mid: #DDD6FE;
+    --historietas-reader-logo-end: #A78BFA;
+    --historietas-reader-secondary: #7C3AED;
+    --historietas-reader-accent: #FDBA74;
+    --historietas-reader-success: #86EFAC;
+    --historietas-reader-danger-text: #FCA5A5;
+    --historietas-reader-purple-border: rgba(59, 7, 100, 0.58);
+    --historietas-reader-panel: rgba(4, 0, 10, 0.72);
+    --historietas-reader-menu: rgba(18, 9, 35, 0.98);
+    --historietas-reader-highlight-border: rgba(167, 139, 250, 0.34);
+    --historietas-reader-publish-bg: rgba(59, 7, 100, 0.72);
+    --historietas-reader-danger-surface: rgba(127,29,29,0.18);
+    --historietas-reader-danger-bg: rgba(239,68,68,0.12);
+    --historietas-reader-danger-border: rgba(248,113,113,0.24);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-reader-bg-page: #000000;
+    --historietas-reader-bg-deep: #000000;
+    --historietas-reader-surface: #050505;
+    --historietas-reader-bg-end: #000000;
+    --historietas-reader-progress: #FFFFFF;
+    --historietas-reader-danger: #FFFFFF;
+    --historietas-reader-heart: #FFFFFF;
+    --historietas-reader-logo-mid: #FFFFFF;
+    --historietas-reader-logo-end: #FFFFFF;
+    --historietas-reader-secondary: #A1A1AA;
+    --historietas-reader-accent: #FFFFFF;
+    --historietas-reader-success: #FFFFFF;
+    --historietas-reader-danger-text: #FFFFFF;
+    --historietas-reader-purple-border: rgba(255,255,255,0.18);
+    --historietas-reader-panel: rgba(5,5,5,0.92);
+    --historietas-reader-menu: #000000;
+    --historietas-reader-highlight-border: rgba(255,255,255,0.26);
+    --historietas-reader-publish-bg: #000000;
+    --historietas-reader-danger-surface: rgba(255,255,255,0.08);
+    --historietas-reader-danger-bg: rgba(255,255,255,0.06);
+    --historietas-reader-danger-border: rgba(255,255,255,0.18);
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -4712,66 +4756,78 @@ const leitorPageCss = `
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="branco"] button:disabled {
-    opacity: 1 !important;
-    background: #F1F3F4 !important;
-    border-color: #DADCE0 !important;
-    color: #5F6368 !important;
-    cursor: not-allowed !important;
-  }
-
   body[data-historietas-reader-focus="true"] {
-    background: #050506 !important;
+    background: #000000 !important;
+    --historietas-reader-bg-page: #000000;
+    --historietas-reader-bg-deep: #000000;
+    --historietas-reader-surface: #050505;
+    --historietas-reader-bg-end: #000000;
+    --historietas-reader-progress: #FFFFFF;
+    --historietas-reader-danger: #FFFFFF;
+    --historietas-reader-heart: #FFFFFF;
+    --historietas-reader-logo-mid: #FFFFFF;
+    --historietas-reader-logo-end: #FFFFFF;
+    --historietas-reader-secondary: #A1A1AA;
+    --historietas-reader-accent: #FFFFFF;
+    --historietas-reader-success: #FFFFFF;
+    --historietas-reader-danger-text: #FFFFFF;
+    --historietas-reader-purple-border: rgba(255,255,255,0.18);
+    --historietas-reader-panel: rgba(5,5,5,0.92);
+    --historietas-reader-menu: #000000;
+    --historietas-reader-highlight-border: rgba(255,255,255,0.26);
+    --historietas-reader-publish-bg: #000000;
+    --historietas-reader-danger-surface: rgba(255,255,255,0.08);
+    --historietas-reader-danger-bg: rgba(255,255,255,0.06);
+    --historietas-reader-danger-border: rgba(255,255,255,0.18);
   }
 `;
 
 const focusBottomNavigationCss = `
   body[data-historietas-reader-focus="true"] {
-    --historietas-accent: #A78BFA;
-    --historietas-secondary: #7C3AED;
-    --historietas-bg-start: #050506;
-    --historietas-bg-mid: #030305;
-    --historietas-bg-end: #020203;
-    --historietas-glow-primary: rgba(124,58,237,0.08);
-    --historietas-glow-secondary: rgba(255,255,255,0.045);
-    --historietas-text-primary: #F4F4F5;
+    --historietas-accent: #FFFFFF;
+    --historietas-secondary: #A1A1AA;
+    --historietas-bg-start: #000000;
+    --historietas-bg-mid: #000000;
+    --historietas-bg-end: #000000;
+    --historietas-glow-primary: transparent;
+    --historietas-glow-secondary: transparent;
+    --historietas-text-primary: #FFFFFF;
     --historietas-text-secondary: #D4D4D8;
-    --historietas-surface: rgba(9,9,11,0.88);
-    --historietas-surface-strong: rgba(3,3,6,0.96);
-    --historietas-border-soft: rgba(255,255,255,0.075);
-    --historietas-input-bg: #09090B;
-    --historietas-input-text: #F4F4F5;
+    --historietas-surface: #050505;
+    --historietas-surface-strong: #000000;
+    --historietas-border-soft: rgba(255,255,255,0.12);
+    --historietas-input-bg: #000000;
+    --historietas-input-text: #FFFFFF;
     --historietas-title-from: #FFFFFF;
-    --historietas-title-mid: #E4E4E7;
-    --historietas-title-to: #A78BFA;
-    --historietas-secondary-surface: rgba(39,39,42,0.72);
-    --historietas-secondary-button-text: #E4E4E7;
-    --historietas-danger-surface: rgba(127,29,29,0.18);
-    --historietas-danger-button-text: #FCA5A5;
+    --historietas-title-mid: #FFFFFF;
+    --historietas-title-to: #FFFFFF;
+    --historietas-secondary-surface: rgba(255,255,255,0.06);
+    --historietas-secondary-button-text: #FFFFFF;
+    --historietas-danger-surface: rgba(255,255,255,0.08);
+    --historietas-danger-button-text: #FFFFFF;
     --historietas-logo-shadow: none;
     --historietas-card-shadow: none;
     --historietas-hero-shadow: none;
-    --historietas-bottom-nav-bg: #050505;
-    --historietas-bottom-nav-border: rgba(255,255,255,0.075);
+    --historietas-bottom-nav-bg: #000000;
+    --historietas-bottom-nav-border: rgba(255,255,255,0.18);
     --historietas-bottom-nav-shadow: none;
-    --historietas-bottom-nav-text: #D4D4D8;
-    --historietas-bottom-nav-hover-bg: rgba(255,255,255,0.055);
+    --historietas-bottom-nav-text: #A1A1AA;
+    --historietas-bottom-nav-hover-bg: rgba(255,255,255,0.08);
     --historietas-bottom-nav-hover-text: #FFFFFF;
-    --historietas-bottom-nav-icon-text: #A78BFA;
-    --historietas-bottom-nav-icon-bg: rgba(255,255,255,0.045);
-    --historietas-bottom-nav-icon-border: rgba(255,255,255,0.07);
-    --historietas-bottom-nav-main-bg: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
-    --historietas-bottom-nav-main-border: rgba(167,139,250,0.34);
+    --historietas-bottom-nav-icon-text: #FFFFFF;
+    --historietas-bottom-nav-icon-bg: #050505;
+    --historietas-bottom-nav-icon-border: rgba(255,255,255,0.18);
+    --historietas-bottom-nav-main-bg: #000000;
+    --historietas-bottom-nav-main-border: #FFFFFF;
   }
-
 
   body[data-historietas-reader-focus="true"] article,
   body[data-historietas-reader-focus="true"] article p,
   body[data-historietas-reader-focus="true"] h1,
   body[data-historietas-reader-focus="true"] h2,
   body[data-historietas-reader-focus="true"] p {
-    color: #F4F4F5 !important;
-    -webkit-text-fill-color: #F4F4F5 !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
     text-shadow: none !important;
   }
 
@@ -4785,8 +4841,8 @@ const focusBottomNavigationCss = `
   body[data-historietas-reader-focus="true"] .historietas-theme-logo-text,
   body[data-historietas-reader-focus="true"] .historietas-theme-title {
     background: none !important;
-    color: #A78BFA !important;
-    -webkit-text-fill-color: #A78BFA !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
   }
 
   body[data-historietas-reader-focus="true"] nav,
@@ -4795,10 +4851,10 @@ const focusBottomNavigationCss = `
   body[data-historietas-reader-focus="true"] nav[aria-label*="Navegação"],
   body[data-historietas-reader-focus="true"] nav[aria-label*="navegação"],
   body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/perfil-autor?aba=biblioteca"]) {
-    background: #050505 !important;
-    border-color: rgba(255,255,255,0.075) !important;
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.18) !important;
     box-shadow: none !important;
-    color: #D4D4D8 !important;
+    color: #A1A1AA !important;
   }
 
   body[data-historietas-reader-focus="true"] nav a,
@@ -4809,7 +4865,7 @@ const focusBottomNavigationCss = `
   body[data-historietas-reader-focus="true"] [data-mobile-nav] button,
   body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/perfil-autor?aba=biblioteca"]) a,
   body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/perfil-autor?aba=biblioteca"]) button {
-    color: #D4D4D8 !important;
+    color: #A1A1AA !important;
     box-shadow: none !important;
   }
 
@@ -4817,18 +4873,17 @@ const focusBottomNavigationCss = `
   body[data-historietas-reader-focus="true"] [data-bottom-nav] a[href="/publicar"],
   body[data-historietas-reader-focus="true"] [data-mobile-nav] a[href="/publicar"],
   body[data-historietas-reader-focus="true"] div:has(a[href="/publicar"]):has(a[href="/perfil-autor?aba=biblioteca"]) a[href="/publicar"] {
-    background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%) !important;
-    border-color: rgba(167,139,250,0.34) !important;
+    background: #000000 !important;
+    border-color: #FFFFFF !important;
     color: #FFFFFF !important;
   }
 
   body[data-historietas-reader-focus="true"] .historietas-bottom-nav-icon {
-    background: rgba(255,255,255,0.045) !important;
-    border-color: rgba(255,255,255,0.07) !important;
-    color: #A78BFA !important;
+    background: #050505 !important;
+    border-color: rgba(255,255,255,0.18) !important;
+    color: #FFFFFF !important;
   }
 `;
-
 
 const safeTextStyle: CSSProperties = {
   minWidth: 0,
@@ -4866,7 +4921,7 @@ const pageStyle: CSSProperties = {
   minHeight: "100vh",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "#070212",
+  background: "var(--historietas-reader-bg-page, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   boxSizing: "border-box",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
@@ -4874,8 +4929,8 @@ const pageStyle: CSSProperties = {
 
 const focusPageStyle: CSSProperties = {
   ...pageStyle,
-  background: "#050506",
-  color: "#F4F4F5",
+  background: "#000000",
+  color: "#FFFFFF",
 };
 
 const fixedReadingProgressOuterStyle: CSSProperties = {
@@ -4891,7 +4946,7 @@ const fixedReadingProgressOuterStyle: CSSProperties = {
 const fixedReadingProgressInnerStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "#4C1D95",
+  background: "var(--historietas-reader-progress, #4C1D95)",
   transition: "width 0.16s ease",
 };
 
@@ -4938,7 +4993,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   height: "40px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-reader-surface, #08030F)",
   color: "#FFFFFF",
   textDecoration: "none",
   display: "inline-flex",
@@ -4966,8 +5021,8 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
+  border: "2px solid var(--historietas-bg-start, var(--historietas-reader-bg-page, #070212))",
+  background: "var(--historietas-reader-danger, #EF4444)",
   color: "#FFFFFF",
   fontSize: "9px",
   lineHeight: 1,
@@ -4998,20 +5053,20 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-reader-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "19px",
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-reader-purple-border, rgba(59, 7, 100, 0.58))",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-reader-logo-mid, #DDD6FE) 44%, var(--historietas-reader-logo-end, #A78BFA) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -5039,7 +5094,7 @@ const topMiniButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-reader-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -5061,7 +5116,7 @@ const backButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-reader-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -5083,7 +5138,7 @@ const settingsButtonStyle: CSSProperties = {
   minHeight: "38px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-reader-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "12px",
@@ -5122,7 +5177,7 @@ const chapterHeaderStyle: CSSProperties = {
   gap: "8px",
   padding: "14px",
   borderRadius: "28px",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  background: "linear-gradient(135deg, var(--historietas-reader-bg-page, #070212) 0%, var(--historietas-reader-bg-deep, #04000A) 58%, var(--historietas-reader-bg-end, #020006) 100%)",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
@@ -5211,7 +5266,7 @@ const readingStatCardStyle: CSSProperties = {
   gap: "3px",
   padding: "10px",
   borderRadius: "16px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-reader-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
@@ -5219,7 +5274,7 @@ const readingStatCardStyle: CSSProperties = {
 };
 
 const readingStatNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-reader-accent, #FDBA74))",
   fontSize: "20px",
   lineHeight: 1,
   fontWeight: 950,
@@ -5242,7 +5297,7 @@ const settingsPanelStyle: CSSProperties = {
   marginTop: "10px",
   padding: "10px",
   borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-reader-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
@@ -5288,7 +5343,7 @@ const chapterSelectStyle: CSSProperties = {
   minHeight: "40px",
   borderRadius: "14px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-reader-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 11px",
   outline: "none",
@@ -5366,7 +5421,7 @@ const fontScaleButtonStyle: CSSProperties = {
   minHeight: "30px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-reader-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "10px",
   fontWeight: 900,
@@ -5402,7 +5457,7 @@ const settingsActionStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-reader-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "10px",
   fontWeight: 900,
@@ -5474,7 +5529,7 @@ const actionButtonStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-reader-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "10.5px",
   fontWeight: 950,
@@ -5531,7 +5586,7 @@ const focusActiveCommentButtonStyle: CSSProperties = {
 
 const commentStatusStyle: CSSProperties = {
   margin: 0,
-  color: "#86EFAC",
+  color: "var(--historietas-reader-success, #86EFAC)",
   fontSize: "11px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -5571,7 +5626,7 @@ const commentsSheetStyle: CSSProperties = {
   gap: "7px",
   padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
   borderRadius: "28px 28px 0 0",
-  background: "#070212",
+  background: "var(--historietas-reader-bg-page, #070212)",
   border: "none",
   borderBottom: "none",
   boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
@@ -5674,7 +5729,7 @@ const commentsSortMenuStyle: CSSProperties = {
   boxSizing: "border-box",
   borderRadius: "12px",
   border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(18, 9, 35, 0.98)",
+  background: "var(--historietas-reader-menu, rgba(18, 9, 35, 0.98))",
   boxShadow: "0 16px 36px rgba(0,0,0,0.48)",
   backdropFilter: "blur(14px)",
   WebkitBackdropFilter: "blur(14px)",
@@ -5797,8 +5852,8 @@ const commentAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  background: "var(--historietas-reader-bg-deep, #04000A)",
+  border: "1px solid var(--historietas-reader-purple-border, rgba(59, 7, 100, 0.58))",
   color: "#FFFFFF",
   fontSize: "12.5px",
   lineHeight: 1,
@@ -5891,7 +5946,7 @@ const commentRemoveButtonStyle: CSSProperties = {
   width: "fit-content",
   border: "none",
   background: "transparent",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  color: "var(--historietas-danger-button-text, var(--historietas-reader-danger-text, #FCA5A5))",
   fontSize: "10.5px",
   fontWeight: 900,
   fontFamily: "inherit",
@@ -5959,9 +6014,9 @@ const commentsSheetErrorStyle: CSSProperties = {
   display: "block",
   padding: "8px 10px",
   borderRadius: "14px",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.12))",
-  border: "1px solid rgba(248,113,113,0.24)",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  background: "var(--historietas-danger-surface, var(--historietas-reader-danger-bg, rgba(239,68,68,0.12)))",
+  border: "1px solid var(--historietas-reader-danger-border, rgba(248,113,113,0.24))",
+  color: "var(--historietas-danger-button-text, var(--historietas-reader-danger-text, #FCA5A5))",
   fontSize: "11px",
   fontWeight: 850,
   lineHeight: 1.35,
@@ -6016,8 +6071,8 @@ const commentsInputAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  background: "var(--historietas-reader-bg-deep, #04000A)",
+  border: "1px solid var(--historietas-reader-purple-border, rgba(59, 7, 100, 0.58))",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -6037,7 +6092,7 @@ const commentsSheetInputStyle: CSSProperties = {
   maxHeight: "82px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-reader-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "9px 12px",
   outline: "none",
@@ -6068,9 +6123,9 @@ const commentsSheetSendStyle: CSSProperties = {
   height: "36px",
   borderRadius: "999px",
   border:
-    "1px solid var(--historietas-bottom-nav-publish-border, rgba(167, 139, 250, 0.34))",
+    "1px solid var(--historietas-bottom-nav-publish-border, var(--historietas-reader-highlight-border, rgba(167, 139, 250, 0.34)))",
   background:
-    "var(--historietas-bottom-nav-publish-bg, rgba(59, 7, 100, 0.72))",
+    "var(--historietas-bottom-nav-publish-bg, var(--historietas-reader-publish-bg, rgba(59, 7, 100, 0.72)))",
   color: "#FFFFFF",
   fontSize: "18px",
   lineHeight: 1,
@@ -6093,7 +6148,7 @@ const chapterNavButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-reader-surface, #08030F)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11px",
@@ -6166,7 +6221,7 @@ const readerFooterBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "12px",
   borderRadius: "20px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-reader-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   display: "grid",
   gap: "6px",

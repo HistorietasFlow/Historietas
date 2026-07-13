@@ -619,8 +619,8 @@ function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
   if (!capa) {
     return {
       ...baseStyle,
-      background: "#04000A",
-      backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+      background: "var(--historietas-seguindo-bg-deep, #04000A)",
+      backgroundImage: "linear-gradient(135deg, var(--historietas-seguindo-surface, #08030F) 0%, var(--historietas-seguindo-bg-deep, #04000A) 100%)",
       backgroundSize: "cover",
       backgroundPosition: "center",
     };
@@ -628,7 +628,7 @@ function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
 
   return {
     ...baseStyle,
-    background: "#04000A",
+    background: "var(--historietas-seguindo-bg-deep, #04000A)",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -3751,15 +3751,58 @@ const safeTextStyle: CSSProperties = {
 };
 
 const seguindoPageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
+  html {
+    --historietas-seguindo-bg-page: #070212;
+    --historietas-seguindo-bg-deep: #04000A;
+    --historietas-seguindo-surface: #08030F;
+    --historietas-seguindo-bg-end: #020006;
+    --historietas-seguindo-purple-text: #DDD6FE;
+    --historietas-seguindo-purple-soft: #A78BFA;
+    --historietas-seguindo-success: #86EFAC;
+    --historietas-seguindo-success-soft: #BBF7D0;
+    --historietas-seguindo-danger-text: #FCA5A5;
+    --historietas-seguindo-purple-border: rgba(59, 7, 100, 0.58);
+    --historietas-seguindo-panel: rgba(4, 0, 10, 0.72);
+    --historietas-seguindo-success-border: rgba(34,197,94,0.20);
+    --historietas-seguindo-success-bg: rgba(34,197,94,0.085);
+    --historietas-seguindo-success-active-bg: rgba(34,197,94,0.14);
+    --historietas-seguindo-success-active-border: rgba(34,197,94,0.28);
+    --historietas-seguindo-danger-border: rgba(239,68,68,0.18);
+    --historietas-seguindo-danger-bg: rgba(239,68,68,0.075);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-seguindo-bg-page: #000000;
+    --historietas-seguindo-bg-deep: #000000;
+    --historietas-seguindo-surface: #050505;
+    --historietas-seguindo-bg-end: #000000;
+    --historietas-seguindo-purple-text: #FFFFFF;
+    --historietas-seguindo-purple-soft: #D4D4D8;
+    --historietas-seguindo-success: #FFFFFF;
+    --historietas-seguindo-success-soft: #FFFFFF;
+    --historietas-seguindo-danger-text: #FFFFFF;
+    --historietas-seguindo-purple-border: rgba(255,255,255,0.18);
+    --historietas-seguindo-panel: rgba(5,5,5,0.92);
+    --historietas-seguindo-success-border: rgba(255,255,255,0.18);
+    --historietas-seguindo-success-bg: rgba(255,255,255,0.06);
+    --historietas-seguindo-success-active-bg: rgba(255,255,255,0.08);
+    --historietas-seguindo-success-active-border: rgba(255,255,255,0.22);
+    --historietas-seguindo-danger-border: rgba(255,255,255,0.18);
+    --historietas-seguindo-danger-bg: rgba(255,255,255,0.06);
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -3773,8 +3816,14 @@ const seguindoPageCss = `
   html[data-historietas-tema-visual] nav a[href="/seguindo"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/seguindo"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/seguindo"] {
-    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
-    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    background: var(
+      --historietas-bottom-nav-active-bg,
+      rgba(59, 7, 100, 0.54)
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-border,
+      rgba(109, 40, 217, 0.48)
+    ) !important;
     color: #FFFFFF !important;
   }
 
@@ -3782,8 +3831,31 @@ const seguindoPageCss = `
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/seguindo"] .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/seguindo"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
-    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
-    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
+    background: var(
+      --historietas-bottom-nav-active-icon-bg,
+      #3B0764
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-icon-border,
+      rgba(167, 139, 250, 0.46)
+    ) !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/seguindo"],
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/seguindo"],
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/seguindo"] {
+    background: #050505 !important;
+    border-color: #FFFFFF !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/seguindo"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/seguindo"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/seguindo"] .historietas-bottom-nav-icon {
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.24) !important;
+    color: #FFFFFF !important;
   }
 
   html[data-historietas-tema-visual] input::placeholder {
@@ -3847,7 +3919,7 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "#070212",
+  background: "var(--historietas-seguindo-bg-page, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -3964,8 +4036,8 @@ const soonTopButtonStyle: CSSProperties = {
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
-  color: "#DDD6FE",
+  background: "var(--historietas-seguindo-bg-deep, #04000A)",
+  color: "var(--historietas-seguindo-purple-text, #DDD6FE)",
   textDecoration: "none",
   fontSize: "11px",
   fontWeight: 950,
@@ -4007,20 +4079,20 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-seguindo-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
   letterSpacing: "-0.04em",
   flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-seguindo-purple-border, rgba(59, 7, 100, 0.58))",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-seguindo-purple-text, #DDD6FE) 44%, var(--historietas-seguindo-purple-soft, #A78BFA) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -4064,11 +4136,11 @@ const titleLogoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-seguindo-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-seguindo-purple-border, rgba(59, 7, 100, 0.58))",
   boxShadow: "none",
   flex: "0 0 auto",
 };
@@ -4120,7 +4192,7 @@ const heroStyle: CSSProperties = {
   gap: "12px",
   borderRadius: "30px",
   border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  background: "linear-gradient(135deg, var(--historietas-seguindo-bg-page, #070212) 0%, var(--historietas-seguindo-bg-deep, #04000A) 58%, var(--historietas-seguindo-bg-end, #020006) 100%)",
   padding: "18px",
   boxShadow: "none",
   minWidth: 0,
@@ -4212,7 +4284,7 @@ const filterBoxStyle: CSSProperties = {
   marginTop: "14px",
   padding: "13px",
   borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
@@ -4273,7 +4345,7 @@ const filterResultBadgeStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "var(--historietas-seguindo-purple-text, #DDD6FE)",
   fontSize: "12px",
   fontWeight: 950,
   boxSizing: "border-box",
@@ -4285,7 +4357,7 @@ const searchInputStyle: CSSProperties = {
   minHeight: "43px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-seguindo-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 15px",
   outline: "none",
@@ -4465,7 +4537,7 @@ const sortingSheetStyle: CSSProperties = {
   gap: 0,
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-bg-start, #070212)",
+  background: "var(--historietas-bg-start, var(--historietas-seguindo-bg-page, #070212))",
   border: "none",
   borderBottom: "0",
   overflowY: "auto",
@@ -4600,7 +4672,7 @@ const quickFilterStyle: CSSProperties = {
 
 const quickFilterActiveStyle: CSSProperties = {
   ...quickFilterStyle,
-  background: "#08030F",
+  background: "var(--historietas-seguindo-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none"
@@ -4630,7 +4702,7 @@ const selectStyle: CSSProperties = {
   minHeight: "43px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-seguindo-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 15px",
   outline: "none",
@@ -4703,7 +4775,7 @@ const summaryCardStyle: CSSProperties = {
   flex: "0 0 88px",
   minHeight: "46px",
   borderRadius: "14px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   padding: "7px 6px",
   display: "grid",
@@ -4725,7 +4797,7 @@ const desktopSummaryCardStyle: CSSProperties = {
 };
 
 const summaryNumberStyle: CSSProperties = {
-  color: "#DDD6FE",
+  color: "var(--historietas-seguindo-purple-text, #DDD6FE)",
   fontSize: "17px",
   lineHeight: 1,
   fontWeight: 950,
@@ -4831,7 +4903,7 @@ const sectionCounterStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#08030F",
+  background: "var(--historietas-seguindo-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "18px",
@@ -4882,7 +4954,7 @@ const cardStyle: CSSProperties = {
   padding: "6px",
   borderRadius: "22px",
   overflow: "hidden",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
@@ -4910,8 +4982,8 @@ const coverStyle: CSSProperties = {
   alignSelf: "start",
   boxSizing: "border-box",
   borderRadius: "16px",
-  background: "#04000A",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  background: "var(--historietas-seguindo-bg-deep, #04000A)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-seguindo-surface, #08030F) 0%, var(--historietas-seguindo-bg-deep, #04000A) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   overflow: "hidden",
@@ -4940,7 +5012,7 @@ const genreStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "4px 7px",
   borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "9px",
@@ -4988,7 +5060,7 @@ const badgeStyleSmall: CSSProperties = {
 
 const classificationBadgeStyle: CSSProperties = {
   ...genreStyle,
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.08)",
 };
 
@@ -5012,7 +5084,7 @@ const favoriteBadgeStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "var(--historietas-seguindo-purple-text, #DDD6FE)",
   fontSize: "9px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -5078,7 +5150,7 @@ const progressTrackStyle: CSSProperties = {
 };
 
 const progressPercentStyle: CSSProperties = {
-  color: "#86EFAC",
+  color: "var(--historietas-seguindo-success, #86EFAC)",
   fontSize: "11px",
   lineHeight: 1,
   fontWeight: 950,
@@ -5135,7 +5207,7 @@ const desktopSecondaryActionsRowStyle: CSSProperties = {
 const readButtonStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-seguindo-surface, #08030F)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11px",
@@ -5159,7 +5231,7 @@ const readButtonStyle: CSSProperties = {
 
 const continueButtonStyle: CSSProperties = {
   ...readButtonStyle,
-  background: "#08030F",
+  background: "var(--historietas-seguindo-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
 };
 
@@ -5207,7 +5279,7 @@ const favoriteActionStyle: CSSProperties = {
 
 const favoriteActionActiveStyle: CSSProperties = {
   ...favoriteActionStyle,
-  background: "#08030F",
+  background: "var(--historietas-seguindo-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none"
@@ -5216,9 +5288,9 @@ const favoriteActionActiveStyle: CSSProperties = {
 const completedActionStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  border: "1px solid rgba(34,197,94,0.20)",
-  background: "rgba(34,197,94,0.085)",
-  color: "#86EFAC",
+  border: "1px solid var(--historietas-seguindo-success-border, rgba(34,197,94,0.20))",
+  background: "var(--historietas-seguindo-success-bg, rgba(34,197,94,0.085))",
+  color: "var(--historietas-seguindo-success, #86EFAC)",
   fontSize: "10px",
   fontWeight: 950,
   cursor: "pointer",
@@ -5233,18 +5305,18 @@ const completedActionStyle: CSSProperties = {
 
 const completedActionActiveStyle: CSSProperties = {
   ...completedActionStyle,
-  background: "rgba(34,197,94,0.14)",
-  border: "1px solid rgba(34,197,94,0.28)",
-  color: "#BBF7D0",
+  background: "var(--historietas-seguindo-success-active-bg, rgba(34,197,94,0.14))",
+  border: "1px solid var(--historietas-seguindo-success-active-border, rgba(34,197,94,0.28))",
+  color: "var(--historietas-seguindo-success-soft, #BBF7D0)",
   boxShadow: "none"
 };
 
 const unfollowButtonStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  border: "1px solid rgba(239,68,68,0.18)",
-  background: "rgba(239,68,68,0.075)",
-  color: "#FCA5A5",
+  border: "1px solid var(--historietas-seguindo-danger-border, rgba(239,68,68,0.18))",
+  background: "var(--historietas-seguindo-danger-bg, rgba(239,68,68,0.075))",
+  color: "var(--historietas-seguindo-danger-text, #FCA5A5)",
   fontSize: "10px",
   fontWeight: 950,
   cursor: "pointer",
@@ -5263,7 +5335,7 @@ const authorCardStyle: CSSProperties = {
   gap: "10px",
   padding: "10px 12px",
   borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   minWidth: 0,
@@ -5287,7 +5359,7 @@ const authorAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-seguindo-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
@@ -5345,7 +5417,7 @@ const exploreButtonStyle: CSSProperties = {
   width: "100%",
   minHeight: "52px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-seguindo-surface, #08030F)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "14px",

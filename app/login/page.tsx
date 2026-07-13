@@ -685,6 +685,36 @@ export default function LoginPage() {
 }
 
 const loginPageCss = `
+  html {
+    --historietas-login-bg-page: #070212;
+    --historietas-login-bg-deep: #04000A;
+    --historietas-login-surface: #08030F;
+    --historietas-login-logo-mid: #DDD6FE;
+    --historietas-login-logo-end: #A78BFA;
+    --historietas-login-danger: #FCA5A5;
+    --historietas-login-success: #86EFAC;
+    --historietas-login-purple-border: rgba(59, 7, 100, 0.58);
+    --historietas-login-purple-border-soft: rgba(59, 7, 100, 0.50);
+    --historietas-login-success-bg: rgba(34,197,94,0.10);
+    --historietas-login-success-border: rgba(34,197,94,0.24);
+    --historietas-login-placeholder: rgba(221, 214, 254, 0.62);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-login-bg-page: #000000;
+    --historietas-login-bg-deep: #000000;
+    --historietas-login-surface: #050505;
+    --historietas-login-logo-mid: #FFFFFF;
+    --historietas-login-logo-end: #FFFFFF;
+    --historietas-login-danger: #FFFFFF;
+    --historietas-login-success: #FFFFFF;
+    --historietas-login-purple-border: rgba(255,255,255,0.18);
+    --historietas-login-purple-border-soft: rgba(255,255,255,0.18);
+    --historietas-login-success-bg: rgba(255,255,255,0.06);
+    --historietas-login-success-border: rgba(255,255,255,0.18);
+    --historietas-login-placeholder: rgba(212,212,216,0.68);
+  }
+
   html,
   body {
     overflow-x: hidden !important;
@@ -697,13 +727,31 @@ const loginPageCss = `
     background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
 
-  html[data-historietas-tema-visual="original"] input::placeholder {
-    color: rgba(221, 214, 254, 0.62) !important;
+  html[data-historietas-tema-visual] input::placeholder {
+    color: var(--historietas-login-placeholder) !important;
+  }
+
+  html[data-historietas-tema-visual] input {
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-theme-logo-text,
+  html[data-historietas-tema-visual="foco"] .historietas-theme-title {
+    background: none !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    text-shadow: none !important;
   }
 `;
 
@@ -745,7 +793,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   overflowY: "auto",
   boxSizing: "border-box",
-  background: "#070212",
+  background: "var(--historietas-login-bg-page, #070212)",
   color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -792,20 +840,20 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-login-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "19px",
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-login-purple-border, rgba(59, 7, 100, 0.58))",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-login-logo-mid, #DDD6FE) 44%, var(--historietas-login-logo-end, #A78BFA) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -915,8 +963,8 @@ const tabsStyle: CSSProperties = {
 const tabStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  border: "1px solid rgba(59, 7, 100, 0.50)",
-  background: "#04000A",
+  border: "1px solid var(--historietas-login-purple-border-soft, rgba(59, 7, 100, 0.50))",
+  background: "var(--historietas-login-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
@@ -929,7 +977,7 @@ const tabStyle: CSSProperties = {
 
 const tabActiveStyle: CSSProperties = {
   ...tabStyle,
-  background: "#08030F",
+  background: "var(--historietas-login-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
@@ -958,8 +1006,8 @@ const inputStyle: CSSProperties = {
   width: "100%",
   minHeight: "42px",
   borderRadius: "999px",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
-  background: "#04000A",
+  border: "1px solid var(--historietas-login-purple-border, rgba(59, 7, 100, 0.58))",
+  background: "var(--historietas-login-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
@@ -974,7 +1022,7 @@ const primaryButtonStyle: CSSProperties = {
   minHeight: "44px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-login-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "13px",
   fontWeight: 950,
@@ -991,7 +1039,7 @@ const errorStyle: CSSProperties = {
   borderRadius: 0,
   background: "transparent",
   border: "none",
-  color: "#FCA5A5",
+  color: "var(--historietas-login-danger, #FCA5A5)",
   fontSize: "12px",
   fontWeight: 850,
   textAlign: "center",
@@ -1002,9 +1050,9 @@ const successStyle: CSSProperties = {
   display: "block",
   padding: "9px 12px",
   borderRadius: "14px",
-  background: "rgba(34,197,94,0.10)",
-  border: "1px solid rgba(34,197,94,0.24)",
-  color: "#86EFAC",
+  background: "var(--historietas-login-success-bg, rgba(34,197,94,0.10))",
+  border: "1px solid var(--historietas-login-success-border, rgba(34,197,94,0.24))",
+  color: "var(--historietas-login-success, #86EFAC)",
   fontSize: "12px",
   lineHeight: 1.45,
   fontWeight: 850,

@@ -1156,7 +1156,7 @@ function criarMiniCoverStyle(capa: string): CSSProperties {
   return {
     ...coverPlaceholderStyle,
     border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-    background: "#0B0714",
+    background: "var(--historietas-editar-obra-cover-surface, #0B0714)",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -1170,7 +1170,7 @@ function criarPreviewCoverStyle(capa: string): CSSProperties {
 
   return {
     ...previewCoverStyle,
-    background: "#04000A",
+    background: "var(--historietas-editar-obra-bg-deep, #04000A)",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -2610,15 +2610,66 @@ export default function EditarObraPage() {
 }
 
 const editarObraPageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
+  html {
+    --historietas-editar-obra-bg-page: #070212;
+    --historietas-editar-obra-bg-deep: #04000A;
+    --historietas-editar-obra-surface: #08030F;
+    --historietas-editar-obra-cover-surface: #0B0714;
+    --historietas-editar-obra-bg-end: #020006;
+    --historietas-editar-obra-accent: #F97316;
+    --historietas-editar-obra-secondary: #7C3AED;
+    --historietas-editar-obra-accent-soft: #FDBA74;
+    --historietas-editar-obra-purple-text: #DDD6FE;
+    --historietas-editar-obra-purple-soft: #A78BFA;
+    --historietas-editar-obra-author-text: #D8C8FF;
+    --historietas-editar-obra-danger: #EF4444;
+    --historietas-editar-obra-danger-text: #FCA5A5;
+    --historietas-editar-obra-danger-text-soft: #FECACA;
+    --historietas-editar-obra-heart: #E11D48;
+    --historietas-editar-obra-purple-border: rgba(59, 7, 100, 0.58);
+    --historietas-editar-obra-panel: rgba(4, 0, 10, 0.72);
+    --historietas-editar-obra-accent-bg: rgba(249,115,22,0.11);
+    --historietas-editar-obra-accent-border: rgba(249,115,22,0.24);
+    --historietas-editar-obra-danger-bg: rgba(239,68,68,0.075);
+    --historietas-editar-obra-danger-border: rgba(239,68,68,0.18);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-editar-obra-bg-page: #000000;
+    --historietas-editar-obra-bg-deep: #000000;
+    --historietas-editar-obra-surface: #050505;
+    --historietas-editar-obra-cover-surface: #050505;
+    --historietas-editar-obra-bg-end: #000000;
+    --historietas-editar-obra-accent: #FFFFFF;
+    --historietas-editar-obra-secondary: #A1A1AA;
+    --historietas-editar-obra-accent-soft: #FFFFFF;
+    --historietas-editar-obra-purple-text: #FFFFFF;
+    --historietas-editar-obra-purple-soft: #D4D4D8;
+    --historietas-editar-obra-author-text: #D4D4D8;
+    --historietas-editar-obra-danger: #FFFFFF;
+    --historietas-editar-obra-danger-text: #FFFFFF;
+    --historietas-editar-obra-danger-text-soft: #FFFFFF;
+    --historietas-editar-obra-heart: #FFFFFF;
+    --historietas-editar-obra-purple-border: rgba(255,255,255,0.18);
+    --historietas-editar-obra-panel: rgba(5,5,5,0.92);
+    --historietas-editar-obra-accent-bg: rgba(255,255,255,0.06);
+    --historietas-editar-obra-accent-border: rgba(255,255,255,0.18);
+    --historietas-editar-obra-danger-bg: rgba(255,255,255,0.06);
+    --historietas-editar-obra-danger-border: rgba(255,255,255,0.18);
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -2632,8 +2683,14 @@ const editarObraPageCss = `
   html[data-historietas-tema-visual] nav a[href="/painel-autor"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] {
-    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
-    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    background: var(
+      --historietas-bottom-nav-active-bg,
+      rgba(59, 7, 100, 0.54)
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-border,
+      rgba(109, 40, 217, 0.48)
+    ) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
@@ -2642,8 +2699,31 @@ const editarObraPageCss = `
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
-    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
-    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
+    background: var(
+      --historietas-bottom-nav-active-icon-bg,
+      #3B0764
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-icon-border,
+      rgba(167, 139, 250, 0.46)
+    ) !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/painel-autor"],
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/painel-autor"],
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/painel-autor"] {
+    background: #050505 !important;
+    border-color: #FFFFFF !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.24) !important;
+    color: #FFFFFF !important;
   }
 
   html[data-historietas-tema-visual] input::placeholder,
@@ -2655,6 +2735,11 @@ const editarObraPageCss = `
   html[data-historietas-tema-visual] textarea,
   html[data-historietas-tema-visual] select {
     color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] option {
+    background: #000000;
+    color: #FFFFFF;
   }
 `;
 
@@ -2697,7 +2782,7 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "#070212",
+  background: "var(--historietas-editar-obra-bg-page, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -2744,20 +2829,20 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-editar-obra-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "19px",
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-editar-obra-purple-border, rgba(59, 7, 100, 0.58))",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-editar-obra-purple-text, #DDD6FE) 44%, var(--historietas-editar-obra-purple-soft, #A78BFA) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -2771,9 +2856,9 @@ const pagePillStyle: CSSProperties = {
   minHeight: "36px",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "rgba(249,115,22,0.11)",
-  border: "1px solid rgba(249,115,22,0.24)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "var(--historietas-editar-obra-accent-bg, rgba(249,115,22,0.11))",
+  border: "1px solid var(--historietas-editar-obra-accent-border, rgba(249,115,22,0.24))",
+  color: "var(--historietas-accent, var(--historietas-editar-obra-accent-soft, #FDBA74))",
   fontSize: "11px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -2811,7 +2896,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
+  background: "var(--historietas-surface-strong, var(--historietas-editar-obra-bg-deep, #04000A))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -2835,8 +2920,8 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
+  border: "2px solid var(--historietas-bg-start, var(--historietas-editar-obra-bg-page, #070212))",
+  background: "var(--historietas-editar-obra-danger, #EF4444)",
   color: "#FFFFFF",
   fontSize: "9px",
   lineHeight: 1,
@@ -2909,7 +2994,7 @@ const heroBoxStyle: CSSProperties = {
   padding: "24px 16px",
   borderRadius: "30px",
   border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  background: "linear-gradient(135deg, var(--historietas-editar-obra-bg-page, #070212) 0%, var(--historietas-editar-obra-bg-deep, #04000A) 58%, var(--historietas-editar-obra-bg-end, #020006) 100%)",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
@@ -2921,8 +3006,8 @@ const titleStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
-  WebkitTextFillColor: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-accent, var(--historietas-editar-obra-accent, #F97316))",
+  WebkitTextFillColor: "var(--historietas-accent, var(--historietas-editar-obra-accent, #F97316))",
   fontSize: "clamp(30px, 8vw, 46px)",
   lineHeight: 1.12,
   fontWeight: 950,
@@ -2982,7 +3067,7 @@ const progressLabelStyle: CSSProperties = {
 };
 
 const progressNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-editar-obra-accent-soft, #FDBA74))",
   fontSize: "13px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -3000,7 +3085,7 @@ const progressTrackStyle: CSSProperties = {
 const progressFillStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "linear-gradient(90deg, var(--historietas-accent, var(--historietas-editar-obra-accent, #F97316)) 0%, var(--historietas-secondary, var(--historietas-editar-obra-secondary, #7C3AED)) 100%)",
   transition: "width 0.2s ease",
 };
 
@@ -3010,9 +3095,9 @@ const errorBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "11px",
   borderRadius: "16px",
-  background: "rgba(239,68,68,0.075)",
-  border: "1px solid rgba(239,68,68,0.18)",
-  color: "#FCA5A5",
+  background: "var(--historietas-editar-obra-danger-bg, rgba(239,68,68,0.075))",
+  border: "1px solid var(--historietas-editar-obra-danger-border, rgba(239,68,68,0.18))",
+  color: "var(--historietas-editar-obra-danger-text, #FCA5A5)",
   minWidth: 0,
   boxSizing: "border-box",
   overflow: "hidden",
@@ -3020,7 +3105,7 @@ const errorBoxStyle: CSSProperties = {
 
 const errorTitleStyle: CSSProperties = {
   margin: 0,
-  color: "#FCA5A5",
+  color: "var(--historietas-editar-obra-danger-text, #FCA5A5)",
   fontSize: "18px",
   fontWeight: 950,
   letterSpacing: "-0.045em",
@@ -3029,7 +3114,7 @@ const errorTitleStyle: CSSProperties = {
 
 const errorTextStyle: CSSProperties = {
   margin: 0,
-  color: "#FECACA",
+  color: "var(--historietas-editar-obra-danger-text-soft, #FECACA)",
   fontSize: "12px",
   lineHeight: 1.55,
   fontWeight: 850,
@@ -3066,7 +3151,7 @@ const formHeaderStyle: CSSProperties = {
 };
 
 const formMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-editar-obra-accent-soft, #FDBA74))",
   fontSize: "11px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -3139,7 +3224,7 @@ const fileUploadBoxStyle: CSSProperties = {
 const fileUploadIconBoxStyle: CSSProperties = {
   minHeight: "82px",
   borderRadius: "18px",
-  background: "#04000A",
+  background: "var(--historietas-editar-obra-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "flex",
   alignItems: "center",
@@ -3173,8 +3258,8 @@ const fileUploadContentStyle: CSSProperties = {
 const coverPlaceholderStyle: CSSProperties = {
   minHeight: "96px",
   borderRadius: "16px",
-  background: "#04000A",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  background: "var(--historietas-editar-obra-bg-deep, #04000A)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-editar-obra-surface, #08030F) 0%, var(--historietas-editar-obra-bg-deep, #04000A) 100%)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   alignContent: "center",
@@ -3191,7 +3276,7 @@ const coverPlaceholderIconStyle: CSSProperties = {
   width: "26px",
   height: "26px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-editar-obra-accent, #F97316))",
   color: "#FFFFFF",
   display: "flex",
   alignItems: "center",
@@ -3228,14 +3313,14 @@ const coverUploadTitleStyle: CSSProperties = {
 };
 
 const fileNameStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-editar-obra-accent-soft, #FDBA74))",
   fontSize: "11px",
   fontWeight: 850,
   ...safeTextStyle,
 };
 
 const coverErrorStyle: CSSProperties = {
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  color: "var(--historietas-danger-button-text, var(--historietas-editar-obra-danger-text, #FCA5A5))",
   fontSize: "11px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -3255,7 +3340,7 @@ const coverButtonStyle: CSSProperties = {
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-editar-obra-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
@@ -3277,7 +3362,7 @@ const inputStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-editar-obra-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 14px",
   outline: "none",
@@ -3295,7 +3380,7 @@ const textareaStyle: CSSProperties = {
   minHeight: "90px",
   borderRadius: "20px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-editar-obra-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "14px",
   outline: "none",
@@ -3333,7 +3418,7 @@ const saveButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-editar-obra-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -3362,7 +3447,7 @@ const secondaryButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-editar-obra-surface, #08030F)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11.5px",
@@ -3425,7 +3510,7 @@ const previewCardStyle: CSSProperties = {
   gap: "14px",
   padding: "11px",
   borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-editar-obra-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   boxShadow: "none",
@@ -3457,8 +3542,8 @@ const previewCoverStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  background: "#04000A",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  background: "var(--historietas-editar-obra-bg-deep, #04000A)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-editar-obra-surface, #08030F) 0%, var(--historietas-editar-obra-bg-deep, #04000A) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "1px solid rgba(255,255,255,0.08)",
@@ -3533,7 +3618,7 @@ const previewAuthorStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   margin: 0,
-  color: "var(--historietas-text-secondary, #D8C8FF)",
+  color: "var(--historietas-text-secondary, var(--historietas-editar-obra-author-text, #D8C8FF))",
   fontSize: "12px",
   fontWeight: 800,
   textDecoration: "none",
@@ -3581,7 +3666,7 @@ const previewStatIconStyle: CSSProperties = {
 
 const previewStatHeartIconStyle: CSSProperties = {
   ...previewStatIconStyle,
-  color: "#E11D48",
+  color: "var(--historietas-editar-obra-heart, #E11D48)",
 };
 
 const previewStatValueStyle: CSSProperties = {
@@ -3614,7 +3699,7 @@ const previewProgressFillStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
   background:
-    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+    "linear-gradient(90deg, var(--historietas-accent, var(--historietas-editar-obra-accent, #F97316)) 0%, var(--historietas-secondary, var(--historietas-editar-obra-secondary, #7C3AED)) 100%)",
 };
 
 const previewProgressTextStyle: CSSProperties = {
@@ -3665,7 +3750,7 @@ const previewActionBadgeStyle: CSSProperties = {
   minHeight: "34px",
   padding: "0 12px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-editar-obra-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "13px",
@@ -3682,7 +3767,7 @@ const previewActionBadgeStyle: CSSProperties = {
 const emptyBoxStyle: CSSProperties = {
   marginTop: "24px",
   borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-editar-obra-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   padding: "24px 16px",
   display: "grid",
@@ -3718,7 +3803,7 @@ const emptyButtonStyle: CSSProperties = {
   minHeight: "46px",
   width: "min(280px, 100%)",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-editar-obra-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",

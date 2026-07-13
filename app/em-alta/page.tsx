@@ -1699,15 +1699,15 @@ function criarRankingCoverStyle(
   if (!capa) {
     return {
       ...baseStyle,
-      backgroundColor: "#04000A",
-      backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+      backgroundColor: "var(--historietas-em-alta-hex-04000a, #04000A)",
+      backgroundImage: "linear-gradient(135deg, var(--historietas-em-alta-hex-08030f, #08030F) 0%, var(--historietas-em-alta-hex-04000a, #04000A) 100%)",
       border: "none",
     };
   }
 
   return {
     ...baseStyle,
-    backgroundColor: "#04000A",
+    backgroundColor: "var(--historietas-em-alta-hex-04000a, #04000A)",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -1781,7 +1781,7 @@ function criarDecoracaoPaginaStyle(index: number): CSSProperties {
 
   return {
     position: "absolute",
-    color: "rgba(139, 92, 246, 0.18)",
+    color: "var(--historietas-em-alta-rgba-139-92-246-0-18, rgba(139, 92, 246, 0.18))",
     opacity: 0.035,
     lineHeight: 1,
     fontWeight: 950,
@@ -2421,6 +2421,7 @@ export default function EmAltaPage() {
             aria-label="Voltar para a Home"
           >
             <span
+              className="historietas-em-alta-logo-mark"
               style={
                 isDesktop ? desktopHeaderTitleMarkStyle : headerTitleMarkStyle
               }
@@ -2617,15 +2618,15 @@ function obterTemaRanking(tipo: TipoRanking) {
     return {
       icone: "👑",
       label: "Ranking Mestre",
-      titleColor: "var(--historietas-accent, #FDBA74)",
-      accent: "var(--historietas-accent, #FDBA74)",
+      titleColor: "var(--historietas-accent, var(--historietas-em-alta-hex-fdba74, #FDBA74))",
+      accent: "var(--historietas-accent, var(--historietas-em-alta-hex-fdba74, #FDBA74))",
       border:
-        "color-mix(in srgb, var(--historietas-accent, #F97316) 42%, transparent)",
+        "color-mix(in srgb, var(--historietas-accent, var(--historietas-em-alta-hex-f97316, #F97316)) 42%, transparent)",
       borderStrong:
-        "color-mix(in srgb, var(--historietas-accent, #F97316) 58%, transparent)",
-      glow: "color-mix(in srgb, var(--historietas-accent, #F97316) 12%, transparent)",
+        "color-mix(in srgb, var(--historietas-accent, var(--historietas-em-alta-hex-f97316, #F97316)) 58%, transparent)",
+      glow: "color-mix(in srgb, var(--historietas-accent, var(--historietas-em-alta-hex-f97316, #F97316)) 12%, transparent)",
       background:
-        "linear-gradient(135deg, rgba(41,27,53,0.82) 0%, rgba(18,12,30,0.92) 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-rgba-41-27-53-0-82, rgba(41,27,53,0.82)) 0%, var(--historietas-em-alta-rgba-18-12-30-0-92, rgba(18,12,30,0.92)) 100%)",
     };
   }
 
@@ -2634,12 +2635,12 @@ function obterTemaRanking(tipo: TipoRanking) {
       icone: "👁",
       label: "Alcance",
       titleColor: "#FFFFFF",
-      accent: "#38BDF8",
-      border: "rgba(56,189,248,0.42)",
-      borderStrong: "rgba(56,189,248,0.58)",
-      glow: "rgba(56,189,248,0.12)",
+      accent: "var(--historietas-em-alta-hex-38bdf8, #38BDF8)",
+      border: "var(--historietas-em-alta-rgba-56-189-248-0-42, rgba(56,189,248,0.42))",
+      borderStrong: "var(--historietas-em-alta-rgba-56-189-248-0-58, rgba(56,189,248,0.58))",
+      glow: "var(--historietas-em-alta-rgba-56-189-248-0-12, rgba(56,189,248,0.12))",
       background:
-        "linear-gradient(135deg, rgba(18,36,54,0.82) 0%, rgba(11,17,32,0.92) 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-rgba-18-36-54-0-82, rgba(18,36,54,0.82)) 0%, var(--historietas-em-alta-rgba-11-17-32-0-92, rgba(11,17,32,0.92)) 100%)",
     };
   }
 
@@ -2648,12 +2649,12 @@ function obterTemaRanking(tipo: TipoRanking) {
       icone: "❤",
       label: "Reação",
       titleColor: "#FFFFFF",
-      accent: "#FB7185",
-      border: "rgba(251,113,133,0.42)",
-      borderStrong: "rgba(251,113,133,0.58)",
-      glow: "rgba(251,113,133,0.12)",
+      accent: "var(--historietas-em-alta-hex-fb7185, #FB7185)",
+      border: "var(--historietas-em-alta-rgba-251-113-133-0-42, rgba(251,113,133,0.42))",
+      borderStrong: "var(--historietas-em-alta-rgba-251-113-133-0-58, rgba(251,113,133,0.58))",
+      glow: "var(--historietas-em-alta-rgba-251-113-133-0-12, rgba(251,113,133,0.12))",
       background:
-        "linear-gradient(135deg, rgba(54,20,38,0.82) 0%, rgba(29,13,27,0.92) 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-rgba-54-20-38-0-82, rgba(54,20,38,0.82)) 0%, var(--historietas-em-alta-rgba-29-13-27-0-92, rgba(29,13,27,0.92)) 100%)",
     };
   }
 
@@ -2662,12 +2663,12 @@ function obterTemaRanking(tipo: TipoRanking) {
       icone: "💬",
       label: "Discussão",
       titleColor: "#FFFFFF",
-      accent: "#C084FC",
-      border: "rgba(192,132,252,0.42)",
-      borderStrong: "rgba(192,132,252,0.58)",
-      glow: "rgba(192,132,252,0.12)",
+      accent: "var(--historietas-em-alta-hex-c084fc, #C084FC)",
+      border: "var(--historietas-em-alta-rgba-192-132-252-0-42, rgba(192,132,252,0.42))",
+      borderStrong: "var(--historietas-em-alta-rgba-192-132-252-0-58, rgba(192,132,252,0.58))",
+      glow: "var(--historietas-em-alta-rgba-192-132-252-0-12, rgba(192,132,252,0.12))",
       background:
-        "linear-gradient(135deg, rgba(40,25,62,0.82) 0%, rgba(20,12,34,0.92) 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-rgba-40-25-62-0-82, rgba(40,25,62,0.82)) 0%, var(--historietas-em-alta-rgba-20-12-34-0-92, rgba(20,12,34,0.92)) 100%)",
     };
   }
 
@@ -2676,12 +2677,12 @@ function obterTemaRanking(tipo: TipoRanking) {
       icone: "👥",
       label: "Seguidores",
       titleColor: "#FFFFFF",
-      accent: "#34D399",
-      border: "rgba(52,211,153,0.42)",
-      borderStrong: "rgba(52,211,153,0.58)",
-      glow: "rgba(52,211,153,0.11)",
+      accent: "var(--historietas-em-alta-hex-34d399, #34D399)",
+      border: "var(--historietas-em-alta-rgba-52-211-153-0-42, rgba(52,211,153,0.42))",
+      borderStrong: "var(--historietas-em-alta-rgba-52-211-153-0-58, rgba(52,211,153,0.58))",
+      glow: "var(--historietas-em-alta-rgba-52-211-153-0-11, rgba(52,211,153,0.11))",
       background:
-        "linear-gradient(135deg, rgba(17,48,39,0.82) 0%, rgba(10,29,25,0.92) 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-rgba-17-48-39-0-82, rgba(17,48,39,0.82)) 0%, var(--historietas-em-alta-rgba-10-29-25-0-92, rgba(10,29,25,0.92)) 100%)",
     };
   }
 
@@ -2690,12 +2691,12 @@ function obterTemaRanking(tipo: TipoRanking) {
       icone: "✨",
       label: "Novidade",
       titleColor: "#FFFFFF",
-      accent: "#F472B6",
-      border: "rgba(244,114,182,0.42)",
-      borderStrong: "rgba(244,114,182,0.58)",
-      glow: "rgba(244,114,182,0.11)",
+      accent: "var(--historietas-em-alta-hex-f472b6, #F472B6)",
+      border: "var(--historietas-em-alta-rgba-244-114-182-0-42, rgba(244,114,182,0.42))",
+      borderStrong: "var(--historietas-em-alta-rgba-244-114-182-0-58, rgba(244,114,182,0.58))",
+      glow: "var(--historietas-em-alta-rgba-244-114-182-0-11, rgba(244,114,182,0.11))",
       background:
-        "linear-gradient(135deg, rgba(54,22,45,0.82) 0%, rgba(30,13,31,0.92) 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-rgba-54-22-45-0-82, rgba(54,22,45,0.82)) 0%, var(--historietas-em-alta-rgba-30-13-31-0-92, rgba(30,13,31,0.92)) 100%)",
     };
   }
 
@@ -2703,12 +2704,12 @@ function obterTemaRanking(tipo: TipoRanking) {
     icone: "📚",
     label: "Conteúdo",
     titleColor: "#FFFFFF",
-    accent: "#A78BFA",
-    border: "rgba(167,139,250,0.42)",
-    borderStrong: "rgba(167,139,250,0.58)",
-    glow: "rgba(167,139,250,0.12)",
+    accent: "var(--historietas-em-alta-hex-a78bfa, #A78BFA)",
+    border: "var(--historietas-em-alta-rgba-167-139-250-0-42, rgba(167,139,250,0.42))",
+    borderStrong: "var(--historietas-em-alta-rgba-167-139-250-0-58, rgba(167,139,250,0.58))",
+    glow: "var(--historietas-em-alta-rgba-167-139-250-0-12, rgba(167,139,250,0.12))",
     background:
-      "linear-gradient(135deg, rgba(37,27,60,0.82) 0%, rgba(18,12,34,0.92) 100%)",
+      "linear-gradient(135deg, var(--historietas-em-alta-rgba-37-27-60-0-82, rgba(37,27,60,0.82)) 0%, var(--historietas-em-alta-rgba-18-12-34-0-92, rgba(18,12,34,0.92)) 100%)",
   };
 }
 function criarSectionHeaderTemaStyle(
@@ -2818,7 +2819,7 @@ function RankingSection({
               : sectionHeaderContentStyle
           }
         >
-          <span style={criarSectionIconStyle(tema)}>{tema.icone}</span>
+          <span className="historietas-em-alta-emoji-icon" style={criarSectionIconStyle(tema)}>{tema.icone}</span>
 
           <div
             style={
@@ -2956,7 +2957,7 @@ function AutoresEmAltaSection({
               : sectionHeaderContentStyle
           }
         >
-          <span style={criarSectionIconStyle(tema)}>👤</span>
+          <span className="historietas-em-alta-emoji-icon" style={criarSectionIconStyle(tema)}>👤</span>
 
           <div
             style={
@@ -3082,7 +3083,7 @@ function AutorRankingCard({
 
         <div style={statsStyle}>
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={metricIconStyle} aria-hidden="true">
               💬
             </span>
             <span style={metricValueStyle}>
@@ -3091,7 +3092,7 @@ function AutorRankingCard({
           </span>
 
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={metricIconStyle} aria-hidden="true">
               👥
             </span>
             <span style={metricValueStyle}>
@@ -3100,7 +3101,7 @@ function AutorRankingCard({
           </span>
 
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={metricIconStyle} aria-hidden="true">
               📚
             </span>
             <span style={metricValueStyle}>
@@ -3111,14 +3112,14 @@ function AutorRankingCard({
 
         <div style={ratingStatsStyle}>
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={metricIconStyle} aria-hidden="true">
               👁
             </span>
             <span style={metricValueStyle}>{formatarNumero(autor.views)}</span>
           </span>
 
           <span style={statsItemStyle}>
-            <span style={heartMetricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={heartMetricIconStyle} aria-hidden="true">
               ❤️
             </span>
             <span style={metricValueStyle}>
@@ -3127,7 +3128,7 @@ function AutorRankingCard({
           </span>
 
           <span style={statsItemStyle}>
-            <span style={starMetricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={starMetricIconStyle} aria-hidden="true">
               ★
             </span>
             <span style={metricValueStyle}>
@@ -3276,7 +3277,7 @@ function RankingCard({
 
         <div style={statsStyle}>
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={metricIconStyle} aria-hidden="true">
               💬
             </span>
             <span style={metricValueStyle}>
@@ -3285,14 +3286,14 @@ function RankingCard({
           </span>
 
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={metricIconStyle} aria-hidden="true">
               👥
             </span>
             <span style={metricValueStyle}>{formatarNumero(obra.salvos)}</span>
           </span>
 
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={metricIconStyle} aria-hidden="true">
               📚
             </span>
             <span style={metricValueStyle}>
@@ -3303,14 +3304,14 @@ function RankingCard({
 
         <div style={ratingStatsStyle}>
           <span style={statsItemStyle}>
-            <span style={metricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={metricIconStyle} aria-hidden="true">
               👁
             </span>
             <span style={metricValueStyle}>{formatarNumero(obra.views)}</span>
           </span>
 
           <span style={statsItemStyle}>
-            <span style={heartMetricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={heartMetricIconStyle} aria-hidden="true">
               ❤️
             </span>
             <span style={metricValueStyle}>
@@ -3319,7 +3320,7 @@ function RankingCard({
           </span>
 
           <span style={statsItemStyle}>
-            <span style={starMetricIconStyle} aria-hidden="true">
+            <span className="historietas-em-alta-emoji-icon" style={starMetricIconStyle} aria-hidden="true">
               ★
             </span>
             <span style={metricValueStyle}>
@@ -3365,25 +3366,25 @@ function obterTemaPosicao(posicao: number) {
     return {
       nome: "Diamante",
       simbolo: "◆",
-      accent: "#7DD3FC",
-      accentSoft: "#E0F2FE",
-      deep: "#061523",
-      border: "rgba(125,211,252,0.78)",
-      cardBackground: "#2486C2",
+      accent: "var(--historietas-em-alta-hex-7dd3fc, #7DD3FC)",
+      accentSoft: "var(--historietas-em-alta-hex-e0f2fe, #E0F2FE)",
+      deep: "var(--historietas-em-alta-hex-061523, #061523)",
+      border: "var(--historietas-em-alta-rgba-125-211-252-0-78, rgba(125,211,252,0.78))",
+      cardBackground: "var(--historietas-em-alta-hex-2486c2, #2486C2)",
       coverBackground:
-        "radial-gradient(circle at 28% 18%, rgba(224,242,254,0.22), transparent 26%), radial-gradient(circle at 80% 92%, rgba(56,189,248,0.22), transparent 32%), linear-gradient(145deg, #0B2235 0%, #111C33 52%, #090A18 100%)",
+        "radial-gradient(circle at 28% 18%, var(--historietas-em-alta-rgba-224-242-254-0-22, rgba(224,242,254,0.22)), transparent 26%), radial-gradient(circle at 80% 92%, var(--historietas-em-alta-rgba-56-189-248-0-22, rgba(56,189,248,0.22)), transparent 32%), linear-gradient(145deg, var(--historietas-em-alta-hex-0b2235, #0B2235) 0%, var(--historietas-em-alta-hex-111c33, #111C33) 52%, var(--historietas-em-alta-hex-090a18, #090A18) 100%)",
       coverOverlay:
-        "linear-gradient(180deg, rgba(224,242,254,0.06) 0%, rgba(6,21,35,0.76) 100%), radial-gradient(circle at 18% 12%, rgba(125,211,252,0.22), transparent 34%)",
+        "linear-gradient(180deg, var(--historietas-em-alta-rgba-224-242-254-0-06, rgba(224,242,254,0.06)) 0%, var(--historietas-em-alta-rgba-6-21-35-0-76, rgba(6,21,35,0.76)) 100%), radial-gradient(circle at 18% 12%, var(--historietas-em-alta-rgba-125-211-252-0-22, rgba(125,211,252,0.22)), transparent 34%)",
       rankBackground:
-        "linear-gradient(135deg, #ECFEFF 0%, #7DD3FC 46%, #A78BFA 100%)",
-      rankText: "#061523",
+        "linear-gradient(135deg, var(--historietas-em-alta-hex-ecfeff, #ECFEFF) 0%, var(--historietas-em-alta-hex-7dd3fc, #7DD3FC) 46%, var(--historietas-em-alta-hex-a78bfa, #A78BFA) 100%)",
+      rankText: "var(--historietas-em-alta-hex-061523, #061523)",
       tierBackground:
-        "linear-gradient(135deg, rgba(236,254,255,0.96) 0%, rgba(125,211,252,0.96) 52%, rgba(167,139,250,0.96) 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-rgba-236-254-255-0-96, rgba(236,254,255,0.96)) 0%, var(--historietas-em-alta-rgba-125-211-252-0-96, rgba(125,211,252,0.96)) 52%, var(--historietas-em-alta-rgba-167-139-250-0-96, rgba(167,139,250,0.96)) 100%)",
       tierText: "#FFFFFF",
-      badgeBackground: "rgba(125,211,252,0.16)",
-      badgeBorder: "rgba(125,211,252,0.42)",
-      badgeText: "#BAE6FD",
-      readColor: "#7DD3FC",
+      badgeBackground: "var(--historietas-em-alta-rgba-125-211-252-0-16, rgba(125,211,252,0.16))",
+      badgeBorder: "var(--historietas-em-alta-rgba-125-211-252-0-42, rgba(125,211,252,0.42))",
+      badgeText: "var(--historietas-em-alta-hex-bae6fd, #BAE6FD)",
+      readColor: "var(--historietas-em-alta-hex-7dd3fc, #7DD3FC)",
       shadow:
         "0 18px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.08)",
     };
@@ -3393,25 +3394,25 @@ function obterTemaPosicao(posicao: number) {
     return {
       nome: "Rubi",
       simbolo: "◆",
-      accent: "#FB7185",
-      accentSoft: "#FFE4E6",
-      deep: "#2A0716",
-      border: "rgba(251,113,133,0.74)",
-      cardBackground: "#A32A4B",
+      accent: "var(--historietas-em-alta-hex-fb7185, #FB7185)",
+      accentSoft: "var(--historietas-em-alta-hex-ffe4e6, #FFE4E6)",
+      deep: "var(--historietas-em-alta-hex-2a0716, #2A0716)",
+      border: "var(--historietas-em-alta-rgba-251-113-133-0-74, rgba(251,113,133,0.74))",
+      cardBackground: "var(--historietas-em-alta-hex-a32a4b, #A32A4B)",
       coverBackground:
-        "radial-gradient(circle at 28% 18%, rgba(255,228,230,0.16), transparent 28%), radial-gradient(circle at 80% 92%, rgba(251,113,133,0.24), transparent 34%), linear-gradient(145deg, #3A1020 0%, #28101F 52%, #0D0917 100%)",
+        "radial-gradient(circle at 28% 18%, var(--historietas-em-alta-rgba-255-228-230-0-16, rgba(255,228,230,0.16)), transparent 28%), radial-gradient(circle at 80% 92%, var(--historietas-em-alta-rgba-251-113-133-0-24, rgba(251,113,133,0.24)), transparent 34%), linear-gradient(145deg, var(--historietas-em-alta-hex-3a1020, #3A1020) 0%, var(--historietas-em-alta-hex-28101f, #28101F) 52%, var(--historietas-em-alta-hex-0d0917, #0D0917) 100%)",
       coverOverlay:
-        "linear-gradient(180deg, rgba(255,228,230,0.05) 0%, rgba(42,7,22,0.78) 100%), radial-gradient(circle at 18% 12%, rgba(251,113,133,0.24), transparent 34%)",
+        "linear-gradient(180deg, var(--historietas-em-alta-rgba-255-228-230-0-05, rgba(255,228,230,0.05)) 0%, var(--historietas-em-alta-rgba-42-7-22-0-78, rgba(42,7,22,0.78)) 100%), radial-gradient(circle at 18% 12%, var(--historietas-em-alta-rgba-251-113-133-0-24, rgba(251,113,133,0.24)), transparent 34%)",
       rankBackground:
-        "linear-gradient(135deg, #FFE4E6 0%, #FB7185 48%, #BE123C 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-hex-ffe4e6, #FFE4E6) 0%, var(--historietas-em-alta-hex-fb7185, #FB7185) 48%, var(--historietas-em-alta-hex-be123c, #BE123C) 100%)",
       rankText: "#FFFFFF",
       tierBackground:
-        "linear-gradient(135deg, #FFE4E6 0%, #FB7185 50%, #BE123C 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-hex-ffe4e6, #FFE4E6) 0%, var(--historietas-em-alta-hex-fb7185, #FB7185) 50%, var(--historietas-em-alta-hex-be123c, #BE123C) 100%)",
       tierText: "#FFFFFF",
-      badgeBackground: "rgba(251,113,133,0.16)",
-      badgeBorder: "rgba(251,113,133,0.44)",
-      badgeText: "#FDA4AF",
-      readColor: "#FB7185",
+      badgeBackground: "var(--historietas-em-alta-rgba-251-113-133-0-16, rgba(251,113,133,0.16))",
+      badgeBorder: "var(--historietas-em-alta-rgba-251-113-133-0-44, rgba(251,113,133,0.44))",
+      badgeText: "var(--historietas-em-alta-hex-fda4af, #FDA4AF)",
+      readColor: "var(--historietas-em-alta-hex-fb7185, #FB7185)",
       shadow:
         "0 18px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.075)",
     };
@@ -3421,25 +3422,25 @@ function obterTemaPosicao(posicao: number) {
     return {
       nome: "Ouro",
       simbolo: "◆",
-      accent: "#FBBF24",
-      accentSoft: "#FEF3C7",
-      deep: "#271504",
-      border: "rgba(251,191,36,0.72)",
-      cardBackground: "#B57D22",
+      accent: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
+      accentSoft: "var(--historietas-em-alta-hex-fef3c7, #FEF3C7)",
+      deep: "var(--historietas-em-alta-hex-271504, #271504)",
+      border: "var(--historietas-em-alta-rgba-251-191-36-0-72, rgba(251,191,36,0.72))",
+      cardBackground: "var(--historietas-em-alta-hex-b57d22, #B57D22)",
       coverBackground:
-        "radial-gradient(circle at 28% 18%, rgba(254,243,199,0.18), transparent 28%), radial-gradient(circle at 80% 92%, rgba(251,191,36,0.24), transparent 34%), linear-gradient(145deg, #3A2508 0%, #271808 52%, #100A14 100%)",
+        "radial-gradient(circle at 28% 18%, var(--historietas-em-alta-rgba-254-243-199-0-18, rgba(254,243,199,0.18)), transparent 28%), radial-gradient(circle at 80% 92%, var(--historietas-em-alta-rgba-251-191-36-0-24, rgba(251,191,36,0.24)), transparent 34%), linear-gradient(145deg, var(--historietas-em-alta-hex-3a2508, #3A2508) 0%, var(--historietas-em-alta-hex-271808, #271808) 52%, var(--historietas-em-alta-hex-100a14, #100A14) 100%)",
       coverOverlay:
-        "linear-gradient(180deg, rgba(254,243,199,0.05) 0%, rgba(39,21,4,0.78) 100%), radial-gradient(circle at 18% 12%, rgba(251,191,36,0.24), transparent 34%)",
+        "linear-gradient(180deg, var(--historietas-em-alta-rgba-254-243-199-0-05, rgba(254,243,199,0.05)) 0%, var(--historietas-em-alta-rgba-39-21-4-0-78, rgba(39,21,4,0.78)) 100%), radial-gradient(circle at 18% 12%, var(--historietas-em-alta-rgba-251-191-36-0-24, rgba(251,191,36,0.24)), transparent 34%)",
       rankBackground:
-        "linear-gradient(135deg, #FEF3C7 0%, #FBBF24 48%, #D97706 100%)",
-      rankText: "#2B1407",
+        "linear-gradient(135deg, var(--historietas-em-alta-hex-fef3c7, #FEF3C7) 0%, var(--historietas-em-alta-hex-fbbf24, #FBBF24) 48%, var(--historietas-em-alta-hex-d97706, #D97706) 100%)",
+      rankText: "var(--historietas-em-alta-hex-2b1407, #2B1407)",
       tierBackground:
-        "linear-gradient(135deg, #FEF3C7 0%, #FBBF24 52%, #D97706 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-hex-fef3c7, #FEF3C7) 0%, var(--historietas-em-alta-hex-fbbf24, #FBBF24) 52%, var(--historietas-em-alta-hex-d97706, #D97706) 100%)",
       tierText: "#FFFFFF",
-      badgeBackground: "rgba(251,191,36,0.16)",
-      badgeBorder: "rgba(251,191,36,0.44)",
-      badgeText: "#FCD34D",
-      readColor: "#FBBF24",
+      badgeBackground: "var(--historietas-em-alta-rgba-251-191-36-0-16, rgba(251,191,36,0.16))",
+      badgeBorder: "var(--historietas-em-alta-rgba-251-191-36-0-44, rgba(251,191,36,0.44))",
+      badgeText: "var(--historietas-em-alta-hex-fcd34d, #FCD34D)",
+      readColor: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
       shadow:
         "0 18px 38px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.075)",
     };
@@ -3449,25 +3450,25 @@ function obterTemaPosicao(posicao: number) {
     return {
       nome: "Prata",
       simbolo: "◆",
-      accent: "#CBD5E1",
-      accentSoft: "#F8FAFC",
-      deep: "#101722",
-      border: "rgba(203,213,225,0.68)",
-      cardBackground: "#7B8AA3",
+      accent: "var(--historietas-em-alta-hex-cbd5e1, #CBD5E1)",
+      accentSoft: "var(--historietas-em-alta-hex-f8fafc, #F8FAFC)",
+      deep: "var(--historietas-em-alta-hex-101722, #101722)",
+      border: "var(--historietas-em-alta-rgba-203-213-225-0-68, rgba(203,213,225,0.68))",
+      cardBackground: "var(--historietas-em-alta-hex-7b8aa3, #7B8AA3)",
       coverBackground:
-        "radial-gradient(circle at 28% 18%, rgba(248,250,252,0.14), transparent 28%), radial-gradient(circle at 80% 92%, rgba(148,163,184,0.18), transparent 34%), linear-gradient(145deg, #26303D 0%, #1A202B 52%, #0D0B16 100%)",
+        "radial-gradient(circle at 28% 18%, var(--historietas-em-alta-rgba-248-250-252-0-14, rgba(248,250,252,0.14)), transparent 28%), radial-gradient(circle at 80% 92%, var(--historietas-em-alta-rgba-148-163-184-0-18, rgba(148,163,184,0.18)), transparent 34%), linear-gradient(145deg, var(--historietas-em-alta-hex-26303d, #26303D) 0%, var(--historietas-em-alta-hex-1a202b, #1A202B) 52%, var(--historietas-em-alta-hex-0d0b16, #0D0B16) 100%)",
       coverOverlay:
-        "linear-gradient(180deg, rgba(248,250,252,0.04) 0%, rgba(16,23,34,0.78) 100%), radial-gradient(circle at 18% 12%, rgba(203,213,225,0.18), transparent 34%)",
+        "linear-gradient(180deg, var(--historietas-em-alta-rgba-248-250-252-0-04, rgba(248,250,252,0.04)) 0%, var(--historietas-em-alta-rgba-16-23-34-0-78, rgba(16,23,34,0.78)) 100%), radial-gradient(circle at 18% 12%, var(--historietas-em-alta-rgba-203-213-225-0-18, rgba(203,213,225,0.18)), transparent 34%)",
       rankBackground:
-        "linear-gradient(135deg, #F8FAFC 0%, #CBD5E1 52%, #64748B 100%)",
-      rankText: "#111827",
+        "linear-gradient(135deg, var(--historietas-em-alta-hex-f8fafc, #F8FAFC) 0%, var(--historietas-em-alta-hex-cbd5e1, #CBD5E1) 52%, var(--historietas-em-alta-hex-64748b, #64748B) 100%)",
+      rankText: "var(--historietas-em-alta-hex-111827, #111827)",
       tierBackground:
-        "linear-gradient(135deg, #F8FAFC 0%, #CBD5E1 52%, #64748B 100%)",
+        "linear-gradient(135deg, var(--historietas-em-alta-hex-f8fafc, #F8FAFC) 0%, var(--historietas-em-alta-hex-cbd5e1, #CBD5E1) 52%, var(--historietas-em-alta-hex-64748b, #64748B) 100%)",
       tierText: "#FFFFFF",
-      badgeBackground: "rgba(203,213,225,0.13)",
-      badgeBorder: "rgba(203,213,225,0.38)",
-      badgeText: "#E2E8F0",
-      readColor: "#CBD5E1",
+      badgeBackground: "var(--historietas-em-alta-rgba-203-213-225-0-13, rgba(203,213,225,0.13))",
+      badgeBorder: "var(--historietas-em-alta-rgba-203-213-225-0-38, rgba(203,213,225,0.38))",
+      badgeText: "var(--historietas-em-alta-hex-e2e8f0, #E2E8F0)",
+      readColor: "var(--historietas-em-alta-hex-cbd5e1, #CBD5E1)",
       shadow:
         "0 18px 38px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.07)",
     };
@@ -3476,25 +3477,25 @@ function obterTemaPosicao(posicao: number) {
   return {
     nome: "Bronze",
     simbolo: "◆",
-    accent: "#FB923C",
-    accentSoft: "#FED7AA",
-    deep: "#241006",
-    border: "rgba(251,146,60,0.70)",
-    cardBackground: "#9A6535",
+    accent: "var(--historietas-em-alta-hex-fb923c, #FB923C)",
+    accentSoft: "var(--historietas-em-alta-hex-fed7aa, #FED7AA)",
+    deep: "var(--historietas-em-alta-hex-241006, #241006)",
+    border: "var(--historietas-em-alta-rgba-251-146-60-0-70, rgba(251,146,60,0.70))",
+    cardBackground: "var(--historietas-em-alta-hex-9a6535, #9A6535)",
     coverBackground:
-      "radial-gradient(circle at 28% 18%, rgba(254,215,170,0.14), transparent 28%), radial-gradient(circle at 80% 92%, rgba(251,146,60,0.22), transparent 34%), linear-gradient(145deg, #351D0E 0%, #24140B 52%, #100A14 100%)",
+      "radial-gradient(circle at 28% 18%, var(--historietas-em-alta-rgba-254-215-170-0-14, rgba(254,215,170,0.14)), transparent 28%), radial-gradient(circle at 80% 92%, var(--historietas-em-alta-rgba-251-146-60-0-22, rgba(251,146,60,0.22)), transparent 34%), linear-gradient(145deg, var(--historietas-em-alta-hex-351d0e, #351D0E) 0%, var(--historietas-em-alta-hex-24140b, #24140B) 52%, var(--historietas-em-alta-hex-100a14, #100A14) 100%)",
     coverOverlay:
-      "linear-gradient(180deg, rgba(254,215,170,0.04) 0%, rgba(36,16,6,0.78) 100%), radial-gradient(circle at 18% 12%, rgba(251,146,60,0.20), transparent 34%)",
+      "linear-gradient(180deg, var(--historietas-em-alta-rgba-254-215-170-0-04, rgba(254,215,170,0.04)) 0%, var(--historietas-em-alta-rgba-36-16-6-0-78, rgba(36,16,6,0.78)) 100%), radial-gradient(circle at 18% 12%, var(--historietas-em-alta-rgba-251-146-60-0-20, rgba(251,146,60,0.20)), transparent 34%)",
     rankBackground:
-      "linear-gradient(135deg, #FED7AA 0%, #FB923C 48%, #9A3412 100%)",
+      "linear-gradient(135deg, var(--historietas-em-alta-hex-fed7aa, #FED7AA) 0%, var(--historietas-em-alta-hex-fb923c, #FB923C) 48%, var(--historietas-em-alta-hex-9a3412, #9A3412) 100%)",
     rankText: "#FFFFFF",
     tierBackground:
-      "linear-gradient(135deg, #FED7AA 0%, #FB923C 50%, #9A3412 100%)",
+      "linear-gradient(135deg, var(--historietas-em-alta-hex-fed7aa, #FED7AA) 0%, var(--historietas-em-alta-hex-fb923c, #FB923C) 50%, var(--historietas-em-alta-hex-9a3412, #9A3412) 100%)",
     tierText: "#FFFFFF",
-    badgeBackground: "rgba(251,146,60,0.15)",
-    badgeBorder: "rgba(251,146,60,0.40)",
-    badgeText: "#FDBA74",
-    readColor: "#FB923C",
+    badgeBackground: "var(--historietas-em-alta-rgba-251-146-60-0-15, rgba(251,146,60,0.15))",
+    badgeBorder: "var(--historietas-em-alta-rgba-251-146-60-0-40, rgba(251,146,60,0.40))",
+    badgeText: "var(--historietas-em-alta-hex-fdba74, #FDBA74)",
+    readColor: "var(--historietas-em-alta-hex-fb923c, #FB923C)",
     shadow:
       "0 18px 38px rgba(0,0,0,0.33), inset 0 1px 0 rgba(255,255,255,0.07)",
   };
@@ -3689,9 +3690,318 @@ function criarAutorCardTitleRankingStyle(_posicao: number): CSSProperties {
 }
 
 const emAltaPageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main {
+  html {
+    --historietas-em-alta-hex-04000a: #04000A;
+    --historietas-em-alta-hex-061523: #061523;
+    --historietas-em-alta-hex-070212: #070212;
+    --historietas-em-alta-hex-08030f: #08030F;
+    --historietas-em-alta-hex-090a18: #090A18;
+    --historietas-em-alta-hex-0b2235: #0B2235;
+    --historietas-em-alta-hex-0d0917: #0D0917;
+    --historietas-em-alta-hex-0d0b16: #0D0B16;
+    --historietas-em-alta-hex-100a14: #100A14;
+    --historietas-em-alta-hex-101722: #101722;
+    --historietas-em-alta-hex-111827: #111827;
+    --historietas-em-alta-hex-111c33: #111C33;
+    --historietas-em-alta-hex-1a202b: #1A202B;
+    --historietas-em-alta-hex-241006: #241006;
+    --historietas-em-alta-hex-24140b: #24140B;
+    --historietas-em-alta-hex-2486c2: #2486C2;
+    --historietas-em-alta-hex-26303d: #26303D;
+    --historietas-em-alta-hex-271504: #271504;
+    --historietas-em-alta-hex-271808: #271808;
+    --historietas-em-alta-hex-28101f: #28101F;
+    --historietas-em-alta-hex-2a0716: #2A0716;
+    --historietas-em-alta-hex-2b1407: #2B1407;
+    --historietas-em-alta-hex-34d399: #34D399;
+    --historietas-em-alta-hex-351d0e: #351D0E;
+    --historietas-em-alta-hex-38bdf8: #38BDF8;
+    --historietas-em-alta-hex-3a1020: #3A1020;
+    --historietas-em-alta-hex-3a2508: #3A2508;
+    --historietas-em-alta-hex-64748b: #64748B;
+    --historietas-em-alta-hex-7b8aa3: #7B8AA3;
+    --historietas-em-alta-hex-7c3aed: #7C3AED;
+    --historietas-em-alta-hex-7dd3fc: #7DD3FC;
+    --historietas-em-alta-hex-86efac: #86EFAC;
+    --historietas-em-alta-hex-9a3412: #9A3412;
+    --historietas-em-alta-hex-9a6535: #9A6535;
+    --historietas-em-alta-hex-a32a4b: #A32A4B;
+    --historietas-em-alta-hex-a78bfa: #A78BFA;
+    --historietas-em-alta-hex-b57d22: #B57D22;
+    --historietas-em-alta-hex-bae6fd: #BAE6FD;
+    --historietas-em-alta-hex-be123c: #BE123C;
+    --historietas-em-alta-hex-c084fc: #C084FC;
+    --historietas-em-alta-hex-c4b5fd: #C4B5FD;
+    --historietas-em-alta-hex-cbd5e1: #CBD5E1;
+    --historietas-em-alta-hex-d8c8ff: #D8C8FF;
+    --historietas-em-alta-hex-d97706: #D97706;
+    --historietas-em-alta-hex-ddd6fe: #DDD6FE;
+    --historietas-em-alta-hex-e0f2fe: #E0F2FE;
+    --historietas-em-alta-hex-e2e8f0: #E2E8F0;
+    --historietas-em-alta-hex-ecfeff: #ECFEFF;
+    --historietas-em-alta-hex-ef4444: #EF4444;
+    --historietas-em-alta-hex-f472b6: #F472B6;
+    --historietas-em-alta-hex-f5f3ff: #F5F3FF;
+    --historietas-em-alta-hex-f8fafc: #F8FAFC;
+    --historietas-em-alta-hex-f97316: #F97316;
+    --historietas-em-alta-hex-fb7185: #FB7185;
+    --historietas-em-alta-hex-fb923c: #FB923C;
+    --historietas-em-alta-hex-fbbf24: #FBBF24;
+    --historietas-em-alta-hex-fcd34d: #FCD34D;
+    --historietas-em-alta-hex-fda4af: #FDA4AF;
+    --historietas-em-alta-hex-fdba74: #FDBA74;
+    --historietas-em-alta-hex-fed7aa: #FED7AA;
+    --historietas-em-alta-hex-fef3c7: #FEF3C7;
+    --historietas-em-alta-hex-ffe4e6: #FFE4E6;
+    --historietas-em-alta-rgba-10-29-25-0-92: rgba(10,29,25,0.92);
+    --historietas-em-alta-rgba-11-17-32-0-92: rgba(11,17,32,0.92);
+    --historietas-em-alta-rgba-125-211-252-0-16: rgba(125,211,252,0.16);
+    --historietas-em-alta-rgba-125-211-252-0-22: rgba(125,211,252,0.22);
+    --historietas-em-alta-rgba-125-211-252-0-42: rgba(125,211,252,0.42);
+    --historietas-em-alta-rgba-125-211-252-0-78: rgba(125,211,252,0.78);
+    --historietas-em-alta-rgba-125-211-252-0-96: rgba(125,211,252,0.96);
+    --historietas-em-alta-rgba-139-92-246-0-18: rgba(139, 92, 246, 0.18);
+    --historietas-em-alta-rgba-148-163-184-0-18: rgba(148,163,184,0.18);
+    --historietas-em-alta-rgba-16-23-34-0-78: rgba(16,23,34,0.78);
+    --historietas-em-alta-rgba-167-139-250-0-12: rgba(167,139,250,0.12);
+    --historietas-em-alta-rgba-167-139-250-0-42: rgba(167,139,250,0.42);
+    --historietas-em-alta-rgba-167-139-250-0-58: rgba(167,139,250,0.58);
+    --historietas-em-alta-rgba-167-139-250-0-96: rgba(167,139,250,0.96);
+    --historietas-em-alta-rgba-17-48-39-0-82: rgba(17,48,39,0.82);
+    --historietas-em-alta-rgba-18-12-30-0-92: rgba(18,12,30,0.92);
+    --historietas-em-alta-rgba-18-12-34-0-92: rgba(18,12,34,0.92);
+    --historietas-em-alta-rgba-18-36-54-0-82: rgba(18,36,54,0.82);
+    --historietas-em-alta-rgba-192-132-252-0-12: rgba(192,132,252,0.12);
+    --historietas-em-alta-rgba-192-132-252-0-42: rgba(192,132,252,0.42);
+    --historietas-em-alta-rgba-192-132-252-0-58: rgba(192,132,252,0.58);
+    --historietas-em-alta-rgba-20-12-34-0-92: rgba(20,12,34,0.92);
+    --historietas-em-alta-rgba-203-213-225-0-13: rgba(203,213,225,0.13);
+    --historietas-em-alta-rgba-203-213-225-0-18: rgba(203,213,225,0.18);
+    --historietas-em-alta-rgba-203-213-225-0-38: rgba(203,213,225,0.38);
+    --historietas-em-alta-rgba-203-213-225-0-68: rgba(203,213,225,0.68);
+    --historietas-em-alta-rgba-224-242-254-0-06: rgba(224,242,254,0.06);
+    --historietas-em-alta-rgba-224-242-254-0-22: rgba(224,242,254,0.22);
+    --historietas-em-alta-rgba-236-254-255-0-96: rgba(236,254,255,0.96);
+    --historietas-em-alta-rgba-244-114-182-0-11: rgba(244,114,182,0.11);
+    --historietas-em-alta-rgba-244-114-182-0-42: rgba(244,114,182,0.42);
+    --historietas-em-alta-rgba-244-114-182-0-58: rgba(244,114,182,0.58);
+    --historietas-em-alta-rgba-248-250-252-0-04: rgba(248,250,252,0.04);
+    --historietas-em-alta-rgba-248-250-252-0-14: rgba(248,250,252,0.14);
+    --historietas-em-alta-rgba-251-113-133-0-12: rgba(251,113,133,0.12);
+    --historietas-em-alta-rgba-251-113-133-0-16: rgba(251,113,133,0.16);
+    --historietas-em-alta-rgba-251-113-133-0-24: rgba(251,113,133,0.24);
+    --historietas-em-alta-rgba-251-113-133-0-42: rgba(251,113,133,0.42);
+    --historietas-em-alta-rgba-251-113-133-0-44: rgba(251,113,133,0.44);
+    --historietas-em-alta-rgba-251-113-133-0-58: rgba(251,113,133,0.58);
+    --historietas-em-alta-rgba-251-113-133-0-74: rgba(251,113,133,0.74);
+    --historietas-em-alta-rgba-251-146-60-0-15: rgba(251,146,60,0.15);
+    --historietas-em-alta-rgba-251-146-60-0-20: rgba(251,146,60,0.20);
+    --historietas-em-alta-rgba-251-146-60-0-22: rgba(251,146,60,0.22);
+    --historietas-em-alta-rgba-251-146-60-0-40: rgba(251,146,60,0.40);
+    --historietas-em-alta-rgba-251-146-60-0-70: rgba(251,146,60,0.70);
+    --historietas-em-alta-rgba-251-191-36-0-16: rgba(251,191,36,0.16);
+    --historietas-em-alta-rgba-251-191-36-0-24: rgba(251,191,36,0.24);
+    --historietas-em-alta-rgba-251-191-36-0-44: rgba(251,191,36,0.44);
+    --historietas-em-alta-rgba-251-191-36-0-72: rgba(251,191,36,0.72);
+    --historietas-em-alta-rgba-254-215-170-0-04: rgba(254,215,170,0.04);
+    --historietas-em-alta-rgba-254-215-170-0-14: rgba(254,215,170,0.14);
+    --historietas-em-alta-rgba-254-243-199-0-05: rgba(254,243,199,0.05);
+    --historietas-em-alta-rgba-254-243-199-0-18: rgba(254,243,199,0.18);
+    --historietas-em-alta-rgba-255-228-230-0-05: rgba(255,228,230,0.05);
+    --historietas-em-alta-rgba-255-228-230-0-16: rgba(255,228,230,0.16);
+    --historietas-em-alta-rgba-29-13-27-0-92: rgba(29,13,27,0.92);
+    --historietas-em-alta-rgba-30-13-31-0-92: rgba(30,13,31,0.92);
+    --historietas-em-alta-rgba-34-197-94-0-14: rgba(34, 197, 94, 0.14);
+    --historietas-em-alta-rgba-34-197-94-0-3: rgba(34, 197, 94, 0.3);
+    --historietas-em-alta-rgba-36-16-6-0-78: rgba(36,16,6,0.78);
+    --historietas-em-alta-rgba-37-27-60-0-82: rgba(37,27,60,0.82);
+    --historietas-em-alta-rgba-39-21-4-0-78: rgba(39,21,4,0.78);
+    --historietas-em-alta-rgba-4-0-10-0-72: rgba(4, 0, 10, 0.72);
+    --historietas-em-alta-rgba-40-25-62-0-82: rgba(40,25,62,0.82);
+    --historietas-em-alta-rgba-41-27-53-0-82: rgba(41,27,53,0.82);
+    --historietas-em-alta-rgba-42-7-22-0-78: rgba(42,7,22,0.78);
+    --historietas-em-alta-rgba-52-211-153-0-11: rgba(52,211,153,0.11);
+    --historietas-em-alta-rgba-52-211-153-0-42: rgba(52,211,153,0.42);
+    --historietas-em-alta-rgba-52-211-153-0-58: rgba(52,211,153,0.58);
+    --historietas-em-alta-rgba-54-20-38-0-82: rgba(54,20,38,0.82);
+    --historietas-em-alta-rgba-54-22-45-0-82: rgba(54,22,45,0.82);
+    --historietas-em-alta-rgba-56-189-248-0-12: rgba(56,189,248,0.12);
+    --historietas-em-alta-rgba-56-189-248-0-22: rgba(56,189,248,0.22);
+    --historietas-em-alta-rgba-56-189-248-0-42: rgba(56,189,248,0.42);
+    --historietas-em-alta-rgba-56-189-248-0-58: rgba(56,189,248,0.58);
+    --historietas-em-alta-rgba-59-7-100-0-58: rgba(59, 7, 100, 0.58);
+    --historietas-em-alta-rgba-6-21-35-0-76: rgba(6,21,35,0.76);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-em-alta-hex-04000a: #000000;
+    --historietas-em-alta-hex-061523: #000000;
+    --historietas-em-alta-hex-070212: #000000;
+    --historietas-em-alta-hex-08030f: #000000;
+    --historietas-em-alta-hex-090a18: #000000;
+    --historietas-em-alta-hex-0b2235: #000000;
+    --historietas-em-alta-hex-0d0917: #000000;
+    --historietas-em-alta-hex-0d0b16: #000000;
+    --historietas-em-alta-hex-100a14: #000000;
+    --historietas-em-alta-hex-101722: #000000;
+    --historietas-em-alta-hex-111827: #000000;
+    --historietas-em-alta-hex-111c33: #000000;
+    --historietas-em-alta-hex-1a202b: #000000;
+    --historietas-em-alta-hex-241006: #000000;
+    --historietas-em-alta-hex-24140b: #000000;
+    --historietas-em-alta-hex-2486c2: #050505;
+    --historietas-em-alta-hex-26303d: #000000;
+    --historietas-em-alta-hex-271504: #000000;
+    --historietas-em-alta-hex-271808: #000000;
+    --historietas-em-alta-hex-28101f: #000000;
+    --historietas-em-alta-hex-2a0716: #000000;
+    --historietas-em-alta-hex-2b1407: #000000;
+    --historietas-em-alta-hex-34d399: #FFFFFF;
+    --historietas-em-alta-hex-351d0e: #000000;
+    --historietas-em-alta-hex-38bdf8: #FFFFFF;
+    --historietas-em-alta-hex-3a1020: #000000;
+    --historietas-em-alta-hex-3a2508: #000000;
+    --historietas-em-alta-hex-64748b: #A1A1AA;
+    --historietas-em-alta-hex-7b8aa3: #050505;
+    --historietas-em-alta-hex-7c3aed: #FFFFFF;
+    --historietas-em-alta-hex-7dd3fc: #FFFFFF;
+    --historietas-em-alta-hex-86efac: #D4D4D8;
+    --historietas-em-alta-hex-9a3412: #A1A1AA;
+    --historietas-em-alta-hex-9a6535: #050505;
+    --historietas-em-alta-hex-a32a4b: #050505;
+    --historietas-em-alta-hex-a78bfa: #FFFFFF;
+    --historietas-em-alta-hex-b57d22: #050505;
+    --historietas-em-alta-hex-bae6fd: #D4D4D8;
+    --historietas-em-alta-hex-be123c: #A1A1AA;
+    --historietas-em-alta-hex-c084fc: #FFFFFF;
+    --historietas-em-alta-hex-c4b5fd: #D4D4D8;
+    --historietas-em-alta-hex-cbd5e1: #D4D4D8;
+    --historietas-em-alta-hex-d8c8ff: #D4D4D8;
+    --historietas-em-alta-hex-d97706: #A1A1AA;
+    --historietas-em-alta-hex-ddd6fe: #D4D4D8;
+    --historietas-em-alta-hex-e0f2fe: #D4D4D8;
+    --historietas-em-alta-hex-e2e8f0: #D4D4D8;
+    --historietas-em-alta-hex-ecfeff: #FFFFFF;
+    --historietas-em-alta-hex-ef4444: #FFFFFF;
+    --historietas-em-alta-hex-f472b6: #FFFFFF;
+    --historietas-em-alta-hex-f5f3ff: #FFFFFF;
+    --historietas-em-alta-hex-f8fafc: #FFFFFF;
+    --historietas-em-alta-hex-f97316: #FFFFFF;
+    --historietas-em-alta-hex-fb7185: #FFFFFF;
+    --historietas-em-alta-hex-fb923c: #FFFFFF;
+    --historietas-em-alta-hex-fbbf24: #FFFFFF;
+    --historietas-em-alta-hex-fcd34d: #D4D4D8;
+    --historietas-em-alta-hex-fda4af: #D4D4D8;
+    --historietas-em-alta-hex-fdba74: #D4D4D8;
+    --historietas-em-alta-hex-fed7aa: #FFFFFF;
+    --historietas-em-alta-hex-fef3c7: #FFFFFF;
+    --historietas-em-alta-hex-ffe4e6: #FFFFFF;
+    --historietas-em-alta-rgba-10-29-25-0-92: rgba(0,0,0,0.92);
+    --historietas-em-alta-rgba-11-17-32-0-92: rgba(0,0,0,0.92);
+    --historietas-em-alta-rgba-125-211-252-0-16: rgba(212,212,216,0.16);
+    --historietas-em-alta-rgba-125-211-252-0-22: rgba(212,212,216,0.22);
+    --historietas-em-alta-rgba-125-211-252-0-42: rgba(212,212,216,0.42);
+    --historietas-em-alta-rgba-125-211-252-0-78: rgba(212,212,216,0.78);
+    --historietas-em-alta-rgba-125-211-252-0-96: rgba(212,212,216,0.96);
+    --historietas-em-alta-rgba-139-92-246-0-18: rgba(212,212,216,0.18);
+    --historietas-em-alta-rgba-148-163-184-0-18: rgba(212,212,216,0.18);
+    --historietas-em-alta-rgba-16-23-34-0-78: rgba(0,0,0,0.78);
+    --historietas-em-alta-rgba-167-139-250-0-12: rgba(212,212,216,0.12);
+    --historietas-em-alta-rgba-167-139-250-0-42: rgba(212,212,216,0.42);
+    --historietas-em-alta-rgba-167-139-250-0-58: rgba(212,212,216,0.58);
+    --historietas-em-alta-rgba-167-139-250-0-96: rgba(212,212,216,0.96);
+    --historietas-em-alta-rgba-17-48-39-0-82: rgba(0,0,0,0.82);
+    --historietas-em-alta-rgba-18-12-30-0-92: rgba(0,0,0,0.92);
+    --historietas-em-alta-rgba-18-12-34-0-92: rgba(0,0,0,0.92);
+    --historietas-em-alta-rgba-18-36-54-0-82: rgba(0,0,0,0.82);
+    --historietas-em-alta-rgba-192-132-252-0-12: rgba(212,212,216,0.12);
+    --historietas-em-alta-rgba-192-132-252-0-42: rgba(212,212,216,0.42);
+    --historietas-em-alta-rgba-192-132-252-0-58: rgba(212,212,216,0.58);
+    --historietas-em-alta-rgba-20-12-34-0-92: rgba(0,0,0,0.92);
+    --historietas-em-alta-rgba-203-213-225-0-13: rgba(212,212,216,0.13);
+    --historietas-em-alta-rgba-203-213-225-0-18: rgba(212,212,216,0.18);
+    --historietas-em-alta-rgba-203-213-225-0-38: rgba(212,212,216,0.38);
+    --historietas-em-alta-rgba-203-213-225-0-68: rgba(212,212,216,0.68);
+    --historietas-em-alta-rgba-224-242-254-0-06: rgba(212,212,216,0.06);
+    --historietas-em-alta-rgba-224-242-254-0-22: rgba(212,212,216,0.22);
+    --historietas-em-alta-rgba-236-254-255-0-96: rgba(212,212,216,0.96);
+    --historietas-em-alta-rgba-244-114-182-0-11: rgba(212,212,216,0.11);
+    --historietas-em-alta-rgba-244-114-182-0-42: rgba(212,212,216,0.42);
+    --historietas-em-alta-rgba-244-114-182-0-58: rgba(212,212,216,0.58);
+    --historietas-em-alta-rgba-248-250-252-0-04: rgba(212,212,216,0.04);
+    --historietas-em-alta-rgba-248-250-252-0-14: rgba(212,212,216,0.14);
+    --historietas-em-alta-rgba-251-113-133-0-12: rgba(212,212,216,0.12);
+    --historietas-em-alta-rgba-251-113-133-0-16: rgba(212,212,216,0.16);
+    --historietas-em-alta-rgba-251-113-133-0-24: rgba(212,212,216,0.24);
+    --historietas-em-alta-rgba-251-113-133-0-42: rgba(212,212,216,0.42);
+    --historietas-em-alta-rgba-251-113-133-0-44: rgba(212,212,216,0.44);
+    --historietas-em-alta-rgba-251-113-133-0-58: rgba(212,212,216,0.58);
+    --historietas-em-alta-rgba-251-113-133-0-74: rgba(212,212,216,0.74);
+    --historietas-em-alta-rgba-251-146-60-0-15: rgba(212,212,216,0.15);
+    --historietas-em-alta-rgba-251-146-60-0-20: rgba(212,212,216,0.2);
+    --historietas-em-alta-rgba-251-146-60-0-22: rgba(212,212,216,0.22);
+    --historietas-em-alta-rgba-251-146-60-0-40: rgba(212,212,216,0.4);
+    --historietas-em-alta-rgba-251-146-60-0-70: rgba(212,212,216,0.7);
+    --historietas-em-alta-rgba-251-191-36-0-16: rgba(212,212,216,0.16);
+    --historietas-em-alta-rgba-251-191-36-0-24: rgba(212,212,216,0.24);
+    --historietas-em-alta-rgba-251-191-36-0-44: rgba(212,212,216,0.44);
+    --historietas-em-alta-rgba-251-191-36-0-72: rgba(212,212,216,0.72);
+    --historietas-em-alta-rgba-254-215-170-0-04: rgba(212,212,216,0.04);
+    --historietas-em-alta-rgba-254-215-170-0-14: rgba(212,212,216,0.14);
+    --historietas-em-alta-rgba-254-243-199-0-05: rgba(212,212,216,0.05);
+    --historietas-em-alta-rgba-254-243-199-0-18: rgba(212,212,216,0.18);
+    --historietas-em-alta-rgba-255-228-230-0-05: rgba(212,212,216,0.05);
+    --historietas-em-alta-rgba-255-228-230-0-16: rgba(212,212,216,0.16);
+    --historietas-em-alta-rgba-29-13-27-0-92: rgba(0,0,0,0.92);
+    --historietas-em-alta-rgba-30-13-31-0-92: rgba(0,0,0,0.92);
+    --historietas-em-alta-rgba-34-197-94-0-14: rgba(161,161,170,0.14);
+    --historietas-em-alta-rgba-34-197-94-0-3: rgba(161,161,170,0.3);
+    --historietas-em-alta-rgba-36-16-6-0-78: rgba(0,0,0,0.78);
+    --historietas-em-alta-rgba-37-27-60-0-82: rgba(0,0,0,0.82);
+    --historietas-em-alta-rgba-39-21-4-0-78: rgba(0,0,0,0.78);
+    --historietas-em-alta-rgba-4-0-10-0-72: rgba(0,0,0,0.72);
+    --historietas-em-alta-rgba-40-25-62-0-82: rgba(0,0,0,0.82);
+    --historietas-em-alta-rgba-41-27-53-0-82: rgba(0,0,0,0.82);
+    --historietas-em-alta-rgba-42-7-22-0-78: rgba(0,0,0,0.78);
+    --historietas-em-alta-rgba-52-211-153-0-11: rgba(161,161,170,0.11);
+    --historietas-em-alta-rgba-52-211-153-0-42: rgba(161,161,170,0.42);
+    --historietas-em-alta-rgba-52-211-153-0-58: rgba(161,161,170,0.58);
+    --historietas-em-alta-rgba-54-20-38-0-82: rgba(0,0,0,0.82);
+    --historietas-em-alta-rgba-54-22-45-0-82: rgba(0,0,0,0.82);
+    --historietas-em-alta-rgba-56-189-248-0-12: rgba(212,212,216,0.12);
+    --historietas-em-alta-rgba-56-189-248-0-22: rgba(212,212,216,0.22);
+    --historietas-em-alta-rgba-56-189-248-0-42: rgba(212,212,216,0.42);
+    --historietas-em-alta-rgba-56-189-248-0-58: rgba(212,212,216,0.58);
+    --historietas-em-alta-rgba-59-7-100-0-58: rgba(0,0,0,0.58);
+    --historietas-em-alta-rgba-6-21-35-0-76: rgba(0,0,0,0.76);
+    --historietas-page-background: #000000;
+    --historietas-bg-start: #000000;
+    --historietas-bg-mid: #000000;
+    --historietas-bg-end: #000000;
+    --historietas-surface: #050505;
+    --historietas-surface-strong: #000000;
+    --historietas-text-primary: #FFFFFF;
+    --historietas-text-secondary: #A1A1AA;
+    --historietas-accent: #FFFFFF;
+    --historietas-secondary: #A1A1AA;
+    --historietas-border-soft: rgba(255,255,255,0.18);
+    --historietas-active-surface: rgba(255,255,255,0.10);
+    --historietas-secondary-surface: rgba(255,255,255,0.06);
+    --historietas-title-from: #FFFFFF;
+    --historietas-title-mid: #FFFFFF;
+    --historietas-title-to: #FFFFFF;
+  }
+
+  html[data-historietas-tema-visual="original"] body,
+  html[data-historietas-tema-visual="original"] main.historietas-em-alta-page {
     background: #070212 !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main.historietas-em-alta-page {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+    color-scheme: dark;
   }
 
   .historietas-em-alta-page,
@@ -3717,10 +4027,7 @@ const emAltaPageCss = `
   .historietas-em-alta-page a:focus,
   .historietas-em-alta-page button:focus,
   .historietas-em-alta-page [role="link"]:focus,
-  .historietas-em-alta-page [role="button"]:focus {
-    outline: none !important;
-  }
-
+  .historietas-em-alta-page [role="button"]:focus,
   .historietas-em-alta-page a:focus-visible,
   .historietas-em-alta-page button:focus-visible,
   .historietas-em-alta-page [role="link"]:focus-visible,
@@ -3728,32 +4035,107 @@ const emAltaPageCss = `
     outline: none !important;
   }
 
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-page article {
+    background: #050505 !important;
+    background-color: #050505 !important;
+    background-image: none !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-page *,
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-page *::before,
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-page *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-hero-title {
+    background: none !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    text-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-emoji-icon {
+    filter: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-logo-mark {
+    background: #04000A !important;
+    color: #FFFFFF !important;
+    border-color: rgba(59, 7, 100, 0.58) !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-page > div[aria-hidden="true"] {
+    opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] input::placeholder,
+  html[data-historietas-tema-visual="foco"] textarea::placeholder {
+    color: #A1A1AA !important;
+    opacity: 1 !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] input,
+  html[data-historietas-tema-visual="foco"] textarea,
+  html[data-historietas-tema-visual="foco"] select {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255,255,255,0.18) !important;
+  }
+
   html[data-historietas-tema-visual] nav a[href="/em-alta"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"] {
-    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
-    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    background: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/em-alta"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+    color: var(--historietas-bottom-nav-text, #A1A1AA) !important;
+    -webkit-text-fill-color: var(--historietas-bottom-nav-text, #A1A1AA) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/em-alta"][aria-current="page"],
+  html[data-historietas-tema-visual] nav a[href="/em-alta"].historietas-bottom-nav-item-active,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"][aria-current="page"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"].historietas-bottom-nav-item-active,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"][aria-current="page"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"].historietas-bottom-nav-item-active {
     color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
   }
 
   html[data-historietas-tema-visual] nav a[href="/em-alta"] .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"] .historietas-bottom-nav-icon,
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"] .historietas-bottom-nav-icon {
-    color: #FFFFFF !important;
-    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
-    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
+    color: currentColor !important;
+    background: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
   }
 
-  html[data-historietas-tema-visual="branco"] input::placeholder {
-    color: #80868B !important;
-  }
-
-  html[data-historietas-tema-visual="branco"] input,
-  html[data-historietas-tema-visual="branco"] textarea,
-  html[data-historietas-tema-visual="branco"] select {
-    color: #202124 !important;
+  html[data-historietas-tema-visual] nav a[href="/em-alta"] .historietas-bottom-nav-svg,
+  html[data-historietas-tema-visual] nav a[href="/em-alta"] .historietas-bottom-nav-svg *,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"] .historietas-bottom-nav-svg,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/em-alta"] .historietas-bottom-nav-svg *,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"] .historietas-bottom-nav-svg,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/em-alta"] .historietas-bottom-nav-svg * {
+    color: currentColor !important;
+    stroke: currentColor !important;
   }
 `;
+
 
 const safeTextStyle: CSSProperties = {
   overflowWrap: "anywhere",
@@ -3800,8 +4182,8 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  backgroundColor: "#070212",
-  background: "#070212",
+  backgroundColor: "var(--historietas-em-alta-hex-070212, #070212)",
+  background: "var(--historietas-em-alta-hex-070212, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -3843,7 +4225,7 @@ const titleStyle: CSSProperties = {
   maxWidth: "100%",
   textAlign: "center",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #F5F3FF) 42%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, var(--historietas-em-alta-hex-f5f3ff, #F5F3FF)) 42%, var(--historietas-title-to, var(--historietas-em-alta-hex-fdba74, #FDBA74)) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -3883,7 +4265,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   height: "34px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
+  background: "var(--historietas-surface-strong, var(--historietas-em-alta-hex-04000a, #04000A))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -3908,8 +4290,8 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
+  border: "2px solid var(--historietas-bg-start, var(--historietas-em-alta-hex-070212, #070212))",
+  background: "var(--historietas-em-alta-hex-ef4444, #EF4444)",
   color: "#FFFFFF",
   fontSize: "9px",
   lineHeight: 1,
@@ -3945,14 +4327,14 @@ const headerTitleMarkStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-em-alta-hex-04000a, #04000A)",
   color: "#FFFFFF",
   fontSize: "clamp(18px, 4.3vw, 24px)",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.04em",
   flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-em-alta-rgba-59-7-100-0-58, rgba(59, 7, 100, 0.58))",
   boxShadow: "none",
 };
 
@@ -4057,8 +4439,8 @@ const carouselArrowButtonStyle: CSSProperties = {
   height: "38px",
   borderRadius: "999px",
   border: "none",
-  background: "#04000A",
-  color: "#DDD6FE",
+  background: "var(--historietas-em-alta-hex-04000a, #04000A)",
+  color: "var(--historietas-em-alta-hex-ddd6fe, #DDD6FE)",
   display: "none",
   alignItems: "center",
   justifyContent: "center",
@@ -4159,7 +4541,7 @@ const cardStyle: CSSProperties = {
   alignItems: "stretch",
   padding: "11px",
   borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-em-alta-rgba-4-0-10-0-72, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
@@ -4209,7 +4591,7 @@ const coverStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-em-alta-hex-08030f, #08030F) 0%, var(--historietas-em-alta-hex-04000a, #04000A) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   maxWidth: "100%",
@@ -4343,10 +4725,10 @@ const statusStyle: CSSProperties = {
   padding: "6px 9px",
   borderRadius: "999px",
   background:
-    "color-mix(in srgb, var(--historietas-accent, #F97316) 14%, transparent)",
+    "color-mix(in srgb, var(--historietas-accent, var(--historietas-em-alta-hex-f97316, #F97316)) 14%, transparent)",
   border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 28%, transparent)",
-  color: "var(--historietas-accent, #FDBA74)",
+    "1px solid color-mix(in srgb, var(--historietas-accent, var(--historietas-em-alta-hex-f97316, #F97316)) 28%, transparent)",
+  color: "var(--historietas-accent, var(--historietas-em-alta-hex-fdba74, #FDBA74))",
   fontSize: "11px",
   fontWeight: 850,
   whiteSpace: "normal",
@@ -4358,9 +4740,9 @@ const publishedStatusStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "6px 9px",
   borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.14)",
-  border: "1px solid rgba(34, 197, 94, 0.3)",
-  color: "#86EFAC",
+  background: "var(--historietas-em-alta-rgba-34-197-94-0-14, rgba(34, 197, 94, 0.14))",
+  border: "1px solid var(--historietas-em-alta-rgba-34-197-94-0-3, rgba(34, 197, 94, 0.3))",
+  color: "var(--historietas-em-alta-hex-86efac, #86EFAC)",
   fontSize: "11px",
   fontWeight: 900,
   whiteSpace: "normal",
@@ -4422,7 +4804,7 @@ const highlightBadgeStyle: CSSProperties = {
 
 const authorStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #D8C8FF)",
+  color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-d8c8ff, #D8C8FF))",
   fontSize: "12px",
   fontWeight: 750,
   maxWidth: "100%",
@@ -4490,12 +4872,12 @@ const heartMetricIconStyle: CSSProperties = {
   width: "16px",
   minWidth: "16px",
   fontSize: "13px",
-  color: "#EF4444",
+  color: "var(--historietas-em-alta-hex-ef4444, #EF4444)",
 };
 
 const starMetricIconStyle: CSSProperties = {
   ...metricIconStyle,
-  color: "#FBBF24",
+  color: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
 };
 
 const progressCompactStyle: CSSProperties = {
@@ -4519,7 +4901,7 @@ const progressBarStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
   background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+    "linear-gradient(135deg, var(--historietas-accent, var(--historietas-em-alta-hex-f97316, #F97316)) 0%, var(--historietas-secondary, var(--historietas-em-alta-hex-7c3aed, #7C3AED)) 100%)",
 };
 
 const progressTextStyle: CSSProperties = {
@@ -4535,7 +4917,7 @@ const readStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   marginTop: "2px",
-  color: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-accent, var(--historietas-em-alta-hex-f97316, #F97316))",
   fontSize: "14px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -4567,7 +4949,7 @@ const authorRankingSectionIconStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "#FBBF24",
+  color: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
   fontSize: "28px",
   lineHeight: 1,
   fontWeight: 950,
@@ -4575,7 +4957,7 @@ const authorRankingSectionIconStyle: CSSProperties = {
 
 const authorRankingSectionTitleStyle: CSSProperties = {
   ...sectionTitleStyle,
-  color: "#FBBF24",
+  color: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
   textAlign: "center",
 };
 
@@ -4700,7 +5082,7 @@ const authorRankingCardTitleStyle: CSSProperties = {
 };
 
 const authorRankingWorksStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #C4B5FD)",
+  color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-c4b5fd, #C4B5FD))",
   fontSize: "11px",
   lineHeight: 1.15,
   fontWeight: 850,
@@ -4730,7 +5112,7 @@ const authorRankingMetaStackStyle: CSSProperties = {
 
 const authorRankingWorksBadgeStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #D8C8FF)",
+  color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-d8c8ff, #D8C8FF))",
   fontSize: "12px",
   lineHeight: 1.2,
   fontWeight: 750,
@@ -4760,7 +5142,7 @@ const emptyButtonStyle: CSSProperties = {
   margin: "0 auto",
   padding: "0 15px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-em-alta-hex-08030f, #08030F)",
   color: "#FFFFFF",
   textDecoration: "none",
   display: "inline-flex",

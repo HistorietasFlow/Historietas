@@ -6,6 +6,15 @@ import { Children, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
+import {
+  historietasThemeCss,
+  TEMAS_VISUAIS_HISTORIETAS,
+  useHistorietasTheme,
+} from "../../lib/historietasTheme";
+import type {
+  TemaVisualHistorietas,
+  TemaVisualHistorietasConfig,
+} from "../../lib/historietasTheme";
 
 type CapituloLocal = {
   id: string;
@@ -169,322 +178,10 @@ type FiltroColecaoExplorar =
   | "lendo"
   | "sem-leitura";
 
-type TemaVisualExplorar =
-  | "branco"
-  | "escuro"
-  | "foco"
-  | "original"
-  | "fantasia"
-  | "romance"
-  | "terror"
-  | "acao"
-  | "scifi"
-  | "drama"
-  | "aventura"
-  | "misterio"
-  | "suspense"
-  | "sobrenatural"
-  | "historico"
-  | "biografia"
-  | "comedia";
-
-type TemaVisualExplorarConfig = {
-  accent: string;
-  secondary: string;
-  bgStart: string;
-  bgMid: string;
-  bgEnd: string;
-  glowPrimary: string;
-  glowSecondary: string;
-  textPrimary?: string;
-  textSecondary?: string;
-  surface?: string;
-  surfaceStrong?: string;
-  borderSoft?: string;
-  inputBg?: string;
-  inputText?: string;
-  titleFrom?: string;
-  titleMid?: string;
-  titleTo?: string;
-  heroShadow?: string;
-  cardShadow?: string;
-  logoShadow?: string;
-  activeSurface?: string;
-  secondarySurface?: string;
-  secondaryButtonText?: string;
-  dangerSurface?: string;
-  dangerButtonText?: string;
-};
-
-const TEMAS_VISUAIS_EXPLORAR: Record<TemaVisualExplorar, TemaVisualExplorarConfig> = {
-  branco: {
-    accent: "#1A73E8",
-    secondary: "#01875F",
-    bgStart: "#FFFFFF",
-    bgMid: "#FFFFFF",
-    bgEnd: "#F8F9FA",
-    glowPrimary: "rgba(26,115,232,0.020)",
-    glowSecondary: "rgba(1,135,95,0.018)",
-    textPrimary: "#202124",
-    textSecondary: "#5F6368",
-    surface: "#FFFFFF",
-    surfaceStrong: "#FFFFFF",
-    borderSoft: "#DADCE0",
-    inputBg: "#FFFFFF",
-    inputText: "#202124",
-    titleFrom: "#202124",
-    titleMid: "#202124",
-    titleTo: "#202124",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(26,115,232,0.10)",
-    secondarySurface: "rgba(1,135,95,0.10)",
-    secondaryButtonText: "#188038",
-    dangerSurface: "rgba(217,48,37,0.10)",
-    dangerButtonText: "#B3261E",
-  },
-  escuro: {
-    accent: "#F97316",
-    secondary: "#7C3AED",
-    bgStart: "#000000",
-    bgMid: "#000000",
-    bgEnd: "#000000",
-    glowPrimary: "rgba(249,115,22,0.030)",
-    glowSecondary: "rgba(124,58,237,0.030)",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#B3B3B3",
-    surface: "#101010",
-    surfaceStrong: "#000000",
-    borderSoft: "rgba(255,255,255,0.11)",
-    inputBg: "#0B0B0B",
-    inputText: "#FFFFFF",
-    titleFrom: "#FFFFFF",
-    titleMid: "#FFFFFF",
-    titleTo: "#FFFFFF",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(124,58,237,0.14)",
-    secondarySurface: "rgba(124,58,237,0.12)",
-    secondaryButtonText: "#FFFFFF",
-    dangerSurface: "rgba(239,68,68,0.12)",
-    dangerButtonText: "#FCA5A5",
-  },
-  foco: {
-    accent: "#A78BFA",
-    secondary: "#27272A",
-    bgStart: "#050506",
-    bgMid: "#030305",
-    bgEnd: "#020203",
-    glowPrimary: "rgba(124,58,237,0.08)",
-    glowSecondary: "rgba(255,255,255,0.045)",
-    textPrimary: "#F4F4F5",
-    textSecondary: "#D4D4D8",
-    surface: "rgba(9,9,11,0.88)",
-    surfaceStrong: "rgba(3,3,6,0.96)",
-    borderSoft: "rgba(255,255,255,0.065)",
-    inputBg: "#09090B",
-    inputText: "#F4F4F5",
-    titleFrom: "#FFFFFF",
-    titleMid: "#E4E4E7",
-    titleTo: "#A78BFA",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(167,139,250,0.12)",
-    secondarySurface: "rgba(39,39,42,0.72)",
-    secondaryButtonText: "#E4E4E7",
-    dangerSurface: "rgba(127,29,29,0.18)",
-    dangerButtonText: "#FCA5A5",
-  },
-  original: {
-    accent: "#F97316",
-    secondary: "#7C3AED",
-    bgStart: "#070212",
-    bgMid: "#070212",
-    bgEnd: "#070212",
-    glowPrimary: "transparent",
-    glowSecondary: "transparent",
-  },
-  fantasia: {
-    accent: "#A855F7",
-    secondary: "#2563EB",
-    bgStart: "#090417",
-    bgMid: "#130A2A",
-    bgEnd: "#0B1028",
-    glowPrimary: "rgba(168,85,247,0.34)",
-    glowSecondary: "rgba(37,99,235,0.18)",
-    titleTo: "#C4B5FD",
-    activeSurface: "rgba(168,85,247,0.18)",
-    secondarySurface: "rgba(37,99,235,0.16)",
-    secondaryButtonText: "#DBEAFE",
-  },
-  romance: {
-    accent: "#EC4899",
-    secondary: "#BE123C",
-    bgStart: "#140711",
-    bgMid: "#251022",
-    bgEnd: "#1E0B16",
-    glowPrimary: "rgba(236,72,153,0.30)",
-    glowSecondary: "rgba(190,18,60,0.18)",
-    titleTo: "#F9A8D4",
-    activeSurface: "rgba(236,72,153,0.18)",
-    secondarySurface: "rgba(190,18,60,0.16)",
-    secondaryButtonText: "#FCE7F3",
-  },
-  terror: {
-    accent: "#EF4444",
-    secondary: "#7F1D1D",
-    bgStart: "#080305",
-    bgMid: "#160707",
-    bgEnd: "#100608",
-    glowPrimary: "rgba(239,68,68,0.30)",
-    glowSecondary: "rgba(127,29,29,0.22)",
-    titleTo: "#FCA5A5",
-    activeSurface: "rgba(239,68,68,0.18)",
-    secondarySurface: "rgba(127,29,29,0.20)",
-    secondaryButtonText: "#FECACA",
-    dangerSurface: "rgba(127,29,29,0.22)",
-    dangerButtonText: "#FCA5A5",
-  },
-  acao: {
-    accent: "#F97316",
-    secondary: "#DC2626",
-    bgStart: "#100604",
-    bgMid: "#1E0B08",
-    bgEnd: "#17101B",
-    glowPrimary: "rgba(249,115,22,0.34)",
-    glowSecondary: "rgba(220,38,38,0.18)",
-    titleTo: "#FDBA74",
-    activeSurface: "rgba(249,115,22,0.20)",
-    secondarySurface: "rgba(220,38,38,0.16)",
-    secondaryButtonText: "#FED7AA",
-  },
-  scifi: {
-    accent: "#06B6D4",
-    secondary: "#2563EB",
-    bgStart: "#031017",
-    bgMid: "#071C2D",
-    bgEnd: "#071321",
-    glowPrimary: "rgba(6,182,212,0.30)",
-    glowSecondary: "rgba(37,99,235,0.20)",
-    titleTo: "#67E8F9",
-    activeSurface: "rgba(6,182,212,0.18)",
-    secondarySurface: "rgba(37,99,235,0.16)",
-    secondaryButtonText: "#CFFAFE",
-  },
-  drama: {
-    accent: "#C084FC",
-    secondary: "#581C87",
-    bgStart: "#0E0718",
-    bgMid: "#160A24",
-    bgEnd: "#17101F",
-    glowPrimary: "rgba(192,132,252,0.30)",
-    glowSecondary: "rgba(88,28,135,0.22)",
-    titleTo: "#DDD6FE",
-    activeSurface: "rgba(192,132,252,0.18)",
-    secondarySurface: "rgba(88,28,135,0.20)",
-    secondaryButtonText: "#E9D5FF",
-  },
-  aventura: {
-    accent: "#EAB308",
-    secondary: "#92400E",
-    bgStart: "#0D0803",
-    bgMid: "#171006",
-    bgEnd: "#1F1308",
-    glowPrimary: "rgba(234,179,8,0.18)",
-    glowSecondary: "rgba(146,64,14,0.20)",
-    titleTo: "#FDE68A",
-    activeSurface: "rgba(234,179,8,0.15)",
-    secondarySurface: "rgba(146,64,14,0.20)",
-    secondaryButtonText: "#FDE68A",
-  },
-  misterio: {
-    accent: "#818CF8",
-    secondary: "#312E81",
-    bgStart: "#060817",
-    bgMid: "#0B1026",
-    bgEnd: "#10112A",
-    glowPrimary: "rgba(129,140,248,0.26)",
-    glowSecondary: "rgba(49,46,129,0.24)",
-    titleTo: "#C7D2FE",
-    activeSurface: "rgba(129,140,248,0.16)",
-    secondarySurface: "rgba(49,46,129,0.22)",
-    secondaryButtonText: "#C7D2FE",
-  },
-  suspense: {
-    accent: "#A3E635",
-    secondary: "#365314",
-    bgStart: "#070B05",
-    bgMid: "#101607",
-    bgEnd: "#11140A",
-    glowPrimary: "rgba(163,230,53,0.18)",
-    glowSecondary: "rgba(54,83,20,0.24)",
-    titleTo: "#D9F99D",
-    activeSurface: "rgba(163,230,53,0.14)",
-    secondarySurface: "rgba(54,83,20,0.24)",
-    secondaryButtonText: "#D9F99D",
-  },
-  sobrenatural: {
-    accent: "#34D399",
-    secondary: "#065F46",
-    bgStart: "#06120D",
-    bgMid: "#0B1D1C",
-    bgEnd: "#10171A",
-    glowPrimary: "rgba(52,211,153,0.24)",
-    glowSecondary: "rgba(6,95,70,0.22)",
-    titleTo: "#A7F3D0",
-    activeSurface: "rgba(52,211,153,0.16)",
-    secondarySurface: "rgba(6,95,70,0.20)",
-    secondaryButtonText: "#D1FAE5",
-  },
-  historico: {
-    accent: "#D97706",
-    secondary: "#78350F",
-    bgStart: "#110805",
-    bgMid: "#1A0F08",
-    bgEnd: "#17100A",
-    glowPrimary: "rgba(217,119,6,0.22)",
-    glowSecondary: "rgba(120,53,15,0.25)",
-    titleTo: "#FDBA74",
-    activeSurface: "rgba(217,119,6,0.16)",
-    secondarySurface: "rgba(120,53,15,0.22)",
-    secondaryButtonText: "#FED7AA",
-  },
-  biografia: {
-    accent: "#60A5FA",
-    secondary: "#334155",
-    bgStart: "#06101F",
-    bgMid: "#0B1728",
-    bgEnd: "#101827",
-    glowPrimary: "rgba(96,165,250,0.22)",
-    glowSecondary: "rgba(51,65,85,0.28)",
-    titleTo: "#BFDBFE",
-    activeSurface: "rgba(96,165,250,0.15)",
-    secondarySurface: "rgba(51,65,85,0.24)",
-    secondaryButtonText: "#BFDBFE",
-  },
-  comedia: {
-    accent: "#FACC15",
-    secondary: "#FB7185",
-    bgStart: "#110D04",
-    bgMid: "#1D1608",
-    bgEnd: "#1A1014",
-    glowPrimary: "rgba(250,204,21,0.24)",
-    glowSecondary: "rgba(251,113,133,0.18)",
-    titleTo: "#FEF08A",
-    activeSurface: "rgba(250,204,21,0.16)",
-    secondarySurface: "rgba(251,113,133,0.16)",
-    secondaryButtonText: "#FEF9C3",
-  },
-};
-
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-const THEME_STORAGE_KEY = "historietas-tema-visual";
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
@@ -550,183 +247,6 @@ function obterTituloCriativoAutoresExplorar(genero: string) {
     TITULOS_CRIATIVOS_AUTORES_EXPLORAR[normalizarTexto(genero)] ||
     "Autores para descobrir"
   );
-}
-
-function obterTemaVisualExplorarSeguro(valor: unknown): TemaVisualExplorar {
-  if (typeof valor === "string" && valor in TEMAS_VISUAIS_EXPLORAR) {
-    return valor as TemaVisualExplorar;
-  }
-
-  return "original";
-}
-
-function carregarTemaVisualExplorarSalvo(userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return "original";
-  }
-
-  try {
-    const texto = lerStorageUsuarioExplorar(THEME_STORAGE_KEY, userIdLimpo);
-
-    if (!texto) {
-      return "original";
-    }
-
-    try {
-      return obterTemaVisualExplorarSeguro(JSON.parse(texto));
-    } catch {
-      return obterTemaVisualExplorarSeguro(texto);
-    }
-  } catch {
-    return "original";
-  }
-}
-
-function aplicarTemaVisualExplorar(temaVisual: TemaVisualExplorar) {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const tema = TEMAS_VISUAIS_EXPLORAR[temaVisual];
-  const raiz = document.documentElement;
-
-  raiz.style.setProperty("--historietas-accent", tema.accent);
-  raiz.style.setProperty("--historietas-secondary", tema.secondary);
-  raiz.style.setProperty("--historietas-bg-start", tema.bgStart);
-  raiz.style.setProperty("--historietas-bg-mid", tema.bgMid);
-  raiz.style.setProperty("--historietas-bg-end", tema.bgEnd);
-  raiz.style.setProperty("--historietas-glow-primary", tema.glowPrimary);
-  raiz.style.setProperty("--historietas-glow-secondary", tema.glowSecondary);
-  raiz.style.setProperty("--historietas-text-primary", tema.textPrimary || "#FFFFFF");
-  raiz.style.setProperty("--historietas-text-secondary", tema.textSecondary || "#D4D4D8");
-  raiz.style.setProperty("--historietas-surface", tema.surface || "rgba(18,12,30,0.82)");
-  raiz.style.setProperty("--historietas-surface-strong", tema.surfaceStrong || "rgba(18,12,30,0.98)");
-  raiz.style.setProperty("--historietas-border-soft", tema.borderSoft || "rgba(255,255,255,0.08)");
-  raiz.style.setProperty("--historietas-input-bg", tema.inputBg || "#18181B");
-  raiz.style.setProperty("--historietas-input-text", tema.inputText || "#FFFFFF");
-  raiz.style.setProperty("--historietas-title-from", tema.titleFrom || "#FFFFFF");
-  raiz.style.setProperty("--historietas-title-mid", tema.titleMid || "#F5F3FF");
-  raiz.style.setProperty("--historietas-title-to", tema.titleTo || "#FDBA74");
-  raiz.style.setProperty(
-    "--historietas-hero-shadow",
-    tema.heroShadow ||
-      "0 18px 48px rgba(0,0,0,0.32), 0 0 36px rgba(124,58,237,0.12)"
-  );
-  raiz.style.setProperty(
-    "--historietas-card-shadow",
-    tema.cardShadow || "0 14px 36px rgba(0,0,0,0.20)"
-  );
-  raiz.style.setProperty(
-    "--historietas-logo-shadow",
-    tema.logoShadow || "0 0 26px rgba(139, 92, 246, 0.24)"
-  );
-  raiz.style.setProperty(
-    "--historietas-active-surface",
-    tema.activeSurface ||
-      "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))"
-  );
-  raiz.style.setProperty(
-    "--historietas-secondary-surface",
-    tema.secondarySurface ||
-      "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(255,255,255,0.035))"
-  );
-  raiz.style.setProperty(
-    "--historietas-secondary-button-text",
-    tema.secondaryButtonText || "#DDD6FE"
-  );
-  raiz.style.setProperty(
-    "--historietas-danger-surface",
-    tema.dangerSurface || "rgba(239, 68, 68, 0.105)"
-  );
-  raiz.style.setProperty(
-    "--historietas-danger-button-text",
-    tema.dangerButtonText || "#FCA5A5"
-  );
-
-  const surface = tema.surface || "rgba(18,12,30,0.82)";
-  const surfaceStrong = tema.surfaceStrong || "rgba(18,12,30,0.98)";
-  const borderSoft = tema.borderSoft || "rgba(255,255,255,0.08)";
-  const textPrimary = tema.textPrimary || "#FFFFFF";
-  const textSecondary = tema.textSecondary || "#D4D4D8";
-  const activeSurface =
-    tema.activeSurface ||
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))";
-
-  const isBranco = temaVisual === "branco";
-  const isEscuro = temaVisual === "escuro";
-  const isFoco = temaVisual === "foco";
-
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-bg",
-    isBranco
-      ? "#FFFFFF"
-      : isEscuro
-        ? "#050505"
-        : isFoco
-          ? "#050506"
-          : `radial-gradient(circle at 16% 0%, color-mix(in srgb, ${tema.accent} 18%, transparent), transparent 34%), radial-gradient(circle at 84% 0%, color-mix(in srgb, ${tema.secondary} 22%, transparent), transparent 38%), linear-gradient(180deg, ${surfaceStrong} 0%, ${tema.bgStart} 100%)`
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-border",
-    isBranco ? "#DADCE0" : borderSoft
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-shadow",
-    isBranco || isEscuro || isFoco
-      ? "none"
-      : "0 14px 34px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06)"
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-text",
-    isBranco ? "#5F6368" : textSecondary
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-hover-bg",
-    isBranco ? "#F1F3F4" : activeSurface
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-hover-text",
-    isBranco ? "#202124" : textPrimary
-  );
-  raiz.style.setProperty("--historietas-bottom-nav-icon-text", tema.accent);
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-icon-bg",
-    isBranco ? "#F1F3F4" : surface
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-icon-border",
-    isBranco ? "#E0E3E7" : borderSoft
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-bg",
-    isBranco
-      ? tema.accent
-      : `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-border",
-    isBranco ? tema.accent : `color-mix(in srgb, ${tema.accent} 55%, transparent)`
-  );
-  raiz.style.setProperty("--historietas-bottom-nav-main-shadow", "none");
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-icon-bg",
-    "rgba(255,255,255,0.16)"
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-icon-border",
-    "rgba(255,255,255,0.18)"
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-shine",
-    isBranco || isEscuro || isFoco
-      ? "none"
-      : "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)"
-  );
-
-  raiz.dataset.historietasTemaVisual = temaVisual;
-  document.body.dataset.historietasTemaVisual = temaVisual;
 }
 
 function criarStorageKeyUsuarioExplorar(chave: string, userId: string) {
@@ -2338,8 +1858,8 @@ type TemaCategoriaExplorar = {
 };
 
 function criarTemaCategoriaExplorar(
-  _tema: Pick<
-    TemaVisualExplorarConfig,
+  tema: Pick<
+    TemaVisualHistorietasConfig,
     | "accent"
     | "secondary"
     | "bgStart"
@@ -2351,8 +1871,29 @@ function criarTemaCategoriaExplorar(
     | "activeSurface"
     | "secondarySurface"
     | "secondaryButtonText"
-  >
+    | "surfaceStrong"
+  >,
+  temaVisual: TemaVisualHistorietas = "original"
 ): TemaCategoriaExplorar {
+  if (temaVisual === "foco") {
+    return {
+      accent: tema.accent,
+      secondary: tema.secondary,
+      bgStart: tema.bgStart,
+      bgMid: tema.bgMid,
+      bgEnd: tema.bgEnd,
+      glowPrimary: tema.glowPrimary,
+      glowSecondary: tema.glowSecondary,
+      titleTo: tema.titleTo,
+      activeSurface: tema.activeSurface,
+      secondarySurface: tema.secondarySurface,
+      secondaryButtonText: tema.secondaryButtonText,
+      activeBackground: tema.surfaceStrong,
+      pageBackground: tema.bgStart,
+      heroBackground: tema.bgStart,
+    };
+  }
+
   return {
     accent: "#A78BFA",
     secondary: "#4C1D95",
@@ -2371,105 +1912,23 @@ function criarTemaCategoriaExplorar(
   };
 }
 
-const TEMAS_CATEGORIAS_EXPLORAR: Record<string, TemaCategoriaExplorar> = {
-  acao: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.acao),
-  aventura: criarTemaCategoriaExplorar({
-    accent: "#EAB308",
-    secondary: "#92400E",
-    bgStart: "#0D0803",
-    bgMid: "#171006",
-    bgEnd: "#1F1308",
-    glowPrimary: "rgba(234,179,8,0.18)",
-    glowSecondary: "rgba(146,64,14,0.20)",
-    titleTo: "#FDE68A",
-    activeSurface: "rgba(234,179,8,0.15)",
-    secondarySurface: "rgba(146,64,14,0.20)",
-    secondaryButtonText: "#FDE68A",
-  }),
-  comedia: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.comedia),
-  drama: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.drama),
-  fantasia: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.fantasia),
-  ficcao: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.scifi),
-  "sci-fi": criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.scifi),
-  "sci fi": criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.scifi),
-  scifi: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.scifi),
-  romance: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.romance),
-  terror: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.terror),
-  sobrenatural: criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.sobrenatural),
-  misterio: criarTemaCategoriaExplorar({
-    accent: "#818CF8",
-    secondary: "#312E81",
-    bgStart: "#060817",
-    bgMid: "#0B1026",
-    bgEnd: "#10112A",
-    glowPrimary: "rgba(129,140,248,0.26)",
-    glowSecondary: "rgba(49,46,129,0.24)",
-    titleTo: "#C7D2FE",
-    activeSurface: "rgba(129,140,248,0.16)",
-    secondarySurface: "rgba(49,46,129,0.22)",
-    secondaryButtonText: "#C7D2FE",
-  }),
-  suspense: criarTemaCategoriaExplorar({
-    accent: "#A3E635",
-    secondary: "#365314",
-    bgStart: "#070B05",
-    bgMid: "#101607",
-    bgEnd: "#11140A",
-    glowPrimary: "rgba(163,230,53,0.18)",
-    glowSecondary: "rgba(54,83,20,0.24)",
-    titleTo: "#D9F99D",
-    activeSurface: "rgba(163,230,53,0.14)",
-    secondarySurface: "rgba(54,83,20,0.24)",
-    secondaryButtonText: "#D9F99D",
-  }),
-  historico: criarTemaCategoriaExplorar({
-    accent: "#D97706",
-    secondary: "#78350F",
-    bgStart: "#110805",
-    bgMid: "#1A0F08",
-    bgEnd: "#17100A",
-    glowPrimary: "rgba(217,119,6,0.22)",
-    glowSecondary: "rgba(120,53,15,0.25)",
-    titleTo: "#FDBA74",
-    activeSurface: "rgba(217,119,6,0.16)",
-    secondarySurface: "rgba(120,53,15,0.22)",
-    secondaryButtonText: "#FED7AA",
-  }),
-  biografia: criarTemaCategoriaExplorar({
-    accent: "#60A5FA",
-    secondary: "#334155",
-    bgStart: "#06101F",
-    bgMid: "#0B1728",
-    bgEnd: "#101827",
-    glowPrimary: "rgba(96,165,250,0.22)",
-    glowSecondary: "rgba(51,65,85,0.28)",
-    titleTo: "#BFDBFE",
-    activeSurface: "rgba(96,165,250,0.15)",
-    secondarySurface: "rgba(51,65,85,0.24)",
-    secondaryButtonText: "#BFDBFE",
-  }),
-};
-
-function obterTemaCategoria(categoria: string) {
-  const categoriaNormalizada = normalizarTexto(categoria);
-
-  return (
-    TEMAS_CATEGORIAS_EXPLORAR[categoriaNormalizada] ||
-    criarTemaCategoriaExplorar(TEMAS_VISUAIS_EXPLORAR.original)
+function obterTemaCategoria(
+  _categoria: string,
+  temaVisual: TemaVisualHistorietas = "original"
+) {
+  return criarTemaCategoriaExplorar(
+    TEMAS_VISUAIS_HISTORIETAS[temaVisual],
+    temaVisual
   );
 }
 
 function criarTemaPaginaVisualExplorar(
-  _temaVisual: TemaVisualExplorar,
-  tema: TemaVisualExplorarConfig,
-  temaCategoria: ReturnType<typeof obterTemaCategoria>,
-  categoriaSelecionada: string
-): ReturnType<typeof obterTemaCategoria> {
-  if (categoriaSelecionada.trim()) {
-    return temaCategoria;
-  }
-
-  return criarTemaCategoriaExplorar(tema);
+  temaVisual: TemaVisualHistorietas
+): TemaCategoriaExplorar {
+  return criarTemaCategoriaExplorar(
+    TEMAS_VISUAIS_HISTORIETAS[temaVisual],
+    temaVisual
+  );
 }
 
 function obterDecoracoesCategoria(categoria: string) {
@@ -2525,6 +1984,7 @@ function criarDecoracaoTemaStyle(
 
 export default function ExplorarPage() {
   const router = useRouter();
+  const { temaVisual, pageThemeStyle } = useHistorietasTheme(pageStyle);
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
@@ -2545,24 +2005,9 @@ export default function ExplorarPage() {
   const [ordenacao, setOrdenacao] = useState<OrdenacaoExplorar>("relevancia");
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [temaVisual, setTemaVisual] = useState<TemaVisualExplorar>("original");
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [mensagemLogin, setMensagemLogin] = useState("");
-
-  useEffect(() => {
-    const temaInicial: TemaVisualExplorar = "original";
-
-    aplicarTemaVisualExplorar(temaInicial);
-
-    const aplicarTemaTimer = window.setTimeout(() => {
-      setTemaVisual(temaInicial);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(aplicarTemaTimer);
-    };
-  }, []);
 
   useEffect(() => {
     let componenteAtivo = true;
@@ -2573,19 +2018,14 @@ export default function ExplorarPage() {
 
         if (componenteAtivo) {
           const userId = data.user?.id || "";
-          const temaSalvo = carregarTemaVisualExplorarSalvo(userId);
 
           setUsuarioLogado(Boolean(userId));
           setUsuarioIdLogado(userId);
-          setTemaVisual(temaSalvo);
-          aplicarTemaVisualExplorar(temaSalvo);
         }
       } catch {
         if (componenteAtivo) {
           setUsuarioLogado(false);
           setUsuarioIdLogado("");
-          setTemaVisual("original");
-          aplicarTemaVisualExplorar("original");
         }
       }
     }
@@ -2596,12 +2036,9 @@ export default function ExplorarPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       const userId = session?.user?.id || "";
-      const temaSalvo = carregarTemaVisualExplorarSalvo(userId);
 
       setUsuarioLogado(Boolean(userId));
       setUsuarioIdLogado(userId);
-      setTemaVisual(temaSalvo);
-      aplicarTemaVisualExplorar(temaSalvo);
 
       if (session?.user) {
         setMensagemLogin("");
@@ -3191,91 +2628,7 @@ export default function ExplorarPage() {
       : "Explorar";
 
   const categoriaAtiva = categoriaSelecionada.trim().length > 0;
-  const temaCategoria = obterTemaCategoria(categoriaSelecionada);
-  const temaVisualConfig = TEMAS_VISUAIS_EXPLORAR[temaVisual];
-  const temaPagina = criarTemaPaginaVisualExplorar(
-    temaVisual,
-    temaVisualConfig,
-    temaCategoria,
-    categoriaSelecionada
-  );
-  const decoracoesTema = obterDecoracoesCategoria(categoriaSelecionada || temaVisual);
-
-  useEffect(() => {
-    aplicarTemaVisualExplorar(temaVisual);
-
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const raiz = document.documentElement;
-
-    if (!categoriaAtiva) {
-      raiz.removeAttribute("data-historietas-explorar-categoria-ativa");
-      document.body.removeAttribute("data-historietas-explorar-categoria-ativa");
-      document.body.style.removeProperty("background");
-      raiz.style.removeProperty("background");
-      return;
-    }
-
-    raiz.setAttribute("data-historietas-explorar-categoria-ativa", "true");
-    document.body.setAttribute("data-historietas-explorar-categoria-ativa", "true");
-    raiz.style.setProperty("background", "#070212");
-    document.body.style.setProperty("background", "#070212");
-    raiz.style.setProperty("--historietas-accent", "#A78BFA");
-    raiz.style.setProperty("--historietas-secondary", "#4C1D95");
-    raiz.style.setProperty("--historietas-bg-start", temaCategoria.bgStart);
-    raiz.style.setProperty("--historietas-bg-mid", temaCategoria.bgMid);
-    raiz.style.setProperty("--historietas-bg-end", temaCategoria.bgEnd);
-    raiz.style.setProperty("--historietas-glow-primary", "transparent");
-    raiz.style.setProperty("--historietas-glow-secondary", "transparent");
-    raiz.style.setProperty("--historietas-title-from", "#FFFFFF");
-    raiz.style.setProperty("--historietas-title-mid", "#F5F3FF");
-    raiz.style.setProperty("--historietas-title-to", temaCategoria.titleTo);
-    raiz.style.setProperty("--historietas-text-primary", "#FFFFFF");
-    raiz.style.setProperty("--historietas-text-secondary", "#E5E7EB");
-    raiz.style.setProperty("--historietas-input-bg", "rgba(5,5,12,0.72)");
-    raiz.style.setProperty("--historietas-input-text", "#FFFFFF");
-    raiz.style.setProperty("--historietas-surface", "rgba(9,7,18,0.72)");
-    raiz.style.setProperty("--historietas-surface-strong", "rgba(3,3,8,0.92)");
-    raiz.style.setProperty("--historietas-border-soft", "rgba(255,255,255,0.13)");
-    raiz.style.setProperty(
-      "--historietas-secondary-surface",
-      `color-mix(in srgb, ${temaCategoria.accent} 15%, rgba(8,8,14,0.82))`
-    );
-    raiz.style.setProperty(
-      "--historietas-active-surface",
-      `color-mix(in srgb, ${temaCategoria.accent} 24%, rgba(8,8,14,0.88))`
-    );
-    raiz.style.setProperty(
-      "--historietas-bottom-nav-bg",
-      `radial-gradient(circle at 16% 0%, color-mix(in srgb, ${temaCategoria.accent} 20%, transparent), transparent 34%), linear-gradient(180deg, rgba(8,8,14,0.98) 0%, rgba(3,3,8,0.98) 100%)`
-    );
-    raiz.style.setProperty(
-      "--historietas-bottom-nav-border",
-      `color-mix(in srgb, ${temaCategoria.accent} 24%, rgba(255,255,255,0.10))`
-    );
-    raiz.style.setProperty("--historietas-bottom-nav-shadow", "none");
-    raiz.style.setProperty("--historietas-bottom-nav-text", "#E5E7EB");
-    raiz.style.setProperty(
-      "--historietas-bottom-nav-hover-bg",
-      `color-mix(in srgb, ${temaCategoria.accent} 18%, rgba(255,255,255,0.06))`
-    );
-    raiz.style.setProperty("--historietas-bottom-nav-hover-text", "#FFFFFF");
-    raiz.style.setProperty("--historietas-bottom-nav-icon-text", temaCategoria.accent);
-    raiz.style.setProperty("--historietas-bottom-nav-icon-bg", "rgba(255,255,255,0.06)");
-    raiz.style.setProperty(
-      "--historietas-bottom-nav-icon-border",
-      `color-mix(in srgb, ${temaCategoria.accent} 22%, rgba(255,255,255,0.08))`
-    );
-    raiz.style.setProperty("--historietas-bottom-nav-main-bg", temaCategoria.activeBackground);
-    raiz.style.setProperty(
-      "--historietas-bottom-nav-main-border",
-      `color-mix(in srgb, ${temaCategoria.accent} 55%, transparent)`
-    );
-    raiz.style.setProperty("--historietas-bottom-nav-main-shadow", "none");
-    raiz.style.setProperty("--historietas-bottom-nav-shine", "none");
-  }, [categoriaAtiva, categoriaSelecionada, temaVisual]);
+  const temaPagina = criarTemaPaginaVisualExplorar(temaVisual);
 
   function atualizarUrl(
     categoria: string,
@@ -3341,8 +2694,8 @@ export default function ExplorarPage() {
   }
 
   return (
-    <main style={criarExplorarPageStyle(temaPagina)}>
-      <style>{themePageCss}</style>
+    <main style={criarExplorarPageStyle(pageThemeStyle)}>
+      <style>{`${themePageCss}${historietasThemeCss}`}</style>
       <style>{explorarBuscaToggleCss}</style>
 
       {isDesktop && (
@@ -3638,7 +2991,7 @@ export default function ExplorarPage() {
             >
               <SectionHeader
                 title={obterTituloCriativoObrasExplorar(secao.genero)}
-                tema={obterTemaCategoria(secao.genero)}
+                tema={obterTemaCategoria(secao.genero, temaVisual)}
                 isDesktop={isDesktop}
               />
 
@@ -3662,7 +3015,7 @@ export default function ExplorarPage() {
                         usuarioLogado &&
                         colecaoTemObraExplorar(obrasConcluidas, obra)
                       }
-                      tema={obterTemaCategoria(secao.genero)}
+                      tema={obterTemaCategoria(secao.genero, temaVisual)}
                       isDesktop={isDesktop}
                     />
                   </div>
@@ -3742,7 +3095,7 @@ export default function ExplorarPage() {
             >
               <SectionHeader
                 title={obterTituloCriativoAutoresExplorar(secao.genero)}
-                tema={obterTemaCategoria(secao.genero)}
+                tema={obterTemaCategoria(secao.genero, temaVisual)}
                 isDesktop={isDesktop}
               />
 
@@ -4283,9 +3636,7 @@ const themePageCss = `
   html[data-historietas-tema-visual] body,
   html[data-historietas-tema-visual] main,
   html[data-historietas-tema-visual="original"] body,
-  html[data-historietas-tema-visual="original"] main,
-  html[data-historietas-explorar-categoria-ativa="true"],
-  html[data-historietas-explorar-categoria-ativa="true"] body {
+  html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
   }
@@ -4480,12 +3831,11 @@ const pageStyle: CSSProperties = {
 };
 
 function criarExplorarPageStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>
+  pageThemeStyle: CSSProperties
 ): CSSProperties {
   return {
-    ...pageStyle,
-    background: "#070212",
-    color: "#FFFFFF",
+    ...pageThemeStyle,
+    color: "var(--historietas-text-primary, #FFFFFF)",
   };
 }
 

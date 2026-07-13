@@ -78,7 +78,107 @@ export default function RootLayout({
       data-historietas-bottom-nav-oculto="false"
       suppressHydrationWarning
     >
-      <body>
+      <body suppressHydrationWarning>
+
+        <Script
+          id="historietas-tema-visual-inicial"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (() => {
+                const chaveTema = "historietas-tema-visual";
+                const raiz = document.documentElement;
+
+                function obterTemaSeguro(valor) {
+                  return valor === "foco" ? "foco" : "original";
+                }
+
+                function lerTemaSalvo() {
+                  try {
+                    const texto = window.localStorage.getItem(chaveTema);
+
+                    if (!texto) {
+                      return "original";
+                    }
+
+                    try {
+                      return obterTemaSeguro(JSON.parse(texto));
+                    } catch {
+                      return obterTemaSeguro(texto);
+                    }
+                  } catch {
+                    return "original";
+                  }
+                }
+
+                function aplicarVariaveisTemaInicial(temaVisual) {
+                  const foco = temaVisual === "foco";
+
+                  const variaveis = foco
+                    ? {
+                        "--historietas-page-background": "#000000",
+                        "--historietas-accent": "#FFFFFF",
+                        "--historietas-secondary": "#A1A1AA",
+                        "--historietas-bg-start": "#000000",
+                        "--historietas-bg-mid": "#000000",
+                        "--historietas-bg-end": "#000000",
+                        "--historietas-glow-primary": "transparent",
+                        "--historietas-glow-secondary": "transparent",
+                        "--historietas-text-primary": "#FFFFFF",
+                        "--historietas-text-secondary": "#A1A1AA",
+                        "--historietas-surface": "#050505",
+                        "--historietas-surface-strong": "#000000",
+                        "--historietas-border-soft": "rgba(255,255,255,0.18)",
+                        "--historietas-input-bg": "#000000",
+                        "--historietas-input-text": "#FFFFFF",
+                        "--historietas-input-placeholder": "#A1A1AA",
+                        "--historietas-title-from": "#FFFFFF",
+                        "--historietas-title-mid": "#FFFFFF",
+                        "--historietas-title-to": "#FFFFFF",
+                        "--historietas-active-surface": "rgba(255,255,255,0.10)",
+                        "--historietas-secondary-surface": "rgba(255,255,255,0.06)",
+                        "--historietas-secondary-button-text": "#FFFFFF",
+                        "--historietas-danger-surface": "rgba(255,255,255,0.08)",
+                        "--historietas-danger-button-text": "#FFFFFF",
+                        "--historietas-bottom-nav-bg": "#000000",
+                        "--historietas-bottom-nav-border": "transparent",
+                        "--historietas-bottom-nav-text": "#A1A1AA",
+                        "--historietas-bottom-nav-active-text": "#FFFFFF",
+                        "--historietas-bottom-nav-muted-text": "#71717A",
+                        "--historietas-bottom-nav-publish-bg": "#000000",
+                        "--historietas-bottom-nav-publish-border": "#FFFFFF"
+                      }
+                    : {
+                        "--historietas-page-background": "#070212",
+                        "--historietas-accent": "#F97316",
+                        "--historietas-secondary": "#7C3AED",
+                        "--historietas-bg-start": "#070212",
+                        "--historietas-bg-mid": "#070212",
+                        "--historietas-bg-end": "#070212",
+                        "--historietas-glow-primary": "transparent",
+                        "--historietas-glow-secondary": "transparent",
+                        "--historietas-text-primary": "#FFFFFF",
+                        "--historietas-text-secondary": "#D4D4D8"
+                      };
+
+                  Object.entries(variaveis).forEach(([variavel, valor]) => {
+                    raiz.style.setProperty(variavel, valor);
+                  });
+
+                  raiz.setAttribute(
+                    "data-historietas-tema-visual",
+                    temaVisual
+                  );
+                  raiz.style.background = foco ? "#000000" : "#070212";
+                  raiz.style.colorScheme = "dark";
+                }
+
+                aplicarVariaveisTemaInicial(lerTemaSalvo());
+              })();
+            `,
+          }}
+        />
+
         <Script
           id="historietas-bottom-nav-visibility"
           strategy="beforeInteractive"
@@ -621,10 +721,7 @@ export default function RootLayout({
                 justify-content: flex-start;
                 gap: 0;
                 padding: 3px 0 max(3px, env(safe-area-inset-bottom));
-                border-top: 1px solid var(--historietas-bottom-nav-bg, rgba(7, 2, 18, 0.98));
-                border-right: 0;
-                border-bottom: 0;
-                border-left: 0;
+                border: 0;
                 border-radius: 0;
                 background:
                   linear-gradient(180deg, rgba(11, 3, 24, 0.96) 0%, var(--historietas-bottom-nav-bg, rgba(7, 2, 18, 0.98)) 100%);
@@ -922,7 +1019,7 @@ export default function RootLayout({
               html[data-historietas-tema-visual] nav.historietas-bottom-nav,
               html[data-historietas-tema-visual] [data-bottom-nav],
               html[data-historietas-tema-visual] [data-mobile-nav] {
-                border-top-color: var(--historietas-bottom-nav-bg, rgba(7, 2, 18, 0.98)) !important;
+                border: 0 !important;
                 box-shadow: none !important;
                 filter: none !important;
                 backdrop-filter: none !important;
@@ -1118,6 +1215,258 @@ export default function RootLayout({
               html[data-historietas-bottom-nav-oculto="true"] [data-bottom-nav],
               html[data-historietas-bottom-nav-oculto="true"] [data-mobile-nav] {
                 display: none !important;
+              }
+
+
+
+              /* MODO FOCO: preto, branco e cinza sem alterar o tema Original. */
+              html[data-historietas-tema-visual="foco"],
+              html[data-historietas-tema-visual="foco"] body {
+                background: #000000 !important;
+                color: #FFFFFF !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] .historietas-app-shell {
+                background: #000000 !important;
+                color: #FFFFFF !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav,
+              html[data-historietas-tema-visual="foco"] [data-bottom-nav="true"],
+              html[data-historietas-tema-visual="foco"] [data-mobile-nav="true"] {
+                background: #000000 !important;
+                border: 0 !important;
+                color: #A1A1AA !important;
+                box-shadow: none !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item:visited,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item:hover,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item:active,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item:focus,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item:focus-visible {
+                color: #A1A1AA !important;
+                -webkit-text-fill-color: #A1A1AA !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"],
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item-active,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"]:visited,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item-active:visited,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"]:hover,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item-active:hover {
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-icon,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-svg,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-svg *,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-icon::before {
+                color: currentColor !important;
+                stroke: currentColor !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"] .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:hover .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:active .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:focus .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"][aria-current="page"] .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"].historietas-bottom-nav-item-active .historietas-bottom-nav-publish-icon {
+                background: #000000 !important;
+                border: 1px solid #FFFFFF !important;
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+                box-shadow: none !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-profile-avatar {
+                background: #050505 !important;
+                border-color: #A1A1AA !important;
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+                box-shadow: none !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-profile-avatar,
+              html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item-active .historietas-bottom-nav-profile-avatar {
+                border-color: #FFFFFF !important;
+              }
+
+
+              /* AJUSTE FINAL DA BOTTOM NAV:
+                 item ativo apenas fica branco, sem bloco;
+                 botão + sem brilho roxo no Foco;
+                 sem linha separadora acima da navegação. */
+              html body nav.historietas-bottom-nav,
+              html[data-historietas-tema-visual] body nav.historietas-bottom-nav,
+              html[data-historietas-tema-visual] body [data-bottom-nav="true"],
+              html[data-historietas-tema-visual] body [data-mobile-nav="true"] {
+                border: 0 !important;
+                border-top: 0 !important;
+                outline: 0 !important;
+                box-shadow: none !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:hover,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:active,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:focus,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:focus-visible,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"],
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item-active {
+                background: transparent !important;
+                background-image: none !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                outline: 0 !important;
+                box-shadow: none !important;
+                filter: none !important;
+                backdrop-filter: none !important;
+                -webkit-tap-highlight-color: transparent !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item::before,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item::after {
+                content: none !important;
+                display: none !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([href="/publicar"]) .historietas-bottom-nav-icon,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([href="/publicar"]) .historietas-bottom-nav-svg,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([href="/publicar"]) .historietas-bottom-nav-svg *,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([href="/publicar"])[aria-current="page"] .historietas-bottom-nav-icon,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([href="/publicar"]).historietas-bottom-nav-item-active .historietas-bottom-nav-icon {
+                background: transparent !important;
+                background-color: transparent !important;
+                background-image: none !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                outline: 0 !important;
+                box-shadow: none !important;
+                filter: none !important;
+                backdrop-filter: none !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"],
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item-active {
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):not([href="/publicar"]) {
+                color: #A1A1AA !important;
+                -webkit-text-fill-color: #A1A1AA !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"],
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item-active {
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"] .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:hover .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:active .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:focus .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:focus-visible .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"][aria-current="page"] .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"].historietas-bottom-nav-item-active .historietas-bottom-nav-publish-icon {
+                background: #050505 !important;
+                background-image: none !important;
+                border: 1px solid #FFFFFF !important;
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+                box-shadow: none !important;
+                filter: none !important;
+                backdrop-filter: none !important;
+              }
+
+
+              /* CORREÇÃO FINAL DO ESTADO ATIVO NO MODO FOCO:
+                 normal = cinza; ativo = branco; sem bloco branco. */
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+                color: #A1A1AA !important;
+                -webkit-text-fill-color: #A1A1AA !important;
+                background: transparent !important;
+                background-image: none !important;
+                box-shadow: none !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"],
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item-active {
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+                background: transparent !important;
+                background-image: none !important;
+                border: 0 !important;
+                box-shadow: none !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-svg,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-svg * {
+                color: #A1A1AA !important;
+                stroke: #A1A1AA !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item-active .historietas-bottom-nav-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-svg,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item-active .historietas-bottom-nav-svg,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-svg *,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item-active .historietas-bottom-nav-svg * {
+                color: #FFFFFF !important;
+                stroke: #FFFFFF !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+                color: #A1A1AA !important;
+                -webkit-text-fill-color: #A1A1AA !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-publish-icon {
+                background: #050505 !important;
+                background-image: none !important;
+                border: 1px solid #A1A1AA !important;
+                color: #A1A1AA !important;
+                -webkit-text-fill-color: #A1A1AA !important;
+                box-shadow: none !important;
+                filter: none !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-publish-icon .historietas-bottom-nav-svg,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-publish-icon .historietas-bottom-nav-svg * {
+                color: #A1A1AA !important;
+                stroke: #A1A1AA !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"][aria-current="page"],
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"].historietas-bottom-nav-item-active {
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"][aria-current="page"] .historietas-bottom-nav-publish-icon,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"].historietas-bottom-nav-item-active .historietas-bottom-nav-publish-icon {
+                background: #050505 !important;
+                background-image: none !important;
+                border: 1px solid #FFFFFF !important;
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+                box-shadow: none !important;
+                filter: none !important;
+              }
+
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"][aria-current="page"] .historietas-bottom-nav-publish-icon .historietas-bottom-nav-svg,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"][aria-current="page"] .historietas-bottom-nav-publish-icon .historietas-bottom-nav-svg *,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"].historietas-bottom-nav-item-active .historietas-bottom-nav-publish-icon .historietas-bottom-nav-svg,
+              html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"].historietas-bottom-nav-item-active .historietas-bottom-nav-publish-icon .historietas-bottom-nav-svg * {
+                color: #FFFFFF !important;
+                stroke: #FFFFFF !important;
               }
 
               @media (min-width: 768px) {

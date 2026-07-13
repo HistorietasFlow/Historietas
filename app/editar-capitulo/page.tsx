@@ -1863,15 +1863,54 @@ export default function EditarCapituloPage() {
 }
 
 const editarCapituloPageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
+  html {
+    --historietas-editar-capitulo-bg-page: #070212;
+    --historietas-editar-capitulo-bg-deep: #04000A;
+    --historietas-editar-capitulo-surface: #08030F;
+    --historietas-editar-capitulo-accent: #F97316;
+    --historietas-editar-capitulo-danger: #EF4444;
+    --historietas-editar-capitulo-danger-text: #FCA5A5;
+    --historietas-editar-capitulo-danger-text-soft: #FECACA;
+    --historietas-editar-capitulo-success: #86EFAC;
+    --historietas-editar-capitulo-panel: rgba(4, 0, 10, 0.72);
+    --historietas-editar-capitulo-danger-surface: rgba(127,29,29,0.18);
+    --historietas-editar-capitulo-danger-border: rgba(239,68,68,0.26);
+    --historietas-editar-capitulo-danger-bg: rgba(239,68,68,0.13);
+    --historietas-editar-capitulo-danger-border-strong: rgba(239,68,68,0.28);
+    --historietas-editar-capitulo-success-bg: rgba(34,197,94,0.12);
+    --historietas-editar-capitulo-success-border: rgba(34,197,94,0.28);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-editar-capitulo-bg-page: #000000;
+    --historietas-editar-capitulo-bg-deep: #000000;
+    --historietas-editar-capitulo-surface: #050505;
+    --historietas-editar-capitulo-accent: #FFFFFF;
+    --historietas-editar-capitulo-danger: #A1A1AA;
+    --historietas-editar-capitulo-danger-text: #FFFFFF;
+    --historietas-editar-capitulo-danger-text-soft: #D4D4D8;
+    --historietas-editar-capitulo-success: #FFFFFF;
+    --historietas-editar-capitulo-panel: rgba(5,5,5,0.92);
+    --historietas-editar-capitulo-danger-surface: rgba(255,255,255,0.08);
+    --historietas-editar-capitulo-danger-border: rgba(255,255,255,0.18);
+    --historietas-editar-capitulo-danger-bg: rgba(255,255,255,0.06);
+    --historietas-editar-capitulo-danger-border-strong: rgba(255,255,255,0.22);
+    --historietas-editar-capitulo-success-bg: rgba(255,255,255,0.06);
+    --historietas-editar-capitulo-success-border: rgba(255,255,255,0.18);
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -1886,13 +1925,56 @@ const editarCapituloPageCss = `
     color: #FFFFFF !important;
   }
 
+  html[data-historietas-tema-visual] nav,
+  html[data-historietas-tema-visual] [data-bottom-nav],
+  html[data-historietas-tema-visual] [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  }
+
   html[data-historietas-tema-visual] nav a[href="/painel-autor"],
   html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"],
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] {
-    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
-    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+    background: var(
+      --historietas-bottom-nav-active-bg,
+      rgba(59, 7, 100, 0.54)
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-border,
+      rgba(109, 40, 217, 0.48)
+    ) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
+    color: #FFFFFF !important;
+    background: var(
+      --historietas-bottom-nav-active-icon-bg,
+      #3B0764
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-icon-border,
+      rgba(167, 139, 250, 0.46)
+    ) !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/painel-autor"],
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/painel-autor"],
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/painel-autor"] {
+    background: #050505 !important;
+    border-color: #FFFFFF !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.24) !important;
+    color: #FFFFFF !important;
   }
 `;
 
@@ -1932,7 +2014,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background: "#070212",
+  background: "var(--historietas-editar-capitulo-bg-page, #070212)",
   color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -1979,7 +2061,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
+  background: "var(--historietas-surface-strong, var(--historietas-editar-capitulo-bg-deep, #04000A))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -2003,8 +2085,8 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
+  border: "2px solid var(--historietas-bg-start, var(--historietas-editar-capitulo-bg-page, #070212))",
+  background: "var(--historietas-editar-capitulo-danger, #EF4444)",
   color: "#FFFFFF",
   fontSize: "9px",
   lineHeight: 1,
@@ -2074,8 +2156,8 @@ const errorBoxStyle: CSSProperties = {
   marginTop: "18px",
   padding: "18px",
   borderRadius: "24px",
-  background: "rgba(127,29,29,0.18)",
-  border: "1px solid rgba(239,68,68,0.26)",
+  background: "var(--historietas-editar-capitulo-danger-surface, rgba(127,29,29,0.18))",
+  border: "1px solid var(--historietas-editar-capitulo-danger-border, rgba(239,68,68,0.26))",
   display: "grid",
   gap: "8px",
   minWidth: 0,
@@ -2086,7 +2168,7 @@ const errorBoxStyle: CSSProperties = {
 
 const errorTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  color: "var(--historietas-danger-button-text, var(--historietas-editar-capitulo-danger-text, #FCA5A5))",
   fontSize: "24px",
   fontWeight: 950,
   letterSpacing: "-0.045em",
@@ -2095,7 +2177,7 @@ const errorTitleStyle: CSSProperties = {
 
 const errorTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-danger-button-text, #FECACA)",
+  color: "var(--historietas-danger-button-text, var(--historietas-editar-capitulo-danger-text-soft, #FECACA))",
   fontSize: "14px",
   lineHeight: 1.7,
   fontWeight: 750,
@@ -2170,7 +2252,7 @@ const inputStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-editar-capitulo-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 14px",
   outline: "none",
@@ -2188,7 +2270,7 @@ const textareaStyle: CSSProperties = {
   minHeight: "78px",
   borderRadius: "20px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "var(--historietas-editar-capitulo-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "14px",
   outline: "none",
@@ -2248,7 +2330,7 @@ const importTitleStyle: CSSProperties = {
 const importIconBoxStyle: CSSProperties = {
   minHeight: "82px",
   borderRadius: "18px",
-  background: "#04000A",
+  background: "var(--historietas-editar-capitulo-bg-deep, #04000A)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "flex",
   alignItems: "center",
@@ -2279,9 +2361,9 @@ const importSuccessStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 9px",
   borderRadius: "999px",
-  background: "rgba(34,197,94,0.12)",
-  border: "1px solid rgba(34,197,94,0.28)",
-  color: "#86EFAC",
+  background: "var(--historietas-editar-capitulo-success-bg, rgba(34,197,94,0.12))",
+  border: "1px solid var(--historietas-editar-capitulo-success-border, rgba(34,197,94,0.28))",
+  color: "var(--historietas-editar-capitulo-success, #86EFAC)",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -2292,9 +2374,9 @@ const importErrorStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "7px 9px",
   borderRadius: "999px",
-  background: "var(--historietas-danger-surface, rgba(239,68,68,0.13))",
-  border: "1px solid rgba(239,68,68,0.28)",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  background: "var(--historietas-danger-surface, var(--historietas-editar-capitulo-danger-bg, rgba(239,68,68,0.13)))",
+  border: "1px solid var(--historietas-editar-capitulo-danger-border-strong, rgba(239,68,68,0.28))",
+  color: "var(--historietas-danger-button-text, var(--historietas-editar-capitulo-danger-text, #FCA5A5))",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -2307,7 +2389,7 @@ const importButtonStyle: CSSProperties = {
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-editar-capitulo-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
@@ -2341,7 +2423,7 @@ const saveButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-editar-capitulo-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -2370,7 +2452,7 @@ const secondaryButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-editar-capitulo-surface, #08030F)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11.5px",
@@ -2432,7 +2514,7 @@ const previewChapterCardStyle: CSSProperties = {
   gap: "7px",
   padding: "11px",
   borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-editar-capitulo-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   boxShadow: "none",
@@ -2500,7 +2582,7 @@ const emptyBoxStyle: CSSProperties = {
   gap: "12px",
   padding: "22px",
   borderRadius: "26px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-editar-capitulo-panel, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   minWidth: 0,
   maxWidth: "100%",
@@ -2529,7 +2611,7 @@ const emptyButtonStyle: CSSProperties = {
   width: "100%",
   minHeight: "50px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-editar-capitulo-accent, #F97316))",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "14px",

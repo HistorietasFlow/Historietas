@@ -1517,7 +1517,7 @@ function criarCapaBibliotecaPerfilStyle(capa: string, desktop: boolean): CSSProp
 
   return {
     ...baseStyle,
-    background: "#04000A",
+    background: "var(--historietas-perfil-bg-deep, #04000A)",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -2955,27 +2955,27 @@ function dataDiarioPerfilFormatada(dataIso: string) {
 
 function obterApresentacaoTipoDiarioPerfil(tipo: DiarioPerfilItem["tipo"]) {
   if (tipo === "lendo") {
-    return { icone: "▶", texto: "Lendo", cor: "#FB923C", fundo: "rgba(249,115,22,0.14)" };
+    return { icone: "▶", texto: "Lendo", cor: "var(--historietas-perfil-accent-strong, #FB923C)", fundo: "var(--historietas-perfil-accent-14, rgba(249,115,22,0.14))" };
   }
 
   if (tipo === "favorita") {
-    return { icone: "❤️", texto: "Favorita", cor: "#FB7185", fundo: "rgba(251,113,133,0.14)" };
+    return { icone: "❤️", texto: "Favorita", cor: "var(--historietas-perfil-rose, #FB7185)", fundo: "var(--historietas-perfil-rose-14, rgba(251,113,133,0.14))" };
   }
 
   if (tipo === "concluida") {
-    return { icone: "✓", texto: "Concluída", cor: "#86EFAC", fundo: "rgba(34,197,94,0.14)" };
+    return { icone: "✓", texto: "Concluída", cor: "var(--historietas-perfil-success-soft, #86EFAC)", fundo: "var(--historietas-perfil-success-14, rgba(34,197,94,0.14))" };
   }
 
   if (tipo === "avaliacao") {
-    return { icone: "★", texto: "Avaliação", cor: "#FBBF24", fundo: "rgba(251,191,36,0.14)" };
+    return { icone: "★", texto: "Avaliação", cor: "var(--historietas-perfil-gold, #FBBF24)", fundo: "var(--historietas-perfil-gold-14, rgba(251,191,36,0.14))" };
   }
 
   if (tipo === "review") {
-    return { icone: "✎", texto: "Review", cor: "#C084FC", fundo: "rgba(192,132,252,0.14)" };
+    return { icone: "✎", texto: "Review", cor: "var(--historietas-perfil-purple-soft, #C084FC)", fundo: "var(--historietas-perfil-purple-soft-14, rgba(192,132,252,0.14))" };
   }
 
   if (tipo === "quero_ler") {
-    return { icone: "+", texto: "Quero ler", cor: "#7DD3FC", fundo: "rgba(56,189,248,0.14)" };
+    return { icone: "+", texto: "Quero ler", cor: "var(--historietas-perfil-blue-soft, #7DD3FC)", fundo: "var(--historietas-perfil-blue-14, rgba(56,189,248,0.14))" };
   }
 
   return { icone: "●", texto: "Atividade", cor: "#D4D4D8", fundo: "rgba(255,255,255,0.08)" };
@@ -2995,7 +2995,7 @@ function criarEstrelaDiarioPerfilStyle(
     lineHeight: 1,
     fontWeight: 950,
     color: "transparent",
-    backgroundImage: `linear-gradient(90deg, #FBBF24 ${preenchimento}, rgba(255,255,255,0.18) ${preenchimento})`,
+    backgroundImage: `linear-gradient(90deg, var(--historietas-perfil-gold, #FBBF24) ${preenchimento}, rgba(255,255,255,0.18) ${preenchimento})`,
     WebkitBackgroundClip: "text",
     backgroundClip: "text",
   };
@@ -7977,7 +7977,7 @@ export default function PerfilAutorPage() {
   if (carregando) {
     return (
       <main style={pageThemeStyle}>
-        <style>{historietasThemeCss}</style>
+        <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
 
         {isDesktop && (
           <div style={desktopTopWaterFadeStyle} aria-hidden="true" />
@@ -7993,7 +7993,7 @@ export default function PerfilAutorPage() {
   if (autorNaoEncontrado) {
     return (
       <main style={pageThemeStyle}>
-        <style>{historietasThemeCss}</style>
+        <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
 
         {isDesktop && (
           <div style={desktopTopWaterFadeStyle} aria-hidden="true" />
@@ -8022,7 +8022,7 @@ export default function PerfilAutorPage() {
   if (!perfilParaMostrar) {
     return (
       <main style={pageThemeStyle}>
-        <style>{historietasThemeCss}</style>
+        <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
 
         {isDesktop && (
           <div style={desktopTopWaterFadeStyle} aria-hidden="true" />
@@ -8052,7 +8052,7 @@ export default function PerfilAutorPage() {
 
   return (
     <main style={pageThemeStyle}>
-      <style>{historietasThemeCss}</style>
+      <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
 
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -10008,7 +10008,7 @@ export default function PerfilAutorPage() {
                               style={{
                                 ...diaryActionSheetAnnotationLikeIconStyle,
                                 color: interacaoAnotacao.curtiu
-                                  ? "#FB7185"
+                                  ? "var(--historietas-perfil-rose, #FB7185)"
                                   : "#FFFFFF",
                               }}
                               aria-hidden="true"
@@ -10068,7 +10068,7 @@ const workActionSheetStyle: CSSProperties = {
   overflowY: "auto",
   overscrollBehavior: "contain",
   borderRadius: "24px 24px 0 0",
-  background: "#070212",
+  background: "var(--historietas-perfil-bg-page, #070212)",
   border: "none",
   borderBottom: "0",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
@@ -10266,8 +10266,8 @@ const diaryVisualCoverStyle: CSSProperties = {
   borderRadius: "18px",
   position: "relative",
   overflow: "hidden",
-  background: "#08030F",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  background: "var(--historietas-perfil-surface, #08030F)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-perfil-surface, #08030F) 0%, var(--historietas-perfil-bg-deep, #04000A) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "0",
@@ -10416,7 +10416,7 @@ const profileLibraryTabStyle: CSSProperties = {
 
 const profileLibraryTabActiveStyle: CSSProperties = {
   ...profileLibraryTabStyle,
-  background: "var(--historietas-active-surface, rgba(124,58,237,0.18))",
+  background: "var(--historietas-active-surface, var(--historietas-perfil-secondary-18, rgba(124,58,237,0.18)))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   border: "1px solid rgba(255,255,255,0.14)",
 };
@@ -10448,7 +10448,7 @@ const profileLibraryStatCardStyle: CSSProperties = {
   flex: "0 0 84px",
   scrollSnapAlign: "start",
   borderRadius: "11px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-perfil-deep-72, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   padding: "4px 4px",
   minHeight: "46px",
@@ -10468,7 +10468,7 @@ const profileLibraryStatCardStyle: CSSProperties = {
 
 const profileLibraryStatCardActiveStyle: CSSProperties = {
   ...profileLibraryStatCardStyle,
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
@@ -10520,7 +10520,7 @@ const profileLibraryCardStyle: CSSProperties = {
   gap: "9px",
   padding: "11px",
   borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "var(--historietas-perfil-deep-72, rgba(4, 0, 10, 0.72))",
   border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
@@ -10585,8 +10585,8 @@ const profileLibraryCoverStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
   textDecoration: "none",
-  background: "#04000A",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  background: "var(--historietas-perfil-bg-deep, #04000A)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-perfil-surface, #08030F) 0%, var(--historietas-perfil-bg-deep, #04000A) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "1px solid rgba(255,255,255,0.08)",
@@ -10642,9 +10642,9 @@ const profileLibraryStatusStyle: CSSProperties = {
 
 const profileLibraryStatusActiveStyle: CSSProperties = {
   ...profileLibraryChapterBadgeStyle,
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.22)",
-  color: "#86EFAC",
+  background: "var(--historietas-perfil-success-spaced-12, rgba(34, 197, 94, 0.12))",
+  border: "1px solid var(--historietas-perfil-success-spaced-22, rgba(34, 197, 94, 0.22))",
+  color: "var(--historietas-perfil-success-soft, #86EFAC)",
   fontWeight: 950,
 };
 
@@ -10682,7 +10682,7 @@ const profileLibraryAuthorStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   margin: 0,
-  color: "var(--historietas-text-secondary, #D8C8FF)",
+  color: "var(--historietas-text-secondary, var(--historietas-perfil-lavender, #D8C8FF))",
   fontSize: "12px",
   fontWeight: 800,
   textDecoration: "none",
@@ -10716,7 +10716,7 @@ const profileLibraryReadButtonStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "0 12px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "13px",
@@ -10776,22 +10776,22 @@ const profileLibraryListButtonActiveStyle: CSSProperties = {
 
 const profileLibraryDoneButtonStyle: CSSProperties = {
   ...profileLibraryListButtonStyle,
-  background: "rgba(34, 197, 94, 0.12)",
-  border: "1px solid rgba(34, 197, 94, 0.22)",
-  color: "#86EFAC",
+  background: "var(--historietas-perfil-success-spaced-12, rgba(34, 197, 94, 0.12))",
+  border: "1px solid var(--historietas-perfil-success-spaced-22, rgba(34, 197, 94, 0.22))",
+  color: "var(--historietas-perfil-success-soft, #86EFAC)",
 };
 
 const profileLibraryDoneButtonActiveStyle: CSSProperties = {
   ...profileLibraryDoneButtonStyle,
-  background: "rgba(16,185,129,0.18)",
-  border: "1px solid rgba(16,185,129,0.38)",
+  background: "var(--historietas-perfil-emerald-18, rgba(16,185,129,0.18))",
+  border: "1px solid var(--historietas-perfil-emerald-38, rgba(16,185,129,0.38))",
 };
 
 const profileLibraryRemoveButtonStyle: CSSProperties = {
   ...profileLibraryListButtonStyle,
-  background: "rgba(127, 29, 29, 0.28)",
-  border: "1px solid rgba(248, 113, 113, 0.22)",
-  color: "#FCA5A5",
+  background: "var(--historietas-perfil-danger-dark-spaced-28, rgba(127, 29, 29, 0.28))",
+  border: "1px solid var(--historietas-perfil-danger-spaced-22, rgba(248, 113, 113, 0.22))",
+  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
 };
 
 const mobileTopWaterFadeStyle: CSSProperties = {
@@ -10818,6 +10818,110 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   opacity: 0,
 };
 
+const perfilAutorThemeCss = `
+  html {
+    --historietas-perfil-bg-page: #070212;
+    --historietas-perfil-bg-deep: #04000A;
+    --historietas-perfil-surface: #08030F;
+    --historietas-perfil-surface-alt: #120B1C;
+    --historietas-perfil-accent: #F97316;
+    --historietas-perfil-accent-strong: #FB923C;
+    --historietas-perfil-accent-soft: #FDBA74;
+    --historietas-perfil-gold: #FBBF24;
+    --historietas-perfil-danger-soft: #FCA5A5;
+    --historietas-perfil-danger: #EF4444;
+    --historietas-perfil-rose-soft: #FDA4AF;
+    --historietas-perfil-rose: #FB7185;
+    --historietas-perfil-success-soft: #86EFAC;
+    --historietas-perfil-lavender-text: #DDD6FE;
+    --historietas-perfil-purple-soft: #C084FC;
+    --historietas-perfil-blue-soft: #7DD3FC;
+    --historietas-perfil-lavender: #D8C8FF;
+    --historietas-perfil-purple: #A78BFA;
+    --historietas-perfil-secondary: #7C3AED;
+    --historietas-perfil-accent-14: rgba(249,115,22,0.14);
+    --historietas-perfil-rose-14: rgba(251,113,133,0.14);
+    --historietas-perfil-success-14: rgba(34,197,94,0.14);
+    --historietas-perfil-gold-14: rgba(251,191,36,0.14);
+    --historietas-perfil-purple-soft-14: rgba(192,132,252,0.14);
+    --historietas-perfil-blue-14: rgba(56,189,248,0.14);
+    --historietas-perfil-secondary-18: rgba(124,58,237,0.18);
+    --historietas-perfil-deep-72: rgba(4, 0, 10, 0.72);
+    --historietas-perfil-success-spaced-12: rgba(34, 197, 94, 0.12);
+    --historietas-perfil-success-spaced-22: rgba(34, 197, 94, 0.22);
+    --historietas-perfil-emerald-18: rgba(16,185,129,0.18);
+    --historietas-perfil-emerald-38: rgba(16,185,129,0.38);
+    --historietas-perfil-danger-dark-spaced-28: rgba(127, 29, 29, 0.28);
+    --historietas-perfil-danger-spaced-22: rgba(248, 113, 113, 0.22);
+    --historietas-perfil-purple-dark-58: rgba(59, 7, 100, 0.58);
+    --historietas-perfil-danger-42: rgba(248,113,113,0.42);
+    --historietas-perfil-danger-dark-24: rgba(127,29,29,0.24);
+    --historietas-perfil-danger-36: rgba(248,113,113,0.36);
+    --historietas-perfil-danger-dark-34: rgba(127,29,29,0.34);
+    --historietas-perfil-gold-spaced-34: rgba(251, 191, 36, 0.34);
+    --historietas-perfil-surface-fade-0: rgba(8,5,13,0);
+    --historietas-perfil-surface-fade-58: rgba(8,5,13,0.58);
+    --historietas-perfil-surface-fade-92: rgba(8,5,13,0.92);
+    --historietas-perfil-success-10: rgba(34,197,94,0.10);
+    --historietas-perfil-success-22: rgba(34,197,94,0.22);
+    --historietas-perfil-rose-dark-14: rgba(190,18,60,0.14);
+    --historietas-perfil-rose-28: rgba(251,113,133,0.28);
+    --historietas-perfil-surface-purple-92: rgba(18,8,31,0.92);
+    --historietas-perfil-surface-purple-94: rgba(38,20,62,0.94);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-perfil-bg-page: #000000;
+    --historietas-perfil-bg-deep: #000000;
+    --historietas-perfil-surface: #050505;
+    --historietas-perfil-surface-alt: #090909;
+    --historietas-perfil-accent: #FFFFFF;
+    --historietas-perfil-accent-strong: #FFFFFF;
+    --historietas-perfil-accent-soft: #FFFFFF;
+    --historietas-perfil-gold: #FFFFFF;
+    --historietas-perfil-danger-soft: #FFFFFF;
+    --historietas-perfil-danger: #FFFFFF;
+    --historietas-perfil-rose-soft: #D4D4D8;
+    --historietas-perfil-rose: #FFFFFF;
+    --historietas-perfil-success-soft: #FFFFFF;
+    --historietas-perfil-lavender-text: #FFFFFF;
+    --historietas-perfil-purple-soft: #FFFFFF;
+    --historietas-perfil-blue-soft: #D4D4D8;
+    --historietas-perfil-lavender: #FFFFFF;
+    --historietas-perfil-purple: #FFFFFF;
+    --historietas-perfil-secondary: #A1A1AA;
+    --historietas-perfil-accent-14: rgba(255,255,255,0.08);
+    --historietas-perfil-rose-14: rgba(255,255,255,0.08);
+    --historietas-perfil-success-14: rgba(255,255,255,0.08);
+    --historietas-perfil-gold-14: rgba(255,255,255,0.08);
+    --historietas-perfil-purple-soft-14: rgba(255,255,255,0.08);
+    --historietas-perfil-blue-14: rgba(255,255,255,0.08);
+    --historietas-perfil-secondary-18: rgba(255,255,255,0.08);
+    --historietas-perfil-deep-72: rgba(0,0,0,0.72);
+    --historietas-perfil-success-spaced-12: rgba(255,255,255,0.06);
+    --historietas-perfil-success-spaced-22: rgba(255,255,255,0.10);
+    --historietas-perfil-emerald-18: rgba(255,255,255,0.08);
+    --historietas-perfil-emerald-38: rgba(255,255,255,0.18);
+    --historietas-perfil-danger-dark-spaced-28: rgba(255,255,255,0.10);
+    --historietas-perfil-danger-spaced-22: rgba(255,255,255,0.10);
+    --historietas-perfil-purple-dark-58: rgba(255,255,255,0.14);
+    --historietas-perfil-danger-42: rgba(255,255,255,0.24);
+    --historietas-perfil-danger-dark-24: rgba(255,255,255,0.08);
+    --historietas-perfil-danger-36: rgba(255,255,255,0.20);
+    --historietas-perfil-danger-dark-34: rgba(255,255,255,0.12);
+    --historietas-perfil-gold-spaced-34: rgba(255,255,255,0.18);
+    --historietas-perfil-surface-fade-0: rgba(0,0,0,0);
+    --historietas-perfil-surface-fade-58: rgba(0,0,0,0.58);
+    --historietas-perfil-surface-fade-92: rgba(0,0,0,0.92);
+    --historietas-perfil-success-10: rgba(255,255,255,0.06);
+    --historietas-perfil-success-22: rgba(255,255,255,0.10);
+    --historietas-perfil-rose-dark-14: rgba(255,255,255,0.08);
+    --historietas-perfil-rose-28: rgba(255,255,255,0.14);
+    --historietas-perfil-surface-purple-92: rgba(0,0,0,0.92);
+    --historietas-perfil-surface-purple-94: rgba(5,5,5,0.94);
+  }
+`;
+
 const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100vh",
@@ -10826,7 +10930,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   boxSizing: "border-box",
   background:
-    "var(--historietas-bg-start, #070212)",
+    "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #070212))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -10872,20 +10976,20 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-perfil-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "19px",
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-perfil-purple-dark-58, rgba(59, 7, 100, 0.58))",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-perfil-lavender-text, #DDD6FE) 44%, var(--historietas-perfil-purple, #A78BFA) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -10913,7 +11017,7 @@ const profileNotificationButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
+  background: "var(--historietas-surface-strong, var(--historietas-perfil-bg-deep, #04000A))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -10936,8 +11040,8 @@ const profileNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
+  border: "2px solid var(--historietas-bg-start, var(--historietas-perfil-bg-page, #070212))",
+  background: "var(--historietas-perfil-danger, #EF4444)",
   color: "#FFFFFF",
   fontSize: "9px",
   lineHeight: 1,
@@ -11036,7 +11140,7 @@ const menuSheetStyle: CSSProperties = {
   borderRadius: 0,
   border: "0",
   borderLeft: "1px solid rgba(255,255,255,0.08)",
-  background: "#070212",
+  background: "var(--historietas-perfil-bg-page, #070212)",
   padding: "22px 16px calc(132px + env(safe-area-inset-bottom, 0px))",
   display: "grid",
   alignContent: "start",
@@ -11150,7 +11254,7 @@ const menuItemStyle: CSSProperties = {
 
 const menuDangerItemStyle: CSSProperties = {
   ...menuItemStyle,
-  color: "#FCA5A5",
+  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
 };
 
 const menuItemIconStyle: CSSProperties = {
@@ -11197,13 +11301,13 @@ const menuNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#EF4444",
+  background: "var(--historietas-perfil-danger, #EF4444)",
   color: "#FFFFFF",
   fontSize: "10px",
   lineHeight: 1,
   fontWeight: 950,
   letterSpacing: "-0.03em",
-  boxShadow: "0 0 0 2px #070212",
+  boxShadow: "0 0 0 2px var(--historietas-perfil-bg-page, #070212)",
   pointerEvents: "none",
 };
 
@@ -11225,7 +11329,7 @@ const headerFollowButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
@@ -11304,12 +11408,12 @@ const avatarBaseStyle: CSSProperties = {
   maxWidth: "76px",
   height: "76px",
   borderRadius: "20px",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid var(--historietas-perfil-purple-dark-58, rgba(59, 7, 100, 0.58))",
   padding: 0,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "var(--historietas-perfil-bg-deep, #04000A)",
   color: "#FFFFFF",
   fontSize: "24px",
   fontWeight: 950,
@@ -11362,7 +11466,7 @@ const profileNameInputStyle: CSSProperties = {
   minHeight: "38px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
   padding: "0 12px",
   outline: "none",
@@ -11393,7 +11497,7 @@ const avatarSmallButtonStyle: CSSProperties = {
   padding: "0 9px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
   fontSize: "9px",
   fontWeight: 900,
@@ -11410,7 +11514,7 @@ const avatarRemoveButtonStyle: CSSProperties = {
 };
 
 const avatarErrorStyle: CSSProperties = {
-  color: "#FCA5A5",
+  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
   fontSize: "10px",
   fontWeight: 800,
   ...safeTextStyle,
@@ -11435,7 +11539,7 @@ const denunciaPerfilSheetStyle: CSSProperties = {
   overflowY: "auto",
   borderRadius: "24px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#070212",
+  background: "var(--historietas-perfil-bg-page, #070212)",
   boxShadow: "0 24px 80px rgba(0,0,0,0.55)",
   padding: "18px",
   display: "grid",
@@ -11514,9 +11618,9 @@ const denunciaPerfilMotivoButtonStyle: CSSProperties = {
 
 const denunciaPerfilMotivoAtivoStyle: CSSProperties = {
   ...denunciaPerfilMotivoButtonStyle,
-  border: "1px solid rgba(248,113,113,0.42)",
-  background: "rgba(127,29,29,0.24)",
-  color: "#FCA5A5",
+  border: "1px solid var(--historietas-perfil-danger-42, rgba(248,113,113,0.42))",
+  background: "var(--historietas-perfil-danger-dark-24, rgba(127,29,29,0.24))",
+  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
 };
 
 const denunciaPerfilTextareaStyle: CSSProperties = {
@@ -11525,7 +11629,7 @@ const denunciaPerfilTextareaStyle: CSSProperties = {
   resize: "vertical",
   borderRadius: "18px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
   padding: "12px",
   outline: "none",
@@ -11549,7 +11653,7 @@ const denunciaPerfilCounterStyle: CSSProperties = {
 };
 
 const denunciaPerfilErrorStyle: CSSProperties = {
-  color: "#FCA5A5",
+  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
   fontSize: "11px",
   lineHeight: 1.3,
   fontWeight: 850,
@@ -11577,9 +11681,9 @@ const denunciaPerfilCancelButtonStyle: CSSProperties = {
 
 const denunciaPerfilSubmitButtonStyle: CSSProperties = {
   ...denunciaPerfilCancelButtonStyle,
-  border: "1px solid rgba(248,113,113,0.36)",
-  background: "rgba(127,29,29,0.34)",
-  color: "#FCA5A5",
+  border: "1px solid var(--historietas-perfil-danger-36, rgba(248,113,113,0.36))",
+  background: "var(--historietas-perfil-danger-dark-34, rgba(127,29,29,0.34))",
+  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
 };
 
 const bioTextareaStyle: CSSProperties = {
@@ -11588,7 +11692,7 @@ const bioTextareaStyle: CSSProperties = {
   resize: "vertical",
   borderRadius: "16px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
   padding: "10px 11px",
   outline: "none",
@@ -11774,7 +11878,7 @@ const profileRatingStatItemStyle: CSSProperties = {
 
 const profileRatingNumberStyle: CSSProperties = {
   ...profileStatNumberStyle,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   position: "relative",
   top: "5px",
 };
@@ -11796,7 +11900,7 @@ const profileRatingMiniStarsStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: "1px",
-  color: "#FBBF24",
+  color: "var(--historietas-perfil-gold, #FBBF24)",
   fontSize: "10px",
   lineHeight: 1,
   letterSpacing: "-0.02em",
@@ -11815,14 +11919,14 @@ const profileRatingMiniStarVisualStyle: CSSProperties = {
 };
 
 const profileRatingMiniStarBaseStyle: CSSProperties = {
-  color: "rgba(251, 191, 36, 0.34)",
+  color: "var(--historietas-perfil-gold-spaced-34, rgba(251, 191, 36, 0.34))",
   position: "absolute",
   inset: 0,
   lineHeight: 1,
 };
 
 const profileRatingMiniStarFillStyle: CSSProperties = {
-  color: "#FBBF24",
+  color: "var(--historietas-perfil-gold, #FBBF24)",
   position: "absolute",
   inset: 0,
   overflow: "hidden",
@@ -11900,7 +12004,7 @@ const authorRatingStarButtonStyle: CSSProperties = {
   borderRadius: 0,
   border: "none",
   background: "transparent",
-  color: "rgba(251, 191, 36, 0.34)",
+  color: "var(--historietas-perfil-gold-spaced-34, rgba(251, 191, 36, 0.34))",
   fontSize: "22px",
   fontWeight: 950,
   lineHeight: 1,
@@ -11920,7 +12024,7 @@ const authorRatingStarActiveStyle: CSSProperties = {
   ...authorRatingStarButtonStyle,
   border: "none",
   background: "transparent",
-  color: "#FBBF24",
+  color: "var(--historietas-perfil-gold, #FBBF24)",
   boxShadow: "none",
   filter: "none",
   backdropFilter: "none",
@@ -11936,14 +12040,14 @@ const authorRatingStarVisualStyle: CSSProperties = {
 };
 
 const authorRatingStarBaseStyle: CSSProperties = {
-  color: "rgba(251, 191, 36, 0.34)",
+  color: "var(--historietas-perfil-gold-spaced-34, rgba(251, 191, 36, 0.34))",
   position: "absolute",
   inset: 0,
   lineHeight: 1,
 };
 
 const authorRatingStarFillStyle: CSSProperties = {
-  color: "#FBBF24",
+  color: "var(--historietas-perfil-gold, #FBBF24)",
   position: "absolute",
   inset: 0,
   overflow: "hidden",
@@ -11981,7 +12085,7 @@ const profilePrimaryButtonStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "10px",
@@ -12091,7 +12195,7 @@ const authorHighlightsLikeButtonStyle: CSSProperties = {
 
 const authorHighlightsLikeButtonActiveStyle: CSSProperties = {
   ...authorHighlightsLikeButtonStyle,
-  color: "#EF4444",
+  color: "var(--historietas-perfil-danger, #EF4444)",
 };
 
 const authorHighlightsLikeHeartEmojiStyle: CSSProperties = {
@@ -12184,7 +12288,7 @@ const authorHighlightCoverStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "none",
@@ -12327,7 +12431,7 @@ const profileAboutTextareaStyle: CSSProperties = {
   resize: "vertical",
   borderRadius: "16px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
   padding: "10px 11px",
   outline: "none",
@@ -12342,7 +12446,7 @@ const profileAboutTextareaStyle: CSSProperties = {
 };
 
 const profileAboutCounterStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "9px",
   fontWeight: 900,
   textAlign: "right",
@@ -12355,7 +12459,7 @@ const profileAboutStatsStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: "8px",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "10px",
   lineHeight: 1.25,
   fontWeight: 900,
@@ -12371,7 +12475,7 @@ const profileAboutHeroStyle: CSSProperties = {
 };
 
 const profileAboutEyebrowStyle: CSSProperties = {
-  color: "var(--historietas-text-accent, #FDBA74)",
+  color: "var(--historietas-text-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "9.5px",
   lineHeight: 1.2,
   fontWeight: 950,
@@ -12544,7 +12648,7 @@ const statCardStyle: CSSProperties = {
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
@@ -12586,7 +12690,7 @@ const authorCommunityIntroStyle: CSSProperties = {
 };
 
 const authorCommunityEyebrowStyle: CSSProperties = {
-  color: "var(--historietas-text-accent, #FDBA74)",
+  color: "var(--historietas-text-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "9px",
   lineHeight: 1,
   fontWeight: 950,
@@ -12630,7 +12734,7 @@ const diaryStatsToggleButtonStyle: CSSProperties = {
   transform: "translateY(-50%)",
   border: "none",
   background: "transparent",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -12698,7 +12802,7 @@ const authorCommunityCardStyle: CSSProperties = {
   minHeight: "48px",
   padding: "6px 4px",
   borderRadius: "16px",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
@@ -12746,7 +12850,7 @@ const authorCommunityPreviewStyle: CSSProperties = {
   width: "100%",
   padding: "9px",
   borderRadius: "18px",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   gridTemplateColumns: "28px minmax(0, 1fr)",
@@ -12808,7 +12912,7 @@ const authorCommunityPrimaryActionStyle: CSSProperties = {
   minHeight: "34px",
   padding: "0 14px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -12827,7 +12931,7 @@ const authorCommunitySecondaryActionStyle: CSSProperties = {
   minHeight: "30px",
   padding: "0 10px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -12843,7 +12947,7 @@ const authorCommunitySecondaryActionStyle: CSSProperties = {
 };
 
 const authorCommunityStatNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "14.5px",
   lineHeight: 1,
   fontWeight: 950,
@@ -12860,7 +12964,7 @@ const authorsBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "12px",
   borderRadius: "22px",
-  background: "var(--historietas-surface, #08030F)",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   display: "grid",
   gap: "9px",
@@ -12901,7 +13005,7 @@ const authorButtonStyle: CSSProperties = {
 
 const activeAuthorButtonStyle: CSSProperties = {
   ...authorButtonStyle,
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   border:
     "1px solid rgba(255,255,255,0.10)",
   color: "var(--historietas-text-primary, #FFFFFF)",
@@ -12924,7 +13028,7 @@ const sectionHeaderStyle: CSSProperties = {
 
 const miniTitleStyle: CSSProperties = {
   display: "inline-flex",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "13px",
   fontWeight: 950,
   letterSpacing: "0.09em",
@@ -12935,7 +13039,7 @@ const miniTitleStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "28px",
   lineHeight: 1.12,
   fontWeight: 950,
@@ -12962,7 +13066,7 @@ const filterBoxStyle: CSSProperties = {
   padding: "10px",
   marginBottom: "12px",
   borderRadius: "18px",
-  background: "var(--historietas-surface, #08030F)",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
   maxWidth: "100%",
@@ -12975,7 +13079,7 @@ const filterInputStyle: CSSProperties = {
   minHeight: "40px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-input-bg, #04000A)",
+  background: "var(--historietas-input-bg, var(--historietas-perfil-bg-deep, #04000A))",
   color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 13px",
   outline: "none",
@@ -13001,7 +13105,7 @@ const filterSelectStyle: CSSProperties = {
   minHeight: "40px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-input-bg, #04000A)",
+  background: "var(--historietas-input-bg, var(--historietas-perfil-bg-deep, #04000A))",
   color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 13px",
   outline: "none",
@@ -13135,7 +13239,7 @@ const profileWorkCoverStyle: CSSProperties = {
   borderRadius: "18px",
   position: "relative",
   overflow: "hidden",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "0",
@@ -13159,7 +13263,7 @@ const profileWorkCoverOverlayStyle: CSSProperties = {
   display: "grid",
   gap: "4px",
   background:
-    "linear-gradient(180deg, rgba(8,5,13,0) 0%, rgba(8,5,13,0.58) 44%, rgba(8,5,13,0.92) 100%)",
+    "linear-gradient(180deg, var(--historietas-perfil-surface-fade-0, rgba(8,5,13,0)) 0%, var(--historietas-perfil-surface-fade-58, rgba(8,5,13,0.58)) 44%, var(--historietas-perfil-surface-fade-92, rgba(8,5,13,0.92)) 100%)",
   boxSizing: "border-box",
   zIndex: 1,
   minWidth: 0,
@@ -13217,12 +13321,12 @@ const diaryCardCoverMetaStyle: CSSProperties = {
 };
 
 const diaryCardHeartMetaStyle: CSSProperties = {
-  color: "#EF4444",
+  color: "var(--historietas-perfil-danger, #EF4444)",
   fontWeight: 950,
 };
 
 const diaryCardStarMetaStyle: CSSProperties = {
-  color: "#FBBF24",
+  color: "var(--historietas-perfil-gold, #FBBF24)",
   fontWeight: 950,
 };
 
@@ -13298,7 +13402,7 @@ const profileWorkHeartMetaStyle: CSSProperties = {
 };
 
 const profileWorkHeartIconMetaStyle: CSSProperties = {
-  color: "#EF4444",
+  color: "var(--historietas-perfil-danger, #EF4444)",
   fontWeight: 950,
 };
 
@@ -13350,7 +13454,7 @@ const profileWorkOptionsMenuStyle: CSSProperties = {
   padding: "5px",
   borderRadius: "13px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "#070212",
+  background: "var(--historietas-perfil-bg-page, #070212)",
   boxShadow: "none",
   display: "flex",
   flexDirection: "column",
@@ -13392,7 +13496,7 @@ const profileWorkMenuItemStyle: CSSProperties = {
 
 const profileWorkMenuItemActiveStyle: CSSProperties = {
   ...profileWorkMenuItemStyle,
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
 };
 
 const profileWorkActionsCompactStyle: CSSProperties = {
@@ -13421,7 +13525,7 @@ const profileWorkActionButtonStyle: CSSProperties = {
 
 const profileWorkActionActiveStyle: CSSProperties = {
   ...profileWorkActionButtonStyle,
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
   border:
     "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
@@ -13455,7 +13559,7 @@ const workCardStyle: CSSProperties = {
   gap: "10px",
   padding: "10px",
   borderRadius: "22px",
-  background: "var(--historietas-surface, #08030F)",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   boxShadow: "none",
   minWidth: 0,
@@ -13483,7 +13587,7 @@ const coverStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
   background:
-    "#08030F",
+    "var(--historietas-perfil-surface, #08030F)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -13559,11 +13663,11 @@ const publishedStatusStyle: CSSProperties = {
   padding: "4px 6px",
   borderRadius: "999px",
   background:
-    "rgba(34,197,94,0.10)",
+    "var(--historietas-perfil-success-10, rgba(34,197,94,0.10))",
   border:
-    "1px solid rgba(34,197,94,0.22)",
+    "1px solid var(--historietas-perfil-success-22, rgba(34,197,94,0.22))",
   color:
-    "#86EFAC",
+    "var(--historietas-perfil-success-soft, #86EFAC)",
   fontSize: "8px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -13575,7 +13679,7 @@ const draftStatusStyle: CSSProperties = {
     "rgba(255,255,255,0.06)",
   border:
     "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
 };
 
 const formatBadgeStyle: CSSProperties = {
@@ -13591,7 +13695,7 @@ const classificationBadgeStyle: CSSProperties = {
     "rgba(255,255,255,0.06)",
   border:
     "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-secondary, #DDD6FE)",
+  color: "var(--historietas-secondary, var(--historietas-perfil-lavender-text, #DDD6FE))",
 };
 
 const favoriteBadgeStyle: CSSProperties = {
@@ -13600,17 +13704,17 @@ const favoriteBadgeStyle: CSSProperties = {
     "rgba(255,255,255,0.06)",
   border:
     "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
 };
 
 const completedBadgeStyle: CSSProperties = {
   ...publishedStatusStyle,
   background:
-    "rgba(34,197,94,0.10)",
+    "var(--historietas-perfil-success-10, rgba(34,197,94,0.10))",
   border:
-    "1px solid rgba(34,197,94,0.22)",
+    "1px solid var(--historietas-perfil-success-22, rgba(34,197,94,0.22))",
   color:
-    "#86EFAC",
+    "var(--historietas-perfil-success-soft, #86EFAC)",
 };
 
 const workTitleStyle: CSSProperties = {
@@ -13666,7 +13770,7 @@ const workProgressFillStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
   background:
-    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+    "linear-gradient(90deg, var(--historietas-accent, var(--historietas-perfil-accent, #F97316)) 0%, var(--historietas-secondary, var(--historietas-perfil-secondary, #7C3AED)) 100%)",
 };
 
 const workProgressTextStyle: CSSProperties = {
@@ -13689,7 +13793,7 @@ const openButtonStyle: CSSProperties = {
   minHeight: "32px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "10px",
@@ -13709,7 +13813,7 @@ const openButtonStyle: CSSProperties = {
 
 const readButtonStyle: CSSProperties = {
   ...openButtonStyle,
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
 };
 
 const smallButtonStyle: CSSProperties = {
@@ -13738,7 +13842,7 @@ const smallButtonActiveStyle: CSSProperties = {
     "1px solid rgba(255,255,255,0.10)",
   background:
     "rgba(255,255,255,0.06)",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
 };
 
 const desktopContainerStyle: CSSProperties = {
@@ -13880,7 +13984,7 @@ const desktopAuthorButtonStyle: CSSProperties = {
 
 const desktopActiveAuthorButtonStyle: CSSProperties = {
   ...desktopAuthorButtonStyle,
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   border:
     "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
@@ -13923,7 +14027,7 @@ const desktopWorkCardStyle: CSSProperties = {
   gap: "14px",
   padding: "12px",
   borderRadius: "24px",
-  background: "var(--historietas-surface, #08030F)",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
   boxShadow: "none",
 };
 
@@ -14124,7 +14228,7 @@ const diaryItemCoverStyle: CSSProperties = {
   width: "76px",
   height: "108px",
   borderRadius: "15px",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   boxShadow: "none",
@@ -14235,7 +14339,7 @@ const diaryItemStarsStyle: CSSProperties = {
 };
 
 const diaryItemRatingNumberStyle: CSSProperties = {
-  color: "#FBBF24",
+  color: "var(--historietas-perfil-gold, #FBBF24)",
   fontSize: "10px",
   lineHeight: 1,
   fontWeight: 950,
@@ -14265,7 +14369,7 @@ const diaryItemProgressTrackStyle: CSSProperties = {
 const diaryItemProgressFillStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
 };
 
 const diaryItemProgressTextStyle: CSSProperties = {
@@ -14281,12 +14385,12 @@ const diaryItemAnnotationBoxStyle: CSSProperties = {
   padding: "7px 8px",
   borderRadius: "12px",
   background: "rgba(255,255,255,0.045)",
-  borderLeft: "2px solid var(--historietas-accent, #F97316)",
+  borderLeft: "2px solid var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
   minWidth: 0,
 };
 
 const diaryItemAnnotationLabelStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "7.8px",
   lineHeight: 1,
   fontWeight: 950,
@@ -14315,7 +14419,7 @@ const diaryItemAnnotationButtonStyle: CSSProperties = {
   padding: 0,
   border: "none",
   background: "transparent",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "8px",
   lineHeight: 1.15,
   fontWeight: 900,
@@ -14362,7 +14466,7 @@ const diaryItemAnnotationSelectStyle: CSSProperties = {
   padding: "5px 8px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "#120B1C",
+  background: "var(--historietas-perfil-surface-alt, #120B1C)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "8px",
   lineHeight: 1,
@@ -14379,7 +14483,7 @@ const diaryItemAnnotationCounterStyle: CSSProperties = {
 };
 
 const diaryItemAnnotationErrorStyle: CSSProperties = {
-  color: "#FDA4AF",
+  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
   fontSize: "8px",
   lineHeight: 1.3,
   fontWeight: 800,
@@ -14398,7 +14502,7 @@ const diaryItemAnnotationSaveStyle: CSSProperties = {
   padding: "5px 9px",
   borderRadius: "999px",
   border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
   color: "#FFFFFF",
   fontSize: "7.8px",
   lineHeight: 1,
@@ -14414,8 +14518,8 @@ const diaryItemAnnotationCancelStyle: CSSProperties = {
 
 const diaryItemAnnotationRemoveStyle: CSSProperties = {
   ...diaryItemAnnotationSaveStyle,
-  background: "rgba(190,18,60,0.14)",
-  color: "#FDA4AF",
+  background: "var(--historietas-perfil-rose-dark-14, rgba(190,18,60,0.14))",
+  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
 };
 
 const diaryItemSocialBlockStyle: CSSProperties = {
@@ -14450,13 +14554,13 @@ const diaryItemSocialButtonStyle: CSSProperties = {
 };
 
 const diaryItemSocialButtonActiveStyle: CSSProperties = {
-  color: "#FB7185",
-  background: "rgba(251,113,133,0.14)",
-  border: "1px solid rgba(251,113,133,0.28)",
+  color: "var(--historietas-perfil-rose, #FB7185)",
+  background: "var(--historietas-perfil-rose-14, rgba(251,113,133,0.14))",
+  border: "1px solid var(--historietas-perfil-rose-28, rgba(251,113,133,0.28))",
 };
 
 const diaryItemSocialErrorStyle: CSSProperties = {
-  color: "#FDA4AF",
+  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
   fontSize: "8px",
   lineHeight: 1.3,
   fontWeight: 800,
@@ -14539,7 +14643,7 @@ const diaryItemCommentRemoveStyle: CSSProperties = {
   padding: 0,
   border: "none",
   background: "transparent",
-  color: "#FDA4AF",
+  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
   fontSize: "7px",
   lineHeight: 1,
   fontWeight: 850,
@@ -14580,7 +14684,7 @@ const diaryItemCommentSendStyle: CSSProperties = {
   padding: "5px 9px",
   borderRadius: "999px",
   border: "none",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
   color: "#FFFFFF",
   fontSize: "7.8px",
   lineHeight: 1,
@@ -14593,7 +14697,7 @@ const diaryItemLoginToCommentStyle: CSSProperties = {
   padding: 0,
   border: "none",
   background: "transparent",
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
   fontSize: "8px",
   lineHeight: 1.2,
   fontWeight: 900,
@@ -14627,7 +14731,7 @@ const diaryItemActionStyle: CSSProperties = {
   minHeight: "25px",
   padding: "5px 8px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
   color: "#FFFFFF",
   fontSize: "7.8px",
   lineHeight: 1,
@@ -14684,7 +14788,7 @@ const diaryTimelineDotStyle: CSSProperties = {
   width: "7px",
   height: "7px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
 };
 
 const diaryTimelineTextStyle: CSSProperties = {
@@ -14752,7 +14856,7 @@ const desktopDiaryCarouselArrowBaseStyle: CSSProperties = {
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.16)",
   background:
-    "linear-gradient(135deg, rgba(18,8,31,0.92) 0%, rgba(38,20,62,0.94) 100%)",
+    "linear-gradient(135deg, var(--historietas-perfil-surface-purple-92, rgba(18,8,31,0.92)) 0%, var(--historietas-perfil-surface-purple-94, rgba(38,20,62,0.94)) 100%)",
   color: "#FFFFFF",
   fontSize: 0,
   lineHeight: 1,
@@ -14787,7 +14891,7 @@ const desktopDiaryCarouselArrowIconStyle: CSSProperties = {
 const emptyBoxStyle: CSSProperties = {
   marginTop: "20px",
   borderRadius: "24px",
-  background: "var(--historietas-surface, #08030F)",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
   border: "1px dashed var(--historietas-border-soft, rgba(255,255,255,0.14))",
   padding: "22px",
   display: "grid",
@@ -14800,7 +14904,7 @@ const emptyBoxStyle: CSSProperties = {
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
   fontSize: "28px",
   fontWeight: 950,
   letterSpacing: "-0.055em",
@@ -14822,7 +14926,7 @@ const emptyButtonStyle: CSSProperties = {
   padding: "0 14px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "#08030F",
+  background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
@@ -14841,7 +14945,7 @@ const emptyButtonStyle: CSSProperties = {
 const emptyMiniBoxStyle: CSSProperties = {
   borderRadius: "20px",
   padding: "16px",
-  background: "var(--historietas-surface, #08030F)",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
   border: "1px dashed var(--historietas-border-soft, rgba(255,255,255,0.14))",
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",

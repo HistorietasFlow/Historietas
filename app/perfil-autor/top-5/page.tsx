@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import {
+  historietasThemeCss,
+  useHistorietasTheme,
+} from "../../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../../lib/utils";
 
 type CapituloLocal = {
@@ -560,6 +564,7 @@ function criarCapaSelecionadaTop5Style(capa: string): CSSProperties {
 
 export default function Top5PerfilAutorPage() {
   const router = useRouter();
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const [usuario, setUsuario] = useState<UsuarioTop5 | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -745,7 +750,8 @@ export default function Top5PerfilAutorPage() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main style={pageThemeStyle}>
+      <style>{`${historietasThemeCss}${top5PerfilAutorPageCss}`}</style>
       <section style={selectedSectionStyle} aria-label="Obras escolhidas para o TOP 5">
         <div style={selectedHeaderStyle}>
           <span style={selectedTitleStyle}>Seu TOP 5</span>
@@ -900,11 +906,53 @@ export default function Top5PerfilAutorPage() {
   );
 }
 
+const top5PerfilAutorPageCss = `
+  html {
+    --historietas-top5-message: #FDE68A;
+    --historietas-top5-purple-page: rgba(124,58,237,0.12);
+    --historietas-top5-purple-empty: rgba(124,58,237,0.18);
+    --historietas-top5-purple-cover: rgba(124,58,237,0.22);
+    --historietas-top5-orange-soft: rgba(249,115,22,0.10);
+    --historietas-top5-orange-cover: rgba(249,115,22,0.13);
+    --historietas-top5-orange-border: rgba(249,115,22,0.20);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-top5-message: #FFFFFF;
+    --historietas-top5-purple-page: rgba(255,255,255,0.06);
+    --historietas-top5-purple-empty: rgba(255,255,255,0.08);
+    --historietas-top5-purple-cover: rgba(255,255,255,0.10);
+    --historietas-top5-orange-soft: rgba(255,255,255,0.06);
+    --historietas-top5-orange-cover: rgba(255,255,255,0.08);
+    --historietas-top5-orange-border: rgba(255,255,255,0.18);
+  }
+
+  html[data-historietas-tema-visual="original"] body {
+    background: #000000 !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] input::placeholder {
+    color: rgba(212,212,216,0.68) !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] input,
+  html[data-historietas-tema-visual="foco"] button,
+  html[data-historietas-tema-visual="foco"] a {
+    color: #FFFFFF;
+  }
+`;
+
 const pageStyle: CSSProperties = {
   minHeight: "100vh",
   padding: "12px 10px 48px",
   background:
-    "radial-gradient(circle at top left, rgba(124,58,237,0.12), transparent 34%), #000000",
+    "radial-gradient(circle at top left, var(--historietas-top5-purple-page, rgba(124,58,237,0.12)), transparent 34%), #000000",
   color: "#FFFFFF",
   fontFamily:
     'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -1019,7 +1067,7 @@ const selectedCoverStyle: CSSProperties = {
 const selectedCoverEmptyStyle: CSSProperties = {
   ...selectedCoverStyle,
   background:
-    "linear-gradient(135deg, rgba(124,58,237,0.18), rgba(249,115,22,0.10)), #09090B",
+    "linear-gradient(135deg, var(--historietas-top5-purple-empty, rgba(124,58,237,0.18)), var(--historietas-top5-orange-soft, rgba(249,115,22,0.10))), #09090B",
 };
 
 const emptySelectedSlotStyle: CSSProperties = {
@@ -1084,7 +1132,7 @@ const searchInputStyle: CSSProperties = {
 const messageStyle: CSSProperties = {
   maxWidth: "980px",
   margin: "0 auto 10px",
-  color: "#FDE68A",
+  color: "var(--historietas-top5-message, #FDE68A)",
   fontSize: "12px",
   fontWeight: 800,
 };
@@ -1094,8 +1142,8 @@ const noticeStyle: CSSProperties = {
   margin: "0 auto 12px",
   padding: "12px",
   borderRadius: "18px",
-  background: "rgba(249,115,22,0.10)",
-  border: "1px solid rgba(249,115,22,0.20)",
+  background: "var(--historietas-top5-orange-soft, rgba(249,115,22,0.10))",
+  border: "1px solid var(--historietas-top5-orange-border, rgba(249,115,22,0.20))",
   display: "flex",
   flexDirection: "column",
   gap: "6px",
@@ -1167,7 +1215,7 @@ const top5CoverStyle: CSSProperties = {
 const top5CoverEmptyStyle: CSSProperties = {
   ...top5CoverStyle,
   background:
-    "linear-gradient(135deg, rgba(124,58,237,0.22), rgba(249,115,22,0.13)), #09090B",
+    "linear-gradient(135deg, var(--historietas-top5-purple-cover, rgba(124,58,237,0.22)), var(--historietas-top5-orange-cover, rgba(249,115,22,0.13))), #09090B",
 };
 
 const selectedBadgeStyle: CSSProperties = {

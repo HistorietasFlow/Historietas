@@ -2250,16 +2250,81 @@ export default function AdminComunidadePage() {
 
 
 const adminComunidadePageCss = `
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
+  html {
+    --historietas-admin-comunidade-bg-page: #070212;
+    --historietas-admin-comunidade-bg-deep: #04000A;
+    --historietas-admin-comunidade-surface: #08030F;
+    --historietas-admin-comunidade-accent: #F97316;
+    --historietas-admin-comunidade-secondary: #7C3AED;
+    --historietas-admin-comunidade-accent-soft: #FDBA74;
+    --historietas-admin-comunidade-accent-pale: #FFD6A8;
+    --historietas-admin-comunidade-purple-text: #DDD6FE;
+    --historietas-admin-comunidade-title-mid: #F5F3FF;
+    --historietas-admin-comunidade-danger-text: #FCA5A5;
+    --historietas-admin-comunidade-danger-menu: #FB7185;
+    --historietas-admin-comunidade-success-text: #86EFAC;
+    --historietas-admin-comunidade-notification-badge-bg: #EF4444;
+    --historietas-admin-comunidade-notification-badge-text: #FFFFFF;
+    --historietas-admin-comunidade-accent-bg: rgba(249,115,22,0.10);
+    --historietas-admin-comunidade-accent-bg-strong: rgba(249,115,22,0.16);
+    --historietas-admin-comunidade-accent-border-soft: rgba(249,115,22,0.26);
+    --historietas-admin-comunidade-accent-border: rgba(249,115,22,0.28);
+    --historietas-admin-comunidade-secondary-bg: rgba(124,58,237,0.13);
+    --historietas-admin-comunidade-surface-gradient: rgba(18,12,30,0.90);
+    --historietas-admin-comunidade-surface-gradient-strong: rgba(18,12,30,0.92);
+    --historietas-admin-comunidade-surface-strong: rgba(8,3,18,0.98);
+    --historietas-admin-comunidade-danger-bg: rgba(248,113,113,0.12);
+    --historietas-admin-comunidade-danger-border: rgba(248,113,113,0.22);
+    --historietas-admin-comunidade-danger-border-strong: rgba(248,113,113,0.30);
+    --historietas-admin-comunidade-success-bg: rgba(34,197,94,0.12);
+    --historietas-admin-comunidade-success-border: rgba(34,197,94,0.22);
+    --historietas-admin-comunidade-panel: rgba(4,0,10,0.72);
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-admin-comunidade-bg-page: #000000;
+    --historietas-admin-comunidade-bg-deep: #000000;
+    --historietas-admin-comunidade-surface: #050505;
+    --historietas-admin-comunidade-accent: #FFFFFF;
+    --historietas-admin-comunidade-secondary: #A1A1AA;
+    --historietas-admin-comunidade-accent-soft: #FFFFFF;
+    --historietas-admin-comunidade-accent-pale: #FFFFFF;
+    --historietas-admin-comunidade-purple-text: #FFFFFF;
+    --historietas-admin-comunidade-title-mid: #FFFFFF;
+    --historietas-admin-comunidade-danger-text: #FFFFFF;
+    --historietas-admin-comunidade-danger-menu: #FFFFFF;
+    --historietas-admin-comunidade-success-text: #FFFFFF;
+    --historietas-admin-comunidade-notification-badge-bg: #FFFFFF;
+    --historietas-admin-comunidade-notification-badge-text: #000000;
+    --historietas-admin-comunidade-accent-bg: rgba(255,255,255,0.06);
+    --historietas-admin-comunidade-accent-bg-strong: rgba(255,255,255,0.08);
+    --historietas-admin-comunidade-accent-border-soft: rgba(255,255,255,0.18);
+    --historietas-admin-comunidade-accent-border: rgba(255,255,255,0.22);
+    --historietas-admin-comunidade-secondary-bg: rgba(255,255,255,0.06);
+    --historietas-admin-comunidade-surface-gradient: #050505;
+    --historietas-admin-comunidade-surface-gradient-strong: #050505;
+    --historietas-admin-comunidade-surface-strong: #000000;
+    --historietas-admin-comunidade-danger-bg: rgba(255,255,255,0.06);
+    --historietas-admin-comunidade-danger-border: rgba(255,255,255,0.18);
+    --historietas-admin-comunidade-danger-border-strong: rgba(255,255,255,0.22);
+    --historietas-admin-comunidade-success-bg: rgba(255,255,255,0.06);
+    --historietas-admin-comunidade-success-border: rgba(255,255,255,0.18);
+    --historietas-admin-comunidade-panel: rgba(5,5,5,0.92);
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -2275,6 +2340,65 @@ const adminComunidadePageCss = `
     color: #FFFFFF !important;
   }
 
+  html[data-historietas-tema-visual] nav,
+  html[data-historietas-tema-visual] [data-bottom-nav],
+  html[data-historietas-tema-visual] [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/admin/comunidade"],
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/admin/comunidade"],
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/admin/comunidade"] {
+    background: var(
+      --historietas-bottom-nav-active-bg,
+      rgba(59, 7, 100, 0.54)
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-border,
+      rgba(109, 40, 217, 0.48)
+    ) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual] nav a[href="/admin/comunidade"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/admin/comunidade"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/admin/comunidade"] .historietas-bottom-nav-icon {
+    color: #FFFFFF !important;
+    background: var(
+      --historietas-bottom-nav-active-icon-bg,
+      #3B0764
+    ) !important;
+    border-color: var(
+      --historietas-bottom-nav-active-icon-border,
+      rgba(167, 139, 250, 0.46)
+    ) !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/admin/comunidade"],
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/admin/comunidade"],
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/admin/comunidade"] {
+    background: #050505 !important;
+    border-color: #FFFFFF !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] nav a[href="/admin/comunidade"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/admin/comunidade"] .historietas-bottom-nav-icon,
+  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/admin/comunidade"] .historietas-bottom-nav-icon {
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.24) !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-theme-logo-text,
+  html[data-historietas-tema-visual="foco"] .historietas-theme-title {
+    background: none !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    text-shadow: none !important;
+  }
 
   .admin-comunidade-stats > * {
     min-width: 0;
@@ -2326,7 +2450,7 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "#070212",
+  background: "var(--historietas-admin-comunidade-bg-page, #070212)",
   color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -2383,7 +2507,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
+  background: "var(--historietas-surface-strong, var(--historietas-admin-comunidade-bg-deep, #04000A))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -2407,9 +2531,11 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "#EF4444",
-  color: "#FFFFFF",
+  border: "2px solid var(--historietas-bg-start, var(--historietas-admin-comunidade-bg-page, #070212))",
+  background:
+    "var(--historietas-admin-comunidade-notification-badge-bg, #EF4444)",
+  color:
+    "var(--historietas-admin-comunidade-notification-badge-text, #FFFFFF)",
   fontSize: "9px",
   lineHeight: 1,
   fontWeight: 950,
@@ -2525,7 +2651,7 @@ const logoMarkStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+    "linear-gradient(135deg, var(--historietas-accent, var(--historietas-admin-comunidade-accent, #F97316)) 0%, var(--historietas-secondary, var(--historietas-admin-comunidade-secondary, #7C3AED)) 100%)",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
@@ -2537,7 +2663,7 @@ const logoMarkStyle: CSSProperties = {
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, #DDD6FE) 40%, var(--historietas-title-to, #FDBA74) 100%)",
+    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, var(--historietas-admin-comunidade-purple-text, #DDD6FE)) 40%, var(--historietas-title-to, var(--historietas-admin-comunidade-accent-soft, #FDBA74)) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -2554,9 +2680,9 @@ const topButtonStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "rgba(249,115,22,0.10)",
-  border: "1px solid rgba(249,115,22,0.28)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "var(--historietas-admin-comunidade-accent-bg, rgba(249,115,22,0.10))",
+  border: "1px solid var(--historietas-admin-comunidade-accent-border, rgba(249,115,22,0.28))",
+  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74))",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -2571,9 +2697,9 @@ const desktopTopButtonStyle: CSSProperties = {
   minHeight: "42px",
   padding: "0 18px",
   background:
-    "linear-gradient(135deg, rgba(249,115,22,0.16) 0%, rgba(124,58,237,0.13) 100%)",
-  border: "1px solid rgba(249,115,22,0.26)",
-  color: "var(--historietas-accent, #FFD6A8)",
+    "linear-gradient(135deg, var(--historietas-admin-comunidade-accent-bg-strong, rgba(249,115,22,0.16)) 0%, var(--historietas-admin-comunidade-secondary-bg, rgba(124,58,237,0.13)) 100%)",
+  border: "1px solid var(--historietas-admin-comunidade-accent-border-soft, rgba(249,115,22,0.26))",
+  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-pale, #FFD6A8))",
 };
 
 const heroStyle: CSSProperties = {
@@ -2581,7 +2707,7 @@ const heroStyle: CSSProperties = {
   borderRadius: "30px",
   border: "none",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.92)) 0%, var(--historietas-surface-strong, rgba(8,3,18,0.98)) 100%)",
+    "linear-gradient(135deg, var(--historietas-surface, var(--historietas-admin-comunidade-surface-gradient-strong, rgba(18,12,30,0.92))) 0%, var(--historietas-surface-strong, var(--historietas-admin-comunidade-surface-strong, rgba(8,3,18,0.98))) 100%)",
   padding: "18px",
   boxShadow: "none",
   minWidth: 0,
@@ -2618,7 +2744,7 @@ const headerStyle: CSSProperties = {
   padding: "20px 16px",
   borderRadius: "28px",
   background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(8,3,18,0.98)) 100%)",
+    "linear-gradient(135deg, var(--historietas-surface, var(--historietas-admin-comunidade-surface-gradient, rgba(18,12,30,0.90))) 0%, var(--historietas-surface-strong, var(--historietas-admin-comunidade-surface-strong, rgba(8,3,18,0.98))) 100%)",
   border: "none",
   boxShadow: "var(--historietas-hero-shadow, none)",
   minWidth: 0,
@@ -2656,7 +2782,7 @@ const titleStyle: CSSProperties = {
   maxWidth: "100%",
   textAlign: "center",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #F5F3FF 44%, var(--historietas-accent, #FDBA74) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-admin-comunidade-title-mid, #F5F3FF) 44%, var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74)) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -2685,7 +2811,7 @@ const secondaryLinkStyle: CSSProperties = {
   padding: "0 15px",
   borderRadius: "999px",
   background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  color: "var(--historietas-secondary-button-text, #DDD6FE)",
+  color: "var(--historietas-secondary-button-text, var(--historietas-admin-comunidade-purple-text, #DDD6FE))",
   textDecoration: "none",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   fontSize: "12px",
@@ -2782,7 +2908,7 @@ const inputStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.08)",
   outline: "none",
   borderRadius: "999px",
-  background: "#04000A",
+  background: "var(--historietas-admin-comunidade-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 16px",
   boxSizing: "border-box",
@@ -2798,7 +2924,7 @@ const adminSearchShellStyle: CSSProperties = {
   minHeight: "44px",
   borderRadius: "999px",
   border: "1px solid transparent",
-  background: "#04000A",
+  background: "var(--historietas-admin-comunidade-bg-deep, #04000A)",
   display: "flex",
   alignItems: "center",
   gap: "8px",
@@ -2907,7 +3033,7 @@ const filterButtonStyle: CSSProperties = {
 
 const activeFilterButtonStyle: CSSProperties = {
   ...filterButtonStyle,
-  background: "#08030F",
+  background: "var(--historietas-admin-comunidade-surface, #08030F)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
@@ -2923,9 +3049,9 @@ const errorStyle: CSSProperties = {
   display: "block",
   padding: "10px 12px",
   borderRadius: "16px",
-  background: "rgba(248,113,113,0.12)",
-  border: "1px solid rgba(248,113,113,0.22)",
-  color: "#FCA5A5",
+  background: "var(--historietas-admin-comunidade-danger-bg, rgba(248,113,113,0.12))",
+  border: "1px solid var(--historietas-admin-comunidade-danger-border, rgba(248,113,113,0.22))",
+  color: "var(--historietas-admin-comunidade-danger-text, #FCA5A5)",
   fontSize: "12px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -2935,9 +3061,9 @@ const successStyle: CSSProperties = {
   display: "block",
   padding: "10px 12px",
   borderRadius: "16px",
-  background: "rgba(34,197,94,0.12)",
-  border: "1px solid rgba(34,197,94,0.22)",
-  color: "#86EFAC",
+  background: "var(--historietas-admin-comunidade-success-bg, rgba(34,197,94,0.12))",
+  border: "1px solid var(--historietas-admin-comunidade-success-border, rgba(34,197,94,0.22))",
+  color: "var(--historietas-admin-comunidade-success-text, #86EFAC)",
   fontSize: "12px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -2970,8 +3096,8 @@ const clearButtonStyle: CSSProperties = {
   padding: "0 13px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(4,0,10,0.72)",
-  color: "#DDD6FE",
+  background: "var(--historietas-admin-comunidade-panel, rgba(4,0,10,0.72))",
+  color: "var(--historietas-admin-comunidade-purple-text, #DDD6FE)",
   fontSize: "10.5px",
   fontWeight: 900,
   cursor: "pointer",
@@ -3062,7 +3188,7 @@ const reportDateStyle: CSSProperties = {
 };
 
 const statusInlineStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74))",
   fontSize: "10.5px",
   lineHeight: 1.2,
   fontWeight: 950,
@@ -3157,7 +3283,7 @@ const adminFiltersSheetStyle: CSSProperties = {
   gap: "0",
   padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "#070212",
+  background: "var(--historietas-admin-comunidade-bg-page, #070212)",
   border: "none",
   overflowY: "auto",
   overflowX: "hidden",
@@ -3303,7 +3429,7 @@ const reportMenuStyle: CSSProperties = {
   gap: "0",
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "#070212",
+  background: "var(--historietas-admin-comunidade-bg-page, #070212)",
   border: "none",
   overflowY: "auto",
   overflowX: "hidden",
@@ -3374,7 +3500,7 @@ const reportMenuItemActiveStyle: CSSProperties = {
 
 const reportMenuDangerItemStyle: CSSProperties = {
   ...reportMenuItemStyle,
-  color: "#FB7185",
+  color: "var(--historietas-admin-comunidade-danger-menu, #FB7185)",
 };
 
 const reportMenuDividerStyle: CSSProperties = {
@@ -3471,7 +3597,7 @@ const metaItemStyle: CSSProperties = {
 
 const spoilerMetaItemStyle: CSSProperties = {
   ...metaItemStyle,
-  color: "#FDBA74",
+  color: "var(--historietas-admin-comunidade-accent-soft, #FDBA74)",
 };
 
 const reasonGridStyle: CSSProperties = {
@@ -3581,9 +3707,9 @@ const statusButtonStyle: CSSProperties = {
 
 const activeStatusButtonStyle: CSSProperties = {
   ...statusButtonStyle,
-  background: "var(--historietas-active-surface, rgba(249,115,22,0.16))",
-  border: "1px solid rgba(249,115,22,0.28)",
-  color: "var(--historietas-accent, #FDBA74)",
+  background: "var(--historietas-active-surface, var(--historietas-admin-comunidade-accent-bg-strong, rgba(249,115,22,0.16)))",
+  border: "1px solid var(--historietas-admin-comunidade-accent-border, rgba(249,115,22,0.28))",
+  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74))",
   cursor: "default",
 };
 
@@ -3591,9 +3717,9 @@ const analysisButtonStyle: CSSProperties = {
   minHeight: "32px",
   padding: "0 10px",
   borderRadius: "999px",
-  border: "1px solid rgba(249,115,22,0.26)",
-  background: "rgba(249,115,22,0.10)",
-  color: "var(--historietas-accent, #FDBA74)",
+  border: "1px solid var(--historietas-admin-comunidade-accent-border-soft, rgba(249,115,22,0.26))",
+  background: "var(--historietas-admin-comunidade-accent-bg, rgba(249,115,22,0.10))",
+  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74))",
   fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",
@@ -3604,9 +3730,9 @@ const dangerButtonStyle: CSSProperties = {
   minHeight: "32px",
   padding: "0 10px",
   borderRadius: "999px",
-  border: "1px solid rgba(248,113,113,0.30)",
-  background: "var(--historietas-danger-surface, rgba(248,113,113,0.12))",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  border: "1px solid var(--historietas-admin-comunidade-danger-border-strong, rgba(248,113,113,0.30))",
+  background: "var(--historietas-danger-surface, var(--historietas-admin-comunidade-danger-bg, rgba(248,113,113,0.12)))",
+  color: "var(--historietas-danger-button-text, var(--historietas-admin-comunidade-danger-text, #FCA5A5))",
   fontSize: "10.5px",
   fontWeight: 950,
   cursor: "pointer",

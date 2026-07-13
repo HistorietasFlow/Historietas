@@ -7,6 +7,10 @@ import type { CSSProperties, ReactNode } from "react";
 import { supabase } from "../lib/supabase/client";
 import { useNotificacoes } from "../components/NotificacoesProvider";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../lib/utils";
+import {
+  historietasThemeCss,
+  useHistorietasTheme,
+} from "../lib/historietasTheme";
 
 type CapituloLocal = {
   id: string;
@@ -174,350 +178,10 @@ type SupabaseAvaliacaoAutorHomeRow = {
   nota: number | null;
 };
 
-type TemaVisualHome =
-  | "branco"
-  | "escuro"
-  | "foco"
-  | "original"
-  | "fantasia"
-  | "romance"
-  | "terror"
-  | "acao"
-  | "scifi"
-  | "drama"
-  | "aventura"
-  | "sobrenatural"
-  | "comedia"
-  | "misterio"
-  | "suspense"
-  | "historico"
-  | "biografia"
-  | "pixel";
-
-type TemaVisualHomeConfig = {
-  accent: string;
-  secondary: string;
-  bgStart: string;
-  bgMid: string;
-  bgEnd: string;
-  glowPrimary: string;
-  glowSecondary: string;
-  textPrimary?: string;
-  textSecondary?: string;
-  surface?: string;
-  surfaceStrong?: string;
-  borderSoft?: string;
-  inputBg?: string;
-  inputText?: string;
-  titleFrom?: string;
-  titleMid?: string;
-  titleTo?: string;
-  heroShadow?: string;
-  cardShadow?: string;
-  logoShadow?: string;
-  activeSurface?: string;
-  secondarySurface?: string;
-  secondaryButtonText?: string;
-  dangerSurface?: string;
-  dangerButtonText?: string;
-};
-
-const TEMAS_VISUAIS_HOME: Record<TemaVisualHome, TemaVisualHomeConfig> = {
-  branco: {
-    accent: "#1A73E8",
-    secondary: "#01875F",
-    bgStart: "#FFFFFF",
-    bgMid: "#FFFFFF",
-    bgEnd: "#F8F9FA",
-    glowPrimary: "rgba(26,115,232,0.020)",
-    glowSecondary: "rgba(1,135,95,0.018)",
-    textPrimary: "#202124",
-    textSecondary: "#5F6368",
-    surface: "#FFFFFF",
-    surfaceStrong: "#FFFFFF",
-    borderSoft: "#DADCE0",
-    inputBg: "#FFFFFF",
-    inputText: "#202124",
-    titleFrom: "#202124",
-    titleMid: "#202124",
-    titleTo: "#202124",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(26,115,232,0.10)",
-    secondarySurface: "rgba(1,135,95,0.10)",
-    secondaryButtonText: "#188038",
-    dangerSurface: "rgba(217,48,37,0.10)",
-    dangerButtonText: "#B3261E",
-  },
-  escuro: {
-    accent: "#F97316",
-    secondary: "#7C3AED",
-    bgStart: "#000000",
-    bgMid: "#000000",
-    bgEnd: "#000000",
-    glowPrimary: "rgba(249,115,22,0.030)",
-    glowSecondary: "rgba(124,58,237,0.030)",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#B3B3B3",
-    surface: "#101010",
-    surfaceStrong: "#000000",
-    borderSoft: "rgba(255,255,255,0.11)",
-    inputBg: "#0B0B0B",
-    inputText: "#FFFFFF",
-    titleFrom: "#FFFFFF",
-    titleMid: "#FFFFFF",
-    titleTo: "#FFFFFF",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(124,58,237,0.14)",
-    secondarySurface: "rgba(124,58,237,0.12)",
-    secondaryButtonText: "#FFFFFF",
-    dangerSurface: "rgba(239,68,68,0.12)",
-    dangerButtonText: "#FCA5A5",
-  },
-  foco: {
-    accent: "#A78BFA",
-    secondary: "#27272A",
-    bgStart: "#050506",
-    bgMid: "#030305",
-    bgEnd: "#020203",
-    glowPrimary: "rgba(124,58,237,0.08)",
-    glowSecondary: "rgba(255,255,255,0.045)",
-    textPrimary: "#F4F4F5",
-    textSecondary: "#D4D4D8",
-    surface: "rgba(9,9,11,0.88)",
-    surfaceStrong: "rgba(3,3,6,0.96)",
-    borderSoft: "rgba(255,255,255,0.065)",
-    inputBg: "#09090B",
-    inputText: "#F4F4F5",
-    titleFrom: "#FFFFFF",
-    titleMid: "#E4E4E7",
-    titleTo: "#A78BFA",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(167,139,250,0.12)",
-    secondarySurface: "rgba(39,39,42,0.72)",
-    secondaryButtonText: "#E4E4E7",
-    dangerSurface: "rgba(127,29,29,0.18)",
-    dangerButtonText: "#FCA5A5",
-  },
-  original: {
-    accent: "#F97316",
-    secondary: "#7C3AED",
-    bgStart: "#070212",
-    bgMid: "#070212",
-    bgEnd: "#070212",
-    glowPrimary: "transparent",
-    glowSecondary: "transparent",
-  },
-  fantasia: {
-    accent: "#A855F7",
-    secondary: "#2563EB",
-    bgStart: "#090417",
-    bgMid: "#130A2A",
-    bgEnd: "#0B1028",
-    glowPrimary: "rgba(168,85,247,0.34)",
-    glowSecondary: "rgba(37,99,235,0.18)",
-    titleTo: "#C4B5FD",
-    activeSurface: "rgba(168,85,247,0.18)",
-    secondarySurface: "rgba(37,99,235,0.16)",
-    secondaryButtonText: "#DBEAFE",
-  },
-  romance: {
-    accent: "#EC4899",
-    secondary: "#BE123C",
-    bgStart: "#140711",
-    bgMid: "#251022",
-    bgEnd: "#1E0B16",
-    glowPrimary: "rgba(236,72,153,0.30)",
-    glowSecondary: "rgba(190,18,60,0.18)",
-    titleTo: "#F9A8D4",
-    activeSurface: "rgba(236,72,153,0.18)",
-    secondarySurface: "rgba(190,18,60,0.16)",
-    secondaryButtonText: "#FCE7F3",
-  },
-  terror: {
-    accent: "#EF4444",
-    secondary: "#7F1D1D",
-    bgStart: "#080305",
-    bgMid: "#160707",
-    bgEnd: "#100608",
-    glowPrimary: "rgba(239,68,68,0.30)",
-    glowSecondary: "rgba(127,29,29,0.22)",
-    titleTo: "#FCA5A5",
-    activeSurface: "rgba(239,68,68,0.18)",
-    secondarySurface: "rgba(127,29,29,0.20)",
-    secondaryButtonText: "#FECACA",
-    dangerSurface: "rgba(127,29,29,0.22)",
-    dangerButtonText: "#FCA5A5",
-  },
-  acao: {
-    accent: "#F97316",
-    secondary: "#DC2626",
-    bgStart: "#100604",
-    bgMid: "#1E0B08",
-    bgEnd: "#17101B",
-    glowPrimary: "rgba(249,115,22,0.34)",
-    glowSecondary: "rgba(220,38,38,0.18)",
-    titleTo: "#FDBA74",
-    activeSurface: "rgba(249,115,22,0.20)",
-    secondarySurface: "rgba(220,38,38,0.16)",
-    secondaryButtonText: "#FED7AA",
-  },
-  scifi: {
-    accent: "#06B6D4",
-    secondary: "#2563EB",
-    bgStart: "#031017",
-    bgMid: "#071C2D",
-    bgEnd: "#071321",
-    glowPrimary: "rgba(6,182,212,0.30)",
-    glowSecondary: "rgba(37,99,235,0.20)",
-    titleTo: "#67E8F9",
-    activeSurface: "rgba(6,182,212,0.18)",
-    secondarySurface: "rgba(37,99,235,0.16)",
-    secondaryButtonText: "#CFFAFE",
-  },
-  drama: {
-    accent: "#C084FC",
-    secondary: "#581C87",
-    bgStart: "#0E0718",
-    bgMid: "#160A24",
-    bgEnd: "#17101F",
-    glowPrimary: "rgba(192,132,252,0.30)",
-    glowSecondary: "rgba(88,28,135,0.22)",
-    titleTo: "#DDD6FE",
-    activeSurface: "rgba(192,132,252,0.18)",
-    secondarySurface: "rgba(88,28,135,0.20)",
-    secondaryButtonText: "#E9D5FF",
-  },
-  aventura: {
-    accent: "#EAB308",
-    secondary: "#92400E",
-    bgStart: "#0D0803",
-    bgMid: "#171006",
-    bgEnd: "#1F1308",
-    glowPrimary: "rgba(234,179,8,0.18)",
-    glowSecondary: "rgba(146,64,14,0.20)",
-    titleTo: "#FDE68A",
-    activeSurface: "rgba(234,179,8,0.15)",
-    secondarySurface: "rgba(146,64,14,0.20)",
-    secondaryButtonText: "#FDE68A",
-  },
-  sobrenatural: {
-    accent: "#34D399",
-    secondary: "#065F46",
-    bgStart: "#06120D",
-    bgMid: "#0B1D1C",
-    bgEnd: "#10171A",
-    glowPrimary: "rgba(52,211,153,0.24)",
-    glowSecondary: "rgba(6,95,70,0.22)",
-    titleTo: "#A7F3D0",
-    activeSurface: "rgba(52,211,153,0.16)",
-    secondarySurface: "rgba(6,95,70,0.20)",
-    secondaryButtonText: "#D1FAE5",
-  },
-  comedia: {
-    accent: "#FACC15",
-    secondary: "#FB7185",
-    bgStart: "#110D04",
-    bgMid: "#1D1608",
-    bgEnd: "#1A1014",
-    glowPrimary: "rgba(250,204,21,0.24)",
-    glowSecondary: "rgba(251,113,133,0.18)",
-    titleTo: "#FEF08A",
-    activeSurface: "rgba(250,204,21,0.16)",
-    secondarySurface: "rgba(251,113,133,0.16)",
-    secondaryButtonText: "#FEF9C3",
-  },
-  misterio: {
-    accent: "#818CF8",
-    secondary: "#312E81",
-    bgStart: "#060817",
-    bgMid: "#0B1026",
-    bgEnd: "#10112A",
-    glowPrimary: "rgba(129,140,248,0.26)",
-    glowSecondary: "rgba(49,46,129,0.24)",
-    titleTo: "#C7D2FE",
-    activeSurface: "rgba(129,140,248,0.16)",
-    secondarySurface: "rgba(49,46,129,0.22)",
-    secondaryButtonText: "#C7D2FE",
-  },
-  suspense: {
-    accent: "#A3E635",
-    secondary: "#365314",
-    bgStart: "#070B05",
-    bgMid: "#101607",
-    bgEnd: "#11140A",
-    glowPrimary: "rgba(163,230,53,0.18)",
-    glowSecondary: "rgba(54,83,20,0.24)",
-    titleTo: "#D9F99D",
-    activeSurface: "rgba(163,230,53,0.14)",
-    secondarySurface: "rgba(54,83,20,0.24)",
-    secondaryButtonText: "#D9F99D",
-  },
-  historico: {
-    accent: "#D97706",
-    secondary: "#78350F",
-    bgStart: "#110805",
-    bgMid: "#1A0F08",
-    bgEnd: "#17100A",
-    glowPrimary: "rgba(217,119,6,0.22)",
-    glowSecondary: "rgba(120,53,15,0.25)",
-    titleTo: "#FDBA74",
-    activeSurface: "rgba(217,119,6,0.16)",
-    secondarySurface: "rgba(120,53,15,0.22)",
-    secondaryButtonText: "#FED7AA",
-  },
-  biografia: {
-    accent: "#60A5FA",
-    secondary: "#334155",
-    bgStart: "#06101F",
-    bgMid: "#0B1728",
-    bgEnd: "#101827",
-    glowPrimary: "rgba(96,165,250,0.22)",
-    glowSecondary: "rgba(51,65,85,0.28)",
-    titleTo: "#BFDBFE",
-    activeSurface: "rgba(96,165,250,0.15)",
-    secondarySurface: "rgba(51,65,85,0.24)",
-    secondaryButtonText: "#BFDBFE",
-  },
-  pixel: {
-    accent: "#22C55E",
-    secondary: "#38BDF8",
-    bgStart: "#030703",
-    bgMid: "#061106",
-    bgEnd: "#020402",
-    glowPrimary: "rgba(34,197,94,0.16)",
-    glowSecondary: "rgba(56,189,248,0.12)",
-    textPrimary: "#ECFDF5",
-    textSecondary: "#BBF7D0",
-    surface: "#07120A",
-    surfaceStrong: "#030803",
-    borderSoft: "rgba(34,197,94,0.34)",
-    inputBg: "#020602",
-    inputText: "#ECFDF5",
-    titleFrom: "#ECFDF5",
-    titleMid: "#BBF7D0",
-    titleTo: "#86EFAC",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface: "rgba(34,197,94,0.18)",
-    secondarySurface: "rgba(56,189,248,0.12)",
-    secondaryButtonText: "#BAE6FD",
-    dangerSurface: "rgba(239,68,68,0.14)",
-    dangerButtonText: "#FCA5A5",
-  },
-};
-
 const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
-const THEME_STORAGE_KEY = "historietas-tema-visual";
 
 const OBRAS_CATALOGO_HOME: Obra[] = [];
 
@@ -538,183 +202,6 @@ const HERO_INICIAL_HOME = {
   disponivel: false,
   link: "/explorar",
 } as Obra & { link: string };
-
-function obterTemaVisualHomeSeguro(valor: unknown): TemaVisualHome {
-  if (typeof valor === "string" && valor in TEMAS_VISUAIS_HOME) {
-    return valor as TemaVisualHome;
-  }
-
-  return "original";
-}
-
-function carregarTemaVisualHomeSalvo(userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return "original";
-  }
-
-  try {
-    const texto = lerStorageUsuarioHome(THEME_STORAGE_KEY, userIdLimpo);
-
-    if (!texto) {
-      return "original";
-    }
-
-    try {
-      return obterTemaVisualHomeSeguro(JSON.parse(texto));
-    } catch {
-      return obterTemaVisualHomeSeguro(texto);
-    }
-  } catch {
-    return "original";
-  }
-}
-
-function aplicarTemaVisualHome(temaVisual: TemaVisualHome) {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const tema = TEMAS_VISUAIS_HOME[temaVisual];
-  const raiz = document.documentElement;
-
-  raiz.style.setProperty("--historietas-accent", tema.accent);
-  raiz.style.setProperty("--historietas-secondary", tema.secondary);
-  raiz.style.setProperty("--historietas-bg-start", tema.bgStart);
-  raiz.style.setProperty("--historietas-bg-mid", tema.bgMid);
-  raiz.style.setProperty("--historietas-bg-end", tema.bgEnd);
-  raiz.style.setProperty("--historietas-glow-primary", tema.glowPrimary);
-  raiz.style.setProperty("--historietas-glow-secondary", tema.glowSecondary);
-  raiz.style.setProperty("--historietas-text-primary", tema.textPrimary || "#FFFFFF");
-  raiz.style.setProperty("--historietas-text-secondary", tema.textSecondary || "#D4D4D8");
-  raiz.style.setProperty("--historietas-surface", tema.surface || "rgba(18,12,30,0.82)");
-  raiz.style.setProperty("--historietas-surface-strong", tema.surfaceStrong || "rgba(18,12,30,0.98)");
-  raiz.style.setProperty("--historietas-border-soft", tema.borderSoft || "rgba(255,255,255,0.08)");
-  raiz.style.setProperty("--historietas-input-bg", tema.inputBg || "#18181B");
-  raiz.style.setProperty("--historietas-input-text", tema.inputText || "#FFFFFF");
-  raiz.style.setProperty("--historietas-title-from", tema.titleFrom || "#FFFFFF");
-  raiz.style.setProperty("--historietas-title-mid", tema.titleMid || "#F5F3FF");
-  raiz.style.setProperty("--historietas-title-to", tema.titleTo || "#FDBA74");
-  raiz.style.setProperty(
-    "--historietas-hero-shadow",
-    tema.heroShadow ||
-      "0 18px 48px rgba(0,0,0,0.32), 0 0 36px rgba(124,58,237,0.12)"
-  );
-  raiz.style.setProperty(
-    "--historietas-card-shadow",
-    tema.cardShadow || "0 14px 36px rgba(0,0,0,0.20)"
-  );
-  raiz.style.setProperty(
-    "--historietas-logo-shadow",
-    tema.logoShadow || "0 0 26px rgba(139, 92, 246, 0.24)"
-  );
-  raiz.style.setProperty(
-    "--historietas-active-surface",
-    tema.activeSurface ||
-      "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))"
-  );
-  raiz.style.setProperty(
-    "--historietas-secondary-surface",
-    tema.secondarySurface ||
-      "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 18%, rgba(255,255,255,0.035))"
-  );
-  raiz.style.setProperty(
-    "--historietas-secondary-button-text",
-    tema.secondaryButtonText || "#DDD6FE"
-  );
-  raiz.style.setProperty(
-    "--historietas-danger-surface",
-    tema.dangerSurface || "rgba(239, 68, 68, 0.105)"
-  );
-  raiz.style.setProperty(
-    "--historietas-danger-button-text",
-    tema.dangerButtonText || "#FCA5A5"
-  );
-
-  const surface = tema.surface || "rgba(18,12,30,0.82)";
-  const surfaceStrong = tema.surfaceStrong || "rgba(18,12,30,0.98)";
-  const borderSoft = tema.borderSoft || "rgba(255,255,255,0.08)";
-  const textPrimary = tema.textPrimary || "#FFFFFF";
-  const textSecondary = tema.textSecondary || "#D4D4D8";
-  const activeSurface =
-    tema.activeSurface ||
-    "color-mix(in srgb, var(--historietas-secondary, #7C3AED) 25%, rgba(18,12,30,0.92))";
-
-  const isBranco = temaVisual === "branco";
-  const isEscuro = temaVisual === "escuro";
-  const isFoco = temaVisual === "foco";
-
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-bg",
-    isBranco
-      ? "#FFFFFF"
-      : isEscuro
-      ? "#050505"
-      : isFoco
-      ? "#050506"
-      : `radial-gradient(circle at 16% 0%, color-mix(in srgb, ${tema.accent} 18%, transparent), transparent 34%), radial-gradient(circle at 84% 0%, color-mix(in srgb, ${tema.secondary} 22%, transparent), transparent 38%), linear-gradient(180deg, ${surfaceStrong} 0%, ${tema.bgStart} 100%)`
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-border",
-    isBranco ? "#DADCE0" : borderSoft
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-shadow",
-    isBranco || isEscuro || isFoco
-      ? "none"
-      : "0 14px 34px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06)"
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-text",
-    isBranco ? "#5F6368" : textSecondary
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-hover-bg",
-    isBranco ? "#F1F3F4" : activeSurface
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-hover-text",
-    isBranco ? "#202124" : textPrimary
-  );
-  raiz.style.setProperty("--historietas-bottom-nav-icon-text", tema.accent);
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-icon-bg",
-    isBranco ? "#F1F3F4" : surface
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-icon-border",
-    isBranco ? "#E0E3E7" : borderSoft
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-bg",
-    isBranco
-      ? tema.accent
-      : `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-border",
-    isBranco ? tema.accent : `color-mix(in srgb, ${tema.accent} 55%, transparent)`
-  );
-  raiz.style.setProperty("--historietas-bottom-nav-main-shadow", "none");
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-icon-bg",
-    "rgba(255,255,255,0.16)"
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-main-icon-border",
-    "rgba(255,255,255,0.18)"
-  );
-  raiz.style.setProperty(
-    "--historietas-bottom-nav-shine",
-    isBranco || isEscuro || isFoco
-      ? "none"
-      : "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)"
-  );
-
-  raiz.dataset.historietasTemaVisual = temaVisual;
-  document.body.dataset.historietasTemaVisual = temaVisual;
-}
 
 function formatarGeneroHome(genero: string) {
   const generoLimpo = genero.trim();
@@ -2527,6 +2014,7 @@ function encontrarObraLocalPorHeroHome(
 
 export default function Home() {
   const router = useRouter();
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const [busca, setBusca] = useState("");
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
@@ -2542,10 +2030,6 @@ export default function Home() {
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [dadosHomeCarregados, setDadosHomeCarregados] = useState(false);
   const [avisoLogin, setAvisoLogin] = useState("");
-
-  useEffect(() => {
-    aplicarTemaVisualHome(carregarTemaVisualHomeSalvo(usuarioIdLogado));
-  }, [usuarioIdLogado]);
 
   useEffect(() => {
     let cancelado = false;
@@ -3390,8 +2874,8 @@ export default function Home() {
 
   if (!dadosHomeCarregados) {
     return (
-      <main style={pageStyle} aria-busy="true">
-        <style>{themePageCss}</style>
+      <main style={pageThemeStyle} aria-busy="true">
+        <style>{`${themePageCss}${historietasThemeCss}`}</style>
       </main>
     );
   }
@@ -3400,7 +2884,7 @@ export default function Home() {
     return (
       <main
         style={{
-          ...pageStyle,
+          ...pageThemeStyle,
           display: "grid",
           placeItems: "center",
           padding: "40px",
@@ -3422,8 +2906,8 @@ export default function Home() {
   }
 
   return (
-    <main style={pageStyle}>
-      <style>{themePageCss}</style>
+    <main style={pageThemeStyle}>
+      <style>{`${themePageCss}${historietasThemeCss}`}</style>
 
       <div style={pageDecorationLayerStyle} aria-hidden="true">
         {["✦", "◌", "✧"].map((decoracao, index) => (
@@ -3437,16 +2921,16 @@ export default function Home() {
 
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
-      <header style={isDesktop ? desktopNavStyle : mobileNavStyle}>
+      <header className="historietas-home-header" style={isDesktop ? desktopNavStyle : mobileNavStyle}>
         <div style={isDesktop ? desktopNavInnerStyle : navInnerStyle}>
           <div style={isDesktop ? desktopNavTopRowStyle : navTopRowStyle}>
-            <Link href="/" style={logoStyle} aria-label="Historietas">
-              <span style={logoMarkStyle}>H</span>
+            <Link href="/" className="historietas-home-logo" style={logoStyle} aria-label="Historietas">
+              <span className="historietas-home-logo-mark" style={logoMarkStyle}>H</span>
               <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
             </Link>
 
             {!isDesktop && buscaMobileAberta ? (
-              <div style={mobileHeaderSearchAreaStyle}>
+              <div className="historietas-home-mobile-search-area" style={mobileHeaderSearchAreaStyle}>
                 <input
                   value={busca}
                   onChange={(event) => setBusca(event.target.value)}
@@ -3455,6 +2939,7 @@ export default function Home() {
                   autoCorrect="off"
                   spellCheck={false}
                   maxLength={90}
+                  className="historietas-home-header-search-input"
                   style={mobileHeaderSearchInputStyle}
                   type="text"
                   autoFocus
@@ -3463,7 +2948,7 @@ export default function Home() {
               </div>
             ) : null}
 
-            <div style={navIconsStyle}>
+            <div className="historietas-home-header-actions" style={navIconsStyle}>
               {isDesktop && (
                 <>
                   <Link href="/configuracoes" style={publishSmallButtonStyle}>
@@ -3498,6 +2983,7 @@ export default function Home() {
                   onClick={() => setBuscaMobileAberta((aberta) => !aberta)}
                   aria-label={buscaMobileAberta ? "Fechar busca" : "Abrir busca"}
                   aria-pressed={buscaMobileAberta}
+                  className="historietas-home-search-toggle"
                   style={
                     buscaMobileAberta
                       ? mobileSearchToggleActiveStyle
@@ -3532,7 +3018,7 @@ export default function Home() {
           </div>
 
           {isDesktop && (
-            <nav style={desktopMenuStyle} aria-label="Navegação principal">
+            <nav className="historietas-home-desktop-menu" style={desktopMenuStyle} aria-label="Navegação principal">
               <Link href="/" style={activeLinkStyle}>
                 Início
               </Link>
@@ -3567,6 +3053,7 @@ export default function Home() {
                   value={busca}
                   onChange={(event) => setBusca(event.target.value)}
                   placeholder="Buscar obras, autor, gênero..."
+                  className="historietas-home-header-search-input"
                   style={inputStyle}
                 />
 
@@ -4815,6 +4302,76 @@ const themePageCss = `
     --historietas-secondary-surface: rgba(124,58,237,0.12);
     --historietas-danger-surface: rgba(239,68,68,0.12);
   }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-header {
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.10) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-logo {
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-logo-mark {
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.22) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-logo-text {
+    background: none !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    text-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-header-search-input {
+    background: #050505 !important;
+    border-color: rgba(255,255,255,0.18) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-header-search-input::placeholder {
+    color: #A1A1AA !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle,
+  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle:hover,
+  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle:active,
+  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle:focus,
+  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle:focus-visible {
+    background: transparent !important;
+    border: 0 !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-header-actions a {
+    background: #050505 !important;
+    border-color: rgba(255,255,255,0.18) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-desktop-menu a {
+    background: #050505 !important;
+    border-color: rgba(255,255,255,0.14) !important;
+    color: #D4D4D8 !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-home-desktop-menu a[href="/"] {
+    background: #FFFFFF !important;
+    border-color: #FFFFFF !important;
+    color: #000000 !important;
+  }
+
 `;
 
 const safeTextStyle: CSSProperties = {
@@ -6568,8 +6125,7 @@ const progressTrackStyle: CSSProperties = {
 const progressBarStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background:
-    "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+  background: "linear-gradient(90deg, #F97316 0%, #7C3AED 100%)",
 };
 
 const progressTextStyle: CSSProperties = {
