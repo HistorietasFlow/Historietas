@@ -4533,7 +4533,7 @@ export default function PerfilAutorPage() {
   const [perfisAutoresSalvos, setPerfisAutoresSalvos] =
     useState<PerfisAutoresSalvos>({});
   const [avatarErro, setAvatarErro] = useState("");
-  const [, setMensagemAcao] = useState("");
+  const [mensagemAcao, setMensagemAcao] = useState("");
   const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
     useState<PerfilUsuarioRemoto | null>(null);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
@@ -4587,6 +4587,20 @@ export default function PerfilAutorPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
+
+  useEffect(() => {
+    if (!mensagemAcao) {
+      return;
+    }
+
+    const timerMensagemAcao = window.setTimeout(() => {
+      setMensagemAcao("");
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timerMensagemAcao);
+    };
+  }, [mensagemAcao]);
 
   useEffect(() => {
     function atualizarTelaDesktop() {
@@ -6592,15 +6606,19 @@ export default function PerfilAutorPage() {
   async function copiarLinkPerfil() {
     setMenuPerfilAberto(false);
 
+    const nomePerfil = perfilParaMostrar?.nome || "este autor";
+    const usernamePerfil = perfilUsuarioRemotoAtivo?.username
+      ? ` (@${perfilUsuarioRemotoAtivo.username})`
+      : "";
+
     await compartilharLinkPerfilAutor({
       url: window.location.href,
-      titulo: perfilParaMostrar?.nome || "Perfil na Historietas",
-      texto: perfilParaMostrar
-        ? `Veja o perfil de ${perfilParaMostrar.nome} na Historietas.`
-        : "Veja este perfil na Historietas.",
+      titulo: `${nomePerfil} no HISTORIETAS`,
+      texto: `Confira o perfil de ${nomePerfil}${usernamePerfil} no HISTORIETAS.`,
       mensagemCompartilhado: "Compartilhamento do perfil aberto.",
-      mensagemCopiado: "",
-      mensagemErro: "",
+      mensagemCopiado: "Link do perfil copiado.",
+      mensagemErro:
+        "Não consegui compartilhar nem copiar o link do perfil neste navegador.",
     });
   }
 
@@ -8623,6 +8641,16 @@ export default function PerfilAutorPage() {
               </>
             )}
           </div>
+
+          {mensagemAcao && (
+            <div
+              style={profileActionToastStyle}
+              role="status"
+              aria-live="polite"
+            >
+              {mensagemAcao}
+            </div>
+          )}
 
           {podeEditarPerfil && (
             <input
@@ -12079,6 +12107,31 @@ const profileVisitorActionsStyle: CSSProperties = {
 const desktopProfileVisitorActionsStyle: CSSProperties = {
   ...desktopProfileActionsStyle,
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+};
+
+const profileActionToastStyle: CSSProperties = {
+  position: "fixed",
+  left: "50%",
+  bottom: "calc(92px + env(safe-area-inset-bottom))",
+  transform: "translateX(-50%)",
+  zIndex: 1400,
+  width: "max-content",
+  maxWidth: "calc(100vw - 32px)",
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
+  background: "var(--historietas-surface-strong, #120822)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  boxShadow: "0 14px 34px rgba(0,0,0,0.38)",
+  padding: "9px 14px",
+  fontSize: "11px",
+  lineHeight: 1.3,
+  fontWeight: 900,
+  textAlign: "center",
+  pointerEvents: "none",
 };
 
 const profilePrimaryButtonStyle: CSSProperties = {
