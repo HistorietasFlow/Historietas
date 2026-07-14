@@ -9,7 +9,7 @@ import {
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties, ReactNode } from "react";
 
 type CapituloLocal = {
@@ -4515,7 +4515,7 @@ function erroCompartilhamentoFoiCanceladoPerfilAutor(error: unknown) {
   return nomeErro === "AbortError";
 }
 
-export default function PerfilAutorPage() {
+function PerfilAutorPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryPerfilAtual = searchParams.toString();
@@ -10068,6 +10068,14 @@ export default function PerfilAutorPage() {
           })()}
       </section>
     </main>
+  );
+}
+
+export default function PerfilAutorPage() {
+  return (
+    <Suspense fallback={null}>
+      <PerfilAutorPageContent />
+    </Suspense>
   );
 }
 
