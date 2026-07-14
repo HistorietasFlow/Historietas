@@ -4496,6 +4496,9 @@ export default function ObraDinamicaPage() {
 
             <article
               ref={comentariosSheetRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Comentários de ${obra.titulo}`}
               style={
                 isDesktop
                   ? desktopCommentsSheetStyle
@@ -6568,7 +6571,7 @@ const commentsSheetStyle: CSSProperties = {
   gap: "7px",
   padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
   borderRadius: "28px 28px 0 0",
-  background: "#070212",
+  background: "var(--historietas-obra-bg-deep, #070212)",
   border: "none",
   borderBottom: "none",
   boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
