@@ -1097,7 +1097,11 @@ function normalizarPerfilNotificacao(
 
 async function carregarPerfisNotificacoes(userIds: string[]) {
   const ids = Array.from(
-    new Set(userIds.map((id) => id.trim()).filter(Boolean))
+    new Set(
+      userIds
+        .map((id) => id.trim())
+        .filter((id) => idObraSupabaseValido(id))
+    )
   );
   const perfis = new Map<string, PerfilNotificacao>();
 
@@ -1105,51 +1109,55 @@ async function carregarPerfisNotificacoes(userIds: string[]) {
     return perfis;
   }
 
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .in("user_id", ids)
-      .limit(1000);
+  const selecoesProfiles = [
+    "id,user_id,nome,avatar_url",
+    "id,user_id,nome_usuario,avatar_url",
+    "id,user_id,username,avatar_url",
+    "id,user_id,display_name,avatar_url",
+    "id,user_id,apelido,avatar_url",
+  ] as const;
 
-    if (!error && Array.isArray(data)) {
-      data.forEach((item) => {
-        const row = item as Record<string, unknown>;
-        const perfil = normalizarPerfilNotificacao(row, "", "Usuário");
-
-        if (perfil.userId) {
-          perfis.set(perfil.userId, perfil);
-        }
-      });
+  async function carregarPorColuna(
+    coluna: "user_id" | "id",
+    idsBusca: string[]
+  ) {
+    if (idsBusca.length === 0) {
+      return;
     }
-  } catch {
-    // Se user_id não existir no schema antigo, tenta pelo id abaixo.
-  }
 
-  const idsFaltantes = ids.filter((id) => !perfis.has(id));
+    for (const campos of selecoesProfiles) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(campos)
+          .in(coluna, idsBusca)
+          .limit(1000);
 
-  if (idsFaltantes.length > 0) {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("id", idsFaltantes)
-        .limit(1000);
+        if (error || !Array.isArray(data)) {
+          continue;
+        }
 
-      if (!error && Array.isArray(data)) {
         data.forEach((item) => {
           const row = item as Record<string, unknown>;
           const perfil = normalizarPerfilNotificacao(row, "", "Usuário");
 
-          if (perfil.userId) {
+          if (perfil.userId && idObraSupabaseValido(perfil.userId)) {
             perfis.set(perfil.userId, perfil);
           }
         });
+
+        return;
+      } catch {
+        // Tenta uma seleção menor ou outra coluna.
       }
-    } catch {
-      // Profiles é complementar; as notificações continuam com nome salvo no registro.
     }
   }
+
+  await carregarPorColuna("user_id", ids);
+
+  const idsFaltantes = ids.filter((id) => !perfis.has(id));
+
+  await carregarPorColuna("id", idsFaltantes);
 
   return perfis;
 }

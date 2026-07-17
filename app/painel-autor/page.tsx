@@ -32,6 +32,17 @@ type ArquivoObraLocal = {
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
+type ArquivoStoragePainel = {
+  bucket: "capas-obras" | "arquivos-obras";
+  caminho: string;
+};
+
+type ObraStoragePainelRow = {
+  id: string;
+  capa_url: string | null;
+  arquivo_url: string | null;
+};
+
 type ObraLocal = {
   id: string;
   autorId?: string;
@@ -382,6 +393,127 @@ function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
     categoria,
     criadoEm: typeof arquivo.criadoEm === "string" ? arquivo.criadoEm : "",
   };
+}
+
+
+function obterCaminhoStoragePainel(
+  bucket: "capas-obras" | "arquivos-obras",
+  referencia: string
+) {
+  const referenciaLimpa = referencia.trim();
+
+  if (!referenciaLimpa || referenciaLimpa.startsWith("data:")) {
+    return "";
+  }
+
+  if (!/^https?:\/\//i.test(referenciaLimpa)) {
+    return referenciaLimpa
+      .replace(new RegExp(`^${bucket}/`), "")
+      .replace(/^\/+/, "");
+  }
+
+  try {
+    const url = new URL(referenciaLimpa);
+    const prefixos = [
+      `/storage/v1/object/public/${bucket}/`,
+      `/storage/v1/object/sign/${bucket}/`,
+      `/storage/v1/object/authenticated/${bucket}/`,
+    ];
+    const prefixo = prefixos.find((valor) => url.pathname.includes(valor));
+
+    if (!prefixo) {
+      return "";
+    }
+
+    const indice = url.pathname.indexOf(prefixo);
+    const caminhoCodificado = url.pathname.slice(indice + prefixo.length);
+
+    return decodeURIComponent(caminhoCodificado).replace(/^\/+/, "");
+  } catch {
+    return "";
+  }
+}
+
+function caminhoStoragePertenceAoUsuarioPainel(
+  caminho: string,
+  userId: string
+) {
+  const primeiraPasta = caminho.trim().split("/")[0] || "";
+
+  return Boolean(
+    primeiraPasta &&
+      userId.trim() &&
+      primeiraPasta.toLowerCase() === userId.trim().toLowerCase()
+  );
+}
+
+async function criarUrlAssinadaArquivoObraPainel(referencia: string) {
+  const referenciaLimpa = referencia.trim();
+
+  if (!referenciaLimpa) {
+    throw new Error("Esta obra não possui arquivo disponível.");
+  }
+
+  const caminho = obterCaminhoStoragePainel(
+    "arquivos-obras",
+    referenciaLimpa
+  );
+
+  if (!caminho) {
+    return referenciaLimpa;
+  }
+
+  const { data, error } = await supabase.storage
+    .from("arquivos-obras")
+    .createSignedUrl(caminho, 60);
+
+  if (error || !data?.signedUrl) {
+    throw new Error(
+      error?.message ||
+        "Não consegui criar um acesso temporário ao arquivo da obra."
+    );
+  }
+
+  return data.signedUrl;
+}
+
+async function removerArquivosStorageObraExcluidaPainel(
+  arquivos: ArquivoStoragePainel[]
+) {
+  const arquivosUnicos = Array.from(
+    new Map(
+      arquivos
+        .filter((arquivo) => Boolean(arquivo.caminho.trim()))
+        .map((arquivo) => [
+          `${arquivo.bucket}:${arquivo.caminho.trim()}`,
+          {
+            bucket: arquivo.bucket,
+            caminho: arquivo.caminho.trim(),
+          },
+        ])
+    ).values()
+  );
+
+  const resultados = await Promise.allSettled(
+    arquivosUnicos.map(async (arquivo) => {
+      const { error } = await supabase.storage
+        .from(arquivo.bucket)
+        .remove([arquivo.caminho]);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    })
+  );
+
+  resultados.forEach((resultado, index) => {
+    if (resultado.status === "rejected") {
+      console.warn(
+        `Não consegui remover o arquivo de ${arquivosUnicos[index]?.bucket}:`,
+        resultado.reason
+      );
+    }
+  });
 }
 
 function obterChavesBackupArquivoPainel(
@@ -1991,18 +2123,29 @@ export default function PainelAutorPage() {
       return;
     }
 
+    let mostrarResumoSalvo = true;
+
     try {
       const preferenciaSalva = lerStorageUsuarioPainel(
         PANEL_SUMMARY_STORAGE_KEY,
         usuarioIdLogado
       );
 
-      setMostrarResumoPainel(
-        preferenciaSalva === null ? true : JSON.parse(preferenciaSalva) !== false
-      );
+      mostrarResumoSalvo =
+        preferenciaSalva === null
+          ? true
+          : JSON.parse(preferenciaSalva) !== false;
     } catch {
-      setMostrarResumoPainel(true);
+      mostrarResumoSalvo = true;
     }
+
+    const aplicarPreferenciaTimer = window.setTimeout(() => {
+      setMostrarResumoPainel(mostrarResumoSalvo);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(aplicarPreferenciaTimer);
+    };
   }, [usuarioIdLogado]);
 
   useEffect(() => {
@@ -2329,6 +2472,35 @@ export default function PainelAutorPage() {
     }
   }
 
+  async function abrirArquivoObra(obra: ObraLocal) {
+    const referencia = obra.arquivoObra?.conteudo?.trim() || "";
+
+    if (!referencia) {
+      window.alert("Esta obra não possui arquivo disponível.");
+      return;
+    }
+
+    try {
+      const urlArquivo = await criarUrlAssinadaArquivoObraPainel(referencia);
+      const linkArquivo = document.createElement("a");
+
+      linkArquivo.href = urlArquivo;
+      linkArquivo.target = "_blank";
+      linkArquivo.rel = "noopener noreferrer";
+      document.body.appendChild(linkArquivo);
+      linkArquivo.click();
+      linkArquivo.remove();
+    } catch (error) {
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : "Não consegui abrir o arquivo da obra agora.";
+
+      console.warn("Não consegui abrir o arquivo da obra:", error);
+      window.alert(mensagem);
+    }
+  }
+
   async function compartilharObra(obra: ObraLocal) {
     const href =
       obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
@@ -2390,13 +2562,15 @@ export default function PainelAutorPage() {
         slug: criarSlugBase(tituloObra),
         titulo: tituloObra,
         link: `/obra/${criarSlugBase(tituloObra)}`,
+        capa: "",
+        arquivoObra: null,
         capitulos: [] as CapituloLocal[],
       };
 
       if (idObraSupabaseValido(obraId)) {
         const { data: obraAutorizada, error: erroAutorizacao } = await supabase
           .from("obras")
-          .select("id")
+          .select("id,capa_url,arquivo_url")
           .eq("id", obraId)
           .eq("user_id", userId)
           .limit(1)
@@ -2411,6 +2585,39 @@ export default function PainelAutorPage() {
         if (!obraAutorizada?.id) {
           throw new Error("Você não tem permissão para excluir esta obra.");
         }
+
+        const obraStorage =
+          obraAutorizada as unknown as ObraStoragePainelRow;
+        const caminhoCapa = obterCaminhoStoragePainel(
+          "capas-obras",
+          obraStorage.capa_url?.trim() || obraExcluida.capa || ""
+        );
+        const caminhoArquivoObra = obterCaminhoStoragePainel(
+          "arquivos-obras",
+          obraStorage.arquivo_url?.trim() ||
+            obraExcluida.arquivoObra?.conteudo ||
+            ""
+        );
+        const arquivosStorageParaRemover: ArquivoStoragePainel[] = [
+          {
+            bucket: "capas-obras",
+            caminho: caminhoStoragePertenceAoUsuarioPainel(
+              caminhoCapa,
+              userId
+            )
+              ? caminhoCapa
+              : "",
+          },
+          {
+            bucket: "arquivos-obras",
+            caminho: caminhoStoragePertenceAoUsuarioPainel(
+              caminhoArquivoObra,
+              userId
+            )
+              ? caminhoArquivoObra
+              : "",
+          },
+        ];
 
         await removerReferenciasSupabaseObraExcluidaPainel(
           userId,
@@ -2449,6 +2656,10 @@ export default function PainelAutorPage() {
             "A exclusão da obra não foi confirmada pelo banco de dados."
           );
         }
+
+        await removerArquivosStorageObraExcluidaPainel(
+          arquivosStorageParaRemover
+        );
       }
 
       const novasObras = obras.filter((obra) => obra.id !== obraId);
@@ -2801,6 +3012,7 @@ export default function PainelAutorPage() {
             obrasFavoritas={obrasFavoritas}
             obrasConcluidas={obrasConcluidas}
             isDesktop={isDesktop}
+            onAbrirArquivo={abrirArquivoObra}
             onCompartilhar={compartilharObra}
             onExcluirObra={excluirObra}
           />
@@ -2834,6 +3046,7 @@ function PainelSecao({
   obrasFavoritas,
   obrasConcluidas,
   isDesktop,
+  onAbrirArquivo,
   onCompartilhar,
   onExcluirObra,
 }: {
@@ -2841,6 +3054,7 @@ function PainelSecao({
   obrasFavoritas: string[];
   obrasConcluidas: string[];
   isDesktop: boolean;
+  onAbrirArquivo: (obra: ObraLocal) => void | Promise<void>;
   onCompartilhar: (obra: ObraLocal) => void | Promise<void>;
   onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
 }) {
@@ -2858,6 +3072,7 @@ function PainelSecao({
             favoritada={colecaoTemObraPainel(obrasFavoritas, obra)}
             concluida={colecaoTemObraPainel(obrasConcluidas, obra)}
             isDesktop={isDesktop}
+            onAbrirArquivo={onAbrirArquivo}
             onCompartilhar={onCompartilhar}
             onExcluirObra={onExcluirObra}
           />
@@ -2872,6 +3087,7 @@ function ObraPainelCard({
   favoritada,
   concluida,
   isDesktop,
+  onAbrirArquivo,
   onCompartilhar,
   onExcluirObra,
 }: {
@@ -2879,6 +3095,7 @@ function ObraPainelCard({
   favoritada: boolean;
   concluida: boolean;
   isDesktop: boolean;
+  onAbrirArquivo: (obra: ObraLocal) => void | Promise<void>;
   onCompartilhar: (obra: ObraLocal) => void | Promise<void>;
   onExcluirObra: (obraId: string, tituloObra: string) => void | Promise<void>;
 }) {
@@ -3092,15 +3309,16 @@ function ObraPainelCard({
 
 
               {obra.arquivoObra && (
-                <a
-                  href={obra.arquivoObra.conteudo}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setAcoesAbertas(false)}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAcoesAbertas(false);
+                    void onAbrirArquivo(obra);
+                  }}
                   style={fileButtonStyle}
                 >
                   Ver arquivo
-                </a>
+                </button>
               )}
 
               <button

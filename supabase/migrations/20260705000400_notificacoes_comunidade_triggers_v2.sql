@@ -1,31 +1,34 @@
 -- 20260705_notificacoes_comunidade_triggers_v2.sql
--- Corrige triggers da comunidade removendo referências frágeis a colunas opcionais em profiles.
+-- Corrige os triggers da Comunidade sem depender de colunas opcionais
+-- específicas em public.profiles.
 -- Rode depois de 20260705_notificacoes_comunidade_triggers.sql.
--- Versão corrigida:
--- - não quebra se as tabelas da comunidade ainda não existirem;
--- - instala triggers só quando as colunas obrigatórias existirem;
--- - remove execução direta de anon/authenticated nas funções internas.
+-- As funções são internas e falhas de notificação não cancelam a interação.
 
 begin;
 
-create or replace function public.obter_nome_usuario_notificacao(p_user_id uuid)
+-- ============================================================
+-- HELPER: NOME PÚBLICO DO USUÁRIO
+-- ============================================================
+
+create or replace function public.obter_nome_usuario_notificacao(
+  p_user_id uuid
+)
 returns text
 language plpgsql
+stable
 security definer
-set search_path = public
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
-  v_nome text := null;
+  v_nome text;
   v_coluna text;
   v_predicados_usuario text[] := array[]::text[];
   v_expressoes_nome text[] := array[]::text[];
   v_sql text;
 begin
-  if p_user_id is null then
-    return 'Usuário';
-  end if;
-
-  if to_regclass('public.profiles') is null then
+  if p_user_id is null
+    or to_regclass('public.profiles') is null
+  then
     return 'Usuário';
   end if;
 
@@ -36,7 +39,10 @@ begin
       and table_name = 'profiles'
       and column_name = 'user_id'
   ) then
-    v_predicados_usuario := array_append(v_predicados_usuario, 'user_id::text = $1::text');
+    v_predicados_usuario := array_append(
+      v_predicados_usuario,
+      'user_id::text = $1::text'
+    );
   end if;
 
   if exists (
@@ -46,7 +52,10 @@ begin
       and table_name = 'profiles'
       and column_name = 'id'
   ) then
-    v_predicados_usuario := array_append(v_predicados_usuario, 'id::text = $1::text');
+    v_predicados_usuario := array_append(
+      v_predicados_usuario,
+      'id::text = $1::text'
+    );
   end if;
 
   if array_length(v_predicados_usuario, 1) is null then
@@ -58,8 +67,10 @@ begin
     'nome_usuario',
     'username',
     'display_name',
+    'nome_exibicao',
     'apelido'
-  ] loop
+  ]
+  loop
     if exists (
       select 1
       from information_schema.columns
@@ -69,7 +80,10 @@ begin
     ) then
       v_expressoes_nome := array_append(
         v_expressoes_nome,
-        format('nullif(trim(%I::text), '''')', v_coluna)
+        format(
+          'nullif(btrim(%I::text), '''')',
+          v_coluna
+        )
       );
     end if;
   end loop;
@@ -79,49 +93,72 @@ begin
   end if;
 
   v_sql := format(
-    'select coalesce(%s) from public.profiles where (%s) limit 1',
+    'select coalesce(%s, ''Usuário'')
+       from public.profiles
+      where (%s)
+      limit 1',
     array_to_string(v_expressoes_nome, ', '),
     array_to_string(v_predicados_usuario, ' or ')
   );
 
-  execute v_sql into v_nome using p_user_id;
+  execute v_sql
+  into v_nome
+  using p_user_id;
 
-  return coalesce(nullif(trim(v_nome), ''), 'Usuário');
+  return left(
+    regexp_replace(
+      coalesce(nullif(btrim(v_nome), ''), 'Usuário'),
+      E'[\n\r\t]+',
+      ' ',
+      'g'
+    ),
+    80
+  );
 exception
   when others then
     return 'Usuário';
 end;
 $$;
 
-revoke all on function public.obter_nome_usuario_notificacao(uuid) from public;
-revoke all on function public.obter_nome_usuario_notificacao(uuid) from anon;
-revoke all on function public.obter_nome_usuario_notificacao(uuid) from authenticated;
+-- ============================================================
+-- TRIGGER: CURTIDA EM POST
+-- ============================================================
 
 create or replace function public.notificar_curtida_post_comunidade()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_post record;
   v_nome text;
 begin
-  if to_regprocedure('public.criar_notificacao_comunidade_interna(uuid, uuid, text, text, text, text, text)') is null then
+  if new.post_id is null
+    or new.usuario_id is null
+    or to_regclass('public.comunidade_posts') is null
+    or to_regprocedure(
+      'public.criar_notificacao_comunidade_interna(uuid,uuid,text,text,text,text,text)'
+    ) is null
+  then
     return new;
   end if;
 
-  select id, autor_id
+  select post.id, post.autor_id
   into v_post
-  from public.comunidade_posts
-  where id = new.post_id
+  from public.comunidade_posts post
+  where post.id = new.post_id
   limit 1;
 
-  if not found or v_post.id is null then
+  if v_post.id is null
+    or v_post.autor_id is null
+    or v_post.autor_id = new.usuario_id
+  then
     return new;
   end if;
 
-  v_nome := public.obter_nome_usuario_notificacao(new.usuario_id);
+  v_nome :=
+    public.obter_nome_usuario_notificacao(new.usuario_id);
 
   perform public.criar_notificacao_comunidade_interna(
     v_post.autor_id,
@@ -130,46 +167,76 @@ begin
     'Nova curtida na Comunidade',
     v_nome || ' curtiu sua publicação.',
     '/comunidade?post=' || new.post_id::text,
-    'comunidade-curtida-post:' || new.post_id::text || ':' || new.usuario_id::text
+    'comunidade-curtida-post:' ||
+      new.post_id::text ||
+      ':' ||
+      new.usuario_id::text
   );
 
   return new;
 exception
   when others then
+    raise warning
+      'Falha no trigger notificar_curtida_post_comunidade: %',
+      sqlerrm;
+
     return new;
 end;
 $$;
 
-revoke all on function public.notificar_curtida_post_comunidade() from public;
-revoke all on function public.notificar_curtida_post_comunidade() from anon;
-revoke all on function public.notificar_curtida_post_comunidade() from authenticated;
+-- ============================================================
+-- TRIGGER: COMENTÁRIO EM POST
+-- ============================================================
 
 create or replace function public.notificar_comentario_post_comunidade()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_post record;
   v_nome text;
 begin
-  if to_regprocedure('public.criar_notificacao_comunidade_interna(uuid, uuid, text, text, text, text, text)') is null then
+  if new.id is null
+    or new.post_id is null
+    or new.autor_id is null
+    or to_regclass('public.comunidade_posts') is null
+    or to_regprocedure(
+      'public.criar_notificacao_comunidade_interna(uuid,uuid,text,text,text,text,text)'
+    ) is null
+  then
     return new;
   end if;
 
-  select id, autor_id
+  select post.id, post.autor_id
   into v_post
-  from public.comunidade_posts
-  where id = new.post_id
+  from public.comunidade_posts post
+  where post.id = new.post_id
   limit 1;
 
-  if not found or v_post.id is null then
+  if v_post.id is null
+    or v_post.autor_id is null
+    or v_post.autor_id = new.autor_id
+  then
     return new;
   end if;
 
-  v_nome := nullif(trim(coalesce(to_jsonb(new) ->> 'autor_nome', '')), '');
-  v_nome := coalesce(v_nome, public.obter_nome_usuario_notificacao(new.autor_id));
+  v_nome :=
+    nullif(
+      btrim(coalesce(to_jsonb(new) ->> 'autor_nome', '')),
+      ''
+    );
+
+  if v_nome is null then
+    v_nome :=
+      public.obter_nome_usuario_notificacao(new.autor_id);
+  else
+    v_nome := left(
+      regexp_replace(v_nome, E'[\n\r\t]+', ' ', 'g'),
+      80
+    );
+  end if;
 
   perform public.criar_notificacao_comunidade_interna(
     v_post.autor_id,
@@ -178,45 +245,66 @@ begin
     'Novo comentário na Comunidade',
     v_nome || ' comentou na sua publicação.',
     '/comunidade?post=' || new.post_id::text,
-    'comunidade-comentario-post:' || new.post_id::text || ':' || new.id::text
+    'comunidade-comentario-post:' ||
+      new.post_id::text ||
+      ':' ||
+      new.id::text
   );
 
   return new;
 exception
   when others then
+    raise warning
+      'Falha no trigger notificar_comentario_post_comunidade: %',
+      sqlerrm;
+
     return new;
 end;
 $$;
 
-revoke all on function public.notificar_comentario_post_comunidade() from public;
-revoke all on function public.notificar_comentario_post_comunidade() from anon;
-revoke all on function public.notificar_comentario_post_comunidade() from authenticated;
+-- ============================================================
+-- TRIGGER: CURTIDA EM COMENTÁRIO
+-- ============================================================
 
 create or replace function public.notificar_curtida_comentario_comunidade()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_comentario record;
   v_nome text;
 begin
-  if to_regprocedure('public.criar_notificacao_comunidade_interna(uuid, uuid, text, text, text, text, text)') is null then
+  if new.comentario_id is null
+    or new.usuario_id is null
+    or to_regclass('public.comunidade_comentarios') is null
+    or to_regprocedure(
+      'public.criar_notificacao_comunidade_interna(uuid,uuid,text,text,text,text,text)'
+    ) is null
+  then
     return new;
   end if;
 
-  select id, post_id, autor_id
+  select
+    comentario.id,
+    comentario.post_id,
+    comentario.autor_id
   into v_comentario
-  from public.comunidade_comentarios
-  where id = new.comentario_id
+  from public.comunidade_comentarios comentario
+  where comentario.id = new.comentario_id
   limit 1;
 
-  if not found or v_comentario.id is null then
+  if v_comentario.id is null
+    or v_comentario.post_id is null
+    or v_comentario.autor_id is null
+    or v_comentario.autor_id = new.usuario_id
+  then
     return new;
   end if;
 
-  v_nome := public.obter_nome_usuario_notificacao(new.usuario_id);
+  v_nome :=
+    public.obter_nome_usuario_notificacao(new.usuario_id);
 
   perform public.criar_notificacao_comunidade_interna(
     v_comentario.autor_id,
@@ -225,24 +313,31 @@ begin
     'Nova curtida no seu comentário',
     v_nome || ' curtiu seu comentário na Comunidade.',
     '/comunidade?post=' || v_comentario.post_id::text,
-    'comunidade-curtida-comentario:' || new.comentario_id::text || ':' || new.usuario_id::text
+    'comunidade-curtida-comentario:' ||
+      new.comentario_id::text ||
+      ':' ||
+      new.usuario_id::text
   );
 
   return new;
 exception
   when others then
+    raise warning
+      'Falha no trigger notificar_curtida_comentario_comunidade: %',
+      sqlerrm;
+
     return new;
 end;
 $$;
 
-revoke all on function public.notificar_curtida_comentario_comunidade() from public;
-revoke all on function public.notificar_curtida_comentario_comunidade() from anon;
-revoke all on function public.notificar_curtida_comentario_comunidade() from authenticated;
+-- ============================================================
+-- INSTALAÇÃO DOS TRIGGERS
+-- ============================================================
 
--- Garante que os triggers continuem apontando para as funções corrigidas.
 do $$
 begin
   if to_regclass('public.comunidade_curtidas') is not null
+    and to_regclass('public.comunidade_posts') is not null
     and exists (
       select 1
       from information_schema.columns
@@ -252,19 +347,80 @@ begin
       group by table_schema, table_name
       having count(*) = 2
     )
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_posts'
+        and column_name in ('id', 'autor_id')
+      group by table_schema, table_name
+      having count(*) = 2
+    )
   then
-    drop trigger if exists trg_notificar_curtida_post_comunidade on public.comunidade_curtidas;
+    drop trigger if exists
+      trg_notificar_curtida_post_comunidade
+      on public.comunidade_curtidas;
 
     create trigger trg_notificar_curtida_post_comunidade
-    after insert on public.comunidade_curtidas
+    after insert
+    on public.comunidade_curtidas
     for each row
     execute function public.notificar_curtida_post_comunidade();
   end if;
-end $$;
+end
+$$;
 
 do $$
 begin
   if to_regclass('public.comunidade_comentarios') is not null
+    and to_regclass('public.comunidade_posts') is not null
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_comentarios'
+        and column_name in ('id', 'post_id', 'autor_id')
+      group by table_schema, table_name
+      having count(*) = 3
+    )
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_posts'
+        and column_name in ('id', 'autor_id')
+      group by table_schema, table_name
+      having count(*) = 2
+    )
+  then
+    drop trigger if exists
+      trg_notificar_comentario_post_comunidade
+      on public.comunidade_comentarios;
+
+    create trigger trg_notificar_comentario_post_comunidade
+    after insert
+    on public.comunidade_comentarios
+    for each row
+    execute function public.notificar_comentario_post_comunidade();
+  end if;
+end
+$$;
+
+do $$
+begin
+  if to_regclass(
+    'public.comunidade_comentario_curtidas'
+  ) is not null
+    and to_regclass('public.comunidade_comentarios') is not null
+    and exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'comunidade_comentario_curtidas'
+        and column_name in ('comentario_id', 'usuario_id')
+      group by table_schema, table_name
+      having count(*) = 2
+    )
     and exists (
       select 1
       from information_schema.columns
@@ -275,35 +431,38 @@ begin
       having count(*) = 3
     )
   then
-    drop trigger if exists trg_notificar_comentario_post_comunidade on public.comunidade_comentarios;
-
-    create trigger trg_notificar_comentario_post_comunidade
-    after insert on public.comunidade_comentarios
-    for each row
-    execute function public.notificar_comentario_post_comunidade();
-  end if;
-end $$;
-
-do $$
-begin
-  if to_regclass('public.comunidade_comentario_curtidas') is not null
-    and exists (
-      select 1
-      from information_schema.columns
-      where table_schema = 'public'
-        and table_name = 'comunidade_comentario_curtidas'
-        and column_name in ('comentario_id', 'usuario_id')
-      group by table_schema, table_name
-      having count(*) = 2
-    )
-  then
-    drop trigger if exists trg_notificar_curtida_comentario_comunidade on public.comunidade_comentario_curtidas;
+    drop trigger if exists
+      trg_notificar_curtida_comentario_comunidade
+      on public.comunidade_comentario_curtidas;
 
     create trigger trg_notificar_curtida_comentario_comunidade
-    after insert on public.comunidade_comentario_curtidas
+    after insert
+    on public.comunidade_comentario_curtidas
     for each row
-    execute function public.notificar_curtida_comentario_comunidade();
+    execute function
+      public.notificar_curtida_comentario_comunidade();
   end if;
-end $$;
+end
+$$;
+
+-- ============================================================
+-- PERMISSÕES
+-- ============================================================
+
+revoke all
+  on function public.obter_nome_usuario_notificacao(uuid)
+  from public, anon, authenticated;
+
+revoke all
+  on function public.notificar_curtida_post_comunidade()
+  from public, anon, authenticated;
+
+revoke all
+  on function public.notificar_comentario_post_comunidade()
+  from public, anon, authenticated;
+
+revoke all
+  on function public.notificar_curtida_comentario_comunidade()
+  from public, anon, authenticated;
 
 commit;

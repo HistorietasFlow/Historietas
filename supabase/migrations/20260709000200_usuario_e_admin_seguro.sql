@@ -1,41 +1,47 @@
--- 20260709_usuario_e_admin_seguro.sql
--- Corrige a RPC de admin para confiar apenas em app_metadata.
--- Não confia em user_metadata nem em colunas editáveis de profiles.
--- Aceita role/cargo/tipo_usuario e também flags booleanas admin/is_admin em app_metadata.
+-- 20260709000200_usuario_e_admin_seguro.sql
+-- Verifica privilégios administrativos usando somente app_metadata do JWT.
+-- Não confia em user_metadata nem em campos editáveis da tabela profiles.
 
 begin;
 
 create or replace function public.usuario_e_admin()
 returns boolean
-language plpgsql
-security definer
-set search_path = public
+language sql
+stable
+security invoker
+set search_path = pg_catalog
 as $$
-declare
-  usuario_atual uuid := auth.uid();
-  jwt_atual jsonb := coalesce(auth.jwt(), '{}'::jsonb);
-  app_metadata_atual jsonb := coalesce(jwt_atual -> 'app_metadata', '{}'::jsonb);
-  role_app text := lower(coalesce(app_metadata_atual ->> 'role', ''));
-  cargo_app text := lower(coalesce(app_metadata_atual ->> 'cargo', ''));
-  tipo_usuario_app text := lower(coalesce(app_metadata_atual ->> 'tipo_usuario', ''));
-  admin_app text := lower(coalesce(app_metadata_atual ->> 'admin', ''));
-  is_admin_app text := lower(coalesce(app_metadata_atual ->> 'is_admin', ''));
-begin
-  if usuario_atual is null then
-    return false;
-  end if;
-
-  return
-    role_app in ('admin', 'moderador', 'moderator')
-    or cargo_app in ('admin', 'moderador', 'moderator')
-    or tipo_usuario_app in ('admin', 'moderador', 'moderator')
-    or admin_app in ('true', '1', 'sim', 'yes')
-    or is_admin_app in ('true', '1', 'sim', 'yes');
-end;
+  with contexto as (
+    select
+      auth.uid() as usuario_id,
+      coalesce(auth.jwt() -> 'app_metadata', '{}'::jsonb) as app_metadata
+  )
+  select
+    usuario_id is not null
+    and (
+      lower(btrim(coalesce(app_metadata ->> 'role', '')))
+        in ('admin', 'moderador', 'moderator')
+      or lower(btrim(coalesce(app_metadata ->> 'cargo', '')))
+        in ('admin', 'moderador', 'moderator')
+      or lower(btrim(coalesce(app_metadata ->> 'tipo_usuario', '')))
+        in ('admin', 'moderador', 'moderator')
+      or lower(btrim(coalesce(app_metadata ->> 'admin', '')))
+        in ('true', '1', 'sim', 'yes')
+      or lower(btrim(coalesce(app_metadata ->> 'is_admin', '')))
+        in ('true', '1', 'sim', 'yes')
+    )
+  from contexto;
 $$;
 
-revoke all on function public.usuario_e_admin() from public;
-revoke all on function public.usuario_e_admin() from anon;
-grant execute on function public.usuario_e_admin() to authenticated;
+comment on function public.usuario_e_admin() is
+  'Retorna true somente quando o usuário autenticado possui privilégio administrativo em app_metadata.';
+
+revoke all
+  on function public.usuario_e_admin()
+  from public, anon, authenticated;
+
+grant execute
+  on function public.usuario_e_admin()
+  to authenticated;
 
 commit;

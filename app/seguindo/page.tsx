@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -2572,7 +2572,7 @@ export default function SeguindoPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
-  const [abaSeguimento, setAbaSeguimento] =
+  const [, setAbaSeguimento] =
     useState<AbaSeguimentoPagina>("seguindo");
   const [perfilSocialId, setPerfilSocialId] = useState("");
   const [perfilSocialNome, setPerfilSocialNome] = useState("");
@@ -2664,7 +2664,7 @@ export default function SeguindoPage() {
   }, [router]);
 
 
-  async function carregarDadosSeguindo() {
+  const carregarDadosSeguindo = useCallback(async () => {
     window.setTimeout(() => {
       setCarregando(true);
     }, 0);
@@ -2811,7 +2811,8 @@ export default function SeguindoPage() {
       setObrasConcluidas(concluidasNormalizadas);
       setCarregando(false);
     }, 0);
-  }
+  }, [perfilSocialId, usuarioLogadoId]);
+
   useEffect(() => {
     if (!usuarioLogadoId) {
       return;
@@ -2824,7 +2825,7 @@ export default function SeguindoPage() {
     return () => {
       window.clearTimeout(carregarDadosTimer);
     };
-  }, [usuarioLogadoId, perfilSocialId]);
+  }, [carregarDadosSeguindo, usuarioLogadoId]);
 
 
   const termoBusca = normalizarTexto(busca);
@@ -2852,40 +2853,47 @@ export default function SeguindoPage() {
   useEffect(() => {
     let cancelado = false;
 
-    if (!buscaSugestoesUsuariosAtiva) {
-      setUsuariosSugestoesBusca([]);
-      setCarregandoUsuariosSugestoes(false);
-      return;
-    }
+    const timerBusca = window.setTimeout(
+      () => {
+        if (cancelado) {
+          return;
+        }
 
-    setCarregandoUsuariosSugestoes(true);
+        if (!buscaSugestoesUsuariosAtiva) {
+          setUsuariosSugestoesBusca([]);
+          setCarregandoUsuariosSugestoes(false);
+          return;
+        }
 
-    const timerBusca = window.setTimeout(() => {
-      void buscarUsuariosParaSeguirSupabase(busca)
-        .then((usuariosEncontrados) => {
-          if (cancelado) {
-            return;
-          }
+        setCarregandoUsuariosSugestoes(true);
 
-          const idsJaSeguidos = new Set(
-            usuariosSeguidos.map((usuarioSeguido) => usuarioSeguido.id)
-          );
+        void buscarUsuariosParaSeguirSupabase(busca)
+          .then((usuariosEncontrados) => {
+            if (cancelado) {
+              return;
+            }
 
-          setUsuariosSugestoesBusca(
-            usuariosEncontrados.filter((usuarioEncontrado) => {
-              return (
-                usuarioEncontrado.id !== usuarioLogadoId &&
-                !idsJaSeguidos.has(usuarioEncontrado.id)
-              );
-            })
-          );
-        })
-        .finally(() => {
-          if (!cancelado) {
-            setCarregandoUsuariosSugestoes(false);
-          }
-        });
-    }, 220);
+            const idsJaSeguidos = new Set(
+              usuariosSeguidos.map((usuarioSeguido) => usuarioSeguido.id)
+            );
+
+            setUsuariosSugestoesBusca(
+              usuariosEncontrados.filter((usuarioEncontrado) => {
+                return (
+                  usuarioEncontrado.id !== usuarioLogadoId &&
+                  !idsJaSeguidos.has(usuarioEncontrado.id)
+                );
+              })
+            );
+          })
+          .finally(() => {
+            if (!cancelado) {
+              setCarregandoUsuariosSugestoes(false);
+            }
+          });
+      },
+      buscaSugestoesUsuariosAtiva ? 220 : 0
+    );
 
     return () => {
       cancelado = true;
@@ -3057,7 +3065,6 @@ export default function SeguindoPage() {
     ordenacao,
     obrasFavoritas,
     obrasConcluidas,
-    visualizandoListaSocialDoPerfil,
     abaConteudo,
   ]);
 

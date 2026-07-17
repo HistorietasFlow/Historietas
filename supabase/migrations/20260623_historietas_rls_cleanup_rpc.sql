@@ -65,6 +65,73 @@ create policy "profiles_delete_proprio"
     )
   );
 
+-- RLS limita linhas, não colunas. Remove SELECT amplo e libera ao público
+-- somente os campos de perfil usados pelo app. Campos privados adicionados
+-- futuramente não ficam expostos automaticamente.
+do $$
+declare
+  v_todas_colunas text;
+  v_colunas_publicas text;
+begin
+  if to_regclass('public.profiles') is null then
+    return;
+  end if;
+
+  select string_agg(format('%I', coluna.column_name), ', ' order by coluna.ordinal_position)
+  into v_todas_colunas
+  from information_schema.columns coluna
+  where coluna.table_schema = 'public'
+    and coluna.table_name = 'profiles';
+
+  execute 'revoke select on public.profiles from public, anon, authenticated';
+
+  if v_todas_colunas is not null then
+    execute format(
+      'revoke select (%s) on public.profiles from public, anon, authenticated',
+      v_todas_colunas
+    );
+  end if;
+
+  select string_agg(format('%I', coluna.column_name), ', ' order by coluna.ordinal_position)
+  into v_colunas_publicas
+  from information_schema.columns coluna
+  where coluna.table_schema = 'public'
+    and coluna.table_name = 'profiles'
+    and coluna.column_name = any (
+      array[
+        'id',
+        'user_id',
+        'nome',
+        'nome_usuario',
+        'username',
+        'display_name',
+        'apelido',
+        'avatar_url',
+        'avatar',
+        'foto_url',
+        'imagem_url',
+        'photo_url',
+        'bio',
+        'sobre_bio',
+        'sobreBio',
+        'sobre',
+        'descricao',
+        'mostrar_destaques',
+        'created_at',
+        'criado_em',
+        'updated_at',
+        'atualizado_em'
+      ]
+    );
+
+  if v_colunas_publicas is not null then
+    execute format(
+      'grant select (%s) on public.profiles to anon, authenticated',
+      v_colunas_publicas
+    );
+  end if;
+end $$;
+
 -- ============================================================
 -- OBRAS
 -- ============================================================
@@ -119,6 +186,69 @@ create policy "obras_delete_proprias"
       user_id = auth.uid()
     )
   );
+
+-- Impede alteração direta de identidade, proprietário e métricas da obra.
+-- O autor continua podendo editar somente os campos de conteúdo usados pelo app.
+do $$
+declare
+  v_todas_colunas text;
+  v_colunas_editaveis text;
+begin
+  if to_regclass('public.obras') is null then
+    return;
+  end if;
+
+  select string_agg(format('%I', coluna.column_name), ', ' order by coluna.ordinal_position)
+  into v_todas_colunas
+  from information_schema.columns coluna
+  where coluna.table_schema = 'public'
+    and coluna.table_name = 'obras';
+
+  execute 'revoke update on public.obras from public, anon, authenticated';
+
+  if v_todas_colunas is not null then
+    execute format(
+      'revoke update (%s) on public.obras from public, anon, authenticated',
+      v_todas_colunas
+    );
+  end if;
+
+  select string_agg(format('%I', coluna.column_name), ', ' order by coluna.ordinal_position)
+  into v_colunas_editaveis
+  from information_schema.columns coluna
+  where coluna.table_schema = 'public'
+    and coluna.table_name = 'obras'
+    and coluna.column_name = any (
+      array[
+        'titulo',
+        'autor',
+        'genero',
+        'formato',
+        'classificacao_indicativa',
+        'sinopse',
+        'tags',
+        'capa_url',
+        'capa_nome',
+        'arquivo_url',
+        'arquivo_nome',
+        'arquivo_tipo',
+        'arquivo_tamanho',
+        'arquivo_categoria',
+        'publicado',
+        'slug',
+        'link',
+        'updated_at',
+        'atualizado_em'
+      ]
+    );
+
+  if v_colunas_editaveis is not null then
+    execute format(
+      'grant update (%s) on public.obras to authenticated',
+      v_colunas_editaveis
+    );
+  end if;
+end $$;
 
 -- ============================================================
 -- CAPITULOS

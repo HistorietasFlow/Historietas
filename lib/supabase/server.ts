@@ -8,13 +8,31 @@ const supabasePublishableKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
   "";
 
+function urlSupabaseValida(url: string) {
+  if (!url) {
+    return false;
+  }
+
+  try {
+    const urlValidada = new URL(url);
+
+    return (
+      (urlValidada.protocol === "https:" ||
+        urlValidada.protocol === "http:") &&
+      Boolean(urlValidada.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export const supabaseServerConfigurado = Boolean(
-  supabaseUrl && supabasePublishableKey
+  urlSupabaseValida(supabaseUrl) && supabasePublishableKey,
 );
 
 function criarErroSupabaseNaoConfigurado() {
   return new Error(
-    "Supabase não configurado. Verifique NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY."
+    "Supabase não configurado. Verifique NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.",
   );
 }
 
@@ -49,7 +67,7 @@ function criarQueryBuilderIndisponivel(): unknown {
 
         return () => proxy;
       },
-    }
+    },
   );
 
   return proxy;
@@ -64,6 +82,10 @@ function criarClienteSupabaseServerIndisponivel(): SupabaseClient {
       }),
       getSession: async () => ({
         data: { session: null },
+        error: criarErroSupabaseNaoConfigurado(),
+      }),
+      updateUser: async () => ({
+        data: { user: null },
         error: criarErroSupabaseNaoConfigurado(),
       }),
       onAuthStateChange: () => ({
@@ -103,6 +125,14 @@ function criarClienteSupabaseServerIndisponivel(): SupabaseClient {
           data: null,
           error: criarErroSupabaseNaoConfigurado(),
         }),
+        createSignedUrl: async () => ({
+          data: null,
+          error: criarErroSupabaseNaoConfigurado(),
+        }),
+        createSignedUrls: async () => ({
+          data: null,
+          error: criarErroSupabaseNaoConfigurado(),
+        }),
         getPublicUrl: () => ({
           data: { publicUrl: "" },
         }),
@@ -130,7 +160,7 @@ export async function criarSupabaseServerClient(): Promise<SupabaseClient> {
           });
         } catch {
           // Server Components não conseguem gravar cookies.
-          // Middleware/Route Handlers conseguem atualizar quando necessário.
+          // Middleware e Route Handlers conseguem atualizar quando necessário.
         }
       },
     },

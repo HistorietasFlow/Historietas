@@ -284,12 +284,15 @@ async function enviarArquivoStorage(
     throw new Error(`Erro ao enviar ${arquivo.name}: ${error.message}`);
   }
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(caminho);
+  const publicUrl =
+    bucket === "capas-obras"
+      ? supabase.storage.from(bucket).getPublicUrl(caminho).data.publicUrl
+      : "";
 
   return {
     bucket,
     caminho,
-    publicUrl: data.publicUrl,
+    publicUrl,
   };
 }
 
@@ -1595,7 +1598,8 @@ export default function PublicarPage() {
       }
 
       const capaUrlSupabase = capaEnviada?.publicUrl || "";
-      const arquivoObraUrlSupabase = arquivoObraEnviado?.publicUrl || "";
+      const arquivoObraReferenciaSupabase =
+        arquivoObraEnviado?.caminho || "";
       const link = `/obra/${slug}`;
 
       const { error: erroObra } = await supabase.from("obras").insert({
@@ -1610,7 +1614,7 @@ export default function PublicarPage() {
         tags: tagsDaObra.length > 0 ? tagsDaObra : ["sem tags"],
         capa_url: capaUrlSupabase,
         capa_nome: capaNome,
-        arquivo_url: arquivoObraUrlSupabase,
+        arquivo_url: arquivoObraReferenciaSupabase,
         arquivo_nome: arquivoObra?.nome || "",
         arquivo_tipo: arquivoObra?.tipo || "",
         arquivo_tamanho: arquivoObra?.tamanho || 0,
@@ -1681,7 +1685,7 @@ export default function PublicarPage() {
         arquivoObra: arquivoObra
           ? {
               ...arquivoObra,
-              conteudo: arquivoObraUrlSupabase,
+              conteudo: arquivoObraReferenciaSupabase,
               criadoEm: criadaEm,
             }
           : null,

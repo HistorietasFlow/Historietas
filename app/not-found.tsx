@@ -9,7 +9,7 @@ export default function NotFound() {
 
       <div style={topWaterFadeStyle} aria-hidden="true" />
 
-      <section style={containerStyle}>
+      <section style={containerStyle} aria-labelledby="not-found-title">
         <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
           <span style={logoMarkStyle}>H</span>
           <span className="historietas-theme-logo-text" style={logoTextStyle}>
@@ -18,9 +18,13 @@ export default function NotFound() {
         </Link>
 
         <section style={boxStyle}>
-          <span style={codeStyle}>404</span>
+          <span style={codeStyle}>Erro 404</span>
 
-          <h1 className="historietas-theme-title" style={titleStyle}>
+          <h1
+            id="not-found-title"
+            className="historietas-theme-title"
+            style={titleStyle}
+          >
             Página não encontrada
           </h1>
 
@@ -29,7 +33,7 @@ export default function NotFound() {
             explore outras obras da Historietas.
           </p>
 
-          <div style={actionsStyle}>
+          <div className="not-found-actions" style={actionsStyle}>
             <Link href="/" style={primaryButtonStyle}>
               Voltar para Home
             </Link>
@@ -45,14 +49,50 @@ export default function NotFound() {
 }
 
 const notFoundPageCss = `
+  html {
+    --historietas-not-found-bg: var(--historietas-bg-start, #070212);
+    --historietas-not-found-surface: linear-gradient(
+      135deg,
+      var(--historietas-surface, rgba(18, 12, 30, 0.90)) 0%,
+      var(--historietas-surface-strong, rgba(12, 7, 23, 0.98)) 100%
+    );
+    --historietas-not-found-code: var(--historietas-accent, #FDBA74);
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
     background: #070212 !important;
   }
 
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-not-found-bg: #000000;
+    --historietas-not-found-surface: #050505;
+    --historietas-not-found-code: #FFFFFF;
+  }
+
+  html[data-historietas-tema-visual="foco"] body,
+  html[data-historietas-tema-visual="foco"] main {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-theme-logo-text,
+  html[data-historietas-tema-visual="foco"] .historietas-theme-title {
+    background: none !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    text-shadow: none !important;
+  }
+
+  @media (max-width: 520px) {
+    .not-found-actions {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
   }
 `;
 
@@ -63,21 +103,19 @@ const safeTextStyle: CSSProperties = {
 
 const pageStyle: CSSProperties = {
   position: "relative",
-  minHeight: "100vh",
+  minHeight: "100dvh",
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background: "var(--historietas-bg-start, #070212)",
+  background: "var(--historietas-not-found-bg, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
 const topWaterFadeStyle: CSSProperties = {
   position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
+  inset: "0 0 auto",
   height: "min(620px, 68vh)",
   pointerEvents: "none",
   zIndex: 0,
@@ -89,7 +127,7 @@ const containerStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   width: "min(920px, calc(100% - 28px))",
-  minHeight: "100vh",
+  minHeight: "100dvh",
   margin: "0 auto",
   padding: "18px 0 calc(96px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
@@ -140,7 +178,8 @@ const logoTextStyle: CSSProperties = {
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
-  textShadow: "var(--historietas-logo-shadow, 0 0 26px rgba(139,92,246,0.24))",
+  textShadow:
+    "var(--historietas-logo-shadow, 0 0 26px rgba(139, 92, 246, 0.24))",
   overflow: "visible",
   whiteSpace: "nowrap",
 };
@@ -152,9 +191,9 @@ const boxStyle: CSSProperties = {
   gap: "12px",
   padding: "22px 16px",
   borderRadius: "26px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, rgba(18,12,30,0.90)) 0%, var(--historietas-surface-strong, rgba(12,7,23,0.98)) 100%)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-not-found-surface)",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255, 255, 255, 0.08))",
   boxShadow: "none",
   textAlign: "center",
   boxSizing: "border-box",
@@ -163,7 +202,7 @@ const boxStyle: CSSProperties = {
 };
 
 const codeStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-not-found-code, #FDBA74)",
   fontSize: "13px",
   fontWeight: 950,
   letterSpacing: "0.16em",
@@ -228,7 +267,9 @@ const primaryButtonStyle: CSSProperties = {
 
 const secondaryButtonStyle: CSSProperties = {
   ...primaryButtonStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background:
+    "var(--historietas-secondary-surface, rgba(255, 255, 255, 0.08))",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255, 255, 255, 0.12))",
   color: "var(--historietas-secondary-button-text, #DDD6FE)",
 };

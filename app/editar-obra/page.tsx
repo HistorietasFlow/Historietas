@@ -175,6 +175,12 @@ const OPCOES_TAGS_OBRA = [
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
+type ArquivoStorageEdicaoObra = {
+  bucket: "capas-obras" | "arquivos-obras";
+  caminho: string;
+  referencia: string;
+};
+
 function criarStorageKeyUsuarioEditarObra(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
 
@@ -433,11 +439,56 @@ function limparNomeArquivoStorage(nomeArquivo: string) {
   return `${nomeSeguro}${extensao}`;
 }
 
+function obterCaminhoStorageEdicaoObra(
+  bucket: "capas-obras" | "arquivos-obras",
+  referencia: string
+) {
+  const referenciaLimpa = referencia.trim();
+
+  if (!referenciaLimpa || referenciaLimpa.startsWith("data:")) {
+    return "";
+  }
+
+  if (!/^https?:\/\//i.test(referenciaLimpa)) {
+    const caminhoDireto = referenciaLimpa
+      .replace(new RegExp(`^${bucket}/`), "")
+      .replace(/^\/+/, "");
+
+    return caminhoDireto;
+  }
+
+  try {
+    const url = new URL(referenciaLimpa);
+    const prefixos = [
+      `/storage/v1/object/public/${bucket}/`,
+      `/storage/v1/object/sign/${bucket}/`,
+      `/storage/v1/object/authenticated/${bucket}/`,
+    ];
+
+    const prefixoEncontrado = prefixos.find((prefixo) =>
+      url.pathname.includes(prefixo)
+    );
+
+    if (!prefixoEncontrado) {
+      return "";
+    }
+
+    const indice = url.pathname.indexOf(prefixoEncontrado);
+    const caminhoCodificado = url.pathname.slice(
+      indice + prefixoEncontrado.length
+    );
+
+    return decodeURIComponent(caminhoCodificado).replace(/^\/+/, "");
+  } catch {
+    return "";
+  }
+}
+
 async function enviarArquivoStorage(
   bucket: "capas-obras" | "arquivos-obras",
   userId: string,
   arquivo: File
-) {
+): Promise<ArquivoStorageEdicaoObra> {
   const idSeguro =
     typeof window !== "undefined" &&
     window.crypto &&
@@ -451,6 +502,7 @@ async function enviarArquivoStorage(
 
   const { error } = await supabase.storage.from(bucket).upload(caminho, arquivo, {
     cacheControl: "3600",
+    contentType: arquivo.type || undefined,
     upsert: false,
   });
 
@@ -458,9 +510,52 @@ async function enviarArquivoStorage(
     throw new Error(`Erro ao enviar ${arquivo.name}: ${error.message}`);
   }
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(caminho);
+  const referencia =
+    bucket === "capas-obras"
+      ? supabase.storage.from(bucket).getPublicUrl(caminho).data.publicUrl
+      : caminho;
 
-  return data.publicUrl;
+  return {
+    bucket,
+    caminho,
+    referencia,
+  };
+}
+
+async function removerArquivosStorageEdicaoObra(
+  arquivos: Array<{
+    bucket: "capas-obras" | "arquivos-obras";
+    caminho: string;
+  }>
+) {
+  const arquivosUnicos = Array.from(
+    new Map(
+      arquivos
+        .filter((arquivo) => Boolean(arquivo.caminho.trim()))
+        .map((arquivo) => [
+          `${arquivo.bucket}:${arquivo.caminho}`,
+          {
+            bucket: arquivo.bucket,
+            caminho: arquivo.caminho.trim(),
+          },
+        ])
+    ).values()
+  );
+
+  await Promise.allSettled(
+    arquivosUnicos.map(async (arquivo) => {
+      const { error } = await supabase.storage
+        .from(arquivo.bucket)
+        .remove([arquivo.caminho]);
+
+      if (error) {
+        console.warn(
+          `Não consegui remover o arquivo antigo de ${arquivo.bucket}:`,
+          error.message
+        );
+      }
+    })
+  );
 }
 
 function normalizarCategoriaArquivoSupabase(
@@ -1906,53 +2001,109 @@ export default function EditarObraPage() {
             arquivoLocalPersistivel ||
             arquivoBackupAtual;
 
+      const arquivosNovosEnviados: ArquivoStorageEdicaoObra[] = [];
+      const arquivosAntigosParaRemover: Array<{
+        bucket: "capas-obras" | "arquivos-obras";
+        caminho: string;
+      }> = [];
+      const caminhoCapaRemotaAtual = obterCaminhoStorageEdicaoObra(
+        "capas-obras",
+        capaRemotaAtual
+      );
+      const caminhoArquivoRemotoAtual = obterCaminhoStorageEdicaoObra(
+        "arquivos-obras",
+        arquivoRemotoAtual?.conteudo || ""
+      );
+
       try {
         if (capaArquivo) {
-          capaFinal = await enviarArquivoStorage("capas-obras", userId, capaArquivo);
+          const novaCapa = await enviarArquivoStorage(
+            "capas-obras",
+            userId,
+            capaArquivo
+          );
+
+          arquivosNovosEnviados.push(novaCapa);
+          capaFinal = novaCapa.referencia;
           capaNomeFinal = capaArquivo.name;
+
+          if (
+            caminhoCapaRemotaAtual &&
+            caminhoCapaRemotaAtual !== novaCapa.caminho
+          ) {
+            arquivosAntigosParaRemover.push({
+              bucket: "capas-obras",
+              caminho: caminhoCapaRemotaAtual,
+            });
+          }
+        } else if (capaRemovidaManualmente && caminhoCapaRemotaAtual) {
+          arquivosAntigosParaRemover.push({
+            bucket: "capas-obras",
+            caminho: caminhoCapaRemotaAtual,
+          });
         }
 
         if (arquivoObraArquivo && arquivoObra) {
-          const arquivoUrl = await enviarArquivoStorage(
+          const novoArquivoObra = await enviarArquivoStorage(
             "arquivos-obras",
             userId,
             arquivoObraArquivo
           );
 
+          arquivosNovosEnviados.push(novoArquivoObra);
           arquivoObraFinal = {
             ...arquivoObra,
             nome: arquivoObraArquivo.name,
             tipo: arquivoObraArquivo.type || arquivoObra.tipo,
             tamanho: arquivoObraArquivo.size,
-            conteudo: arquivoUrl,
+            conteudo: novoArquivoObra.referencia,
             categoria: identificarCategoriaArquivo(arquivoObraArquivo),
             criadoEm: arquivoObra.criadoEm || agora,
           };
+
+          if (
+            caminhoArquivoRemotoAtual &&
+            caminhoArquivoRemotoAtual !== novoArquivoObra.caminho
+          ) {
+            arquivosAntigosParaRemover.push({
+              bucket: "arquivos-obras",
+              caminho: caminhoArquivoRemotoAtual,
+            });
+          }
+        } else if (
+          arquivoObraRemovidoManualmente &&
+          caminhoArquivoRemotoAtual
+        ) {
+          arquivosAntigosParaRemover.push({
+            bucket: "arquivos-obras",
+            caminho: caminhoArquivoRemotoAtual,
+          });
         }
 
-        const { data: obraAtualizadaSupabase, error: erroAtualizarObra } = await supabase
-          .from("obras")
-          .update({
-            titulo: tituloFinal,
-            autor: autorFinal,
-            genero: generoFinalSalvo,
-            formato: formatoFinalSalvo,
-            classificacao_indicativa: classificacaoFinal,
-            sinopse: sinopseFinal,
-            tags: tagsFinais,
-            capa_url: capaFinal,
-            capa_nome: capaNomeFinal,
-            arquivo_url: arquivoObraFinal?.conteudo || "",
-            arquivo_nome: arquivoObraFinal?.nome || "",
-            arquivo_tipo: arquivoObraFinal?.tipo || "",
-            arquivo_tamanho: arquivoObraFinal?.tamanho || 0,
-            arquivo_categoria: arquivoObraFinal?.categoria || "outro",
-            atualizado_em: agora,
-          })
-          .eq("id", obraId)
-          .eq("user_id", userId)
-          .select("id")
-          .maybeSingle();
+        const { data: obraAtualizadaSupabase, error: erroAtualizarObra } =
+          await supabase
+            .from("obras")
+            .update({
+              titulo: tituloFinal,
+              autor: autorFinal,
+              genero: generoFinalSalvo,
+              formato: formatoFinalSalvo,
+              classificacao_indicativa: classificacaoFinal,
+              sinopse: sinopseFinal,
+              tags: tagsFinais,
+              capa_url: capaFinal,
+              capa_nome: capaNomeFinal,
+              arquivo_url: arquivoObraFinal?.conteudo || "",
+              arquivo_nome: arquivoObraFinal?.nome || "",
+              arquivo_tipo: arquivoObraFinal?.tipo || "",
+              arquivo_tamanho: arquivoObraFinal?.tamanho || 0,
+              arquivo_categoria: arquivoObraFinal?.categoria || "outro",
+              atualizado_em: agora,
+            })
+            .eq("id", obraId)
+            .eq("user_id", userId)
+            .select("id")
+            .maybeSingle();
 
         if (erroAtualizarObra) {
           throw new Error(
@@ -1961,9 +2112,18 @@ export default function EditarObraPage() {
         }
 
         if (!obraAtualizadaSupabase?.id) {
-          throw new Error("Não consegui confirmar a atualização da obra no Supabase.");
+          throw new Error(
+            "Não consegui confirmar a atualização da obra no Supabase."
+          );
         }
       } catch (erroSupabase) {
+        await removerArquivosStorageEdicaoObra(
+          arquivosNovosEnviados.map((arquivo) => ({
+            bucket: arquivo.bucket,
+            caminho: arquivo.caminho,
+          }))
+        );
+
         const mensagemSupabase =
           erroSupabase instanceof Error
             ? erroSupabase.message
@@ -1971,6 +2131,8 @@ export default function EditarObraPage() {
 
         throw new Error(mensagemSupabase);
       }
+
+      await removerArquivosStorageEdicaoObra(arquivosAntigosParaRemover);
 
       const novasObras = obras.map((obra, index) => {
         const obraNormalizada = normalizarObra(obra, index);

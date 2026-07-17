@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { criarSupabaseServerClient } from "../../../../../lib/supabase/server";
+import { idObraSupabaseValido } from "../../../../../lib/utils";
 
 type PageProps = {
   params: Promise<{
@@ -19,27 +20,45 @@ type CapituloRouteRow = {
 function decodificarSlugSeguro(valor: string) {
   const slug = valor.trim();
 
-  if (!slug) {
+  if (!slug || slug.length > 180) {
     return "";
   }
 
   try {
-    return decodeURIComponent(slug).trim();
+    const slugDecodificado = decodeURIComponent(slug).trim();
+
+    if (
+      !slugDecodificado ||
+      slugDecodificado.length > 180 ||
+      slugDecodificado.includes("/") ||
+      slugDecodificado.includes("\\") ||
+      /[\u0000-\u001F\u007F]/.test(slugDecodificado)
+    ) {
+      return "";
+    }
+
+    return slugDecodificado;
   } catch {
     return "";
   }
 }
 
 function obterNumeroCapituloSeguro(valor: string) {
-  const numero = Number(valor);
+  const numeroTexto = valor.trim();
 
-  return Number.isInteger(numero) && numero >= 1 ? numero : null;
+  if (!/^[1-9]\d*$/.test(numeroTexto)) {
+    return null;
+  }
+
+  const numero = Number(numeroTexto);
+
+  return Number.isSafeInteger(numero) ? numero : null;
 }
 
 export default async function CapituloCanonicoPage({ params }: PageProps) {
   const { slug, numero } = await params;
   const slugSeguro = decodificarSlugSeguro(slug || "");
-  const numeroCapitulo = obterNumeroCapituloSeguro(numero);
+  const numeroCapitulo = obterNumeroCapituloSeguro(numero || "");
 
   if (!slugSeguro) {
     redirect("/explorar");
@@ -67,6 +86,10 @@ export default async function CapituloCanonicoPage({ params }: PageProps) {
 
   const obra = obraData as ObraCapituloRouteRow;
 
+  if (!idObraSupabaseValido(obra.id)) {
+    redirect(obraHref);
+  }
+
   const { data: capituloData, error: capituloError } = await supabase
     .from("capitulos")
     .select("id")
@@ -82,9 +105,14 @@ export default async function CapituloCanonicoPage({ params }: PageProps) {
 
   const capitulo = capituloData as CapituloRouteRow;
 
-  redirect(
-    `/ler-capitulo?obraId=${encodeURIComponent(
-      obra.id,
-    )}&capituloId=${encodeURIComponent(capitulo.id)}`,
-  );
+  if (!idObraSupabaseValido(capitulo.id)) {
+    redirect(obraHref);
+  }
+
+  const leituraParams = new URLSearchParams({
+    obraId: obra.id,
+    capituloId: capitulo.id,
+  });
+
+  redirect(`/ler-capitulo?${leituraParams.toString()}`);
 }

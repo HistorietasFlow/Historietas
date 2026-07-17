@@ -20,9 +20,14 @@ export function NotificacoesBottomNavItem({
   href = "/notificacoes",
   className = "historietas-bottom-nav-item",
 }: NotificacoesBottomNavItemProps) {
-  const { notificacoesNaoLidas, carregandoNotificacoes } = useNotificacoes();
-  const totalNaoLidas = normalizarTotalNaoLidas(notificacoesNaoLidas);
-  const totalFormatado = totalNaoLidas > 99 ? "99+" : String(totalNaoLidas);
+  const { notificacoesNaoLidas, carregandoNotificacoes } =
+    useNotificacoes();
+
+  const totalNaoLidas = normalizarTotalNaoLidas(
+    notificacoesNaoLidas,
+  );
+  const totalFormatado =
+    totalNaoLidas > 99 ? "99+" : String(totalNaoLidas);
   const rotuloAcessivel = carregandoNotificacoes
     ? "Notificações, carregando"
     : totalNaoLidas > 0
@@ -37,12 +42,12 @@ export function NotificacoesBottomNavItem({
         href={href}
         className={className}
         aria-label={rotuloAcessivel}
+        aria-busy={carregandoNotificacoes || undefined}
         title={rotuloAcessivel}
       >
         <span
-          className="historietas-bottom-nav-icon"
+          className="historietas-bottom-nav-icon historietas-notificacoes-bottom-nav-icon"
           aria-hidden="true"
-          style={{ position: "relative" }}
         >
           <svg
             className="historietas-bottom-nav-svg"
@@ -70,38 +75,15 @@ export function NotificacoesBottomNavItem({
             <span
               className="historietas-notificacoes-bottom-nav-badge"
               aria-hidden="true"
-              style={{
-                position: "absolute",
-                top: "-9px",
-                right: "-12px",
-                zIndex: 1,
-                minWidth: "18px",
-                height: "18px",
-                borderRadius: "999px",
-                padding: "0 5px",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxSizing: "border-box",
-                background:
-                  "var(--historietas-notificacoes-bottom-nav-badge-bg, #dc2626)",
-                color:
-                  "var(--historietas-notificacoes-bottom-nav-badge-text, #FFFFFF)",
-                fontSize: "10px",
-                fontWeight: 900,
-                lineHeight: 1,
-                whiteSpace: "nowrap",
-                boxShadow:
-                  "0 0 0 2px var(--historietas-notificacoes-bottom-nav-badge-ring, #04000A)",
-                pointerEvents: "none",
-              }}
             >
               {totalFormatado}
             </span>
           ) : null}
         </span>
 
-        <span className="historietas-bottom-nav-label">Notificações</span>
+        <span className="historietas-bottom-nav-label">
+          Notificações
+        </span>
       </Link>
     </>
   );
@@ -109,14 +91,50 @@ export function NotificacoesBottomNavItem({
 
 const notificacoesBottomNavItemCss = `
   html {
-    --historietas-notificacoes-bottom-nav-badge-bg: #dc2626;
+    --historietas-notificacoes-bottom-nav-badge-bg: #DC2626;
     --historietas-notificacoes-bottom-nav-badge-text: #FFFFFF;
-    --historietas-notificacoes-bottom-nav-badge-ring: #04000A;
+    --historietas-notificacoes-bottom-nav-badge-ring: #070212;
   }
 
   html[data-historietas-tema-visual="foco"] {
     --historietas-notificacoes-bottom-nav-badge-bg: #FFFFFF;
     --historietas-notificacoes-bottom-nav-badge-text: #000000;
     --historietas-notificacoes-bottom-nav-badge-ring: #000000;
+  }
+
+  .historietas-notificacoes-bottom-nav-icon {
+    position: relative;
+  }
+
+  .historietas-notificacoes-bottom-nav-badge {
+    position: absolute;
+    top: -9px;
+    right: -12px;
+    z-index: 1;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    background: var(
+      --historietas-notificacoes-bottom-nav-badge-bg,
+      #DC2626
+    );
+    color: var(
+      --historietas-notificacoes-bottom-nav-badge-text,
+      #FFFFFF
+    );
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 0 0 2px var(
+      --historietas-notificacoes-bottom-nav-badge-ring,
+      #070212
+    );
+    pointer-events: none;
   }
 `;

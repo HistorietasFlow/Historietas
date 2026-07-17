@@ -19,8 +19,13 @@ type ObraMetadataRow = {
 const SITE_NAME = "HISTORIETAS";
 const DEFAULT_DESCRIPTION =
   "Leia histórias, contos, mangás, webnovels e publique suas próprias obras no HISTORIETAS.";
+const NOT_FOUND_TITLE = "Obra não encontrada";
 
-function normalizarSlugParametro(valor: string) {
+function normalizarSlugParametro(valor: unknown) {
+  if (typeof valor !== "string") {
+    return "";
+  }
+
   const valorLimpo = valor.trim();
 
   if (!valorLimpo) {
@@ -34,6 +39,7 @@ function normalizarSlugParametro(valor: string) {
       !slugDecodificado ||
       slugDecodificado.includes("/") ||
       slugDecodificado.includes("\\") ||
+      /[\u0000-\u001F\u007F]/.test(slugDecodificado) ||
       slugDecodificado.length > 180
     ) {
       return "";
@@ -65,11 +71,42 @@ function criarHrefCanonicoObra(slug: string) {
   return `/obra/${encodeURIComponent(slug)}`;
 }
 
-function criarMetadataPadrao(): Metadata {
+function obterUrlImagemSegura(valor: string | null) {
+  const valorLimpo = valor?.trim() || "";
+
+  if (!valorLimpo) {
+    return "";
+  }
+
+  try {
+    const url = new URL(valorLimpo);
+
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? url.toString()
+      : "";
+  } catch {
+    return "";
+  }
+}
+
+function criarMetadataPadrao({
+  titulo = SITE_NAME,
+  noIndex = false,
+}: {
+  titulo?: string;
+  noIndex?: boolean;
+} = {}): Metadata {
   return {
+    title: titulo,
     description: DEFAULT_DESCRIPTION,
+    robots: noIndex
+      ? {
+          index: false,
+          follow: false,
+        }
+      : undefined,
     openGraph: {
-      title: SITE_NAME,
+      title: titulo,
       description: DEFAULT_DESCRIPTION,
       siteName: SITE_NAME,
       locale: "pt_BR",
@@ -77,7 +114,7 @@ function criarMetadataPadrao(): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: SITE_NAME,
+      title: titulo,
       description: DEFAULT_DESCRIPTION,
     },
   };
@@ -87,7 +124,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const slug = await obterSlug(params);
 
   if (!slug) {
-    return criarMetadataPadrao();
+    return criarMetadataPadrao({
+      titulo: NOT_FOUND_TITLE,
+      noIndex: true,
+    });
   }
 
   try {
@@ -101,16 +141,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       .maybeSingle();
 
     if (error || !data) {
-      return criarMetadataPadrao();
+      return criarMetadataPadrao({
+        titulo: NOT_FOUND_TITLE,
+        noIndex: true,
+      });
     }
 
     const obra = data as ObraMetadataRow;
-    const tituloObra = obra.titulo?.trim() || "Obra no HISTORIETAS";
-    const autorObra = obra.autor?.trim() || "Autor não informado";
+    const tituloObra = limitarTexto(
+      obra.titulo?.trim() || "Obra no HISTORIETAS",
+      100,
+    );
+    const autorObra = limitarTexto(
+      obra.autor?.trim() || "Autor não informado",
+      80,
+    );
     const sinopseObra = obra.sinopse?.trim() || DEFAULT_DESCRIPTION;
     const description = limitarTexto(`${sinopseObra} — por ${autorObra}`, 160);
-    const capaUrl = obra.capa_url?.trim() || "";
-    const slugCanonico = normalizarSlugParametro(obra.slug || "") || slug;
+    const capaUrl = obterUrlImagemSegura(obra.capa_url);
+    const slugCanonico = normalizarSlugParametro(obra.slug) || slug;
     const hrefCanonico = criarHrefCanonicoObra(slugCanonico);
     const tituloSocial = `${tituloObra} | ${SITE_NAME}`;
     const images = capaUrl

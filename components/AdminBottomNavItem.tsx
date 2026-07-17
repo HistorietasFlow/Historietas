@@ -11,7 +11,15 @@ type AppMetadataAdmin = {
   tipo_usuario?: unknown;
   admin?: unknown;
   is_admin?: unknown;
+  moderator?: unknown;
+  roles?: unknown;
 };
+
+type UsuarioAdminMinimo = {
+  app_metadata?: unknown;
+};
+
+const PAPEIS_ADMIN = new Set(["admin", "moderador", "moderator"]);
 
 function valorTextoAdmin(valor: unknown) {
   return typeof valor === "string" ? valor.trim().toLowerCase() : "";
@@ -24,7 +32,16 @@ function valorBooleanoAdmin(valor: unknown) {
 
   const texto = valorTextoAdmin(valor);
 
-  return texto === "true" || texto === "1" || texto === "sim" || texto === "yes";
+  return (
+    texto === "true" ||
+    texto === "1" ||
+    texto === "sim" ||
+    texto === "yes"
+  );
+}
+
+function valorEhPapelAdmin(valor: unknown) {
+  return PAPEIS_ADMIN.has(valorTextoAdmin(valor));
 }
 
 function metadataTemAdmin(appMetadata: AppMetadataAdmin | null | undefined) {
@@ -32,22 +49,18 @@ function metadataTemAdmin(appMetadata: AppMetadataAdmin | null | undefined) {
     return false;
   }
 
-  const role = valorTextoAdmin(appMetadata.role);
-  const cargo = valorTextoAdmin(appMetadata.cargo);
-  const tipoUsuario = valorTextoAdmin(appMetadata.tipo_usuario);
+  const roles = Array.isArray(appMetadata.roles)
+    ? appMetadata.roles
+    : [];
 
   return (
-    role === "admin" ||
-    role === "moderador" ||
-    role === "moderator" ||
-    cargo === "admin" ||
-    cargo === "moderador" ||
-    cargo === "moderator" ||
-    tipoUsuario === "admin" ||
-    tipoUsuario === "moderador" ||
-    tipoUsuario === "moderator" ||
+    valorEhPapelAdmin(appMetadata.role) ||
+    valorEhPapelAdmin(appMetadata.cargo) ||
+    valorEhPapelAdmin(appMetadata.tipo_usuario) ||
+    roles.some(valorEhPapelAdmin) ||
     valorBooleanoAdmin(appMetadata.admin) ||
-    valorBooleanoAdmin(appMetadata.is_admin)
+    valorBooleanoAdmin(appMetadata.is_admin) ||
+    valorBooleanoAdmin(appMetadata.moderator)
   );
 }
 
@@ -55,6 +68,7 @@ export default function AdminBottomNavItem() {
   const [mostrarAdmin, setMostrarAdmin] = useState(false);
   const pathname = usePathname() || "/";
   const verificacaoAtualRef = useRef(0);
+  const verificacaoTimerRef = useRef<number | null>(null);
 
   const itemAtivo =
     pathname === "/admin/comunidade" ||
@@ -67,32 +81,63 @@ export default function AdminBottomNavItem() {
       verificacaoAtualRef.current += 1;
     }
 
-    async function verificarAdmin() {
+    function limparVerificacaoAgendada() {
+      if (verificacaoTimerRef.current !== null) {
+        window.clearTimeout(verificacaoTimerRef.current);
+        verificacaoTimerRef.current = null;
+      }
+    }
+
+    async function verificarAdmin(
+      usuarioRecebido?: UsuarioAdminMinimo | null,
+    ) {
       const verificacaoId = verificacaoAtualRef.current + 1;
       verificacaoAtualRef.current = verificacaoId;
 
       try {
-        const { data, error } = await supabase.auth.getUser();
-        const user = data.user || null;
+        let usuario = usuarioRecebido;
 
-        if (cancelado || verificacaoAtualRef.current !== verificacaoId) {
+        if (usuario === undefined) {
+          const { data, error } = await supabase.auth.getUser();
+
+          if (
+            cancelado ||
+            verificacaoAtualRef.current !== verificacaoId
+          ) {
+            return;
+          }
+
+          if (error || !data.user) {
+            setMostrarAdmin(false);
+            return;
+          }
+
+          usuario = data.user;
+        }
+
+        if (
+          cancelado ||
+          verificacaoAtualRef.current !== verificacaoId
+        ) {
           return;
         }
 
-        if (error || !user) {
+        if (!usuario) {
           setMostrarAdmin(false);
           return;
         }
 
         const adminPeloToken = metadataTemAdmin(
-          user.app_metadata as AppMetadataAdmin | null | undefined,
+          usuario.app_metadata as AppMetadataAdmin | null | undefined,
         );
 
-        const { data: adminLiberado, error: adminError } = await supabase.rpc(
-          "usuario_e_admin",
-        );
+        const { data: adminLiberado, error: adminError } =
+          await supabase.rpc("usuario_e_admin");
 
-        if (cancelado || verificacaoAtualRef.current !== verificacaoId) {
+        if (
+          cancelado ||
+          verificacaoAtualRef.current !== verificacaoId
+        ) {
           return;
         }
 
@@ -100,28 +145,47 @@ export default function AdminBottomNavItem() {
           adminError ? adminPeloToken : adminLiberado === true,
         );
       } catch {
-        if (!cancelado && verificacaoAtualRef.current === verificacaoId) {
+        if (
+          !cancelado &&
+          verificacaoAtualRef.current === verificacaoId
+        ) {
           setMostrarAdmin(false);
         }
       }
+    }
+
+    function agendarVerificacao(
+      usuario: UsuarioAdminMinimo | null,
+    ) {
+      limparVerificacaoAgendada();
+
+      verificacaoTimerRef.current = window.setTimeout(() => {
+        verificacaoTimerRef.current = null;
+
+        if (!cancelado) {
+          void verificarAdmin(usuario);
+        }
+      }, 0);
     }
 
     void verificarAdmin();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       invalidarVerificacaoAtual();
+      limparVerificacaoAgendada();
       setMostrarAdmin(false);
 
-      if (event !== "SIGNED_OUT") {
-        void verificarAdmin();
+      if (event !== "SIGNED_OUT" && session?.user) {
+        agendarVerificacao(session.user);
       }
     });
 
     return () => {
       cancelado = true;
       invalidarVerificacaoAtual();
+      limparVerificacaoAgendada();
       subscription.unsubscribe();
     };
   }, []);
@@ -142,7 +206,10 @@ export default function AdminBottomNavItem() {
       aria-current={itemAtivo ? "page" : undefined}
       data-admin-bottom-nav="true"
     >
-      <span className="historietas-bottom-nav-icon" aria-hidden="true">
+      <span
+        className="historietas-bottom-nav-icon"
+        aria-hidden="true"
+      >
         M
       </span>
 

@@ -49,10 +49,12 @@ type UsuarioConfiguracoes = {
 
 type AppMetadataAdminConfiguracoes = {
   role?: unknown;
+  roles?: unknown;
   cargo?: unknown;
   tipo_usuario?: unknown;
   admin?: unknown;
   is_admin?: unknown;
+  moderator?: unknown;
 };
 
 type IconName =
@@ -418,22 +420,21 @@ function metadataTemAdminConfiguracoes(
     return false;
   }
 
-  const role = valorTextoAdminConfiguracoes(appMetadata.role);
-  const cargo = valorTextoAdminConfiguracoes(appMetadata.cargo);
-  const tipoUsuario = valorTextoAdminConfiguracoes(appMetadata.tipo_usuario);
+  const cargosPermitidos = new Set(["admin", "moderador", "moderator"]);
+  const roles = Array.isArray(appMetadata.roles)
+    ? appMetadata.roles.map(valorTextoAdminConfiguracoes)
+    : [];
 
   return (
-    role === "admin" ||
-    role === "moderador" ||
-    role === "moderator" ||
-    cargo === "admin" ||
-    cargo === "moderador" ||
-    cargo === "moderator" ||
-    tipoUsuario === "admin" ||
-    tipoUsuario === "moderador" ||
-    tipoUsuario === "moderator" ||
+    [
+      valorTextoAdminConfiguracoes(appMetadata.role),
+      valorTextoAdminConfiguracoes(appMetadata.cargo),
+      valorTextoAdminConfiguracoes(appMetadata.tipo_usuario),
+      ...roles,
+    ].some((valor) => cargosPermitidos.has(valor)) ||
     appMetadata.admin === true ||
-    appMetadata.is_admin === true
+    appMetadata.is_admin === true ||
+    appMetadata.moderator === true
   );
 }
 
@@ -609,9 +610,6 @@ async function salvarPerfilConfiguracoesSupabase({
         user_id: userIdLimpo,
         avatar_url: "",
         bio: "",
-        tipo: "leitor",
-        criado_em: atualizadoEm,
-        is_admin: false,
         sobre_bio: "",
         ...payloadAtualizacao,
       })
@@ -980,6 +978,8 @@ function SettingsInput({
   type = "text",
   helperText,
   error = false,
+  maxLength,
+  autoComplete,
   onChange,
 }: {
   icon: IconName;
@@ -989,6 +989,8 @@ function SettingsInput({
   type?: string;
   helperText?: string;
   error?: boolean;
+  maxLength?: number;
+  autoComplete?: string;
   onChange: (valor: string) => void;
 }) {
   return (
@@ -1005,6 +1007,8 @@ function SettingsInput({
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           type={type}
+          maxLength={maxLength}
+          autoComplete={autoComplete}
           style={inputStyle}
         />
 
@@ -1140,7 +1144,7 @@ export default function ConfiguracoesPage() {
 
         if (!cancelado) {
           setAdminLiberado(
-            adminPeloToken || (!error && adminLiberadoResposta === true),
+            error ? adminPeloToken : adminLiberadoResposta === true,
           );
         }
       } catch {
@@ -1382,6 +1386,8 @@ export default function ConfiguracoesPage() {
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
             placeholder="Pesquisar"
+            maxLength={80}
+            autoComplete="off"
             style={searchInputStyle}
           />
         </label>
@@ -1414,6 +1420,8 @@ export default function ConfiguracoesPage() {
                 value={preferencias.nomeExibicao}
                 onChange={(valor) => atualizarPreferencia("nomeExibicao", valor)}
                 placeholder="Ex: Nome do autor"
+                maxLength={80}
+                autoComplete="name"
               />
             ) : null}
 
@@ -1430,6 +1438,8 @@ export default function ConfiguracoesPage() {
                   );
                 }}
                 placeholder="ex: username"
+                maxLength={30}
+                autoComplete="username"
                 helperText={
                   erroUsername ||
                   "Nome pode repetir. @username não pode repetir."
@@ -1446,6 +1456,8 @@ export default function ConfiguracoesPage() {
                 onChange={(valor) => atualizarPreferencia("emailContato", valor)}
                 placeholder="Ex: seuemail@email.com"
                 type="email"
+                maxLength={254}
+                autoComplete="email"
               />
             ) : null}
 
@@ -2258,13 +2270,4 @@ const themeCheckStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   color: "var(--historietas-accent, #F97316)",
-};
-
-const emptyAccessTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.58))",
-  fontSize: "14px",
-  lineHeight: 1.45,
-  fontWeight: 650,
-  ...safeTextStyle,
 };

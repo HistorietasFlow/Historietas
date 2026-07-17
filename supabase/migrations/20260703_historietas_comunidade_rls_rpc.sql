@@ -56,9 +56,31 @@ grant execute on function public.usuario_e_admin() to authenticated;
 -- RPC: VISUALIZAÇÕES DE OBRAS
 -- ============================================================
 
+-- Registra no máximo uma visualização por visitante, obra e dia.
+-- Usuários autenticados são identificados por auth.uid().
+-- Visitantes anônimos usam um hash do IP encaminhado pelo proxy e user-agent.
+create table if not exists public.obra_visualizacoes_unicas (
+  obra_id uuid not null references public.obras(id) on delete cascade,
+  chave_visitante text not null,
+  dia date not null default current_date,
+  criada_em timestamptz not null default now(),
+  primary key (obra_id, chave_visitante, dia)
+);
+
+create index if not exists obra_visualizacoes_unicas_dia_idx
+  on public.obra_visualizacoes_unicas (dia desc);
+
+alter table public.obra_visualizacoes_unicas enable row level security;
+
+-- A tabela é interna. Somente o RPC SECURITY DEFINER pode gravar nela.
+revoke all on table public.obra_visualizacoes_unicas
+  from public, anon, authenticated;
+
 drop function if exists public.incrementar_visualizacao_obra(uuid);
 
-create or replace function public.incrementar_visualizacao_obra(obra_id_param uuid)
+create or replace function public.incrementar_visualizacao_obra(
+  obra_id_param uuid
+)
 returns integer
 language plpgsql
 security definer
@@ -66,7 +88,93 @@ set search_path = public
 as $$
 declare
   total_visualizacoes integer := 0;
+  linhas_inseridas integer := 0;
+  usuario_id uuid := auth.uid();
+  cabecalhos jsonb := '{}'::jsonb;
+  ip_visitante text := null;
+  user_agent text := null;
+  chave_visitante text := null;
 begin
+  if obra_id_param is null then
+    return 0;
+  end if;
+
+  select coalesce(o.visualizacoes, 0)
+  into total_visualizacoes
+  from public.obras o
+  where o.id = obra_id_param
+    and coalesce(o.publicado, false) = true
+  limit 1;
+
+  if not found then
+    return 0;
+  end if;
+
+  if usuario_id is not null then
+    chave_visitante := 'usuario:' || usuario_id::text;
+  else
+    begin
+      cabecalhos := coalesce(
+        nullif(current_setting('request.headers', true), '')::jsonb,
+        '{}'::jsonb
+      );
+    exception
+      when others then
+        cabecalhos := '{}'::jsonb;
+    end;
+
+    ip_visitante := nullif(
+      trim(
+        coalesce(
+          cabecalhos ->> 'cf-connecting-ip',
+          split_part(coalesce(cabecalhos ->> 'x-forwarded-for', ''), ',', 1),
+          cabecalhos ->> 'x-real-ip',
+          ''
+        )
+      ),
+      ''
+    );
+
+    user_agent := nullif(
+      trim(coalesce(cabecalhos ->> 'user-agent', '')),
+      ''
+    );
+
+    -- Sem uma identificação mínima confiável, retorna o total atual
+    -- sem permitir incremento anônimo ilimitado.
+    if ip_visitante is null then
+      return total_visualizacoes;
+    end if;
+
+    chave_visitante :=
+      'anon:' ||
+      encode(
+        digest(
+          ip_visitante || '|' || coalesce(user_agent, ''),
+          'sha256'
+        ),
+        'hex'
+      );
+  end if;
+
+  insert into public.obra_visualizacoes_unicas (
+    obra_id,
+    chave_visitante,
+    dia
+  )
+  values (
+    obra_id_param,
+    chave_visitante,
+    current_date
+  )
+  on conflict (obra_id, chave_visitante, dia) do nothing;
+
+  get diagnostics linhas_inseridas = row_count;
+
+  if linhas_inseridas = 0 then
+    return total_visualizacoes;
+  end if;
+
   update public.obras
   set visualizacoes = coalesce(visualizacoes, 0) + 1
   where id = obra_id_param
@@ -78,8 +186,17 @@ begin
 end;
 $$;
 
-revoke all on function public.incrementar_visualizacao_obra(uuid) from public;
-grant execute on function public.incrementar_visualizacao_obra(uuid) to anon, authenticated;
+revoke all on function public.incrementar_visualizacao_obra(uuid)
+  from public;
+
+revoke all on function public.incrementar_visualizacao_obra(uuid)
+  from anon;
+
+revoke all on function public.incrementar_visualizacao_obra(uuid)
+  from authenticated;
+
+grant execute on function public.incrementar_visualizacao_obra(uuid)
+  to anon, authenticated;
 
 -- ============================================================
 -- TABELAS: COMUNIDADE

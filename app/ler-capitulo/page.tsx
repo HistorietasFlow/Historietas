@@ -780,63 +780,24 @@ function registrarVisualizacaoObraLocalUnica(
   }
 }
 
-async function incrementarVisualizacaoObraSupabase(
-  obraId: string,
-  userId: string,
-  visualizacaoLocalNova: boolean
-) {
+async function incrementarVisualizacaoObraSupabase(obraId: string) {
   const obraIdLimpo = obraId.trim();
-  const userIdLimpo = userId.trim();
 
-  if (
-    !idObraSupabaseValido(obraIdLimpo) ||
-    !idObraSupabaseValido(userIdLimpo)
-  ) {
+  if (!idObraSupabaseValido(obraIdLimpo)) {
     return;
   }
 
   try {
-    const { data: progressoExistente, error: erroProgresso } = await supabase
-      .from("progresso_leitura")
-      .select("obra_id")
-      .eq("user_id", userIdLimpo)
-      .eq("obra_id", obraIdLimpo)
-      .limit(1)
-      .maybeSingle();
+    const { error } = await supabase.rpc("incrementar_visualizacao_obra", {
+      obra_id_param: obraIdLimpo,
+    });
 
-    if (!erroProgresso && progressoExistente) {
-      return;
+    if (error) {
+      console.warn(
+        "Não consegui registrar a visualização protegida da obra:",
+        error.message
+      );
     }
-
-    if (erroProgresso && !visualizacaoLocalNova) {
-      return;
-    }
-
-    const { error: erroRpc } = await supabase.rpc(
-      "incrementar_visualizacao_obra",
-      { obra_id_param: obraIdLimpo }
-    );
-
-    if (!erroRpc) {
-      return;
-    }
-
-    const { data: obraAtual } = await supabase
-      .from("obras")
-      .select("visualizacoes")
-      .eq("id", obraIdLimpo)
-      .limit(1)
-      .maybeSingle();
-
-    const visualizacoesAtuais = obterNumeroSeguro(
-      (obraAtual as { visualizacoes?: unknown } | null)?.visualizacoes,
-      0
-    );
-
-    await supabase
-      .from("obras")
-      .update({ visualizacoes: visualizacoesAtuais + 1 })
-      .eq("id", obraIdLimpo);
   } catch {
     // A leitura continua mesmo se a contagem remota falhar.
   }
@@ -3431,16 +3392,9 @@ export default function LerCapituloPage() {
 
     visualizacaoObraRegistradaRef.current = chaveVisualizacao;
 
-    const visualizacaoLocalNova = registrarVisualizacaoObraLocalUnica(
-      obraAtual,
-      usuarioIdLogado
-    );
+    registrarVisualizacaoObraLocalUnica(obraAtual, usuarioIdLogado);
 
-    void incrementarVisualizacaoObraSupabase(
-      obraAtual.id,
-      usuarioIdLogado,
-      visualizacaoLocalNova
-    );
+    void incrementarVisualizacaoObraSupabase(obraAtual.id);
   }, [obraAtual?.id, obraAtual?.slug, obraAtual?.titulo, usuarioIdLogado]);
 
   useEffect(() => {

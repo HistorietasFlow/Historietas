@@ -1,69 +1,79 @@
 -- 20260705_notificacoes_rls_select_proprio.sql
--- Garante que o usuário logado consiga ler/atualizar/excluir as próprias notificações.
--- Mantém notificações privadas por usuário e remove policies duplicadas/inseguras.
+-- Mantém as notificações privadas e acessíveis somente pelo próprio usuário.
+-- A criação de notificações fica restrita às RPCs SECURITY DEFINER do projeto.
+-- O cliente pode apenas ler, marcar como lida e excluir as próprias notificações.
 
 begin;
 
-alter table if exists public.notificacoes enable row level security;
+do $$
+declare
+  v_policy record;
+begin
+  -- Algumas instalações podem aplicar esta migration antes da criação da tabela.
+  -- Nesse caso, encerra sem quebrar a sequência de migrations.
+  if to_regclass('public.notificacoes') is null then
+    return;
+  end if;
 
--- Remove versões duplicadas/antigas da mesma regra.
-drop policy if exists "notificacoes_select_proprio" on public.notificacoes;
-drop policy if exists "notificacoes_select_proprias" on public.notificacoes;
-drop policy if exists "notificacoes_insert_proprio" on public.notificacoes;
-drop policy if exists "notificacoes_insert_proprias" on public.notificacoes;
-drop policy if exists "notificacoes_insert_autenticado" on public.notificacoes;
-drop policy if exists "notificacoes_insert_autor_para_seguidor" on public.notificacoes;
-drop policy if exists "notificacoes_update_proprio" on public.notificacoes;
-drop policy if exists "notificacoes_update_proprias" on public.notificacoes;
-drop policy if exists "notificacoes_delete_proprio" on public.notificacoes;
-drop policy if exists "notificacoes_delete_proprias" on public.notificacoes;
+  alter table public.notificacoes enable row level security;
 
-create policy "notificacoes_select_proprio"
-  on public.notificacoes
-  for select
-  to authenticated
-  using (
-    auth.uid() is not null
-    and user_id::text = auth.uid()::text
-  );
+  -- Policies permissivas são combinadas com OR. Remove todas as antigas para
+  -- impedir que uma regra esquecida reabra o acesso às notificações.
+  for v_policy in
+    select policyname
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'notificacoes'
+  loop
+    execute format(
+      'drop policy if exists %I on public.notificacoes',
+      v_policy.policyname
+    );
+  end loop;
 
-create policy "notificacoes_insert_proprio"
-  on public.notificacoes
-  for insert
-  to authenticated
-  with check (
-    auth.uid() is not null
-    and user_id::text = auth.uid()::text
-  );
+  create policy "notificacoes_select_proprio"
+    on public.notificacoes
+    for select
+    to authenticated
+    using (
+      auth.uid() is not null
+      and user_id::text = auth.uid()::text
+    );
 
-create policy "notificacoes_update_proprio"
-  on public.notificacoes
-  for update
-  to authenticated
-  using (
-    auth.uid() is not null
-    and user_id::text = auth.uid()::text
-  )
-  with check (
-    auth.uid() is not null
-    and user_id::text = auth.uid()::text
-  );
+  create policy "notificacoes_update_proprio"
+    on public.notificacoes
+    for update
+    to authenticated
+    using (
+      auth.uid() is not null
+      and user_id::text = auth.uid()::text
+    )
+    with check (
+      auth.uid() is not null
+      and user_id::text = auth.uid()::text
+    );
 
-create policy "notificacoes_delete_proprio"
-  on public.notificacoes
-  for delete
-  to authenticated
-  using (
-    auth.uid() is not null
-    and user_id::text = auth.uid()::text
-  );
+  create policy "notificacoes_delete_proprio"
+    on public.notificacoes
+    for delete
+    to authenticated
+    using (
+      auth.uid() is not null
+      and user_id::text = auth.uid()::text
+    );
 
--- Remove acesso direto de anônimos/público.
--- A proteção real continua sendo feita pelas policies acima.
-revoke all on public.notificacoes from anon;
-revoke all on public.notificacoes from public;
+  -- Bloqueia acesso direto genérico, inclusive INSERT pelo cliente.
+  -- As RPCs SECURITY DEFINER continuam responsáveis pela criação.
+  revoke all on public.notificacoes from public;
+  revoke all on public.notificacoes from anon;
+  revoke all on public.notificacoes from authenticated;
 
--- Garante permissões SQL para o papel autenticado.
-grant select, insert, update, delete on public.notificacoes to authenticated;
+  grant select on public.notificacoes to authenticated;
+  grant delete on public.notificacoes to authenticated;
+
+  -- O cliente pode alterar somente o estado de leitura.
+  grant update (lida) on public.notificacoes to authenticated;
+end
+$$;
 
 commit;

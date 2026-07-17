@@ -2221,15 +2221,20 @@ export default function ExplorarPage() {
       )
     );
 
-    if (autorIds.length === 0) {
-      setPerfisAutores({});
-      setAvaliacoesAutores({});
-      return;
-    }
-
     let cancelado = false;
 
     async function carregarDadosAutores() {
+      if (autorIds.length === 0) {
+        await Promise.resolve();
+
+        if (!cancelado) {
+          setPerfisAutores({});
+          setAvaliacoesAutores({});
+        }
+
+        return;
+      }
+
       const [perfis, avaliacoes] = await Promise.all([
         carregarPerfisAutoresExplorar(autorIds),
         carregarAvaliacoesAutoresExplorar(autorIds),

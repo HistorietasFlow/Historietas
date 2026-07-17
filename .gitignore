@@ -19,6 +19,10 @@
 
 # production
 /build
+/dist
+
+# local archives
+*.zip
 
 # misc
 .DS_Store
@@ -30,8 +34,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# environment files
 .env*
+!.env.example
 
 # vercel
 .vercel

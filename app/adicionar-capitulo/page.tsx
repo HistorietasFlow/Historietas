@@ -2258,62 +2258,6 @@ const containerStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  marginBottom: "10px",
-  flexWrap: "nowrap",
-  minWidth: 0,
-};
-
-
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "23px",
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-adicionar-capitulo-bg-deep, #04000A)",
-  color: "#FFFFFF",
-  fontSize: "19px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  flex: "0 0 auto",
-  border: "1px solid var(--historietas-adicionar-capitulo-purple-border, rgba(59, 7, 100, 0.58))",
-  boxShadow: "none",
-};
-
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-adicionar-capitulo-purple-text, #DDD6FE) 44%, var(--historietas-adicionar-capitulo-purple-soft, #A78BFA) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
 const titleHeaderStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
@@ -2425,102 +2369,6 @@ const desktopHeaderTitleTextStyle: CSSProperties = {
   ...headerTitleTextStyle,
 };
 
-
-const heroBoxStyle: CSSProperties = {
-  position: "relative",
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-  gap: "8px",
-  padding: "18px",
-  borderRadius: "30px",
-  background: "linear-gradient(135deg, var(--historietas-adicionar-capitulo-bg-page, #070212) 0%, var(--historietas-adicionar-capitulo-bg-deep, #04000A) 58%, var(--historietas-adicionar-capitulo-bg-end, #020006) 100%)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, var(--historietas-adicionar-capitulo-accent, #F97316))",
-  WebkitTextFillColor: "var(--historietas-accent, var(--historietas-adicionar-capitulo-accent, #F97316))",
-  fontSize: "clamp(28px, 7.4vw, 40px)",
-  lineHeight: 1.02,
-  fontWeight: 950,
-  letterSpacing: "-0.048em",
-  maxWidth: "100%",
-  textAlign: "center",
-  textShadow: "none",
-  ...safeTextStyle,
-};
-
-const descriptionStyle: CSSProperties = {
-  margin: "0 auto",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11.5px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-  maxWidth: "560px",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const progressBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  width: "100%",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "visible",
-};
-
-const progressTopStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  flexWrap: "nowrap",
-  minWidth: 0,
-};
-
-const progressLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
-
-const progressNumberStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const progressTrackStyle: CSSProperties = {
-  height: "5px",
-  overflow: "hidden",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.10)",
-  maxWidth: "100%",
-};
-
-const progressFillStyle: CSSProperties = {
-  height: "100%",
-  borderRadius: "999px",
-  background: "linear-gradient(90deg, var(--historietas-accent, var(--historietas-adicionar-capitulo-accent, #F97316)) 0%, var(--historietas-secondary, var(--historietas-adicionar-capitulo-secondary, #7C3AED)) 100%)",
-  transition: "width 0.2s ease",
-};
-
 const errorBoxStyle: CSSProperties = {
   marginTop: "18px",
   padding: "18px",
@@ -2551,43 +2399,6 @@ const errorTextStyle: CSSProperties = {
   lineHeight: 1.7,
   fontWeight: 750,
   ...safeTextStyle,
-};
-
-
-const inlineStatsBoxStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  justifyContent: "center",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const inlineStatsItemStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
-
-const inlineStatsReadyStyle: CSSProperties = {
-  ...inlineStatsItemStyle,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-};
-
-const inlineStatsWarningStyle: CSSProperties = {
-  ...inlineStatsItemStyle,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
 };
 
 const mainGridStyle: CSSProperties = {
@@ -2759,21 +2570,6 @@ const importTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const importTextStyle: CSSProperties = {
-  display: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.35,
-  fontWeight: 700,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const desktopImportTextStyle: CSSProperties = {
-  ...importTextStyle,
-  display: "none",
-};
-
 const importSuccessStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
@@ -2824,101 +2620,6 @@ const importButtonStyle: CSSProperties = {
 
 const hiddenFileInputStyle: CSSProperties = {
   display: "none",
-};
-
-const successBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  padding: "16px",
-  borderRadius: "22px",
-  background: "var(--historietas-adicionar-capitulo-success-bg-soft, rgba(34,197,94,0.10))",
-  border: "1px solid var(--historietas-adicionar-capitulo-success-border-soft, rgba(34,197,94,0.24))",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-const successTitleStyle: CSSProperties = {
-  color: "var(--historietas-adicionar-capitulo-success, #86EFAC)",
-  fontSize: "16px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const successTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.6,
-  fontWeight: 650,
-  ...safeTextStyle,
-};
-
-const notificationCreatedStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-adicionar-capitulo-accent-soft, #FDBA74))",
-  fontSize: "13px",
-  lineHeight: 1.6,
-  fontWeight: 900,
-  padding: "10px 12px",
-  borderRadius: "16px",
-  background: "var(--historietas-adicionar-capitulo-accent-bg, rgba(249,115,22,0.12))",
-  border: "1px solid var(--historietas-adicionar-capitulo-accent-border, rgba(249,115,22,0.28))",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
-const createdActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
-  gap: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const successPrimaryButtonStyle: CSSProperties = {
-  minHeight: "48px",
-  borderRadius: "999px",
-  background: "var(--historietas-adicionar-capitulo-bg-deep, #04000A)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "14px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const successSecondaryButtonStyle: CSSProperties = {
-  minHeight: "48px",
-  borderRadius: "999px",
-  background: "var(--historietas-adicionar-capitulo-bg-deep, #04000A)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "14px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
 };
 
 const buttonAreaStyle: CSSProperties = {
@@ -3026,17 +2727,6 @@ const previewMiniTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const previewTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "22px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
 const previewChapterCardStyle: CSSProperties = {
   display: "grid",
   gap: "7px",
@@ -3050,44 +2740,6 @@ const previewChapterCardStyle: CSSProperties = {
   maxWidth: "100%",
   overflow: "hidden",
   boxSizing: "border-box",
-};
-
-const previewChapterTopStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const previewChapterBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "7px 10px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 950,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const previewChapterStatusStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "7px 10px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#E4E4E7",
-  fontSize: "11px",
-  fontWeight: 950,
-  whiteSpace: "normal",
-  ...safeTextStyle,
 };
 
 const previewChapterTitleStyle: CSSProperties = {
@@ -3137,174 +2789,11 @@ const previewTopRowStyle: CSSProperties = {
   maxWidth: "100%",
 };
 
-const previewStatsStyle: CSSProperties = {
-  display: "flex",
-  gap: "10px",
-  flexWrap: "wrap",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "13px",
-  fontWeight: 850,
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const recentBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  minWidth: 0,
-  width: "100%",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "visible",
-  boxShadow: "none",
-};
-
-const recentMiniTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "9.5px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const recentListStyle: CSSProperties = {
-  display: "grid",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
-
-const recentItemStyle: CSSProperties = {
-  display: "grid",
-  gap: "2px",
-  padding: "8px",
-  borderRadius: "14px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  textAlign: "center",
-};
-
-const recentNumberStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const recentTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14px",
-  fontWeight: 900,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const emptyBoxStyle: CSSProperties = {
-  marginTop: "24px",
-  display: "grid",
-  gap: "12px",
-  padding: "22px",
-  borderRadius: "26px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "28px",
-  fontWeight: 950,
-  letterSpacing: "-0.05em",
-  ...safeTextStyle,
-};
-
-const emptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
-  lineHeight: 1.7,
-  fontWeight: 600,
-  ...safeTextStyle,
-};
-
-const emptyButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "50px",
-  borderRadius: "999px",
-  background: "var(--historietas-accent, var(--historietas-adicionar-capitulo-accent, #F97316))",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "14px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1120px, calc(100% - 48px))",
   padding: "24px 0 64px",
-};
-
-const desktopTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "14px",
-  flexWrap: "nowrap",
-};
-
-const desktopHeroBoxStyle: CSSProperties = {
-  ...heroBoxStyle,
-  width: "100%",
-  maxWidth: "100%",
-  margin: "0",
-  gridTemplateColumns: "1fr",
-  justifyItems: "center",
-  textAlign: "center",
-  gap: "8px",
-  padding: "16px 24px",
-  borderRadius: "24px",
-  alignItems: "center",
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-
-const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  fontSize: "clamp(38px, 4.4vw, 58px)",
-};
-
-const desktopDescriptionStyle: CSSProperties = {
-  ...descriptionStyle,
-  fontSize: "13px",
-  maxWidth: "760px",
-};
-
-const desktopProgressBoxStyle: CSSProperties = {
-  ...progressBoxStyle,
-  width: "100%",
-  padding: 0,
 };
 
 const desktopMainGridSoloStyle: CSSProperties = {

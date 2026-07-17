@@ -3002,8 +3002,16 @@ export default function ComunidadePage() {
     const userId = usuario?.id || "";
 
     if (!userId) {
-      setUsuariosSeguidosIds([]);
-      return;
+      const limparUsuariosSeguidosTimer = window.setTimeout(() => {
+        if (!cancelado) {
+          setUsuariosSeguidosIds([]);
+        }
+      }, 0);
+
+      return () => {
+        cancelado = true;
+        window.clearTimeout(limparUsuariosSeguidosTimer);
+      };
     }
 
     void carregarUsuariosSeguidosComunidade(userId).then((idsSeguidos) => {
@@ -3022,14 +3030,26 @@ export default function ComunidadePage() {
     const termoLimpo = termoBuscaAdiado.trim().replace(/^@+/, "");
 
     if (!buscaComunidadeAberta || termoLimpo.length < 2) {
-      setUsuariosBuscaComunidade([]);
-      setCarregandoUsuariosBuscaComunidade(false);
-      return;
+      const limparBuscaUsuariosTimer = window.setTimeout(() => {
+        if (!cancelado) {
+          setUsuariosBuscaComunidade([]);
+          setCarregandoUsuariosBuscaComunidade(false);
+        }
+      }, 0);
+
+      return () => {
+        cancelado = true;
+        window.clearTimeout(limparBuscaUsuariosTimer);
+      };
     }
 
-    setCarregandoUsuariosBuscaComunidade(true);
-
     const buscaTimer = window.setTimeout(() => {
+      if (cancelado) {
+        return;
+      }
+
+      setCarregandoUsuariosBuscaComunidade(true);
+
       const usuariosLocais = buscarUsuariosComunidadeNosPosts(
         posts,
         termoLimpo

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -102,19 +102,32 @@ function formatarErroAuth(error: unknown) {
 function obterRedirectToSeguro(valor: string | null, fallback: string) {
   const destino = typeof valor === "string" ? valor.trim() : "";
 
-  if (!destino) {
+  if (
+    !destino ||
+    !destino.startsWith("/") ||
+    destino.startsWith("//") ||
+    destino.includes("\\") ||
+    /[\u0000-\u001F\u007F]/.test(destino)
+  ) {
     return fallback;
   }
 
-  if (!destino.startsWith("/") || destino.startsWith("//")) {
+  try {
+    const urlDestino = new URL(destino, "https://historietas.local");
+    const pathname = urlDestino.pathname.replace(/\/+$/, "") || "/";
+
+    if (
+      urlDestino.origin !== "https://historietas.local" ||
+      pathname === "/login" ||
+      pathname.startsWith("/login/")
+    ) {
+      return fallback;
+    }
+
+    return `${urlDestino.pathname}${urlDestino.search}${urlDestino.hash}`;
+  } catch {
     return fallback;
   }
-
-  if (destino === "/login" || destino.startsWith("/login?")) {
-    return fallback;
-  }
-
-  return destino;
 }
 
 function obterRedirectToAtual(fallback: string) {
@@ -267,67 +280,12 @@ export default function LoginPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
-  useEffect(() => {
-    let componenteAtivo = true;
-
-    async function redirecionarUsuarioJaLogado() {
-      try {
-        const { data } = await supabase.auth.getUser();
-
-        if (componenteAtivo && data.user) {
-          await salvarProfile(
-            data.user.id,
-            "",
-            data.user.email || "",
-            data.user.user_metadata
-          );
-          sincronizarStorageUsuarioLogin(data.user.id);
-
-          router.replace(obterRedirectToAtual("/perfil-autor"));
-          router.refresh();
-        }
-      } catch {
-        // A página de login deve continuar acessível se a verificação falhar.
-      }
-    }
-
-    void redirecionarUsuarioJaLogado();
-
-    return () => {
-      componenteAtivo = false;
-    };
-  }, [router]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-
-    const atualizarModoDesktop = () => {
-      setIsDesktop(mediaQuery.matches);
-    };
-
-    atualizarModoDesktop();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", atualizarModoDesktop);
-
-      return () => {
-        mediaQuery.removeEventListener("change", atualizarModoDesktop);
-      };
-    }
-
-    mediaQuery.addListener(atualizarModoDesktop);
-
-    return () => {
-      mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
-
-  async function salvarProfile(
+  const salvarProfile = useCallback(async (
     userId: string,
     nomeInformado: string,
-    emailInformado = email,
+    emailInformado: string,
     userMetadata?: Record<string, unknown> | null,
-  ) {
+  ) => {
     const userIdLimpo = userId.trim();
 
     if (!userIdLimpo) {
@@ -343,7 +301,7 @@ export default function LoginPage() {
             typeof valor === "string" && Boolean(valor.trim()),
         )
         ?.trim() || "";
-    const emailLimpo = emailInformado.trim() || email.trim();
+    const emailLimpo = emailInformado.trim();
     const nomeFinal =
       nomeInformado.trim() ||
       nomeMetadata ||
@@ -414,7 +372,62 @@ export default function LoginPage() {
     } catch {
       // O login não pode falhar só porque o perfil não sincronizou.
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    let componenteAtivo = true;
+
+    async function redirecionarUsuarioJaLogado() {
+      try {
+        const { data } = await supabase.auth.getUser();
+
+        if (componenteAtivo && data.user) {
+          await salvarProfile(
+            data.user.id,
+            "",
+            data.user.email || "",
+            data.user.user_metadata
+          );
+          sincronizarStorageUsuarioLogin(data.user.id);
+
+          router.replace(obterRedirectToAtual("/perfil-autor"));
+          router.refresh();
+        }
+      } catch {
+        // A página de login deve continuar acessível se a verificação falhar.
+      }
+    }
+
+    void redirecionarUsuarioJaLogado();
+
+    return () => {
+      componenteAtivo = false;
+    };
+  }, [router, salvarProfile]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+    const atualizarModoDesktop = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
+
+    atualizarModoDesktop();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", atualizarModoDesktop);
+
+      return () => {
+        mediaQuery.removeEventListener("change", atualizarModoDesktop);
+      };
+    }
+
+    mediaQuery.addListener(atualizarModoDesktop);
+
+    return () => {
+      mediaQuery.removeListener(atualizarModoDesktop);
+    };
+  }, []);
 
   async function enviarFormulario(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

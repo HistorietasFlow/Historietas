@@ -132,92 +132,6 @@ const MOTIVOS_DENUNCIA_PERFIL_LABEL: Record<string, string> = {
   outro: "Outro",
 };
 
-const NOTIFICATIONS_STORAGE_KEY = "historietas-notificacoes";
-
-function criarStorageKeyUsuarioAdminComunidade(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-function lerStorageUsuarioAdminComunidade(chave: string, userId = "") {
-  const userIdLimpo = userId.trim();
-
-  if (typeof window === "undefined" || !userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const chaveStorage = criarStorageKeyUsuarioAdminComunidade(
-      chave,
-      userIdLimpo
-    );
-
-    return chaveStorage ? localStorage.getItem(chaveStorage) : null;
-  } catch {
-    return null;
-  }
-}
-
-function contarNotificacoesNaoLidasLocaisAdminComunidade(userId = "") {
-  try {
-    const notificacoesTexto = lerStorageUsuarioAdminComunidade(
-      NOTIFICATIONS_STORAGE_KEY,
-      userId
-    );
-    const notificacoesJson: unknown = notificacoesTexto
-      ? JSON.parse(notificacoesTexto)
-      : [];
-
-    if (!Array.isArray(notificacoesJson)) {
-      return 0;
-    }
-
-    return notificacoesJson.filter((notificacao) => {
-      if (
-        !notificacao ||
-        typeof notificacao !== "object" ||
-        Array.isArray(notificacao)
-      ) {
-        return false;
-      }
-
-      return !(notificacao as { lida?: unknown }).lida;
-    }).length;
-  } catch {
-    return 0;
-  }
-}
-
-async function contarNotificacoesNaoLidasSupabaseAdminComunidade(
-  userId: string
-) {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return 0;
-  }
-
-  try {
-    const { count, error } = await supabase
-      .from("notificacoes")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .eq("user_id", userIdLimpo)
-      .eq("lida", false);
-
-    if (error) {
-      return 0;
-    }
-
-    return typeof count === "number" ? count : 0;
-  } catch {
-    return 0;
-  }
-}
-
 function criarLoginHrefAdminModeracao() {
   const redirectTo =
     typeof window !== "undefined"
@@ -344,119 +258,36 @@ function erroOpcionalIgnoravel(erro: unknown) {
   );
 }
 
-async function apagarRegistrosOpcionais(
-  tabela: string,
-  campo: string,
-  valor: string
-) {
-  if (!valor.trim()) {
-    return;
-  }
-
-  try {
-    const { error } = await supabase.from(tabela).delete().eq(campo, valor);
-
-    if (error && !erroOpcionalIgnoravel(error)) {
-      console.warn(`Não consegui limpar ${tabela}:`, error.message);
-    }
-  } catch {
-    // Tabelas auxiliares podem não existir em algumas versões do banco.
-  }
-}
-
-async function apagarRegistrosOpcionaisEmLista(
-  tabela: string,
-  campo: string,
-  valores: string[]
-) {
-  const valoresValidos = valores.filter((valor) => valor.trim());
-
-  if (valoresValidos.length === 0) {
-    return;
-  }
-
-  try {
-    const { error } = await supabase.from(tabela).delete().in(campo, valoresValidos);
-
-    if (error && !erroOpcionalIgnoravel(error)) {
-      console.warn(`Não consegui limpar ${tabela}:`, error.message);
-    }
-  } catch {
-    // Tabelas auxiliares podem não existir em algumas versões do banco.
-  }
-}
-
-async function buscarIdsComentariosDoPost(postId: string) {
-  const postIdLimpo = postId.trim();
-
-  if (!postIdLimpo) {
-    return [] as string[];
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("comunidade_comentarios")
-      .select("id")
-      .eq("post_id", postIdLimpo)
-      .limit(1000);
-
-    if (error) {
-      return [] as string[];
-    }
-
-    return (data || [])
-      .map((comentario) => String(comentario.id || ""))
-      .filter(Boolean);
-  } catch {
-    return [] as string[];
-  }
-}
-
-async function removerDependenciasConteudoComunidade(
+async function removerConteudoComunidadeComCascata(
   denuncia: Pick<DenunciaComContexto, "alvoTipo" | "alvoId">
 ) {
   const alvoId = denuncia.alvoId.trim();
 
   if (!alvoId) {
-    return;
+    throw new Error("O conteúdo denunciado não possui um identificador válido.");
   }
 
-  if (denuncia.alvoTipo === "comentario") {
-    await apagarRegistrosOpcionais(
-      "comunidade_comentario_curtidas",
-      "comentario_id",
-      alvoId
-    );
-    await apagarRegistrosOpcionais(
-      "comunidade_comentarios_salvos",
-      "comentario_id",
-      alvoId
-    );
-    return;
+  const tabela =
+    denuncia.alvoTipo === "post"
+      ? "comunidade_posts"
+      : "comunidade_comentarios";
+
+  const { data, error } = await supabase
+    .from(tabela)
+    .delete()
+    .eq("id", alvoId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
   }
 
-  const comentariosDoPost = await buscarIdsComentariosDoPost(alvoId);
-
-  await apagarRegistrosOpcionais("comunidade_curtidas", "post_id", alvoId);
-  await apagarRegistrosOpcionais("comunidade_post_curtidas", "post_id", alvoId);
-  await apagarRegistrosOpcionais("comunidade_enquete_votos", "post_id", alvoId);
-  await apagarRegistrosOpcionais("comunidade_post_salvos", "post_id", alvoId);
-  await apagarRegistrosOpcionais("comunidade_salvos", "post_id", alvoId);
-
-  if (comentariosDoPost.length > 0) {
-    await apagarRegistrosOpcionaisEmLista(
-      "comunidade_comentario_curtidas",
-      "comentario_id",
-      comentariosDoPost
-    );
-    await apagarRegistrosOpcionaisEmLista(
-      "comunidade_comentarios_salvos",
-      "comentario_id",
-      comentariosDoPost
+  if (!data?.id) {
+    throw new Error(
+      "O conteúdo não foi encontrado ou o banco recusou a remoção."
     );
   }
-
-  await apagarRegistrosOpcionais("comunidade_comentarios", "post_id", alvoId);
 }
 
 
@@ -962,16 +793,24 @@ export default function AdminComunidadePage() {
     const atualizadoEm = new Date().toISOString();
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("denuncias_perfis")
         .update({
           status: novoStatus,
           atualizado_em: atualizadoEm,
         })
-        .eq("id", denunciaId);
+        .eq("id", denunciaId)
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         throw error;
+      }
+
+      if (!data?.id) {
+        throw new Error(
+          "A denúncia de perfil não foi encontrada ou não pôde ser atualizada."
+        );
       }
 
       setDenunciasPerfis((denunciasAtuais) =>
@@ -1021,7 +860,7 @@ export default function AdminComunidadePage() {
     const analisadoEm = new Date().toISOString();
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("comunidade_denuncias")
         .update({
           status: novoStatus,
@@ -1029,10 +868,18 @@ export default function AdminComunidadePage() {
           analisado_por: usuarioId,
           analisado_em: analisadoEm,
         })
-        .eq("id", denunciaId);
+        .eq("id", denunciaId)
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         throw error;
+      }
+
+      if (!data?.id) {
+        throw new Error(
+          "A denúncia não foi encontrada ou não pôde ser atualizada."
+        );
       }
 
       setDenuncias((denunciasAtuais) =>
@@ -1092,39 +939,38 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      await removerDependenciasConteudoComunidade(denuncia);
+      // As tabelas relacionadas devem usar ON DELETE CASCADE. Assim, a remoção
+      // do conteúdo e de suas dependências acontece dentro da mesma operação
+      // do banco, sem apagar registros auxiliares parcialmente pelo cliente.
+      await removerConteudoComunidadeComCascata(denuncia);
 
-      const resultadoRemocao =
-        denuncia.alvoTipo === "post"
-          ? await supabase.from("comunidade_posts").delete().eq("id", denuncia.alvoId)
-          : await supabase
-              .from("comunidade_comentarios")
-              .delete()
-              .eq("id", denuncia.alvoId);
-
-      if (resultadoRemocao.error) {
-        throw resultadoRemocao.error;
-      }
-
-      const { error: erroAtualizacao } = await supabase
-        .from("comunidade_denuncias")
-        .update({
-          status: "resolvida",
-          observacao_admin: observacaoFinal.slice(0, 800),
-          analisado_por: usuarioId,
-          analisado_em: analisadoEm,
-        })
-        .eq("alvo_tipo", denuncia.alvoTipo)
-        .eq("alvo_id", denuncia.alvoId);
+      const { data: denunciasAtualizadas, error: erroAtualizacao } =
+        await supabase
+          .from("comunidade_denuncias")
+          .update({
+            status: "resolvida",
+            observacao_admin: observacaoFinal.slice(0, 800),
+            analisado_por: usuarioId,
+            analisado_em: analisadoEm,
+          })
+          .eq("alvo_tipo", denuncia.alvoTipo)
+          .eq("alvo_id", denuncia.alvoId)
+          .select("id");
 
       if (erroAtualizacao) {
         throw erroAtualizacao;
       }
 
+      if (!denunciasAtualizadas || denunciasAtualizadas.length === 0) {
+        throw new Error(
+          "O conteúdo foi removido, mas nenhuma denúncia correspondente pôde ser atualizada."
+        );
+      }
     } catch (error) {
       setErro(criarMensagemErro("Erro ao remover conteúdo denunciado", error));
-      setAcaoEmAndamento("");
       return;
+    } finally {
+      setAcaoEmAndamento("");
     }
 
     setDenuncias((denunciasAtuais) =>
@@ -1153,7 +999,6 @@ export default function AdminComunidadePage() {
         denuncia.alvoTipo === "post" ? "Publicação removida" : "Comentário removido"
       } e denúncia marcada como resolvida.`
     );
-    setAcaoEmAndamento("");
   }
 
   async function arquivarDenuncia(denunciaId: string) {
@@ -1174,13 +1019,21 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("comunidade_denuncias")
         .update({ arquivada: true })
-        .eq("id", denunciaId);
+        .eq("id", denunciaId)
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         throw error;
+      }
+
+      if (!data?.id) {
+        throw new Error(
+          "A denúncia não foi encontrada ou não pôde ser arquivada."
+        );
       }
 
       setDenuncias((denunciasAtuais) =>
@@ -1220,13 +1073,21 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("comunidade_denuncias")
         .update({ arquivada: false })
-        .eq("id", denunciaId);
+        .eq("id", denunciaId)
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         throw error;
+      }
+
+      if (!data?.id) {
+        throw new Error(
+          "A denúncia não foi encontrada ou não pôde ser restaurada."
+        );
       }
 
       setDenuncias((denunciasAtuais) =>
@@ -1273,14 +1134,22 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("comunidade_denuncias")
         .delete()
         .eq("id", denunciaId)
-        .eq("status", "resolvida");
+        .eq("status", "resolvida")
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         throw error;
+      }
+
+      if (!data?.id) {
+        throw new Error(
+          "A denúncia resolvida não foi encontrada ou não pôde ser removida."
+        );
       }
 
       setDenuncias((denunciasAtuais) =>
@@ -1325,14 +1194,22 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("denuncias_perfis")
         .delete()
         .eq("id", denunciaId)
-        .eq("status", "resolvida");
+        .eq("status", "resolvida")
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         throw error;
+      }
+
+      if (!data?.id) {
+        throw new Error(
+          "A denúncia de perfil resolvida não foi encontrada ou não pôde ser removida."
+        );
       }
 
       setDenunciasPerfis((denunciasAtuais) =>
@@ -2594,237 +2471,6 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   opacity: 0,
 };
 
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  marginBottom: "18px",
-  padding: "2px 0",
-  minWidth: 0,
-};
-
-const mobileTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "12px",
-  padding: "0",
-};
-
-const desktopTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "16px",
-};
-
-const topActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flex: "0 0 auto",
-};
-
-const desktopTopActionsStyle: CSSProperties = {
-  ...topActionsStyle,
-  gap: "10px",
-};
-
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "calc(100% - 174px)",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
-
-const logoMarkStyle: CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "14px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, var(--historietas-admin-comunidade-accent, #F97316)) 0%, var(--historietas-secondary, var(--historietas-admin-comunidade-secondary, #7C3AED)) 100%)",
-  color: "#FFFFFF",
-  fontSize: "17px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  boxShadow: "none",
-  flex: "0 0 auto",
-};
-
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, var(--historietas-title-from, #FFFFFF) 0%, var(--historietas-title-mid, var(--historietas-admin-comunidade-purple-text, #DDD6FE)) 40%, var(--historietas-title-to, var(--historietas-admin-comunidade-accent-soft, #FDBA74)) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const topButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 13px",
-  borderRadius: "999px",
-  background: "var(--historietas-admin-comunidade-accent-bg, rgba(249,115,22,0.10))",
-  border: "1px solid var(--historietas-admin-comunidade-accent-border, rgba(249,115,22,0.28))",
-  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74))",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const desktopTopButtonStyle: CSSProperties = {
-  ...topButtonStyle,
-  minHeight: "42px",
-  padding: "0 18px",
-  background:
-    "linear-gradient(135deg, var(--historietas-admin-comunidade-accent-bg-strong, rgba(249,115,22,0.16)) 0%, var(--historietas-admin-comunidade-secondary-bg, rgba(124,58,237,0.13)) 100%)",
-  border: "1px solid var(--historietas-admin-comunidade-accent-border-soft, rgba(249,115,22,0.26))",
-  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-pale, #FFD6A8))",
-};
-
-const heroStyle: CSSProperties = {
-  position: "relative",
-  borderRadius: "30px",
-  border: "none",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, var(--historietas-admin-comunidade-surface-gradient-strong, rgba(18,12,30,0.92))) 0%, var(--historietas-surface-strong, var(--historietas-admin-comunidade-surface-strong, rgba(8,3,18,0.98))) 100%)",
-  padding: "18px",
-  boxShadow: "none",
-  minWidth: 0,
-  overflow: "hidden",
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-};
-
-const mobileHeroStyle: CSSProperties = {
-  ...heroStyle,
-  borderRadius: "28px",
-};
-
-const desktopHeroStyle: CSSProperties = {
-  ...heroStyle,
-  padding: "20px 28px",
-  borderRadius: "32px",
-  minHeight: "138px",
-  display: "grid",
-  alignContent: "center",
-};
-
-const heroDecorationLayerStyle: CSSProperties = {
-  display: "none",
-};
-
-
-const headerStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  gap: "16px",
-  marginBottom: "16px",
-  padding: "20px 16px",
-  borderRadius: "28px",
-  background:
-    "linear-gradient(135deg, var(--historietas-surface, var(--historietas-admin-comunidade-surface-gradient, rgba(18,12,30,0.90))) 0%, var(--historietas-surface-strong, var(--historietas-admin-comunidade-surface-strong, rgba(8,3,18,0.98))) 100%)",
-  border: "none",
-  boxShadow: "var(--historietas-hero-shadow, none)",
-  minWidth: 0,
-  overflow: "hidden",
-};
-
-const headerTextStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "780px",
-  margin: "0 auto",
-  textAlign: "center",
-};
-
-const headerActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 180px))",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  minWidth: 0,
-  width: "100%",
-};
-
-const titleStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: "8px auto 0",
-  fontSize: "clamp(34px, 10vw, 60px)",
-  lineHeight: 0.92,
-  fontWeight: 950,
-  letterSpacing: "-0.085em",
-  maxWidth: "100%",
-  textAlign: "center",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-admin-comunidade-title-mid, #F5F3FF) 44%, var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74)) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "0 18px 42px rgba(0,0,0,0.22)",
-  ...safeTextStyle,
-};
-
-const descriptionStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: "10px auto 0",
-  color: "var(--historietas-text-secondary, #E4E4E7)",
-  fontSize: "13px",
-  lineHeight: 1.62,
-  fontWeight: 650,
-  maxWidth: "620px",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const secondaryLinkStyle: CSSProperties = {
-  minHeight: "42px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 15px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
-  color: "var(--historietas-secondary-button-text, var(--historietas-admin-comunidade-purple-text, #DDD6FE))",
-  textDecoration: "none",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  fontSize: "12px",
-  fontWeight: 950,
-  boxSizing: "border-box",
-  textAlign: "center",
-};
-
-const secondaryButtonStyle: CSSProperties = {
-  ...secondaryLinkStyle,
-  cursor: "pointer",
-};
-
 const statsGridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
@@ -2884,39 +2530,6 @@ const toolsStyle: CSSProperties = {
   overflow: "visible",
   backdropFilter: "none",
   WebkitBackdropFilter: "none",
-};
-
-const searchBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  minWidth: 0,
-};
-
-const toolLabelStyle: CSSProperties = {
-  color: "#D4D4D8",
-  fontSize: "11px",
-  fontWeight: 870,
-  letterSpacing: "0.02em",
-  textTransform: "none",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "46px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  outline: "none",
-  borderRadius: "999px",
-  background: "var(--historietas-admin-comunidade-bg-deep, #04000A)",
-  color: "#FFFFFF",
-  padding: "0 16px",
-  boxSizing: "border-box",
-  fontSize: "14px",
-  fontWeight: 720,
-  textAlign: "center",
-  boxShadow: "none",
-  minWidth: 0,
 };
 
 const adminSearchShellStyle: CSSProperties = {
@@ -3662,95 +3275,10 @@ const textareaStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const compactTextareaStyle: CSSProperties = {
-  ...textareaStyle,
-  minHeight: "auto",
-  resize: "none",
-};
-
-const adminObservationReadonlyStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12.5px",
-  lineHeight: 1.45,
-  fontWeight: 800,
-  whiteSpace: "pre-wrap",
-  background: "transparent",
-  border: "none",
-  borderRadius: 0,
-  padding: 0,
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const reportActionsStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-start",
-  gap: "6px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  paddingTop: "2px",
-};
-
-const statusButtonStyle: CSSProperties = {
-  minHeight: "32px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-surface, rgba(255,255,255,0.055))",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10.5px",
-  fontWeight: 950,
-  cursor: "pointer",
-  boxShadow: "none",
-};
-
-const activeStatusButtonStyle: CSSProperties = {
-  ...statusButtonStyle,
-  background: "var(--historietas-active-surface, var(--historietas-admin-comunidade-accent-bg-strong, rgba(249,115,22,0.16)))",
-  border: "1px solid var(--historietas-admin-comunidade-accent-border, rgba(249,115,22,0.28))",
-  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74))",
-  cursor: "default",
-};
-
-const analysisButtonStyle: CSSProperties = {
-  minHeight: "32px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-admin-comunidade-accent-border-soft, rgba(249,115,22,0.26))",
-  background: "var(--historietas-admin-comunidade-accent-bg, rgba(249,115,22,0.10))",
-  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74))",
-  fontSize: "10.5px",
-  fontWeight: 950,
-  cursor: "pointer",
-  boxShadow: "none",
-};
-
-const dangerButtonStyle: CSSProperties = {
-  minHeight: "32px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-admin-comunidade-danger-border-strong, rgba(248,113,113,0.30))",
-  background: "var(--historietas-danger-surface, var(--historietas-admin-comunidade-danger-bg, rgba(248,113,113,0.12)))",
-  color: "var(--historietas-danger-button-text, var(--historietas-admin-comunidade-danger-text, #FCA5A5))",
-  fontSize: "10.5px",
-  fontWeight: 950,
-  cursor: "pointer",
-  boxShadow: "none",
-};
-
 const analysisMetaStyle: CSSProperties = {
   color: "var(--historietas-text-muted, #A1A1AA)",
   fontSize: "10.5px",
   fontWeight: 800,
   textAlign: "right",
-  ...safeTextStyle,
-};
-
-const emptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  fontWeight: 750,
   ...safeTextStyle,
 };

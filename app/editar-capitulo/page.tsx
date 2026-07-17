@@ -152,7 +152,7 @@ function salvarJsonStorageUsuarioEditarCapitulo(
 }
 
 function contarLetrasNumeros(texto: string) {
-  return (texto.match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9]/g) || []).length;
+  return texto.match(/[\p{L}\p{N}]/gu)?.length || 0;
 }
 
 function contarPalavras(texto: string) {
@@ -833,7 +833,14 @@ function carregarObrasLocaisNormalizadas(userId = "") {
     STORAGE_KEY,
     userIdLimpo
   );
-  const obrasSalvasJson = obrasSalvasTexto ? JSON.parse(obrasSalvasTexto) : [];
+  let obrasSalvasJson: unknown = [];
+
+  try {
+    obrasSalvasJson = obrasSalvasTexto ? JSON.parse(obrasSalvasTexto) : [];
+  } catch {
+    obrasSalvasJson = [];
+  }
+
   const backupArquivos = carregarBackupArquivosObras(userIdLimpo);
 
   const obrasNormalizadasBase: ObraLocal[] = Array.isArray(obrasSalvasJson)
@@ -1035,7 +1042,6 @@ export default function EditarCapituloPage() {
   const [obras, setObras] = useState<ObraLocal[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [salvou, setSalvou] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
@@ -1097,7 +1103,6 @@ export default function EditarCapituloPage() {
 
         if (erroUsuario || !userId) {
           if (!cancelado) {
-            setUsuarioIdLogado("");
             setVerificandoAcesso(false);
             setCarregando(false);
           }
@@ -1109,7 +1114,6 @@ export default function EditarCapituloPage() {
         }
 
         if (!cancelado) {
-          setUsuarioIdLogado(userId);
           setVerificandoAcesso(false);
         }
 
@@ -1564,7 +1568,6 @@ export default function EditarCapituloPage() {
           autor: autorFinalObra,
         };
 
-      setUsuarioIdLogado(userId);
       setObras(novasObrasDoUsuario);
 
       if (registroSupabase) {
@@ -2575,58 +2578,6 @@ const previewTopRowStyle: CSSProperties = {
 
 
 
-
-const emptyBoxStyle: CSSProperties = {
-  marginTop: "24px",
-  display: "grid",
-  gap: "12px",
-  padding: "22px",
-  borderRadius: "26px",
-  background: "var(--historietas-editar-capitulo-panel, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.06)",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
-
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "28px",
-  fontWeight: 950,
-  letterSpacing: "-0.05em",
-  ...safeTextStyle,
-};
-
-const emptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
-  lineHeight: 1.7,
-  fontWeight: 600,
-  ...safeTextStyle,
-};
-
-const emptyButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "50px",
-  borderRadius: "999px",
-  background: "var(--historietas-accent, var(--historietas-editar-capitulo-accent, #F97316))",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "14px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,

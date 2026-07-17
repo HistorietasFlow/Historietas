@@ -325,6 +325,24 @@ export function aplicarTemaVisual(
     "--historietas-secondary-button-text": tema.secondaryButtonText,
     "--historietas-danger-surface": tema.dangerSurface,
     "--historietas-danger-button-text": tema.dangerButtonText,
+    "--historietas-obra-bg-deep":
+      temaSeguro === "foco" ? "#000000" : "#04000A",
+    "--historietas-obra-bg-shadow-42":
+      temaSeguro === "foco"
+        ? "rgba(0,0,0,0.72)"
+        : "rgba(3,2,8,0.42)",
+    "--historietas-obra-menu-98":
+      temaSeguro === "foco" ? "#000000" : "rgba(18,9,35,0.98)",
+    "--historietas-obra-purple-58":
+      temaSeguro === "foco"
+        ? "rgba(255,255,255,0.18)"
+        : "rgba(59,7,100,0.58)",
+    "--historietas-obra-purple-72":
+      temaSeguro === "foco" ? "#050505" : "rgba(59,7,100,0.72)",
+    "--historietas-obra-secondary-soft-34":
+      temaSeguro === "foco"
+        ? "rgba(255,255,255,0.18)"
+        : "rgba(167,139,250,0.34)",
   };
 
   Object.entries(variaveis).forEach(([variavel, valor]) => {
@@ -443,6 +461,42 @@ export const historietasThemeCss = `
     border-color: #FFFFFF !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] {
+    --historietas-obra-bg-deep: #000000;
+    --historietas-obra-bg-shadow-42: rgba(0,0,0,0.72);
+    --historietas-obra-menu-98: #000000;
+    --historietas-obra-purple-58: rgba(255,255,255,0.18);
+    --historietas-obra-purple-72: #050505;
+    --historietas-obra-secondary-soft-34: rgba(255,255,255,0.18);
+    --historietas-text-primary: #FFFFFF;
+    --historietas-text-secondary: #A1A1AA;
+    --historietas-border-soft: rgba(255,255,255,0.18);
+    --historietas-input-bg: #000000;
+    --historietas-input-text: #FFFFFF;
+    --historietas-input-placeholder: #A1A1AA;
+    --historietas-danger-button-text: #FFFFFF;
+    color: #FFFFFF;
+  }
+
+  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] [role="dialog"],
+  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] [role="menu"] {
+    background-color: #000000 !important;
+    border-color: rgba(255,255,255,0.18) !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] textarea {
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.18) !important;
+    color: #FFFFFF !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] textarea::placeholder {
+    color: #A1A1AA !important;
+    opacity: 1 !important;
   }
 
   html[data-historietas-tema-visual="foco"] ::selection {

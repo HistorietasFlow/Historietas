@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
@@ -758,26 +758,32 @@ export default function EmBrevePage() {
 
   const obrasEmBreve = removerObrasDuplicadasEmBreve(obrasReaisEmBreve);
 
+  const obrasSalvasNormalizadas = useMemo(() => {
+    if (!usuarioIdLogado || obrasReaisEmBreve.length === 0) {
+      return obrasSalvas;
+    }
+
+    return normalizarLancamentosSalvosComObrasEmBreve(
+      obrasSalvas,
+      obrasReaisEmBreve
+    );
+  }, [obrasReaisEmBreve, obrasSalvas, usuarioIdLogado]);
+
   useEffect(() => {
     if (!usuarioIdLogado || obrasReaisEmBreve.length === 0) {
       return;
     }
 
-    setObrasSalvas((obrasAtuais) => {
-      const obrasNormalizadas = normalizarLancamentosSalvosComObrasEmBreve(
-        obrasAtuais,
-        obrasReaisEmBreve
-      );
-
-      salvarJsonUsuarioEmBreve(
-        SAVED_RELEASES_STORAGE_KEY,
-        usuarioIdLogado,
-        obrasNormalizadas
-      );
-
-      return obrasNormalizadas;
-    });
-  }, [obrasReaisEmBreve, usuarioIdLogado]);
+    salvarJsonUsuarioEmBreve(
+      SAVED_RELEASES_STORAGE_KEY,
+      usuarioIdLogado,
+      obrasSalvasNormalizadas
+    );
+  }, [
+    obrasReaisEmBreve.length,
+    obrasSalvasNormalizadas,
+    usuarioIdLogado,
+  ]);
 
   const obraConsultada = obraIdConsultada || nomeObra
     ? obrasEmBreve.find((obra) => {
@@ -818,7 +824,7 @@ export default function EmBrevePage() {
         return;
       }
 
-      const avisoAtivo = listaTemObraEmBreve(obra, obrasSalvas);
+      const avisoAtivo = listaTemObraEmBreve(obra, obrasSalvasNormalizadas);
       const deveAtivar = !avisoAtivo;
       const sincronizou = await sincronizarAvisoLancamentoSupabaseEmBreve(
         data.user.id,
@@ -834,8 +840,8 @@ export default function EmBrevePage() {
       }
 
       const novasObrasSalvas = deveAtivar
-        ? adicionarObraNaListaEmBreve(obra, obrasSalvas)
-        : removerObraDaListaEmBreve(obra, obrasSalvas);
+        ? adicionarObraNaListaEmBreve(obra, obrasSalvasNormalizadas)
+        : removerObraDaListaEmBreve(obra, obrasSalvasNormalizadas);
       const obrasNormalizadas = normalizarLancamentosSalvosComObrasEmBreve(
         novasObrasSalvas,
         obrasReaisEmBreve
@@ -911,7 +917,7 @@ export default function EmBrevePage() {
 
             <div style={desktopLayout ? desktopRelatedGridStyle : relatedGridStyle}>
               {outrasObrasEmBreve.map((obra) => {
-                const obraSalva = listaTemObraEmBreve(obra, obrasSalvas);
+                const obraSalva = listaTemObraEmBreve(obra, obrasSalvasNormalizadas);
 
                 return (
                   <article

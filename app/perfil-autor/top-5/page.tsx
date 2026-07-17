@@ -237,27 +237,6 @@ function normalizarObraLocalTop5(obra: ObraTop5Salva, obraIndex: number): ObraTo
   };
 }
 
-function criarArquivoObraSupabase(row: SupabaseObraTop5Row): ArquivoObraLocal | null {
-  const conteudo = pegarTexto(
-    row.arquivo_url ?? row.arquivoUrl ?? row.arquivo_conteudo ?? row.arquivoObra,
-  );
-
-  if (!conteudo) {
-    return null;
-  }
-
-  const tipo = pegarTexto(row.arquivo_tipo ?? row.arquivoTipo, "outro");
-
-  return {
-    nome: pegarTexto(row.arquivo_nome ?? row.arquivoNome, "arquivo-da-obra"),
-    tipo,
-    tamanho: pegarNumero(row.arquivo_tamanho ?? row.arquivoTamanho, 0),
-    conteudo,
-    categoria: normalizarCategoriaArquivo(tipo),
-    criadoEm: pegarTexto(row.arquivo_criado_em ?? row.arquivoCriadoEm ?? row.created_at),
-  };
-}
-
 function normalizarObraSupabaseTop5(row: SupabaseObraTop5Row, index: number): ObraTop5 {
   const titulo = pegarTexto(row.titulo, `Obra ${index + 1}`);
   const slug = pegarTexto(row.slug, criarSlugBase(titulo));
@@ -277,7 +256,7 @@ function normalizarObraSupabaseTop5(row: SupabaseObraTop5Row, index: number): Ob
     tags: pegarTags(row.tags),
     capa: pegarTexto(row.capa_url ?? row.capaUrl ?? row.capa, ""),
     capaNome: pegarTexto(row.capa_nome ?? row.capaNome, ""),
-    arquivoObra: criarArquivoObraSupabase(row),
+    arquivoObra: null,
     publicado: pegarBooleano(row.publicado, false),
     capitulos: [],
     criadaEm: pegarTexto(row.created_at ?? row.criada_em ?? row.criadaEm, ""),
@@ -348,19 +327,20 @@ function salvarJsonStorageUsuarioTop5(
   const userIdLimpo = userId.trim();
 
   if (typeof window === "undefined" || !userIdLimpo) {
-    return;
+    return false;
   }
 
   try {
     const chaveStorage = criarStorageKeyUsuarioTop5(chave, userIdLimpo);
 
     if (!chaveStorage) {
-      return;
+      return false;
     }
 
     localStorage.setItem(chaveStorage, JSON.stringify(valor));
+    return true;
   } catch {
-    // localStorage é apoio; a página continua com o estado em memória.
+    return false;
   }
 }
 
@@ -392,7 +372,7 @@ async function carregarObrasSupabaseTop5() {
     const { data, error } = await supabase
       .from("obras")
       .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,criada_em,atualizado_em",
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,publicado,visualizacoes,slug,criada_em,atualizado_em",
       )
       .eq("publicado", true)
       .order("criada_em", { ascending: false })
@@ -491,10 +471,10 @@ function salvarTop5(userId: string, ids: string[]) {
   const userIdLimpo = userId.trim();
 
   if (typeof window === "undefined" || !userIdLimpo) {
-    return;
+    return false;
   }
 
-  salvarJsonStorageUsuarioTop5(
+  return salvarJsonStorageUsuarioTop5(
     TOP_FIVE_STORAGE_KEY,
     userIdLimpo,
     ids.slice(0, TOP_FIVE_MAXIMO),
@@ -629,7 +609,7 @@ export default function Top5PerfilAutorPage() {
       }
     }
 
-    iniciarPagina();
+    void iniciarPagina();
 
     return () => {
       cancelado = true;
@@ -740,7 +720,12 @@ export default function Top5PerfilAutorPage() {
         obras,
       );
 
-      salvarTop5(usuario.id, idsValidos);
+      const salvou = salvarTop5(usuario.id, idsValidos);
+
+      if (!salvou) {
+        throw new Error("Não foi possível gravar o TOP 5 no navegador.");
+      }
+
       setIdsSelecionados(idsValidos);
       router.push("/perfil-autor");
     } catch {
@@ -844,7 +829,11 @@ export default function Top5PerfilAutorPage() {
         </label>
       </section>
 
-      {mensagem && <p style={messageStyle}>{mensagem}</p>}
+      {mensagem && (
+        <p role="status" aria-live="polite" style={messageStyle}>
+          {mensagem}
+        </p>
+      )}
 
       {!usuario && !carregando && (
         <section style={noticeStyle}>
@@ -859,6 +848,12 @@ export default function Top5PerfilAutorPage() {
       )}
 
       <section style={gridSectionStyle} aria-label="Lista de obras disponíveis">
+        {carregando && (
+          <p role="status" aria-live="polite" style={loadingStyle}>
+            Carregando obras...
+          </p>
+        )}
+
         {!carregando && (
           obrasFiltradas.length > 0 ? (
             <div style={worksGridStyle}>
@@ -1135,6 +1130,14 @@ const messageStyle: CSSProperties = {
   color: "var(--historietas-top5-message, #FDE68A)",
   fontSize: "12px",
   fontWeight: 800,
+};
+
+const loadingStyle: CSSProperties = {
+  margin: "18px 0 0",
+  color: "rgba(255,255,255,0.72)",
+  fontSize: "12px",
+  fontWeight: 800,
+  textAlign: "center",
 };
 
 const noticeStyle: CSSProperties = {

@@ -2286,7 +2286,13 @@ export default function Home() {
   }, [obrasPublicadas, termoBusca]);
 
   useEffect(() => {
-    setHeroIndex(0);
+    const redefinirHeroTimer = window.setTimeout(() => {
+      setHeroIndex(0);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(redefinirHeroTimer);
+    };
   }, [termoBusca]);
 
   useEffect(() => {
@@ -2751,15 +2757,19 @@ export default function Home() {
           .filter((autorId) => idObraSupabaseValido(autorId))
       )
     );
-
-    if (autorIds.length === 0) {
-      setAvaliacoesAutoresHome({});
-      return;
-    }
-
     let cancelado = false;
 
     async function carregarAvaliacoesAutoresHome() {
+      if (autorIds.length === 0) {
+        await Promise.resolve();
+
+        if (!cancelado) {
+          setAvaliacoesAutoresHome({});
+        }
+
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from("autor_avaliacoes")

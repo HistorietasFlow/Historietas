@@ -7,11 +7,31 @@ const supabasePublishableKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
   "";
 
-const supabaseConfigurado = Boolean(supabaseUrl && supabasePublishableKey);
+function urlSupabaseValida(url: string) {
+  if (!url) {
+    return false;
+  }
+
+  try {
+    const urlValidada = new URL(url);
+
+    return (
+      (urlValidada.protocol === "https:" ||
+        urlValidada.protocol === "http:") &&
+      Boolean(urlValidada.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+const supabaseConfigurado = Boolean(
+  urlSupabaseValida(supabaseUrl) && supabasePublishableKey,
+);
 
 function criarErroSupabaseNaoConfigurado() {
   return new Error(
-    "Supabase não configurado. Verifique NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY."
+    "Supabase não configurado. Verifique NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.",
   );
 }
 
@@ -46,7 +66,7 @@ function criarQueryBuilderIndisponivel(): unknown {
 
         return () => proxy;
       },
-    }
+    },
   );
 
   return proxy;
@@ -65,6 +85,14 @@ function criarCanalSupabaseIndisponivel() {
 }
 
 function criarClienteSupabaseIndisponivel(): SupabaseClient {
+  const criarRespostaAuthVazia = () => ({
+    data: {
+      user: null,
+      session: null,
+    },
+    error: criarErroSupabaseNaoConfigurado(),
+  });
+
   return {
     auth: {
       getUser: async () => ({
@@ -84,12 +112,10 @@ function criarClienteSupabaseIndisponivel(): SupabaseClient {
           },
         },
       }),
-      signUp: async () => ({
-        data: { user: null, session: null },
-        error: criarErroSupabaseNaoConfigurado(),
-      }),
-      signInWithPassword: async () => ({
-        data: { user: null, session: null },
+      signUp: async () => criarRespostaAuthVazia(),
+      signInWithPassword: async () => criarRespostaAuthVazia(),
+      updateUser: async () => ({
+        data: { user: null },
         error: criarErroSupabaseNaoConfigurado(),
       }),
       signOut: async () => ({
@@ -124,6 +150,14 @@ function criarClienteSupabaseIndisponivel(): SupabaseClient {
           data: null,
           error: criarErroSupabaseNaoConfigurado(),
         }),
+        createSignedUrl: async () => ({
+          data: null,
+          error: criarErroSupabaseNaoConfigurado(),
+        }),
+        createSignedUrls: async () => ({
+          data: null,
+          error: criarErroSupabaseNaoConfigurado(),
+        }),
         getPublicUrl: () => ({
           data: { publicUrl: "" },
         }),
@@ -134,7 +168,7 @@ function criarClienteSupabaseIndisponivel(): SupabaseClient {
 
 if (!supabaseConfigurado && typeof window !== "undefined") {
   console.error(
-    "Supabase não configurado. Verifique NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY."
+    "Supabase não configurado. Verifique NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.",
   );
 }
 
