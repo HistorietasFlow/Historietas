@@ -11,6 +11,7 @@ const rotasProtegidas = [
   "/painel-autor",
   "/publicar",
   "/seguindo",
+  "/ver-arquivo",
 ] as const;
 
 type CookieParaSalvar = {
@@ -30,9 +31,9 @@ function normalizarPathname(pathname: string) {
 function rotaEstaProtegida(pathname: string) {
   const caminho = normalizarPathname(pathname);
 
-  return rotasProtegidas.some((rota) => {
-    return caminho === rota || caminho.startsWith(`${rota}/`);
-  });
+  return rotasProtegidas.some(
+    (rota) => caminho === rota || caminho.startsWith(`${rota}/`),
+  );
 }
 
 function urlSupabaseValida(url: string) {
@@ -44,8 +45,7 @@ function urlSupabaseValida(url: string) {
     const urlValidada = new URL(url);
 
     return (
-      (urlValidada.protocol === "https:" ||
-        urlValidada.protocol === "http:") &&
+      ["https:", "http:"].includes(urlValidada.protocol) &&
       Boolean(urlValidada.hostname)
     );
   } catch {
@@ -67,10 +67,11 @@ function obterRedirectToSeguro(valor: string | null, fallback: string) {
   }
 
   try {
-    const urlDestino = new URL(destino, "https://historietas.local");
+    const origemInterna = "https://historietas.local";
+    const urlDestino = new URL(destino, origemInterna);
     const caminho = normalizarPathname(urlDestino.pathname);
 
-    if (urlDestino.origin !== "https://historietas.local") {
+    if (urlDestino.origin !== origemInterna) {
       return fallback;
     }
 
@@ -85,9 +86,7 @@ function obterRedirectToSeguro(valor: string | null, fallback: string) {
 }
 
 function obterPathComBusca(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
-
-  return `${pathname}${search}`;
+  return `${request.nextUrl.pathname}${request.nextUrl.search}`;
 }
 
 function aplicarCookiesNaResposta(
@@ -180,10 +179,6 @@ export async function proxy(request: NextRequest) {
   let cookiesPendentes: CookieParaSalvar[] = [];
   let response = criarRespostaContinuar(request);
 
-  function recriarRespostaComCookies() {
-    response = criarRespostaContinuar(request, cookiesPendentes);
-  }
-
   const supabase = createServerClient(supabaseUrl, supabasePublicKey, {
     cookies: {
       getAll() {
@@ -203,27 +198,28 @@ export async function proxy(request: NextRequest) {
         });
 
         cookiesPendentes = Array.from(cookiesPorChave.values());
-        recriarRespostaComCookies();
+        response = criarRespostaContinuar(request, cookiesPendentes);
       },
     },
   });
 
-  let user = null;
-  let erroUsuario = null;
+  let usuarioAutenticado = false;
+  let falhaAoValidarSessao = false;
 
   try {
-    const resultadoUsuario = await supabase.auth.getUser();
-    user = resultadoUsuario.data.user;
-    erroUsuario = resultadoUsuario.error;
+    const { data, error } = await supabase.auth.getUser();
+
+    usuarioAutenticado = Boolean(data.user);
+    falhaAoValidarSessao = Boolean(error);
   } catch {
-    erroUsuario = new Error("Não foi possível validar a sessão.");
+    falhaAoValidarSessao = true;
   }
 
-  if (precisaLogin && (erroUsuario || !user)) {
+  if (precisaLogin && (falhaAoValidarSessao || !usuarioAutenticado)) {
     return criarRedirectLogin(request, cookiesPendentes);
   }
 
-  if (estaNoLogin && user) {
+  if (estaNoLogin && usuarioAutenticado) {
     const redirectTo = request.nextUrl.searchParams.get("redirectTo");
 
     return criarRedirectSeguro(

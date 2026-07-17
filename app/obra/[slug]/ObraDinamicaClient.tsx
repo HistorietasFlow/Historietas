@@ -17,6 +17,8 @@ const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 const LOCAL_WORKS_STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
+const PRIVATE_WORK_FILES_BUCKET = "arquivos-obras";
+const PRIVATE_WORK_FILE_SIGNED_URL_TTL_SECONDS = 60 * 60 * 6;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const VERSAO_INTERACOES_OBRA_PUBLICA = "fix-interacoes-obra-2026-06-16-0022";
@@ -678,6 +680,90 @@ function normalizarCategoriaArquivoSupabase(
   }
 
   return "outro";
+}
+
+
+function decodificarCaminhoArquivoObra(caminho: string) {
+  try {
+    return decodeURIComponent(caminho);
+  } catch {
+    return caminho;
+  }
+}
+
+function normalizarCaminhoStorageArquivoObra(caminho: string) {
+  const caminhoSemBusca = caminho.split("?")[0]?.split("#")[0] || "";
+  const caminhoDecodificado = decodificarCaminhoArquivoObra(caminhoSemBusca)
+    .replace(/^\/+/, "")
+    .trim();
+  const prefixos = [
+    "storage/v1/object/sign/arquivos-obras/",
+    "storage/v1/object/public/arquivos-obras/",
+    "storage/v1/object/authenticated/arquivos-obras/",
+    "storage/v1/object/arquivos-obras/",
+    "arquivos-obras/",
+  ];
+
+  let caminhoObjeto = caminhoDecodificado;
+
+  for (const prefixo of prefixos) {
+    const indicePrefixo = caminhoDecodificado.indexOf(prefixo);
+
+    if (indicePrefixo >= 0) {
+      caminhoObjeto = caminhoDecodificado.slice(
+        indicePrefixo + prefixo.length
+      );
+      break;
+    }
+  }
+
+  const caminhoLimpo = caminhoObjeto.replace(/^\/+/, "").trim();
+  const pastaProprietario = caminhoLimpo.split("/")[0] || "";
+
+  return idObraSupabaseValido(pastaProprietario) ? caminhoLimpo : "";
+}
+
+function obterCaminhoStorageArquivoObra(conteudo: string) {
+  const valor = conteudo.trim();
+
+  if (!valor || /^(?:data|blob):/i.test(valor)) {
+    return "";
+  }
+
+  try {
+    const url = new URL(valor);
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return "";
+    }
+
+    return normalizarCaminhoStorageArquivoObra(url.pathname);
+  } catch {
+    return normalizarCaminhoStorageArquivoObra(valor);
+  }
+}
+
+async function criarUrlAssinadaArquivoObra(caminho: string) {
+  const caminhoLimpo = caminho.trim();
+
+  if (!caminhoLimpo) {
+    throw new Error("Caminho do arquivo ausente.");
+  }
+
+  const { data, error } = await supabase.storage
+    .from(PRIVATE_WORK_FILES_BUCKET)
+    .createSignedUrl(
+      caminhoLimpo,
+      PRIVATE_WORK_FILE_SIGNED_URL_TTL_SECONDS
+    );
+
+  const urlAssinada = data?.signedUrl?.trim() || "";
+
+  if (error || !urlAssinada) {
+    throw error || new Error("Não foi possível criar a URL do arquivo.");
+  }
+
+  return urlAssinada;
 }
 
 function normalizarObraSupabase(
@@ -2559,13 +2645,16 @@ export default function ObraDinamicaPage() {
       return;
     }
 
-    setAgoraComentarios(Date.now());
+    const inicioRelogioComentarios = window.setTimeout(() => {
+      setAgoraComentarios(Date.now());
+    }, 0);
 
     const relogioComentarios = window.setInterval(() => {
       setAgoraComentarios(Date.now());
     }, 1000);
 
     return () => {
+      window.clearTimeout(inicioRelogioComentarios);
       window.clearInterval(relogioComentarios);
     };
   }, [comentariosAbertos]);
@@ -5357,8 +5446,70 @@ function ArquivoObraPublico({
 }) {
   const tamanhoArquivo = formatarTamanhoArquivo(arquivo.tamanho);
   const dataArquivo = formatarData(arquivo.criadoEm);
-  const arquivoHref = arquivo.conteudo;
-  const nomeArquivoDownload = arquivo.nome?.trim() || "arquivo-da-obra";
+  const arquivoConteudo = arquivo.conteudo.trim();
+  const caminhoStorageArquivo =
+    obterCaminhoStorageArquivoObra(arquivoConteudo);
+  const nomeArquivoDownload =
+    arquivo.nome?.trim() || "arquivo-da-obra";
+  const [arquivoAssinado, setArquivoAssinado] = useState({
+    caminho: "",
+    url: "",
+    erro: "",
+  });
+
+  useEffect(() => {
+    if (!caminhoStorageArquivo) {
+      return;
+    }
+
+    let cancelado = false;
+
+    async function prepararArquivoPrivado() {
+      try {
+        const url = await criarUrlAssinadaArquivoObra(
+          caminhoStorageArquivo
+        );
+
+        if (!cancelado) {
+          setArquivoAssinado({
+            caminho: caminhoStorageArquivo,
+            url,
+            erro: "",
+          });
+        }
+      } catch {
+        if (!cancelado) {
+          setArquivoAssinado({
+            caminho: caminhoStorageArquivo,
+            url: "",
+            erro: "Não foi possível liberar este arquivo agora.",
+          });
+        }
+      }
+    }
+
+    void prepararArquivoPrivado();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [caminhoStorageArquivo]);
+
+  const assinaturaAtual =
+    arquivoAssinado.caminho === caminhoStorageArquivo;
+  const arquivoHref = caminhoStorageArquivo
+    ? assinaturaAtual
+      ? arquivoAssinado.url
+      : ""
+    : arquivoConteudo;
+  const arquivoErro =
+    caminhoStorageArquivo && assinaturaAtual
+      ? arquivoAssinado.erro
+      : "";
+  const arquivoCarregando = Boolean(
+    caminhoStorageArquivo && !assinaturaAtual
+  );
+  const arquivoIndisponivel = !arquivoHref;
 
   async function baixarArquivo() {
     if (!arquivoHref) {
@@ -5373,7 +5524,8 @@ function ArquivoObraPublico({
       }
 
       const arquivoBlob = await resposta.blob();
-      const arquivoUrlTemporaria = window.URL.createObjectURL(arquivoBlob);
+      const arquivoUrlTemporaria =
+        window.URL.createObjectURL(arquivoBlob);
       const linkDownload = document.createElement("a");
 
       linkDownload.href = arquivoUrlTemporaria;
@@ -5381,6 +5533,7 @@ function ArquivoObraPublico({
       document.body.appendChild(linkDownload);
       linkDownload.click();
       linkDownload.remove();
+
       window.setTimeout(() => {
         window.URL.revokeObjectURL(arquivoUrlTemporaria);
       }, 1000);
@@ -5400,15 +5553,25 @@ function ArquivoObraPublico({
     <section style={isDesktop ? desktopFileBoxStyle : fileBoxStyle}>
       <div style={isDesktop ? desktopFileInfoCardStyle : fileInfoCardStyle}>
         <a
-          href={arquivoHref}
+          href={arquivoHref || undefined}
           target="_blank"
           rel="noopener noreferrer"
-          style={filePreviewLinkStyle}
+          style={{
+            ...filePreviewLinkStyle,
+            opacity: arquivoIndisponivel ? 0.56 : 1,
+            pointerEvents: arquivoIndisponivel ? "none" : "auto",
+          }}
           aria-label={`Abrir arquivo ${arquivo.nome}`}
+          aria-disabled={arquivoIndisponivel}
+          onClick={(event) => {
+            if (arquivoIndisponivel) {
+              event.preventDefault();
+            }
+          }}
         >
-          {arquivo.categoria === "imagem" ? (
+          {arquivo.categoria === "imagem" && arquivoHref ? (
             <img
-              src={arquivo.conteudo}
+              src={arquivoHref}
               alt={`Prévia do arquivo ${arquivo.nome}`}
               style={fileImagePreviewStyle}
             />
@@ -5417,8 +5580,8 @@ function ArquivoObraPublico({
               {arquivo.categoria === "documento"
                 ? "PDF"
                 : arquivo.categoria === "texto"
-                ? "TXT"
-                : "ARQ"}
+                  ? "TXT"
+                  : "ARQ"}
             </span>
           )}
         </a>
@@ -5428,22 +5591,56 @@ function ArquivoObraPublico({
             {tituloObra} • {tamanhoArquivo} • {dataArquivo}
           </span>
 
+          {arquivoErro ? (
+            <span
+              style={{
+                ...fileMetaStyle,
+                color: "var(--historietas-obra-danger, #EF4444)",
+              }}
+            >
+              {arquivoErro}
+            </span>
+          ) : null}
+
           <div style={isDesktop ? desktopFileActionsStyle : fileActionsStyle}>
             <a
-              href={arquivoHref}
+              href={arquivoHref || undefined}
               target="_blank"
               rel="noopener noreferrer"
-              style={filePrimaryButtonStyle}
+              aria-disabled={arquivoIndisponivel}
+              onClick={(event) => {
+                if (arquivoIndisponivel) {
+                  event.preventDefault();
+                }
+              }}
+              style={{
+                ...filePrimaryButtonStyle,
+                opacity: arquivoIndisponivel ? 0.58 : 1,
+                pointerEvents: arquivoIndisponivel ? "none" : "auto",
+              }}
             >
-              Abrir arquivo
+              {arquivoCarregando
+                ? "Preparando arquivo..."
+                : arquivoErro
+                  ? "Arquivo indisponível"
+                  : "Abrir arquivo"}
             </a>
 
             <button
               type="button"
               onClick={baixarArquivo}
-              style={fileSecondaryButtonStyle}
+              disabled={arquivoIndisponivel}
+              style={{
+                ...fileSecondaryButtonStyle,
+                opacity: arquivoIndisponivel ? 0.58 : 1,
+                cursor: arquivoIndisponivel
+                  ? "not-allowed"
+                  : "pointer",
+              }}
             >
-              Baixar arquivo
+              {arquivoCarregando
+                ? "Preparando..."
+                : "Baixar arquivo"}
             </button>
           </div>
         </div>
