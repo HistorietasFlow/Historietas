@@ -2480,6 +2480,46 @@ function obterIdsComentarioComRespostas(
   return ids;
 }
 
+function LoadingSpinner({
+  label = "Carregando",
+  compacto = false,
+}: {
+  label?: string;
+  compacto?: boolean;
+}) {
+  if (compacto) {
+    return (
+      <span
+        role="status"
+        aria-live="polite"
+        aria-label={label}
+        style={loadingInlineStyle}
+      >
+        <span
+          className="historietas-loading-spinner"
+          style={loadingSpinnerCompactStyle}
+          aria-hidden="true"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 export default function ObraDinamicaPage() {
   const router = useRouter();
   const params = useParams<{ slug?: string | string[] }>();
@@ -4691,7 +4731,12 @@ export default function ObraDinamicaPage() {
 
               <section style={commentsSheetListStyle}>
                 {comentariosCarregando ? (
-                  <p style={emptyCommentsStyle}>Carregando comentários...</p>
+                  <div style={commentsLoadingStyle}>
+                    <LoadingSpinner
+                      compacto
+                      label="Carregando comentários"
+                    />
+                  </div>
                 ) : estruturaComentariosObra.comentariosRaiz.length > 0 ? (
                   estruturaComentariosObra.comentariosRaiz.map((comentario) => {
                     const respostas =
@@ -4881,7 +4926,14 @@ export default function ObraDinamicaPage() {
                     cursor: comentarioEnviando ? "not-allowed" : "pointer",
                   }}
                 >
-                  {comentarioEnviando ? "..." : "↑"}
+                  {comentarioEnviando ? (
+                    <LoadingSpinner
+                      compacto
+                      label="Enviando comentário"
+                    />
+                  ) : (
+                    "↑"
+                  )}
                 </button>
               </form>
 
@@ -4896,11 +4948,13 @@ export default function ObraDinamicaPage() {
 
   if (carregandoObras && !obra) {
     return (
-      <main style={pageThemeStyle}>
+      <main style={pageThemeStyle} aria-busy="true">
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <LoadingSpinner label="Carregando obra" />
       </main>
     );
   }
@@ -5623,11 +5677,16 @@ function ArquivoObraPublico({
                 pointerEvents: arquivoIndisponivel ? "none" : "auto",
               }}
             >
-              {arquivoCarregando
-                ? "Preparando arquivo..."
-                : arquivoErro
-                  ? "Arquivo indisponível"
-                  : "Abrir arquivo"}
+              {arquivoCarregando ? (
+                <LoadingSpinner
+                  compacto
+                  label="Preparando arquivo"
+                />
+              ) : arquivoErro ? (
+                "Arquivo indisponível"
+              ) : (
+                "Abrir arquivo"
+              )}
             </a>
 
             <button
@@ -5642,9 +5701,14 @@ function ArquivoObraPublico({
                   : "pointer",
               }}
             >
-              {arquivoCarregando
-                ? "Preparando..."
-                : "Baixar arquivo"}
+              {arquivoCarregando ? (
+                <LoadingSpinner
+                  compacto
+                  label="Preparando download"
+                />
+              ) : (
+                "Baixar arquivo"
+              )}
             </button>
           </div>
         </div>
@@ -5744,6 +5808,18 @@ function CommunityItem({
 }
 
 const obraPageCss = `
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   @keyframes historietas-stat-heart-pop {
     0% { transform: scale(1); }
     45% { transform: scale(1.28); }
@@ -5865,6 +5941,46 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   zIndex: 0,
   background: "transparent",
   opacity: 0,
+};
+
+const loadingPageStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingInlineStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "18px",
+  height: "18px",
+  lineHeight: 1,
+  verticalAlign: "middle",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
+};
+
+const loadingSpinnerCompactStyle: CSSProperties = {
+  ...loadingSpinnerStyle,
+  width: "18px",
+  height: "18px",
+  borderWidth: "2px",
 };
 
 const pageStyle: CSSProperties = {
@@ -7130,6 +7246,15 @@ const commentSheetHeartIconStyle: CSSProperties = {
   width: "19px",
   height: "19px",
   display: "block",
+};
+
+const commentsLoadingStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "58px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
 };
 
 const emptyCommentsStyle: CSSProperties = {

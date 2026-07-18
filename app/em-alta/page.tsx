@@ -1791,6 +1791,23 @@ function criarDecoracaoPaginaStyle(index: number): CSSProperties {
   };
 }
 
+function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 export default function EmAltaPage() {
   const router = useRouter();
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
@@ -2392,6 +2409,19 @@ export default function EmAltaPage() {
     }
   }
 
+  if (carregandoRanking) {
+    return (
+      <main
+        className="historietas-em-alta-page"
+        style={pageThemeStyle}
+        aria-busy="true"
+      >
+        <style>{`${historietasThemeCss}${emAltaPageCss}`}</style>
+        <LoadingSpinner label="Carregando Em Alta" />
+      </main>
+    );
+  }
+
   return (
     <main className="historietas-em-alta-page" style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${emAltaPageCss}`}</style>
@@ -2457,22 +2487,6 @@ export default function EmAltaPage() {
             </Link>
           ) : null}
         </header>
-
-        {false && carregandoRanking && (
-          <p
-            aria-live="polite"
-            aria-busy="true"
-            style={{
-              margin: "10px 0 0",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              fontWeight: 800,
-              textAlign: "center",
-            }}
-          >
-            Carregando rankings
-          </p>
-        )}
 
         {!carregandoRanking && ranking.length > 0 && rankingTemAtividadeReal && (
           <>
@@ -2819,7 +2833,23 @@ function RankingSection({
               : sectionHeaderContentStyle
           }
         >
-          <span className="historietas-em-alta-emoji-icon" style={criarSectionIconStyle(tema)}>{tema.icone}</span>
+          <span
+            className={`historietas-em-alta-emoji-icon${
+              tipo === "curtidas" ? " historietas-em-alta-heart-icon" : ""
+            }`}
+            style={{
+              ...criarSectionIconStyle(tema),
+              ...(tipo === "curtidas"
+                ? {
+                    color:
+                      "#EF4444",
+                    fontFamily: "Arial, Helvetica, sans-serif",
+                  }
+                : {}),
+            }}
+          >
+            {tema.icone}
+          </span>
 
           <div
             style={
@@ -3049,6 +3079,8 @@ function AutorRankingCard({
 
   return (
     <article
+      className="historietas-ranking-card historietas-ranking-author-card"
+      data-ranking-level={temaPosicao.nome.toLowerCase()}
       style={criarCardRankingStyle(posicao, true, "geral", isDesktop)}
       role="link"
       tabIndex={0}
@@ -3138,11 +3170,12 @@ function AutorRankingCard({
         </div>
 
         <div style={authorRankingScoreRowStyle}>
-          <span style={criarAutorPointsBadgeStyle(posicao)}>
+          <span className="historietas-ranking-level-line" style={criarAutorPointsBadgeStyle(posicao)}>
             {formatarNumero(autor.pontuacao)} pts
           </span>
 
           <span
+            className="historietas-ranking-level-line historietas-ranking-tier-badge"
             style={criarAutorTierInlineBadgeStyle(posicao)}
             aria-label={`Posição ${posicao}º — ${temaPosicao.nome}`}
           >
@@ -3210,6 +3243,8 @@ function RankingCard({
 
   return (
     <article
+      className="historietas-ranking-card historietas-ranking-work-card"
+      data-ranking-level={temaPosicao.nome.toLowerCase()}
       style={criarCardRankingStyle(posicao, obra.disponivel, tipo, isDesktop)}
       role="link"
       tabIndex={0}
@@ -3250,15 +3285,18 @@ function RankingCard({
           mostrarClassificacao) && (
           <div style={cardMetaRowStyle}>
             {mostrarFormatoNoTopoRankingMestre && (
-              <span style={formatBadgeStyle}>{formatoCard}</span>
+              <span className="historietas-ranking-level-line" style={formatBadgeStyle}>{formatoCard}</span>
             )}
 
             {mostrarGeneroRanking && (
-              <span style={formatBadgeStyle}>{generoCard}</span>
+              <span className="historietas-ranking-level-line" style={formatBadgeStyle}>{generoCard}</span>
             )}
 
             {mostrarClassificacao && (
-              <span style={classificationBadgeStyle}>
+              <span
+                className="historietas-ranking-level-line"
+                style={classificationBadgeStyle}
+              >
                 {obra.classificacaoIndicativa}
               </span>
             )}
@@ -3337,6 +3375,7 @@ function RankingCard({
           }
         >
           <span
+            className="historietas-ranking-level-line"
             style={
               isDesktop ? desktopRankingThemeBadgeStyle : rankingThemeBadgeStyle
             }
@@ -3349,6 +3388,7 @@ function RankingCard({
           </span>
 
           <span
+            className="historietas-ranking-level-line historietas-ranking-tier-badge"
             style={criarRankingTierInlineBadgeStyle(posicao)}
             aria-label={`Posição ${posicao}º — ${temaPosicao.nome}`}
           >
@@ -3690,6 +3730,18 @@ function criarAutorCardTitleRankingStyle(_posicao: number): CSSProperties {
 }
 
 const emAltaPageCss = `
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   html {
     --historietas-em-alta-hex-04000a: #04000A;
     --historietas-em-alta-hex-061523: #061523;
@@ -4035,12 +4087,45 @@ const emAltaPageCss = `
     outline: none !important;
   }
 
+  html[data-historietas-tema-visual="foco"] .historietas-ranking-card[data-ranking-level="diamante"] {
+    --historietas-ranking-line-color: #7DD3FC;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-ranking-card[data-ranking-level="rubi"] {
+    --historietas-ranking-line-color: #FB7185;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-ranking-card[data-ranking-level="ouro"] {
+    --historietas-ranking-line-color: #FBBF24;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-ranking-card[data-ranking-level="prata"] {
+    --historietas-ranking-line-color: #CBD5E1;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-ranking-card[data-ranking-level="bronze"] {
+    --historietas-ranking-line-color: #FB923C;
+  }
+
   html[data-historietas-tema-visual="foco"] .historietas-em-alta-page article {
     background: #050505 !important;
     background-color: #050505 !important;
     background-image: none !important;
     border: 1px solid rgba(255,255,255,0.18) !important;
     box-shadow: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-page article.historietas-ranking-card {
+    border-color: var(--historietas-ranking-line-color, rgba(255,255,255,0.18)) !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-ranking-card .historietas-ranking-level-line {
+    border: 1px solid var(--historietas-ranking-line-color, rgba(255,255,255,0.18)) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   html[data-historietas-tema-visual="foco"] .historietas-em-alta-page *,
@@ -4059,6 +4144,11 @@ const emAltaPageCss = `
 
   html[data-historietas-tema-visual="foco"] .historietas-em-alta-emoji-icon {
     filter: none !important;
+  }
+
+  html[data-historietas-tema-visual="foco"] .historietas-em-alta-heart-icon {
+    color: #EF4444 !important;
+    -webkit-text-fill-color: #EF4444 !important;
   }
 
   html[data-historietas-tema-visual="foco"] .historietas-em-alta-logo-mark {
@@ -4174,6 +4264,28 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   background: "transparent",
   WebkitMaskImage: "none",
   maskImage: "none",
+};
+
+const loadingPageStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
 };
 
 const pageStyle: CSSProperties = {
@@ -4878,6 +4990,7 @@ const heartMetricIconStyle: CSSProperties = {
 const starMetricIconStyle: CSSProperties = {
   ...metricIconStyle,
   color: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
+  transform: "translateY(-1px)",
 };
 
 const progressCompactStyle: CSSProperties = {

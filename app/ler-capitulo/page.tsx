@@ -2828,7 +2828,14 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
                 </section>
               );
             })
-          ) : carregando ? null : (
+          ) : carregando ? (
+            <div style={commentsLoadingStyle}>
+              <LoadingSpinner
+                compacto
+                label="Carregando comentários"
+              />
+            </div>
+          ) : (
             <p style={emptyCommentsStyle}>Sem comentários ainda</p>
           )}
         </section>
@@ -2906,7 +2913,14 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
                   : "not-allowed",
             }}
           >
-            {comentarioEnviando ? "..." : "↑"}
+            {comentarioEnviando ? (
+              <LoadingSpinner
+                compacto
+                label="Enviando comentário"
+              />
+            ) : (
+              "↑"
+            )}
           </button>
         </form>
       </article>
@@ -2914,6 +2928,46 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
     document.body
   );
 });
+
+function LoadingSpinner({
+  label = "Carregando",
+  compacto = false,
+}: {
+  label?: string;
+  compacto?: boolean;
+}) {
+  if (compacto) {
+    return (
+      <span
+        role="status"
+        aria-live="polite"
+        aria-label={label}
+        style={loadingInlineStyle}
+      >
+        <span
+          className="historietas-loading-spinner"
+          style={loadingSpinnerCompactStyle}
+          aria-hidden="true"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
 
 export default function LerCapituloPage() {
   const router = useRouter();
@@ -4229,10 +4283,11 @@ export default function LerCapituloPage() {
 
   if (carregando) {
     return (
-      <main style={pageThemeStyle}>
+      <main style={pageThemeStyle} aria-busy="true">
         <style>{`${historietasThemeCss}${leitorPageCss}`}</style>
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+        <LoadingSpinner label="Carregando capítulo" />
       </main>
     );
   }
@@ -4630,6 +4685,18 @@ export default function LerCapituloPage() {
 }
 
 const leitorPageCss = `
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   html {
     --historietas-reader-bg-page: #070212;
     --historietas-reader-bg-deep: #04000A;
@@ -4867,6 +4934,46 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   zIndex: 0,
   background: "transparent",
   opacity: 0,
+};
+
+const loadingPageStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingInlineStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "18px",
+  height: "18px",
+  lineHeight: 1,
+  verticalAlign: "middle",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
+};
+
+const loadingSpinnerCompactStyle: CSSProperties = {
+  ...loadingSpinnerStyle,
+  width: "18px",
+  height: "18px",
+  borderWidth: "2px",
 };
 
 const pageStyle: CSSProperties = {
@@ -5954,6 +6061,15 @@ const commentHeartIconStyle: CSSProperties = {
   width: "19px",
   height: "19px",
   display: "block",
+};
+
+const commentsLoadingStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "58px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
 };
 
 const emptyCommentsStyle: CSSProperties = {

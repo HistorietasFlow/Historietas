@@ -2535,6 +2535,46 @@ async function sincronizarObraUsuarioSupabase(
   }
 }
 
+function LoadingSpinner({
+  label = "Carregando",
+  compacto = false,
+}: {
+  label?: string;
+  compacto?: boolean;
+}) {
+  if (compacto) {
+    return (
+      <span
+        role="status"
+        aria-live="polite"
+        aria-label={label}
+        style={loadingInlineStyle}
+      >
+        <span
+          className="historietas-loading-spinner"
+          style={loadingSpinnerCompactStyle}
+          aria-hidden="true"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 export default function SeguindoPage() {
   const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -2545,7 +2585,7 @@ export default function SeguindoPage() {
   const [, setAtividadesSeguindo] = useState<AtividadeSeguindo[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
-  const [, setCarregando] = useState(false);
+  const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState("");
   const [buscaSeguindoAberta, setBuscaSeguindoAberta] = useState(false);
   const [usuariosSugestoesBusca, setUsuariosSugestoesBusca] = useState<
@@ -3373,7 +3413,7 @@ export default function SeguindoPage() {
     );
   }
 
-  if (verificandoAcesso) {
+  if (verificandoAcesso || carregando) {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${seguindoPageCss}`}</style>
@@ -3381,6 +3421,8 @@ export default function SeguindoPage() {
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
 
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <LoadingSpinner label="Carregando seguindo" />
       </main>
     );
   }
@@ -3907,8 +3949,10 @@ export default function SeguindoPage() {
 
                 {carregandoUsuariosSugestoes ? (
                   <div style={suggestedUsersLoadingStyle}>
-                    <span style={suggestedUsersLoadingItemStyle} />
-                    <span style={suggestedUsersLoadingItemStyle} />
+                    <LoadingSpinner
+                      compacto
+                      label="Carregando sugestões para seguir"
+                    />
                   </div>
                 ) : usuariosSugestoesBusca.length > 0 ? (
                   <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
@@ -4064,6 +4108,18 @@ const safeTextStyle: CSSProperties = {
 };
 
 const seguindoPageCss = `
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   html {
     --historietas-seguindo-bg-page: #070212;
     --historietas-seguindo-bg-deep: #04000A;
@@ -4225,6 +4281,44 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   opacity: 0,
 };
 
+
+const loadingPageStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingInlineStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "62px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
+};
+
+const loadingSpinnerCompactStyle: CSSProperties = {
+  ...loadingSpinnerStyle,
+  width: "22px",
+  height: "22px",
+  borderWidth: "2.5px",
+};
 
 const pageStyle: CSSProperties = {
   position: "relative",
@@ -4666,17 +4760,11 @@ const filterResultBadgeStyle: CSSProperties = {
 };
 
 const suggestedUsersLoadingStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-};
-
-const suggestedUsersLoadingItemStyle: CSSProperties = {
-  display: "block",
   width: "100%",
-  height: "62px",
-  borderRadius: "16px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  minWidth: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const suggestedUserInfoStyle: CSSProperties = {

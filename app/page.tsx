@@ -2012,6 +2012,23 @@ function encontrarObraLocalPorHeroHome(
   );
 }
 
+function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -2886,6 +2903,7 @@ export default function Home() {
     return (
       <main style={pageThemeStyle} aria-busy="true">
         <style>{`${themePageCss}${historietasThemeCss}`}</style>
+        <LoadingSpinner label="Carregando página inicial" />
       </main>
     );
   }
@@ -4160,6 +4178,18 @@ function CarouselRow({
 }
 
 const themePageCss = `
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   html[data-historietas-tema-visual] body {
     background: var(--historietas-bg-start, #070212) !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
@@ -4440,6 +4470,28 @@ const heroDecorationLayerStyle: CSSProperties = {
   overflow: "hidden",
   pointerEvents: "none",
   zIndex: 0,
+};
+
+const loadingPageStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
 };
 
 const pageStyle: CSSProperties = {
@@ -5797,6 +5849,7 @@ const authorRatingStarStyle: CSSProperties = {
   marginRight: "3px",
   textShadow: "0 0 8px rgba(250,204,21,0.22)",
   flex: "0 0 auto",
+  transform: "translateY(-1px)",
 };
 
 const authorBottomRowStyle: CSSProperties = {

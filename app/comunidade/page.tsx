@@ -2475,6 +2475,46 @@ const ComentariosSheet = memo(function ComentariosSheet({
   );
 });
 
+function LoadingSpinner({
+  label = "Carregando",
+  compacto = false,
+}: {
+  label?: string;
+  compacto?: boolean;
+}) {
+  if (compacto) {
+    return (
+      <span
+        role="status"
+        aria-live="polite"
+        aria-label={label}
+        style={loadingInlineStyle}
+      >
+        <span
+          className="historietas-loading-spinner"
+          style={loadingSpinnerCompactStyle}
+          aria-hidden="true"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 export default function ComunidadePage() {
   const router = useRouter();
   const [usuario, setUsuario] = useState<UsuarioComunidade | null>(null);
@@ -4553,6 +4593,15 @@ export default function ComunidadePage() {
     }
   }
 
+  if (carregandoFeed) {
+    return (
+      <main style={pageThemeStyle} aria-busy="true">
+        <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
+        <LoadingSpinner label="Carregando Comunidade" />
+      </main>
+    );
+  }
+
   return (
     <main style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
@@ -4884,8 +4933,10 @@ export default function ComunidadePage() {
                   </p>
                 ) : carregandoUsuariosBuscaComunidade ? (
                   <div style={communityUserSearchLoadingStyle}>
-                    <span style={communityUserSearchLoadingLineStyle} />
-                    <span style={communityUserSearchLoadingLineStyle} />
+                    <LoadingSpinner
+                      compacto
+                      label="Buscando usuários"
+                    />
                   </div>
                 ) : usuariosBuscaComunidade.length > 0 ? (
                   <div style={communityUserSearchListStyle}>
@@ -5392,9 +5443,14 @@ export default function ComunidadePage() {
                       : "pointer",
                   }}
                 >
-                  {carregandoMaisPostsComunidade
-                    ? "Carregando..."
-                    : "Carregar mais publicações"}
+                  {carregandoMaisPostsComunidade ? (
+                    <LoadingSpinner
+                      compacto
+                      label="Carregando mais publicações"
+                    />
+                  ) : (
+                    "Carregar mais publicações"
+                  )}
                 </button>
               </section>
             )}
@@ -5659,6 +5715,18 @@ const safeTextStyle: CSSProperties = {
 
 
 const comunidadeThemeCss = `
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   html {
     --historietas-comunidade-bg-page: #070212;
     --historietas-comunidade-bg-deep: #04000A;
@@ -5745,6 +5813,44 @@ const comunidadeThemeCss = `
     color: #FFFFFF !important;
   }
 `;
+
+const loadingPageStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingInlineStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: "22px",
+  minHeight: "22px",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
+};
+
+const loadingSpinnerCompactStyle: CSSProperties = {
+  ...loadingSpinnerStyle,
+  width: "22px",
+  height: "22px",
+  borderWidth: "2.5px",
+};
 
 const pageStyle: CSSProperties = {
   position: "relative",
@@ -8137,16 +8243,11 @@ const communitySearchResultsEmptyStyle: CSSProperties = {
 };
 
 const communityUserSearchLoadingStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-};
-
-const communityUserSearchLoadingLineStyle: CSSProperties = {
-  display: "block",
   width: "100%",
-  height: "54px",
-  borderRadius: "16px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.06))",
+  minHeight: "54px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const postsListStyle: CSSProperties = {

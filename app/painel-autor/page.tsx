@@ -2039,6 +2039,23 @@ async function carregarPainelAutorSupabase(
   }
 }
 
+function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 export default function PainelAutorPage() {
   const router = useRouter();
 
@@ -2052,6 +2069,7 @@ export default function PainelAutorPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [verificandoUsuario, setVerificandoUsuario] = useState(true);
+  const [carregandoDados, setCarregandoDados] = useState(true);
   const [mostrarFiltrosPainel, setMostrarFiltrosPainel] = useState(false);
   const [mostrarResumoPainel, setMostrarResumoPainel] = useState(true);
 
@@ -2187,6 +2205,8 @@ export default function PainelAutorPage() {
 
     let componenteAtivo = true;
 
+    setCarregandoDados(true);
+
     async function carregarDadosPainelAutor() {
       try {
         const obrasSalvasTexto = lerStorageUsuarioPainel(
@@ -2282,6 +2302,10 @@ export default function PainelAutorPage() {
         }
 
         console.warn("Não consegui atualizar o Painel do Autor:", error);
+      } finally {
+        if (componenteAtivo) {
+          setCarregandoDados(false);
+        }
       }
     }
 
@@ -2699,13 +2723,15 @@ export default function PainelAutorPage() {
     }
   }
 
-  if (verificandoUsuario || !usuarioLogado) {
+  if (verificandoUsuario || !usuarioLogado || carregandoDados) {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${painelAutorPageCss}`}</style>
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <LoadingSpinner label="Carregando Painel do Autor" />
       </main>
     );
   }
@@ -3358,6 +3384,18 @@ function ObraPainelCard({
 }
 
 const painelAutorPageCss = `
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   html {
     --historietas-painel-bg: #070212;
     --historietas-painel-bg-deep: #04000A;
@@ -3492,6 +3530,28 @@ const desktopTopWaterFadeStyle: CSSProperties = {
 };
 
 const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)";
+
+const loadingPageStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
+};
 
 const pageStyle: CSSProperties = {
   position: "relative",

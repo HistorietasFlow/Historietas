@@ -3123,6 +3123,23 @@ async function excluirNotificacoesLidasSupabase(userIdAtual = "") {
     return false;
   }
 }
+function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 export default function NotificacoesPage() {
   const router = useRouter();
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -3645,6 +3662,8 @@ export default function NotificacoesPage() {
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
+
+        <LoadingSpinner label="Carregando notificações" />
       </main>
     );
   }
@@ -4259,6 +4278,18 @@ export default function NotificacoesPage() {
 }
 
 const notificacoesPageCss = `
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   html {
     --historietas-notificacoes-bg-page: #070212;
     --historietas-notificacoes-bg-deep: #04000A;
@@ -4437,6 +4468,28 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   zIndex: 0,
   background: "transparent",
   opacity: 0,
+};
+
+const loadingPageStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
 };
 
 const pageStyle: CSSProperties = {

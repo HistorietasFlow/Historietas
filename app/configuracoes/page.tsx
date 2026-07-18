@@ -862,6 +862,46 @@ function SvgIcon({
   );
 }
 
+function LoadingSpinner({
+  label = "Carregando",
+  compacto = false,
+}: {
+  label?: string;
+  compacto?: boolean;
+}) {
+  if (compacto) {
+    return (
+      <span
+        role="status"
+        aria-live="polite"
+        aria-label={label}
+        style={loadingInlineStyle}
+      >
+        <span
+          className="historietas-loading-spinner"
+          style={loadingSpinnerCompactStyle}
+          aria-hidden="true"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 function ValorLinha({ children, danger = false }: { children: ReactNode; danger?: boolean }) {
   return (
     <span style={danger ? rowValueDangerStyle : rowValueStyle}>
@@ -1356,6 +1396,7 @@ export default function ConfiguracoesPage() {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
+        <LoadingSpinner label="Carregando configurações" />
       </main>
     );
   }
@@ -1466,7 +1507,13 @@ export default function ConfiguracoesPage() {
                 icon="check"
                 title={salvando ? "Salvando..." : "Salvar alterações"}
                 subtitle="Grava suas preferências nesta conta"
+                right={
+                  salvando ? (
+                    <LoadingSpinner compacto label="Salvando alterações" />
+                  ) : undefined
+                }
                 onClick={salvar}
+                hideChevron={salvando}
               />
             ) : null}
 
@@ -1834,6 +1881,18 @@ const configuracoesPageCss = `
     box-shadow: none;
   }
 
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   .configuracoes-input {
     appearance: none;
   }
@@ -1858,6 +1917,43 @@ const pageStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily:
     "Inter, Poppins, Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+};
+
+const loadingPageStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingInlineStyle: CSSProperties = {
+  width: "24px",
+  height: "24px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+  flex: "0 0 auto",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
+};
+
+const loadingSpinnerCompactStyle: CSSProperties = {
+  ...loadingSpinnerStyle,
+  width: "22px",
+  height: "22px",
+  borderWidth: "2.5px",
 };
 
 const containerStyle: CSSProperties = {

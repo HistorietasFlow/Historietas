@@ -1982,6 +1982,23 @@ function criarDecoracaoTemaStyle(
   };
 }
 
+function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 export default function ExplorarPage() {
   const router = useRouter();
   const { temaVisual, pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -2008,6 +2025,7 @@ export default function ExplorarPage() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [mensagemLogin, setMensagemLogin] = useState("");
+  const [dadosExplorarCarregados, setDadosExplorarCarregados] = useState(false);
 
   useEffect(() => {
     let componenteAtivo = true;
@@ -2198,10 +2216,14 @@ export default function ExplorarPage() {
           setObrasFavoritas([]);
           setObrasConcluidas([]);
         }
+      } finally {
+        if (!cancelado) {
+          setDadosExplorarCarregados(true);
+        }
       }
     }
 
-    carregarExplorar();
+    void carregarExplorar();
 
     return () => {
       cancelado = true;
@@ -2696,6 +2718,18 @@ export default function ExplorarPage() {
     setMensagemLogin("");
     setMostrarFiltrosAvancados(false);
     window.history.pushState(null, "", "/explorar");
+  }
+
+  if (!dadosExplorarCarregados) {
+    return (
+      <main
+        style={criarExplorarPageStyle(pageThemeStyle)}
+        aria-busy="true"
+      >
+        <style>{`${themePageCss}${historietasThemeCss}`}</style>
+        <LoadingSpinner label="Carregando Explorar" />
+      </main>
+    );
   }
 
   return (
@@ -3661,6 +3695,18 @@ function criarCardPrimaryActionStyle(
 }
 
 const themePageCss = `
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   html[data-historietas-tema-visual] body,
   html[data-historietas-tema-visual] main,
   html[data-historietas-tema-visual="original"] body,
@@ -3845,6 +3891,28 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   zIndex: 0,
   background: "transparent",
   opacity: 0,
+};
+
+const loadingPageStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 2,
+  width: "100%",
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
 };
 
 const pageStyle: CSSProperties = {

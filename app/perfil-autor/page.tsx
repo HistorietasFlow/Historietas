@@ -4605,6 +4605,29 @@ function erroCompartilhamentoFoiCanceladoPerfilAutor(error: unknown) {
   return nomeErro === "AbortError";
 }
 
+function LoadingSpinner({
+  label = "Carregando",
+  compacto = false,
+}: {
+  label?: string;
+  compacto?: boolean;
+}) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      style={compacto ? loadingInlineStyle : loadingPageStyle}
+    >
+      <span
+        className="historietas-loading-spinner"
+        style={compacto ? loadingSpinnerCompactStyle : loadingSpinnerStyle}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 function PerfilAutorPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -8055,7 +8078,9 @@ function PerfilAutorPageContent() {
         {!isDesktop && (
           <div style={mobileTopWaterFadeStyle} aria-hidden="true" />
         )}
-        <section style={isDesktop ? desktopContainerStyle : containerStyle} />
+        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+          <LoadingSpinner label="Carregando perfil" />
+        </section>
       </main>
     );
   }
@@ -9196,24 +9221,24 @@ function PerfilAutorPageContent() {
               ))}
             </div>
 
-            {!diarioPerfil.carregando && (
-              itensBibliotecaAtivos.length === 0 ? (
-                <div style={emptyMiniBoxStyle}>
-                  Sua Biblioteca ainda não tem itens em {rotuloBibliotecaAtiva}.
-                </div>
-              ) : (
-                <div
-                  style={
-                    isDesktop
-                      ? desktopProfileWorksGridStyle
-                      : profileWorksGridStyle
-                  }
-                >
-                  {itensBibliotecaAtivos.map((item) =>
-                    renderizarItemBibliotecaPerfil(item),
-                  )}
-                </div>
-              )
+            {diarioPerfil.carregando ? (
+              <LoadingSpinner label="Carregando biblioteca" compacto />
+            ) : itensBibliotecaAtivos.length === 0 ? (
+              <div style={emptyMiniBoxStyle}>
+                Sua Biblioteca ainda não tem itens em {rotuloBibliotecaAtiva}.
+              </div>
+            ) : (
+              <div
+                style={
+                  isDesktop
+                    ? desktopProfileWorksGridStyle
+                    : profileWorksGridStyle
+                }
+              >
+                {itensBibliotecaAtivos.map((item) =>
+                  renderizarItemBibliotecaPerfil(item),
+                )}
+              </div>
             )}
           </section>
         )}
@@ -9281,7 +9306,9 @@ function PerfilAutorPageContent() {
               </div>
             )}
 
-            {diarioPerfil.carregando ? null : (
+            {diarioPerfil.carregando ? (
+              <LoadingSpinner label="Carregando diário" compacto />
+            ) : (
               <>
                 {renderizarSecaoDiarioPerfil(
                   "",
@@ -10235,7 +10262,14 @@ function PerfilAutorPageContent() {
 
 export default function PerfilAutorPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <main style={pageStyle}>
+          <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
+          <LoadingSpinner label="Carregando perfil" />
+        </main>
+      }
+    >
       <PerfilAutorPageContent />
     </Suspense>
   );
@@ -11094,6 +11128,18 @@ const perfilAutorThemeCss = `
     --historietas-perfil-surface-purple-94: rgba(38,20,62,0.94);
   }
 
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
   html[data-historietas-tema-visual="foco"] {
     --historietas-perfil-bg-page: #000000;
     --historietas-perfil-bg-deep: #000000;
@@ -11157,6 +11203,42 @@ const pageStyle: CSSProperties = {
     "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #070212))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+};
+
+const loadingPageStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "calc(100dvh - 32px)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingInlineStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "72px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+};
+
+const loadingSpinnerStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "999px",
+  border: "3px solid rgba(255,255,255,0.20)",
+  borderTopColor: "#FFFFFF",
+  boxSizing: "border-box",
+  animation: "historietas-loading-spin 0.78s linear infinite",
+  flex: "0 0 auto",
+};
+
+const loadingSpinnerCompactStyle: CSSProperties = {
+  ...loadingSpinnerStyle,
+  width: "24px",
+  height: "24px",
+  borderWidth: "2.5px",
 };
 
 const containerStyle: CSSProperties = {
