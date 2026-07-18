@@ -2926,7 +2926,9 @@ export default function PainelAutorPage() {
                       <span
                         style={criarFilterSheetRadioStyle(ativo)}
                         aria-hidden="true"
-                      />
+                      >
+                        {ativo ? "✓" : ""}
+                      </span>
                     </button>
                   );
                 })}
@@ -2950,7 +2952,9 @@ export default function PainelAutorPage() {
                       <span
                         style={criarFilterSheetRadioStyle(ativo)}
                         aria-hidden="true"
-                      />
+                      >
+                        {ativo ? "✓" : ""}
+                      </span>
                     </button>
                   );
                 })}
@@ -2967,7 +2971,9 @@ export default function PainelAutorPage() {
                   <span
                     style={criarFilterSheetRadioStyle(mostrarResumoPainel)}
                     aria-hidden="true"
-                  />
+                  >
+                    {mostrarResumoPainel ? "✓" : ""}
+                  </span>
                 </button>
 
                 {filtrosAtivos && (
@@ -3822,11 +3828,18 @@ function criarFilterSheetRadioStyle(ativo: boolean): CSSProperties {
     height: "23px",
     borderRadius: "999px",
     border: ativo
-      ? "6.5px solid #FFFFFF"
+      ? "2px solid #FFFFFF"
       : "2.5px solid rgba(161,161,170,0.72)",
-    background: "transparent",
+    background: ativo ? "#FFFFFF" : "transparent",
+    color: ativo ? "#111111" : "transparent",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     boxSizing: "border-box",
     flex: "0 0 auto",
+    fontSize: "15px",
+    lineHeight: 1,
+    fontWeight: 900,
   };
 }
 

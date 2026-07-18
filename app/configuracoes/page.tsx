@@ -1610,11 +1610,15 @@ export default function ConfiguracoesPage() {
                             <span style={themeDescriptionStyle}>{tema.descricao}</span>
                           </span>
 
-                          {ativo ? (
-                            <span style={themeCheckStyle}>
-                              <SvgIcon name="check" size={21} strokeWidth={2.2} />
-                            </span>
-                          ) : null}
+                          <span
+                            style={
+                              ativo
+                                ? themeCheckActiveStyle
+                                : themeCheckStyle
+                            }
+                          >
+                            {ativo ? "✓" : ""}
+                          </span>
                         </button>
                       );
                     })}
@@ -2264,10 +2268,25 @@ const themeDescriptionStyle: CSSProperties = {
 };
 
 const themeCheckStyle: CSSProperties = {
-  width: "26px",
-  height: "26px",
+  width: "23px",
+  height: "23px",
+  borderRadius: "999px",
+  border: "2.5px solid rgba(161,161,170,0.72)",
+  background: "transparent",
+  color: "transparent",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "var(--historietas-accent, #F97316)",
+  boxSizing: "border-box",
+  flex: "0 0 auto",
+  fontSize: "15px",
+  lineHeight: 1,
+  fontWeight: 900,
+};
+
+const themeCheckActiveStyle: CSSProperties = {
+  ...themeCheckStyle,
+  border: "2px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#111111",
 };

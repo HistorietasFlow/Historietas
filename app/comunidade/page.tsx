@@ -4742,7 +4742,9 @@ export default function ComunidadePage() {
                           ? communityFiltersSheetRadioActiveStyle
                           : communityFiltersSheetRadioStyle
                       }
-                    />
+                    >
+                      {!filtrosAtivos ? "✓" : ""}
+                    </span>
                   </button>
 
                   <button
@@ -4764,7 +4766,9 @@ export default function ComunidadePage() {
                           ? communityFiltersSheetRadioActiveStyle
                           : communityFiltersSheetRadioStyle
                       }
-                    />
+                    >
+                      {mostrarApenasSalvos ? "✓" : ""}
+                    </span>
                   </button>
 
                   <span style={communityFiltersSheetSectionLabelStyle}>
@@ -4791,7 +4795,11 @@ export default function ComunidadePage() {
                           ? communityFiltersSheetRadioActiveStyle
                           : communityFiltersSheetRadioStyle
                       }
-                    />
+                    >
+                      {ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
+                        ? "✓"
+                        : ""}
+                    </span>
                   </button>
 
                   <button
@@ -4814,7 +4822,11 @@ export default function ComunidadePage() {
                           ? communityFiltersSheetRadioActiveStyle
                           : communityFiltersSheetRadioStyle
                       }
-                    />
+                    >
+                      {ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
+                        ? "✓"
+                        : ""}
+                    </span>
                   </button>
 
                   <button
@@ -4837,7 +4849,11 @@ export default function ComunidadePage() {
                           ? communityFiltersSheetRadioActiveStyle
                           : communityFiltersSheetRadioStyle
                       }
-                    />
+                    >
+                      {ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
+                        ? "✓"
+                        : ""}
+                    </span>
                   </button>
 
                 </article>
@@ -7288,7 +7304,7 @@ const communityFilterControlsRowStyle: CSSProperties = {
   justifyContent: "space-between",
   gap: "10px",
   flexWrap: "nowrap",
-  marginBottom: "10px",
+  marginBottom: "4px",
   width: "100%",
   minWidth: 0,
   maxWidth: "100%",
@@ -7470,13 +7486,22 @@ const communityFiltersSheetRadioStyle: CSSProperties = {
   borderRadius: "999px",
   border: "2.5px solid rgba(161,161,170,0.72)",
   background: "transparent",
+  color: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
   flex: "0 0 auto",
   boxSizing: "border-box",
+  fontSize: "15px",
+  lineHeight: 1,
+  fontWeight: 900,
 };
 
 const communityFiltersSheetRadioActiveStyle: CSSProperties = {
   ...communityFiltersSheetRadioStyle,
-  border: "6.5px solid #FFFFFF",
+  border: "2px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#111111",
 };
 
 

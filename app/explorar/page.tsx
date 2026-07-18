@@ -2824,7 +2824,21 @@ export default function ExplorarPage() {
           )}
         </header>
 
-        <section style={isDesktop ? criarDesktopSearchBoxStyle(temaPagina, categoriaAtiva) : criarSearchBoxStyle(temaPagina, categoriaAtiva)}>
+        <section
+          style={
+            isDesktop
+              ? criarDesktopSearchBoxStyle(
+                  temaPagina,
+                  categoriaAtiva,
+                  temaVisual
+                )
+              : criarSearchBoxStyle(
+                  temaPagina,
+                  categoriaAtiva,
+                  temaVisual
+                )
+          }
+        >
           <section className="explorar-carousel" style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
             <button
               type="button"
@@ -2903,7 +2917,9 @@ export default function ExplorarPage() {
                     style={criarExplorarModalOptionStyle(filtroColecao === valor)}
                   >
                     <span>{rotulo}</span>
-                    <span style={criarExplorarModalRadioStyle(filtroColecao === valor)} />
+                    <span style={criarExplorarModalRadioStyle(filtroColecao === valor)}>
+                      {filtroColecao === valor ? "✓" : ""}
+                    </span>
                   </button>
                 ))}
 
@@ -2921,7 +2937,9 @@ export default function ExplorarPage() {
                     style={criarExplorarModalOptionStyle(ordenacao === valor)}
                   >
                     <span>{rotulo}</span>
-                    <span style={criarExplorarModalRadioStyle(ordenacao === valor)} />
+                    <span style={criarExplorarModalRadioStyle(ordenacao === valor)}>
+                      {ordenacao === valor ? "✓" : ""}
+                    </span>
                   </button>
                 ))}
 
@@ -3512,28 +3530,34 @@ function criarActiveCategoryStyle(_tema: ReturnType<typeof obterTemaCategoria>):
 
 function criarSearchBoxStyle(
   _tema: ReturnType<typeof obterTemaCategoria>,
-  _categoriaAtiva = false
+  _categoriaAtiva = false,
+  temaVisual: TemaVisualHistorietas = "original"
 ): CSSProperties {
   return {
     ...searchBoxStyle,
-    background: "rgba(4, 0, 10, 0.72)",
-    border: "1px solid rgba(255,255,255,0.06)",
+    marginBottom: "-6px",
+    background:
+      temaVisual === "original"
+        ? "#070212"
+        : "rgba(4, 0, 10, 0.72)",
+    border: "none",
     boxShadow: "none",
   };
 }
 
 function criarDesktopSearchBoxStyle(
   tema: ReturnType<typeof obterTemaCategoria>,
-  categoriaAtiva = false
+  categoriaAtiva = false,
+  temaVisual: TemaVisualHistorietas = "original"
 ): CSSProperties {
   return {
-    ...criarSearchBoxStyle(tema, categoriaAtiva),
+    ...criarSearchBoxStyle(tema, categoriaAtiva, temaVisual),
     gridTemplateColumns: "1fr",
     alignItems: "stretch",
     gap: "5px",
     marginTop: "12px",
-    padding: "10px 12px",
-    borderRadius: "22px",
+    padding: "5px 8px",
+    borderRadius: "18px",
     overflow: "hidden",
     boxShadow: "none",
   };
@@ -4152,7 +4176,7 @@ const badgeStyle: CSSProperties = {
 
 const desktopBadgeStyle: CSSProperties = {
   ...badgeStyle,
-  padding: "9px 13px",
+  padding: "7px 12px",
   fontSize: "11px",
 };
 
@@ -4193,7 +4217,7 @@ const categoriesStyle: CSSProperties = {
   overflowY: "hidden",
   marginLeft: "-12px",
   marginRight: "-12px",
-  padding: "2px 12px 5px",
+  padding: "0 12px 2px",
   maxWidth: "calc(100% + 24px)",
   scrollbarWidth: "none",
   msOverflowStyle: "none",
@@ -4241,8 +4265,8 @@ const searchBoxStyle: CSSProperties = {
   marginTop: "10px",
   display: "grid",
   gap: "5px",
-  padding: "10px",
-  borderRadius: "20px",
+  padding: "5px 6px",
+  borderRadius: "18px",
   background: "rgba(4, 0, 10, 0.72)",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
@@ -4450,11 +4474,18 @@ function criarExplorarModalRadioStyle(ativo: boolean): CSSProperties {
     height: "23px",
     borderRadius: "999px",
     border: ativo
-      ? "6.5px solid #FFFFFF"
+      ? "2px solid #FFFFFF"
       : "2.5px solid rgba(161,161,170,0.72)",
-    background: "transparent",
+    background: ativo ? "#FFFFFF" : "transparent",
+    color: ativo ? "#111111" : "transparent",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     boxSizing: "border-box",
     flex: "0 0 auto",
+    fontSize: "15px",
+    lineHeight: 1,
+    fontWeight: 900,
   };
 }
 
@@ -5197,7 +5228,7 @@ const desktopCategoriesStyle: CSSProperties = {
   justifyContent: "center",
   marginLeft: 0,
   marginRight: 0,
-  padding: "3px 0 8px",
+  padding: "1px 0 3px",
   maxWidth: "100%",
 };
 

@@ -87,21 +87,21 @@ security definer
 set search_path = public
 as $$
 declare
-  total_visualizacoes integer := 0;
-  linhas_inseridas integer := 0;
-  usuario_id uuid := auth.uid();
-  cabecalhos jsonb := '{}'::jsonb;
-  ip_visitante text := null;
-  user_agent text := null;
-  chave_visitante text := null;
+  v_total_visualizacoes integer := 0;
+  v_linhas_inseridas integer := 0;
+  v_usuario_id uuid := auth.uid();
+  v_cabecalhos jsonb := '{}'::jsonb;
+  v_ip_visitante text := null;
+  v_user_agent text := null;
+  v_chave_visitante text := null;
 begin
   if obra_id_param is null then
     return 0;
   end if;
 
   select coalesce(o.visualizacoes, 0)
-  into total_visualizacoes
-  from public.obras o
+  into v_total_visualizacoes
+  from public.obras as o
   where o.id = obra_id_param
     and coalesce(o.publicado, false) = true
   limit 1;
@@ -110,47 +110,49 @@ begin
     return 0;
   end if;
 
-  if usuario_id is not null then
-    chave_visitante := 'usuario:' || usuario_id::text;
+  if v_usuario_id is not null then
+    v_chave_visitante := 'usuario:' || v_usuario_id::text;
   else
     begin
-      cabecalhos := coalesce(
+      v_cabecalhos := coalesce(
         nullif(current_setting('request.headers', true), '')::jsonb,
         '{}'::jsonb
       );
     exception
       when others then
-        cabecalhos := '{}'::jsonb;
+        v_cabecalhos := '{}'::jsonb;
     end;
 
-    ip_visitante := nullif(
+    v_ip_visitante := nullif(
       trim(
         coalesce(
-          cabecalhos ->> 'cf-connecting-ip',
-          split_part(coalesce(cabecalhos ->> 'x-forwarded-for', ''), ',', 1),
-          cabecalhos ->> 'x-real-ip',
+          v_cabecalhos ->> 'cf-connecting-ip',
+          split_part(
+            coalesce(v_cabecalhos ->> 'x-forwarded-for', ''),
+            ',',
+            1
+          ),
+          v_cabecalhos ->> 'x-real-ip',
           ''
         )
       ),
       ''
     );
 
-    user_agent := nullif(
-      trim(coalesce(cabecalhos ->> 'user-agent', '')),
+    v_user_agent := nullif(
+      trim(coalesce(v_cabecalhos ->> 'user-agent', '')),
       ''
     );
 
-    -- Sem uma identificação mínima confiável, retorna o total atual
-    -- sem permitir incremento anônimo ilimitado.
-    if ip_visitante is null then
-      return total_visualizacoes;
+    if v_ip_visitante is null then
+      return v_total_visualizacoes;
     end if;
 
-    chave_visitante :=
+    v_chave_visitante :=
       'anon:' ||
       encode(
         digest(
-          ip_visitante || '|' || coalesce(user_agent, ''),
+          v_ip_visitante || '|' || coalesce(v_user_agent, ''),
           'sha256'
         ),
         'hex'
@@ -164,25 +166,25 @@ begin
   )
   values (
     obra_id_param,
-    chave_visitante,
+    v_chave_visitante,
     current_date
   )
   on conflict (obra_id, chave_visitante, dia) do nothing;
 
-  get diagnostics linhas_inseridas = row_count;
+  get diagnostics v_linhas_inseridas = row_count;
 
-  if linhas_inseridas = 0 then
-    return total_visualizacoes;
+  if v_linhas_inseridas = 0 then
+    return v_total_visualizacoes;
   end if;
 
-  update public.obras
-  set visualizacoes = coalesce(visualizacoes, 0) + 1
-  where id = obra_id_param
-    and coalesce(publicado, false) = true
-  returning coalesce(visualizacoes, 0)
-  into total_visualizacoes;
+  update public.obras as o
+  set visualizacoes = coalesce(o.visualizacoes, 0) + 1
+  where o.id = obra_id_param
+    and coalesce(o.publicado, false) = true
+  returning coalesce(o.visualizacoes, 0)
+  into v_total_visualizacoes;
 
-  return coalesce(total_visualizacoes, 0);
+  return coalesce(v_total_visualizacoes, 0);
 end;
 $$;
 
@@ -197,6 +199,7 @@ revoke all on function public.incrementar_visualizacao_obra(uuid)
 
 grant execute on function public.incrementar_visualizacao_obra(uuid)
   to anon, authenticated;
+
 
 -- ============================================================
 -- TABELAS: COMUNIDADE

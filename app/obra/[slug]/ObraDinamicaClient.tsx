@@ -5236,7 +5236,9 @@ export default function ObraDinamicaPage() {
                         ? obraMenuItemDotActiveStyle
                         : obraMenuItemDotStyle
                     }
-                  />
+                  >
+                    {obraFavoritada ? "✓" : ""}
+                  </span>
                 </button>
 
                 <button
@@ -5258,7 +5260,9 @@ export default function ObraDinamicaPage() {
                         ? obraMenuItemDotActiveStyle
                         : obraMenuItemDotStyle
                     }
-                  />
+                  >
+                    {obraConcluida ? "✓" : ""}
+                  </span>
                 </button>
 
                 <button
@@ -6592,13 +6596,22 @@ const obraMenuItemDotStyle: CSSProperties = {
   borderRadius: "999px",
   border: "2.25px solid rgba(161,161,170,0.72)",
   background: "transparent",
+  color: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
   flex: "0 0 auto",
   boxSizing: "border-box",
+  fontSize: "13px",
+  lineHeight: 1,
+  fontWeight: 900,
 };
 
 const obraMenuItemDotActiveStyle: CSSProperties = {
   ...obraMenuItemDotStyle,
-  border: "5.8px solid #FFFFFF",
+  border: "2px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#111111",
 };
 
 const obraMenuSynopsisStyle: CSSProperties = {

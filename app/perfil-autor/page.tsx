@@ -545,6 +545,20 @@ function formatarTotalAvaliacoesAutor(total: number) {
   return total === 1 ? "1 avaliação" : `${total} avaliações`;
 }
 
+function formatarEntradaHistorietasPerfilAutor(criadoEm: string) {
+  const criadoEmLimpo = criadoEm.trim();
+  const dataCriacao = new Date(criadoEmLimpo);
+
+  if (!criadoEmLimpo || Number.isNaN(dataCriacao.getTime())) {
+    return "julho de 2026";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    month: "long",
+    year: "numeric",
+  }).format(dataCriacao);
+}
+
 function obterProximaNotaAvaliacaoAutor(estrela: number, notaAtual: number) {
   const meiaNota = estrela - 0.5;
   const notaNormalizada = Math.round(notaAtual * 2) / 2;
@@ -4621,6 +4635,12 @@ function PerfilAutorPageContent() {
   const [editorPerfilAberto, setEditorPerfilAberto] = useState(false);
   const [nomePerfilEditor, setNomePerfilEditor] = useState("");
   const [usernamePerfilEditor, setUsernamePerfilEditor] = useState("");
+  const [bioPerfilEditor, setBioPerfilEditor] = useState("");
+  const [avatarPerfilEditor, setAvatarPerfilEditor] = useState("");
+  const [avatarNomePerfilEditor, setAvatarNomePerfilEditor] = useState("");
+  const [avatarArquivoPerfilEditor, setAvatarArquivoPerfilEditor] =
+    useState<File | null>(null);
+  const [salvandoEditorPerfil, setSalvandoEditorPerfil] = useState(false);
   const [editorSobreAberto, setEditorSobreAberto] = useState(false);
   const [abaPerfil, setAbaPerfil] = useState<AbaPerfilAutor>("obras");
   const [abaBibliotecaPerfil, setAbaBibliotecaPerfil] =
@@ -5435,14 +5455,24 @@ function PerfilAutorPageContent() {
       )
     : "@autor.historietas";
   const avatarAutor = perfilSalvoAutor.avatar || perfilUsuarioRemotoAtivo?.avatar || "";
+  const entradaHistorietasPerfil = formatarEntradaHistorietasPerfilAutor(
+    perfilUsuarioRemotoAtivo?.criadoEm || "",
+  );
 
   useEffect(() => {
     if (!editorPerfilAberto || !podeEditarPerfil || !perfilParaMostrar) {
       return;
     }
 
-    setNomePerfilEditor("");
+    setNomePerfilEditor(
+      perfilUsuarioRemotoAtivo?.nome || perfilParaMostrar.nome || "",
+    );
     setUsernamePerfilEditor(perfilUsuarioRemotoAtivo?.username || "");
+    setBioPerfilEditor(bioAutorPersonalizada);
+    setAvatarPerfilEditor(avatarAutor);
+    setAvatarNomePerfilEditor(perfilSalvoAutor.avatarNome || "");
+    setAvatarArquivoPerfilEditor(null);
+    setAvatarErro("");
   }, [
     editorPerfilAberto,
     podeEditarPerfil,
@@ -5451,6 +5481,9 @@ function PerfilAutorPageContent() {
     perfilParaMostrar,
     perfilUsuarioRemotoAtivo?.nome,
     perfilUsuarioRemotoAtivo?.username,
+    bioAutorPersonalizada,
+    avatarAutor,
+    perfilSalvoAutor.avatarNome,
   ]);
 
   const caracteresRestantesBio = BIO_MAX_LENGTH - bioAutorPersonalizada.length;
@@ -6129,9 +6162,6 @@ function PerfilAutorPageContent() {
   const avatarRemoveButtonAtualStyle = isDesktop
     ? desktopAvatarRemoveButtonStyle
     : avatarRemoveButtonStyle;
-  const bioTextareaAtualStyle = isDesktop
-    ? desktopBioTextareaStyle
-    : bioTextareaStyle;
   const profileStatsAtualStyle = isDesktop
     ? desktopProfileStatsStyle
     : profileStatsStyle;
@@ -6170,6 +6200,24 @@ function PerfilAutorPageContent() {
   function avisarLoginNecessario(mensagem: string) {
     setMensagemAcao(mensagem);
     router.push(criarLoginHrefPerfilAutor());
+  }
+
+  function abrirEditorPerfil() {
+    setMenuPerfilAberto(false);
+    setEditorPerfilAberto(true);
+  }
+
+  function fecharEditorPerfil() {
+    if (salvandoEditorPerfil) {
+      return;
+    }
+
+    setEditorPerfilAberto(false);
+    setAvatarErro("");
+
+    if (avatarInputRef.current) {
+      avatarInputRef.current.value = "";
+    }
   }
 
   function salvarPerfilAutor(novoPerfil: PerfilAutorSalvo) {
@@ -6233,47 +6281,112 @@ function PerfilAutorPageContent() {
     }
   }
 
-  async function salvarNomePerfilAutor(nomeAtualizado: string) {
-    const nomeFinal = nomeAtualizado.trim().replace(/\s+/g, " ").slice(0, 80);
+  async function salvarEdicaoPerfilAutor() {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
     const usuarioIdAtual = usuarioIdLogado.trim();
 
-    if (!podeEditarPerfil || !perfilParaMostrar || !perfilUserId || !usuarioIdAtual) {
+    if (
+      !podeEditarPerfil ||
+      !perfilParaMostrar ||
+      !perfilUserId ||
+      !usuarioIdAtual ||
+      perfilUserId.toLowerCase() !== usuarioIdAtual.toLowerCase()
+    ) {
+      setMensagemAcao("Não foi possível confirmar este perfil para edição.");
       return;
     }
 
-    if (perfilUserId.toLowerCase() !== usuarioIdAtual.toLowerCase()) {
-      return;
-    }
+    const nomeFinal = nomePerfilEditor
+      .trim()
+      .replace(/\s+/g, " ")
+      .slice(0, 80);
+    const usernameDigitado = usernamePerfilEditor.trim();
+    const usernameFinal = usernameDigitado
+      ? normalizarUsernamePerfilAutor(usernameDigitado)
+      : "";
 
     if (nomeFinal.length < 3) {
       setMensagemAcao("O nome do perfil precisa ter pelo menos 3 caracteres.");
-      setNomePerfilEditor("");
       return;
     }
 
-    if (nomeFinal === perfilParaMostrar.nome && nomeFinal === perfilUsuarioRemotoAtivo?.nome) {
-      setNomePerfilEditor("");
+    if (usernameDigitado && usernameFinal.length < 3) {
+      setMensagemAcao("O @username precisa ter pelo menos 3 caracteres.");
       return;
     }
 
-    setMensagemAcao("Salvando nome do perfil...");
+    setSalvandoEditorPerfil(true);
+    setMensagemAcao("Salvando perfil...");
 
-    const perfilNormalizado: PerfilAutorSalvo = {
-      avatar: avatarAutor,
-      avatarNome: perfilSalvoAutor.avatarNome,
-      bio: bioAutorPersonalizada,
+    let avatarFinal = avatarPerfilEditor;
+    let avisoAvatar = "";
+
+    if (avatarArquivoPerfilEditor) {
+      const resultadoUpload = await enviarAvatarPerfilUsuarioSupabase({
+        userId: perfilUserId,
+        arquivo: avatarArquivoPerfilEditor,
+      });
+
+      if (resultadoUpload.ok && resultadoUpload.url) {
+        avatarFinal = resultadoUpload.url;
+      } else {
+        avisoAvatar =
+          " A imagem ficou salva neste aparelho, mas não foi enviada ao Storage.";
+      }
+    }
+
+    const perfilFinal: PerfilAutorSalvo = {
+      avatar: avatarFinal,
+      avatarNome: avatarFinal ? avatarNomePerfilEditor : "",
+      bio: bioPerfilEditor.slice(0, BIO_MAX_LENGTH),
       sobreBio: bioSobrePersonalizada,
       mostrarDestaques: perfilSalvoAutor.mostrarDestaques,
     };
 
+    const resultadoPerfil = await salvarPerfilUsuarioSupabase({
+      userId: perfilUserId,
+      nome: nomeFinal,
+      perfil: perfilFinal,
+      username: usernameFinal || null,
+    });
+
+    if (!resultadoPerfil.ok) {
+      const erroPerfil = resultadoPerfil.erro.toLowerCase();
+
+      if (
+        erroPerfil.includes("profiles_username_unique") ||
+        erroPerfil.includes("duplicate key") ||
+        erroPerfil.includes("unique")
+      ) {
+        setMensagemAcao("Esse @username já está em uso.");
+        setSalvandoEditorPerfil(false);
+        return;
+      }
+    }
+
+    const resultadoObras = resultadoPerfil.ok
+      ? await sincronizarNomeAutorObrasSupabase(perfilUserId, nomeFinal)
+      : { ok: false, erro: "" };
+
+    const novosPerfis = {
+      ...perfisAutoresSalvos,
+      [autorChavePerfil]: perfilFinal,
+    };
+
+    salvarJsonUsuarioPerfilAutor(
+      AUTHOR_PROFILE_STORAGE_KEY,
+      usuarioIdAtual,
+      novosPerfis,
+    );
+    setPerfisAutoresSalvos(novosPerfis);
+
     setPerfilUsuarioRemoto({
       userId: perfilUserId,
       nome: nomeFinal,
-      username: perfilUsuarioRemotoAtivo?.username || "",
-      avatar: avatarAutor,
-      bio: bioAutorPersonalizada,
-      sobreBio: bioSobrePersonalizada,
+      username: usernameFinal,
+      avatar: avatarFinal,
+      bio: perfilFinal.bio,
+      sobreBio: perfilFinal.sobreBio,
       criadoEm: perfilUsuarioRemotoAtivo?.criadoEm || "",
     });
 
@@ -6307,127 +6420,33 @@ function PerfilAutorPageContent() {
         obrasLocaisAtualizadas,
       );
     } catch {
-      // Se o localStorage falhar, a alteração em profiles ainda continua.
+      // O perfil continua atualizado em memória se o armazenamento local falhar.
     }
 
-    const [resultadoPerfil, resultadoObras] = await Promise.all([
-      salvarPerfilUsuarioSupabase({
-        userId: perfilUserId,
-        nome: nomeFinal,
-        perfil: perfilNormalizado,
-        username: perfilUsuarioRemotoAtivo?.username || undefined,
-      }),
-      sincronizarNomeAutorObrasSupabase(perfilUserId, nomeFinal),
-    ]);
+    setAvatarPerfilEditor(avatarFinal);
+    setAvatarArquivoPerfilEditor(null);
+    setEditorPerfilAberto(false);
+    setSalvandoEditorPerfil(false);
+
+    if (avatarInputRef.current) {
+      avatarInputRef.current.value = "";
+    }
 
     if (!resultadoPerfil.ok) {
-      setNomePerfilEditor("");
       setMensagemAcao(
-        `Nome salvo neste aparelho. Supabase: ${resultadoPerfil.erro}`,
+        `Perfil salvo neste aparelho. Supabase: ${resultadoPerfil.erro}${avisoAvatar}`,
       );
       return;
     }
 
     if (!resultadoObras.ok) {
-      setNomePerfilEditor("");
       setMensagemAcao(
-        `Nome do perfil atualizado. Obras locais atualizadas; Supabase obras: ${resultadoObras.erro}`,
+        `Perfil atualizado. Não consegui sincronizar o nome nas obras.${avisoAvatar}`,
       );
       return;
     }
 
-    setNomePerfilEditor("");
-    setMensagemAcao("Nome do perfil atualizado.");
-  }
-
-  async function salvarUsernamePerfilAutor(usernameAtualizado: string) {
-    const usernameDigitado = usernameAtualizado.trim();
-    const usernameFinal = usernameDigitado
-      ? normalizarUsernamePerfilAutor(usernameDigitado)
-      : "";
-    const usernameAtual = perfilUsuarioRemotoAtivo?.username || "";
-    const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
-    const usuarioIdAtual = usuarioIdLogado.trim();
-
-    if (!podeEditarPerfil || !perfilParaMostrar || !perfilUserId || !usuarioIdAtual) {
-      return;
-    }
-
-    if (perfilUserId.toLowerCase() !== usuarioIdAtual.toLowerCase()) {
-      return;
-    }
-
-    if (usernameDigitado && usernameFinal.length < 3) {
-      setMensagemAcao("O @username precisa ter pelo menos 3 caracteres.");
-      setUsernamePerfilEditor(usernameAtual);
-      return;
-    }
-
-    if (usernameFinal === usernameAtual) {
-      setUsernamePerfilEditor(usernameFinal);
-      return;
-    }
-
-    setUsernamePerfilEditor(usernameFinal);
-    setMensagemAcao(usernameFinal ? "Salvando @username..." : "Removendo @username...");
-
-    const nomePerfil = nomePerfilEditor.trim().replace(/\s+/g, " ").slice(0, 80) ||
-      perfilUsuarioRemotoAtivo?.nome ||
-      perfilParaMostrar.nome ||
-      "Usuário";
-    const perfilNormalizado: PerfilAutorSalvo = {
-      avatar: avatarAutor,
-      avatarNome: perfilSalvoAutor.avatarNome,
-      bio: bioAutorPersonalizada,
-      sobreBio: bioSobrePersonalizada,
-      mostrarDestaques: perfilSalvoAutor.mostrarDestaques,
-    };
-
-    const resultado = await salvarPerfilUsuarioSupabase({
-      userId: perfilUserId,
-      nome: nomePerfil,
-      perfil: perfilNormalizado,
-      username: usernameFinal || null,
-    });
-
-    if (!resultado.ok) {
-      const erro = resultado.erro.toLowerCase();
-
-      if (
-        erro.includes("profiles_username_unique") ||
-        erro.includes("duplicate key") ||
-        erro.includes("unique")
-      ) {
-        setMensagemAcao("Esse @username já está em uso.");
-      } else {
-        setMensagemAcao(`Não consegui salvar o @username. Supabase: ${resultado.erro}`);
-      }
-
-      setUsernamePerfilEditor(usernameAtual);
-      return;
-    }
-
-    setPerfilUsuarioRemoto({
-      userId: perfilUserId,
-      nome: nomePerfil,
-      username: usernameFinal,
-      avatar: avatarAutor,
-      bio: bioAutorPersonalizada,
-      sobreBio: bioSobrePersonalizada,
-      criadoEm: perfilUsuarioRemotoAtivo?.criadoEm || "",
-    });
-
-    setMensagemAcao(usernameFinal ? "@username atualizado." : "@username removido.");
-  }
-
-  function atualizarBioAutor(novaBio: string) {
-    salvarPerfilAutor({
-      avatar: avatarAutor,
-      avatarNome: perfilSalvoAutor.avatarNome,
-      bio: novaBio.slice(0, BIO_MAX_LENGTH),
-      sobreBio: bioSobrePersonalizada,
-      mostrarDestaques: perfilSalvoAutor.mostrarDestaques,
-    });
+    setMensagemAcao(`Perfil atualizado.${avisoAvatar}`);
   }
 
   function atualizarBioSobreAutor(novaBioSobre: string) {
@@ -6566,52 +6585,10 @@ function PerfilAutorPageContent() {
         return;
       }
 
-      const perfilComAvatarLocal: PerfilAutorSalvo = {
-        avatar: resultado,
-        avatarNome: arquivo.name,
-        bio: bioAutorPersonalizada,
-        sobreBio: bioSobrePersonalizada,
-        mostrarDestaques: perfilSalvoAutor.mostrarDestaques,
-      };
-
-      salvarPerfilAutor(perfilComAvatarLocal);
-      setMensagemAcao("Avatar atualizado. Salvando imagem pública...");
-
-      const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
-
-      if (
-        !podeEditarPerfil ||
-        !perfilUserId ||
-        !usuarioIdLogado ||
-        perfilUserId.toLowerCase() !== usuarioIdLogado.trim().toLowerCase()
-      ) {
-        setMensagemAcao("Avatar atualizado neste aparelho.");
-        return;
-      }
-
-      void enviarAvatarPerfilUsuarioSupabase({
-        userId: perfilUserId,
-        arquivo,
-      }).then((resultadoUpload) => {
-        if (!resultadoUpload.ok || !resultadoUpload.url) {
-          setMensagemAcao(
-            "Avatar salvo neste aparelho. Para aparecer em outros lugares, confirme o bucket avatars no Supabase."
-          );
-          return;
-        }
-
-        const perfilComAvatarPublico: PerfilAutorSalvo = {
-          ...perfilComAvatarLocal,
-          avatar: resultadoUpload.url,
-        };
-
-        salvarPerfilAutor(perfilComAvatarPublico);
-        setMensagemAcao("Avatar salvo no perfil público.");
-
-        if (avatarInputRef.current) {
-          avatarInputRef.current.value = "";
-        }
-      });
+      setAvatarPerfilEditor(resultado);
+      setAvatarNomePerfilEditor(arquivo.name);
+      setAvatarArquivoPerfilEditor(arquivo);
+      setAvatarErro("");
     };
 
     leitor.onerror = () => {
@@ -6622,14 +6599,9 @@ function PerfilAutorPageContent() {
   }
 
   function removerAvatarAutor() {
-    salvarPerfilAutor({
-      avatar: "",
-      avatarNome: "",
-      bio: bioAutorPersonalizada,
-      sobreBio: bioSobrePersonalizada,
-      mostrarDestaques: perfilSalvoAutor.mostrarDestaques,
-    });
-
+    setAvatarPerfilEditor("");
+    setAvatarNomePerfilEditor("");
+    setAvatarArquivoPerfilEditor(null);
     setAvatarErro("");
 
     if (avatarInputRef.current) {
@@ -8389,6 +8361,178 @@ function PerfilAutorPageContent() {
           </div>
         )}
 
+        {podeEditarPerfil && editorPerfilAberto && (
+          <div
+            style={menuOverlayStyle}
+            role="presentation"
+            onClick={fecharEditorPerfil}
+          >
+            <section
+              style={menuSheetAtualStyle}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Editar perfil"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div style={menuHeaderStyle}>
+                <div style={menuTitleBlockStyle}>
+                  <strong style={menuTitleStyle}>Editar perfil</strong>
+                  <span style={menuSubtitleStyle}>
+                    Atualize suas informações públicas
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={fecharEditorPerfil}
+                  disabled={salvandoEditorPerfil}
+                  style={menuCloseButtonStyle}
+                  aria-label="Fechar edição do perfil"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={profileEditorSheetContentStyle}>
+                <div style={profileEditorAvatarBlockStyle}>
+                  <div style={profileEditorAvatarPreviewStyle}>
+                    {avatarPerfilEditor ? (
+                      <img
+                        src={avatarPerfilEditor}
+                        alt="Prévia da imagem do perfil"
+                        style={avatarImageStyle}
+                      />
+                    ) : (
+                      <span>
+                        {(nomePerfilEditor || perfilParaMostrar.nome)
+                          .charAt(0)
+                          .toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={avatarActionsAtualStyle}>
+                    <button
+                      type="button"
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={salvandoEditorPerfil}
+                      style={avatarSmallButtonAtualStyle}
+                    >
+                      {avatarPerfilEditor ? "Trocar imagem" : "Colocar imagem"}
+                    </button>
+
+                    {avatarPerfilEditor && (
+                      <button
+                        type="button"
+                        onClick={removerAvatarAutor}
+                        disabled={salvandoEditorPerfil}
+                        style={avatarRemoveButtonAtualStyle}
+                      >
+                        Remover
+                      </button>
+                    )}
+                  </div>
+
+                  {avatarErro && (
+                    <span style={avatarErrorStyle}>{avatarErro}</span>
+                  )}
+                </div>
+
+                <label style={profileEditorSheetFieldStyle}>
+                  <span style={profileEditorSheetLabelStyle}>
+                    Nome de usuário
+                  </span>
+
+                  <input
+                    value={nomePerfilEditor}
+                    onChange={(event) =>
+                      setNomePerfilEditor(event.target.value.slice(0, 80))
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void salvarEdicaoPerfilAutor();
+                      }
+                    }}
+                    placeholder="Digite seu nome"
+                    maxLength={80}
+                    disabled={salvandoEditorPerfil}
+                    style={profileEditorSheetInputStyle}
+                    type="text"
+                  />
+                </label>
+
+                <label style={profileEditorSheetFieldStyle}>
+                  <span style={profileEditorSheetLabelStyle}>
+                    @username público
+                  </span>
+
+                  <input
+                    value={usernamePerfilEditor}
+                    onChange={(event) =>
+                      setUsernamePerfilEditor(
+                        normalizarUsernamePerfilAutor(event.target.value),
+                      )
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void salvarEdicaoPerfilAutor();
+                      }
+                    }}
+                    placeholder="Digite seu username"
+                    maxLength={30}
+                    disabled={salvandoEditorPerfil}
+                    style={profileEditorSheetInputStyle}
+                    type="text"
+                  />
+                </label>
+
+                <label style={profileEditorSheetFieldStyle}>
+                  <span style={profileEditorSheetLabelStyle}>Biografia</span>
+
+                  <textarea
+                    value={bioPerfilEditor}
+                    onChange={(event) =>
+                      setBioPerfilEditor(
+                        event.target.value.slice(0, BIO_MAX_LENGTH),
+                      )
+                    }
+                    placeholder={bioPadraoAutor}
+                    maxLength={BIO_MAX_LENGTH}
+                    disabled={salvandoEditorPerfil}
+                    style={profileEditorSheetTextareaStyle}
+                  />
+                </label>
+
+                <span style={bioCounterStyle}>
+                  {BIO_MAX_LENGTH - bioPerfilEditor.length} caracteres
+                </span>
+
+                <div style={profileEditorSheetActionsStyle}>
+                  <button
+                    type="button"
+                    onClick={fecharEditorPerfil}
+                    disabled={salvandoEditorPerfil}
+                    style={profileEditorCancelButtonStyle}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void salvarEdicaoPerfilAutor()}
+                    disabled={salvandoEditorPerfil}
+                    style={profileEditorSaveButtonStyle}
+                  >
+                    {salvandoEditorPerfil ? "Salvando..." : "Salvar"}
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+
         {denunciaPerfilAberta && !podeEditarPerfil && (
           <div
             style={denunciaPerfilOverlayStyle}
@@ -8501,9 +8645,9 @@ function PerfilAutorPageContent() {
             {podeEditarPerfil ? (
               <button
                 type="button"
-                onClick={() => avatarInputRef.current?.click()}
+                onClick={abrirEditorPerfil}
                 style={avatarButtonAtualStyle}
-                aria-label="Trocar imagem do autor"
+                aria-label="Editar perfil"
               >
                 {avatarAutor ? (
                   <img
@@ -8637,7 +8781,7 @@ function PerfilAutorPageContent() {
             ) : podeEditarPerfil ? (
               <button
                 type="button"
-                onClick={() => setEditorPerfilAberto(true)}
+                onClick={abrirEditorPerfil}
                 style={profileAddBioButtonStyle}
               >
                 + Adicionar biografia
@@ -8658,10 +8802,10 @@ function PerfilAutorPageContent() {
               <>
                 <button
                   type="button"
-                  onClick={() => setEditorPerfilAberto((aberto) => !aberto)}
+                  onClick={abrirEditorPerfil}
                   style={profilePrimaryButtonStyle}
                 >
-                  {editorPerfilAberto ? "Fechar edição" : "Editar perfil"}
+                  Editar perfil
                 </button>
 
                 <button
@@ -8746,95 +8890,6 @@ function PerfilAutorPageContent() {
             />
           )}
 
-          {podeEditarPerfil && editorPerfilAberto && (
-            <>
-              <label style={profileEditorFieldStyle}>
-                <span style={profileEditorLabelStyle}>Nome de usuário</span>
-
-                <input
-                  value={nomePerfilEditor}
-                  onChange={(event) => setNomePerfilEditor(event.target.value)}
-                  onBlur={() => {
-                    const nomeDigitado = nomePerfilEditor.trim();
-
-                    if (nomeDigitado) {
-                      void salvarNomePerfilAutor(nomeDigitado);
-                    }
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      event.currentTarget.blur();
-                    }
-                  }}
-                  placeholder="ex: nome de usuário"
-                  maxLength={80}
-                  style={profileNameInputStyle}
-                  type="text"
-                />
-              </label>
-
-              <label style={profileEditorFieldStyle}>
-                <span style={profileEditorLabelStyle}>@username público</span>
-
-                <input
-                  value={usernamePerfilEditor}
-                  onChange={(event) =>
-                    setUsernamePerfilEditor(
-                      normalizarUsernamePerfilAutor(event.target.value),
-                    )
-                  }
-                  onBlur={() =>
-                    void salvarUsernamePerfilAutor(usernamePerfilEditor)
-                  }
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      event.currentTarget.blur();
-                    }
-                  }}
-                  placeholder="ex: username"
-                  maxLength={30}
-                  style={profileNameInputStyle}
-                  type="text"
-                />
-              </label>
-
-              <div style={avatarActionsAtualStyle}>
-                <button
-                  type="button"
-                  onClick={() => avatarInputRef.current?.click()}
-                  style={avatarSmallButtonAtualStyle}
-                >
-                  {avatarAutor ? "Trocar imagem" : "Colocar imagem"}
-                </button>
-
-                {avatarAutor && (
-                  <button
-                    type="button"
-                    onClick={removerAvatarAutor}
-                    style={avatarRemoveButtonAtualStyle}
-                  >
-                    Remover
-                  </button>
-                )}
-              </div>
-
-              {avatarErro && <span style={avatarErrorStyle}>{avatarErro}</span>}
-
-              <textarea
-                value={perfilSalvoAutor.bio}
-                onChange={(event) => atualizarBioAutor(event.target.value)}
-                placeholder={bioPadraoAutor}
-                maxLength={BIO_MAX_LENGTH}
-                style={bioTextareaAtualStyle}
-              />
-
-              <span style={bioCounterStyle}>
-                {caracteresRestantesBio} caracteres
-              </span>
-            </>
-          )}
         </section>
 
         {destaquesPerfilVisivel &&
@@ -9475,6 +9530,10 @@ function PerfilAutorPageContent() {
                 </div>
               </section>
             </div>
+
+            <p style={profileAboutMemberSinceStyle}>
+              Na Historietas desde {entradaHistorietasPerfil}
+            </p>
           </section>
         )}
 
@@ -9695,9 +9754,14 @@ function PerfilAutorPageContent() {
                               : workActionSheetItemStyle
                           }
                         >
-                          {obraFavorita
-                            ? "Remover da lista"
-                            : "Adicionar à lista"}
+                          <span>
+                            {obraFavorita
+                              ? "Remover da lista"
+                              : "Adicionar à lista"}
+                          </span>
+                          <span style={criarProfileSelectionDotStyle(obraFavorita)}>
+                            {obraFavorita ? "✓" : ""}
+                          </span>
                         </button>
 
                         <button
@@ -9712,9 +9776,14 @@ function PerfilAutorPageContent() {
                               : workActionSheetItemStyle
                           }
                         >
-                          {obraConcluida
-                            ? "Marcar como não concluída"
-                            : "Concluir"}
+                          <span>
+                            {obraConcluida
+                              ? "Marcar como não concluída"
+                              : "Concluir"}
+                          </span>
+                          <span style={criarProfileSelectionDotStyle(obraConcluida)}>
+                            {obraConcluida ? "✓" : ""}
+                          </span>
                         </button>
                       </>
                     )}
@@ -9827,7 +9896,12 @@ function PerfilAutorPageContent() {
                           : workActionSheetItemStyle
                       }
                     >
-                      {obraNoQueroLer ? "Remover do Quero ler" : "Quero ler"}
+                      <span>
+                        {obraNoQueroLer ? "Remover do Quero ler" : "Quero ler"}
+                      </span>
+                      <span style={criarProfileSelectionDotStyle(obraNoQueroLer)}>
+                        {obraNoQueroLer ? "✓" : ""}
+                      </span>
                     </button>
 
                     <button
@@ -9842,7 +9916,12 @@ function PerfilAutorPageContent() {
                           : workActionSheetItemStyle
                       }
                     >
-                      {obraFavorita ? "Remover favorita" : "Favoritar"}
+                      <span>
+                        {obraFavorita ? "Remover favorita" : "Favoritar"}
+                      </span>
+                      <span style={criarProfileSelectionDotStyle(obraFavorita)}>
+                        {obraFavorita ? "✓" : ""}
+                      </span>
                     </button>
 
                     <button
@@ -9857,7 +9936,12 @@ function PerfilAutorPageContent() {
                           : workActionSheetItemStyle
                       }
                     >
-                      {obraConcluida ? "Marcar como não concluída" : "Concluir"}
+                      <span>
+                        {obraConcluida ? "Marcar como não concluída" : "Concluir"}
+                      </span>
+                      <span style={criarProfileSelectionDotStyle(obraConcluida)}>
+                        {obraConcluida ? "✓" : ""}
+                      </span>
                     </button>
 
                     <button
@@ -10284,6 +10368,28 @@ const workActionSheetActionsStyle: CSSProperties = {
   background: "transparent",
   overflow: "hidden",
 };
+
+function criarProfileSelectionDotStyle(ativo: boolean): CSSProperties {
+  return {
+    width: "23px",
+    height: "23px",
+    marginLeft: "auto",
+    borderRadius: "999px",
+    border: ativo
+      ? "2px solid #FFFFFF"
+      : "2.5px solid rgba(161,161,170,0.72)",
+    background: ativo ? "#FFFFFF" : "transparent",
+    color: ativo ? "#111111" : "transparent",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxSizing: "border-box",
+    flex: "0 0 auto",
+    fontSize: "15px",
+    lineHeight: 1,
+    fontWeight: 900,
+  };
+}
 
 const workActionSheetItemStyle: CSSProperties = {
   appearance: "none",
@@ -11257,7 +11363,6 @@ const menuSheetStyle: CSSProperties = {
   maxHeight: "100dvh",
   borderRadius: 0,
   border: "0",
-  borderLeft: "1px solid rgba(255,255,255,0.08)",
   background: "var(--historietas-perfil-bg-page, #070212)",
   padding: "22px 16px calc(132px + env(safe-area-inset-bottom, 0px))",
   display: "grid",
@@ -11562,40 +11667,124 @@ const hiddenInputStyle: CSSProperties = {
   display: "none",
 };
 
-const profileEditorFieldStyle: CSSProperties = {
+const profileEditorSheetContentStyle: CSSProperties = {
   display: "grid",
-  gap: "5px",
+  gap: "14px",
+  minWidth: 0,
+  maxWidth: "100%",
+  paddingBottom: "24px",
+  boxSizing: "border-box",
+};
+
+const profileEditorAvatarBlockStyle: CSSProperties = {
+  display: "grid",
+  justifyItems: "center",
+  gap: "10px",
+  minWidth: 0,
+  padding: "6px 0 2px",
+};
+
+const profileEditorAvatarPreviewStyle: CSSProperties = {
+  width: "88px",
+  height: "88px",
+  borderRadius: "24px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "var(--historietas-perfil-bg-deep, #04000A)",
+  color: "#FFFFFF",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  boxSizing: "border-box",
+  fontSize: "30px",
+  lineHeight: 1,
+  fontWeight: 950,
+};
+
+const profileEditorSheetFieldStyle: CSSProperties = {
+  display: "grid",
+  gap: "7px",
   width: "100%",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
 };
 
-const profileEditorLabelStyle: CSSProperties = {
+const profileEditorSheetLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
+  fontSize: "11px",
+  lineHeight: 1.2,
   fontWeight: 900,
-  textAlign: "center",
+  textAlign: "left",
   ...safeTextStyle,
 };
 
-const profileNameInputStyle: CSSProperties = {
+const profileEditorSheetInputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "38px",
-  borderRadius: "999px",
+  minHeight: "44px",
+  borderRadius: "14px",
   border: "1px solid rgba(255,255,255,0.10)",
   background: "var(--historietas-perfil-surface, #08030F)",
   color: "#FFFFFF",
-  padding: "0 12px",
+  padding: "0 14px",
   outline: "none",
-  fontSize: "12px",
+  fontSize: "13px",
+  lineHeight: 1.2,
   fontWeight: 850,
   fontFamily: "inherit",
-  textAlign: "center",
+  textAlign: "left",
   boxSizing: "border-box",
   minWidth: 0,
   maxWidth: "100%",
   ...safeTextStyle,
+};
+
+const profileEditorSheetTextareaStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "112px",
+  resize: "vertical",
+  borderRadius: "16px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "var(--historietas-perfil-surface, #08030F)",
+  color: "#FFFFFF",
+  padding: "12px 14px",
+  outline: "none",
+  fontSize: "13px",
+  lineHeight: 1.45,
+  fontWeight: 650,
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+  minWidth: 0,
+  maxWidth: "100%",
+  ...safeTextStyle,
+};
+
+const profileEditorSheetActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: "8px",
+  minWidth: 0,
+  marginTop: "4px",
+};
+
+const profileEditorCancelButtonStyle: CSSProperties = {
+  minHeight: "44px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#FFFFFF",
+  fontSize: "12px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  cursor: "pointer",
+};
+
+const profileEditorSaveButtonStyle: CSSProperties = {
+  ...profileEditorCancelButtonStyle,
+  border: "1px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#111111",
 };
 
 const avatarActionsStyle: CSSProperties = {
@@ -11802,26 +11991,6 @@ const denunciaPerfilSubmitButtonStyle: CSSProperties = {
   border: "1px solid var(--historietas-perfil-danger-36, rgba(248,113,113,0.36))",
   background: "var(--historietas-perfil-danger-dark-34, rgba(127,29,29,0.34))",
   color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
-};
-
-const bioTextareaStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "64px",
-  resize: "vertical",
-  borderRadius: "16px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
-  color: "#FFFFFF",
-  padding: "10px 11px",
-  outline: "none",
-  fontSize: "11px",
-  lineHeight: 1.4,
-  fontWeight: 650,
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  minWidth: 0,
-  maxWidth: "100%",
-  ...safeTextStyle,
 };
 
 const bioCounterStyle: CSSProperties = {
@@ -12733,6 +12902,16 @@ const profileAboutRowStyle: CSSProperties = {
   lineHeight: 1.2,
   fontWeight: 800,
   textAlign: "left",
+  ...safeTextStyle,
+};
+
+const profileAboutMemberSinceStyle: CSSProperties = {
+  margin: "5px 0 0",
+  color: "var(--historietas-text-muted, #A1A1AA)",
+  fontSize: "10px",
+  lineHeight: 1.25,
+  fontWeight: 800,
+  textAlign: "center",
   ...safeTextStyle,
 };
 
@@ -14062,13 +14241,6 @@ const desktopAvatarSmallButtonStyle: CSSProperties = {
 
 const desktopAvatarRemoveButtonStyle: CSSProperties = {
   ...desktopAvatarSmallButtonStyle,
-};
-
-const desktopBioTextareaStyle: CSSProperties = {
-  ...bioTextareaStyle,
-  minHeight: "92px",
-  fontSize: "13px",
-  lineHeight: 1.55,
 };
 
 const desktopStatsBoxStyle: CSSProperties = {

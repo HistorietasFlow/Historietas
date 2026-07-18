@@ -1528,7 +1528,9 @@ export default function AdminComunidadePage() {
                           ? adminFiltersSheetRadioActiveStyle
                           : adminFiltersSheetRadioStyle
                       }
-                    />
+                    >
+                      {statusFiltro === status ? "✓" : ""}
+                    </span>
                   </button>
                 )
               )}
@@ -2977,13 +2979,22 @@ const adminFiltersSheetRadioStyle: CSSProperties = {
   borderRadius: "999px",
   border: "2.5px solid rgba(161,161,170,0.72)",
   background: "transparent",
+  color: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
   flex: "0 0 auto",
   boxSizing: "border-box",
+  fontSize: "15px",
+  lineHeight: 1,
+  fontWeight: 900,
 };
 
 const adminFiltersSheetRadioActiveStyle: CSSProperties = {
   ...adminFiltersSheetRadioStyle,
-  border: "6.5px solid #FFFFFF",
+  border: "2px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#111111",
 };
 
 const adminFiltersSheetClearButtonStyle: CSSProperties = {

@@ -1867,9 +1867,7 @@ async function carregarUsuariosSeguidosSupabase(userId: string) {
     try {
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select(
-          "*"
-        )
+        .select("id,user_id,nome,avatar_url")
         .in("user_id", usuariosIds)
         .limit(120);
 
@@ -1894,9 +1892,7 @@ async function carregarUsuariosSeguidosSupabase(userId: string) {
       try {
         const { data: profilesDataPorId } = await supabase
           .from("profiles")
-          .select(
-            "*"
-          )
+        .select("id,user_id,nome,avatar_url")
           .in("id", usuariosSemProfile)
           .limit(120);
 
@@ -1924,7 +1920,7 @@ async function carregarUsuariosSeguidosSupabase(userId: string) {
         }
 
         const profile = profilesPorUsuario.get(seguidoId);
-        const nome = obterNomeProfileSeguindo(profile) || seguidoId;
+        const nome = obterNomeProfileSeguindo(profile) || "Usuário";
         const handleSalvo =
           obterTextoRegistro(profile || {}, "username") ||
           obterTextoRegistro(profile || {}, "nome_usuario") ||
@@ -1991,9 +1987,7 @@ async function carregarUsuariosSeguidoresSupabase(userId: string) {
     try {
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select(
-          "*"
-        )
+        .select("id,user_id,nome,avatar_url")
         .in("user_id", usuariosIds)
         .limit(120);
 
@@ -2018,9 +2012,7 @@ async function carregarUsuariosSeguidoresSupabase(userId: string) {
       try {
         const { data: profilesDataPorId } = await supabase
           .from("profiles")
-          .select(
-            "*"
-          )
+        .select("id,user_id,nome,avatar_url")
           .in("id", usuariosSemProfile)
           .limit(120);
 
@@ -2048,7 +2040,7 @@ async function carregarUsuariosSeguidoresSupabase(userId: string) {
         }
 
         const profile = profilesPorUsuario.get(seguidorId);
-        const nome = obterNomeProfileSeguindo(profile) || seguidorId;
+        const nome = obterNomeProfileSeguindo(profile) || "Usuário";
         const handleSalvo =
           obterTextoRegistro(profile || {}, "username") ||
           obterTextoRegistro(profile || {}, "nome_usuario") ||
@@ -3623,7 +3615,9 @@ export default function SeguindoPage() {
                                 ? sortingOptionRadioActiveStyle
                                 : sortingOptionRadioStyle
                             }
-                          />
+                          >
+                            {ativo ? "✓" : ""}
+                          </span>
                         </button>
                       );
                     })}
@@ -4988,13 +4982,21 @@ const sortingOptionRadioStyle: CSSProperties = {
   borderRadius: "999px",
   border: "2.5px solid rgba(161,161,170,0.72)",
   background: "transparent",
+  color: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
   boxSizing: "border-box",
+  fontSize: "15px",
+  lineHeight: 1,
+  fontWeight: 900,
 };
 
 const sortingOptionRadioActiveStyle: CSSProperties = {
   ...sortingOptionRadioStyle,
-  border: "6.5px solid #FFFFFF",
-  background: "transparent",
+  border: "2px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#111111",
 };
 
 const quickFiltersStyle: CSSProperties = {
