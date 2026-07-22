@@ -1638,31 +1638,25 @@ async function carregarPerfilPublicoObra(
   return normalizarPerfilPublicoObra(null, userIdLimpo, nomeFallback || "Usuário");
 }
 
-function criarLinkComunidadeObra(titulo: string, tipo?: "Teoria" | "Review") {
+function criarLinkComunidadeObra(
+  titulo: string,
+  filtro?: "Teoria" | "Review" | "posts"
+) {
   const params = new URLSearchParams();
 
-  params.set("busca", titulo);
+  params.set("obra", titulo);
 
-  if (tipo) {
-    params.set("tipo", tipo);
+  if (filtro === "posts") {
+    params.set("grupo", "posts");
+  } else if (filtro) {
+    params.set("tipo", filtro);
   }
 
   return `/comunidade?${params.toString()}`;
 }
 
-function normalizarObraRelacionadaComunidade(valor: string) {
-  return normalizarTexto(valor).replace(/\s+/g, " ");
-}
-
 function postComunidadePertenceAObra(post: SupabaseComunidadePostRow, titulo: string) {
-  const obraPost = normalizarObraRelacionadaComunidade(post.obra_relacionada || "");
-  const obraTitulo = normalizarObraRelacionadaComunidade(titulo);
-
-  if (!obraPost || !obraTitulo) {
-    return false;
-  }
-
-  return obraPost === obraTitulo;
+  return post.obra_relacionada === titulo;
 }
 
 function obterNumeroMetrica(valor: string) {
@@ -2476,6 +2470,35 @@ function obterIdsComentarioComRespostas(
   return ids;
 }
 
+async function incrementarVisualizacaoObraPublicaSupabase(
+  obraId: string
+): Promise<number | null> {
+  const obraIdLimpo = obraId.trim();
+
+  if (!idObraSupabaseValido(obraIdLimpo)) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase.rpc("incrementar_visualizacao_obra", {
+      obra_id_param: obraIdLimpo,
+    });
+
+    if (error) {
+      console.warn(
+        "Não consegui registrar a visualização protegida da obra:",
+        error.message
+      );
+      return null;
+    }
+
+    return Math.max(0, obterNumeroSeguro(data, 0));
+  } catch {
+    // A página da obra continua funcionando mesmo se a contagem falhar.
+    return null;
+  }
+}
+
 function LoadingSpinner({
   label = "Carregando",
   compacto = false,
@@ -2577,6 +2600,7 @@ export default function ObraDinamicaPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
+  const visualizacaoObraRegistradaRef = useRef("");
 
   useEffect(() => {
     if (!mensagemAcao) {
@@ -2788,6 +2812,39 @@ export default function ObraDinamicaPage() {
 
     return null;
   }, [slug, obrasLocais]);
+
+  useEffect(() => {
+    if (!obra || !idObraSupabaseValido(obra.id)) {
+      return;
+    }
+
+    const obraIdAtual = obra.id;
+
+    if (visualizacaoObraRegistradaRef.current === obraIdAtual) {
+      return;
+    }
+
+    visualizacaoObraRegistradaRef.current = obraIdAtual;
+
+    async function registrarVisualizacaoObraAtual() {
+      const totalVisualizacoes =
+        await incrementarVisualizacaoObraPublicaSupabase(obraIdAtual);
+
+      if (totalVisualizacoes === null) {
+        return;
+      }
+
+      setMetricasObra((metricasAtuais) => ({
+        ...metricasAtuais,
+        visualizacoes: Math.max(
+          metricasAtuais.visualizacoes,
+          totalVisualizacoes
+        ),
+      }));
+    }
+
+    void registrarVisualizacaoObraAtual();
+  }, [obra?.id]);
 
   useEffect(() => {
     let cancelado = false;
@@ -3268,6 +3325,11 @@ export default function ObraDinamicaPage() {
 
     let cancelado = false;
     const tituloObra = obra.titulo;
+    const iniciarCarregamentoTimer = window.setTimeout(() => {
+      if (!cancelado) {
+        setMetricasComunidadeObra(metricasComunidadeObraVazias);
+      }
+    }, 0);
 
     async function carregarMetricasComunidadeObra() {
       try {
@@ -3280,6 +3342,7 @@ export default function ObraDinamicaPage() {
             .from("comunidade_posts")
             .select("id, tipo_publicacao, obra_relacionada")
             .eq("obra_relacionada", tituloObra)
+            .order("id", { ascending: true })
             .range(inicio, inicio + tamanhoPagina - 1);
 
           if (erroPosts || !Array.isArray(postsData)) {
@@ -3312,7 +3375,11 @@ export default function ObraDinamicaPage() {
           reviews: postsRelacionados.filter(
             (post) => post.tipo_publicacao === "Review"
           ).length,
-          posts: postsRelacionados.length,
+          posts: postsRelacionados.filter(
+            (post) =>
+              post.tipo_publicacao !== "Teoria" &&
+              post.tipo_publicacao !== "Review"
+          ).length,
           carregado: true,
         });
       } catch {
@@ -3329,6 +3396,7 @@ export default function ObraDinamicaPage() {
 
     return () => {
       cancelado = true;
+      window.clearTimeout(iniciarCarregamentoTimer);
     };
   }, [obra?.titulo]);
 
@@ -5412,7 +5480,7 @@ export default function ObraDinamicaPage() {
                   : "—"
               }
               rotulo="posts"
-              href={criarLinkComunidadeObra(obra.titulo)}
+              href={criarLinkComunidadeObra(obra.titulo, "posts")}
             />
           </div>
         </section>

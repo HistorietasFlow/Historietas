@@ -21,6 +21,7 @@ type CapituloLocal = {
   lido: boolean;
   lidoEm: string;
   publicado?: boolean;
+  visualizacoes?: number;
 };
 
 type ArquivoObraLocal = {
@@ -87,6 +88,7 @@ type CapituloSupabaseRow = {
   texto: string | null;
   ordem: number | null;
   publicado: boolean | null;
+  visualizacoes: number | null;
   criado_em: string | null;
   atualizado_em: string | null;
 };
@@ -158,6 +160,7 @@ type PreferenciasLeitura = {
 };
 
 type MetricasCapituloLeitor = {
+  totalVisualizacoes: number;
   totalCurtidas: number;
   totalSalvos: number;
   totalComentarios: number;
@@ -167,6 +170,7 @@ type MetricasCapituloLeitor = {
 };
 
 const metricasCapituloVazias: MetricasCapituloLeitor = {
+  totalVisualizacoes: 0,
   totalCurtidas: 0,
   totalSalvos: 0,
   totalComentarios: 0,
@@ -185,7 +189,6 @@ const FONT_SCALE_LEGACY_VALUES: Record<TamanhoFonte, 1 | 3 | 5 | 7 | 10> = {
 };
 
 const STORAGE_KEY = "historietas-obras";
-const VIEWED_WORKS_STORAGE_KEY = "historietas-obras-visualizacoes";
 const READER_PREFERENCES_STORAGE_KEY = "historietas-preferencias-leitura";
 const TABELA_COMENTARIOS_CAPITULOS_CURTIDAS = "comentarios_capitulos_curtidas";
 const CURTIDAS_COMENTARIOS_CAPITULOS_STORAGE_KEY = "historietas-comentarios-capitulos-curtidas";
@@ -449,6 +452,13 @@ function normalizarCapitulo(
       typeof (capitulo as Record<string, unknown>).publicado === "boolean"
         ? Boolean((capitulo as Record<string, unknown>).publicado)
         : undefined,
+    visualizacoes: Math.max(
+      0,
+      obterNumeroSeguro(
+        (capitulo as Record<string, unknown>).visualizacoes,
+        0
+      )
+    ),
   };
 }
 
@@ -726,80 +736,35 @@ function criarHrefLeituraCapituloLeitor(
   )}&capituloId=${encodeURIComponent(capituloId)}`;
 }
 
-function registrarVisualizacaoObraLocalUnica(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
-  userId = ""
-) {
-  const userIdLimpo = userId.trim();
+async function incrementarVisualizacaoCapituloSupabase(
+  capituloId: string
+): Promise<number | null> {
+  const capituloIdLimpo = capituloId.trim();
 
-  if (!userIdLimpo) {
-    return false;
+  if (!idObraSupabaseValido(capituloIdLimpo)) {
+    return null;
   }
 
   try {
-    const chaveObra = obra.id || obra.slug || normalizarTexto(obra.titulo);
-
-    if (!chaveObra) {
-      return false;
-    }
-
-    const visualizacoesTexto = lerStorageUsuarioLeitor(
-      VIEWED_WORKS_STORAGE_KEY,
-      userIdLimpo
-    );
-    const visualizacoesJson: unknown = visualizacoesTexto
-      ? JSON.parse(visualizacoesTexto)
-      : {};
-    const visualizacoesPorObra =
-      visualizacoesJson &&
-      typeof visualizacoesJson === "object" &&
-      !Array.isArray(visualizacoesJson)
-        ? (visualizacoesJson as Record<string, unknown>)
-        : {};
-    const jaVisualizou =
-      visualizacoesPorObra[chaveObra] === true ||
-      obterNumeroSeguro(visualizacoesPorObra[chaveObra], 0) > 0;
-
-    if (jaVisualizou) {
-      return false;
-    }
-
-    salvarJsonStorageUsuarioLeitor(
-      VIEWED_WORKS_STORAGE_KEY,
-      userIdLimpo,
+    const { data, error } = await supabase.rpc(
+      "incrementar_visualizacao_capitulo",
       {
-        ...visualizacoesPorObra,
-        [chaveObra]: 1,
+        capitulo_id_param: capituloIdLimpo,
       }
     );
 
-    return true;
-  } catch {
-    // Visualização local é fallback e não deve travar a leitura.
-    return false;
-  }
-}
-
-async function incrementarVisualizacaoObraSupabase(obraId: string) {
-  const obraIdLimpo = obraId.trim();
-
-  if (!idObraSupabaseValido(obraIdLimpo)) {
-    return;
-  }
-
-  try {
-    const { error } = await supabase.rpc("incrementar_visualizacao_obra", {
-      obra_id_param: obraIdLimpo,
-    });
-
     if (error) {
       console.warn(
-        "Não consegui registrar a visualização protegida da obra:",
+        "Não consegui registrar a visualização protegida do capítulo:",
         error.message
       );
+      return null;
     }
+
+    return Math.max(0, obterNumeroSeguro(data, 0));
   } catch {
     // A leitura continua mesmo se a contagem remota falhar.
+    return null;
   }
 }
 
@@ -867,6 +832,10 @@ function mesclarCapituloSupabaseComLocal(
     lido: Boolean(capituloLocal?.lido),
     lidoEm: capituloLocal?.lidoEm || "",
     publicado: Boolean(capitulo.publicado),
+    visualizacoes: Math.max(
+      0,
+      obterNumeroSeguro(capitulo.visualizacoes, capituloLocal?.visualizacoes || 0)
+    ),
   };
 }
 
@@ -1072,7 +1041,7 @@ async function carregarObraSupabase(
 
   let capitulosQuery = supabase
     .from("capitulos")
-    .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
+    .select("id,obra_id,user_id,titulo,texto,ordem,publicado,visualizacoes,criado_em,atualizado_em")
     .eq("obra_id", obraId)
     .order("ordem", { ascending: true })
     .limit(300);
@@ -1418,6 +1387,7 @@ function criarMetricasCapituloLocais(
   }
 
   return {
+    totalVisualizacoes: Math.max(0, capitulo.visualizacoes || 0),
     totalCurtidas: capitulo.curtiu ? 1 : 0,
     totalSalvos: capitulo.salvo ? 1 : 0,
     totalComentarios,
@@ -1477,6 +1447,33 @@ async function usuarioTemRegistroCapituloLeitor(
   }
 }
 
+async function carregarVisualizacoesCapituloLeitor(
+  capituloId: string
+): Promise<number | null> {
+  try {
+    const { data, error } = await supabase
+      .from("capitulos")
+      .select("visualizacoes")
+      .eq("id", capituloId)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return Math.max(
+      0,
+      obterNumeroSeguro(
+        (data as { visualizacoes?: number | null }).visualizacoes,
+        0
+      )
+    );
+  } catch {
+    return null;
+  }
+}
+
 async function carregarMetricasCapituloSupabase(
   capitulo: CapituloLocal,
   userId: string,
@@ -1489,12 +1486,14 @@ async function carregarMetricasCapituloSupabase(
   }
 
   const [
+    totalVisualizacoes,
     totalCurtidas,
     totalSalvos,
     totalComentarios,
     curtiu,
     salvo,
   ] = await Promise.all([
+    carregarVisualizacoesCapituloLeitor(capituloId),
     contarRegistrosCapituloLeitor("curtidas_capitulos", capituloId),
     contarRegistrosCapituloLeitor("salvos_capitulos", capituloId),
     contarRegistrosCapituloLeitor("comentarios_capitulos", capituloId),
@@ -1503,6 +1502,10 @@ async function carregarMetricasCapituloSupabase(
   ]);
 
   return {
+    totalVisualizacoes:
+      totalVisualizacoes === null
+        ? Math.max(0, capitulo.visualizacoes || 0)
+        : totalVisualizacoes,
     totalCurtidas:
       totalCurtidas === null ? (capitulo.curtiu ? 1 : 0) : totalCurtidas,
     totalSalvos:
@@ -3003,7 +3006,7 @@ export default function LerCapituloPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const visualizacaoObraRegistradaRef = useRef("");
+  const visualizacaoCapituloRegistradaRef = useRef("");
   const atividadeDiarioRegistradaRef = useRef("");
   const curtidaCapituloSalvandoRef = useRef(false);
   const salvoCapituloSalvandoRef = useRef(false);
@@ -3367,7 +3370,13 @@ export default function LerCapituloPage() {
         return;
       }
 
-      setMetricasCapitulo(metricasReais);
+      setMetricasCapitulo((metricasAtuais) => ({
+        ...metricasReais,
+        totalVisualizacoes: Math.max(
+          metricasAtuais.totalVisualizacoes,
+          metricasReais.totalVisualizacoes
+        ),
+      }));
 
       if (
         metricasReais.curtiu !== capituloAtual.curtiu ||
@@ -3433,23 +3442,37 @@ export default function LerCapituloPage() {
     : null;
 
   useEffect(() => {
-    if (!obraAtual) {
+    if (!capituloAtual || !idObraSupabaseValido(capituloAtual.id)) {
       return;
     }
 
-    const chaveVisualizacao =
-      obraAtual.id || obraAtual.slug || normalizarTexto(obraAtual.titulo);
+    const capituloIdAtual = capituloAtual.id;
 
-    if (!chaveVisualizacao || visualizacaoObraRegistradaRef.current === chaveVisualizacao) {
+    if (visualizacaoCapituloRegistradaRef.current === capituloIdAtual) {
       return;
     }
 
-    visualizacaoObraRegistradaRef.current = chaveVisualizacao;
+    visualizacaoCapituloRegistradaRef.current = capituloIdAtual;
 
-    registrarVisualizacaoObraLocalUnica(obraAtual, usuarioIdLogado);
+    async function registrarVisualizacaoCapituloAtual() {
+      const totalVisualizacoes =
+        await incrementarVisualizacaoCapituloSupabase(capituloIdAtual);
 
-    void incrementarVisualizacaoObraSupabase(obraAtual.id);
-  }, [obraAtual?.id, obraAtual?.slug, obraAtual?.titulo, usuarioIdLogado]);
+      if (totalVisualizacoes === null) {
+        return;
+      }
+
+      setMetricasCapitulo((metricasAtuais) => ({
+        ...metricasAtuais,
+        totalVisualizacoes: Math.max(
+          metricasAtuais.totalVisualizacoes,
+          totalVisualizacoes
+        ),
+      }));
+    }
+
+    void registrarVisualizacaoCapituloAtual();
+  }, [capituloAtual?.id]);
 
   useEffect(() => {
     const atualizarComentarioTimer = window.setTimeout(() => {
@@ -4415,6 +4438,15 @@ export default function LerCapituloPage() {
           }
         >
           <h1 style={titleStyle}>{capituloAtual.titulo}</h1>
+          <p style={chapterViewsStyle}>
+            <span aria-hidden="true">👁</span>{" "}
+            {formatarContadorCapituloLeitor(
+              metricasCapitulo.totalVisualizacoes
+            )}{" "}
+            {metricasCapitulo.totalVisualizacoes === 1
+              ? "visualização"
+              : "visualizações"}
+          </p>
         </section>
 
         {mostrarAjustes && (
@@ -5268,6 +5300,16 @@ const titleStyle: CSSProperties = {
   WebkitTextFillColor: "#FFFFFF",
   textShadow: "none",
   ...safeTextStyle,
+};
+
+const chapterViewsStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
+  lineHeight: 1.4,
+  fontWeight: 800,
+  letterSpacing: "0.01em",
+  textAlign: "center",
 };
 
 const metaStyle: CSSProperties = {
