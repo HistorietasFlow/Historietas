@@ -95,6 +95,7 @@ type SupabaseEnqueteVotoRow = {
 
 type OrdenacaoComunidade = "Recentes" | "Em alta" | "Mais comentadas";
 type TipoPublicacaoFiltro = TipoPublicacaoComunidade | "Todos";
+type GrupoPublicacaoObra = "" | "posts";
 
 const CATEGORIAS_COMUNIDADE: CategoriaComunidade[] = [
   "Geral",
@@ -733,6 +734,12 @@ function obterTipoPublicacaoPorParametro(valor: string) {
       (tipo) => normalizarTexto(tipo) === valorNormalizado
     ) || null
   );
+}
+
+function obterGrupoPublicacaoObraPorParametro(
+  valor: string
+): GrupoPublicacaoObra {
+  return normalizarTexto(valor) === "posts" ? "posts" : "";
 }
 
 function normalizarSugestaoObraLocal(valor: unknown, index: number) {
@@ -2526,6 +2533,9 @@ export default function ComunidadePage() {
   );
   const [tipoPublicacaoAtiva, setTipoPublicacaoAtiva] =
     useState<TipoPublicacaoFiltro>("Todos");
+  const [obraRelacionadaFiltro, setObraRelacionadaFiltro] = useState("");
+  const [grupoPublicacaoObra, setGrupoPublicacaoObra] =
+    useState<GrupoPublicacaoObra>("");
   const [categoriaPost, setCategoriaPost] =
     useState<CategoriaComunidade>("Geral");
   const [tipoPublicacaoPost, setTipoPublicacaoPost] =
@@ -2967,8 +2977,11 @@ export default function ComunidadePage() {
 
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 
+    const parametrosUrl = new URLSearchParams(window.location.search);
+    const obraUrl = (parametrosUrl.get("obra") || "").trim().slice(0, 90);
+
     const carregarFeedTimer = window.setTimeout(() => {
-      void carregarPostsComunidade(true);
+      void carregarPostsComunidade(true, 0, obraUrl);
     }, 0);
 
     return () => {
@@ -2985,11 +2998,15 @@ export default function ComunidadePage() {
 
     const parametrosUrl = new URLSearchParams(window.location.search);
     const buscaUrl = (parametrosUrl.get("busca") || "").trim();
+    const obraUrl = (parametrosUrl.get("obra") || "").trim().slice(0, 90);
     const tipoUrl = obterTipoPublicacaoPorParametro(
       parametrosUrl.get("tipo") || ""
     );
+    const grupoObraUrl = obterGrupoPublicacaoObraPorParametro(
+      parametrosUrl.get("grupo") || ""
+    );
 
-    if (!buscaUrl && !tipoUrl) {
+    if (!buscaUrl && !obraUrl && !tipoUrl && !grupoObraUrl) {
       return;
     }
 
@@ -2998,9 +3015,14 @@ export default function ComunidadePage() {
         setTermoBusca(buscaUrl.slice(0, 90));
       }
 
+      setObraRelacionadaFiltro(obraUrl);
+      setGrupoPublicacaoObra(tipoUrl ? "" : grupoObraUrl);
+
       if (tipoUrl) {
         setTipoPublicacaoAtiva(tipoUrl);
         setMenuAcoesRapidasComunidadeAberto(true);
+      } else if (grupoObraUrl) {
+        setTipoPublicacaoAtiva("Todos");
       }
 
       setMostrarApenasSalvos(false);
@@ -3158,8 +3180,21 @@ export default function ComunidadePage() {
       const tipoPublicacaoCombina =
         tipoPublicacaoAtiva === "Todos" ||
         tipoVisualPublicacao === tipoPublicacaoAtiva;
+      const obraRelacionadaCombina =
+        !obraRelacionadaFiltro.trim() ||
+        normalizarTexto(post.obraRelacionada) ===
+          normalizarTexto(obraRelacionadaFiltro);
+      const grupoPublicacaoCombina =
+        grupoPublicacaoObra !== "posts" ||
+        (tipoVisualPublicacao !== "Teoria" &&
+          tipoVisualPublicacao !== "Review");
 
-      if (!categoriaCombina || !tipoPublicacaoCombina) {
+      if (
+        !categoriaCombina ||
+        !tipoPublicacaoCombina ||
+        !obraRelacionadaCombina ||
+        !grupoPublicacaoCombina
+      ) {
         return false;
       }
 
@@ -3225,6 +3260,8 @@ export default function ComunidadePage() {
   }, [
     categoriaAtiva,
     tipoPublicacaoAtiva,
+    obraRelacionadaFiltro,
+    grupoPublicacaoObra,
     mostrarApenasSalvos,
     ordenacaoAtiva,
     posts,
@@ -3327,6 +3364,8 @@ export default function ComunidadePage() {
   const filtrosAtivos =
     categoriaAtiva !== "Todos" ||
     tipoPublicacaoAtiva !== "Todos" ||
+    Boolean(obraRelacionadaFiltro.trim()) ||
+    Boolean(grupoPublicacaoObra) ||
     Boolean(termoBuscaNormalizado) ||
     mostrarApenasSalvos ||
     ordenacaoAtiva !== "Recentes";
@@ -3352,9 +3391,14 @@ export default function ComunidadePage() {
   function limparFiltrosComunidade() {
     setCategoriaAtiva("Todos");
     setTipoPublicacaoAtiva("Todos");
+    setObraRelacionadaFiltro("");
+    setGrupoPublicacaoObra("");
     setTermoBusca("");
     setOrdenacaoAtiva("Recentes");
     setMostrarApenasSalvos(false);
+
+    window.history.replaceState(null, "", "/comunidade");
+    void carregarPostsComunidade(true, 0, "");
   }
 
   function emitirFeedbackAcao(mensagem: string) {
@@ -3699,7 +3743,8 @@ export default function ComunidadePage() {
 
   async function carregarPostsComunidade(
     mostrarCarregamento = false,
-    pagina = 0
+    pagina = 0,
+    obraFiltro = obraRelacionadaFiltro
   ) {
     const carregandoPaginaInicial = mostrarCarregamento;
     const carregandoPaginaSeguinte = pagina > 0;
@@ -3716,11 +3761,22 @@ export default function ComunidadePage() {
     const fim = inicio + POSTS_COMUNIDADE_POR_PAGINA - 1;
 
     try {
-      const postsResposta = await supabase
+      let consultaPosts = supabase
         .from("comunidade_posts")
         .select(
           "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por"
-        )
+        );
+
+      const obraFiltroLimpa = obraFiltro.trim().slice(0, 90);
+
+      if (obraFiltroLimpa) {
+        consultaPosts = consultaPosts.eq(
+          "obra_relacionada",
+          obraFiltroLimpa
+        );
+      }
+
+      const postsResposta = await consultaPosts
         .order("criado_em", { ascending: false })
         .range(inicio, fim);
 

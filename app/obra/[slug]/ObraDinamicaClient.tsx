@@ -268,7 +268,7 @@ type MetricasObraPublica = {
 type MetricasComunidadeObra = {
   teorias: number;
   reviews: number;
-  interacoes: number;
+  posts: number;
   carregado: boolean;
 };
 
@@ -294,7 +294,7 @@ const metricasObraVazias: MetricasObraPublica = {
 const metricasComunidadeObraVazias: MetricasComunidadeObra = {
   teorias: 0,
   reviews: 0,
-  interacoes: 0,
+  posts: 0,
   carregado: false,
 };
 
@@ -1662,11 +1662,7 @@ function postComunidadePertenceAObra(post: SupabaseComunidadePostRow, titulo: st
     return false;
   }
 
-  return (
-    obraPost === obraTitulo ||
-    obraPost.includes(obraTitulo) ||
-    obraTitulo.includes(obraPost)
-  );
+  return obraPost === obraTitulo;
 }
 
 function obterNumeroMetrica(valor: string) {
@@ -3275,39 +3271,34 @@ export default function ObraDinamicaPage() {
 
     async function carregarMetricasComunidadeObra() {
       try {
-        const { data: postsData, error: erroPosts } = await supabase
-          .from("comunidade_posts")
-          .select("id, tipo_publicacao, obra_relacionada")
-          .not("obra_relacionada", "is", null)
-          .limit(200);
+        const tamanhoPagina = 1000;
+        const postsRelacionados: SupabaseComunidadePostRow[] = [];
+        let inicio = 0;
 
-        if (erroPosts || !Array.isArray(postsData)) {
-          throw erroPosts;
-        }
+        while (true) {
+          const { data: postsData, error: erroPosts } = await supabase
+            .from("comunidade_posts")
+            .select("id, tipo_publicacao, obra_relacionada")
+            .eq("obra_relacionada", tituloObra)
+            .range(inicio, inicio + tamanhoPagina - 1);
 
-        const postsRelacionados = (
-          postsData as unknown as SupabaseComunidadePostRow[]
-        ).filter((post) => postComunidadePertenceAObra(post, tituloObra));
-        const postIds = postsRelacionados.map((post) => post.id).filter(Boolean);
+          if (erroPosts || !Array.isArray(postsData)) {
+            throw erroPosts;
+          }
 
-        let totalComentariosComunidade = 0;
-        let totalCurtidasComunidade = 0;
+          const lotePosts = postsData as unknown as SupabaseComunidadePostRow[];
 
-        if (postIds.length > 0) {
-          const [{ count: comentariosCount }, { count: curtidasCount }] =
-            await Promise.all([
-              supabase
-                .from("comunidade_comentarios")
-                .select("id", { count: "exact", head: true })
-                .in("post_id", postIds),
-              supabase
-                .from("comunidade_curtidas")
-                .select("post_id", { count: "exact", head: true })
-                .in("post_id", postIds),
-            ]);
+          postsRelacionados.push(
+            ...lotePosts.filter((post) =>
+              postComunidadePertenceAObra(post, tituloObra)
+            )
+          );
 
-          totalComentariosComunidade = comentariosCount ?? 0;
-          totalCurtidasComunidade = curtidasCount ?? 0;
+          if (lotePosts.length < tamanhoPagina) {
+            break;
+          }
+
+          inicio += tamanhoPagina;
         }
 
         if (cancelado) {
@@ -3321,10 +3312,7 @@ export default function ObraDinamicaPage() {
           reviews: postsRelacionados.filter(
             (post) => post.tipo_publicacao === "Review"
           ).length,
-          interacoes:
-            postsRelacionados.length +
-            totalComentariosComunidade +
-            totalCurtidasComunidade,
+          posts: postsRelacionados.length,
           carregado: true,
         });
       } catch {
@@ -5400,17 +5388,29 @@ export default function ObraDinamicaPage() {
 
           <div style={communityGridStyle}>
             <CommunityItem
-              numero={formatarNumeroCompacto(metricasComunidadeObra.teorias)}
+              numero={
+                metricasComunidadeObra.carregado
+                  ? formatarNumeroCompacto(metricasComunidadeObra.teorias)
+                  : "—"
+              }
               rotulo="teorias"
               href={criarLinkComunidadeObra(obra.titulo, "Teoria")}
             />
             <CommunityItem
-              numero={formatarNumeroCompacto(metricasComunidadeObra.reviews)}
+              numero={
+                metricasComunidadeObra.carregado
+                  ? formatarNumeroCompacto(metricasComunidadeObra.reviews)
+                  : "—"
+              }
               rotulo="reviews"
               href={criarLinkComunidadeObra(obra.titulo, "Review")}
             />
             <CommunityItem
-              numero={formatarNumeroCompacto(metricasComunidadeObra.interacoes)}
+              numero={
+                metricasComunidadeObra.carregado
+                  ? formatarNumeroCompacto(metricasComunidadeObra.posts)
+                  : "—"
+              }
               rotulo="posts"
               href={criarLinkComunidadeObra(obra.titulo)}
             />
