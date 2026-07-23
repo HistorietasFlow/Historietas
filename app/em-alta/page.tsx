@@ -105,11 +105,6 @@ type SupabaseCapituloRow = {
   atualizado_em: string | null;
 };
 
-type SupabaseInteracaoCapituloRow = {
-  capitulo_id: string | null;
-  user_id: string | null;
-};
-
 type SupabaseInteracaoObraRow = {
   obra_id: string | null;
   user_id: string | null;
@@ -129,11 +124,6 @@ type SupabaseAvaliacaoObraRow = {
 };
 
 type UsuariosPorObraRanking = Record<string, string[]>;
-
-type ResultadoInteracoesCapitulosRanking = {
-  porCapitulo: Record<string, number>;
-  usuariosPorObra: UsuariosPorObraRanking;
-};
 
 type ResultadoInteracoesObrasRanking = {
   porObra: Record<string, number>;
@@ -1039,52 +1029,34 @@ function combinarUsuariosRanking(
   return converterMapaUsuariosRanking(usuariosCombinados);
 }
 
-function contarPorCapitulo(
-  linhas: SupabaseInteracaoCapituloRow[],
-  obraIdPorCapitulo: Record<string, string>,
-): ResultadoInteracoesCapitulosRanking {
-  const usuariosPorCapitulo = new Map<string, Set<string>>();
-  const usuariosPorObra = new Map<string, Set<string>>();
-
-  linhas.forEach((linha) => {
-    const capituloId = linha.capitulo_id?.trim() || "";
-    const userId = linha.user_id?.trim() || "";
-    const obraId = capituloId ? obraIdPorCapitulo[capituloId] || "" : "";
-
-    adicionarUsuarioRanking(usuariosPorCapitulo, capituloId, userId);
-    adicionarUsuarioRanking(usuariosPorObra, obraId, userId);
-  });
-
-  const porCapitulo = Array.from(usuariosPorCapitulo.entries()).reduce<
-    Record<string, number>
-  >((contagem, [capituloId, usuarios]) => {
-    contagem[capituloId] = usuarios.size;
-    return contagem;
-  }, {});
-
-  return {
-    porCapitulo,
-    usuariosPorObra: converterMapaUsuariosRanking(usuariosPorObra),
-  };
-}
-
 function contarPorObra(
   linhas: SupabaseInteracaoObraRow[],
+  contarCadaRegistro = false,
 ): ResultadoInteracoesObrasRanking {
   const usuariosPorObra = new Map<string, Set<string>>();
+  const registrosPorObra: Record<string, number> = {};
 
   linhas.forEach((linha) => {
-    adicionarUsuarioRanking(
-      usuariosPorObra,
-      linha.obra_id?.trim() || "",
-      linha.user_id?.trim() || "",
-    );
+    const obraId = linha.obra_id?.trim() || "";
+    const userId = linha.user_id?.trim() || "";
+
+    if (!obraId) {
+      return;
+    }
+
+    if (contarCadaRegistro) {
+      registrosPorObra[obraId] = (registrosPorObra[obraId] || 0) + 1;
+    }
+
+    adicionarUsuarioRanking(usuariosPorObra, obraId, userId);
   });
 
   const usuariosNormalizados = converterMapaUsuariosRanking(usuariosPorObra);
 
   return {
-    porObra: contarUsuariosRanking(usuariosNormalizados),
+    porObra: contarCadaRegistro
+      ? registrosPorObra
+      : contarUsuariosRanking(usuariosNormalizados),
     usuariosPorObra: usuariosNormalizados,
   };
 }
@@ -1145,8 +1117,13 @@ async function buscarContagemInteracoesObras(
     | "favoritos"
     | "comentarios_obras",
   obraIds: string[],
+  contarCadaRegistro = false,
 ): Promise<ResultadoInteracoesObrasRanking> {
-  if (obraIds.length === 0) {
+  const idsUnicos = Array.from(
+    new Set(obraIds.map((obraId) => obraId.trim()).filter(Boolean)),
+  );
+
+  if (idsUnicos.length === 0) {
     return {
       porObra: {},
       usuariosPorObra: {},
@@ -1154,21 +1131,40 @@ async function buscarContagemInteracoesObras(
   }
 
   try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select("obra_id,user_id")
-      .in("obra_id", obraIds)
-      .limit(5000);
+    const linhas: SupabaseInteracaoObraRow[] = [];
+    const tamanhoPagina = 1000;
 
-    if (error) {
-      console.warn(`Não consegui carregar ${tabela}:`, error.message);
-      return {
-        porObra: {},
-        usuariosPorObra: {},
-      };
+    for (let inicioIds = 0; inicioIds < idsUnicos.length; inicioIds += 80) {
+      const loteIds = idsUnicos.slice(inicioIds, inicioIds + 80);
+      let inicio = 0;
+
+      while (true) {
+        const { data, error } = await supabase
+          .from(tabela)
+          .select("obra_id,user_id")
+          .in("obra_id", loteIds)
+          .range(inicio, inicio + tamanhoPagina - 1);
+
+        if (error) {
+          console.warn(`Não consegui carregar ${tabela}:`, error.message);
+          return {
+            porObra: {},
+            usuariosPorObra: {},
+          };
+        }
+
+        const pagina = (data || []) as unknown as SupabaseInteracaoObraRow[];
+        linhas.push(...pagina);
+
+        if (pagina.length < tamanhoPagina) {
+          break;
+        }
+
+        inicio += tamanhoPagina;
+      }
     }
 
-    return contarPorObra((data || []) as unknown as SupabaseInteracaoObraRow[]);
+    return contarPorObra(linhas, contarCadaRegistro);
   } catch (error) {
     console.warn(`Não consegui acessar ${tabela} agora:`, error);
     return {
@@ -1201,46 +1197,6 @@ async function buscarAvaliacoesObras(obraIds: string[]) {
   } catch (error) {
     console.warn("Não consegui acessar obra_avaliacoes agora:", error);
     return {};
-  }
-}
-
-async function buscarContagemInteracoesCapitulos(
-  tabela: "curtidas_capitulos" | "salvos_capitulos" | "comentarios_capitulos",
-  capituloIds: string[],
-  obraIdPorCapitulo: Record<string, string>,
-): Promise<ResultadoInteracoesCapitulosRanking> {
-  if (capituloIds.length === 0) {
-    return {
-      porCapitulo: {},
-      usuariosPorObra: {},
-    };
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select("capitulo_id,user_id")
-      .in("capitulo_id", capituloIds)
-      .limit(5000);
-
-    if (error) {
-      console.warn(`Não consegui carregar ${tabela}:`, error.message);
-      return {
-        porCapitulo: {},
-        usuariosPorObra: {},
-      };
-    }
-
-    return contarPorCapitulo(
-      (data || []) as unknown as SupabaseInteracaoCapituloRow[],
-      obraIdPorCapitulo,
-    );
-  } catch (error) {
-    console.warn(`Não consegui acessar ${tabela} agora:`, error);
-    return {
-      porCapitulo: {},
-      usuariosPorObra: {},
-    };
   }
 }
 
@@ -1328,11 +1284,8 @@ function converterObraSupabaseParaLocal(
   capitulos: SupabaseCapituloRow[],
   obraLocal: ObraLocal | undefined,
   index: number,
-  curtidasPorCapitulo: Record<string, number>,
-  salvosPorCapitulo: Record<string, number>,
-  comentariosPorCapitulo: Record<string, number>,
   curtidasUnicasPorObra: Record<string, number>,
-  comentariosUnicosPorObra: Record<string, number>,
+  comentariosTotaisPorObra: Record<string, number>,
   salvosUnicosPorObra: Record<string, number>,
   seguidoresPorObra: Record<string, number>,
   avaliacoesPorObra: Record<string, AvaliacaoRankingObra>,
@@ -1356,9 +1309,6 @@ function converterObraSupabaseParaLocal(
 
   const capitulosNormalizados = capitulos.map((capitulo, capituloIndex) => {
     const capituloLocal = capitulosLocaisPorId.get(capitulo.id);
-    const totalCurtidas = curtidasPorCapitulo[capitulo.id] || 0;
-    const totalSalvos = salvosPorCapitulo[capitulo.id] || 0;
-    const totalComentarios = comentariosPorCapitulo[capitulo.id] || 0;
     const chaveProgresso = `${obra.id}::${capitulo.id}`;
     const registroProgresso = progressoPorCapitulo.get(chaveProgresso);
     const lido = progressoCarregado
@@ -1469,7 +1419,7 @@ function converterObraSupabaseParaLocal(
         }
       : null,
     totalCurtidasRanking: curtidasUnicasPorObra[obra.id] || 0,
-    totalComentariosRanking: comentariosUnicosPorObra[obra.id] || 0,
+    totalComentariosRanking: comentariosTotaisPorObra[obra.id] || 0,
     totalSalvosRanking: salvosUnicosPorObra[obra.id] || 0,
     totalViewsRanking:
       typeof obra.visualizacoes === "number" &&
@@ -1540,21 +1490,7 @@ async function carregarObrasSupabasePublicadas(
     const capituloIds = capitulosSupabase
       .map((capitulo) => capitulo.id)
       .filter(Boolean);
-    const obraIdPorCapitulo = capitulosSupabase.reduce<Record<string, string>>(
-      (mapa, capitulo) => {
-        if (capitulo.id && capitulo.obra_id) {
-          mapa[capitulo.id] = capitulo.obra_id;
-        }
-
-        return mapa;
-      },
-      {},
-    );
-
     const [
-      curtidasCapitulosResultado,
-      salvosCapitulosResultado,
-      comentariosCapitulosResultado,
       curtidasObraResultado,
       seguidoresObraResultado,
       favoritosObraResultado,
@@ -1564,49 +1500,21 @@ async function carregarObrasSupabasePublicadas(
       seguidoresAutores,
       progressoUsuario,
     ] = await Promise.all([
-      buscarContagemInteracoesCapitulos(
-        "curtidas_capitulos",
-        capituloIds,
-        obraIdPorCapitulo,
-      ),
-      buscarContagemInteracoesCapitulos(
-        "salvos_capitulos",
-        capituloIds,
-        obraIdPorCapitulo,
-      ),
-      buscarContagemInteracoesCapitulos(
-        "comentarios_capitulos",
-        capituloIds,
-        obraIdPorCapitulo,
-      ),
       buscarContagemInteracoesObras("obra_curtidas", obraIds),
       buscarContagemInteracoesObras("seguindo_obras", obraIds),
       buscarContagemInteracoesObras("favoritos", obraIds),
-      buscarContagemInteracoesObras("comentarios_obras", obraIds),
+      buscarContagemInteracoesObras("comentarios_obras", obraIds, true),
       buscarAvaliacoesObras(obraIds),
       carregarProfilesAutoresRanking(autorIds),
       buscarSeguidoresAutoresRanking(autorIds),
       carregarProgressoUsuarioEmAlta(userId, obraIds, capituloIds),
     ]);
 
-    const usuariosCurtidasPorObra = combinarUsuariosRanking(
-      curtidasCapitulosResultado.usuariosPorObra,
-      curtidasObraResultado.usuariosPorObra,
-    );
-    const usuariosComentariosPorObra = combinarUsuariosRanking(
-      comentariosCapitulosResultado.usuariosPorObra,
-      comentariosObraResultado.usuariosPorObra,
-    );
+    const curtidasUnicasPorObra = curtidasObraResultado.porObra;
+    const comentariosTotaisPorObra = comentariosObraResultado.porObra;
     const usuariosSalvosPorObra = combinarUsuariosRanking(
-      salvosCapitulosResultado.usuariosPorObra,
       seguidoresObraResultado.usuariosPorObra,
       favoritosObraResultado.usuariosPorObra,
-    );
-    const curtidasUnicasPorObra = contarUsuariosRanking(
-      usuariosCurtidasPorObra,
-    );
-    const comentariosUnicosPorObra = contarUsuariosRanking(
-      usuariosComentariosPorObra,
     );
     const salvosUnicosPorObra = contarUsuariosRanking(usuariosSalvosPorObra);
 
@@ -1641,11 +1549,8 @@ async function carregarObrasSupabasePublicadas(
           capitulosPorObra[obra.id] || [],
           obraLocal,
           index,
-          curtidasCapitulosResultado.porCapitulo,
-          salvosCapitulosResultado.porCapitulo,
-          comentariosCapitulosResultado.porCapitulo,
           curtidasUnicasPorObra,
-          comentariosUnicosPorObra,
+          comentariosTotaisPorObra,
           salvosUnicosPorObra,
           seguidoresObraResultado.porObra,
           avaliacoesPorObra,
@@ -2010,31 +1915,9 @@ export default function EmAltaPage() {
     return obrasLocais
       .filter((obra) => obra.publicado)
       .map((obra) => {
-        const totalCurtidasLocais = obra.capitulos.filter(
-          (capitulo) => capitulo.curtiu,
-        ).length;
-
-        const totalComentariosLocais = obra.capitulos.filter((capitulo) =>
-          capitulo.comentario.trim(),
-        ).length;
-
-        const totalSalvosLocais = obra.capitulos.filter(
-          (capitulo) => capitulo.salvo,
-        ).length;
-
-        const totalCurtidas = Math.max(
-          totalCurtidasLocais,
-          obra.totalCurtidasRanking || 0,
-        );
-        const totalComentarios = Math.max(
-          totalComentariosLocais,
-          obra.totalComentariosRanking || 0,
-        );
-        const totalSalvos = Math.max(
-          totalSalvosLocais,
-          obra.totalSalvosRanking || 0,
-          obra.totalSeguidoresRanking || 0,
-        );
+        const totalCurtidas = Math.max(0, obra.totalCurtidasRanking || 0);
+        const totalComentarios = Math.max(0, obra.totalComentariosRanking || 0);
+        const totalSalvos = Math.max(0, obra.totalSalvosRanking || 0);
         const avaliacaoLocalObra = obterAvaliacaoLocalRanking(
           obra,
           avaliacoesLocaisRegistradas,
@@ -2091,7 +1974,6 @@ export default function EmAltaPage() {
           : criadaEmTimestamp;
 
         const pontuacao =
-          obra.capitulos.length * 1 +
           totalCurtidas * 2 +
           totalComentarios * 3 +
           totalSalvos * 4 +
@@ -2210,7 +2092,6 @@ export default function EmAltaPage() {
           autor.pesoNotas > 0 ? autor.somaNotas / autor.pesoNotas : 0;
         const pontuacao =
           autor.obras * 1 +
-          autor.capitulos * 1 +
           autor.seguidores * 4 +
           autor.seguidoresObras * 4 +
           autor.views * 1 +

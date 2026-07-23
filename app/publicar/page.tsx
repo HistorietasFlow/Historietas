@@ -1000,6 +1000,7 @@ export default function PublicarPage() {
   const [arquivoCapituloTitulo, setArquivoCapituloTitulo] = useState("");
   const [arquivoCapituloTexto, setArquivoCapituloTexto] = useState("");
   const [arquivoCapituloErro, setArquivoCapituloErro] = useState("");
+  const [arquivoTextoPendente, setArquivoTextoPendente] = useState<File | null>(null);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
   const [verificandoAutenticacao, setVerificandoAutenticacao] = useState(true);
@@ -1104,8 +1105,7 @@ export default function PublicarPage() {
 
   const jaSalvouRef = useRef(false);
   const capaInputRef = useRef<HTMLInputElement | null>(null);
-  const arquivoObraInputRef = useRef<HTMLInputElement | null>(null);
-  const arquivoCapituloInputRef = useRef<HTMLInputElement | null>(null);
+  const arquivoConteudoInputRef = useRef<HTMLInputElement | null>(null);
 
   const tagsDaObra = useMemo(() => {
     return tags
@@ -1174,7 +1174,11 @@ export default function PublicarPage() {
       ? "Texto"
       : "Arquivo"
     : "";
+  const arquivoTextoPendenteTamanhoTexto = arquivoTextoPendente
+    ? formatarTamanhoArquivo(arquivoTextoPendente.size)
+    : "";
   const temCapituloImportado = Boolean(arquivoCapituloTexto.trim());
+  const temConteudoPorArquivo = Boolean(arquivoObra || temCapituloImportado);
   const arquivoCapituloPalavras = contarPalavras(arquivoCapituloTexto);
   const arquivoCapituloMinutos = calcularMinutosLeitura(arquivoCapituloTexto);
   const arquivoCapituloCaracteresValidos = contarCaracteresValidos(
@@ -1311,10 +1315,126 @@ export default function PublicarPage() {
     }
   }
 
-  function selecionarArquivoObra(event: ChangeEvent<HTMLInputElement>) {
+  function limparArquivoAnexado() {
+    setArquivoObra(null);
+    setArquivoObraArquivo(null);
+    setArquivoObraErro("");
+  }
+
+  function limparCapituloImportado() {
+    setArquivoCapituloNome("");
+    setArquivoCapituloTitulo("");
+    setArquivoCapituloTexto("");
+    setArquivoCapituloErro("");
+  }
+
+  function limparSelecaoConteudoArquivo() {
+    limparArquivoAnexado();
+    limparCapituloImportado();
+    setArquivoTextoPendente(null);
+
+    if (arquivoConteudoInputRef.current) {
+      arquivoConteudoInputRef.current.value = "";
+    }
+  }
+
+  function anexarArquivoCompleto(arquivo: File) {
+    setArquivoObraErro("");
+    setArquivoCapituloErro("");
+    setErro("");
+
+    const leitor = new FileReader();
+
+    leitor.onload = () => {
+      const resultado = typeof leitor.result === "string" ? leitor.result : "";
+
+      if (!resultado) {
+        setArquivoObraErro("Não consegui carregar esse arquivo.");
+        return;
+      }
+
+      limparCapituloImportado();
+      setArquivoObra({
+        nome: arquivo.name,
+        tipo: arquivo.type || "application/octet-stream",
+        tamanho: arquivo.size,
+        conteudo: resultado,
+        categoria: identificarCategoriaArquivo(arquivo),
+        criadoEm: new Date().toISOString(),
+      });
+      setArquivoObraArquivo(arquivo);
+      setArquivoTextoPendente(null);
+
+      if (arquivoConteudoInputRef.current) {
+        arquivoConteudoInputRef.current.value = "";
+      }
+    };
+
+    leitor.onerror = () => {
+      setArquivoObraErro("Não consegui carregar esse arquivo.");
+    };
+
+    leitor.readAsDataURL(arquivo);
+  }
+
+  function transformarArquivoTextoEmCapitulo(arquivo: File) {
+    setArquivoObraErro("");
+    setArquivoCapituloErro("");
+    setErro("");
+
+    if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_TEXTO) {
+      setArquivoCapituloErro(
+        "Para virar capítulo, o arquivo de texto precisa ter no máximo 900 KB. Você ainda pode anexá-lo como arquivo completo."
+      );
+      return;
+    }
+
+    const leitor = new FileReader();
+
+    leitor.onload = () => {
+      const resultado = typeof leitor.result === "string" ? leitor.result : "";
+      const textoImportado = resultado.replace(/\r\n/g, "\n").trim();
+
+      if (contarCaracteresValidos(textoImportado) < 20) {
+        setArquivoCapituloErro(
+          "Esse arquivo tem pouco texto para virar um capítulo."
+        );
+        return;
+      }
+
+      limparArquivoAnexado();
+      setArquivoCapituloNome(arquivo.name);
+      setArquivoCapituloTitulo(nomeArquivoParaTitulo(arquivo.name));
+      setArquivoCapituloTexto(textoImportado);
+      setArquivoTextoPendente(null);
+
+      if (arquivoConteudoInputRef.current) {
+        arquivoConteudoInputRef.current.value = "";
+      }
+    };
+
+    leitor.onerror = () => {
+      setArquivoCapituloErro("Não consegui ler esse arquivo.");
+    };
+
+    leitor.readAsText(arquivo, "UTF-8");
+  }
+
+  function cancelarEscolhaArquivoTexto() {
+    setArquivoTextoPendente(null);
+    setArquivoObraErro("");
+    setArquivoCapituloErro("");
+
+    if (arquivoConteudoInputRef.current) {
+      arquivoConteudoInputRef.current.value = "";
+    }
+  }
+
+  function selecionarConteudoArquivo(event: ChangeEvent<HTMLInputElement>) {
     const arquivo = event.target.files?.[0];
 
     setArquivoObraErro("");
+    setArquivoCapituloErro("");
     setErro("");
 
     if (!arquivo) {
@@ -1330,108 +1450,17 @@ export default function PublicarPage() {
     }
 
     if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_OBRA) {
-      setArquivoObraErro(
-        "O arquivo completo precisa ter no máximo 5 MB."
-      );
+      setArquivoObraErro("O arquivo precisa ter no máximo 5 MB.");
       event.target.value = "";
       return;
     }
 
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      const resultado = typeof leitor.result === "string" ? leitor.result : "";
-
-      if (!resultado) {
-        setArquivoObraErro("Não consegui carregar esse arquivo.");
-        return;
-      }
-
-      setArquivoObra({
-        nome: arquivo.name,
-        tipo: arquivo.type || "application/octet-stream",
-        tamanho: arquivo.size,
-        conteudo: resultado,
-        categoria: identificarCategoriaArquivo(arquivo),
-        criadoEm: new Date().toISOString(),
-      });
-      setArquivoObraArquivo(arquivo);
-    };
-
-    leitor.onerror = () => {
-      setArquivoObraErro("Não consegui carregar esse arquivo.");
-    };
-
-    leitor.readAsDataURL(arquivo);
-  }
-
-  function removerArquivoObra() {
-    setArquivoObra(null);
-    setArquivoObraArquivo(null);
-    setArquivoObraErro("");
-
-    if (arquivoObraInputRef.current) {
-      arquivoObraInputRef.current.value = "";
-    }
-  }
-
-  function selecionarArquivoCapitulo(event: ChangeEvent<HTMLInputElement>) {
-    const arquivo = event.target.files?.[0];
-
-    setArquivoCapituloErro("");
-    setErro("");
-
-    if (!arquivo) {
+    if (arquivoTextoAceito(arquivo)) {
+      setArquivoTextoPendente(arquivo);
       return;
     }
 
-    if (!arquivoTextoAceito(arquivo)) {
-      setArquivoCapituloErro("Escolha um arquivo .txt ou .md válido.");
-      event.target.value = "";
-      return;
-    }
-
-    if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO_TEXTO) {
-      setArquivoCapituloErro("O arquivo precisa ter no máximo 900 KB.");
-      event.target.value = "";
-      return;
-    }
-
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      const resultado = typeof leitor.result === "string" ? leitor.result : "";
-      const textoImportado = resultado.replace(/\r\n/g, "\n").trim();
-
-      if (contarCaracteresValidos(textoImportado) < 20) {
-        setArquivoCapituloErro(
-          "Esse arquivo tem pouco texto para virar um capítulo."
-        );
-        event.target.value = "";
-        return;
-      }
-
-      setArquivoCapituloNome(arquivo.name);
-      setArquivoCapituloTitulo(nomeArquivoParaTitulo(arquivo.name));
-      setArquivoCapituloTexto(textoImportado);
-    };
-
-    leitor.onerror = () => {
-      setArquivoCapituloErro("Não consegui ler esse arquivo.");
-    };
-
-    leitor.readAsText(arquivo, "UTF-8");
-  }
-
-  function removerArquivoCapitulo() {
-    setArquivoCapituloNome("");
-    setArquivoCapituloTitulo("");
-    setArquivoCapituloTexto("");
-    setArquivoCapituloErro("");
-
-    if (arquivoCapituloInputRef.current) {
-      arquivoCapituloInputRef.current.value = "";
-    }
+    anexarArquivoCompleto(arquivo);
   }
 
   function tagEstaSelecionada(tag: string) {
@@ -2112,35 +2141,71 @@ export default function PublicarPage() {
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
               <div style={fileUploadLabelRowStyle}>
-                <label style={labelStyle}>Arquivo completo da obra</label>
+                <label style={labelStyle}>Adicionar conteúdo por arquivo</label>
                 <span style={fileOptionalBadgeStyle}>Opcional</span>
               </div>
 
               <input
-                ref={arquivoObraInputRef}
+                ref={arquivoConteudoInputRef}
                 type="file"
                 accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp,.gif,application/pdf,text/plain,text/markdown,image/*"
-                onChange={selecionarArquivoObra}
+                onChange={selecionarConteudoArquivo}
                 style={hiddenInputStyle}
               />
 
-              <div style={isDesktop ? desktopFullWidthArquivoObraBoxStyle : chapterImportBoxStyle}>
+              <div
+                style={
+                  isDesktop
+                    ? desktopFullWidthArquivoObraBoxStyle
+                    : chapterImportBoxStyle
+                }
+              >
                 <div style={chapterImportIconBoxStyle}>
-                  <span style={chapterImportIconStyle}>▣</span>
+                  <span style={chapterImportIconStyle}>
+                    {temCapituloImportado ? "⇧" : "▣"}
+                  </span>
                 </div>
 
-                <div style={isDesktop ? desktopFullWidthArquivoObraContentStyle : chapterImportContentStyle}>
+                <div
+                  style={
+                    isDesktop
+                      ? desktopFullWidthArquivoObraContentStyle
+                      : chapterImportContentStyle
+                  }
+                >
                   <strong style={chapterImportTitleStyle}>
-                    {arquivoObra ? "Arquivo da obra anexado" : "Enviar PDF, texto ou imagem"}
+                    {arquivoTextoPendente
+                      ? "Como deseja usar este arquivo?"
+                      : arquivoObra
+                        ? "Arquivo completo anexado"
+                        : temCapituloImportado
+                          ? "Primeiro capítulo importado"
+                          : "Enviar PDF, texto ou imagem"}
                   </strong>
 
                   <span style={hintStyle}>
-                    Opcional. Anexe PDF, texto, imagem ou página de mangá. Tamanho máximo: 5 MB.
+                    {arquivoTextoPendente
+                      ? "Arquivos TXT e MD podem ser anexados como obra completa ou transformados no primeiro capítulo."
+                      : "PDF e imagens serão anexados. Arquivos TXT e MD permitem escolher entre anexo completo ou primeiro capítulo. Máximo: 5 MB."}
                   </span>
 
-                  {arquivoObra && (
+                  {arquivoTextoPendente && (
                     <span style={fileNameStyle}>
-                      {arquivoObra.nome} • {arquivoObraTipoTexto} • {arquivoObraTamanhoTexto}
+                      {arquivoTextoPendente.name} • Texto •{" "}
+                      {arquivoTextoPendenteTamanhoTexto}
+                    </span>
+                  )}
+
+                  {arquivoObra && !arquivoTextoPendente && (
+                    <span style={fileNameStyle}>
+                      {arquivoObra.nome} • {arquivoObraTipoTexto} •{" "}
+                      {arquivoObraTamanhoTexto}
+                    </span>
+                  )}
+
+                  {temCapituloImportado && !arquivoTextoPendente && (
+                    <span style={fileNameStyle}>
+                      {arquivoCapituloNome} • Primeiro capítulo
                     </span>
                   )}
 
@@ -2148,95 +2213,103 @@ export default function PublicarPage() {
                     <span style={coverErrorStyle}>{arquivoObraErro}</span>
                   )}
 
-                  <div style={isDesktop ? desktopCoverButtonsStyle : coverButtonsStyle}>
-                    <button
-                      type="button"
-                      onClick={() => arquivoObraInputRef.current?.click()}
-                      style={isDesktop ? desktopCoverButtonStyle : coverButtonStyle}
-                    >
-                      {arquivoObra ? "Trocar arquivo" : "Escolher arquivo"}
-                    </button>
+                  {arquivoCapituloErro && (
+                    <span style={coverErrorStyle}>{arquivoCapituloErro}</span>
+                  )}
 
-                    {arquivoObra && (
+                  {arquivoTextoPendente ? (
+                    <div
+                      style={
+                        isDesktop ? desktopCoverButtonsStyle : coverButtonsStyle
+                      }
+                    >
                       <button
                         type="button"
-                        onClick={removerArquivoObra}
-                        style={isDesktop ? desktopRemoveCoverButtonStyle : removeCoverButtonStyle}
+                        onClick={() =>
+                          transformarArquivoTextoEmCapitulo(arquivoTextoPendente)
+                        }
+                        style={
+                          isDesktop
+                            ? desktopCoverButtonStyle
+                            : coverButtonStyle
+                        }
                       >
-                        Remover
+                        Transformar em capítulo
                       </button>
-                    )}
-                  </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          anexarArquivoCompleto(arquivoTextoPendente)
+                        }
+                        style={
+                          isDesktop
+                            ? desktopCoverButtonStyle
+                            : coverButtonStyle
+                        }
+                      >
+                        Anexar arquivo completo
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={cancelarEscolhaArquivoTexto}
+                        style={
+                          isDesktop
+                            ? desktopRemoveCoverButtonStyle
+                            : removeCoverButtonStyle
+                        }
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      style={
+                        isDesktop ? desktopCoverButtonsStyle : coverButtonsStyle
+                      }
+                    >
+                      <button
+                        type="button"
+                        onClick={() => arquivoConteudoInputRef.current?.click()}
+                        style={
+                          isDesktop
+                            ? desktopCoverButtonStyle
+                            : coverButtonStyle
+                        }
+                      >
+                        {temConteudoPorArquivo
+                          ? "Trocar arquivo"
+                          : "Escolher arquivo"}
+                      </button>
+
+                      {temConteudoPorArquivo && (
+                        <button
+                          type="button"
+                          onClick={limparSelecaoConteudoArquivo}
+                          style={
+                            isDesktop
+                              ? desktopRemoveCoverButtonStyle
+                              : removeCoverButtonStyle
+                          }
+                        >
+                          Remover
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {arquivoObra && (
+              {arquivoObra && !arquivoTextoPendente && (
                 <div style={chapterImportStatsStyle}>
                   <span style={inlineStatStyle}>{arquivoObraTipoTexto}</span>
                   <span style={inlineStatStyle}>{arquivoObraTamanhoTexto}</span>
                   <span style={inlineStatStyle}>anexado à obra</span>
                 </div>
               )}
-            </div>
 
-            <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>Primeiro capítulo por arquivo</label>
-
-              <input
-                ref={arquivoCapituloInputRef}
-                type="file"
-                accept=".txt,.md,text/plain,text/markdown"
-                onChange={selecionarArquivoCapitulo}
-                style={hiddenInputStyle}
-              />
-
-              <div style={isDesktop ? desktopChapterImportBoxStyle : chapterImportBoxStyle}>
-                <div style={chapterImportIconBoxStyle}>
-                  <span style={chapterImportIconStyle}>⇧</span>
-                </div>
-
-                <div style={isDesktop ? desktopChapterImportContentStyle : chapterImportContentStyle}>
-                  <strong style={chapterImportTitleStyle}>
-                    {arquivoCapituloNome
-                      ? "Capítulo importado"
-                      : "Importar .txt/.md"}
-                  </strong>
-
-                  <span style={hintStyle}>
-                    Opcional. Um .txt ou .md pode virar o primeiro capítulo.
-                  </span>
-
-                  {arquivoCapituloNome && (
-                    <span style={fileNameStyle}>{arquivoCapituloNome}</span>
-                  )}
-
-                  {arquivoCapituloErro && (
-                    <span style={coverErrorStyle}>{arquivoCapituloErro}</span>
-                  )}
-
-                  <div style={isDesktop ? desktopCoverButtonsStyle : coverButtonsStyle}>
-                    <button
-                      type="button"
-                      onClick={() => arquivoCapituloInputRef.current?.click()}
-                      style={isDesktop ? desktopCoverButtonStyle : coverButtonStyle}
-                    >
-                      {arquivoCapituloNome ? "Trocar arquivo" : "Escolher arquivo"}
-                    </button>
-
-                    {arquivoCapituloNome && (
-                      <button
-                        type="button"
-                        onClick={removerArquivoCapitulo}
-                        style={isDesktop ? desktopRemoveCoverButtonStyle : removeCoverButtonStyle}
-                      >
-                        Remover
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {temCapituloImportado && (
+              {temCapituloImportado && !arquivoTextoPendente && (
                 <div style={chapterImportStatsStyle}>
                   <span style={inlineStatStyle}>
                     Título: {arquivoCapituloTitulo || "Capítulo 1"}

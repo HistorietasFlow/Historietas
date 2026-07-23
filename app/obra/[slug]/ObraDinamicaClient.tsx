@@ -1198,6 +1198,89 @@ function totalUsuariosUnicosObraPublica(
   return chaveLimpa ? usuariosPorRegistro.get(chaveLimpa)?.size || 0 : 0;
 }
 
+async function carregarTotaisPorColunaObraPublica(
+  tabela: string,
+  coluna: string,
+  ids: string[],
+  somenteLidos = false,
+) {
+  const idsUnicos = Array.from(
+    new Set(ids.map((id) => id.trim()).filter(Boolean)),
+  );
+  const totaisPorRegistro = new Map<string, number>();
+  const tamanhoPagina = 1000;
+
+  if (idsUnicos.length === 0) {
+    return totaisPorRegistro;
+  }
+
+  for (let inicioIds = 0; inicioIds < idsUnicos.length; inicioIds += 80) {
+    const loteIds = idsUnicos.slice(inicioIds, inicioIds + 80);
+    let inicio = 0;
+
+    while (true) {
+      try {
+        let consulta = supabase
+          .from(tabela)
+          .select(coluna)
+          .in(coluna, loteIds)
+          .range(inicio, inicio + tamanhoPagina - 1);
+
+        if (somenteLidos) {
+          consulta = consulta.eq("lido", true);
+        }
+
+        const { data, error } = await consulta;
+
+        if (error || !Array.isArray(data) || data.length === 0) {
+          break;
+        }
+
+        data.forEach((registro) => {
+          if (
+            !registro ||
+            typeof registro !== "object" ||
+            Array.isArray(registro)
+          ) {
+            return;
+          }
+
+          const chave = (registro as Record<string, unknown>)[coluna];
+
+          if (typeof chave !== "string" || !chave.trim()) {
+            return;
+          }
+
+          const chaveLimpa = chave.trim();
+          totaisPorRegistro.set(
+            chaveLimpa,
+            (totaisPorRegistro.get(chaveLimpa) || 0) + 1,
+          );
+        });
+
+        if (data.length < tamanhoPagina) {
+          break;
+        }
+
+        inicio += tamanhoPagina;
+      } catch {
+        break;
+      }
+    }
+  }
+
+  return totaisPorRegistro;
+}
+
+function totalRegistrosObraPublica(
+  totaisPorRegistro: Map<string, number>,
+  chave: string,
+) {
+  const chaveLimpa = chave.trim();
+
+  return chaveLimpa ? totaisPorRegistro.get(chaveLimpa) || 0 : 0;
+}
+
 function totalCurtidasObraPublica(obra: ObraLocal) {
   return normalizarContadorObraPublica(obra.totalCurtidas);
 }
@@ -1241,7 +1324,7 @@ async function aplicarTotaisReaisObraPublica(obrasParaAtualizar: ObraLocal[]) {
       "capitulo_id",
       capituloIds,
     ),
-    carregarUsuariosUnicosPorColunaObraPublica(
+    carregarTotaisPorColunaObraPublica(
       "comentarios_capitulos",
       "capitulo_id",
       capituloIds,
@@ -1263,7 +1346,7 @@ async function aplicarTotaisReaisObraPublica(obrasParaAtualizar: ObraLocal[]) {
       "obra_id",
       obraIds,
     ),
-    carregarUsuariosUnicosPorColunaObraPublica(
+    carregarTotaisPorColunaObraPublica(
       "comentarios_obras",
       "obra_id",
       obraIds,
@@ -1286,7 +1369,7 @@ async function aplicarTotaisReaisObraPublica(obrasParaAtualizar: ObraLocal[]) {
       curtidasPorObra,
       obra.id,
     ),
-    totalComentarios: totalUsuariosUnicosObraPublica(
+    totalComentarios: totalRegistrosObraPublica(
       comentariosPorObra,
       obra.id,
     ),
@@ -1304,7 +1387,7 @@ async function aplicarTotaisReaisObraPublica(obrasParaAtualizar: ObraLocal[]) {
         curtidasPorCapitulo,
         capitulo.id,
       ),
-      totalComentarios: totalUsuariosUnicosObraPublica(
+      totalComentarios: totalRegistrosObraPublica(
         comentariosPorCapitulo,
         capitulo.id,
       ),
@@ -3213,7 +3296,7 @@ export default function ObraDinamicaPage() {
           { data: obraMetricas },
           curtidasUsuarios,
           seguidoresUsuarios,
-          comentariosUsuarios,
+          comentariosTotais,
         ] = await Promise.all([
           supabase
             .from("obras")
@@ -3231,7 +3314,7 @@ export default function ObraDinamicaPage() {
             "obra_id",
             [obraId],
           ),
-          carregarUsuariosUnicosPorColunaObraPublica(
+          carregarTotaisPorColunaObraPublica(
             "comentarios_obras",
             "obra_id",
             [obraId],
@@ -3250,8 +3333,8 @@ export default function ObraDinamicaPage() {
           seguidoresUsuarios,
           obraId,
         );
-        const totalComentarios = totalUsuariosUnicosObraPublica(
-          comentariosUsuarios,
+        const totalComentarios = totalRegistrosObraPublica(
+          comentariosTotais,
           obraId,
         );
 
