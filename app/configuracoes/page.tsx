@@ -17,8 +17,91 @@ import {
   type TemaVisualHistorietas,
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
+import LanguageSelect from "../../components/LanguageSelect";
+import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import type { HistorietasLanguage } from "../../lib/i18n";
 
 type TemaVisual = TemaVisualHistorietas;
+
+function textoIdioma(
+  language: HistorietasLanguage,
+  portugues: string,
+  ingles: string,
+  espanhol: string,
+) {
+  if (language === "en") {
+    return ingles;
+  }
+
+  if (language === "es") {
+    return espanhol;
+  }
+
+  return portugues;
+}
+
+function normalizarTextoBuscaConfiguracoes(valor: string) {
+  return valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+const ALIASES_BUSCA_CONFIGURACOES: Record<string, string[]> = {
+  conta: ["account", "cuenta"],
+  nome: ["name", "nombre"],
+  exibicao: ["display", "visualizacion"],
+  autor: ["author", "autor"],
+  usuario: ["user", "usuario"],
+  perfil: ["profile", "perfil"],
+  arroba: ["handle", "usuario"],
+  email: ["email", "correo"],
+  contato: ["contact", "contacto"],
+  senha: ["password", "contrasena"],
+  seguranca: ["security", "seguridad"],
+  privacidade: ["privacy", "privacidad"],
+  salvar: ["save", "guardar"],
+  alteracoes: ["changes", "cambios"],
+  configuracoes: ["settings", "configuracion"],
+  moderacao: ["moderation", "moderacion"],
+  comunidade: ["community", "comunidad"],
+  obras: ["works", "stories", "obras", "historias"],
+  criadas: ["created", "creadas"],
+  biblioteca: ["library", "biblioteca"],
+  lista: ["list", "lista"],
+  favoritas: ["favorites", "favoritas"],
+  concluidas: ["completed", "completadas"],
+  notificacoes: ["notifications", "notificaciones"],
+  avisos: ["alerts", "notices", "avisos"],
+  historico: ["history", "historial"],
+  leitura: ["reading", "lectura"],
+  diario: ["journal", "diario"],
+  preferencias: ["preferences", "preferencias"],
+  tema: ["theme", "tema"],
+  visual: ["appearance", "apariencia"],
+  aparencia: ["appearance", "apariencia"],
+  idioma: ["language", "idioma"],
+  lingua: ["language", "idioma"],
+  receber: ["receive", "recibir"],
+  confortavel: ["comfortable", "comoda"],
+  efeitos: ["effects", "efectos"],
+  reduzir: ["reduce", "reducir"],
+  dados: ["data", "datos"],
+  backup: ["backup", "copia"],
+  copiar: ["copy", "copiar"],
+  baixar: ["download", "descargar"],
+  resumo: ["summary", "resumen"],
+  suporte: ["support", "soporte"],
+  ajuda: ["help", "ayuda"],
+  termos: ["terms", "terminos"],
+  politicas: ["policies", "politicas"],
+  sobre: ["about", "acerca"],
+  versao: ["version", "version"],
+  sair: ["sign out", "logout", "cerrar sesion"],
+  login: ["login", "inicio de sesion"],
+};
+
 
 type PreferenciasConta = {
   nomeExibicao: string;
@@ -147,6 +230,37 @@ const TEMAS_VISUAIS: Record<
 };
 
 const ORDEM_TEMAS_VISUAIS: TemaVisual[] = ["original", "foco"];
+
+function obterTemaVisualTraduzido(
+  temaVisual: TemaVisual,
+  language: HistorietasLanguage,
+) {
+  const temaBase = TEMAS_VISUAIS[temaVisual];
+
+  if (temaVisual === "foco") {
+    return {
+      ...temaBase,
+      nome: textoIdioma(language, "Foco", "Focus", "Enfoque"),
+      descricao: textoIdioma(
+        language,
+        "Fundo e blocos pretos, textos brancos e secundários em cinza claro.",
+        "Black background and sections, white text and light gray secondary text.",
+        "Fondo y bloques negros, textos blancos y secundarios en gris claro.",
+      ),
+    };
+  }
+
+  return {
+    ...temaBase,
+    nome: textoIdioma(language, "Original", "Original", "Original"),
+    descricao: textoIdioma(
+      language,
+      "Visual atual do Historietas em roxo escuro, preto e branco.",
+      "Current Historietas look in dark purple, black and white.",
+      "Diseño actual de Historietas en morado oscuro, negro y blanco.",
+    ),
+  };
+}
 
 function criarStorageKeyUsuarioConfiguracoes(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
@@ -504,7 +618,10 @@ async function carregarPerfilConfiguracoesSupabase(
   }
 }
 
-function traduzirErroUsernameConfiguracoes(mensagem: string) {
+function traduzirErroUsernameConfiguracoes(
+  mensagem: string,
+  language: HistorietasLanguage,
+) {
   const mensagemNormalizada = mensagem.toLowerCase();
 
   if (
@@ -512,10 +629,20 @@ function traduzirErroUsernameConfiguracoes(mensagem: string) {
     mensagemNormalizada.includes("duplicate") ||
     mensagemNormalizada.includes("unique")
   ) {
-    return "Esse @username já está em uso.";
+    return textoIdioma(
+      language,
+      "Esse @username já está em uso.",
+      "This @username is already in use.",
+      "Este @username ya está en uso.",
+    );
   }
 
-  return "Não consegui salvar esse @username agora.";
+  return textoIdioma(
+    language,
+    "Não consegui salvar esse @username agora.",
+    "I could not save this @username right now.",
+    "No pude guardar este @username ahora.",
+  );
 }
 
 async function salvarPerfilConfiguracoesSupabase({
@@ -1077,9 +1204,17 @@ export default function ConfiguracoesPage() {
   const { pageThemeStyle, setTemaVisual } =
     useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
+  const { language } = useHistorietasLanguage();
 
   const usuarioIdLogado = usuario?.id || "";
-  const temaAtual = TEMAS_VISUAIS[preferencias.temaVisual];
+  const temaAtual = obterTemaVisualTraduzido(
+    preferencias.temaVisual,
+    language,
+  );
+
+  function t(portugues: string, ingles: string, espanhol: string) {
+    return textoIdioma(language, portugues, ingles, espanhol);
+  }
 
   useEffect(() => {
     let cancelado = false;
@@ -1213,14 +1348,24 @@ export default function ConfiguracoesPage() {
     };
   }, [verificandoAcesso]);
 
-  const buscaNormalizada = busca.trim().toLowerCase();
+  const buscaNormalizada = normalizarTextoBuscaConfiguracoes(busca);
 
   function deveMostrar(...termos: string[]) {
     if (!buscaNormalizada) {
       return true;
     }
 
-    return termos.join(" ").toLowerCase().includes(buscaNormalizada);
+    const termosExpandidos = termos.flatMap((termo) => {
+      const termoNormalizado = normalizarTextoBuscaConfiguracoes(termo);
+      const aliases = ALIASES_BUSCA_CONFIGURACOES[termoNormalizado] || [];
+
+      return [termoNormalizado, ...aliases];
+    });
+
+    return termosExpandidos
+      .map(normalizarTextoBuscaConfiguracoes)
+      .join(" ")
+      .includes(buscaNormalizada);
   }
 
   const totalBiblioteca = useMemo(
@@ -1271,7 +1416,13 @@ export default function ConfiguracoesPage() {
     }
 
     if (preferencias.username.trim() && usernameLimpo.length < 3) {
-      setErroUsername("Use pelo menos 3 caracteres no @username.");
+      setErroUsername(
+        t(
+          "Use pelo menos 3 caracteres no @username.",
+          "Use at least 3 characters in the @username.",
+          "Usa al menos 3 caracteres en el @username.",
+        ),
+      );
       return;
     }
 
@@ -1308,7 +1459,7 @@ export default function ConfiguracoesPage() {
 
       if (!resultadoPerfil.ok) {
         setErroUsername(
-          traduzirErroUsernameConfiguracoes(resultadoPerfil.erro),
+          traduzirErroUsernameConfiguracoes(resultadoPerfil.erro, language),
         );
         return;
       }
@@ -1347,7 +1498,13 @@ export default function ConfiguracoesPage() {
       setResumo(criarResumoLocal(userIdSeguro));
     } catch (error) {
       console.warn("Não consegui salvar as configurações da conta:", error);
-      setErroUsername("Não consegui salvar suas alterações agora.");
+      setErroUsername(
+        t(
+          "Não consegui salvar suas alterações agora.",
+          "I could not save your changes right now.",
+          "No pude guardar tus cambios ahora.",
+        ),
+      );
     } finally {
       setSalvando(false);
     }
@@ -1396,7 +1553,13 @@ export default function ConfiguracoesPage() {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${configuracoesPageCss}`}</style>
-        <LoadingSpinner label="Carregando configurações" />
+        <LoadingSpinner
+          label={t(
+            "Carregando configurações",
+            "Loading settings",
+            "Cargando configuración",
+          )}
+        />
       </main>
     );
   }
@@ -1411,12 +1574,18 @@ export default function ConfiguracoesPage() {
             type="button"
             onClick={() => router.back()}
             style={backButtonStyle}
-            aria-label="Voltar"
+            aria-label={t("Voltar", "Back", "Volver")}
           >
             <SvgIcon name="arrowLeft" size={25} strokeWidth={2.4} />
           </button>
 
-          <h1 style={pageTitleStyle}>Configurações e atividade</h1>
+          <h1 style={pageTitleStyle}>
+            {t(
+              "Configurações e atividade",
+              "Settings and activity",
+              "Configuración y actividad",
+            )}
+          </h1>
         </header>
 
         <label style={searchBoxStyle} htmlFor="buscar-configuracoes">
@@ -1426,7 +1595,7 @@ export default function ConfiguracoesPage() {
             className="configuracoes-input"
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
-            placeholder="Pesquisar"
+            placeholder={t("Pesquisar", "Search", "Buscar")}
             maxLength={80}
             autoComplete="off"
             style={searchInputStyle}
@@ -1440,27 +1609,65 @@ export default function ConfiguracoesPage() {
 
           <div style={profileTextStyle}>
             <strong style={profileNameStyle}>
-              {preferencias.nomeExibicao || usuario?.nome || "Conta Historietas"}
+              {preferencias.nomeExibicao ||
+                usuario?.nome ||
+                t(
+                  "Conta Historietas",
+                  "Historietas account",
+                  "Cuenta de Historietas",
+                )}
             </strong>
             <span style={profileUsernameStyle}>
-              {preferencias.username ? `@${preferencias.username}` : "@username não definido"}
+              {preferencias.username
+                ? `@${preferencias.username}`
+                : t(
+                    "@username não definido",
+                    "@username not set",
+                    "@username no definido",
+                  )}
             </span>
             <span style={profileEmailStyle}>
-              {preferencias.emailContato || usuario?.email || "E-mail não informado"}
+              {preferencias.emailContato ||
+                usuario?.email ||
+                t(
+                  "E-mail não informado",
+                  "Email not provided",
+                  "Correo no informado",
+                )}
             </span>
           </div>
         </section>
 
-
-        {deveMostrar("conta", "nome", "username", "usuário", "email", "senha", "privacidade", "salvar") ? (
-          <SettingsSection title="Sua conta">
+        {deveMostrar(
+          "conta",
+          "nome",
+          "username",
+          "usuário",
+          "email",
+          "senha",
+          "privacidade",
+          "salvar",
+        ) ? (
+          <SettingsSection
+            title={t("Sua conta", "Your account", "Tu cuenta")}
+          >
             {deveMostrar("nome", "exibição", "autor") ? (
               <SettingsInput
                 icon="user"
-                label="Nome de exibição"
+                label={t(
+                  "Nome de exibição",
+                  "Display name",
+                  "Nombre visible",
+                )}
                 value={preferencias.nomeExibicao}
-                onChange={(valor) => atualizarPreferencia("nomeExibicao", valor)}
-                placeholder="Ex: Nome do autor"
+                onChange={(valor) =>
+                  atualizarPreferencia("nomeExibicao", valor)
+                }
+                placeholder={t(
+                  "Ex: Nome do autor",
+                  "Example: Author name",
+                  "Ejemplo: Nombre del autor",
+                )}
                 maxLength={80}
                 autoComplete="name"
               />
@@ -1478,12 +1685,20 @@ export default function ConfiguracoesPage() {
                     normalizarUsernameConfiguracoes(valor),
                   );
                 }}
-                placeholder="ex: username"
+                placeholder={t(
+                  "ex: username",
+                  "example: username",
+                  "ejemplo: username",
+                )}
                 maxLength={30}
                 autoComplete="username"
                 helperText={
                   erroUsername ||
-                  "Nome pode repetir. @username não pode repetir."
+                  t(
+                    "Nome pode repetir. @username não pode repetir.",
+                    "Names may repeat. @username must be unique.",
+                    "El nombre puede repetirse. El @username debe ser único.",
+                  )
                 }
                 error={Boolean(erroUsername)}
               />
@@ -1492,10 +1707,20 @@ export default function ConfiguracoesPage() {
             {deveMostrar("email", "contato") ? (
               <SettingsInput
                 icon="mail"
-                label="E-mail de contato"
+                label={t(
+                  "E-mail de contato",
+                  "Contact email",
+                  "Correo de contacto",
+                )}
                 value={preferencias.emailContato}
-                onChange={(valor) => atualizarPreferencia("emailContato", valor)}
-                placeholder="Ex: seuemail@email.com"
+                onChange={(valor) =>
+                  atualizarPreferencia("emailContato", valor)
+                }
+                placeholder={t(
+                  "Ex: seuemail@email.com",
+                  "Example: youremail@email.com",
+                  "Ejemplo: tucorreo@email.com",
+                )}
                 type="email"
                 maxLength={254}
                 autoComplete="email"
@@ -1505,11 +1730,30 @@ export default function ConfiguracoesPage() {
             {deveMostrar("salvar", "alterações", "configurações") ? (
               <SettingsRow
                 icon="check"
-                title={salvando ? "Salvando..." : "Salvar alterações"}
-                subtitle="Grava suas preferências nesta conta"
+                title={
+                  salvando
+                    ? t("Salvando...", "Saving...", "Guardando...")
+                    : t(
+                        "Salvar alterações",
+                        "Save changes",
+                        "Guardar cambios",
+                      )
+                }
+                subtitle={t(
+                  "Grava suas preferências nesta conta",
+                  "Saves your preferences to this account",
+                  "Guarda tus preferencias en esta cuenta",
+                )}
                 right={
                   salvando ? (
-                    <LoadingSpinner compacto label="Salvando alterações" />
+                    <LoadingSpinner
+                      compacto
+                      label={t(
+                        "Salvando alterações",
+                        "Saving changes",
+                        "Guardando cambios",
+                      )}
+                    />
                   ) : undefined
                 }
                 onClick={salvar}
@@ -1520,29 +1764,64 @@ export default function ConfiguracoesPage() {
             {deveMostrar("privacidade", "conta") ? (
               <SettingsRow
                 icon="shield"
-                title="Privacidade da conta"
-                subtitle="Em breve: público, privado ou seguidores"
-                right={<ValorLinha>Em breve</ValorLinha>}
+                title={t(
+                  "Privacidade da conta",
+                  "Account privacy",
+                  "Privacidad de la cuenta",
+                )}
+                subtitle={t(
+                  "Em breve: público, privado ou seguidores",
+                  "Coming soon: public, private or followers",
+                  "Próximamente: pública, privada o seguidores",
+                )}
+                right={
+                  <ValorLinha>
+                    {t("Em breve", "Coming soon", "Próximamente")}
+                  </ValorLinha>
+                }
               />
             ) : null}
 
             {deveMostrar("senha", "segurança") ? (
               <SettingsRow
                 icon="lock"
-                title="Senha e segurança"
-                subtitle="Gerenciada pela sua autenticação"
-                right={<ValorLinha>Conta</ValorLinha>}
+                title={t(
+                  "Senha e segurança",
+                  "Password and security",
+                  "Contraseña y seguridad",
+                )}
+                subtitle={t(
+                  "Gerenciada pela sua autenticação",
+                  "Managed by your authentication",
+                  "Gestionada por tu autenticación",
+                )}
+                right={
+                  <ValorLinha>
+                    {t("Conta", "Account", "Cuenta")}
+                  </ValorLinha>
+                }
               />
             ) : null}
           </SettingsSection>
         ) : null}
 
-        {adminLiberado && deveMostrar("moderação", "admin", "comunidade") ? (
-          <SettingsSection title="Moderação">
+        {adminLiberado &&
+        deveMostrar("moderação", "admin", "comunidade") ? (
+          <SettingsSection
+            title={t("Moderação", "Moderation", "Moderación")}
+          >
             <SettingsRow
               icon="admin"
-              title="Área de moderação"
-              subtitle="Revisar denúncias e conteúdos enviados"
+              title={t(
+                "Área de moderação",
+                "Moderation area",
+                "Área de moderación",
+              )}
+              subtitle={t(
+                "Revisar denúncias e conteúdos enviados",
+                "Review reports and submitted content",
+                "Revisar denuncias y contenidos enviados",
+              )}
               href="/admin/comunidade"
             />
           </SettingsSection>
@@ -1557,22 +1836,45 @@ export default function ConfiguracoesPage() {
           "top 5",
           "diário",
         ) ? (
-          <SettingsSection title="Como você usa o Historietas">
+          <SettingsSection
+            title={t(
+              "Como você usa o Historietas",
+              "How you use Historietas",
+              "Cómo usas Historietas",
+            )}
+          >
             {deveMostrar("obras", "criadas") ? (
               <SettingsRow
                 icon="book"
-                title="Obras criadas"
-                subtitle="Total publicado ou salvo no seu dispositivo"
+                title={t(
+                  "Obras criadas",
+                  "Created works",
+                  "Obras creadas",
+                )}
+                subtitle={t(
+                  "Total publicado ou salvo no seu dispositivo",
+                  "Total published or saved on your device",
+                  "Total publicado o guardado en tu dispositivo",
+                )}
                 right={<ValorLinha>{resumo.obras}</ValorLinha>}
                 href="/perfil-autor?aba=obras"
               />
             ) : null}
 
-            {deveMostrar("biblioteca", "lista", "favoritas", "concluidas") ? (
+            {deveMostrar(
+              "biblioteca",
+              "lista",
+              "favoritas",
+              "concluidas",
+            ) ? (
               <SettingsRow
                 icon="bookmark"
-                title="Biblioteca"
-                subtitle="Favoritas, concluídas e obras seguidas"
+                title={t("Biblioteca", "Library", "Biblioteca")}
+                subtitle={t(
+                  "Favoritas, concluídas e obras seguidas",
+                  "Favorites, completed and followed works",
+                  "Favoritas, completadas y obras seguidas",
+                )}
                 right={<ValorLinha>{totalBiblioteca}</ValorLinha>}
                 href="/perfil-autor?aba=biblioteca"
               />
@@ -1581,8 +1883,16 @@ export default function ConfiguracoesPage() {
             {deveMostrar("notificações", "avisos") ? (
               <SettingsRow
                 icon="bell"
-                title="Notificações"
-                subtitle="Mensagens, avisos e atividade recente"
+                title={t(
+                  "Notificações",
+                  "Notifications",
+                  "Notificaciones",
+                )}
+                subtitle={t(
+                  "Mensagens, avisos e atividade recente",
+                  "Messages, alerts and recent activity",
+                  "Mensajes, avisos y actividad reciente",
+                )}
                 right={<ValorLinha>{notificacoesNaoLidas}</ValorLinha>}
                 href="/notificacoes"
               />
@@ -1591,8 +1901,16 @@ export default function ConfiguracoesPage() {
             {deveMostrar("comunidade", "autor") ? (
               <SettingsRow
                 icon="comment"
-                title="Comunidade do autor"
-                subtitle="Interações e publicações da comunidade"
+                title={t(
+                  "Comunidade do autor",
+                  "Author community",
+                  "Comunidad del autor",
+                )}
+                subtitle={t(
+                  "Interações e publicações da comunidade",
+                  "Community interactions and posts",
+                  "Interacciones y publicaciones de la comunidad",
+                )}
                 href="/perfil-autor?aba=comunidade"
               />
             ) : null}
@@ -1601,7 +1919,11 @@ export default function ConfiguracoesPage() {
               <SettingsRow
                 icon="trophy"
                 title="TOP 5"
-                subtitle="Escolha suas cinco obras favoritas"
+                subtitle={t(
+                  "Escolha suas cinco obras favoritas",
+                  "Choose your five favorite works",
+                  "Elige tus cinco obras favoritas",
+                )}
                 href="/perfil-autor/top-5"
               />
             ) : null}
@@ -1609,22 +1931,77 @@ export default function ConfiguracoesPage() {
             {deveMostrar("histórico", "leitura", "diário") ? (
               <SettingsRow
                 icon="clock"
-                title="Histórico de leitura"
-                subtitle="Diário, leituras recentes e avaliações"
+                title={t(
+                  "Histórico de leitura",
+                  "Reading history",
+                  "Historial de lectura",
+                )}
+                subtitle={t(
+                  "Diário, leituras recentes e avaliações",
+                  "Journal, recent reads and ratings",
+                  "Diario, lecturas recientes y valoraciones",
+                )}
                 href="/perfil-autor?aba=diario"
               />
             ) : null}
           </SettingsSection>
         ) : null}
 
-        {deveMostrar("preferências", "tema", "aparência", "efeitos", "avisos") ? (
-          <SettingsSection title="Preferências">
+        {deveMostrar(
+          "preferências",
+          "tema",
+          "aparência",
+          "efeitos",
+          "avisos",
+          "idioma",
+          "língua",
+        ) ? (
+          <SettingsSection
+            title={t("Preferências", "Preferences", "Preferencias")}
+          >
+            {deveMostrar("idioma", "língua") ? (
+              <SettingsRow
+                icon="layers"
+                title={t(
+                  "Idioma do site",
+                  "Site language",
+                  "Idioma del sitio",
+                )}
+                subtitle={t(
+                  "Escolha Português, English ou Español",
+                  "Choose Português, English or Español",
+                  "Elige Português, English o Español",
+                )}
+                right={
+                  <LanguageSelect
+                    showLabel={false}
+                    style={{ width: "150px", maxWidth: "42vw" }}
+                    selectStyle={{
+                      minHeight: 38,
+                      padding: "7px 10px",
+                      borderRadius: 10,
+                      fontSize: 13,
+                    }}
+                  />
+                }
+                hideChevron
+              />
+            ) : null}
+
             {deveMostrar("tema", "visual", "aparência") ? (
               <>
                 <SettingsRow
                   icon="palette"
-                  title="Tema visual"
-                  subtitle="Escolha entre o visual original e o modo foco"
+                  title={t(
+                    "Tema visual",
+                    "Visual theme",
+                    "Tema visual",
+                  )}
+                  subtitle={t(
+                    "Escolha entre o visual original e o modo foco",
+                    "Choose between the original look and focus mode",
+                    "Elige entre el diseño original y el modo enfoque",
+                  )}
                   right={<ValorLinha>{temaAtual.nome}</ValorLinha>}
                   onClick={() => setMostrarTemas((atual) => !atual)}
                 />
@@ -1632,15 +2009,25 @@ export default function ConfiguracoesPage() {
                 {mostrarTemas ? (
                   <div style={themeListStyle}>
                     {ORDEM_TEMAS_VISUAIS.map((temaVisual) => {
-                      const tema = TEMAS_VISUAIS[temaVisual];
-                      const ativo = preferencias.temaVisual === temaVisual;
+                      const tema = obterTemaVisualTraduzido(
+                        temaVisual,
+                        language,
+                      );
+                      const ativo =
+                        preferencias.temaVisual === temaVisual;
 
                       return (
                         <button
                           key={temaVisual}
                           type="button"
-                          onClick={() => atualizarTemaVisual(temaVisual)}
-                          style={ativo ? themeOptionActiveStyle : themeOptionStyle}
+                          onClick={() =>
+                            atualizarTemaVisual(temaVisual)
+                          }
+                          style={
+                            ativo
+                              ? themeOptionActiveStyle
+                              : themeOptionStyle
+                          }
                           aria-pressed={ativo}
                         >
                           <span
@@ -1653,8 +2040,12 @@ export default function ConfiguracoesPage() {
                           />
 
                           <span style={themeTextStyle}>
-                            <strong style={themeNameStyle}>{tema.nome}</strong>
-                            <span style={themeDescriptionStyle}>{tema.descricao}</span>
+                            <strong style={themeNameStyle}>
+                              {tema.nome}
+                            </strong>
+                            <span style={themeDescriptionStyle}>
+                              {tema.descricao}
+                            </span>
                           </span>
 
                           <span
@@ -1677,8 +2068,16 @@ export default function ConfiguracoesPage() {
             {deveMostrar("receber", "avisos") ? (
               <SettingsRow
                 icon="bell"
-                title="Receber avisos"
-                subtitle="Ativa alertas importantes do site"
+                title={t(
+                  "Receber avisos",
+                  "Receive alerts",
+                  "Recibir avisos",
+                )}
+                subtitle={t(
+                  "Ativa alertas importantes do site",
+                  "Enables important site alerts",
+                  "Activa avisos importantes del sitio",
+                )}
                 right={
                   <Toggle
                     checked={preferencias.receberAvisos}
@@ -1688,7 +2087,11 @@ export default function ConfiguracoesPage() {
                         !preferencias.receberAvisos,
                       )
                     }
-                    ariaLabel="Ativar ou desativar avisos"
+                    ariaLabel={t(
+                      "Ativar ou desativar avisos",
+                      "Enable or disable alerts",
+                      "Activar o desactivar avisos",
+                    )}
                   />
                 }
                 hideChevron
@@ -1698,8 +2101,16 @@ export default function ConfiguracoesPage() {
             {deveMostrar("leitura", "confortável") ? (
               <SettingsRow
                 icon="moon"
-                title="Leitura confortável"
-                subtitle="Reduz contraste e deixa a leitura mais suave"
+                title={t(
+                  "Leitura confortável",
+                  "Comfortable reading",
+                  "Lectura cómoda",
+                )}
+                subtitle={t(
+                  "Reduz contraste e deixa a leitura mais suave",
+                  "Reduces contrast and makes reading softer",
+                  "Reduce el contraste y suaviza la lectura",
+                )}
                 right={
                   <Toggle
                     checked={preferencias.leituraConfortavel}
@@ -1709,7 +2120,11 @@ export default function ConfiguracoesPage() {
                         !preferencias.leituraConfortavel,
                       )
                     }
-                    ariaLabel="Ativar ou desativar leitura confortável"
+                    ariaLabel={t(
+                      "Ativar ou desativar leitura confortável",
+                      "Enable or disable comfortable reading",
+                      "Activar o desactivar la lectura cómoda",
+                    )}
                   />
                 }
                 hideChevron
@@ -1719,15 +2134,30 @@ export default function ConfiguracoesPage() {
             {deveMostrar("efeitos", "reduzir") ? (
               <SettingsRow
                 icon="spark"
-                title="Reduzir efeitos"
-                subtitle="Diminui brilhos, transições e animações"
+                title={t(
+                  "Reduzir efeitos",
+                  "Reduce effects",
+                  "Reducir efectos",
+                )}
+                subtitle={t(
+                  "Diminui brilhos, transições e animações",
+                  "Reduces glows, transitions and animations",
+                  "Reduce brillos, transiciones y animaciones",
+                )}
                 right={
                   <Toggle
                     checked={preferencias.reduzirEfeitos}
                     onChange={() =>
-                      atualizarPreferencia("reduzirEfeitos", !preferencias.reduzirEfeitos)
+                      atualizarPreferencia(
+                        "reduzirEfeitos",
+                        !preferencias.reduzirEfeitos,
+                      )
                     }
-                    ariaLabel="Ativar ou desativar redução de efeitos"
+                    ariaLabel={t(
+                      "Ativar ou desativar redução de efeitos",
+                      "Enable or disable reduced effects",
+                      "Activar o desactivar la reducción de efectos",
+                    )}
                   />
                 }
                 hideChevron
@@ -1736,13 +2166,29 @@ export default function ConfiguracoesPage() {
           </SettingsSection>
         ) : null}
 
-        {deveMostrar("dados", "backup", "copiar", "baixar", "download") ? (
-          <SettingsSection title="Dados e arquivos">
+        {deveMostrar(
+          "dados",
+          "backup",
+          "copiar",
+          "baixar",
+          "download",
+        ) ? (
+          <SettingsSection
+            title={t(
+              "Dados e arquivos",
+              "Data and files",
+              "Datos y archivos",
+            )}
+          >
             {deveMostrar("copiar", "dados") ? (
               <SettingsRow
                 icon="copy"
-                title="Copiar dados"
-                subtitle="Copia um backup em texto para a área de transferência"
+                title={t("Copiar dados", "Copy data", "Copiar datos")}
+                subtitle={t(
+                  "Copia um backup em texto para a área de transferência",
+                  "Copies a text backup to the clipboard",
+                  "Copia una copia de seguridad en texto al portapapeles",
+                )}
                 onClick={copiarBackup}
               />
             ) : null}
@@ -1750,8 +2196,16 @@ export default function ConfiguracoesPage() {
             {deveMostrar("baixar", "backup", "download") ? (
               <SettingsRow
                 icon="download"
-                title="Baixar backup"
-                subtitle="Salva um arquivo JSON com seus dados locais"
+                title={t(
+                  "Baixar backup",
+                  "Download backup",
+                  "Descargar copia",
+                )}
+                subtitle={t(
+                  "Salva um arquivo JSON com seus dados locais",
+                  "Saves a JSON file with your local data",
+                  "Guarda un archivo JSON con tus datos locales",
+                )}
                 onClick={baixarBackup}
               />
             ) : null}
@@ -1759,41 +2213,97 @@ export default function ConfiguracoesPage() {
             {deveMostrar("resumo", "dados") ? (
               <SettingsRow
                 icon="database"
-                title="Resumo da conta"
-                subtitle={`${resumo.obras} obras, ${resumo.favoritas} na lista, ${
-                  resumo.seguindoObras + resumo.seguindoAutores
-                } seguindo`}
+                title={t(
+                  "Resumo da conta",
+                  "Account summary",
+                  "Resumen de la cuenta",
+                )}
+                subtitle={t(
+                  `${resumo.obras} obras, ${resumo.favoritas} na lista, ${
+                    resumo.seguindoObras + resumo.seguindoAutores
+                  } seguindo`,
+                  `${resumo.obras} works, ${resumo.favoritas} in the list, ${
+                    resumo.seguindoObras + resumo.seguindoAutores
+                  } following`,
+                  `${resumo.obras} obras, ${resumo.favoritas} en la lista, ${
+                    resumo.seguindoObras + resumo.seguindoAutores
+                  } siguiendo`,
+                )}
                 hideChevron
               />
             ) : null}
           </SettingsSection>
         ) : null}
 
-        {deveMostrar("suporte", "ajuda", "termos", "políticas", "sobre") ? (
-          <SettingsSection title="Suporte e sobre">
+        {deveMostrar(
+          "suporte",
+          "ajuda",
+          "termos",
+          "políticas",
+          "sobre",
+        ) ? (
+          <SettingsSection
+            title={t(
+              "Suporte e sobre",
+              "Support and about",
+              "Soporte y acerca de",
+            )}
+          >
             {deveMostrar("ajuda", "suporte") ? (
               <SettingsRow
                 icon="help"
-                title="Central de ajuda"
-                subtitle="Dúvidas, problemas e orientação"
-                right={<ValorLinha>Em breve</ValorLinha>}
+                title={t(
+                  "Central de ajuda",
+                  "Help center",
+                  "Centro de ayuda",
+                )}
+                subtitle={t(
+                  "Dúvidas, problemas e orientação",
+                  "Questions, problems and guidance",
+                  "Dudas, problemas y orientación",
+                )}
+                right={
+                  <ValorLinha>
+                    {t("Em breve", "Coming soon", "Próximamente")}
+                  </ValorLinha>
+                }
               />
             ) : null}
 
             {deveMostrar("termos", "políticas", "privacidade") ? (
               <SettingsRow
                 icon="file"
-                title="Termos e políticas"
-                subtitle="Privacidade, uso da plataforma e regras"
-                right={<ValorLinha>Em breve</ValorLinha>}
+                title={t(
+                  "Termos e políticas",
+                  "Terms and policies",
+                  "Términos y políticas",
+                )}
+                subtitle={t(
+                  "Privacidade, uso da plataforma e regras",
+                  "Privacy, platform use and rules",
+                  "Privacidad, uso de la plataforma y reglas",
+                )}
+                right={
+                  <ValorLinha>
+                    {t("Em breve", "Coming soon", "Próximamente")}
+                  </ValorLinha>
+                }
               />
             ) : null}
 
             {deveMostrar("sobre", "versão") ? (
               <SettingsRow
                 icon="settings"
-                title="Sobre o Historietas"
-                subtitle="Versão local de desenvolvimento"
+                title={t(
+                  "Sobre o Historietas",
+                  "About Historietas",
+                  "Acerca de Historietas",
+                )}
+                subtitle={t(
+                  "Versão local de desenvolvimento",
+                  "Local development version",
+                  "Versión local de desarrollo",
+                )}
                 right={<ValorLinha>Beta</ValorLinha>}
                 hideChevron
               />
@@ -1806,8 +2316,16 @@ export default function ConfiguracoesPage() {
             <div style={listCardTransparentStyle}>
               <SettingsRow
                 icon="logout"
-                title="Sair da conta"
-                subtitle="Encerrar sessão neste dispositivo"
+                title={t(
+                  "Sair da conta",
+                  "Sign out",
+                  "Cerrar sesión",
+                )}
+                subtitle={t(
+                  "Encerrar sessão neste dispositivo",
+                  "End the session on this device",
+                  "Cerrar la sesión en este dispositivo",
+                )}
                 onClick={sairDaConta}
                 danger
               />

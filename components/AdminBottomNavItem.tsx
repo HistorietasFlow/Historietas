@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase/client";
+import type { HistorietasLanguage } from "../lib/i18n";
+import { useHistorietasLanguage } from "./HistorietasLanguageProvider";
 
 type AppMetadataAdmin = {
   role?: unknown;
@@ -19,7 +21,30 @@ type UsuarioAdminMinimo = {
   app_metadata?: unknown;
 };
 
+type TextosAdminBottomNav = {
+  ariaLabel: string;
+  rotulo: string;
+};
+
 const PAPEIS_ADMIN = new Set(["admin", "moderador", "moderator"]);
+
+const TEXTOS_ADMIN_BOTTOM_NAV: Record<
+  HistorietasLanguage,
+  TextosAdminBottomNav
+> = {
+  "pt-BR": {
+    ariaLabel: "Administração",
+    rotulo: "ADM",
+  },
+  en: {
+    ariaLabel: "Admin",
+    rotulo: "ADMIN",
+  },
+  es: {
+    ariaLabel: "Administración",
+    rotulo: "ADM",
+  },
+};
 
 function valorTextoAdmin(valor: unknown) {
   return typeof valor === "string" ? valor.trim().toLowerCase() : "";
@@ -49,9 +74,7 @@ function metadataTemAdmin(appMetadata: AppMetadataAdmin | null | undefined) {
     return false;
   }
 
-  const roles = Array.isArray(appMetadata.roles)
-    ? appMetadata.roles
-    : [];
+  const roles = Array.isArray(appMetadata.roles) ? appMetadata.roles : [];
 
   return (
     valorEhPapelAdmin(appMetadata.role) ||
@@ -69,6 +92,8 @@ export default function AdminBottomNavItem() {
   const pathname = usePathname() || "/";
   const verificacaoAtualRef = useRef(0);
   const verificacaoTimerRef = useRef<number | null>(null);
+  const { language } = useHistorietasLanguage();
+  const textos = TEXTOS_ADMIN_BOTTOM_NAV[language];
 
   const itemAtivo =
     pathname === "/admin/comunidade" ||
@@ -100,10 +125,7 @@ export default function AdminBottomNavItem() {
         if (usuario === undefined) {
           const { data, error } = await supabase.auth.getUser();
 
-          if (
-            cancelado ||
-            verificacaoAtualRef.current !== verificacaoId
-          ) {
+          if (cancelado || verificacaoAtualRef.current !== verificacaoId) {
             return;
           }
 
@@ -115,10 +137,7 @@ export default function AdminBottomNavItem() {
           usuario = data.user;
         }
 
-        if (
-          cancelado ||
-          verificacaoAtualRef.current !== verificacaoId
-        ) {
+        if (cancelado || verificacaoAtualRef.current !== verificacaoId) {
           return;
         }
 
@@ -131,32 +150,23 @@ export default function AdminBottomNavItem() {
           usuario.app_metadata as AppMetadataAdmin | null | undefined,
         );
 
-        const { data: adminLiberado, error: adminError } =
-          await supabase.rpc("usuario_e_admin");
+        const { data: adminLiberado, error: adminError } = await supabase.rpc(
+          "usuario_e_admin",
+        );
 
-        if (
-          cancelado ||
-          verificacaoAtualRef.current !== verificacaoId
-        ) {
+        if (cancelado || verificacaoAtualRef.current !== verificacaoId) {
           return;
         }
 
-        setMostrarAdmin(
-          adminError ? adminPeloToken : adminLiberado === true,
-        );
+        setMostrarAdmin(adminError ? adminPeloToken : adminLiberado === true);
       } catch {
-        if (
-          !cancelado &&
-          verificacaoAtualRef.current === verificacaoId
-        ) {
+        if (!cancelado && verificacaoAtualRef.current === verificacaoId) {
           setMostrarAdmin(false);
         }
       }
     }
 
-    function agendarVerificacao(
-      usuario: UsuarioAdminMinimo | null,
-    ) {
+    function agendarVerificacao(usuario: UsuarioAdminMinimo | null) {
       limparVerificacaoAgendada();
 
       verificacaoTimerRef.current = window.setTimeout(() => {
@@ -202,18 +212,15 @@ export default function AdminBottomNavItem() {
           ? "historietas-bottom-nav-item historietas-bottom-nav-item-active"
           : "historietas-bottom-nav-item"
       }
-      aria-label="Admin"
+      aria-label={textos.ariaLabel}
       aria-current={itemAtivo ? "page" : undefined}
       data-admin-bottom-nav="true"
     >
-      <span
-        className="historietas-bottom-nav-icon"
-        aria-hidden="true"
-      >
+      <span className="historietas-bottom-nav-icon" aria-hidden="true">
         M
       </span>
 
-      <span className="historietas-bottom-nav-label">ADM</span>
+      <span className="historietas-bottom-nav-label">{textos.rotulo}</span>
     </Link>
   );
 }

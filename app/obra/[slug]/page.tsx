@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import ObraDinamicaClient from "./ObraDinamicaClient";
-import { createClient } from "../../../lib/supabase/server";
+import { criarSupabaseServerClient } from "../../../lib/supabase/server";
+import {
+  DEFAULT_HISTORIETAS_LANGUAGE,
+  normalizeHistorietasLanguage,
+  type HistorietasLanguage,
+} from "../../../lib/i18n";
 
 type PageProps = {
   params: Promise<{
@@ -16,10 +22,50 @@ type ObraMetadataRow = {
   slug: string | null;
 };
 
+type TextosMetadataObra = {
+  descricaoPadrao: string;
+  tituloNaoEncontrado: string;
+  tituloObraFallback: string;
+  autorFallback: string;
+  separadorAutor: string;
+  capaDe: string;
+  localeOpenGraph: "pt_BR" | "en_US" | "es_ES";
+};
+
 const SITE_NAME = "HISTORIETAS";
-const DEFAULT_DESCRIPTION =
-  "Leia histórias, contos, mangás, webnovels e publique suas próprias obras no HISTORIETAS.";
-const NOT_FOUND_TITLE = "Obra não encontrada";
+
+const TEXTOS_METADATA_OBRA: Record<HistorietasLanguage, TextosMetadataObra> = {
+  "pt-BR": {
+    descricaoPadrao:
+      "Leia histórias, contos, mangás, webnovels e publique suas próprias obras no HISTORIETAS.",
+    tituloNaoEncontrado: "Obra não encontrada",
+    tituloObraFallback: "Obra no HISTORIETAS",
+    autorFallback: "Autor não informado",
+    separadorAutor: "por",
+    capaDe: "Capa de",
+    localeOpenGraph: "pt_BR",
+  },
+  en: {
+    descricaoPadrao:
+      "Read stories, short fiction, manga and web novels, and publish your own works on HISTORIETAS.",
+    tituloNaoEncontrado: "Work not found",
+    tituloObraFallback: "Work on HISTORIETAS",
+    autorFallback: "Author not provided",
+    separadorAutor: "by",
+    capaDe: "Cover of",
+    localeOpenGraph: "en_US",
+  },
+  es: {
+    descricaoPadrao:
+      "Lee historias, cuentos, mangas y webnovels, y publica tus propias obras en HISTORIETAS.",
+    tituloNaoEncontrado: "Obra no encontrada",
+    tituloObraFallback: "Obra en HISTORIETAS",
+    autorFallback: "Autor no informado",
+    separadorAutor: "por",
+    capaDe: "Portada de",
+    localeOpenGraph: "es_ES",
+  },
+};
 
 function normalizarSlugParametro(valor: unknown) {
   if (typeof valor !== "string") {
@@ -89,16 +135,52 @@ function obterUrlImagemSegura(valor: string | null) {
   }
 }
 
+function resolverIdiomaMetadata(
+  acceptLanguage: string,
+): HistorietasLanguage {
+  const idiomasSolicitados = acceptLanguage
+    .split(",")
+    .map((parte) => parte.split(";")[0]?.trim().toLowerCase() || "")
+    .filter(Boolean);
+
+  for (const idiomaSolicitado of idiomasSolicitados) {
+    if (
+      idiomaSolicitado.startsWith("pt") ||
+      idiomaSolicitado.startsWith("en") ||
+      idiomaSolicitado.startsWith("es")
+    ) {
+      return normalizeHistorietasLanguage(idiomaSolicitado);
+    }
+  }
+
+  return DEFAULT_HISTORIETAS_LANGUAGE;
+}
+
+async function obterIdiomaMetadata(): Promise<HistorietasLanguage> {
+  try {
+    const cabecalhos = await headers();
+
+    return resolverIdiomaMetadata(cabecalhos.get("accept-language") || "");
+  } catch {
+    return DEFAULT_HISTORIETAS_LANGUAGE;
+  }
+}
+
 function criarMetadataPadrao({
-  titulo = SITE_NAME,
+  idioma = DEFAULT_HISTORIETAS_LANGUAGE,
+  titulo,
   noIndex = false,
 }: {
+  idioma?: HistorietasLanguage;
   titulo?: string;
   noIndex?: boolean;
 } = {}): Metadata {
+  const textos = TEXTOS_METADATA_OBRA[idioma];
+  const tituloFinal = titulo || SITE_NAME;
+
   return {
-    title: titulo,
-    description: DEFAULT_DESCRIPTION,
+    title: tituloFinal,
+    description: textos.descricaoPadrao,
     robots: noIndex
       ? {
           index: false,
@@ -106,32 +188,37 @@ function criarMetadataPadrao({
         }
       : undefined,
     openGraph: {
-      title: titulo,
-      description: DEFAULT_DESCRIPTION,
+      title: tituloFinal,
+      description: textos.descricaoPadrao,
       siteName: SITE_NAME,
-      locale: "pt_BR",
+      locale: textos.localeOpenGraph,
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: titulo,
-      description: DEFAULT_DESCRIPTION,
+      title: tituloFinal,
+      description: textos.descricaoPadrao,
     },
   };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const slug = await obterSlug(params);
+  const [slug, idioma] = await Promise.all([
+    obterSlug(params),
+    obterIdiomaMetadata(),
+  ]);
+  const textos = TEXTOS_METADATA_OBRA[idioma];
 
   if (!slug) {
     return criarMetadataPadrao({
-      titulo: NOT_FOUND_TITLE,
+      idioma,
+      titulo: textos.tituloNaoEncontrado,
       noIndex: true,
     });
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = await criarSupabaseServerClient();
     const { data, error } = await supabase
       .from("obras")
       .select("titulo,autor,sinopse,capa_url,slug")
@@ -142,22 +229,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     if (error || !data) {
       return criarMetadataPadrao({
-        titulo: NOT_FOUND_TITLE,
+        idioma,
+        titulo: textos.tituloNaoEncontrado,
         noIndex: true,
       });
     }
 
     const obra = data as ObraMetadataRow;
     const tituloObra = limitarTexto(
-      obra.titulo?.trim() || "Obra no HISTORIETAS",
+      obra.titulo?.trim() || textos.tituloObraFallback,
       100,
     );
     const autorObra = limitarTexto(
-      obra.autor?.trim() || "Autor não informado",
+      obra.autor?.trim() || textos.autorFallback,
       80,
     );
-    const sinopseObra = obra.sinopse?.trim() || DEFAULT_DESCRIPTION;
-    const description = limitarTexto(`${sinopseObra} — por ${autorObra}`, 160);
+    const sinopseObra = obra.sinopse?.trim() || textos.descricaoPadrao;
+    const description = limitarTexto(
+      `${sinopseObra} — ${textos.separadorAutor} ${autorObra}`,
+      160,
+    );
     const capaUrl = obterUrlImagemSegura(obra.capa_url);
     const slugCanonico = normalizarSlugParametro(obra.slug) || slug;
     const hrefCanonico = criarHrefCanonicoObra(slugCanonico);
@@ -166,7 +257,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? [
           {
             url: capaUrl,
-            alt: `Capa de ${tituloObra}`,
+            alt: `${textos.capaDe} ${tituloObra}`,
           },
         ]
       : undefined;
@@ -182,7 +273,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title: tituloSocial,
         description,
         siteName: SITE_NAME,
-        locale: "pt_BR",
+        locale: textos.localeOpenGraph,
         type: "article",
         url: hrefCanonico,
         images,
@@ -195,7 +286,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     };
   } catch {
-    return criarMetadataPadrao();
+    return criarMetadataPadrao({ idioma });
   }
 }
 

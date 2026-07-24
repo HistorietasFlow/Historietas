@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
+import type { HistorietasLanguage } from "../../../lib/i18n";
 import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import type { CSSProperties, FormEvent, TouchEvent } from "react";
@@ -22,6 +24,655 @@ const PRIVATE_WORK_FILE_SIGNED_URL_TTL_SECONDS = 60 * 60 * 6;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
 const VERSAO_INTERACOES_OBRA_PUBLICA = "fix-interacoes-obra-2026-06-16-0022";
+
+type TraducaoObraDinamica = {
+  en: string;
+  es: string;
+};
+
+const OBRA_DINAMICA_UI_TRANSLATIONS: Record<string, TraducaoObraDinamica> = {
+  "Carregando": { en: "Loading", es: "Cargando" },
+  "Carregando obra": { en: "Loading work", es: "Cargando obra" },
+  "Obra não encontrada": { en: "Work not found", es: "Obra no encontrada" },
+  "Obra sem título": { en: "Untitled work", es: "Obra sin título" },
+  "Capítulo sem título": { en: "Untitled chapter", es: "Capítulo sin título" },
+  "Autor não informado": { en: "Author not provided", es: "Autor no informado" },
+  "Não informado": { en: "Not provided", es: "No informado" },
+  "Não informada": { en: "Not provided", es: "No informada" },
+  "Nenhuma sinopse informada.": { en: "No synopsis provided.", es: "No se proporcionó una sinopsis." },
+  "nenhuma sinopse informada": { en: "no synopsis provided", es: "sin sinopsis" },
+  "sem tags": { en: "no tags", es: "sin etiquetas" },
+  "Usuário": { en: "User", es: "Usuario" },
+  "Você": { en: "You", es: "Tú" },
+  "Por": { en: "By", es: "Por" },
+  "Publicado": { en: "Published", es: "Publicado" },
+  "Rascunho": { en: "Draft", es: "Borrador" },
+  "Notificações": { en: "Notifications", es: "Notificaciones" },
+  "Seguir obra": { en: "Follow work", es: "Seguir obra" },
+  "✓ Seguindo": { en: "✓ Following", es: "✓ Siguiendo" },
+  "Abrir ações da obra": { en: "Open work actions", es: "Abrir acciones de la obra" },
+  "Ações": { en: "Actions", es: "Acciones" },
+  "Arquivo anexado": { en: "Attached file", es: "Archivo adjunto" },
+  "Salvar": { en: "Save", es: "Guardar" },
+  "Salvo": { en: "Saved", es: "Guardado" },
+  "Concluída": { en: "Completed", es: "Completada" },
+  "Concluir": { en: "Mark as completed", es: "Marcar como completada" },
+  "Compartilhar": { en: "Share", es: "Compartir" },
+  "Link copiado!": { en: "Link copied!", es: "¡Enlace copiado!" },
+  "Sinopse": { en: "Synopsis", es: "Sinopsis" },
+  "AVALIE ESTA OBRA": { en: "RATE THIS WORK", es: "VALORA ESTA OBRA" },
+  "COMUNIDADE": { en: "COMMUNITY", es: "COMUNIDAD" },
+  "CAPÍTULOS": { en: "CHAPTERS", es: "CAPÍTULOS" },
+  "Teoria": { en: "Theory", es: "Teoría" },
+  "Review": { en: "Review", es: "Reseña" },
+  "teorias": { en: "theories", es: "teorías" },
+  "reviews": { en: "reviews", es: "reseñas" },
+  "posts": { en: "posts", es: "publicaciones" },
+  "visualizações": { en: "views", es: "visualizaciones" },
+  "curtidas": { en: "likes", es: "me gusta" },
+  "comentários": { en: "comments", es: "comentarios" },
+  "seguidores": { en: "followers", es: "seguidores" },
+  "disponíveis": { en: "available", es: "disponibles" },
+  "em breve": { en: "coming soon", es: "próximamente" },
+  "Responder": { en: "Reply", es: "Responder" },
+  "Removendo...": { en: "Removing...", es: "Eliminando..." },
+  "Remover": { en: "Remove", es: "Eliminar" },
+  "Remover curtida do comentário": { en: "Unlike comment", es: "Quitar Me gusta del comentario" },
+  "Curtir comentário": { en: "Like comment", es: "Dar Me gusta al comentario" },
+  "Fechar comentários": { en: "Close comments", es: "Cerrar comentarios" },
+  "Recolher comentários": { en: "Collapse comments", es: "Contraer comentarios" },
+  "Expandir comentários": { en: "Expand comments", es: "Expandir comentarios" },
+  "1 comentário": { en: "1 comment", es: "1 comentario" },
+  "Ordenar comentários": { en: "Sort comments", es: "Ordenar comentarios" },
+  "Relevantes": { en: "Relevant", es: "Relevantes" },
+  "Recentes": { en: "Recent", es: "Recientes" },
+  "Ocultar respostas": { en: "Hide replies", es: "Ocultar respuestas" },
+  "Carregando comentários": { en: "Loading comments", es: "Cargando comentarios" },
+  "Sem comentários ainda": { en: "No comments yet", es: "Aún no hay comentarios" },
+  "Adicionar comentário...": { en: "Add a comment...", es: "Añadir un comentario..." },
+  "Entre para comentar.": { en: "Sign in to comment.", es: "Inicia sesión para comentar." },
+  "Adicionar menção": { en: "Add mention", es: "Añadir mención" },
+  "Enviar comentário": { en: "Send comment", es: "Enviar comentario" },
+  "Enviando comentário": { en: "Sending comment", es: "Enviando comentario" },
+  "Remover curtida": { en: "Unlike", es: "Quitar Me gusta" },
+  "Curtir": { en: "Like", es: "Me gusta" },
+  "Arquivo da obra": { en: "Work file", es: "Archivo de la obra" },
+  "Preparando arquivo": { en: "Preparing file", es: "Preparando archivo" },
+  "Preparando download": { en: "Preparing download", es: "Preparando descarga" },
+  "Arquivo indisponível": { en: "File unavailable", es: "Archivo no disponible" },
+  "Abrir arquivo": { en: "Open file", es: "Abrir archivo" },
+  "Baixar arquivo": { en: "Download file", es: "Descargar archivo" },
+  "Não foi possível liberar este arquivo agora.": { en: "This file could not be made available right now.", es: "No se pudo habilitar este archivo ahora." },
+  "Não foi possível baixar o arquivo.": { en: "The file could not be downloaded.", es: "No se pudo descargar el archivo." },
+  "Caminho do arquivo ausente.": { en: "File path is missing.", es: "Falta la ruta del archivo." },
+  "Não foi possível criar a URL do arquivo.": { en: "The file URL could not be created.", es: "No se pudo crear la URL del archivo." },
+  "Entre na sua conta para seguir esta obra.": { en: "Sign in to follow this work.", es: "Inicia sesión para seguir esta obra." },
+  "Obra salva no navegador. Verifique o Supabase/RLS se não sincronizar online.": { en: "Work saved in the browser. Check Supabase/RLS if it does not sync online.", es: "Obra guardada en el navegador. Revisa Supabase/RLS si no se sincroniza en línea." },
+  "Obra removida da lista no navegador. Verifique o Supabase/RLS se voltar depois.": { en: "Work removed from the browser list. Check Supabase/RLS if it appears again.", es: "Obra eliminada de la lista del navegador. Revisa Supabase/RLS si vuelve a aparecer." },
+  "Entre na sua conta para curtir esta obra.": { en: "Sign in to like this work.", es: "Inicia sesión para dar Me gusta a esta obra." },
+  "Não foi possível salvar a curtida da obra.": { en: "The work like could not be saved.", es: "No se pudo guardar el Me gusta de la obra." },
+  "Não foi possível salvar a curtida agora.": { en: "The like could not be saved right now.", es: "No se pudo guardar el Me gusta ahora." },
+  "Escreva um comentário antes de enviar.": { en: "Write a comment before sending.", es: "Escribe un comentario antes de enviarlo." },
+  "Entre na sua conta para responder este comentário.": { en: "Sign in to reply to this comment.", es: "Inicia sesión para responder a este comentario." },
+  "Entre na sua conta para comentar esta obra.": { en: "Sign in to comment on this work.", es: "Inicia sesión para comentar esta obra." },
+  "Resposta salva neste aparelho.": { en: "Reply saved on this device.", es: "Respuesta guardada en este dispositivo." },
+  "Comentário salvo neste aparelho.": { en: "Comment saved on this device.", es: "Comentario guardado en este dispositivo." },
+  "Comentário não retornado pelo Supabase.": { en: "The comment was not returned by Supabase.", es: "Supabase no devolvió el comentario." },
+  "Comentário inválido retornado pelo Supabase.": { en: "Supabase returned an invalid comment.", es: "Supabase devolvió un comentario no válido." },
+  "Comentários inválidos retornados pelo Supabase.": { en: "Supabase returned invalid comments.", es: "Supabase devolvió comentarios no válidos." },
+  "Não foi possível carregar os comentários agora.": { en: "Comments could not be loaded right now.", es: "No se pudieron cargar los comentarios ahora." },
+  "Não foi possível enviar a resposta agora.": { en: "The reply could not be sent right now.", es: "No se pudo enviar la respuesta ahora." },
+  "Não foi possível enviar o comentário agora.": { en: "The comment could not be sent right now.", es: "No se pudo enviar el comentario ahora." },
+  "Entre na sua conta para remover este comentário.": { en: "Sign in to remove this comment.", es: "Inicia sesión para eliminar este comentario." },
+  "Não foi possível remover o comentário agora.": { en: "The comment could not be removed right now.", es: "No se pudo eliminar el comentario ahora." },
+  "Entre na sua conta para curtir comentários.": { en: "Sign in to like comments.", es: "Inicia sesión para dar Me gusta a los comentarios." },
+  "Não foi possível atualizar a curtida do comentário agora.": { en: "The comment like could not be updated right now.", es: "No se pudo actualizar el Me gusta del comentario ahora." },
+  "Entre na sua conta para salvar esta obra.": { en: "Sign in to save this work.", es: "Inicia sesión para guardar esta obra." },
+  "Obra removida da lista.": { en: "Work removed from the list.", es: "Obra eliminada de la lista." },
+  "Não foi possível salvar na lista agora.": { en: "The work could not be saved to the list right now.", es: "No se pudo guardar la obra en la lista ahora." },
+  "Entre na sua conta para marcar esta obra como concluída.": { en: "Sign in to mark this work as completed.", es: "Inicia sesión para marcar esta obra como completada." },
+  "Obra marcada como concluída.": { en: "Work marked as completed.", es: "Obra marcada como completada." },
+  "Obra removida das concluídas.": { en: "Work removed from completed works.", es: "Obra eliminada de las completadas." },
+  "Não foi possível marcar como concluída agora.": { en: "The work could not be marked as completed right now.", es: "No se pudo marcar la obra como completada ahora." },
+  "Entre na sua conta para avaliar esta obra.": { en: "Sign in to rate this work.", es: "Inicia sesión para valorar esta obra." },
+  "Compartilhamento da obra aberto.": { en: "Work sharing opened.", es: "Se abrió la opción de compartir la obra." },
+  "Não foi possível copiar o link.": { en: "The link could not be copied.", es: "No se pudo copiar el enlace." },
+  "Não consegui compartilhar nem copiar o link da obra neste navegador.": { en: "The work could not be shared or its link copied in this browser.", es: "No se pudo compartir la obra ni copiar su enlace en este navegador." },
+  "agora": { en: "now", es: "ahora" },
+  "Fantasia": { en: "Fantasy", es: "Fantasía" },
+  "Terror": { en: "Horror", es: "Terror" },
+  "Ficção": { en: "Fiction", es: "Ficción" },
+  "Romance": { en: "Romance", es: "Romance" },
+  "Drama": { en: "Drama", es: "Drama" },
+  "Ação": { en: "Action", es: "Acción" },
+  "Mistério": { en: "Mystery", es: "Misterio" },
+  "Suspense": { en: "Thriller", es: "Suspenso" },
+  "Aventura": { en: "Adventure", es: "Aventura" },
+  "Comédia": { en: "Comedy", es: "Comedia" },
+  "Webnovel": { en: "Web novel", es: "Novela web" },
+  "Light novel": { en: "Light novel", es: "Novela ligera" },
+  "Conto": { en: "Short story", es: "Cuento" },
+  "Poesia": { en: "Poetry", es: "Poesía" },
+  "HQ": { en: "Comic", es: "Cómic" },
+  "Mangá": { en: "Manga", es: "Manga" },
+  "Fanfic": { en: "Fanfiction", es: "Fanfic" },
+  "Livre": { en: "All ages", es: "Todo público" },
+  "Sombria": { en: "Dark", es: "Oscura" },
+  "Psicológico": { en: "Psychological", es: "Psicológico" },
+  "Sci-fi": { en: "Sci-fi", es: "Ciencia ficción" },
+  "Cyberpunk": { en: "Cyberpunk", es: "Cyberpunk" },
+  "Espacial": { en: "Space", es: "Espacial" },
+  "Isekai": { en: "Isekai", es: "Isekai" },
+  "Distopia": { en: "Dystopia", es: "Distopía" },
+  "Apocalipse": { en: "Apocalypse", es: "Apocalipsis" },
+  "Escolar": { en: "School", es: "Escolar" },
+  "Máfia": { en: "Mafia", es: "Mafia" },
+  "Investigação": { en: "Investigation", es: "Investigación" },
+  "Religioso": { en: "Religious", es: "Religioso" },
+  "Mitologia": { en: "Mythology", es: "Mitología" },
+  "Folclore": { en: "Folklore", es: "Folclore" },
+  "Vampiro": { en: "Vampire", es: "Vampiro" },
+  "Lobisomem": { en: "Werewolf", es: "Hombre lobo" },
+  "Zumbi": { en: "Zombie", es: "Zombi" },
+  "Super-herói": { en: "Superhero", es: "Superhéroe" },
+  "Magia": { en: "Magic", es: "Magia" },
+  "Guerra": { en: "War", es: "Guerra" },
+  "Família": { en: "Family", es: "Familia" },
+  "Amizade": { en: "Friendship", es: "Amistad" },
+  "Traição": { en: "Betrayal", es: "Traición" },
+  "Vingança": { en: "Revenge", es: "Venganza" },
+  "Sobrevivência": { en: "Survival", es: "Supervivencia" },
+};
+
+function traduzirTextoObraDinamica(
+  texto: string,
+  idioma: HistorietasLanguage,
+) {
+  if (idioma === "pt-BR" || !texto) {
+    return texto;
+  }
+
+  const partes = /^(\s*)([\s\S]*?)(\s*)$/.exec(texto);
+  const inicio = partes?.[1] || "";
+  const conteudo = partes?.[2] || texto;
+  const fim = partes?.[3] || "";
+  const traducaoExata = OBRA_DINAMICA_UI_TRANSLATIONS[conteudo];
+
+  if (traducaoExata) {
+    return `${inicio}${idioma === "en" ? traducaoExata.en : traducaoExata.es}${fim}`;
+  }
+
+  let correspondencia = /^Notificações:\s*(\d+)\s*não lidas$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Notifications: ${correspondencia[1]} unread${fim}`
+      : `${inicio}Notificaciones: ${correspondencia[1]} sin leer${fim}`;
+  }
+
+  correspondencia = /^Por\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}By ${correspondencia[1]}${fim}`
+      : `${inicio}Por ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Comentários de\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Comments on ${correspondencia[1]}${fim}`
+      : `${inicio}Comentarios de ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Abrir perfil do autor\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open author profile for ${correspondencia[1]}${fim}`
+      : `${inicio}Abrir perfil del autor ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Abrir perfil de\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open ${correspondencia[1]}'s profile${fim}`
+      : `${inicio}Abrir perfil de ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Ações da obra\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Actions for ${correspondencia[1]}${fim}`
+      : `${inicio}Acciones de la obra ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^(\d+)\s+comentários$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1]} comments${fim}`
+      : `${inicio}${correspondencia[1]} comentarios${fim}`;
+  }
+
+  correspondencia = /^(\d+)\s+avaliações$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1]} ratings${fim}`
+      : `${inicio}${correspondencia[1]} valoraciones${fim}`;
+  }
+
+  correspondencia = /^(\d+)\s+(disponíveis|em breve)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const quantidade = correspondencia[1];
+    const disponivel = correspondencia[2].toLowerCase() === "disponíveis";
+
+    return idioma === "en"
+      ? `${inicio}${quantidade} ${disponivel ? "available" : "coming soon"}${fim}`
+      : `${inicio}${quantidade} ${disponivel ? "disponibles" : "próximamente"}${fim}`;
+  }
+
+  correspondencia = /^Ver\s+(\d+)\s+(resposta|respostas)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const quantidade = Number(correspondencia[1]);
+
+    return idioma === "en"
+      ? `${inicio}View ${quantidade} ${quantidade === 1 ? "reply" : "replies"}${fim}`
+      : `${inicio}Ver ${quantidade} ${quantidade === 1 ? "respuesta" : "respuestas"}${fim}`;
+  }
+
+  correspondencia = /^Adicionar\s+(.+)\s+ao comentário$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Add ${correspondencia[1]} to comment${fim}`
+      : `${inicio}Añadir ${correspondencia[1]} al comentario${fim}`;
+  }
+
+  correspondencia = /^Avaliar com\s+([\d,.]+)\s+estrela(s)?$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const plural = Boolean(correspondencia[2]);
+
+    return idioma === "en"
+      ? `${inicio}Rate ${correspondencia[1]} ${plural ? "stars" : "star"}${fim}`
+      : `${inicio}Valorar con ${correspondencia[1]} ${plural ? "estrellas" : "estrella"}${fim}`;
+  }
+
+  correspondencia = /^Média\s+(.+)\s+de\s+5$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Average ${correspondencia[1]} out of 5${fim}`
+      : `${inicio}Media de ${correspondencia[1]} sobre 5${fim}`;
+  }
+
+  correspondencia = /^há\s+(\d+)\s+(segundo|segundos|minuto|minutos|hora|horas|dia|dias)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const quantidade = Number(correspondencia[1]);
+    const unidade = correspondencia[2].toLowerCase();
+    const singular = quantidade === 1;
+    const unidadesEn: Record<string, string> = {
+      segundo: "second",
+      segundos: "seconds",
+      minuto: "minute",
+      minutos: "minutes",
+      hora: "hour",
+      horas: "hours",
+      dia: "day",
+      dias: "days",
+    };
+    const unidadesEs: Record<string, string> = {
+      segundo: "segundo",
+      segundos: "segundos",
+      minuto: "minuto",
+      minutos: "minutos",
+      hora: "hora",
+      horas: "horas",
+      dia: "día",
+      dias: "días",
+    };
+    const unidadeTraduzida =
+      idioma === "en" ? unidadesEn[unidade] : unidadesEs[unidade];
+
+    return idioma === "en"
+      ? `${inicio}${quantidade} ${unidadeTraduzida} ago${fim}`
+      : `${inicio}hace ${quantidade} ${unidadeTraduzida}${fim}`;
+  }
+
+  correspondencia = /^Abrir arquivo\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open file ${correspondencia[1]}${fim}`
+      : `${inicio}Abrir archivo ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Prévia do arquivo\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Preview of file ${correspondencia[1]}${fim}`
+      : `${inicio}Vista previa del archivo ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Abrir\s+(.+)\.\s+Total:\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open ${correspondencia[1]}. Total: ${correspondencia[2]}${fim}`
+      : `${inicio}Abrir ${correspondencia[1]}. Total: ${correspondencia[2]}${fim}`;
+  }
+
+  correspondencia = /^Abrir\s+(.+)\s+desta obra na Comunidade$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open this work's ${correspondencia[1]} in Community${fim}`
+      : `${inicio}Abrir ${correspondencia[1]} de esta obra en la Comunidad${fim}`;
+  }
+
+  correspondencia = /^(Remover curtida|Curtir)\.\s+(.+)\s+curtidas$/i.exec(conteudo);
+
+  if (correspondencia) {
+    const remover = correspondencia[1].toLowerCase().startsWith("remover");
+
+    return idioma === "en"
+      ? `${inicio}${remover ? "Unlike" : "Like"}. ${correspondencia[2]} likes${fim}`
+      : `${inicio}${remover ? "Quitar Me gusta" : "Me gusta"}. ${correspondencia[2]} Me gusta${fim}`;
+  }
+
+  correspondencia = /^Adicionou\s+(.+)\s+à lista\.$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Added ${correspondencia[1]} to the list.${fim}`
+      : `${inicio}Añadió ${correspondencia[1]} a la lista.${fim}`;
+  }
+
+  correspondencia = /^Concluiu\s+(.+)\.$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Completed ${correspondencia[1]}.${fim}`
+      : `${inicio}Completó ${correspondencia[1]}.${fim}`;
+  }
+
+  correspondencia = /^Avaliou\s+(.+)\s+com\s+([\d,.]+)\s+estrelas\.$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Rated ${correspondencia[1]} ${correspondencia[2]} stars.${fim}`
+      : `${inicio}Valoró ${correspondencia[1]} con ${correspondencia[2]} estrellas.${fim}`;
+  }
+
+  correspondencia = /^([\d.,]+)\s+mil$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1].replace(",", ".")}K${fim}`
+      : `${inicio}${correspondencia[1]} mil${fim}`;
+  }
+
+  correspondencia = /^Abrir\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open ${correspondencia[1]}${fim}`
+      : `${inicio}Abrir ${correspondencia[1]}${fim}`;
+  }
+
+  return texto;
+}
+
+function ObraDinamicaLanguageBridge() {
+  const { language } = useHistorietasLanguage();
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const seletorRaiz =
+      "[data-historietas-obra-dinamica-root='true'], [data-historietas-obra-comments-root='true']";
+
+    type EstadoTraducaoObraDinamica = {
+      original: string;
+      traduzido: string;
+    };
+
+    const estadosTexto: WeakMap<Text, EstadoTraducaoObraDinamica> = new WeakMap();
+    const estadosAtributos: WeakMap<
+      Element,
+      Map<string, EstadoTraducaoObraDinamica>
+    > = new WeakMap();
+    const textosAlterados = new Set<Text>();
+    const atributosAlterados: Array<{ elemento: Element; atributo: string }> = [];
+    const atributosTraduziveis = ["aria-label", "title", "placeholder", "alt"];
+    let aplicando = false;
+
+    function elementoEstaNaPagina(elemento: Element | null) {
+      return Boolean(
+        elemento?.matches(seletorRaiz) || elemento?.closest(seletorRaiz),
+      );
+    }
+
+    function deveIgnorarElemento(elemento: Element | null) {
+      if (!elemento || !elementoEstaNaPagina(elemento)) {
+        return true;
+      }
+
+      if (elemento.closest("[data-historietas-i18n-ignore='true']")) {
+        return true;
+      }
+
+      const tag = elemento.tagName.toLowerCase();
+
+      return tag === "script" || tag === "style";
+    }
+
+    function aplicarTexto(no: Text) {
+      const elementoPai = no.parentElement;
+
+      if (
+        deveIgnorarElemento(elementoPai) ||
+        elementoPai?.tagName.toLowerCase() === "textarea"
+      ) {
+        return;
+      }
+
+      const atual = no.data;
+      let estado = estadosTexto.get(no);
+
+      if (!estado) {
+        estado = { original: atual, traduzido: atual };
+        estadosTexto.set(no, estado);
+        textosAlterados.add(no);
+      } else if (atual !== estado.traduzido && atual !== estado.original) {
+        estado.original = atual;
+      }
+
+      const proximo = traduzirTextoObraDinamica(estado.original, language);
+      estado.traduzido = proximo;
+
+      if (no.data !== proximo) {
+        no.data = proximo;
+      }
+    }
+
+    function aplicarAtributo(elemento: Element, atributo: string) {
+      if (deveIgnorarElemento(elemento) || !elemento.hasAttribute(atributo)) {
+        return;
+      }
+
+      const atual = elemento.getAttribute(atributo) || "";
+      let mapaElemento = estadosAtributos.get(elemento);
+
+      if (!mapaElemento) {
+        mapaElemento = new Map();
+        estadosAtributos.set(elemento, mapaElemento);
+      }
+
+      let estado = mapaElemento.get(atributo);
+
+      if (!estado) {
+        estado = { original: atual, traduzido: atual };
+        mapaElemento.set(atributo, estado);
+        atributosAlterados.push({ elemento, atributo });
+      } else if (atual !== estado.traduzido && atual !== estado.original) {
+        estado.original = atual;
+      }
+
+      const proximo = traduzirTextoObraDinamica(estado.original, language);
+      estado.traduzido = proximo;
+
+      if (atual !== proximo) {
+        elemento.setAttribute(atributo, proximo);
+      }
+    }
+
+    function aplicarNo(no: Node) {
+      if (no.nodeType === Node.TEXT_NODE) {
+        aplicarTexto(no as Text);
+        return;
+      }
+
+      if (!(no instanceof Element)) {
+        return;
+      }
+
+      const raizes: Element[] = [];
+
+      if (no.matches(seletorRaiz)) {
+        raizes.push(no);
+      } else if (no.closest(seletorRaiz)) {
+        raizes.push(no);
+      } else {
+        no.querySelectorAll(seletorRaiz).forEach((raiz) => raizes.push(raiz));
+      }
+
+      raizes.forEach((raiz) => {
+        if (deveIgnorarElemento(raiz)) {
+          return;
+        }
+
+        atributosTraduziveis.forEach((atributo) =>
+          aplicarAtributo(raiz, atributo),
+        );
+
+        const walker = document.createTreeWalker(
+          raiz,
+          NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+        );
+        let atual: Node | null = walker.nextNode();
+
+        while (atual) {
+          if (atual.nodeType === Node.TEXT_NODE) {
+            aplicarTexto(atual as Text);
+          } else if (atual instanceof Element && !deveIgnorarElemento(atual)) {
+            atributosTraduziveis.forEach((atributo) =>
+              aplicarAtributo(atual as Element, atributo),
+            );
+          }
+
+          atual = walker.nextNode();
+        }
+      });
+    }
+
+    function aplicarTudo() {
+      if (aplicando) {
+        return;
+      }
+
+      aplicando = true;
+
+      try {
+        document.querySelectorAll(seletorRaiz).forEach((raiz) => aplicarNo(raiz));
+      } finally {
+        aplicando = false;
+      }
+    }
+
+    aplicarTudo();
+
+    const observador = new MutationObserver((mutacoes) => {
+      if (aplicando) {
+        return;
+      }
+
+      aplicando = true;
+
+      try {
+        mutacoes.forEach((mutacao) => {
+          if (mutacao.type === "characterData") {
+            aplicarTexto(mutacao.target as Text);
+            return;
+          }
+
+          if (mutacao.type === "attributes" && mutacao.target instanceof Element) {
+            if (
+              mutacao.attributeName &&
+              atributosTraduziveis.includes(mutacao.attributeName)
+            ) {
+              aplicarAtributo(mutacao.target, mutacao.attributeName);
+            }
+
+            return;
+          }
+
+          mutacao.addedNodes.forEach((no) => aplicarNo(no));
+        });
+      } finally {
+        aplicando = false;
+      }
+    });
+
+    observador.observe(document.body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: atributosTraduziveis,
+    });
+
+    return () => {
+      observador.disconnect();
+
+      textosAlterados.forEach((no) => {
+        const estado = estadosTexto.get(no);
+
+        if (estado && no.isConnected && no.data === estado.traduzido) {
+          no.data = estado.original;
+        }
+      });
+
+      atributosAlterados.forEach((registro) => {
+        const estado = estadosAtributos
+          .get(registro.elemento)
+          ?.get(registro.atributo);
+
+        if (
+          estado &&
+          registro.elemento.isConnected &&
+          registro.elemento.getAttribute(registro.atributo) === estado.traduzido
+        ) {
+          registro.elemento.setAttribute(registro.atributo, estado.original);
+        }
+      });
+    };
+  }, [language]);
+
+  return null;
+}
+
 
 function criarStorageKeyUsuarioObraPublica(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
@@ -4660,6 +5311,7 @@ export default function ObraDinamicaPage() {
           <div style={commentSheetTopLineStyle}>
             <Link
               href={criarLinkPerfilAutor(comentario.nome, comentario.userId)}
+              data-historietas-i18n-ignore="true"
               style={commentSheetAuthorLinkStyle}
             >
               {comentario.nome}
@@ -4673,7 +5325,7 @@ export default function ObraDinamicaPage() {
             </span>
           </div>
 
-          <p style={commentSheetTextStyle}>{comentario.texto}</p>
+          <p data-historietas-i18n-ignore="true" style={commentSheetTextStyle}>{comentario.texto}</p>
 
           <div style={commentSheetActionsRowStyle}>
             <button
@@ -4752,6 +5404,7 @@ export default function ObraDinamicaPage() {
     obra && comentariosAbertos && typeof document !== "undefined"
       ? createPortal(
           <section
+            data-historietas-obra-comments-root="true"
             style={commentsSheetOverlayStyle}
             aria-label={`Comentários de ${obra.titulo}`}
           >
@@ -5087,8 +5740,10 @@ export default function ObraDinamicaPage() {
 
   if (carregandoObras && !obra) {
     return (
-      <main style={pageThemeStyle} aria-busy="true">
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy="true">
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
+
+        <ObraDinamicaLanguageBridge />
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -5100,8 +5755,10 @@ export default function ObraDinamicaPage() {
 
   if (!obra) {
     return (
-      <main style={pageThemeStyle}>
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
+
+        <ObraDinamicaLanguageBridge />
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -5125,8 +5782,10 @@ export default function ObraDinamicaPage() {
 
   if (!obraDisponivel) {
     return (
-      <main style={pageThemeStyle}>
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${obraPageCss}`}</style>
+
+        <ObraDinamicaLanguageBridge />
 
         {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
         {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -5136,8 +5795,10 @@ export default function ObraDinamicaPage() {
 
   return (
     <>
-      <main style={pageThemeStyle}>
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
       <style>{`${historietasThemeCss}${obraPageCss}`}</style>
+
+        <ObraDinamicaLanguageBridge />
 
       {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
@@ -5227,6 +5888,7 @@ export default function ObraDinamicaPage() {
               }
             >
               <h1
+                data-historietas-i18n-ignore="true"
                 className="historietas-theme-title"
                 style={isDesktop ? desktopTitleStyle : titleStyle}
               >
@@ -5245,7 +5907,7 @@ export default function ObraDinamicaPage() {
                   aria-label={`Abrir perfil do autor ${autorObraNome}`}
                   title={perfilAutorObra?.bio || undefined}
                 >
-                  Por {autorObraNome}
+                  Por <span data-historietas-i18n-ignore="true">{autorObraNome}</span>
                 </Link>
 
                 <div style={heroBottomMetricsStyle}>
@@ -5321,7 +5983,7 @@ export default function ObraDinamicaPage() {
               <div style={obraActionSheetHandleStyle} aria-hidden="true" />
 
               <div style={obraMenuHeaderStyle}>
-                <strong style={obraMenuTitleStyle}>{obra.titulo}</strong>
+                <strong data-historietas-i18n-ignore="true" style={obraMenuTitleStyle}>{obra.titulo}</strong>
 
                 <div style={obraMenuAuthorMetricsRowStyle}>
                   <Link
@@ -5330,7 +5992,7 @@ export default function ObraDinamicaPage() {
                     aria-label={`Abrir perfil do autor ${autorObraNome}`}
                     title={perfilAutorObra?.bio || undefined}
                   >
-                    Por {autorObraNome}
+                    Por <span data-historietas-i18n-ignore="true">{autorObraNome}</span>
                   </Link>
                 </div>
 
@@ -5475,7 +6137,7 @@ export default function ObraDinamicaPage() {
                 {sinopseObraMenu ? (
                   <div style={obraMenuSynopsisStyle}>
                     <span style={obraMenuSynopsisLabelStyle}>Sinopse</span>
-                    <p style={obraMenuSynopsisTextStyle}>{sinopseObraMenu}</p>
+                    <p data-historietas-i18n-ignore="true" style={obraMenuSynopsisTextStyle}>{sinopseObraMenu}</p>
                   </div>
                 ) : null}
               </div>
@@ -5614,7 +6276,7 @@ export default function ObraDinamicaPage() {
                   <div style={chapterNumberStyle}>{capitulo.numero}</div>
 
                   <div style={chapterContentStyle}>
-                    <h3 style={chapterTitleStyle}>{capitulo.titulo}</h3>
+                    <h3 data-historietas-i18n-ignore="true" style={chapterTitleStyle}>{capitulo.titulo}</h3>
 
                     {capitulo.descricao ? (
                       <p style={chapterMetaStyle}>{capitulo.descricao}</p>

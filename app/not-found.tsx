@@ -1,8 +1,57 @@
+"use client";
+
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { useHistorietasLanguage } from "../components/HistorietasLanguageProvider";
 import { historietasThemeCss } from "../lib/historietasTheme";
+import type { HistorietasLanguage } from "../lib/i18n";
+
+type NotFoundTranslation = {
+  homeAria: string;
+  errorCode: string;
+  title: string;
+  description: string;
+  backHome: string;
+  exploreWorks: string;
+};
+
+const NOT_FOUND_TRANSLATIONS: Record<
+  HistorietasLanguage,
+  NotFoundTranslation
+> = {
+  "pt-BR": {
+    homeAria: "Voltar para a Home",
+    errorCode: "Erro 404",
+    title: "Página não encontrada",
+    description:
+      "O endereço acessado não existe ou foi movido. Volte para a Home ou explore outras obras da Historietas.",
+    backHome: "Voltar para Home",
+    exploreWorks: "Explorar obras",
+  },
+  en: {
+    homeAria: "Go back to Home",
+    errorCode: "Error 404",
+    title: "Page not found",
+    description:
+      "The address you accessed does not exist or has been moved. Go back to Home or explore other works on Historietas.",
+    backHome: "Back to Home",
+    exploreWorks: "Explore works",
+  },
+  es: {
+    homeAria: "Volver al inicio",
+    errorCode: "Error 404",
+    title: "Página no encontrada",
+    description:
+      "La dirección a la que accediste no existe o fue trasladada. Vuelve al inicio o explora otras obras en Historietas.",
+    backHome: "Volver al inicio",
+    exploreWorks: "Explorar obras",
+  },
+};
 
 export default function NotFound() {
+  const { language } = useHistorietasLanguage();
+  const texts = NOT_FOUND_TRANSLATIONS[language];
+
   return (
     <main style={pageStyle}>
       <style>{`${historietasThemeCss}${notFoundPageCss}`}</style>
@@ -10,7 +59,7 @@ export default function NotFound() {
       <div style={topWaterFadeStyle} aria-hidden="true" />
 
       <section style={containerStyle} aria-labelledby="not-found-title">
-        <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
+        <Link href="/" style={logoStyle} aria-label={texts.homeAria}>
           <span style={logoMarkStyle}>H</span>
           <span className="historietas-theme-logo-text" style={logoTextStyle}>
             istorietas
@@ -18,28 +67,25 @@ export default function NotFound() {
         </Link>
 
         <section style={boxStyle}>
-          <span style={codeStyle}>Erro 404</span>
+          <span style={codeStyle}>{texts.errorCode}</span>
 
           <h1
             id="not-found-title"
             className="historietas-theme-title"
             style={titleStyle}
           >
-            Página não encontrada
+            {texts.title}
           </h1>
 
-          <p style={textStyle}>
-            O endereço acessado não existe ou foi movido. Volte para a Home ou
-            explore outras obras da Historietas.
-          </p>
+          <p style={textStyle}>{texts.description}</p>
 
           <div className="not-found-actions" style={actionsStyle}>
             <Link href="/" style={primaryButtonStyle}>
-              Voltar para Home
+              {texts.backHome}
             </Link>
 
             <Link href="/explorar" style={secondaryButtonStyle}>
-              Explorar obras
+              {texts.exploreWorks}
             </Link>
           </div>
         </section>

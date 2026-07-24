@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Children, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import type { HistorietasLanguage } from "../../lib/i18n";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import {
@@ -184,6 +186,400 @@ const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
+
+type ExplorarTranslationEntry = {
+  en: string;
+  es: string;
+};
+
+const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
+  "Carregando": { en: "Loading", es: "Cargando" },
+  "Carregando Explorar": { en: "Loading Explore", es: "Cargando Explorar" },
+  "Explorar": { en: "Explore", es: "Explorar" },
+  "Abrir funções do Explorar": {
+    en: "Open Explore options",
+    es: "Abrir opciones de Explorar",
+  },
+  "Buscar autores...": { en: "Search authors...", es: "Buscar autores..." },
+  "Buscar histórias...": { en: "Search stories...", es: "Buscar historias..." },
+  "Fechar busca": { en: "Close search", es: "Cerrar búsqueda" },
+  "Abrir busca": { en: "Open search", es: "Abrir búsqueda" },
+  "Categorias": { en: "Categories", es: "Categorías" },
+  "Tudo": { en: "All", es: "Todo" },
+  "Autores": { en: "Authors", es: "Autores" },
+  "EXPLORAR": { en: "EXPLORE", es: "EXPLORAR" },
+  "Mostrar": { en: "Show", es: "Mostrar" },
+  "Todas": { en: "All", es: "Todas" },
+  "Lendo agora": { en: "Reading now", es: "Leyendo ahora" },
+  "Na lista": { en: "In my list", es: "En mi lista" },
+  "Concluídas": { en: "Completed", es: "Completadas" },
+  "Sem leitura": { en: "Not started", es: "Sin comenzar" },
+  "Ordenar": { en: "Sort", es: "Ordenar" },
+  "Relevância": { en: "Relevance", es: "Relevancia" },
+  "Mais curtidas": { en: "Most liked", es: "Más gustadas" },
+  "Mais recentes": { en: "Most recent", es: "Más recientes" },
+  "Limpar filtros": { en: "Clear filters", es: "Limpiar filtros" },
+  "Entre na sua conta para usar filtros pessoais.": {
+    en: "Sign in to use personal filters.",
+    es: "Inicia sesión para usar filtros personales.",
+  },
+  "Recomendações para você": {
+    en: "Recommendations for you",
+    es: "Recomendaciones para ti",
+  },
+  "Publicações recentes": {
+    en: "Recent publications",
+    es: "Publicaciones recientes",
+  },
+  "Novos capítulos": { en: "New chapters", es: "Nuevos capítulos" },
+  "Mais comentadas": { en: "Most commented", es: "Más comentadas" },
+  "Para ler agora": { en: "Read now", es: "Para leer ahora" },
+  "Autores para conhecer": {
+    en: "Authors to discover",
+    es: "Autores por descubrir",
+  },
+  "Autores em destaque": {
+    en: "Featured authors",
+    es: "Autores destacados",
+  },
+  "Mais bem avaliados": {
+    en: "Top rated",
+    es: "Mejor valorados",
+  },
+  "Resultados da busca": {
+    en: "Search results",
+    es: "Resultados de búsqueda",
+  },
+  "Autores encontrados": {
+    en: "Authors found",
+    es: "Autores encontrados",
+  },
+  "Nenhum autor encontrado": {
+    en: "No authors found",
+    es: "No se encontraron autores",
+  },
+  "Nenhuma obra encontrada": {
+    en: "No works found",
+    es: "No se encontraron obras",
+  },
+  "PUBLIQUE SUA HISTÓRIA": {
+    en: "PUBLISH YOUR STORY",
+    es: "PUBLICA TU HISTORIA",
+  },
+  "Ver perfil": { en: "View profile", es: "Ver perfil" },
+  "obra publicada": { en: "published work", es: "obra publicada" },
+  "obras publicadas": { en: "published works", es: "obras publicadas" },
+  "avaliação": { en: "rating", es: "valoración" },
+  "avaliações": { en: "ratings", es: "valoraciones" },
+  "Autor ainda sem avaliações": {
+    en: "Author has no ratings yet",
+    es: "El autor aún no tiene valoraciones",
+  },
+  "Rolar carrossel para a esquerda": {
+    en: "Scroll carousel left",
+    es: "Desplazar el carrusel a la izquierda",
+  },
+  "Rolar carrossel para a direita": {
+    en: "Scroll carousel right",
+    es: "Desplazar el carrusel a la derecha",
+  },
+  "Por": { en: "By", es: "Por" },
+  "Rascunho": { en: "Draft", es: "Borrador" },
+  "Ver obra": { en: "View work", es: "Ver obra" },
+  "Capítulo sem título": {
+    en: "Untitled chapter",
+    es: "Capítulo sin título",
+  },
+  "Obra sem título": { en: "Untitled work", es: "Obra sin título" },
+  "Autor não informado": {
+    en: "Author not provided",
+    es: "Autor no informado",
+  },
+  "Não informado": { en: "Not provided", es: "No informado" },
+  "Não informada": { en: "Not provided", es: "No informada" },
+  "Nenhuma sinopse informada.": {
+    en: "No synopsis provided.",
+    es: "No se proporcionó una sinopsis.",
+  },
+  "sem tags": { en: "no tags", es: "sin etiquetas" },
+  "Arquivo da obra": { en: "Work file", es: "Archivo de la obra" },
+
+  "Ação do começo ao fim": {
+    en: "Nonstop action",
+    es: "Acción de principio a fin",
+  },
+  "Aventuras sem limites": {
+    en: "Limitless adventures",
+    es: "Aventuras sin límites",
+  },
+  "Para rir agora": { en: "A good laugh", es: "Para reír ahora" },
+  "Histórias que deixam marcas": {
+    en: "Stories that leave a mark",
+    es: "Historias que dejan huella",
+  },
+  "Mundos além da imaginação": {
+    en: "Worlds beyond imagination",
+    es: "Mundos más allá de la imaginación",
+  },
+  "Além do que é possível": {
+    en: "Beyond what is possible",
+    es: "Más allá de lo posible",
+  },
+  "Mistérios para desvendar": {
+    en: "Mysteries to uncover",
+    es: "Misterios por descubrir",
+  },
+  "Amores que deixam marcas": {
+    en: "Love stories that leave a mark",
+    es: "Amores que dejan huella",
+  },
+  "Tensão até a última página": {
+    en: "Tension to the final page",
+    es: "Tensión hasta la última página",
+  },
+  "Histórias para perder o sono": {
+    en: "Stories that will keep you awake",
+    es: "Historias para perder el sueño",
+  },
+  "Entre este mundo e o outro": {
+    en: "Between this world and the next",
+    es: "Entre este mundo y el otro",
+  },
+  "Viagens por outros tempos": {
+    en: "Journeys through other times",
+    es: "Viajes por otros tiempos",
+  },
+  "Vidas que merecem ser contadas": {
+    en: "Lives worth telling",
+    es: "Vidas que merecen ser contadas",
+  },
+  "Descobertas fora do comum": {
+    en: "Unusual discoveries",
+    es: "Descubrimientos fuera de lo común",
+  },
+  "Histórias para descobrir": {
+    en: "Stories to discover",
+    es: "Historias por descubrir",
+  },
+
+  "Autores que aceleram o coração": {
+    en: "Authors who make your heart race",
+    es: "Autores que aceleran el corazón",
+  },
+  "Autores de grandes jornadas": {
+    en: "Authors of great journeys",
+    es: "Autores de grandes viajes",
+  },
+  "Autores para arrancar risadas": {
+    en: "Authors who make you laugh",
+    es: "Autores que provocan risas",
+  },
+  "Autores que tocam fundo": {
+    en: "Authors who move you deeply",
+    es: "Autores que llegan al corazón",
+  },
+  "Criadores de mundos impossíveis": {
+    en: "Creators of impossible worlds",
+    es: "Creadores de mundos imposibles",
+  },
+  "Autores que enxergam além": {
+    en: "Authors who see beyond",
+    es: "Autores que ven más allá",
+  },
+  "Mestres dos enigmas": {
+    en: "Masters of mysteries",
+    es: "Maestros de los enigmas",
+  },
+  "Autores que escrevem sentimentos": {
+    en: "Authors who write emotions",
+    es: "Autores que escriben sentimientos",
+  },
+  "Mestres da tensão": {
+    en: "Masters of tension",
+    es: "Maestros de la tensión",
+  },
+  "Autores que dominam o medo": {
+    en: "Authors who master fear",
+    es: "Autores que dominan el miedo",
+  },
+  "Vozes do desconhecido": {
+    en: "Voices of the unknown",
+    es: "Voces de lo desconocido",
+  },
+  "Autores que revivem o passado": {
+    en: "Authors who bring the past to life",
+    es: "Autores que reviven el pasado",
+  },
+  "Autores de vidas reais": {
+    en: "Authors of real lives",
+    es: "Autores de vidas reales",
+  },
+  "Novas vozes para descobrir": {
+    en: "New voices to discover",
+    es: "Nuevas voces por descubrir",
+  },
+  "Autores para descobrir": {
+    en: "Authors to discover",
+    es: "Autores por descubrir",
+  },
+};
+
+const EXPLORAR_GENRE_TRANSLATIONS: Record<
+  string,
+  ExplorarTranslationEntry
+> = {
+  acao: { en: "Action", es: "Acción" },
+  aventura: { en: "Adventure", es: "Aventura" },
+  comedia: { en: "Comedy", es: "Comedia" },
+  drama: { en: "Drama", es: "Drama" },
+  fantasia: { en: "Fantasy", es: "Fantasía" },
+  ficcao: { en: "Fiction", es: "Ficción" },
+  misterio: { en: "Mystery", es: "Misterio" },
+  romance: { en: "Romance", es: "Romance" },
+  suspense: { en: "Thriller", es: "Suspenso" },
+  terror: { en: "Horror", es: "Terror" },
+  sobrenatural: { en: "Supernatural", es: "Sobrenatural" },
+  historico: { en: "Historical", es: "Histórico" },
+  biografia: { en: "Biography", es: "Biografía" },
+  outros: { en: "Others", es: "Otros" },
+};
+
+const EXPLORAR_FORMAT_TRANSLATIONS: Record<
+  string,
+  ExplorarTranslationEntry
+> = {
+  webnovel: { en: "Web novel", es: "Novela web" },
+  "web novel": { en: "Web novel", es: "Novela web" },
+  "light novel": { en: "Light novel", es: "Novela ligera" },
+  romance: { en: "Novel", es: "Novela" },
+  conto: { en: "Short story", es: "Cuento" },
+  poesia: { en: "Poetry", es: "Poesía" },
+  hq: { en: "Comics", es: "Cómic" },
+  manga: { en: "Manga", es: "Manga" },
+  fanfic: { en: "Fanfiction", es: "Fanfic" },
+  historia: { en: "Story", es: "Historia" },
+};
+
+const EXPLORAR_CLASSIFICATION_TRANSLATIONS: Record<
+  string,
+  ExplorarTranslationEntry
+> = {
+  livre: { en: "All ages", es: "Todo público" },
+  leitores: { en: "Readers", es: "Lectores" },
+  "nao informada": { en: "Not provided", es: "No informada" },
+  "nao informado": { en: "Not provided", es: "No informado" },
+};
+
+function obterLocaleExplorar(idioma: HistorietasLanguage): string {
+  if (idioma === "en") {
+    return "en-US";
+  }
+
+  if (idioma === "es") {
+    return "es-ES";
+  }
+
+  return "pt-BR";
+}
+
+function traduzirTextoExplorar(
+  texto: string,
+  idioma: HistorietasLanguage
+): string {
+  if (idioma === "pt-BR") {
+    return texto;
+  }
+
+  const traducaoExata = EXPLORAR_UI_TRANSLATIONS[texto];
+
+  if (traducaoExata) {
+    return traducaoExata[idioma];
+  }
+
+  let correspondencia = texto.match(/^Explorar \((\d+)\)$/);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `Explore (${correspondencia[1]})`
+      : `Explorar (${correspondencia[1]})`;
+  }
+
+  correspondencia = texto.match(/^Publicações em (.+)$/);
+
+  if (correspondencia) {
+    const genero = traduzirGeneroExplorar(correspondencia[1], idioma);
+
+    return idioma === "en"
+      ? `Publications in ${genero}`
+      : `Publicaciones de ${genero}`;
+  }
+
+  correspondencia = texto.match(/^Autores de (.+)$/);
+
+  if (correspondencia) {
+    const genero = traduzirGeneroExplorar(correspondencia[1], idioma);
+
+    return idioma === "en"
+      ? `${genero} authors`
+      : `Autores de ${genero}`;
+  }
+
+  correspondencia = texto.match(/^Capítulo (\d+)$/);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `Chapter ${correspondencia[1]}`
+      : `Capítulo ${correspondencia[1]}`;
+  }
+
+  return texto;
+}
+
+function traduzirGeneroExplorar(
+  genero: string,
+  idioma: HistorietasLanguage
+): string {
+  if (idioma === "pt-BR") {
+    return genero;
+  }
+
+  const chave = normalizarTexto(genero);
+  const traducao = EXPLORAR_GENRE_TRANSLATIONS[chave];
+
+  return traducao?.[idioma] || traduzirTextoExplorar(genero, idioma);
+}
+
+function traduzirFormatoExplorar(
+  formato: string,
+  idioma: HistorietasLanguage
+): string {
+  if (idioma === "pt-BR") {
+    return formato;
+  }
+
+  const chave = normalizarTexto(formato);
+  const traducao = EXPLORAR_FORMAT_TRANSLATIONS[chave];
+
+  if (traducao) {
+    return traducao[idioma];
+  }
+
+  return traduzirTextoExplorar(formato, idioma);
+}
+
+function traduzirClassificacaoExplorar(
+  classificacao: string,
+  idioma: HistorietasLanguage
+): string {
+  if (idioma === "pt-BR") {
+    return classificacao;
+  }
+
+  const chave = normalizarTexto(classificacao);
+  const traducao = EXPLORAR_CLASSIFICATION_TRANSLATIONS[chave];
+
+  return traducao?.[idioma] || classificacao;
+}
 
 const categorias = [
   "Ação",
@@ -486,18 +882,49 @@ function criarIniciaisAutorExplorar(nome: string) {
     .toUpperCase();
 }
 
-function criarBioAutorExplorar(nome: string, generos: string[]) {
-  const generosValidos = generos.filter(Boolean).slice(0, 2);
+function criarBioAutorExplorar(
+  nome: string,
+  generos: string[],
+  idioma: HistorietasLanguage = "pt-BR"
+) {
+  const generosValidos = generos
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((genero) => traduzirGeneroExplorar(genero, idioma));
+  const nomeExibicao =
+    nome === "Autor não informado"
+      ? traduzirTextoExplorar(nome, idioma)
+      : nome;
 
   if (generosValidos.length === 0) {
-    return `${nome} publica histórias na Historietas.`;
+    if (idioma === "en") {
+      return `${nomeExibicao} publishes stories on Historietas.`;
+    }
+
+    if (idioma === "es") {
+      return `${nomeExibicao} publica historias en Historietas.`;
+    }
+
+    return `${nomeExibicao} publica histórias na Historietas.`;
   }
 
-  return `Autor de ${generosValidos.join(" e ").toLowerCase()} na Historietas.`;
+  const conector = idioma === "en" ? " and " : idioma === "es" ? " y " : " e ";
+  const generosTexto = generosValidos.join(conector).toLowerCase();
+
+  if (idioma === "en") {
+    return `Author of ${generosTexto} on Historietas.`;
+  }
+
+  if (idioma === "es") {
+    return `Autor de ${generosTexto} en Historietas.`;
+  }
+
+  return `Autor de ${generosTexto} na Historietas.`;
 }
 
 function formatarMediaAvaliacaoAutorExplorar(
-  avaliacao: AvaliacaoAutorExplorar | undefined
+  avaliacao: AvaliacaoAutorExplorar | undefined,
+  idioma: HistorietasLanguage = "pt-BR"
 ) {
   if (
     !avaliacao ||
@@ -508,7 +935,7 @@ function formatarMediaAvaliacaoAutorExplorar(
     return "—";
   }
 
-  return avaliacao.media.toLocaleString("pt-BR", {
+  return avaliacao.media.toLocaleString(obterLocaleExplorar(idioma), {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   });
@@ -2001,6 +2428,7 @@ function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
 
 export default function ExplorarPage() {
   const router = useRouter();
+  const { language } = useHistorietasLanguage();
   const { temaVisual, pageThemeStyle } = useHistorietasTheme(pageStyle);
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
@@ -2418,7 +2846,7 @@ export default function ExplorarPage() {
           avatar: perfil?.avatar || "",
           bio:
             perfil?.bio ||
-            criarBioAutorExplorar(autor.nome, generos),
+            criarBioAutorExplorar(autor.nome, generos, language),
           totalObras: autor.obrasIds.size,
           totalCurtidas: autor.totalCurtidas,
           totalComentarios: autor.totalComentarios,
@@ -2433,12 +2861,13 @@ export default function ExplorarPage() {
         (autorA, autorB) =>
           autorB.totalObras - autorA.totalObras ||
           autorB.totalCurtidas - autorA.totalCurtidas ||
-          autorA.nome.localeCompare(autorB.nome, "pt-BR")
+          autorA.nome.localeCompare(autorB.nome, obterLocaleExplorar(language))
       );
   }, [
     obrasBaseFiltradas,
     perfisAutores,
     avaliacoesAutores,
+    language,
   ]);
 
   const autoresFiltrados = useMemo(() => {
@@ -2649,10 +3078,12 @@ export default function ExplorarPage() {
     ordenacao !== "relevancia",
   ].filter(Boolean).length;
 
-  const textoBotaoFiltrosAvancados =
+  const textoBotaoFiltrosAvancados = traduzirTextoExplorar(
     totalFiltrosAvancadosAtivos > 0
       ? `Explorar (${totalFiltrosAvancadosAtivos})`
-      : "Explorar";
+      : "Explorar",
+    language
+  );
 
   const categoriaAtiva = categoriaSelecionada.trim().length > 0;
   const temaPagina = criarTemaPaginaVisualExplorar(temaVisual);
@@ -2727,7 +3158,7 @@ export default function ExplorarPage() {
         aria-busy="true"
       >
         <style>{`${themePageCss}${historietasThemeCss}`}</style>
-        <LoadingSpinner label="Carregando Explorar" />
+        <LoadingSpinner label={traduzirTextoExplorar("Carregando Explorar", language)} />
       </main>
     );
   }
@@ -2755,7 +3186,10 @@ export default function ExplorarPage() {
                 ? desktopExplorarHeaderFilterButtonStyle
                 : explorarHeaderFilterButtonStyle
             }
-            aria-label="Abrir funções do Explorar"
+            aria-label={traduzirTextoExplorar(
+              "Abrir funções do Explorar",
+              language
+            )}
           >
             <span>{textoBotaoFiltrosAvancados}</span>
             <span style={explorarHeaderFilterIconStyle} aria-hidden="true">
@@ -2775,11 +3209,12 @@ export default function ExplorarPage() {
                 <input
                   value={busca}
                   onChange={(event) => setBusca(event.target.value)}
-                  placeholder={
+                  placeholder={traduzirTextoExplorar(
                     modoConteudo === "autores"
                       ? "Buscar autores..."
-                      : "Buscar histórias..."
-                  }
+                      : "Buscar histórias...",
+                    language
+                  )}
                   autoComplete="off"
                   autoCorrect="off"
                   spellCheck={false}
@@ -2796,7 +3231,7 @@ export default function ExplorarPage() {
                   setBusca("");
                   setBuscaMobileAberta(false);
                 }}
-                aria-label="Fechar busca"
+                aria-label={traduzirTextoExplorar("Fechar busca", language)}
                 aria-expanded="true"
                 style={mobileSearchToggleStyle}
               >
@@ -2828,7 +3263,7 @@ export default function ExplorarPage() {
             <button
               type="button"
               onClick={() => setBuscaMobileAberta(true)}
-              aria-label="Abrir busca"
+              aria-label={traduzirTextoExplorar("Abrir busca", language)}
               aria-expanded="false"
               style={mobileSearchToggleStyle}
             >
@@ -2873,7 +3308,11 @@ export default function ExplorarPage() {
                 )
           }
         >
-          <section className="explorar-carousel" style={isDesktop ? desktopCategoriesStyle : categoriesStyle} aria-label="Categorias">
+          <section
+            className="explorar-carousel"
+            style={isDesktop ? desktopCategoriesStyle : categoriesStyle}
+            aria-label={traduzirTextoExplorar("Categorias", language)}
+          >
             <button
               type="button"
               onClick={() => selecionarModoConteudo("obras")}
@@ -2883,7 +3322,7 @@ export default function ExplorarPage() {
                   : categoryStyle
               }
             >
-              Tudo
+              {traduzirTextoExplorar("Tudo", language)}
             </button>
 
             <button
@@ -2895,7 +3334,7 @@ export default function ExplorarPage() {
                   : categoryStyle
               }
             >
-              Autores
+              {traduzirTextoExplorar("Autores", language)}
             </button>
 
             {categorias.map((categoria) => (
@@ -2909,13 +3348,15 @@ export default function ExplorarPage() {
                     : categoryStyle
                 }
               >
-                {categoria}
+                {traduzirGeneroExplorar(categoria, language)}
               </button>
             ))}
           </section>
 
           {mensagemLogin && (
-            <span style={loginNoticeStyle}>{mensagemLogin}</span>
+            <span style={loginNoticeStyle}>
+            {traduzirTextoExplorar(mensagemLogin, language)}
+          </span>
           )}
 
         </section>
@@ -2928,14 +3369,18 @@ export default function ExplorarPage() {
             <section
               style={isDesktop ? desktopExplorarModalSheetStyle : explorarModalSheetStyle}
               onClick={(event) => event.stopPropagation()}
-              aria-label="EXPLORAR"
+              aria-label={traduzirTextoExplorar("EXPLORAR", language)}
             >
               <span style={explorarModalHandleStyle} aria-hidden="true" />
 
-              <h2 style={explorarModalTitleStyle}>EXPLORAR</h2>
+              <h2 style={explorarModalTitleStyle}>
+                {traduzirTextoExplorar("EXPLORAR", language)}
+              </h2>
 
               <div style={explorarModalContentStyle}>
-                <p style={explorarModalSectionLabelStyle}>Mostrar</p>
+                <p style={explorarModalSectionLabelStyle}>
+                  {traduzirTextoExplorar("Mostrar", language)}
+                </p>
 
                 {[
                   ["todos", "Todas"],
@@ -2950,14 +3395,16 @@ export default function ExplorarPage() {
                     onClick={() => selecionarFiltroColecao(valor as FiltroColecaoExplorar)}
                     style={criarExplorarModalOptionStyle(filtroColecao === valor)}
                   >
-                    <span>{rotulo}</span>
+                    <span>{traduzirTextoExplorar(rotulo, language)}</span>
                     <span style={criarExplorarModalRadioStyle(filtroColecao === valor)}>
                       {filtroColecao === valor ? "✓" : ""}
                     </span>
                   </button>
                 ))}
 
-                <p style={explorarModalSectionLabelStyle}>Ordenar</p>
+                <p style={explorarModalSectionLabelStyle}>
+                  {traduzirTextoExplorar("Ordenar", language)}
+                </p>
 
                 {[
                   ["relevancia", "Relevância"],
@@ -2970,7 +3417,7 @@ export default function ExplorarPage() {
                     onClick={() => setOrdenacao(valor as OrdenacaoExplorar)}
                     style={criarExplorarModalOptionStyle(ordenacao === valor)}
                   >
-                    <span>{rotulo}</span>
+                    <span>{traduzirTextoExplorar(rotulo, language)}</span>
                     <span style={criarExplorarModalRadioStyle(ordenacao === valor)}>
                       {ordenacao === valor ? "✓" : ""}
                     </span>
@@ -2986,7 +3433,7 @@ export default function ExplorarPage() {
                       onClick={limparFiltros}
                       style={explorarModalClearButtonStyle}
                     >
-                      Limpar filtros
+                      {traduzirTextoExplorar("Limpar filtros", language)}
                     </button>
                   </>
                 )}
@@ -3219,6 +3666,7 @@ function EstadoVazioExplorar({
   possuiObrasPublicadas: boolean;
   modoConteudo: ModoConteudoExplorar;
 }) {
+  const { language } = useHistorietasLanguage();
   const titulo =
     modoConteudo === "autores"
       ? "Nenhum autor encontrado"
@@ -3236,7 +3684,7 @@ function EstadoVazioExplorar({
         textAlign: "center",
       }}
     >
-      {titulo}
+      {traduzirTextoExplorar(titulo, language)}
     </p>
   );
 }
@@ -3250,6 +3698,7 @@ function SectionHeader({
   tema: ReturnType<typeof obterTemaCategoria>;
   isDesktop?: boolean;
 }) {
+  const { language } = useHistorietasLanguage();
   const titleStyleTema: CSSProperties = {
     ...(isDesktop ? desktopSectionTitleStyle : sectionTitleStyle),
     background: "none",
@@ -3259,7 +3708,7 @@ function SectionHeader({
 
   return (
     <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-      <h2 style={titleStyleTema}>{title}</h2>
+      <h2 style={titleStyleTema}>{traduzirTextoExplorar(title, language)}</h2>
     </div>
   );
 }
@@ -3273,7 +3722,12 @@ function AutorExplorarCard({
   isDesktop?: boolean;
   emGrade?: boolean;
 }) {
+  const { language } = useHistorietasLanguage();
   const generos = autor.generos.length > 0 ? autor.generos : ["Historietas"];
+  const nomeExibicao =
+    autor.nome === "Autor não informado"
+      ? traduzirTextoExplorar(autor.nome, language)
+      : autor.nome;
 
   return (
     <Link
@@ -3287,7 +3741,13 @@ function AutorExplorarCard({
             ? desktopAutorExplorarCardStyle
             : autorExplorarCardStyle
       }
-      aria-label={`Abrir perfil do autor ${autor.nome}`}
+      aria-label={
+        language === "en"
+          ? `Open author profile for ${nomeExibicao}`
+          : language === "es"
+            ? `Abrir el perfil del autor ${nomeExibicao}`
+            : `Abrir perfil do autor ${nomeExibicao}`
+      }
     >
       <span style={autorExplorarCardGlowStyle} aria-hidden="true" />
 
@@ -3296,18 +3756,22 @@ function AutorExplorarCard({
           {autor.avatar ? (
             <img
               src={autor.avatar}
-              alt={`Avatar de ${autor.nome}`}
+              alt={
+                language === "en"
+                  ? `${nomeExibicao} avatar`
+                  : `Avatar de ${nomeExibicao}`
+              }
               style={autorExplorarAvatarImageStyle}
             />
           ) : (
             <span style={autorExplorarAvatarInitialsStyle}>
-              {criarIniciaisAutorExplorar(autor.nome)}
+              {criarIniciaisAutorExplorar(nomeExibicao)}
             </span>
           )}
         </div>
 
         <div style={autorExplorarIdentityStyle}>
-          <h3 style={autorExplorarNameStyle}>{autor.nome}</h3>
+          <h3 style={autorExplorarNameStyle}>{nomeExibicao}</h3>
           <p style={autorExplorarBioStyle}>{autor.bio}</p>
         </div>
       </div>
@@ -3315,9 +3779,10 @@ function AutorExplorarCard({
       <div style={autorExplorarMetaRowStyle}>
         <span
           style={autorExplorarMetaBadgeStyle}
-          aria-label={`${autor.totalObras} ${
-            autor.totalObras === 1 ? "obra publicada" : "obras publicadas"
-          }`}
+          aria-label={`${autor.totalObras} ${traduzirTextoExplorar(
+            autor.totalObras === 1 ? "obra publicada" : "obras publicadas",
+            language
+          )}`}
         >
           📚 {autor.totalObras}
         </span>
@@ -3326,18 +3791,37 @@ function AutorExplorarCard({
           style={autorExplorarMetaBadgeStyle}
           aria-label={
             autor.avaliacao && autor.avaliacao.total > 0
-              ? `Avaliação média ${formatarMediaAvaliacaoAutorExplorar(
-                  autor.avaliacao
-                )} de 5, com ${autor.avaliacao.total} ${
-                  autor.avaliacao.total === 1 ? "avaliação" : "avaliações"
-                }`
-              : "Autor ainda sem avaliações"
+              ? language === "en"
+                ? `Average rating ${formatarMediaAvaliacaoAutorExplorar(
+                    autor.avaliacao,
+                    language
+                  )} out of 5, from ${autor.avaliacao.total} ${
+                    autor.avaliacao.total === 1 ? "rating" : "ratings"
+                  }`
+                : language === "es"
+                  ? `Valoración media ${formatarMediaAvaliacaoAutorExplorar(
+                      autor.avaliacao,
+                      language
+                    )} de 5, con ${autor.avaliacao.total} ${
+                      autor.avaliacao.total === 1
+                        ? "valoración"
+                        : "valoraciones"
+                    }`
+                  : `Avaliação média ${formatarMediaAvaliacaoAutorExplorar(
+                      autor.avaliacao,
+                      language
+                    )} de 5, com ${autor.avaliacao.total} ${
+                      autor.avaliacao.total === 1
+                        ? "avaliação"
+                        : "avaliações"
+                    }`
+              : traduzirTextoExplorar("Autor ainda sem avaliações", language)
           }
         >
           <span style={autorExplorarRatingStarStyle} aria-hidden="true">
             ★
           </span>
-          {formatarMediaAvaliacaoAutorExplorar(autor.avaliacao)}
+          {formatarMediaAvaliacaoAutorExplorar(autor.avaliacao, language)}
         </span>
 
         {autor.totalCurtidas > 0 && (
@@ -3360,12 +3844,14 @@ function AutorExplorarCard({
               key={`${autor.chave}-${genero}`}
               style={autorExplorarGenreBadgeStyle}
             >
-              {genero}
+              {traduzirGeneroExplorar(genero, language)}
             </span>
           ))}
         </div>
 
-        <span style={autorExplorarProfileButtonStyle}>Ver perfil</span>
+        <span style={autorExplorarProfileButtonStyle}>
+          {traduzirTextoExplorar("Ver perfil", language)}
+        </span>
       </div>
     </Link>
   );
@@ -3380,6 +3866,7 @@ function ExplorarCarouselRow({
   isDesktop: boolean;
   variant: "obra" | "autor";
 }) {
+  const { language } = useHistorietasLanguage();
   const rowRef = useRef<HTMLDivElement | null>(null);
   const totalItems = Children.count(children);
   const precisaSetas = isDesktop && totalItems > 3;
@@ -3422,7 +3909,7 @@ function ExplorarCarouselRow({
         type="button"
         onClick={() => rolar(-1)}
         style={explorarCarouselArrowLeftStyle}
-        aria-label="Rolar carrossel para a esquerda"
+        aria-label={traduzirTextoExplorar("Rolar carrossel para a esquerda", language)}
       >
         ‹
       </button>
@@ -3435,7 +3922,7 @@ function ExplorarCarouselRow({
         type="button"
         onClick={() => rolar(1)}
         style={explorarCarouselArrowRightStyle}
-        aria-label="Rolar carrossel para a direita"
+        aria-label={traduzirTextoExplorar("Rolar carrossel para a direita", language)}
       >
         ›
       </button>
@@ -3456,6 +3943,7 @@ function ObraPublicadaCard({
   tema: ReturnType<typeof obterTemaCategoria>;
   isDesktop?: boolean;
 }) {
+  const { language } = useHistorietasLanguage();
   const totalCurtidas = totalCurtidasObra(obra);
   const totalComentarios = totalComentariosObra(obra);
   const totalVisualizacoes = normalizarContadorExplorar(obra.visualizacoes);
@@ -3474,25 +3962,45 @@ function ObraPublicadaCard({
 
       <div style={isDesktop ? desktopPublishedInfoStyle : publishedInfoStyle}>
         <div style={cardTopStyle}>
-          <h3 style={isDesktop ? desktopPublishedTitleStyle : publishedTitleStyle}>{obra.titulo}</h3>
+          <h3 style={isDesktop ? desktopPublishedTitleStyle : publishedTitleStyle}>
+            {obra.titulo === "Obra sem título"
+              ? traduzirTextoExplorar(obra.titulo, language)
+              : obra.titulo}
+          </h3>
 
           <Link href={perfilAutorHref} style={authorLinkStyle}>
-            Por {obra.autor}
+            {traduzirTextoExplorar("Por", language)}{" "}
+            {obra.autor === "Autor não informado"
+              ? traduzirTextoExplorar(obra.autor, language)
+              : obra.autor}
           </Link>
         </div>
 
         <div style={statusRowStyle}>
-          {!obra.publicado && <span style={draftStatusStyle}>Rascunho</span>}
+          {!obra.publicado && (
+            <span style={draftStatusStyle}>
+              {traduzirTextoExplorar("Rascunho", language)}
+            </span>
+          )}
 
-          <span style={formatBadgeStyle}>{obra.formato}</span>
+          <span style={formatBadgeStyle}>
+            {traduzirFormatoExplorar(obra.formato, language)}
+          </span>
 
           <span style={classificationBadgeStyle}>
-            {obra.classificacaoIndicativa}
+            {traduzirClassificacaoExplorar(
+              obra.classificacaoIndicativa,
+              language
+            )}
           </span>
         </div>
 
         {isDesktop && (
-          <p style={desktopPublishedSynopsisStyle}>{obra.sinopse}</p>
+          <p style={desktopPublishedSynopsisStyle}>
+            {obra.sinopse === "Nenhuma sinopse informada."
+              ? traduzirTextoExplorar(obra.sinopse, language)
+              : obra.sinopse}
+          </p>
         )}
 
         <div style={statsStyle}>
@@ -3540,11 +4048,11 @@ function ObraPublicadaCard({
 
         <div style={isDesktop ? desktopCardActionRowStyle : cardActionRowStyle}>
           <span style={isDesktop ? desktopCardGenreBadgeStyle : cardGenreBadgeStyle}>
-            {obra.genero}
+            {traduzirGeneroExplorar(obra.genero, language)}
           </span>
 
           <Link href={paginaPublicaHref} style={criarCardPrimaryActionStyle(tema, isDesktop)}>
-            Ver obra
+            {traduzirTextoExplorar("Ver obra", language)}
           </Link>
         </div>
       </div>

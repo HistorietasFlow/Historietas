@@ -1,11 +1,39 @@
 "use client";
 
 import Link from "next/link";
+import { useHistorietasLanguage } from "./HistorietasLanguageProvider";
 import { useNotificacoes } from "./NotificacoesProvider";
 
 type NotificacoesBottomNavItemProps = {
   href?: string;
   className?: string;
+};
+
+type TextosNotificacoesBottomNav = {
+  notificacoes: string;
+  carregando: string;
+  naoLidas: (total: string) => string;
+};
+
+const TEXTOS_NOTIFICACOES_BOTTOM_NAV: Record<
+  "pt-BR" | "en" | "es",
+  TextosNotificacoesBottomNav
+> = {
+  "pt-BR": {
+    notificacoes: "Notificações",
+    carregando: "Notificações, carregando",
+    naoLidas: (total) => `Notificações, ${total} não lidas`,
+  },
+  en: {
+    notificacoes: "Notifications",
+    carregando: "Notifications, loading",
+    naoLidas: (total) => `Notifications, ${total} unread`,
+  },
+  es: {
+    notificacoes: "Notificaciones",
+    carregando: "Notificaciones, cargando",
+    naoLidas: (total) => `Notificaciones, ${total} sin leer`,
+  },
 };
 
 function normalizarTotalNaoLidas(total: number) {
@@ -20,8 +48,10 @@ export function NotificacoesBottomNavItem({
   href = "/notificacoes",
   className = "historietas-bottom-nav-item",
 }: NotificacoesBottomNavItemProps) {
+  const { language } = useHistorietasLanguage();
   const { notificacoesNaoLidas, carregandoNotificacoes } =
     useNotificacoes();
+  const textos = TEXTOS_NOTIFICACOES_BOTTOM_NAV[language];
 
   const totalNaoLidas = normalizarTotalNaoLidas(
     notificacoesNaoLidas,
@@ -29,10 +59,10 @@ export function NotificacoesBottomNavItem({
   const totalFormatado =
     totalNaoLidas > 99 ? "99+" : String(totalNaoLidas);
   const rotuloAcessivel = carregandoNotificacoes
-    ? "Notificações, carregando"
+    ? textos.carregando
     : totalNaoLidas > 0
-      ? `Notificações, ${totalFormatado} não lidas`
-      : "Notificações";
+      ? textos.naoLidas(totalFormatado)
+      : textos.notificacoes;
 
   return (
     <>
@@ -82,7 +112,7 @@ export function NotificacoesBottomNavItem({
         </span>
 
         <span className="historietas-bottom-nav-label">
-          Notificações
+          {textos.notificacoes}
         </span>
       </Link>
     </>

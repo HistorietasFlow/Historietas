@@ -3,6 +3,7 @@ import Link from "next/link";
 import Script from "next/script";
 import AdminBottomNavItem from "../components/AdminBottomNavItem";
 import { NotificacoesProvider } from "../components/NotificacoesProvider";
+import { HistorietasLanguageProvider } from "../components/HistorietasLanguageProvider";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
@@ -234,7 +235,8 @@ export default function RootLayout({
           }}
         />
 
-        <NotificacoesProvider>
+        <HistorietasLanguageProvider>
+          <NotificacoesProvider>
           <div className="historietas-app-shell">{children}</div>
 
           <nav
@@ -1481,7 +1483,8 @@ export default function RootLayout({
             `,
           }}
           />
-        </NotificacoesProvider>
+          </NotificacoesProvider>
+        </HistorietasLanguageProvider>
       </body>
     </html>
   );

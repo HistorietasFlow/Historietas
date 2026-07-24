@@ -11,6 +11,8 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
+import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import type { HistorietasLanguage } from "../../lib/i18n";
 
 type CategoriaComunidade =
   | "Geral"
@@ -125,6 +127,625 @@ const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
 const CHAVE_POSTS_SALVOS_COMUNIDADE = "historietas:comunidade:posts-salvos";
 const CHAVE_VOTOS_ENQUETES_COMUNIDADE = "historietas:comunidade:votos-enquetes";
 const POSTS_COMUNIDADE_POR_PAGINA = 50;
+
+type ComunidadeTranslationEntry = {
+  en: string;
+  es: string;
+};
+
+const COMUNIDADE_UI_TRANSLATIONS: Record<
+  string,
+  ComunidadeTranslationEntry
+> = {
+  "Geral": { en: "General", es: "General" },
+  "Divulgação": { en: "Promotion", es: "Promoción" },
+  "Recomendações": { en: "Recommendations", es: "Recomendaciones" },
+  "Discussão": { en: "Discussion", es: "Discusión" },
+  "Dúvidas": { en: "Questions", es: "Dudas" },
+  "Teoria": { en: "Theory", es: "Teoría" },
+  "Enquete": { en: "Poll", es: "Encuesta" },
+  "Pedido de indicação": { en: "Recommendation request", es: "Solicitud de recomendación" },
+  "Review": { en: "Review", es: "Reseña" },
+  "Aviso de capítulo": { en: "Chapter update", es: "Aviso de capítulo" },
+  "Dúvida": { en: "Question", es: "Duda" },
+  "Recentes": { en: "Recent", es: "Recientes" },
+  "Em alta": { en: "Trending", es: "Tendencias" },
+  "Mais comentadas": { en: "Most commented", es: "Más comentadas" },
+  "Todos": { en: "All", es: "Todos" },
+  "Todas": { en: "All", es: "Todas" },
+  "Primeiros leitores": { en: "First readers", es: "Primeros lectores" },
+  "Que tipo de história você quer encontrar no HISTORIETAS?": { en: "What kind of story do you want to find on HISTORIETAS?", es: "¿Qué tipo de historia quieres encontrar en HISTORIETAS?" },
+  "Enquete: qual opção você escolheria?\nOpção 1:\nOpção 2:": { en: "Poll: which option would you choose?\nOption 1:\nOption 2:", es: "Encuesta: ¿qué opción elegirías?\nOpción 1:\nOpción 2:" },
+  "Usuário": { en: "User", es: "Usuario" },
+  "Agora": { en: "Now", es: "Ahora" },
+  "agora": { en: "now", es: "ahora" },
+  "Autor não informado": { en: "Author not provided", es: "Autor no informado" },
+  "Enquete da comunidade": { en: "Community poll", es: "Encuesta de la comunidad" },
+  "Responder": { en: "Reply", es: "Responder" },
+  "Removendo...": { en: "Removing...", es: "Eliminando..." },
+  "Remover": { en: "Remove", es: "Eliminar" },
+  "Enviando...": { en: "Sending...", es: "Enviando..." },
+  "Denunciar": { en: "Report", es: "Denunciar" },
+  "Remover curtida do comentário": { en: "Unlike comment", es: "Quitar Me gusta del comentario" },
+  "Curtir comentário": { en: "Like comment", es: "Me gusta en el comentario" },
+  "Comentários": { en: "Comments", es: "Comentarios" },
+  "Fechar comentários": { en: "Close comments", es: "Cerrar comentarios" },
+  "Recolher comentários": { en: "Collapse comments", es: "Contraer comentarios" },
+  "Expandir comentários": { en: "Expand comments", es: "Expandir comentarios" },
+  "Ordenar comentários": { en: "Sort comments", es: "Ordenar comentarios" },
+  "Relevantes": { en: "Relevant", es: "Relevantes" },
+  "Ocultar respostas": { en: "Hide replies", es: "Ocultar respuestas" },
+  "Sem comentários ainda": { en: "No comments yet", es: "Aún no hay comentarios" },
+  "Adicionar comentário...": { en: "Add a comment...", es: "Añadir un comentario..." },
+  "Entre para comentar.": { en: "Sign in to comment.", es: "Inicia sesión para comentar." },
+  "Adicionar menção": { en: "Add mention", es: "Añadir mención" },
+  "Enviar comentário": { en: "Send comment", es: "Enviar comentario" },
+  "Carregando": { en: "Loading", es: "Cargando" },
+  "Carregando Comunidade": { en: "Loading Community", es: "Cargando Comunidad" },
+  "Comunidade": { en: "Community", es: "Comunidad" },
+  "Você já votou nesta enquete.": { en: "You have already voted in this poll.", es: "Ya votaste en esta encuesta." },
+  "Erro ao votar na enquete": { en: "Error voting in the poll", es: "Error al votar en la encuesta" },
+  "Voto registrado.": { en: "Vote recorded.", es: "Voto registrado." },
+  "Publicação removida dos salvos.": { en: "Post removed from saved items.", es: "Publicación eliminada de guardados." },
+  "Publicação salva.": { en: "Post saved.", es: "Publicación guardada." },
+  "Publicação salva neste navegador.": { en: "Post saved in this browser.", es: "Publicación guardada en este navegador." },
+  "Compartilhamento da publicação aberto.": { en: "Post sharing opened.", es: "Se abrió la opción para compartir la publicación." },
+  "Link da publicação copiado.": { en: "Post link copied.", es: "Enlace de la publicación copiado." },
+  "Não consegui compartilhar nem copiar o link da publicação neste navegador.": { en: "I couldn't share or copy the post link in this browser.", es: "No se pudo compartir ni copiar el enlace de la publicación en este navegador." },
+  "Erro ao carregar Comunidade": { en: "Error loading Community", es: "Error al cargar Comunidad" },
+  "Entre na sua conta para participar da Comunidade.": { en: "Sign in to participate in the Community.", es: "Inicia sesión para participar en la Comunidad." },
+  "Não foi possível atualizar este usuário agora.": { en: "This user could not be updated right now.", es: "No se pudo actualizar este usuario ahora." },
+  "Escreva uma publicação com pelo menos 8 caracteres.": { en: "Write a post with at least 8 characters.", es: "Escribe una publicación de al menos 8 caracteres." },
+  "Escreva a pergunta da enquete na primeira linha.": { en: "Write the poll question on the first line.", es: "Escribe la pregunta de la encuesta en la primera línea." },
+  "A enquete precisa ter pelo menos 2 opções preenchidas.": { en: "The poll must have at least 2 completed options.", es: "La encuesta debe tener al menos 2 opciones completas." },
+  "A enquete pode ter no máximo 4 opções.": { en: "The poll can have at most 4 options.", es: "La encuesta puede tener como máximo 4 opciones." },
+  "Erro ao publicar": { en: "Error publishing", es: "Error al publicar" },
+  "Erro ao publicar: o Supabase não retornou a publicação criada.": { en: "Error publishing: Supabase did not return the created post.", es: "Error al publicar: Supabase no devolvió la publicación creada." },
+  "Publicação enviada para a Comunidade.": { en: "Post published in the Community.", es: "Publicación enviada a la Comunidad." },
+  "Erro ao atualizar curtida": { en: "Error updating like", es: "Error al actualizar Me gusta" },
+  "Erro ao curtir": { en: "Error liking the post", es: "Error al marcar Me gusta" },
+  "Nova curtida na Comunidade": { en: "New like in the Community", es: "Nuevo Me gusta en la Comunidad" },
+  "Curtida removida.": { en: "Like removed.", es: "Me gusta eliminado." },
+  "Publicação curtida.": { en: "Post liked.", es: "Publicación marcada con Me gusta." },
+  "Escreva um comentário antes de enviar.": { en: "Write a comment before sending.", es: "Escribe un comentario antes de enviarlo." },
+  "O comentário respondido não foi encontrado.": { en: "The comment you replied to was not found.", es: "No se encontró el comentario respondido." },
+  "Erro ao comentar": { en: "Error commenting", es: "Error al comentar" },
+  "Erro ao comentar: o Supabase não retornou o comentário criado.": { en: "Error commenting: Supabase did not return the created comment.", es: "Error al comentar: Supabase no devolvió el comentario creado." },
+  "Novo comentário na Comunidade": { en: "New comment in the Community", es: "Nuevo comentario en la Comunidad" },
+  "Comentário enviado.": { en: "Comment sent.", es: "Comentario enviado." },
+  "Conteúdo inadequado": { en: "Inappropriate content", es: "Contenido inapropiado" },
+  "Você já denunciou este conteúdo.": { en: "You have already reported this content.", es: "Ya denunciaste este contenido." },
+  "Erro ao denunciar": { en: "Error reporting", es: "Error al denunciar" },
+  "Denúncia enviada para análise.": { en: "Report sent for review.", es: "Denuncia enviada para revisión." },
+  "Você só pode remover seus próprios comentários.": { en: "You can only remove your own comments.", es: "Solo puedes eliminar tus propios comentarios." },
+  "Remover este comentário?": { en: "Remove this comment?", es: "¿Eliminar este comentario?" },
+  "Erro ao remover comentário": { en: "Error removing comment", es: "Error al eliminar el comentario" },
+  "Comentário removido.": { en: "Comment removed.", es: "Comentario eliminado." },
+  "Erro ao atualizar curtida do comentário": { en: "Error updating the comment like", es: "Error al actualizar el Me gusta del comentario" },
+  "Erro ao curtir comentário": { en: "Error liking the comment", es: "Error al marcar Me gusta en el comentario" },
+  "Nova curtida no seu comentário": { en: "New like on your comment", es: "Nuevo Me gusta en tu comentario" },
+  "Curtida do comentário removida.": { en: "Comment like removed.", es: "Me gusta del comentario eliminado." },
+  "Comentário curtido.": { en: "Comment liked.", es: "Comentario marcado con Me gusta." },
+  "Apenas administradores podem fixar publicações.": { en: "Only administrators can pin posts.", es: "Solo los administradores pueden fijar publicaciones." },
+  "Erro ao atualizar fixado": { en: "Error updating pinned status", es: "Error al actualizar el estado fijado" },
+  "Publicação fixada no topo.": { en: "Post pinned to the top.", es: "Publicación fijada arriba." },
+  "Publicação desafixada.": { en: "Post unpinned.", es: "Publicación desfijada." },
+  "Remover esta publicação?": { en: "Remove this post?", es: "¿Eliminar esta publicación?" },
+  "Erro ao remover publicação": { en: "Error removing post", es: "Error al eliminar la publicación" },
+  "Publicação removida.": { en: "Post removed.", es: "Publicación eliminada." },
+  "Abrir filtros, ordenação e ações da comunidade": { en: "Open Community filters, sorting, and actions", es: "Abrir filtros, orden y acciones de la comunidad" },
+  "Buscar publicações ou usuários": { en: "Search posts or users", es: "Buscar publicaciones o usuarios" },
+  "Fechar busca": { en: "Close search", es: "Cerrar búsqueda" },
+  "Abrir busca": { en: "Open search", es: "Abrir búsqueda" },
+  "Filtros, ordenação e ações da comunidade": { en: "Community filters, sorting, and actions", es: "Filtros, orden y acciones de la comunidad" },
+  "Fechar filtros e ações da comunidade": { en: "Close Community filters and actions", es: "Cerrar filtros y acciones de la comunidad" },
+  "Filtrar e ordenar": { en: "Filter and sort", es: "Filtrar y ordenar" },
+  "Ações": { en: "Actions", es: "Acciones" },
+  "Publicar": { en: "Post", es: "Publicar" },
+  "Pedir recomendações": { en: "Ask for recommendations", es: "Pedir recomendaciones" },
+  "Mostrar": { en: "Show", es: "Mostrar" },
+  "Posts salvos": { en: "Saved posts", es: "Publicaciones guardadas" },
+  "Ordenar": { en: "Sort", es: "Ordenar" },
+  "Usuários encontrados": { en: "Users found", es: "Usuarios encontrados" },
+  "Usuários": { en: "Users", es: "Usuarios" },
+  "Buscando...": { en: "Searching...", es: "Buscando..." },
+  "Digite pelo menos 2 caracteres para encontrar usuários.": { en: "Enter at least 2 characters to find users.", es: "Escribe al menos 2 caracteres para encontrar usuarios." },
+  "Buscando usuários": { en: "Searching for users", es: "Buscando usuarios" },
+  "Perfil da comunidade": { en: "Community profile", es: "Perfil de la comunidad" },
+  "Você": { en: "You", es: "Tú" },
+  "Seguindo": { en: "Following", es: "Siguiendo" },
+  "Seguir": { en: "Follow", es: "Seguir" },
+  "Nenhum usuário encontrado.": { en: "No users found.", es: "No se encontraron usuarios." },
+  "Publicações": { en: "Posts", es: "Publicaciones" },
+  "Abrir opções da publicação": { en: "Open post options", es: "Abrir opciones de la publicación" },
+  "Ações da publicação": { en: "Post actions", es: "Acciones de la publicación" },
+  "Fechar ações da publicação": { en: "Close post actions", es: "Cerrar acciones de la publicación" },
+  "Salvando...": { en: "Saving...", es: "Guardando..." },
+  "Remover dos salvos": { en: "Remove from saved", es: "Eliminar de guardados" },
+  "Salvar publicação": { en: "Save post", es: "Guardar publicación" },
+  "Compartilhando...": { en: "Sharing...", es: "Compartiendo..." },
+  "Compartilhar": { en: "Share", es: "Compartir" },
+  "Atualizando...": { en: "Updating...", es: "Actualizando..." },
+  "Desfixar publicação": { en: "Unpin post", es: "Desfijar publicación" },
+  "Fixar publicação": { en: "Pin post", es: "Fijar publicación" },
+  "Remover publicação": { en: "Remove post", es: "Eliminar publicación" },
+  "Fixado": { en: "Pinned", es: "Fijado" },
+  "Conteúdo com spoiler oculto": { en: "Spoiler content hidden", es: "Contenido con spoiler oculto" },
+  "Votar": { en: "Vote", es: "Votar" },
+  "Remover curtida da publicação": { en: "Unlike post", es: "Quitar Me gusta de la publicación" },
+  "Curtir publicação": { en: "Like post", es: "Me gusta en la publicación" },
+  "REVELAR": { en: "REVEAL", es: "MOSTRAR" },
+  "OCULTAR": { en: "HIDE", es: "OCULTAR" },
+  "Nenhuma publicação salva": { en: "No saved posts", es: "No hay publicaciones guardadas" },
+  "Nenhuma publicação encontrada": { en: "No posts found", es: "No se encontraron publicaciones" },
+  "Nenhuma publicação ainda": { en: "No posts yet", es: "Aún no hay publicaciones" },
+  "Carregando mais publicações": { en: "Loading more posts", es: "Cargando más publicaciones" },
+  "Carregar mais publicações": { en: "Load more posts", es: "Cargar más publicaciones" },
+  "Criar publicação": { en: "Create post", es: "Crear publicación" },
+  "Fechar publicação": { en: "Close post", es: "Cerrar publicación" },
+  "Nova publicação": { en: "New post", es: "Nueva publicación" },
+  "Categoria": { en: "Category", es: "Categoría" },
+  "Tipo": { en: "Type", es: "Tipo" },
+  "Obra relacionada": { en: "Related work", es: "Obra relacionada" },
+  "Opcional: nome da obra": { en: "Optional: work title", es: "Opcional: nombre de la obra" },
+  "OBRA": { en: "WORK", es: "OBRA" },
+  "Publicação": { en: "Post", es: "Publicación" },
+  "Modelo de enquete": { en: "Poll template", es: "Plantilla de encuesta" },
+  "máx. 700": { en: "max. 700", es: "máx. 700" },
+  "Abra uma conversa, peça indicação ou divulgue uma obra real publicada...": { en: "Start a conversation, ask for recommendations, or promote a published work...", es: "Inicia una conversación, pide recomendaciones o promociona una obra publicada..." },
+  "Este post contém spoiler": { en: "This post contains spoilers", es: "Esta publicación contiene spoilers" },
+  "Publicando...": { en: "Publishing...", es: "Publicando..." },
+  "1 comentário": { en: "1 comment", es: "1 comentario" },
+  "Sem título": { en: "Untitled", es: "Sin título" },
+  "Não consegui carregar usuário da Comunidade:": { en: "I couldn't load the Community user:", es: "No se pudo cargar el usuario de la Comunidad:" },
+  "Não consegui iniciar usuário da Comunidade:": { en: "I couldn't initialize the Community user:", es: "No se pudo iniciar el usuario de la Comunidad:" },
+  "Não consegui remover a review do Diário:": { en: "I couldn't remove the review from the Journal:", es: "No se pudo eliminar la reseña del Diario:" },
+  "Não consegui acessar o Diário para remover a review:": { en: "I couldn't access the Journal to remove the review:", es: "No se pudo acceder al Diario para eliminar la reseña:" },
+};
+
+function traduzirTextoComunidade(
+  texto: string,
+  idioma: HistorietasLanguage
+) {
+  if (idioma === "pt-BR" || !texto) {
+    return texto;
+  }
+
+  const partes = /^(\s*)([\s\S]*?)(\s*)$/.exec(texto);
+
+  if (!partes) {
+    return texto;
+  }
+
+  const inicio = partes[1];
+  const conteudo = partes[2];
+  const fim = partes[3];
+  const traducaoExata = COMUNIDADE_UI_TRANSLATIONS[conteudo];
+
+  if (traducaoExata) {
+    return `${inicio}${traducaoExata[idioma]}${fim}`;
+  }
+
+  let correspondencia = /^Abrir perfil de (.+)$/.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Open ${correspondencia[1]}'s profile${fim}`
+      : `${inicio}Abrir perfil de ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^há (\d+) (segundo|segundos|minuto|minutos|hora|horas|dia|dias)$/.exec(
+    conteudo
+  );
+
+  if (correspondencia) {
+    const total = Number(correspondencia[1]);
+    const unidade = correspondencia[2];
+
+    if (idioma === "en") {
+      const unidadeEn = unidade.startsWith("segundo")
+        ? total === 1
+          ? "second"
+          : "seconds"
+        : unidade.startsWith("minuto")
+          ? total === 1
+            ? "minute"
+            : "minutes"
+          : unidade.startsWith("hora")
+            ? total === 1
+              ? "hour"
+              : "hours"
+            : total === 1
+              ? "day"
+              : "days";
+
+      return `${inicio}${total} ${unidadeEn} ago${fim}`;
+    }
+
+    const unidadeEs = unidade.startsWith("segundo")
+      ? total === 1
+        ? "segundo"
+        : "segundos"
+      : unidade.startsWith("minuto")
+        ? total === 1
+          ? "minuto"
+          : "minutos"
+        : unidade.startsWith("hora")
+          ? total === 1
+            ? "hora"
+            : "horas"
+          : total === 1
+            ? "día"
+            : "días";
+
+    return `${inicio}hace ${total} ${unidadeEs}${fim}`;
+  }
+
+  correspondencia = /^(\d+) comentários$/.exec(conteudo);
+
+  if (correspondencia) {
+    const total = Number(correspondencia[1]);
+
+    return idioma === "en"
+      ? `${inicio}${total} ${total === 1 ? "comment" : "comments"}${fim}`
+      : `${inicio}${total} ${total === 1 ? "comentario" : "comentarios"}${fim}`;
+  }
+
+  correspondencia = /^Ver (\d+) (resposta|respostas)$/.exec(conteudo);
+
+  if (correspondencia) {
+    const total = Number(correspondencia[1]);
+
+    return idioma === "en"
+      ? `${inicio}View ${total} ${total === 1 ? "reply" : "replies"}${fim}`
+      : `${inicio}Ver ${total} ${total === 1 ? "respuesta" : "respuestas"}${fim}`;
+  }
+
+  correspondencia = /^Ver mais (\d+) (resposta|respostas)$/.exec(conteudo);
+
+  if (correspondencia) {
+    const total = Number(correspondencia[1]);
+
+    return idioma === "en"
+      ? `${inicio}View ${total} more ${total === 1 ? "reply" : "replies"}${fim}`
+      : `${inicio}Ver ${total} ${total === 1 ? "respuesta" : "respuestas"} más${fim}`;
+  }
+
+  correspondencia = /^Adicionar (.+) ao comentário$/.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Add ${correspondencia[1]} to comment${fim}`
+      : `${inicio}Añadir ${correspondencia[1]} al comentario${fim}`;
+  }
+
+  correspondencia = /^(\d+) encontrad(?:o|a)(?:s)?$/.exec(conteudo);
+
+  if (correspondencia) {
+    const total = Number(correspondencia[1]);
+
+    return idioma === "en"
+      ? `${inicio}${total} found${fim}`
+      : `${inicio}${total} ${total === 1 ? "encontrado" : "encontrados"}${fim}`;
+  }
+
+  correspondencia = /^Confira a publicação de (.+) no HISTORIETAS\.$/.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Check out ${correspondencia[1]}'s post on HISTORIETAS.${fim}`
+      : `${inicio}Mira la publicación de ${correspondencia[1]} en HISTORIETAS.${fim}`;
+  }
+
+  correspondencia = /^(.+) na Comunidade HISTORIETAS$/.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1]} in the HISTORIETAS Community${fim}`
+      : `${inicio}${correspondencia[1]} en la Comunidad HISTORIETAS${fim}`;
+  }
+
+  correspondencia = /^Você começou a seguir (.+)\.$/.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}You started following ${correspondencia[1]}.${fim}`
+      : `${inicio}Empezaste a seguir a ${correspondencia[1]}.${fim}`;
+  }
+
+  correspondencia = /^Você deixou de seguir (.+)\.$/.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}You unfollowed ${correspondencia[1]}.${fim}`
+      : `${inicio}Dejaste de seguir a ${correspondencia[1]}.${fim}`;
+  }
+
+  correspondencia = /^(.+) curtiu sua publicação\.$/.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1]} liked your post.${fim}`
+      : `${inicio}A ${correspondencia[1]} le gustó tu publicación.${fim}`;
+  }
+
+  correspondencia = /^(.+) comentou na sua publicação\.$/.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1]} commented on your post.${fim}`
+      : `${inicio}${correspondencia[1]} comentó en tu publicación.${fim}`;
+  }
+
+  correspondencia = /^(.+) curtiu seu comentário na Comunidade\.$/.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1]} liked your comment in the Community.${fim}`
+      : `${inicio}A ${correspondencia[1]} le gustó tu comentario en la Comunidad.${fim}`;
+  }
+
+  return texto;
+}
+
+function traduzirContagemResultadosComunidade(
+  total: number,
+  tipo: "usuarios" | "publicacoes",
+  idioma: HistorietasLanguage
+) {
+  if (idioma === "en") {
+    return `${total} found`;
+  }
+
+  if (idioma === "es") {
+    if (tipo === "publicacoes") {
+      return `${total} ${total === 1 ? "encontrada" : "encontradas"}`;
+    }
+
+    return `${total} ${total === 1 ? "encontrado" : "encontrados"}`;
+  }
+
+  if (tipo === "publicacoes") {
+    return `${total} ${total === 1 ? "encontrada" : "encontradas"}`;
+  }
+
+  return `${total} ${total === 1 ? "encontrado" : "encontrados"}`;
+}
+
+function obterLocaleDocumentoComunidade() {
+  if (typeof document === "undefined") {
+    return "pt-BR";
+  }
+
+  const idiomaDocumento = document.documentElement.lang.toLowerCase();
+
+  if (idiomaDocumento.startsWith("en")) {
+    return "en-US";
+  }
+
+  if (idiomaDocumento.startsWith("es")) {
+    return "es-ES";
+  }
+
+  return "pt-BR";
+}
+
+function CommunityLanguageBridge() {
+  const { language } = useHistorietasLanguage();
+
+  useEffect(() => {
+    if (typeof document === "undefined" || !document.body) {
+      return;
+    }
+
+    type EstadoTraducaoComunidade = {
+      original: string;
+      traduzido: string;
+    };
+
+    const estadosTexto: WeakMap<Text, EstadoTraducaoComunidade> =
+      new WeakMap();
+    const estadosAtributos: WeakMap<
+      Element,
+      Map<string, EstadoTraducaoComunidade>
+    > = new WeakMap();
+    const textosAlterados = new Set<Text>();
+    const atributosAlterados = new Set<{ elemento: Element; atributo: string }>();
+    const atributosTraduziveis = ["aria-label", "title", "placeholder", "alt"];
+    let aplicando = false;
+
+    function deveIgnorarElemento(elemento: Element | null) {
+      if (!elemento) {
+        return true;
+      }
+
+      const tag = elemento.tagName.toLowerCase();
+
+      return (
+        tag === "script" ||
+        tag === "style" ||
+        tag === "textarea" ||
+        Boolean(elemento.closest("[data-historietas-user-content='true']"))
+      );
+    }
+
+    function aplicarTexto(no: Text) {
+      const elementoPai = no.parentElement;
+
+      if (deveIgnorarElemento(elementoPai)) {
+        return;
+      }
+
+      const atual = no.data;
+      let estado = estadosTexto.get(no);
+
+      if (!estado) {
+        estado = { original: atual, traduzido: atual };
+        estadosTexto.set(no, estado);
+        textosAlterados.add(no);
+      } else if (atual !== estado.traduzido && atual !== estado.original) {
+        estado.original = atual;
+      }
+
+      const proximo = traduzirTextoComunidade(estado.original, language);
+      estado.traduzido = proximo;
+
+      if (no.data !== proximo) {
+        no.data = proximo;
+      }
+    }
+
+    function aplicarAtributo(elemento: Element, atributo: string) {
+      if (deveIgnorarElemento(elemento) || !elemento.hasAttribute(atributo)) {
+        return;
+      }
+
+      const atual = elemento.getAttribute(atributo) || "";
+      let mapaElemento = estadosAtributos.get(elemento);
+
+      if (!mapaElemento) {
+        mapaElemento = new Map();
+        estadosAtributos.set(elemento, mapaElemento);
+      }
+
+      let estado = mapaElemento.get(atributo);
+
+      if (!estado) {
+        estado = { original: atual, traduzido: atual };
+        mapaElemento.set(atributo, estado);
+        atributosAlterados.add({ elemento, atributo });
+      } else if (atual !== estado.traduzido && atual !== estado.original) {
+        estado.original = atual;
+      }
+
+      const proximo = traduzirTextoComunidade(estado.original, language);
+      estado.traduzido = proximo;
+
+      if (atual !== proximo) {
+        elemento.setAttribute(atributo, proximo);
+      }
+    }
+
+    function aplicarNo(no: Node) {
+      if (no.nodeType === Node.TEXT_NODE) {
+        aplicarTexto(no as Text);
+        return;
+      }
+
+      if (!(no instanceof Element) || deveIgnorarElemento(no)) {
+        return;
+      }
+
+      atributosTraduziveis.forEach((atributo) =>
+        aplicarAtributo(no, atributo)
+      );
+
+      const walker = document.createTreeWalker(
+        no,
+        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT
+      );
+
+      let atual: Node | null = walker.nextNode();
+
+      while (atual) {
+        if (atual.nodeType === Node.TEXT_NODE) {
+          aplicarTexto(atual as Text);
+        } else if (atual instanceof Element && !deveIgnorarElemento(atual)) {
+          atributosTraduziveis.forEach((atributo) =>
+            aplicarAtributo(atual as Element, atributo)
+          );
+        }
+
+        atual = walker.nextNode();
+      }
+    }
+
+    function aplicarTudo() {
+      if (aplicando) {
+        return;
+      }
+
+      aplicando = true;
+
+      try {
+        aplicarNo(document.body);
+      } finally {
+        aplicando = false;
+      }
+    }
+
+    aplicarTudo();
+
+    const observador = new MutationObserver((mutacoes) => {
+      if (aplicando) {
+        return;
+      }
+
+      aplicando = true;
+
+      try {
+        mutacoes.forEach((mutacao) => {
+          if (mutacao.type === "characterData") {
+            aplicarTexto(mutacao.target as Text);
+            return;
+          }
+
+          if (mutacao.type === "attributes" && mutacao.target instanceof Element) {
+            if (
+              mutacao.attributeName &&
+              atributosTraduziveis.includes(mutacao.attributeName)
+            ) {
+              aplicarAtributo(mutacao.target, mutacao.attributeName);
+            }
+
+            return;
+          }
+
+          mutacao.addedNodes.forEach((no) => aplicarNo(no));
+        });
+      } finally {
+        aplicando = false;
+      }
+    });
+
+    observador.observe(document.body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: atributosTraduziveis,
+    });
+
+    return () => {
+      observador.disconnect();
+
+      textosAlterados.forEach((no) => {
+        const estado = estadosTexto.get(no);
+
+        if (estado && no.isConnected && no.data === estado.traduzido) {
+          no.data = estado.original;
+        }
+      });
+
+      atributosAlterados.forEach((registro) => {
+        const estado = estadosAtributos
+          .get(registro.elemento)
+          ?.get(registro.atributo);
+
+        if (
+          estado &&
+          registro.elemento.isConnected &&
+          registro.elemento.getAttribute(registro.atributo) === estado.traduzido
+        ) {
+          registro.elemento.setAttribute(registro.atributo, estado.original);
+        }
+      });
+    };
+  }, [language]);
+
+  return null;
+}
+
 
 function criarStorageKeyUsuarioComunidade(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
@@ -683,7 +1304,7 @@ function formatarDataComunidade(dataIso: string) {
     return "Agora";
   }
 
-  return data.toLocaleDateString("pt-BR", {
+  return data.toLocaleDateString(obterLocaleDocumentoComunidade(), {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -2094,7 +2715,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
             </span>
           </div>
 
-          <p style={commentTextStyle}>{comentario.texto}</p>
+          <p data-historietas-user-content="true" style={commentTextStyle}>{comentario.texto}</p>
 
           <div style={commentActionsRowStyle}>
             <button
@@ -2524,6 +3145,7 @@ function LoadingSpinner({
 
 export default function ComunidadePage() {
   const router = useRouter();
+  const { language } = useHistorietasLanguage();
   const [usuario, setUsuario] = useState<UsuarioComunidade | null>(null);
   const [usuarioEhAdmin, setUsuarioEhAdmin] = useState(false);
   const [carregandoUsuario, setCarregandoUsuario] = useState(true);
@@ -4385,7 +5007,7 @@ export default function ComunidadePage() {
         return;
       }
 
-      if (!window.confirm("Remover este comentário?")) {
+      if (!window.confirm(traduzirTextoComunidade("Remover este comentário?", language))) {
         return;
       }
 
@@ -4594,7 +5216,7 @@ export default function ComunidadePage() {
         return;
       }
 
-      if (!window.confirm("Remover esta publicação?")) {
+      if (!window.confirm(traduzirTextoComunidade("Remover esta publicação?", language))) {
         return;
       }
 
@@ -4652,6 +5274,7 @@ export default function ComunidadePage() {
   if (carregandoFeed) {
     return (
       <main style={pageThemeStyle} aria-busy="true">
+        <CommunityLanguageBridge />
         <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
         <LoadingSpinner label="Carregando Comunidade" />
       </main>
@@ -4660,6 +5283,7 @@ export default function ComunidadePage() {
 
   return (
     <main style={pageThemeStyle}>
+      <CommunityLanguageBridge />
       <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
 
       {isDesktop ? (
@@ -4976,10 +5600,12 @@ export default function ComunidadePage() {
                   </strong>
                   <span style={communitySearchResultsCountStyle}>
                     {carregandoUsuariosBuscaComunidade
-                      ? "Buscando..."
-                      : `${usuariosBuscaComunidade.length} encontrado${
-                          usuariosBuscaComunidade.length === 1 ? "" : "s"
-                        }`}
+                      ? traduzirTextoComunidade("Buscando...", language)
+                      : traduzirContagemResultadosComunidade(
+                          usuariosBuscaComunidade.length,
+                          "usuarios",
+                          language
+                        )}
                   </span>
                 </div>
 
@@ -5085,8 +5711,11 @@ export default function ComunidadePage() {
                   Publicações
                 </strong>
                 <span style={communitySearchResultsCountStyle}>
-                  {postsVisiveis.length} encontrada
-                  {postsVisiveis.length === 1 ? "" : "s"}
+                  {traduzirContagemResultadosComunidade(
+                    postsVisiveis.length,
+                    "publicacoes",
+                    language
+                  )}
                 </span>
               </div>
             ) : null}
@@ -5308,6 +5937,7 @@ export default function ComunidadePage() {
                                 post.obraRelacionada,
                                 obrasRelacionadasSugestoes
                               )}
+                              data-historietas-user-content="true"
                               style={obraBadgeStyle}
                             >
                               {post.obraRelacionada}
@@ -5318,6 +5948,9 @@ export default function ComunidadePage() {
                         )}
 
                         <span
+                          data-historietas-user-content={
+                            postEhEnquete(post) ? "true" : undefined
+                          }
                           style={
                             postEhEnquete(post)
                               ? pollPostInlineQuestionStyle
@@ -5384,6 +6017,7 @@ export default function ComunidadePage() {
                                       />
 
                                       <span
+                                        data-historietas-user-content="true"
                                         style={{
                                           ...pollPostOptionTextStyle,
                                           color: "#FFFFFF",
@@ -5414,7 +6048,7 @@ export default function ComunidadePage() {
                               </div>
                             </div>
                           ) : (
-                            <p style={postTextStyle}>{post.texto}</p>
+                            <p data-historietas-user-content="true" style={postTextStyle}>{post.texto}</p>
                           )}
                         </>
                       )}
@@ -5632,11 +6266,11 @@ export default function ComunidadePage() {
                               style={relatedWorkSuggestionButtonStyle}
                             >
                               <span style={relatedWorkSuggestionContentStyle}>
-                                <strong style={relatedWorkSuggestionTitleStyle}>
+                                <strong data-historietas-user-content="true" style={relatedWorkSuggestionTitleStyle}>
                                   {obra.titulo}
                                 </strong>
 
-                                <span style={relatedWorkSuggestionAuthorStyle}>
+                                <span data-historietas-user-content="true" style={relatedWorkSuggestionAuthorStyle}>
                                   {obra.autor}
                                 </span>
                               </span>

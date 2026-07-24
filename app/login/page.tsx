@@ -6,8 +6,180 @@ import { useCallback, useEffect, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import LanguageSelect from "../../components/LanguageSelect";
+import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import type { HistorietasLanguage } from "../../lib/i18n";
 
 type ModoAuth = "entrar" | "criar";
+
+type LoginTranslationKey =
+  | "backHome"
+  | "signInTitle"
+  | "createAccountTitle"
+  | "description"
+  | "signInTab"
+  | "createAccountTab"
+  | "displayName"
+  | "displayNamePlaceholder"
+  | "email"
+  | "password"
+  | "passwordPlaceholder"
+  | "wait"
+  | "create"
+  | "signIn"
+  | "helperText"
+  | "emailRequired"
+  | "passwordMin"
+  | "displayNameMin"
+  | "accountCreationNotConfirmed"
+  | "accountCreatedNotice"
+  | "sessionNotConfirmed"
+  | "genericFailure"
+  | "invalidCredentials"
+  | "emailNotConfirmed"
+  | "alreadyRegistered"
+  | "signupDisabled"
+  | "databaseFailure"
+  | "weakPassword"
+  | "invalidEmail"
+  | "connectionFailure"
+  | "technicalError"
+  | "unknownError";
+
+const LOGIN_TRANSLATIONS: Record<
+  HistorietasLanguage,
+  Record<LoginTranslationKey, string>
+> = {
+  "pt-BR": {
+    backHome: "Voltar para a página inicial",
+    signInTitle: "FAZER LOGIN",
+    createAccountTitle: "CRIAR CONTA",
+    description:
+      "Acesse sua conta para publicar histórias, salvar o progresso, acompanhar obras e continuar construindo seu perfil de autor na Historietas.",
+    signInTab: "ENTRAR",
+    createAccountTab: "CRIAR CONTA",
+    displayName: "Nome de exibição",
+    displayNamePlaceholder: "Ex.: Nome do Autor",
+    email: "E-mail",
+    password: "Senha",
+    passwordPlaceholder: "Mínimo de 6 caracteres",
+    wait: "Aguarde...",
+    create: "CRIAR",
+    signIn: "ENTRAR",
+    helperText:
+      "Use seu e-mail e senha para acessar sua conta. Ao criar uma conta, confira os dados antes de continuar.",
+    emailRequired: "Digite seu e-mail.",
+    passwordMin: "A senha precisa ter pelo menos 6 caracteres.",
+    displayNameMin:
+      "Digite um nome de exibição com pelo menos 2 caracteres.",
+    accountCreationNotConfirmed:
+      "Não consegui confirmar a criação da conta.",
+    accountCreatedNotice:
+      "Conta criada. Confira seu e-mail para confirmar o cadastro e depois entre.",
+    sessionNotConfirmed: "Não consegui confirmar sua sessão.",
+    genericFailure: "Não foi possível concluir agora.",
+    invalidCredentials: "E-mail ou senha incorretos.",
+    emailNotConfirmed: "Confirme seu e-mail antes de entrar.",
+    alreadyRegistered:
+      "Já existe uma conta com este e-mail. Use Entrar ou recupere a senha.",
+    signupDisabled: "O cadastro por e-mail está desativado no Supabase.",
+    databaseFailure:
+      "O Supabase recusou o cadastro por um erro no banco, gatilho ou perfil.",
+    weakPassword: "A senha não atende aos requisitos necessários.",
+    invalidEmail: "Verifique o e-mail informado.",
+    connectionFailure: "Não consegui conectar ao Supabase agora.",
+    technicalError: "Erro técnico",
+    unknownError: "erro desconhecido",
+  },
+  en: {
+    backHome: "Back to the home page",
+    signInTitle: "SIGN IN",
+    createAccountTitle: "CREATE ACCOUNT",
+    description:
+      "Sign in to publish stories, save your progress, follow works, and keep building your author profile on Historietas.",
+    signInTab: "SIGN IN",
+    createAccountTab: "CREATE ACCOUNT",
+    displayName: "Display name",
+    displayNamePlaceholder: "Example: Author Name",
+    email: "Email",
+    password: "Password",
+    passwordPlaceholder: "At least 6 characters",
+    wait: "Please wait...",
+    create: "CREATE",
+    signIn: "SIGN IN",
+    helperText:
+      "Use your email and password to access your account. When creating an account, check your details before continuing.",
+    emailRequired: "Enter your email address.",
+    passwordMin: "Your password must be at least 6 characters long.",
+    displayNameMin: "Enter a display name with at least 2 characters.",
+    accountCreationNotConfirmed:
+      "The account creation could not be confirmed.",
+    accountCreatedNotice:
+      "Account created. Check your email to confirm your registration, then sign in.",
+    sessionNotConfirmed: "Your session could not be confirmed.",
+    genericFailure: "The request could not be completed right now.",
+    invalidCredentials: "Incorrect email or password.",
+    emailNotConfirmed: "Confirm your email before signing in.",
+    alreadyRegistered:
+      "An account with this email already exists. Sign in or recover your password.",
+    signupDisabled: "Email sign-up is disabled in Supabase.",
+    databaseFailure:
+      "Supabase rejected the sign-up because of a database, trigger, or profile error.",
+    weakPassword: "The password does not meet the required criteria.",
+    invalidEmail: "Check the email address you entered.",
+    connectionFailure: "Supabase could not be reached right now.",
+    technicalError: "Technical error",
+    unknownError: "unknown error",
+  },
+  es: {
+    backHome: "Volver a la página de inicio",
+    signInTitle: "INICIAR SESIÓN",
+    createAccountTitle: "CREAR CUENTA",
+    description:
+      "Accede a tu cuenta para publicar historias, guardar tu progreso, seguir obras y continuar construyendo tu perfil de autor en Historietas.",
+    signInTab: "ENTRAR",
+    createAccountTab: "CREAR CUENTA",
+    displayName: "Nombre para mostrar",
+    displayNamePlaceholder: "Ej.: Nombre del Autor",
+    email: "Correo electrónico",
+    password: "Contraseña",
+    passwordPlaceholder: "Mínimo 6 caracteres",
+    wait: "Espera...",
+    create: "CREAR",
+    signIn: "ENTRAR",
+    helperText:
+      "Usa tu correo y contraseña para acceder a tu cuenta. Al crear una cuenta, revisa tus datos antes de continuar.",
+    emailRequired: "Escribe tu correo electrónico.",
+    passwordMin: "La contraseña debe tener al menos 6 caracteres.",
+    displayNameMin:
+      "Escribe un nombre para mostrar de al menos 2 caracteres.",
+    accountCreationNotConfirmed:
+      "No se pudo confirmar la creación de la cuenta.",
+    accountCreatedNotice:
+      "Cuenta creada. Revisa tu correo para confirmar el registro y luego inicia sesión.",
+    sessionNotConfirmed: "No se pudo confirmar tu sesión.",
+    genericFailure: "No fue posible completar la solicitud ahora.",
+    invalidCredentials: "Correo o contraseña incorrectos.",
+    emailNotConfirmed: "Confirma tu correo antes de iniciar sesión.",
+    alreadyRegistered:
+      "Ya existe una cuenta con este correo. Inicia sesión o recupera la contraseña.",
+    signupDisabled: "El registro por correo está desactivado en Supabase.",
+    databaseFailure:
+      "Supabase rechazó el registro por un error en la base de datos, el trigger o el perfil.",
+    weakPassword: "La contraseña no cumple los requisitos necesarios.",
+    invalidEmail: "Revisa el correo electrónico ingresado.",
+    connectionFailure: "No se pudo conectar con Supabase ahora.",
+    technicalError: "Error técnico",
+    unknownError: "error desconocido",
+  },
+};
+
+function traduzirLogin(
+  language: HistorietasLanguage,
+  key: LoginTranslationKey,
+) {
+  return LOGIN_TRANSLATIONS[language][key];
+}
 
 const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
@@ -42,61 +214,67 @@ function obterCodigoErroAuth(error: unknown) {
   return typeof erroAuth.code === "string" ? erroAuth.code.trim() : "";
 }
 
-function formatarErroAuth(error: unknown) {
+function formatarErroAuth(
+  error: unknown,
+  language: HistorietasLanguage,
+) {
   const mensagem = obterMensagemErroAuth(error);
   const codigo = obterCodigoErroAuth(error);
   const textoErro = [mensagem, codigo].filter(Boolean).join(" | ");
   const mensagemNormalizada = textoErro.toLowerCase();
 
-  let mensagemAmigavel = "Não foi possível concluir agora.";
+  let mensagemAmigavel = traduzirLogin(language, "genericFailure");
 
   if (
     mensagemNormalizada.includes("invalid login credentials") ||
     mensagemNormalizada.includes("invalid credentials")
   ) {
-    mensagemAmigavel = "E-mail ou senha incorretos.";
+    mensagemAmigavel = traduzirLogin(language, "invalidCredentials");
   } else if (mensagemNormalizada.includes("email not confirmed")) {
-    mensagemAmigavel = "Confirme seu e-mail antes de entrar.";
+    mensagemAmigavel = traduzirLogin(language, "emailNotConfirmed");
   } else if (
     mensagemNormalizada.includes("user already registered") ||
     mensagemNormalizada.includes("already registered") ||
     mensagemNormalizada.includes("user_already_exists") ||
     mensagemNormalizada.includes("email_exists")
   ) {
-    mensagemAmigavel =
-      "Já existe uma conta com este e-mail. Use Entrar ou recupere a senha.";
+    mensagemAmigavel = traduzirLogin(language, "alreadyRegistered");
   } else if (
     mensagemNormalizada.includes("signup") &&
     mensagemNormalizada.includes("disabled")
   ) {
-    mensagemAmigavel = "Cadastro por e-mail está desativado no Supabase.";
+    mensagemAmigavel = traduzirLogin(language, "signupDisabled");
   } else if (
     mensagemNormalizada.includes("database error") ||
     mensagemNormalizada.includes("saving new user") ||
     mensagemNormalizada.includes("unexpected_failure")
   ) {
-    mensagemAmigavel =
-      "O Supabase recusou o cadastro por erro no banco, trigger ou profile.";
+    mensagemAmigavel = traduzirLogin(language, "databaseFailure");
   } else if (
     mensagemNormalizada.includes("password") ||
     mensagemNormalizada.includes("weak_password")
   ) {
-    mensagemAmigavel = "A senha não atende aos requisitos necessários.";
+    mensagemAmigavel = traduzirLogin(language, "weakPassword");
   } else if (mensagemNormalizada.includes("email")) {
-    mensagemAmigavel = "Verifique o e-mail informado.";
+    mensagemAmigavel = traduzirLogin(language, "invalidEmail");
   } else if (
     mensagemNormalizada.includes("failed to fetch") ||
     mensagemNormalizada.includes("network") ||
     mensagemNormalizada.includes("fetch")
   ) {
-    mensagemAmigavel = "Não consegui conectar ao Supabase agora.";
+    mensagemAmigavel = traduzirLogin(language, "connectionFailure");
   }
+
+  const technicalError = traduzirLogin(language, "technicalError");
 
   if (!textoErro) {
-    return `${mensagemAmigavel} Erro técnico: erro desconhecido.`;
+    return `${mensagemAmigavel} ${technicalError}: ${traduzirLogin(
+      language,
+      "unknownError",
+    )}.`;
   }
 
-  return `${mensagemAmigavel} Erro técnico: ${textoErro}`;
+  return `${mensagemAmigavel} ${technicalError}: ${textoErro}`;
 }
 
 function obterRedirectToSeguro(valor: string | null, fallback: string) {
@@ -267,6 +445,11 @@ function sincronizarStorageUsuarioLogin(userId: string) {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { language } = useHistorietasLanguage();
+  const t = useCallback(
+    (key: LoginTranslationKey) => traduzirLogin(language, key),
+    [language],
+  );
 
   const [modo, setModo] = useState<ModoAuth>("entrar");
   const [nome, setNome] = useState("");
@@ -443,17 +626,17 @@ export default function LoginPage() {
     const nomeFinal = nome.trim();
 
     if (!emailFinal) {
-      setErro("Digite seu e-mail.");
+      setErro(t("emailRequired"));
       return;
     }
 
     if (senha.length < 6) {
-      setErro("A senha precisa ter pelo menos 6 caracteres.");
+      setErro(t("passwordMin"));
       return;
     }
 
     if (criandoConta && nomeFinal.length < 2) {
-      setErro("Digite um nome de exibição com pelo menos 2 caracteres.");
+      setErro(t("displayNameMin"));
       return;
     }
 
@@ -474,12 +657,12 @@ export default function LoginPage() {
         });
 
         if (error) {
-          setErro(formatarErroAuth(error));
+          setErro(formatarErroAuth(error, language));
           return;
         }
 
         if (!data.user) {
-          setErro("Não consegui confirmar a criação da conta.");
+          setErro(t("accountCreationNotConfirmed"));
           return;
         }
 
@@ -498,9 +681,7 @@ export default function LoginPage() {
 
         setModo("entrar");
         setSenha("");
-        setAviso(
-          "Conta criada. Confira seu e-mail para confirmar o cadastro e depois entre.",
-        );
+        setAviso(t("accountCreatedNotice"));
         return;
       }
 
@@ -510,12 +691,12 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setErro(formatarErroAuth(error));
+        setErro(formatarErroAuth(error, language));
         return;
       }
 
       if (!data.user) {
-        setErro("Não consegui confirmar sua sessão.");
+        setErro(t("sessionNotConfirmed"));
         return;
       }
 
@@ -529,7 +710,7 @@ export default function LoginPage() {
       router.replace(obterRedirectToAtual("/perfil-autor"));
       router.refresh();
     } catch (error) {
-      setErro(formatarErroAuth(error));
+      setErro(formatarErroAuth(error, language));
     } finally {
       setCarregando(false);
     }
@@ -544,10 +725,20 @@ export default function LoginPage() {
 
       <section style={containerStyle}>
         <header style={topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
+          <span aria-hidden="true" />
+
+          <Link href="/" style={logoStyle} aria-label={t("backHome")}>
             <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+            <span className="historietas-theme-logo-text" style={logoTextStyle}>
+              istorietas
+            </span>
           </Link>
+
+          <LanguageSelect
+            showLabel={false}
+            style={languageSelectWrapperStyle}
+            selectStyle={languageSelectStyle}
+          />
         </header>
 
         <section style={heroStyle}>
@@ -556,14 +747,10 @@ export default function LoginPage() {
           <div style={heroContentStyle}>
             <div style={introStyle}>
               <h1 className="historietas-theme-title" style={titleStyle}>
-                {criandoConta ? "CRIAR LOGIN" : "FAZER LOGIN"}
+                {criandoConta ? t("createAccountTitle") : t("signInTitle")}
               </h1>
 
-              <p style={descriptionStyle}>
-                Acesse sua conta para publicar histórias, salvar progresso,
-                acompanhar obras e continuar construindo seu perfil do autor na
-                Historietas.
-              </p>
+              <p style={descriptionStyle}>{t("description")}</p>
             </div>
 
             <div style={formPanelStyle}>
@@ -578,7 +765,7 @@ export default function LoginPage() {
                   style={modo === "entrar" ? tabActiveStyle : tabStyle}
                   aria-pressed={modo === "entrar"}
                 >
-                  ENTRAR
+                  {t("signInTab")}
                 </button>
 
                 <button
@@ -591,14 +778,14 @@ export default function LoginPage() {
                   style={modo === "criar" ? tabActiveStyle : tabStyle}
                   aria-pressed={modo === "criar"}
                 >
-                  CRIAR LOGIN
+                  {t("createAccountTab")}
                 </button>
               </div>
 
               <form onSubmit={enviarFormulario} style={formStyle}>
                 {criandoConta && (
                   <label style={fieldStyle}>
-                    <span style={labelStyle}>Nome de exibição</span>
+                    <span style={labelStyle}>{t("displayName")}</span>
 
                     <input
                       value={nome}
@@ -607,7 +794,7 @@ export default function LoginPage() {
                         setErro("");
                         setAviso("");
                       }}
-                      placeholder="Ex: Nome do Autor"
+                      placeholder={t("displayNamePlaceholder")}
                       style={inputStyle}
                       type="text"
                       autoComplete="name"
@@ -618,7 +805,7 @@ export default function LoginPage() {
                 )}
 
                 <label style={fieldStyle}>
-                  <span style={labelStyle}>E-mail</span>
+                  <span style={labelStyle}>{t("email")}</span>
 
                   <input
                     value={email}
@@ -638,7 +825,7 @@ export default function LoginPage() {
                 </label>
 
                 <label style={fieldStyle}>
-                  <span style={labelStyle}>Senha</span>
+                  <span style={labelStyle}>{t("password")}</span>
 
                   <input
                     value={senha}
@@ -647,7 +834,7 @@ export default function LoginPage() {
                     setErro("");
                     setAviso("");
                   }}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder={t("passwordPlaceholder")}
                     style={inputStyle}
                     type="password"
                     autoComplete={criandoConta ? "new-password" : "current-password"}
@@ -678,17 +865,14 @@ export default function LoginPage() {
                   }}
                 >
                   {carregando
-                    ? "Aguarde..."
+                    ? t("wait")
                     : criandoConta
-                    ? "CRIAR"
-                    : "ENTRAR"}
+                    ? t("create")
+                    : t("signIn")}
                 </button>
               </form>
 
-              <p style={helperTextStyle}>
-                Use seu e-mail e senha para acessar sua conta. Se estiver criando
-                uma conta nova, confirme seus dados antes de continuar.
-              </p>
+              <p style={helperTextStyle}>{t("helperText")}</p>
             </div>
           </div>
         </section>
@@ -823,12 +1007,32 @@ const containerStyle: CSSProperties = {
 };
 
 const topStyle: CSSProperties = {
-  display: "flex",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
   alignItems: "center",
-  justifyContent: "center",
   gap: "10px",
   marginBottom: "10px",
   minWidth: 0,
+};
+
+const languageSelectWrapperStyle: CSSProperties = {
+  width: "clamp(96px, 24vw, 122px)",
+  minWidth: 0,
+  justifySelf: "end",
+};
+
+const languageSelectStyle: CSSProperties = {
+  minHeight: "36px",
+  height: "36px",
+  padding: "0 10px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-login-purple-border, rgba(59, 7, 100, 0.58))",
+  background: "var(--historietas-login-bg-deep, #04000A)",
+  color: "#FFFFFF",
+  fontSize: "12px",
+  fontWeight: 850,
+  colorScheme: "dark",
 };
 
 const logoStyle: CSSProperties = {

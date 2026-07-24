@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
+import type { HistorietasLanguage } from "../../../lib/i18n";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -64,6 +66,357 @@ type UsuarioTop5 = {
   id: string;
   nome: string;
 };
+
+
+type TraducaoTop5 = {
+  en: string;
+  es: string;
+};
+
+const TOP5_UI_TRANSLATIONS: Record<string, TraducaoTop5> = {
+  "Seu TOP 5": { en: "Your TOP 5", es: "Tu TOP 5" },
+  "Cancelar": { en: "Cancel", es: "Cancelar" },
+  "Salvando...": { en: "Saving...", es: "Guardando..." },
+  "Salvar": { en: "Save", es: "Guardar" },
+  "Buscar obras": { en: "Search works", es: "Buscar obras" },
+  "Pesquisar obra, autor, gênero ou tag": {
+    en: "Search by work, author, genre, or tag",
+    es: "Buscar por obra, autor, género o etiqueta",
+  },
+  "Entre para salvar seu TOP 5": {
+    en: "Sign in to save your TOP 5",
+    es: "Inicia sesión para guardar tu TOP 5",
+  },
+  "Você pode ver as obras, mas precisa estar logado para salvar suas escolhas.": {
+    en: "You can view the works, but you need to be signed in to save your choices.",
+    es: "Puedes ver las obras, pero debes iniciar sesión para guardar tus elecciones.",
+  },
+  "Entrar": { en: "Sign in", es: "Iniciar sesión" },
+  "Lista de obras disponíveis": {
+    en: "List of available works",
+    es: "Lista de obras disponibles",
+  },
+  "Carregando obras...": { en: "Loading works...", es: "Cargando obras..." },
+  "Nenhuma obra encontrada": {
+    en: "No works found",
+    es: "No se encontraron obras",
+  },
+  "Obras escolhidas para o TOP 5": {
+    en: "Works selected for the TOP 5",
+    es: "Obras elegidas para el TOP 5",
+  },
+  "Você já escolheu 5 obras. Remova uma para trocar.": {
+    en: "You have already selected 5 works. Remove one to replace it.",
+    es: "Ya elegiste 5 obras. Elimina una para reemplazarla.",
+  },
+  "Entre na sua conta para salvar seu TOP 5.": {
+    en: "Sign in to save your TOP 5.",
+    es: "Inicia sesión para guardar tu TOP 5.",
+  },
+  "Não foi possível gravar o TOP 5 no navegador.": {
+    en: "The TOP 5 could not be saved in the browser.",
+    es: "No se pudo guardar el TOP 5 en el navegador.",
+  },
+  "Não foi possível salvar agora. Tente novamente.": {
+    en: "It could not be saved right now. Try again.",
+    es: "No se pudo guardar ahora. Inténtalo de nuevo.",
+  },
+  "Capítulo sem título": { en: "Untitled chapter", es: "Capítulo sin título" },
+  "Autor não informado": { en: "Author not provided", es: "Autor no informado" },
+  "Não informado": { en: "Not provided", es: "No informado" },
+  "Não informada": { en: "Not provided", es: "No informada" },
+  "sem tags": { en: "no tags", es: "sin etiquetas" },
+  "Usuário": { en: "User", es: "Usuario" },
+};
+
+function traduzirTextoTop5(texto: string, idioma: HistorietasLanguage) {
+  if (idioma === "pt-BR" || !texto) {
+    return texto;
+  }
+
+  const partes = /^(\s*)([\s\S]*?)(\s*)$/.exec(texto);
+
+  if (!partes) {
+    return texto;
+  }
+
+  const inicio = partes[1];
+  const conteudo = partes[2];
+  const fim = partes[3];
+  const traducaoExata = TOP5_UI_TRANSLATIONS[conteudo];
+
+  if (traducaoExata) {
+    return `${inicio}${traducaoExata[idioma]}${fim}`;
+  }
+
+  let correspondencia = /^Remover\s+(.+)\s+do TOP 5$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Remove ${correspondencia[1]} from the TOP 5${fim}`
+      : `${inicio}Eliminar ${correspondencia[1]} del TOP 5${fim}`;
+  }
+
+  correspondencia = /^Adicionar\s+(.+)\s+ao TOP 5$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Add ${correspondencia[1]} to the TOP 5${fim}`
+      : `${inicio}Añadir ${correspondencia[1]} al TOP 5${fim}`;
+  }
+
+  correspondencia = /^Subir\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Move ${correspondencia[1]} up${fim}`
+      : `${inicio}Subir ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Descer\s+(.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Move ${correspondencia[1]} down${fim}`
+      : `${inicio}Bajar ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^Obra\s+(\d+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Work ${correspondencia[1]}${fim}`
+      : `${inicio}Obra ${correspondencia[1]}${fim}`;
+  }
+
+  return texto;
+}
+
+function Top5LanguageBridge() {
+  const { language } = useHistorietasLanguage();
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const seletorRaiz = "[data-historietas-top5-root='true']";
+
+    type EstadoTraducaoTop5 = {
+      original: string;
+      traduzido: string;
+    };
+
+    const estadosTexto: WeakMap<Text, EstadoTraducaoTop5> = new WeakMap();
+    const estadosAtributos: WeakMap<
+      Element,
+      Map<string, EstadoTraducaoTop5>
+    > = new WeakMap();
+    const textosAlterados = new Set<Text>();
+    const atributosAlterados: Array<{ elemento: Element; atributo: string }> = [];
+    const atributosTraduziveis = ["aria-label", "title", "placeholder", "alt"];
+    let aplicando = false;
+
+    function elementoEstaNaPagina(elemento: Element | null) {
+      return Boolean(
+        elemento?.matches(seletorRaiz) || elemento?.closest(seletorRaiz)
+      );
+    }
+
+    function deveIgnorarElemento(elemento: Element | null) {
+      if (!elemento || !elementoEstaNaPagina(elemento)) {
+        return true;
+      }
+
+      if (elemento.closest("[data-historietas-i18n-ignore='true']")) {
+        return true;
+      }
+
+      const tag = elemento.tagName.toLowerCase();
+
+      return tag === "script" || tag === "style";
+    }
+
+    function aplicarTexto(no: Text) {
+      const elementoPai = no.parentElement;
+
+      if (
+        deveIgnorarElemento(elementoPai) ||
+        elementoPai?.tagName.toLowerCase() === "textarea"
+      ) {
+        return;
+      }
+
+      const atual = no.data;
+      let estado = estadosTexto.get(no);
+
+      if (!estado) {
+        estado = { original: atual, traduzido: atual };
+        estadosTexto.set(no, estado);
+        textosAlterados.add(no);
+      } else if (atual !== estado.traduzido && atual !== estado.original) {
+        estado.original = atual;
+      }
+
+      const proximo = traduzirTextoTop5(estado.original, language);
+      estado.traduzido = proximo;
+
+      if (no.data !== proximo) {
+        no.data = proximo;
+      }
+    }
+
+    function aplicarAtributos(elemento: Element) {
+      if (deveIgnorarElemento(elemento)) {
+        return;
+      }
+
+      let estadosElemento = estadosAtributos.get(elemento);
+
+      if (!estadosElemento) {
+        estadosElemento = new Map();
+        estadosAtributos.set(elemento, estadosElemento);
+      }
+
+      atributosTraduziveis.forEach((atributo) => {
+        const atual = elemento.getAttribute(atributo);
+
+        if (atual === null) {
+          return;
+        }
+
+        let estado = estadosElemento?.get(atributo);
+
+        if (!estado) {
+          estado = { original: atual, traduzido: atual };
+          estadosElemento?.set(atributo, estado);
+          atributosAlterados.push({ elemento, atributo });
+        } else if (atual !== estado.traduzido && atual !== estado.original) {
+          estado.original = atual;
+        }
+
+        const proximo = traduzirTextoTop5(estado.original, language);
+        estado.traduzido = proximo;
+
+        if (atual !== proximo) {
+          elemento.setAttribute(atributo, proximo);
+        }
+      });
+    }
+
+    function aplicarNo(no: Node) {
+      if (no.nodeType === Node.TEXT_NODE) {
+        aplicarTexto(no as Text);
+        return;
+      }
+
+      if (no.nodeType !== Node.ELEMENT_NODE) {
+        return;
+      }
+
+      const elemento = no as Element;
+
+      if (deveIgnorarElemento(elemento)) {
+        return;
+      }
+
+      aplicarAtributos(elemento);
+
+      elemento.querySelectorAll("*").forEach((filho) => {
+        if (!deveIgnorarElemento(filho)) {
+          aplicarAtributos(filho);
+        }
+      });
+
+      const percorrer = document.createTreeWalker(
+        elemento,
+        NodeFilter.SHOW_TEXT
+      );
+      let textoAtual = percorrer.nextNode();
+
+      while (textoAtual) {
+        aplicarTexto(textoAtual as Text);
+        textoAtual = percorrer.nextNode();
+      }
+    }
+
+    function aplicarPagina() {
+      if (aplicando) {
+        return;
+      }
+
+      aplicando = true;
+
+      try {
+        document.querySelectorAll(seletorRaiz).forEach(aplicarNo);
+      } finally {
+        aplicando = false;
+      }
+    }
+
+    aplicarPagina();
+
+    const observador = new MutationObserver((mutacoes) => {
+      if (aplicando) {
+        return;
+      }
+
+      aplicando = true;
+
+      try {
+        mutacoes.forEach((mutacao) => {
+          if (mutacao.type === "characterData") {
+            aplicarTexto(mutacao.target as Text);
+            return;
+          }
+
+          if (mutacao.type === "attributes") {
+            aplicarAtributos(mutacao.target as Element);
+            return;
+          }
+
+          mutacao.addedNodes.forEach(aplicarNo);
+        });
+      } finally {
+        aplicando = false;
+      }
+    });
+
+    observador.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: atributosTraduziveis,
+    });
+
+    return () => {
+      observador.disconnect();
+
+      textosAlterados.forEach((no) => {
+        const estado = estadosTexto.get(no);
+
+        if (estado && no.isConnected && no.data === estado.traduzido) {
+          no.data = estado.original;
+        }
+      });
+
+      atributosAlterados.forEach(({ elemento, atributo }) => {
+        const estado = estadosAtributos.get(elemento)?.get(atributo);
+
+        if (
+          estado &&
+          elemento.isConnected &&
+          elemento.getAttribute(atributo) === estado.traduzido
+        ) {
+          elemento.setAttribute(atributo, estado.original);
+        }
+      });
+    };
+  }, [language]);
+
+  return null;
+}
 
 const STORAGE_KEY = "historietas-obras";
 const TOP_FIVE_STORAGE_KEY = "historietas-top-5-obras";
@@ -735,7 +1088,8 @@ export default function Top5PerfilAutorPage() {
   }
 
   return (
-    <main style={pageThemeStyle}>
+    <main data-historietas-top5-root="true" style={pageThemeStyle}>
+      <Top5LanguageBridge />
       <style>{`${historietasThemeCss}${top5PerfilAutorPageCss}`}</style>
       <section style={selectedSectionStyle} aria-label="Obras escolhidas para o TOP 5">
         <div style={selectedHeaderStyle}>

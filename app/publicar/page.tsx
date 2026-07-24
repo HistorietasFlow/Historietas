@@ -8,6 +8,8 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
+import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import type { HistorietasLanguage } from "../../lib/i18n";
 
 type CapituloLocal = {
   id: string;
@@ -143,6 +145,516 @@ const CLASSIFICACOES_INDICATIVAS_OBRA = [
   "16+",
   "18+",
 ] as const;
+
+
+type ChaveTextoPublicar = keyof (typeof TEXTOS_PUBLICAR)["pt-BR"];
+
+const TEXTOS_PUBLICAR = {
+  "pt-BR": {
+    voltarHome: "Voltar para a Home",
+    novaObra: "NOVA OBRA",
+    notificacoes: "Notificações",
+    notificacoesNaoLidas: "não lidas",
+    ajusteNecessario: "Ajuste necessário:",
+    capaSelecionada: "Capa selecionada",
+    adicionarCapa: "Adicionar capa",
+    dicaCapa: "Imagem vertical. Tamanho máximo: 2 MB.",
+    escolherImagem: "Escolher imagem",
+    remover: "Remover",
+    tituloObra: "Título da obra",
+    dicaTitulo: "Mínimo 3 letras ou números.",
+    nomeAutor: "Nome do autor",
+    dicaAutor: "Pode ser nome, nickname ou estúdio.",
+    formato: "Formato",
+    escolherFormato: "Escolha o formato",
+    outroFormato: "Outro formato",
+    digiteFormato: "Digite o formato",
+    generoPrincipal: "Gênero principal",
+    escolherGenero: "Escolha um gênero",
+    outroGenero: "Outro gênero",
+    digiteGenero: "Digite o gênero",
+    tag: "Tag",
+    escolherTag: "Escolha uma tag",
+    outraTag: "Outra tag",
+    digiteTag: "Digite a tag",
+    classificacaoIndicativa: "Classificação indicativa",
+    escolherClassificacao: "Escolha a classificação",
+    sinopse: "Sinopse",
+    resumoChamativo: "Escreva um resumo chamativo de sua história...",
+    minimoSinopse: "Mínimo 20 letras ou números.",
+    palavras: "palavras",
+    adicionarConteudoArquivo: "Adicionar conteúdo por arquivo",
+    opcional: "Opcional",
+    comoUsarArquivo: "Como deseja usar este arquivo?",
+    arquivoCompletoAnexado: "Arquivo completo anexado",
+    primeiroCapituloImportado: "Primeiro capítulo importado",
+    enviarArquivo: "Enviar PDF, texto ou imagem",
+    dicaArquivoPendente: "Arquivos TXT e MD podem ser anexados como obra completa ou transformados no primeiro capítulo.",
+    dicaArquivo: "PDF e imagens serão anexados. Arquivos TXT e MD permitem escolher entre anexo completo ou primeiro capítulo. Máximo: 5 MB.",
+    texto: "Texto",
+    primeiroCapitulo: "Primeiro capítulo",
+    transformarCapitulo: "Transformar em capítulo",
+    anexarArquivoCompleto: "Anexar arquivo completo",
+    cancelar: "Cancelar",
+    trocarArquivo: "Trocar arquivo",
+    escolherArquivo: "Escolher arquivo",
+    anexadoObra: "anexado à obra",
+    titulo: "Título",
+    salvando: "Salvando...",
+    criarObra: "Criar obra",
+    progresso: "Progresso",
+    previaObra: "PRÉVIA DA OBRA",
+    obraSemTitulo: "Obra sem título",
+    classificacao: "Classificação",
+    por: "Por",
+    autorNaoInformado: "Autor não informado",
+    capituloAbreviado: "cap.",
+    capituloPronto: "1 cap. pronto",
+    semCapitulo: "sem capítulo",
+    primeiroCapituloMaiusculo: "PRIMEIRO CAPÍTULO",
+    minLeitura: "min de leitura",
+    genero: "Gênero",
+    previa: "Prévia",
+    previaAqui: "A prévia aparece aqui",
+    dicaPrevia: "Preencha título, autor, gênero e capa para ver como a obra vai ficar.",
+    imagem: "Imagem",
+    arquivo: "Arquivo",
+    livre: "Livre",
+  },
+  en: {
+    voltarHome: "Back to Home",
+    novaObra: "NEW WORK",
+    notificacoes: "Notifications",
+    notificacoesNaoLidas: "unread",
+    ajusteNecessario: "Action required:",
+    capaSelecionada: "Cover selected",
+    adicionarCapa: "Add cover",
+    dicaCapa: "Vertical image. Maximum size: 2 MB.",
+    escolherImagem: "Choose image",
+    remover: "Remove",
+    tituloObra: "Work title",
+    dicaTitulo: "At least 3 letters or numbers.",
+    nomeAutor: "Author name",
+    dicaAutor: "It may be a name, nickname, or studio.",
+    formato: "Format",
+    escolherFormato: "Choose the format",
+    outroFormato: "Other format",
+    digiteFormato: "Enter the format",
+    generoPrincipal: "Main genre",
+    escolherGenero: "Choose a genre",
+    outroGenero: "Other genre",
+    digiteGenero: "Enter the genre",
+    tag: "Tag",
+    escolherTag: "Choose a tag",
+    outraTag: "Other tag",
+    digiteTag: "Enter the tag",
+    classificacaoIndicativa: "Age rating",
+    escolherClassificacao: "Choose the age rating",
+    sinopse: "Synopsis",
+    resumoChamativo: "Write an engaging summary of your story...",
+    minimoSinopse: "At least 20 letters or numbers.",
+    palavras: "words",
+    adicionarConteudoArquivo: "Add content from a file",
+    opcional: "Optional",
+    comoUsarArquivo: "How would you like to use this file?",
+    arquivoCompletoAnexado: "Full file attached",
+    primeiroCapituloImportado: "First chapter imported",
+    enviarArquivo: "Upload PDF, text, or image",
+    dicaArquivoPendente: "TXT and MD files can be attached as a full work or turned into the first chapter.",
+    dicaArquivo: "PDFs and images will be attached. TXT and MD files let you choose between a full attachment or a first chapter. Maximum: 5 MB.",
+    texto: "Text",
+    primeiroCapitulo: "First chapter",
+    transformarCapitulo: "Turn into chapter",
+    anexarArquivoCompleto: "Attach full file",
+    cancelar: "Cancel",
+    trocarArquivo: "Change file",
+    escolherArquivo: "Choose file",
+    anexadoObra: "attached to the work",
+    titulo: "Title",
+    salvando: "Saving...",
+    criarObra: "Create work",
+    progresso: "Progress",
+    previaObra: "WORK PREVIEW",
+    obraSemTitulo: "Untitled work",
+    classificacao: "Age rating",
+    por: "By",
+    autorNaoInformado: "Author not provided",
+    capituloAbreviado: "ch.",
+    capituloPronto: "1 ch. ready",
+    semCapitulo: "no chapter",
+    primeiroCapituloMaiusculo: "FIRST CHAPTER",
+    minLeitura: "min read",
+    genero: "Genre",
+    previa: "Preview",
+    previaAqui: "The preview appears here",
+    dicaPrevia: "Fill in the title, author, genre, and cover to see how the work will look.",
+    imagem: "Image",
+    arquivo: "File",
+    livre: "All ages",
+  },
+  es: {
+    voltarHome: "Volver al inicio",
+    novaObra: "NUEVA OBRA",
+    notificacoes: "Notificaciones",
+    notificacoesNaoLidas: "sin leer",
+    ajusteNecessario: "Ajuste necesario:",
+    capaSelecionada: "Portada seleccionada",
+    adicionarCapa: "Añadir portada",
+    dicaCapa: "Imagen vertical. Tamaño máximo: 2 MB.",
+    escolherImagem: "Elegir imagen",
+    remover: "Eliminar",
+    tituloObra: "Título de la obra",
+    dicaTitulo: "Mínimo 3 letras o números.",
+    nomeAutor: "Nombre del autor",
+    dicaAutor: "Puede ser un nombre, apodo o estudio.",
+    formato: "Formato",
+    escolherFormato: "Elige el formato",
+    outroFormato: "Otro formato",
+    digiteFormato: "Escribe el formato",
+    generoPrincipal: "Género principal",
+    escolherGenero: "Elige un género",
+    outroGenero: "Otro género",
+    digiteGenero: "Escribe el género",
+    tag: "Etiqueta",
+    escolherTag: "Elige una etiqueta",
+    outraTag: "Otra etiqueta",
+    digiteTag: "Escribe la etiqueta",
+    classificacaoIndicativa: "Clasificación por edad",
+    escolherClassificacao: "Elige la clasificación",
+    sinopse: "Sinopsis",
+    resumoChamativo: "Escribe un resumen atractivo de tu historia...",
+    minimoSinopse: "Mínimo 20 letras o números.",
+    palavras: "palabras",
+    adicionarConteudoArquivo: "Añadir contenido desde un archivo",
+    opcional: "Opcional",
+    comoUsarArquivo: "¿Cómo deseas usar este archivo?",
+    arquivoCompletoAnexado: "Archivo completo adjunto",
+    primeiroCapituloImportado: "Primer capítulo importado",
+    enviarArquivo: "Subir PDF, texto o imagen",
+    dicaArquivoPendente: "Los archivos TXT y MD pueden adjuntarse como obra completa o convertirse en el primer capítulo.",
+    dicaArquivo: "Los PDF y las imágenes se adjuntarán. Los archivos TXT y MD permiten elegir entre un adjunto completo o el primer capítulo. Máximo: 5 MB.",
+    texto: "Texto",
+    primeiroCapitulo: "Primer capítulo",
+    transformarCapitulo: "Convertir en capítulo",
+    anexarArquivoCompleto: "Adjuntar archivo completo",
+    cancelar: "Cancelar",
+    trocarArquivo: "Cambiar archivo",
+    escolherArquivo: "Elegir archivo",
+    anexadoObra: "adjunto a la obra",
+    titulo: "Título",
+    salvando: "Guardando...",
+    criarObra: "Crear obra",
+    progresso: "Progreso",
+    previaObra: "VISTA PREVIA DE LA OBRA",
+    obraSemTitulo: "Obra sin título",
+    classificacao: "Clasificación",
+    por: "Por",
+    autorNaoInformado: "Autor no informado",
+    capituloAbreviado: "cap.",
+    capituloPronto: "1 cap. listo",
+    semCapitulo: "sin capítulo",
+    primeiroCapituloMaiusculo: "PRIMER CAPÍTULO",
+    minLeitura: "min de lectura",
+    genero: "Género",
+    previa: "Vista previa",
+    previaAqui: "La vista previa aparece aquí",
+    dicaPrevia: "Completa el título, autor, género y portada para ver cómo quedará la obra.",
+    imagem: "Imagen",
+    arquivo: "Archivo",
+    livre: "Todo público",
+  },
+} as const;
+
+const ROTULOS_FORMATO_PUBLICAR: Record<HistorietasLanguage, Record<string, string>> = {
+  "pt-BR": {
+    Webnovel: "Webnovel",
+    "Light novel": "Light novel",
+    Romance: "Romance",
+    Conto: "Conto",
+    Poesia: "Poesia",
+    HQ: "HQ",
+    Mangá: "Mangá",
+    Fanfic: "Fanfic",
+  },
+  en: {
+    Webnovel: "Web novel",
+    "Light novel": "Light novel",
+    Romance: "Novel",
+    Conto: "Short story",
+    Poesia: "Poetry",
+    HQ: "Comic",
+    Mangá: "Manga",
+    Fanfic: "Fanfic",
+  },
+  es: {
+    Webnovel: "Webnovela",
+    "Light novel": "Novela ligera",
+    Romance: "Novela",
+    Conto: "Cuento",
+    Poesia: "Poesía",
+    HQ: "Cómic",
+    Mangá: "Manga",
+    Fanfic: "Fanfic",
+  },
+};
+
+const ROTULOS_GENERO_PUBLICAR: Record<HistorietasLanguage, Record<string, string>> = {
+  "pt-BR": {
+    Fantasia: "Fantasia",
+    Terror: "Terror",
+    Ficção: "Ficção",
+    Romance: "Romance",
+    Drama: "Drama",
+    Ação: "Ação",
+    Mistério: "Mistério",
+    Suspense: "Suspense",
+    Aventura: "Aventura",
+    Comédia: "Comédia",
+  },
+  en: {
+    Fantasia: "Fantasy",
+    Terror: "Horror",
+    Ficção: "Fiction",
+    Romance: "Romance",
+    Drama: "Drama",
+    Ação: "Action",
+    Mistério: "Mystery",
+    Suspense: "Thriller",
+    Aventura: "Adventure",
+    Comédia: "Comedy",
+  },
+  es: {
+    Fantasia: "Fantasía",
+    Terror: "Terror",
+    Ficção: "Ficción",
+    Romance: "Romance",
+    Drama: "Drama",
+    Ação: "Acción",
+    Mistério: "Misterio",
+    Suspense: "Suspenso",
+    Aventura: "Aventura",
+    Comédia: "Comedia",
+  },
+};
+
+const ROTULOS_TAG_PUBLICAR: Record<HistorietasLanguage, Record<string, string>> = {
+  "pt-BR": {
+    Sombria: "Sombria",
+    Psicológico: "Psicológico",
+    "Sci-fi": "Sci-fi",
+    Cyberpunk: "Cyberpunk",
+    Espacial: "Espacial",
+    Isekai: "Isekai",
+    Distopia: "Distopia",
+    Apocalipse: "Apocalipse",
+    Escolar: "Escolar",
+    Máfia: "Máfia",
+    Investigação: "Investigação",
+    Religioso: "Religioso",
+    Mitologia: "Mitologia",
+    Folclore: "Folclore",
+    Vampiro: "Vampiro",
+    Lobisomem: "Lobisomem",
+    Zumbi: "Zumbi",
+    "Super-herói": "Super-herói",
+    Magia: "Magia",
+    Guerra: "Guerra",
+    Família: "Família",
+    Amizade: "Amizade",
+    Traição: "Traição",
+    Vingança: "Vingança",
+    Sobrevivência: "Sobrevivência",
+  },
+  en: {
+    Sombria: "Dark",
+    Psicológico: "Psychological",
+    "Sci-fi": "Sci-fi",
+    Cyberpunk: "Cyberpunk",
+    Espacial: "Space",
+    Isekai: "Isekai",
+    Distopia: "Dystopia",
+    Apocalipse: "Apocalypse",
+    Escolar: "School",
+    Máfia: "Mafia",
+    Investigação: "Investigation",
+    Religioso: "Religious",
+    Mitologia: "Mythology",
+    Folclore: "Folklore",
+    Vampiro: "Vampire",
+    Lobisomem: "Werewolf",
+    Zumbi: "Zombie",
+    "Super-herói": "Superhero",
+    Magia: "Magic",
+    Guerra: "War",
+    Família: "Family",
+    Amizade: "Friendship",
+    Traição: "Betrayal",
+    Vingança: "Revenge",
+    Sobrevivência: "Survival",
+  },
+  es: {
+    Sombria: "Oscura",
+    Psicológico: "Psicológico",
+    "Sci-fi": "Sci-fi",
+    Cyberpunk: "Cyberpunk",
+    Espacial: "Espacial",
+    Isekai: "Isekai",
+    Distopia: "Distopía",
+    Apocalipse: "Apocalipsis",
+    Escolar: "Escolar",
+    Máfia: "Mafia",
+    Investigação: "Investigación",
+    Religioso: "Religioso",
+    Mitologia: "Mitología",
+    Folclore: "Folclore",
+    Vampiro: "Vampiro",
+    Lobisomem: "Hombre lobo",
+    Zumbi: "Zombi",
+    "Super-herói": "Superhéroe",
+    Magia: "Magia",
+    Guerra: "Guerra",
+    Família: "Familia",
+    Amizade: "Amistad",
+    Traição: "Traición",
+    Vingança: "Venganza",
+    Sobrevivência: "Supervivencia",
+  },
+};
+
+const MENSAGENS_ERRO_PUBLICAR: Record<HistorietasLanguage, Record<string, string>> = {
+  "pt-BR": {},
+  en: {
+    "O título precisa ter pelo menos 3 letras ou números. Não pode ser só ponto.": "The title must contain at least 3 letters or numbers. It cannot consist only of punctuation.",
+    "O nome do autor precisa ter pelo menos 2 letras ou números.": "The author name must contain at least 2 letters or numbers.",
+    "O formato personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho.": "The custom format must contain 3 to 14 characters, without commas, emojis, or unsupported symbols.",
+    "Escolha o formato da obra.": "Choose the work format.",
+    "O gênero personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho.": "The custom genre must contain 3 to 14 characters, without commas, emojis, or unsupported symbols.",
+    "Escolha o gênero principal da obra.": "Choose the work's main genre.",
+    "A tag personalizada precisa ter 2 a 10 caracteres, sem vírgula, emoji ou símbolo estranho, e não pode repetir gênero ou formato.": "The custom tag must contain 2 to 10 characters, without commas, emojis, or unsupported symbols, and cannot repeat the genre or format.",
+    "Escolha a classificação indicativa da obra.": "Choose the work's age rating.",
+    "A sinopse precisa ter pelo menos 20 letras ou números.": "The synopsis must contain at least 20 letters or numbers.",
+    "O arquivo importado precisa ter pelo menos 20 letras ou números para virar o primeiro capítulo.": "The imported file must contain at least 20 letters or numbers to become the first chapter.",
+    "Escolha um arquivo de imagem válido.": "Choose a valid image file.",
+    "A capa precisa ter no máximo 2 MB.": "The cover must be no larger than 2 MB.",
+    "Não consegui carregar essa imagem.": "I couldn't load this image.",
+    "Não consegui carregar esse arquivo.": "I couldn't load this file.",
+    "Para virar capítulo, o arquivo de texto precisa ter no máximo 900 KB. Você ainda pode anexá-lo como arquivo completo.": "To become a chapter, the text file must be no larger than 900 KB. You can still attach it as a full file.",
+    "Esse arquivo tem pouco texto para virar um capítulo.": "This file does not contain enough text to become a chapter.",
+    "Não consegui ler esse arquivo.": "I couldn't read this file.",
+    "Escolha PDF, TXT, MD ou imagem em PNG, JPG, WEBP ou GIF.": "Choose a PDF, TXT, MD, or an image in PNG, JPG, WEBP, or GIF format.",
+    "O arquivo precisa ter no máximo 5 MB.": "The file must be no larger than 5 MB.",
+    "Entre na sua conta antes de publicar uma obra.": "Sign in before publishing a work.",
+    "Não consegui encontrar um nome de autor válido no seu perfil. Atualize seu perfil ou preencha o nome do autor.": "I couldn't find a valid author name in your profile. Update your profile or enter the author name.",
+    "O navegador recusou salvar dados locais porque o armazenamento está cheio.": "The browser couldn't save local data because its storage is full.",
+    "Não consegui salvar a obra agora. Tente novamente.": "I couldn't save the work right now. Try again.",
+    "A obra foi publicada, mas não consegui abrir o Painel do Autor. Acesse o painel antes de tentar publicar novamente.": "The work was published, but I couldn't open the Author Dashboard. Open the dashboard before trying to publish again.",
+  },
+  es: {
+    "O título precisa ter pelo menos 3 letras ou números. Não pode ser só ponto.": "El título debe tener al menos 3 letras o números. No puede contener solamente signos.",
+    "O nome do autor precisa ter pelo menos 2 letras ou números.": "El nombre del autor debe tener al menos 2 letras o números.",
+    "O formato personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho.": "El formato personalizado debe tener entre 3 y 14 caracteres, sin comas, emojis ni símbolos no admitidos.",
+    "Escolha o formato da obra.": "Elige el formato de la obra.",
+    "O gênero personalizado precisa ter 3 a 14 caracteres, sem vírgula, emoji ou símbolo estranho.": "El género personalizado debe tener entre 3 y 14 caracteres, sin comas, emojis ni símbolos no admitidos.",
+    "Escolha o gênero principal da obra.": "Elige el género principal de la obra.",
+    "A tag personalizada precisa ter 2 a 10 caracteres, sem vírgula, emoji ou símbolo estranho, e não pode repetir gênero ou formato.": "La etiqueta personalizada debe tener entre 2 y 10 caracteres, sin comas, emojis ni símbolos no admitidos, y no puede repetir el género ni el formato.",
+    "Escolha a classificação indicativa da obra.": "Elige la clasificación por edad de la obra.",
+    "A sinopse precisa ter pelo menos 20 letras ou números.": "La sinopsis debe tener al menos 20 letras o números.",
+    "O arquivo importado precisa ter pelo menos 20 letras ou números para virar o primeiro capítulo.": "El archivo importado debe tener al menos 20 letras o números para convertirse en el primer capítulo.",
+    "Escolha um arquivo de imagem válido.": "Elige un archivo de imagen válido.",
+    "A capa precisa ter no máximo 2 MB.": "La portada debe tener como máximo 2 MB.",
+    "Não consegui carregar essa imagem.": "No pude cargar esta imagen.",
+    "Não consegui carregar esse arquivo.": "No pude cargar este archivo.",
+    "Para virar capítulo, o arquivo de texto precisa ter no máximo 900 KB. Você ainda pode anexá-lo como arquivo completo.": "Para convertirse en capítulo, el archivo de texto debe tener como máximo 900 KB. También puedes adjuntarlo como archivo completo.",
+    "Esse arquivo tem pouco texto para virar um capítulo.": "Este archivo no tiene suficiente texto para convertirse en un capítulo.",
+    "Não consegui ler esse arquivo.": "No pude leer este archivo.",
+    "Escolha PDF, TXT, MD ou imagem em PNG, JPG, WEBP ou GIF.": "Elige un PDF, TXT, MD o una imagen en formato PNG, JPG, WEBP o GIF.",
+    "O arquivo precisa ter no máximo 5 MB.": "El archivo debe tener como máximo 5 MB.",
+    "Entre na sua conta antes de publicar uma obra.": "Inicia sesión antes de publicar una obra.",
+    "Não consegui encontrar um nome de autor válido no seu perfil. Atualize seu perfil ou preencha o nome do autor.": "No pude encontrar un nombre de autor válido en tu perfil. Actualiza tu perfil o escribe el nombre del autor.",
+    "O navegador recusou salvar dados locais porque o armazenamento está cheio.": "El navegador no pudo guardar datos locales porque el almacenamiento está lleno.",
+    "Não consegui salvar a obra agora. Tente novamente.": "No pude guardar la obra ahora. Inténtalo de nuevo.",
+    "A obra foi publicada, mas não consegui abrir o Painel do Autor. Acesse o painel antes de tentar publicar novamente.": "La obra fue publicada, pero no pude abrir el Panel del Autor. Abre el panel antes de intentar publicar nuevamente.",
+  },
+};
+
+function obterTextoPublicar(
+  idioma: HistorietasLanguage,
+  chave: ChaveTextoPublicar,
+) {
+  return TEXTOS_PUBLICAR[idioma][chave] || TEXTOS_PUBLICAR["pt-BR"][chave];
+}
+
+function traduzirFormatoPublicar(idioma: HistorietasLanguage, formato: string) {
+  return ROTULOS_FORMATO_PUBLICAR[idioma][formato] || formato;
+}
+
+function traduzirGeneroPublicar(idioma: HistorietasLanguage, genero: string) {
+  return ROTULOS_GENERO_PUBLICAR[idioma][genero] || genero;
+}
+
+function traduzirTagPublicar(idioma: HistorietasLanguage, tag: string) {
+  return ROTULOS_TAG_PUBLICAR[idioma][tag] || tag;
+}
+
+function traduzirClassificacaoPublicar(
+  idioma: HistorietasLanguage,
+  classificacao: string,
+) {
+  return classificacao === "Livre"
+    ? obterTextoPublicar(idioma, "livre")
+    : classificacao;
+}
+
+function traduzirMensagemPublicar(
+  idioma: HistorietasLanguage,
+  mensagem: string,
+): string {
+  if (!mensagem || idioma === "pt-BR") {
+    return mensagem;
+  }
+
+  const mensagemExata = MENSAGENS_ERRO_PUBLICAR[idioma][mensagem];
+
+  if (mensagemExata) {
+    return mensagemExata;
+  }
+
+  const prefixos = idioma === "en"
+    ? [
+        ["Erro ao enviar ", "Error uploading "],
+        ["Não consegui preparar o endereço da obra: ", "I couldn't prepare the work address: "],
+        ["Não consegui salvar a obra agora: ", "I couldn't save the work: "],
+        ["Não consegui salvar o capítulo inicial: ", "I couldn't save the first chapter: "],
+        ["A obra foi preparada, mas não pôde ser publicada: ", "The work was prepared but couldn't be published: "],
+      ]
+    : [
+        ["Erro ao enviar ", "Error al subir "],
+        ["Não consegui preparar o endereço da obra: ", "No pude preparar la dirección de la obra: "],
+        ["Não consegui salvar a obra agora: ", "No pude guardar la obra: "],
+        ["Não consegui salvar o capítulo inicial: ", "No pude guardar el primer capítulo: "],
+        ["A obra foi preparada, mas não pôde ser publicada: ", "La obra fue preparada, pero no pudo publicarse: "],
+      ];
+
+  for (const [prefixoOriginal, prefixoTraduzido] of prefixos) {
+    if (mensagem.startsWith(prefixoOriginal)) {
+      return `${prefixoTraduzido}${mensagem.slice(prefixoOriginal.length)}`;
+    }
+  }
+
+  const sufixoParcial =
+    " A publicação parcial não pôde ser removida automaticamente. Confira o Painel do Autor antes de tentar novamente.";
+
+  if (mensagem.endsWith(sufixoParcial)) {
+    const base = mensagem.slice(0, -sufixoParcial.length);
+    const baseTraduzida: string = traduzirMensagemPublicar(idioma, base);
+
+    return idioma === "en"
+      ? `${baseTraduzida} The partial publication couldn't be removed automatically. Check the Author Dashboard before trying again.`
+      : `${baseTraduzida} La publicación parcial no pudo eliminarse automáticamente. Revisa el Panel del Autor antes de intentarlo de nuevo.`;
+  }
+
+  return mensagem;
+}
 
 function criarStorageKeyUsuarioPublicar(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
@@ -1008,6 +1520,8 @@ export default function PublicarPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
+  const { language: idioma } = useHistorietasLanguage();
+  const t = (chave: ChaveTextoPublicar) => obterTextoPublicar(idioma, chave);
 
   useEffect(() => {
     let cancelado = false;
@@ -1167,12 +1681,12 @@ export default function PublicarPage() {
     : "";
   const arquivoObraTipoTexto = arquivoObra
     ? arquivoObra.categoria === "imagem"
-      ? "Imagem"
+      ? t("imagem")
       : arquivoObra.categoria === "documento"
       ? "PDF"
       : arquivoObra.categoria === "texto"
-      ? "Texto"
-      : "Arquivo"
+      ? t("texto")
+      : t("arquivo")
     : "";
   const arquivoTextoPendenteTamanhoTexto = arquivoTextoPendente
     ? formatarTamanhoArquivo(arquivoTextoPendente.size)
@@ -1830,13 +2344,13 @@ export default function PublicarPage() {
           <Link
             href="/"
             style={isDesktop ? desktopHeaderTitleLinkStyle : headerTitleLinkStyle}
-            aria-label="Voltar para a Home"
+            aria-label={t("voltarHome")}
           >
             <span
               className="historietas-theme-title"
               style={isDesktop ? desktopHeaderTitleTextStyle : headerTitleTextStyle}
             >
-              NOVA OBRA
+              {t("novaObra")}
             </span>
           </Link>
 
@@ -1846,8 +2360,8 @@ export default function PublicarPage() {
               style={desktopNotificationButtonStyle}
               aria-label={
                 notificacoesNaoLidas > 0
-                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                  : "Notificações"
+                  ? `${t("notificacoes")}: ${notificacoesNaoLidas} ${t("notificacoesNaoLidas")}`
+                  : t("notificacoes")
               }
             >
               N
@@ -1867,8 +2381,8 @@ export default function PublicarPage() {
           <form onSubmit={salvarObra} style={isDesktop ? desktopFormPanelStyle : formPanelStyle}>
             {erro && (
               <div style={isDesktop ? desktopFullWidthErrorBoxStyle : errorBoxStyle}>
-                <strong style={safeTextStyle}>Ajuste necessário:</strong>
-                <span style={safeTextStyle}>{erro}</span>
+                <strong style={safeTextStyle}>{t("ajusteNecessario")}</strong>
+                <span style={safeTextStyle}>{traduzirMensagemPublicar(idioma, erro)}</span>
               </div>
             )}
 
@@ -1889,16 +2403,20 @@ export default function PublicarPage() {
 
                 <div style={isDesktop ? desktopChapterImportContentStyle : chapterImportContentStyle}>
                   <strong style={chapterImportTitleStyle}>
-                    {capa ? "Capa selecionada" : "Adicionar capa"}
+                    {capa ? t("capaSelecionada") : t("adicionarCapa")}
                   </strong>
 
                   <span style={hintStyle}>
-                    Imagem vertical. Tamanho máximo: 2 MB.
+                    {t("dicaCapa")}
                   </span>
 
                   {capaNome && <span style={fileNameStyle}>{capaNome}</span>}
 
-                  {capaErro && <span style={coverErrorStyle}>{capaErro}</span>}
+                  {capaErro && (
+                    <span style={coverErrorStyle}>
+                      {traduzirMensagemPublicar(idioma, capaErro)}
+                    </span>
+                  )}
 
                   <div style={isDesktop ? desktopCoverButtonsStyle : coverButtonsStyle}>
                     <button
@@ -1906,7 +2424,7 @@ export default function PublicarPage() {
                       onClick={() => capaInputRef.current?.click()}
                       style={isDesktop ? desktopCoverButtonStyle : coverButtonStyle}
                     >
-                      Escolher imagem
+                      {t("escolherImagem")}
                     </button>
 
                     {capa && (
@@ -1915,7 +2433,7 @@ export default function PublicarPage() {
                         onClick={removerCapa}
                         style={isDesktop ? desktopRemoveCoverButtonStyle : removeCoverButtonStyle}
                       >
-                        Remover
+                        {t("remover")}
                       </button>
                     )}
                   </div>
@@ -1925,7 +2443,7 @@ export default function PublicarPage() {
 
 
             <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>Título da obra</label>
+              <label style={labelStyle}>{t("tituloObra")}</label>
 
               <input
                 value={titulo}
@@ -1938,11 +2456,11 @@ export default function PublicarPage() {
                 type="text"
               />
 
-              <span style={hintStyle}>Mínimo 3 letras ou números.</span>
+              <span style={hintStyle}>{t("dicaTitulo")}</span>
             </div>
 
             <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>Nome do autor</label>
+              <label style={labelStyle}>{t("nomeAutor")}</label>
 
               <input
                 value={autor}
@@ -1955,12 +2473,12 @@ export default function PublicarPage() {
                 type="text"
               />
 
-              <span style={hintStyle}>Pode ser nome, nickname ou estúdio.</span>
+              <span style={hintStyle}>{t("dicaAutor")}</span>
             </div>
 
             <div style={isDesktop ? desktopFullWidthDoubleFieldStyle : doubleFieldStyle}>
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>Formato</label>
+                <label style={labelStyle}>{t("formato")}</label>
 
                 <select
                   value={formato}
@@ -1977,11 +2495,13 @@ export default function PublicarPage() {
                   }}
                   style={inputStyle}
                 >
-                  <option value="">Escolha o formato</option>
+                  <option value="">{t("escolherFormato")}</option>
                   {OPCOES_FORMATO_OBRA.map((opcao) => (
-                    <option key={opcao}>{opcao}</option>
+                    <option key={opcao} value={opcao}>
+                      {traduzirFormatoPublicar(idioma, opcao)}
+                    </option>
                   ))}
-                  <option value={OUTRO_FORMATO_VALUE}>Outro formato</option>
+                  <option value={OUTRO_FORMATO_VALUE}>{t("outroFormato")}</option>
                 </select>
 
                 {formatoEhPersonalizado && (
@@ -1997,7 +2517,7 @@ export default function PublicarPage() {
                       setErro("");
                     }}
                     style={inputStyle}
-                    placeholder="Digite o formato"
+                    placeholder={t("digiteFormato")}
                     maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
                     type="text"
                   />
@@ -2005,7 +2525,7 @@ export default function PublicarPage() {
               </div>
 
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>Gênero principal</label>
+                <label style={labelStyle}>{t("generoPrincipal")}</label>
 
                 <select
                   value={genero}
@@ -2022,11 +2542,13 @@ export default function PublicarPage() {
                   }}
                   style={inputStyle}
                 >
-                  <option value="">Escolha um gênero</option>
+                  <option value="">{t("escolherGenero")}</option>
                   {OPCOES_GENERO_OBRA.map((opcao) => (
-                    <option key={opcao}>{opcao}</option>
+                    <option key={opcao} value={opcao}>
+                      {traduzirGeneroPublicar(idioma, opcao)}
+                    </option>
                   ))}
-                  <option value={OUTRO_GENERO_VALUE}>Outro gênero</option>
+                  <option value={OUTRO_GENERO_VALUE}>{t("outroGenero")}</option>
                 </select>
 
                 {generoEhPersonalizado && (
@@ -2042,7 +2564,7 @@ export default function PublicarPage() {
                       setErro("");
                     }}
                     style={inputStyle}
-                    placeholder="Digite o gênero"
+                    placeholder={t("digiteGenero")}
                     maxLength={LIMITE_CARACTERES_FORMATO_GENERO_PERSONALIZADO}
                     type="text"
                   />
@@ -2051,7 +2573,7 @@ export default function PublicarPage() {
             </div>
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>Tag</label>
+              <label style={labelStyle}>{t("tag")}</label>
 
               <select
                 value={usarTagPersonalizada ? OUTRA_TAG_VALUE : tagsDaObra[0] || ""}
@@ -2070,15 +2592,15 @@ export default function PublicarPage() {
                 }}
                 style={inputStyle}
               >
-                <option value="">Escolha uma tag</option>
+                <option value="">{t("escolherTag")}</option>
 
                 {OPCOES_TAGS_OBRA.map((tag) => (
                   <option key={tag} value={tag}>
-                    {tag}
+                    {traduzirTagPublicar(idioma, tag)}
                   </option>
                 ))}
 
-                <option value={OUTRA_TAG_VALUE}>Outra tag</option>
+                <option value={OUTRA_TAG_VALUE}>{t("outraTag")}</option>
               </select>
 
               {usarTagPersonalizada && (
@@ -2086,7 +2608,7 @@ export default function PublicarPage() {
                   value={tagPersonalizada}
                   onChange={(event) => atualizarTagPersonalizada(event.target.value)}
                   style={inputStyle}
-                  placeholder="Digite a tag"
+                  placeholder={t("digiteTag")}
                   maxLength={LIMITE_CARACTERES_TAG_PERSONALIZADA}
                   type="text"
                 />
@@ -2094,7 +2616,7 @@ export default function PublicarPage() {
             </div>
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>Classificação indicativa</label>
+              <label style={labelStyle}>{t("classificacaoIndicativa")}</label>
 
               <select
                 value={classificacaoIndicativa}
@@ -2104,8 +2626,8 @@ export default function PublicarPage() {
                 }}
                 style={inputStyle}
               >
-                <option value="">Escolha a classificação</option>
-                <option value="Livre">Livre</option>
+                <option value="">{t("escolherClassificacao")}</option>
+                <option value="Livre">{t("livre")}</option>
                 <option>10+</option>
                 <option>12+</option>
                 <option>14+</option>
@@ -2116,7 +2638,7 @@ export default function PublicarPage() {
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
               <div style={labelRowStyle}>
-                <label style={labelStyle}>Sinopse</label>
+                <label style={labelStyle}>{t("sinopse")}</label>
 
                 <span
                   style={
@@ -2134,15 +2656,15 @@ export default function PublicarPage() {
                   setErro("");
                 }}
                 style={textareaStyle}
-                placeholder={`Escreva um resumo chamativo de sua história...\nMínimo 20 letras ou números. ${sinopsePalavras} palavras.`}
+                placeholder={`${t("resumoChamativo")}\n${t("minimoSinopse")} ${sinopsePalavras} ${t("palavras")}.`}
               />
             </div>
 
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
               <div style={fileUploadLabelRowStyle}>
-                <label style={labelStyle}>Adicionar conteúdo por arquivo</label>
-                <span style={fileOptionalBadgeStyle}>Opcional</span>
+                <label style={labelStyle}>{t("adicionarConteudoArquivo")}</label>
+                <span style={fileOptionalBadgeStyle}>{t("opcional")}</span>
               </div>
 
               <input
@@ -2175,23 +2697,23 @@ export default function PublicarPage() {
                 >
                   <strong style={chapterImportTitleStyle}>
                     {arquivoTextoPendente
-                      ? "Como deseja usar este arquivo?"
+                      ? t("comoUsarArquivo")
                       : arquivoObra
-                        ? "Arquivo completo anexado"
+                        ? t("arquivoCompletoAnexado")
                         : temCapituloImportado
-                          ? "Primeiro capítulo importado"
-                          : "Enviar PDF, texto ou imagem"}
+                          ? t("primeiroCapituloImportado")
+                          : t("enviarArquivo")}
                   </strong>
 
                   <span style={hintStyle}>
                     {arquivoTextoPendente
-                      ? "Arquivos TXT e MD podem ser anexados como obra completa ou transformados no primeiro capítulo."
-                      : "PDF e imagens serão anexados. Arquivos TXT e MD permitem escolher entre anexo completo ou primeiro capítulo. Máximo: 5 MB."}
+                      ? t("dicaArquivoPendente")
+                      : t("dicaArquivo")}
                   </span>
 
                   {arquivoTextoPendente && (
                     <span style={fileNameStyle}>
-                      {arquivoTextoPendente.name} • Texto •{" "}
+                      {arquivoTextoPendente.name} • {t("texto")} •{" "}
                       {arquivoTextoPendenteTamanhoTexto}
                     </span>
                   )}
@@ -2205,16 +2727,20 @@ export default function PublicarPage() {
 
                   {temCapituloImportado && !arquivoTextoPendente && (
                     <span style={fileNameStyle}>
-                      {arquivoCapituloNome} • Primeiro capítulo
+                      {arquivoCapituloNome} • {t("primeiroCapitulo")}
                     </span>
                   )}
 
                   {arquivoObraErro && (
-                    <span style={coverErrorStyle}>{arquivoObraErro}</span>
+                    <span style={coverErrorStyle}>
+                      {traduzirMensagemPublicar(idioma, arquivoObraErro)}
+                    </span>
                   )}
 
                   {arquivoCapituloErro && (
-                    <span style={coverErrorStyle}>{arquivoCapituloErro}</span>
+                    <span style={coverErrorStyle}>
+                      {traduzirMensagemPublicar(idioma, arquivoCapituloErro)}
+                    </span>
                   )}
 
                   {arquivoTextoPendente ? (
@@ -2234,7 +2760,7 @@ export default function PublicarPage() {
                             : coverButtonStyle
                         }
                       >
-                        Transformar em capítulo
+                        {t("transformarCapitulo")}
                       </button>
 
                       <button
@@ -2248,7 +2774,7 @@ export default function PublicarPage() {
                             : coverButtonStyle
                         }
                       >
-                        Anexar arquivo completo
+                        {t("anexarArquivoCompleto")}
                       </button>
 
                       <button
@@ -2260,7 +2786,7 @@ export default function PublicarPage() {
                             : removeCoverButtonStyle
                         }
                       >
-                        Cancelar
+                        {t("cancelar")}
                       </button>
                     </div>
                   ) : (
@@ -2279,8 +2805,8 @@ export default function PublicarPage() {
                         }
                       >
                         {temConteudoPorArquivo
-                          ? "Trocar arquivo"
-                          : "Escolher arquivo"}
+                          ? t("trocarArquivo")
+                          : t("escolherArquivo")}
                       </button>
 
                       {temConteudoPorArquivo && (
@@ -2293,7 +2819,7 @@ export default function PublicarPage() {
                               : removeCoverButtonStyle
                           }
                         >
-                          Remover
+                          {t("remover")}
                         </button>
                       )}
                     </div>
@@ -2305,17 +2831,17 @@ export default function PublicarPage() {
                 <div style={chapterImportStatsStyle}>
                   <span style={inlineStatStyle}>{arquivoObraTipoTexto}</span>
                   <span style={inlineStatStyle}>{arquivoObraTamanhoTexto}</span>
-                  <span style={inlineStatStyle}>anexado à obra</span>
+                  <span style={inlineStatStyle}>{t("anexadoObra")}</span>
                 </div>
               )}
 
               {temCapituloImportado && !arquivoTextoPendente && (
                 <div style={chapterImportStatsStyle}>
                   <span style={inlineStatStyle}>
-                    Título: {arquivoCapituloTitulo || "Capítulo 1"}
+                    {t("titulo")}: {arquivoCapituloTitulo || `${t("primeiroCapitulo")} 1`}
                   </span>
                   <span style={inlineStatStyle}>
-                    {arquivoCapituloPalavras} palavras
+                    {arquivoCapituloPalavras} {t("palavras")}
                   </span>
                   <span style={inlineStatStyle}>
                     {arquivoCapituloMinutos} min
@@ -2326,7 +2852,7 @@ export default function PublicarPage() {
 
             <div style={isDesktop ? desktopButtonAreaStyle : buttonAreaStyle}>
               <Link href="/" style={secondaryButtonStyle}>
-                Cancelar
+                {t("cancelar")}
               </Link>
 
               <button
@@ -2334,7 +2860,7 @@ export default function PublicarPage() {
                 style={processando ? disabledButtonStyle : primaryButtonStyle}
                 disabled={processando}
               >
-                {processando ? "Salvando..." : "Criar obra"}
+                {processando ? t("salvando") : t("criarObra")}
               </button>
             </div>
 
@@ -2346,7 +2872,7 @@ export default function PublicarPage() {
               }
             >
               <div style={progressTopStyle}>
-                <span style={progressLabelStyle}>Progresso</span>
+                <span style={progressLabelStyle}>{t("progresso")}</span>
                 <strong style={progressNumberStyle}>{progresso}%</strong>
               </div>
 
@@ -2358,7 +2884,7 @@ export default function PublicarPage() {
 
           <aside style={isDesktop ? desktopPreviewPanelStyle : previewPanelStyle}>
             <div style={previewHeaderStyle}>
-              <span style={previewMiniTitleStyle}>PRÉVIA DA OBRA</span>
+              <span style={previewMiniTitleStyle}>{t("previaObra")}</span>
             </div>
 
             {previewTemConteudo ? (
@@ -2371,22 +2897,22 @@ export default function PublicarPage() {
                 <div style={previewContentStyle}>
                   <div style={previewTopRowStyle}>
                     <h3 style={previewObraTitleStyle}>
-                      {titulo.trim() || "Obra sem título"}
+                      {titulo.trim() || t("obraSemTitulo")}
                     </h3>
 
                     <div style={previewBadgesStyle}>
                       <span style={previewBadgeStyle}>
-                        {formatoFinal || "Formato"}
+                        {formatoFinal ? traduzirFormatoPublicar(idioma, formatoFinal) : t("formato")}
                       </span>
 
                       <span style={previewRatingBadgeStyle}>
-                        {classificacaoFinal || "Classificação"}
+                        {classificacaoFinal ? traduzirClassificacaoPublicar(idioma, classificacaoFinal) : t("classificacao")}
                       </span>
                     </div>
                   </div>
 
                   <p style={previewAuthorStyle}>
-                    Por {autor.trim() || "Autor não informado"}
+                    {t("por")} {autor.trim() || t("autorNaoInformado")}
                   </p>
 
                   <div style={previewStatsStyle}>
@@ -2408,7 +2934,7 @@ export default function PublicarPage() {
                     <span style={previewStatItemStyle}>
                       <span style={previewStatIconStyle}>📚</span>
                       <span style={previewStatValueStyle}>
-                        {temCapituloImportado ? "1 cap." : "0 cap."}
+                        {temCapituloImportado ? `1 ${t("capituloAbreviado")}` : `0 ${t("capituloAbreviado")}`}
                       </span>
                     </span>
                   </div>
@@ -2424,7 +2950,7 @@ export default function PublicarPage() {
                     </div>
 
                     <span style={previewProgressTextStyle}>
-                      {temCapituloImportado ? "1 cap. pronto" : "sem capítulo"}
+                      {temCapituloImportado ? t("capituloPronto") : t("semCapitulo")}
                     </span>
                   </div>
 
@@ -2432,26 +2958,26 @@ export default function PublicarPage() {
                   {temCapituloImportado && (
                     <div style={previewImportedChapterStyle}>
                       <span style={previewImportedMiniStyle}>
-                        PRIMEIRO CAPÍTULO
+                        {t("primeiroCapituloMaiusculo")}
                       </span>
 
                       <strong style={previewImportedTitleStyle}>
-                        {arquivoCapituloTitulo || "Capítulo 1"}
+                        {arquivoCapituloTitulo || `${t("primeiroCapitulo")} 1`}
                       </strong>
 
                       <span style={previewImportedTextStyle}>
-                        {arquivoCapituloPalavras} palavras • {arquivoCapituloMinutos} min de leitura
+                        {arquivoCapituloPalavras} {t("palavras")} • {arquivoCapituloMinutos} {t("minLeitura")}
                       </span>
                     </div>
                   )}
 
                   <div style={previewActionRowStyle}>
                     <span style={previewGenreBadgeStyle}>
-                      {generoFinal || "Gênero"}
+                      {generoFinal ? traduzirGeneroPublicar(idioma, generoFinal) : t("genero")}
                     </span>
 
                     <span style={previewActionBadgeStyle}>
-                      Prévia
+                      {t("previa")}
                     </span>
                   </div>
                 </div>
@@ -2464,11 +2990,11 @@ export default function PublicarPage() {
 
                 <div style={emptyPreviewContentStyle}>
                   <strong style={emptyPreviewTitleStyle}>
-                    A prévia aparece aqui
+                    {t("previaAqui")}
                   </strong>
 
                   <span style={emptyPreviewTextStyle}>
-                    Preencha título, autor, gênero e capa para ver como a obra vai ficar.
+                    {t("dicaPrevia")}
                   </span>
                 </div>
               </div>
