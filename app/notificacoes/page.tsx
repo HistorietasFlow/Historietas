@@ -68,6 +68,7 @@ type NotificacaoLocal = {
     | "comentario-diario"
     | "atividade-diario"
     | "novo-seguidor"
+    | "solicitacao-seguidor"
     | "denuncia-comunidade"
     | "moderacao-comunidade";
   lida: boolean;
@@ -75,6 +76,7 @@ type NotificacaoLocal = {
   autorId?: string;
   autorNome?: string;
   autorAvatar?: string;
+  solicitacaoId?: string;
 };
 
 type FiltroNotificacao = "todas" | "nao-lidas" | "lidas" | "capitulos" | "comunidade";
@@ -131,6 +133,22 @@ const NOTIFICACOES_UI_TRANSLATIONS: Record<string, TraducaoNotificacoes> = {
   "Novo comentário no capítulo": { en: "New chapter comment", es: "Nuevo comentario en el capítulo" },
   "Nova review publicada": { en: "New review published", es: "Nueva reseña publicada" },
   "Novo seguidor": { en: "New follower", es: "Nuevo seguidor" },
+  "Nova solicitação para seguir": {
+    en: "New follow request",
+    es: "Nueva solicitud para seguir",
+  },
+  "Solicitação para seguir": {
+    en: "Follow request",
+    es: "Solicitud para seguir",
+  },
+  "Responder solicitação": {
+    en: "Respond to request",
+    es: "Responder solicitud",
+  },
+  "Aceitar": { en: "Accept", es: "Aceptar" },
+  "Recusar": { en: "Decline", es: "Rechazar" },
+  "Aceitando...": { en: "Accepting...", es: "Aceptando..." },
+  "Recusando...": { en: "Declining...", es: "Rechazando..." },
   "Nova curtida no Diário": { en: "New Journal like", es: "Nuevo Me gusta en el Diario" },
   "Novo comentário no Diário": { en: "New Journal comment", es: "Nuevo comentario en el Diario" },
   "Comentário no Diário": { en: "Journal comment", es: "Comentario en el Diario" },
@@ -332,6 +350,22 @@ function traduzirTextoNotificacoes(
     return idioma === "en"
       ? `${inicio}${correspondencia[1]} started following your profile.${fim}`
       : `${inicio}${correspondencia[1]} empezó a seguir tu perfil.${fim}`;
+  }
+
+  correspondencia = /^Solicitação de (.+)$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}Request from ${correspondencia[1]}${fim}`
+      : `${inicio}Solicitud de ${correspondencia[1]}${fim}`;
+  }
+
+  correspondencia = /^(.+?) quer seguir seu perfil\.$/i.exec(conteudo);
+
+  if (correspondencia) {
+    return idioma === "en"
+      ? `${inicio}${correspondencia[1]} wants to follow your profile.${fim}`
+      : `${inicio}${correspondencia[1]} quiere seguir tu perfil.${fim}`;
   }
 
   correspondencia = /^(.+?) comentou em "(.+?)"(?::\s*(.+)|\.)$/i.exec(
@@ -1150,6 +1184,7 @@ function normalizarTipoNotificacao(valor: unknown): NotificacaoLocal["tipo"] {
     "comentario-diario",
     "atividade-diario",
     "novo-seguidor",
+    "solicitacao-seguidor",
     "denuncia-comunidade",
     "moderacao-comunidade",
   ]);
@@ -1206,6 +1241,12 @@ function normalizarNotificacao(
       typeof notificacaoBruta.autorAvatar === "string"
         ? notificacaoBruta.autorAvatar.trim()
         : "",
+    solicitacaoId:
+      typeof notificacaoBruta.solicitacaoId === "string"
+        ? notificacaoBruta.solicitacaoId.trim()
+        : typeof notificacaoBruta.solicitacao_id === "string"
+          ? notificacaoBruta.solicitacao_id.trim()
+          : "",
   };
 }
 
@@ -1419,6 +1460,10 @@ function montarLinkNotificacao(
   notificacao: NotificacaoLocal,
   obra?: ObraLocal | null
 ) {
+  if (notificacao.tipo === "solicitacao-seguidor") {
+    return "/seguindo?aba=seguidores&conteudo=seguidores";
+  }
+
   if (notificacao.tipo === "novo-seguidor" && notificacao.autorId) {
     return criarPerfilHrefNotificacao(notificacao.autorId, notificacao.autorNome || "Usuário");
   }
@@ -1532,6 +1577,10 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
     return "Novo seguidor";
   }
 
+  if (notificacao.tipo === "solicitacao-seguidor") {
+    return "Solicitação para seguir";
+  }
+
   if (notificacao.tipo === "atividade-comunidade") {
     return "Atividade da comunidade";
   }
@@ -1560,6 +1609,10 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
 }
 
 function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
+  if (notificacao.tipo === "solicitacao-seguidor") {
+    return "Responder solicitação";
+  }
+
   if (notificacao.tipo === "novo-seguidor") {
     return "Ver perfil";
   }
@@ -1627,7 +1680,10 @@ function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
     return "◉";
   }
 
-  if (notificacao.tipo === "novo-seguidor") {
+  if (
+    notificacao.tipo === "novo-seguidor" ||
+    notificacao.tipo === "solicitacao-seguidor"
+  ) {
     return "+";
   }
 
@@ -1688,6 +1744,10 @@ function obterTituloExibicaoNotificacao(notificacao: NotificacaoLocal) {
 
   if (notificacao.tipo === "novo-seguidor") {
     return "Novo seguidor";
+  }
+
+  if (notificacao.tipo === "solicitacao-seguidor") {
+    return "Nova solicitação para seguir";
   }
 
   if (notificacao.tipo === "atividade-comunidade") {
@@ -1754,7 +1814,8 @@ function notificacaoTemAutorSocial(notificacao: NotificacaoLocal) {
     notificacao.tipo === "curtida-comentario-capitulo" ||
     notificacao.tipo === "comentario-diario" ||
     notificacao.tipo === "curtida-diario" ||
-    notificacao.tipo === "novo-seguidor"
+    notificacao.tipo === "novo-seguidor" ||
+    notificacao.tipo === "solicitacao-seguidor"
   );
 }
 
@@ -1782,6 +1843,10 @@ function obterTituloBlocoSocialNotificacao(notificacao: NotificacaoLocal) {
 
   if (notificacao.tipo === "novo-seguidor") {
     return `Novo seguidor: ${nomeAutor}`;
+  }
+
+  if (notificacao.tipo === "solicitacao-seguidor") {
+    return `Solicitação de ${nomeAutor}`;
   }
 
   return obterDetalheNotificacao(notificacao);
@@ -2191,6 +2256,8 @@ function mesclarNotificacoes(
       autorId: preferida.autorId || secundaria.autorId,
       autorNome: preferida.autorNome || secundaria.autorNome,
       autorAvatar: preferida.autorAvatar || secundaria.autorAvatar,
+      solicitacaoId:
+        preferida.solicitacaoId || secundaria.solicitacaoId,
       lida: existente.lida || notificacaoNormalizada.lida,
     });
   });
@@ -2430,6 +2497,12 @@ function normalizarNotificacaoSupabase(
           registro.remetente_avatar ??
           metadata.autor_avatar ??
           metadata.remetente_avatar
+      ),
+      solicitacaoId: pegarTexto(
+        registro.solicitacao_id ??
+          registro.solicitacaoId ??
+          metadata.solicitacao_id ??
+          metadata.solicitacaoId
       ),
     },
     index
@@ -2959,6 +3032,7 @@ async function carregarNotificacoesComunidadeSupabase(
   const comentariosComunidade: Record<string, unknown>[] = [];
   const denunciasComunidade: Record<string, unknown>[] = [];
   const seguidoresPerfil: Record<string, unknown>[] = [];
+  const solicitacoesSeguidoresPerfil: Record<string, unknown>[] = [];
   const comentariosCapitulos: Record<string, unknown>[] = [];
   const reviewsComunidade: Record<string, unknown>[] = [];
   const obrasAutor = new Map<
@@ -3072,6 +3146,32 @@ async function carregarNotificacoesComunidadeSupabase(
     }
   } catch {
     // Seguir usuário é social; se falhar, as outras notificações continuam.
+  }
+
+  try {
+    const { data: solicitacoesData } = await supabase
+      .from("solicitacoes_seguidores")
+      .select(
+        "id, solicitante_id, destinatario_id, criado_em, atualizado_em"
+      )
+      .eq("destinatario_id", userId)
+      .order("criado_em", { ascending: false })
+      .limit(60);
+
+    if (Array.isArray(solicitacoesData)) {
+      solicitacoesData.forEach((solicitacao) => {
+        const registro = solicitacao as Record<string, unknown>;
+        const solicitanteId = pegarTexto(registro.solicitante_id);
+
+        solicitacoesSeguidoresPerfil.push(registro);
+
+        if (solicitanteId) {
+          userIdsParaProfiles.add(solicitanteId);
+        }
+      });
+    }
+  } catch {
+    // Solicitações são opcionais; as demais notificações continuam funcionando.
   }
 
   try {
@@ -3268,6 +3368,41 @@ async function carregarNotificacoesComunidadeSupabase(
       autorId: seguidorId,
       autorNome: perfilSeguidor.nome,
       autorAvatar: perfilSeguidor.avatar,
+    });
+  });
+
+  solicitacoesSeguidoresPerfil.forEach((registro) => {
+    const solicitacaoId = pegarTexto(registro.id);
+    const solicitanteId = pegarTexto(registro.solicitante_id);
+
+    if (!solicitacaoId || !solicitanteId) {
+      return;
+    }
+
+    const perfilSolicitante = obterPerfilNotificacao(
+      perfis,
+      solicitanteId,
+      "Usuário"
+    );
+    const id = `solicitacao-seguidor-${solicitacaoId}`;
+
+    notificacoesSociais.push({
+      id,
+      obraId: "",
+      capituloId: "",
+      link: "/seguindo?aba=seguidores&conteudo=seguidores",
+      titulo: "Nova solicitação para seguir",
+      mensagem: `${perfilSolicitante.nome} quer seguir seu perfil.`,
+      tipo: "solicitacao-seguidor",
+      lida: idsLidos.has(id),
+      criadaEm: pegarTexto(
+        registro.criado_em ?? registro.atualizado_em,
+        new Date().toISOString()
+      ),
+      autorId: solicitanteId,
+      autorNome: perfilSolicitante.nome,
+      autorAvatar: perfilSolicitante.avatar,
+      solicitacaoId,
     });
   });
 
@@ -3962,6 +4097,7 @@ export default function NotificacoesPage() {
   const [carregando, setCarregando] = useState(true);
   const [usuarioNotificacoesId, setUsuarioNotificacoesId] = useState("");
   const [menuNotificacaoAbertoId, setMenuNotificacaoAbertoId] = useState("");
+  const [solicitacaoRespondendoId, setSolicitacaoRespondendoId] = useState("");
   const [mostrarPainelOrdenacao, setMostrarPainelOrdenacao] = useState(false);
   const { definirNotificacoesNaoLidas } = useNotificacoes();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -4307,6 +4443,55 @@ export default function NotificacoesPage() {
 
   function abrirNotificacao(id: string) {
     marcarComoLida(id);
+  }
+
+  async function responderSolicitacaoSeguidorNotificacao(
+    notificacao: NotificacaoLocal,
+    aceitar: boolean
+  ) {
+    const solicitacaoId = notificacao.solicitacaoId?.trim() || "";
+
+    if (
+      !solicitacaoId ||
+      !idObraSupabaseValido(solicitacaoId) ||
+      solicitacaoRespondendoId
+    ) {
+      return;
+    }
+
+    setSolicitacaoRespondendoId(solicitacaoId);
+
+    try {
+      const { data, error } = await supabase.rpc(
+        "responder_solicitacao_seguidor",
+        {
+          p_solicitacao_id: solicitacaoId,
+          p_aceitar: aceitar,
+        }
+      );
+
+      if (error || (data !== "aceita" && data !== "recusada")) {
+        window.alert(
+          error?.message || "Não foi possível responder esta solicitação."
+        );
+        return;
+      }
+
+      atualizarNotificacoes(
+        notificacoes.filter(
+          (notificacaoAtual) => notificacaoAtual.id !== notificacao.id
+        )
+      );
+      fecharMenuNotificacao();
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível responder esta solicitação."
+      );
+    } finally {
+      setSolicitacaoRespondendoId("");
+    }
   }
 
   function marcarTodasComoLidas() {
@@ -4963,6 +5148,53 @@ export default function NotificacoesPage() {
                             {textoBlocoSocial}
                           </p>
                         ) : null}
+
+                        {notificacao.tipo === "solicitacao-seguidor" &&
+                        notificacao.solicitacaoId ? (
+                          <div style={followerRequestActionsStyle}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void responderSolicitacaoSeguidorNotificacao(
+                                  notificacao,
+                                  true
+                                )
+                              }
+                              style={
+                                solicitacaoRespondendoId
+                                  ? followerRequestAcceptButtonDisabledStyle
+                                  : followerRequestAcceptButtonStyle
+                              }
+                              disabled={Boolean(solicitacaoRespondendoId)}
+                            >
+                              {solicitacaoRespondendoId ===
+                              notificacao.solicitacaoId
+                                ? "Aceitando..."
+                                : "Aceitar"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void responderSolicitacaoSeguidorNotificacao(
+                                  notificacao,
+                                  false
+                                )
+                              }
+                              style={
+                                solicitacaoRespondendoId
+                                  ? followerRequestRejectButtonDisabledStyle
+                                  : followerRequestRejectButtonStyle
+                              }
+                              disabled={Boolean(solicitacaoRespondendoId)}
+                            >
+                              {solicitacaoRespondendoId ===
+                              notificacao.solicitacaoId
+                                ? "Recusando..."
+                                : "Recusar"}
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
                     ) : (
                       <>
@@ -5034,6 +5266,53 @@ export default function NotificacoesPage() {
                           Abrir perfil
                         </Link>
                       )}
+
+                      {notificacao.tipo === "solicitacao-seguidor" &&
+                      notificacao.solicitacaoId ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void responderSolicitacaoSeguidorNotificacao(
+                                notificacao,
+                                true
+                              )
+                            }
+                            style={
+                              solicitacaoRespondendoId
+                                ? notificationActionsOptionDisabledStyle
+                                : notificationActionsOptionStyle
+                            }
+                            disabled={Boolean(solicitacaoRespondendoId)}
+                          >
+                            {solicitacaoRespondendoId ===
+                            notificacao.solicitacaoId
+                              ? "Aceitando..."
+                              : "Aceitar"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void responderSolicitacaoSeguidorNotificacao(
+                                notificacao,
+                                false
+                              )
+                            }
+                            style={
+                              solicitacaoRespondendoId
+                                ? notificationActionsDangerOptionDisabledStyle
+                                : notificationActionsDangerOptionStyle
+                            }
+                            disabled={Boolean(solicitacaoRespondendoId)}
+                          >
+                            {solicitacaoRespondendoId ===
+                            notificacao.solicitacaoId
+                              ? "Recusando..."
+                              : "Recusar"}
+                          </button>
+                        </>
+                      ) : null}
 
                       {notificacao.lida ? (
                         <button
@@ -6391,6 +6670,45 @@ const communityCommentTextStyle: CSSProperties = {
   fontWeight: 720,
   textAlign: "left",
   ...safeTextStyle,
+};
+
+const followerRequestActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "8px",
+  marginTop: "8px",
+  minWidth: 0,
+};
+
+const followerRequestAcceptButtonStyle: CSSProperties = {
+  minHeight: "36px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.18)",
+  background: "var(--historietas-accent, #7C3AED)",
+  color: "#000000",
+  fontSize: "11px",
+  fontWeight: 950,
+  cursor: "pointer",
+  padding: "0 12px",
+  boxSizing: "border-box",
+};
+
+const followerRequestRejectButtonStyle: CSSProperties = {
+  ...followerRequestAcceptButtonStyle,
+  background: "transparent",
+  color: "var(--historietas-notificacoes-danger-text, #FCA5A5)",
+};
+
+const followerRequestAcceptButtonDisabledStyle: CSSProperties = {
+  ...followerRequestAcceptButtonStyle,
+  opacity: 0.5,
+  cursor: "not-allowed",
+};
+
+const followerRequestRejectButtonDisabledStyle: CSSProperties = {
+  ...followerRequestRejectButtonStyle,
+  opacity: 0.5,
+  cursor: "not-allowed",
 };
 
 const cardActionsStyle: CSSProperties = {

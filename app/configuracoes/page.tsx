@@ -20,8 +20,288 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
-
 type TemaVisual = TemaVisualHistorietas;
+
+type QuemPodeComentarDiario = "todos" | "seguidores" | "ninguem";
+type VisibilidadeAbaPerfil =
+  | "publico"
+  | "seguidores"
+  | "seguindo"
+  | "somente_eu";
+
+type PreferenciasPrivacidadeHistorietas = {
+  perfilPrivado: boolean;
+  aprovarNovosSeguidores: boolean;
+  visibilidadeObras: VisibilidadeAbaPerfil;
+  visibilidadeSobre: VisibilidadeAbaPerfil;
+  visibilidadeDiario: VisibilidadeAbaPerfil;
+  visibilidadeComunidade: VisibilidadeAbaPerfil;
+  visibilidadeBiblioteca: VisibilidadeAbaPerfil;
+  visibilidadeAtividades: VisibilidadeAbaPerfil;
+  anotacoesPrivadasPorPadrao: boolean;
+  quemPodeComentarDiario: QuemPodeComentarDiario;
+};
+
+const PRIVACIDADE_STORAGE_KEY = "historietas-privacidade";
+const PRIVACIDADE_ATUALIZADA_EVENT =
+  "historietas:privacidade-atualizada";
+
+const preferenciasPrivacidadePadrao: PreferenciasPrivacidadeHistorietas = {
+  perfilPrivado: false,
+  aprovarNovosSeguidores: false,
+  visibilidadeObras: "publico",
+  visibilidadeSobre: "publico",
+  visibilidadeDiario: "publico",
+  visibilidadeComunidade: "publico",
+  visibilidadeBiblioteca: "somente_eu",
+  visibilidadeAtividades: "seguidores",
+  anotacoesPrivadasPorPadrao: true,
+  quemPodeComentarDiario: "todos",
+};
+
+function criarChavePrivacidadeUsuario(userId: string) {
+  const userIdLimpo = userId.trim();
+
+  return userIdLimpo
+    ? `${PRIVACIDADE_STORAGE_KEY}:${userIdLimpo}`
+    : PRIVACIDADE_STORAGE_KEY;
+}
+
+function normalizarBooleanoPrivacidade(valor: unknown, fallback: boolean) {
+  return typeof valor === "boolean" ? valor : fallback;
+}
+
+function normalizarVisibilidadeAba(
+  valor: unknown,
+  fallback: VisibilidadeAbaPerfil,
+): VisibilidadeAbaPerfil {
+  return valor === "publico" ||
+    valor === "seguidores" ||
+    valor === "seguindo" ||
+    valor === "somente_eu"
+    ? valor
+    : fallback;
+}
+
+function normalizarQuemPodeComentarDiario(
+  valor: unknown,
+): QuemPodeComentarDiario {
+  return valor === "seguidores" || valor === "ninguem" || valor === "todos"
+    ? valor
+    : preferenciasPrivacidadePadrao.quemPodeComentarDiario;
+}
+
+function normalizarPreferenciasPrivacidade(
+  valor: unknown,
+): PreferenciasPrivacidadeHistorietas {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
+    return { ...preferenciasPrivacidadePadrao };
+  }
+
+  const registro = valor as Record<string, unknown>;
+  const perfilPrivado = normalizarBooleanoPrivacidade(
+    registro.perfilPrivado ?? registro.perfil_privado,
+    preferenciasPrivacidadePadrao.perfilPrivado,
+  );
+  const mostrarObrasLegado = normalizarBooleanoPrivacidade(
+    registro.mostrarObrasParaTodos ?? registro.mostrar_obras_para_todos,
+    true,
+  );
+  const mostrarSobreLegado = normalizarBooleanoPrivacidade(
+    registro.mostrarSobreParaTodos ?? registro.mostrar_sobre_para_todos,
+    true,
+  );
+  const mostrarDiarioLegado = normalizarBooleanoPrivacidade(
+    registro.mostrarDiarioNoPerfil ?? registro.mostrar_diario_perfil,
+    true,
+  );
+  const mostrarAtividadesLegado = normalizarBooleanoPrivacidade(
+    registro.mostrarAtividadesLeitura ?? registro.mostrar_atividades_leitura,
+    true,
+  );
+
+  return {
+    perfilPrivado,
+    aprovarNovosSeguidores: normalizarBooleanoPrivacidade(
+      registro.aprovarNovosSeguidores ?? registro.aprovar_novos_seguidores,
+      preferenciasPrivacidadePadrao.aprovarNovosSeguidores,
+    ),
+    visibilidadeObras: normalizarVisibilidadeAba(
+      registro.visibilidadeObras ?? registro.visibilidade_obras,
+      mostrarObrasLegado ? "publico" : "seguidores",
+    ),
+    visibilidadeSobre: normalizarVisibilidadeAba(
+      registro.visibilidadeSobre ?? registro.visibilidade_sobre,
+      mostrarSobreLegado ? "publico" : "seguidores",
+    ),
+    visibilidadeDiario: normalizarVisibilidadeAba(
+      registro.visibilidadeDiario ?? registro.visibilidade_diario,
+      mostrarDiarioLegado
+        ? perfilPrivado
+          ? "seguidores"
+          : "publico"
+        : "somente_eu",
+    ),
+    visibilidadeComunidade: normalizarVisibilidadeAba(
+      registro.visibilidadeComunidade ?? registro.visibilidade_comunidade,
+      perfilPrivado ? "seguidores" : "publico",
+    ),
+    visibilidadeBiblioteca: normalizarVisibilidadeAba(
+      registro.visibilidadeBiblioteca ?? registro.visibilidade_biblioteca,
+      perfilPrivado ? "seguidores" : "somente_eu",
+    ),
+    visibilidadeAtividades: normalizarVisibilidadeAba(
+      registro.visibilidadeAtividades ?? registro.visibilidade_atividades,
+      mostrarAtividadesLegado
+        ? perfilPrivado
+          ? "seguidores"
+          : "publico"
+        : "somente_eu",
+    ),
+    anotacoesPrivadasPorPadrao: normalizarBooleanoPrivacidade(
+      registro.anotacoesPrivadasPorPadrao ??
+        registro.anotacoes_privadas_padrao,
+      preferenciasPrivacidadePadrao.anotacoesPrivadasPorPadrao,
+    ),
+    quemPodeComentarDiario: normalizarQuemPodeComentarDiario(
+      registro.quemPodeComentarDiario ??
+        registro.quem_pode_comentar_diario,
+    ),
+  };
+}
+
+function carregarPreferenciasPrivacidadeLocal(
+  userId: string,
+): PreferenciasPrivacidadeHistorietas {
+  if (typeof window === "undefined") {
+    return { ...preferenciasPrivacidadePadrao };
+  }
+
+  try {
+    const texto = localStorage.getItem(criarChavePrivacidadeUsuario(userId));
+
+    return texto
+      ? normalizarPreferenciasPrivacidade(JSON.parse(texto))
+      : { ...preferenciasPrivacidadePadrao };
+  } catch {
+    return { ...preferenciasPrivacidadePadrao };
+  }
+}
+
+function salvarPreferenciasPrivacidadeLocal(
+  preferencias: PreferenciasPrivacidadeHistorietas,
+  userId: string,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const preferenciasSeguras = normalizarPreferenciasPrivacidade(preferencias);
+
+    localStorage.setItem(
+      criarChavePrivacidadeUsuario(userId),
+      JSON.stringify(preferenciasSeguras),
+    );
+    window.dispatchEvent(
+      new CustomEvent(PRIVACIDADE_ATUALIZADA_EVENT, {
+        detail: { userId: userId.trim() },
+      }),
+    );
+  } catch {
+    // O Supabase continua sendo a fonte principal quando disponível.
+  }
+}
+
+async function carregarPreferenciasPrivacidade(
+  userId: string,
+  opcoes: { usarFallbackLocal?: boolean } = {},
+): Promise<PreferenciasPrivacidadeHistorietas> {
+  const userIdLimpo = userId.trim();
+  const usarFallbackLocal = opcoes.usarFallbackLocal !== false;
+  const fallback = usarFallbackLocal
+    ? carregarPreferenciasPrivacidadeLocal(userIdLimpo)
+    : { ...preferenciasPrivacidadePadrao };
+
+  if (!userIdLimpo) {
+    return fallback;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("preferencias_privacidade")
+      .select(
+        "perfil_privado,aprovar_novos_seguidores,visibilidade_obras,visibilidade_sobre,visibilidade_diario,visibilidade_comunidade,visibilidade_biblioteca,visibilidade_atividades,anotacoes_privadas_padrao,quem_pode_comentar_diario",
+      )
+      .eq("user_id", userIdLimpo)
+      .maybeSingle();
+
+    if (error || !data) {
+      return fallback;
+    }
+
+    const preferencias = normalizarPreferenciasPrivacidade(data);
+
+    if (usarFallbackLocal) {
+      salvarPreferenciasPrivacidadeLocal(preferencias, userIdLimpo);
+    }
+
+    return preferencias;
+  } catch {
+    return fallback;
+  }
+}
+
+async function salvarPreferenciasPrivacidade(
+  preferencias: PreferenciasPrivacidadeHistorietas,
+  userId: string,
+) {
+  const userIdLimpo = userId.trim();
+  const preferenciasSeguras = normalizarPreferenciasPrivacidade(preferencias);
+
+  salvarPreferenciasPrivacidadeLocal(preferenciasSeguras, userIdLimpo);
+
+  if (!userIdLimpo) {
+    return { ok: false, erro: "Usuário inválido." };
+  }
+
+  try {
+    const { error } = await supabase.from("preferencias_privacidade").upsert(
+      {
+        user_id: userIdLimpo,
+        perfil_privado: preferenciasSeguras.perfilPrivado,
+        aprovar_novos_seguidores:
+          preferenciasSeguras.aprovarNovosSeguidores,
+        visibilidade_obras: preferenciasSeguras.visibilidadeObras,
+        visibilidade_sobre: preferenciasSeguras.visibilidadeSobre,
+        visibilidade_diario: preferenciasSeguras.visibilidadeDiario,
+        visibilidade_comunidade: preferenciasSeguras.visibilidadeComunidade,
+        visibilidade_biblioteca: preferenciasSeguras.visibilidadeBiblioteca,
+        visibilidade_atividades: preferenciasSeguras.visibilidadeAtividades,
+        anotacoes_privadas_padrao:
+          preferenciasSeguras.anotacoesPrivadasPorPadrao,
+        quem_pode_comentar_diario:
+          preferenciasSeguras.quemPodeComentarDiario,
+        atualizado_em: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
+
+    if (error) {
+      return { ok: false, erro: error.message };
+    }
+
+    return { ok: true, erro: "" };
+  } catch (error) {
+    return {
+      ok: false,
+      erro:
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar a privacidade.",
+    };
+  }
+}
 
 function textoIdioma(
   language: HistorietasLanguage,
@@ -61,6 +341,20 @@ const ALIASES_BUSCA_CONFIGURACOES: Record<string, string[]> = {
   senha: ["password", "contrasena"],
   seguranca: ["security", "seguridad"],
   privacidade: ["privacy", "privacidad"],
+  privado: ["private", "privado"],
+  visibilidade: ["visibility", "visibilidad"],
+  publico: ["public", "público"],
+  somente: ["only", "solo"],
+  pessoas: ["people", "personas"],
+  sigo: ["following", "sigo"],
+  anotacoes: ["notes", "anotaciones"],
+  progresso: ["progress", "progreso"],
+  avaliacoes: ["ratings", "reviews", "valoraciones", "resenas"],
+  comentarios: ["comments", "comentarios"],
+  seguidores: ["followers", "seguidores"],
+  aprovacao: ["approval", "aprobacion"],
+  aprovar: ["approve", "aprobar"],
+  solicitacoes: ["requests", "solicitudes"],
   salvar: ["save", "guardar"],
   alteracoes: ["changes", "cambios"],
   configuracoes: ["settings", "configuracion"],
@@ -181,6 +475,7 @@ const CHAVES_RESUMO = [
   "historietas-obras-seguidas",
   "historietas-autores-seguidos",
   "historietas-perfis-autores",
+  "historietas-privacidade",
   THEME_STORAGE_KEY,
 ];
 
@@ -1195,6 +1490,10 @@ export default function ConfiguracoesPage() {
   const [usuario, setUsuario] = useState<UsuarioConfiguracoes | null>(null);
   const [preferencias, setPreferencias] =
     useState<PreferenciasConta>(preferenciasPadrao);
+  const [privacidade, setPrivacidade] =
+    useState<PreferenciasPrivacidadeHistorietas>(
+      preferenciasPrivacidadePadrao,
+    );
   const [resumo, setResumo] = useState<ResumoLocal>(resumoPadrao);
   const [erroUsername, setErroUsername] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -1252,8 +1551,13 @@ export default function ConfiguracoesPage() {
           email: data.user.email || "",
         };
         const preferenciasCarregadas = carregarPreferencias(usuarioCarregado.id);
+        const privacidadeCarregada = await carregarPreferenciasPrivacidade(
+          usuarioCarregado.id,
+          { usarFallbackLocal: true },
+        );
 
         setUsuario(usuarioCarregado);
+        setPrivacidade(privacidadeCarregada);
         setPreferencias({
           ...preferenciasCarregadas,
           nomeExibicao:
@@ -1383,6 +1687,59 @@ export default function ConfiguracoesPage() {
     }));
   }
 
+  function aplicarPrivacidadeAtualizada(
+    privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
+  ) {
+    setPrivacidade(privacidadeAtualizada);
+
+    if (usuarioIdLogado) {
+      void salvarPreferenciasPrivacidade(
+        privacidadeAtualizada,
+        usuarioIdLogado,
+      ).then((resultado) => {
+        if (!resultado.ok) {
+          console.warn(
+            "A privacidade ficou salva neste aparelho, mas não sincronizou:",
+            resultado.erro,
+          );
+        }
+      });
+    }
+  }
+
+  function atualizarPrivacidade<
+    K extends keyof PreferenciasPrivacidadeHistorietas,
+  >(campo: K, valor: PreferenciasPrivacidadeHistorietas[K]) {
+    aplicarPrivacidadeAtualizada({
+      ...privacidade,
+      [campo]: valor,
+    });
+  }
+
+  function alternarPerfilPrivado() {
+    const perfilPrivado = !privacidade.perfilPrivado;
+
+    aplicarPrivacidadeAtualizada({
+      ...privacidade,
+      perfilPrivado,
+      aprovarNovosSeguidores: perfilPrivado
+        ? true
+        : privacidade.aprovarNovosSeguidores,
+    });
+  }
+
+  function alternarAprovacaoNovosSeguidores() {
+    const aprovarNovosSeguidores = !privacidade.aprovarNovosSeguidores;
+
+    aplicarPrivacidadeAtualizada({
+      ...privacidade,
+      aprovarNovosSeguidores,
+      perfilPrivado: aprovarNovosSeguidores
+        ? privacidade.perfilPrivado
+        : false,
+    });
+  }
+
   function atualizarTemaVisual(temaVisual: TemaVisual) {
     const temaSeguro = obterTemaVisualSeguro(temaVisual);
     const preferenciasAtualizadas: PreferenciasConta = {
@@ -1482,6 +1839,18 @@ export default function ConfiguracoesPage() {
       }
 
       salvarPreferencias(preferenciasNormalizadas, userIdSeguro);
+      const resultadoPrivacidade = await salvarPreferenciasPrivacidade(
+        privacidade,
+        userIdSeguro,
+      );
+
+      if (!resultadoPrivacidade.ok) {
+        console.warn(
+          "As preferências de privacidade ficaram salvas neste aparelho, mas não sincronizaram:",
+          resultadoPrivacidade.erro,
+        );
+      }
+
       setPreferencias(preferenciasNormalizadas);
       setUsuario((usuarioAtual) =>
         usuarioAtual
@@ -1761,27 +2130,6 @@ export default function ConfiguracoesPage() {
               />
             ) : null}
 
-            {deveMostrar("privacidade", "conta") ? (
-              <SettingsRow
-                icon="shield"
-                title={t(
-                  "Privacidade da conta",
-                  "Account privacy",
-                  "Privacidad de la cuenta",
-                )}
-                subtitle={t(
-                  "Em breve: público, privado ou seguidores",
-                  "Coming soon: public, private or followers",
-                  "Próximamente: pública, privada o seguidores",
-                )}
-                right={
-                  <ValorLinha>
-                    {t("Em breve", "Coming soon", "Próximamente")}
-                  </ValorLinha>
-                }
-              />
-            ) : null}
-
             {deveMostrar("senha", "segurança") ? (
               <SettingsRow
                 icon="lock"
@@ -1800,6 +2148,422 @@ export default function ConfiguracoesPage() {
                     {t("Conta", "Account", "Cuenta")}
                   </ValorLinha>
                 }
+              />
+            ) : null}
+          </SettingsSection>
+        ) : null}
+
+        {deveMostrar(
+          "privacidade",
+          "perfil",
+          "privado",
+          "seguidores",
+          "aprovação",
+          "solicitações",
+        ) ? (
+          <SettingsSection
+            title={t(
+              "Privacidade do perfil",
+              "Profile privacy",
+              "Privacidad del perfil",
+            )}
+          >
+            {deveMostrar("perfil", "privado", "visibilidade") ? (
+              <SettingsRow
+                icon="lock"
+                title={t(
+                  "Perfil privado",
+                  "Private profile",
+                  "Perfil privado",
+                )}
+                subtitle={t(
+                  "Controla quem pode seguir você. A visibilidade de cada aba é escolhida separadamente abaixo.",
+                  "Controls who can follow you. Each tab's visibility is chosen separately below.",
+                  "Controla quién puede seguirte. La visibilidad de cada pestaña se elige por separado abajo.",
+                )}
+                right={
+                  <Toggle
+                    checked={privacidade.perfilPrivado}
+                    onChange={alternarPerfilPrivado}
+                    ariaLabel={t(
+                      "Ativar ou desativar perfil privado",
+                      "Enable or disable private profile",
+                      "Activar o desactivar el perfil privado",
+                    )}
+                  />
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar(
+              "aprovar",
+              "aprovação",
+              "seguidores",
+              "solicitações",
+            ) ? (
+              <SettingsRow
+                icon="user"
+                title={t(
+                  "Aprovar novos seguidores",
+                  "Approve new followers",
+                  "Aprobar nuevos seguidores",
+                )}
+                subtitle={
+                  privacidade.perfilPrivado
+                    ? t(
+                        "Novos seguidores precisam da sua aprovação",
+                        "New followers need your approval",
+                        "Los nuevos seguidores necesitan tu aprobación",
+                      )
+                    : t(
+                        "Ative para receber solicitações antes de alguém seguir você",
+                        "Turn this on to receive requests before someone follows you",
+                        "Actívalo para recibir solicitudes antes de que alguien te siga",
+                      )
+                }
+                right={
+                  <Toggle
+                    checked={privacidade.aprovarNovosSeguidores}
+                    onChange={alternarAprovacaoNovosSeguidores}
+                    ariaLabel={t(
+                      "Ativar ou desativar aprovação de novos seguidores",
+                      "Enable or disable approval of new followers",
+                      "Activar o desactivar la aprobación de nuevos seguidores",
+                    )}
+                  />
+                }
+                hideChevron
+              />
+            ) : null}
+          </SettingsSection>
+        ) : null}
+
+        {deveMostrar(
+          "privacidade",
+          "visibilidade",
+          "obras",
+          "sobre",
+          "diário",
+          "comunidade",
+          "biblioteca",
+          "atividades",
+          "público",
+          "seguidores",
+          "pessoas que sigo",
+          "somente eu",
+        ) ? (
+          <SettingsSection
+            title={t(
+              "Visibilidade das abas",
+              "Tab visibility",
+              "Visibilidad de las pestañas",
+            )}
+          >
+            {deveMostrar("obras", "publicadas", "visibilidade") ? (
+              <SettingsRow
+                icon="book"
+                title={t("Obras", "Works", "Obras")}
+                subtitle={t(
+                  "Escolha quem pode ver suas obras publicadas no perfil",
+                  "Choose who can see your published works on your profile",
+                  "Elige quién puede ver tus obras publicadas en tu perfil",
+                )}
+                right={
+                  <select
+                    value={privacidade.visibilidadeObras}
+                    onChange={(event) =>
+                      atualizarPrivacidade(
+                        "visibilidadeObras",
+                        event.target.value as VisibilidadeAbaPerfil,
+                      )
+                    }
+                    aria-label={t(
+                      "Visibilidade da aba Obras",
+                      "Works tab visibility",
+                      "Visibilidad de la pestaña Obras",
+                    )}
+                    style={privacySelectStyle}
+                  >
+                    <option value="publico">{t("Público", "Public", "Público")}</option>
+                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
+                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
+                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
+                  </select>
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar("sobre", "perfil", "visibilidade") ? (
+              <SettingsRow
+                icon="file"
+                title={t("Sobre", "About", "Acerca de")}
+                subtitle={t(
+                  "Escolha quem pode ver sua biografia e informações pessoais",
+                  "Choose who can see your biography and personal information",
+                  "Elige quién puede ver tu biografía e información personal",
+                )}
+                right={
+                  <select
+                    value={privacidade.visibilidadeSobre}
+                    onChange={(event) =>
+                      atualizarPrivacidade(
+                        "visibilidadeSobre",
+                        event.target.value as VisibilidadeAbaPerfil,
+                      )
+                    }
+                    aria-label={t(
+                      "Visibilidade da aba Sobre",
+                      "About tab visibility",
+                      "Visibilidad de la pestaña Acerca de",
+                    )}
+                    style={privacySelectStyle}
+                  >
+                    <option value="publico">{t("Público", "Public", "Público")}</option>
+                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
+                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
+                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
+                  </select>
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar("diário", "visibilidade") ? (
+              <SettingsRow
+                icon="pen"
+                title={t("Diário", "Journal", "Diario")}
+                subtitle={t(
+                  "Escolha quem pode ver anotações, avaliações e leituras do Diário",
+                  "Choose who can see Journal notes, ratings and reading entries",
+                  "Elige quién puede ver las anotaciones, valoraciones y lecturas del Diario",
+                )}
+                right={
+                  <select
+                    value={privacidade.visibilidadeDiario}
+                    onChange={(event) =>
+                      atualizarPrivacidade(
+                        "visibilidadeDiario",
+                        event.target.value as VisibilidadeAbaPerfil,
+                      )
+                    }
+                    aria-label={t(
+                      "Visibilidade da aba Diário",
+                      "Journal tab visibility",
+                      "Visibilidad de la pestaña Diario",
+                    )}
+                    style={privacySelectStyle}
+                  >
+                    <option value="publico">{t("Público", "Public", "Público")}</option>
+                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
+                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
+                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
+                  </select>
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar("comunidade", "publicações", "visibilidade") ? (
+              <SettingsRow
+                icon="comment"
+                title={t("Comunidade", "Community", "Comunidad")}
+                subtitle={t(
+                  "Escolha quem pode ver suas publicações e interações da Comunidade",
+                  "Choose who can see your Community posts and interactions",
+                  "Elige quién puede ver tus publicaciones e interacciones de la Comunidad",
+                )}
+                right={
+                  <select
+                    value={privacidade.visibilidadeComunidade}
+                    onChange={(event) =>
+                      atualizarPrivacidade(
+                        "visibilidadeComunidade",
+                        event.target.value as VisibilidadeAbaPerfil,
+                      )
+                    }
+                    aria-label={t(
+                      "Visibilidade da aba Comunidade",
+                      "Community tab visibility",
+                      "Visibilidad de la pestaña Comunidad",
+                    )}
+                    style={privacySelectStyle}
+                  >
+                    <option value="publico">{t("Público", "Public", "Público")}</option>
+                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
+                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
+                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
+                  </select>
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar("biblioteca", "listas", "visibilidade") ? (
+              <SettingsRow
+                icon="bookmark"
+                title={t("Biblioteca", "Library", "Biblioteca")}
+                subtitle={t(
+                  "Escolha quem pode ver suas listas, favoritas e obras concluídas",
+                  "Choose who can see your lists, favorites and completed works",
+                  "Elige quién puede ver tus listas, favoritas y obras completadas",
+                )}
+                right={
+                  <select
+                    value={privacidade.visibilidadeBiblioteca}
+                    onChange={(event) =>
+                      atualizarPrivacidade(
+                        "visibilidadeBiblioteca",
+                        event.target.value as VisibilidadeAbaPerfil,
+                      )
+                    }
+                    aria-label={t(
+                      "Visibilidade da aba Biblioteca",
+                      "Library tab visibility",
+                      "Visibilidad de la pestaña Biblioteca",
+                    )}
+                    style={privacySelectStyle}
+                  >
+                    <option value="publico">{t("Público", "Public", "Público")}</option>
+                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
+                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
+                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
+                  </select>
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar("atividades", "leitura", "visibilidade") ? (
+              <SettingsRow
+                icon="clock"
+                title={t("Atividades", "Activity", "Actividad")}
+                subtitle={t(
+                  "Escolha quem pode ver seu progresso e suas atividades de leitura",
+                  "Choose who can see your reading progress and activity",
+                  "Elige quién puede ver tu progreso y actividad de lectura",
+                )}
+                right={
+                  <select
+                    value={privacidade.visibilidadeAtividades}
+                    onChange={(event) =>
+                      atualizarPrivacidade(
+                        "visibilidadeAtividades",
+                        event.target.value as VisibilidadeAbaPerfil,
+                      )
+                    }
+                    aria-label={t(
+                      "Visibilidade das atividades",
+                      "Activity visibility",
+                      "Visibilidad de la actividad",
+                    )}
+                    style={privacySelectStyle}
+                  >
+                    <option value="publico">{t("Público", "Public", "Público")}</option>
+                    <option value="seguidores">{t("Seguidores", "Followers", "Seguidores")}</option>
+                    <option value="seguindo">{t("Pessoas que sigo", "People I follow", "Personas que sigo")}</option>
+                    <option value="somente_eu">{t("Somente eu", "Only me", "Solo yo")}</option>
+                  </select>
+                }
+                hideChevron
+              />
+            ) : null}
+          </SettingsSection>
+        ) : null}
+
+        {deveMostrar(
+          "diário",
+          "anotações",
+          "comentários",
+          "seguidores",
+        ) ? (
+          <SettingsSection
+            title={t(
+              "Opções do Diário",
+              "Journal options",
+              "Opciones del Diario",
+            )}
+          >
+            {deveMostrar("anotações", "privadas", "padrão") ? (
+              <SettingsRow
+                icon="lock"
+                title={t(
+                  "Anotações privadas por padrão",
+                  "Notes private by default",
+                  "Anotaciones privadas de forma predeterminada",
+                )}
+                subtitle={t(
+                  "Vale para novas anotações; cada uma ainda pode ser alterada",
+                  "Applies to new notes; each one can still be changed",
+                  "Se aplica a nuevas anotaciones; cada una todavía puede cambiarse",
+                )}
+                right={
+                  <Toggle
+                    checked={privacidade.anotacoesPrivadasPorPadrao}
+                    onChange={() =>
+                      atualizarPrivacidade(
+                        "anotacoesPrivadasPorPadrao",
+                        !privacidade.anotacoesPrivadasPorPadrao,
+                      )
+                    }
+                    ariaLabel={t(
+                      "Ativar ou desativar anotações privadas por padrão",
+                      "Enable or disable private notes by default",
+                      "Activar o desactivar anotaciones privadas de forma predeterminada",
+                    )}
+                  />
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar("comentários", "seguidores", "diário") ? (
+              <SettingsRow
+                icon="comment"
+                title={t(
+                  "Quem pode comentar no Diário",
+                  "Who can comment on the Journal",
+                  "Quién puede comentar en el Diario",
+                )}
+                subtitle={t(
+                  "Escolha todos, apenas seguidores ou ninguém",
+                  "Choose everyone, followers only, or no one",
+                  "Elige todos, solo seguidores o nadie",
+                )}
+                right={
+                  <select
+                    value={privacidade.quemPodeComentarDiario}
+                    onChange={(event) =>
+                      atualizarPrivacidade(
+                        "quemPodeComentarDiario",
+                        event.target.value as
+                          PreferenciasPrivacidadeHistorietas["quemPodeComentarDiario"],
+                      )
+                    }
+                    aria-label={t(
+                      "Quem pode comentar no Diário",
+                      "Who can comment on the Journal",
+                      "Quién puede comentar en el Diario",
+                    )}
+                    style={privacySelectStyle}
+                  >
+                    <option value="todos">
+                      {t("Todos", "Everyone", "Todos")}
+                    </option>
+                    <option value="seguidores">
+                      {t(
+                        "Apenas seguidores",
+                        "Followers only",
+                        "Solo seguidores",
+                      )}
+                    </option>
+                    <option value="ninguem">
+                      {t("Ninguém", "No one", "Nadie")}
+                    </option>
+                  </select>
+                }
+                hideChevron
               />
             ) : null}
           </SettingsSection>
@@ -2819,6 +3583,20 @@ const toggleKnobBaseStyle: CSSProperties = {
 
 const toggleKnobOnStyle: CSSProperties = {
   ...toggleKnobBaseStyle,
+};
+
+const privacySelectStyle: CSSProperties = {
+  minWidth: 156,
+  maxWidth: "48vw",
+  minHeight: 38,
+  padding: "7px 30px 7px 10px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.06)",
+  color: "#FFFFFF",
+  fontSize: 12,
+  fontWeight: 800,
+  outline: "none",
 };
 
 const toggleKnobOffStyle: CSSProperties = {

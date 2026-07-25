@@ -1970,6 +1970,20 @@ function idSupabaseValidoComunidade(id: string) {
   );
 }
 
+async function obterUsuarioAutenticadoComunidadeAtual() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error || !data.user?.id?.trim()) {
+      return null;
+    }
+
+    return data.user;
+  } catch {
+    return null;
+  }
+}
+
 async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
   const idsValidos = Array.from(
     new Set(
@@ -2063,37 +2077,45 @@ async function removerReviewComunidadeDoDiario({
   const postIdLimpo = postId.trim();
 
   if (!userIdLimpo || !postIdLimpo) {
-    return;
+    return false;
   }
 
+  let removeuSemErro = false;
+
   try {
-    const { error } = await supabase
+    const { error: erroContains } = await supabase
       .from("diario_atividades")
       .delete()
       .eq("user_id", userIdLimpo)
       .eq("tipo", "publicou_review")
       .contains("metadata", { post_id: postIdLimpo });
 
-    if (!error) {
-      return;
+    if (!erroContains) {
+      removeuSemErro = true;
     }
 
-    const { error: erroFallback } = await supabase
+    const { error: erroCaminhoJson } = await supabase
       .from("diario_atividades")
       .delete()
       .eq("user_id", userIdLimpo)
       .eq("tipo", "publicou_review")
       .eq("metadata->>post_id", postIdLimpo);
 
-    if (erroFallback) {
+    if (!erroCaminhoJson) {
+      removeuSemErro = true;
+    }
+
+    if (erroContains && erroCaminhoJson) {
       console.warn(
         "Não consegui remover a review do Diário:",
-        erroFallback.message
+        erroCaminhoJson.message || erroContains.message
       );
     }
   } catch (error) {
     console.warn("Não consegui acessar o Diário para remover a review:", error);
   }
+
+  return removeuSemErro;
 }
 
 async function registrarReviewComunidadeNoDiario({
@@ -2101,24 +2123,33 @@ async function registrarReviewComunidadeNoDiario({
   texto,
   obraRelacionada,
   postId,
+  criadaEm,
   sugestoesObras,
 }: {
   userId: string;
   texto: string;
   obraRelacionada: string;
   postId: string;
+  criadaEm: string;
   sugestoesObras: ObraRelacionadaSugestao[];
 }) {
   const userIdLimpo = userId.trim();
+  const postIdLimpo = postId.trim();
 
-  if (!userIdLimpo || !postId.trim()) {
-    return;
+  if (!userIdLimpo || !postIdLimpo) {
+    return false;
   }
 
   try {
+    const usuarioAutenticado = await obterUsuarioAutenticadoComunidadeAtual();
+
+    if (!usuarioAutenticado || usuarioAutenticado.id !== userIdLimpo) {
+      return false;
+    }
+
     await removerReviewComunidadeDoDiario({
       userId: userIdLimpo,
-      postId,
+      postId: postIdLimpo,
     });
 
     const obraDiario = obterObraRelacionadaParaDiario(
@@ -2126,6 +2157,10 @@ async function registrarReviewComunidadeNoDiario({
       sugestoesObras
     );
     const obraId = obraDiario?.id?.trim() || "";
+    const dataReview = new Date(criadaEm);
+    const criadaEmValida = Number.isNaN(dataReview.getTime())
+      ? ""
+      : dataReview.toISOString();
     const registroDiario: {
       user_id: string;
       tipo: "publicou_review";
@@ -2137,13 +2172,15 @@ async function registrarReviewComunidadeNoDiario({
         origem: "comunidade";
       };
       obra_id?: string;
+      criado_em?: string;
+      atualizado_em?: string;
     } = {
       user_id: userIdLimpo,
       tipo: "publicou_review",
       texto: texto.trim().slice(0, 420),
       visibilidade: "publico",
       metadata: {
-        post_id: postId,
+        post_id: postIdLimpo,
         obra_relacionada: obraRelacionada.trim().slice(0, 90),
         origem: "comunidade",
       },
@@ -2153,9 +2190,43 @@ async function registrarReviewComunidadeNoDiario({
       registroDiario.obra_id = obraId;
     }
 
-    await supabase.from("diario_atividades").insert(registroDiario);
-  } catch {
-    // A publicação na Comunidade não deve falhar se o Diário não registrar.
+    if (criadaEmValida) {
+      registroDiario.criado_em = criadaEmValida;
+      registroDiario.atualizado_em = criadaEmValida;
+    }
+
+    const { error } = await supabase
+      .from("diario_atividades")
+      .insert(registroDiario);
+
+    if (!error) {
+      return true;
+    }
+
+    const registroFallback = {
+      user_id: registroDiario.user_id,
+      tipo: registroDiario.tipo,
+      texto: registroDiario.texto,
+      visibilidade: registroDiario.visibilidade,
+      metadata: registroDiario.metadata,
+      ...(registroDiario.obra_id ? { obra_id: registroDiario.obra_id } : {}),
+    };
+    const { error: erroFallback } = await supabase
+      .from("diario_atividades")
+      .insert(registroFallback);
+
+    if (erroFallback) {
+      console.warn(
+        "Não consegui registrar a review no Diário:",
+        erroFallback.message
+      );
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn("Não consegui registrar a review no Diário:", error);
+    return false;
   }
 }
 
@@ -3201,6 +3272,9 @@ export default function ComunidadePage() {
   const textoPostRef = useRef<HTMLTextAreaElement | null>(null);
   const obraRelacionadaRef = useRef<HTMLInputElement | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
+  const autenticacaoComunidadeVersaoRef = useRef(0);
+  const reviewsDiarioSincronizadasRef = useRef<Set<string>>(new Set<string>());
+  const usuarioReviewsDiarioRef = useRef("");
   const acoesComunidadeRef = useRef<Set<string>>(new Set<string>());
   const parametrosComunidadeAplicadosRef = useRef(false);
   const comentarioUrlAplicadoRef = useRef(false);
@@ -3375,16 +3449,58 @@ export default function ComunidadePage() {
 
   useEffect(() => {
     let cancelado = false;
+    const timersAutenticacao = new Set<number>();
+
+    function limparEstadoContaAnterior() {
+      setUsuario(null);
+      setUsuarioEhAdmin(false);
+      setPostMenuAbertoId(null);
+      setMenuAcoesRapidasComunidadeAberto(false);
+      setComposerAberto(false);
+      setComentariosPostId(null);
+      setPostsSalvosIds([]);
+      setVotosEnquetes({});
+      setResultadosEnquetes({});
+      setUsuariosSeguidosIds([]);
+      setUsuarioSeguindoId(null);
+      setPostCurtindoId(null);
+      setPostSalvandoId(null);
+      setPostCompartilhandoId(null);
+      setPostRemovendoId(null);
+      setPostFixandoId(null);
+      setDenunciaEnviandoId(null);
+      setFeedbackAcao("");
+      setObraRelacionadaBusca("");
+      setSugestoesObrasAbertas(false);
+      reviewsDiarioSincronizadasRef.current.clear();
+      usuarioReviewsDiarioRef.current = "";
+      acoesComunidadeRef.current.clear();
+
+      if (textoPostRef.current) {
+        textoPostRef.current.value = "";
+      }
+
+      if (obraRelacionadaRef.current) {
+        obraRelacionadaRef.current.value = "";
+      }
+    }
 
     async function carregarUsuario() {
-      window.setTimeout(() => {
-        if (!cancelado) {
-          setCarregandoUsuario(true);
-        }
-      }, 0);
+      const versaoCarregamento =
+        autenticacaoComunidadeVersaoRef.current + 1;
+
+      autenticacaoComunidadeVersaoRef.current = versaoCarregamento;
+      setCarregandoUsuario(true);
 
       try {
         const { data, error: usuarioErro } = await supabase.auth.getUser();
+
+        if (
+          cancelado ||
+          versaoCarregamento !== autenticacaoComunidadeVersaoRef.current
+        ) {
+          return;
+        }
 
         if (usuarioErro) {
           if (!erroEhSessaoAusenteComunidade(usuarioErro)) {
@@ -3394,26 +3510,16 @@ export default function ComunidadePage() {
             );
           }
 
-          window.setTimeout(() => {
-            if (!cancelado) {
-              setUsuario(null);
-              setUsuarioEhAdmin(false);
-            }
-          }, 0);
-
+          setUsuario(null);
+          setUsuarioEhAdmin(false);
           return;
         }
 
         const user = data.user || null;
 
         if (!user) {
-          window.setTimeout(() => {
-            if (!cancelado) {
-              setUsuario(null);
-              setUsuarioEhAdmin(false);
-            }
-          }, 0);
-
+          setUsuario(null);
+          setUsuarioEhAdmin(false);
           return;
         }
 
@@ -3435,40 +3541,59 @@ export default function ComunidadePage() {
         }
 
         try {
-          const { data: adminData } = await supabase.rpc("usuario_e_admin");
-          usuarioAdmin = adminData === true;
+          const { data: adminData, error: adminError } = await supabase.rpc(
+            "usuario_e_admin"
+          );
+
+          usuarioAdmin = !adminError && adminData === true;
         } catch {
           usuarioAdmin = false;
         }
 
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setUsuarioEhAdmin(usuarioAdmin);
-            setUsuario({
-              id: user.id,
-              email: user.email || "",
-              nome: obterNomeUsuario(user.email || "", nomeProfile),
-              avatar: avatarProfile,
-            });
-          }
-        }, 0);
+        if (
+          cancelado ||
+          versaoCarregamento !== autenticacaoComunidadeVersaoRef.current
+        ) {
+          return;
+        }
+
+        const usuarioConfirmado = await obterUsuarioAutenticadoComunidadeAtual();
+
+        if (
+          cancelado ||
+          versaoCarregamento !== autenticacaoComunidadeVersaoRef.current ||
+          !usuarioConfirmado ||
+          usuarioConfirmado.id !== user.id
+        ) {
+          return;
+        }
+
+        setUsuarioEhAdmin(usuarioAdmin);
+        setUsuario({
+          id: user.id,
+          email: user.email || "",
+          nome: obterNomeUsuario(user.email || "", nomeProfile),
+          avatar: avatarProfile,
+        });
       } catch (error) {
         if (!erroEhSessaoAusenteComunidade(error)) {
           console.warn("Não consegui iniciar usuário da Comunidade:", error);
         }
 
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setUsuario(null);
-            setUsuarioEhAdmin(false);
-          }
-        }, 0);
+        if (
+          !cancelado &&
+          versaoCarregamento === autenticacaoComunidadeVersaoRef.current
+        ) {
+          setUsuario(null);
+          setUsuarioEhAdmin(false);
+        }
       } finally {
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setCarregandoUsuario(false);
-          }
-        }, 0);
+        if (
+          !cancelado &&
+          versaoCarregamento === autenticacaoComunidadeVersaoRef.current
+        ) {
+          setCarregandoUsuario(false);
+        }
       }
     }
 
@@ -3477,11 +3602,38 @@ export default function ComunidadePage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
-      void carregarUsuario();
+      autenticacaoComunidadeVersaoRef.current += 1;
+      limparEstadoContaAnterior();
+      setCarregandoUsuario(true);
+      setPosts([]);
+      setCarregandoFeed(true);
+
+      const timer = window.setTimeout(() => {
+        timersAutenticacao.delete(timer);
+
+        if (cancelado) {
+          return;
+        }
+
+        void carregarUsuario();
+
+        const obraFiltroUrl = (
+          new URLSearchParams(window.location.search).get("obra") || ""
+        )
+          .trim()
+          .slice(0, 90);
+
+        void carregarPostsComunidade(true, 0, obraFiltroUrl);
+      }, 0);
+
+      timersAutenticacao.add(timer);
     });
 
     return () => {
       cancelado = true;
+      autenticacaoComunidadeVersaoRef.current += 1;
+      timersAutenticacao.forEach((timer) => window.clearTimeout(timer));
+      timersAutenticacao.clear();
       subscription.unsubscribe();
     };
   }, []);
@@ -3545,6 +3697,66 @@ export default function ComunidadePage() {
       cancelado = true;
     };
   }, [usuario?.id]);
+
+  useEffect(() => {
+    const userId = usuario?.id.trim() || "";
+
+    if (!userId) {
+      reviewsDiarioSincronizadasRef.current.clear();
+      usuarioReviewsDiarioRef.current = "";
+      return;
+    }
+
+    if (usuarioReviewsDiarioRef.current !== userId) {
+      reviewsDiarioSincronizadasRef.current.clear();
+      usuarioReviewsDiarioRef.current = userId;
+    }
+
+    const reviewsPendentes = posts.filter((post) => {
+      return (
+        post.autorId.trim() === userId &&
+        post.tipoPublicacao === "Review" &&
+        !reviewsDiarioSincronizadasRef.current.has(post.id)
+      );
+    });
+
+    if (reviewsPendentes.length === 0) {
+      return;
+    }
+
+    let cancelado = false;
+
+    reviewsPendentes.forEach((post) => {
+      reviewsDiarioSincronizadasRef.current.add(post.id);
+    });
+
+    async function sincronizarReviewsPendentes() {
+      for (const post of reviewsPendentes) {
+        if (cancelado) {
+          return;
+        }
+
+        const sincronizou = await registrarReviewComunidadeNoDiario({
+          userId,
+          texto: post.texto,
+          obraRelacionada: post.obraRelacionada,
+          postId: post.id,
+          criadaEm: post.criadoEm,
+          sugestoesObras: obrasRelacionadasSugestoes,
+        });
+
+        if (!sincronizou) {
+          reviewsDiarioSincronizadasRef.current.delete(post.id);
+        }
+      }
+    }
+
+    void sincronizarReviewsPendentes();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [usuario?.id, posts, obrasRelacionadasSugestoes]);
 
   useEffect(() => {
     if (composerAberto) {
@@ -4700,13 +4912,20 @@ export default function ComunidadePage() {
       setPosts((postsAtuais) => [novoPost, ...postsAtuais]);
 
       if (!publicacaoEhEnquete && tipoPublicacaoPost === "Review") {
-        void registrarReviewComunidadeNoDiario({
+        reviewsDiarioSincronizadasRef.current.add(novoPost.id);
+
+        const reviewSincronizada = await registrarReviewComunidadeNoDiario({
           userId: usuario.id,
           texto: textoLimpo,
           obraRelacionada: obraLimpa,
           postId: novoPost.id,
+          criadaEm: novoPost.criadoEm,
           sugestoesObras: obrasRelacionadasSugestoes,
         });
+
+        if (!reviewSincronizada) {
+          reviewsDiarioSincronizadasRef.current.delete(novoPost.id);
+        }
       }
 
       if (textoPostRef.current) {
@@ -4996,18 +5215,81 @@ export default function ComunidadePage() {
         return;
       }
 
+      const usuarioAutenticado = await obterUsuarioAutenticadoComunidadeAtual();
+      const usuarioAutenticadoId = usuarioAutenticado?.id?.trim() || "";
+      const usuarioEstadoId = usuario.id.trim();
+
+      if (
+        !usuarioAutenticadoId ||
+        usuarioAutenticadoId !== usuarioEstadoId
+      ) {
+        setUsuario(null);
+        setUsuarioEhAdmin(false);
+        setPostMenuAbertoId(null);
+        setErro(
+          "Sua conta mudou. Aguarde a Comunidade atualizar antes de tentar novamente."
+        );
+        return;
+      }
+
       const comentariosDoPost =
         posts.find((post) => post.id === postId)?.comentarios || [];
       const comentarioAtual = comentariosDoPost.find(
         (comentario) => comentario.id === comentarioId
       );
 
-      if (!comentarioAtual || comentarioAtual.autorId !== usuario.id) {
+      if (
+        !comentarioAtual ||
+        comentarioAtual.autorId.trim() !== usuarioAutenticadoId
+      ) {
         setErro("Você só pode remover seus próprios comentários.");
         return;
       }
 
-      if (!window.confirm(traduzirTextoComunidade("Remover este comentário?", language))) {
+      const { data: comentarioBanco, error: comentarioBancoError } =
+        await supabase
+          .from("comunidade_comentarios")
+          .select("id, post_id, autor_id")
+          .eq("id", comentarioId)
+          .maybeSingle();
+
+      if (comentarioBancoError) {
+        setErro(
+          formatarErroSupabase(
+            "Erro ao conferir comentário",
+            comentarioBancoError
+          )
+        );
+        return;
+      }
+
+      if (!comentarioBanco) {
+        setPosts((postsAtuais) =>
+          postsAtuais.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  comentarios: post.comentarios.filter(
+                    (comentario) => comentario.id !== comentarioId
+                  ),
+                }
+              : post
+          )
+        );
+        setErro("Este comentário já não existe.");
+        return;
+      }
+
+      if (comentarioBanco.autor_id !== usuarioAutenticadoId) {
+        setErro("Você só pode remover seus próprios comentários.");
+        return;
+      }
+
+      if (
+        !window.confirm(
+          traduzirTextoComunidade("Remover este comentário?", language)
+        )
+      ) {
         return;
       }
 
@@ -5016,14 +5298,23 @@ export default function ComunidadePage() {
         comentarioId
       );
 
-      const { error } = await supabase
+      const { data: comentariosRemovidos, error } = await supabase
         .from("comunidade_comentarios")
         .delete()
         .eq("id", comentarioId)
-        .eq("autor_id", usuario.id);
+        .eq("autor_id", usuarioAutenticadoId)
+        .select("id");
 
       if (error) {
         setErro(formatarErroSupabase("Erro ao remover comentário", error));
+        return;
+      }
+
+      if (!Array.isArray(comentariosRemovidos) || comentariosRemovidos.length === 0) {
+        setErro(
+          "O comentário não foi removido. A conta atual não possui permissão para essa ação."
+        );
+        await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
         return;
       }
 
@@ -5216,36 +5507,119 @@ export default function ComunidadePage() {
         return;
       }
 
-      if (!window.confirm(traduzirTextoComunidade("Remover esta publicação?", language))) {
+      const usuarioAutenticado = await obterUsuarioAutenticadoComunidadeAtual();
+      const usuarioAutenticadoId = usuarioAutenticado?.id?.trim() || "";
+      const usuarioEstadoId = usuario.id.trim();
+
+      if (
+        !usuarioAutenticadoId ||
+        usuarioAutenticadoId !== usuarioEstadoId
+      ) {
+        setUsuario(null);
+        setUsuarioEhAdmin(false);
+        setPostMenuAbertoId(null);
+        setErro(
+          "Sua conta mudou. Aguarde a Comunidade atualizar antes de tentar novamente."
+        );
         return;
       }
 
-      const postParaRemover =
-        posts.find((post) => post.id === postId) || null;
+      let usuarioAtualEhAdmin = false;
+
+      try {
+        const { data: adminData, error: adminError } = await supabase.rpc(
+          "usuario_e_admin"
+        );
+
+        usuarioAtualEhAdmin = !adminError && adminData === true;
+      } catch {
+        usuarioAtualEhAdmin = false;
+      }
+
+      const { data: postBanco, error: postBancoError } = await supabase
+        .from("comunidade_posts")
+        .select("id, autor_id, tipo_publicacao")
+        .eq("id", postId)
+        .maybeSingle();
+
+      if (postBancoError) {
+        setErro(
+          formatarErroSupabase(
+            "Erro ao conferir publicação",
+            postBancoError
+          )
+        );
+        return;
+      }
+
+      if (!postBanco) {
+        setPosts((postsAtuais) =>
+          postsAtuais.filter((post) => post.id !== postId)
+        );
+        setPostMenuAbertoId(null);
+        setErro("Esta publicação já não existe.");
+        return;
+      }
+
+      const autorPostId = postBanco.autor_id?.trim() || "";
+
+      if (
+        !usuarioAtualEhAdmin &&
+        autorPostId !== usuarioAutenticadoId
+      ) {
+        setPostMenuAbertoId(null);
+        setErro("Você só pode remover suas próprias publicações.");
+        return;
+      }
+
+      if (
+        !window.confirm(
+          traduzirTextoComunidade("Remover esta publicação?", language)
+        )
+      ) {
+        return;
+      }
 
       let removerPostQuery = supabase
         .from("comunidade_posts")
         .delete()
         .eq("id", postId);
 
-      if (!usuarioEhAdmin) {
-        removerPostQuery = removerPostQuery.eq("autor_id", usuario.id);
+      if (!usuarioAtualEhAdmin) {
+        removerPostQuery = removerPostQuery.eq(
+          "autor_id",
+          usuarioAutenticadoId
+        );
       }
 
-      const { error } = await removerPostQuery;
+      const { data: postsRemovidos, error } = await removerPostQuery.select(
+        "id, autor_id, tipo_publicacao"
+      );
 
       if (error) {
         setErro(formatarErroSupabase("Erro ao remover publicação", error));
         return;
       }
 
-      if (postParaRemover?.tipoPublicacao === "Review") {
-        await removerReviewComunidadeDoDiario({
-          userId: postParaRemover.autorId || usuario.id,
-          postId,
-        });
+      if (!Array.isArray(postsRemovidos) || postsRemovidos.length === 0) {
+        setErro(
+          "A publicação não foi removida. A conta atual não possui permissão para essa ação."
+        );
+        await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
+        return;
       }
 
+      const postRemovido = postsRemovidos[0];
+
+      if (postRemovido.tipo_publicacao === "Review") {
+        await removerReviewComunidadeDoDiario({
+          userId: postRemovido.autor_id || autorPostId,
+          postId,
+        });
+        reviewsDiarioSincronizadasRef.current.delete(postId);
+      }
+
+      setUsuarioEhAdmin(usuarioAtualEhAdmin);
       setPosts((postsAtuais) =>
         postsAtuais.filter((post) => post.id !== postId)
       );
@@ -5258,11 +5632,12 @@ export default function ComunidadePage() {
 
       salvarJsonUsuarioComunidade(
         CHAVE_POSTS_SALVOS_COMUNIDADE,
-        usuario.id,
+        usuarioAutenticadoId,
         postsSalvosAtualizados
       );
 
       emitirFeedbackAcao("Publicação removida.");
+      await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
     } finally {
       finalizarAcaoComunidade(chaveAcao);
       setPostRemovendoId((postAtualId) =>
@@ -5728,11 +6103,17 @@ export default function ComunidadePage() {
                     usuario && post.curtidas.includes(usuario.id)
                   );
                   const postSalvo = postsSalvosIds.includes(post.id);
+                  const usuarioAtualId = usuario?.id.trim() || "";
+                  const autorPostId = post.autorId.trim();
                   const podeRemover = Boolean(
-                    usuario && (post.autorId === usuario.id || usuarioEhAdmin)
+                    !carregandoUsuario &&
+                      usuarioAtualId &&
+                      (autorPostId === usuarioAtualId || usuarioEhAdmin)
                   );
                   const podeDenunciarPost = Boolean(
-                    usuario && post.autorId !== usuario.id
+                    !carregandoUsuario &&
+                      usuarioAtualId &&
+                      autorPostId !== usuarioAtualId
                   );
                   const postCurtindo = postCurtindoId === post.id;
                   const postSalvando = postSalvandoId === post.id;

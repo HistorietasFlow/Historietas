@@ -11,6 +11,18 @@ import {
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
+import {
+  cancelarSolicitacaoSeguidor,
+  carregarEstadoRelacionamentoPerfil,
+  carregarPermissoesAbasPerfil,
+  carregarPreferenciasPrivacidade,
+  deixarDeSeguirUsuario,
+  preferenciasPrivacidadePadrao,
+  solicitarOuSeguirUsuario,
+  type EstadoRelacionamentoPerfil,
+  type PermissoesAbasPerfil,
+  type PreferenciasPrivacidadeHistorietas,
+} from "../../lib/historietasPrivacy";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties, ReactNode } from "react";
 
@@ -85,7 +97,31 @@ type PerfilUsuarioRemoto = {
   criadoEm: string;
 };
 
-type AbaPerfilAutor = "obras" | "diario" | "comunidade" | "sobre" | "biblioteca";
+type AbaPerfilAutor =
+  | "obras"
+  | "diario"
+  | "comunidade"
+  | "sobre"
+  | "biblioteca";
+
+const PERMISSOES_ABAS_PERFIL_PADRAO: PermissoesAbasPerfil = {
+  obras: true,
+  sobre: true,
+  diario: true,
+  comunidade: true,
+  biblioteca: false,
+  atividades: false,
+};
+
+const PERMISSOES_ABAS_PERFIL_PROPRIO: PermissoesAbasPerfil = {
+  obras: true,
+  sobre: true,
+  diario: true,
+  comunidade: true,
+  biblioteca: true,
+  atividades: true,
+};
+
 type AbaBibliotecaPerfil =
   | "tudo"
   | "quero-ler"
@@ -1176,6 +1212,34 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
     "en": "Follow",
     "es": "Seguir"
   },
+  "Solicitado": {
+    "en": "Requested",
+    "es": "Solicitado"
+  },
+  "Cancelar solicitação": {
+    "en": "Cancel request",
+    "es": "Cancelar solicitud"
+  },
+  "Perfil privado": {
+    "en": "Private profile",
+    "es": "Perfil privado"
+  },
+  "Conteúdo privado": {
+    "en": "Private content",
+    "es": "Contenido privado"
+  },
+  "Siga este perfil para ver as seções que o autor escolheu manter privadas.": {
+    "en": "Follow this profile to view the sections the author chose to keep private.",
+    "es": "Sigue este perfil para ver las secciones que el autor decidió mantener privadas."
+  },
+  "Este autor manteve todas as seções do perfil privadas.": {
+    "en": "This author has kept all profile sections private.",
+    "es": "Este autor mantuvo privadas todas las secciones del perfil."
+  },
+  "Apenas seguidores aprovados podem ver o Diário, a comunidade, a biblioteca e as atividades deste perfil.": {
+    "en": "Only approved followers can view this profile's Journal, community, library and activity.",
+    "es": "Solo los seguidores aprobados pueden ver el Diario, la comunidad, la biblioteca y la actividad de este perfil."
+  },
   "Nenhum usuário encontrado.": {
     "en": "No users found.",
     "es": "No se encontraron usuarios."
@@ -1599,6 +1663,10 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
   "Atividade recente": {
     "en": "Recent activity",
     "es": "Actividad reciente"
+  },
+  "Atividades": {
+    "en": "Activity",
+    "es": "Actividad"
   },
   "Reviews": {
     "en": "Reviews",
@@ -2275,6 +2343,14 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
   "Perfil removido dos seus seguindo.": {
     "en": "Profile removed from your following list.",
     "es": "Perfil eliminado de tu lista de seguidos."
+  },
+  "Sua solicitação foi enviada.": {
+    "en": "Your follow request was sent.",
+    "es": "Tu solicitud de seguimiento fue enviada."
+  },
+  "Solicitação cancelada.": {
+    "en": "Request canceled.",
+    "es": "Solicitud cancelada."
   },
   "Entre na sua conta para adicionar obras à lista.": {
     "en": "Sign in to add works to the list.",
@@ -2960,6 +3036,25 @@ type DiarioPerfilEstado = {
   atividades: DiarioPerfilItem[];
 };
 
+type PublicacaoComunidadePerfil = {
+  id: string;
+  categoria: string;
+  tipoPublicacao: string;
+  temSpoiler: boolean;
+  texto: string;
+  obraRelacionada: string;
+  criadoEm: string;
+};
+
+type ComunidadePerfilEstado = {
+  carregando: boolean;
+  erro: string;
+  totalPublicacoes: number;
+  totalTeorias: number;
+  totalReviews: number;
+  publicacoesRecentes: PublicacaoComunidadePerfil[];
+};
+
 type ItemBibliotecaPerfil = {
   chave: string;
   obra: ObraLocal;
@@ -3054,6 +3149,21 @@ const diarioPerfilVazio: DiarioPerfilEstado = {
   reviews: [],
   atividades: [],
 };
+
+function aplicarPermissoesAbasAoDiario(
+  diario: Omit<DiarioPerfilEstado, "carregando">,
+  permissoes: PermissoesAbasPerfil,
+): Omit<DiarioPerfilEstado, "carregando"> {
+  return {
+    lendoAgora: permissoes.diario ? diario.lendoAgora : [],
+    queroLer: permissoes.diario ? diario.queroLer : [],
+    favoritas: permissoes.diario ? diario.favoritas : [],
+    concluidas: permissoes.diario ? diario.concluidas : [],
+    avaliacoes: permissoes.diario ? diario.avaliacoes : [],
+    reviews: permissoes.diario ? diario.reviews : [],
+    atividades: permissoes.atividades ? diario.atividades : [],
+  };
+}
 
 
 const avaliacaoAutorVazia: AvaliacaoAutorPublica = {
@@ -5821,6 +5931,124 @@ function criarEstadoDiarioPerfilVazio(): Omit<DiarioPerfilEstado, "carregando"> 
   };
 }
 
+const comunidadePerfilVazia: ComunidadePerfilEstado = {
+  carregando: false,
+  erro: "",
+  totalPublicacoes: 0,
+  totalTeorias: 0,
+  totalReviews: 0,
+  publicacoesRecentes: [],
+};
+
+function normalizarPublicacaoComunidadePerfil(
+  registro: Record<string, unknown>,
+): PublicacaoComunidadePerfil | null {
+  const id = pegarTexto(registro.id);
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    categoria: pegarTexto(registro.categoria, "Geral"),
+    tipoPublicacao: pegarTexto(registro.tipo_publicacao, "Discussão"),
+    temSpoiler: registro.tem_spoiler === true,
+    texto: pegarTexto(registro.texto).slice(0, 700),
+    obraRelacionada: pegarTexto(registro.obra_relacionada).slice(0, 120),
+    criadoEm: pegarTexto(registro.criado_em),
+  };
+}
+
+async function carregarComunidadePerfilSupabase(
+  userId: string,
+): Promise<Omit<ComunidadePerfilEstado, "carregando" | "erro">> {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo || !idAutorSupabaseValido(userIdLimpo)) {
+    return {
+      totalPublicacoes: 0,
+      totalTeorias: 0,
+      totalReviews: 0,
+      publicacoesRecentes: [],
+    };
+  }
+
+  const [publicacoesResposta, teoriasResposta, reviewsResposta] =
+    await Promise.all([
+      supabase
+        .from("comunidade_posts")
+        .select(
+          "id, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em",
+          { count: "exact" },
+        )
+        .eq("autor_id", userIdLimpo)
+        .order("criado_em", { ascending: false })
+        .limit(12),
+      supabase
+        .from("comunidade_posts")
+        .select("id", { count: "exact", head: true })
+        .eq("autor_id", userIdLimpo)
+        .eq("tipo_publicacao", "Teoria"),
+      supabase
+        .from("comunidade_posts")
+        .select("id", { count: "exact", head: true })
+        .eq("autor_id", userIdLimpo)
+        .eq("tipo_publicacao", "Review"),
+    ]);
+
+  if (publicacoesResposta.error) {
+    throw publicacoesResposta.error;
+  }
+
+  const publicacoesRecentes = (
+    (publicacoesResposta.data || []) as unknown as Record<string, unknown>[]
+  )
+    .map((registro) => normalizarPublicacaoComunidadePerfil(registro))
+    .filter(
+      (publicacao): publicacao is PublicacaoComunidadePerfil =>
+        Boolean(publicacao),
+    );
+
+  const totalTeoriasLocal = publicacoesRecentes.filter(
+    (publicacao) => publicacao.tipoPublicacao === "Teoria",
+  ).length;
+  const totalReviewsLocal = publicacoesRecentes.filter(
+    (publicacao) => publicacao.tipoPublicacao === "Review",
+  ).length;
+
+  return {
+    totalPublicacoes:
+      publicacoesResposta.count ?? publicacoesRecentes.length,
+    totalTeorias: teoriasResposta.error
+      ? totalTeoriasLocal
+      : teoriasResposta.count ?? totalTeoriasLocal,
+    totalReviews: reviewsResposta.error
+      ? totalReviewsLocal
+      : reviewsResposta.count ?? totalReviewsLocal,
+    publicacoesRecentes,
+  };
+}
+
+function criarHrefPublicacaoComunidadePerfil(postId: string) {
+  return `/comunidade?post=${encodeURIComponent(postId.trim())}`;
+}
+
+function criarResumoPublicacaoComunidadePerfil(
+  publicacao: PublicacaoComunidadePerfil,
+) {
+  if (publicacao.temSpoiler) {
+    return "Este post contém spoiler";
+  }
+
+  const textoLimpo = publicacao.texto.replace(/\s+/g, " ").trim();
+
+  if (!textoLimpo) {
+    return "Publicação sem texto.";
+  }
+
+  return `${textoLimpo.slice(0, 180)}${textoLimpo.length > 180 ? "..." : ""}`;
+}
 
 function dataDiarioPerfilFormatada(dataIso: string) {
   if (!dataIso) {
@@ -6534,25 +6762,17 @@ async function carregarDiarioPerfilSupabase(
   userId: string,
   obrasDisponiveis: ObraLocal[],
   incluirPrivados: boolean,
+  liberarConteudoDiario: boolean,
+  liberarAtividades: boolean,
 ): Promise<Omit<DiarioPerfilEstado, "carregando">> {
-  const [
-    seguindoObras,
-    favoritos,
-    concluidas,
-    progresso,
-  ] = incluirPrivados
-    ? await Promise.all([
-        carregarRegistrosDiarioPerfil("seguindo_obras", userId),
-        carregarRegistrosDiarioPerfil("favoritos", userId),
-        carregarRegistrosDiarioPerfil("concluidas", userId),
-        carregarRegistrosDiarioPerfil("progresso_leitura", userId),
-      ])
-    : [
-        [] as Record<string, unknown>[],
-        [] as Record<string, unknown>[],
-        [] as Record<string, unknown>[],
-        [] as Record<string, unknown>[],
-      ];
+  const incluirItensDoDiario = incluirPrivados || liberarConteudoDiario;
+  const incluirItensDasAtividades = incluirPrivados || liberarAtividades;
+  const [seguindoObras, favoritos, concluidas, progresso] = await Promise.all([
+    carregarRegistrosDiarioPerfil("seguindo_obras", userId),
+    carregarRegistrosDiarioPerfil("favoritos", userId),
+    carregarRegistrosDiarioPerfil("concluidas", userId),
+    carregarRegistrosDiarioPerfil("progresso_leitura", userId),
+  ]);
 
   const [avaliacoes, diarioAtividades, diarioAnotacoes] = await Promise.all([
     carregarRegistrosDiarioPerfil("obra_avaliacoes", userId),
@@ -6590,7 +6810,7 @@ async function carregarDiarioPerfilSupabase(
   const concluidasIds = new Set(
     concluidas
       .filter((registro) =>
-        registroDiarioPodeAparecer(registro, incluirPrivados, "parcial"),
+        registroDiarioPodeAparecer(registro, incluirItensDoDiario, "parcial"),
       )
       .map((registro) => pegarTexto(registro.obra_id ?? registro.obraId))
       .filter(Boolean),
@@ -6608,7 +6828,7 @@ async function carregarDiarioPerfilSupabase(
   >();
 
   progresso.forEach((registro) => {
-    if (!registroDiarioPodeAparecer(registro, incluirPrivados, "privado")) {
+    if (!registroDiarioPodeAparecer(registro, incluirItensDoDiario, "privado")) {
       return;
     }
 
@@ -6725,7 +6945,7 @@ async function carregarDiarioPerfilSupabase(
   const queroLer = ordenarItensDiarioPerfil(
     seguindoObras
       .filter((registro) =>
-        registroDiarioPodeAparecer(registro, incluirPrivados, "privado"),
+        registroDiarioPodeAparecer(registro, incluirItensDoDiario, "privado"),
       )
       .map((registro) => {
         const obra = obterObraRegistroDiario(registro, obrasPorId, obrasPorCapituloId);
@@ -6753,7 +6973,7 @@ async function carregarDiarioPerfilSupabase(
   const favoritas = ordenarItensDiarioPerfil(
     favoritos
       .filter((registro) =>
-        registroDiarioPodeAparecer(registro, incluirPrivados, "parcial"),
+        registroDiarioPodeAparecer(registro, incluirItensDoDiario, "parcial"),
       )
       .map((registro) => {
         const obra = obterObraRegistroDiario(registro, obrasPorId, obrasPorCapituloId);
@@ -6781,7 +7001,7 @@ async function carregarDiarioPerfilSupabase(
   const concluidasItens = ordenarItensDiarioPerfil(
     concluidas
       .filter((registro) =>
-        registroDiarioPodeAparecer(registro, incluirPrivados, "parcial"),
+        registroDiarioPodeAparecer(registro, incluirItensDoDiario, "parcial"),
       )
       .map((registro) => {
         const obra = obterObraRegistroDiario(registro, obrasPorId, obrasPorCapituloId);
@@ -6809,7 +7029,7 @@ async function carregarDiarioPerfilSupabase(
   const avaliacoesItens = ordenarItensDiarioPerfil(
     avaliacoes
       .filter((registro) =>
-        registroDiarioPodeAparecer(registro, incluirPrivados, "publico"),
+        registroDiarioPodeAparecer(registro, incluirItensDoDiario, "publico"),
       )
       .map((registro) => {
         const obra = obterObraRegistroDiario(registro, obrasPorId, obrasPorCapituloId);
@@ -6836,10 +7056,24 @@ async function carregarDiarioPerfilSupabase(
       .filter((item): item is DiarioPerfilItem => Boolean(item)),
   );
 
+  const atividadesDoDiario = ordenarItensDiarioPerfil(
+    diarioAtividades
+      .filter((registro) =>
+        registroDiarioPodeAparecer(registro, incluirItensDoDiario, "privado"),
+      )
+      .map((registro) =>
+        criarItemAtividadeDiarioPerfil(registro, obrasPorId, obrasPorCapituloId),
+      )
+      .filter((item): item is DiarioPerfilItem => Boolean(item)),
+  );
   const atividadesReais = ordenarItensDiarioPerfil(
     diarioAtividades
       .filter((registro) =>
-        registroDiarioPodeAparecer(registro, incluirPrivados, "privado"),
+        registroDiarioPodeAparecer(
+          registro,
+          incluirItensDasAtividades,
+          "privado",
+        ),
       )
       .map((registro) =>
         criarItemAtividadeDiarioPerfil(registro, obrasPorId, obrasPorCapituloId),
@@ -6847,7 +7081,7 @@ async function carregarDiarioPerfilSupabase(
       .filter((item): item is DiarioPerfilItem => Boolean(item)),
   );
 
-  const reviews = atividadesReais.filter((item) => item.tipo === "review");
+  const reviews = atividadesDoDiario.filter((item) => item.tipo === "review");
 
   const atividades = ordenarItensDiarioPerfil([
     ...atividadesReais,
@@ -7476,20 +7710,31 @@ function PerfilAutorPageContent() {
     useState<AvaliacaoAutorPublica>(avaliacaoAutorVazia);
   const [diarioPerfil, setDiarioPerfil] =
     useState<DiarioPerfilEstado>(diarioPerfilVazio);
+  const [comunidadePerfil, setComunidadePerfil] =
+    useState<ComunidadePerfilEstado>(comunidadePerfilVazia);
+  const [privacidadePerfil, setPrivacidadePerfil] =
+    useState<PreferenciasPrivacidadeHistorietas>(
+      preferenciasPrivacidadePadrao,
+    );
   const [editorAnotacaoDiario, setEditorAnotacaoDiario] =
     useState<EditorAnotacaoDiarioEstado>(editorAnotacaoDiarioVazio);
   const [interacoesAnotacoesDiario, setInteracoesAnotacoesDiario] =
     useState<InteracoesAnotacoesDiarioEstado>({});
   const [, setComentariosAnotacaoDiarioAbertoChave] = useState("");
   const [resumoDiarioAberto, setResumoDiarioAberto] = useState(false);
-  const [reviewsDiarioAberto, setReviewsDiarioAberto] = useState(false);
-  const [atividadesDiarioAberto, setAtividadesDiarioAberto] = useState(false);
+  const [atividadeSobreAberta, setAtividadeSobreAberta] = useState(false);
   const [seguindoUsuarioPerfil, setSeguindoUsuarioPerfil] = useState(false);
   const [seguidoresUsuarioPerfilTotal, setSeguidoresUsuarioPerfilTotal] =
     useState(0);
   const [seguindoUsuarioPerfilTotal, setSeguindoUsuarioPerfilTotal] =
     useState(0);
   const [seguirUsuarioSalvando, setSeguirUsuarioSalvando] = useState(false);
+  const [estadoRelacionamentoPerfil, setEstadoRelacionamentoPerfil] =
+    useState<EstadoRelacionamentoPerfil>("nenhum");
+  const [permissoesAbasPerfil, setPermissoesAbasPerfil] =
+    useState<PermissoesAbasPerfil>(PERMISSOES_ABAS_PERFIL_PADRAO);
+  const [privacidadePerfilCarregando, setPrivacidadePerfilCarregando] =
+    useState(true);
   const [denunciaPerfilAberta, setDenunciaPerfilAberta] = useState(false);
   const [motivoDenunciaPerfil, setMotivoDenunciaPerfil] =
     useState<MotivoDenunciaPerfil>("spam");
@@ -8065,53 +8310,221 @@ function PerfilAutorPageContent() {
     );
   }, [perfilParaMostrar, autorIdSelecionado, autorSelecionado, usuarioIdLogado]);
 
-  const bibliotecaPerfilVisivel = perfilPertenceAoUsuario;
+  const obrasPerfilVisivel =
+    perfilPertenceAoUsuario ||
+    (!privacidadePerfilCarregando && permissoesAbasPerfil.obras);
+  const sobrePerfilVisivel =
+    perfilPertenceAoUsuario ||
+    (!privacidadePerfilCarregando && permissoesAbasPerfil.sobre);
+  const diarioPerfilVisivel =
+    perfilPertenceAoUsuario ||
+    (!privacidadePerfilCarregando && permissoesAbasPerfil.diario);
+  const comunidadePerfilVisivel =
+    perfilPertenceAoUsuario ||
+    (!privacidadePerfilCarregando && permissoesAbasPerfil.comunidade);
+  const bibliotecaPerfilVisivel =
+    perfilPertenceAoUsuario ||
+    (!privacidadePerfilCarregando && permissoesAbasPerfil.biblioteca);
+  const atividadesPerfilVisivel =
+    perfilPertenceAoUsuario ||
+    (!privacidadePerfilCarregando && permissoesAbasPerfil.atividades);
+  const totalAbasPerfilVisiveis =
+    (obrasPerfilVisivel ? 1 : 0) +
+    (diarioPerfilVisivel ? 1 : 0) +
+    (comunidadePerfilVisivel ? 1 : 0) +
+    (sobrePerfilVisivel ? 1 : 0) +
+    (bibliotecaPerfilVisivel ? 1 : 0);
+  const conteudoPrivadoBloqueado = Boolean(
+    !perfilPertenceAoUsuario &&
+      !privacidadePerfilCarregando &&
+      totalAbasPerfilVisiveis === 0,
+  );
+  const primeiraAbaPerfilVisivel: AbaPerfilAutor | null = obrasPerfilVisivel
+    ? "obras"
+    : diarioPerfilVisivel
+      ? "diario"
+      : comunidadePerfilVisivel
+        ? "comunidade"
+        : sobrePerfilVisivel
+          ? "sobre"
+          : bibliotecaPerfilVisivel
+            ? "biblioteca"
+            : null;
 
   useEffect(() => {
     setPodeEditarPerfil(perfilPertenceAoUsuario);
   }, [perfilPertenceAoUsuario]);
 
   useEffect(() => {
-    if (!bibliotecaPerfilVisivel && abaPerfil === "biblioteca") {
-      setAbaPerfil("obras");
+    const userIdPerfil = perfilParaMostrar?.autorId.trim() || "";
+    let cancelado = false;
+
+    async function carregarPrivacidadePerfil() {
+      setPrivacidadePerfilCarregando(true);
+
+      if (!userIdPerfil || !idAutorSupabaseValido(userIdPerfil)) {
+        if (!cancelado) {
+          setPrivacidadePerfil(preferenciasPrivacidadePadrao);
+          setPermissoesAbasPerfil(
+            perfilPertenceAoUsuario
+              ? PERMISSOES_ABAS_PERFIL_PROPRIO
+              : PERMISSOES_ABAS_PERFIL_PADRAO,
+          );
+          setPrivacidadePerfilCarregando(false);
+        }
+
+        return;
+      }
+
+      const preferencias = await carregarPreferenciasPrivacidade(userIdPerfil, {
+        usarFallbackLocal: perfilPertenceAoUsuario,
+      });
+      const permissoes = perfilPertenceAoUsuario
+        ? PERMISSOES_ABAS_PERFIL_PROPRIO
+        : await carregarPermissoesAbasPerfil(userIdPerfil, preferencias);
+
+      if (!cancelado) {
+        setPrivacidadePerfil(preferencias);
+        setPermissoesAbasPerfil(permissoes);
+        setPrivacidadePerfilCarregando(false);
+      }
     }
-  }, [bibliotecaPerfilVisivel, abaPerfil]);
+
+    void carregarPrivacidadePerfil();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [
+    perfilParaMostrar?.autorId,
+    perfilPertenceAoUsuario,
+    estadoRelacionamentoPerfil,
+  ]);
+
+  useEffect(() => {
+    const userIdPerfil = perfilParaMostrar?.autorId.trim() || "";
+    let cancelado = false;
+
+    if (
+      !comunidadePerfilVisivel ||
+      !userIdPerfil ||
+      !idAutorSupabaseValido(userIdPerfil)
+    ) {
+      setComunidadePerfil(comunidadePerfilVazia);
+      return;
+    }
+
+    setComunidadePerfil({
+      ...comunidadePerfilVazia,
+      carregando: true,
+    });
+
+    async function carregarComunidadePerfil() {
+      try {
+        const comunidadeCarregada =
+          await carregarComunidadePerfilSupabase(userIdPerfil);
+
+        if (!cancelado) {
+          setComunidadePerfil({
+            carregando: false,
+            erro: "",
+            ...comunidadeCarregada,
+          });
+        }
+      } catch (error) {
+        console.warn(
+          "Não consegui carregar as publicações da Comunidade deste perfil:",
+          error,
+        );
+
+        if (!cancelado) {
+          setComunidadePerfil({
+            ...comunidadePerfilVazia,
+            erro: "Não foi possível carregar as publicações deste perfil agora.",
+          });
+        }
+      }
+    }
+
+    void carregarComunidadePerfil();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [perfilParaMostrar?.autorId, comunidadePerfilVisivel]);
+
+  useEffect(() => {
+    const abaAtualVisivel =
+      (abaPerfil === "obras" && obrasPerfilVisivel) ||
+      (abaPerfil === "diario" && diarioPerfilVisivel) ||
+      (abaPerfil === "comunidade" && comunidadePerfilVisivel) ||
+      (abaPerfil === "sobre" && sobrePerfilVisivel) ||
+      (abaPerfil === "biblioteca" && bibliotecaPerfilVisivel);
+
+    if (!abaAtualVisivel && primeiraAbaPerfilVisivel) {
+      setAbaPerfil(primeiraAbaPerfilVisivel);
+    }
+  }, [
+    abaPerfil,
+    obrasPerfilVisivel,
+    diarioPerfilVisivel,
+    comunidadePerfilVisivel,
+    sobrePerfilVisivel,
+    bibliotecaPerfilVisivel,
+    primeiraAbaPerfilVisivel,
+  ]);
 
   useEffect(() => {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
+    const usuarioAtualId = usuarioIdLogado.trim();
 
     if (!perfilUserId || !idAutorSupabaseValido(perfilUserId)) {
       setSeguindoUsuarioPerfil(false);
+      setEstadoRelacionamentoPerfil("nenhum");
       return;
     }
 
     let cancelado = false;
 
     async function carregarSeguimentoUsuario() {
-      const estadoSeguimento = await carregarEstadoSeguimentoUsuarioPerfil(
-        usuarioIdLogado,
-        perfilUserId,
-      );
+      const [estadoSeguimento, estadoRelacionamento] = await Promise.all([
+        carregarEstadoSeguimentoUsuarioPerfil(
+          usuarioAtualId,
+          perfilUserId,
+        ),
+        usuarioAtualId && idAutorSupabaseValido(usuarioAtualId)
+          ? carregarEstadoRelacionamentoPerfil(
+              perfilUserId,
+              usuarioAtualId,
+            )
+          : Promise.resolve<EstadoRelacionamentoPerfil>("nenhum"),
+      ]);
 
       if (cancelado) {
         return;
       }
 
-      const seguidoresMinimoPorEstadoAtual = estadoSeguimento.seguindo ? 1 : 0;
+      const seguindoConfirmado =
+        estadoRelacionamento === "seguindo" || estadoSeguimento.seguindo;
+      const estadoSeguro =
+        perfilUserId === usuarioAtualId
+          ? "proprio_perfil"
+          : seguindoConfirmado
+            ? "seguindo"
+            : estadoRelacionamento;
+      const seguidoresMinimoPorEstadoAtual = seguindoConfirmado ? 1 : 0;
       const seguidoresTotalSeguro = Math.max(
         estadoSeguimento.seguidoresTotal,
         seguidoresMinimoPorEstadoAtual,
         seguidoresTotalEstavelRef.current[perfilUserId] || 0,
       );
-      const seguindoTotalSeguro = Math.max(
-        estadoSeguimento.seguindoTotal,
-        seguindoTotalEstavelRef.current[perfilUserId] || 0,
-      );
+      const seguindoTotalSeguro = estadoSeguimento.seguindoTotal;
 
       seguidoresTotalEstavelRef.current[perfilUserId] = seguidoresTotalSeguro;
       seguindoTotalEstavelRef.current[perfilUserId] = seguindoTotalSeguro;
 
-      setSeguindoUsuarioPerfil(estadoSeguimento.seguindo);
+      setEstadoRelacionamentoPerfil(estadoSeguro);
+      setSeguindoUsuarioPerfil(seguindoConfirmado);
       setSeguidoresUsuarioPerfilTotal(seguidoresTotalSeguro);
       setSeguindoUsuarioPerfilTotal(seguindoTotalSeguro);
     }
@@ -8142,8 +8555,12 @@ function PerfilAutorPageContent() {
   const chaveSeguimentoPerfil =
     perfilUserIdParaSeguir || autorChavePerfil || autorNormalizadoParaSeguir;
   const seguindoPerfilAtual = podeUsarSeguimentoUsuario
-    ? seguindoUsuarioPerfil
+    ? estadoRelacionamentoPerfil === "seguindo" || seguindoUsuarioPerfil
     : seguindoAutor;
+  const solicitacaoSeguimentoPendente = Boolean(
+    podeUsarSeguimentoUsuario &&
+      estadoRelacionamentoPerfil === "solicitado",
+  );
   const seguidoresTotal = useMemo(() => {
     const totalMinimoPorSeguimentoAtual =
       seguindoPerfilAtual || seguindoUsuarioPerfil || seguindoAutor ? 1 : 0;
@@ -8176,28 +8593,14 @@ function PerfilAutorPageContent() {
     seguindoAutor,
   ]);
   const seguindoTotalPerfil = useMemo(() => {
-    const totalAtual = podeUsarSeguimentoUsuario
-      ? Math.max(
-          seguindoUsuarioPerfilTotal,
-          podeEditarPerfil ? autoresSeguidos.length : 0,
-        )
-      : podeEditarPerfil
-        ? autoresSeguidos.length
-        : 0;
+    if (podeUsarSeguimentoUsuario) {
+      seguindoTotalEstavelRef.current[chaveSeguimentoPerfil] =
+        seguindoUsuarioPerfilTotal;
 
-    if (!chaveSeguimentoPerfil) {
-      return totalAtual;
+      return seguindoUsuarioPerfilTotal;
     }
 
-    const ultimoTotalValido =
-      seguindoTotalEstavelRef.current[chaveSeguimentoPerfil] || 0;
-    const totalSeguro = Math.max(totalAtual, ultimoTotalValido);
-
-    if (totalSeguro > 0) {
-      seguindoTotalEstavelRef.current[chaveSeguimentoPerfil] = totalSeguro;
-    }
-
-    return totalSeguro;
+    return podeEditarPerfil ? autoresSeguidos.length : 0;
   }, [
     chaveSeguimentoPerfil,
     podeUsarSeguimentoUsuario,
@@ -8364,9 +8767,11 @@ function PerfilAutorPageContent() {
     return Array.from(obrasSelecionadas.values()).slice(0, TOP_FIVE_MAXIMO);
   }, [obras, perfilParaMostrar?.obras, topFiveObraIds]);
 
-  const destaquesPerfilVisivel = podeEditarPerfil
-    ? perfilSalvoAutor.mostrarDestaques
-    : mostrarDestaquesVisitante;
+  const destaquesPerfilVisivel =
+    obrasPerfilVisivel &&
+    (podeEditarPerfil
+      ? perfilSalvoAutor.mostrarDestaques
+      : mostrarDestaquesVisitante);
 
   async function alternarCurtidaTopFivePerfil() {
     const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
@@ -8426,14 +8831,8 @@ function PerfilAutorPageContent() {
 
     async function carregarDiarioPerfil() {
       const userIdPerfil = perfilDiario.autorId.trim();
-      const bibliotecaUsaUsuarioLogado =
-        bibliotecaPerfilVisivel &&
-        abaPerfil === "biblioteca" &&
-        Boolean(usuarioIdLogado.trim());
-      const userIdFonteDiario = bibliotecaUsaUsuarioLogado
-        ? usuarioIdLogado.trim()
-        : userIdPerfil;
-      const incluirItensPrivados = bibliotecaUsaUsuarioLogado || podeEditarPerfil;
+      const userIdFonteDiario = userIdPerfil;
+      const incluirItensPrivados = podeEditarPerfil;
 
       setDiarioPerfil({
         ...diarioPerfilVazio,
@@ -8465,10 +8864,18 @@ function PerfilAutorPageContent() {
         userIdFonteDiario,
         obras,
         incluirItensPrivados,
+        diarioPerfilVisivel,
+        atividadesPerfilVisivel,
       );
-      const diarioFinal = incluirItensPrivados
+      const diarioSemFiltro = incluirItensPrivados
         ? mesclarDiarioPerfilComLocal(diarioSupabase, diarioLocal)
         : diarioSupabase;
+      const diarioFinal = incluirItensPrivados
+        ? diarioSemFiltro
+        : aplicarPermissoesAbasAoDiario(
+            diarioSemFiltro,
+            permissoesAbasPerfil,
+          );
 
       if (!cancelado) {
         setDiarioPerfil({
@@ -8494,6 +8901,7 @@ function PerfilAutorPageContent() {
     abaPerfil,
     usuarioIdLogado,
     versaoSincronizacaoBiblioteca,
+    permissoesAbasPerfil,
   ]);
 
   const anotacoesInterativasIds = useMemo(() => {
@@ -8584,7 +8992,6 @@ function PerfilAutorPageContent() {
   const totalFavoritasDiario = diarioPerfil.favoritas.length;
   const totalConcluidasDiario = diarioPerfil.concluidas.length;
   const totalAvaliacoesDiario = diarioPerfil.avaliacoes.length;
-  const totalReviewsDiario = diarioPerfil.reviews.length;
   useEffect(() => {
     if (!perfilParaMostrar || !autorPodeReceberAvaliacao) {
       setAvaliacaoAutor(avaliacaoAutorVazia);
@@ -9655,44 +10062,46 @@ function PerfilAutorPageContent() {
         return;
       }
 
-      const proximoEstadoSeguindo = !seguindoUsuarioPerfil;
+      const estadoAnterior = estadoRelacionamentoPerfil;
+      const seguindoAntes =
+        estadoAnterior === "seguindo" || seguindoUsuarioPerfil;
 
       setSeguirUsuarioSalvando(true);
-      setSeguindoUsuarioPerfil(proximoEstadoSeguindo);
-      setSeguidoresUsuarioPerfilTotal((totalAtual) => {
-        const proximoTotal = proximoEstadoSeguindo
-          ? totalAtual + 1
-          : Math.max(0, totalAtual - 1);
 
-        seguidoresTotalEstavelRef.current[userIdPerfil] = proximoTotal;
-
-        return proximoTotal;
-      });
-
-      const resultadoSeguimento = await sincronizarUsuarioSeguidoSupabase(
-        userIdAtual,
-        userIdPerfil,
-        proximoEstadoSeguindo,
-      );
+      const resultado =
+        estadoAnterior === "solicitado"
+          ? await cancelarSolicitacaoSeguidor(userIdPerfil)
+          : seguindoAntes
+            ? await deixarDeSeguirUsuario(userIdPerfil)
+            : await solicitarOuSeguirUsuario(userIdPerfil);
 
       setSeguirUsuarioSalvando(false);
 
-      if (!resultadoSeguimento.ok) {
-        setSeguindoUsuarioPerfil(!proximoEstadoSeguindo);
-        setSeguidoresUsuarioPerfilTotal((totalAtual) => {
-          const totalAnterior = proximoEstadoSeguindo
-            ? Math.max(0, totalAtual - 1)
-            : totalAtual + 1;
-
-          seguidoresTotalEstavelRef.current[userIdPerfil] = totalAnterior;
-
-          return totalAnterior;
-        });
-        setMensagemAcao("Não consegui atualizar este seguimento agora.");
+      if (!resultado.ok) {
+        setMensagemAcao(
+          resultado.erro || "Não consegui atualizar este seguimento agora.",
+        );
         return;
       }
 
-      if (proximoEstadoSeguindo) {
+      const novoEstado = resultado.estado;
+      const seguindoDepois = novoEstado === "seguindo";
+
+      setEstadoRelacionamentoPerfil(novoEstado);
+      setSeguindoUsuarioPerfil(seguindoDepois);
+      if (seguindoAntes !== seguindoDepois) {
+        setSeguidoresUsuarioPerfilTotal((totalAtual) => {
+          const proximoTotal = seguindoDepois
+            ? totalAtual + 1
+            : Math.max(0, totalAtual - 1);
+
+          seguidoresTotalEstavelRef.current[userIdPerfil] = proximoTotal;
+
+          return proximoTotal;
+        });
+      }
+
+      if (novoEstado === "seguindo" && !seguindoAntes) {
         const nomeSeguidor =
           perfilDoUsuarioLogado?.nome.trim() || "Um leitor";
         const linkSeguidor = criarPerfilAutorHref(nomeSeguidor, userIdAtual);
@@ -9707,10 +10116,32 @@ function PerfilAutorPageContent() {
         });
       }
 
+      if (novoEstado === "solicitado") {
+        const nomeSolicitante =
+          perfilDoUsuarioLogado?.nome.trim() || "Um leitor";
+        const linkSolicitante = criarPerfilAutorHref(
+          nomeSolicitante,
+          userIdAtual,
+        );
+
+        void criarNotificacaoSocialPerfilAutor({
+          receptorId: userIdPerfil,
+          tipo: "solicitacao-seguidor",
+          titulo: "Nova solicitação de seguidor",
+          mensagem: `${nomeSolicitante} pediu para seguir você.`,
+          link: linkSolicitante,
+          notificacaoId: `solicitacao-seguidor:${userIdAtual}:${userIdPerfil}`,
+        });
+      }
+
       setMensagemAcao(
-        proximoEstadoSeguindo
+        novoEstado === "seguindo"
           ? "Perfil adicionado aos seus seguindo."
-          : "Perfil removido dos seus seguindo.",
+          : novoEstado === "solicitado"
+            ? "Sua solicitação foi enviada."
+            : estadoAnterior === "solicitado"
+              ? "Solicitação cancelada."
+              : "Perfil removido dos seus seguindo.",
       );
       return;
     }
@@ -10125,8 +10556,12 @@ function PerfilAutorPageContent() {
       tipo: item.tipo,
       texto: item.anotacao || "",
       visibilidade: item.anotacao
-        ? item.anotacaoVisibilidade || item.visibilidade || "privado"
-        : "privado",
+        ? (item.anotacaoVisibilidade || item.visibilidade) === "privado"
+          ? "privado"
+          : "publico"
+        : privacidadePerfil.anotacoesPrivadasPorPadrao
+          ? "privado"
+          : "publico",
       salvando: false,
       erro: "",
     });
@@ -10341,8 +10776,22 @@ function PerfilAutorPageContent() {
   ) {
     const anotacaoId = item.anotacaoId?.trim() || "";
     const userId = usuarioIdLogado.trim();
+    const comentarioLiberado =
+      perfilPertenceAoUsuario ||
+      privacidadePerfil.quemPodeComentarDiario === "todos" ||
+      (privacidadePerfil.quemPodeComentarDiario === "seguidores" &&
+        seguindoUsuarioPerfil);
 
     if (!anotacaoId || item.anotacaoVisibilidade === "privado") {
+      return;
+    }
+
+    if (!comentarioLiberado) {
+      setMensagemAcao(
+        privacidadePerfil.quemPodeComentarDiario === "ninguem"
+          ? "Este usuário desativou comentários no Diário."
+          : "Apenas seguidores podem comentar neste Diário.",
+      );
       return;
     }
 
@@ -10788,37 +11237,7 @@ function PerfilAutorPageContent() {
     );
   }
 
-  function renderizarSecaoDiarioRecolhivelPerfil(
-    titulo: string,
-    aberto: boolean,
-    alternar: () => void,
-    itens: DiarioPerfilItem[],
-    vazio: string,
-  ) {
-    return (
-      <section style={diarySectionStyle}>
-        <div style={diaryCollapsibleHeaderStyle}>
-          <strong style={diarySectionTitleStyle}>{titulo}</strong>
-
-          <button
-            type="button"
-            onClick={alternar}
-            style={diaryToggleButtonStyle}
-            aria-expanded={aberto}
-          >
-            <span>{aberto ? "Ocultar" : "Abrir"}</span>
-            <span style={diaryToggleButtonIconStyle}>
-              {aberto ? "↑" : "↓"}
-            </span>
-          </button>
-        </div>
-
-        {aberto && renderizarConteudoSecaoDiarioPerfil(itens, vazio)}
-      </section>
-    );
-  }
-
-  function renderizarAtividadeRecenteDiarioPerfil() {
+  function renderizarAtividadeRecenteSobrePerfil() {
     return (
       <section style={diaryTimelineStyle}>
         <div style={diaryCollapsibleHeaderStyle}>
@@ -10827,20 +11246,27 @@ function PerfilAutorPageContent() {
           <button
             type="button"
             onClick={() =>
-              setAtividadesDiarioAberto((valorAtual) => !valorAtual)
+              setAtividadeSobreAberta((valorAtual) => !valorAtual)
             }
             style={diaryToggleButtonStyle}
-            aria-expanded={atividadesDiarioAberto}
+            aria-label={
+              atividadeSobreAberta
+                ? "Ocultar atividade recente"
+                : "Abrir atividade recente"
+            }
+            aria-expanded={atividadeSobreAberta}
           >
-            <span>{atividadesDiarioAberto ? "Ocultar" : "Abrir"}</span>
+            <span>{atividadeSobreAberta ? "Ocultar" : "Abrir"}</span>
             <span style={diaryToggleButtonIconStyle}>
-              {atividadesDiarioAberto ? "↑" : "↓"}
+              {atividadeSobreAberta ? "↑" : "↓"}
             </span>
           </button>
         </div>
 
-        {atividadesDiarioAberto &&
-          (diarioPerfil.atividades.length === 0 ? (
+        {atividadeSobreAberta &&
+          (diarioPerfil.carregando ? (
+            <LoadingSpinner label="Carregando atividades" compacto />
+          ) : diarioPerfil.atividades.length === 0 ? (
             <div style={diaryEmptyStateStyle}>
               Nenhuma atividade recente para mostrar.
             </div>
@@ -11677,8 +12103,20 @@ function PerfilAutorPageContent() {
                   type="button"
                   onClick={() => void alternarSeguirAutor()}
                   disabled={seguirUsuarioSalvando}
+                  aria-label={
+                    solicitacaoSeguimentoPendente
+                      ? "Cancelar solicitação"
+                      : seguindoPerfilAtual
+                        ? "Deixar de seguir"
+                        : "Seguir"
+                  }
+                  title={
+                    solicitacaoSeguimentoPendente
+                      ? "Cancelar solicitação"
+                      : undefined
+                  }
                   style={{
-                    ...(seguindoPerfilAtual
+                    ...(seguindoPerfilAtual || solicitacaoSeguimentoPendente
                       ? profileActiveButtonStyle
                       : profilePrimaryButtonStyle),
                     opacity: seguirUsuarioSalvando ? 0.58 : 1,
@@ -11687,9 +12125,11 @@ function PerfilAutorPageContent() {
                 >
                   {seguirUsuarioSalvando
                     ? "..."
-                    : seguindoPerfilAtual
-                      ? "Seguindo"
-                      : "Seguir"}
+                    : solicitacaoSeguimentoPendente
+                      ? "Solicitado"
+                      : seguindoPerfilAtual
+                        ? "Seguindo"
+                        : "Seguir"}
                 </button>
 
                 <button
@@ -11700,17 +12140,19 @@ function PerfilAutorPageContent() {
                   Compartilhar
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    setMostrarDestaquesVisitante((valorAtual) => !valorAtual)
-                  }
-                  style={profileSecondaryButtonStyle}
-                >
-                  {mostrarDestaquesVisitante
-                    ? "Ocultar destaque"
-                    : "Mostrar destaque"}
-                </button>
+                {obrasPerfilVisivel && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMostrarDestaquesVisitante((valorAtual) => !valorAtual)
+                    }
+                    style={profileSecondaryButtonStyle}
+                  >
+                    {mostrarDestaquesVisitante
+                      ? "Ocultar destaque"
+                      : "Mostrar destaque"}
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -11940,73 +12382,106 @@ function PerfilAutorPageContent() {
           </section>
         )}
 
-        <div
-          role="tablist"
-          style={{
-            ...profileTabsStyle,
-            gridTemplateColumns: bibliotecaPerfilVisivel
-              ? "repeat(5, minmax(0, 1fr))"
-              : "repeat(4, minmax(0, 1fr))",
-          }}
-          aria-label="Seções do perfil"
-        >
-          <button
-            type="button"
-            onClick={() => setAbaPerfil("obras")}
-            style={
-              abaPerfil === "obras" ? profileTabActiveStyle : profileTabStyle
-            }
+        {totalAbasPerfilVisiveis > 0 && (
+          <div
+            role="tablist"
+            style={{
+              ...profileTabsStyle,
+              gridTemplateColumns: `repeat(${totalAbasPerfilVisiveis}, minmax(0, 1fr))`,
+            }}
+            aria-label="Seções do perfil"
           >
-            Obras
-          </button>
+            {obrasPerfilVisivel && (
+              <button
+                type="button"
+                onClick={() => setAbaPerfil("obras")}
+                style={
+                  abaPerfil === "obras"
+                    ? profileTabActiveStyle
+                    : profileTabStyle
+                }
+              >
+                Obras
+              </button>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setAbaPerfil("diario")}
-            style={
-              abaPerfil === "diario" ? profileTabActiveStyle : profileTabStyle
-            }
+            {diarioPerfilVisivel && (
+              <button
+                type="button"
+                onClick={() => setAbaPerfil("diario")}
+                style={
+                  abaPerfil === "diario"
+                    ? profileTabActiveStyle
+                    : profileTabStyle
+                }
+              >
+                Diário
+              </button>
+            )}
+
+            {comunidadePerfilVisivel && (
+              <button
+                type="button"
+                onClick={() => setAbaPerfil("comunidade")}
+                style={
+                  abaPerfil === "comunidade"
+                    ? profileTabActiveStyle
+                    : profileTabStyle
+                }
+              >
+                Comunidade
+              </button>
+            )}
+
+            {sobrePerfilVisivel && (
+              <button
+                type="button"
+                onClick={() => setAbaPerfil("sobre")}
+                style={
+                  abaPerfil === "sobre"
+                    ? profileTabActiveStyle
+                    : profileTabStyle
+                }
+              >
+                Sobre
+              </button>
+            )}
+
+            {bibliotecaPerfilVisivel && (
+              <button
+                type="button"
+                onClick={() => setAbaPerfil("biblioteca")}
+                style={
+                  abaPerfil === "biblioteca"
+                    ? profileTabActiveStyle
+                    : profileTabStyle
+                }
+              >
+                Biblioteca
+              </button>
+            )}
+
+          </div>
+        )}
+
+        {conteudoPrivadoBloqueado && (
+          <section
+            style={privateProfileNoticeStyle}
+            aria-label="Conteúdo privado"
           >
-            Diário
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setAbaPerfil("comunidade")}
-            style={
-              abaPerfil === "comunidade"
-                ? profileTabActiveStyle
-                : profileTabStyle
-            }
-          >
-            Comunidade
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setAbaPerfil("sobre")}
-            style={
-              abaPerfil === "sobre" ? profileTabActiveStyle : profileTabStyle
-            }
-          >
-            Sobre
-          </button>
-
-          {bibliotecaPerfilVisivel && (
-            <button
-              type="button"
-              onClick={() => setAbaPerfil("biblioteca")}
-              style={
-                abaPerfil === "biblioteca"
-                  ? profileTabActiveStyle
-                  : profileTabStyle
-              }
-            >
-              Biblioteca
-            </button>
-          )}
-        </div>
-
+            <span style={privateProfileLockStyle} aria-hidden="true">
+              🔒
+            </span>
+            <div style={privateProfileNoticeTextBlockStyle}>
+              <strong style={privateProfileNoticeTitleStyle}>
+                Conteúdo privado
+              </strong>
+              <p style={privateProfileNoticeTextStyle}>
+                Este autor manteve todas as seções do perfil privadas.
+              </p>
+            </div>
+          </section>
+        )}
 
         {abaPerfil === "biblioteca" && bibliotecaPerfilVisivel && (
           <section
@@ -12063,7 +12538,7 @@ function PerfilAutorPageContent() {
           </section>
         )}
 
-        {abaPerfil === "diario" && (
+        {abaPerfil === "diario" && diarioPerfilVisivel && (
           <section style={isDesktop ? desktopDiaryBoxStyle : diaryBoxStyle}>
             <div style={diaryTitleToolbarStyle}>
               <h2 style={diaryMainTitleStyle}>
@@ -12119,7 +12594,7 @@ function PerfilAutorPageContent() {
 
                 <div style={diaryStatCardStyle}>
                   <strong style={diaryStatNumberStyle}>
-                    {totalAvaliacoesDiario + totalReviewsDiario}
+                    {totalAvaliacoesDiario}
                   </strong>
                   <span style={diaryStatLabelStyle}>avaliações</span>
                 </div>
@@ -12170,23 +12645,12 @@ function PerfilAutorPageContent() {
                     : "Este perfil ainda não possui avaliações públicas.",
                 )}
 
-                {renderizarSecaoDiarioRecolhivelPerfil(
-                  "Avaliações",
-                  reviewsDiarioAberto,
-                  () => setReviewsDiarioAberto((valorAtual) => !valorAtual),
-                  diarioPerfil.reviews,
-                  podeEditarPerfil
-                    ? "Suas avaliações publicadas na Comunidade aparecerão aqui."
-                    : "Este perfil ainda não publicou avaliações.",
-                )}
-
-                {renderizarAtividadeRecenteDiarioPerfil()}
               </>
             )}
           </section>
         )}
 
-        {abaPerfil === "comunidade" && (
+        {abaPerfil === "comunidade" && comunidadePerfilVisivel && (
           <section
             style={
               isDesktop
@@ -12204,66 +12668,157 @@ function PerfilAutorPageContent() {
               </h2>
             </div>
 
-            <div
-              style={
-                isDesktop
-                  ? desktopAuthorCommunityGridStyle
-                  : authorCommunityGridStyle
-              }
-            >
-              <Link
-                href={comunidadeAutorHref}
-                style={authorCommunityCardStyle}
-                aria-label={`Abrir publicações de ${perfilParaMostrar.nome} na comunidade`}
-              >
-                <strong style={authorCommunityCardNumberStyle}>0</strong>
-                <span style={authorCommunityCardTitleStyle}>PUBLICAÇÕES</span>
-                <span style={authorCommunityCardTextStyle}>posts do perfil</span>
-              </Link>
+            {comunidadePerfil.carregando ? (
+              <LoadingSpinner
+                label="Carregando publicações da Comunidade"
+                compacto
+              />
+            ) : (
+              <>
+                <div
+                  style={
+                    isDesktop
+                      ? desktopAuthorCommunityGridStyle
+                      : authorCommunityGridStyle
+                  }
+                >
+                  <Link
+                    href={comunidadeAutorHref}
+                    style={authorCommunityCardStyle}
+                    aria-label={`Abrir publicações de ${perfilParaMostrar.nome} na comunidade`}
+                  >
+                    <strong style={authorCommunityCardNumberStyle}>
+                      {compactarNumeroPerfilAutor(
+                        comunidadePerfil.totalPublicacoes,
+                      )}
+                    </strong>
+                    <span style={authorCommunityCardTitleStyle}>
+                      PUBLICAÇÕES
+                    </span>
+                    <span style={authorCommunityCardTextStyle}>
+                      posts do perfil
+                    </span>
+                  </Link>
 
-              <Link
-                href={comunidadeAutorTeoriasHref}
-                style={authorCommunityCardStyle}
-                aria-label={`Abrir teorias de ${perfilParaMostrar.nome} na comunidade`}
-              >
-                <strong style={authorCommunityCardNumberStyle}>0</strong>
-                <span style={authorCommunityCardTitleStyle}>TEORIAS</span>
-                <span style={authorCommunityCardTextStyle}>discussões</span>
-              </Link>
+                  <Link
+                    href={comunidadeAutorTeoriasHref}
+                    style={authorCommunityCardStyle}
+                    aria-label={`Abrir teorias de ${perfilParaMostrar.nome} na comunidade`}
+                  >
+                    <strong style={authorCommunityCardNumberStyle}>
+                      {compactarNumeroPerfilAutor(comunidadePerfil.totalTeorias)}
+                    </strong>
+                    <span style={authorCommunityCardTitleStyle}>TEORIAS</span>
+                    <span style={authorCommunityCardTextStyle}>discussões</span>
+                  </Link>
 
-              <Link
-                href={comunidadeAutorReviewsHref}
-                style={authorCommunityCardStyle}
-                aria-label={`Abrir reviews de ${perfilParaMostrar.nome} na comunidade`}
-              >
-                <strong style={authorCommunityCardNumberStyle}>0</strong>
-                <span style={authorCommunityCardTitleStyle}>REVIEWS</span>
-                <span style={authorCommunityCardTextStyle}>opiniões</span>
-              </Link>
-            </div>
+                  <Link
+                    href={comunidadeAutorReviewsHref}
+                    style={authorCommunityCardStyle}
+                    aria-label={`Abrir reviews de ${perfilParaMostrar.nome} na comunidade`}
+                  >
+                    <strong style={authorCommunityCardNumberStyle}>
+                      {compactarNumeroPerfilAutor(comunidadePerfil.totalReviews)}
+                    </strong>
+                    <span style={authorCommunityCardTitleStyle}>REVIEWS</span>
+                    <span style={authorCommunityCardTextStyle}>opiniões</span>
+                  </Link>
+                </div>
 
-            <div style={authorCommunityPreviewStyle}>
-              <span style={authorCommunityPreviewIconStyle}>💬</span>
+                {comunidadePerfil.erro ? (
+                  <div style={authorCommunityPreviewStyle}>
+                    <span style={authorCommunityPreviewIconStyle}>!</span>
 
-              <div style={authorCommunityPreviewTextBlockStyle}>
-                <strong style={authorCommunityPreviewTitleStyle}>
-                  {podeEditarPerfil
-                    ? "Sua comunidade ainda está vazia"
-                    : "Nenhuma publicação por aqui ainda"}
-                </strong>
+                    <div style={authorCommunityPreviewTextBlockStyle}>
+                      <strong style={authorCommunityPreviewTitleStyle}>
+                        Comunidade indisponível
+                      </strong>
+                      <p style={authorCommunityPreviewTextStyle}>
+                        {comunidadePerfil.erro}
+                      </p>
+                    </div>
+                  </div>
+                ) : comunidadePerfil.publicacoesRecentes.length === 0 ? (
+                  <div style={authorCommunityPreviewStyle}>
+                    <span style={authorCommunityPreviewIconStyle}>💬</span>
 
-                <p style={authorCommunityPreviewTextStyle}>
-                  {podeEditarPerfil
-                    ? "Publique avisos, bastidores, teorias e chamadas para aproximar leitores das suas obras."
-                    : `Quando ${perfilParaMostrar.nome} publicar posts, teorias ou reviews, eles aparecerão nesta área.`}
-                </p>
-              </div>
-            </div>
+                    <div style={authorCommunityPreviewTextBlockStyle}>
+                      <strong style={authorCommunityPreviewTitleStyle}>
+                        {podeEditarPerfil
+                          ? "Sua comunidade ainda está vazia"
+                          : "Nenhuma publicação por aqui ainda"}
+                      </strong>
 
+                      <p style={authorCommunityPreviewTextStyle}>
+                        {podeEditarPerfil
+                          ? "Publique avisos, bastidores, teorias e chamadas para aproximar leitores das suas obras."
+                          : `Quando ${perfilParaMostrar.nome} publicar posts, teorias ou reviews, eles aparecerão nesta área.`}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={authorCommunityPostsBlockStyle}>
+                    <strong style={authorCommunityPostsTitleStyle}>
+                      Publicações recentes
+                    </strong>
+
+                    <div
+                      style={
+                        isDesktop
+                          ? desktopAuthorCommunityPostsListStyle
+                          : authorCommunityPostsListStyle
+                      }
+                    >
+                      {comunidadePerfil.publicacoesRecentes.map(
+                        (publicacao) => (
+                          <Link
+                            key={publicacao.id}
+                            href={criarHrefPublicacaoComunidadePerfil(
+                              publicacao.id,
+                            )}
+                            style={authorCommunityPostStyle}
+                            aria-label={`Abrir ${publicacao.tipoPublicacao} na Comunidade`}
+                          >
+                            <span style={authorCommunityPostHeaderStyle}>
+                              <strong style={authorCommunityPostTypeStyle}>
+                                {publicacao.tipoPublicacao}
+                              </strong>
+                              <span style={authorCommunityPostDateStyle}>
+                                {dataDiarioPerfilFormatada(
+                                  publicacao.criadoEm,
+                                )}
+                              </span>
+                            </span>
+
+                            <span
+                              data-historietas-user-content="true"
+                              style={authorCommunityPostTextStyle}
+                            >
+                              {criarResumoPublicacaoComunidadePerfil(
+                                publicacao,
+                              )}
+                            </span>
+
+                            {publicacao.obraRelacionada && (
+                              <span style={authorCommunityPostWorkStyle}>
+                                <span>OBRA</span>
+                                <strong data-historietas-user-content="true">
+                                  {publicacao.obraRelacionada}
+                                </strong>
+                              </span>
+                            )}
+                          </Link>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </section>
         )}
 
-        {abaPerfil === "sobre" && (
+        {abaPerfil === "sobre" && sobrePerfilVisivel && (
           <section style={profileAboutBoxStyle}>
             <div style={profileAboutHeroStyle}>
               <h2 style={profileAboutTitleStyle}>
@@ -12392,10 +12947,13 @@ function PerfilAutorPageContent() {
             <p style={profileAboutMemberSinceStyle}>
               Na Historietas desde {entradaHistorietasPerfil}
             </p>
+
+            {atividadesPerfilVisivel &&
+              renderizarAtividadeRecenteSobrePerfil()}
           </section>
         )}
 
-        {abaPerfil === "obras" && (
+        {abaPerfil === "obras" && obrasPerfilVisivel && (
           <section style={profileWorksSectionStyle}>
             {obrasDoPerfilFiltradas.length === 0 ? (
               <div style={emptyMiniBoxStyle}>
@@ -12984,6 +13542,27 @@ function PerfilAutorPageContent() {
                       />
 
                       <div style={diaryItemAnnotationEditorMetaStyle}>
+                        <label style={diaryItemAnnotationVisibilityLabelStyle}>
+                          <span>Visibilidade</span>
+                          <select
+                            value={editorAnotacaoDiario.visibilidade}
+                            onChange={(event) =>
+                              setEditorAnotacaoDiario((estadoAtual) => ({
+                                ...estadoAtual,
+                                visibilidade: event.target.value === "publico"
+                                  ? "publico"
+                                  : "privado",
+                                erro: "",
+                              }))
+                            }
+                            style={diaryItemAnnotationVisibilitySelectStyle}
+                            disabled={editorAnotacaoDiario.salvando}
+                          >
+                            <option value="privado">Privada</option>
+                            <option value="publico">Pública</option>
+                          </select>
+                        </label>
+
                         <span style={diaryItemAnnotationCounterStyle}>
                           {editorAnotacaoDiario.texto.length}/
                           {DIARIO_ANOTACAO_MAX_LENGTH}
@@ -13496,7 +14075,8 @@ const profileLibraryTabStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "rgba(255,255,255,0.055)",
+  background:
+    "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #070212))",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10.5px",
   fontWeight: 950,
@@ -13509,7 +14089,8 @@ const profileLibraryTabStyle: CSSProperties = {
 
 const profileLibraryTabActiveStyle: CSSProperties = {
   ...profileLibraryTabStyle,
-  background: "var(--historietas-active-surface, var(--historietas-perfil-secondary-18, rgba(124,58,237,0.18)))",
+  background:
+    "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #070212))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   border: "1px solid rgba(255,255,255,0.14)",
 };
@@ -16138,6 +16719,105 @@ const authorCommunityPreviewTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const authorCommunityPostsBlockStyle: CSSProperties = {
+  width: "100%",
+  display: "grid",
+  gap: "7px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+};
+
+const authorCommunityPostsTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "11px",
+  lineHeight: 1.1,
+  fontWeight: 950,
+  textAlign: "left",
+  ...safeTextStyle,
+};
+
+const authorCommunityPostsListStyle: CSSProperties = {
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "6px",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
+const authorCommunityPostStyle: CSSProperties = {
+  minHeight: "104px",
+  padding: "10px",
+  borderRadius: "17px",
+  background: "var(--historietas-perfil-surface, #08030F)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "grid",
+  alignContent: "start",
+  gap: "7px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  textAlign: "left",
+};
+
+const authorCommunityPostHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const authorCommunityPostTypeStyle: CSSProperties = {
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textTransform: "uppercase",
+  letterSpacing: "0.055em",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const authorCommunityPostDateStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "8px",
+  lineHeight: 1,
+  fontWeight: 800,
+  flexShrink: 0,
+};
+
+const authorCommunityPostTextStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #F4F4F5)",
+  fontSize: "10px",
+  lineHeight: 1.35,
+  fontWeight: 800,
+  overflow: "hidden",
+  display: "-webkit-box",
+  WebkitLineClamp: 4,
+  WebkitBoxOrient: "vertical",
+  ...safeTextStyle,
+};
+
+const authorCommunityPostWorkStyle: CSSProperties = {
+  marginTop: "auto",
+  display: "flex",
+  alignItems: "center",
+  gap: "5px",
+  minWidth: 0,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "8px",
+  lineHeight: 1.1,
+  fontWeight: 900,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
 const authorCommunityActionsStyle: CSSProperties = {
   width: "100%",
   display: "grid",
@@ -17185,6 +17865,12 @@ const desktopAuthorCommunityGridStyle: CSSProperties = {
   gap: "8px",
 };
 
+const desktopAuthorCommunityPostsListStyle: CSSProperties = {
+  ...authorCommunityPostsListStyle,
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "8px",
+};
+
 const desktopAuthorCommunityStatsGridStyle: CSSProperties = {
   ...authorCommunityStatsGridStyle,
   gap: "8px",
@@ -17706,6 +18392,27 @@ const diaryItemAnnotationSelectStyle: CSSProperties = {
   outline: "none",
 };
 
+const diaryItemAnnotationVisibilityLabelStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  color: "rgba(255,255,255,0.72)",
+  fontSize: 11,
+  fontWeight: 850,
+};
+
+const diaryItemAnnotationVisibilitySelectStyle: CSSProperties = {
+  minHeight: 32,
+  padding: "5px 26px 5px 9px",
+  borderRadius: 9,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.07)",
+  color: "#FFFFFF",
+  fontSize: 11,
+  fontWeight: 850,
+  outline: "none",
+};
+
 const diaryItemAnnotationCounterStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "7.5px",
@@ -18171,6 +18878,61 @@ const emptyButtonStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   whiteSpace: "normal",
+  ...safeTextStyle,
+};
+
+const privateProfileNoticeStyle: CSSProperties = {
+  width: "100%",
+  margin: "12px 0 0",
+  padding: "13px 14px",
+  borderRadius: "16px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.1))",
+  background:
+    "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
+  display: "flex",
+  alignItems: "center",
+  gap: "11px",
+  boxSizing: "border-box",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxShadow: "0 10px 28px rgba(0,0,0,0.16)",
+};
+
+const privateProfileLockStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "11px",
+  background: "rgba(255,255,255,0.055)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+  fontSize: "15px",
+  lineHeight: 1,
+};
+
+const privateProfileNoticeTextBlockStyle: CSSProperties = {
+  display: "grid",
+  gap: "2px",
+  minWidth: 0,
+};
+
+const privateProfileNoticeTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "13px",
+  lineHeight: 1.25,
+  fontWeight: 900,
+  ...safeTextStyle,
+};
+
+const privateProfileNoticeTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  lineHeight: 1.45,
+  fontWeight: 650,
   ...safeTextStyle,
 };
 

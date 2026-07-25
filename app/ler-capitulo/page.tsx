@@ -4053,7 +4053,7 @@ export default function LerCapituloPage() {
       tipo: "comecou_ler",
       obra: obraAtual,
       capituloId: capituloAtual.id,
-      visibilidade: "privado",
+      visibilidade: "publico",
       texto: `Começou a ler ${obraAtual.titulo}`,
       metadata: {
         capitulo_titulo: capituloAtual.titulo,
@@ -4329,7 +4329,7 @@ export default function LerCapituloPage() {
           tipo: "salvou_obra",
           obra: obraAtual,
           capituloId: capituloAtual.id,
-          visibilidade: "privado",
+          visibilidade: "publico",
           texto: `Salvou ${capituloAtual.titulo}`,
           metadata: {
             capitulo_titulo: capituloAtual.titulo,
@@ -4446,7 +4446,7 @@ export default function LerCapituloPage() {
           tipo: "leu_capitulo",
           obra: obraAtualizada,
           capituloId: capituloAtual.id,
-          visibilidade: "privado",
+          visibilidade: "publico",
           texto: `Leu ${capituloAtual.titulo}`,
           metadata: {
             capitulo_titulo: capituloAtual.titulo,
