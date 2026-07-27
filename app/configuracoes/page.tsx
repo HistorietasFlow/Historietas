@@ -378,9 +378,6 @@ const ALIASES_BUSCA_CONFIGURACOES: Record<string, string[]> = {
   idioma: ["language", "idioma"],
   lingua: ["language", "idioma"],
   receber: ["receive", "recibir"],
-  confortavel: ["comfortable", "comoda"],
-  efeitos: ["effects", "efectos"],
-  reduzir: ["reduce", "reducir"],
   dados: ["data", "datos"],
   backup: ["backup", "copia"],
   copiar: ["copy", "copiar"],
@@ -402,8 +399,6 @@ type PreferenciasConta = {
   username: string;
   emailContato: string;
   receberAvisos: boolean;
-  leituraConfortavel: boolean;
-  reduzirEfeitos: boolean;
   temaVisual: TemaVisual;
 };
 
@@ -484,8 +479,6 @@ const preferenciasPadrao: PreferenciasConta = {
   username: "",
   emailContato: "",
   receberAvisos: true,
-  leituraConfortavel: true,
-  reduzirEfeitos: false,
   temaVisual: "original",
 };
 
@@ -708,14 +701,6 @@ function carregarPreferencias(userId = ""): PreferenciasConta {
         typeof preferencias.receberAvisos === "boolean"
           ? preferencias.receberAvisos
           : true,
-      leituraConfortavel:
-        typeof preferencias.leituraConfortavel === "boolean"
-          ? preferencias.leituraConfortavel
-          : true,
-      reduzirEfeitos:
-        typeof preferencias.reduzirEfeitos === "boolean"
-          ? preferencias.reduzirEfeitos
-          : false,
       temaVisual: temaVisualSalvo,
     };
   } catch {
@@ -2177,9 +2162,9 @@ export default function ConfiguracoesPage() {
                   "Perfil privado",
                 )}
                 subtitle={t(
-                  "Controla quem pode seguir você. A visibilidade de cada aba é escolhida separadamente abaixo.",
-                  "Controls who can follow you. Each tab's visibility is chosen separately below.",
-                  "Controla quién puede seguirte. La visibilidad de cada pestaña se elige por separado abajo.",
+                  "Controla quem pode seguir você.",
+                  "Controls who can follow you.",
+                  "Controla quién puede seguirte.",
                 )}
                 right={
                   <Toggle
@@ -2526,11 +2511,6 @@ export default function ConfiguracoesPage() {
                   "Who can comment on the Journal",
                   "Quién puede comentar en el Diario",
                 )}
-                subtitle={t(
-                  "Escolha todos, apenas seguidores ou ninguém",
-                  "Choose everyone, followers only, or no one",
-                  "Elige todos, solo seguidores o nadie",
-                )}
                 right={
                   <select
                     value={privacidade.quemPodeComentarDiario}
@@ -2715,7 +2695,6 @@ export default function ConfiguracoesPage() {
           "preferências",
           "tema",
           "aparência",
-          "efeitos",
           "avisos",
           "idioma",
           "língua",
@@ -2731,18 +2710,18 @@ export default function ConfiguracoesPage() {
                   "Site language",
                   "Idioma del sitio",
                 )}
-                subtitle={t(
-                  "Escolha Português, English ou Español",
-                  "Choose Português, English or Español",
-                  "Elige Português, English o Español",
-                )}
                 right={
                   <LanguageSelect
                     showLabel={false}
-                    style={{ width: "150px", maxWidth: "42vw" }}
+                    style={{
+                      width: "clamp(120px, 34vw, 128px)",
+                      maxWidth: "100%",
+                      transform: "translateX(22px)",
+                    }}
                     selectStyle={{
+                      width: "100%",
                       minHeight: 38,
-                      padding: "7px 10px",
+                      padding: "7px 8px",
                       borderRadius: 10,
                       fontSize: 13,
                     }}
@@ -2760,11 +2739,6 @@ export default function ConfiguracoesPage() {
                     "Tema visual",
                     "Visual theme",
                     "Tema visual",
-                  )}
-                  subtitle={t(
-                    "Escolha entre o visual original e o modo foco",
-                    "Choose between the original look and focus mode",
-                    "Elige entre el diseño original y el modo enfoque",
                   )}
                   right={<ValorLinha>{temaAtual.nome}</ValorLinha>}
                   onClick={() => setMostrarTemas((atual) => !atual)}
@@ -2862,71 +2836,6 @@ export default function ConfiguracoesPage() {
               />
             ) : null}
 
-            {deveMostrar("leitura", "confortável") ? (
-              <SettingsRow
-                icon="moon"
-                title={t(
-                  "Leitura confortável",
-                  "Comfortable reading",
-                  "Lectura cómoda",
-                )}
-                subtitle={t(
-                  "Reduz contraste e deixa a leitura mais suave",
-                  "Reduces contrast and makes reading softer",
-                  "Reduce el contraste y suaviza la lectura",
-                )}
-                right={
-                  <Toggle
-                    checked={preferencias.leituraConfortavel}
-                    onChange={() =>
-                      atualizarPreferencia(
-                        "leituraConfortavel",
-                        !preferencias.leituraConfortavel,
-                      )
-                    }
-                    ariaLabel={t(
-                      "Ativar ou desativar leitura confortável",
-                      "Enable or disable comfortable reading",
-                      "Activar o desactivar la lectura cómoda",
-                    )}
-                  />
-                }
-                hideChevron
-              />
-            ) : null}
-
-            {deveMostrar("efeitos", "reduzir") ? (
-              <SettingsRow
-                icon="spark"
-                title={t(
-                  "Reduzir efeitos",
-                  "Reduce effects",
-                  "Reducir efectos",
-                )}
-                subtitle={t(
-                  "Diminui brilhos, transições e animações",
-                  "Reduces glows, transitions and animations",
-                  "Reduce brillos, transiciones y animaciones",
-                )}
-                right={
-                  <Toggle
-                    checked={preferencias.reduzirEfeitos}
-                    onChange={() =>
-                      atualizarPreferencia(
-                        "reduzirEfeitos",
-                        !preferencias.reduzirEfeitos,
-                      )
-                    }
-                    ariaLabel={t(
-                      "Ativar ou desativar redução de efeitos",
-                      "Enable or disable reduced effects",
-                      "Activar o desactivar la reducción de efectos",
-                    )}
-                  />
-                }
-                hideChevron
-              />
-            ) : null}
           </SettingsSection>
         ) : null}
 
@@ -3586,10 +3495,11 @@ const toggleKnobOnStyle: CSSProperties = {
 };
 
 const privacySelectStyle: CSSProperties = {
-  minWidth: 156,
-  maxWidth: "48vw",
+  width: "clamp(120px, 34vw, 128px)",
+  minWidth: 0,
+  maxWidth: "100%",
   minHeight: 38,
-  padding: "7px 30px 7px 10px",
+  padding: "7px 20px 7px 8px",
   borderRadius: 10,
   border: "1px solid rgba(255,255,255,0.14)",
   background: "rgba(255,255,255,0.06)",
@@ -3597,6 +3507,7 @@ const privacySelectStyle: CSSProperties = {
   fontSize: 12,
   fontWeight: 800,
   outline: "none",
+  transform: "translateX(22px)",
 };
 
 const toggleKnobOffStyle: CSSProperties = {

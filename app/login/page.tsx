@@ -725,8 +725,6 @@ export default function LoginPage() {
 
       <section style={containerStyle}>
         <header style={topStyle}>
-          <span aria-hidden="true" />
-
           <Link href="/" style={logoStyle} aria-label={t("backHome")}>
             <span style={logoMarkStyle}>H</span>
             <span className="historietas-theme-logo-text" style={logoTextStyle}>
@@ -734,11 +732,13 @@ export default function LoginPage() {
             </span>
           </Link>
 
-          <LanguageSelect
-            showLabel={false}
-            style={languageSelectWrapperStyle}
-            selectStyle={languageSelectStyle}
-          />
+          <div style={languageSelectShellStyle}>
+            <LanguageSelect
+              showLabel={false}
+              style={languageSelectWrapperStyle}
+              selectStyle={languageSelectStyle}
+            />
+          </div>
         </header>
 
         <section style={heroStyle}>
@@ -1007,25 +1007,31 @@ const containerStyle: CSSProperties = {
 };
 
 const topStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
+  display: "flex",
   alignItems: "center",
+  justifyContent: "space-between",
   gap: "10px",
   marginBottom: "10px",
   minWidth: 0,
 };
 
-const languageSelectWrapperStyle: CSSProperties = {
-  width: "clamp(96px, 24vw, 122px)",
+const languageSelectShellStyle: CSSProperties = {
+  position: "relative",
+  width: "108px",
   minWidth: 0,
   justifySelf: "end",
+};
+
+const languageSelectWrapperStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
 };
 
 const languageSelectStyle: CSSProperties = {
   minHeight: "36px",
   height: "36px",
-  padding: "0 10px",
-  borderRadius: "999px",
+  padding: "0 8px",
+  borderRadius: "12px",
   border:
     "1px solid var(--historietas-login-purple-border, rgba(59, 7, 100, 0.58))",
   background: "var(--historietas-login-bg-deep, #04000A)",
@@ -1103,7 +1109,7 @@ const heroContentStyle: CSSProperties = {
   justifyItems: "center",
   alignItems: "center",
   gap: "clamp(14px, 2.8vw, 26px)",
-  transform: "translateY(clamp(8px, 1.8vh, 18px))",
+  transform: "translateY(clamp(16px, 2.4vh, 26px))",
   minWidth: 0,
 };
 

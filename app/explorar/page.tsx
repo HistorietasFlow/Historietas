@@ -793,6 +793,70 @@ function criarPerfilAutorHrefExplorar(autor: string, autorId?: string) {
   return query ? `/perfil-autor?${query}` : "/perfil-autor";
 }
 
+function criarHrefListaExplorar({
+  titulo,
+  modo,
+  genero = "",
+}: {
+  titulo: string;
+  modo: ModoConteudoExplorar;
+  genero?: string;
+}) {
+  const parametros = new URLSearchParams();
+  const tituloLimpo = titulo.trim();
+  const generoLimpo = genero.trim();
+  const tituloNormalizado = normalizarTexto(tituloLimpo);
+
+  parametros.set("modo", modo);
+
+  if (tituloLimpo) {
+    parametros.set("titulo", tituloLimpo);
+  }
+
+  if (generoLimpo) {
+    parametros.set("genero", generoLimpo);
+  }
+
+  if (modo === "autores") {
+    parametros.set("secao", "autores");
+
+    if (tituloNormalizado === "mais bem avaliados") {
+      parametros.set("ordem", "avaliacao");
+    } else if (tituloNormalizado === "autores em destaque") {
+      parametros.set("ordem", "popularidade");
+    } else {
+      parametros.set("ordem", "recentes");
+    }
+
+    return `/listas?${parametros.toString()}`;
+  }
+
+  if (tituloNormalizado === "recomendacoes para voce") {
+    parametros.set("secao", "recomendacoes");
+    parametros.set("ordem", "popularidade");
+  } else if (tituloNormalizado === "publicacoes recentes") {
+    parametros.set("secao", "recentes");
+    parametros.set("ordem", "recentes");
+  } else if (tituloNormalizado === "novos capitulos") {
+    parametros.set("secao", "novos-capitulos");
+    parametros.set("ordem", "recentes");
+  } else if (tituloNormalizado === "mais curtidas") {
+    parametros.set("secao", "mais-curtidas");
+    parametros.set("ordem", "popularidade");
+  } else if (tituloNormalizado === "mais comentadas") {
+    parametros.set("secao", "mais-comentadas");
+    parametros.set("ordem", "popularidade");
+  } else if (tituloNormalizado === "para ler agora") {
+    parametros.set("secao", "para-ler-agora");
+    parametros.set("ordem", "recentes");
+  } else {
+    parametros.set("secao", "catalogo");
+    parametros.set("ordem", "recentes");
+  }
+
+  return `/listas?${parametros.toString()}`;
+}
+
 function obterNomeProfileExplorar(profile: PerfilExplorarRow) {
   return typeof profile.nome === "string" && profile.nome.trim()
     ? profile.nome.trim()
@@ -3454,6 +3518,10 @@ export default function ExplorarPage() {
                 title={secao.titulo}
                 tema={temaPagina}
                 isDesktop={isDesktop}
+                href={criarHrefListaExplorar({
+                  titulo: secao.titulo,
+                  modo: "obras",
+                })}
               />
 
               <ExplorarCarouselRow isDesktop={isDesktop} variant="obra">
@@ -3497,6 +3565,11 @@ export default function ExplorarPage() {
                 title={obterTituloCriativoObrasExplorar(secao.genero)}
                 tema={obterTemaCategoria(secao.genero, temaVisual)}
                 isDesktop={isDesktop}
+                href={criarHrefListaExplorar({
+                  titulo: obterTituloCriativoObrasExplorar(secao.genero),
+                  modo: "obras",
+                  genero: secao.genero,
+                })}
               />
 
               <ExplorarCarouselRow isDesktop={isDesktop} variant="obra">
@@ -3575,6 +3648,10 @@ export default function ExplorarPage() {
                 title={secao.titulo}
                 tema={temaPagina}
                 isDesktop={isDesktop}
+                href={criarHrefListaExplorar({
+                  titulo: secao.titulo,
+                  modo: "autores",
+                })}
               />
 
               <ExplorarCarouselRow isDesktop={isDesktop} variant="autor">
@@ -3601,6 +3678,11 @@ export default function ExplorarPage() {
                 title={obterTituloCriativoAutoresExplorar(secao.genero)}
                 tema={obterTemaCategoria(secao.genero, temaVisual)}
                 isDesktop={isDesktop}
+                href={criarHrefListaExplorar({
+                  titulo: obterTituloCriativoAutoresExplorar(secao.genero),
+                  modo: "autores",
+                  genero: secao.genero,
+                })}
               />
 
               <ExplorarCarouselRow isDesktop={isDesktop} variant="autor">
@@ -3693,22 +3775,48 @@ function SectionHeader({
   title,
   tema,
   isDesktop,
+  href,
 }: {
   title: string;
   tema: ReturnType<typeof obterTemaCategoria>;
   isDesktop?: boolean;
+  href?: string;
 }) {
   const { language } = useHistorietasLanguage();
+  const tituloTraduzido = traduzirTextoExplorar(title, language);
   const titleStyleTema: CSSProperties = {
     ...(isDesktop ? desktopSectionTitleStyle : sectionTitleStyle),
     background: "none",
     color: "#FFFFFF",
     textAlign: "center",
   };
+  const ariaLabelMais =
+    language === "en"
+      ? `View all in ${tituloTraduzido}`
+      : language === "es"
+        ? `Ver todo en ${tituloTraduzido}`
+        : `Ver tudo em ${tituloTraduzido}`;
+
+  void tema;
 
   return (
     <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-      <h2 style={titleStyleTema}>{traduzirTextoExplorar(title, language)}</h2>
+      <span style={sectionHeaderSpacerStyle} aria-hidden="true" />
+
+      <h2 style={titleStyleTema}>{tituloTraduzido}</h2>
+
+      {href ? (
+        <Link
+          href={href}
+          style={isDesktop ? desktopSectionMoreLinkStyle : sectionMoreLinkStyle}
+          aria-label={ariaLabelMais}
+          title={ariaLabelMais}
+        >
+          +
+        </Link>
+      ) : (
+        <span style={sectionHeaderSpacerStyle} aria-hidden="true" />
+      )}
     </div>
   );
 }
@@ -5096,13 +5204,46 @@ const sectionStyle: CSSProperties = {
 
 const sectionHeaderStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  justifyItems: "center",
+  gridTemplateColumns: "38px minmax(0, 1fr) 38px",
+  alignItems: "center",
   gap: "6px",
   marginBottom: "14px",
   maxWidth: "100%",
   minWidth: 0,
   textAlign: "center",
+};
+
+const sectionHeaderSpacerStyle: CSSProperties = {
+  display: "block",
+  width: "38px",
+  height: "38px",
+};
+
+const sectionMoreLinkStyle: CSSProperties = {
+  width: "38px",
+  height: "38px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  justifySelf: "end",
+  border: 0,
+  borderRadius: "999px",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontSize: "30px",
+  lineHeight: 1,
+  fontWeight: 500,
+  textDecoration: "none",
+  cursor: "pointer",
+  boxSizing: "border-box",
+  fontFamily: "inherit",
+};
+
+const desktopSectionMoreLinkStyle: CSSProperties = {
+  ...sectionMoreLinkStyle,
+  width: "42px",
+  height: "42px",
+  fontSize: "32px",
 };
 
 const sectionTitleStyle: CSSProperties = {

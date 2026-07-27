@@ -912,7 +912,7 @@ function corrigirTextoQuebrado(texto: string) {
   let textoCorrigido = texto;
 
   for (let tentativa = 0; tentativa < 2; tentativa += 1) {
-    if (!/[ÃÂâð�]/.test(textoCorrigido)) {
+    if (!/[ÃÂâð ]/.test(textoCorrigido)) {
       break;
     }
 
@@ -932,7 +932,7 @@ function corrigirTextoQuebrado(texto: string) {
     }
   }
 
-  return textoCorrigido.replace(/�/g, "");
+  return textoCorrigido.replace(/ /g, "");
 }
 
 function limparTextoExibicao(valor: string) {
@@ -1299,9 +1299,12 @@ function carregarNotificacoes(userId = ""): NotificacaoLocal[] {
       return [];
     }
 
-    const notificacoesNormalizadas = notificacoes
-      .map((notificacao, index) => normalizarNotificacao(notificacao, index))
-      .sort((a, b) => dataNotificacao(b) - dataNotificacao(a));
+    const notificacoesNormalizadas = mesclarNotificacoes(
+      [],
+      notificacoes.map((notificacao, index) =>
+        normalizarNotificacao(notificacao, index)
+      )
+    );
 
     salvarJsonStorageUsuarioNotificacoes(
       CHAVE_NOTIFICACOES,
@@ -1858,7 +1861,8 @@ function obterTextoBlocoSocialNotificacao(notificacao: NotificacaoLocal) {
     notificacaoPareceCurtidaComunidade(notificacao) ||
     notificacao.tipo === "comentario-capitulo" ||
     notificacao.tipo === "curtida-capitulo" ||
-    notificacao.tipo === "curtida-comentario-capitulo"
+    notificacao.tipo === "curtida-comentario-capitulo" ||
+    notificacao.tipo === "novo-seguidor"
   ) {
     return "";
   }
@@ -2203,12 +2207,68 @@ function notificacaoSinteticaDeCapitulo(notificacao: NotificacaoLocal) {
   );
 }
 
-function criarChaveMesclagemNotificacao(notificacao: NotificacaoLocal) {
-  if (notificacao.tipo === "novo-capitulo" && notificacao.capituloId.trim()) {
-    return `novo-capitulo:${notificacao.capituloId.trim()}`;
+function obterAutorChaveNotificacao(notificacao: NotificacaoLocal) {
+  const autorId = notificacao.autorId?.trim() || "";
+
+  if (autorId) {
+    return autorId;
   }
 
-  return notificacao.id.trim();
+  const autorNome = normalizarTexto(notificacao.autorNome || "");
+
+  return autorNome || "";
+}
+
+function criarChaveMesclagemNotificacao(notificacao: NotificacaoLocal) {
+  const id = notificacao.id.trim();
+  const autor = obterAutorChaveNotificacao(notificacao);
+  const obraId = notificacao.obraId.trim();
+  const capituloId = notificacao.capituloId.trim();
+  const link = notificacao.link.trim();
+
+  if (notificacao.tipo === "novo-capitulo" && capituloId) {
+    return `novo-capitulo:${capituloId}`;
+  }
+
+  if (notificacao.tipo === "solicitacao-seguidor") {
+    if (autor) {
+      return `solicitacao-seguidor:${autor}`;
+    }
+
+    const solicitacaoId = notificacao.solicitacaoId?.trim() || "";
+
+    if (solicitacaoId) {
+      return `solicitacao-seguidor-id:${solicitacaoId}`;
+    }
+  }
+
+  if (notificacao.tipo === "novo-seguidor" && autor) {
+    return `novo-seguidor:${autor}`;
+  }
+
+  if (notificacao.tipo === "curtida-obra" && autor && (obraId || link)) {
+    return `curtida-obra:${autor}:${obraId || link}`;
+  }
+
+  if (notificacao.tipo === "curtida-capitulo" && autor && capituloId) {
+    return `curtida-capitulo:${autor}:${capituloId}`;
+  }
+
+  if (notificacao.tipo === "curtida-comunidade" && autor && link) {
+    return `curtida-comunidade:${autor}:${link}`;
+  }
+
+  return id;
+}
+
+function notificacoesRepresentamMesmoEvento(
+  primeira: NotificacaoLocal,
+  segunda: NotificacaoLocal
+) {
+  const primeiraChave = criarChaveMesclagemNotificacao(primeira);
+  const segundaChave = criarChaveMesclagemNotificacao(segunda);
+
+  return Boolean(primeiraChave && primeiraChave === segundaChave);
 }
 
 function mesclarNotificacoes(
@@ -2237,15 +2297,20 @@ function mesclarNotificacoes(
     const novaSintetica = notificacaoSinteticaDeCapitulo(
       notificacaoNormalizada
     );
+    const existenteMaisRecente =
+      dataNotificacao(existente) > dataNotificacao(notificacaoNormalizada);
     const preferida =
       existenteSintetica && !novaSintetica
         ? notificacaoNormalizada
         : !existenteSintetica && novaSintetica
           ? existente
-          : notificacaoNormalizada;
+          : existenteMaisRecente
+            ? existente
+            : notificacaoNormalizada;
     const secundaria = preferida === notificacaoNormalizada
       ? existente
       : notificacaoNormalizada;
+    const mesmoId = existente.id.trim() === notificacaoNormalizada.id.trim();
 
     mapa.set(chave, {
       ...secundaria,
@@ -2258,7 +2323,9 @@ function mesclarNotificacoes(
       autorAvatar: preferida.autorAvatar || secundaria.autorAvatar,
       solicitacaoId:
         preferida.solicitacaoId || secundaria.solicitacaoId,
-      lida: existente.lida || notificacaoNormalizada.lida,
+      lida: mesmoId
+        ? existente.lida || notificacaoNormalizada.lida
+        : preferida.lida,
     });
   });
 
@@ -4390,9 +4457,10 @@ export default function NotificacoesPage() {
   }
 
   function atualizarNotificacoes(novasNotificacoes: NotificacaoLocal[]) {
-    const notificacoesNormalizadas = novasNotificacoes.map((notificacao) =>
-      prepararNotificacaoTexto(notificacao)
-    );
+    const notificacoesNormalizadas = mesclarNotificacoes(
+      [],
+      novasNotificacoes
+    ).map((notificacao) => prepararNotificacaoTexto(notificacao));
 
     setNotificacoes(notificacoesNormalizadas);
     definirNotificacoesNaoLidas(
@@ -4477,11 +4545,38 @@ export default function NotificacoesPage() {
         return;
       }
 
-      atualizarNotificacoes(
-        notificacoes.filter(
-          (notificacaoAtual) => notificacaoAtual.id !== notificacao.id
+      const notificacoesRelacionadas = notificacoes.filter(
+        (notificacaoAtual) =>
+          notificacaoAtual.tipo === "solicitacao-seguidor" &&
+          (notificacaoAtual.solicitacaoId?.trim() === solicitacaoId ||
+            notificacoesRepresentamMesmoEvento(
+              notificacaoAtual,
+              notificacao
+            ))
+      );
+      const idsRelacionados = new Set(
+        notificacoesRelacionadas.map((notificacaoAtual) =>
+          notificacaoAtual.id.trim()
         )
       );
+
+      registrarNotificacoesApagadas(
+        usuarioNotificacoesId,
+        Array.from(idsRelacionados)
+      );
+      atualizarNotificacoes(
+        notificacoes.filter(
+          (notificacaoAtual) => !idsRelacionados.has(notificacaoAtual.id.trim())
+        )
+      );
+
+      if (notificacoesRelacionadas.length > 0) {
+        void apagarNotificacoesSupabase(
+          notificacoesRelacionadas,
+          usuarioNotificacoesId
+        );
+      }
+
       fecharMenuNotificacao();
     } catch (error) {
       window.alert(

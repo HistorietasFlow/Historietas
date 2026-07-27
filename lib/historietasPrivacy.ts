@@ -132,6 +132,130 @@ function obterMensagemErro(error: unknown, fallback: string) {
   return fallback;
 }
 
+const acoesRelacionamentoEmAndamento = new Map<
+  string,
+  Promise<ResultadoRelacionamentoPerfil>
+>();
+
+function executarAcaoRelacionamentoUnica(
+  perfilUserId: string,
+  acao: () => Promise<ResultadoRelacionamentoPerfil>,
+) {
+  const chave = perfilUserId.trim();
+  const acaoExistente = acoesRelacionamentoEmAndamento.get(chave);
+
+  if (acaoExistente) {
+    return acaoExistente;
+  }
+
+  const novaAcao = acao().finally(() => {
+    if (acoesRelacionamentoEmAndamento.get(chave) === novaAcao) {
+      acoesRelacionamentoEmAndamento.delete(chave);
+    }
+  });
+
+  acoesRelacionamentoEmAndamento.set(chave, novaAcao);
+  return novaAcao;
+}
+
+async function obterUsuarioAtualIdRelacionamento() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error) {
+      return "";
+    }
+
+    return data.user?.id?.trim() || "";
+  } catch {
+    return "";
+  }
+}
+
+async function removerSolicitacoesPendentesRelacionamento(
+  solicitanteId: string,
+  destinatarioId: string,
+) {
+  const solicitanteIdLimpo = solicitanteId.trim();
+  const destinatarioIdLimpo = destinatarioId.trim();
+
+  if (!solicitanteIdLimpo || !destinatarioIdLimpo) {
+    return false;
+  }
+
+  try {
+    const { error } = await supabase
+      .from("solicitacoes_seguidores")
+      .delete()
+      .eq("solicitante_id", solicitanteIdLimpo)
+      .eq("destinatario_id", destinatarioIdLimpo);
+
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+async function manterSomenteSolicitacaoMaisRecente(
+  solicitanteId: string,
+  destinatarioId: string,
+) {
+  const solicitanteIdLimpo = solicitanteId.trim();
+  const destinatarioIdLimpo = destinatarioId.trim();
+
+  if (!solicitanteIdLimpo || !destinatarioIdLimpo) {
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("solicitacoes_seguidores")
+      .select("id,criado_em")
+      .eq("solicitante_id", solicitanteIdLimpo)
+      .eq("destinatario_id", destinatarioIdLimpo)
+      .order("criado_em", { ascending: false })
+      .limit(50);
+
+    if (error || !Array.isArray(data) || data.length <= 1) {
+      return;
+    }
+
+    const idsDuplicados = data
+      .slice(1)
+      .map((item) => (typeof item.id === "string" ? item.id.trim() : ""))
+      .filter(Boolean);
+
+    if (idsDuplicados.length === 0) {
+      return;
+    }
+
+    await supabase
+      .from("solicitacoes_seguidores")
+      .delete()
+      .in("id", idsDuplicados);
+  } catch {
+    // A proteção definitiva contra duplicidade também será feita no SQL.
+  }
+}
+
+function avisarRelacionamentoPerfilAtualizado(
+  perfilUserId: string,
+  estado: EstadoRelacionamentoPerfil,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("historietas:relacionamento-perfil-atualizado", {
+      detail: {
+        perfilUserId: perfilUserId.trim(),
+        estado,
+      },
+    }),
+  );
+}
+
 function criarPermissoesPublicas(
   preferencias: PreferenciasPrivacidadeHistorietas,
 ): PermissoesAbasPerfil {
@@ -504,6 +628,7 @@ export async function carregarEstadoRelacionamentoPerfil(
         .select("id")
         .eq("solicitante_id", usuarioAtualIdLimpo)
         .eq("destinatario_id", perfilUserIdLimpo)
+        .order("criado_em", { ascending: false })
         .limit(1)
         .maybeSingle(),
     ]);
@@ -531,30 +656,73 @@ export async function solicitarOuSeguirUsuario(
     return { ok: false, estado: "nenhum", erro: "Usuário inválido." };
   }
 
-  try {
-    const { data, error } = await supabase.rpc(
-      "solicitar_ou_seguir_usuario",
-      { p_seguido_id: perfilUserIdLimpo },
-    );
+  return executarAcaoRelacionamentoUnica(perfilUserIdLimpo, async () => {
+    try {
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
 
-    if (error) {
-      return { ok: false, estado: "nenhum", erro: error.message };
+      if (usuarioAtualId === perfilUserIdLimpo) {
+        return {
+          ok: false,
+          estado: "proprio_perfil",
+          erro: "Você não pode seguir o próprio perfil.",
+        };
+      }
+
+      if (usuarioAtualId) {
+        const estadoAtual = await carregarEstadoRelacionamentoPerfil(
+          perfilUserIdLimpo,
+          usuarioAtualId,
+        );
+
+        if (estadoAtual === "seguindo" || estadoAtual === "solicitado") {
+          return { ok: true, estado: estadoAtual, erro: "" };
+        }
+      }
+
+      const { data, error } = await supabase.rpc(
+        "solicitar_ou_seguir_usuario",
+        { p_seguido_id: perfilUserIdLimpo },
+      );
+
+      if (error) {
+        return { ok: false, estado: "nenhum", erro: error.message };
+      }
+
+      const estado = normalizarEstadoRelacionamento(data);
+
+      if (estado === "solicitado" && usuarioAtualId) {
+        await manterSomenteSolicitacaoMaisRecente(
+          usuarioAtualId,
+          perfilUserIdLimpo,
+        );
+      } else if (estado === "seguindo" && usuarioAtualId) {
+        await removerSolicitacoesPendentesRelacionamento(
+          usuarioAtualId,
+          perfilUserIdLimpo,
+        );
+      }
+
+      if (estado !== "nenhum") {
+        avisarRelacionamentoPerfilAtualizado(perfilUserIdLimpo, estado);
+      }
+
+      return {
+        ok: estado !== "nenhum",
+        estado,
+        erro:
+          estado === "nenhum" ? "Não foi possível seguir este usuário." : "",
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        estado: "nenhum",
+        erro: obterMensagemErro(
+          error,
+          "Não foi possível seguir este usuário.",
+        ),
+      };
     }
-
-    const estado = normalizarEstadoRelacionamento(data);
-
-    return {
-      ok: estado !== "nenhum",
-      estado,
-      erro: estado === "nenhum" ? "Não foi possível seguir este usuário." : "",
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      estado: "nenhum",
-      erro: obterMensagemErro(error, "Não foi possível seguir este usuário."),
-    };
-  }
+  });
 }
 
 export async function cancelarSolicitacaoSeguidor(
@@ -566,31 +734,72 @@ export async function cancelarSolicitacaoSeguidor(
     return { ok: false, estado: "solicitado", erro: "Usuário inválido." };
   }
 
-  try {
-    const { data, error } = await supabase.rpc(
-      "cancelar_solicitacao_seguidor",
-      { p_seguido_id: perfilUserIdLimpo },
-    );
+  return executarAcaoRelacionamentoUnica(perfilUserIdLimpo, async () => {
+    try {
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+      const { data, error } = await supabase.rpc(
+        "cancelar_solicitacao_seguidor",
+        { p_seguido_id: perfilUserIdLimpo },
+      );
 
-    if (error || data !== true) {
+      if (error) {
+        return {
+          ok: false,
+          estado: "solicitado",
+          erro: error.message,
+        };
+      }
+
+      if (usuarioAtualId) {
+        await removerSolicitacoesPendentesRelacionamento(
+          usuarioAtualId,
+          perfilUserIdLimpo,
+        );
+
+        const estadoAtual = await carregarEstadoRelacionamentoPerfil(
+          perfilUserIdLimpo,
+          usuarioAtualId,
+        );
+
+        if (estadoAtual === "solicitado") {
+          return {
+            ok: false,
+            estado: "solicitado",
+            erro: "A solicitação ainda aparece como pendente.",
+          };
+        }
+
+        const estadoFinal =
+          estadoAtual === "seguindo" ? "seguindo" : "nenhum";
+        avisarRelacionamentoPerfilAtualizado(
+          perfilUserIdLimpo,
+          estadoFinal,
+        );
+
+        return { ok: true, estado: estadoFinal, erro: "" };
+      }
+
+      if (data !== true) {
+        return {
+          ok: false,
+          estado: "solicitado",
+          erro: "Não foi possível cancelar a solicitação.",
+        };
+      }
+
+      avisarRelacionamentoPerfilAtualizado(perfilUserIdLimpo, "nenhum");
+      return { ok: true, estado: "nenhum", erro: "" };
+    } catch (error) {
       return {
         ok: false,
         estado: "solicitado",
-        erro: error?.message || "Não foi possível cancelar a solicitação.",
+        erro: obterMensagemErro(
+          error,
+          "Não foi possível cancelar a solicitação.",
+        ),
       };
     }
-
-    return { ok: true, estado: "nenhum", erro: "" };
-  } catch (error) {
-    return {
-      ok: false,
-      estado: "solicitado",
-      erro: obterMensagemErro(
-        error,
-        "Não foi possível cancelar a solicitação.",
-      ),
-    };
-  }
+  });
 }
 
 export async function deixarDeSeguirUsuario(
@@ -602,25 +811,36 @@ export async function deixarDeSeguirUsuario(
     return { ok: false, estado: "seguindo", erro: "Usuário inválido." };
   }
 
-  try {
-    const { data, error } = await supabase.rpc("deixar_de_seguir_usuario", {
-      p_seguido_id: perfilUserIdLimpo,
-    });
+  return executarAcaoRelacionamentoUnica(perfilUserIdLimpo, async () => {
+    try {
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+      const { data, error } = await supabase.rpc("deixar_de_seguir_usuario", {
+        p_seguido_id: perfilUserIdLimpo,
+      });
 
-    if (error || data !== true) {
+      if (error || data !== true) {
+        return {
+          ok: false,
+          estado: "seguindo",
+          erro: error?.message || "Não foi possível deixar de seguir.",
+        };
+      }
+
+      if (usuarioAtualId) {
+        await removerSolicitacoesPendentesRelacionamento(
+          usuarioAtualId,
+          perfilUserIdLimpo,
+        );
+      }
+
+      avisarRelacionamentoPerfilAtualizado(perfilUserIdLimpo, "nenhum");
+      return { ok: true, estado: "nenhum", erro: "" };
+    } catch (error) {
       return {
         ok: false,
         estado: "seguindo",
-        erro: error?.message || "Não foi possível deixar de seguir.",
+        erro: obterMensagemErro(error, "Não foi possível deixar de seguir."),
       };
     }
-
-    return { ok: true, estado: "nenhum", erro: "" };
-  } catch (error) {
-    return {
-      ok: false,
-      estado: "seguindo",
-      erro: obterMensagemErro(error, "Não foi possível deixar de seguir."),
-    };
-  }
+  });
 }

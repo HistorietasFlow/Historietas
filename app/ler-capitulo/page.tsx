@@ -4951,14 +4951,44 @@ export default function LerCapituloPage() {
               {capituloAtual.titulo}
             </span>
           </h1>
-          <p style={chapterViewsStyle}>
-            <span aria-hidden="true">👁</span>{" "}
-            {formatarContadorCapituloLeitor(
+          <p
+            style={chapterViewsStyle}
+            aria-label={`${formatarContadorCapituloLeitor(
               metricasCapitulo.totalVisualizacoes
-            )}{" "}
-            {metricasCapitulo.totalVisualizacoes === 1
-              ? "visualização"
-              : "visualizações"}
+            )} ${
+              metricasCapitulo.totalVisualizacoes === 1
+                ? "visualização"
+                : "visualizações"
+            }`}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              style={chapterViewsIconStyle}
+            >
+              <path
+                d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="2.8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              />
+            </svg>
+
+            <span>
+              {formatarContadorCapituloLeitor(
+                metricasCapitulo.totalVisualizacoes
+              )}
+            </span>
           </p>
         </section>
 
@@ -5832,7 +5862,18 @@ const chapterViewsStyle: CSSProperties = {
   lineHeight: 1.4,
   fontWeight: 800,
   letterSpacing: "0.01em",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "6px",
   textAlign: "center",
+};
+
+const chapterViewsIconStyle: CSSProperties = {
+  width: "19px",
+  height: "19px",
+  flexShrink: 0,
+  display: "block",
 };
 
 const metaStyle: CSSProperties = {

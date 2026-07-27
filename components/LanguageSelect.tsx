@@ -29,6 +29,12 @@ const LABELS: Record<HistorietasLanguage, string> = {
   es: "Idioma",
 };
 
+const LANGUAGE_FLAGS: Record<HistorietasLanguage, string> = {
+  "pt-BR": "🇧🇷",
+  en: "🇺🇸",
+  es: "🇪🇸",
+};
+
 export default function LanguageSelect({
   id,
   className,
@@ -100,7 +106,7 @@ export default function LanguageSelect({
             key={item.code}
             value={item.code}
           >
-            {item.label}
+            {`${LANGUAGE_FLAGS[item.code]} ${item.label}`}
           </option>
         ))}
       </select>

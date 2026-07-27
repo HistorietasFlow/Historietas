@@ -6,7 +6,7 @@ import { useHistorietasLanguage } from "../../../components/HistorietasLanguageP
 import type { HistorietasLanguage } from "../../../lib/i18n";
 import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
-import type { CSSProperties, FormEvent, TouchEvent } from "react";
+import type { CSSProperties, FormEvent, ReactNode, TouchEvent } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { useNotificacoes } from "../../../components/NotificacoesProvider";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
@@ -60,6 +60,10 @@ const OBRA_DINAMICA_UI_TRANSLATIONS: Record<string, TraducaoObraDinamica> = {
   "Compartilhar": { en: "Share", es: "Compartir" },
   "Link copiado!": { en: "Link copied!", es: "¡Enlace copiado!" },
   "Sinopse": { en: "Synopsis", es: "Sinopsis" },
+  "SINOPSE": { en: "SYNOPSIS", es: "SINOPSIS" },
+  "Capítulos": { en: "Chapters", es: "Capítulos" },
+  "Mostrar sinopse": { en: "Show synopsis", es: "Mostrar sinopsis" },
+  "Mostrar capítulos": { en: "Show chapters", es: "Mostrar capítulos" },
   "AVALIE ESTA OBRA": { en: "RATE THIS WORK", es: "VALORA ESTA OBRA" },
   "COMUNIDADE": { en: "COMMUNITY", es: "COMUNIDAD" },
   "CAPÍTULOS": { en: "CHAPTERS", es: "CAPÍTULOS" },
@@ -2612,14 +2616,34 @@ function carregarAvaliacoesLocais(userId = "") {
   }
 }
 
-function obterAvaliacaoLocal(obra: ObraDinamica, userId = "") {
+type AvaliacaoLocalObra = {
+  encontrada: boolean;
+  nota: number;
+};
+
+function obterAvaliacaoLocalDetalhada(
+  obra: ObraDinamica,
+  userId = ""
+): AvaliacaoLocalObra {
   const chaveAvaliacao = obterChaveAvaliacaoObra(obra);
   const avaliacoesLocais = carregarAvaliacoesLocais(userId);
+  const encontrada = Object.prototype.hasOwnProperty.call(
+    avaliacoesLocais,
+    chaveAvaliacao
+  );
   const nota = Number(avaliacoesLocais[chaveAvaliacao]);
 
-  return Number.isFinite(nota) && nota >= 0.5 && nota <= 5
-    ? Math.round(nota * 2) / 2
-    : 0;
+  return {
+    encontrada,
+    nota:
+      Number.isFinite(nota) && nota >= 0.5 && nota <= 5
+        ? Math.round(nota * 2) / 2
+        : 0,
+  };
+}
+
+function obterAvaliacaoLocal(obra: ObraDinamica, userId = "") {
+  return obterAvaliacaoLocalDetalhada(obra, userId).nota;
 }
 
 function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
@@ -2637,12 +2661,8 @@ function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
     }
 
     const avaliacoesLocais = carregarAvaliacoesLocais(userIdLimpo);
-
-    if (nota <= 0) {
-      delete avaliacoesLocais[chaveAvaliacao];
-    } else {
-      avaliacoesLocais[chaveAvaliacao] = nota;
-    }
+    avaliacoesLocais[chaveAvaliacao] =
+      nota <= 0 ? 0 : Math.round(nota * 2) / 2;
 
     salvarStorageUsuarioObraPublica(
       RATED_WORKS_STORAGE_KEY,
@@ -2717,7 +2737,7 @@ function calcularProximaAvaliacao(
       total: totalNovo,
       minhaNota: 0,
       carregado: true,
-      salvando: false,
+      salvando: true,
     };
   }
 
@@ -2731,8 +2751,72 @@ function calcularProximaAvaliacao(
     total: totalNovo,
     minhaNota: novaNota,
     carregado: true,
-    salvando: false,
+    salvando: true,
   };
+}
+
+async function salvarAvaliacaoRemotaObra({
+  obraId,
+  userId,
+  nota,
+}: {
+  obraId: string;
+  userId: string;
+  nota: number;
+}) {
+  if (!obraId.trim() || !userId.trim()) {
+    return;
+  }
+
+  // Remove qualquer registro antigo ou duplicado antes de gravar a nota nova.
+  // Isso também funciona em bancos que ainda não possuem a restrição única.
+  const { error: erroRemocao } = await supabase
+    .from("obra_avaliacoes")
+    .delete()
+    .eq("obra_id", obraId)
+    .eq("user_id", userId);
+
+  if (erroRemocao) {
+    throw erroRemocao;
+  }
+
+  if (nota <= 0) {
+    return;
+  }
+
+  const { error: erroInsercao } = await supabase
+    .from("obra_avaliacoes")
+    .insert({
+      obra_id: obraId,
+      user_id: userId,
+      nota,
+    });
+
+  if (erroInsercao) {
+    throw erroInsercao;
+  }
+
+  const { data: verificacao, error: erroVerificacao } = await supabase
+    .from("obra_avaliacoes")
+    .select("nota")
+    .eq("obra_id", obraId)
+    .eq("user_id", userId)
+    .limit(10);
+
+  if (erroVerificacao) {
+    throw erroVerificacao;
+  }
+
+  const notaConfirmada = Array.isArray(verificacao)
+    ? verificacao.some((registro) => {
+        const valor = Number((registro as { nota?: unknown }).nota);
+        return Number.isFinite(valor) && Math.round(valor * 2) / 2 === nota;
+      })
+    : false;
+
+  if (!notaConfirmada) {
+    throw new Error("A avaliação não foi confirmada pelo banco de dados.");
+  }
 }
 
 type DiarioAtividadeObraTipo =
@@ -3303,6 +3387,7 @@ export default function ObraDinamicaPage() {
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [acoesObraAbertas, setAcoesObraAbertas] = useState(false);
+  const [sinopseAberta, setSinopseAberta] = useState(false);
   const [comentariosObra, setComentariosObra] = useState<ComentarioObraPublico[]>([]);
   const [totalComentariosObra, setTotalComentariosObra] = useState(0);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
@@ -3335,6 +3420,7 @@ export default function ObraDinamicaPage() {
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
   const visualizacaoObraRegistradaRef = useRef("");
+  const avaliacaoVersaoRef = useRef(0);
 
   useEffect(() => {
     if (!mensagemAcao) {
@@ -3548,6 +3634,10 @@ export default function ObraDinamicaPage() {
   }, [slug, obrasLocais]);
 
   useEffect(() => {
+    setSinopseAberta(false);
+  }, [obra?.id]);
+
+  useEffect(() => {
     if (!obra || !idObraSupabaseValido(obra.id)) {
       return;
     }
@@ -3619,12 +3709,10 @@ export default function ObraDinamicaPage() {
   const autorObraNome = perfilAutorObra?.nome || obra?.autor || "Autor não informado";
   const autorObraId = perfilAutorObra?.userId || obra?.autorId || "";
   const obraDisponivel = Boolean(obra?.disponivel);
-  const sinopseObraMenu =
-    obra &&
-    obra.sinopse.trim() &&
-    normalizarTexto(obra.sinopse) !== "nenhuma sinopse informada"
+  const sinopseObraExibida =
+    obra && obra.sinopse.trim()
       ? obra.sinopse.trim()
-      : "";
+      : "Nenhuma sinopse informada.";
 
   const capitulosDaObra = useMemo<CapituloDinamico[]>(() => {
     if (!obra) {
@@ -4146,13 +4234,21 @@ export default function ObraDinamicaPage() {
     }
 
     const obraAtual = obra;
-    const notaLocal = obterAvaliacaoLocal(obraAtual, usuarioIdLogado);
+    const versaoAoIniciar = avaliacaoVersaoRef.current;
+    const avaliacaoLocalInicial = obterAvaliacaoLocalDetalhada(
+      obraAtual,
+      usuarioIdLogado
+    );
 
     const aplicarAvaliacaoLocalTimer = window.setTimeout(() => {
+      if (avaliacaoVersaoRef.current !== versaoAoIniciar) {
+        return;
+      }
+
       setAvaliacaoObra({
-        media: notaLocal > 0 ? notaLocal : 0,
-        total: notaLocal > 0 ? 1 : 0,
-        minhaNota: notaLocal,
+        media: avaliacaoLocalInicial.nota > 0 ? avaliacaoLocalInicial.nota : 0,
+        total: avaliacaoLocalInicial.nota > 0 ? 1 : 0,
+        minhaNota: avaliacaoLocalInicial.nota,
         carregado: true,
         salvando: false,
       });
@@ -4169,47 +4265,84 @@ export default function ObraDinamicaPage() {
     async function carregarAvaliacaoRealObra() {
       try {
         const { data: usuarioData } = await supabase.auth.getUser();
-        const userId = usuarioData.user?.id || "";
+        const userId = usuarioData.user?.id || usuarioIdLogado || "";
+        const avaliacaoLocal = obterAvaliacaoLocalDetalhada(
+          obraAtual,
+          userId
+        );
 
         const { data: avaliacoesData, error: erroAvaliacoes } = await supabase
           .from("obra_avaliacoes")
-          .select("nota")
+          .select("user_id,nota")
           .eq("obra_id", obraAtual.id)
-          .limit(1000);
+          .limit(2000);
 
         if (erroAvaliacoes || !Array.isArray(avaliacoesData)) {
           return;
         }
 
-        const notas = avaliacoesData
-          .map((avaliacao) => Number((avaliacao as { nota?: unknown }).nota))
-          .filter((nota) => Number.isFinite(nota) && nota >= 0.5 && nota <= 5);
+        const notasPorUsuario = new Map<string, number>();
+
+        avaliacoesData.forEach((avaliacao, indice) => {
+          const registro = avaliacao as {
+            user_id?: unknown;
+            nota?: unknown;
+          };
+          const nota = Number(registro.nota);
+
+          if (!Number.isFinite(nota) || nota < 0.5 || nota > 5) {
+            return;
+          }
+
+          const chaveUsuario =
+            typeof registro.user_id === "string" && registro.user_id.trim()
+              ? registro.user_id.trim()
+              : `avaliacao-${indice}`;
+
+          notasPorUsuario.set(chaveUsuario, Math.round(nota * 2) / 2);
+        });
+
+        const minhaNotaRemota = userId
+          ? notasPorUsuario.get(userId) || 0
+          : 0;
+        const minhaNota = avaliacaoLocal.encontrada
+          ? avaliacaoLocal.nota
+          : minhaNotaRemota;
+
+        if (userId && avaliacaoLocal.encontrada) {
+          if (avaliacaoLocal.nota > 0) {
+            notasPorUsuario.set(userId, avaliacaoLocal.nota);
+          } else {
+            notasPorUsuario.delete(userId);
+          }
+
+          if (minhaNotaRemota !== avaliacaoLocal.nota) {
+            void salvarAvaliacaoRemotaObra({
+              obraId: obraAtual.id,
+              userId,
+              nota: avaliacaoLocal.nota,
+            }).catch((error) => {
+              console.warn(
+                "Não consegui reconciliar a avaliação local com o Supabase:",
+                error
+              );
+            });
+          }
+        } else if (userId && minhaNotaRemota > 0) {
+          salvarAvaliacaoLocal(obraAtual, minhaNotaRemota, userId);
+        }
+
+        const notas = Array.from(notasPorUsuario.values());
         const total = notas.length;
         const media =
           total > 0
             ? notas.reduce((soma, nota) => soma + nota, 0) / total
             : 0;
-        let minhaNota = notaLocal;
 
-        if (userId) {
-          const { data: minhaAvaliacao } = await supabase
-            .from("obra_avaliacoes")
-            .select("nota")
-            .eq("obra_id", obraAtual.id)
-            .eq("user_id", userId)
-            .limit(1)
-            .maybeSingle();
-
-          const notaUsuario = Number(
-            (minhaAvaliacao as { nota?: unknown } | null)?.nota
-          );
-
-          if (Number.isFinite(notaUsuario) && notaUsuario >= 0.5 && notaUsuario <= 5) {
-            minhaNota = Math.round(notaUsuario * 2) / 2;
-          }
-        }
-
-        if (cancelado) {
+        if (
+          cancelado ||
+          avaliacaoVersaoRef.current !== versaoAoIniciar
+        ) {
           return;
         }
 
@@ -4220,8 +4353,13 @@ export default function ObraDinamicaPage() {
           carregado: true,
           salvando: false,
         });
-      } catch {
-        if (!cancelado) {
+      } catch (error) {
+        console.warn("Não consegui carregar a avaliação da obra:", error);
+
+        if (
+          !cancelado &&
+          avaliacaoVersaoRef.current === versaoAoIniciar
+        ) {
           setAvaliacaoObra((avaliacaoAtual) => ({
             ...avaliacaoAtual,
             carregado: true,
@@ -4929,6 +5067,7 @@ export default function ObraDinamicaPage() {
     }
 
     const notaNormalizada = nota <= 0 ? 0 : Math.round(nota * 2) / 2;
+    avaliacaoVersaoRef.current += 1;
 
     const proximaAvaliacao = calcularProximaAvaliacao(
       avaliacaoObra,
@@ -4948,26 +5087,11 @@ export default function ObraDinamicaPage() {
     }
 
     try {
-      const resposta =
-        notaNormalizada > 0
-          ? await supabase.from("obra_avaliacoes").upsert(
-              {
-                obra_id: obra.id,
-                user_id: userId,
-                nota: notaNormalizada,
-                atualizado_em: new Date().toISOString(),
-              },
-              { onConflict: "obra_id,user_id" }
-            )
-          : await supabase
-              .from("obra_avaliacoes")
-              .delete()
-              .eq("obra_id", obra.id)
-              .eq("user_id", userId);
-
-      if (resposta.error) {
-        throw resposta.error;
-      }
+      await salvarAvaliacaoRemotaObra({
+        obraId: obra.id,
+        userId,
+        nota: notaNormalizada,
+      });
 
       if (notaNormalizada > 0) {
         await registrarAtividadeDiarioObra({
@@ -4991,7 +5115,8 @@ export default function ObraDinamicaPage() {
         salvando: false,
       }));
       setMensagemAcao("");
-    } catch {
+    } catch (error) {
+      console.warn("Não consegui salvar a avaliação da obra:", error);
       setAvaliacaoObra((avaliacaoAtual) => ({
         ...avaliacaoAtual,
         carregado: true,
@@ -6134,12 +6259,6 @@ export default function ObraDinamicaPage() {
                   <span>{linkCopiado ? "Link copiado!" : "Compartilhar"}</span>
                 </button>
 
-                {sinopseObraMenu ? (
-                  <div style={obraMenuSynopsisStyle}>
-                    <span style={obraMenuSynopsisLabelStyle}>Sinopse</span>
-                    <p data-historietas-i18n-ignore="true" style={obraMenuSynopsisTextStyle}>{sinopseObraMenu}</p>
-                  </div>
-                ) : null}
               </div>
             </section>
           </div>
@@ -6232,8 +6351,8 @@ export default function ObraDinamicaPage() {
 
         <section style={isDesktop ? desktopStatsGridStyle : statsGridStyle}>
           <MetricCard
-            numero={formatarNumeroCompacto(metricasObra.visualizacoes)}
-            rotulo="visualizações"
+            numero={formatarNumeroCompacto(metricasObra.seguidores)}
+            rotulo="seguidores"
           />
           <MetricCard
             numero={formatarNumeroCompacto(metricasObra.curtidas)}
@@ -6248,44 +6367,74 @@ export default function ObraDinamicaPage() {
             onClick={abrirComentariosObra}
           />
           <MetricCard
-            numero={formatarNumeroCompacto(metricasObra.seguidores)}
-            rotulo="seguidores"
+            numero={
+              <span
+                aria-hidden="true"
+                style={{
+                  ...synopsisToggleIconStyle,
+                  transform: sinopseAberta ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+              >
+                ⌄
+              </span>
+            }
+            rotulo={sinopseAberta ? "Capítulos" : "Sinopse"}
+            onClick={() => setSinopseAberta((aberta) => !aberta)}
+            ariaLabel={sinopseAberta ? "Mostrar capítulos" : "Mostrar sinopse"}
+            ariaExpanded={sinopseAberta}
           />
         </section>
 
-        {capitulosDaObra.length > 0 && (
-          <section id="capitulos" style={chaptersSectionStyle}>
+        {sinopseAberta ? (
+          <section id="sinopse" style={synopsisSectionStyle}>
             <div style={sectionHeaderStyle}>
-              <h2 style={accentSectionTitleStyle}>CAPÍTULOS</h2>
-
-              <span style={chapterCountBadgeStyle}>
-                {obraDisponivel
-                  ? `${capitulosDaObra.length} disponíveis`
-                  : `${capitulosDaObra.length} em breve`}
-              </span>
+              <h2 style={accentSectionTitleStyle}>SINOPSE</h2>
             </div>
 
-            <div style={isDesktop ? desktopChaptersListStyle : chaptersListStyle}>
-              {capitulosDaObra.map((capitulo) => (
-                <Link
-                  key={capitulo.id || capitulo.numero}
-                  href={capitulo.href}
-                  style={isDesktop ? desktopChapterCardStyle : chapterCardStyle}
-                  aria-label={`Abrir ${capitulo.titulo}`}
-                >
-                  <div style={chapterNumberStyle}>{capitulo.numero}</div>
-
-                  <div style={chapterContentStyle}>
-                    <h3 data-historietas-i18n-ignore="true" style={chapterTitleStyle}>{capitulo.titulo}</h3>
-
-                    {capitulo.descricao ? (
-                      <p style={chapterMetaStyle}>{capitulo.descricao}</p>
-                    ) : null}
-                  </div>
-                </Link>
-              ))}
+            <div style={synopsisCardStyle}>
+              <p
+                data-historietas-i18n-ignore="true"
+                style={synopsisTextStyle}
+              >
+                {sinopseObraExibida}
+              </p>
             </div>
           </section>
+        ) : (
+          capitulosDaObra.length > 0 && (
+            <section id="capitulos" style={chaptersSectionStyle}>
+              <div style={sectionHeaderStyle}>
+                <h2 style={accentSectionTitleStyle}>CAPÍTULOS</h2>
+
+                <span style={chapterCountBadgeStyle}>
+                  {obraDisponivel
+                    ? `${capitulosDaObra.length} disponíveis`
+                    : `${capitulosDaObra.length} em breve`}
+                </span>
+              </div>
+
+              <div style={isDesktop ? desktopChaptersListStyle : chaptersListStyle}>
+                {capitulosDaObra.map((capitulo) => (
+                  <Link
+                    key={capitulo.id || capitulo.numero}
+                    href={capitulo.href}
+                    style={isDesktop ? desktopChapterCardStyle : chapterCardStyle}
+                    aria-label={`Abrir ${capitulo.titulo}`}
+                  >
+                    <div style={chapterNumberStyle}>{capitulo.numero}</div>
+
+                    <div style={chapterContentStyle}>
+                      <h3 data-historietas-i18n-ignore="true" style={chapterTitleStyle}>{capitulo.titulo}</h3>
+
+                      {capitulo.descricao ? (
+                        <p style={chapterMetaStyle}>{capitulo.descricao}</p>
+                      ) : null}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )
         )}
 
 
@@ -6536,12 +6685,16 @@ function MetricCard({
   ativo = false,
   mostrarCoracao = false,
   onClick,
+  ariaLabel,
+  ariaExpanded,
 }: {
-  numero: string;
+  numero: ReactNode;
   rotulo: string;
   ativo?: boolean;
   mostrarCoracao?: boolean;
   onClick?: () => void;
+  ariaLabel?: string;
+  ariaExpanded?: boolean;
 }) {
   const cardStyle = ativo ? activeStatCardStyle : statCardStyle;
   const conteudoNumero = (
@@ -6581,16 +6734,22 @@ function MetricCard({
     );
   }
 
+  const numeroTexto = typeof numero === "string" || typeof numero === "number"
+    ? String(numero)
+    : "";
+
   return (
     <button
       type="button"
       onClick={onClick}
       style={ativo ? activeStatButtonStyle : statButtonStyle}
       aria-pressed={mostrarCoracao ? ativo : undefined}
+      aria-expanded={ariaExpanded}
       aria-label={
-        mostrarCoracao
-          ? `${ativo ? "Remover curtida" : "Curtir"}. ${numero} curtidas`
-          : `Abrir ${rotulo}. Total: ${numero}`
+        ariaLabel ||
+        (mostrarCoracao
+          ? `${ativo ? "Remover curtida" : "Curtir"}. ${numeroTexto} curtidas`
+          : `Abrir ${rotulo}${numeroTexto ? `. Total: ${numeroTexto}` : ""}`)
       }
     >
       {conteudoNumero}
@@ -6637,6 +6796,17 @@ const obraPageCss = `
     0% { transform: scale(1); }
     45% { transform: scale(1.28); }
     100% { transform: scale(1); }
+  }
+
+  @keyframes historietas-synopsis-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   html {
@@ -7346,7 +7516,7 @@ const obraActionsMenuStyle: CSSProperties = {
   background: "#070212",
   border: "none",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
-  padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
+  padding: "8px 0 calc(12px + env(safe-area-inset-bottom))",
   display: "grid",
   gap: 0,
   boxSizing: "border-box",
@@ -7543,43 +7713,12 @@ const obraMenuItemDotActiveStyle: CSSProperties = {
   color: "#111111",
 };
 
-const obraMenuSynopsisStyle: CSSProperties = {
-  width: "100%",
-  display: "grid",
-  gap: "5px",
-  padding: "4px 30px 11px",
-  boxSizing: "border-box",
-  color: "#FFFFFF",
-  textAlign: "left",
-  ...safeTextStyle,
-};
-
-const obraMenuSynopsisLabelStyle: CSSProperties = {
-  color: "rgba(244,244,245,0.58)",
-  fontSize: "10.5px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  ...safeTextStyle,
-};
-
-const obraMenuSynopsisTextStyle: CSSProperties = {
-  margin: 0,
-  maxHeight: "96px",
-  overflowX: "hidden",
-  overflowY: "auto",
-  overscrollBehavior: "contain",
-  paddingRight: "4px",
-  color: "rgba(255,255,255,0.82)",
-  fontSize: "12px",
-  lineHeight: 1.38,
-  fontWeight: 650,
-  whiteSpace: "normal",
-  wordBreak: "break-word",
-  scrollbarWidth: "thin",
-  WebkitOverflowScrolling: "touch",
-  ...safeTextStyle,
+const synopsisToggleIconStyle: CSSProperties = {
+  display: "inline-block",
+  fontSize: "clamp(22px, 5.6vw, 28px)",
+  lineHeight: 0.72,
+  transformOrigin: "center",
+  transition: "transform 220ms ease",
 };
 
 const actionMessageStyle: CSSProperties = {
@@ -8659,6 +8798,32 @@ const commentTextStyle: CSSProperties = {
 const chaptersSectionStyle: CSSProperties = {
   marginTop: "14px",
   minWidth: 0,
+};
+
+const synopsisSectionStyle: CSSProperties = {
+  ...chaptersSectionStyle,
+  animation: "historietas-synopsis-reveal 220ms ease-out",
+};
+
+const synopsisCardStyle: CSSProperties = {
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
+  minWidth: 0,
+  boxSizing: "border-box",
+};
+
+const synopsisTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "13px",
+  lineHeight: 1.62,
+  fontWeight: 650,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+  textAlign: "left",
+  ...safeTextStyle,
 };
 
 const sectionHeaderStyle: CSSProperties = {
