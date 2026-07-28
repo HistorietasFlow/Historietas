@@ -2841,11 +2841,15 @@ const ComentariosSheet = memo(function ComentariosSheet({
         <div style={commentLikeWrapStyle}>
           <button
             type="button"
-            aria-label={
+            data-historietas-community-like="comment"
+            aria-pressed={usuarioCurtiuComentario}
+            aria-label={`${
               usuarioCurtiuComentario
                 ? "Remover curtida do comentário"
                 : "Curtir comentário"
-            }
+            }. ${comentario.curtidas.length} ${
+              comentario.curtidas.length === 1 ? "curtida" : "curtidas"
+            }`}
             onClick={() =>
               curtirComentarioSeguro(post?.id || "", comentario.id)
             }
@@ -2862,15 +2866,24 @@ const ComentariosSheet = memo(function ComentariosSheet({
             <svg
               viewBox="0 0 24 24"
               aria-hidden="true"
-              style={commentHeartIconStyle}
+              style={{
+                ...commentHeartIconStyle,
+                animation: usuarioCurtiuComentario
+                  ? "historietas-comunidade-heart-pop 260ms ease-out"
+                  : "none",
+              }}
             >
               <path
                 d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                fill={usuarioCurtiuComentario ? "var(--historietas-comunidade-heart, #F43F5E)" : "none"}
+                fill={
+                  usuarioCurtiuComentario
+                    ? "var(--historietas-comunidade-heart, #EF4444)"
+                    : "none"
+                }
                 stroke={
                   usuarioCurtiuComentario
-                    ? "var(--historietas-comunidade-heart, #F43F5E)"
-                    : "var(--historietas-text-secondary, #D4D4D8)"
+                    ? "var(--historietas-comunidade-heart, #EF4444)"
+                    : "#FFFFFF"
                 }
                 strokeWidth="2"
                 strokeLinecap="round"
@@ -6437,18 +6450,52 @@ export default function ComunidadePage() {
                       <div style={isDesktop ? postActionsDesktopStyle : postActionsStyle}>
                         <button
                           type="button"
+                          data-historietas-community-like="post"
                           onClick={() => alternarCurtida(post.id)}
                           disabled={postCurtindo}
-                          style={postReactionButtonStyle}
-                          aria-label={
+                          style={{
+                            ...postReactionButtonStyle,
+                            opacity: postCurtindo ? 0.58 : 1,
+                            cursor: postCurtindo ? "not-allowed" : "pointer",
+                          }}
+                          aria-pressed={usuarioCurtiu}
+                          aria-label={`${
                             usuarioCurtiu
                               ? "Remover curtida da publicação"
                               : "Curtir publicação"
-                          }
+                          }. ${contarCurtidasUnicasPostComunidade(post)} ${
+                            contarCurtidasUnicasPostComunidade(post) === 1
+                              ? "curtida"
+                              : "curtidas"
+                          }`}
                         >
-                          <span style={postReactionIconStyle} aria-hidden="true">
-                            {usuarioCurtiu ? "❤️" : "🤍"}
-                          </span>
+                          <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            style={{
+                              ...postHeartIconStyle,
+                              animation: usuarioCurtiu
+                                ? "historietas-comunidade-heart-pop 260ms ease-out"
+                                : "none",
+                            }}
+                          >
+                            <path
+                              d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                              fill={
+                                usuarioCurtiu
+                                  ? "var(--historietas-comunidade-heart, #EF4444)"
+                                  : "none"
+                              }
+                              stroke={
+                                usuarioCurtiu
+                                  ? "var(--historietas-comunidade-heart, #EF4444)"
+                                  : "#FFFFFF"
+                              }
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
                           <span style={postReactionCountStyle}>
                             {contarCurtidasUnicasPostComunidade(post)}
                           </span>
@@ -6786,6 +6833,12 @@ const safeTextStyle: CSSProperties = {
 
 
 const comunidadeThemeCss = `
+  @keyframes historietas-comunidade-heart-pop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.28); }
+    100% { transform: scale(1); }
+  }
+
   @keyframes historietas-loading-spin {
     to {
       transform: rotate(360deg);
@@ -6795,6 +6848,10 @@ const comunidadeThemeCss = `
   @media (prefers-reduced-motion: reduce) {
     .historietas-loading-spinner {
       animation-duration: 1.4s !important;
+    }
+
+    [data-historietas-community-like] svg {
+      animation-duration: 1ms !important;
     }
   }
 
@@ -6809,7 +6866,7 @@ const comunidadeThemeCss = `
     --historietas-comunidade-secondary-soft: #A78BFA;
     --historietas-comunidade-secondary-text: #DDD6FE;
     --historietas-comunidade-danger-text: #FCA5A5;
-    --historietas-comunidade-heart: #F43F5E;
+    --historietas-comunidade-heart: #EF4444;
     --historietas-comunidade-blue: #2563EB;
     --historietas-comunidade-cyan: #38BDF8;
     --historietas-comunidade-pink: #FB7185;
@@ -9695,6 +9752,14 @@ const postReactionIconStyle: CSSProperties = {
   lineHeight: 1,
 };
 
+const postHeartIconStyle: CSSProperties = {
+  width: "18px",
+  height: "18px",
+  display: "block",
+  flex: "0 0 auto",
+  transformOrigin: "center",
+};
+
 const postReactionCountStyle: CSSProperties = {
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
@@ -10119,6 +10184,8 @@ const commentHeartIconStyle: CSSProperties = {
   width: "19px",
   height: "19px",
   display: "block",
+  flex: "0 0 auto",
+  transformOrigin: "center",
 };
 
 const emptyCommentsStyle: CSSProperties = {

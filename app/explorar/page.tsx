@@ -1000,7 +1000,7 @@ function formatarMediaAvaliacaoAutorExplorar(
   }
 
   return avaliacao.media.toLocaleString(obterLocaleExplorar(idioma), {
-    minimumFractionDigits: 1,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 1,
   });
 }
@@ -3379,6 +3379,7 @@ export default function ExplorarPage() {
           >
             <button
               type="button"
+              data-historietas-page-background-action="true"
               onClick={() => selecionarModoConteudo("obras")}
               style={
                 modoConteudo === "obras" && !categoriaSelecionada
@@ -3391,6 +3392,7 @@ export default function ExplorarPage() {
 
             <button
               type="button"
+              data-historietas-page-background-action="true"
               onClick={() => selecionarModoConteudo("autores")}
               style={
                 modoConteudo === "autores" && !categoriaSelecionada
@@ -3405,6 +3407,7 @@ export default function ExplorarPage() {
               <button
                 key={categoria}
                 type="button"
+                data-historietas-page-background-action="true"
                 onClick={() => selecionarCategoria(categoria)}
                 style={
                   categoriaSelecionada === categoria
@@ -3959,7 +3962,10 @@ function AutorExplorarCard({
           ))}
         </div>
 
-        <span style={autorExplorarProfileButtonStyle}>
+        <span
+          data-historietas-page-background-action="true"
+          style={autorExplorarProfileButtonStyle}
+        >
           {traduzirTextoExplorar("Ver perfil", language)}
         </span>
       </div>
@@ -4161,7 +4167,11 @@ function ObraPublicadaCard({
             {traduzirGeneroExplorar(obra.genero, language)}
           </span>
 
-          <Link href={paginaPublicaHref} style={criarCardPrimaryActionStyle(tema, isDesktop)}>
+          <Link
+            href={paginaPublicaHref}
+            data-historietas-page-background-action="true"
+            style={criarCardPrimaryActionStyle(tema, isDesktop)}
+          >
             {traduzirTextoExplorar("Ver obra", language)}
           </Link>
         </div>
@@ -4173,7 +4183,7 @@ function ObraPublicadaCard({
 function criarActiveCategoryStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...activeCategoryStyle,
-    background: "#08030F",
+    background: "transparent",
     border: "1px solid rgba(255,255,255,0.10)",
     color: "#FFFFFF",
     boxShadow: "none",
@@ -4231,7 +4241,8 @@ function criarSearchInputStyle(
 function criarPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...publishedCardStyle,
-    border: "1px solid rgba(255,255,255,0.06)",
+    background: "transparent",
+    border: "none",
     boxShadow: "none",
   };
 }
@@ -4239,7 +4250,8 @@ function criarPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria
 function criarDesktopPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...desktopPublishedCardStyle,
-    border: "1px solid rgba(255,255,255,0.06)",
+    background: "transparent",
+    border: "none",
     boxShadow: "none",
   };
 }
@@ -4296,7 +4308,7 @@ function criarReadStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProper
   return {
     ...readStyle,
     color: "#FFFFFF",
-    background: "#08030F",
+    background: "var(--historietas-bg-start, #070212)",
     border: "1px solid rgba(255,255,255,0.10)",
     boxShadow: "none",
   };
@@ -4444,6 +4456,17 @@ const themePageCss = `
   html[data-historietas-tema-visual] button {
     color: inherit;
   }
+
+
+  html[data-historietas-tema-visual]
+    [data-historietas-page-background-action="true"],
+  html[data-historietas-tema-visual="original"]
+    [data-historietas-page-background-action="true"] {
+    background: var(--historietas-bg-start, #070212) !important;
+    background-color: var(--historietas-bg-start, #070212) !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
 `;
 
 const explorarBuscaToggleCss = `
@@ -4533,6 +4556,28 @@ const loadingSpinnerStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
+// Teste: mesma identidade tipográfica aplicada anteriormente na Home.
+const listaPageTitleTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 900,
+  letterSpacing: "-0.035em",
+};
+
+const listaWorkTitleTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
+};
+
+const listaAuthorMetaTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+};
+
 const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100vh",
@@ -4541,7 +4586,8 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   background: "#070212",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 };
 
 function criarExplorarPageStyle(
@@ -4602,8 +4648,7 @@ const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "23px",
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
+  ...listaPageTitleTypographyStyle,
   display: "flex",
   alignItems: "center",
   gap: "4px",
@@ -4738,11 +4783,10 @@ const explorarHeaderFilterButtonStyle: CSSProperties = {
   flex: "0 1 auto",
   fontSize: "16px",
   lineHeight: 1.15,
-  fontWeight: 950,
   fontFamily: "inherit",
+  ...listaPageTitleTypographyStyle,
   cursor: "pointer",
   textAlign: "left",
-  letterSpacing: "-0.04em",
   boxShadow: "none",
   outline: "none",
   WebkitTapHighlightColor: "transparent",
@@ -4877,8 +4921,7 @@ const titleStyle: CSSProperties = {
   color: "var(--historietas-accent, #F97316)",
   fontSize: "32px",
   lineHeight: 0.98,
-  fontWeight: 950,
-  letterSpacing: "-0.08em",
+  ...listaPageTitleTypographyStyle,
   textAlign: "center",
   ...safeTextStyle,
 };
@@ -4889,8 +4932,8 @@ const descriptionStyle: CSSProperties = {
   margin: "10px auto 0",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "14px",
+  ...listaAuthorMetaTypographyStyle,
   lineHeight: 1.55,
-  fontWeight: 720,
   textAlign: "center",
   maxWidth: "680px",
   ...safeTextStyle,
@@ -4916,7 +4959,7 @@ const categoryStyle: CSSProperties = {
   maxWidth: "220px",
   padding: "9px 13px",
   borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "transparent",
   border: "1px solid rgba(255,255,255,0.06)",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
@@ -4930,7 +4973,7 @@ const categoryStyle: CSSProperties = {
 
 const activeCategoryStyle: CSSProperties = {
   ...categoryStyle,
-  background: "#08030F",
+  background: "transparent",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
@@ -5264,8 +5307,7 @@ const sectionTitleStyle: CSSProperties = {
   color: "var(--historietas-accent, #F97316)",
   fontSize: "clamp(18px, 4.8vw, 23px)",
   lineHeight: 1.08,
-  fontWeight: 900,
-  letterSpacing: "-0.035em",
+  ...listaPageTitleTypographyStyle,
   maxWidth: "100%",
   textAlign: "center",
   ...safeTextStyle,
@@ -5387,8 +5429,8 @@ const autorExplorarCardStyle: CSSProperties = {
   scrollSnapAlign: "start",
   padding: "12px",
   borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  background: "transparent",
+  border: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "grid",
@@ -5482,8 +5524,7 @@ const autorExplorarNameStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "24px",
   lineHeight: 0.98,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
+  ...listaWorkTitleTypographyStyle,
   display: "-webkit-box",
   WebkitLineClamp: 1,
   WebkitBoxOrient: "vertical",
@@ -5495,8 +5536,8 @@ const autorExplorarBioStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
+  ...listaAuthorMetaTypographyStyle,
   lineHeight: 1.35,
-  fontWeight: 750,
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
@@ -5580,7 +5621,7 @@ const autorExplorarProfileButtonStyle: CSSProperties = {
   minHeight: "40px",
   padding: "0 12px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "transparent",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "13px",
@@ -5608,8 +5649,8 @@ const publishedCardStyle: CSSProperties = {
   alignItems: "stretch",
   padding: "11px",
   borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  background: "transparent",
+  border: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   minWidth: 0,
@@ -5650,8 +5691,7 @@ const publishedTitleStyle: CSSProperties = {
   margin: 0,
   fontSize: "20px",
   lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
+  ...listaWorkTitleTypographyStyle,
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -5732,7 +5772,7 @@ const authorLinkStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D8C8FF)",
   fontSize: "12px",
-  fontWeight: 820,
+  ...listaAuthorMetaTypographyStyle,
   textDecoration: "none",
   borderBottom: "0",
   whiteSpace: "normal",
@@ -5758,8 +5798,8 @@ const desktopPublishedSynopsisStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #C9C0D8)",
   fontSize: "12.5px",
+  ...listaAuthorMetaTypographyStyle,
   lineHeight: 1.45,
-  fontWeight: 680,
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
@@ -5993,7 +6033,8 @@ const desktopPublishedCardStyle: CSSProperties = {
   borderRadius: "24px",
   alignItems: "stretch",
   minHeight: "178px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "transparent",
+  border: "none",
   boxShadow: "none",
 };
 
@@ -6010,7 +6051,6 @@ const desktopPublishedTitleStyle: CSSProperties = {
   ...publishedTitleStyle,
   fontSize: "22px",
   lineHeight: 1.08,
-  letterSpacing: "-0.03em",
 };
 
 

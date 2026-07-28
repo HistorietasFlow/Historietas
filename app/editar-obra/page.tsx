@@ -4197,8 +4197,10 @@ const previewObraTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "20px",
   lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -4215,7 +4217,10 @@ const previewAuthorStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, var(--historietas-editar-obra-author-text, #D8C8FF))",
   fontSize: "12px",
-  fontWeight: 800,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
   textDecoration: "none",
   borderBottom: "none",
   ...safeTextStyle,
@@ -4237,6 +4242,8 @@ const previewStatsStyle: CSSProperties = {
   flexWrap: "wrap",
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   fontWeight: 850,
   maxWidth: "100%",
   minWidth: 0,

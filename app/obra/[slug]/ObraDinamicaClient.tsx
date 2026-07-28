@@ -6966,6 +6966,27 @@ const loadingSpinnerCompactStyle: CSSProperties = {
   borderWidth: "2px",
 };
 
+// Teste: tipografia do card principal igual à usada no card principal da Home.
+const homeMainTitleTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
+};
+
+const homeMainMetaTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+};
+
+const homeMainStatsTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 850,
+};
+
 const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100vh",
@@ -7206,8 +7227,7 @@ const coverTitleStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "68px",
   lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.12em",
+  ...homeMainTitleTypographyStyle,
   ...heroTitleOutlineStyle,
   ...safeTextStyle,
 };
@@ -7216,8 +7236,7 @@ const titleStyle: CSSProperties = {
   margin: 0,
   fontSize: "clamp(36px, 9.6vw, 58px)",
   lineHeight: 0.94,
-  fontWeight: 950,
-  letterSpacing: "-0.085em",
+  ...homeMainTitleTypographyStyle,
   maxWidth: "100%",
   textAlign: "center",
   background: "none",
@@ -7236,8 +7255,8 @@ const descriptionStyle: CSSProperties = {
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
   fontSize: "15.4px",
+  ...homeMainMetaTypographyStyle,
   lineHeight: 1.35,
-  fontWeight: 850,
   maxWidth: "620px",
   textAlign: "center",
   display: "block",
@@ -7315,8 +7334,7 @@ const heroBottomAuthorLinkStyle: CSSProperties = {
   color: "rgba(255,255,255,0.95)",
   textDecoration: "none",
   fontSize: "14.1px",
-  lineHeight: 1.15,
-  fontWeight: 950,
+  ...homeMainMetaTypographyStyle,
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
@@ -7337,7 +7355,7 @@ const heroBottomMetricStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "13.5px",
   lineHeight: 1.15,
-  fontWeight: 950,
+  ...homeMainStatsTypographyStyle,
   whiteSpace: "nowrap",
   textShadow: "0 1px 0 rgba(0,0,0,0.28)",
   ...safeTextStyle,
@@ -8996,7 +9014,6 @@ const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
   fontSize: "clamp(48px, 6vw, 82px)",
   lineHeight: 0.92,
-  letterSpacing: "-0.085em",
   textAlign: "left",
   maxWidth: "900px",
 };

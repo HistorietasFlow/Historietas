@@ -1279,10 +1279,14 @@ function formatarNumero(numero: number) {
 
 function formatarMediaRanking(media: number) {
   if (!Number.isFinite(media) || media <= 0) {
-    return "0.0";
+    return "0";
   }
 
-  return media.toFixed(1);
+  const mediaArredondada = Math.round(media * 10) / 10;
+
+  return Number.isInteger(mediaArredondada)
+    ? String(mediaArredondada)
+    : mediaArredondada.toFixed(1);
 }
 
 function normalizarVisualizacoesRanking(valor: unknown) {
@@ -5083,8 +5087,10 @@ const cardTitleStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "20px",
   lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -5252,7 +5258,10 @@ const authorStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-d8c8ff, #D8C8FF))",
   fontSize: "12px",
-  fontWeight: 750,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 1,
@@ -5276,7 +5285,9 @@ const statsStyle: CSSProperties = {
   flexWrap: "wrap",
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
-  fontWeight: 800,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 850,
   maxWidth: "100%",
   minWidth: 0,
 };
@@ -5518,8 +5529,10 @@ const authorRankingCardTitleStyle: CSSProperties = {
   margin: 0,
   fontSize: "19px",
   lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.045em",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -5561,8 +5574,10 @@ const authorRankingWorksBadgeStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-d8c8ff, #D8C8FF))",
   fontSize: "12px",
-  lineHeight: 1.2,
-  fontWeight: 750,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
   width: "fit-content",
   maxWidth: "100%",
   background: "transparent",

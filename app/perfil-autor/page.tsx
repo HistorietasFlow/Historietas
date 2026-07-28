@@ -3348,10 +3348,14 @@ function idAutorSupabaseValido(id: string) {
 
 function formatarMediaAvaliacaoAutor(media: number) {
   if (!Number.isFinite(media) || media <= 0) {
-    return "0.0";
+    return "0";
   }
 
-  return media.toFixed(1);
+  const mediaArredondada = Math.round(media * 10) / 10;
+
+  return Number.isInteger(mediaArredondada)
+    ? String(mediaArredondada)
+    : mediaArredondada.toFixed(1);
 }
 
 function formatarTotalAvaliacoesAutor(
@@ -6053,7 +6057,7 @@ function criarItemAtividadeDiarioPerfil(
   } else if (tipoAtividade === "avaliou_obra") {
     tipoItem = "avaliacao";
     descricao = Number.isFinite(nota) && nota > 0
-      ? `Avaliou com ${nota.toFixed(1).replace(".", ",")} estrelas.`
+      ? `Avaliou com ${formatarMediaAvaliacaoAutor(nota).replace(".", ",")} estrelas.`
       : "Avaliou esta obra.";
   } else if (tipoAtividade === "favoritou_obra") {
     tipoItem = "favorita";
@@ -6716,7 +6720,7 @@ async function carregarDiarioPerfilSupabase(
           "avaliacao",
           obra,
           obterDataRegistroDiario(registro) || obra.criadaEm,
-          `Avaliou com ${nota.toFixed(1).replace(".", ",")} estrelas`,
+          `Avaliou com ${formatarMediaAvaliacaoAutor(nota).replace(".", ",")} estrelas`,
           {
             nota,
             visibilidade: obterVisibilidadeRegistroDiario(
@@ -11424,41 +11428,54 @@ function PerfilAutorPageContent() {
                   {podeEditarPerfil && obrasEmDestaque.length > 0 && (
                     <button
                       type="button"
+                      data-historietas-top-five-like="true"
                       onClick={() => void alternarCurtidaTopFivePerfil()}
                       disabled={topFiveCurtidaSalvando}
-                      style={
-                        topFiveCurtidoPorMim
+                      style={{
+                        ...(topFiveCurtidoPorMim
                           ? authorHighlightsLikeButtonActiveStyle
-                          : authorHighlightsLikeButtonStyle
-                      }
-                      aria-label={
+                          : authorHighlightsLikeButtonStyle),
+                        opacity: topFiveCurtidaSalvando ? 0.58 : 1,
+                        cursor: topFiveCurtidaSalvando
+                          ? "not-allowed"
+                          : "pointer",
+                      }}
+                      aria-pressed={topFiveCurtidoPorMim}
+                      aria-label={`${
                         topFiveCurtidoPorMim
                           ? "Remover curtida do TOP 5"
                           : "Curtir TOP 5"
-                      }
+                      }. ${compactarNumeroPerfilAutor(topFiveCurtidasTotal)} ${
+                        topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
+                      }`}
                     >
-                      {topFiveCurtidoPorMim ? (
-                        <span
-                          style={authorHighlightsLikeHeartEmojiStyle}
-                          aria-hidden="true"
-                        >
-                          ❤️
-                        </span>
-                      ) : (
-                        <svg
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
+                      <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        style={{
+                          ...authorHighlightsLikeHeartIconStyle,
+                          animation: topFiveCurtidoPorMim
+                            ? "historietas-perfil-heart-pop 260ms ease-out"
+                            : "none",
+                        }}
+                      >
+                        <path
+                          d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                          fill={
+                            topFiveCurtidoPorMim
+                              ? "var(--historietas-perfil-danger, #EF4444)"
+                              : "none"
+                          }
+                          stroke={
+                            topFiveCurtidoPorMim
+                              ? "var(--historietas-perfil-danger, #EF4444)"
+                              : "#FFFFFF"
+                          }
+                          strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
-                        </svg>
-                      )}
+                        />
+                      </svg>
                       <span style={authorHighlightsLikeCountStyle}>{compactarNumeroPerfilAutor(topFiveCurtidasTotal)}</span>
                     </button>
                   )}
@@ -11477,41 +11494,54 @@ function PerfilAutorPageContent() {
                     obrasEmDestaque.length > 0 && (
                       <button
                         type="button"
-                        onClick={() => void alternarCurtidaTopFivePerfil()}
+                        data-historietas-top-five-like="true"
+                      onClick={() => void alternarCurtidaTopFivePerfil()}
                         disabled={topFiveCurtidaSalvando}
-                        style={
-                          topFiveCurtidoPorMim
-                            ? authorHighlightsLikeButtonActiveStyle
-                            : authorHighlightsLikeButtonStyle
-                        }
-                        aria-label={
-                          topFiveCurtidoPorMim
-                            ? "Remover curtida do TOP 5"
-                            : "Curtir TOP 5"
-                        }
+                        style={{
+                        ...(topFiveCurtidoPorMim
+                          ? authorHighlightsLikeButtonActiveStyle
+                          : authorHighlightsLikeButtonStyle),
+                        opacity: topFiveCurtidaSalvando ? 0.58 : 1,
+                        cursor: topFiveCurtidaSalvando
+                          ? "not-allowed"
+                          : "pointer",
+                      }}
+                        aria-pressed={topFiveCurtidoPorMim}
+                      aria-label={`${
+                        topFiveCurtidoPorMim
+                          ? "Remover curtida do TOP 5"
+                          : "Curtir TOP 5"
+                      }. ${compactarNumeroPerfilAutor(topFiveCurtidasTotal)} ${
+                        topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
+                      }`}
                       >
-                        {topFiveCurtidoPorMim ? (
-                          <span
-                            style={authorHighlightsLikeHeartEmojiStyle}
-                            aria-hidden="true"
-                          >
-                            ❤️
-                          </span>
-                        ) : (
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                          >
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
-                          </svg>
-                        )}
+                        <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        style={{
+                          ...authorHighlightsLikeHeartIconStyle,
+                          animation: topFiveCurtidoPorMim
+                            ? "historietas-perfil-heart-pop 260ms ease-out"
+                            : "none",
+                        }}
+                      >
+                        <path
+                          d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                          fill={
+                            topFiveCurtidoPorMim
+                              ? "var(--historietas-perfil-danger, #EF4444)"
+                              : "none"
+                          }
+                          stroke={
+                            topFiveCurtidoPorMim
+                              ? "var(--historietas-perfil-danger, #EF4444)"
+                              : "#FFFFFF"
+                          }
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                         <span style={authorHighlightsLikeCountStyle}>{compactarNumeroPerfilAutor(topFiveCurtidasTotal)}</span>
                       </button>
                     )
@@ -12808,6 +12838,27 @@ const desktopDiarySummaryGridStyle: CSSProperties = {
   padding: "4px 0 0",
 };
 
+// Teste: tipografia dos cards de obras igual à do card principal da Home.
+const homeCardTitleTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
+};
+
+const homeCardMetaTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+};
+
+const homeCardStatsTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 850,
+};
+
 const diarySummaryCardLinkStyle: CSSProperties = {
   display: "grid",
   gridTemplateRows: "auto auto",
@@ -12845,7 +12896,7 @@ const diarySummaryCardTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "10.5px",
   lineHeight: 1.3,
-  fontWeight: 900,
+  ...homeCardTitleTypographyStyle,
   textAlign: "center",
   overflow: "hidden",
   display: "-webkit-box",
@@ -13346,6 +13397,18 @@ const desktopTopWaterFadeStyle: CSSProperties = {
 };
 
 const perfilAutorThemeCss = `
+  @keyframes historietas-perfil-heart-pop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.28); }
+    100% { transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-historietas-top-five-like="true"] svg {
+      animation-duration: 1ms !important;
+    }
+  }
+
   html {
     --historietas-perfil-bg-page: #070212;
     --historietas-perfil-bg-deep: #04000A;
@@ -14839,7 +14902,7 @@ const authorHighlightsLikeButtonStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "4px",
+  gap: "5px",
   minWidth: 0,
   height: "22px",
   padding: 0,
@@ -14861,15 +14924,12 @@ const authorHighlightsLikeButtonActiveStyle: CSSProperties = {
   color: "var(--historietas-perfil-danger, #EF4444)",
 };
 
-const authorHighlightsLikeHeartEmojiStyle: CSSProperties = {
-  width: "16px",
-  height: "16px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
+const authorHighlightsLikeHeartIconStyle: CSSProperties = {
+  width: "18px",
+  height: "18px",
+  display: "block",
   flex: "0 0 auto",
-  fontSize: "14px",
-  lineHeight: 1,
+  transformOrigin: "center",
 };
 
 const authorHighlightsLikeCountStyle: CSSProperties = {
@@ -16032,8 +16092,7 @@ const profileWorkCoverTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "13px",
   lineHeight: 1.06,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
+  ...homeCardTitleTypographyStyle,
   textShadow: "none",
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -16046,7 +16105,7 @@ const profileWorkCoverMetaStyle: CSSProperties = {
   color: "rgba(244,244,245,0.86)",
   fontSize: "9px",
   lineHeight: 1.18,
-  fontWeight: 850,
+  ...homeCardStatsTypographyStyle,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -16114,8 +16173,7 @@ const profileWorkTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "12.75px",
   lineHeight: 1.08,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
+  ...homeCardTitleTypographyStyle,
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
@@ -16141,8 +16199,8 @@ const profileWorkMetaRowStyle: CSSProperties = {
 const profileWorkMetaStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9.1px",
+  ...homeCardMetaTypographyStyle,
   lineHeight: 1.2,
-  fontWeight: 850,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
@@ -16475,8 +16533,7 @@ const workTitleStyle: CSSProperties = {
   margin: 0,
   fontSize: "22px",
   lineHeight: 1.12,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
+  ...homeCardTitleTypographyStyle,
   maxWidth: "100%",
   ...safeTextStyle,
 };
@@ -16485,8 +16542,8 @@ const workTextStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "11px",
+  ...homeCardMetaTypographyStyle,
   lineHeight: 1.4,
-  fontWeight: 650,
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 1,
@@ -16501,7 +16558,7 @@ const workStatsStyle: CSSProperties = {
   gap: "5px",
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "9px",
-  fontWeight: 850,
+  ...homeCardStatsTypographyStyle,
   minWidth: 0,
   maxWidth: "100%",
 };

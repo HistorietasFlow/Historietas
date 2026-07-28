@@ -3956,7 +3956,7 @@ async function carregarNotificacoesDiarioSupabase(
     const mensagem =
       tipoAtividade === "avaliou_obra"
         ? `${perfilAutor.nome} avaliou ${tituloObra}${
-            nota > 0 ? ` com ${nota.toFixed(1).replace(".", ",")} estrelas` : ""
+            nota > 0 ? ` com ${nota.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 1 })} estrelas` : ""
           }.`
         : `${perfilAutor.nome} concluiu ${tituloObra}.`;
 

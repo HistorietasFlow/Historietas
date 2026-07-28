@@ -1759,7 +1759,7 @@ function formatarMediaAvaliacaoAutorHome(
   }
 
   return avaliacao.media.toLocaleString(obterLocaleHomeAtual().locale, {
-    minimumFractionDigits: 1,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 1,
   });
 }
@@ -4119,7 +4119,12 @@ export default function Home() {
               </div>
 
               <div style={mobileHeroTextBlockStyle}>
-                <h1 className="historietas-home-hero-title" style={mobileHeroTitleStyle}>{heroObra.titulo}</h1>
+                <h1
+                  className="historietas-home-hero-title"
+                  style={mobileHeroTitleStyle}
+                >
+                  {heroObra.titulo}
+                </h1>
 
                 <p style={mobileHeroDescriptionStyle}>
                   {formatarSinopseHeroMobile(heroObra.sinopse)}
@@ -4742,7 +4747,16 @@ function MobileObraLocalCard({
 
           <Link
             href={actionHref}
-            style={isDesktop ? desktopCardPrimaryActionStyle : mobileCardPrimaryActionStyle}
+            style={{
+              ...(isDesktop
+                ? desktopCardPrimaryActionStyle
+                : mobileCardPrimaryActionStyle),
+              ...(actionLabel === "Ver obra" ||
+              actionLabel === "Continuar" ||
+              actionLabel === "Ler agora"
+                ? pageBackgroundActionButtonStyle
+                : {}),
+            }}
           >
             {actionSubLabel ? (
               <span style={continueActionTextWrapStyle}>
@@ -4919,15 +4933,18 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
           </span>
 
           <span
-            style={
-              obra.disponivel
+            style={{
+              ...(obra.disponivel
                 ? isDesktop
                   ? desktopCardPrimaryActionStyle
                   : mobileCardPrimaryActionStyle
                 : isDesktop
                   ? desktopCardSecondaryActionStyle
-                  : mobileCardSecondaryActionStyle
-            }
+                  : mobileCardSecondaryActionStyle),
+              ...(obra.disponivel
+                ? pageBackgroundActionButtonStyle
+                : {}),
+            }}
           >
             {obra.disponivel ? "Ver obra" : "Ver detalhes"}
           </span>
@@ -5388,6 +5405,29 @@ const loadingSpinnerStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
+// Teste: identidade tipográfica trazida da página Lista.
+// Mantém os tamanhos e o layout próprios da Home.
+const listaPageTitleTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 900,
+  letterSpacing: "-0.035em",
+};
+
+const listaWorkTitleTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
+};
+
+const listaAuthorMetaTypographyStyle: CSSProperties = {
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+};
+
 const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100vh",
@@ -5397,7 +5437,8 @@ const pageStyle: CSSProperties = {
   background:
     "var(--historietas-bg-start, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 };
 
 const containerStyle: CSSProperties = {
@@ -5485,8 +5526,7 @@ const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: 0,
+  ...listaPageTitleTypographyStyle,
   display: "flex",
   alignItems: "center",
   gap: "4px",
@@ -5817,7 +5857,7 @@ const desktopHeroPosterTitleStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "28px",
   lineHeight: 1.06,
-  fontWeight: 950,
+  ...listaWorkTitleTypographyStyle,
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
@@ -5930,8 +5970,7 @@ const heroTitleStyle: CSSProperties = {
   margin: 0,
   fontSize: "clamp(34px, 11vw, 72px)",
   lineHeight: 0.96,
-  fontWeight: 950,
-  letterSpacing: 0,
+  ...listaWorkTitleTypographyStyle,
   maxWidth: "100%",
   textShadow:
     "0 1px 0 rgba(0,0,0,0.34), 0 2px 12px rgba(0,0,0,0.34)",
@@ -5955,8 +5994,8 @@ const heroDescriptionStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "15px",
+  ...listaAuthorMetaTypographyStyle,
   lineHeight: 1.55,
-  fontWeight: 650,
   maxWidth: "100%",
   textShadow:
     "0 1px 0 rgba(0,0,0,0.32), 0 2px 10px rgba(0,0,0,0.30)",
@@ -6241,7 +6280,7 @@ const mobileHeroTextBlockStyle: CSSProperties = {
   bottom: "120px",
   display: "grid",
   justifyItems: "center",
-  gap: "10px",
+  gap: "4px",
   textAlign: "center",
   width: "auto",
   maxWidth: "none",
@@ -6274,7 +6313,6 @@ const mobileHeroDescriptionStyle: CSSProperties = {
   WebkitBoxOrient: "vertical",
   width: "100%",
   maxWidth: "560px",
-  minHeight: "63px",
   overflow: "hidden",
   overflowWrap: "anywhere",
   wordBreak: "break-word",
@@ -6470,8 +6508,7 @@ const sectionTitleStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "clamp(24px, 4vw, 30px)",
   lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
+  ...listaPageTitleTypographyStyle,
   maxWidth: "100%",
   textAlign: "center",
   ...safeTextStyle,
@@ -6606,8 +6643,8 @@ const authorCardStyle: CSSProperties = {
   scrollSnapAlign: "start",
   padding: "12px",
   borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  background: "transparent",
+  border: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "grid",
@@ -6687,8 +6724,7 @@ const authorCardNameStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "24px",
   lineHeight: 0.98,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
+  ...listaWorkTitleTypographyStyle,
   display: "-webkit-box",
   WebkitLineClamp: 1,
   WebkitBoxOrient: "vertical",
@@ -6700,8 +6736,8 @@ const authorCardBioStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "12px",
+  ...listaAuthorMetaTypographyStyle,
   lineHeight: 1.35,
-  fontWeight: 750,
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
@@ -6786,7 +6822,7 @@ const authorProfileButtonStyle: CSSProperties = {
   minHeight: "40px",
   padding: "0 12px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "var(--historietas-bg-start, #070212)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "13px",
@@ -6810,8 +6846,8 @@ const publishedCardStyle: CSSProperties = {
   alignItems: "stretch",
   padding: "11px",
   borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  background: "transparent",
+  border: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   minWidth: 0,
@@ -6893,8 +6929,7 @@ const publishedTitleStyle: CSSProperties = {
   margin: 0,
   fontSize: "20px",
   lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
+  ...listaWorkTitleTypographyStyle,
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -6965,7 +7000,7 @@ const authorLinkStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D8C8FF)",
   fontSize: "12px",
-  fontWeight: 800,
+  ...listaAuthorMetaTypographyStyle,
   textDecoration: "none",
   borderBottom: "0",
   whiteSpace: "normal",
@@ -7152,6 +7187,10 @@ const mobileCardPrimaryActionStyle: CSSProperties = {
   textAlign: "center",
 };
 
+const pageBackgroundActionButtonStyle: CSSProperties = {
+  background: "var(--historietas-bg-start, #070212)",
+};
+
 const mobileCardSecondaryActionStyle: CSSProperties = {
   flex: "1 1 auto",
   minWidth: 0,
@@ -7213,8 +7252,8 @@ const obraCardStyle: CSSProperties = {
   alignItems: "stretch",
   padding: "11px",
   borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  background: "transparent",
+  border: "none",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   minWidth: 0,
@@ -7278,8 +7317,7 @@ const obraTitleStyle: CSSProperties = {
   margin: 0,
   fontSize: "20px",
   lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
+  ...listaWorkTitleTypographyStyle,
   maxWidth: "100%",
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -7326,7 +7364,7 @@ const authorStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D8C8FF)",
   fontSize: "12px",
-  fontWeight: 750,
+  ...listaAuthorMetaTypographyStyle,
   maxWidth: "100%",
   ...safeTextStyle,
 };

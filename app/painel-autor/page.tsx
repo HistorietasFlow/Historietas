@@ -4534,8 +4534,10 @@ const workTitleStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "13px",
   lineHeight: 1.06,
-  fontWeight: 950,
-  letterSpacing: "-0.035em",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
   textShadow: "none",
   display: "-webkit-box",
   WebkitLineClamp: 2,
@@ -4569,6 +4571,8 @@ const workMetaLineStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "9px",
   lineHeight: 1.18,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   fontWeight: 850,
   letterSpacing: "-0.01em",
   textShadow: "none",

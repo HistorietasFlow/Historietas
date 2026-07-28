@@ -621,6 +621,18 @@ function compactarNumero(valor: number) {
   }).format(Math.max(0, valor));
 }
 
+function formatarNotaListas(nota: number) {
+  if (!Number.isFinite(nota) || nota <= 0) {
+    return "0";
+  }
+
+  const notaArredondada = Math.round(nota * 10) / 10;
+
+  return Number.isInteger(notaArredondada)
+    ? String(notaArredondada)
+    : notaArredondada.toFixed(1).replace(".", ",");
+}
+
 function criarObraLista(row: RegistroGenerico, index: number): ObraLista {
   const titulo = pegarTexto(row.titulo, `Obra ${index + 1}`);
   const slug = pegarTexto(row.slug, criarSlugBase(titulo));
@@ -1452,9 +1464,7 @@ async function sincronizarAtividadeAvaliacaoListas(
       user_id: userId,
       obra_id: obra.id,
       tipo: "avaliou_obra",
-      texto: `Avaliou ${obra.titulo} com ${nota
-        .toFixed(1)
-        .replace(".", ",")} estrelas.`,
+      texto: `Avaliou ${obra.titulo} com ${formatarNotaListas(nota)} estrelas.`,
       visibilidade: "publico",
       metadata: {
         origem: "listas",
@@ -2564,7 +2574,7 @@ function renderizarEstrelasAvaliacao(nota: number, data: string) {
   return (
     <span
       style={ratingDetailStyle}
-      aria-label={`${notaNormalizada.toFixed(1).replace(".", ",")} de 5 estrelas`}
+      aria-label={`${formatarNotaListas(notaNormalizada)} de 5 estrelas`}
     >
       <span style={ratingStarsStyle} aria-hidden="true">
         {Array.from({ length: 5 }, (_, indice) => {
@@ -2593,7 +2603,7 @@ function renderizarEstrelasAvaliacao(nota: number, data: string) {
       </span>
 
       <span>
-        {notaNormalizada.toFixed(1).replace(".", ",")} • {formatarDataCurta(data)}
+        {formatarNotaListas(notaNormalizada)} • {formatarDataCurta(data)}
       </span>
     </span>
   );
@@ -4165,7 +4175,7 @@ function ListasUniversaisContent() {
               <span style={rowSignalsStyle}>
                 {item.nota > 0 && categoriaAtual !== "avaliacoes" && (
                   <span style={rowSignalStyle}>
-                    ★ {item.nota.toFixed(1).replace(".", ",")}
+                    ★ {formatarNotaListas(item.nota)}
                   </span>
                 )}
                 {item.anotacao && (
@@ -4247,24 +4257,42 @@ function ListasUniversaisContent() {
                       ? "not-allowed"
                       : "pointer",
                   }}
-                  aria-label={
+                  aria-label={`${
                     interacao.curtiu
                       ? "Remover curtida da anotação"
                       : "Curtir anotação"
-                  }
+                  }. ${compactarNumero(interacao.totalCurtidas)} ${
+                    interacao.totalCurtidas === 1 ? "curtida" : "curtidas"
+                  }`}
                   aria-pressed={interacao.curtiu}
                 >
-                  <span
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
                     style={{
                       ...listDiaryCardAnnotationLikeIconStyle,
-                      color: interacao.curtiu
-                        ? "var(--historietas-perfil-rose, #FB7185)"
-                        : "#FFFFFF",
+                      animation: interacao.curtiu
+                        ? "historietas-list-heart-pop 260ms ease-out"
+                        : "none",
                     }}
-                    aria-hidden="true"
                   >
-                    ❤️
-                  </span>
+                    <path
+                      d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                      fill={
+                        interacao.curtiu
+                          ? "var(--historietas-list-like-active, #EF4444)"
+                          : "none"
+                      }
+                      stroke={
+                        interacao.curtiu
+                          ? "var(--historietas-list-like-active, #EF4444)"
+                          : "#FFFFFF"
+                      }
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                   <span style={listDiaryCardAnnotationLikeCountStyle}>
                     {compactarNumero(interacao.totalCurtidas)}
                   </span>
@@ -4725,6 +4753,26 @@ export default function ListasUniversaisPage() {
 }
 
 const listasPageCss = `
+  html {
+    --historietas-list-like-active: #EF4444;
+  }
+
+  html[data-historietas-tema-visual="foco"] {
+    --historietas-list-like-active: #FFFFFF;
+  }
+
+  @keyframes historietas-list-heart-pop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.28); }
+    100% { transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-list-annotation svg {
+      animation-duration: 1ms !important;
+    }
+  }
+
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main,
   html[data-historietas-tema-visual="foco"] body,
@@ -5502,7 +5550,7 @@ const listDiaryCardAnnotationLikeButtonStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "4px",
+  gap: "5px",
   minHeight: "26px",
   padding: "0 2px",
   border: "none",
@@ -5515,10 +5563,11 @@ const listDiaryCardAnnotationLikeButtonStyle: CSSProperties = {
 };
 
 const listDiaryCardAnnotationLikeIconStyle: CSSProperties = {
-  fontSize: "14px",
-  fontWeight: 950,
-  lineHeight: 1,
-  transition: "color 160ms ease, transform 160ms ease",
+  width: "18px",
+  height: "18px",
+  display: "block",
+  flex: "0 0 auto",
+  transformOrigin: "center",
 };
 
 const listDiaryCardAnnotationLikeCountStyle: CSSProperties = {

@@ -2198,8 +2198,10 @@ const relatedTitleStyle: CSSProperties = {
   color: "#FFFFFF",
   fontSize: "clamp(18px, 5.8vw, 21px)",
   lineHeight: 1.02,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
@@ -2210,7 +2212,10 @@ const relatedTitleStyle: CSSProperties = {
 const relatedAuthorStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
-  fontWeight: 900,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
   maxWidth: "100%",
   ...safeTextStyle,
 };
@@ -2230,16 +2235,21 @@ const relatedReleasePanelStyle: CSSProperties = {
 const relatedReleaseLabelStyle: CSSProperties = {
   color: "var(--historietas-accent, var(--historietas-em-breve-accent-soft, #FDBA74))",
   fontSize: "8px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+  letterSpacing: "0.02em",
   ...safeTextStyle,
 };
 
 const relatedReleaseTextStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10px",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
   lineHeight: 1.35,
-  fontWeight: 750,
   ...safeTextStyle,
 };
 

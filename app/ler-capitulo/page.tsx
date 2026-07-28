@@ -3093,11 +3093,15 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
         <div style={commentLikeWrapStyle}>
           <button
             type="button"
-            aria-label={
+            data-historietas-reader-like="comment"
+            aria-pressed={usuarioCurtiuComentario}
+            aria-label={`${
               usuarioCurtiuComentario
                 ? "Remover curtida do comentário"
                 : "Curtir comentário"
-            }
+            }. ${comentario.curtidas.length} ${
+              comentario.curtidas.length === 1 ? "curtida" : "curtidas"
+            }`}
             onClick={() =>
               curtirComentarioSeguro(post?.id || "", comentario.id)
             }
@@ -3114,15 +3118,24 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
             <svg
               viewBox="0 0 24 24"
               aria-hidden="true"
-              style={commentHeartIconStyle}
+              style={{
+                ...commentHeartIconStyle,
+                animation: usuarioCurtiuComentario
+                  ? "historietas-reader-heart-pop 260ms ease-out"
+                  : "none",
+              }}
             >
               <path
                 d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                fill={usuarioCurtiuComentario ? "var(--historietas-reader-heart, #F43F5E)" : "none"}
+                fill={
+                  usuarioCurtiuComentario
+                    ? "var(--historietas-reader-heart, #EF4444)"
+                    : "none"
+                }
                 stroke={
                   usuarioCurtiuComentario
-                    ? "var(--historietas-reader-heart, #F43F5E)"
-                    : "var(--historietas-text-secondary, #D4D4D8)"
+                    ? "var(--historietas-reader-heart, #EF4444)"
+                    : "#FFFFFF"
                 }
                 strokeWidth="2"
                 strokeLinecap="round"
@@ -5110,14 +5123,19 @@ export default function LerCapituloPage() {
         >
           <button
             type="button"
+            data-historietas-reader-like="chapter"
             onClick={() => void alternarCurtida()}
             disabled={curtidaCapituloSalvando}
             aria-pressed={metricasCapitulo.curtiu}
-            aria-label={
+            aria-label={`${
               metricasCapitulo.curtiu
                 ? "Remover curtida do capítulo"
                 : "Curtir capítulo"
-            }
+            }. ${formatarContadorCapituloLeitor(
+              metricasCapitulo.totalCurtidas,
+            )} ${
+              metricasCapitulo.totalCurtidas === 1 ? "curtida" : "curtidas"
+            }`}
             style={{
               ...(modoFoco
                 ? metricasCapitulo.curtiu
@@ -5126,12 +5144,43 @@ export default function LerCapituloPage() {
                 : metricasCapitulo.curtiu
                 ? activeActionButtonStyle
                 : actionButtonStyle),
-              opacity: curtidaCapituloSalvando ? 0.72 : 1,
-              cursor: curtidaCapituloSalvando ? "wait" : "pointer",
+              ...chapterLikeButtonLayoutStyle,
+              opacity: curtidaCapituloSalvando ? 0.58 : 1,
+              cursor: curtidaCapituloSalvando
+                ? "not-allowed"
+                : "pointer",
             }}
           >
-            {metricasCapitulo.curtiu ? "❤️" : "🤍"}{" "}
-            {formatarContadorCapituloLeitor(metricasCapitulo.totalCurtidas)}
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              style={{
+                ...chapterHeartIconStyle,
+                animation: metricasCapitulo.curtiu
+                  ? "historietas-reader-heart-pop 260ms ease-out"
+                  : "none",
+              }}
+            >
+              <path
+                d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                fill={
+                  metricasCapitulo.curtiu
+                    ? "var(--historietas-reader-heart, #EF4444)"
+                    : "none"
+                }
+                stroke={
+                  metricasCapitulo.curtiu
+                    ? "var(--historietas-reader-heart, #EF4444)"
+                    : "#FFFFFF"
+                }
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span style={chapterLikeCountStyle}>
+              {formatarContadorCapituloLeitor(metricasCapitulo.totalCurtidas)}
+            </span>
           </button>
 
           <button
@@ -5270,6 +5319,12 @@ export default function LerCapituloPage() {
 }
 
 const leitorPageCss = `
+  @keyframes historietas-reader-heart-pop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.28); }
+    100% { transform: scale(1); }
+  }
+
   @keyframes historietas-loading-spin {
     to {
       transform: rotate(360deg);
@@ -5280,6 +5335,10 @@ const leitorPageCss = `
     .historietas-loading-spinner {
       animation-duration: 1.4s !important;
     }
+
+    [data-historietas-reader-like] svg {
+      animation-duration: 1ms !important;
+    }
   }
 
   html {
@@ -5289,7 +5348,7 @@ const leitorPageCss = `
     --historietas-reader-bg-end: #020006;
     --historietas-reader-progress: #4C1D95;
     --historietas-reader-danger: #EF4444;
-    --historietas-reader-heart: #F43F5E;
+    --historietas-reader-heart: #EF4444;
     --historietas-reader-logo-mid: #DDD6FE;
     --historietas-reader-logo-end: #A78BFA;
     --historietas-reader-secondary: #7C3AED;
@@ -6218,6 +6277,27 @@ const activeActionButtonStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.18)",
 };
 
+const chapterLikeButtonLayoutStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "5px",
+};
+
+const chapterHeartIconStyle: CSSProperties = {
+  width: "18px",
+  height: "18px",
+  display: "block",
+  flex: "0 0 auto",
+  transformOrigin: "center",
+};
+
+const chapterLikeCountStyle: CSSProperties = {
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  lineHeight: 1,
+};
+
 const activeSaveButtonStyle: CSSProperties = {
   ...actionButtonStyle,
   border: "1px solid rgba(255,255,255,0.18)",
@@ -6667,6 +6747,8 @@ const commentHeartIconStyle: CSSProperties = {
   width: "19px",
   height: "19px",
   display: "block",
+  flex: "0 0 auto",
+  transformOrigin: "center",
 };
 
 const commentsLoadingStyle: CSSProperties = {

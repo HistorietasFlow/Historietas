@@ -2913,7 +2913,7 @@ function montarTextoAtividadeSeguindo({
 
   if (tipo === "avaliou_obra") {
     const notaTexto = Number.isFinite(nota) && nota > 0
-      ? ` com ${nota.toFixed(1).replace(".", ",")} estrelas`
+      ? ` com ${nota.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 1 })} estrelas`
       : "";
 
     return `avaliou ${tituloObra}${notaTexto}`;
@@ -4702,7 +4702,7 @@ export default function SeguindoPage() {
 
                         <div style={isDesktop ? desktopContentStyle : contentStyle}>
                           <div style={badgeRowStyle}>
-                            <span style={badgeStyleSmall}>
+                            <span style={genreStyle}>
                               {obra.formato || "Obra"}
                             </span>
 
@@ -5194,13 +5194,13 @@ export default function SeguindoPage() {
 
                       <div style={authorContentStyle}>
                         <div style={authorBadgeRowStyle}>
-                          <span style={badgeStyleSmall}>
+                          <span style={authorWorksMetaStyle}>
                             {autor.obras.length} {" "}
                             {autor.obras.length === 1 ? "obra" : "obras"}
                           </span>
 
                           {autor.totalEmLeitura > 0 && (
-                            <span style={readingBadgeStyle}>
+                            <span style={authorReadingMetaStyle}>
                               {autor.totalEmLeitura} em leitura
                             </span>
                           )}
@@ -5918,7 +5918,10 @@ const suggestedUserNameStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "15px",
   lineHeight: 1.08,
-  fontWeight: 950,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
   textDecoration: "none",
   whiteSpace: "nowrap",
   overflow: "hidden",
@@ -5928,8 +5931,10 @@ const suggestedUserNameStyle: CSSProperties = {
 const suggestedUserHandleStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10px",
-  lineHeight: 1.1,
-  fontWeight: 800,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
@@ -6705,6 +6710,22 @@ const readingBadgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const authorWorksMetaStyle: CSSProperties = {
+  ...badgeStyleSmall,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+};
+
+const authorReadingMetaStyle: CSSProperties = {
+  ...readingBadgeStyle,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
+};
+
 const favoriteBadgeStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
@@ -6723,8 +6744,10 @@ const cardTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "22px",
   lineHeight: 1.02,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
   display: "-webkit-box",
   WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
@@ -6739,7 +6762,10 @@ const authorLinkStyle: CSSProperties = {
   margin: 0,
   color: "var(--historietas-text-secondary, #D8C8FF)",
   fontSize: "12px",
-  fontWeight: 900,
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 450,
+  lineHeight: 1.25,
   textDecoration: "none",
   borderBottom: "none",
   ...safeTextStyle,
@@ -7035,8 +7061,10 @@ const authorNameStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontSize: "23px",
   lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.05em",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
   maxWidth: "100%",
   ...safeTextStyle,
 };
