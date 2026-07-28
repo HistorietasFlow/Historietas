@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, FormEvent, ReactNode } from "react";
 import { supabase } from "../../lib/supabase/client";
 import {
   aplicarTemaVisual,
@@ -22,6 +22,14 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import type { HistorietasLanguage } from "../../lib/i18n";
 type TemaVisual = TemaVisualHistorietas;
 
+type TipoMensagemAcaoConfiguracoes = "sucesso" | "erro" | "aviso";
+
+type MensagemAcaoConfiguracoes = {
+  id: number;
+  tipo: TipoMensagemAcaoConfiguracoes;
+  texto: string;
+};
+
 type QuemPodeComentarDiario = "todos" | "seguidores" | "ninguem";
 type VisibilidadeAbaPerfil =
   | "publico"
@@ -38,7 +46,6 @@ type PreferenciasPrivacidadeHistorietas = {
   visibilidadeComunidade: VisibilidadeAbaPerfil;
   visibilidadeBiblioteca: VisibilidadeAbaPerfil;
   visibilidadeAtividades: VisibilidadeAbaPerfil;
-  anotacoesPrivadasPorPadrao: boolean;
   quemPodeComentarDiario: QuemPodeComentarDiario;
 };
 
@@ -55,7 +62,6 @@ const preferenciasPrivacidadePadrao: PreferenciasPrivacidadeHistorietas = {
   visibilidadeComunidade: "publico",
   visibilidadeBiblioteca: "somente_eu",
   visibilidadeAtividades: "seguidores",
-  anotacoesPrivadasPorPadrao: true,
   quemPodeComentarDiario: "todos",
 };
 
@@ -158,11 +164,6 @@ function normalizarPreferenciasPrivacidade(
           : "publico"
         : "somente_eu",
     ),
-    anotacoesPrivadasPorPadrao: normalizarBooleanoPrivacidade(
-      registro.anotacoesPrivadasPorPadrao ??
-        registro.anotacoes_privadas_padrao,
-      preferenciasPrivacidadePadrao.anotacoesPrivadasPorPadrao,
-    ),
     quemPodeComentarDiario: normalizarQuemPodeComentarDiario(
       registro.quemPodeComentarDiario ??
         registro.quem_pode_comentar_diario,
@@ -231,7 +232,7 @@ async function carregarPreferenciasPrivacidade(
     const { data, error } = await supabase
       .from("preferencias_privacidade")
       .select(
-        "perfil_privado,aprovar_novos_seguidores,visibilidade_obras,visibilidade_sobre,visibilidade_diario,visibilidade_comunidade,visibilidade_biblioteca,visibilidade_atividades,anotacoes_privadas_padrao,quem_pode_comentar_diario",
+        "perfil_privado,aprovar_novos_seguidores,visibilidade_obras,visibilidade_sobre,visibilidade_diario,visibilidade_comunidade,visibilidade_biblioteca,visibilidade_atividades,quem_pode_comentar_diario",
       )
       .eq("user_id", userIdLimpo)
       .maybeSingle();
@@ -278,8 +279,6 @@ async function salvarPreferenciasPrivacidade(
         visibilidade_comunidade: preferenciasSeguras.visibilidadeComunidade,
         visibilidade_biblioteca: preferenciasSeguras.visibilidadeBiblioteca,
         visibilidade_atividades: preferenciasSeguras.visibilidadeAtividades,
-        anotacoes_privadas_padrao:
-          preferenciasSeguras.anotacoesPrivadasPorPadrao,
         quem_pode_comentar_diario:
           preferenciasSeguras.quemPodeComentarDiario,
         atualizado_em: new Date().toISOString(),
@@ -347,7 +346,6 @@ const ALIASES_BUSCA_CONFIGURACOES: Record<string, string[]> = {
   somente: ["only", "solo"],
   pessoas: ["people", "personas"],
   sigo: ["following", "sigo"],
-  anotacoes: ["notes", "anotaciones"],
   progresso: ["progress", "progreso"],
   avaliacoes: ["ratings", "reviews", "valoraciones", "resenas"],
   comentarios: ["comments", "comentarios"],
@@ -461,6 +459,8 @@ type IconName =
   | "spark";
 
 const CONFIG_STORAGE_KEY = "historietas-configuracoes-conta";
+const CONFIGURACOES_ATUALIZADAS_EVENT =
+  "historietas:configuracoes-atualizadas";
 const CHAVES_RESUMO = [
   "historietas-obras",
   "historietas-notificacoes",
@@ -668,6 +668,112 @@ function criarResumoLocal(userId = ""): ResumoLocal {
   };
 }
 
+type ResultadoContagemResumoSupabase = {
+  ok: boolean;
+  total: number;
+};
+
+async function contarRegistrosResumoSupabase({
+  tabela,
+  campoSelecionado,
+  colunaUsuario,
+  userId,
+}: {
+  tabela: string;
+  campoSelecionado: string;
+  colunaUsuario: string;
+  userId: string;
+}): Promise<ResultadoContagemResumoSupabase> {
+  try {
+    const { count, error } = await supabase
+      .from(tabela)
+      .select(campoSelecionado, { count: "exact", head: true })
+      .eq(colunaUsuario, userId);
+
+    if (error) {
+      console.warn(
+        `Não consegui contar ${tabela} no resumo da conta:`,
+        error.message,
+      );
+      return { ok: false, total: 0 };
+    }
+
+    return {
+      ok: true,
+      total:
+        typeof count === "number" && Number.isFinite(count)
+          ? Math.max(0, Math.trunc(count))
+          : 0,
+    };
+  } catch (error) {
+    console.warn(`Não consegui acessar ${tabela} no resumo da conta:`, error);
+    return { ok: false, total: 0 };
+  }
+}
+
+async function carregarResumoContaSupabase(
+  userId: string,
+): Promise<ResumoLocal> {
+  const userIdLimpo = userId.trim();
+  const fallbackLocal = criarResumoLocal(userIdLimpo);
+
+  if (!idUsuarioSupabaseValido(userIdLimpo)) {
+    return fallbackLocal;
+  }
+
+  const [
+    obras,
+    favoritas,
+    concluidas,
+    seguindoObras,
+    seguindoAutores,
+  ] = await Promise.all([
+    contarRegistrosResumoSupabase({
+      tabela: "obras",
+      campoSelecionado: "id",
+      colunaUsuario: "user_id",
+      userId: userIdLimpo,
+    }),
+    contarRegistrosResumoSupabase({
+      tabela: "favoritos",
+      campoSelecionado: "obra_id",
+      colunaUsuario: "user_id",
+      userId: userIdLimpo,
+    }),
+    contarRegistrosResumoSupabase({
+      tabela: "concluidas",
+      campoSelecionado: "obra_id",
+      colunaUsuario: "user_id",
+      userId: userIdLimpo,
+    }),
+    contarRegistrosResumoSupabase({
+      tabela: "seguindo_obras",
+      campoSelecionado: "obra_id",
+      colunaUsuario: "user_id",
+      userId: userIdLimpo,
+    }),
+    contarRegistrosResumoSupabase({
+      tabela: "seguindo_usuarios",
+      campoSelecionado: "id",
+      colunaUsuario: "seguidor_id",
+      userId: userIdLimpo,
+    }),
+  ]);
+
+  return {
+    ...fallbackLocal,
+    obras: obras.ok ? obras.total : fallbackLocal.obras,
+    favoritas: favoritas.ok ? favoritas.total : fallbackLocal.favoritas,
+    concluidas: concluidas.ok ? concluidas.total : fallbackLocal.concluidas,
+    seguindoObras: seguindoObras.ok
+      ? seguindoObras.total
+      : fallbackLocal.seguindoObras,
+    seguindoAutores: seguindoAutores.ok
+      ? seguindoAutores.total
+      : fallbackLocal.seguindoAutores,
+  };
+}
+
 function carregarPreferencias(userId = ""): PreferenciasConta {
   const temaVisualSalvo = carregarTemaVisualSalvo(userId, true);
 
@@ -712,8 +818,22 @@ function carregarPreferencias(userId = ""): PreferenciasConta {
 }
 
 function salvarPreferencias(preferencias: PreferenciasConta, userId = "") {
-  salvarJsonStorageUsuarioConfiguracoes(CONFIG_STORAGE_KEY, userId, preferencias);
-  salvarTemaVisualSalvo(preferencias.temaVisual, userId);
+  const userIdLimpo = userId.trim();
+
+  salvarJsonStorageUsuarioConfiguracoes(
+    CONFIG_STORAGE_KEY,
+    userIdLimpo,
+    preferencias,
+  );
+  salvarTemaVisualSalvo(preferencias.temaVisual, userIdLimpo);
+
+  if (typeof window !== "undefined" && userIdLimpo) {
+    window.dispatchEvent(
+      new CustomEvent(CONFIGURACOES_ATUALIZADAS_EVENT, {
+        detail: { userId: userIdLimpo },
+      }),
+    );
+  }
 }
 
 function criarBackupLocal(userId = "") {
@@ -896,6 +1016,74 @@ async function carregarPerfilConfiguracoesSupabase(
   } catch {
     return null;
   }
+}
+
+function traduzirErroSenhaConfiguracoes(
+  mensagem: string,
+  language: HistorietasLanguage,
+) {
+  const mensagemNormalizada = mensagem.toLowerCase();
+
+  if (
+    mensagemNormalizada.includes("invalid login credentials") ||
+    mensagemNormalizada.includes("current password") ||
+    mensagemNormalizada.includes("incorrect password") ||
+    mensagemNormalizada.includes("invalid password")
+  ) {
+    return textoIdioma(
+      language,
+      "A senha atual está incorreta.",
+      "The current password is incorrect.",
+      "La contraseña actual es incorrecta.",
+    );
+  }
+
+  if (
+    mensagemNormalizada.includes("same password") ||
+    mensagemNormalizada.includes("different from the old password") ||
+    mensagemNormalizada.includes("new password should be different")
+  ) {
+    return textoIdioma(
+      language,
+      "A nova senha precisa ser diferente da senha atual.",
+      "The new password must be different from the current password.",
+      "La nueva contraseña debe ser diferente de la contraseña actual.",
+    );
+  }
+
+  if (
+    mensagemNormalizada.includes("weak password") ||
+    mensagemNormalizada.includes("password should") ||
+    mensagemNormalizada.includes("password must") ||
+    mensagemNormalizada.includes("password is too short")
+  ) {
+    return textoIdioma(
+      language,
+      "A nova senha não atende aos requisitos de segurança.",
+      "The new password does not meet the security requirements.",
+      "La nueva contraseña no cumple los requisitos de seguridad.",
+    );
+  }
+
+  if (
+    mensagemNormalizada.includes("reauth") ||
+    mensagemNormalizada.includes("nonce") ||
+    mensagemNormalizada.includes("session")
+  ) {
+    return textoIdioma(
+      language,
+      "Por segurança, entre novamente na conta e tente alterar a senha.",
+      "For security, sign in again and try changing the password.",
+      "Por seguridad, inicia sesión de nuevo e intenta cambiar la contraseña.",
+    );
+  }
+
+  return textoIdioma(
+    language,
+    "Não foi possível alterar a senha agora.",
+    "The password could not be changed right now.",
+    "No se pudo cambiar la contraseña ahora.",
+  );
 }
 
 function traduzirErroUsernameConfiguracoes(
@@ -1485,6 +1673,15 @@ export default function ConfiguracoesPage() {
   const [busca, setBusca] = useState("");
   const [mostrarTemas, setMostrarTemas] = useState(false);
   const [adminLiberado, setAdminLiberado] = useState(false);
+  const [mostrarSeguranca, setMostrarSeguranca] = useState(false);
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmarNovaSenha, setConfirmarNovaSenha] = useState("");
+  const [salvandoSenha, setSalvandoSenha] = useState(false);
+  const [erroSenha, setErroSenha] = useState("");
+  const [senhaAlterada, setSenhaAlterada] = useState(false);
+  const [mensagemAcao, setMensagemAcao] =
+    useState<MensagemAcaoConfiguracoes | null>(null);
   const { pageThemeStyle, setTemaVisual } =
     useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
@@ -1498,6 +1695,17 @@ export default function ConfiguracoesPage() {
 
   function t(portugues: string, ingles: string, espanhol: string) {
     return textoIdioma(language, portugues, ingles, espanhol);
+  }
+
+  function mostrarMensagemAcao(
+    tipo: TipoMensagemAcaoConfiguracoes,
+    texto: string,
+  ) {
+    setMensagemAcao({
+      id: Date.now(),
+      tipo,
+      texto,
+    });
   }
 
   useEffect(() => {
@@ -1536,10 +1744,12 @@ export default function ConfiguracoesPage() {
           email: data.user.email || "",
         };
         const preferenciasCarregadas = carregarPreferencias(usuarioCarregado.id);
-        const privacidadeCarregada = await carregarPreferenciasPrivacidade(
-          usuarioCarregado.id,
-          { usarFallbackLocal: true },
-        );
+        const [privacidadeCarregada, resumoCarregado] = await Promise.all([
+          carregarPreferenciasPrivacidade(usuarioCarregado.id, {
+            usarFallbackLocal: true,
+          }),
+          carregarResumoContaSupabase(usuarioCarregado.id),
+        ]);
 
         setUsuario(usuarioCarregado);
         setPrivacidade(privacidadeCarregada);
@@ -1562,7 +1772,7 @@ export default function ConfiguracoesPage() {
         );
         setTemaVisual(preferenciasCarregadas.temaVisual);
         aplicarTemaVisual(preferenciasCarregadas.temaVisual);
-        setResumo(criarResumoLocal(usuarioCarregado.id));
+        setResumo(resumoCarregado);
         setVerificandoAcesso(false);
       } catch {
         if (!cancelado) {
@@ -1637,6 +1847,50 @@ export default function ConfiguracoesPage() {
     };
   }, [verificandoAcesso]);
 
+  useEffect(() => {
+    if (!mostrarSeguranca || typeof document === "undefined") {
+      return;
+    }
+
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function fecharComEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && !salvandoSenha) {
+        setMostrarSeguranca(false);
+        setSenhaAtual("");
+        setNovaSenha("");
+        setConfirmarNovaSenha("");
+        setErroSenha("");
+        setSenhaAlterada(false);
+      }
+    }
+
+    window.addEventListener("keydown", fecharComEscape);
+
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      window.removeEventListener("keydown", fecharComEscape);
+    };
+  }, [mostrarSeguranca, salvandoSenha]);
+
+  useEffect(() => {
+    if (!mensagemAcao) {
+      return;
+    }
+
+    const mensagemId = mensagemAcao.id;
+    const timer = window.setTimeout(() => {
+      setMensagemAcao((mensagemAtual) =>
+        mensagemAtual?.id === mensagemId ? null : mensagemAtual,
+      );
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [mensagemAcao]);
+
   const buscaNormalizada = normalizarTextoBuscaConfiguracoes(busca);
 
   function deveMostrar(...termos: string[]) {
@@ -1672,24 +1926,77 @@ export default function ConfiguracoesPage() {
     }));
   }
 
+  function alternarReceberAvisos() {
+    const preferenciasAtualizadas: PreferenciasConta = {
+      ...preferencias,
+      receberAvisos: !preferencias.receberAvisos,
+    };
+
+    setPreferencias(preferenciasAtualizadas);
+
+    if (usuarioIdLogado) {
+      salvarPreferencias(preferenciasAtualizadas, usuarioIdLogado);
+    }
+  }
+
   function aplicarPrivacidadeAtualizada(
     privacidadeAtualizada: PreferenciasPrivacidadeHistorietas,
   ) {
     setPrivacidade(privacidadeAtualizada);
+    setMensagemAcao(null);
 
-    if (usuarioIdLogado) {
-      void salvarPreferenciasPrivacidade(
-        privacidadeAtualizada,
-        usuarioIdLogado,
-      ).then((resultado) => {
-        if (!resultado.ok) {
-          console.warn(
-            "A privacidade ficou salva neste aparelho, mas não sincronizou:",
-            resultado.erro,
-          );
-        }
-      });
+    const userIdSeguro = usuarioIdLogado.trim();
+
+    if (!userIdSeguro) {
+      mostrarMensagemAcao(
+        "aviso",
+        t(
+          "A preferência ficou salva apenas neste aparelho porque sua conta não pôde ser confirmada.",
+          "The preference was saved only on this device because your account could not be confirmed.",
+          "La preferencia se guardó solo en este dispositivo porque no se pudo confirmar tu cuenta.",
+        ),
+      );
+      return;
     }
+
+    void salvarPreferenciasPrivacidade(
+      privacidadeAtualizada,
+      userIdSeguro,
+    )
+      .then((resultado) => {
+        if (resultado.ok) {
+          return;
+        }
+
+        console.warn(
+          "A privacidade ficou salva neste aparelho, mas não sincronizou:",
+          resultado.erro,
+        );
+
+        mostrarMensagemAcao(
+          "aviso",
+          t(
+            "A preferência foi salva neste aparelho, mas não sincronizou com sua conta. Verifique sua conexão e tente novamente.",
+            "The preference was saved on this device, but it did not sync with your account. Check your connection and try again.",
+            "La preferencia se guardó en este dispositivo, pero no se sincronizó con tu cuenta. Comprueba tu conexión e inténtalo de nuevo.",
+          ),
+        );
+      })
+      .catch((error) => {
+        console.warn(
+          "Não foi possível sincronizar a preferência de privacidade:",
+          error,
+        );
+
+        mostrarMensagemAcao(
+          "aviso",
+          t(
+            "A preferência foi salva neste aparelho, mas não sincronizou com sua conta. Verifique sua conexão e tente novamente.",
+            "The preference was saved on this device, but it did not sync with your account. Check your connection and try again.",
+            "La preferencia se guardó en este dispositivo, pero no se sincronizó con tu cuenta. Comprueba tu conexión e inténtalo de nuevo.",
+          ),
+        );
+      });
   }
 
   function atualizarPrivacidade<
@@ -1749,6 +2056,8 @@ export default function ConfiguracoesPage() {
       return;
     }
 
+    setMensagemAcao(null);
+
     const userIdSeguro = usuarioIdLogado.trim();
     const usernameLimpo = normalizarUsernameConfiguracoes(preferencias.username);
 
@@ -1758,13 +2067,14 @@ export default function ConfiguracoesPage() {
     }
 
     if (preferencias.username.trim() && usernameLimpo.length < 3) {
-      setErroUsername(
-        t(
-          "Use pelo menos 3 caracteres no @username.",
-          "Use at least 3 characters in the @username.",
-          "Usa al menos 3 caracteres en el @username.",
-        ),
+      const mensagem = t(
+        "Use pelo menos 3 caracteres no @username.",
+        "Use at least 3 characters in the @username.",
+        "Usa al menos 3 caracteres en el @username.",
       );
+
+      setErroUsername(mensagem);
+      mostrarMensagemAcao("erro", mensagem);
       return;
     }
 
@@ -1792,6 +2102,8 @@ export default function ConfiguracoesPage() {
         return;
       }
 
+      const falhasSincronizacao: string[] = [];
+
       const resultadoPerfil = await salvarPerfilConfiguracoesSupabase({
         userId: userIdSeguro,
         nome:
@@ -1800,9 +2112,13 @@ export default function ConfiguracoesPage() {
       });
 
       if (!resultadoPerfil.ok) {
-        setErroUsername(
-          traduzirErroUsernameConfiguracoes(resultadoPerfil.erro, language),
+        const mensagem = traduzirErroUsernameConfiguracoes(
+          resultadoPerfil.erro,
+          language,
         );
+
+        setErroUsername(mensagem);
+        mostrarMensagemAcao("erro", mensagem);
         return;
       }
 
@@ -1817,6 +2133,7 @@ export default function ConfiguracoesPage() {
       });
 
       if (erroMetadata) {
+        falhasSincronizacao.push("metadados");
         console.warn(
           "O perfil foi salvo, mas os metadados da autenticação não sincronizaram:",
           erroMetadata.message,
@@ -1830,6 +2147,7 @@ export default function ConfiguracoesPage() {
       );
 
       if (!resultadoPrivacidade.ok) {
+        falhasSincronizacao.push("privacidade");
         console.warn(
           "As preferências de privacidade ficaram salvas neste aparelho, mas não sincronizaram:",
           resultadoPrivacidade.erro,
@@ -1849,30 +2167,207 @@ export default function ConfiguracoesPage() {
             }
           : usuarioAtual,
       );
-      setResumo(criarResumoLocal(userIdSeguro));
+      setResumo(await carregarResumoContaSupabase(userIdSeguro));
+
+      if (falhasSincronizacao.length > 0) {
+        mostrarMensagemAcao(
+          "aviso",
+          t(
+            "As alterações foram salvas neste aparelho, mas parte delas não sincronizou com sua conta.",
+            "The changes were saved on this device, but some of them did not sync with your account.",
+            "Los cambios se guardaron en este dispositivo, pero algunos no se sincronizaron con tu cuenta.",
+          ),
+        );
+      } else {
+        mostrarMensagemAcao(
+          "sucesso",
+          t(
+            "Alterações salvas com sucesso.",
+            "Changes saved successfully.",
+            "Cambios guardados correctamente.",
+          ),
+        );
+      }
     } catch (error) {
       console.warn("Não consegui salvar as configurações da conta:", error);
-      setErroUsername(
-        t(
-          "Não consegui salvar suas alterações agora.",
-          "I could not save your changes right now.",
-          "No pude guardar tus cambios ahora.",
-        ),
+
+      const mensagem = t(
+        "Não consegui salvar suas alterações agora.",
+        "I could not save your changes right now.",
+        "No pude guardar tus cambios ahora.",
       );
+
+      setErroUsername(mensagem);
+      mostrarMensagemAcao("erro", mensagem);
     } finally {
       setSalvando(false);
     }
   }
 
+  function abrirSeguranca() {
+    setSenhaAtual("");
+    setNovaSenha("");
+    setConfirmarNovaSenha("");
+    setErroSenha("");
+    setSenhaAlterada(false);
+    setMostrarSeguranca(true);
+  }
+
+  function fecharSeguranca() {
+    if (salvandoSenha) {
+      return;
+    }
+
+    setMostrarSeguranca(false);
+    setSenhaAtual("");
+    setNovaSenha("");
+    setConfirmarNovaSenha("");
+    setErroSenha("");
+    setSenhaAlterada(false);
+  }
+
+  async function alterarSenha(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (salvandoSenha || senhaAlterada) {
+      return;
+    }
+
+    setErroSenha("");
+
+    if (!senhaAtual) {
+      setErroSenha(
+        t(
+          "Digite sua senha atual.",
+          "Enter your current password.",
+          "Escribe tu contraseña actual.",
+        ),
+      );
+      return;
+    }
+
+    if (novaSenha.length < 8) {
+      setErroSenha(
+        t(
+          "A nova senha precisa ter pelo menos 8 caracteres.",
+          "The new password must be at least 8 characters long.",
+          "La nueva contraseña debe tener al menos 8 caracteres.",
+        ),
+      );
+      return;
+    }
+
+    if (
+      !/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(novaSenha) ||
+      !/[0-9]/.test(novaSenha)
+    ) {
+      setErroSenha(
+        t(
+          "Use pelo menos uma letra e um número na nova senha.",
+          "Use at least one letter and one number in the new password.",
+          "Usa al menos una letra y un número en la nueva contraseña.",
+        ),
+      );
+      return;
+    }
+
+    if (novaSenha === senhaAtual) {
+      setErroSenha(
+        t(
+          "A nova senha precisa ser diferente da senha atual.",
+          "The new password must be different from the current password.",
+          "La nueva contraseña debe ser diferente de la contraseña actual.",
+        ),
+      );
+      return;
+    }
+
+    if (novaSenha !== confirmarNovaSenha) {
+      setErroSenha(
+        t(
+          "A confirmação não corresponde à nova senha.",
+          "The confirmation does not match the new password.",
+          "La confirmación no coincide con la nueva contraseña.",
+        ),
+      );
+      return;
+    }
+
+    setSalvandoSenha(true);
+
+    try {
+      const { data: dadosUsuario, error: erroUsuario } =
+        await supabase.auth.getUser();
+
+      if (
+        erroUsuario ||
+        !dadosUsuario.user ||
+        dadosUsuario.user.id !== usuarioIdLogado
+      ) {
+        setErroSenha(
+          t(
+            "Sua sessão expirou. Entre novamente na conta.",
+            "Your session has expired. Sign in again.",
+            "Tu sesión expiró. Inicia sesión de nuevo.",
+          ),
+        );
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        current_password: senhaAtual,
+        password: novaSenha,
+      });
+
+      if (error) {
+        setErroSenha(traduzirErroSenhaConfiguracoes(error.message, language));
+        return;
+      }
+
+      setSenhaAtual("");
+      setNovaSenha("");
+      setConfirmarNovaSenha("");
+      setSenhaAlterada(true);
+    } catch (error) {
+      setErroSenha(
+        traduzirErroSenhaConfiguracoes(
+          error instanceof Error ? error.message : "",
+          language,
+        ),
+      );
+    } finally {
+      setSalvandoSenha(false);
+    }
+  }
+
   async function copiarBackup() {
+    setMensagemAcao(null);
+
     try {
       await copiarTexto(criarBackupLocal(usuarioIdLogado));
+      mostrarMensagemAcao(
+        "sucesso",
+        t(
+          "Dados copiados para a área de transferência.",
+          "Data copied to the clipboard.",
+          "Datos copiados al portapapeles.",
+        ),
+      );
     } catch {
-      // A ação de copiar não mostra bloco visual na página.
+      mostrarMensagemAcao(
+        "erro",
+        t(
+          "Não foi possível copiar os dados.",
+          "The data could not be copied.",
+          "No se pudieron copiar los datos.",
+        ),
+      );
     }
   }
 
   function baixarBackup() {
+    setMensagemAcao(null);
+
     try {
       const backup = criarBackupLocal(usuarioIdLogado);
       const dataAtual = new Date().toISOString().slice(0, 10);
@@ -1887,10 +2382,25 @@ export default function ConfiguracoesPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
 
+      mostrarMensagemAcao(
+        "sucesso",
+        t(
+          "Backup preparado e download iniciado.",
+          "Backup prepared and download started.",
+          "Copia preparada y descarga iniciada.",
+        ),
+      );
     } catch {
-      // A ação de baixar backup não mostra bloco visual na página.
+      mostrarMensagemAcao(
+        "erro",
+        t(
+          "Não foi possível baixar o backup.",
+          "The backup could not be downloaded.",
+          "No se pudo descargar la copia.",
+        ),
+      );
     }
   }
 
@@ -2124,15 +2634,16 @@ export default function ConfiguracoesPage() {
                   "Contraseña y seguridad",
                 )}
                 subtitle={t(
-                  "Gerenciada pela sua autenticação",
-                  "Managed by your authentication",
-                  "Gestionada por tu autenticación",
+                  "Altere com segurança sua senha de acesso",
+                  "Securely change your access password",
+                  "Cambia de forma segura tu contraseña de acceso",
                 )}
                 right={
                   <ValorLinha>
-                    {t("Conta", "Account", "Cuenta")}
+                    {t("Alterar", "Change", "Cambiar")}
                   </ValorLinha>
                 }
+                onClick={abrirSeguranca}
               />
             ) : null}
           </SettingsSection>
@@ -2459,7 +2970,6 @@ export default function ConfiguracoesPage() {
 
         {deveMostrar(
           "diário",
-          "anotações",
           "comentários",
           "seguidores",
         ) ? (
@@ -2470,39 +2980,6 @@ export default function ConfiguracoesPage() {
               "Opciones del Diario",
             )}
           >
-            {deveMostrar("anotações", "privadas", "padrão") ? (
-              <SettingsRow
-                icon="lock"
-                title={t(
-                  "Anotações privadas por padrão",
-                  "Notes private by default",
-                  "Anotaciones privadas de forma predeterminada",
-                )}
-                subtitle={t(
-                  "Vale para novas anotações; cada uma ainda pode ser alterada",
-                  "Applies to new notes; each one can still be changed",
-                  "Se aplica a nuevas anotaciones; cada una todavía puede cambiarse",
-                )}
-                right={
-                  <Toggle
-                    checked={privacidade.anotacoesPrivadasPorPadrao}
-                    onChange={() =>
-                      atualizarPrivacidade(
-                        "anotacoesPrivadasPorPadrao",
-                        !privacidade.anotacoesPrivadasPorPadrao,
-                      )
-                    }
-                    ariaLabel={t(
-                      "Ativar ou desativar anotações privadas por padrão",
-                      "Enable or disable private notes by default",
-                      "Activar o desactivar anotaciones privadas de forma predeterminada",
-                    )}
-                  />
-                }
-                hideChevron
-              />
-            ) : null}
-
             {deveMostrar("comentários", "seguidores", "diário") ? (
               <SettingsRow
                 icon="comment"
@@ -2596,9 +3073,9 @@ export default function ConfiguracoesPage() {
                   "Obras creadas",
                 )}
                 subtitle={t(
-                  "Total publicado ou salvo no seu dispositivo",
-                  "Total published or saved on your device",
-                  "Total publicado o guardado en tu dispositivo",
+                  "Total de obras criadas na sua conta",
+                  "Total works created on your account",
+                  "Total de obras creadas en tu cuenta",
                 )}
                 right={<ValorLinha>{resumo.obras}</ValorLinha>}
                 href="/perfil-autor?aba=obras"
@@ -2819,12 +3296,7 @@ export default function ConfiguracoesPage() {
                 right={
                   <Toggle
                     checked={preferencias.receberAvisos}
-                    onChange={() =>
-                      atualizarPreferencia(
-                        "receberAvisos",
-                        !preferencias.receberAvisos,
-                      )
-                    }
+                    onChange={alternarReceberAvisos}
                     ariaLabel={t(
                       "Ativar ou desativar avisos",
                       "Enable or disable alerts",
@@ -2935,11 +3407,7 @@ export default function ConfiguracoesPage() {
                   "Questions, problems and guidance",
                   "Dudas, problemas y orientación",
                 )}
-                right={
-                  <ValorLinha>
-                    {t("Em breve", "Coming soon", "Próximamente")}
-                  </ValorLinha>
-                }
+                href="/ajuda"
               />
             ) : null}
 
@@ -2956,11 +3424,7 @@ export default function ConfiguracoesPage() {
                   "Privacy, platform use and rules",
                   "Privacidad, uso de la plataforma y reglas",
                 )}
-                right={
-                  <ValorLinha>
-                    {t("Em breve", "Coming soon", "Próximamente")}
-                  </ValorLinha>
-                }
+                href="/termos"
               />
             ) : null}
 
@@ -3006,6 +3470,277 @@ export default function ConfiguracoesPage() {
           </section>
         ) : null}
       </section>
+
+      {mostrarSeguranca ? (
+        <div
+          role="presentation"
+          style={securityOverlayStyle}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              fecharSeguranca();
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-seguranca-configuracoes"
+            style={securityModalStyle}
+          >
+            <header style={securityModalHeaderStyle}>
+              <span style={securityModalIconStyle}>
+                <SvgIcon name="lock" size={24} strokeWidth={2.2} />
+              </span>
+
+              <div style={securityModalHeadingStyle}>
+                <h2
+                  id="titulo-seguranca-configuracoes"
+                  style={securityModalTitleStyle}
+                >
+                  {t(
+                    "Alterar senha",
+                    "Change password",
+                    "Cambiar contraseña",
+                  )}
+                </h2>
+                <p style={securityModalSubtitleStyle}>
+                  {t(
+                    "Confirme sua senha atual e escolha uma nova senha.",
+                    "Confirm your current password and choose a new one.",
+                    "Confirma tu contraseña actual y elige una nueva.",
+                  )}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharSeguranca}
+                disabled={salvandoSenha}
+                aria-label={t("Fechar", "Close", "Cerrar")}
+                style={
+                  salvandoSenha
+                    ? securityCloseButtonDisabledStyle
+                    : securityCloseButtonStyle
+                }
+              >
+                ×
+              </button>
+            </header>
+
+            {senhaAlterada ? (
+              <div role="status" aria-live="polite" style={securitySuccessStyle}>
+                <SvgIcon name="check" size={25} strokeWidth={2.4} />
+                <div style={securityFeedbackTextStyle}>
+                  <strong>
+                    {t(
+                      "Senha alterada com sucesso",
+                      "Password changed successfully",
+                      "Contraseña cambiada correctamente",
+                    )}
+                  </strong>
+                  <span>
+                    {t(
+                      "A nova senha já está ativa na sua conta.",
+                      "The new password is now active on your account.",
+                      "La nueva contraseña ya está activa en tu cuenta.",
+                    )}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={alterarSenha} style={securityFormStyle}>
+                <label style={securityFieldStyle}>
+                  <span style={securityFieldLabelStyle}>
+                    {t(
+                      "Senha atual",
+                      "Current password",
+                      "Contraseña actual",
+                    )}
+                  </span>
+                  <input
+                    className="configuracoes-input"
+                    type="password"
+                    value={senhaAtual}
+                    onChange={(event) => {
+                      setSenhaAtual(event.target.value);
+                      setErroSenha("");
+                    }}
+                    autoComplete="current-password"
+                    disabled={salvandoSenha}
+                    style={securityPasswordInputStyle}
+                  />
+                </label>
+
+                <label style={securityFieldStyle}>
+                  <span style={securityFieldLabelStyle}>
+                    {t("Nova senha", "New password", "Nueva contraseña")}
+                  </span>
+                  <input
+                    className="configuracoes-input"
+                    type="password"
+                    value={novaSenha}
+                    onChange={(event) => {
+                      setNovaSenha(event.target.value);
+                      setErroSenha("");
+                    }}
+                    autoComplete="new-password"
+                    minLength={8}
+                    disabled={salvandoSenha}
+                    style={securityPasswordInputStyle}
+                  />
+                </label>
+
+                <label style={securityFieldStyle}>
+                  <span style={securityFieldLabelStyle}>
+                    {t(
+                      "Confirmar nova senha",
+                      "Confirm new password",
+                      "Confirmar nueva contraseña",
+                    )}
+                  </span>
+                  <input
+                    className="configuracoes-input"
+                    type="password"
+                    value={confirmarNovaSenha}
+                    onChange={(event) => {
+                      setConfirmarNovaSenha(event.target.value);
+                      setErroSenha("");
+                    }}
+                    autoComplete="new-password"
+                    minLength={8}
+                    disabled={salvandoSenha}
+                    style={securityPasswordInputStyle}
+                  />
+                </label>
+
+                <p style={securityHintStyle}>
+                  {t(
+                    "Use no mínimo 8 caracteres, incluindo uma letra e um número.",
+                    "Use at least 8 characters, including a letter and a number.",
+                    "Usa al menos 8 caracteres, incluyendo una letra y un número.",
+                  )}
+                </p>
+
+                {erroSenha ? (
+                  <div role="alert" aria-live="assertive" style={securityErrorStyle}>
+                    {erroSenha}
+                  </div>
+                ) : null}
+
+                <div style={securityActionsStyle}>
+                  <button
+                    type="button"
+                    onClick={fecharSeguranca}
+                    disabled={salvandoSenha}
+                    style={
+                      salvandoSenha
+                        ? securitySecondaryButtonDisabledStyle
+                        : securitySecondaryButtonStyle
+                    }
+                  >
+                    {t("Cancelar", "Cancel", "Cancelar")}
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={salvandoSenha}
+                    style={
+                      salvandoSenha
+                        ? securityPrimaryButtonDisabledStyle
+                        : securityPrimaryButtonStyle
+                    }
+                  >
+                    {salvandoSenha ? (
+                      <>
+                        <LoadingSpinner
+                          compacto
+                          label={t(
+                            "Alterando senha",
+                            "Changing password",
+                            "Cambiando contraseña",
+                          )}
+                        />
+                        <span>
+                          {t(
+                            "Alterando...",
+                            "Changing...",
+                            "Cambiando...",
+                          )}
+                        </span>
+                      </>
+                    ) : (
+                      t(
+                        "Alterar senha",
+                        "Change password",
+                        "Cambiar contraseña",
+                      )
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {senhaAlterada ? (
+              <button
+                type="button"
+                onClick={fecharSeguranca}
+                style={securityDoneButtonStyle}
+              >
+                {t("Concluído", "Done", "Listo")}
+              </button>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
+
+      {mensagemAcao ? (
+        <div
+          role={mensagemAcao.tipo === "erro" ? "alert" : "status"}
+          aria-live={mensagemAcao.tipo === "erro" ? "assertive" : "polite"}
+          aria-atomic="true"
+          style={
+            mensagemAcao.tipo === "sucesso"
+              ? actionToastSuccessStyle
+              : mensagemAcao.tipo === "aviso"
+                ? actionToastWarningStyle
+                : actionToastErrorStyle
+          }
+        >
+          <span style={actionToastIconStyle}>
+            <SvgIcon
+              name={
+                mensagemAcao.tipo === "sucesso"
+                  ? "check"
+                  : mensagemAcao.tipo === "aviso"
+                    ? "shield"
+                    : "file"
+              }
+              size={23}
+              strokeWidth={2.25}
+            />
+          </span>
+
+          <span style={actionToastTextBoxStyle}>
+            <strong style={actionToastTitleStyle}>
+              {mensagemAcao.tipo === "sucesso"
+                ? t("Sucesso", "Success", "Éxito")
+                : mensagemAcao.tipo === "aviso"
+                  ? t("Atenção", "Attention", "Atención")
+                  : t("Não foi possível", "Something went wrong", "No fue posible")}
+            </strong>
+            <span style={actionToastMessageStyle}>{mensagemAcao.texto}</span>
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setMensagemAcao(null)}
+            aria-label={t("Fechar mensagem", "Close message", "Cerrar mensaje")}
+            style={actionToastCloseStyle}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -3456,6 +4191,317 @@ const inputHelperStyle: CSSProperties = {
 const inputErrorStyle: CSSProperties = {
   ...inputHelperStyle,
   color: "var(--configuracoes-danger-text, #FCA5A5)",
+};
+
+const actionToastBaseStyle: CSSProperties = {
+  position: "fixed",
+  right: "16px",
+  bottom: "16px",
+  zIndex: 1400,
+  width: "min(390px, calc(100vw - 32px))",
+  boxSizing: "border-box",
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr) 32px",
+  alignItems: "start",
+  gap: "10px",
+  padding: "13px",
+  borderRadius: "16px",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.52)",
+  backdropFilter: "blur(14px)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+};
+
+const actionToastSuccessStyle: CSSProperties = {
+  ...actionToastBaseStyle,
+  background: "rgba(20,83,45,0.94)",
+  border: "1px solid rgba(74,222,128,0.36)",
+  color: "#DCFCE7",
+};
+
+const actionToastWarningStyle: CSSProperties = {
+  ...actionToastBaseStyle,
+  background: "rgba(113,63,18,0.95)",
+  border: "1px solid rgba(251,191,36,0.40)",
+  color: "#FEF3C7",
+};
+
+const actionToastErrorStyle: CSSProperties = {
+  ...actionToastBaseStyle,
+  background: "rgba(127,29,29,0.95)",
+  border: "1px solid rgba(248,113,113,0.40)",
+  color: "#FEE2E2",
+};
+
+const actionToastIconStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "rgba(255,255,255,0.12)",
+  color: "inherit",
+};
+
+const actionToastTextBoxStyle: CSSProperties = {
+  minWidth: 0,
+  display: "grid",
+  gap: "4px",
+  paddingTop: "1px",
+};
+
+const actionToastTitleStyle: CSSProperties = {
+  color: "inherit",
+  fontSize: "13px",
+  lineHeight: 1.1,
+  fontWeight: 900,
+};
+
+const actionToastMessageStyle: CSSProperties = {
+  color: "inherit",
+  fontSize: "12px",
+  lineHeight: 1.4,
+  fontWeight: 650,
+  opacity: 0.94,
+  ...safeTextStyle,
+};
+
+const actionToastCloseStyle: CSSProperties = {
+  width: "32px",
+  height: "32px",
+  border: 0,
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "rgba(255,255,255,0.10)",
+  color: "inherit",
+  fontFamily: "inherit",
+  fontSize: "22px",
+  lineHeight: 1,
+  cursor: "pointer",
+};
+
+const securityOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 1200,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "20px",
+  boxSizing: "border-box",
+  background: "rgba(0,0,0,0.74)",
+  backdropFilter: "blur(8px)",
+};
+
+const securityModalStyle: CSSProperties = {
+  width: "min(440px, 100%)",
+  maxHeight: "calc(100dvh - 40px)",
+  overflowY: "auto",
+  borderRadius: "22px",
+  padding: "20px",
+  boxSizing: "border-box",
+  background:
+    "var(--configuracoes-card-bg, linear-gradient(180deg, #18131F 0%, #0B090E 100%))",
+  border: "1px solid var(--configuracoes-border, rgba(255,255,255,0.14))",
+  boxShadow: "0 28px 90px rgba(0,0,0,0.62)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+};
+
+const securityModalHeaderStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "42px minmax(0, 1fr) 36px",
+  alignItems: "start",
+  gap: "11px",
+};
+
+const securityModalIconStyle: CSSProperties = {
+  width: "42px",
+  height: "42px",
+  borderRadius: "14px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--configuracoes-control-bg, rgba(255,255,255,0.09))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+};
+
+const securityModalHeadingStyle: CSSProperties = {
+  minWidth: 0,
+};
+
+const securityModalTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "21px",
+  lineHeight: 1.08,
+  fontWeight: 900,
+  letterSpacing: "-0.035em",
+};
+
+const securityModalSubtitleStyle: CSSProperties = {
+  margin: "6px 0 0",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.58))",
+  fontSize: "13px",
+  lineHeight: 1.35,
+  fontWeight: 560,
+  ...safeTextStyle,
+};
+
+const securityCloseButtonStyle: CSSProperties = {
+  width: "36px",
+  height: "36px",
+  border: "0",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--configuracoes-control-bg, rgba(255,255,255,0.08))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontFamily: "inherit",
+  fontSize: "25px",
+  lineHeight: 1,
+  cursor: "pointer",
+};
+
+const securityCloseButtonDisabledStyle: CSSProperties = {
+  ...securityCloseButtonStyle,
+  cursor: "not-allowed",
+  opacity: 0.45,
+};
+
+const securityFormStyle: CSSProperties = {
+  display: "grid",
+  gap: "14px",
+  marginTop: "22px",
+};
+
+const securityFieldStyle: CSSProperties = {
+  display: "grid",
+  gap: "7px",
+};
+
+const securityFieldLabelStyle: CSSProperties = {
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.70))",
+  fontSize: "12px",
+  lineHeight: 1,
+  fontWeight: 850,
+  textTransform: "uppercase",
+  letterSpacing: "0.035em",
+};
+
+const securityPasswordInputStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "48px",
+  boxSizing: "border-box",
+  borderRadius: "13px",
+  border: "1px solid var(--configuracoes-border, rgba(255,255,255,0.14))",
+  outline: "none",
+  padding: "10px 13px",
+  background: "var(--configuracoes-control-bg, rgba(255,255,255,0.075))",
+  color: "var(--historietas-input-text, #FFFFFF)",
+  fontFamily: "inherit",
+  fontSize: "16px",
+  lineHeight: 1.2,
+  fontWeight: 680,
+};
+
+const securityHintStyle: CSSProperties = {
+  margin: "-2px 0 0",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.50))",
+  fontSize: "12px",
+  lineHeight: 1.35,
+  fontWeight: 570,
+  ...safeTextStyle,
+};
+
+const securityErrorStyle: CSSProperties = {
+  padding: "11px 12px",
+  borderRadius: "12px",
+  border: "1px solid rgba(248,113,113,0.32)",
+  background: "rgba(127,29,29,0.20)",
+  color: "var(--configuracoes-danger-text, #FCA5A5)",
+  fontSize: "13px",
+  lineHeight: 1.35,
+  fontWeight: 700,
+  ...safeTextStyle,
+};
+
+const securitySuccessStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "30px minmax(0, 1fr)",
+  gap: "11px",
+  alignItems: "start",
+  marginTop: "22px",
+  padding: "15px",
+  borderRadius: "15px",
+  border: "1px solid rgba(74,222,128,0.30)",
+  background: "rgba(20,83,45,0.22)",
+  color: "#BBF7D0",
+};
+
+const securityFeedbackTextStyle: CSSProperties = {
+  display: "grid",
+  gap: "5px",
+  color: "inherit",
+  fontSize: "13px",
+  lineHeight: 1.35,
+  ...safeTextStyle,
+};
+
+const securityActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.25fr)",
+  gap: "10px",
+  marginTop: "4px",
+};
+
+const securityButtonBaseStyle: CSSProperties = {
+  minHeight: "46px",
+  borderRadius: "13px",
+  padding: "10px 14px",
+  border: "0",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "9px",
+  fontFamily: "inherit",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 850,
+  cursor: "pointer",
+};
+
+const securitySecondaryButtonStyle: CSSProperties = {
+  ...securityButtonBaseStyle,
+  background: "var(--configuracoes-control-bg, rgba(255,255,255,0.09))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  border: "1px solid var(--configuracoes-border, rgba(255,255,255,0.12))",
+};
+
+const securityPrimaryButtonStyle: CSSProperties = {
+  ...securityButtonBaseStyle,
+  background: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-secondary-button-text, #FFFFFF)",
+};
+
+const securitySecondaryButtonDisabledStyle: CSSProperties = {
+  ...securitySecondaryButtonStyle,
+  cursor: "not-allowed",
+  opacity: 0.48,
+};
+
+const securityPrimaryButtonDisabledStyle: CSSProperties = {
+  ...securityPrimaryButtonStyle,
+  cursor: "not-allowed",
+  opacity: 0.64,
+};
+
+const securityDoneButtonStyle: CSSProperties = {
+  ...securityPrimaryButtonStyle,
+  width: "100%",
+  marginTop: "15px",
 };
 
 const toggleBaseStyle: CSSProperties = {
