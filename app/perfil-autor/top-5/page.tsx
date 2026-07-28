@@ -1210,7 +1210,10 @@ export default function Top5PerfilAutorPage() {
 
         {!carregando && (
           obrasFiltradas.length > 0 ? (
-            <div style={worksGridStyle}>
+            <div
+              data-historietas-top5-works-grid="true"
+              style={worksGridStyle}
+            >
               {obrasFiltradas.map((obra) => {
                 const chave = criarChaveObraTop5(obra);
                 const posicaoSelecionada = idsSelecionados.indexOf(chave) + 1;
@@ -1294,6 +1297,18 @@ const top5PerfilAutorPageCss = `
   html[data-historietas-tema-visual="foco"] button,
   html[data-historietas-tema-visual="foco"] a {
     color: #FFFFFF;
+  }
+
+
+  @media (min-width: 768px) {
+    [data-historietas-top5-works-grid="true"] {
+      grid-template-columns: repeat(
+        auto-fill,
+        minmax(138px, 1fr)
+      ) !important;
+      row-gap: 12px !important;
+      column-gap: 14px !important;
+    }
   }
 `;
 
@@ -1537,9 +1552,15 @@ const gridSectionStyle: CSSProperties = {
 };
 
 const worksGridStyle: CSSProperties = {
+  width: "100%",
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "10px",
+  alignItems: "start",
+  rowGap: "10px",
+  columnGap: "10px",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const top5CardStyle: CSSProperties = {
@@ -1562,11 +1583,12 @@ const top5CardSelectedStyle: CSSProperties = {
 const top5CoverStyle: CSSProperties = {
   position: "relative",
   width: "100%",
-  aspectRatio: "0.68 / 1",
-  borderRadius: "14px",
+  aspectRatio: "3 / 4",
+  borderRadius: "12px",
   overflow: "hidden",
   background: "#09090B",
-  boxShadow: "0 12px 22px rgba(0,0,0,0.22)",
+  border: "none",
+  boxShadow: "none",
 };
 
 const top5CoverEmptyStyle: CSSProperties = {

@@ -11,9 +11,13 @@ import {
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 import {
+  carregarEstadoRelacionamentoPerfil,
   carregarPermissoesAbasPerfil,
   carregarPreferenciasPrivacidade,
+  preferenciasPrivacidadePadrao,
+  type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
+  type PreferenciasPrivacidadeHistorietas,
 } from "../../lib/historietasPrivacy";
 
 type ModoLista = "perfil" | "obras" | "autores";
@@ -27,6 +31,15 @@ type CategoriaPerfil =
   | "avaliacoes"
   | "historico";
 type OrdenacaoLista = "recentes" | "titulo" | "avaliacao" | "popularidade";
+type VisibilidadeAnotacaoListas = "publico" | "parcial" | "privado";
+type TipoDiarioListas =
+  | "lendo"
+  | "quero_ler"
+  | "favorita"
+  | "concluida"
+  | "avaliacao"
+  | "review"
+  | "atividade";
 
 type CapituloLista = {
   id: string;
@@ -68,9 +81,17 @@ type ItemObraLista = {
   obra: ObraLista;
   categorias: CategoriaPerfil[];
   data: string;
+  ultimaLeituraEm?: string;
   nota: number;
   progresso: number;
   capituloAtual: string;
+  capituloAtualId: string;
+  capitulosLidosIds: string[];
+  anotacao?: string;
+  anotacaoId?: string;
+  anotacaoTipo?: TipoDiarioListas;
+  anotacaoVisibilidade?: VisibilidadeAnotacaoListas;
+  anotacaoSpoiler?: boolean;
 };
 
 type AutorLista = {
@@ -91,6 +112,49 @@ type AutorLista = {
 type ListasPerfilEstado = Record<CategoriaPerfil, ItemObraLista[]>;
 
 type RegistroGenerico = Record<string, unknown>;
+
+type AnotacaoObraListas = {
+  id: string;
+  obraId: string;
+  tipo: TipoDiarioListas;
+  texto: string;
+  visibilidade: VisibilidadeAnotacaoListas;
+  contemSpoiler: boolean;
+  atualizadoEm: string;
+};
+
+type EditorAnotacaoListasEstado = {
+  aberto: boolean;
+  obraId: string;
+  anotacaoId: string;
+  tipo: TipoDiarioListas;
+  texto: string;
+  contemSpoiler: boolean;
+  salvando: boolean;
+  erro: string;
+};
+
+type ComentarioAnotacaoListas = {
+  id: string;
+  anotacaoId: string;
+  userId: string;
+  autorNome: string;
+  texto: string;
+  criadoEm: string;
+};
+
+type InteracaoAnotacaoListas = {
+  carregando: boolean;
+  totalCurtidas: number;
+  curtiu: boolean;
+  comentarios: ComentarioAnotacaoListas[];
+  novoComentario: string;
+  salvandoCurtida: boolean;
+  enviandoComentario: boolean;
+  erro: string;
+};
+
+type InteracoesAnotacoesListasEstado = Record<string, InteracaoAnotacaoListas>;
 
 const LISTAS_PERFIL_VAZIAS: ListasPerfilEstado = {
   tudo: [],
@@ -124,7 +188,40 @@ const CATEGORIAS_PERFIL: Array<{
   { valor: "historico", rotulo: "Histórico" },
 ];
 
+const OBRAS_STORAGE_KEY = "historietas-obras";
 const LIBRARY_FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
+const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
+const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
+const DIARIO_ANOTACOES_STORAGE_KEY = "historietas-diario-anotacoes";
+const DIARIO_ANOTACAO_MAX_LENGTH = 700;
+const DIARIO_COMENTARIO_MAX_LENGTH = 700;
+const NOTAS_AVALIACAO_LISTAS = [1, 2, 3, 4, 5] as const;
+
+const EDITOR_ANOTACAO_LISTAS_VAZIO: EditorAnotacaoListasEstado = {
+  aberto: false,
+  obraId: "",
+  anotacaoId: "",
+  tipo: "atividade",
+  texto: "",
+  contemSpoiler: false,
+  salvando: false,
+  erro: "",
+};
+
+function criarInteracaoAnotacaoListasVazia(
+  carregando = false,
+): InteracaoAnotacaoListas {
+  return {
+    carregando,
+    totalCurtidas: 0,
+    curtiu: false,
+    comentarios: [],
+    novoComentario: "",
+    salvandoCurtida: false,
+    enviandoComentario: false,
+    erro: "",
+  };
+}
 
 const CAMPOS_OBRAS =
   "id,user_id,titulo,autor,genero,formato,capa_url,publicado,visualizacoes,slug,criada_em";
@@ -147,6 +244,55 @@ function pegarNumero(valor: unknown, fallback = 0) {
   }
 
   return fallback;
+}
+
+function pegarBooleanoListas(valor: unknown, fallback = false) {
+  if (typeof valor === "boolean") {
+    return valor;
+  }
+
+  if (typeof valor === "number") {
+    return valor === 1;
+  }
+
+  if (typeof valor === "string") {
+    const normalizado = valor.trim().toLowerCase();
+
+    if (normalizado === "true" || normalizado === "1") {
+      return true;
+    }
+
+    if (normalizado === "false" || normalizado === "0") {
+      return false;
+    }
+  }
+
+  return fallback;
+}
+
+function erroRelacionadoAoCampoSpoilerListas(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const registro = error as Record<string, unknown>;
+  const textoErro = [
+    registro.message,
+    registro.details,
+    registro.hint,
+    registro.code,
+  ]
+    .filter((valor): valor is string => typeof valor === "string")
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    textoErro.includes("contem_spoiler") &&
+    (textoErro.includes("column") ||
+      textoErro.includes("campo") ||
+      textoErro.includes("schema") ||
+      textoErro.includes("cache"))
+  );
 }
 
 function idUsuarioValido(valor: string) {
@@ -187,6 +333,78 @@ function carregarListaIdsListas(chave: string, userId = "") {
   } catch {
     return [] as string[];
   }
+}
+
+function carregarObrasLocaisListas(userId: string) {
+  const userIdLimpo = userId.trim();
+
+  if (typeof window === "undefined" || !userIdLimpo) {
+    return [] as RegistroGenerico[];
+  }
+
+  try {
+    const texto = localStorage.getItem(
+      criarStorageKeyUsuarioListas(OBRAS_STORAGE_KEY, userIdLimpo),
+    );
+    const valor = texto ? JSON.parse(texto) : [];
+
+    return Array.isArray(valor)
+      ? valor.filter(
+          (item): item is RegistroGenerico =>
+            Boolean(item) && typeof item === "object" && !Array.isArray(item),
+        )
+      : [];
+  } catch {
+    return [] as RegistroGenerico[];
+  }
+}
+
+function obterProgressoObraLocalListas(registro: RegistroGenerico) {
+  const capitulos = Array.isArray(registro.capitulos)
+    ? registro.capitulos.filter(
+        (item): item is RegistroGenerico =>
+          Boolean(item) && typeof item === "object" && !Array.isArray(item),
+      )
+    : [];
+  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido === true);
+  const progressoCalculado = capitulos.length
+    ? Math.round((capitulosLidos.length / capitulos.length) * 100)
+    : 0;
+  const progressoInformado = pegarNumero(
+    registro.progressoLeitura ??
+      registro.progresso_leitura ??
+      registro.progresso,
+  );
+  const progresso = Math.max(
+    0,
+    Math.min(100, Math.round(Math.max(progressoCalculado, progressoInformado))),
+  );
+  const capituloMaisRecente = [...capitulosLidos].sort(
+    (a, b) =>
+      timestampData(
+        pegarTexto(b.lidoEm ?? b.lido_em ?? b.atualizado_em ?? b.criado_em),
+      ) -
+      timestampData(
+        pegarTexto(a.lidoEm ?? a.lido_em ?? a.atualizado_em ?? a.criado_em),
+      ),
+  )[0];
+
+  return {
+    progresso,
+    data:
+      pegarTexto(
+        registro.ultimaLeituraEm ??
+          registro.ultima_leitura_em ??
+          capituloMaisRecente?.lidoEm ??
+          capituloMaisRecente?.lido_em ??
+          capituloMaisRecente?.atualizado_em ??
+          capituloMaisRecente?.criado_em,
+      ) || pegarTexto(registro.criadaEm ?? registro.criada_em),
+    capituloId:
+      pegarTexto(
+        registro.ultimoCapituloLidoId ?? registro.ultimo_capitulo_lido_id,
+      ) || pegarTexto(capituloMaisRecente?.id),
+  };
 }
 
 function salvarListaIdsListas(
@@ -381,6 +599,21 @@ function formatarMesAno(data: string) {
     .toLocaleUpperCase("pt-BR");
 }
 
+function formatarLeituraMesAno(data: string) {
+  const timestamp = timestampData(data);
+
+  if (!timestamp) {
+    return "";
+  }
+
+  const mesAno = new Intl.DateTimeFormat("pt-BR", {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(timestamp));
+
+  return `Lido em ${mesAno}`;
+}
+
 function compactarNumero(valor: number) {
   return new Intl.NumberFormat("pt-BR", {
     notation: valor >= 1000 ? "compact" : "standard",
@@ -418,7 +651,7 @@ function criarPerfilLista(
   nomeFallback: string,
 ): PerfilLista {
   return {
-    userId,
+    userId: pegarTexto(row?.user_id ?? row?.id, userId),
     nome:
       pegarTexto(row?.nome) ||
       pegarTexto(row?.display_name) ||
@@ -795,6 +1028,55 @@ async function carregarObrasPublicadas(idsEspecificos: string[] = []) {
   }
 }
 
+function obterCamposAlternativosRegistrosUsuario(
+  tabela: string,
+  camposPrincipais: string,
+) {
+  const alternativasPorTabela: Record<string, string[]> = {
+    seguindo_obras: [
+      "obra_id,visibilidade,criado_em",
+      "obra_id,criado_em",
+      "obra_id",
+    ],
+    favoritos: [
+      "obra_id,visibilidade,criado_em",
+      "obra_id,criado_em",
+      "obra_id",
+    ],
+    concluidas: [
+      "obra_id,visibilidade,criado_em",
+      "obra_id,criado_em",
+      "obra_id",
+    ],
+    obra_avaliacoes: [
+      "obra_id,nota,criado_em",
+      "obra_id,nota",
+    ],
+    diario_anotacoes: [
+      "id,obra_id,tipo,texto,visibilidade,contem_spoiler,criado_em,atualizado_em",
+      "id,obra_id,tipo,texto,visibilidade,contem_spoiler,atualizado_em",
+      "id,obra_id,tipo,texto,visibilidade,criado_em,atualizado_em",
+      "id,obra_id,tipo,texto,visibilidade,atualizado_em",
+      "id,obra_id,tipo,texto,visibilidade",
+      "id,obra_id,tipo,texto",
+    ],
+    progresso_leitura: [
+      "obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
+      "obra_id,capitulo_id,lido,progresso,criado_em",
+      "obra_id,capitulo_id,lido,progresso",
+      "obra_id,capitulo_id,lido",
+      "capitulo_id,lido,criado_em,atualizado_em",
+      "capitulo_id,lido,atualizado_em",
+      "capitulo_id,lido,criado_em",
+      "capitulo_id,lido",
+    ],
+  };
+
+  return Array.from(
+    new Set([camposPrincipais, ...(alternativasPorTabela[tabela] || [])]),
+  );
+}
+
 async function carregarRegistrosUsuario(
   tabela: string,
   campos: string,
@@ -804,30 +1086,53 @@ async function carregarRegistrosUsuario(
     return [] as RegistroGenerico[];
   }
 
-  try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select(campos)
-      .eq("user_id", userId)
-      .limit(2000);
+  const camposParaTentar = obterCamposAlternativosRegistrosUsuario(
+    tabela,
+    campos,
+  );
+  let ultimaMensagemErro = "";
 
-    if (error || !Array.isArray(data)) {
-      return [] as RegistroGenerico[];
+  for (const camposConsulta of camposParaTentar) {
+    try {
+      const { data, error } = await supabase
+        .from(tabela)
+        .select(camposConsulta)
+        .eq("user_id", userId)
+        .limit(2000);
+
+      if (error) {
+        ultimaMensagemErro = error.message;
+        continue;
+      }
+
+      if (!Array.isArray(data)) {
+        continue;
+      }
+
+      return data
+        .filter(
+          (registro) =>
+            Boolean(
+              registro &&
+                typeof registro === "object" &&
+                !Array.isArray(registro),
+            ),
+        )
+        .map((registro) => registro as unknown as RegistroGenerico);
+    } catch (error) {
+      ultimaMensagemErro =
+        error instanceof Error ? error.message : "Falha desconhecida";
     }
-
-    return data
-      .filter(
-        (registro) =>
-          Boolean(
-            registro &&
-              typeof registro === "object" &&
-              !Array.isArray(registro),
-          ),
-      )
-      .map((registro) => registro as unknown as RegistroGenerico);
-  } catch {
-    return [] as RegistroGenerico[];
   }
+
+  if (ultimaMensagemErro) {
+    console.warn(
+      `Não consegui carregar ${tabela} na página Listas:`,
+      ultimaMensagemErro,
+    );
+  }
+
+  return [] as RegistroGenerico[];
 }
 
 function dataRegistro(registro: RegistroGenerico) {
@@ -848,6 +1153,491 @@ function registroPermitido(registro: RegistroGenerico, proprioPerfil: boolean) {
   return visibilidade !== "privado";
 }
 
+
+function normalizarVisibilidadeAnotacaoListas(
+  valor: unknown,
+  fallback: VisibilidadeAnotacaoListas = "privado",
+): VisibilidadeAnotacaoListas {
+  return valor === "publico" || valor === "parcial" || valor === "privado"
+    ? valor
+    : fallback;
+}
+
+function normalizarTipoDiarioListas(valor: unknown): TipoDiarioListas | "" {
+  return valor === "lendo" ||
+    valor === "quero_ler" ||
+    valor === "favorita" ||
+    valor === "concluida" ||
+    valor === "avaliacao" ||
+    valor === "review" ||
+    valor === "atividade"
+    ? valor
+    : "";
+}
+
+function obterTipoDiarioDoItemListas(
+  categoria: CategoriaPerfil,
+  item?: ItemObraLista | null,
+): TipoDiarioListas {
+  const categoriaEfetiva =
+    categoria === "tudo"
+      ? ([
+          "lendo",
+          "quero-ler",
+          "favoritas",
+          "concluidas",
+          "avaliacoes",
+          "historico",
+        ] as CategoriaPerfil[]).find((valor) => item?.categorias.includes(valor)) ||
+        "historico"
+      : categoria;
+
+  if (categoriaEfetiva === "lendo") return "lendo";
+  if (categoriaEfetiva === "quero-ler") return "quero_ler";
+  if (categoriaEfetiva === "favoritas") return "favorita";
+  if (categoriaEfetiva === "concluidas") return "concluida";
+  if (categoriaEfetiva === "avaliacoes") return "avaliacao";
+  return "atividade";
+}
+
+function criarChaveStorageAnotacoesListas(userId: string) {
+  return `${DIARIO_ANOTACOES_STORAGE_KEY}:${userId.trim().toLowerCase()}`;
+}
+
+function carregarAnotacoesLocaisListas(userId: string) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return [] as RegistroGenerico[];
+  }
+
+  try {
+    const salvo = window.localStorage.getItem(
+      criarChaveStorageAnotacoesListas(userId),
+    );
+    const registros = salvo ? JSON.parse(salvo) : [];
+
+    return Array.isArray(registros)
+      ? registros.filter(
+          (registro): registro is RegistroGenerico =>
+            Boolean(registro) &&
+            typeof registro === "object" &&
+            !Array.isArray(registro),
+        )
+      : [];
+  } catch {
+    return [] as RegistroGenerico[];
+  }
+}
+
+function salvarAnotacaoLocalListas(
+  userId: string,
+  registro: RegistroGenerico,
+) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return;
+  }
+
+  try {
+    const obraId = pegarTexto(registro.obra_id ?? registro.obraId);
+
+    if (!obraId) {
+      return;
+    }
+
+    const registros = carregarAnotacoesLocaisListas(userId).filter(
+      (item) => pegarTexto(item.obra_id ?? item.obraId) !== obraId,
+    );
+
+    registros.push(registro);
+    window.localStorage.setItem(
+      criarChaveStorageAnotacoesListas(userId),
+      JSON.stringify(registros),
+    );
+  } catch {
+    // O Supabase continua sendo a fonte principal.
+  }
+}
+
+function removerAnotacaoLocalListas(userId: string, obraId: string) {
+  if (typeof window === "undefined" || !userId.trim()) {
+    return;
+  }
+
+  try {
+    const obraIdLimpo = obraId.trim();
+    const registros = carregarAnotacoesLocaisListas(userId).filter(
+      (item) => pegarTexto(item.obra_id ?? item.obraId) !== obraIdLimpo,
+    );
+
+    window.localStorage.setItem(
+      criarChaveStorageAnotacoesListas(userId),
+      JSON.stringify(registros),
+    );
+  } catch {
+    // Ignora somente a cópia local.
+  }
+}
+
+function anotacaoPodeAparecerListas(
+  _registro: RegistroGenerico,
+  _proprioPerfil: boolean,
+) {
+  // A visibilidade é controlada pela configuração geral da aba Diário.
+  // Esta função só é chamada depois que o acesso ao Diário foi autorizado.
+  return true;
+}
+
+function montarMapaAnotacoesPorObraListas(
+  registros: RegistroGenerico[],
+  proprioPerfil: boolean,
+) {
+  const mapa = new Map<string, AnotacaoObraListas>();
+
+  registros.forEach((registro) => {
+    if (!anotacaoPodeAparecerListas(registro, proprioPerfil)) {
+      return;
+    }
+
+    const obraId = pegarTexto(registro.obra_id ?? registro.obraId);
+    const tipo = normalizarTipoDiarioListas(registro.tipo);
+    const textoAnotacao = pegarTexto(registro.texto);
+    const atualizadoEm = dataRegistro(registro);
+
+    if (!obraId || !tipo || !textoAnotacao) {
+      return;
+    }
+
+    const chave = obraId.toLowerCase();
+    const existente = mapa.get(chave);
+
+    if (
+      existente &&
+      timestampData(existente.atualizadoEm) >= timestampData(atualizadoEm)
+    ) {
+      return;
+    }
+
+    mapa.set(chave, {
+      id: pegarTexto(registro.id),
+      obraId,
+      tipo,
+      texto: textoAnotacao,
+      visibilidade: normalizarVisibilidadeAnotacaoListas(
+        registro.visibilidade,
+        "publico",
+      ),
+      contemSpoiler: pegarBooleanoListas(
+        registro.contem_spoiler ?? registro.contemSpoiler,
+      ),
+      atualizadoEm,
+    });
+  });
+
+  return mapa;
+}
+
+function aplicarAnotacoesAosItensListas(
+  itens: ItemObraLista[],
+  anotacoesPorObra: Map<string, AnotacaoObraListas>,
+) {
+  return itens.map((item) => {
+    const anotacao = anotacoesPorObra.get(item.obra.id.toLowerCase());
+
+    if (!anotacao) {
+      return item;
+    }
+
+    return {
+      ...item,
+      anotacao: anotacao.texto,
+      anotacaoId: anotacao.id,
+      anotacaoTipo: anotacao.tipo,
+      anotacaoVisibilidade: anotacao.visibilidade,
+      anotacaoSpoiler: anotacao.contemSpoiler,
+    };
+  });
+}
+
+function obterProximaNotaAvaliacaoListas(estrela: number, notaAtual: number) {
+  const meiaNota = estrela - 0.5;
+  const notaNormalizada = Math.round(notaAtual * 2) / 2;
+
+  if (notaNormalizada === meiaNota) return estrela;
+  if (notaNormalizada === estrela) return 0;
+  return meiaNota;
+}
+
+function obterPreenchimentoEstrelaListas(estrela: number, notaAtual: number) {
+  const notaNormalizada = Math.max(
+    0,
+    Math.min(5, Math.round(notaAtual * 2) / 2),
+  );
+
+  if (notaNormalizada >= estrela) return "100%";
+  if (notaNormalizada >= estrela - 0.5) return "50%";
+  return "0%";
+}
+
+async function salvarAvaliacaoRemotaListas({
+  obraId,
+  userId,
+  nota,
+}: {
+  obraId: string;
+  userId: string;
+  nota: number;
+}) {
+  const { error: erroRemocao } = await supabase
+    .from("obra_avaliacoes")
+    .delete()
+    .eq("obra_id", obraId)
+    .eq("user_id", userId);
+
+  if (erroRemocao) {
+    throw erroRemocao;
+  }
+
+  if (nota <= 0) {
+    return;
+  }
+
+  const { error: erroInsercao } = await supabase
+    .from("obra_avaliacoes")
+    .insert({ obra_id: obraId, user_id: userId, nota });
+
+  if (erroInsercao) {
+    throw erroInsercao;
+  }
+
+  const { data, error: erroVerificacao } = await supabase
+    .from("obra_avaliacoes")
+    .select("nota")
+    .eq("obra_id", obraId)
+    .eq("user_id", userId)
+    .limit(10);
+
+  if (erroVerificacao) {
+    throw erroVerificacao;
+  }
+
+  const confirmado = Array.isArray(data)
+    ? data.some((registro) => {
+        const valor = pegarNumero((registro as RegistroGenerico).nota);
+        return Math.round(valor * 2) / 2 === nota;
+      })
+    : false;
+
+  if (!confirmado) {
+    throw new Error("A avaliação não foi confirmada pelo banco de dados.");
+  }
+}
+
+async function sincronizarAtividadeAvaliacaoListas(
+  userId: string,
+  obra: ObraLista,
+  nota: number,
+) {
+  try {
+    await supabase
+      .from("diario_atividades")
+      .delete()
+      .eq("user_id", userId)
+      .eq("obra_id", obra.id)
+      .eq("tipo", "avaliou_obra");
+
+    if (nota <= 0) {
+      return;
+    }
+
+    const payloadBase = {
+      user_id: userId,
+      obra_id: obra.id,
+      tipo: "avaliou_obra",
+      texto: `Avaliou ${obra.titulo} com ${nota
+        .toFixed(1)
+        .replace(".", ",")} estrelas.`,
+      visibilidade: "publico",
+      metadata: {
+        origem: "listas",
+        titulo: obra.titulo,
+        slug: obra.slug,
+        autor: obra.autor,
+        genero: obra.genero,
+        formato: obra.formato,
+      },
+    };
+    const { error } = await supabase.from("diario_atividades").insert({
+      ...payloadBase,
+      nota,
+    });
+
+    if (error) {
+      await supabase.from("diario_atividades").insert(payloadBase);
+    }
+  } catch (error) {
+    console.warn("Não consegui sincronizar a atividade da avaliação:", error);
+  }
+}
+
+async function carregarNomesComentariosAnotacoesListas(userIds: string[]) {
+  const ids = Array.from(new Set(userIds.map((id) => id.trim()).filter(Boolean)));
+  const nomes = new Map<string, string>();
+
+  if (ids.length === 0) {
+    return nomes;
+  }
+
+  const selecoes = [
+    "id,user_id,nome,nome_usuario,username,display_name,apelido",
+    "id,user_id,nome,username,display_name",
+    "id,user_id,nome,username",
+    "id,user_id,nome",
+  ];
+
+  for (const coluna of ["user_id", "id"] as const) {
+    for (const selecao of selecoes) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(selecao)
+          .in(coluna, ids)
+          .limit(Math.max(ids.length, 1));
+
+        if (error || !Array.isArray(data)) {
+          continue;
+        }
+
+        data.forEach((item) => {
+          const registro = item as unknown as RegistroGenerico;
+          const nome =
+            pegarTexto(registro.nome) ||
+            pegarTexto(registro.nome_usuario) ||
+            pegarTexto(registro.username) ||
+            pegarTexto(registro.display_name) ||
+            pegarTexto(registro.apelido) ||
+            "Leitor";
+          const userId = pegarTexto(registro.user_id);
+          const id = pegarTexto(registro.id);
+
+          if (userId) nomes.set(userId, nome);
+          if (id) nomes.set(id, nome);
+        });
+
+        break;
+      } catch {
+        // Tenta a próxima seleção compatível.
+      }
+    }
+  }
+
+  return nomes;
+}
+
+async function carregarInteracoesAnotacoesListas(
+  anotacaoIds: string[],
+  usuarioAtualId: string,
+): Promise<InteracoesAnotacoesListasEstado> {
+  const ids = Array.from(
+    new Set(anotacaoIds.map((id) => id.trim()).filter(Boolean)),
+  );
+  const resultado = ids.reduce<InteracoesAnotacoesListasEstado>(
+    (estado, id) => {
+      estado[id] = criarInteracaoAnotacaoListasVazia();
+      return estado;
+    },
+    {},
+  );
+
+  if (ids.length === 0) {
+    return resultado;
+  }
+
+  const [curtidasResposta, comentariosResposta] = await Promise.all([
+    supabase
+      .from("diario_anotacao_curtidas")
+      .select("id,anotacao_id,user_id")
+      .in("anotacao_id", ids)
+      .limit(2000),
+    supabase
+      .from("diario_anotacao_comentarios")
+      .select("id,anotacao_id,user_id,texto,criado_em,atualizado_em")
+      .in("anotacao_id", ids)
+      .order("criado_em", { ascending: true })
+      .limit(2000),
+  ]);
+
+  if (Array.isArray(curtidasResposta.data)) {
+    curtidasResposta.data.forEach((item) => {
+      const registro = item as unknown as RegistroGenerico;
+      const anotacaoId = pegarTexto(registro.anotacao_id);
+      const interacao = resultado[anotacaoId];
+
+      if (!interacao) return;
+      interacao.totalCurtidas += 1;
+      if (pegarTexto(registro.user_id) === usuarioAtualId) {
+        interacao.curtiu = true;
+      }
+    });
+  }
+
+  const comentarios = Array.isArray(comentariosResposta.data)
+    ? comentariosResposta.data.map(
+        (item) => item as unknown as RegistroGenerico,
+      )
+    : [];
+  const nomes = await carregarNomesComentariosAnotacoesListas(
+    comentarios.map((registro) => pegarTexto(registro.user_id)).filter(Boolean),
+  );
+
+  comentarios.forEach((registro) => {
+    const anotacaoId = pegarTexto(registro.anotacao_id);
+    const interacao = resultado[anotacaoId];
+    const id = pegarTexto(registro.id);
+    const textoComentario = pegarTexto(registro.texto);
+    const userId = pegarTexto(registro.user_id);
+
+    if (!interacao || !id || !textoComentario) return;
+
+    interacao.comentarios.push({
+      id,
+      anotacaoId,
+      userId,
+      autorNome: nomes.get(userId) || "Leitor",
+      texto: textoComentario,
+      criadoEm: pegarTexto(registro.criado_em ?? registro.atualizado_em),
+    });
+  });
+
+  return resultado;
+}
+
+function obterHrefContinuarLeituraListas(item: ItemObraLista) {
+  const obra = item.obra;
+  const capitulosLidos = new Set(item.capitulosLidosIds);
+  const indiceAtual = obra.capitulos.findIndex(
+    (capitulo) => capitulo.id === item.capituloAtualId,
+  );
+  const proximoAposAtual =
+    indiceAtual >= 0
+      ? obra.capitulos
+          .slice(indiceAtual + 1)
+          .find((capitulo) => !capitulosLidos.has(capitulo.id))
+      : null;
+  const capitulo =
+    proximoAposAtual ||
+    obra.capitulos.find((itemCapitulo) => !capitulosLidos.has(itemCapitulo.id)) ||
+    obra.capitulos.find((itemCapitulo) => itemCapitulo.id === item.capituloAtualId) ||
+    null;
+
+  if (!capitulo) {
+    return obra.link;
+  }
+
+  const indice = obra.capitulos.findIndex((itemCapitulo) => itemCapitulo.id === capitulo.id);
+  const numero = capitulo.ordem > 0 ? capitulo.ordem : indice + 1;
+
+  return `/obra/${encodeURIComponent(obra.slug)}/capitulo/${Math.max(1, numero)}`;
+}
+
 function criarItemPerfil(
   categoria: CategoriaPerfil,
   obra: ObraLista,
@@ -862,6 +1652,8 @@ function criarItemPerfil(
     nota: 0,
     progresso: 0,
     capituloAtual: "",
+    capituloAtualId: "",
+    capitulosLidosIds: [],
     ...extras,
   };
 }
@@ -897,17 +1689,107 @@ function mesclarTudoPerfil(fontes: ItemObraLista[][]) {
       nota: Math.max(atual.nota, item.nota),
       progresso: Math.max(atual.progresso, item.progresso),
       capituloAtual: item.capituloAtual || atual.capituloAtual,
+      capituloAtualId: item.capituloAtualId || atual.capituloAtualId,
+      capitulosLidosIds: Array.from(
+        new Set([...atual.capitulosLidosIds, ...item.capitulosLidosIds]),
+      ),
+      ultimaLeituraEm:
+        timestampData(item.ultimaLeituraEm || "") >
+        timestampData(atual.ultimaLeituraEm || "")
+          ? item.ultimaLeituraEm
+          : atual.ultimaLeituraEm,
     });
   });
 
   return ordenarPorData(Array.from(mapa.values()));
 }
 
+function normalizarIdentificadorColecaoListas(valor: string) {
+  return valor.trim().toLowerCase();
+}
+
+function criarMapaObrasPorIdentificadorListas(obras: ObraLista[]) {
+  const mapa = new Map<string, ObraLista>();
+
+  obras.forEach((obra) => {
+    obterIdentificadoresObraListas(obra).forEach((identificador) => {
+      const chave = normalizarIdentificadorColecaoListas(identificador);
+
+      if (chave && !mapa.has(chave)) {
+        mapa.set(chave, obra);
+      }
+    });
+  });
+
+  return mapa;
+}
+
+function encontrarObraColecaoLocalListas(
+  identificador: string,
+  obrasPorIdentificador: Map<string, ObraLista>,
+) {
+  return (
+    obrasPorIdentificador.get(
+      normalizarIdentificadorColecaoListas(identificador),
+    ) || null
+  );
+}
+
+function mesclarItensLocaisCategoriaPerfil(
+  categoria: CategoriaPerfil,
+  itensRemotos: ItemObraLista[],
+  idsLocais: string[],
+  obrasPorIdentificador: Map<string, ObraLista>,
+  obrasExcluidasIds: Set<string> = new Set<string>(),
+) {
+  const itensPorObra = new Map<string, ItemObraLista>();
+
+  itensRemotos.forEach((item) => {
+    const chave = item.obra.id || item.obra.slug;
+
+    if (chave) {
+      itensPorObra.set(chave, item);
+    }
+  });
+
+  idsLocais.forEach((identificador) => {
+    const obra = encontrarObraColecaoLocalListas(
+      identificador,
+      obrasPorIdentificador,
+    );
+
+    if (!obra || obrasExcluidasIds.has(obra.id)) {
+      return;
+    }
+
+    const chave = obra.id || obra.slug;
+
+    if (!chave || itensPorObra.has(chave)) {
+      return;
+    }
+
+    itensPorObra.set(
+      chave,
+      criarItemPerfil(
+        categoria,
+        obra,
+        {
+          obra_id: obra.id,
+          criado_em: obra.publicadaEm,
+          origem_local: true,
+        },
+      ),
+    );
+  });
+
+  return ordenarPorData(Array.from(itensPorObra.values()));
+}
+
 async function carregarListasDoPerfil(
   userId: string,
   proprioPerfil: boolean,
 ) {
-  const [seguindo, favoritas, concluidas, avaliacoes, progresso] =
+  const [seguindo, favoritas, concluidas, avaliacoes, progresso, anotacoes] =
     await Promise.all([
       carregarRegistrosUsuario(
         "seguindo_obras",
@@ -934,25 +1816,118 @@ async function carregarListasDoPerfil(
         "obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
         userId,
       ),
+      carregarRegistrosUsuario(
+        "diario_anotacoes",
+        "id,obra_id,tipo,texto,visibilidade,contem_spoiler,criado_em,atualizado_em",
+        userId,
+      ),
     ]);
+
+  const capituloIdsSemObra = Array.from(
+    new Set(
+      progresso
+        .filter((registro) => !pegarTexto(registro.obra_id))
+        .map((registro) => pegarTexto(registro.capitulo_id))
+        .filter(Boolean),
+    ),
+  );
+  let obraIdPorCapituloSemObra = new Map<string, string>();
+
+  if (capituloIdsSemObra.length > 0) {
+    try {
+      const { data, error } = await supabase
+        .from("capitulos")
+        .select("id,obra_id")
+        .in("id", capituloIdsSemObra)
+        .limit(capituloIdsSemObra.length);
+
+      if (!error && Array.isArray(data)) {
+        const paresCapituloObra: Array<[string, string]> = [];
+
+        for (const registro of data) {
+          const capituloId = pegarTexto(registro?.id);
+          const obraId = pegarTexto(registro?.obra_id);
+
+          if (capituloId && obraId) {
+            paresCapituloObra.push([capituloId, obraId]);
+          }
+        }
+
+        obraIdPorCapituloSemObra = new Map<string, string>(
+          paresCapituloObra,
+        );
+      }
+    } catch {
+      // Mantém os registros originais caso não seja possível resolver o capítulo.
+    }
+  }
+
+  const progressoCompleto = progresso.map((registro) => {
+    if (pegarTexto(registro.obra_id)) {
+      return registro;
+    }
+
+    const obraIdResolvido = obraIdPorCapituloSemObra.get(
+      pegarTexto(registro.capitulo_id),
+    );
+
+    return obraIdResolvido
+      ? { ...registro, obra_id: obraIdResolvido }
+      : registro;
+  });
+
+  const seguindoLocais = proprioPerfil
+    ? carregarListaIdsListas(LIBRARY_FOLLOW_STORAGE_KEY, userId)
+    : [];
+  const favoritasLocais = proprioPerfil
+    ? carregarListaIdsListas(FAVORITES_STORAGE_KEY, userId)
+    : [];
+  const concluidasLocais = proprioPerfil
+    ? carregarListaIdsListas(COMPLETED_STORAGE_KEY, userId)
+    : [];
+  const obrasLocais = proprioPerfil ? carregarObrasLocaisListas(userId) : [];
+  const anotacoesLocais = proprioPerfil
+    ? carregarAnotacoesLocaisListas(userId)
+    : [];
+  const anotacoesVisiveis = [...anotacoesLocais, ...anotacoes].filter(
+    (registro) => anotacaoPodeAparecerListas(registro, proprioPerfil),
+  );
 
   const registrosVisiveis = [
     ...seguindo,
     ...favoritas,
     ...concluidas,
     ...avaliacoes,
-    ...progresso,
-  ].filter((registro) => registroPermitido(registro, proprioPerfil));
+    ...progressoCompleto,
+    ...anotacoesVisiveis,
+  ].filter((registro) =>
+    anotacoesVisiveis.includes(registro)
+      ? true
+      : registroPermitido(registro, proprioPerfil),
+  );
 
-  const idsObras = Array.from(
+  const idsObrasRemotos = Array.from(
     new Set(
       registrosVisiveis
         .map((registro) => pegarTexto(registro.obra_id))
         .filter(Boolean),
     ),
   );
-  const obras = await carregarObrasPublicadas(idsObras);
+  const obras = idsObrasRemotos.length > 0
+    ? await carregarObrasPublicadas(idsObrasRemotos)
+    : await carregarObrasPublicadas([]);
   const obrasPorId = new Map(obras.map((obra) => [obra.id, obra]));
+  const obrasPorCapituloId = new Map<string, ObraLista>();
+
+  obras.forEach((obra) => {
+    obra.capitulos.forEach((capitulo) => {
+      if (capitulo.id && !obrasPorCapituloId.has(capitulo.id)) {
+        obrasPorCapituloId.set(capitulo.id, obra);
+      }
+    });
+  });
+
+  const obrasPorIdentificador = criarMapaObrasPorIdentificadorListas(obras);
   const concluidasIds = new Set(
     concluidas
       .filter((registro) => registroPermitido(registro, proprioPerfil))
@@ -960,7 +1935,18 @@ async function carregarListasDoPerfil(
       .filter(Boolean),
   );
 
-  const queroLer = ordenarPorData(
+  concluidasLocais.forEach((identificador) => {
+    const obra = encontrarObraColecaoLocalListas(
+      identificador,
+      obrasPorIdentificador,
+    );
+
+    if (obra?.id) {
+      concluidasIds.add(obra.id);
+    }
+  });
+
+  const queroLerRemoto = ordenarPorData(
     seguindo
       .filter((registro) => registroPermitido(registro, proprioPerfil))
       .map((registro) => {
@@ -975,8 +1961,15 @@ async function carregarListasDoPerfil(
       })
       .filter((item): item is ItemObraLista => Boolean(item)),
   );
+  const queroLer = mesclarItensLocaisCategoriaPerfil(
+    "quero-ler",
+    queroLerRemoto,
+    seguindoLocais,
+    obrasPorIdentificador,
+    concluidasIds,
+  );
 
-  const itensFavoritas = ordenarPorData(
+  const favoritasRemotas = ordenarPorData(
     favoritas
       .filter((registro) => registroPermitido(registro, proprioPerfil))
       .map((registro) => {
@@ -985,8 +1978,14 @@ async function carregarListasDoPerfil(
       })
       .filter((item): item is ItemObraLista => Boolean(item)),
   );
+  const itensFavoritas = mesclarItensLocaisCategoriaPerfil(
+    "favoritas",
+    favoritasRemotas,
+    favoritasLocais,
+    obrasPorIdentificador,
+  );
 
-  const itensConcluidas = ordenarPorData(
+  const concluidasRemotas = ordenarPorData(
     concluidas
       .filter((registro) => registroPermitido(registro, proprioPerfil))
       .map((registro) => {
@@ -994,6 +1993,12 @@ async function carregarListasDoPerfil(
         return obra ? criarItemPerfil("concluidas", obra, registro) : null;
       })
       .filter((item): item is ItemObraLista => Boolean(item)),
+  );
+  const itensConcluidas = mesclarItensLocaisCategoriaPerfil(
+    "concluidas",
+    concluidasRemotas,
+    concluidasLocais,
+    obrasPorIdentificador,
   );
 
   const itensAvaliacoes = ordenarPorData(
@@ -1023,14 +2028,19 @@ async function carregarListasDoPerfil(
     }
   >();
 
-  progresso
+  progressoCompleto
     .filter((registro) => registroPermitido(registro, proprioPerfil))
     .forEach((registro) => {
-      const obraId = pegarTexto(registro.obra_id);
+      const obraIdRegistro = pegarTexto(registro.obra_id);
       const capituloId = pegarTexto(registro.capitulo_id);
+      const obraResolvida =
+        obrasPorId.get(obraIdRegistro) ||
+        obrasPorCapituloId.get(capituloId) ||
+        null;
+      const obraId = obraResolvida?.id || obraIdRegistro;
       const lido = typeof registro.lido === "boolean" ? registro.lido : true;
 
-      if (!obraId || !lido) {
+      if (!obraId || !obraResolvida || !lido) {
         return;
       }
 
@@ -1060,6 +2070,55 @@ async function carregarListasDoPerfil(
       progressoPorObra.set(obraId, atual);
     });
 
+  obrasLocais.forEach((registro) => {
+    const identificadores = [
+      pegarTexto(registro.id),
+      pegarTexto(registro.slug),
+      pegarTexto(registro.titulo),
+    ].filter(Boolean);
+    const obra = identificadores
+      .map((identificador) =>
+        encontrarObraColecaoLocalListas(identificador, obrasPorIdentificador),
+      )
+      .find(Boolean);
+
+    if (!obra || concluidasIds.has(obra.id)) {
+      return;
+    }
+
+    const progressoLocal = obterProgressoObraLocalListas(registro);
+
+    if (progressoLocal.progresso <= 0) {
+      return;
+    }
+
+    const atual = progressoPorObra.get(obra.id) || {
+      registros: [],
+      capitulosLidos: new Set<string>(),
+      progressoInformado: 0,
+      data: "",
+      capituloAtual: "",
+    };
+
+    atual.progressoInformado = Math.max(
+      atual.progressoInformado,
+      progressoLocal.progresso,
+    );
+
+    if (progressoLocal.capituloId) {
+      atual.capitulosLidos.add(progressoLocal.capituloId);
+    }
+
+    if (
+      timestampData(progressoLocal.data) >= timestampData(atual.data)
+    ) {
+      atual.data = progressoLocal.data;
+      atual.capituloAtual = progressoLocal.capituloId;
+    }
+
+    progressoPorObra.set(obra.id, atual);
+  });
+
   const lendo: ItemObraLista[] = [];
   const historico: ItemObraLista[] = [];
 
@@ -1071,28 +2130,47 @@ async function carregarListasDoPerfil(
     }
 
     const totalCapitulos = obra.capitulos.length;
+    const capitulosLidosValidos = obra.capitulos.filter((capitulo) =>
+      grupo.capitulosLidos.has(capitulo.id),
+    ).length;
     const progressoCalculado = totalCapitulos
-      ? Math.round((grupo.capitulosLidos.size / totalCapitulos) * 100)
+      ? Math.round((capitulosLidosValidos / totalCapitulos) * 100)
       : 0;
-    const progressoFinal = Math.max(
-      0,
-      Math.min(100, Math.round(Math.max(grupo.progressoInformado, progressoCalculado))),
-    );
+
+    // Em progresso_leitura, "progresso: 100" pode significar que apenas
+    // o capítulo atual foi concluído. Quando há capítulos registrados,
+    // calculamos o progresso da obra pela quantidade de capítulos lidos,
+    // igual ao Diário do perfil. O valor informado fica apenas como
+    // fallback para leituras mantidas localmente.
+    const progressoFinal =
+      capitulosLidosValidos > 0
+        ? progressoCalculado
+        : Math.min(
+            99,
+            Math.max(1, Math.round(grupo.progressoInformado)),
+          );
     const capitulo = obra.capitulos.find(
       (itemCapitulo) => itemCapitulo.id === grupo.capituloAtual,
     );
-    const registroBase = grupo.registros[0] || {};
+    const registroBase = grupo.registros[0] || {
+      obra_id: obra.id,
+      atualizado_em: grupo.data,
+      origem_local: true,
+    };
     const extras = {
       data: grupo.data || obra.publicadaEm,
+      ultimaLeituraEm: grupo.data || obra.publicadaEm,
       progresso: progressoFinal,
       capituloAtual: capitulo?.titulo || "",
+      capituloAtualId: grupo.capituloAtual,
+      capitulosLidosIds: Array.from(grupo.capitulosLidos),
     };
 
     historico.push(
       criarItemPerfil("historico", obra, registroBase, extras),
     );
 
-    if (progressoFinal > 0 && progressoFinal < 100 && !concluidasIds.has(obraId)) {
+    if (progressoFinal > 0 && !concluidasIds.has(obraId)) {
       lendo.push(criarItemPerfil("lendo", obra, registroBase, extras));
     }
   });
@@ -1115,6 +2193,33 @@ async function carregarListasDoPerfil(
     estado.avaliacoes,
     estado.historico,
   ]);
+
+  const anotacoesPorObra = montarMapaAnotacoesPorObraListas(
+    anotacoesVisiveis,
+    proprioPerfil,
+  );
+  const notasPorObra = new Map<string, number>();
+
+  avaliacoes
+    .filter((registro) => registroPermitido(registro, proprioPerfil))
+    .forEach((registro) => {
+      const obraId = pegarTexto(registro.obra_id);
+      const nota = Math.max(0, Math.min(5, pegarNumero(registro.nota)));
+
+      if (obraId && nota > 0) {
+        notasPorObra.set(obraId, Math.round(nota * 2) / 2);
+      }
+    });
+
+  (Object.keys(estado) as CategoriaPerfil[]).forEach((categoriaEstado) => {
+    estado[categoriaEstado] = aplicarAnotacoesAosItensListas(
+      estado[categoriaEstado].map((item) => ({
+        ...item,
+        nota: notasPorObra.get(item.obra.id) || item.nota,
+      })),
+      anotacoesPorObra,
+    );
+  });
 
   return estado;
 }
@@ -1599,6 +2704,9 @@ function ListasUniversaisContent() {
   const secao = pegarTexto(searchParams.get("secao"), "catalogo");
   const genero = pegarTexto(searchParams.get("genero"));
   const tituloPersonalizado = pegarTexto(searchParams.get("titulo"));
+  const obraAlvoId = pegarTexto(
+    searchParams.get("obra") || searchParams.get("obraId"),
+  );
 
   const [usuarioAtualId, setUsuarioAtualId] = useState("");
   const [perfil, setPerfil] = useState<PerfilLista | null>(null);
@@ -1614,8 +2722,28 @@ function ListasUniversaisContent() {
   const [bloqueado, setBloqueado] = useState(false);
   const [erro, setErro] = useState("");
   const [obraMenuAberta, setObraMenuAberta] = useState<ObraLista | null>(null);
+  const [itemPerfilMenuAberto, setItemPerfilMenuAberto] =
+    useState<ItemObraLista | null>(null);
+  const [categoriaMenuAberta, setCategoriaMenuAberta] =
+    useState<CategoriaPerfil>("tudo");
   const [salvandoQueroLer, setSalvandoQueroLer] = useState(false);
   const [obraMenuNoQueroLer, setObraMenuNoQueroLer] = useState(false);
+  const [editorAnotacao, setEditorAnotacao] =
+    useState<EditorAnotacaoListasEstado>(EDITOR_ANOTACAO_LISTAS_VAZIO);
+  const [interacoesAnotacoes, setInteracoesAnotacoes] =
+    useState<InteracoesAnotacoesListasEstado>({});
+  const [anotacoesAbertas, setAnotacoesAbertas] =
+    useState<Record<string, boolean>>({});
+  const [anotacoesSpoilerReveladas, setAnotacoesSpoilerReveladas] =
+    useState<Record<string, boolean>>({});
+  const [preferenciasPerfil, setPreferenciasPerfil] =
+    useState<PreferenciasPrivacidadeHistorietas>(preferenciasPrivacidadePadrao);
+  const [relacionamentoPerfil, setRelacionamentoPerfil] =
+    useState<EstadoRelacionamentoPerfil>("nenhum");
+  const [avaliacaoSalvando, setAvaliacaoSalvando] = useState(false);
+  const [avaliacaoErro, setAvaliacaoErro] = useState("");
+  const [mensagemAcao, setMensagemAcao] = useState("");
+  const [obraDestacadaId, setObraDestacadaId] = useState("");
 
   useEffect(() => {
     setCategoria(categoriaUrl);
@@ -1634,7 +2762,9 @@ function ListasUniversaisContent() {
     const aoPressionarTecla = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setObraMenuAberta(null);
+        setItemPerfilMenuAberto(null);
         setObraMenuNoQueroLer(false);
+        setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
       }
     };
 
@@ -1666,28 +2796,36 @@ function ListasUniversaisContent() {
         setUsuarioAtualId(usuarioLogadoId);
 
         if (modo === "perfil") {
-          const perfilUserId = userIdUrl.trim() || usuarioLogadoId;
+          const perfilIdRecebido = userIdUrl.trim() || usuarioLogadoId;
 
-          if (!perfilUserId || !idUsuarioValido(perfilUserId)) {
+          if (!perfilIdRecebido || !idUsuarioValido(perfilIdRecebido)) {
             setPerfil(null);
             setListasPerfil(LISTAS_PERFIL_VAZIAS);
             setErro("Não foi possível identificar o perfil desta lista.");
             return;
           }
 
-          const proprioPerfil = perfilUserId === usuarioLogadoId;
-          const [perfilCarregado, preferencias] = await Promise.all([
-            carregarPerfil(
-              perfilUserId,
-              proprioPerfil
-                ? pegarTexto(authData.user?.user_metadata?.nome) ||
-                    pegarTexto(authData.user?.email)
-                : "",
-            ),
-            carregarPreferenciasPrivacidade(perfilUserId, {
+          const perfilInicialmenteProprio =
+            perfilIdRecebido === usuarioLogadoId;
+          const perfilCarregado = await carregarPerfil(
+            perfilIdRecebido,
+            perfilInicialmenteProprio
+              ? pegarTexto(authData.user?.user_metadata?.nome) ||
+                  pegarTexto(authData.user?.email)
+              : "",
+          );
+          const perfilUserId =
+            perfilCarregado.userId.trim() || perfilIdRecebido;
+          const proprioPerfil =
+            Boolean(usuarioLogadoId) &&
+            (perfilUserId === usuarioLogadoId ||
+              perfilIdRecebido === usuarioLogadoId);
+          const preferencias = await carregarPreferenciasPrivacidade(
+            perfilUserId,
+            {
               usarFallbackLocal: proprioPerfil,
-            }),
-          ]);
+            },
+          );
           const permissoes = proprioPerfil
             ? PERMISSOES_PROPRIO_PERFIL
             : await carregarPermissoesAbasPerfil(perfilUserId, preferencias);
@@ -1695,12 +2833,20 @@ function ListasUniversaisContent() {
             origemPerfil === "biblioteca"
               ? permissoes.biblioteca
               : permissoes.diario;
+          const relacionamento = proprioPerfil
+            ? "proprio_perfil"
+            : await carregarEstadoRelacionamentoPerfil(
+                perfilUserId,
+                usuarioLogadoId,
+              );
 
           if (cancelado) {
             return;
           }
 
           setPerfil(perfilCarregado);
+          setPreferenciasPerfil(preferencias);
+          setRelacionamentoPerfil(relacionamento);
 
           if (!permitido) {
             setBloqueado(true);
@@ -1769,6 +2915,101 @@ function ListasUniversaisContent() {
       cancelado = true;
     };
   }, [modo, origemPerfil, userIdUrl, secao, genero]);
+
+
+  useEffect(() => {
+    if (!mensagemAcao) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setMensagemAcao(""), 2600);
+    return () => window.clearTimeout(timer);
+  }, [mensagemAcao]);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    if (modo !== "perfil") {
+      setInteracoesAnotacoes({});
+      return;
+    }
+
+    const anotacaoIds = Array.from(
+      new Set(
+        (Object.values(listasPerfil) as ItemObraLista[][])
+          .flat()
+          .map((item) => item.anotacaoId?.trim() || "")
+          .filter(Boolean),
+      ),
+    );
+
+    void carregarInteracoesAnotacoesListas(
+      anotacaoIds,
+      usuarioAtualId,
+    ).then((carregadas) => {
+      if (cancelado) return;
+
+      setInteracoesAnotacoes((atuais) => {
+        const proximo: InteracoesAnotacoesListasEstado = {};
+
+        Object.entries(carregadas).forEach(([id, interacao]) => {
+          proximo[id] = {
+            ...interacao,
+            novoComentario: atuais[id]?.novoComentario || "",
+          };
+        });
+
+        return proximo;
+      });
+    });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [listasPerfil, modo, usuarioAtualId]);
+
+  useEffect(() => {
+    if (modo !== "perfil" || carregando || !obraAlvoId) {
+      return;
+    }
+
+    const obraEstaNaCategoriaAtual = listasPerfil[categoria].some(
+      (item) => item.obra.id === obraAlvoId,
+    );
+    const obraEstaEmTudo = listasPerfil.tudo.some(
+      (item) => item.obra.id === obraAlvoId,
+    );
+
+    if (!obraEstaNaCategoriaAtual && obraEstaEmTudo && categoria !== "tudo") {
+      const params = new URLSearchParams(queryAtual);
+      params.set("categoria", "tudo");
+      setCategoria("tudo");
+      router.replace(`/listas?${params.toString()}`, { scroll: false });
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const elemento = document.getElementById(`lista-obra-${obraAlvoId}`);
+
+      if (!elemento) return;
+      setObraDestacadaId(obraAlvoId);
+      elemento.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      window.setTimeout(() => {
+        setObraDestacadaId((atual) => (atual === obraAlvoId ? "" : atual));
+      }, 2400);
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    obraAlvoId,
+    carregando,
+    categoria,
+    listasPerfil,
+    modo,
+    queryAtual,
+    router,
+  ]);
 
   const itensPerfilFiltrados = useMemo(() => {
     const buscaNormalizada = normalizarTexto(busca);
@@ -1913,7 +3154,7 @@ function ListasUniversaisContent() {
   const tituloPagina =
     tituloPersonalizado ||
     (modo === "perfil"
-      ? `${origemPerfil === "biblioteca" ? "Biblioteca" : "Leituras"} de ${
+      ? `${origemPerfil === "biblioteca" ? "Biblioteca" : "Diário"} de ${
           perfil?.nome || "usuário"
         }`
       : modo === "autores"
@@ -1945,9 +3186,17 @@ function ListasUniversaisContent() {
     router.replace(`/listas?${params.toString()}`, { scroll: false });
   }
 
-  async function abrirMenuObra(obra: ObraLista) {
+  async function abrirMenuObra(
+    obra: ObraLista,
+    item: ItemObraLista | null = null,
+    categoriaAtual: CategoriaPerfil = "tudo",
+  ) {
     setObraMenuAberta(obra);
+    setItemPerfilMenuAberto(item);
+    setCategoriaMenuAberta(categoriaAtual);
     setObraMenuNoQueroLer(false);
+    setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
+    setAvaliacaoErro("");
 
     try {
       const userId =
@@ -1996,12 +3245,15 @@ function ListasUniversaisContent() {
   }
 
   function fecharMenuObra() {
-    if (salvandoQueroLer) {
+    if (salvandoQueroLer || editorAnotacao.salvando || avaliacaoSalvando) {
       return;
     }
 
     setObraMenuAberta(null);
+    setItemPerfilMenuAberto(null);
     setObraMenuNoQueroLer(false);
+    setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
+    setAvaliacaoErro("");
   }
 
   async function alternarObraNoQueroLer() {
@@ -2042,6 +3294,7 @@ function ListasUniversaisContent() {
       );
       setObraMenuNoQueroLer(proximoEstado);
       setObraMenuAberta(null);
+      setItemPerfilMenuAberto(null);
 
       await sincronizarQueroLerListas(userId, obra.id, proximoEstado);
     } finally {
@@ -2122,11 +3375,776 @@ function ListasUniversaisContent() {
     }
   }
 
-  function renderizarItemObra(item: ItemObraLista, categoriaAtual: CategoriaPerfil) {
+
+  const perfilEhProprio = Boolean(
+    modo === "perfil" &&
+      usuarioAtualId &&
+      perfil?.userId &&
+      usuarioAtualId === perfil.userId,
+  );
+  const podeInteragirComAnotacao =
+    perfilEhProprio ||
+    preferenciasPerfil.quemPodeComentarDiario === "todos" ||
+    (preferenciasPerfil.quemPodeComentarDiario === "seguidores" &&
+      relacionamentoPerfil === "seguindo");
+
+  function atualizarAnotacaoNosItensListas(
+    obraId: string,
+    atualizacao: Pick<
+      ItemObraLista,
+      | "anotacao"
+      | "anotacaoId"
+      | "anotacaoTipo"
+      | "anotacaoVisibilidade"
+      | "anotacaoSpoiler"
+    >,
+  ) {
+    setListasPerfil((estadoAtual) => {
+      const proximo = { ...estadoAtual };
+
+      (Object.keys(proximo) as CategoriaPerfil[]).forEach((categoriaEstado) => {
+        proximo[categoriaEstado] = proximo[categoriaEstado].map((item) =>
+          item.obra.id === obraId ? { ...item, ...atualizacao } : item,
+        );
+      });
+
+      return proximo;
+    });
+
+    setItemPerfilMenuAberto((itemAtual) =>
+      itemAtual?.obra.id === obraId
+        ? { ...itemAtual, ...atualizacao }
+        : itemAtual,
+    );
+  }
+
+  function abrirEditorAnotacaoListas() {
+    const item = itemPerfilMenuAberto;
+    const obra = obraMenuAberta;
+
+    if (!item || !obra || !perfilEhProprio || !idUsuarioValido(obra.id)) {
+      setMensagemAcao("Você só pode editar anotações da sua própria lista.");
+      return;
+    }
+
+    setEditorAnotacao({
+      aberto: true,
+      obraId: obra.id,
+      anotacaoId: item.anotacaoId?.trim() || "",
+      tipo:
+        item.anotacaoTipo ||
+        obterTipoDiarioDoItemListas(categoriaMenuAberta, item),
+      texto: item.anotacao || "",
+      contemSpoiler: Boolean(item.anotacaoSpoiler),
+      salvando: false,
+      erro: "",
+    });
+  }
+
+  async function salvarAnotacaoListas() {
+    const userId = usuarioAtualId.trim();
+    const obraId = editorAnotacao.obraId.trim();
+    const textoAnotacao = editorAnotacao.texto.trim();
+
+    if (!perfilEhProprio || !userId || !idUsuarioValido(userId)) {
+      setEditorAnotacao((atual) => ({
+        ...atual,
+        erro: "Entre na sua conta para salvar a anotação.",
+      }));
+      return;
+    }
+
+    if (!obraId || !idUsuarioValido(obraId)) {
+      setEditorAnotacao((atual) => ({
+        ...atual,
+        erro: "A obra ainda não possui um ID válido no Supabase.",
+      }));
+      return;
+    }
+
+    if (!textoAnotacao) {
+      setEditorAnotacao((atual) => ({
+        ...atual,
+        erro: "Escreva uma anotação antes de salvar.",
+      }));
+      return;
+    }
+
+    setEditorAnotacao((atual) => ({ ...atual, salvando: true, erro: "" }));
+
+    try {
+      const atualizadoEm = new Date().toISOString();
+      const visibilidadeHerdada: VisibilidadeAnotacaoListas =
+        preferenciasPerfil.visibilidadeDiario === "somente_eu"
+          ? "privado"
+          : preferenciasPerfil.visibilidadeDiario === "publico"
+            ? "publico"
+            : "parcial";
+      const payload = {
+        user_id: userId,
+        obra_id: obraId,
+        tipo: editorAnotacao.tipo,
+        texto: textoAnotacao.slice(0, DIARIO_ANOTACAO_MAX_LENGTH),
+        visibilidade: visibilidadeHerdada,
+        contem_spoiler: editorAnotacao.contemSpoiler,
+        atualizado_em: atualizadoEm,
+      };
+      const camposComSpoiler =
+        "id,obra_id,tipo,texto,visibilidade,contem_spoiler,atualizado_em";
+      const camposCompatibilidade =
+        "id,obra_id,tipo,texto,visibilidade,atualizado_em";
+
+      async function atualizarRegistroAnotacao(id: string) {
+        const respostaComSpoiler = await supabase
+          .from("diario_anotacoes")
+          .update({
+            texto: payload.texto,
+            visibilidade: payload.visibilidade,
+            contem_spoiler: payload.contem_spoiler,
+            atualizado_em: payload.atualizado_em,
+          })
+          .eq("id", id)
+          .eq("user_id", userId)
+          .select(camposComSpoiler)
+          .maybeSingle();
+
+        if (!respostaComSpoiler.error) {
+          return respostaComSpoiler.data
+            ? (respostaComSpoiler.data as unknown as RegistroGenerico)
+            : null;
+        }
+
+        if (
+          !erroRelacionadoAoCampoSpoilerListas(respostaComSpoiler.error)
+        ) {
+          throw respostaComSpoiler.error;
+        }
+
+        const respostaCompatibilidade = await supabase
+          .from("diario_anotacoes")
+          .update({
+            texto: payload.texto,
+            visibilidade: payload.visibilidade,
+            atualizado_em: payload.atualizado_em,
+          })
+          .eq("id", id)
+          .eq("user_id", userId)
+          .select(camposCompatibilidade)
+          .maybeSingle();
+
+        if (respostaCompatibilidade.error || !respostaCompatibilidade.data) {
+          throw (
+            respostaCompatibilidade.error ||
+            respostaComSpoiler.error ||
+            new Error("O banco não confirmou a anotação atualizada.")
+          );
+        }
+
+        return {
+          ...(respostaCompatibilidade.data as unknown as RegistroGenerico),
+          contem_spoiler: payload.contem_spoiler,
+        };
+      }
+
+      async function buscarRegistroAnotacaoExistente() {
+        const respostaComSpoiler = await supabase
+          .from("diario_anotacoes")
+          .select(camposComSpoiler)
+          .eq("user_id", userId)
+          .eq("obra_id", obraId)
+          .order("atualizado_em", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!respostaComSpoiler.error) {
+          return respostaComSpoiler.data
+            ? (respostaComSpoiler.data as unknown as RegistroGenerico)
+            : null;
+        }
+
+        if (
+          !erroRelacionadoAoCampoSpoilerListas(respostaComSpoiler.error)
+        ) {
+          throw respostaComSpoiler.error;
+        }
+
+        const respostaCompatibilidade = await supabase
+          .from("diario_anotacoes")
+          .select(camposCompatibilidade)
+          .eq("user_id", userId)
+          .eq("obra_id", obraId)
+          .order("atualizado_em", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (respostaCompatibilidade.error) {
+          throw respostaCompatibilidade.error;
+        }
+
+        return respostaCompatibilidade.data
+          ? ({
+              ...(respostaCompatibilidade.data as unknown as RegistroGenerico),
+              contem_spoiler: false,
+            } as RegistroGenerico)
+          : null;
+      }
+
+      async function inserirRegistroAnotacao() {
+        const respostaComSpoiler = await supabase
+          .from("diario_anotacoes")
+          .insert(payload)
+          .select(camposComSpoiler)
+          .single();
+
+        if (!respostaComSpoiler.error) {
+          if (!respostaComSpoiler.data) {
+            throw new Error("O banco não confirmou a anotação salva.");
+          }
+
+          return respostaComSpoiler.data as unknown as RegistroGenerico;
+        }
+
+        if (
+          !erroRelacionadoAoCampoSpoilerListas(respostaComSpoiler.error)
+        ) {
+          throw respostaComSpoiler.error;
+        }
+
+        const payloadCompatibilidade = {
+          user_id: payload.user_id,
+          obra_id: payload.obra_id,
+          tipo: payload.tipo,
+          texto: payload.texto,
+          visibilidade: payload.visibilidade,
+          atualizado_em: payload.atualizado_em,
+        };
+        const respostaCompatibilidade = await supabase
+          .from("diario_anotacoes")
+          .insert(payloadCompatibilidade)
+          .select(camposCompatibilidade)
+          .single();
+
+        if (respostaCompatibilidade.error || !respostaCompatibilidade.data) {
+          throw (
+            respostaCompatibilidade.error ||
+            respostaComSpoiler.error ||
+            new Error("O banco não confirmou a anotação salva.")
+          );
+        }
+
+        return {
+          ...(respostaCompatibilidade.data as unknown as RegistroGenerico),
+          contem_spoiler: payload.contem_spoiler,
+        };
+      }
+
+      let registroSalvo: RegistroGenerico | null = null;
+
+      if (editorAnotacao.anotacaoId) {
+        registroSalvo = await atualizarRegistroAnotacao(
+          editorAnotacao.anotacaoId,
+        );
+      }
+
+      if (!registroSalvo) {
+        const anotacaoExistente = await buscarRegistroAnotacaoExistente();
+        const idExistente = pegarTexto(anotacaoExistente?.id);
+
+        registroSalvo = idExistente
+          ? await atualizarRegistroAnotacao(idExistente)
+          : await inserirRegistroAnotacao();
+      }
+
+      if (!registroSalvo) {
+        throw new Error("O banco não confirmou a anotação salva.");
+      }
+
+      const anotacaoId = pegarTexto(registroSalvo.id);
+      const tipoSalvo =
+        normalizarTipoDiarioListas(registroSalvo.tipo) || editorAnotacao.tipo;
+      const visibilidadeSalva = normalizarVisibilidadeAnotacaoListas(
+        registroSalvo.visibilidade,
+        visibilidadeHerdada,
+      );
+      const textoSalvo = pegarTexto(registroSalvo.texto, payload.texto);
+      const contemSpoilerSalvo = pegarBooleanoListas(
+        registroSalvo.contem_spoiler ?? registroSalvo.contemSpoiler,
+        editorAnotacao.contemSpoiler,
+      );
+
+      if (anotacaoId) {
+        const { error: erroDuplicadas } = await supabase
+          .from("diario_anotacoes")
+          .delete()
+          .eq("user_id", userId)
+          .eq("obra_id", obraId)
+          .neq("id", anotacaoId);
+
+        if (erroDuplicadas) {
+          console.warn(
+            "Não consegui remover anotações duplicadas:",
+            erroDuplicadas.message,
+          );
+        }
+      }
+
+      salvarAnotacaoLocalListas(userId, {
+        id: anotacaoId,
+        user_id: userId,
+        obra_id: obraId,
+        tipo: tipoSalvo,
+        texto: textoSalvo,
+        visibilidade: visibilidadeSalva,
+        contem_spoiler: contemSpoilerSalvo,
+        atualizado_em: pegarTexto(registroSalvo.atualizado_em, atualizadoEm),
+      });
+
+      atualizarAnotacaoNosItensListas(obraId, {
+        anotacao: textoSalvo,
+        anotacaoId,
+        anotacaoTipo: tipoSalvo,
+        anotacaoVisibilidade: visibilidadeSalva,
+        anotacaoSpoiler: contemSpoilerSalvo,
+      });
+
+      const chaveAnotacaoSalva = anotacaoId || obraId;
+      setAnotacoesAbertas((atuais) => ({
+        ...atuais,
+        [chaveAnotacaoSalva]: false,
+      }));
+      setAnotacoesSpoilerReveladas((atuais) => ({
+        ...atuais,
+        [chaveAnotacaoSalva]: false,
+      }));
+
+      if (anotacaoId && !interacoesAnotacoes[anotacaoId]) {
+        setInteracoesAnotacoes((atual) => ({
+          ...atual,
+          [anotacaoId]: criarInteracaoAnotacaoListasVazia(),
+        }));
+      }
+
+      setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
+      setMensagemAcao("Anotação salva.");
+    } catch (error) {
+      setEditorAnotacao((atual) => ({
+        ...atual,
+        salvando: false,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível salvar a anotação.",
+      }));
+    }
+  }
+
+  async function removerAnotacaoListas() {
+    const userId = usuarioAtualId.trim();
+    const obraId = editorAnotacao.obraId.trim();
+
+    if (
+      !perfilEhProprio ||
+      !userId ||
+      !obraId ||
+      !window.confirm("Remover esta anotação?")
+    ) {
+      return;
+    }
+
+    setEditorAnotacao((atual) => ({ ...atual, salvando: true, erro: "" }));
+
+    try {
+      const { error } = await supabase
+        .from("diario_anotacoes")
+        .delete()
+        .eq("user_id", userId)
+        .eq("obra_id", obraId);
+
+      if (error) throw error;
+
+      removerAnotacaoLocalListas(userId, obraId);
+      atualizarAnotacaoNosItensListas(obraId, {
+        anotacao: undefined,
+        anotacaoId: undefined,
+        anotacaoTipo: undefined,
+        anotacaoVisibilidade: undefined,
+        anotacaoSpoiler: undefined,
+      });
+      const chaveAnotacaoRemovida =
+        editorAnotacao.anotacaoId || obraId;
+      setAnotacoesAbertas((atuais) => {
+        const proximo = { ...atuais };
+        delete proximo[chaveAnotacaoRemovida];
+        return proximo;
+      });
+      setAnotacoesSpoilerReveladas((atuais) => {
+        const proximo = { ...atuais };
+        delete proximo[chaveAnotacaoRemovida];
+        return proximo;
+      });
+      setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
+      setMensagemAcao("Anotação removida.");
+    } catch (error) {
+      setEditorAnotacao((atual) => ({
+        ...atual,
+        salvando: false,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível remover a anotação.",
+      }));
+    }
+  }
+
+  function atualizarInteracaoAnotacaoListas(
+    anotacaoId: string,
+    atualizar: (estado: InteracaoAnotacaoListas) => InteracaoAnotacaoListas,
+  ) {
+    setInteracoesAnotacoes((estadoAtual) => ({
+      ...estadoAtual,
+      [anotacaoId]: atualizar(
+        estadoAtual[anotacaoId] || criarInteracaoAnotacaoListasVazia(),
+      ),
+    }));
+  }
+
+  async function alternarCurtidaAnotacaoListas(item: ItemObraLista) {
+    const anotacaoId = item.anotacaoId?.trim() || "";
+    const userId = usuarioAtualId.trim();
+
+    if (!anotacaoId) return;
+
+    if (!podeInteragirComAnotacao) {
+      setMensagemAcao(
+        preferenciasPerfil.quemPodeComentarDiario === "ninguem"
+          ? "Este perfil desativou as interações nas anotações."
+          : "Apenas seguidores podem interagir com estas anotações.",
+      );
+      return;
+    }
+
+    if (!userId) {
+      router.push(criarLoginHrefListas());
+      return;
+    }
+
+    const interacao =
+      interacoesAnotacoes[anotacaoId] || criarInteracaoAnotacaoListasVazia();
+
+    if (interacao.salvandoCurtida) return;
+
+    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+      ...atual,
+      salvandoCurtida: true,
+      erro: "",
+    }));
+
+    try {
+      if (interacao.curtiu) {
+        const { error } = await supabase
+          .from("diario_anotacao_curtidas")
+          .delete()
+          .eq("anotacao_id", anotacaoId)
+          .eq("user_id", userId);
+        if (error) throw error;
+
+        atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+          ...atual,
+          curtiu: false,
+          totalCurtidas: Math.max(0, atual.totalCurtidas - 1),
+          salvandoCurtida: false,
+        }));
+      } else {
+        const { error } = await supabase
+          .from("diario_anotacao_curtidas")
+          .insert({ anotacao_id: anotacaoId, user_id: userId });
+        if (error) throw error;
+
+        atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+          ...atual,
+          curtiu: true,
+          totalCurtidas: atual.totalCurtidas + 1,
+          salvandoCurtida: false,
+        }));
+      }
+    } catch (error) {
+      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+        ...atual,
+        salvandoCurtida: false,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível atualizar a curtida.",
+      }));
+    }
+  }
+
+  function atualizarComentarioAnotacaoListas(anotacaoId: string, texto: string) {
+    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+      ...atual,
+      novoComentario: texto.slice(0, DIARIO_COMENTARIO_MAX_LENGTH),
+      erro: "",
+    }));
+  }
+
+  async function enviarComentarioAnotacaoListas(item: ItemObraLista) {
+    const anotacaoId = item.anotacaoId?.trim() || "";
+    const userId = usuarioAtualId.trim();
+
+    if (!anotacaoId) return;
+
+    if (!podeInteragirComAnotacao) {
+      setMensagemAcao(
+        preferenciasPerfil.quemPodeComentarDiario === "ninguem"
+          ? "Este perfil desativou comentários nas anotações."
+          : "Apenas seguidores podem comentar nestas anotações.",
+      );
+      return;
+    }
+
+    if (!userId) {
+      router.push(criarLoginHrefListas());
+      return;
+    }
+
+    const interacao =
+      interacoesAnotacoes[anotacaoId] || criarInteracaoAnotacaoListasVazia();
+    const textoComentario = interacao.novoComentario.trim();
+
+    if (!textoComentario) {
+      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+        ...atual,
+        erro: "Escreva um comentário antes de enviar.",
+      }));
+      return;
+    }
+
+    if (interacao.enviandoComentario) return;
+
+    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+      ...atual,
+      enviandoComentario: true,
+      erro: "",
+    }));
+
+    try {
+      const { data, error } = await supabase
+        .from("diario_anotacao_comentarios")
+        .insert({
+          anotacao_id: anotacaoId,
+          user_id: userId,
+          texto: textoComentario.slice(0, DIARIO_COMENTARIO_MAX_LENGTH),
+        })
+        .select("id,anotacao_id,user_id,texto,criado_em")
+        .maybeSingle();
+
+      if (error) throw error;
+
+      const registro = data as unknown as RegistroGenerico | null;
+      const comentario: ComentarioAnotacaoListas = {
+        id: pegarTexto(registro?.id),
+        anotacaoId,
+        userId,
+        autorNome: "Você",
+        texto: pegarTexto(registro?.texto, textoComentario),
+        criadoEm: pegarTexto(registro?.criado_em, new Date().toISOString()),
+      };
+
+      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+        ...atual,
+        comentarios: comentario.id
+          ? [...atual.comentarios, comentario]
+          : atual.comentarios,
+        novoComentario: "",
+        enviandoComentario: false,
+      }));
+    } catch (error) {
+      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+        ...atual,
+        enviandoComentario: false,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível enviar o comentário.",
+      }));
+    }
+  }
+
+  async function removerComentarioAnotacaoListas(
+    item: ItemObraLista,
+    comentario: ComentarioAnotacaoListas,
+  ) {
+    const anotacaoId = item.anotacaoId?.trim() || "";
+
+    if (
+      !anotacaoId ||
+      !comentario.id ||
+      comentario.userId !== usuarioAtualId ||
+      !window.confirm("Remover este comentário?")
+    ) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("diario_anotacao_comentarios")
+        .delete()
+        .eq("id", comentario.id)
+        .eq("user_id", usuarioAtualId);
+
+      if (error) throw error;
+
+      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+        ...atual,
+        comentarios: atual.comentarios.filter(
+          (itemComentario) => itemComentario.id !== comentario.id,
+        ),
+        erro: "",
+      }));
+    } catch (error) {
+      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+        ...atual,
+        erro:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível remover o comentário.",
+      }));
+    }
+  }
+
+  function atualizarAvaliacaoNosItensListas(
+    obra: ObraLista,
+    nota: number,
+    data: string,
+  ) {
+    setListasPerfil((estadoAtual) => {
+      const categoriasSemTudo = [
+        "lendo",
+        "quero-ler",
+        "favoritas",
+        "concluidas",
+        "historico",
+      ] as CategoriaPerfil[];
+      const proximo = { ...estadoAtual };
+
+      categoriasSemTudo.forEach((categoriaEstado) => {
+        proximo[categoriaEstado] = proximo[categoriaEstado].map((item) =>
+          item.obra.id === obra.id ? { ...item, nota } : item,
+        );
+      });
+
+      const avaliacaoExistente = estadoAtual.avaliacoes.find(
+        (item) => item.obra.id === obra.id,
+      );
+      proximo.avaliacoes = nota > 0
+        ? ordenarPorData([
+            ...estadoAtual.avaliacoes.filter((item) => item.obra.id !== obra.id),
+            {
+              ...(avaliacaoExistente ||
+                criarItemPerfil("avaliacoes", obra, {
+                  obra_id: obra.id,
+                  atualizado_em: data,
+                })),
+              nota,
+              data,
+            },
+          ])
+        : estadoAtual.avaliacoes.filter((item) => item.obra.id !== obra.id);
+      proximo.tudo = mesclarTudoPerfil([
+        proximo.lendo,
+        proximo["quero-ler"],
+        proximo.favoritas,
+        proximo.concluidas,
+        proximo.avaliacoes,
+        proximo.historico,
+      ]).map((item) => (item.obra.id === obra.id ? { ...item, nota } : item));
+
+      return proximo;
+    });
+
+    setItemPerfilMenuAberto((itemAtual) =>
+      itemAtual?.obra.id === obra.id ? { ...itemAtual, nota, data } : itemAtual,
+    );
+  }
+
+  async function salvarAvaliacaoListas(novaNota: number) {
+    const obra = obraMenuAberta;
+    const userId = usuarioAtualId.trim();
+
+    if (!obra || !perfilEhProprio || !userId || avaliacaoSalvando) {
+      return;
+    }
+
+    const nota =
+      novaNota <= 0
+        ? 0
+        : Math.max(0.5, Math.min(5, Math.round(novaNota * 2) / 2));
+    setAvaliacaoSalvando(true);
+    setAvaliacaoErro("");
+
+    try {
+      await salvarAvaliacaoRemotaListas({ obraId: obra.id, userId, nota });
+      await sincronizarAtividadeAvaliacaoListas(userId, obra, nota);
+      const data = new Date().toISOString();
+      atualizarAvaliacaoNosItensListas(obra, nota, data);
+      setMensagemAcao(nota > 0 ? "Avaliação salva." : "Avaliação removida.");
+    } catch (error) {
+      setAvaliacaoErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar a avaliação.",
+      );
+    } finally {
+      setAvaliacaoSalvando(false);
+    }
+  }
+
+  function renderizarItemObra(
+    item: ItemObraLista,
+    categoriaAtual: CategoriaPerfil,
+  ) {
     const obra = item.obra;
+    const detalheVisivel =
+      categoriaAtual === "avaliacoes"
+        ? renderizarEstrelasAvaliacao(item.nota, item.data)
+        : categoriaAtual === "tudo"
+          ? formatarLeituraMesAno(item.ultimaLeituraEm || "")
+          : textoSecundarioItem(item, categoriaAtual);
+    const anotacaoId = item.anotacaoId?.trim() || "";
+    const chaveAnotacao = anotacaoId || obra.id;
+    const anotacaoAberta = Boolean(anotacoesAbertas[chaveAnotacao]);
+    const spoilerRevelado = Boolean(
+      anotacoesSpoilerReveladas[chaveAnotacao],
+    );
+
+    function alternarExibicaoAnotacao() {
+      const proximoEstado = !anotacaoAberta;
+
+      setAnotacoesAbertas((atuais) => ({
+        ...atuais,
+        [chaveAnotacao]: proximoEstado,
+      }));
+
+      if (!proximoEstado) {
+        setAnotacoesSpoilerReveladas((atuais) => ({
+          ...atuais,
+          [chaveAnotacao]: false,
+        }));
+      }
+    }
+    const interacao = anotacaoId
+      ? interacoesAnotacoes[anotacaoId] ||
+        criarInteracaoAnotacaoListasVazia()
+      : criarInteracaoAnotacaoListasVazia();
 
     return (
-      <article key={item.chave} className="historietas-list-row">
+      <article
+        key={item.chave}
+        id={`lista-obra-${obra.id}`}
+        className={`historietas-list-row${
+          obraDestacadaId === obra.id ? " historietas-list-row-highlight" : ""
+        }`}
+      >
         <Link href={obra.link} style={rowMainLinkStyle}>
           <span style={criarCapaStyle(obra.capa)} aria-hidden="true" />
 
@@ -2137,17 +4155,65 @@ function ListasUniversaisContent() {
             <span data-historietas-user-content="true" style={rowMetaStyle}>
               {obra.autor} • {obra.genero}
             </span>
-            <span style={rowDetailStyle}>
-              {categoriaAtual === "avaliacoes"
-                ? renderizarEstrelasAvaliacao(item.nota, item.data)
-                : textoSecundarioItem(item, categoriaAtual)}
-            </span>
+
+            {detalheVisivel && (
+              <span style={rowDetailStyle}>{detalheVisivel}</span>
+            )}
+
+            {(item.anotacao ||
+              (item.nota > 0 && categoriaAtual !== "avaliacoes")) && (
+              <span style={rowSignalsStyle}>
+                {item.nota > 0 && categoriaAtual !== "avaliacoes" && (
+                  <span style={rowSignalStyle}>
+                    ★ {item.nota.toFixed(1).replace(".", ",")}
+                  </span>
+                )}
+                {item.anotacao && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={anotacaoAberta}
+                    aria-controls={`anotacao-${obra.id}`}
+                    aria-label={
+                      anotacaoAberta
+                        ? `Ocultar anotação de ${obra.titulo}`
+                        : `Mostrar anotação de ${obra.titulo}`
+                    }
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      alternarExibicaoAnotacao();
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      event.stopPropagation();
+                      alternarExibicaoAnotacao();
+                    }}
+                    style={{
+                      ...rowSignalAnnotationToggleStyle,
+                      background: anotacaoAberta
+                        ? "rgba(255,255,255,0.16)"
+                        : rowSignalStyle.background,
+                      color: anotacaoAberta
+                        ? "#FFFFFF"
+                        : rowSignalStyle.color,
+                    }}
+                  >
+                    ✎ Anotação
+                  </span>
+                )}
+              </span>
+            )}
           </span>
         </Link>
 
         <button
           type="button"
-          onClick={() => void abrirMenuObra(obra)}
+          onClick={() => void abrirMenuObra(obra, item, categoriaAtual)}
           style={rowOptionsButtonStyle}
           aria-label={`Abrir opções de ${obra.titulo}`}
         >
@@ -2157,6 +4223,100 @@ function ListasUniversaisContent() {
             <span style={moreDotStyle} />
           </span>
         </button>
+
+        {item.anotacao && anotacaoAberta && (
+          <div
+            id={`anotacao-${obra.id}`}
+            className="historietas-list-annotation"
+            style={listDiaryCardAnnotationStyle}
+          >
+            <div style={listDiaryCardAnnotationHeaderStyle}>
+              <strong style={listDiaryCardAnnotationTitleStyle}>
+                Anotação de {perfil?.nome || "usuário"}
+              </strong>
+
+              {anotacaoId && (
+                <button
+                  type="button"
+                  onClick={() => void alternarCurtidaAnotacaoListas(item)}
+                  disabled={interacao.salvandoCurtida}
+                  style={{
+                    ...listDiaryCardAnnotationLikeButtonStyle,
+                    opacity: interacao.salvandoCurtida ? 0.58 : 1,
+                    cursor: interacao.salvandoCurtida
+                      ? "not-allowed"
+                      : "pointer",
+                  }}
+                  aria-label={
+                    interacao.curtiu
+                      ? "Remover curtida da anotação"
+                      : "Curtir anotação"
+                  }
+                  aria-pressed={interacao.curtiu}
+                >
+                  <span
+                    style={{
+                      ...listDiaryCardAnnotationLikeIconStyle,
+                      color: interacao.curtiu
+                        ? "var(--historietas-perfil-rose, #FB7185)"
+                        : "#FFFFFF",
+                    }}
+                    aria-hidden="true"
+                  >
+                    ❤️
+                  </span>
+                  <span style={listDiaryCardAnnotationLikeCountStyle}>
+                    {compactarNumero(interacao.totalCurtidas)}
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {item.anotacaoSpoiler && !spoilerRevelado ? (
+              <div style={listDiaryCardSpoilerStyle}>
+                <span style={listDiaryCardSpoilerTextStyle}>
+                  Esta anotação contém spoiler
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAnotacoesSpoilerReveladas((atuais) => ({
+                      ...atuais,
+                      [chaveAnotacao]: true,
+                    }))
+                  }
+                  style={listDiaryCardSpoilerButtonStyle}
+                >
+                  Revelar
+                </button>
+              </div>
+            ) : (
+              <>
+                <p
+                  data-historietas-user-content="true"
+                  style={listDiaryCardAnnotationTextStyle}
+                >
+                  {item.anotacao}
+                </p>
+
+                {item.anotacaoSpoiler && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAnotacoesSpoilerReveladas((atuais) => ({
+                        ...atuais,
+                        [chaveAnotacao]: false,
+                      }))
+                    }
+                    style={listDiaryCardSpoilerButtonStyle}
+                  >
+                    Ocultar
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </article>
     );
   }
@@ -2179,7 +4339,7 @@ function ListasUniversaisContent() {
 
         <button
           type="button"
-          onClick={() => void abrirMenuObra(obra)}
+          onClick={() => void abrirMenuObra(obra, null, "tudo")}
           style={rowOptionsButtonStyle}
           aria-label={`Abrir opções de ${obra.titulo}`}
         >
@@ -2231,6 +4391,12 @@ function ListasUniversaisContent() {
           </h1>
         </div>
       </header>
+
+      {mensagemAcao && (
+        <div role="status" style={actionMessageStyle}>
+          {mensagemAcao}
+        </div>
+      )}
 
       {modo === "perfil" && !bloqueado && (
         <section style={controlsStyle}>
@@ -2339,72 +4505,206 @@ function ListasUniversaisContent() {
         <span>Historietas</span>
       </footer>
 
-      {obraMenuAberta && (
-        <div
-          style={actionSheetOverlayStyle}
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              fecharMenuObra();
-            }
-          }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Opções de ${obraMenuAberta.titulo}`}
-            style={actionSheetStyle}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <span style={actionSheetHandleStyle} aria-hidden="true" />
+      {obraMenuAberta &&
+        (() => {
+          const obra = obraMenuAberta;
+          const item = itemPerfilMenuAberto;
+          const hrefPrincipal = item
+            ? obterHrefContinuarLeituraListas(item)
+            : obra.link;
+          const podeContinuar = Boolean(item && item.progresso > 0);
+          const detalheMenu = item
+            ? textoSecundarioItem(item, categoriaMenuAberta)
+            : "";
 
-            <div style={actionSheetHeaderStyle}>
-              <strong data-historietas-user-content="true" style={actionSheetTitleStyle}>
-                {obraMenuAberta.titulo}
-              </strong>
-              <span data-historietas-user-content="true" style={actionSheetMetaStyle}>
-                {obraMenuAberta.autor} • {obraMenuAberta.genero}
-              </span>
-            </div>
-
-            <div style={actionSheetActionsStyle}>
-              <button
-                type="button"
-                onClick={() => void alternarObraNoQueroLer()}
-                disabled={salvandoQueroLer}
-                style={{
-                  ...actionSheetButtonStyle,
-                  ...(salvandoQueroLer ? actionSheetButtonDisabledStyle : {}),
-                }}
+          return (
+            <div
+              style={actionSheetOverlayStyle}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) fecharMenuObra();
+              }}
+            >
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Opções de ${obra.titulo}`}
+                style={actionSheetStyle}
+                onClick={(event) => event.stopPropagation()}
               >
-                <span>
-                  {obraMenuNoQueroLer
-                    ? "Remover do Quero ler"
-                    : "Quero ler mais tarde"}
-                </span>
-                <span
-                  aria-hidden="true"
-                  style={
-                    obraMenuNoQueroLer
-                      ? actionSheetSelectionDotActiveStyle
-                      : actionSheetSelectionDotStyle
-                  }
-                >
-                  {obraMenuNoQueroLer ? "✓" : ""}
-                </span>
-              </button>
+                <span style={actionSheetHandleStyle} aria-hidden="true" />
 
-              <button
-                type="button"
-                onClick={() => void compartilharObraDoMenu()}
-                style={actionSheetButtonStyle}
-              >
-                <span>Compartilhar</span>
-                <span aria-hidden="true" style={actionSheetButtonIconStyle}>↗</span>
-              </button>
+                <div style={actionSheetHeaderStyle}>
+                  <strong
+                    data-historietas-user-content="true"
+                    style={actionSheetTitleStyle}
+                  >
+                    {obra.titulo}
+                  </strong>
+                  <span
+                    data-historietas-user-content="true"
+                    style={actionSheetMetaStyle}
+                  >
+                    {obra.autor} • {obra.genero}
+                  </span>
+
+                  {detalheMenu && (
+                    <span style={actionSheetDetailStyle}>{detalheMenu}</span>
+                  )}
+                </div>
+
+                <div style={actionSheetActionsStyle}>
+                  <Link
+                    href={hrefPrincipal}
+                    onClick={() => fecharMenuObra()}
+                    style={actionSheetButtonStyle}
+                  >
+                    <span>{podeContinuar ? "Continuar leitura" : "Ver obra"}</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => void alternarObraNoQueroLer()}
+                    disabled={salvandoQueroLer}
+                    style={{
+                      ...actionSheetButtonStyle,
+                      ...(salvandoQueroLer ? actionSheetButtonDisabledStyle : {}),
+                    }}
+                  >
+                    <span>
+                      {obraMenuNoQueroLer
+                        ? "Remover do Quero ler"
+                        : "Quero ler mais tarde"}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      style={
+                        obraMenuNoQueroLer
+                          ? actionSheetSelectionDotActiveStyle
+                          : actionSheetSelectionDotStyle
+                      }
+                    >
+                      {obraMenuNoQueroLer ? "✓" : ""}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void compartilharObraDoMenu()}
+                    style={actionSheetButtonStyle}
+                  >
+                    <span>Compartilhar</span>
+                  </button>
+
+                  {item && perfilEhProprio && (
+                    <button
+                      type="button"
+                      onClick={abrirEditorAnotacaoListas}
+                      style={actionSheetButtonStyle}
+                    >
+                      <span>
+                        {item.anotacao
+                          ? "Editar anotação"
+                          : "Criar anotação"}
+                      </span>
+                      <span aria-hidden="true" style={actionSheetButtonIconStyle}>
+                        ✎
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {editorAnotacao.aberto && (
+                  <div style={listDiaryActionSheetEditorStyle}>
+                    <div style={listDiaryAnnotationTextareaWrapStyle}>
+                      <textarea
+                        value={editorAnotacao.texto}
+                        onChange={(event) =>
+                          setEditorAnotacao((estadoAtual) => ({
+                            ...estadoAtual,
+                            texto: event.target.value.slice(
+                              0,
+                              DIARIO_ANOTACAO_MAX_LENGTH,
+                            ),
+                            erro: "",
+                          }))
+                        }
+                        placeholder="Escreva o que achou desta leitura..."
+                        maxLength={DIARIO_ANOTACAO_MAX_LENGTH}
+                        rows={4}
+                        style={listDiaryAnnotationTextareaStyle}
+                        disabled={editorAnotacao.salvando}
+                      />
+
+                      <span style={listDiaryAnnotationCounterStyle}>
+                        {editorAnotacao.texto.length}/
+                        {DIARIO_ANOTACAO_MAX_LENGTH}
+                      </span>
+                    </div>
+
+                    <div style={listDiaryAnnotationEditorMetaStyle}>
+                      <label style={listDiaryAnnotationSpoilerLabelStyle}>
+                        <span>Contém spoiler</span>
+                        <input
+                          type="checkbox"
+                          checked={editorAnotacao.contemSpoiler}
+                          onChange={(event) =>
+                            setEditorAnotacao((estadoAtual) => ({
+                              ...estadoAtual,
+                              contemSpoiler: event.target.checked,
+                              erro: "",
+                            }))
+                          }
+                          style={listDiaryAnnotationSpoilerCheckboxStyle}
+                          disabled={editorAnotacao.salvando}
+                        />
+                      </label>
+
+                      {item?.anotacao && (
+                        <button
+                          type="button"
+                          onClick={() => void removerAnotacaoListas()}
+                          disabled={editorAnotacao.salvando}
+                          style={listDiaryAnnotationRemoveStyle}
+                        >
+                          Remover
+                        </button>
+                      )}
+
+                      <div style={listDiaryAnnotationMetaActionsStyle}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO)
+                          }
+                          disabled={editorAnotacao.salvando}
+                          style={listDiaryAnnotationCancelStyle}
+                        >
+                          Cancelar
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => void salvarAnotacaoListas()}
+                          disabled={editorAnotacao.salvando}
+                          style={listDiaryAnnotationSaveStyle}
+                        >
+                          {editorAnotacao.salvando ? "Salvando..." : "Salvar"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {editorAnotacao.erro && (
+                      <span style={listDiaryAnnotationErrorStyle}>
+                        {editorAnotacao.erro}
+                      </span>
+                    )}                  </div>
+                )}
+
+              </section>
             </div>
-          </section>
-        </div>
-      )}
+          );
+        })()}
+
 
     </main>
   );
@@ -2441,6 +4741,11 @@ const listasPageCss = `
     align-items: stretch;
   }
 
+  .historietas-list-annotation {
+    grid-column: 1 / -1;
+    padding: 0 44px 13px 4px;
+  }
+
   .historietas-list-row::after {
     content: "";
     position: absolute;
@@ -2454,6 +4759,18 @@ const listasPageCss = `
 
   .historietas-list-row:last-child::after {
     display: none;
+  }
+
+  .historietas-list-row-highlight {
+    border-radius: 14px;
+    background: rgba(255,255,255,0.10);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.72);
+    animation: historietas-list-highlight 2.4s ease both;
+  }
+
+  @keyframes historietas-list-highlight {
+    0%, 100% { background: rgba(255,255,255,0.04); }
+    25%, 70% { background: rgba(255,255,255,0.14); }
   }
 
   .historietas-list-row a:hover {
@@ -2481,6 +4798,11 @@ const listasPageCss = `
 
     .historietas-list-row > button {
       margin-right: 12px !important;
+    }
+
+    .historietas-list-annotation {
+      padding-left: 18px;
+      padding-right: 58px;
     }
 
     .historietas-list-row::after {
@@ -2789,7 +5111,7 @@ const actionSheetOverlayStyle: CSSProperties = {
 
 const actionSheetStyle: CSSProperties = {
   width: "min(820px, 100%)",
-  maxHeight: "calc(100dvh - 90px)",
+  maxHeight: "calc(100dvh - 72px)",
   overflowY: "auto",
   borderRadius: "24px 24px 0 0",
   background: "#070212",
@@ -2836,6 +5158,16 @@ const actionSheetMetaStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
+const actionSheetDetailStyle: CSSProperties = {
+  maxWidth: "100%",
+  color: "rgba(255,255,255,0.72)",
+  fontSize: "11px",
+  fontWeight: 750,
+  lineHeight: 1.3,
+  textAlign: "center",
+  overflowWrap: "anywhere",
+};
+
 const actionSheetActionsStyle: CSSProperties = {
   display: "grid",
 };
@@ -2857,6 +5189,7 @@ const actionSheetButtonStyle: CSSProperties = {
   fontWeight: 650,
   fontFamily: "inherit",
   textAlign: "left",
+  textDecoration: "none",
   cursor: "pointer",
 };
 
@@ -2968,6 +5301,549 @@ const loadMoreButtonStyle: CSSProperties = {
   fontSize: "13px",
   fontWeight: 900,
   cursor: "pointer",
+};
+
+
+const actionMessageStyle: CSSProperties = {
+  position: "sticky",
+  top: "10px",
+  zIndex: 40,
+  width: "fit-content",
+  maxWidth: "calc(100% - 28px)",
+  margin: "8px auto 0",
+  padding: "10px 14px",
+  borderRadius: "999px",
+  background: "#FFFFFF",
+  color: "#090909",
+  fontSize: "12px",
+  fontWeight: 900,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.32)",
+};
+
+const rowSignalsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: "5px",
+  marginTop: "3px",
+};
+
+const rowSignalStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  minHeight: "18px",
+  padding: "2px 7px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.09)",
+  color: "rgba(255,255,255,0.78)",
+  fontSize: "9px",
+  fontWeight: 850,
+  lineHeight: 1,
+};
+
+const rowSignalAnnotationToggleStyle: CSSProperties = {
+  ...rowSignalStyle,
+  cursor: "pointer",
+  userSelect: "none",
+  WebkitUserSelect: "none",
+  WebkitTapHighlightColor: "transparent",
+};
+
+const listDiaryActionSheetEditorStyle: CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  padding: "4px 18px 14px",
+  borderBottom: "0",
+  boxSizing: "border-box",
+};
+
+const listDiaryAnnotationTextareaWrapStyle: CSSProperties = {
+  position: "relative",
+  width: "100%",
+  minWidth: 0,
+  paddingTop: "13px",
+};
+
+const listDiaryAnnotationTextareaStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "78px",
+  resize: "vertical",
+  padding: "8px 48px 8px 9px",
+  borderRadius: "11px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "rgba(255,255,255,0.05)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "9px",
+  lineHeight: 1.4,
+  fontWeight: 700,
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const listDiaryAnnotationEditorMetaStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  flexWrap: "wrap",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const listDiaryAnnotationMetaActionsStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  flexWrap: "wrap",
+  gap: "5px",
+  marginLeft: "auto",
+};
+
+const listDiaryAnnotationSpoilerLabelStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "5px",
+  minHeight: "27px",
+  color: "rgba(255,255,255,0.72)",
+  fontSize: "8px",
+  fontWeight: 850,
+  lineHeight: 1,
+  whiteSpace: "nowrap",
+  cursor: "pointer",
+};
+
+const listDiaryAnnotationSpoilerCheckboxStyle: CSSProperties = {
+  width: "13px",
+  height: "13px",
+  margin: 0,
+  accentColor:
+    "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
+  cursor: "pointer",
+  flex: "0 0 auto",
+};
+
+const listDiaryAnnotationCounterStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  right: "10px",
+  zIndex: 1,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "7.5px",
+  lineHeight: 1,
+  fontWeight: 800,
+  whiteSpace: "nowrap",
+  pointerEvents: "none",
+};
+
+const listDiaryAnnotationErrorStyle: CSSProperties = {
+  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
+  fontSize: "8px",
+  lineHeight: 1.3,
+  fontWeight: 800,
+  overflowWrap: "anywhere",
+};
+
+const listDiaryAnnotationSaveStyle: CSSProperties = {
+  minHeight: "27px",
+  padding: "5px 9px",
+  borderRadius: "999px",
+  border: "none",
+  background:
+    "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
+  color: "#000000",
+  fontSize: "7.8px",
+  lineHeight: 1,
+  fontWeight: 950,
+  cursor: "pointer",
+};
+
+const listDiaryAnnotationCancelStyle: CSSProperties = {
+  ...listDiaryAnnotationSaveStyle,
+  background: "rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+};
+
+const listDiaryAnnotationRemoveStyle: CSSProperties = {
+  ...listDiaryAnnotationSaveStyle,
+  background:
+    "var(--historietas-perfil-rose-dark-14, rgba(190,18,60,0.14))",
+  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
+};
+
+const listDiaryCardAnnotationStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+  boxSizing: "border-box",
+};
+
+const listDiaryCardAnnotationHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  minWidth: 0,
+};
+
+const listDiaryCardAnnotationTitleStyle: CSSProperties = {
+  minWidth: 0,
+  color: "rgba(255,255,255,0.82)",
+  fontSize: "11px",
+  fontWeight: 900,
+  lineHeight: 1.25,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const listDiaryCardAnnotationLikeButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "4px",
+  minHeight: "26px",
+  padding: "0 2px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  lineHeight: 1,
+  flex: "0 0 auto",
+};
+
+const listDiaryCardAnnotationLikeIconStyle: CSSProperties = {
+  fontSize: "14px",
+  fontWeight: 950,
+  lineHeight: 1,
+  transition: "color 160ms ease, transform 160ms ease",
+};
+
+const listDiaryCardAnnotationLikeCountStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "10px",
+  fontWeight: 850,
+  lineHeight: 1,
+};
+
+const listDiaryCardAnnotationTextStyle: CSSProperties = {
+  margin: 0,
+  color: "rgba(255,255,255,0.88)",
+  fontSize: "12px",
+  fontWeight: 600,
+  lineHeight: 1.5,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
+const listDiaryCardSpoilerStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  flexWrap: "wrap",
+  gap: "8px",
+  minWidth: 0,
+  padding: "8px 10px",
+  borderRadius: "10px",
+  background: "rgba(255,255,255,0.05)",
+};
+
+const listDiaryCardSpoilerTextStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.64)",
+  fontSize: "10px",
+  fontWeight: 750,
+  lineHeight: 1.35,
+};
+
+const listDiaryCardSpoilerButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "fit-content",
+  minHeight: "26px",
+  padding: "4px 8px",
+  border: "none",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.08)",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  fontWeight: 900,
+  lineHeight: 1,
+  cursor: "pointer",
+};
+
+const listDiaryPanelStyle: CSSProperties = {
+  display: "grid",
+  gap: "11px",
+  margin: "8px 16px 0",
+  padding: "14px",
+  borderRadius: "16px",
+  border: "1px solid rgba(255,255,255,0.11)",
+  background: "rgba(255,255,255,0.035)",
+};
+
+const listDiarySectionHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+};
+
+const listDiarySectionTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 950,
+};
+
+const listDiaryRatingValueStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.62)",
+  fontSize: "11px",
+  fontWeight: 800,
+};
+
+const listDiaryStarsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "5px",
+};
+
+const listDiaryStarButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  position: "relative",
+  width: "31px",
+  height: "31px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  border: 0,
+  background: "transparent",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  fontSize: "29px",
+  lineHeight: 1,
+};
+
+const listDiaryStarBaseStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.18)",
+};
+
+const listDiaryStarFillStyle: CSSProperties = {
+  position: "absolute",
+  left: 0,
+  top: 0,
+  height: "100%",
+  overflow: "hidden",
+  color: "#FBBF24",
+  whiteSpace: "nowrap",
+  pointerEvents: "none",
+};
+
+const listDiaryTextButtonStyle: CSSProperties = {
+  width: "fit-content",
+  padding: 0,
+  border: 0,
+  background: "transparent",
+  color: "rgba(255,255,255,0.58)",
+  fontSize: "11px",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const listDiaryTextareaStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "112px",
+  resize: "vertical",
+  boxSizing: "border-box",
+  border: "1px solid rgba(255,255,255,0.14)",
+  borderRadius: "12px",
+  background: "#050505",
+  color: "#FFFFFF",
+  padding: "11px",
+  fontFamily: "inherit",
+  fontSize: "13px",
+  lineHeight: 1.5,
+  outline: "none",
+};
+
+const listDiaryCounterStyle: CSSProperties = {
+  justifySelf: "end",
+  marginTop: "-7px",
+  color: "rgba(255,255,255,0.42)",
+  fontSize: "10px",
+  fontWeight: 750,
+};
+
+const listDiaryEditorControlsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  flexWrap: "wrap",
+  gap: "10px",
+};
+
+const listDiarySelectStyle: CSSProperties = {
+  minHeight: "36px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "#090909",
+  color: "#FFFFFF",
+  padding: "0 10px",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 800,
+};
+
+const listDiaryEditorButtonsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+};
+
+const listDiarySecondaryButtonStyle: CSSProperties = {
+  minHeight: "36px",
+  padding: "0 12px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "transparent",
+  color: "rgba(255,255,255,0.72)",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 850,
+  cursor: "pointer",
+};
+
+const listDiaryPrimaryButtonStyle: CSSProperties = {
+  minHeight: "36px",
+  padding: "0 14px",
+  borderRadius: "10px",
+  border: 0,
+  background: "#FFFFFF",
+  color: "#070707",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 950,
+  cursor: "pointer",
+};
+
+const listDiaryRemoveButtonStyle: CSSProperties = {
+  ...listDiaryTextButtonStyle,
+  color: "#FB7185",
+};
+
+const listDiaryErrorStyle: CSSProperties = {
+  display: "block",
+  color: "#FCA5A5",
+  fontSize: "11px",
+  fontWeight: 750,
+  lineHeight: 1.4,
+};
+
+const listDiaryAnnotationTitleWrapStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+};
+
+const listDiaryVisibilityStyle: CSSProperties = {
+  padding: "3px 7px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.08)",
+  color: "rgba(255,255,255,0.54)",
+  fontSize: "9px",
+  fontWeight: 850,
+  textTransform: "uppercase",
+};
+
+const listDiaryLikeButtonStyle: CSSProperties = {
+  minHeight: "32px",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "5px",
+  padding: "0 9px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.11)",
+  background: "rgba(255,255,255,0.05)",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "11px",
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const listDiaryAnnotationTextStyle: CSSProperties = {
+  margin: 0,
+  color: "rgba(255,255,255,0.86)",
+  fontSize: "13px",
+  lineHeight: 1.58,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
+const listDiaryCommentsStyle: CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  paddingTop: "3px",
+};
+
+const listDiaryCommentsTitleStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.78)",
+  fontSize: "11px",
+  fontWeight: 900,
+};
+
+const listDiaryCommentsListStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+};
+
+const listDiaryCommentStyle: CSSProperties = {
+  display: "grid",
+  gap: "5px",
+  padding: "10px",
+  borderRadius: "11px",
+  background: "rgba(0,0,0,0.28)",
+};
+
+const listDiaryCommentHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+  color: "rgba(255,255,255,0.55)",
+  fontSize: "9px",
+};
+
+const listDiaryCommentTextStyle: CSSProperties = {
+  margin: 0,
+  color: "rgba(255,255,255,0.80)",
+  fontSize: "12px",
+  lineHeight: 1.45,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
+const listDiaryCommentRemoveStyle: CSSProperties = {
+  ...listDiaryTextButtonStyle,
+  color: "#FB7185",
+};
+
+const listDiaryEmptyCommentsStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.46)",
+  fontSize: "11px",
+  lineHeight: 1.4,
+};
+
+const listDiaryCommentComposerStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+};
+
+const listDiaryCommentTextareaStyle: CSSProperties = {
+  ...listDiaryTextareaStyle,
+  minHeight: "76px",
 };
 
 const footerStyle: CSSProperties = {

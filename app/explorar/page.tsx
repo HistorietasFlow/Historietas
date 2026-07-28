@@ -3812,7 +3812,9 @@ function SectionHeader({
           aria-label={ariaLabelMais}
           title={ariaLabelMais}
         >
-          +
+          <span style={sectionMoreChevronStyle} aria-hidden="true">
+            ›
+          </span>
         </Link>
       ) : (
         <span style={sectionHeaderSpacerStyle} aria-hidden="true" />
@@ -5244,6 +5246,17 @@ const desktopSectionMoreLinkStyle: CSSProperties = {
   width: "42px",
   height: "42px",
   fontSize: "32px",
+};
+
+const sectionMoreChevronStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "rgba(255,255,255,0.62)",
+  fontSize: "34px",
+  lineHeight: 0.8,
+  fontWeight: 700,
+  transform: "translateY(-1px)",
 };
 
 const sectionTitleStyle: CSSProperties = {
