@@ -70,7 +70,8 @@ type NotificacaoLocal = {
     | "novo-seguidor"
     | "solicitacao-seguidor"
     | "denuncia-comunidade"
-    | "moderacao-comunidade";
+    | "moderacao-comunidade"
+    | "problema-tecnico";
   lida: boolean;
   criadaEm: string;
   autorId?: string;
@@ -171,6 +172,23 @@ const NOTIFICACOES_UI_TRANSLATIONS: Record<string, TraducaoNotificacoes> = {
   "Atividade da comunidade": { en: "Community activity", es: "Actividad de la comunidad" },
   "Denúncia analisada": { en: "Report reviewed", es: "Denuncia revisada" },
   "Moderação": { en: "Moderation", es: "Moderación" },
+  "Suporte técnico": { en: "Technical support", es: "Soporte técnico" },
+  "Problema técnico em análise": {
+    en: "Technical issue under review",
+    es: "Problema técnico en revisión",
+  },
+  "Problema técnico aguardando informações": {
+    en: "Technical issue waiting for information",
+    es: "Problema técnico esperando información",
+  },
+  "Problema técnico resolvido": {
+    en: "Technical issue resolved",
+    es: "Problema técnico resuelto",
+  },
+  "Problema técnico fechado": {
+    en: "Technical issue closed",
+    es: "Problema técnico cerrado",
+  },
   "Comentário em capítulo": { en: "Comment on a chapter", es: "Comentario en un capítulo" },
   "Curtida no capítulo": { en: "Chapter like", es: "Me gusta en el capítulo" },
   "Curtida no comentário": { en: "Comment like", es: "Me gusta en el comentario" },
@@ -182,6 +200,7 @@ const NOTIFICACOES_UI_TRANSLATIONS: Record<string, TraducaoNotificacoes> = {
   "Ver comunidade": { en: "View Community", es: "Ver comunidad" },
   "Ver comentário": { en: "View comment", es: "Ver comentario" },
   "Ver capítulo": { en: "View chapter", es: "Ver capítulo" },
+  "Ver chamado": { en: "View ticket", es: "Ver solicitud" },
   "Obra não encontrada": { en: "Work not found", es: "Obra no encontrada" },
   "Capítulo não encontrado": { en: "Chapter not found", es: "Capítulo no encontrado" },
   "Obra sem título": { en: "Untitled work", es: "Obra sin título" },
@@ -231,6 +250,28 @@ function traduzirStatusDenunciaNotificacoes(
   if (statusNormalizado.includes("analise")) return "en revisión";
   if (statusNormalizado.includes("resolvida")) return "resuelta";
   if (statusNormalizado.includes("rejeitada")) return "rechazada";
+
+  return status;
+}
+
+function traduzirStatusProblemaTecnicoNotificacoes(
+  status: string,
+  idioma: HistorietasLanguage
+) {
+  const statusNormalizado = normalizarTexto(status);
+
+  if (idioma === "en") {
+    if (statusNormalizado.includes("analise")) return "under review";
+    if (statusNormalizado.includes("aguardando")) return "waiting for information";
+    if (statusNormalizado.includes("resolvido")) return "resolved";
+    if (statusNormalizado.includes("fechado")) return "closed";
+    return status;
+  }
+
+  if (statusNormalizado.includes("analise")) return "en revisión";
+  if (statusNormalizado.includes("aguardando")) return "esperando información";
+  if (statusNormalizado.includes("resolvido")) return "resuelto";
+  if (statusNormalizado.includes("fechado")) return "cerrado";
 
   return status;
 }
@@ -441,6 +482,22 @@ function traduzirTextoNotificacoes(
     return idioma === "en"
       ? `${inicio}Moderation marked your report as ${status}.${fim}`
       : `${inicio}Moderación marcó tu denuncia como ${status}.${fim}`;
+  }
+
+  correspondencia =
+    /^Seu chamado técnico ["“](.+?)["”] foi atualizado para (.+)\.$/i.exec(
+      conteudo
+    );
+
+  if (correspondencia) {
+    const status = traduzirStatusProblemaTecnicoNotificacoes(
+      correspondencia[2],
+      idioma
+    );
+
+    return idioma === "en"
+      ? `${inicio}Your technical ticket "${correspondencia[1]}" was updated to ${status}.${fim}`
+      : `${inicio}Tu solicitud técnica "${correspondencia[1]}" fue actualizada a ${status}.${fim}`;
   }
 
   correspondencia =
@@ -1187,6 +1244,7 @@ function normalizarTipoNotificacao(valor: unknown): NotificacaoLocal["tipo"] {
     "solicitacao-seguidor",
     "denuncia-comunidade",
     "moderacao-comunidade",
+    "problema-tecnico",
   ]);
 
   if (tiposValidos.has(tipoAlias as NotificacaoLocal["tipo"])) {
@@ -1596,6 +1654,10 @@ function obterDetalheNotificacao(notificacao: NotificacaoLocal) {
     return "Moderação";
   }
 
+  if (notificacao.tipo === "problema-tecnico") {
+    return "Suporte técnico";
+  }
+
   if (notificacao.tipo === "comentario-capitulo") {
     return "Comentário em capítulo";
   }
@@ -1618,6 +1680,10 @@ function obterAcaoPrincipalNotificacao(notificacao: NotificacaoLocal) {
 
   if (notificacao.tipo === "novo-seguidor") {
     return "Ver perfil";
+  }
+
+  if (notificacao.tipo === "problema-tecnico") {
+    return "Ver chamado";
   }
 
   if (
@@ -1695,6 +1761,10 @@ function obterIconeNotificacao(notificacao: NotificacaoLocal, lida: boolean) {
     notificacao.tipo === "moderacao-comunidade"
   ) {
     return "N";
+  }
+
+  if (notificacao.tipo === "problema-tecnico") {
+    return "S";
   }
 
   return "!";
@@ -3172,19 +3242,23 @@ async function carregarNotificacoesComunidadeSupabase(
   }
 
   try {
-    const { data: denunciasData } = await supabase
-      .from("comunidade_denuncias")
-      .select(
-        "id, alvo_tipo, alvo_id, status, observacao_admin, analisado_em, criado_em"
-      )
-      .eq("denunciante_id", userId)
-      .in("status", ["em_analise", "resolvida", "rejeitada"])
-      .order("criado_em", { ascending: false })
-      .limit(80);
+    const { data: denunciasData } = await supabase.rpc(
+      "listar_minhas_denuncias",
+      {
+        p_limite: 80,
+      }
+    );
 
     if (Array.isArray(denunciasData)) {
       denunciasData.forEach((denuncia) => {
-        denunciasComunidade.push(denuncia as Record<string, unknown>);
+        const registro = denuncia as Record<string, unknown>;
+        const status = pegarTexto(registro.status);
+
+        if (!["em_analise", "resolvida", "rejeitada"].includes(status)) {
+          return;
+        }
+
+        denunciasComunidade.push(registro);
       });
     }
   } catch {
@@ -3555,7 +3629,7 @@ async function carregarNotificacoesComunidadeSupabase(
   });
 
   denunciasComunidade.forEach((registro) => {
-    const denunciaId = pegarTexto(registro.id);
+    const denunciaId = pegarTexto(registro.denuncia_id);
     const status = pegarTexto(registro.status, "em_analise");
 
     if (!denunciaId) {
@@ -3571,7 +3645,6 @@ async function carregarNotificacoesComunidadeSupabase(
           : "em análise";
     const alvoTipo = pegarTexto(registro.alvo_tipo, "conteúdo");
     const alvoId = pegarTexto(registro.alvo_id);
-    const observacaoAdmin = pegarTexto(registro.observacao_admin);
     const link =
       alvoTipo === "post" && alvoId
         ? `/comunidade?post=${encodeURIComponent(alvoId)}`
@@ -3583,9 +3656,7 @@ async function carregarNotificacoesComunidadeSupabase(
       capituloId: "",
       link,
       titulo: `Denúncia ${statusTexto}`,
-      mensagem: observacaoAdmin
-        ? `A moderação atualizou sua denúncia: ${observacaoAdmin}`
-        : `A moderação marcou sua denúncia como ${statusTexto}.`,
+      mensagem: `A moderação marcou sua denúncia como ${statusTexto}.`,
       tipo: "denuncia-comunidade",
       lida: idsLidos.has(id),
       criadaEm: pegarTexto(
@@ -3603,6 +3674,116 @@ async function carregarNotificacoesComunidadeSupabase(
   );
 }
 
+
+function obterStatusProblemaTecnicoNotificacao(status: string) {
+  if (status === "em_analise") {
+    return {
+      titulo: "Problema técnico em análise",
+      texto: "em análise",
+    };
+  }
+
+  if (status === "aguardando_usuario") {
+    return {
+      titulo: "Problema técnico aguardando informações",
+      texto: "aguardando informações",
+    };
+  }
+
+  if (status === "resolvido") {
+    return {
+      titulo: "Problema técnico resolvido",
+      texto: "resolvido",
+    };
+  }
+
+  if (status === "fechado") {
+    return {
+      titulo: "Problema técnico fechado",
+      texto: "fechado",
+    };
+  }
+
+  return null;
+}
+
+async function carregarNotificacoesProblemasTecnicosSupabase(
+  userId: string,
+  notificacoesLidasIds: string[]
+): Promise<NotificacaoLocal[]> {
+  const userIdLimpo = userId.trim();
+
+  if (!userIdLimpo) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase.rpc(
+      "listar_meus_problemas_tecnicos",
+      {
+        p_limite: 80,
+      }
+    );
+
+    if (error || !Array.isArray(data)) {
+      return [];
+    }
+
+    const idsLidos = new Set(notificacoesLidasIds);
+    const notificacoesCriadas: NotificacaoLocal[] = [];
+
+    data.forEach((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return;
+      }
+
+      const registro = item as Record<string, unknown>;
+      const problemaId =
+        pegarTexto(registro.problema_id) || pegarTexto(registro.id);
+      const status = pegarTexto(
+        registro.status ?? registro.problema_status
+      );
+      const statusNotificacao =
+        obterStatusProblemaTecnicoNotificacao(status);
+
+      if (!problemaId || !statusNotificacao) {
+        return;
+      }
+
+      const tituloChamado = pegarTexto(
+        registro.titulo,
+        "Problema técnico"
+      ).slice(0, 120);
+      const id = `problema-tecnico-${problemaId}-${status}`;
+
+      notificacoesCriadas.push({
+        id,
+        obraId: "",
+        capituloId: "",
+        link: "/ajuda#problema-tecnico",
+        titulo: statusNotificacao.titulo,
+        mensagem: `Seu chamado técnico "${tituloChamado}" foi atualizado para ${statusNotificacao.texto}.`,
+        tipo: "problema-tecnico",
+        lida: idsLidos.has(id),
+        criadaEm: pegarTexto(
+          registro.atualizado_em ??
+            registro.analisado_em ??
+            registro.criado_em,
+          new Date().toISOString()
+        ),
+        autorId: "",
+        autorNome: "Suporte técnico",
+        autorAvatar: "",
+      });
+    });
+
+    return notificacoesCriadas.sort(
+      (a, b) => dataNotificacao(b) - dataNotificacao(a)
+    );
+  } catch {
+    return [];
+  }
+}
 
 function obterRotuloTipoAnotacaoDiarioNotificacao(tipo: string) {
   if (tipo === "lendo") {
@@ -4270,12 +4451,17 @@ export default function NotificacoesPage() {
         const [
           notificacoesComunidadeSupabase,
           notificacoesDiarioSupabase,
+          notificacoesProblemasTecnicosSupabase,
         ] = await Promise.all([
           carregarNotificacoesComunidadeSupabase(
             usuarioAtualId,
             notificacoesLidasIds
           ),
           carregarNotificacoesDiarioSupabase(
+            usuarioAtualId,
+            notificacoesLidasIds
+          ),
+          carregarNotificacoesProblemasTecnicosSupabase(
             usuarioAtualId,
             notificacoesLidasIds
           ),
@@ -4286,6 +4472,7 @@ export default function NotificacoesPage() {
             ...notificacoesDiretasSupabase,
             ...notificacoesComunidadeSupabase,
             ...notificacoesDiarioSupabase,
+            ...notificacoesProblemasTecnicosSupabase,
           ]),
           idsNotificacoesApagadas
         ).map((notificacao) => prepararNotificacaoTexto(notificacao));

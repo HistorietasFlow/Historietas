@@ -14,7 +14,15 @@ import { useNotificacoes } from "../../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../../lib/i18n";
 
-type TipoAlvoDenuncia = "post" | "comentario";
+type TipoAlvoDenuncia =
+  | "post"
+  | "comentario"
+  | "comentario_capitulo"
+  | "obra"
+  | "capitulo"
+  | "comentario_obra"
+  | "diario_anotacao"
+  | "comentario_diario";
 
 type StatusDenuncia =
   | "pendente"
@@ -58,6 +66,72 @@ type ComentarioDenunciado = {
   criado_em: string;
 };
 
+type ComentarioCapituloDenunciado = {
+  id: string;
+  capitulo_id: string;
+  user_id: string;
+  comentario: string;
+  criado_em: string;
+};
+
+type CapituloContextoDenuncia = {
+  id: string;
+  obra_id: string;
+  titulo: string | null;
+};
+
+type CapituloDenunciado = {
+  id: string;
+  obra_id: string;
+  user_id: string;
+  titulo: string | null;
+  texto: string | null;
+  ordem: number | null;
+  publicado: boolean | null;
+  criado_em: string;
+};
+
+type ObraDenunciada = {
+  id: string;
+  user_id: string;
+  titulo: string | null;
+  autor: string | null;
+  slug: string | null;
+  link: string | null;
+  publicado: boolean | null;
+  criada_em: string;
+};
+
+type ComentarioObraDenunciado = {
+  id: string;
+  obra_id: string;
+  user_id: string;
+  comentario: string;
+  criado_em: string;
+};
+
+type DiarioAnotacaoDenunciada = {
+  id: string;
+  obra_id: string;
+  user_id: string;
+  tipo: string | null;
+  texto: string;
+  visibilidade: string | null;
+  contem_spoiler: boolean | null;
+  criado_em: string;
+  atualizado_em: string | null;
+};
+
+type ComentarioDiarioDenunciado = {
+  id: string;
+  anotacao_id: string;
+  user_id: string;
+  texto: string;
+  criado_em: string;
+  atualizado_em: string | null;
+};
+
+
 type PerfilModeracao = {
   id?: string | null;
   user_id?: string | null;
@@ -74,6 +148,12 @@ type DenunciaComContexto = DenunciaComunidade & {
   alvoTipoPublicacao?: string;
   alvoTemSpoiler?: boolean;
   alvoObra?: string;
+  alvoCapituloId?: string;
+  alvoObraId?: string;
+  alvoObraSlug?: string;
+  alvoCapituloTitulo?: string;
+  alvoPerfilUserId?: string;
+  alvoAnotacaoId?: string;
 };
 
 type StatusDenunciaPerfil = "pendente" | "analisada" | "ignorada" | "resolvida";
@@ -124,6 +204,13 @@ const ADMIN_COMUNIDADE_UI_TRANSLATIONS: Record<
   "Usuário": { en: "User", es: "Usuario" },
   "Usuário denunciado": { en: "Reported user", es: "Usuario denunciado" },
   "Conteúdo inadequado": { en: "Inappropriate content", es: "Contenido inapropiado" },
+  "Ódio ou discriminação": { en: "Hate or discrimination", es: "Odio o discriminación" },
+  "Ameaça ou violência": { en: "Threats or violence", es: "Amenazas o violencia" },
+  "Conteúdo sexual impróprio": { en: "Improper sexual content", es: "Contenido sexual inapropiado" },
+  "Risco envolvendo menor": { en: "Risk involving a minor", es: "Riesgo relacionado con un menor" },
+  "Plágio ou direitos autorais": { en: "Plagiarism or copyright", es: "Plagio o derechos de autor" },
+  "Informações pessoais expostas": { en: "Exposed personal information", es: "Información personal expuesta" },
+  "Fraude ou golpe": { en: "Fraud or scam", es: "Fraude o estafa" },
   "Publicação não encontrada ou removida.": {
     en: "Post not found or removed.",
     es: "Publicación no encontrada o eliminada.",
@@ -131,6 +218,30 @@ const ADMIN_COMUNIDADE_UI_TRANSLATIONS: Record<
   "Comentário não encontrado ou removido.": {
     en: "Comment not found or removed.",
     es: "Comentario no encontrado o eliminado.",
+  },
+  "Comentário de capítulo não encontrado ou removido.": {
+    en: "Chapter comment not found or removed.",
+    es: "Comentario del capítulo no encontrado o eliminado.",
+  },
+  "Obra não encontrada ou removida.": {
+    en: "Work not found or removed.",
+    es: "Obra no encontrada o eliminada.",
+  },
+  "Capítulo não encontrado ou removido.": {
+    en: "Chapter not found or removed.",
+    es: "Capítulo no encontrado o eliminado.",
+  },
+  "Comentário da obra não encontrado ou removido.": {
+    en: "Work comment not found or removed.",
+    es: "Comentario de la obra no encontrado o eliminado.",
+  },
+  "Anotação do Diário não encontrada ou removida.": {
+    en: "Journal entry not found or removed.",
+    es: "Anotación del Diario no encontrada o eliminada.",
+  },
+  "Comentário do Diário não encontrado ou removido.": {
+    en: "Journal comment not found or removed.",
+    es: "Comentario del Diario no encontrado o eliminado.",
   },
   "Autor não encontrado": { en: "Author not found", es: "Autor no encontrado" },
   "Discussão": { en: "Discussion", es: "Discusión" },
@@ -140,6 +251,14 @@ const ADMIN_COMUNIDADE_UI_TRANSLATIONS: Record<
   "Fechar busca": { en: "Close search", es: "Cerrar búsqueda" },
   "Abrir busca": { en: "Open search", es: "Abrir búsqueda" },
   "Notificações": { en: "Notifications", es: "Notificaciones" },
+  "Problemas técnicos": {
+    en: "Technical issues",
+    es: "Problemas técnicos",
+  },
+  "Abrir problemas técnicos": {
+    en: "Open technical issues",
+    es: "Abrir problemas técnicos",
+  },
   "Buscar denúncias...": { en: "Search reports...", es: "Buscar denuncias..." },
   "total": { en: "total", es: "total" },
   "pendentes": { en: "pending", es: "pendientes" },
@@ -175,10 +294,41 @@ const ADMIN_COMUNIDADE_UI_TRANSLATIONS: Record<
   },
   "Publicação": { en: "Post", es: "Publicación" },
   "Comentário": { en: "Comment", es: "Comentario" },
+  "Comentário de capítulo": {
+    en: "Chapter comment",
+    es: "Comentario del capítulo",
+  },
+  "Obra": { en: "Work", es: "Obra" },
+  "Capítulo": { en: "Chapter", es: "Capítulo" },
+  "Comentário da obra": {
+    en: "Work comment",
+    es: "Comentario de la obra",
+  },
+  "Anotação do Diário": {
+    en: "Journal entry",
+    es: "Anotación del Diario",
+  },
+  "Comentário do Diário": {
+    en: "Journal comment",
+    es: "Comentario del Diario",
+  },
+  "Diário": { en: "Journal", es: "Diario" },
   "Arquivada": { en: "Archived", es: "Archivada" },
   "Abrir publicação na Comunidade": {
     en: "Open post in Community",
     es: "Abrir publicación en la Comunidad",
+  },
+  "Abrir capítulo denunciado": {
+    en: "Open reported chapter",
+    es: "Abrir capítulo denunciado",
+  },
+  "Abrir obra denunciada": {
+    en: "Open reported work",
+    es: "Abrir obra denunciada",
+  },
+  "Abrir conteúdo no Diário": {
+    en: "Open content in Journal",
+    es: "Abrir contenido en el Diario",
   },
   "Restaurar para o painel": {
     en: "Restore to dashboard",
@@ -187,6 +337,24 @@ const ADMIN_COMUNIDADE_UI_TRANSLATIONS: Record<
   "Arquivar denúncia": { en: "Archive report", es: "Archivar denuncia" },
   "Remover publicação": { en: "Remove post", es: "Eliminar publicación" },
   "Remover comentário": { en: "Remove comment", es: "Eliminar comentario" },
+  "Remover comentário do capítulo": {
+    en: "Remove chapter comment",
+    es: "Eliminar comentario del capítulo",
+  },
+  "Remover obra": { en: "Remove work", es: "Eliminar obra" },
+  "Remover capítulo": { en: "Remove chapter", es: "Eliminar capítulo" },
+  "Remover comentário da obra": {
+    en: "Remove work comment",
+    es: "Eliminar comentario de la obra",
+  },
+  "Remover anotação do Diário": {
+    en: "Remove Journal entry",
+    es: "Eliminar anotación del Diario",
+  },
+  "Remover comentário do Diário": {
+    en: "Remove Journal comment",
+    es: "Eliminar comentario del Diario",
+  },
   "Conteúdo denunciado": { en: "Reported content", es: "Contenido denunciado" },
   "Indisponível": { en: "Unavailable", es: "No disponible" },
   "Conteúdo removido ou indisponível.": {
@@ -201,6 +369,7 @@ const ADMIN_COMUNIDADE_UI_TRANSLATIONS: Record<
   "Sim": { en: "Yes", es: "Sí" },
   "Não": { en: "No", es: "No" },
   "Obra:": { en: "Work:", es: "Obra:" },
+  "Capítulo:": { en: "Chapter:", es: "Capítulo:" },
   "Sem detalhe adicional.": {
     en: "No additional details.",
     es: "Sin detalles adicionales.",
@@ -385,22 +554,64 @@ function localeAdminComunidade(language: HistorietasLanguage) {
 }
 
 function textoConfirmacaoRemocaoAdminComunidade(
-  tipoConteudo: string,
+  alvoTipo: TipoAlvoDenuncia,
   language: HistorietasLanguage
 ) {
-  if (language === "en") {
-    const tipo = tipoConteudo === "publicação" ? "post" : "comment";
+  const textos: Record<
+    TipoAlvoDenuncia,
+    { "pt-BR": string; en: string; es: string }
+  > = {
+    post: {
+      "pt-BR":
+        "Remover esta publicação denunciada? Essa ação apaga a publicação da Comunidade.",
+      en: "Remove this reported post? This action deletes the post from the Community.",
+      es: "¿Eliminar esta publicación denunciada? Esta acción elimina la publicación de la Comunidad.",
+    },
+    comentario: {
+      "pt-BR":
+        "Remover este comentário denunciado? Essa ação apaga o comentário da Comunidade.",
+      en: "Remove this reported comment? This action deletes the comment from the Community.",
+      es: "¿Eliminar este comentario denunciado? Esta acción elimina el comentario de la Comunidad.",
+    },
+    comentario_capitulo: {
+      "pt-BR":
+        "Remover este comentário de capítulo denunciado? Essa ação apaga o comentário do capítulo.",
+      en: "Remove this reported chapter comment? This action deletes the comment from the chapter.",
+      es: "¿Eliminar este comentario del capítulo denunciado? Esta acción elimina el comentario del capítulo.",
+    },
+    obra: {
+      "pt-BR":
+        "Remover esta obra denunciada? Essa ação apaga a obra e pode apagar capítulos e interações relacionadas.",
+      en: "Remove this reported work? This may also delete related chapters and interactions.",
+      es: "¿Eliminar esta obra denunciada? Esto también puede eliminar capítulos e interacciones relacionadas.",
+    },
+    capitulo: {
+      "pt-BR":
+        "Remover este capítulo denunciado? Essa ação apaga o capítulo e pode apagar interações relacionadas.",
+      en: "Remove this reported chapter? This may also delete related interactions.",
+      es: "¿Eliminar este capítulo denunciado? Esto también puede eliminar interacciones relacionadas.",
+    },
+    comentario_obra: {
+      "pt-BR":
+        "Remover este comentário de obra denunciado? Essa ação apaga o comentário da obra.",
+      en: "Remove this reported work comment? This action deletes the comment from the work.",
+      es: "¿Eliminar este comentario de obra denunciado? Esta acción elimina el comentario de la obra.",
+    },
+    diario_anotacao: {
+      "pt-BR":
+        "Remover esta anotação denunciada? Essa ação apaga a anotação e as interações relacionadas no Diário.",
+      en: "Remove this reported Journal entry? This action deletes the entry and its related interactions.",
+      es: "¿Eliminar esta anotación denunciada? Esta acción elimina la anotación y sus interacciones relacionadas.",
+    },
+    comentario_diario: {
+      "pt-BR":
+        "Remover este comentário denunciado? Essa ação apaga o comentário do Diário.",
+      en: "Remove this reported Journal comment? This action deletes the comment from the Journal.",
+      es: "¿Eliminar este comentario denunciado? Esta acción elimina el comentario del Diario.",
+    },
+  };
 
-    return `Remove this reported ${tipo}? This action deletes the content from the Community.`;
-  }
-
-  if (language === "es") {
-    const tipo = tipoConteudo === "publicação" ? "publicación" : "comentario";
-
-    return `¿Eliminar este ${tipo} denunciado? Esta acción elimina el contenido de la Comunidad.`;
-  }
-
-  return `Remover esta ${tipoConteudo} denunciada? Essa ação apaga o conteúdo da Comunidade.`;
+  return textos[alvoTipo][language];
 }
 
 function traduzirTextoAdminComunidade(
@@ -445,12 +656,12 @@ function traduzirTextoAdminComunidade(
       : `${inicio}${correspondencia[1]} denuncias de perfiles encontradas${fim}`;
   }
 
-  correspondencia = /^(\d+)\s+denúncia da Comunidade encontrada$/i.exec(conteudo);
+  correspondencia = /^(\d+)\s+denúncia de conteúdo encontrada$/i.exec(conteudo);
 
   if (correspondencia) {
     return language === "en"
-      ? `${inicio}${correspondencia[1]} Community report found${fim}`
-      : `${inicio}${correspondencia[1]} denuncia de la Comunidad encontrada${fim}`;
+      ? `${inicio}${correspondencia[1]} content report found${fim}`
+      : `${inicio}${correspondencia[1]} denuncia de contenido encontrada${fim}`;
   }
 
   correspondencia = /^(\d+)\s+denúncias da Comunidade encontradas$/i.exec(
@@ -459,8 +670,8 @@ function traduzirTextoAdminComunidade(
 
   if (correspondencia) {
     return language === "en"
-      ? `${inicio}${correspondencia[1]} Community reports found${fim}`
-      : `${inicio}${correspondencia[1]} denuncias de la Comunidad encontradas${fim}`;
+      ? `${inicio}${correspondencia[1]} content reports found${fim}`
+      : `${inicio}${correspondencia[1]} denuncias de contenido encontradas${fim}`;
   }
 
   correspondencia = /^Denunciado em\s+(.+)$/i.exec(conteudo);
@@ -548,18 +759,55 @@ function traduzirTextoAdminComunidade(
   }
 
   correspondencia =
-    /^(Publicação removida|Comentário removido) e denúncia marcada como resolvida\.$/i.exec(
+    /^(Anotação do Diário removida|Comentário do Diário removido) e denúncia marcada como resolvida\.$/i.exec(
       conteudo
     );
 
   if (correspondencia) {
-    const alvo = normalizarTexto(correspondencia[1]).startsWith("publicacao")
+    const alvoNormalizado = normalizarTexto(correspondencia[1]);
+    const alvo = alvoNormalizado.startsWith("anotacao")
+      ? language === "en"
+        ? "Journal entry"
+        : "Anotación del Diario"
+      : language === "en"
+        ? "Journal comment"
+        : "Comentario del Diario";
+
+    return language === "en"
+      ? `${inicio}${alvo} removed and report marked as resolved.${fim}`
+      : `${inicio}${alvo} eliminado y denuncia marcada como resuelta.${fim}`;
+  }
+
+  correspondencia =
+    /^(Publicação removida|Comentário removido|Comentário do capítulo removido|Obra removida|Capítulo removido|Comentário da obra removido) e denúncia marcada como resolvida\.$/i.exec(
+      conteudo
+    );
+
+  if (correspondencia) {
+    const alvoNormalizado = normalizarTexto(correspondencia[1]);
+    const alvo = alvoNormalizado.startsWith("publicacao")
       ? language === "en"
         ? "Post"
         : "Publicación"
-      : language === "en"
-        ? "Comment"
-        : "Comentario";
+      : alvoNormalizado === "obra removida"
+        ? language === "en"
+          ? "Work"
+          : "Obra"
+        : alvoNormalizado === "capitulo removido"
+          ? language === "en"
+            ? "Chapter"
+            : "Capítulo"
+          : alvoNormalizado.includes("comentario da obra")
+            ? language === "en"
+              ? "Work comment"
+              : "Comentario de la obra"
+            : alvoNormalizado.includes("capitulo")
+              ? language === "en"
+                ? "Chapter comment"
+                : "Comentario del capítulo"
+              : language === "en"
+                ? "Comment"
+                : "Comentario";
 
     return language === "en"
       ? `${inicio}${alvo} removed and report marked as resolved.${fim}`
@@ -907,8 +1155,115 @@ function criarHrefPerfilDenunciado(denuncia: Pick<DenunciaPerfil, "denunciadoId"
   return `/perfil-autor?userId=${encodeURIComponent(denuncia.denunciadoId)}`;
 }
 
+const MOTIVOS_DENUNCIA_CONTEUDO_LABEL: Record<string, string> = {
+  conteudo_inadequado: "Conteúdo inadequado",
+  spam: "Spam",
+  assedio: "Assédio",
+  odio_discriminacao: "Ódio ou discriminação",
+  ameaca_violencia: "Ameaça ou violência",
+  conteudo_sexual: "Conteúdo sexual impróprio",
+  risco_menor: "Risco envolvendo menor",
+  plagio_direitos_autorais: "Plágio ou direitos autorais",
+  informacoes_pessoais: "Informações pessoais expostas",
+  fraude: "Fraude ou golpe",
+  outro: "Outro",
+};
+
+function formatarMotivoDenunciaConteudo(motivo: string) {
+  const motivoLimpo = motivo.trim();
+
+  return (
+    MOTIVOS_DENUNCIA_CONTEUDO_LABEL[motivoLimpo] ||
+    motivoLimpo ||
+    "Conteúdo inadequado"
+  );
+}
+
 function normalizarTipoAlvo(valor: unknown): TipoAlvoDenuncia {
-  return valor === "comentario" ? "comentario" : "post";
+  const tiposValidos = new Set<TipoAlvoDenuncia>([
+    "post",
+    "comentario",
+    "comentario_capitulo",
+    "obra",
+    "capitulo",
+    "comentario_obra",
+    "diario_anotacao",
+    "comentario_diario",
+  ]);
+
+  return tiposValidos.has(valor as TipoAlvoDenuncia)
+    ? (valor as TipoAlvoDenuncia)
+    : "post";
+}
+
+function rotuloTipoAlvoDenuncia(tipo: TipoAlvoDenuncia) {
+  const rotulos: Record<TipoAlvoDenuncia, string> = {
+    post: "Publicação",
+    comentario: "Comentário",
+    comentario_capitulo: "Comentário de capítulo",
+    obra: "Obra",
+    capitulo: "Capítulo",
+    comentario_obra: "Comentário da obra",
+    diario_anotacao: "Anotação do Diário",
+    comentario_diario: "Comentário do Diário",
+  };
+
+  return rotulos[tipo];
+}
+
+function rotuloRemocaoAlvoDenuncia(tipo: TipoAlvoDenuncia) {
+  const rotulos: Record<TipoAlvoDenuncia, string> = {
+    post: "Remover publicação",
+    comentario: "Remover comentário",
+    comentario_capitulo: "Remover comentário do capítulo",
+    obra: "Remover obra",
+    capitulo: "Remover capítulo",
+    comentario_obra: "Remover comentário da obra",
+    diario_anotacao: "Remover anotação do Diário",
+    comentario_diario: "Remover comentário do Diário",
+  };
+
+  return rotulos[tipo];
+}
+
+function rotuloSucessoRemocaoAlvo(tipo: TipoAlvoDenuncia) {
+  const rotulos: Record<TipoAlvoDenuncia, string> = {
+    post: "Publicação removida",
+    comentario: "Comentário removido",
+    comentario_capitulo: "Comentário do capítulo removido",
+    obra: "Obra removida",
+    capitulo: "Capítulo removido",
+    comentario_obra: "Comentário da obra removido",
+    diario_anotacao: "Anotação do Diário removida",
+    comentario_diario: "Comentário do Diário removido",
+  };
+
+  return rotulos[tipo];
+}
+
+
+function criarHrefDiarioDenunciado(
+  denuncia: Pick<
+    DenunciaComContexto,
+    "alvoPerfilUserId" | "alvoObraId"
+  >
+) {
+  const params = new URLSearchParams({
+    modo: "perfil",
+    origem: "diario",
+  });
+  const perfilUserId = denuncia.alvoPerfilUserId?.trim() || "";
+  const obraId = denuncia.alvoObraId?.trim() || "";
+
+  if (perfilUserId) {
+    params.set("userId", perfilUserId);
+  }
+
+  if (obraId) {
+    params.set("obraId", obraId);
+  }
+
+  return `/listas?${params.toString()}`;
 }
 
 
@@ -919,7 +1274,14 @@ function conteudoDenunciadoIndisponivel(denuncia: DenunciaComContexto) {
     resumo.includes("conteudo removido pela moderacao") ||
     resumo.includes("publicacao nao encontrada ou removida") ||
     resumo.includes("comentario nao encontrado ou removido") ||
-    resumo.includes("nao encontrada ou removida")
+    resumo.includes("comentario de capitulo nao encontrado ou removido") ||
+    resumo.includes("obra nao encontrada ou removida") ||
+    resumo.includes("capitulo nao encontrado ou removido") ||
+    resumo.includes("comentario da obra nao encontrado ou removido") ||
+    resumo.includes("anotacao do diario nao encontrada ou removida") ||
+    resumo.includes("comentario do diario nao encontrado ou removido") ||
+    resumo.includes("nao encontrada ou removida") ||
+    resumo.includes("nao encontrado ou removido")
   );
 }
 
@@ -997,13 +1359,22 @@ async function removerConteudoComunidadeComCascata(
   const alvoId = denuncia.alvoId.trim();
 
   if (!alvoId) {
-    throw new Error("O conteúdo denunciado não possui um identificador válido.");
+    throw new Error(
+      "O conteúdo denunciado não possui um identificador válido."
+    );
   }
 
-  const tabela =
-    denuncia.alvoTipo === "post"
-      ? "comunidade_posts"
-      : "comunidade_comentarios";
+  const tabelasPorTipo: Record<TipoAlvoDenuncia, string> = {
+    post: "comunidade_posts",
+    comentario: "comunidade_comentarios",
+    comentario_capitulo: "comentarios_capitulos",
+    obra: "obras",
+    capitulo: "capitulos",
+    comentario_obra: "comentarios_obras",
+    diario_anotacao: "diario_anotacoes",
+    comentario_diario: "diario_anotacao_comentarios",
+  };
+  const tabela = tabelasPorTipo[denuncia.alvoTipo];
 
   const { data, error } = await supabase
     .from(tabela)
@@ -1022,6 +1393,7 @@ async function removerConteudoComunidadeComCascata(
     );
   }
 }
+
 
 
 export default function AdminComunidadePage() {
@@ -1091,11 +1463,13 @@ export default function AdminComunidadePage() {
     const denunciasMapeadas: DenunciaComunidade[] = (
       (denunciasResposta || []) as unknown as Record<string, unknown>[]
     ).map((denuncia) => ({
-      id: String(denuncia.id),
+      id: String(denuncia.id || ""),
       alvoTipo: normalizarTipoAlvo(denuncia.alvo_tipo),
-      alvoId: String(denuncia.alvo_id),
-      denuncianteId: String(denuncia.denunciante_id),
-      motivo: String(denuncia.motivo || "Conteúdo inadequado"),
+      alvoId: String(denuncia.alvo_id || ""),
+      denuncianteId: String(denuncia.denunciante_id || ""),
+      motivo: formatarMotivoDenunciaConteudo(
+        String(denuncia.motivo || "Conteúdo inadequado")
+      ),
       detalhe: String(denuncia.detalhe || ""),
       status: normalizarStatus(denuncia.status),
       arquivada: Boolean(denuncia.arquivada),
@@ -1103,42 +1477,38 @@ export default function AdminComunidadePage() {
       analisadoPor: denuncia.analisado_por
         ? String(denuncia.analisado_por)
         : null,
-      analisadoEm: denuncia.analisado_em ? String(denuncia.analisado_em) : null,
-      criadoEm: String(denuncia.criado_em),
+      analisadoEm: denuncia.analisado_em
+        ? String(denuncia.analisado_em)
+        : null,
+      criadoEm: String(denuncia.criado_em || ""),
     }));
 
-    const denuncianteIds = Array.from(
-      new Set(denunciasMapeadas.map((denuncia) => denuncia.denuncianteId))
-    );
+    const idsPorTipo = <T extends TipoAlvoDenuncia>(tipo: T) =>
+      Array.from(
+        new Set(
+          denunciasMapeadas
+            .filter((denuncia) => denuncia.alvoTipo === tipo)
+            .map((denuncia) => denuncia.alvoId)
+            .filter(Boolean)
+        )
+      );
 
-    const postIds = denunciasMapeadas
-      .filter((denuncia) => denuncia.alvoTipo === "post")
-      .map((denuncia) => denuncia.alvoId);
-
-    const comentarioIds = denunciasMapeadas
-      .filter((denuncia) => denuncia.alvoTipo === "comentario")
-      .map((denuncia) => denuncia.alvoId);
+    const postIds = idsPorTipo("post");
+    const comentarioIds = idsPorTipo("comentario");
+    const comentarioCapituloIds = idsPorTipo("comentario_capitulo");
+    const obraIdsDenunciadas = idsPorTipo("obra");
+    const capituloIdsDenunciados = idsPorTipo("capitulo");
+    const comentarioObraIds = idsPorTipo("comentario_obra");
+    const diarioAnotacaoIds = idsPorTipo("diario_anotacao");
+    const comentarioDiarioIds = idsPorTipo("comentario_diario");
 
     const [
-      perfisPorUserIdResposta,
-      perfisPorIdResposta,
       postsResposta,
       comentariosResposta,
+      comentariosCapitulosResposta,
+      comentariosObrasResposta,
+      comentariosDiarioResposta,
     ] = await Promise.all([
-      denuncianteIds.length > 0
-        ? supabase
-            .from("profiles")
-            .select("id, user_id, nome")
-            .in("user_id", denuncianteIds)
-            .limit(1000)
-        : Promise.resolve({ data: [], error: null }),
-      denuncianteIds.length > 0
-        ? supabase
-            .from("profiles")
-            .select("id, user_id, nome")
-            .in("id", denuncianteIds)
-            .limit(1000)
-        : Promise.resolve({ data: [], error: null }),
       postIds.length > 0
         ? supabase
             .from("comunidade_posts")
@@ -1155,63 +1525,405 @@ export default function AdminComunidadePage() {
             .in("id", comentarioIds)
             .limit(500)
         : Promise.resolve({ data: [], error: null }),
+      comentarioCapituloIds.length > 0
+        ? supabase
+            .from("comentarios_capitulos")
+            .select("id, capitulo_id, user_id, comentario, criado_em")
+            .in("id", comentarioCapituloIds)
+            .limit(500)
+        : Promise.resolve({ data: [], error: null }),
+      comentarioObraIds.length > 0
+        ? supabase
+            .from("comentarios_obras")
+            .select("id, obra_id, user_id, comentario, criado_em")
+            .in("id", comentarioObraIds)
+            .limit(500)
+        : Promise.resolve({ data: [], error: null }),
+      comentarioDiarioIds.length > 0
+        ? supabase
+            .from("diario_anotacao_comentarios")
+            .select(
+              "id, anotacao_id, user_id, texto, criado_em, atualizado_em"
+            )
+            .in("id", comentarioDiarioIds)
+            .limit(500)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    const posts = postsResposta.error
+      ? []
+      : ((postsResposta.data || []) as unknown as PostDenunciado[]);
+    const comentarios = comentariosResposta.error
+      ? []
+      : ((comentariosResposta.data || []) as unknown as ComentarioDenunciado[]);
+    const comentariosCapitulos = comentariosCapitulosResposta.error
+      ? []
+      : ((comentariosCapitulosResposta.data ||
+          []) as unknown as ComentarioCapituloDenunciado[]);
+    const comentariosObras = comentariosObrasResposta.error
+      ? []
+      : ((comentariosObrasResposta.data ||
+          []) as unknown as ComentarioObraDenunciado[]);
+    const comentariosDiario = comentariosDiarioResposta.error
+      ? []
+      : ((comentariosDiarioResposta.data ||
+          []) as unknown as ComentarioDiarioDenunciado[]);
+
+    const diarioAnotacaoIdsContexto = Array.from(
+      new Set([
+        ...diarioAnotacaoIds,
+        ...comentariosDiario
+          .map((comentario) => comentario.anotacao_id)
+          .filter(Boolean),
+      ])
+    );
+
+    const {
+      data: diarioAnotacoesResposta,
+      error: diarioAnotacoesErro,
+    } =
+      diarioAnotacaoIdsContexto.length > 0
+        ? await supabase
+            .from("diario_anotacoes")
+            .select(
+              "id, obra_id, user_id, tipo, texto, visibilidade, contem_spoiler, criado_em, atualizado_em"
+            )
+            .in("id", diarioAnotacaoIdsContexto)
+            .limit(500)
+        : { data: [], error: null };
+
+    const diarioAnotacoes = diarioAnotacoesErro
+      ? []
+      : ((diarioAnotacoesResposta ||
+          []) as unknown as DiarioAnotacaoDenunciada[]);
+
+    const capituloIdsContexto = Array.from(
+      new Set([
+        ...capituloIdsDenunciados,
+        ...comentariosCapitulos
+          .map((comentario) => comentario.capitulo_id)
+          .filter(Boolean),
+      ])
+    );
+
+    const { data: capitulosResposta, error: capitulosErro } =
+      capituloIdsContexto.length > 0
+        ? await supabase
+            .from("capitulos")
+            .select(
+              "id, obra_id, user_id, titulo, texto, ordem, publicado, criado_em"
+            )
+            .in("id", capituloIdsContexto)
+            .limit(500)
+        : { data: [], error: null };
+
+    const capitulos = capitulosErro
+      ? []
+      : ((capitulosResposta || []) as unknown as CapituloDenunciado[]);
+
+    const obraIdsContexto = Array.from(
+      new Set([
+        ...obraIdsDenunciadas,
+        ...capitulos.map((capitulo) => capitulo.obra_id).filter(Boolean),
+        ...comentariosObras
+          .map((comentario) => comentario.obra_id)
+          .filter(Boolean),
+        ...diarioAnotacoes
+          .map((anotacao) => anotacao.obra_id)
+          .filter(Boolean),
+      ])
+    );
+
+    const { data: obrasResposta, error: obrasErro } =
+      obraIdsContexto.length > 0
+        ? await supabase
+            .from("obras")
+            .select(
+              "id, user_id, titulo, autor, slug, link, publicado, criada_em"
+            )
+            .in("id", obraIdsContexto)
+            .limit(500)
+        : { data: [], error: null };
+
+    const obras = obrasErro
+      ? []
+      : ((obrasResposta || []) as unknown as ObraDenunciada[]);
+
+    const perfilIds = Array.from(
+      new Set(
+        [
+          ...denunciasMapeadas.map((denuncia) => denuncia.denuncianteId),
+          ...comentariosCapitulos.map((comentario) => comentario.user_id),
+          ...comentariosObras.map((comentario) => comentario.user_id),
+          ...comentariosDiario.map((comentario) => comentario.user_id),
+          ...diarioAnotacoes.map((anotacao) => anotacao.user_id),
+          ...capitulos.map((capitulo) => capitulo.user_id),
+          ...obras.map((obra) => obra.user_id),
+        ].filter(Boolean)
+      )
+    );
+
+    const [perfisPorUserIdResposta, perfisPorIdResposta] = await Promise.all([
+      perfilIds.length > 0
+        ? supabase
+            .from("profiles")
+            .select("id, user_id, nome")
+            .in("user_id", perfilIds)
+            .limit(1000)
+        : Promise.resolve({ data: [], error: null }),
+      perfilIds.length > 0
+        ? supabase
+            .from("profiles")
+            .select("id, user_id, nome")
+            .in("id", perfilIds)
+            .limit(1000)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
     const perfis = [
       ...(perfisPorUserIdResposta.error
         ? []
-        : ((perfisPorUserIdResposta.data || []) as unknown as PerfilModeracao[])),
+        : ((perfisPorUserIdResposta.data ||
+            []) as unknown as PerfilModeracao[])),
       ...(perfisPorIdResposta.error
         ? []
-        : ((perfisPorIdResposta.data || []) as unknown as PerfilModeracao[])),
+        : ((perfisPorIdResposta.data ||
+            []) as unknown as PerfilModeracao[])),
     ];
 
-    const posts = postsResposta.error
-      ? []
-      : ((postsResposta.data || []) as unknown as PostDenunciado[]);
-
-    const comentarios = comentariosResposta.error
-      ? []
-      : ((comentariosResposta.data || []) as unknown as ComentarioDenunciado[]);
-
     const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
-
     const postsPorId = new Map(posts.map((post) => [post.id, post]));
     const comentariosPorId = new Map(
       comentarios.map((comentario) => [comentario.id, comentario])
     );
+    const comentariosCapitulosPorId = new Map(
+      comentariosCapitulos.map((comentario) => [comentario.id, comentario])
+    );
+    const comentariosObrasPorId = new Map(
+      comentariosObras.map((comentario) => [comentario.id, comentario])
+    );
+    const comentariosDiarioPorId = new Map(
+      comentariosDiario.map((comentario) => [comentario.id, comentario])
+    );
+    const diarioAnotacoesPorId = new Map(
+      diarioAnotacoes.map((anotacao) => [anotacao.id, anotacao])
+    );
+    const capitulosPorId = new Map(
+      capitulos.map((capitulo) => [capitulo.id, capitulo])
+    );
+    const obrasPorId = new Map(obras.map((obra) => [obra.id, obra]));
 
-    const denunciasComContexto = denunciasMapeadas.map((denuncia) => {
-      if (denuncia.alvoTipo === "post") {
-        const post = postsPorId.get(denuncia.alvoId);
+    const nomeDenunciante = (denuncia: DenunciaComunidade) =>
+      perfisPorId.get(denuncia.denuncianteId) || "Usuário";
+
+    const denunciasComContexto: DenunciaComContexto[] =
+      denunciasMapeadas.map((denuncia) => {
+        if (denuncia.alvoTipo === "post") {
+          const post = postsPorId.get(denuncia.alvoId);
+
+          return {
+            ...denuncia,
+            denuncianteNome: nomeDenunciante(denuncia),
+            alvoResumo:
+              post?.texto || "Publicação não encontrada ou removida.",
+            alvoAutor: post?.autor_nome || "Autor não encontrado",
+            alvoData: post?.criado_em || "",
+            alvoPostId: post?.id || denuncia.alvoId,
+            alvoCategoria: post?.categoria || "",
+            alvoTipoPublicacao: post?.tipo_publicacao || "Discussão",
+            alvoTemSpoiler: Boolean(post?.tem_spoiler),
+            alvoObra: post?.obra_relacionada || "",
+          };
+        }
+
+        if (denuncia.alvoTipo === "comentario") {
+          const comentario = comentariosPorId.get(denuncia.alvoId);
+
+          return {
+            ...denuncia,
+            denuncianteNome: nomeDenunciante(denuncia),
+            alvoResumo:
+              comentario?.texto ||
+              "Comentário não encontrado ou removido.",
+            alvoAutor: comentario?.autor_nome || "Autor não encontrado",
+            alvoData: comentario?.criado_em || "",
+            alvoPostId: comentario?.post_id || "",
+          };
+        }
+
+        if (denuncia.alvoTipo === "comentario_capitulo") {
+          const comentario = comentariosCapitulosPorId.get(denuncia.alvoId);
+          const capitulo = comentario
+            ? capitulosPorId.get(comentario.capitulo_id)
+            : undefined;
+          const obra = capitulo
+            ? obrasPorId.get(capitulo.obra_id)
+            : undefined;
+
+          return {
+            ...denuncia,
+            denuncianteNome: nomeDenunciante(denuncia),
+            alvoResumo:
+              comentario?.comentario ||
+              "Comentário de capítulo não encontrado ou removido.",
+            alvoAutor: comentario
+              ? perfisPorId.get(comentario.user_id) ||
+                "Autor não encontrado"
+              : "Autor não encontrado",
+            alvoData: comentario?.criado_em || "",
+            alvoPostId: "",
+            alvoObra: obra?.titulo?.trim() || "",
+            alvoObraId: obra?.id || capitulo?.obra_id || "",
+            alvoObraSlug: obra?.slug?.trim() || "",
+            alvoCapituloId: comentario?.capitulo_id || "",
+            alvoCapituloTitulo: capitulo?.titulo?.trim() || "",
+          };
+        }
+
+        if (denuncia.alvoTipo === "obra") {
+          const obra = obrasPorId.get(denuncia.alvoId);
+
+          return {
+            ...denuncia,
+            denuncianteNome: nomeDenunciante(denuncia),
+            alvoResumo:
+              obra?.titulo?.trim() || "Obra não encontrada ou removida.",
+            alvoAutor:
+              obra?.autor?.trim() ||
+              (obra
+                ? perfisPorId.get(obra.user_id) || "Autor não encontrado"
+                : "Autor não encontrado"),
+            alvoData: obra?.criada_em || "",
+            alvoPostId: "",
+            alvoObraId: obra?.id || denuncia.alvoId,
+            alvoObraSlug: obra?.slug?.trim() || "",
+          };
+        }
+
+        if (denuncia.alvoTipo === "capitulo") {
+          const capitulo = capitulosPorId.get(denuncia.alvoId);
+          const obra = capitulo
+            ? obrasPorId.get(capitulo.obra_id)
+            : undefined;
+          const textoCapitulo = capitulo?.texto?.trim() || "";
+
+          return {
+            ...denuncia,
+            denuncianteNome: nomeDenunciante(denuncia),
+            alvoResumo:
+              textoCapitulo.slice(0, 5000) ||
+              capitulo?.titulo?.trim() ||
+              "Capítulo não encontrado ou removido.",
+            alvoAutor: capitulo
+              ? perfisPorId.get(capitulo.user_id) ||
+                obra?.autor?.trim() ||
+                "Autor não encontrado"
+              : "Autor não encontrado",
+            alvoData: capitulo?.criado_em || "",
+            alvoPostId: "",
+            alvoObra: obra?.titulo?.trim() || "",
+            alvoObraId: obra?.id || capitulo?.obra_id || "",
+            alvoObraSlug: obra?.slug?.trim() || "",
+            alvoCapituloId: capitulo?.id || denuncia.alvoId,
+            alvoCapituloTitulo: capitulo?.titulo?.trim() || "",
+          };
+        }
+
+        if (denuncia.alvoTipo === "diario_anotacao") {
+          const anotacao = diarioAnotacoesPorId.get(denuncia.alvoId);
+          const obra = anotacao
+            ? obrasPorId.get(anotacao.obra_id)
+            : undefined;
+
+          return {
+            ...denuncia,
+            denuncianteNome: nomeDenunciante(denuncia),
+            alvoResumo:
+              anotacao?.texto ||
+              "Anotação do Diário não encontrada ou removida.",
+            alvoAutor: anotacao
+              ? perfisPorId.get(anotacao.user_id) ||
+                "Autor não encontrado"
+              : "Autor não encontrado",
+            alvoData:
+              anotacao?.atualizado_em ||
+              anotacao?.criado_em ||
+              "",
+            alvoPostId: "",
+            alvoCategoria: "Diário",
+            alvoTipoPublicacao: anotacao?.tipo?.trim() || "",
+            alvoTemSpoiler: Boolean(anotacao?.contem_spoiler),
+            alvoObra: obra?.titulo?.trim() || "",
+            alvoObraId: obra?.id || anotacao?.obra_id || "",
+            alvoObraSlug: obra?.slug?.trim() || "",
+            alvoPerfilUserId: anotacao?.user_id || "",
+            alvoAnotacaoId: anotacao?.id || denuncia.alvoId,
+          };
+        }
+
+        if (denuncia.alvoTipo === "comentario_diario") {
+          const comentarioDiario = comentariosDiarioPorId.get(
+            denuncia.alvoId
+          );
+          const anotacao = comentarioDiario
+            ? diarioAnotacoesPorId.get(comentarioDiario.anotacao_id)
+            : undefined;
+          const obra = anotacao
+            ? obrasPorId.get(anotacao.obra_id)
+            : undefined;
+
+          return {
+            ...denuncia,
+            denuncianteNome: nomeDenunciante(denuncia),
+            alvoResumo:
+              comentarioDiario?.texto ||
+              "Comentário do Diário não encontrado ou removido.",
+            alvoAutor: comentarioDiario
+              ? perfisPorId.get(comentarioDiario.user_id) ||
+                "Autor não encontrado"
+              : "Autor não encontrado",
+            alvoData:
+              comentarioDiario?.atualizado_em ||
+              comentarioDiario?.criado_em ||
+              "",
+            alvoPostId: "",
+            alvoCategoria: "Diário",
+            alvoTemSpoiler: Boolean(anotacao?.contem_spoiler),
+            alvoObra: obra?.titulo?.trim() || "",
+            alvoObraId: obra?.id || anotacao?.obra_id || "",
+            alvoObraSlug: obra?.slug?.trim() || "",
+            alvoPerfilUserId: anotacao?.user_id || "",
+            alvoAnotacaoId:
+              comentarioDiario?.anotacao_id ||
+              anotacao?.id ||
+              "",
+          };
+        }
+
+        const comentarioObra = comentariosObrasPorId.get(
+          denuncia.alvoId
+        );
+        const obra = comentarioObra
+          ? obrasPorId.get(comentarioObra.obra_id)
+          : undefined;
 
         return {
           ...denuncia,
-          denuncianteNome:
-            perfisPorId.get(denuncia.denuncianteId) || "Usuário",
-          alvoResumo: post?.texto || "Publicação não encontrada ou removida.",
-          alvoAutor: post?.autor_nome || "Autor não encontrado",
-          alvoData: post?.criado_em || "",
-          alvoPostId: post?.id || denuncia.alvoId,
-          alvoCategoria: post?.categoria || "",
-          alvoTipoPublicacao: post?.tipo_publicacao || "Discussão",
-          alvoTemSpoiler: Boolean(post?.tem_spoiler),
-          alvoObra: post?.obra_relacionada || "",
+          denuncianteNome: nomeDenunciante(denuncia),
+          alvoResumo:
+            comentarioObra?.comentario ||
+            "Comentário da obra não encontrado ou removido.",
+          alvoAutor: comentarioObra
+            ? perfisPorId.get(comentarioObra.user_id) ||
+              "Autor não encontrado"
+            : "Autor não encontrado",
+          alvoData: comentarioObra?.criado_em || "",
+          alvoPostId: "",
+          alvoObra: obra?.titulo?.trim() || "",
+          alvoObraId: obra?.id || comentarioObra?.obra_id || "",
+          alvoObraSlug: obra?.slug?.trim() || "",
         };
-      }
-
-      const comentario = comentariosPorId.get(denuncia.alvoId);
-
-      return {
-        ...denuncia,
-        denuncianteNome: perfisPorId.get(denuncia.denuncianteId) || "Usuário",
-        alvoResumo:
-          comentario?.texto || "Comentário não encontrado ou removido.",
-        alvoAutor: comentario?.autor_nome || "Autor não encontrado",
-        alvoData: comentario?.criado_em || "",
-        alvoPostId: comentario?.post_id || "",
-      };
-    });
+      });
 
     setDenuncias(denunciasComContexto);
     setObservacoes((observacoesAtuais) => {
@@ -1219,14 +1931,14 @@ export default function AdminComunidadePage() {
 
       denunciasComContexto.forEach((denuncia) => {
         if (!(denuncia.id in proximasObservacoes)) {
-          proximasObservacoes[denuncia.id] = denuncia.observacaoAdmin;
+          proximasObservacoes[denuncia.id] =
+            denuncia.observacaoAdmin;
         }
       });
 
       return proximasObservacoes;
     });
   }
-
 
   async function carregarDenunciasPerfis() {
     const { data: denunciasResposta, error: denunciasErro } = await supabase
@@ -1421,6 +2133,12 @@ export default function AdminComunidadePage() {
           denuncia.alvoTipoPublicacao || "",
           denuncia.alvoTemSpoiler ? "spoiler contem spoiler" : "",
           denuncia.alvoObra || "",
+          denuncia.alvoCapituloTitulo || "",
+          denuncia.alvoCapituloId || "",
+          denuncia.alvoObraId || "",
+          denuncia.alvoObraSlug || "",
+          denuncia.alvoPerfilUserId || "",
+          denuncia.alvoAnotacaoId || "",
           arquivada ? "arquivada ocultada painel" : "",
         ].join(" ")
       );
@@ -1648,12 +2366,9 @@ export default function AdminComunidadePage() {
       return;
     }
 
-    const tipoConteudo =
-      denuncia.alvoTipo === "post" ? "publicação" : "comentário";
-
     if (
       !window.confirm(
-        textoConfirmacaoRemocaoAdminComunidade(tipoConteudo, language)
+        textoConfirmacaoRemocaoAdminComunidade(denuncia.alvoTipo, language)
       )
     ) {
       return;
@@ -1729,9 +2444,9 @@ export default function AdminComunidadePage() {
     }));
 
     setSucesso(
-      `${
-        denuncia.alvoTipo === "post" ? "Publicação removida" : "Comentário removido"
-      } e denúncia marcada como resolvida.`
+      `${rotuloSucessoRemocaoAlvo(
+        denuncia.alvoTipo
+      )} e denúncia marcada como resolvida.`
     );
   }
 
@@ -2053,6 +2768,19 @@ export default function AdminComunidadePage() {
           </button>
 
           <div style={titleHeaderActionsStyle}>
+            <Link
+              href="/admin/problemas-tecnicos"
+              style={
+                isDesktop
+                  ? desktopTechnicalSupportButtonStyle
+                  : mobileTechnicalSupportButtonStyle
+              }
+              aria-label="Abrir problemas técnicos"
+              title="Problemas técnicos"
+            >
+              {isDesktop ? "Problemas técnicos" : "T"}
+            </Link>
+
             <button
               type="button"
               aria-label={buscaModeracaoAberta ? "Fechar busca" : "Abrir busca"}
@@ -2506,8 +3234,8 @@ export default function AdminComunidadePage() {
         <section style={summaryStyle}>
           <strong style={summaryTitleStyle}>
             {denunciasFiltradas.length === 1
-              ? "1 denúncia da Comunidade encontrada"
-              : `${denunciasFiltradas.length} denúncias da Comunidade encontradas`}
+              ? "1 denúncia de conteúdo encontrada"
+              : `${denunciasFiltradas.length} denúncias de conteúdo encontradas`}
           </strong>
         </section>
 
@@ -2536,7 +3264,7 @@ export default function AdminComunidadePage() {
                               : commentTargetBadgeStyle),
                           }}
                         >
-                          {denuncia.alvoTipo === "post" ? "Publicação" : "Comentário"}
+                          {rotuloTipoAlvoDenuncia(denuncia.alvoTipo)}
                         </span>
 
                         <span style={reportDotStyle}>•</span>
@@ -2617,6 +3345,53 @@ export default function AdminComunidadePage() {
                               </Link>
                             )}
 
+                            {(denuncia.alvoTipo === "comentario_capitulo" ||
+                              denuncia.alvoTipo === "capitulo") &&
+                              denuncia.alvoObraId &&
+                              denuncia.alvoCapituloId && (
+                                <Link
+                                  href={`/ler-capitulo?obraId=${encodeURIComponent(
+                                    denuncia.alvoObraId
+                                  )}&capituloId=${encodeURIComponent(
+                                    denuncia.alvoCapituloId
+                                  )}`}
+                                  onClick={() => setMenuDenunciaAbertoId("")}
+                                  style={reportMenuItemLinkStyle}
+                                >
+                                  Abrir capítulo denunciado
+                                </Link>
+                              )}
+
+                            {(denuncia.alvoTipo === "obra" ||
+                              denuncia.alvoTipo === "comentario_obra") &&
+                              denuncia.alvoObraSlug && (
+                                <Link
+                                  href={`/obra/${encodeURIComponent(
+                                    denuncia.alvoObraSlug
+                                  )}`}
+                                  onClick={() =>
+                                    setMenuDenunciaAbertoId("")
+                                  }
+                                  style={reportMenuItemLinkStyle}
+                                >
+                                  Abrir obra denunciada
+                                </Link>
+                              )}
+
+                            {(denuncia.alvoTipo === "diario_anotacao" ||
+                              denuncia.alvoTipo === "comentario_diario") &&
+                              denuncia.alvoPerfilUserId && (
+                                <Link
+                                  href={criarHrefDiarioDenunciado(denuncia)}
+                                  onClick={() =>
+                                    setMenuDenunciaAbertoId("")
+                                  }
+                                  style={reportMenuItemLinkStyle}
+                                >
+                                  Abrir conteúdo no Diário
+                                </Link>
+                              )}
+
                             {denunciaArquivada ? (
                               <button
                                 type="button"
@@ -2684,9 +3459,9 @@ export default function AdminComunidadePage() {
                               {acaoEmAndamento ===
                               `${denuncia.id}-remover-conteudo`
                                 ? "Removendo..."
-                                : denuncia.alvoTipo === "post"
-                                  ? "Remover publicação"
-                                  : "Remover comentário"}
+                                : rotuloRemocaoAlvoDenuncia(
+                                    denuncia.alvoTipo
+                                  )}
                             </button>
 
                             <div style={reportMenuDividerStyle} />
@@ -2730,9 +3505,7 @@ export default function AdminComunidadePage() {
                         <span style={sectionHintStyle}>
                           {conteudoIndisponivel
                             ? "Indisponível"
-                            : denuncia.alvoTipo === "post"
-                              ? "Publicação"
-                              : "Comentário"}
+                            : rotuloTipoAlvoDenuncia(denuncia.alvoTipo)}
                         </span>
                       </div>
 
@@ -2764,13 +3537,17 @@ export default function AdminComunidadePage() {
                           </span>
                         )}
 
-                        {denuncia.alvoTipo === "post" && denuncia.alvoTipoPublicacao && (
-                          <span style={metaItemStyle}>
-                            Tipo: <strong>{denuncia.alvoTipoPublicacao}</strong>
-                          </span>
-                        )}
+                        {(denuncia.alvoTipo === "post" ||
+                          denuncia.alvoTipo === "diario_anotacao") &&
+                          denuncia.alvoTipoPublicacao && (
+                            <span style={metaItemStyle}>
+                              Tipo: <strong>{denuncia.alvoTipoPublicacao}</strong>
+                            </span>
+                          )}
 
-                        {denuncia.alvoTipo === "post" && (
+                        {(denuncia.alvoTipo === "post" ||
+                          denuncia.alvoTipo === "diario_anotacao" ||
+                          denuncia.alvoTipo === "comentario_diario") && (
                           <span
                             style={
                               denuncia.alvoTemSpoiler
@@ -2790,6 +3567,18 @@ export default function AdminComunidadePage() {
                               Obra: <strong>{denuncia.alvoObra}</strong>
                             </span>
                           )}
+
+                          {(denuncia.alvoTipo === "comentario_capitulo" ||
+                            denuncia.alvoTipo === "capitulo") &&
+                            denuncia.alvoCapituloId && (
+                              <span style={metaItemStyle}>
+                                Capítulo:{" "}
+                                <strong>
+                                  {denuncia.alvoCapituloTitulo ||
+                                    denuncia.alvoCapituloId}
+                                </strong>
+                              </span>
+                            )}
                         </div>
                       )}
                     </section>
@@ -3115,6 +3904,47 @@ const titleHeaderActionsStyle: CSSProperties = {
   justifyContent: "flex-end",
   gap: "10px",
   flex: "0 0 auto",
+};
+
+const desktopTechnicalSupportButtonStyle: CSSProperties = {
+  minHeight: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  padding: "7px 12px",
+  background:
+    "var(--historietas-surface-strong, var(--historietas-admin-comunidade-bg-deep, #04000A))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "10px",
+  lineHeight: 1,
+  fontWeight: 900,
+  whiteSpace: "nowrap",
+  boxShadow: "none",
+  zIndex: 2,
+};
+
+const mobileTechnicalSupportButtonStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
+  background:
+    "var(--historietas-surface-strong, var(--historietas-admin-comunidade-bg-deep, #04000A))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "12px",
+  lineHeight: 1,
+  fontWeight: 950,
+  boxShadow: "none",
+  zIndex: 2,
 };
 
 const desktopNotificationButtonStyle: CSSProperties = {

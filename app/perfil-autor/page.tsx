@@ -10,15 +10,22 @@ import {
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import DenunciaModal, {
+  type TipoAlvoDenuncia,
+} from "../../components/DenunciaModal";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
+  bloquearUsuario,
   cancelarSolicitacaoSeguidor,
+  carregarEstadoBloqueioPerfil,
   carregarEstadoRelacionamentoPerfil,
   carregarPermissoesAbasPerfil,
   carregarPreferenciasPrivacidade,
   deixarDeSeguirUsuario,
+  desbloquearUsuario,
   preferenciasPrivacidadePadrao,
   solicitarOuSeguirUsuario,
+  type EstadoBloqueioPerfil,
   type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
   type PreferenciasPrivacidadeHistorietas,
@@ -146,17 +153,6 @@ const AVATAR_STORAGE_BUCKET = "avatars";
 const BIO_MAX_LENGTH = 90;
 const SOBRE_BIO_MAX_LENGTH = 600;
 const NOTAS_AVALIACAO_AUTOR = [1, 2, 3, 4, 5] as const;
-const DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH = 500;
-const DENUNCIA_PERFIL_MOTIVOS = [
-  { valor: "spam", rotulo: "Spam" },
-  { valor: "ofensivo", rotulo: "Conteúdo ofensivo" },
-  { valor: "perfil_falso", rotulo: "Perfil falso" },
-  { valor: "assedio", rotulo: "Assédio" },
-  { valor: "improprio", rotulo: "Conteúdo impróprio" },
-  { valor: "outro", rotulo: "Outro" },
-] as const;
-
-
 type PerfilAutorTranslationEntry = {
   en: string;
   es: string;
@@ -877,6 +873,18 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
   "Denunciar": {
     "en": "Report",
     "es": "Denunciar"
+  },
+  "Denunciar publicação": {
+    "en": "Report post",
+    "es": "Denunciar publicación"
+  },
+  "Denunciar obra": {
+    "en": "Report work",
+    "es": "Denunciar obra"
+  },
+  "Não foi possível identificar este conteúdo.": {
+    "en": "This content could not be identified.",
+    "es": "No se pudo identificar este contenido."
   },
   "Remover curtida do comentário": {
     "en": "Unlike comment",
@@ -1810,6 +1818,30 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
     "en": "Report profile",
     "es": "Denunciar perfil"
   },
+  "Bloquear usuário": {
+    "en": "Block user",
+    "es": "Bloquear usuario"
+  },
+  "Desbloquear usuário": {
+    "en": "Unblock user",
+    "es": "Desbloquear usuario"
+  },
+  "Bloqueando...": {
+    "en": "Blocking...",
+    "es": "Bloqueando..."
+  },
+  "Desbloqueando...": {
+    "en": "Unblocking...",
+    "es": "Desbloqueando..."
+  },
+  "Perfil bloqueado": {
+    "en": "Blocked profile",
+    "es": "Perfil bloqueado"
+  },
+  "O conteúdo deste perfil está oculto porque existe um bloqueio entre vocês.": {
+    "en": "This profile's content is hidden because there is a block between you.",
+    "es": "El contenido de este perfil está oculto porque existe un bloqueo entre ustedes."
+  },
   "Descoberta": {
     "en": "Discover",
     "es": "Descubrimiento"
@@ -1945,6 +1977,14 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
   "AVALIE ESTE AUTOR": {
     "en": "RATE THIS AUTHOR",
     "es": "VALORA A ESTE AUTOR"
+  },
+  "Avaliação do Diário": {
+    "en": "Journal rating",
+    "es": "Valoración del Diario"
+  },
+  "AVALIE ESTE DIÁRIO": {
+    "en": "RATE THIS JOURNAL",
+    "es": "VALORA ESTE DIARIO"
   },
   "Seções do perfil": {
     "en": "Profile sections",
@@ -2258,6 +2298,10 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
     "en": "That @username is already in use.",
     "es": "Ese @username ya está en uso."
   },
+  "Não foi possível copiar o username agora.": {
+    "en": "The username could not be copied right now.",
+    "es": "No se pudo copiar el username ahora."
+  },
   "Você não pode avaliar seu próprio perfil.": {
     "en": "You cannot rate your own profile.",
     "es": "No puedes valorar tu propio perfil."
@@ -2265,6 +2309,18 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
   "Entre na sua conta para avaliar este autor.": {
     "en": "Sign in to rate this author.",
     "es": "Inicia sesión para valorar a este autor."
+  },
+  "Você não pode avaliar seu próprio Diário.": {
+    "en": "You cannot rate your own Journal.",
+    "es": "No puedes valorar tu propio Diario."
+  },
+  "Entre na sua conta para avaliar este Diário.": {
+    "en": "Sign in to rate this Journal.",
+    "es": "Inicia sesión para valorar este Diario."
+  },
+  "Este Diário não está disponível para avaliação.": {
+    "en": "This Journal is not available for rating.",
+    "es": "Este Diario no está disponible para valoración."
   },
   "Escolha uma imagem válida.": {
     "en": "Choose a valid image.",
@@ -3000,6 +3056,13 @@ type AvaliacaoAutorPublica = {
   carregado: boolean;
   salvando: boolean;
 };
+
+type AvaliacaoDiarioPublica = AvaliacaoAutorPublica & {
+  visivel: boolean;
+  mostrar: boolean;
+  podeAvaliar: boolean;
+};
+
 type DiarioPerfilItem = {
   chave: string;
   tipo:
@@ -3054,6 +3117,12 @@ type ComunidadePerfilEstado = {
   publicacoesRecentes: PublicacaoComunidadePerfil[];
 };
 
+type AlvoDenunciaConteudoPerfil = {
+  alvoTipo: Extract<TipoAlvoDenuncia, "post" | "obra">;
+  alvoId: string;
+  alvoTitulo: string;
+} | null;
+
 type ItemBibliotecaPerfil = {
   chave: string;
   obra: ObraLocal;
@@ -3065,7 +3134,6 @@ type ItemBibliotecaPerfil = {
 };
 
 type VisibilidadeDiarioPerfil = "publico" | "parcial" | "privado";
-type MotivoDenunciaPerfil = (typeof DENUNCIA_PERFIL_MOTIVOS)[number]["valor"];
 
 const diarioPerfilVazio: DiarioPerfilEstado = {
   carregando: false,
@@ -3101,6 +3169,53 @@ const avaliacaoAutorVazia: AvaliacaoAutorPublica = {
   carregado: false,
   salvando: false,
 };
+
+const avaliacaoDiarioVazia: AvaliacaoDiarioPublica = {
+  media: 0,
+  total: 0,
+  minhaNota: 0,
+  carregado: false,
+  salvando: false,
+  visivel: false,
+  mostrar: true,
+  podeAvaliar: false,
+};
+
+function normalizarAvaliacaoDiarioPerfil(
+  valor: unknown,
+  estadoAnterior: AvaliacaoDiarioPublica = avaliacaoDiarioVazia,
+): AvaliacaoDiarioPublica {
+  const registro =
+    valor && typeof valor === "object" && !Array.isArray(valor)
+      ? (valor as Record<string, unknown>)
+      : {};
+
+  return {
+    ...estadoAnterior,
+    media: Math.max(0, Math.min(5, pegarNumero(registro.media, 0))),
+    total: Math.max(0, Math.trunc(pegarNumero(registro.total, 0))),
+    minhaNota: Math.max(
+      0,
+      Math.min(
+        5,
+        Math.round(
+          pegarNumero(registro.minha_nota ?? registro.minhaNota, 0) * 2,
+        ) / 2,
+      ),
+    ),
+    carregado: true,
+    salvando: false,
+    visivel: pegarBooleano(registro.visivel, false),
+    mostrar: pegarBooleano(
+      registro.mostrar ?? registro.mostrar_avaliacao_diario,
+      true,
+    ),
+    podeAvaliar: pegarBooleano(
+      registro.pode_avaliar ?? registro.podeAvaliar,
+      false,
+    ),
+  };
+}
 
 
 type TotaisInteracoesObrasPerfilAutor = {
@@ -3379,6 +3494,25 @@ function formatarTotalAvaliacoesAutor(
   }
 
   return totalSeguro === 1 ? "1 avaliação" : `${totalSeguro} avaliações`;
+}
+
+function formatarTotalAvaliacoesDiario(
+  total: number,
+  idioma: HistorietasLanguage,
+) {
+  const totalSeguro = Math.max(0, Math.trunc(total));
+
+  if (idioma === "en") {
+    return totalSeguro === 1
+      ? "1 Journal rating"
+      : `${totalSeguro} Journal ratings`;
+  }
+
+  if (idioma === "es") {
+    return `${totalSeguro} Val. Diario`;
+  }
+
+  return `${totalSeguro} Av. Diário`;
 }
 
 function formatarEntradaHistorietasPerfilAutor(criadoEm: string) {
@@ -7121,7 +7255,43 @@ type MenuPerfilIconeTipo =
   | "sair"
   | "comunidade"
   | "denunciar"
+  | "bloquear"
   | "explorar";
+
+function CadeadoAvaliacaoDiarioIcone() {
+  return (
+    <svg
+      width="23"
+      height="25"
+      viewBox="0 0 24 26"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        fill="currentColor"
+        d="M7 9V6.75C7 3.57 9.24 1 12 1s5 2.57 5 5.75V9h-2.75V6.75c0-1.55-1-2.8-2.25-2.8S9.75 5.2 9.75 6.75V9H7Z"
+      />
+      <rect
+        x="3"
+        y="8"
+        width="18"
+        height="16"
+        rx="3.2"
+        fill="currentColor"
+      />
+      <circle cx="12" cy="15" r="1.65" fill="rgba(0,0,0,0.88)" />
+      <rect
+        x="11.15"
+        y="15.7"
+        width="1.7"
+        height="4"
+        rx="0.85"
+        fill="rgba(0,0,0,0.88)"
+      />
+    </svg>
+  );
+}
 
 function MenuPerfilIcone({ tipo }: { tipo: MenuPerfilIconeTipo }) {
   const iconProps = {
@@ -7199,6 +7369,15 @@ function MenuPerfilIcone({ tipo }: { tipo: MenuPerfilIconeTipo }) {
         <path d="M12 3 3 7v6c0 5 3.8 7.6 9 8 5.2-.4 9-3 9-8V7l-9-4Z" />
         <path d="M12 8v5" />
         <path d="M12 17h.01" />
+      </svg>
+    );
+  }
+
+  if (tipo === "bloquear") {
+    return (
+      <svg {...iconProps}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="m6.5 6.5 11 11" />
       </svg>
     );
   }
@@ -7346,6 +7525,8 @@ function PerfilAutorPageContent() {
   const [podeEditarPerfil, setPodeEditarPerfil] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [menuPerfilAberto, setMenuPerfilAberto] = useState(false);
+  const [usernameCabecalhoVisivel, setUsernameCabecalhoVisivel] =
+    useState(false);
   const [editorPerfilAberto, setEditorPerfilAberto] = useState(false);
   const [nomePerfilEditor, setNomePerfilEditor] = useState("");
   const [usernamePerfilEditor, setUsernamePerfilEditor] = useState("");
@@ -7368,6 +7549,8 @@ function PerfilAutorPageContent() {
   const [bibliotecaMenuAbertoChave, setBibliotecaMenuAbertoChave] = useState("");
   const [avaliacaoAutor, setAvaliacaoAutor] =
     useState<AvaliacaoAutorPublica>(avaliacaoAutorVazia);
+  const [avaliacaoDiario, setAvaliacaoDiario] =
+    useState<AvaliacaoDiarioPublica>(avaliacaoDiarioVazia);
   const [diarioPerfil, setDiarioPerfil] =
     useState<DiarioPerfilEstado>(diarioPerfilVazio);
   const [comunidadePerfil, setComunidadePerfil] =
@@ -7386,11 +7569,18 @@ function PerfilAutorPageContent() {
   const [privacidadePerfilCarregando, setPrivacidadePerfilCarregando] =
     useState(true);
   const [denunciaPerfilAberta, setDenunciaPerfilAberta] = useState(false);
-  const [motivoDenunciaPerfil, setMotivoDenunciaPerfil] =
-    useState<MotivoDenunciaPerfil>("spam");
-  const [descricaoDenunciaPerfil, setDescricaoDenunciaPerfil] = useState("");
-  const [denunciaPerfilErro, setDenunciaPerfilErro] = useState("");
-  const [denunciaPerfilSalvando, setDenunciaPerfilSalvando] = useState(false);
+  const [
+    alvoDenunciaConteudoPerfil,
+    setAlvoDenunciaConteudoPerfil,
+  ] = useState<AlvoDenunciaConteudoPerfil>(null);
+  const [estadoBloqueioPerfil, setEstadoBloqueioPerfil] =
+    useState<EstadoBloqueioPerfil>({
+      bloqueadoPorMim: false,
+      bloqueadoPeloPerfil: false,
+      existeBloqueio: false,
+    });
+  const [bloqueioPerfilSalvando, setBloqueioPerfilSalvando] =
+    useState(false);
   const seguidoresTotalEstavelRef = useRef<Record<string, number>>({});
   const seguindoTotalEstavelRef = useRef<Record<string, number>>({});
 
@@ -8144,24 +8334,38 @@ function PerfilAutorPageContent() {
     );
   }, [perfilParaMostrar, autorIdSelecionado, autorSelecionado, usuarioIdLogado]);
 
+  const perfilBloqueadoEntreUsuarios =
+    !perfilPertenceAoUsuario && estadoBloqueioPerfil.existeBloqueio;
   const obrasPerfilVisivel =
     perfilPertenceAoUsuario ||
-    (!privacidadePerfilCarregando && permissoesAbasPerfil.obras);
+    (!perfilBloqueadoEntreUsuarios &&
+      !privacidadePerfilCarregando &&
+      permissoesAbasPerfil.obras);
   const sobrePerfilVisivel =
     perfilPertenceAoUsuario ||
-    (!privacidadePerfilCarregando && permissoesAbasPerfil.sobre);
+    (!perfilBloqueadoEntreUsuarios &&
+      !privacidadePerfilCarregando &&
+      permissoesAbasPerfil.sobre);
   const diarioPerfilVisivel =
     perfilPertenceAoUsuario ||
-    (!privacidadePerfilCarregando && permissoesAbasPerfil.diario);
+    (!perfilBloqueadoEntreUsuarios &&
+      !privacidadePerfilCarregando &&
+      permissoesAbasPerfil.diario);
   const comunidadePerfilVisivel =
     perfilPertenceAoUsuario ||
-    (!privacidadePerfilCarregando && permissoesAbasPerfil.comunidade);
+    (!perfilBloqueadoEntreUsuarios &&
+      !privacidadePerfilCarregando &&
+      permissoesAbasPerfil.comunidade);
   const bibliotecaPerfilVisivel =
     perfilPertenceAoUsuario ||
-    (!privacidadePerfilCarregando && permissoesAbasPerfil.biblioteca);
+    (!perfilBloqueadoEntreUsuarios &&
+      !privacidadePerfilCarregando &&
+      permissoesAbasPerfil.biblioteca);
   const atividadesPerfilVisivel =
     perfilPertenceAoUsuario ||
-    (!privacidadePerfilCarregando && permissoesAbasPerfil.atividades);
+    (!perfilBloqueadoEntreUsuarios &&
+      !privacidadePerfilCarregando &&
+      permissoesAbasPerfil.atividades);
   const totalAbasPerfilVisiveis =
     (obrasPerfilVisivel ? 1 : 0) +
     (diarioPerfilVisivel ? 1 : 0) +
@@ -8305,6 +8509,40 @@ function PerfilAutorPageContent() {
     bibliotecaPerfilVisivel,
     primeiraAbaPerfilVisivel,
   ]);
+
+  useEffect(() => {
+    const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
+    const usuarioAtualId = usuarioIdLogado.trim();
+    let cancelado = false;
+
+    if (
+      !perfilUserId ||
+      !usuarioAtualId ||
+      perfilUserId === usuarioAtualId ||
+      !idAutorSupabaseValido(perfilUserId)
+    ) {
+      setEstadoBloqueioPerfil({
+        bloqueadoPorMim: false,
+        bloqueadoPeloPerfil: false,
+        existeBloqueio: false,
+      });
+      return;
+    }
+
+    async function carregarBloqueioPerfil() {
+      const estado = await carregarEstadoBloqueioPerfil(perfilUserId);
+
+      if (!cancelado) {
+        setEstadoBloqueioPerfil(estado);
+      }
+    }
+
+    void carregarBloqueioPerfil();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
 
   useEffect(() => {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
@@ -8521,6 +8759,10 @@ function PerfilAutorPageContent() {
   );
 
   useEffect(() => {
+    setUsernameCabecalhoVisivel(false);
+  }, [perfilParaMostrar?.autorId]);
+
+  useEffect(() => {
     if (!editorPerfilAberto || !podeEditarPerfil || !perfilParaMostrar) {
       return;
     }
@@ -8553,6 +8795,28 @@ function PerfilAutorPageContent() {
   const autorPodeReceberAvaliacao = Boolean(
     perfilParaMostrar && perfilParaMostrar.obras.length > 0,
   );
+  const perfilUsaAvaliacaoDiario = Boolean(
+    perfilParaMostrar && perfilParaMostrar.obras.length === 0,
+  );
+  const avaliacaoDiarioPrivada = Boolean(
+    perfilUsaAvaliacaoDiario &&
+      avaliacaoDiario.carregado &&
+      !avaliacaoDiario.mostrar,
+  );
+  const avaliacaoDiarioResumoVisivel = Boolean(
+    perfilUsaAvaliacaoDiario &&
+      (
+        avaliacaoDiarioPrivada ||
+        podeEditarPerfil ||
+        avaliacaoDiario.visivel
+      ),
+  );
+  const avaliacaoResumoPerfilVisivel =
+    autorPodeReceberAvaliacao || avaliacaoDiarioResumoVisivel;
+  const avaliacaoResumoPerfil = autorPodeReceberAvaliacao
+    ? avaliacaoAutor
+    : avaliacaoDiario;
+  const avaliacaoResumoEhDiario = !autorPodeReceberAvaliacao;
 
   const obrasDoPerfilFiltradas = useMemo(() => {
     if (!perfilParaMostrar) {
@@ -8938,6 +9202,73 @@ function PerfilAutorPageContent() {
   }, [
     perfilParaMostrar,
     autorPodeReceberAvaliacao,
+    usuarioIdLogado,
+  ]);
+
+  useEffect(() => {
+    if (!perfilParaMostrar || !perfilUsaAvaliacaoDiario) {
+      setAvaliacaoDiario(avaliacaoDiarioVazia);
+      return;
+    }
+
+    const diarioUserId = (
+      perfilUsuarioRemotoAtivo?.userId || perfilParaMostrar.autorId
+    ).trim();
+
+    if (!diarioUserId || !idAutorSupabaseValido(diarioUserId)) {
+      setAvaliacaoDiario({
+        ...avaliacaoDiarioVazia,
+        carregado: true,
+        visivel: podeEditarPerfil,
+      });
+      return;
+    }
+
+    let cancelado = false;
+
+    setAvaliacaoDiario((avaliacaoAtual) => ({
+      ...avaliacaoAtual,
+      carregado: false,
+      salvando: false,
+    }));
+
+    async function carregarAvaliacaoRealDiario() {
+      try {
+        const { data, error } = await supabase.rpc(
+          "carregar_avaliacao_diario",
+          { p_diario_user_id: diarioUserId },
+        );
+
+        if (error) {
+          throw error;
+        }
+
+        if (!cancelado) {
+          setAvaliacaoDiario((avaliacaoAtual) =>
+            normalizarAvaliacaoDiarioPerfil(data, avaliacaoAtual),
+          );
+        }
+      } catch {
+        if (!cancelado) {
+          setAvaliacaoDiario({
+            ...avaliacaoDiarioVazia,
+            carregado: true,
+            visivel: podeEditarPerfil,
+          });
+        }
+      }
+    }
+
+    void carregarAvaliacaoRealDiario();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [
+    perfilParaMostrar?.autorId,
+    perfilUsuarioRemotoAtivo?.userId,
+    perfilUsaAvaliacaoDiario,
+    podeEditarPerfil,
     usuarioIdLogado,
   ]);
 
@@ -9619,6 +9950,97 @@ function PerfilAutorPageContent() {
     }
   }
 
+  async function avaliarDiarioPerfil(nota: number) {
+    if (
+      !perfilParaMostrar ||
+      !perfilUsaAvaliacaoDiario ||
+      nota < 0 ||
+      nota > 5 ||
+      avaliacaoDiario.salvando
+    ) {
+      return;
+    }
+
+    if (podeEditarPerfil) {
+      setMensagemAcao("Você não pode avaliar seu próprio Diário.");
+      return;
+    }
+
+    let userId = "";
+
+    try {
+      const { data } = await supabase.auth.getUser();
+      userId = data.user?.id || "";
+    } catch {
+      userId = "";
+    }
+
+    if (!userId) {
+      avisarLoginNecessario("Entre na sua conta para avaliar este Diário.");
+      return;
+    }
+
+    if (!avaliacaoDiario.visivel || !avaliacaoDiario.podeAvaliar) {
+      setMensagemAcao("Este Diário não está disponível para avaliação.");
+      return;
+    }
+
+    const diarioUserId = (
+      perfilUsuarioRemotoAtivo?.userId || perfilParaMostrar.autorId
+    ).trim();
+
+    if (!diarioUserId || !idAutorSupabaseValido(diarioUserId)) {
+      setMensagemAcao("Este Diário não está disponível para avaliação.");
+      return;
+    }
+
+    const notaNormalizada =
+      nota <= 0 ? 0 : Math.max(0.5, Math.min(5, Math.round(nota * 2) / 2));
+    const avaliacaoAnterior = avaliacaoDiario;
+    const avaliacaoOtimista = calcularProximaAvaliacaoAutor(
+      avaliacaoDiario,
+      notaNormalizada,
+    );
+
+    setAvaliacaoDiario((avaliacaoAtual) => ({
+      ...avaliacaoAtual,
+      ...avaliacaoOtimista,
+      salvando: true,
+    }));
+    setMensagemAcao("");
+
+    try {
+      const nomeRpc =
+        notaNormalizada > 0
+          ? "salvar_avaliacao_diario"
+          : "remover_avaliacao_diario";
+      const parametros =
+        notaNormalizada > 0
+          ? {
+              p_diario_user_id: diarioUserId,
+              p_nota: notaNormalizada,
+            }
+          : { p_diario_user_id: diarioUserId };
+      const { data, error } = await supabase.rpc(nomeRpc, parametros);
+
+      if (error) {
+        throw error;
+      }
+
+      setAvaliacaoDiario((avaliacaoAtual) =>
+        normalizarAvaliacaoDiarioPerfil(data, avaliacaoAtual),
+      );
+      setMensagemAcao("");
+    } catch {
+      setAvaliacaoDiario({
+        ...avaliacaoAnterior,
+        carregado: true,
+        salvando: false,
+      });
+      setMensagemAcao("Este Diário não está disponível para avaliação.");
+    }
+  }
+
   function selecionarAvatarAutor(event: ChangeEvent<HTMLInputElement>) {
     const arquivo = event.target.files?.[0];
 
@@ -9739,94 +10161,151 @@ function PerfilAutorPageContent() {
     });
   }
 
+  async function copiarUsernameCabecalho() {
+    const usernameCompleto = autorHandlePerfil.startsWith("@")
+      ? autorHandlePerfil
+      : `@${autorHandlePerfil}`;
+    const copiado = await copiarTextoComFallbackPerfilAutor(usernameCompleto);
+
+    if (!copiado) {
+      setMensagemAcao("Não foi possível copiar o username agora.");
+    }
+  }
+
   function abrirDenunciaPerfil() {
-    if (podeEditarPerfil) {
-      return;
-    }
-
-    setMenuPerfilAberto(false);
-    setDenunciaPerfilErro("");
-    setMensagemAcao("");
-    setDenunciaPerfilAberta(true);
-  }
-
-  function fecharDenunciaPerfil() {
-    if (denunciaPerfilSalvando) {
-      return;
-    }
-
-    setDenunciaPerfilAberta(false);
-    setDenunciaPerfilErro("");
-  }
-
-  async function enviarDenunciaPerfil() {
-    if (!perfilParaMostrar || podeEditarPerfil || denunciaPerfilSalvando) {
+    if (podeEditarPerfil || !perfilParaMostrar) {
       return;
     }
 
     const perfilDenunciadoId = perfilParaMostrar.autorId.trim();
 
     if (!perfilDenunciadoId || !idAutorSupabaseValido(perfilDenunciadoId)) {
-      setDenunciaPerfilErro("Não foi possível identificar este perfil.");
+      setMensagemAcao("Não foi possível identificar este perfil.");
       return;
     }
 
-    setDenunciaPerfilSalvando(true);
-    setDenunciaPerfilErro("");
+    setMenuPerfilAberto(false);
+    setMensagemAcao("");
+    setDenunciaPerfilAberta(true);
+  }
 
-    try {
-      const { data } = await supabase.auth.getUser();
-      const denuncianteId = data.user?.id || usuarioIdLogado.trim();
-
-      if (!denuncianteId) {
-        setDenunciaPerfilSalvando(false);
-        setDenunciaPerfilAberta(false);
-        avisarLoginNecessario("Entre na sua conta para denunciar este perfil.");
-        return;
-      }
-
-      if (denuncianteId === perfilDenunciadoId) {
-        setDenunciaPerfilSalvando(false);
-        setDenunciaPerfilErro("Você não pode denunciar o próprio perfil.");
-        return;
-      }
-
-      const descricao = descricaoDenunciaPerfil
-        .trim()
-        .slice(0, DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH);
-      const perfilUrl =
-        typeof window !== "undefined"
-          ? criarUrlAbsolutaCompartilhamentoPerfilAutor(window.location.href)
-          : "";
-
-      const { error } = await supabase.from("denuncias_perfis").insert({
-        denunciante_id: denuncianteId,
-        denunciado_id: perfilDenunciadoId,
-        perfil_nome: perfilParaMostrar.nome,
-        perfil_url: perfilUrl,
-        motivo: motivoDenunciaPerfil,
-        descricao,
-        status: "pendente",
-        criado_em: new Date().toISOString(),
-      });
-
-      if (error) {
-        setDenunciaPerfilErro(
-          "Não consegui enviar a denúncia agora. Verifique se a tabela denuncias_perfis já existe no Supabase.",
-        );
-        setDenunciaPerfilSalvando(false);
-        return;
-      }
-
-      setDenunciaPerfilAberta(false);
-      setMotivoDenunciaPerfil("spam");
-      setDescricaoDenunciaPerfil("");
-      setDenunciaPerfilSalvando(false);
-      setMensagemAcao("Denúncia enviada para análise.");
-    } catch {
-      setDenunciaPerfilErro("Não consegui enviar a denúncia agora.");
-      setDenunciaPerfilSalvando(false);
+  function abrirDenunciaConteudoPerfil(
+    alvoTipo: Extract<TipoAlvoDenuncia, "post" | "obra">,
+    alvoId: string,
+    alvoTitulo: string,
+  ) {
+    if (podeEditarPerfil) {
+      return;
     }
+
+    const alvoIdLimpo = alvoId.trim();
+
+    if (!alvoIdLimpo || !idObraSupabaseValido(alvoIdLimpo)) {
+      setMensagemAcao("Não foi possível identificar este conteúdo.");
+      return;
+    }
+
+    setObraMenuAbertoId("");
+    setMensagemAcao("");
+    setAlvoDenunciaConteudoPerfil({
+      alvoTipo,
+      alvoId: alvoIdLimpo,
+      alvoTitulo: alvoTitulo.trim() || "Conteúdo",
+    });
+  }
+
+  async function alternarBloqueioPerfil() {
+    if (
+      podeEditarPerfil ||
+      !perfilParaMostrar ||
+      bloqueioPerfilSalvando
+    ) {
+      return;
+    }
+
+    const perfilUserId = perfilParaMostrar.autorId.trim();
+
+    if (!perfilUserId || !idAutorSupabaseValido(perfilUserId)) {
+      setMensagemAcao("Não foi possível identificar este perfil.");
+      return;
+    }
+
+    let usuarioAtualId = usuarioIdLogado.trim();
+
+    if (!usuarioAtualId) {
+      try {
+        const { data } = await supabase.auth.getUser();
+        usuarioAtualId = data.user?.id?.trim() || "";
+      } catch {
+        usuarioAtualId = "";
+      }
+    }
+
+    if (!usuarioAtualId) {
+      setMenuPerfilAberto(false);
+      avisarLoginNecessario(
+        "Entre na sua conta para bloquear este usuário.",
+      );
+      return;
+    }
+
+    if (usuarioAtualId === perfilUserId) {
+      setMensagemAcao("Você não pode bloquear o próprio perfil.");
+      return;
+    }
+
+    const desbloquear = estadoBloqueioPerfil.bloqueadoPorMim;
+    const nomePerfil = perfilParaMostrar.nome || "este usuário";
+    const confirmou = window.confirm(
+      desbloquear
+        ? `Desbloquear ${nomePerfil}?`
+        : `Bloquear ${nomePerfil}? Vocês deixarão de se seguir e não poderão interagir entre si.`,
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    setMenuPerfilAberto(false);
+    setMensagemAcao("");
+    setBloqueioPerfilSalvando(true);
+
+    const resultado = desbloquear
+      ? await desbloquearUsuario(perfilUserId)
+      : await bloquearUsuario(perfilUserId);
+
+    setBloqueioPerfilSalvando(false);
+
+    if (!resultado.ok) {
+      setMensagemAcao(
+        resultado.erro ||
+          (desbloquear
+            ? "Não foi possível desbloquear este usuário."
+            : "Não foi possível bloquear este usuário."),
+      );
+      return;
+    }
+
+    setEstadoBloqueioPerfil(resultado.estado);
+
+    if (!desbloquear) {
+      setSeguindoUsuarioPerfil(false);
+      setEstadoRelacionamentoPerfil("nenhum");
+      setPermissoesAbasPerfil({
+        obras: false,
+        sobre: false,
+        diario: false,
+        comunidade: false,
+        biblioteca: false,
+        atividades: false,
+      });
+    }
+
+    setMensagemAcao(
+      desbloquear
+        ? `${nomePerfil} foi desbloqueado.`
+        : `${nomePerfil} foi bloqueado.`,
+    );
   }
 
   async function compartilharObraPerfilAutor(obra: ObraLocal) {
@@ -10622,12 +11101,43 @@ function PerfilAutorPageContent() {
             isDesktop ? profileHeaderDesktopStyle : profileHeaderStyle
           }
         >
-          <Link href="/" style={profileHeaderLogoStyle} aria-label="Historietas">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-home-logo-text" style={logoTextStyle}>
-              istorietas
-            </span>
-          </Link>
+          <div style={profileHeaderLogoStyle}>
+            <button
+              type="button"
+              onClick={() =>
+                setUsernameCabecalhoVisivel((visivel) => !visivel)
+              }
+              style={logoMarkButtonStyle}
+              aria-label={
+                usernameCabecalhoVisivel
+                  ? "Esconder username"
+                  : "Mostrar username"
+              }
+              aria-expanded={usernameCabecalhoVisivel}
+            >
+              <span style={logoMarkStyle} aria-hidden="true">
+                @
+              </span>
+            </button>
+
+            {usernameCabecalhoVisivel ? (
+              <button
+                type="button"
+                onClick={copiarUsernameCabecalho}
+                style={logoTextButtonStyle}
+                aria-label={`Copiar ${autorHandlePerfil}`}
+                title="Copiar username"
+              >
+                <span
+                  data-historietas-user-content="true"
+                  data-historietas-i18n-ignore="true"
+                  style={logoTextStyle}
+                >
+                  {autorHandlePerfil.replace(/^@/, "")}
+                </span>
+              </button>
+            ) : null}
+          </div>
 
           {isDesktop ? (
             <Link
@@ -10830,6 +11340,31 @@ function PerfilAutorPageContent() {
                       <span style={menuChevronStyle}>›</span>
                     </button>
 
+                    <button
+                      type="button"
+                      onClick={() => void alternarBloqueioPerfil()}
+                      disabled={bloqueioPerfilSalvando}
+                      style={
+                        estadoBloqueioPerfil.bloqueadoPorMim
+                          ? menuItemStyle
+                          : menuDangerItemStyle
+                      }
+                    >
+                      <span style={menuItemIconStyle}>
+                        <MenuPerfilIcone tipo="bloquear" />
+                      </span>
+                      <strong style={menuItemTextStyle}>
+                        {bloqueioPerfilSalvando
+                          ? estadoBloqueioPerfil.bloqueadoPorMim
+                            ? "Desbloqueando..."
+                            : "Bloqueando..."
+                          : estadoBloqueioPerfil.bloqueadoPorMim
+                            ? "Desbloquear usuário"
+                            : "Bloquear usuário"}
+                      </strong>
+                      <span style={menuChevronStyle}>›</span>
+                    </button>
+
                     <div style={menuDividerStyle} />
                     <span style={menuSectionTitleStyle}>Descoberta</span>
 
@@ -11023,112 +11558,45 @@ function PerfilAutorPageContent() {
           </div>
         )}
 
-        {denunciaPerfilAberta && !podeEditarPerfil && (
-          <div
-            style={denunciaPerfilOverlayStyle}
-            role="presentation"
-            onClick={fecharDenunciaPerfil}
-          >
-            <section
-              style={denunciaPerfilSheetStyle}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Denunciar perfil"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div style={denunciaPerfilHeaderStyle}>
-                <div style={denunciaPerfilTitleBlockStyle}>
-                  <strong style={denunciaPerfilTitleStyle}>
-                    Denunciar perfil
-                  </strong>
-                  <span style={denunciaPerfilSubtitleStyle}>
-                    Essa denúncia será enviada para análise da moderação.
-                  </span>
-                </div>
+        <DenunciaModal
+          aberto={
+            denunciaPerfilAberta &&
+            !podeEditarPerfil &&
+            Boolean(perfilParaMostrar)
+          }
+          alvoTipo="perfil"
+          alvoId={perfilParaMostrar?.autorId || ""}
+          alvoTitulo={perfilParaMostrar?.nome || "Perfil"}
+          alvoUrl={
+            perfilParaMostrar?.autorId
+              ? `/perfil-autor?userId=${encodeURIComponent(
+                  perfilParaMostrar.autorId
+                )}`
+              : ""
+          }
+          onFechar={() => setDenunciaPerfilAberta(false)}
+          onEnviada={() => {
+            setDenunciaPerfilAberta(false);
+            setMensagemAcao("Denúncia enviada para análise.");
+          }}
+        />
 
-                <button
-                  type="button"
-                  onClick={fecharDenunciaPerfil}
-                  disabled={denunciaPerfilSalvando}
-                  style={denunciaPerfilCloseButtonStyle}
-                  aria-label="Fechar denúncia"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div style={denunciaPerfilMotivosGridStyle}>
-                {DENUNCIA_PERFIL_MOTIVOS.map((opcao) => (
-                  <button
-                    key={opcao.valor}
-                    type="button"
-                    onClick={() => {
-                      setMotivoDenunciaPerfil(opcao.valor);
-                      setDenunciaPerfilErro("");
-                    }}
-                    disabled={denunciaPerfilSalvando}
-                    style={
-                      motivoDenunciaPerfil === opcao.valor
-                        ? denunciaPerfilMotivoAtivoStyle
-                        : denunciaPerfilMotivoButtonStyle
-                    }
-                  >
-                    {opcao.rotulo}
-                  </button>
-                ))}
-              </div>
-
-              <textarea
-                value={descricaoDenunciaPerfil}
-                onChange={(event) => {
-                  setDescricaoDenunciaPerfil(
-                    event.target.value.slice(
-                      0,
-                      DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH,
-                    ),
-                  );
-                  setDenunciaPerfilErro("");
-                }}
-                placeholder="Explique rapidamente o problema, se quiser."
-                maxLength={DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH}
-                rows={4}
-                disabled={denunciaPerfilSalvando}
-                style={denunciaPerfilTextareaStyle}
-              />
-
-              <span style={denunciaPerfilCounterStyle}>
-                {descricaoDenunciaPerfil.length}/
-                {DENUNCIA_PERFIL_DESCRICAO_MAX_LENGTH}
-              </span>
-
-              {denunciaPerfilErro && (
-                <span style={denunciaPerfilErrorStyle}>
-                  {denunciaPerfilErro}
-                </span>
-              )}
-
-              <div style={denunciaPerfilActionsStyle}>
-                <button
-                  type="button"
-                  onClick={fecharDenunciaPerfil}
-                  disabled={denunciaPerfilSalvando}
-                  style={denunciaPerfilCancelButtonStyle}
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void enviarDenunciaPerfil()}
-                  disabled={denunciaPerfilSalvando}
-                  style={denunciaPerfilSubmitButtonStyle}
-                >
-                  {denunciaPerfilSalvando ? "Enviando..." : "Enviar denúncia"}
-                </button>
-              </div>
-            </section>
-          </div>
-        )}
+        <DenunciaModal
+          aberto={
+            Boolean(alvoDenunciaConteudoPerfil) &&
+            !podeEditarPerfil
+          }
+          alvoTipo={alvoDenunciaConteudoPerfil?.alvoTipo || "post"}
+          alvoId={alvoDenunciaConteudoPerfil?.alvoId || ""}
+          alvoTitulo={
+            alvoDenunciaConteudoPerfil?.alvoTitulo || "Conteúdo"
+          }
+          onFechar={() => setAlvoDenunciaConteudoPerfil(null)}
+          onEnviada={() => {
+            setAlvoDenunciaConteudoPerfil(null);
+            setMensagemAcao("Denúncia enviada para análise.");
+          }}
+        />
 
         <section style={heroAtualStyle}>
           <div style={authorTopRowAtualStyle}>
@@ -11172,7 +11640,7 @@ function PerfilAutorPageContent() {
 
               <div
                 style={
-                  autorPodeReceberAvaliacao
+                  avaliacaoResumoPerfilVisivel
                     ? {
                         ...profileStatsAtualStyle,
                         gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
@@ -11230,48 +11698,76 @@ function PerfilAutorPageContent() {
                   <span style={profileStatLabelStyle}>seguindo</span>
                 </Link>
 
-                {autorPodeReceberAvaliacao && (
-                  <div style={profileRatingStatItemStyle}>
-                    <strong style={profileRatingNumberStyle}>
-                      {formatarMediaAvaliacaoAutor(avaliacaoAutor.media)}
-                    </strong>
-
-                    <span style={profileRatingStackedMetaStyle}>
+                {avaliacaoResumoPerfilVisivel && (
+                  <div
+                    style={profileRatingStatItemStyle}
+                    aria-label={
+                      avaliacaoResumoEhDiario
+                        ? "Avaliação do Diário"
+                        : "Avaliação do autor"
+                    }
+                  >
+                    {avaliacaoResumoEhDiario && avaliacaoDiarioPrivada ? (
                       <span
-                        style={profileRatingMiniStarsStyle}
-                        aria-label={`Média ${formatarMediaAvaliacaoAutor(
-                          avaliacaoAutor.media,
-                        )} de 5`}
+                        style={profileRatingPrivateLockStyle}
+                        title="Avaliação do Diário privada"
+                        aria-label="Avaliação do Diário privada"
                       >
-                        {NOTAS_AVALIACAO_AUTOR.map((estrela) => (
-                          <span
-                            key={`media-autor-topo-${estrela}`}
-                            style={profileRatingMiniStarVisualStyle}
-                            aria-hidden="true"
-                          >
-                            <span style={profileRatingMiniStarBaseStyle}>★</span>
-                            <span
-                              style={{
-                                ...profileRatingMiniStarFillStyle,
-                                width: obterPreenchimentoEstrelaAutor(
-                                  estrela,
-                                  avaliacaoAutor.media,
-                                ),
-                              }}
-                            >
-                              ★
-                            </span>
-                          </span>
-                        ))}
+                        <CadeadoAvaliacaoDiarioIcone />
                       </span>
+                    ) : (
+                      <>
+                        <strong style={profileRatingNumberStyle}>
+                          {formatarMediaAvaliacaoAutor(
+                            avaliacaoResumoPerfil.media,
+                          )}
+                        </strong>
 
-                      <span style={profileRatingTotalStyle}>
-                        {formatarTotalAvaliacoesAutor(
-                          avaliacaoAutor.total,
-                          language,
-                        )}
-                      </span>
-                    </span>
+                        <span style={profileRatingStackedMetaStyle}>
+                          <span
+                            style={profileRatingMiniStarsStyle}
+                            aria-label={`Média ${formatarMediaAvaliacaoAutor(
+                              avaliacaoResumoPerfil.media,
+                            )} de 5`}
+                          >
+                            {NOTAS_AVALIACAO_AUTOR.map((estrela) => (
+                              <span
+                                key={`${
+                                  avaliacaoResumoEhDiario ? "diario" : "autor"
+                                }-media-topo-${estrela}`}
+                                style={profileRatingMiniStarVisualStyle}
+                                aria-hidden="true"
+                              >
+                                <span style={profileRatingMiniStarBaseStyle}>★</span>
+                                <span
+                                  style={{
+                                    ...profileRatingMiniStarFillStyle,
+                                    width: obterPreenchimentoEstrelaAutor(
+                                      estrela,
+                                      avaliacaoResumoPerfil.media,
+                                    ),
+                                  }}
+                                >
+                                  ★
+                                </span>
+                              </span>
+                            ))}
+                          </span>
+
+                          <span style={profileRatingTotalStyle}>
+                            {avaliacaoResumoEhDiario
+                              ? formatarTotalAvaliacoesDiario(
+                                  avaliacaoResumoPerfil.total,
+                                  language,
+                                )
+                              : formatarTotalAvaliacoesAutor(
+                                  avaliacaoResumoPerfil.total,
+                                  language,
+                                )}
+                          </span>
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -11279,10 +11775,6 @@ function PerfilAutorPageContent() {
           </div>
 
           <div style={authorTextBlockStyle}>
-            <span style={profileHandleStyle}>
-              {autorHandlePerfil}
-            </span>
-
             {bioAutorPersonalizada ? (
               <p data-historietas-user-content="true" style={descriptionAtualStyle}>{bioAutorPersonalizada}</p>
             ) : podeEditarPerfil ? (
@@ -11335,6 +11827,7 @@ function PerfilAutorPageContent() {
               </>
             ) : (
               <>
+                {!estadoBloqueioPerfil.existeBloqueio && (
                 <button
                   type="button"
                   onClick={() => void alternarSeguirAutor()}
@@ -11367,6 +11860,7 @@ function PerfilAutorPageContent() {
                         ? "Seguindo"
                         : "Seguir"}
                 </button>
+                )}
 
                 <button
                   type="button"
@@ -11644,6 +12138,63 @@ function PerfilAutorPageContent() {
           </section>
         )}
 
+        {perfilUsaAvaliacaoDiario &&
+          !podeEditarPerfil &&
+          avaliacaoDiario.visivel &&
+          avaliacaoDiario.podeAvaliar && (
+            <section
+              style={isDesktop ? desktopAuthorRatingBoxStyle : authorRatingBoxStyle}
+              aria-label="Avaliação do Diário"
+            >
+              <div style={authorRatingHeaderStyle}>
+                <span style={authorRatingTitleStyle}>AVALIE ESTE DIÁRIO</span>
+              </div>
+
+              <div style={authorRatingStarsRowStyle}>
+                {NOTAS_AVALIACAO_AUTOR.map((estrela) => {
+                  const preenchimentoEstrela = obterPreenchimentoEstrelaAutor(
+                    estrela,
+                    avaliacaoDiario.minhaNota,
+                  );
+                  const proximaNota = obterProximaNotaAvaliacaoAutor(
+                    estrela,
+                    avaliacaoDiario.minhaNota,
+                  );
+
+                  return (
+                    <button
+                      key={`avaliacao-diario-perfil-${estrela}`}
+                      type="button"
+                      onClick={() => void avaliarDiarioPerfil(proximaNota)}
+                      disabled={avaliacaoDiario.salvando}
+                      style={{
+                        ...(preenchimentoEstrela === "0%"
+                          ? authorRatingStarButtonStyle
+                          : authorRatingStarActiveStyle),
+                        opacity: avaliacaoDiario.salvando ? 0.58 : 1,
+                      }}
+                      aria-label={`Avaliar Diário com ${proximaNota
+                        .toString()
+                        .replace(".", ",")} estrela${proximaNota === 1 ? "" : "s"}`}
+                    >
+                      <span style={authorRatingStarVisualStyle} aria-hidden="true">
+                        <span style={authorRatingStarBaseStyle}>★</span>
+                        <span
+                          style={{
+                            ...authorRatingStarFillStyle,
+                            width: preenchimentoEstrela,
+                          }}
+                        >
+                          ★
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
         {totalAbasPerfilVisiveis > 0 && (
           <div
             role="tablist"
@@ -11736,10 +12287,14 @@ function PerfilAutorPageContent() {
             </span>
             <div style={privateProfileNoticeTextBlockStyle}>
               <strong style={privateProfileNoticeTitleStyle}>
-                Conteúdo privado
+                {perfilBloqueadoEntreUsuarios
+                  ? "Perfil bloqueado"
+                  : "Conteúdo privado"}
               </strong>
               <p style={privateProfileNoticeTextStyle}>
-                Este autor manteve todas as seções do perfil privadas.
+                {perfilBloqueadoEntreUsuarios
+                  ? "O conteúdo deste perfil está oculto porque existe um bloqueio entre vocês."
+                  : "Este autor manteve todas as seções do perfil privadas."}
               </p>
             </div>
           </section>
@@ -11972,43 +12527,71 @@ function PerfilAutorPageContent() {
                     >
                       {comunidadePerfil.publicacoesRecentes.map(
                         (publicacao) => (
-                          <Link
+                          <article
                             key={publicacao.id}
-                            href={criarHrefPublicacaoComunidadePerfil(
-                              publicacao.id,
-                            )}
-                            style={authorCommunityPostStyle}
-                            aria-label={`Abrir ${publicacao.tipoPublicacao} na Comunidade`}
+                            style={authorCommunityPostWrapperStyle}
                           >
-                            <span style={authorCommunityPostHeaderStyle}>
-                              <strong style={authorCommunityPostTypeStyle}>
-                                {publicacao.tipoPublicacao}
-                              </strong>
-                              <span style={authorCommunityPostDateStyle}>
-                                {dataDiarioPerfilFormatada(
-                                  publicacao.criadoEm,
+                            <Link
+                              href={criarHrefPublicacaoComunidadePerfil(
+                                publicacao.id,
+                              )}
+                              style={{
+                                ...authorCommunityPostStyle,
+                                paddingBottom: podeEditarPerfil
+                                  ? "10px"
+                                  : "42px",
+                              }}
+                              aria-label={`Abrir ${publicacao.tipoPublicacao} na Comunidade`}
+                            >
+                              <span style={authorCommunityPostHeaderStyle}>
+                                <strong style={authorCommunityPostTypeStyle}>
+                                  {publicacao.tipoPublicacao}
+                                </strong>
+                                <span style={authorCommunityPostDateStyle}>
+                                  {dataDiarioPerfilFormatada(
+                                    publicacao.criadoEm,
+                                  )}
+                                </span>
+                              </span>
+
+                              <span
+                                data-historietas-user-content="true"
+                                style={authorCommunityPostTextStyle}
+                              >
+                                {criarResumoPublicacaoComunidadePerfil(
+                                  publicacao,
                                 )}
                               </span>
-                            </span>
 
-                            <span
-                              data-historietas-user-content="true"
-                              style={authorCommunityPostTextStyle}
-                            >
-                              {criarResumoPublicacaoComunidadePerfil(
-                                publicacao,
+                              {publicacao.obraRelacionada && (
+                                <span style={authorCommunityPostWorkStyle}>
+                                  <span>OBRA</span>
+                                  <strong data-historietas-user-content="true">
+                                    {publicacao.obraRelacionada}
+                                  </strong>
+                                </span>
                               )}
-                            </span>
+                            </Link>
 
-                            {publicacao.obraRelacionada && (
-                              <span style={authorCommunityPostWorkStyle}>
-                                <span>OBRA</span>
-                                <strong data-historietas-user-content="true">
-                                  {publicacao.obraRelacionada}
-                                </strong>
-                              </span>
+                            {!podeEditarPerfil && (
+                              <button
+                                type="button"
+                                style={authorCommunityPostReportButtonStyle}
+                                onClick={() =>
+                                  abrirDenunciaConteudoPerfil(
+                                    "post",
+                                    publicacao.id,
+                                    criarResumoPublicacaoComunidadePerfil(
+                                      publicacao,
+                                    ),
+                                  )
+                                }
+                                aria-label="Denunciar publicação"
+                              >
+                                Denunciar
+                              </button>
                             )}
-                          </Link>
+                          </article>
                         ),
                       )}
                     </div>
@@ -12403,6 +12986,20 @@ function PerfilAutorPageContent() {
                             {obraConcluida ? "✓" : ""}
                           </span>
                         </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            abrirDenunciaConteudoPerfil(
+                              "obra",
+                              obra.id,
+                              obra.titulo,
+                            )
+                          }
+                          style={workActionSheetDangerItemStyle}
+                        >
+                          Denunciar obra
+                        </button>
                       </>
                     )}
 
@@ -12791,6 +13388,11 @@ const workActionSheetItemStyle: CSSProperties = {
   cursor: "pointer",
   boxSizing: "border-box",
   whiteSpace: "nowrap",
+};
+
+const workActionSheetDangerItemStyle: CSSProperties = {
+  ...workActionSheetItemStyle,
+  color: "#FDA4AF",
 };
 
 const workActionSheetItemActiveStyle: CSSProperties = {
@@ -13594,17 +14196,42 @@ const topStyle: CSSProperties = {
 };
 
 const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: 0,
   display: "flex",
   alignItems: "center",
-  gap: "4px",
+  gap: "7px",
   minWidth: 0,
   maxWidth: "min(100%, calc(100% - 96px))",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
   ...safeTextStyle,
+};
+
+const logoMarkButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  padding: 0,
+  border: "none",
+  background: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+  cursor: "pointer",
+};
+
+const logoTextButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  padding: 0,
+  border: "none",
+  background: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  minWidth: 0,
+  maxWidth: "100%",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  cursor: "copy",
 };
 
 const logoMarkStyle: CSSProperties = {
@@ -13616,7 +14243,9 @@ const logoMarkStyle: CSSProperties = {
   justifyContent: "center",
   background: "var(--historietas-perfil-bg-deep, #04000A)",
   color: "#FFFFFF",
-  fontSize: "19px",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "21px",
+  lineHeight: 1,
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
@@ -13625,13 +14254,19 @@ const logoMarkStyle: CSSProperties = {
 };
 
 const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-perfil-lavender-text, #DDD6FE) 44%, var(--historietas-perfil-purple, #A78BFA) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
+  minWidth: 0,
+  maxWidth: "min(58vw, 360px)",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  background: "none",
+  fontSize: "17px",
+  lineHeight: 1,
+  ...homeCardTitleTypographyStyle,
   textShadow: "none",
+  ...safeTextStyle,
 };
 
 const profileHeaderStyle: CSSProperties = {
@@ -14242,171 +14877,6 @@ const avatarErrorStyle: CSSProperties = {
 };
 
 
-const denunciaPerfilOverlayStyle: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 10000,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "18px",
-  boxSizing: "border-box",
-  background: "rgba(0,0,0,0.68)",
-};
-
-const denunciaPerfilSheetStyle: CSSProperties = {
-  width: "min(430px, 100%)",
-  maxHeight: "calc(100dvh - 36px)",
-  overflowY: "auto",
-  borderRadius: "24px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-bg-page, #070212)",
-  boxShadow: "0 24px 80px rgba(0,0,0,0.55)",
-  padding: "18px",
-  display: "grid",
-  gap: "14px",
-  boxSizing: "border-box",
-};
-
-const denunciaPerfilHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: "12px",
-  minWidth: 0,
-};
-
-const denunciaPerfilTitleBlockStyle: CSSProperties = {
-  display: "grid",
-  gap: "5px",
-  minWidth: 0,
-};
-
-const denunciaPerfilTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "17px",
-  lineHeight: 1.1,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const denunciaPerfilSubtitleStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
-
-const denunciaPerfilCloseButtonStyle: CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "999px",
-  border: "0",
-  background: "rgba(255,255,255,0.075)",
-  color: "#FFFFFF",
-  fontSize: "20px",
-  lineHeight: 1,
-  fontWeight: 900,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  flex: "0 0 auto",
-};
-
-const denunciaPerfilMotivosGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
-  minWidth: 0,
-};
-
-const denunciaPerfilMotivoButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.04)",
-  color: "#FFFFFF",
-  padding: "0 10px",
-  fontSize: "10px",
-  lineHeight: 1.15,
-  fontWeight: 900,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  textAlign: "center",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
-const denunciaPerfilMotivoAtivoStyle: CSSProperties = {
-  ...denunciaPerfilMotivoButtonStyle,
-  border: "1px solid var(--historietas-perfil-danger-42, rgba(248,113,113,0.42))",
-  background: "var(--historietas-perfil-danger-dark-24, rgba(127,29,29,0.24))",
-  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
-};
-
-const denunciaPerfilTextareaStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "92px",
-  resize: "vertical",
-  borderRadius: "18px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
-  color: "#FFFFFF",
-  padding: "12px",
-  outline: "none",
-  fontSize: "12px",
-  lineHeight: 1.42,
-  fontWeight: 650,
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  minWidth: 0,
-  ...safeTextStyle,
-};
-
-const denunciaPerfilCounterStyle: CSSProperties = {
-  marginTop: "-8px",
-  color: "var(--historietas-text-muted, #A1A1AA)",
-  fontSize: "10px",
-  lineHeight: 1.2,
-  fontWeight: 850,
-  textAlign: "right",
-  ...safeTextStyle,
-};
-
-const denunciaPerfilErrorStyle: CSSProperties = {
-  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
-  fontSize: "11px",
-  lineHeight: 1.3,
-  fontWeight: 850,
-  ...safeTextStyle,
-};
-
-const denunciaPerfilActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: "8px",
-  minWidth: 0,
-};
-
-const denunciaPerfilCancelButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.06)",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-};
-
-const denunciaPerfilSubmitButtonStyle: CSSProperties = {
-  ...denunciaPerfilCancelButtonStyle,
-  border: "1px solid var(--historietas-perfil-danger-36, rgba(248,113,113,0.36))",
-  background: "var(--historietas-perfil-danger-dark-34, rgba(127,29,29,0.34))",
-  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
-};
-
 const bioCounterStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "9px",
@@ -14419,8 +14889,7 @@ const titleStyle: CSSProperties = {
   margin: 0,
   fontSize: "clamp(20px, 5.2vw, 27px)",
   lineHeight: 1.18,
-  fontWeight: 950,
-  letterSpacing: "-0.025em",
+  ...homeCardTitleTypographyStyle,
   maxWidth: "100%",
   minWidth: 0,
   paddingRight: "6px",
@@ -14465,14 +14934,6 @@ const profileNameRowStyle: CSSProperties = {
   overflow: "visible",
 };
 
-const profileHandleStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  lineHeight: 1.25,
-  fontWeight: 850,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
 const profileAddBioButtonStyle: CSSProperties = {
   appearance: "none",
@@ -14575,6 +15036,20 @@ const profileStatWorksLabelStyle: CSSProperties = {
 const profileRatingStatItemStyle: CSSProperties = {
   ...profileStatItemStyle,
   gap: "3px",
+};
+
+const profileRatingPrivateLockStyle: CSSProperties = {
+  width: "25px",
+  height: "29px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  position: "relative",
+  top: "-2px",
+  lineHeight: 1,
+  flex: "0 0 auto",
 };
 
 const profileRatingNumberStyle: CSSProperties = {
@@ -15646,6 +16121,12 @@ const authorCommunityPostsListStyle: CSSProperties = {
   maxWidth: "100%",
 };
 
+const authorCommunityPostWrapperStyle: CSSProperties = {
+  position: "relative",
+  minWidth: 0,
+  maxWidth: "100%",
+};
+
 const authorCommunityPostStyle: CSSProperties = {
   minHeight: "104px",
   padding: "10px",
@@ -15661,6 +16142,24 @@ const authorCommunityPostStyle: CSSProperties = {
   maxWidth: "100%",
   boxSizing: "border-box",
   textAlign: "left",
+};
+
+const authorCommunityPostReportButtonStyle: CSSProperties = {
+  position: "absolute",
+  right: "9px",
+  bottom: "8px",
+  minHeight: "27px",
+  border: "1px solid rgba(251,113,133,0.28)",
+  borderRadius: "999px",
+  padding: "5px 9px",
+  background: "rgba(159,18,57,0.16)",
+  color: "#FDA4AF",
+  font: "inherit",
+  fontSize: "8px",
+  lineHeight: 1,
+  fontWeight: 900,
+  cursor: "pointer",
+  zIndex: 2,
 };
 
 const authorCommunityPostHeaderStyle: CSSProperties = {
@@ -16698,7 +17197,6 @@ const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
   fontSize: "clamp(31px, 3.4vw, 43px)",
   lineHeight: 1.18,
-  letterSpacing: "-0.03em",
   paddingRight: "8px",
   paddingBottom: 0,
   overflow: "visible",

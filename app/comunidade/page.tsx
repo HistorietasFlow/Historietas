@@ -12,6 +12,7 @@ import {
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
+import DenunciaModal from "../../components/DenunciaModal";
 import type { HistorietasLanguage } from "../../lib/i18n";
 
 type CategoriaComunidade =
@@ -86,6 +87,12 @@ type ObraRelacionadaSugestao = {
 type PerfilComunidadeRow = Record<string, unknown>;
 
 type AlvoDenunciaComunidade = "post" | "comentario";
+
+type DenunciaAlvoComunidade = {
+  alvoTipo: AlvoDenunciaComunidade;
+  alvoId: string;
+  alvoTitulo: string;
+};
 
 type ResultadoVotosEnquete = Record<string, Record<string, number>>;
 
@@ -3268,9 +3275,8 @@ export default function ComunidadePage() {
   const [postRemovendoId, setPostRemovendoId] = useState<string | null>(null);
   const [postFixandoId, setPostFixandoId] = useState<string | null>(null);
   const [postMenuAbertoId, setPostMenuAbertoId] = useState<string | null>(null);
-  const [denunciaEnviandoId, setDenunciaEnviandoId] = useState<string | null>(
-    null
-  );
+  const [denunciaAlvo, setDenunciaAlvo] =
+    useState<DenunciaAlvoComunidade | null>(null);
   const [carregandoFeed, setCarregandoFeed] = useState(true);
   const [paginaFeedComunidade, setPaginaFeedComunidade] = useState(0);
   const [temMaisPostsComunidade, setTemMaisPostsComunidade] = useState(false);
@@ -3481,7 +3487,7 @@ export default function ComunidadePage() {
       setPostCompartilhandoId(null);
       setPostRemovendoId(null);
       setPostFixandoId(null);
-      setDenunciaEnviandoId(null);
+      setDenunciaAlvo(null);
       setFeedbackAcao("");
       setObraRelacionadaBusca("");
       setSugestoesObrasAbertas(false);
@@ -4229,10 +4235,6 @@ export default function ComunidadePage() {
 
   function finalizarAcaoComunidade(chave: string) {
     acoesComunidadeRef.current.delete(chave);
-  }
-
-  function obterChaveDenuncia(alvoTipo: AlvoDenunciaComunidade, alvoId: string) {
-    return `denunciar-${alvoTipo}:${alvoId}`;
   }
 
   function limparFiltrosComunidade() {
@@ -5166,52 +5168,46 @@ export default function ComunidadePage() {
     }
   }
 
-  async function denunciarConteudo(
+  function denunciarConteudo(
     alvoTipo: AlvoDenunciaComunidade,
     alvoId: string
   ) {
-    const chaveAcao = obterChaveDenuncia(alvoTipo, alvoId);
-
-    if (!iniciarAcaoComunidade(chaveAcao)) {
+    if (!exigirLogin() || !usuario) {
       return;
     }
 
-    setDenunciaEnviandoId(chaveAcao);
-    setErro("");
+    const alvoIdLimpo = alvoId.trim();
 
-    try {
-      if (!exigirLogin() || !usuario) {
-        return;
-      }
-
-      const { error } = await supabase.from("comunidade_denuncias").insert({
-        alvo_tipo: alvoTipo,
-        alvo_id: alvoId,
-        denunciante_id: usuario.id,
-        motivo: "Conteúdo inadequado",
-        detalhe: "",
-      });
-
-      if (error) {
-        const codigoErro = (error as { code?: string }).code;
-
-        if (codigoErro === "23505") {
-          setErro("Você já denunciou este conteúdo.");
-          return;
-        }
-
-        setErro(formatarErroSupabase("Erro ao denunciar", error));
-        return;
-      }
-
-      setErro("");
-      emitirFeedbackAcao("Denúncia enviada para análise.");
-    } finally {
-      finalizarAcaoComunidade(chaveAcao);
-      setDenunciaEnviandoId((denunciaAtualId) =>
-        denunciaAtualId === chaveAcao ? null : denunciaAtualId
-      );
+    if (!alvoIdLimpo) {
+      setErro("O conteúdo que você tentou denunciar é inválido.");
+      return;
     }
+
+    let alvoTitulo = "";
+
+    if (alvoTipo === "post") {
+      const postAlvo = posts.find((post) => post.id === alvoIdLimpo);
+
+      alvoTitulo = postAlvo
+        ? `Publicação de ${postAlvo.autorNome}`
+        : "Publicação da Comunidade";
+    } else {
+      const comentarioAlvo = posts
+        .flatMap((post) => post.comentarios)
+        .find((comentario) => comentario.id === alvoIdLimpo);
+
+      alvoTitulo = comentarioAlvo
+        ? `Comentário de ${comentarioAlvo.autorNome}`
+        : "Comentário da Comunidade";
+    }
+
+    setErro("");
+    setPostMenuAbertoId(null);
+    setDenunciaAlvo({
+      alvoTipo,
+      alvoId: alvoIdLimpo,
+      alvoTitulo,
+    });
   }
 
   async function removerComentario(postId: string, comentarioId: string) {
@@ -6133,8 +6129,10 @@ export default function ComunidadePage() {
                   const postCompartilhando = postCompartilhandoId === post.id;
                   const postRemovendo = postRemovendoId === post.id;
                   const postFixando = postFixandoId === post.id;
-                  const postDenunciando =
-                    denunciaEnviandoId === obterChaveDenuncia("post", post.id);
+                  const postDenunciando = Boolean(
+                    denunciaAlvo?.alvoTipo === "post" &&
+                      denunciaAlvo.alvoId === post.id
+                  );
                   const spoilerRevelado = spoilersReveladosIds.includes(post.id);
                   const ocultarTextoSpoiler = post.temSpoiler && !spoilerRevelado;
                   const opcoesPublicacao = (
@@ -6815,6 +6813,18 @@ export default function ComunidadePage() {
         onDenunciarComentario={(comentarioId) =>
           denunciarConteudo("comentario", comentarioId)
         }
+      />
+
+      <DenunciaModal
+        aberto={Boolean(denunciaAlvo)}
+        alvoTipo={denunciaAlvo?.alvoTipo || "post"}
+        alvoId={denunciaAlvo?.alvoId || ""}
+        alvoTitulo={denunciaAlvo?.alvoTitulo || ""}
+        onFechar={() => setDenunciaAlvo(null)}
+        onEnviada={() => {
+          setErro("");
+          emitirFeedbackAcao("Denúncia enviada para análise.");
+        }}
       />
 
       {feedbackAcao && (

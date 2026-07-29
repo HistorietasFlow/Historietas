@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import type { CSSProperties, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
+import DenunciaModal from "../../components/DenunciaModal";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 
@@ -136,6 +137,12 @@ type RespostaComentarioCapitulo = {
 };
 
 type OrdenacaoComentariosCapitulo = "relevantes" | "recentes";
+
+type AlvoDenunciaLeitor = {
+  alvoTipo: "capitulo" | "comentario_capitulo";
+  alvoId: string;
+  alvoTitulo: string;
+};
 
 type ComentariosCapituloPost = {
   id: string;
@@ -3498,6 +3505,8 @@ export default function LerCapituloPage() {
   const [carregando, setCarregando] = useState(true);
   const [, setComentarioDigitado] = useState("");
   const [comentarioStatus, setComentarioStatus] = useState("");
+  const [denunciaAlvo, setDenunciaAlvo] =
+    useState<AlvoDenunciaLeitor | null>(null);
   const [comentariosCapitulo, setComentariosCapitulo] = useState<ComentarioCapituloPublico[]>([]);
   const [metricasCapitulo, setMetricasCapitulo] =
     useState<MetricasCapituloLeitor>(metricasCapituloVazias);
@@ -4759,47 +4768,48 @@ export default function LerCapituloPage() {
   }
 
 
-  async function denunciarComentarioCapitulo(comentarioId: string) {
-    const chaveAcao = `denunciar-comentario-capitulo:${comentarioId}`;
+  async function abrirDenunciaCapituloAtual() {
+    const userIdAtual = await obterUsuarioLogadoIdAtual();
 
-    if (!iniciarAcaoComentariosCapitulo(chaveAcao)) {
+    if (!userIdAtual) {
+      setMensagemAcao("Entre na sua conta para denunciar este capítulo.");
+      router.push(criarLoginHrefLeitor(obraId, capituloId));
       return;
     }
 
-    setComentarioStatus("");
-
-    try {
-      const userIdAtual = await obterUsuarioLogadoIdAtual();
-
-      if (!userIdAtual) {
-        setMensagemAcao("Entre na sua conta para denunciar comentários.");
-        router.push(criarLoginHrefLeitor(obraId, capituloId));
-        return;
-      }
-
-      const { error } = await supabase.from("comunidade_denuncias").insert({
-        alvo_tipo: "comentario_capitulo",
-        alvo_id: comentarioId,
-        denunciante_id: userIdAtual,
-        motivo: "Conteúdo inadequado",
-        detalhe: "Comentário em capítulo",
-      });
-
-      if (error) {
-        const codigoErro = (error as { code?: string }).code;
-
-        if (codigoErro === "23505") {
-          setComentarioStatus("Você já denunciou este conteúdo.");
-          return;
-        }
-
-        setComentarioStatus("Não consegui enviar a denúncia agora.");
-        return;
-      }
-
-    } finally {
-      finalizarAcaoComentariosCapitulo(chaveAcao);
+    if (!capituloAtual) {
+      return;
     }
+
+    setMostrarAjustes(false);
+    setDenunciaAlvo({
+      alvoTipo: "capitulo",
+      alvoId: capituloAtual.id,
+      alvoTitulo: capituloAtual.titulo,
+    });
+  }
+
+  async function denunciarComentarioCapitulo(comentarioId: string) {
+    const userIdAtual = await obterUsuarioLogadoIdAtual();
+
+    if (!userIdAtual) {
+      setMensagemAcao("Entre na sua conta para denunciar comentários.");
+      router.push(criarLoginHrefLeitor(obraId, capituloId));
+      return;
+    }
+
+    const comentario = comentariosCapitulo.find(
+      (item) => item.id === comentarioId
+    );
+
+    setComentarioStatus("");
+    setDenunciaAlvo({
+      alvoTipo: "comentario_capitulo",
+      alvoId: comentarioId,
+      alvoTitulo: comentario
+        ? `Comentário de ${comentario.nome}`
+        : "Comentário de capítulo",
+    });
   }
 
 
@@ -4892,9 +4902,49 @@ export default function LerCapituloPage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
-          <Link href="/" style={logoStyle} aria-label="Voltar para a Home">
-            <span style={logoMarkStyle}>H</span>
-            <span className="historietas-theme-logo-text" style={logoTextStyle}>istorietas</span>
+          <Link
+            href="/"
+            style={logoStyle}
+            aria-label={`${formatarContadorCapituloLeitor(
+              metricasCapitulo.totalVisualizacoes
+            )} ${
+              metricasCapitulo.totalVisualizacoes === 1
+                ? "visualização"
+                : "visualizações"
+            }`}
+          >
+            <span style={logoMarkStyle} aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                style={logoViewsIconStyle}
+              >
+                <path
+                  d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="2.8"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                />
+              </svg>
+            </span>
+
+            <span
+              data-historietas-i18n-ignore="true"
+              style={logoViewsCountStyle}
+            >
+              {formatarContadorCapituloLeitor(
+                metricasCapitulo.totalVisualizacoes
+              )}
+            </span>
           </Link>
 
           <div
@@ -4959,50 +5009,16 @@ export default function LerCapituloPage() {
               : chapterHeaderStyle
           }
         >
-          <h1 style={titleStyle}>
+          <h1
+            style={criarEstiloTituloCapitulo(
+              capituloAtual.titulo,
+              isDesktop
+            )}
+          >
             <span data-historietas-i18n-ignore="true">
               {capituloAtual.titulo}
             </span>
           </h1>
-          <p
-            style={chapterViewsStyle}
-            aria-label={`${formatarContadorCapituloLeitor(
-              metricasCapitulo.totalVisualizacoes
-            )} ${
-              metricasCapitulo.totalVisualizacoes === 1
-                ? "visualização"
-                : "visualizações"
-            }`}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              style={chapterViewsIconStyle}
-            >
-              <path
-                d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="2.8"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              />
-            </svg>
-
-            <span>
-              {formatarContadorCapituloLeitor(
-                metricasCapitulo.totalVisualizacoes
-              )}
-            </span>
-          </p>
         </section>
 
         {mostrarAjustes && (
@@ -5071,7 +5087,17 @@ export default function LerCapituloPage() {
               </div>
             </div>
 
-            <div style={isDesktop ? desktopSettingsGridStyle : settingsGridStyle}>
+            <div
+              style={{
+                ...(isDesktop ? desktopSettingsGridStyle : settingsGridStyle),
+                gridTemplateColumns: !(
+                  usuarioIdLogado &&
+                  obterAutorIdSeguro(obraAtual) === usuarioIdLogado
+                )
+                  ? "repeat(3, minmax(0, 1fr))"
+                  : "repeat(2, minmax(0, 1fr))",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setModoFoco((valorAtual) => !valorAtual)}
@@ -5094,6 +5120,22 @@ export default function LerCapituloPage() {
                 {mostrarLinhaProgresso ? "Barra ativa" : "Barra de progresso"}
               </button>
 
+              {!(
+                usuarioIdLogado &&
+                obterAutorIdSeguro(obraAtual) === usuarioIdLogado
+              ) ? (
+                <button
+                  type="button"
+                  onClick={() => void abrirDenunciaCapituloAtual()}
+                  style={
+                    modoFoco
+                      ? focusMutedSettingsActionStyle
+                      : settingsActionStyle
+                  }
+                >
+                  Denunciar
+                </button>
+              ) : null}
             </div>
           </section>
         )}
@@ -5312,6 +5354,14 @@ export default function LerCapituloPage() {
         onCurtirComentario={alternarCurtidaComentarioCapitulo}
         onRemoverComentario={removerComentarioCapitulo}
         onDenunciarComentario={denunciarComentarioCapitulo}
+      />
+
+      <DenunciaModal
+        aberto={Boolean(denunciaAlvo)}
+        alvoTipo={denunciaAlvo?.alvoTipo || "capitulo"}
+        alvoId={denunciaAlvo?.alvoId || ""}
+        alvoTitulo={denunciaAlvo?.alvoTitulo || ""}
+        onFechar={() => setDenunciaAlvo(null)}
       />
 
     </main>
@@ -5768,6 +5818,23 @@ const logoMarkStyle: CSSProperties = {
   boxShadow: "none",
 };
 
+const logoViewsIconStyle: CSSProperties = {
+  width: "21px",
+  height: "21px",
+  display: "block",
+  color: "#FFFFFF",
+};
+
+const logoViewsCountStyle: CSSProperties = {
+  marginLeft: "-1px",
+  color: "#FFFFFF",
+  fontSize: "20px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.02em",
+  textShadow: "none",
+};
+
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
@@ -5879,40 +5946,88 @@ const focusTopSingleSettingsButtonStyle: CSSProperties = {
 
 const chapterHeaderStyle: CSSProperties = {
   display: "grid",
-  gap: "8px",
-  padding: "14px",
-  borderRadius: "28px",
-  background: "linear-gradient(135deg, var(--historietas-reader-bg-page, #070212) 0%, var(--historietas-reader-bg-deep, #04000A) 58%, var(--historietas-reader-bg-end, #020006) 100%)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  justifyItems: "center",
+  gap: 0,
+  padding: "10px 0 4px",
+  borderRadius: 0,
+  background: "transparent",
+  border: "none",
   boxShadow: "none",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-  overflow: "hidden",
+  overflow: "visible",
 };
 
 const focusChapterHeaderStyle: CSSProperties = {
   ...chapterHeaderStyle,
-  background: "rgba(9,9,11,0.74)",
-  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: "clamp(28px, 8vw, 42px)",
-  lineHeight: 1.02,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  textAlign: "center",
+  width: "100%",
   maxWidth: "100%",
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  fontSize: "clamp(26px, 7.4vw, 38px)",
+  lineHeight: 0.96,
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
+  textAlign: "center",
   background: "none",
   WebkitBackgroundClip: "initial",
   backgroundClip: "initial",
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
-  textShadow: "none",
+  textShadow:
+    "0 1px 0 rgba(0,0,0,0.34), 0 2px 12px rgba(0,0,0,0.34)",
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
   ...safeTextStyle,
 };
+
+const desktopTitleStyle: CSSProperties = {
+  ...titleStyle,
+  fontSize: "clamp(34px, 4vw, 52px)",
+  lineHeight: 1.04,
+  width: "100%",
+  maxWidth: "680px",
+};
+
+function criarEstiloTituloCapitulo(
+  titulo: string,
+  isDesktop: boolean
+): CSSProperties {
+  const totalCaracteres = titulo.trim().length;
+  const estiloBase = isDesktop ? desktopTitleStyle : titleStyle;
+
+  if (totalCaracteres <= 15) {
+    return {
+      ...estiloBase,
+      fontSize: isDesktop
+        ? "clamp(34px, 4vw, 52px)"
+        : "clamp(26px, 7.4vw, 38px)",
+    };
+  }
+
+  if (totalCaracteres <= 35) {
+    return {
+      ...estiloBase,
+      fontSize: isDesktop
+        ? "clamp(30px, 3.4vw, 44px)"
+        : "clamp(23px, 6.4vw, 33px)",
+      lineHeight: isDesktop ? 1.06 : 1.02,
+    };
+  }
+
+  return {
+    ...estiloBase,
+    fontSize: isDesktop
+      ? "clamp(26px, 3vw, 38px)"
+      : "clamp(20px, 5.5vw, 28px)",
+    lineHeight: isDesktop ? 1.08 : 1.06,
+  };
+}
 
 const chapterViewsStyle: CSSProperties = {
   margin: 0,
@@ -7031,15 +7146,11 @@ const desktopFocusSettingsButtonStyle: CSSProperties = {
 
 const desktopChapterHeaderStyle: CSSProperties = {
   ...chapterHeaderStyle,
-  gap: "8px",
-  padding: "18px 22px",
-  borderRadius: "30px",
+  padding: "16px 0 6px",
 };
 
 const desktopFocusChapterHeaderStyle: CSSProperties = {
   ...desktopChapterHeaderStyle,
-  background: "rgba(9,9,11,0.76)",
-  border: "1px solid rgba(255,255,255,0.07)",
 };
 
 const desktopSettingsPanelStyle: CSSProperties = {

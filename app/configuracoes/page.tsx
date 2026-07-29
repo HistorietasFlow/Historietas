@@ -30,7 +30,16 @@ type MensagemAcaoConfiguracoes = {
   texto: string;
 };
 
-type QuemPodeComentarDiario = "todos" | "seguidores" | "ninguem";
+type QuemPodeComentarDiario =
+  | "todos"
+  | "seguidores"
+  | "seguindo"
+  | "ninguem";
+type QuemPodeAvaliarDiario =
+  | "todos"
+  | "seguidores"
+  | "seguindo"
+  | "ninguem";
 type VisibilidadeAbaPerfil =
   | "publico"
   | "seguidores"
@@ -47,6 +56,10 @@ type PreferenciasPrivacidadeHistorietas = {
   visibilidadeBiblioteca: VisibilidadeAbaPerfil;
   visibilidadeAtividades: VisibilidadeAbaPerfil;
   quemPodeComentarDiario: QuemPodeComentarDiario;
+  visibilidadeAvaliacaoDiario: VisibilidadeAbaPerfil;
+  mostrarAvaliacaoDiario: boolean;
+  permitirAvaliacaoDiario: boolean;
+  quemPodeAvaliarDiario: QuemPodeAvaliarDiario;
 };
 
 const PRIVACIDADE_STORAGE_KEY = "historietas-privacidade";
@@ -62,7 +75,11 @@ const preferenciasPrivacidadePadrao: PreferenciasPrivacidadeHistorietas = {
   visibilidadeComunidade: "publico",
   visibilidadeBiblioteca: "somente_eu",
   visibilidadeAtividades: "seguidores",
-  quemPodeComentarDiario: "todos",
+  quemPodeComentarDiario: "seguidores",
+  visibilidadeAvaliacaoDiario: "publico",
+  mostrarAvaliacaoDiario: true,
+  permitirAvaliacaoDiario: true,
+  quemPodeAvaliarDiario: "seguidores",
 };
 
 function criarChavePrivacidadeUsuario(userId: string) {
@@ -92,9 +109,23 @@ function normalizarVisibilidadeAba(
 function normalizarQuemPodeComentarDiario(
   valor: unknown,
 ): QuemPodeComentarDiario {
-  return valor === "seguidores" || valor === "ninguem" || valor === "todos"
+  return valor === "seguidores" ||
+    valor === "seguindo" ||
+    valor === "ninguem" ||
+    valor === "todos"
     ? valor
     : preferenciasPrivacidadePadrao.quemPodeComentarDiario;
+}
+
+function normalizarQuemPodeAvaliarDiario(
+  valor: unknown,
+): QuemPodeAvaliarDiario {
+  return valor === "seguidores" ||
+    valor === "seguindo" ||
+    valor === "ninguem" ||
+    valor === "todos"
+    ? valor
+    : preferenciasPrivacidadePadrao.quemPodeAvaliarDiario;
 }
 
 function normalizarPreferenciasPrivacidade(
@@ -125,6 +156,29 @@ function normalizarPreferenciasPrivacidade(
     registro.mostrarAtividadesLeitura ?? registro.mostrar_atividades_leitura,
     true,
   );
+  const mostrarAvaliacaoDiarioLegado = normalizarBooleanoPrivacidade(
+    registro.mostrarAvaliacaoDiario ??
+      registro.mostrar_avaliacao_diario,
+    preferenciasPrivacidadePadrao.mostrarAvaliacaoDiario,
+  );
+  const permitirAvaliacaoDiarioLegado = normalizarBooleanoPrivacidade(
+    registro.permitirAvaliacaoDiario ??
+      registro.permitir_avaliacao_diario,
+    preferenciasPrivacidadePadrao.permitirAvaliacaoDiario,
+  );
+  const visibilidadeAvaliacaoDiario = normalizarVisibilidadeAba(
+    registro.visibilidadeAvaliacaoDiario ??
+      registro.visibilidade_avaliacao_diario,
+    mostrarAvaliacaoDiarioLegado ? "publico" : "somente_eu",
+  );
+  const quemPodeAvaliarDiarioNormalizado =
+    normalizarQuemPodeAvaliarDiario(
+      registro.quemPodeAvaliarDiario ??
+        registro.quem_pode_avaliar_diario,
+    );
+  const quemPodeAvaliarDiario = permitirAvaliacaoDiarioLegado
+    ? quemPodeAvaliarDiarioNormalizado
+    : "ninguem";
 
   return {
     perfilPrivado,
@@ -168,6 +222,11 @@ function normalizarPreferenciasPrivacidade(
       registro.quemPodeComentarDiario ??
         registro.quem_pode_comentar_diario,
     ),
+    visibilidadeAvaliacaoDiario,
+    mostrarAvaliacaoDiario:
+      visibilidadeAvaliacaoDiario !== "somente_eu",
+    permitirAvaliacaoDiario: quemPodeAvaliarDiario !== "ninguem",
+    quemPodeAvaliarDiario,
   };
 }
 
@@ -229,19 +288,29 @@ async function carregarPreferenciasPrivacidade(
   }
 
   try {
-    const { data, error } = await supabase
+    let resultado = await supabase
       .from("preferencias_privacidade")
       .select(
-        "perfil_privado,aprovar_novos_seguidores,visibilidade_obras,visibilidade_sobre,visibilidade_diario,visibilidade_comunidade,visibilidade_biblioteca,visibilidade_atividades,quem_pode_comentar_diario",
+        "perfil_privado,aprovar_novos_seguidores,visibilidade_obras,visibilidade_sobre,visibilidade_diario,visibilidade_comunidade,visibilidade_biblioteca,visibilidade_atividades,quem_pode_comentar_diario,visibilidade_avaliacao_diario,mostrar_avaliacao_diario,permitir_avaliacao_diario,quem_pode_avaliar_diario",
       )
       .eq("user_id", userIdLimpo)
       .maybeSingle();
 
-    if (error || !data) {
+    if (resultado.error) {
+      resultado = await supabase
+        .from("preferencias_privacidade")
+        .select(
+          "perfil_privado,aprovar_novos_seguidores,visibilidade_obras,visibilidade_sobre,visibilidade_diario,visibilidade_comunidade,visibilidade_biblioteca,visibilidade_atividades,quem_pode_comentar_diario,mostrar_avaliacao_diario,permitir_avaliacao_diario,quem_pode_avaliar_diario",
+        )
+        .eq("user_id", userIdLimpo)
+        .maybeSingle();
+    }
+
+    if (resultado.error || !resultado.data) {
       return fallback;
     }
 
-    const preferencias = normalizarPreferenciasPrivacidade(data);
+    const preferencias = normalizarPreferenciasPrivacidade(resultado.data);
 
     if (usarFallbackLocal) {
       salvarPreferenciasPrivacidadeLocal(preferencias, userIdLimpo);
@@ -266,28 +335,47 @@ async function salvarPreferenciasPrivacidade(
     return { ok: false, erro: "Usuário inválido." };
   }
 
+  const payloadLegado = {
+    user_id: userIdLimpo,
+    perfil_privado: preferenciasSeguras.perfilPrivado,
+    aprovar_novos_seguidores:
+      preferenciasSeguras.aprovarNovosSeguidores,
+    visibilidade_obras: preferenciasSeguras.visibilidadeObras,
+    visibilidade_sobre: preferenciasSeguras.visibilidadeSobre,
+    visibilidade_diario: preferenciasSeguras.visibilidadeDiario,
+    visibilidade_comunidade: preferenciasSeguras.visibilidadeComunidade,
+    visibilidade_biblioteca: preferenciasSeguras.visibilidadeBiblioteca,
+    visibilidade_atividades: preferenciasSeguras.visibilidadeAtividades,
+    quem_pode_comentar_diario:
+      preferenciasSeguras.quemPodeComentarDiario,
+    mostrar_avaliacao_diario:
+      preferenciasSeguras.mostrarAvaliacaoDiario,
+    permitir_avaliacao_diario:
+      preferenciasSeguras.permitirAvaliacaoDiario,
+    quem_pode_avaliar_diario:
+      preferenciasSeguras.quemPodeAvaliarDiario,
+    atualizado_em: new Date().toISOString(),
+  };
+
   try {
-    const { error } = await supabase.from("preferencias_privacidade").upsert(
+    let resultado = await supabase.from("preferencias_privacidade").upsert(
       {
-        user_id: userIdLimpo,
-        perfil_privado: preferenciasSeguras.perfilPrivado,
-        aprovar_novos_seguidores:
-          preferenciasSeguras.aprovarNovosSeguidores,
-        visibilidade_obras: preferenciasSeguras.visibilidadeObras,
-        visibilidade_sobre: preferenciasSeguras.visibilidadeSobre,
-        visibilidade_diario: preferenciasSeguras.visibilidadeDiario,
-        visibilidade_comunidade: preferenciasSeguras.visibilidadeComunidade,
-        visibilidade_biblioteca: preferenciasSeguras.visibilidadeBiblioteca,
-        visibilidade_atividades: preferenciasSeguras.visibilidadeAtividades,
-        quem_pode_comentar_diario:
-          preferenciasSeguras.quemPodeComentarDiario,
-        atualizado_em: new Date().toISOString(),
+        ...payloadLegado,
+        visibilidade_avaliacao_diario:
+          preferenciasSeguras.visibilidadeAvaliacaoDiario,
       },
       { onConflict: "user_id" },
     );
 
-    if (error) {
-      return { ok: false, erro: error.message };
+    if (resultado.error) {
+      resultado = await supabase.from("preferencias_privacidade").upsert(
+        payloadLegado,
+        { onConflict: "user_id" },
+      );
+    }
+
+    if (resultado.error) {
+      return { ok: false, erro: resultado.error.message };
     }
 
     return { ok: true, erro: "" };
@@ -341,6 +429,9 @@ const ALIASES_BUSCA_CONFIGURACOES: Record<string, string[]> = {
   seguranca: ["security", "seguridad"],
   privacidade: ["privacy", "privacidad"],
   privado: ["private", "privado"],
+  bloqueio: ["block", "blocking", "bloqueo"],
+  bloqueados: ["blocked users", "usuarios bloqueados"],
+  desbloquear: ["unblock", "desbloquear"],
   visibilidade: ["visibility", "visibilidad"],
   publico: ["public", "público"],
   somente: ["only", "solo"],
@@ -348,6 +439,7 @@ const ALIASES_BUSCA_CONFIGURACOES: Record<string, string[]> = {
   sigo: ["following", "sigo"],
   progresso: ["progress", "progreso"],
   avaliacoes: ["ratings", "reviews", "valoraciones", "resenas"],
+  avaliar: ["rate", "rating", "review", "evaluar", "valorar"],
   comentarios: ["comments", "comentarios"],
   seguidores: ["followers", "seguidores"],
   aprovacao: ["approval", "aprobacion"],
@@ -415,6 +507,14 @@ type UsuarioConfiguracoes = {
   nome: string;
   username: string;
   email: string;
+};
+
+type UsuarioBloqueadoConfiguracoes = {
+  userId: string;
+  nome: string;
+  username: string;
+  avatar: string;
+  bloqueadoEm: string;
 };
 
 type AppMetadataAdminConfiguracoes = {
@@ -964,6 +1064,31 @@ function normalizarPerfilConfiguracoesSupabase(
     nome: pegarTexto(perfil.nome),
     username: normalizarUsernameConfiguracoes(pegarTexto(perfil.username)),
   };
+}
+
+async function listarUsuariosBloqueadosConfiguracoes(): Promise<
+  UsuarioBloqueadoConfiguracoes[]
+> {
+  const { data, error } = await supabase.rpc(
+    "listar_usuarios_bloqueados",
+    { p_limite: 100 },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data || []) as unknown as Record<string, unknown>[]).map(
+    (item) => ({
+      userId: pegarTexto(item.user_id),
+      nome: pegarTexto(item.nome, "Usuário"),
+      username: normalizarUsernameConfiguracoes(
+        pegarTexto(item.username),
+      ),
+      avatar: pegarTexto(item.avatar_url),
+      bloqueadoEm: pegarTexto(item.bloqueado_em),
+    }),
+  ).filter((item) => idUsuarioSupabaseValido(item.userId));
 }
 
 async function carregarPerfilConfiguracoesSupabase(
@@ -1673,6 +1798,17 @@ export default function ConfiguracoesPage() {
   const [busca, setBusca] = useState("");
   const [mostrarTemas, setMostrarTemas] = useState(false);
   const [adminLiberado, setAdminLiberado] = useState(false);
+  const [mostrarUsuariosBloqueados, setMostrarUsuariosBloqueados] =
+    useState(false);
+  const [usuariosBloqueados, setUsuariosBloqueados] = useState<
+    UsuarioBloqueadoConfiguracoes[]
+  >([]);
+  const [carregandoUsuariosBloqueados, setCarregandoUsuariosBloqueados] =
+    useState(false);
+  const [desbloqueandoUsuarioId, setDesbloqueandoUsuarioId] =
+    useState("");
+  const [erroUsuariosBloqueados, setErroUsuariosBloqueados] =
+    useState("");
   const [mostrarSeguranca, setMostrarSeguranca] = useState(false);
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
@@ -1744,15 +1880,21 @@ export default function ConfiguracoesPage() {
           email: data.user.email || "",
         };
         const preferenciasCarregadas = carregarPreferencias(usuarioCarregado.id);
-        const [privacidadeCarregada, resumoCarregado] = await Promise.all([
+        const [
+          privacidadeCarregada,
+          resumoCarregado,
+          usuariosBloqueadosCarregados,
+        ] = await Promise.all([
           carregarPreferenciasPrivacidade(usuarioCarregado.id, {
             usarFallbackLocal: true,
           }),
           carregarResumoContaSupabase(usuarioCarregado.id),
+          listarUsuariosBloqueadosConfiguracoes().catch(() => []),
         ]);
 
         setUsuario(usuarioCarregado);
         setPrivacidade(privacidadeCarregada);
+        setUsuariosBloqueados(usuariosBloqueadosCarregados);
         setPreferencias({
           ...preferenciasCarregadas,
           nomeExibicao:
@@ -2340,6 +2482,114 @@ export default function ConfiguracoesPage() {
     }
   }
 
+  async function carregarUsuariosBloqueados() {
+    if (carregandoUsuariosBloqueados) {
+      return;
+    }
+
+    setCarregandoUsuariosBloqueados(true);
+    setErroUsuariosBloqueados("");
+
+    try {
+      const lista = await listarUsuariosBloqueadosConfiguracoes();
+      setUsuariosBloqueados(lista);
+    } catch (error) {
+      setErroUsuariosBloqueados(
+        error instanceof Error && error.message.trim()
+          ? error.message
+          : t(
+              "Não foi possível carregar os usuários bloqueados.",
+              "Blocked users could not be loaded.",
+              "No se pudieron cargar los usuarios bloqueados.",
+            ),
+      );
+    } finally {
+      setCarregandoUsuariosBloqueados(false);
+    }
+  }
+
+  function alternarUsuariosBloqueados() {
+    setMostrarUsuariosBloqueados((mostrarAtual) => {
+      const proximo = !mostrarAtual;
+
+      if (proximo) {
+        void carregarUsuariosBloqueados();
+      }
+
+      return proximo;
+    });
+  }
+
+  async function desbloquearUsuarioConfiguracoes(
+    usuarioBloqueado: UsuarioBloqueadoConfiguracoes,
+  ) {
+    if (
+      desbloqueandoUsuarioId ||
+      !idUsuarioSupabaseValido(usuarioBloqueado.userId)
+    ) {
+      return;
+    }
+
+    const confirmou = window.confirm(
+      t(
+        `Desbloquear ${usuarioBloqueado.nome}?`,
+        `Unblock ${usuarioBloqueado.nome}?`,
+        `¿Desbloquear a ${usuarioBloqueado.nome}?`,
+      ),
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    setDesbloqueandoUsuarioId(usuarioBloqueado.userId);
+    setErroUsuariosBloqueados("");
+
+    try {
+      const { data, error } = await supabase.rpc(
+        "desbloquear_usuario",
+        { p_bloqueado_id: usuarioBloqueado.userId },
+      );
+
+      if (error || data !== true) {
+        throw error || new Error(
+          t(
+            "O desbloqueio não foi confirmado.",
+            "The unblock action was not confirmed.",
+            "No se confirmó el desbloqueo.",
+          ),
+        );
+      }
+
+      setUsuariosBloqueados((usuariosAtuais) =>
+        usuariosAtuais.filter(
+          (item) => item.userId !== usuarioBloqueado.userId,
+        ),
+      );
+
+      mostrarMensagemAcao(
+        "sucesso",
+        t(
+          `${usuarioBloqueado.nome} foi desbloqueado.`,
+          `${usuarioBloqueado.nome} was unblocked.`,
+          `${usuarioBloqueado.nome} fue desbloqueado.`,
+        ),
+      );
+    } catch (error) {
+      setErroUsuariosBloqueados(
+        error instanceof Error && error.message.trim()
+          ? error.message
+          : t(
+              "Não foi possível desbloquear este usuário.",
+              "This user could not be unblocked.",
+              "No se pudo desbloquear a este usuario.",
+            ),
+      );
+    } finally {
+      setDesbloqueandoUsuarioId("");
+    }
+  }
+
   async function copiarBackup() {
     setMensagemAcao(null);
 
@@ -2556,14 +2806,7 @@ export default function ConfiguracoesPage() {
                 )}
                 maxLength={30}
                 autoComplete="username"
-                helperText={
-                  erroUsername ||
-                  t(
-                    "Nome pode repetir. @username não pode repetir.",
-                    "Names may repeat. @username must be unique.",
-                    "El nombre puede repetirse. El @username debe ser único.",
-                  )
-                }
+                helperText={erroUsername || undefined}
                 error={Boolean(erroUsername)}
               />
             ) : null}
@@ -2656,6 +2899,9 @@ export default function ConfiguracoesPage() {
           "seguidores",
           "aprovação",
           "solicitações",
+          "bloqueio",
+          "bloqueados",
+          "desbloquear",
         ) ? (
           <SettingsSection
             title={t(
@@ -2732,6 +2978,155 @@ export default function ConfiguracoesPage() {
                 hideChevron
               />
             ) : null}
+
+            {deveMostrar(
+              "bloqueio",
+              "bloqueados",
+              "desbloquear",
+              "privacidade",
+            ) ? (
+              <>
+                <SettingsRow
+                  icon="shield"
+                  title={t(
+                    "Usuários bloqueados",
+                    "Blocked users",
+                    "Usuarios bloqueados",
+                  )}
+                  subtitle={t(
+                    "Revise e desbloqueie perfis da sua lista",
+                    "Review and unblock profiles on your list",
+                    "Revisa y desbloquea perfiles de tu lista",
+                  )}
+                  right={
+                    carregandoUsuariosBloqueados ? (
+                      <LoadingSpinner
+                        compacto
+                        label={t(
+                          "Carregando usuários bloqueados",
+                          "Loading blocked users",
+                          "Cargando usuarios bloqueados",
+                        )}
+                      />
+                    ) : (
+                      <ValorLinha>{usuariosBloqueados.length}</ValorLinha>
+                    )
+                  }
+                  onClick={alternarUsuariosBloqueados}
+                />
+
+                {mostrarUsuariosBloqueados ? (
+                  <div style={blockedUsersPanelStyle}>
+                    {erroUsuariosBloqueados ? (
+                      <div style={blockedUsersErrorStyle}>
+                        <span>{erroUsuariosBloqueados}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void carregarUsuariosBloqueados()
+                          }
+                          disabled={carregandoUsuariosBloqueados}
+                          style={blockedUsersRetryButtonStyle}
+                        >
+                          {t(
+                            "Tentar novamente",
+                            "Try again",
+                            "Intentar de nuevo",
+                          )}
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {!carregandoUsuariosBloqueados &&
+                    !erroUsuariosBloqueados &&
+                    usuariosBloqueados.length === 0 ? (
+                      <p style={blockedUsersEmptyStyle}>
+                        {t(
+                          "Você não bloqueou nenhum usuário.",
+                          "You have not blocked any users.",
+                          "No has bloqueado a ningún usuario.",
+                        )}
+                      </p>
+                    ) : null}
+
+                    {usuariosBloqueados.map((usuarioBloqueado) => {
+                      const desbloqueando =
+                        desbloqueandoUsuarioId ===
+                        usuarioBloqueado.userId;
+                      const inicial =
+                        usuarioBloqueado.nome.trim().charAt(0)
+                          .toUpperCase() || "U";
+
+                      return (
+                        <div
+                          key={usuarioBloqueado.userId}
+                          style={blockedUserRowStyle}
+                        >
+                          {usuarioBloqueado.avatar ? (
+                            <img
+                              src={usuarioBloqueado.avatar}
+                              alt=""
+                              style={blockedUserAvatarStyle}
+                            />
+                          ) : (
+                            <span
+                              aria-hidden="true"
+                              style={blockedUserAvatarFallbackStyle}
+                            >
+                              {inicial}
+                            </span>
+                          )}
+
+                          <span style={blockedUserTextStyle}>
+                            <strong style={blockedUserNameStyle}>
+                              {usuarioBloqueado.nome}
+                            </strong>
+                            <span style={blockedUserUsernameStyle}>
+                              {usuarioBloqueado.username
+                                ? `@${usuarioBloqueado.username}`
+                                : t(
+                                    "Sem @username",
+                                    "No @username",
+                                    "Sin @username",
+                                  )}
+                            </span>
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void desbloquearUsuarioConfiguracoes(
+                                usuarioBloqueado,
+                              )
+                            }
+                            disabled={Boolean(
+                              desbloqueandoUsuarioId,
+                            )}
+                            style={
+                              desbloqueando
+                                ? blockedUserButtonDisabledStyle
+                                : blockedUserButtonStyle
+                            }
+                          >
+                            {desbloqueando
+                              ? t(
+                                  "Desbloqueando...",
+                                  "Unblocking...",
+                                  "Desbloqueando...",
+                                )
+                              : t(
+                                  "Desbloquear",
+                                  "Unblock",
+                                  "Desbloquear",
+                                )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </>
+            ) : null}
           </SettingsSection>
         ) : null}
 
@@ -2760,11 +3155,6 @@ export default function ConfiguracoesPage() {
               <SettingsRow
                 icon="book"
                 title={t("Obras", "Works", "Obras")}
-                subtitle={t(
-                  "Escolha quem pode ver suas obras publicadas no perfil",
-                  "Choose who can see your published works on your profile",
-                  "Elige quién puede ver tus obras publicadas en tu perfil",
-                )}
                 right={
                   <select
                     value={privacidade.visibilidadeObras}
@@ -2795,11 +3185,6 @@ export default function ConfiguracoesPage() {
               <SettingsRow
                 icon="file"
                 title={t("Sobre", "About", "Acerca de")}
-                subtitle={t(
-                  "Escolha quem pode ver sua biografia e informações pessoais",
-                  "Choose who can see your biography and personal information",
-                  "Elige quién puede ver tu biografía e información personal",
-                )}
                 right={
                   <select
                     value={privacidade.visibilidadeSobre}
@@ -2830,11 +3215,6 @@ export default function ConfiguracoesPage() {
               <SettingsRow
                 icon="pen"
                 title={t("Diário", "Journal", "Diario")}
-                subtitle={t(
-                  "Escolha quem pode ver anotações, avaliações e leituras do Diário",
-                  "Choose who can see Journal notes, ratings and reading entries",
-                  "Elige quién puede ver las anotaciones, valoraciones y lecturas del Diario",
-                )}
                 right={
                   <select
                     value={privacidade.visibilidadeDiario}
@@ -2865,11 +3245,6 @@ export default function ConfiguracoesPage() {
               <SettingsRow
                 icon="comment"
                 title={t("Comunidade", "Community", "Comunidad")}
-                subtitle={t(
-                  "Escolha quem pode ver suas publicações e interações da Comunidade",
-                  "Choose who can see your Community posts and interactions",
-                  "Elige quién puede ver tus publicaciones e interacciones de la Comunidad",
-                )}
                 right={
                   <select
                     value={privacidade.visibilidadeComunidade}
@@ -2900,11 +3275,6 @@ export default function ConfiguracoesPage() {
               <SettingsRow
                 icon="bookmark"
                 title={t("Biblioteca", "Library", "Biblioteca")}
-                subtitle={t(
-                  "Escolha quem pode ver suas listas, favoritas e obras concluídas",
-                  "Choose who can see your lists, favorites and completed works",
-                  "Elige quién puede ver tus listas, favoritas y obras completadas",
-                )}
                 right={
                   <select
                     value={privacidade.visibilidadeBiblioteca}
@@ -2935,11 +3305,6 @@ export default function ConfiguracoesPage() {
               <SettingsRow
                 icon="clock"
                 title={t("Atividades", "Activity", "Actividad")}
-                subtitle={t(
-                  "Escolha quem pode ver seu progresso e suas atividades de leitura",
-                  "Choose who can see your reading progress and activity",
-                  "Elige quién puede ver tu progreso y actividad de lectura",
-                )}
                 right={
                   <select
                     value={privacidade.visibilidadeAtividades}
@@ -2970,23 +3335,148 @@ export default function ConfiguracoesPage() {
 
         {deveMostrar(
           "diário",
+          "avaliações",
+          "avaliar",
           "comentários",
           "seguidores",
+          "privacidade",
         ) ? (
           <SettingsSection
             title={t(
-              "Opções do Diário",
-              "Journal options",
-              "Opciones del Diario",
+              "Privacidade e interações do Diário",
+              "Journal privacy and interactions",
+              "Privacidad e interacciones del Diario",
             )}
           >
-            {deveMostrar("comentários", "seguidores", "diário") ? (
+            {deveMostrar(
+              "avaliações",
+              "mostrar",
+              "perfil",
+              "diário",
+              "visibilidade",
+            ) ? (
+              <SettingsRow
+                icon="star"
+                title={t(
+                  "Mostrar avaliações do Diário",
+                  "Show Journal ratings",
+                  "Mostrar valoraciones del Diario",
+                )}
+                right={
+                  <select
+                    value={privacidade.visibilidadeAvaliacaoDiario}
+                    onChange={(event) => {
+                      const visibilidade = event.target
+                        .value as VisibilidadeAbaPerfil;
+
+                      aplicarPrivacidadeAtualizada({
+                        ...privacidade,
+                        visibilidadeAvaliacaoDiario: visibilidade,
+                        mostrarAvaliacaoDiario:
+                          visibilidade !== "somente_eu",
+                      });
+                    }}
+                    aria-label={t(
+                      "Quem pode ver as avaliações do meu Diário",
+                      "Who can see my Journal ratings",
+                      "Quién puede ver las valoraciones de mi Diario",
+                    )}
+                    style={privacySelectStyle}
+                  >
+                    <option value="publico">
+                      {t("Público", "Public", "Público")}
+                    </option>
+                    <option value="seguidores">
+                      {t("Seguidores", "Followers", "Seguidores")}
+                    </option>
+                    <option value="seguindo">
+                      {t(
+                        "Pessoas que sigo",
+                        "People I follow",
+                        "Personas que sigo",
+                      )}
+                    </option>
+                    <option value="somente_eu">
+                      {t("Somente eu", "Only me", "Solo yo")}
+                    </option>
+                  </select>
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar(
+              "avaliações",
+              "permitir",
+              "avaliar",
+              "seguidores",
+              "pessoas que sigo",
+              "diário",
+            ) ? (
+              <SettingsRow
+                icon="user"
+                title={t(
+                  "Permitir novas avaliações",
+                  "Allow new ratings",
+                  "Permitir nuevas valoraciones",
+                )}
+                right={
+                  <select
+                    value={privacidade.quemPodeAvaliarDiario}
+                    onChange={(event) => {
+                      const quemPodeAvaliar = event.target
+                        .value as QuemPodeAvaliarDiario;
+
+                      aplicarPrivacidadeAtualizada({
+                        ...privacidade,
+                        permitirAvaliacaoDiario:
+                          quemPodeAvaliar !== "ninguem",
+                        quemPodeAvaliarDiario: quemPodeAvaliar,
+                      });
+                    }}
+                    aria-label={t(
+                      "Quem pode avaliar meu Diário",
+                      "Who can rate my Journal",
+                      "Quién puede valorar mi Diario",
+                    )}
+                    style={privacySelectStyle}
+                  >
+                    <option value="todos">
+                      {t("Público", "Public", "Público")}
+                    </option>
+                    <option value="seguidores">
+                      {t("Seguidores", "Followers", "Seguidores")}
+                    </option>
+                    <option value="seguindo">
+                      {t(
+                        "Pessoas que sigo",
+                        "People I follow",
+                        "Personas que sigo",
+                      )}
+                    </option>
+                    <option value="ninguem">
+                      {t("Ninguém", "No one", "Nadie")}
+                    </option>
+                  </select>
+                }
+                hideChevron
+              />
+            ) : null}
+
+            {deveMostrar(
+              "comentários",
+              "público",
+              "seguidores",
+              "pessoas que sigo",
+              "ninguém",
+              "diário",
+            ) ? (
               <SettingsRow
                 icon="comment"
                 title={t(
-                  "Quem pode comentar no Diário",
-                  "Who can comment on the Journal",
-                  "Quién puede comentar en el Diario",
+                  "Quem pode comentar no meu Diário",
+                  "Who can comment on my Journal",
+                  "Quién puede comentar en mi Diario",
                 )}
                 right={
                   <select
@@ -2994,25 +3484,27 @@ export default function ConfiguracoesPage() {
                     onChange={(event) =>
                       atualizarPrivacidade(
                         "quemPodeComentarDiario",
-                        event.target.value as
-                          PreferenciasPrivacidadeHistorietas["quemPodeComentarDiario"],
+                        event.target.value as QuemPodeComentarDiario,
                       )
                     }
                     aria-label={t(
-                      "Quem pode comentar no Diário",
-                      "Who can comment on the Journal",
-                      "Quién puede comentar en el Diario",
+                      "Quem pode comentar no meu Diário",
+                      "Who can comment on my Journal",
+                      "Quién puede comentar en mi Diario",
                     )}
                     style={privacySelectStyle}
                   >
                     <option value="todos">
-                      {t("Todos", "Everyone", "Todos")}
+                      {t("Público", "Public", "Público")}
                     </option>
                     <option value="seguidores">
+                      {t("Seguidores", "Followers", "Seguidores")}
+                    </option>
+                    <option value="seguindo">
                       {t(
-                        "Apenas seguidores",
-                        "Followers only",
-                        "Solo seguidores",
+                        "Pessoas que sigo",
+                        "People I follow",
+                        "Personas que sigo",
                       )}
                     </option>
                     <option value="ninguem">
@@ -3287,11 +3779,6 @@ export default function ConfiguracoesPage() {
                   "Receber avisos",
                   "Receive alerts",
                   "Recibir avisos",
-                )}
-                subtitle={t(
-                  "Ativa alertas importantes do site",
-                  "Enables important site alerts",
-                  "Activa avisos importantes del sitio",
                 )}
                 right={
                   <Toggle
@@ -4538,6 +5025,120 @@ const toggleKnobBaseStyle: CSSProperties = {
 
 const toggleKnobOnStyle: CSSProperties = {
   ...toggleKnobBaseStyle,
+};
+
+const blockedUsersPanelStyle: CSSProperties = {
+  display: "grid",
+  borderTop:
+    "1px solid var(--configuracoes-border, rgba(255,255,255,0.065))",
+};
+
+const blockedUserRowStyle: CSSProperties = {
+  minHeight: 64,
+  display: "grid",
+  gridTemplateColumns: "38px minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: 10,
+  padding: "10px 12px",
+  borderBottom:
+    "1px solid var(--configuracoes-border, rgba(255,255,255,0.055))",
+};
+
+const blockedUserAvatarStyle: CSSProperties = {
+  width: 38,
+  height: 38,
+  borderRadius: "50%",
+  objectFit: "cover",
+  background: "rgba(255,255,255,0.08)",
+};
+
+const blockedUserAvatarFallbackStyle: CSSProperties = {
+  width: 38,
+  height: 38,
+  borderRadius: "50%",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--historietas-accent, #F97316)",
+  color: "#FFFFFF",
+  fontSize: 15,
+  fontWeight: 900,
+};
+
+const blockedUserTextStyle: CSSProperties = {
+  minWidth: 0,
+  display: "grid",
+  gap: 3,
+};
+
+const blockedUserNameStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: 14,
+  lineHeight: 1.15,
+  fontWeight: 800,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const blockedUserUsernameStyle: CSSProperties = {
+  color:
+    "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
+  fontSize: 12,
+  lineHeight: 1.15,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const blockedUserButtonStyle: CSSProperties = {
+  minHeight: 34,
+  padding: "7px 10px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: 12,
+  fontWeight: 850,
+  cursor: "pointer",
+};
+
+const blockedUserButtonDisabledStyle: CSSProperties = {
+  ...blockedUserButtonStyle,
+  opacity: 0.58,
+  cursor: "wait",
+};
+
+const blockedUsersEmptyStyle: CSSProperties = {
+  margin: 0,
+  padding: "16px 14px",
+  color:
+    "var(--configuracoes-text-secondary, rgba(255,255,255,0.58))",
+  fontSize: 13,
+  lineHeight: 1.4,
+  textAlign: "center",
+};
+
+const blockedUsersErrorStyle: CSSProperties = {
+  display: "grid",
+  gap: 10,
+  padding: "14px",
+  color: "var(--configuracoes-danger-text, #FCA5A5)",
+  fontSize: 13,
+  lineHeight: 1.35,
+};
+
+const blockedUsersRetryButtonStyle: CSSProperties = {
+  justifySelf: "start",
+  minHeight: 34,
+  padding: "7px 11px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.08)",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: 12,
+  fontWeight: 850,
+  cursor: "pointer",
 };
 
 const privacySelectStyle: CSSProperties = {

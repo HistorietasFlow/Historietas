@@ -9,6 +9,7 @@ import { useParams, useRouter } from "next/navigation";
 import type { CSSProperties, FormEvent, ReactNode, TouchEvent } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import { useNotificacoes } from "../../../components/NotificacoesProvider";
+import DenunciaModal from "../../../components/DenunciaModal";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
 import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArquivo, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../../lib/utils";
 
@@ -58,6 +59,7 @@ const OBRA_DINAMICA_UI_TRANSLATIONS: Record<string, TraducaoObraDinamica> = {
   "Concluída": { en: "Completed", es: "Completada" },
   "Concluir": { en: "Mark as completed", es: "Marcar como completada" },
   "Compartilhar": { en: "Share", es: "Compartir" },
+  "Denunciar": { en: "Report", es: "Denunciar" },
   "Link copiado!": { en: "Link copied!", es: "¡Enlace copiado!" },
   "Sinopse": { en: "Synopsis", es: "Sinopsis" },
   "SINOPSE": { en: "SYNOPSIS", es: "SINOPSIS" },
@@ -905,6 +907,12 @@ type RespostaComentarioObra = {
 };
 
 type OrdenacaoComentariosObra = "relevantes" | "recentes";
+
+type AlvoDenunciaObraDinamica = {
+  alvoTipo: "obra" | "comentario_obra";
+  alvoId: string;
+  alvoTitulo: string;
+};
 
 type SupabaseCurtidaComentarioObraRow = {
   comentario_id: string | null;
@@ -3387,6 +3395,8 @@ export default function ObraDinamicaPage() {
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [acoesObraAbertas, setAcoesObraAbertas] = useState(false);
+  const [denunciaAlvo, setDenunciaAlvo] =
+    useState<AlvoDenunciaObraDinamica | null>(null);
   const [sinopseAberta, setSinopseAberta] = useState(false);
   const [comentariosObra, setComentariosObra] = useState<ComentarioObraPublico[]>([]);
   const [totalComentariosObra, setTotalComentariosObra] = useState(0);
@@ -5383,6 +5393,29 @@ export default function ObraDinamicaPage() {
     setComentariosSheetExpandido((expandidoAtual) => !expandidoAtual);
   }
 
+  function abrirDenunciaObraAtual() {
+    if (!obra) {
+      return;
+    }
+
+    setAcoesObraAbertas(false);
+    setDenunciaAlvo({
+      alvoTipo: "obra",
+      alvoId: obra.id,
+      alvoTitulo: obra.titulo,
+    });
+  }
+
+  function abrirDenunciaComentarioObra(
+    comentario: ComentarioObraPublico
+  ) {
+    setDenunciaAlvo({
+      alvoTipo: "comentario_obra",
+      alvoId: comentario.id,
+      alvoTitulo: `Comentário de ${comentario.nome}`,
+    });
+  }
+
 
   const estruturaComentariosObra = useMemo(
     () => criarEstruturaComentariosObra(comentariosObra, ordenacaoComentarios),
@@ -5475,6 +5508,14 @@ export default function ObraDinamicaPage() {
                 }}
               >
                 {removendo ? "Removendo..." : "Remover"}
+              </button>
+            ) : !comentario.local ? (
+              <button
+                type="button"
+                onClick={() => abrirDenunciaComentarioObra(comentario)}
+                style={commentSheetRemoveButtonStyle}
+              >
+                Denunciar
               </button>
             ) : null}
           </div>
@@ -6245,6 +6286,20 @@ export default function ObraDinamicaPage() {
                   </span>
                 </button>
 
+                {!(
+                  usuarioIdLogado &&
+                  autorObraId &&
+                  usuarioIdLogado === autorObraId
+                ) ? (
+                  <button
+                    type="button"
+                    onClick={abrirDenunciaObraAtual}
+                    style={obraMenuItemButtonStyle}
+                  >
+                    <span>Denunciar</span>
+                  </button>
+                ) : null}
+
                 <button
                   type="button"
                   onClick={() => {
@@ -6451,6 +6506,14 @@ export default function ObraDinamicaPage() {
       </main>
 
       {painelComentariosObra}
+
+      <DenunciaModal
+        aberto={Boolean(denunciaAlvo)}
+        alvoTipo={denunciaAlvo?.alvoTipo || "obra"}
+        alvoId={denunciaAlvo?.alvoId || ""}
+        alvoTitulo={denunciaAlvo?.alvoTitulo || ""}
+        onFechar={() => setDenunciaAlvo(null)}
+      />
     </>
   );
 }

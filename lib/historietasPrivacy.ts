@@ -47,9 +47,21 @@ export type ResultadoRelacionamentoPerfil = ResultadoAcaoPrivacidade & {
   estado: EstadoRelacionamentoPerfil;
 };
 
+export type EstadoBloqueioPerfil = {
+  bloqueadoPorMim: boolean;
+  bloqueadoPeloPerfil: boolean;
+  existeBloqueio: boolean;
+};
+
+export type ResultadoBloqueioPerfil = ResultadoAcaoPrivacidade & {
+  estado: EstadoBloqueioPerfil;
+};
+
 export const PRIVACIDADE_STORAGE_KEY = "historietas-privacidade";
 export const PRIVACIDADE_ATUALIZADA_EVENT =
   "historietas:privacidade-atualizada";
+export const BLOQUEIO_USUARIO_ATUALIZADO_EVENT =
+  "historietas:bloqueio-usuario-atualizado";
 
 export const preferenciasPrivacidadePadrao: PreferenciasPrivacidadeHistorietas = {
   perfilPrivado: false,
@@ -71,6 +83,12 @@ const permissoesAbasPerfilPadrao: PermissoesAbasPerfil = {
   comunidade: true,
   biblioteca: false,
   atividades: false,
+};
+
+const estadoBloqueioPerfilPadrao: EstadoBloqueioPerfil = {
+  bloqueadoPorMim: false,
+  bloqueadoPeloPerfil: false,
+  existeBloqueio: false,
 };
 
 function criarChavePrivacidadeUsuario(userId: string) {
@@ -116,6 +134,33 @@ function normalizarEstadoRelacionamento(
     : "nenhum";
 }
 
+function normalizarEstadoBloqueioPerfil(
+  valor: unknown,
+): EstadoBloqueioPerfil {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
+    return { ...estadoBloqueioPerfilPadrao };
+  }
+
+  const registro = valor as Record<string, unknown>;
+  const bloqueadoPorMim = normalizarBooleano(
+    registro.bloqueadoPorMim ?? registro.bloqueado_por_mim,
+    false,
+  );
+  const bloqueadoPeloPerfil = normalizarBooleano(
+    registro.bloqueadoPeloPerfil ?? registro.bloqueado_pelo_perfil,
+    false,
+  );
+
+  return {
+    bloqueadoPorMim,
+    bloqueadoPeloPerfil,
+    existeBloqueio: normalizarBooleano(
+      registro.existeBloqueio ?? registro.existe_bloqueio,
+      bloqueadoPorMim || bloqueadoPeloPerfil,
+    ),
+  };
+}
+
 function obterMensagemErro(error: unknown, fallback: string) {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
@@ -137,6 +182,11 @@ const acoesRelacionamentoEmAndamento = new Map<
   Promise<ResultadoRelacionamentoPerfil>
 >();
 
+const acoesBloqueioEmAndamento = new Map<
+  string,
+  Promise<ResultadoBloqueioPerfil>
+>();
+
 function executarAcaoRelacionamentoUnica(
   perfilUserId: string,
   acao: () => Promise<ResultadoRelacionamentoPerfil>,
@@ -155,6 +205,27 @@ function executarAcaoRelacionamentoUnica(
   });
 
   acoesRelacionamentoEmAndamento.set(chave, novaAcao);
+  return novaAcao;
+}
+
+function executarAcaoBloqueioUnica(
+  perfilUserId: string,
+  acao: () => Promise<ResultadoBloqueioPerfil>,
+) {
+  const chave = perfilUserId.trim();
+  const acaoExistente = acoesBloqueioEmAndamento.get(chave);
+
+  if (acaoExistente) {
+    return acaoExistente;
+  }
+
+  const novaAcao = acao().finally(() => {
+    if (acoesBloqueioEmAndamento.get(chave) === novaAcao) {
+      acoesBloqueioEmAndamento.delete(chave);
+    }
+  });
+
+  acoesBloqueioEmAndamento.set(chave, novaAcao);
   return novaAcao;
 }
 
@@ -248,6 +319,24 @@ function avisarRelacionamentoPerfilAtualizado(
 
   window.dispatchEvent(
     new CustomEvent("historietas:relacionamento-perfil-atualizado", {
+      detail: {
+        perfilUserId: perfilUserId.trim(),
+        estado,
+      },
+    }),
+  );
+}
+
+function avisarBloqueioUsuarioAtualizado(
+  perfilUserId: string,
+  estado: EstadoBloqueioPerfil,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent(BLOQUEIO_USUARIO_ATUALIZADO_EVENT, {
       detail: {
         perfilUserId: perfilUserId.trim(),
         estado,
@@ -843,4 +932,173 @@ export async function deixarDeSeguirUsuario(
       };
     }
   });
+}
+
+
+export async function carregarEstadoBloqueioPerfil(
+  perfilUserId: string,
+): Promise<EstadoBloqueioPerfil> {
+  const perfilUserIdLimpo = perfilUserId.trim();
+
+  if (!perfilUserIdLimpo) {
+    return { ...estadoBloqueioPerfilPadrao };
+  }
+
+  try {
+    const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+
+    if (!usuarioAtualId || usuarioAtualId === perfilUserIdLimpo) {
+      return { ...estadoBloqueioPerfilPadrao };
+    }
+
+    const { data, error } = await supabase.rpc(
+      "carregar_estado_bloqueio_usuario",
+      { p_outro_user_id: perfilUserIdLimpo },
+    );
+
+    if (error) {
+      return { ...estadoBloqueioPerfilPadrao };
+    }
+
+    return normalizarEstadoBloqueioPerfil(data);
+  } catch {
+    return { ...estadoBloqueioPerfilPadrao };
+  }
+}
+
+export async function bloquearUsuario(
+  perfilUserId: string,
+): Promise<ResultadoBloqueioPerfil> {
+  const perfilUserIdLimpo = perfilUserId.trim();
+
+  if (!perfilUserIdLimpo) {
+    return {
+      ok: false,
+      estado: { ...estadoBloqueioPerfilPadrao },
+      erro: "Usuário inválido.",
+    };
+  }
+
+  return executarAcaoBloqueioUnica(perfilUserIdLimpo, async () => {
+    try {
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+
+      if (!usuarioAtualId) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "Entre na sua conta para bloquear este usuário.",
+        };
+      }
+
+      if (usuarioAtualId === perfilUserIdLimpo) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "Você não pode bloquear o próprio perfil.",
+        };
+      }
+
+      const { data, error } = await supabase.rpc("bloquear_usuario", {
+        p_bloqueado_id: perfilUserIdLimpo,
+      });
+
+      if (error || data !== true) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: error?.message || "Não foi possível bloquear este usuário.",
+        };
+      }
+
+      const estado: EstadoBloqueioPerfil = {
+        bloqueadoPorMim: true,
+        bloqueadoPeloPerfil: false,
+        existeBloqueio: true,
+      };
+
+      avisarBloqueioUsuarioAtualizado(perfilUserIdLimpo, estado);
+      avisarRelacionamentoPerfilAtualizado(perfilUserIdLimpo, "nenhum");
+
+      return { ok: true, estado, erro: "" };
+    } catch (error) {
+      return {
+        ok: false,
+        estado: { ...estadoBloqueioPerfilPadrao },
+        erro: obterMensagemErro(
+          error,
+          "Não foi possível bloquear este usuário.",
+        ),
+      };
+    }
+  });
+}
+
+export async function desbloquearUsuario(
+  perfilUserId: string,
+): Promise<ResultadoBloqueioPerfil> {
+  const perfilUserIdLimpo = perfilUserId.trim();
+
+  if (!perfilUserIdLimpo) {
+    return {
+      ok: false,
+      estado: { ...estadoBloqueioPerfilPadrao },
+      erro: "Usuário inválido.",
+    };
+  }
+
+  return executarAcaoBloqueioUnica(perfilUserIdLimpo, async () => {
+    try {
+      const usuarioAtualId = await obterUsuarioAtualIdRelacionamento();
+
+      if (!usuarioAtualId) {
+        return {
+          ok: false,
+          estado: { ...estadoBloqueioPerfilPadrao },
+          erro: "Entre na sua conta para desbloquear este usuário.",
+        };
+      }
+
+      const { data, error } = await supabase.rpc("desbloquear_usuario", {
+        p_bloqueado_id: perfilUserIdLimpo,
+      });
+
+      if (error || data !== true) {
+        return {
+          ok: false,
+          estado: {
+            bloqueadoPorMim: true,
+            bloqueadoPeloPerfil: false,
+            existeBloqueio: true,
+          },
+          erro: error?.message || "Não foi possível desbloquear este usuário.",
+        };
+      }
+
+      const estado = await carregarEstadoBloqueioPerfil(perfilUserIdLimpo);
+      avisarBloqueioUsuarioAtualizado(perfilUserIdLimpo, estado);
+
+      return { ok: true, estado, erro: "" };
+    } catch (error) {
+      return {
+        ok: false,
+        estado: {
+          bloqueadoPorMim: true,
+          bloqueadoPeloPerfil: false,
+          existeBloqueio: true,
+        },
+        erro: obterMensagemErro(
+          error,
+          "Não foi possível desbloquear este usuário.",
+        ),
+      };
+    }
+  });
+}
+
+export async function usuariosPossuemBloqueio(
+  perfilUserId: string,
+): Promise<boolean> {
+  const estado = await carregarEstadoBloqueioPerfil(perfilUserId);
+  return estado.existeBloqueio;
 }

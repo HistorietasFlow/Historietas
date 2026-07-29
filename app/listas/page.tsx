@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, TouchEvent } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import {
@@ -19,6 +20,9 @@ import {
   type PermissoesAbasPerfil,
   type PreferenciasPrivacidadeHistorietas,
 } from "../../lib/historietasPrivacy";
+import DenunciaModal, {
+  type TipoAlvoDenuncia,
+} from "../../components/DenunciaModal";
 
 type ModoLista = "perfil" | "obras" | "autores";
 type OrigemPerfil = "diario" | "biblioteca";
@@ -32,6 +36,18 @@ type CategoriaPerfil =
   | "historico";
 type OrdenacaoLista = "recentes" | "titulo" | "avaliacao" | "popularidade";
 type VisibilidadeAnotacaoListas = "publico" | "parcial" | "privado";
+type QuemPodeComentarAnotacaoListas =
+  | "herdar"
+  | "todos"
+  | "seguidores"
+  | "ninguem";
+type VisibilidadeComentariosAnotacaoListas =
+  | "herdar"
+  | "publico"
+  | "seguidores"
+  | "somente_eu";
+type OrdenacaoComentariosDiarioListas = "relevantes" | "recentes";
+type QuemPodeAvaliarDiarioListas = "todos" | "seguidores" | "ninguem";
 type TipoDiarioListas =
   | "lendo"
   | "quero_ler"
@@ -91,6 +107,9 @@ type ItemObraLista = {
   anotacaoId?: string;
   anotacaoTipo?: TipoDiarioListas;
   anotacaoVisibilidade?: VisibilidadeAnotacaoListas;
+  anotacaoQuemPodeComentar?: QuemPodeComentarAnotacaoListas;
+  anotacaoVisibilidadeComentarios?: VisibilidadeComentariosAnotacaoListas;
+  anotacaoPermitirCurtidas?: boolean;
   anotacaoSpoiler?: boolean;
 };
 
@@ -119,6 +138,9 @@ type AnotacaoObraListas = {
   tipo: TipoDiarioListas;
   texto: string;
   visibilidade: VisibilidadeAnotacaoListas;
+  quemPodeComentar: QuemPodeComentarAnotacaoListas;
+  visibilidadeComentarios: VisibilidadeComentariosAnotacaoListas;
+  permitirCurtidas: boolean;
   contemSpoiler: boolean;
   atualizadoEm: string;
 };
@@ -129,9 +151,19 @@ type EditorAnotacaoListasEstado = {
   anotacaoId: string;
   tipo: TipoDiarioListas;
   texto: string;
+  visibilidade: VisibilidadeAnotacaoListas;
+  quemPodeComentar: QuemPodeComentarAnotacaoListas;
+  visibilidadeComentarios: VisibilidadeComentariosAnotacaoListas;
+  permitirCurtidas: boolean;
   contemSpoiler: boolean;
   salvando: boolean;
   erro: string;
+};
+
+type PerfilComentarioDiarioListas = {
+  nome: string;
+  username: string;
+  avatar: string;
 };
 
 type ComentarioAnotacaoListas = {
@@ -139,8 +171,13 @@ type ComentarioAnotacaoListas = {
   anotacaoId: string;
   userId: string;
   autorNome: string;
+  autorUsername: string;
+  autorAvatar: string;
   texto: string;
   criadoEm: string;
+  atualizadoEm: string;
+  parentId: string;
+  curtidas: string[];
 };
 
 type InteracaoAnotacaoListas = {
@@ -149,12 +186,40 @@ type InteracaoAnotacaoListas = {
   curtiu: boolean;
   comentarios: ComentarioAnotacaoListas[];
   novoComentario: string;
+  respondendoComentarioId: string;
+  respondendoAutorNome: string;
+  ordenacaoComentarios: OrdenacaoComentariosDiarioListas;
   salvandoCurtida: boolean;
   enviandoComentario: boolean;
   erro: string;
 };
 
+type AvaliacaoDiarioListasEstado = {
+  carregando: boolean;
+  visivel: boolean;
+  mostrar: boolean;
+  permitir: boolean;
+  quemPodeAvaliar: QuemPodeAvaliarDiarioListas;
+  podeAvaliar: boolean;
+  media: number;
+  total: number;
+  minhaNota: number;
+  salvando: boolean;
+  salvandoConfiguracoes: boolean;
+  configuracoesAbertas: boolean;
+  erro: string;
+};
+
 type InteracoesAnotacoesListasEstado = Record<string, InteracaoAnotacaoListas>;
+
+type AlvoDenunciaDiarioListas = {
+  tipo: Extract<
+    TipoAlvoDenuncia,
+    "diario_anotacao" | "comentario_diario"
+  >;
+  id: string;
+  titulo: string;
+};
 
 const LISTAS_PERFIL_VAZIAS: ListasPerfilEstado = {
   tudo: [],
@@ -203,8 +268,28 @@ const EDITOR_ANOTACAO_LISTAS_VAZIO: EditorAnotacaoListasEstado = {
   anotacaoId: "",
   tipo: "atividade",
   texto: "",
+  visibilidade: "privado",
+  quemPodeComentar: "herdar",
+  visibilidadeComentarios: "herdar",
+  permitirCurtidas: true,
   contemSpoiler: false,
   salvando: false,
+  erro: "",
+};
+
+const AVALIACAO_DIARIO_LISTAS_VAZIA: AvaliacaoDiarioListasEstado = {
+  carregando: false,
+  visivel: false,
+  mostrar: true,
+  permitir: true,
+  quemPodeAvaliar: "todos",
+  podeAvaliar: false,
+  media: 0,
+  total: 0,
+  minhaNota: 0,
+  salvando: false,
+  salvandoConfiguracoes: false,
+  configuracoesAbertas: false,
   erro: "",
 };
 
@@ -217,6 +302,9 @@ function criarInteracaoAnotacaoListasVazia(
     curtiu: false,
     comentarios: [],
     novoComentario: "",
+    respondendoComentarioId: "",
+    respondendoAutorNome: "",
+    ordenacaoComentarios: "relevantes",
     salvandoCurtida: false,
     enviandoComentario: false,
     erro: "",
@@ -560,6 +648,113 @@ function normalizarOrdenacao(valor: string | null): OrdenacaoLista {
     valor === "popularidade"
     ? valor
     : "recentes";
+}
+
+function normalizarQuemPodeComentarAnotacaoListas(
+  valor: unknown,
+  fallback: QuemPodeComentarAnotacaoListas = "herdar",
+): QuemPodeComentarAnotacaoListas {
+  return valor === "todos" ||
+    valor === "seguidores" ||
+    valor === "ninguem" ||
+    valor === "herdar"
+    ? valor
+    : fallback;
+}
+
+function normalizarVisibilidadeComentariosAnotacaoListas(
+  valor: unknown,
+  fallback: VisibilidadeComentariosAnotacaoListas = "herdar",
+): VisibilidadeComentariosAnotacaoListas {
+  return valor === "publico" ||
+    valor === "seguidores" ||
+    valor === "somente_eu" ||
+    valor === "herdar"
+    ? valor
+    : fallback;
+}
+
+function normalizarQuemPodeAvaliarDiarioListas(
+  valor: unknown,
+): QuemPodeAvaliarDiarioListas {
+  return valor === "seguidores" || valor === "ninguem" || valor === "todos"
+    ? valor
+    : "todos";
+}
+
+function obterMensagemErroListas(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  if (error && typeof error === "object" && "message" in error) {
+    const mensagem = (error as { message?: unknown }).message;
+
+    if (typeof mensagem === "string" && mensagem.trim()) {
+      return mensagem.trim();
+    }
+  }
+
+  return fallback;
+}
+
+function normalizarAvaliacaoDiarioListas(
+  valor: unknown,
+  estadoAnterior: AvaliacaoDiarioListasEstado = AVALIACAO_DIARIO_LISTAS_VAZIA,
+): AvaliacaoDiarioListasEstado {
+  const registro =
+    valor && typeof valor === "object" && !Array.isArray(valor)
+      ? (valor as RegistroGenerico)
+      : {};
+
+  return {
+    ...estadoAnterior,
+    carregando: false,
+    visivel: pegarBooleanoListas(registro.visivel, false),
+    mostrar: pegarBooleanoListas(registro.mostrar, true),
+    permitir: pegarBooleanoListas(registro.permitir, true),
+    quemPodeAvaliar: normalizarQuemPodeAvaliarDiarioListas(
+      registro.quem_pode_avaliar ?? registro.quemPodeAvaliar,
+    ),
+    podeAvaliar: pegarBooleanoListas(
+      registro.pode_avaliar ?? registro.podeAvaliar,
+      false,
+    ),
+    media: Math.max(0, Math.min(5, pegarNumero(registro.media, 0))),
+    total: Math.max(0, Math.trunc(pegarNumero(registro.total, 0))),
+    minhaNota: Math.max(
+      0,
+      Math.min(
+        5,
+        Math.round(
+          pegarNumero(registro.minha_nota ?? registro.minhaNota, 0) * 2,
+        ) / 2,
+      ),
+    ),
+    salvando: false,
+    salvandoConfiguracoes: false,
+    erro: "",
+  };
+}
+
+async function carregarAvaliacaoDiarioListas(
+  perfilUserId: string,
+): Promise<AvaliacaoDiarioListasEstado> {
+  const userId = perfilUserId.trim();
+
+  if (!idUsuarioValido(userId)) {
+    return { ...AVALIACAO_DIARIO_LISTAS_VAZIA };
+  }
+
+  const { data, error } = await supabase.rpc("carregar_avaliacao_diario", {
+    p_diario_user_id: userId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return normalizarAvaliacaoDiarioListas(data);
 }
 
 function timestampData(data: string) {
@@ -1065,6 +1260,8 @@ function obterCamposAlternativosRegistrosUsuario(
       "obra_id,nota",
     ],
     diario_anotacoes: [
+      "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,criado_em,atualizado_em",
+      "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,atualizado_em",
       "id,obra_id,tipo,texto,visibilidade,contem_spoiler,criado_em,atualizado_em",
       "id,obra_id,tipo,texto,visibilidade,contem_spoiler,atualizado_em",
       "id,obra_id,tipo,texto,visibilidade,criado_em,atualizado_em",
@@ -1337,6 +1534,16 @@ function montarMapaAnotacoesPorObraListas(
         registro.visibilidade,
         "publico",
       ),
+      quemPodeComentar: normalizarQuemPodeComentarAnotacaoListas(
+        registro.quem_pode_comentar ?? registro.quemPodeComentar,
+      ),
+      visibilidadeComentarios: normalizarVisibilidadeComentariosAnotacaoListas(
+        registro.visibilidade_comentarios ?? registro.visibilidadeComentarios,
+      ),
+      permitirCurtidas: pegarBooleanoListas(
+        registro.permitir_curtidas ?? registro.permitirCurtidas,
+        true,
+      ),
       contemSpoiler: pegarBooleanoListas(
         registro.contem_spoiler ?? registro.contemSpoiler,
       ),
@@ -1364,6 +1571,9 @@ function aplicarAnotacoesAosItensListas(
       anotacaoId: anotacao.id,
       anotacaoTipo: anotacao.tipo,
       anotacaoVisibilidade: anotacao.visibilidade,
+      anotacaoQuemPodeComentar: anotacao.quemPodeComentar,
+      anotacaoVisibilidadeComentarios: anotacao.visibilidadeComentarios,
+      anotacaoPermitirCurtidas: anotacao.permitirCurtidas,
       anotacaoSpoiler: anotacao.contemSpoiler,
     };
   });
@@ -1373,9 +1583,53 @@ function obterProximaNotaAvaliacaoListas(estrela: number, notaAtual: number) {
   const meiaNota = estrela - 0.5;
   const notaNormalizada = Math.round(notaAtual * 2) / 2;
 
-  if (notaNormalizada === meiaNota) return estrela;
-  if (notaNormalizada === estrela) return 0;
+  if (notaNormalizada === meiaNota) {
+    return estrela;
+  }
+
+  if (notaNormalizada === estrela) {
+    return 0;
+  }
+
   return meiaNota;
+}
+
+function calcularProximaAvaliacaoDiarioListas(
+  avaliacaoAtual: AvaliacaoDiarioListasEstado,
+  novaNota: number,
+): AvaliacaoDiarioListasEstado {
+  const notaAnterior = avaliacaoAtual.minhaNota;
+  const totalAtual = avaliacaoAtual.total;
+  const somaAtual = avaliacaoAtual.media * totalAtual;
+
+  if (novaNota <= 0) {
+    const totalNovo = notaAnterior > 0 ? Math.max(0, totalAtual - 1) : totalAtual;
+    const somaNova = notaAnterior > 0 ? somaAtual - notaAnterior : somaAtual;
+
+    return {
+      ...avaliacaoAtual,
+      media: totalNovo > 0 ? somaNova / totalNovo : 0,
+      total: totalNovo,
+      minhaNota: 0,
+      salvando: true,
+      erro: "",
+    };
+  }
+
+  const totalNovo = notaAnterior > 0 ? totalAtual : totalAtual + 1;
+  const somaNova =
+    notaAnterior > 0
+      ? somaAtual - notaAnterior + novaNota
+      : somaAtual + novaNota;
+
+  return {
+    ...avaliacaoAtual,
+    media: totalNovo > 0 ? somaNova / totalNovo : 0,
+    total: totalNovo,
+    minhaNota: novaNota,
+    salvando: true,
+    erro: "",
+  };
 }
 
 function obterPreenchimentoEstrelaListas(estrela: number, notaAtual: number) {
@@ -1488,18 +1742,19 @@ async function sincronizarAtividadeAvaliacaoListas(
   }
 }
 
-async function carregarNomesComentariosAnotacoesListas(userIds: string[]) {
+async function carregarPerfisComentariosAnotacoesListas(userIds: string[]) {
   const ids = Array.from(new Set(userIds.map((id) => id.trim()).filter(Boolean)));
-  const nomes = new Map<string, string>();
+  const perfis = new Map<string, PerfilComentarioDiarioListas>();
 
   if (ids.length === 0) {
-    return nomes;
+    return perfis;
   }
 
   const selecoes = [
-    "id,user_id,nome,nome_usuario,username,display_name,apelido",
-    "id,user_id,nome,username,display_name",
-    "id,user_id,nome,username",
+    "id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar",
+    "id,user_id,nome,username,display_name,avatar_url",
+    "id,user_id,nome,username,avatar_url",
+    "id,user_id,nome,avatar_url",
     "id,user_id,nome",
   ];
 
@@ -1518,18 +1773,25 @@ async function carregarNomesComentariosAnotacoesListas(userIds: string[]) {
 
         data.forEach((item) => {
           const registro = item as unknown as RegistroGenerico;
-          const nome =
-            pegarTexto(registro.nome) ||
-            pegarTexto(registro.nome_usuario) ||
-            pegarTexto(registro.username) ||
-            pegarTexto(registro.display_name) ||
-            pegarTexto(registro.apelido) ||
-            "Leitor";
+          const perfil: PerfilComentarioDiarioListas = {
+            nome:
+              pegarTexto(registro.nome) ||
+              pegarTexto(registro.display_name) ||
+              pegarTexto(registro.apelido) ||
+              pegarTexto(registro.nome_usuario) ||
+              pegarTexto(registro.username) ||
+              "Leitor",
+            username:
+              pegarTexto(registro.username) ||
+              pegarTexto(registro.nome_usuario),
+            avatar:
+              pegarTexto(registro.avatar_url) || pegarTexto(registro.avatar),
+          };
           const userId = pegarTexto(registro.user_id);
           const id = pegarTexto(registro.id);
 
-          if (userId) nomes.set(userId, nome);
-          if (id) nomes.set(id, nome);
+          if (userId) perfis.set(userId, perfil);
+          if (id) perfis.set(id, perfil);
         });
 
         break;
@@ -1539,7 +1801,7 @@ async function carregarNomesComentariosAnotacoesListas(userIds: string[]) {
     }
   }
 
-  return nomes;
+  return perfis;
 }
 
 async function carregarInteracoesAnotacoesListas(
@@ -1569,7 +1831,9 @@ async function carregarInteracoesAnotacoesListas(
       .limit(2000),
     supabase
       .from("diario_anotacao_comentarios")
-      .select("id,anotacao_id,user_id,texto,criado_em,atualizado_em")
+      .select(
+        "id,anotacao_id,user_id,texto,parent_id,criado_em,atualizado_em",
+      )
       .in("anotacao_id", ids)
       .order("criado_em", { ascending: true })
       .limit(2000),
@@ -1594,9 +1858,37 @@ async function carregarInteracoesAnotacoesListas(
         (item) => item as unknown as RegistroGenerico,
       )
     : [];
-  const nomes = await carregarNomesComentariosAnotacoesListas(
-    comentarios.map((registro) => pegarTexto(registro.user_id)).filter(Boolean),
-  );
+  const comentarioIds = comentarios
+    .map((registro) => pegarTexto(registro.id))
+    .filter(Boolean);
+  const [perfis, curtidasComentariosResposta] = await Promise.all([
+    carregarPerfisComentariosAnotacoesListas(
+      comentarios
+        .map((registro) => pegarTexto(registro.user_id))
+        .filter(Boolean),
+    ),
+    comentarioIds.length > 0
+      ? supabase
+          .from("diario_comentario_curtidas")
+          .select("comentario_id,user_id")
+          .in("comentario_id", comentarioIds)
+          .limit(4000)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const curtidasPorComentario = new Map<string, string[]>();
+
+  if (Array.isArray(curtidasComentariosResposta.data)) {
+    curtidasComentariosResposta.data.forEach((item) => {
+      const registro = item as unknown as RegistroGenerico;
+      const comentarioId = pegarTexto(registro.comentario_id);
+      const userId = pegarTexto(registro.user_id);
+
+      if (!comentarioId || !userId) return;
+      const atuais = curtidasPorComentario.get(comentarioId) || [];
+      atuais.push(userId);
+      curtidasPorComentario.set(comentarioId, atuais);
+    });
+  }
 
   comentarios.forEach((registro) => {
     const anotacaoId = pegarTexto(registro.anotacao_id);
@@ -1604,6 +1896,7 @@ async function carregarInteracoesAnotacoesListas(
     const id = pegarTexto(registro.id);
     const textoComentario = pegarTexto(registro.texto);
     const userId = pegarTexto(registro.user_id);
+    const perfil = perfis.get(userId);
 
     if (!interacao || !id || !textoComentario) return;
 
@@ -1611,13 +1904,60 @@ async function carregarInteracoesAnotacoesListas(
       id,
       anotacaoId,
       userId,
-      autorNome: nomes.get(userId) || "Leitor",
+      autorNome: perfil?.nome || "Leitor",
+      autorUsername: perfil?.username || "",
+      autorAvatar: perfil?.avatar || "",
       texto: textoComentario,
       criadoEm: pegarTexto(registro.criado_em ?? registro.atualizado_em),
+      atualizadoEm: pegarTexto(registro.atualizado_em ?? registro.criado_em),
+      parentId: pegarTexto(registro.parent_id),
+      curtidas: curtidasPorComentario.get(id) || [],
     });
   });
 
   return resultado;
+}
+
+function ordenarComentariosRaizDiarioListas(
+  comentarios: ComentarioAnotacaoListas[],
+  ordenacao: OrdenacaoComentariosDiarioListas,
+) {
+  const respostasPorPai = new Map<string, number>();
+
+  comentarios.forEach((comentario) => {
+    if (!comentario.parentId) return;
+    respostasPorPai.set(
+      comentario.parentId,
+      (respostasPorPai.get(comentario.parentId) || 0) + 1,
+    );
+  });
+
+  return comentarios
+    .filter((comentario) => !comentario.parentId)
+    .sort((a, b) => {
+      if (ordenacao === "recentes") {
+        return timestampData(b.criadoEm) - timestampData(a.criadoEm);
+      }
+
+      const relevanciaA =
+        a.curtidas.length * 3 + (respostasPorPai.get(a.id) || 0) * 2;
+      const relevanciaB =
+        b.curtidas.length * 3 + (respostasPorPai.get(b.id) || 0) * 2;
+
+      return (
+        relevanciaB - relevanciaA ||
+        timestampData(b.criadoEm) - timestampData(a.criadoEm)
+      );
+    });
+}
+
+function obterRespostasComentarioDiarioListas(
+  comentarios: ComentarioAnotacaoListas[],
+  comentarioId: string,
+) {
+  return comentarios
+    .filter((comentario) => comentario.parentId === comentarioId)
+    .sort((a, b) => timestampData(a.criadoEm) - timestampData(b.criadoEm));
 }
 
 function obterHrefContinuarLeituraListas(item: ItemObraLista) {
@@ -1828,7 +2168,7 @@ async function carregarListasDoPerfil(
       ),
       carregarRegistrosUsuario(
         "diario_anotacoes",
-        "id,obra_id,tipo,texto,visibilidade,contem_spoiler,criado_em,atualizado_em",
+        "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,criado_em,atualizado_em",
         userId,
       ),
     ]);
@@ -2697,6 +3037,37 @@ function criarAvatarStyle(avatar: string): CSSProperties {
     : authorAvatarEmptyStyle;
 }
 
+function criarAvatarPerfilDiarioListasStyle(avatar: string): CSSProperties {
+  const avatarLimpo = avatar.trim();
+
+  return avatarLimpo
+    ? {
+        ...listDiaryProfileAvatarStyle,
+        backgroundImage: `url(${avatarLimpo})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        color: "transparent",
+      }
+    : listDiaryProfileAvatarStyle;
+}
+
+function criarAvatarComentarioDiarioListasStyle(
+  estiloBase: CSSProperties,
+  avatar: string,
+): CSSProperties {
+  const avatarLimpo = avatar.trim();
+
+  return avatarLimpo
+    ? {
+        ...estiloBase,
+        backgroundImage: `url(${avatarLimpo})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        color: "transparent",
+      }
+    : estiloBase;
+}
+
 function ListasUniversaisContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -2719,6 +3090,8 @@ function ListasUniversaisContent() {
   );
 
   const [usuarioAtualId, setUsuarioAtualId] = useState("");
+  const [usuarioAtualPerfil, setUsuarioAtualPerfil] =
+    useState<PerfilLista | null>(null);
   const [perfil, setPerfil] = useState<PerfilLista | null>(null);
   const [listasPerfil, setListasPerfil] =
     useState<ListasPerfilEstado>(LISTAS_PERFIL_VAZIAS);
@@ -2752,7 +3125,27 @@ function ListasUniversaisContent() {
     useState<EstadoRelacionamentoPerfil>("nenhum");
   const [avaliacaoSalvando, setAvaliacaoSalvando] = useState(false);
   const [avaliacaoErro, setAvaliacaoErro] = useState("");
+  const [avaliacaoDiario, setAvaliacaoDiario] =
+    useState<AvaliacaoDiarioListasEstado>(AVALIACAO_DIARIO_LISTAS_VAZIA);
+  const [comentarioCurtindoId, setComentarioCurtindoId] = useState("");
+  const [comentarioRemovendoId, setComentarioRemovendoId] = useState("");
   const [mensagemAcao, setMensagemAcao] = useState("");
+  const [alvoDenunciaDiario, setAlvoDenunciaDiario] =
+    useState<AlvoDenunciaDiarioListas | null>(null);
+  const [comentariosDiarioItem, setComentariosDiarioItem] =
+    useState<ItemObraLista | null>(null);
+  const [comentariosDiarioExpandido, setComentariosDiarioExpandido] =
+    useState(false);
+  const [menuOrdenacaoComentariosDiarioAberto, setMenuOrdenacaoComentariosDiarioAberto] =
+    useState(false);
+  const [respostasVisiveisComentariosDiario, setRespostasVisiveisComentariosDiario] =
+    useState<Record<string, number>>({});
+  const comentariosSheetRef = useRef<HTMLElement | null>(null);
+  const comentariosDragStartYRef = useRef(0);
+  const comentariosDragOffsetYRef = useRef(0);
+  const comentariosDragIgnorarCliqueRef = useRef(false);
+  const comentariosDragResetTimerRef = useRef<number | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [obraDestacadaId, setObraDestacadaId] = useState("");
 
   useEffect(() => {
@@ -2794,6 +3187,11 @@ function ListasUniversaisContent() {
       setCarregando(true);
       setBloqueado(false);
       setErro("");
+      setAvaliacaoDiario((atual) => ({
+        ...AVALIACAO_DIARIO_LISTAS_VAZIA,
+        carregando: modo === "perfil" && origemPerfil === "diario",
+        configuracoesAbertas: atual.configuracoesAbertas,
+      }));
 
       try {
         const { data: authData } = await supabase.auth.getUser();
@@ -2804,6 +3202,41 @@ function ListasUniversaisContent() {
         }
 
         setUsuarioAtualId(usuarioLogadoId);
+
+        if (usuarioLogadoId) {
+          try {
+            const perfilUsuarioAtual = await carregarPerfil(
+              usuarioLogadoId,
+              pegarTexto(authData.user?.user_metadata?.nome) ||
+                pegarTexto(authData.user?.email) ||
+                "Usuário",
+            );
+
+            if (!cancelado) {
+              setUsuarioAtualPerfil(perfilUsuarioAtual);
+            }
+          } catch {
+            if (!cancelado) {
+              setUsuarioAtualPerfil({
+                userId: usuarioLogadoId,
+                nome:
+                  pegarTexto(authData.user?.user_metadata?.nome) ||
+                  pegarTexto(authData.user?.email) ||
+                  "Usuário",
+                username: pegarTexto(
+                  authData.user?.user_metadata?.username,
+                ).replace(/^@/, ""),
+                avatar: pegarTexto(
+                  authData.user?.user_metadata?.avatar_url ??
+                    authData.user?.user_metadata?.avatar,
+                ),
+                bio: "",
+              });
+            }
+          }
+        } else {
+          setUsuarioAtualPerfil(null);
+        }
 
         if (modo === "perfil") {
           const perfilIdRecebido = userIdUrl.trim() || usuarioLogadoId;
@@ -2857,6 +3290,29 @@ function ListasUniversaisContent() {
           setPerfil(perfilCarregado);
           setPreferenciasPerfil(preferencias);
           setRelacionamentoPerfil(relacionamento);
+
+          if (origemPerfil === "diario") {
+            try {
+              const avaliacaoCarregada = await carregarAvaliacaoDiarioListas(
+                perfilUserId,
+              );
+
+              if (!cancelado) {
+                setAvaliacaoDiario(avaliacaoCarregada);
+              }
+            } catch (error) {
+              if (!cancelado) {
+                setAvaliacaoDiario((atual) => ({
+                  ...atual,
+                  carregando: false,
+                  erro: obterMensagemErroListas(
+                    error,
+                    "Não foi possível carregar a Avaliação do Diário.",
+                  ),
+                }));
+              }
+            }
+          }
 
           if (!permitido) {
             setBloqueado(true);
@@ -2937,6 +3393,55 @@ function ListasUniversaisContent() {
   }, [mensagemAcao]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+    const atualizarModoDesktop = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
+
+    const timer = window.setTimeout(atualizarModoDesktop, 0);
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", atualizarModoDesktop);
+
+      return () => {
+        window.clearTimeout(timer);
+        mediaQuery.removeEventListener("change", atualizarModoDesktop);
+      };
+    }
+
+    mediaQuery.addListener(atualizarModoDesktop);
+
+    return () => {
+      window.clearTimeout(timer);
+      mediaQuery.removeListener(atualizarModoDesktop);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!comentariosDiarioItem) {
+      return;
+    }
+
+    const overflowAnterior = document.body.style.overflow;
+    const aoPressionarTecla = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setComentariosDiarioItem(null);
+        setComentariosDiarioExpandido(false);
+        setMenuOrdenacaoComentariosDiarioAberto(false);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", aoPressionarTecla);
+
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      window.removeEventListener("keydown", aoPressionarTecla);
+    };
+  }, [comentariosDiarioItem]);
+
+  useEffect(() => {
     let cancelado = false;
 
     if (modo !== "perfil") {
@@ -2966,6 +3471,11 @@ function ListasUniversaisContent() {
           proximo[id] = {
             ...interacao,
             novoComentario: atuais[id]?.novoComentario || "",
+            respondendoComentarioId:
+              atuais[id]?.respondendoComentarioId || "",
+            respondendoAutorNome: atuais[id]?.respondendoAutorNome || "",
+            ordenacaoComentarios:
+              atuais[id]?.ordenacaoComentarios || "relevantes",
           };
         });
 
@@ -3392,11 +3902,147 @@ function ListasUniversaisContent() {
       perfil?.userId &&
       usuarioAtualId === perfil.userId,
   );
-  const podeInteragirComAnotacao =
-    perfilEhProprio ||
-    preferenciasPerfil.quemPodeComentarDiario === "todos" ||
-    (preferenciasPerfil.quemPodeComentarDiario === "seguidores" &&
-      relacionamentoPerfil === "seguindo");
+  function obterPermissoesAnotacaoListas(item: ItemObraLista) {
+    const visibilidadeComentarios =
+      item.anotacaoVisibilidadeComentarios || "herdar";
+    const quemPodeComentar = item.anotacaoQuemPodeComentar || "herdar";
+    const seguidor = relacionamentoPerfil === "seguindo";
+    const podeVerComentarios =
+      perfilEhProprio ||
+      visibilidadeComentarios === "publico" ||
+      visibilidadeComentarios === "herdar" ||
+      (visibilidadeComentarios === "seguidores" && seguidor);
+    const regraComentarioEfetiva =
+      quemPodeComentar === "herdar"
+        ? preferenciasPerfil.quemPodeComentarDiario
+        : quemPodeComentar;
+    const podeComentar =
+      podeVerComentarios &&
+      (perfilEhProprio ||
+        regraComentarioEfetiva === "todos" ||
+        (regraComentarioEfetiva === "seguidores" && seguidor));
+
+    return {
+      podeVerComentarios,
+      podeComentar,
+      podeCurtirAnotacao: item.anotacaoPermitirCurtidas !== false,
+    };
+  }
+
+  async function salvarAvaliacaoDiarioPerfil(novaNota: number) {
+    const perfilUserId = perfil?.userId.trim() || "";
+
+    if (!perfilUserId || avaliacaoDiario.salvando || perfilEhProprio) {
+      return;
+    }
+
+    if (!usuarioAtualId) {
+      router.push(criarLoginHrefListas());
+      return;
+    }
+
+    if (!avaliacaoDiario.visivel || !avaliacaoDiario.podeAvaliar) {
+      return;
+    }
+
+    const nota =
+      novaNota <= 0
+        ? 0
+        : Math.max(0.5, Math.min(5, Math.round(novaNota * 2) / 2));
+    const avaliacaoAnterior = avaliacaoDiario;
+    const avaliacaoOtimista = calcularProximaAvaliacaoDiarioListas(
+      avaliacaoDiario,
+      nota,
+    );
+
+    setAvaliacaoDiario(avaliacaoOtimista);
+    setMensagemAcao("");
+
+    try {
+      const nomeRpc =
+        nota > 0 ? "salvar_avaliacao_diario" : "remover_avaliacao_diario";
+      const parametros =
+        nota > 0
+          ? { p_diario_user_id: perfilUserId, p_nota: nota }
+          : { p_diario_user_id: perfilUserId };
+      const { data, error } = await supabase.rpc(nomeRpc, parametros);
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && typeof data === "object") {
+        setAvaliacaoDiario((atual) =>
+          normalizarAvaliacaoDiarioListas(data, atual),
+        );
+      } else {
+        const avaliacaoAtualizada = await carregarAvaliacaoDiarioListas(
+          perfilUserId,
+        );
+        setAvaliacaoDiario(avaliacaoAtualizada);
+      }
+    } catch (error) {
+      setAvaliacaoDiario({
+        ...avaliacaoAnterior,
+        salvando: false,
+        erro: obterMensagemErroListas(
+          error,
+          "Não foi possível salvar a Avaliação do Diário.",
+        ),
+      });
+    }
+  }
+
+  async function salvarConfiguracoesAvaliacaoDiario() {
+    const perfilUserId = perfil?.userId.trim() || "";
+
+    if (
+      !perfilEhProprio ||
+      !perfilUserId ||
+      avaliacaoDiario.salvandoConfiguracoes
+    ) {
+      return;
+    }
+
+    setAvaliacaoDiario((atual) => ({
+      ...atual,
+      salvandoConfiguracoes: true,
+      erro: "",
+    }));
+
+    try {
+      const { error } = await supabase
+        .from("preferencias_privacidade")
+        .upsert(
+          {
+            user_id: perfilUserId,
+            mostrar_avaliacao_diario: avaliacaoDiario.mostrar,
+            permitir_avaliacao_diario: avaliacaoDiario.permitir,
+            quem_pode_avaliar_diario: avaliacaoDiario.quemPodeAvaliar,
+          },
+          { onConflict: "user_id" },
+        );
+
+      if (error) throw error;
+      const avaliacaoAtualizada = await carregarAvaliacaoDiarioListas(
+        perfilUserId,
+      );
+      setAvaliacaoDiario({
+        ...avaliacaoAtualizada,
+        configuracoesAbertas: false,
+      });
+      setMensagemAcao("Privacidade da Avaliação do Diário atualizada.");
+    } catch (error) {
+      setAvaliacaoDiario((atual) => ({
+        ...atual,
+        salvandoConfiguracoes: false,
+        erro: obterMensagemErroListas(
+          error,
+          "Não foi possível salvar as configurações da avaliação.",
+        ),
+      }));
+    }
+  }
 
   function atualizarAnotacaoNosItensListas(
     obraId: string,
@@ -3406,6 +4052,9 @@ function ListasUniversaisContent() {
       | "anotacaoId"
       | "anotacaoTipo"
       | "anotacaoVisibilidade"
+      | "anotacaoQuemPodeComentar"
+      | "anotacaoVisibilidadeComentarios"
+      | "anotacaoPermitirCurtidas"
       | "anotacaoSpoiler"
     >,
   ) {
@@ -3445,6 +4094,17 @@ function ListasUniversaisContent() {
         item.anotacaoTipo ||
         obterTipoDiarioDoItemListas(categoriaMenuAberta, item),
       texto: item.anotacao || "",
+      visibilidade:
+        item.anotacaoVisibilidade ||
+        (preferenciasPerfil.anotacoesPrivadasPorPadrao
+          ? "privado"
+          : preferenciasPerfil.visibilidadeDiario === "publico"
+            ? "publico"
+            : "parcial"),
+      quemPodeComentar: item.anotacaoQuemPodeComentar || "herdar",
+      visibilidadeComentarios:
+        item.anotacaoVisibilidadeComentarios || "herdar",
+      permitirCurtidas: item.anotacaoPermitirCurtidas !== false,
       contemSpoiler: Boolean(item.anotacaoSpoiler),
       salvando: false,
       erro: "",
@@ -3485,22 +4145,21 @@ function ListasUniversaisContent() {
     try {
       const atualizadoEm = new Date().toISOString();
       const visibilidadeHerdada: VisibilidadeAnotacaoListas =
-        preferenciasPerfil.visibilidadeDiario === "somente_eu"
-          ? "privado"
-          : preferenciasPerfil.visibilidadeDiario === "publico"
-            ? "publico"
-            : "parcial";
+        editorAnotacao.visibilidade;
       const payload = {
         user_id: userId,
         obra_id: obraId,
         tipo: editorAnotacao.tipo,
         texto: textoAnotacao.slice(0, DIARIO_ANOTACAO_MAX_LENGTH),
         visibilidade: visibilidadeHerdada,
+        quem_pode_comentar: editorAnotacao.quemPodeComentar,
+        visibilidade_comentarios: editorAnotacao.visibilidadeComentarios,
+        permitir_curtidas: editorAnotacao.permitirCurtidas,
         contem_spoiler: editorAnotacao.contemSpoiler,
         atualizado_em: atualizadoEm,
       };
       const camposComSpoiler =
-        "id,obra_id,tipo,texto,visibilidade,contem_spoiler,atualizado_em";
+        "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,atualizado_em";
       const camposCompatibilidade =
         "id,obra_id,tipo,texto,visibilidade,atualizado_em";
 
@@ -3510,6 +4169,9 @@ function ListasUniversaisContent() {
           .update({
             texto: payload.texto,
             visibilidade: payload.visibilidade,
+            quem_pode_comentar: payload.quem_pode_comentar,
+            visibilidade_comentarios: payload.visibilidade_comentarios,
+            permitir_curtidas: payload.permitir_curtidas,
             contem_spoiler: payload.contem_spoiler,
             atualizado_em: payload.atualizado_em,
           })
@@ -3677,6 +4339,20 @@ function ListasUniversaisContent() {
         visibilidadeHerdada,
       );
       const textoSalvo = pegarTexto(registroSalvo.texto, payload.texto);
+      const quemPodeComentarSalvo = normalizarQuemPodeComentarAnotacaoListas(
+        registroSalvo.quem_pode_comentar ?? registroSalvo.quemPodeComentar,
+        editorAnotacao.quemPodeComentar,
+      );
+      const visibilidadeComentariosSalva =
+        normalizarVisibilidadeComentariosAnotacaoListas(
+          registroSalvo.visibilidade_comentarios ??
+            registroSalvo.visibilidadeComentarios,
+          editorAnotacao.visibilidadeComentarios,
+        );
+      const permitirCurtidasSalvo = pegarBooleanoListas(
+        registroSalvo.permitir_curtidas ?? registroSalvo.permitirCurtidas,
+        editorAnotacao.permitirCurtidas,
+      );
       const contemSpoilerSalvo = pegarBooleanoListas(
         registroSalvo.contem_spoiler ?? registroSalvo.contemSpoiler,
         editorAnotacao.contemSpoiler,
@@ -3705,6 +4381,9 @@ function ListasUniversaisContent() {
         tipo: tipoSalvo,
         texto: textoSalvo,
         visibilidade: visibilidadeSalva,
+        quem_pode_comentar: quemPodeComentarSalvo,
+        visibilidade_comentarios: visibilidadeComentariosSalva,
+        permitir_curtidas: permitirCurtidasSalvo,
         contem_spoiler: contemSpoilerSalvo,
         atualizado_em: pegarTexto(registroSalvo.atualizado_em, atualizadoEm),
       });
@@ -3714,6 +4393,9 @@ function ListasUniversaisContent() {
         anotacaoId,
         anotacaoTipo: tipoSalvo,
         anotacaoVisibilidade: visibilidadeSalva,
+        anotacaoQuemPodeComentar: quemPodeComentarSalvo,
+        anotacaoVisibilidadeComentarios: visibilidadeComentariosSalva,
+        anotacaoPermitirCurtidas: permitirCurtidasSalvo,
         anotacaoSpoiler: contemSpoilerSalvo,
       });
 
@@ -3778,6 +4460,9 @@ function ListasUniversaisContent() {
         anotacaoId: undefined,
         anotacaoTipo: undefined,
         anotacaoVisibilidade: undefined,
+        anotacaoQuemPodeComentar: undefined,
+        anotacaoVisibilidadeComentarios: undefined,
+        anotacaoPermitirCurtidas: undefined,
         anotacaoSpoiler: undefined,
       });
       const chaveAnotacaoRemovida =
@@ -3806,6 +4491,40 @@ function ListasUniversaisContent() {
     }
   }
 
+  function abrirDenunciaDiario(
+    tipo: AlvoDenunciaDiarioListas["tipo"],
+    id: string,
+    titulo: string,
+    autorId: string,
+  ) {
+    const alvoId = id.trim();
+    const autorIdLimpo = autorId.trim();
+
+    if (!alvoId || !idUsuarioValido(alvoId)) {
+      setMensagemAcao("Não foi possível identificar este conteúdo.");
+      return;
+    }
+
+    if (
+      autorIdLimpo &&
+      usuarioAtualId.trim() &&
+      autorIdLimpo === usuarioAtualId.trim()
+    ) {
+      setMensagemAcao("Você não pode denunciar seu próprio conteúdo.");
+      return;
+    }
+
+    if (tipo === "comentario_diario") {
+      fecharComentariosDiario();
+    }
+
+    setAlvoDenunciaDiario({
+      tipo,
+      id: alvoId,
+      titulo: titulo.trim() || "Conteúdo do Diário",
+    });
+  }
+
   function atualizarInteracaoAnotacaoListas(
     anotacaoId: string,
     atualizar: (estado: InteracaoAnotacaoListas) => InteracaoAnotacaoListas,
@@ -3824,12 +4543,10 @@ function ListasUniversaisContent() {
 
     if (!anotacaoId) return;
 
-    if (!podeInteragirComAnotacao) {
-      setMensagemAcao(
-        preferenciasPerfil.quemPodeComentarDiario === "ninguem"
-          ? "Este perfil desativou as interações nas anotações."
-          : "Apenas seguidores podem interagir com estas anotações.",
-      );
+    const permissoes = obterPermissoesAnotacaoListas(item);
+
+    if (!permissoes.podeCurtirAnotacao) {
+      setMensagemAcao("As curtidas estão desativadas nesta anotação.");
       return;
     }
 
@@ -3897,18 +4614,103 @@ function ListasUniversaisContent() {
     }));
   }
 
+  function iniciarRespostaComentarioAnotacaoListas(
+    anotacaoId: string,
+    comentario: ComentarioAnotacaoListas,
+  ) {
+    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+      ...atual,
+      respondendoComentarioId: comentario.parentId || comentario.id,
+      respondendoAutorNome: comentario.autorNome,
+      erro: "",
+    }));
+  }
+
+  function cancelarRespostaComentarioAnotacaoListas(anotacaoId: string) {
+    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+      ...atual,
+      respondendoComentarioId: "",
+      respondendoAutorNome: "",
+    }));
+  }
+
+  function alterarOrdenacaoComentariosAnotacaoListas(
+    anotacaoId: string,
+    ordenacao: OrdenacaoComentariosDiarioListas,
+  ) {
+    atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+      ...atual,
+      ordenacaoComentarios: ordenacao,
+    }));
+  }
+
+  async function alternarCurtidaComentarioAnotacaoListas(
+    anotacaoId: string,
+    comentario: ComentarioAnotacaoListas,
+  ) {
+    const userId = usuarioAtualId.trim();
+
+    if (!userId) {
+      router.push(criarLoginHrefListas());
+      return;
+    }
+
+    if (!comentario.id || comentarioCurtindoId) return;
+    const curtiu = comentario.curtidas.includes(userId);
+    setComentarioCurtindoId(comentario.id);
+
+    try {
+      if (curtiu) {
+        const { error } = await supabase
+          .from("diario_comentario_curtidas")
+          .delete()
+          .eq("comentario_id", comentario.id)
+          .eq("user_id", userId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("diario_comentario_curtidas")
+          .insert({ comentario_id: comentario.id, user_id: userId });
+        if (error) throw error;
+      }
+
+      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+        ...atual,
+        comentarios: atual.comentarios.map((itemComentario) =>
+          itemComentario.id === comentario.id
+            ? {
+                ...itemComentario,
+                curtidas: curtiu
+                  ? itemComentario.curtidas.filter((id) => id !== userId)
+                  : Array.from(new Set([...itemComentario.curtidas, userId])),
+              }
+            : itemComentario,
+        ),
+        erro: "",
+      }));
+    } catch (error) {
+      atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
+        ...atual,
+        erro: obterMensagemErroListas(
+          error,
+          "Não foi possível atualizar a curtida do comentário.",
+        ),
+      }));
+    } finally {
+      setComentarioCurtindoId("");
+    }
+  }
+
   async function enviarComentarioAnotacaoListas(item: ItemObraLista) {
     const anotacaoId = item.anotacaoId?.trim() || "";
     const userId = usuarioAtualId.trim();
 
     if (!anotacaoId) return;
 
-    if (!podeInteragirComAnotacao) {
-      setMensagemAcao(
-        preferenciasPerfil.quemPodeComentarDiario === "ninguem"
-          ? "Este perfil desativou comentários nas anotações."
-          : "Apenas seguidores podem comentar nestas anotações.",
-      );
+    const permissoes = obterPermissoesAnotacaoListas(item);
+
+    if (!permissoes.podeComentar) {
+      setMensagemAcao("Você não tem permissão para comentar nesta anotação.");
       return;
     }
 
@@ -3944,8 +4746,11 @@ function ListasUniversaisContent() {
           anotacao_id: anotacaoId,
           user_id: userId,
           texto: textoComentario.slice(0, DIARIO_COMENTARIO_MAX_LENGTH),
+          parent_id: interacao.respondendoComentarioId || null,
         })
-        .select("id,anotacao_id,user_id,texto,criado_em")
+        .select(
+          "id,anotacao_id,user_id,texto,parent_id,criado_em,atualizado_em",
+        )
         .maybeSingle();
 
       if (error) throw error;
@@ -3955,9 +4760,20 @@ function ListasUniversaisContent() {
         id: pegarTexto(registro?.id),
         anotacaoId,
         userId,
-        autorNome: "Você",
+        autorNome: usuarioAtualPerfil?.nome || "Você",
+        autorUsername: usuarioAtualPerfil?.username || "",
+        autorAvatar: usuarioAtualPerfil?.avatar || "",
         texto: pegarTexto(registro?.texto, textoComentario),
         criadoEm: pegarTexto(registro?.criado_em, new Date().toISOString()),
+        atualizadoEm: pegarTexto(
+          registro?.atualizado_em ?? registro?.criado_em,
+          new Date().toISOString(),
+        ),
+        parentId: pegarTexto(
+          registro?.parent_id,
+          interacao.respondendoComentarioId,
+        ),
+        curtidas: [],
       };
 
       atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
@@ -3966,8 +4782,20 @@ function ListasUniversaisContent() {
           ? [...atual.comentarios, comentario]
           : atual.comentarios,
         novoComentario: "",
+        respondendoComentarioId: "",
+        respondendoAutorNome: "",
         enviandoComentario: false,
       }));
+
+      if (comentario.parentId) {
+        setRespostasVisiveisComentariosDiario((atuais) => ({
+          ...atuais,
+          [comentario.parentId]: Math.max(
+            5,
+            atuais[comentario.parentId] || 0,
+          ),
+        }));
+      }
     } catch (error) {
       atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
         ...atual,
@@ -3995,6 +4823,8 @@ function ListasUniversaisContent() {
       return;
     }
 
+    setComentarioRemovendoId(comentario.id);
+
     try {
       const { error } = await supabase
         .from("diario_anotacao_comentarios")
@@ -4007,18 +4837,30 @@ function ListasUniversaisContent() {
       atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
         ...atual,
         comentarios: atual.comentarios.filter(
-          (itemComentario) => itemComentario.id !== comentario.id,
+          (itemComentario) =>
+            itemComentario.id !== comentario.id &&
+            itemComentario.parentId !== comentario.id,
         ),
+        respondendoComentarioId:
+          atual.respondendoComentarioId === comentario.id
+            ? ""
+            : atual.respondendoComentarioId,
+        respondendoAutorNome:
+          atual.respondendoComentarioId === comentario.id
+            ? ""
+            : atual.respondendoAutorNome,
         erro: "",
       }));
     } catch (error) {
       atualizarInteracaoAnotacaoListas(anotacaoId, (atual) => ({
         ...atual,
-        erro:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível remover o comentário.",
+        erro: obterMensagemErroListas(
+          error,
+          "Não foi possível remover o comentário.",
+        ),
       }));
+    } finally {
+      setComentarioRemovendoId("");
     }
   }
 
@@ -4109,6 +4951,157 @@ function ListasUniversaisContent() {
     }
   }
 
+  function abrirComentariosDiario(item: ItemObraLista) {
+    const anotacaoId = item.anotacaoId?.trim() || "";
+
+    if (!anotacaoId) {
+      return;
+    }
+
+    const permissoes = obterPermissoesAnotacaoListas(item);
+
+    if (!permissoes.podeVerComentarios) {
+      setMensagemAcao("Os comentários desta anotação não estão disponíveis.");
+      return;
+    }
+
+    comentariosDragOffsetYRef.current = 0;
+    comentariosDragIgnorarCliqueRef.current = false;
+    setComentariosDiarioItem(item);
+    setComentariosDiarioExpandido(false);
+    setMenuOrdenacaoComentariosDiarioAberto(false);
+    setRespostasVisiveisComentariosDiario({});
+  }
+
+  function fecharComentariosDiario() {
+    setComentariosDiarioItem(null);
+    setComentariosDiarioExpandido(false);
+    setMenuOrdenacaoComentariosDiarioAberto(false);
+    comentariosDragOffsetYRef.current = 0;
+  }
+
+  function iniciarArrasteComentariosDiario(
+    event: TouchEvent<HTMLDivElement>,
+  ) {
+    if (isDesktop) {
+      return;
+    }
+
+    comentariosDragStartYRef.current = event.touches[0]?.clientY || 0;
+    comentariosDragOffsetYRef.current = 0;
+    comentariosDragIgnorarCliqueRef.current = false;
+
+    if (comentariosDragResetTimerRef.current !== null) {
+      window.clearTimeout(comentariosDragResetTimerRef.current);
+      comentariosDragResetTimerRef.current = null;
+    }
+
+    if (comentariosSheetRef.current) {
+      comentariosSheetRef.current.style.transition = "none";
+    }
+  }
+
+  function moverArrasteComentariosDiario(
+    event: TouchEvent<HTMLDivElement>,
+  ) {
+    if (isDesktop) {
+      return;
+    }
+
+    const posicaoAtual =
+      event.touches[0]?.clientY || comentariosDragStartYRef.current;
+    const limiteSuperior = comentariosDiarioExpandido ? -46 : -58;
+    const limiteInferior = comentariosDiarioExpandido ? 112 : 132;
+    const deslocamento = Math.max(
+      limiteSuperior,
+      Math.min(
+        limiteInferior,
+        posicaoAtual - comentariosDragStartYRef.current,
+      ),
+    );
+
+    comentariosDragOffsetYRef.current = deslocamento;
+
+    if (Math.abs(deslocamento) > 6) {
+      comentariosDragIgnorarCliqueRef.current = true;
+    }
+
+    const handle = comentariosSheetRef.current?.querySelector(
+      "[data-comments-sheet-handle='true']",
+    ) as HTMLElement | null;
+
+    if (handle) {
+      handle.style.transform = `translate3d(0, ${deslocamento}px, 0)`;
+    }
+  }
+
+  function finalizarArrasteComentariosDiario() {
+    if (isDesktop) {
+      return;
+    }
+
+    const deslocamento = comentariosDragOffsetYRef.current;
+
+    if (comentariosSheetRef.current) {
+      comentariosSheetRef.current.style.transition = "height 220ms ease";
+    }
+
+    const handle = comentariosSheetRef.current?.querySelector(
+      "[data-comments-sheet-handle='true']",
+    ) as HTMLElement | null;
+
+    if (handle) {
+      handle.style.transition = "transform 160ms ease";
+      handle.style.transform = "";
+    }
+
+    if (comentariosDragIgnorarCliqueRef.current) {
+      comentariosDragResetTimerRef.current = window.setTimeout(() => {
+        comentariosDragIgnorarCliqueRef.current = false;
+        comentariosDragResetTimerRef.current = null;
+      }, 350);
+    }
+
+    if (deslocamento < -34) {
+      setComentariosDiarioExpandido(true);
+      return;
+    }
+
+    if (deslocamento > 52 && comentariosDiarioExpandido) {
+      setComentariosDiarioExpandido(false);
+      return;
+    }
+
+    if (deslocamento > 118 && !comentariosDiarioExpandido) {
+      fecharComentariosDiario();
+    }
+  }
+
+  function alternarExpansaoComentariosDiario() {
+    if (isDesktop || comentariosDragIgnorarCliqueRef.current) {
+      return;
+    }
+
+    setComentariosDiarioExpandido((expandido) => !expandido);
+  }
+
+  function inserirNoComentarioDiario(texto: string) {
+    const anotacaoId = comentariosDiarioItem?.anotacaoId?.trim() || "";
+
+    if (!anotacaoId) {
+      return;
+    }
+
+    const interacao =
+      interacoesAnotacoes[anotacaoId] || criarInteracaoAnotacaoListasVazia();
+    const separador = interacao.novoComentario && texto !== "@" ? " " : "";
+
+    atualizarComentarioAnotacaoListas(
+      anotacaoId,
+      `${interacao.novoComentario}${separador}${texto}`,
+    );
+  }
+
   function renderizarItemObra(
     item: ItemObraLista,
     categoriaAtual: CategoriaPerfil,
@@ -4146,7 +5139,7 @@ function ListasUniversaisContent() {
       ? interacoesAnotacoes[anotacaoId] ||
         criarInteracaoAnotacaoListasVazia()
       : criarInteracaoAnotacaoListasVazia();
-
+    const permissoesAnotacao = obterPermissoesAnotacaoListas(item);
     return (
       <article
         key={item.chave}
@@ -4174,8 +5167,11 @@ function ListasUniversaisContent() {
               (item.nota > 0 && categoriaAtual !== "avaliacoes")) && (
               <span style={rowSignalsStyle}>
                 {item.nota > 0 && categoriaAtual !== "avaliacoes" && (
-                  <span style={rowSignalStyle}>
-                    ★ {formatarNotaListas(item.nota)}
+                  <span style={rowRatingSignalStyle}>
+                    <span style={rowRatingSignalStarStyle} aria-hidden="true">
+                      ★
+                    </span>
+                    <span>{formatarNotaListas(item.nota)}</span>
                   </span>
                 )}
                 {item.anotacao && (
@@ -4241,63 +5237,99 @@ function ListasUniversaisContent() {
             style={listDiaryCardAnnotationStyle}
           >
             <div style={listDiaryCardAnnotationHeaderStyle}>
-              <strong style={listDiaryCardAnnotationTitleStyle}>
-                Anotação de {perfil?.nome || "usuário"}
-              </strong>
+              <div style={listDiaryCardAnnotationTitleGroupStyle}>
+                <strong style={listDiaryCardAnnotationTitleStyle}>
+                  Anotação de {perfil?.nome || "usuário"}
+                </strong>
+              </div>
 
-              {anotacaoId && (
-                <button
-                  type="button"
-                  onClick={() => void alternarCurtidaAnotacaoListas(item)}
-                  disabled={interacao.salvandoCurtida}
-                  style={{
-                    ...listDiaryCardAnnotationLikeButtonStyle,
-                    opacity: interacao.salvandoCurtida ? 0.58 : 1,
-                    cursor: interacao.salvandoCurtida
-                      ? "not-allowed"
-                      : "pointer",
-                  }}
-                  aria-label={`${
-                    interacao.curtiu
-                      ? "Remover curtida da anotação"
-                      : "Curtir anotação"
-                  }. ${compactarNumero(interacao.totalCurtidas)} ${
-                    interacao.totalCurtidas === 1 ? "curtida" : "curtidas"
-                  }`}
-                  aria-pressed={interacao.curtiu}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
+              <div style={listDiaryCardAnnotationHeaderActionsStyle}>
+                {anotacaoId && permissoesAnotacao.podeCurtirAnotacao && (
+                  <button
+                    type="button"
+                    onClick={() => void alternarCurtidaAnotacaoListas(item)}
+                    disabled={interacao.salvandoCurtida}
                     style={{
-                      ...listDiaryCardAnnotationLikeIconStyle,
-                      animation: interacao.curtiu
-                        ? "historietas-list-heart-pop 260ms ease-out"
-                        : "none",
+                      ...listDiaryCardAnnotationLikeButtonStyle,
+                      opacity: interacao.salvandoCurtida ? 0.58 : 1,
+                      cursor: interacao.salvandoCurtida
+                        ? "not-allowed"
+                        : "pointer",
                     }}
+                    aria-label={`${
+                      interacao.curtiu
+                        ? "Remover curtida da anotação"
+                        : "Curtir anotação"
+                    }. ${compactarNumero(interacao.totalCurtidas)} ${
+                      interacao.totalCurtidas === 1 ? "curtida" : "curtidas"
+                    }`}
+                    aria-pressed={interacao.curtiu}
                   >
-                    <path
-                      d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                      fill={
-                        interacao.curtiu
-                          ? "var(--historietas-list-like-active, #EF4444)"
-                          : "none"
-                      }
-                      stroke={
-                        interacao.curtiu
-                          ? "var(--historietas-list-like-active, #EF4444)"
-                          : "#FFFFFF"
-                      }
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span style={listDiaryCardAnnotationLikeCountStyle}>
-                    {compactarNumero(interacao.totalCurtidas)}
-                  </span>
-                </button>
-              )}
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      style={{
+                        ...listDiaryCardAnnotationLikeIconStyle,
+                        animation: interacao.curtiu
+                          ? "historietas-list-heart-pop 260ms ease-out"
+                          : "none",
+                      }}
+                    >
+                      <path
+                        d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                        fill={
+                          interacao.curtiu
+                            ? "var(--historietas-list-like-active, #EF4444)"
+                            : "none"
+                        }
+                        stroke={
+                          interacao.curtiu
+                            ? "var(--historietas-list-like-active, #EF4444)"
+                            : "#FFFFFF"
+                        }
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span style={listDiaryCardAnnotationLikeCountStyle}>
+                      {compactarNumero(interacao.totalCurtidas)}
+                    </span>
+                  </button>
+                )}
+
+                {anotacaoId && permissoesAnotacao.podeVerComentarios && (
+                  <button
+                    type="button"
+                    onClick={() => abrirComentariosDiario(item)}
+                    style={listDiaryCardAnnotationCommentButtonStyle}
+                    aria-label={`Abrir ${interacao.comentarios.length} ${
+                      interacao.comentarios.length === 1
+                        ? "comentário"
+                        : "comentários"
+                    } da anotação`}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      style={listDiaryCardAnnotationCommentIconStyle}
+                    >
+                      <path
+                        d="M5 5.75h14a2.25 2.25 0 0 1 2.25 2.25v6A2.25 2.25 0 0 1 19 16.25h-6.2L8 20v-3.75H5A2.25 2.25 0 0 1 2.75 14V8A2.25 2.25 0 0 1 5 5.75Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.9"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span style={listDiaryCardAnnotationCommentCountStyle}>
+                      {compactarNumero(interacao.comentarios.length)}
+                    </span>
+                  </button>
+                )}
+
+              </div>
             </div>
 
             {item.anotacaoSpoiler && !spoilerRevelado ? (
@@ -4343,9 +5375,538 @@ function ListasUniversaisContent() {
                 )}
               </>
             )}
+
           </div>
         )}
       </article>
+    );
+  }
+
+
+  function renderizarComentariosDiarioSheet() {
+    const item = comentariosDiarioItem;
+
+    if (!item || typeof document === "undefined") {
+      return null;
+    }
+
+    const itemSelecionado = item;
+    const anotacaoId = itemSelecionado.anotacaoId?.trim() || "";
+
+    if (!anotacaoId) {
+      return null;
+    }
+
+    const interacao =
+      interacoesAnotacoes[anotacaoId] || criarInteracaoAnotacaoListasVazia();
+    const permissoes = obterPermissoesAnotacaoListas(itemSelecionado);
+    const comentariosRaiz = ordenarComentariosRaizDiarioListas(
+      interacao.comentarios,
+      interacao.ordenacaoComentarios,
+    );
+
+    function renderizarComentarioSheet(
+      comentario: ComentarioAnotacaoListas,
+      resposta = false,
+    ) {
+      const comentarioEhProprio =
+        Boolean(usuarioAtualId) && comentario.userId === usuarioAtualId;
+      const comentarioCurtiu = Boolean(
+        usuarioAtualId && comentario.curtidas.includes(usuarioAtualId),
+      );
+      const hrefPerfil = idUsuarioValido(comentario.userId)
+        ? `/perfil-autor?autorId=${encodeURIComponent(comentario.userId)}`
+        : "/perfil-autor";
+      const carregandoCurtida = comentarioCurtindoId === comentario.id;
+      const removendoComentario = comentarioRemovendoId === comentario.id;
+      const avatarStyle = resposta
+        ? commentReplyAvatarLinkStyle
+        : commentAvatarLinkStyle;
+
+      return (
+        <article
+          key={comentario.id}
+          style={resposta ? commentReplyItemStyle : commentItemStyle}
+        >
+          <Link
+            href={hrefPerfil}
+            aria-label={`Abrir perfil de ${comentario.autorNome}`}
+            style={criarAvatarComentarioDiarioListasStyle(
+              avatarStyle,
+              comentario.autorAvatar,
+            )}
+          >
+            {!comentario.autorAvatar &&
+              (comentario.autorNome.slice(0, 1).toUpperCase() || "U")}
+          </Link>
+
+          <div style={commentContentStyle}>
+            <div style={commentTopLineStyle}>
+              <Link href={hrefPerfil} style={commentAuthorLinkStyle}>
+                <span data-historietas-i18n-ignore="true">
+                  {comentario.autorNome}
+                </span>
+              </Link>
+              <span style={commentTimeStyle}>
+                {formatarDataCurta(comentario.criadoEm)}
+              </span>
+            </div>
+
+            <p data-historietas-user-content="true" style={commentTextStyle}>
+              {comentario.texto}
+            </p>
+
+            <div style={commentActionsRowStyle}>
+              <button
+                type="button"
+                onClick={() =>
+                  iniciarRespostaComentarioAnotacaoListas(
+                    anotacaoId,
+                    comentario,
+                  )
+                }
+                disabled={!permissoes.podeComentar}
+                style={{
+                  ...commentReplyButtonStyle,
+                  opacity: permissoes.podeComentar ? 1 : 0.52,
+                  cursor: permissoes.podeComentar
+                    ? "pointer"
+                    : "not-allowed",
+                }}
+              >
+                Responder
+              </button>
+
+              {comentarioEhProprio ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void removerComentarioAnotacaoListas(itemSelecionado, comentario)
+                  }
+                  disabled={removendoComentario}
+                  style={{
+                    ...commentRemoveButtonStyle,
+                    opacity: removendoComentario ? 0.58 : 1,
+                    cursor: removendoComentario ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {removendoComentario ? "Removendo..." : "Remover"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    abrirDenunciaDiario(
+                      "comentario_diario",
+                      comentario.id,
+                      `Comentário de ${comentario.autorNome} em ${itemSelecionado.obra.titulo}`,
+                      comentario.userId,
+                    )
+                  }
+                  style={commentReportButtonStyle}
+                >
+                  Denunciar
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div style={commentLikeWrapStyle}>
+            <button
+              type="button"
+              aria-pressed={comentarioCurtiu}
+              aria-label={`${
+                comentarioCurtiu
+                  ? "Remover curtida do comentário"
+                  : "Curtir comentário"
+              }. ${comentario.curtidas.length} ${
+                comentario.curtidas.length === 1 ? "curtida" : "curtidas"
+              }`}
+              onClick={() =>
+                void alternarCurtidaComentarioAnotacaoListas(
+                  anotacaoId,
+                  comentario,
+                )
+              }
+              disabled={carregandoCurtida}
+              style={{
+                ...commentLikeButtonStyle,
+                opacity: carregandoCurtida ? 0.58 : 1,
+                cursor: carregandoCurtida ? "not-allowed" : "pointer",
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                style={{
+                  ...commentHeartIconStyle,
+                  animation: comentarioCurtiu
+                    ? "historietas-list-heart-pop 260ms ease-out"
+                    : "none",
+                }}
+              >
+                <path
+                  d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
+                  fill={comentarioCurtiu ? "#EF4444" : "none"}
+                  stroke={comentarioCurtiu ? "#EF4444" : "#FFFFFF"}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <span style={commentLikeCountStyle}>
+              {comentario.curtidas.length}
+            </span>
+          </div>
+        </article>
+      );
+    }
+
+    return createPortal(
+      <section style={commentsSheetOverlayStyle} aria-label="Comentários">
+        <button
+          type="button"
+          aria-label="Fechar comentários"
+          onClick={fecharComentariosDiario}
+          style={commentsSheetBackdropStyle}
+        />
+
+        <article
+          ref={comentariosSheetRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Comentários de ${itemSelecionado.obra.titulo}`}
+          style={
+            isDesktop
+              ? desktopCommentsSheetStyle
+              : {
+                  ...commentsSheetStyle,
+                  ...(comentariosDiarioExpandido
+                    ? commentsSheetExpandedStyle
+                    : commentsSheetCompactStyle),
+                }
+          }
+        >
+          <div
+            data-comments-sheet-handle="true"
+            style={commentsSheetHandleWrapStyle}
+            onClick={alternarExpansaoComentariosDiario}
+            onTouchStart={iniciarArrasteComentariosDiario}
+            onTouchMove={moverArrasteComentariosDiario}
+            onTouchEnd={finalizarArrasteComentariosDiario}
+            onTouchCancel={finalizarArrasteComentariosDiario}
+            role="button"
+            tabIndex={0}
+            aria-label={
+              comentariosDiarioExpandido
+                ? "Recolher comentários"
+                : "Expandir comentários"
+            }
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                alternarExpansaoComentariosDiario();
+              }
+            }}
+          >
+            <div style={commentsSheetHandleStyle} />
+          </div>
+
+          <header style={commentsSheetHeaderStyle}>
+            <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
+
+            <strong style={commentsSheetTitleStyle}>
+              {interacao.comentarios.length === 1
+                ? "1 comentário"
+                : `${interacao.comentarios.length} comentários`}
+            </strong>
+
+            <div style={commentsSortMenuWrapStyle}>
+              <button
+                type="button"
+                onClick={() =>
+                  setMenuOrdenacaoComentariosDiarioAberto((aberto) => !aberto)
+                }
+                style={commentsSortMenuTriggerStyle}
+                aria-label="Ordenar comentários"
+                aria-haspopup="menu"
+                aria-expanded={menuOrdenacaoComentariosDiarioAberto}
+              >
+                +
+              </button>
+
+              {menuOrdenacaoComentariosDiarioAberto ? (
+                <div style={commentsSortMenuStyle} role="menu">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      alterarOrdenacaoComentariosAnotacaoListas(
+                        anotacaoId,
+                        "relevantes",
+                      );
+                      setMenuOrdenacaoComentariosDiarioAberto(false);
+                    }}
+                    style={
+                      interacao.ordenacaoComentarios === "relevantes"
+                        ? commentsSortMenuItemActiveStyle
+                        : commentsSortMenuItemStyle
+                    }
+                    role="menuitem"
+                  >
+                    Relevantes
+                  </button>
+
+                  <div style={commentsSortMenuDividerStyle} aria-hidden="true" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      alterarOrdenacaoComentariosAnotacaoListas(
+                        anotacaoId,
+                        "recentes",
+                      );
+                      setMenuOrdenacaoComentariosDiarioAberto(false);
+                    }}
+                    style={
+                      interacao.ordenacaoComentarios === "recentes"
+                        ? commentsSortMenuItemActiveStyle
+                        : commentsSortMenuItemStyle
+                    }
+                    role="menuitem"
+                  >
+                    Recentes
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </header>
+
+          <section style={commentsSheetListStyle}>
+            {comentariosRaiz.length > 0 ? (
+              comentariosRaiz.map((comentario) => {
+                const respostas = obterRespostasComentarioDiarioListas(
+                  interacao.comentarios,
+                  comentario.id,
+                );
+                const quantidadeVisivel = Math.min(
+                  respostas.length,
+                  respostasVisiveisComentariosDiario[comentario.id] || 0,
+                );
+                const respostasVisiveis = respostas.slice(0, quantidadeVisivel);
+                const respostasOcultas = Math.max(
+                  0,
+                  respostas.length - quantidadeVisivel,
+                );
+                const respostasExpandidas = quantidadeVisivel > 0;
+
+                return (
+                  <section key={comentario.id} style={commentThreadStyle}>
+                    {renderizarComentarioSheet(comentario)}
+
+                    {respostasVisiveis.length > 0 ? (
+                      <div style={commentRepliesListStyle}>
+                        {respostasVisiveis.map((resposta) =>
+                          renderizarComentarioSheet(resposta, true),
+                        )}
+                      </div>
+                    ) : null}
+
+                    {respostas.length > 0 && !respostasExpandidas ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRespostasVisiveisComentariosDiario((atuais) => ({
+                            ...atuais,
+                            [comentario.id]: Math.min(5, respostas.length),
+                          }))
+                        }
+                        style={commentRepliesToggleStyle}
+                      >
+                        <span style={commentRepliesLineStyle} />
+                        {`Ver ${respostas.length} ${
+                          respostas.length === 1 ? "resposta" : "respostas"
+                        }`}
+                      </button>
+                    ) : null}
+
+                    {respostasExpandidas ? (
+                      <div style={commentRepliesControlsStyle}>
+                        {respostasOcultas > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRespostasVisiveisComentariosDiario((atuais) => ({
+                                ...atuais,
+                                [comentario.id]: Math.min(
+                                  respostas.length,
+                                  (atuais[comentario.id] || 0) + 5,
+                                ),
+                              }))
+                            }
+                            style={commentRepliesToggleStyle}
+                          >
+                            <span style={commentRepliesLineStyle} />
+                            {`Ver mais ${respostasOcultas} ${
+                              respostasOcultas === 1 ? "resposta" : "respostas"
+                            }`}
+                          </button>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setRespostasVisiveisComentariosDiario((atuais) => ({
+                              ...atuais,
+                              [comentario.id]: 0,
+                            }))
+                          }
+                          style={commentRepliesHideButtonStyle}
+                        >
+                          Ocultar respostas
+                        </button>
+                      </div>
+                    ) : null}
+                  </section>
+                );
+              })
+            ) : interacao.carregando ? (
+              <div style={commentsLoadingStyle}>Carregando comentários...</div>
+            ) : (
+              <p style={emptyCommentsStyle}>Sem comentários ainda</p>
+            )}
+          </section>
+
+          {interacao.erro ? (
+            <span style={commentsSheetErrorStyle}>{interacao.erro}</span>
+          ) : null}
+
+          {interacao.respondendoComentarioId ? (
+            <div style={commentsReplyingBannerStyle}>
+              <span>
+                Respondendo a {interacao.respondendoAutorNome || "usuário"}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  cancelarRespostaComentarioAnotacaoListas(anotacaoId)
+                }
+                style={commentsReplyingCancelStyle}
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : null}
+
+          <section style={commentsToolsStyle}>
+            <div style={commentsQuickReactionsStyle}>
+              {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => inserirNoComentarioDiario(emoji)}
+                  disabled={!permissoes.podeComentar}
+                  style={commentsQuickReactionButtonStyle}
+                  aria-label={`Adicionar ${emoji} ao comentário`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void enviarComentarioAnotacaoListas(itemSelecionado);
+            }}
+            style={commentsSheetFormStyle}
+          >
+            <div
+              style={criarAvatarComentarioDiarioListasStyle(
+                commentsInputAvatarStyle,
+                permissoes.podeComentar
+                  ? usuarioAtualPerfil?.avatar || ""
+                  : "",
+              )}
+            >
+              {!(permissoes.podeComentar && usuarioAtualPerfil?.avatar) &&
+                (permissoes.podeComentar
+                  ? usuarioAtualPerfil?.nome || "U"
+                  : "H"
+                )
+                  .slice(0, 1)
+                  .toUpperCase()}
+            </div>
+
+            <div style={commentsInputBoxStyle}>
+              <textarea
+                value={interacao.novoComentario}
+                onChange={(event) =>
+                  atualizarComentarioAnotacaoListas(
+                    anotacaoId,
+                    event.target.value,
+                  )
+                }
+                placeholder={
+                  permissoes.podeComentar
+                    ? interacao.respondendoComentarioId
+                      ? "Adicionar resposta..."
+                      : "Adicionar comentário..."
+                    : "Comentários limitados pelo dono do Diário."
+                }
+                disabled={!permissoes.podeComentar || interacao.enviandoComentario}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                inputMode="text"
+                enterKeyHint="send"
+                maxLength={DIARIO_COMENTARIO_MAX_LENGTH}
+                rows={1}
+                style={commentsSheetInputStyle}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => inserirNoComentarioDiario("@")}
+              disabled={!permissoes.podeComentar}
+              style={commentsInputIconButtonStyle}
+              aria-label="Adicionar menção"
+            >
+              @
+            </button>
+
+            <button
+              type="submit"
+              aria-label="Enviar comentário"
+              disabled={
+                !permissoes.podeComentar ||
+                interacao.enviandoComentario ||
+                !interacao.novoComentario.trim()
+              }
+              style={{
+                ...commentsSheetSendStyle,
+                opacity:
+                  permissoes.podeComentar &&
+                  !interacao.enviandoComentario &&
+                  interacao.novoComentario.trim()
+                    ? 1
+                    : 0.58,
+                cursor:
+                  permissoes.podeComentar &&
+                  !interacao.enviandoComentario &&
+                  interacao.novoComentario.trim()
+                    ? "pointer"
+                    : "not-allowed",
+              }}
+            >
+              {interacao.enviandoComentario ? "…" : "↑"}
+            </button>
+          </form>
+        </article>
+      </section>,
+      document.body,
     );
   }
 
@@ -4414,9 +5975,156 @@ function ListasUniversaisContent() {
 
       <header style={headerStyle}>
         <div style={headerInnerStyle}>
-          <h1 data-historietas-user-content="true" style={pageTitleStyle}>
-            {tituloPagina}
-          </h1>
+          {modo === "perfil" && origemPerfil === "diario" && perfil ? (
+            <div style={listDiaryProfileHeaderStyle}>
+              <div style={listDiaryProfileHeaderTopStyle}>
+                <span
+                  aria-hidden="true"
+                  style={criarAvatarPerfilDiarioListasStyle(perfil.avatar)}
+                >
+                  {!perfil.avatar
+                    ? perfil.nome.slice(0, 1).toLocaleUpperCase("pt-BR") || "U"
+                    : ""}
+                </span>
+
+                <div style={listDiaryProfileTitleAreaStyle}>
+                  <h1
+                    data-historietas-user-content="true"
+                    style={listDiaryProfileTitleStyle}
+                  >
+                    {tituloPagina}
+                  </h1>
+                </div>
+
+                {(perfilEhProprio || avaliacaoDiario.visivel) && (
+                  <div style={listDiaryRatingSummaryStyle}>
+                    <strong style={listDiaryRatingNumberStyle}>
+                      {formatarNotaListas(avaliacaoDiario.media)}
+                    </strong>
+                    <span
+                      style={listDiaryRatingSummaryStarsStyle}
+                      aria-label={`Média ${formatarNotaListas(
+                        avaliacaoDiario.media,
+                      )} de 5`}
+                    >
+                      {NOTAS_AVALIACAO_LISTAS.map((estrela) => (
+                        <span
+                          key={`media-diario-${estrela}`}
+                          style={listDiaryRatingSummaryStarVisualStyle}
+                          aria-hidden="true"
+                        >
+                          <span style={listDiaryRatingSummaryStarBaseStyle}>
+                            ★
+                          </span>
+                          <span
+                            style={{
+                              ...listDiaryRatingSummaryStarFillStyle,
+                              width: obterPreenchimentoEstrelaListas(
+                                estrela,
+                                avaliacaoDiario.media,
+                              ),
+                            }}
+                          >
+                            ★
+                          </span>
+                        </span>
+                      ))}
+                    </span>
+                    <span style={listDiaryRatingTotalStyle}>
+                      {avaliacaoDiario.total} Av. Diário
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {(perfilEhProprio ||
+                (avaliacaoDiario.visivel && avaliacaoDiario.podeAvaliar)) && (
+                <div
+                  style={listDiaryHeaderRatingBoxStyle}
+                  aria-label={
+                    perfilEhProprio
+                      ? `Média do Diário: ${formatarNotaListas(
+                          avaliacaoDiario.media,
+                        )} de 5`
+                      : "Avaliar este Diário"
+                  }
+                >
+                  <div style={listDiaryHeaderRatingStarsRowStyle}>
+                    {NOTAS_AVALIACAO_LISTAS.map((estrela) => {
+                      const notaExibida = perfilEhProprio
+                        ? avaliacaoDiario.media
+                        : avaliacaoDiario.minhaNota;
+                      const preenchimento = obterPreenchimentoEstrelaListas(
+                        estrela,
+                        notaExibida,
+                      );
+                      const interativa =
+                        !perfilEhProprio &&
+                        avaliacaoDiario.visivel &&
+                        avaliacaoDiario.podeAvaliar &&
+                        !avaliacaoDiario.salvando;
+                      const proximaNota = obterProximaNotaAvaliacaoListas(
+                        estrela,
+                        avaliacaoDiario.minhaNota,
+                      );
+
+                      return (
+                        <button
+                          key={`avaliacao-diario-cabecalho-${estrela}`}
+                          type="button"
+                          onClick={() => {
+                            if (!interativa) {
+                              return;
+                            }
+
+                            void salvarAvaliacaoDiarioPerfil(proximaNota);
+                          }}
+                          disabled={!interativa}
+                          style={{
+                            ...(preenchimento === "0%"
+                              ? listDiaryHeaderRatingStarButtonStyle
+                              : listDiaryHeaderRatingStarActiveStyle),
+                            cursor: interativa ? "pointer" : "default",
+                            opacity: avaliacaoDiario.salvando ? 0.58 : 1,
+                          }}
+                          aria-label={
+                            interativa
+                              ? `Avaliar Diário com ${proximaNota
+                                  .toString()
+                                  .replace(".", ",")} estrela${
+                                  proximaNota === 1 ? "" : "s"
+                                }`
+                              : undefined
+                          }
+                        >
+                          <span
+                            style={listDiaryHeaderRatingStarVisualStyle}
+                            aria-hidden="true"
+                          >
+                            <span style={listDiaryHeaderRatingStarBaseStyle}>
+                              ★
+                            </span>
+                            <span
+                              style={{
+                                ...listDiaryHeaderRatingStarFillStyle,
+                                width: preenchimento,
+                              }}
+                            >
+                              ★
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <h1 data-historietas-user-content="true" style={pageTitleStyle}>
+              {tituloPagina}
+            </h1>
+          )}
         </div>
       </header>
 
@@ -4427,7 +6135,13 @@ function ListasUniversaisContent() {
       )}
 
       {modo === "perfil" && !bloqueado && (
-        <section style={controlsStyle}>
+        <section
+          style={
+            origemPerfil === "diario"
+              ? listDiaryControlsStyle
+              : controlsStyle
+          }
+        >
           <div style={tabsStyle} aria-label="Categorias da lista">
             {CATEGORIAS_PERFIL.map((item) => (
               <button
@@ -4533,6 +6247,18 @@ function ListasUniversaisContent() {
         <span>Historietas</span>
       </footer>
 
+      <DenunciaModal
+        aberto={Boolean(alvoDenunciaDiario)}
+        alvoTipo={alvoDenunciaDiario?.tipo || "diario_anotacao"}
+        alvoId={alvoDenunciaDiario?.id || ""}
+        alvoTitulo={alvoDenunciaDiario?.titulo || "Conteúdo do Diário"}
+        onFechar={() => setAlvoDenunciaDiario(null)}
+        onEnviada={() => {
+          setAlvoDenunciaDiario(null);
+          setMensagemAcao("Denúncia enviada para análise.");
+        }}
+      />
+
       {obraMenuAberta &&
         (() => {
           const obra = obraMenuAberta;
@@ -4622,6 +6348,32 @@ function ListasUniversaisContent() {
                   >
                     <span>Compartilhar</span>
                   </button>
+
+                  {item?.anotacaoId && !perfilEhProprio && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const anotacaoId = item.anotacaoId?.trim() || "";
+
+                        if (!anotacaoId) {
+                          return;
+                        }
+
+                        setObraMenuAberta(null);
+                        setItemPerfilMenuAberto(null);
+                        setObraMenuNoQueroLer(false);
+                        abrirDenunciaDiario(
+                          "diario_anotacao",
+                          anotacaoId,
+                          `Anotação de ${perfil?.nome || "usuário"} em ${obra.titulo}`,
+                          perfil?.userId || "",
+                        );
+                      }}
+                      style={listDiaryActionSheetReportStyle}
+                    >
+                      <span>Denunciar anotação</span>
+                    </button>
+                  )}
 
                   {item && perfilEhProprio && (
                     <button
@@ -4725,7 +6477,8 @@ function ListasUniversaisContent() {
                       <span style={listDiaryAnnotationErrorStyle}>
                         {editorAnotacao.erro}
                       </span>
-                    )}                  </div>
+                    )}
+                  </div>
                 )}
 
               </section>
@@ -4733,7 +6486,7 @@ function ListasUniversaisContent() {
           );
         })()}
 
-
+      {renderizarComentariosDiarioSheet()}
     </main>
   );
 }
@@ -4755,16 +6508,31 @@ export default function ListasUniversaisPage() {
 const listasPageCss = `
   html {
     --historietas-list-like-active: #EF4444;
+    --historietas-list-diary-rating: var(--historietas-accent, #F97316);
+    --historietas-list-diary-rating-muted: color-mix(
+      in srgb,
+      var(--historietas-list-diary-rating) 34%,
+      transparent
+    );
+    --historietas-list-comments-send-text: #FFFFFF;
   }
 
   html[data-historietas-tema-visual="foco"] {
     --historietas-list-like-active: #FFFFFF;
+    --historietas-list-diary-rating: #FFFFFF;
+    --historietas-list-diary-rating-muted: rgba(255,255,255,0.30);
+    --historietas-list-comments-send-text: #000000;
   }
 
   @keyframes historietas-list-heart-pop {
     0% { transform: scale(1); }
     45% { transform: scale(1.28); }
     100% { transform: scale(1); }
+  }
+
+  @keyframes historietas-list-comments-sheet-up {
+    from { transform: translateY(100%); opacity: 0.75; }
+    to { transform: translateY(0); opacity: 1; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -4819,10 +6587,6 @@ const listasPageCss = `
   @keyframes historietas-list-highlight {
     0%, 100% { background: rgba(255,255,255,0.04); }
     25%, 70% { background: rgba(255,255,255,0.14); }
-  }
-
-  .historietas-list-row a:hover {
-    background: rgba(255,255,255,0.035);
   }
 
   .historietas-list-spinner {
@@ -4906,6 +6670,11 @@ const controlsStyle: CSSProperties = {
   display: "grid",
   gap: "10px",
   boxSizing: "border-box",
+};
+
+const listDiaryControlsStyle: CSSProperties = {
+  ...controlsStyle,
+  padding: "5px 14px 8px",
 };
 
 const tabsStyle: CSSProperties = {
@@ -5371,9 +7140,10 @@ const actionMessageStyle: CSSProperties = {
 const rowSignalsStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  flexWrap: "wrap",
+  flexWrap: "nowrap",
   gap: "5px",
   marginTop: "3px",
+  minWidth: 0,
 };
 
 const rowSignalStyle: CSSProperties = {
@@ -5389,6 +7159,20 @@ const rowSignalStyle: CSSProperties = {
   lineHeight: 1,
 };
 
+const rowRatingSignalStyle: CSSProperties = {
+  ...rowSignalStyle,
+  gap: "3px",
+  position: "relative",
+  top: 0,
+  flex: "0 0 auto",
+};
+
+const rowRatingSignalStarStyle: CSSProperties = {
+  display: "inline-block",
+  lineHeight: 1,
+  transform: "translateY(-0.5px)",
+};
+
 const rowSignalAnnotationToggleStyle: CSSProperties = {
   ...rowSignalStyle,
   cursor: "pointer",
@@ -5397,12 +7181,243 @@ const rowSignalAnnotationToggleStyle: CSSProperties = {
   WebkitTapHighlightColor: "transparent",
 };
 
+const listDiaryActionSheetReportStyle: CSSProperties = {
+  ...actionSheetButtonStyle,
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
+};
+
 const listDiaryActionSheetEditorStyle: CSSProperties = {
   display: "grid",
   gap: "10px",
   padding: "4px 18px 14px",
   borderBottom: "0",
   boxSizing: "border-box",
+};
+
+const listDiaryEvaluationCardStyle: CSSProperties = {
+  width: "min(calc(100% - 28px), 892px)",
+  margin: "0 auto 10px",
+  padding: "16px",
+  display: "grid",
+  gap: "12px",
+  border: "1px solid rgba(255,255,255,0.11)",
+  borderRadius: "18px",
+  background:
+    "linear-gradient(145deg, rgba(124,58,237,0.13), rgba(249,115,22,0.055)), rgba(255,255,255,0.025)",
+  boxSizing: "border-box",
+};
+
+const listDiaryEvaluationHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+};
+
+const listDiaryEvaluationTitleGroupStyle: CSSProperties = {
+  minWidth: 0,
+  display: "flex",
+  alignItems: "baseline",
+  gap: "8px",
+  flexWrap: "wrap",
+};
+
+const listDiaryEvaluationEyebrowStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.72)",
+  fontSize: "10px",
+  fontWeight: 950,
+  letterSpacing: "0.08em",
+};
+
+const listDiaryEvaluationScoreStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "25px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.04em",
+};
+
+const listDiaryEvaluationTotalStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.48)",
+  fontSize: "10px",
+  fontWeight: 800,
+};
+
+const listDiaryEvaluationSettingsButtonStyle: CSSProperties = {
+  minHeight: "30px",
+  padding: "0 10px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.05)",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "9px",
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const listDiaryEvaluationStarsRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "3px",
+};
+
+const listDiaryEvaluationStarButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  position: "relative",
+  width: "32px",
+  height: "32px",
+  padding: 0,
+  border: "none",
+  background: "transparent",
+  fontSize: "30px",
+  lineHeight: 1,
+  fontFamily: "inherit",
+};
+
+const listDiaryEvaluationStarBaseStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.16)",
+};
+
+const listDiaryEvaluationStarFillStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  color: "#FBBF24",
+  whiteSpace: "nowrap",
+  pointerEvents: "none",
+};
+
+const listDiaryEvaluationDescriptionStyle: CSSProperties = {
+  margin: 0,
+  color: "rgba(255,255,255,0.58)",
+  fontSize: "10.5px",
+  lineHeight: 1.45,
+  fontWeight: 700,
+};
+
+const listDiaryEvaluationSettingsPanelStyle: CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  paddingTop: "12px",
+  borderTop: "1px solid rgba(255,255,255,0.08)",
+};
+
+const listDiaryEvaluationToggleRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "14px",
+  padding: "9px 10px",
+  borderRadius: "12px",
+  background: "rgba(255,255,255,0.035)",
+  color: "#FFFFFF",
+  fontSize: "10px",
+  lineHeight: 1.35,
+};
+
+const listDiaryEvaluationCheckboxStyle: CSSProperties = {
+  width: "16px",
+  height: "16px",
+  margin: 0,
+  accentColor: "#F97316",
+  flex: "0 0 auto",
+};
+
+const listDiaryEvaluationFieldStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  color: "rgba(255,255,255,0.64)",
+  fontSize: "9px",
+  fontWeight: 850,
+};
+
+const listDiaryEvaluationSelectStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "36px",
+  padding: "0 10px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: "11px",
+  background: "#080808",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "10px",
+  fontWeight: 800,
+};
+
+const listDiaryEvaluationSettingsActionsStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: "8px",
+};
+
+const listDiaryEvaluationCancelButtonStyle: CSSProperties = {
+  minHeight: "32px",
+  padding: "0 11px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: "999px",
+  background: "transparent",
+  color: "rgba(255,255,255,0.70)",
+  fontFamily: "inherit",
+  fontSize: "9px",
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const listDiaryEvaluationSaveButtonStyle: CSSProperties = {
+  ...listDiaryEvaluationCancelButtonStyle,
+  border: "none",
+  background: "#FFFFFF",
+  color: "#050505",
+};
+
+const listDiaryEvaluationErrorStyle: CSSProperties = {
+  color: "#FDA4AF",
+  fontSize: "9px",
+  lineHeight: 1.4,
+  fontWeight: 800,
+};
+
+const listDiaryAnnotationPrivacyGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gap: "8px",
+  padding: "10px",
+  borderRadius: "12px",
+  background: "rgba(255,255,255,0.035)",
+};
+
+const listDiaryAnnotationFieldStyle: CSSProperties = {
+  minWidth: 0,
+  display: "grid",
+  gap: "5px",
+  color: "rgba(255,255,255,0.60)",
+  fontSize: "8px",
+  fontWeight: 850,
+};
+
+const listDiaryAnnotationPrivacySelectStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "32px",
+  padding: "0 8px",
+  border: "1px solid rgba(255,255,255,0.11)",
+  borderRadius: "9px",
+  background: "#090909",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "8.5px",
+  fontWeight: 800,
+};
+
+const listDiaryAnnotationToggleFieldStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  color: "rgba(255,255,255,0.74)",
+  fontSize: "8px",
+  lineHeight: 1.35,
 };
 
 const listDiaryAnnotationTextareaWrapStyle: CSSProperties = {
@@ -5544,6 +7559,15 @@ const listDiaryCardAnnotationTitleStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
+const listDiaryCardAnnotationHeaderActionsStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "8px",
+  flex: "0 0 auto",
+  transform: "translateX(33px)",
+};
+
 const listDiaryCardAnnotationLikeButtonStyle: CSSProperties = {
   appearance: "none",
   WebkitAppearance: "none",
@@ -5620,6 +7644,388 @@ const listDiaryCardSpoilerButtonStyle: CSSProperties = {
   fontWeight: 900,
   lineHeight: 1,
   cursor: "pointer",
+};
+
+const listDiaryCardAnnotationTitleGroupStyle: CSSProperties = {
+  minWidth: 0,
+  display: "flex",
+  alignItems: "center",
+  gap: "7px",
+};
+
+const listDiaryCommentsModernHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  flexWrap: "wrap",
+};
+
+const listDiaryCommentsSortStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "4px",
+  padding: "3px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.04)",
+};
+
+const listDiaryCommentsSortButtonStyle: CSSProperties = {
+  minHeight: "25px",
+  padding: "0 8px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  color: "rgba(255,255,255,0.48)",
+  fontFamily: "inherit",
+  fontSize: "8px",
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const listDiaryCommentsSortActiveStyle: CSSProperties = {
+  ...listDiaryCommentsSortButtonStyle,
+  background: "rgba(255,255,255,0.12)",
+  color: "#FFFFFF",
+};
+
+const listDiaryCommentsModernListStyle: CSSProperties = {
+  display: "grid",
+  gap: "12px",
+};
+
+const listDiaryCommentThreadStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const listDiaryCommentModernRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr) 28px",
+  gap: "9px",
+  alignItems: "start",
+  minWidth: 0,
+};
+
+const listDiaryCommentReplyRowStyle: CSSProperties = {
+  ...listDiaryCommentModernRowStyle,
+  gridTemplateColumns: "28px minmax(0, 1fr) 28px",
+  gap: "8px",
+};
+
+const listDiaryCommentRepliesStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  marginLeft: "34px",
+  paddingLeft: "10px",
+  borderLeft: "1px solid rgba(255,255,255,0.08)",
+};
+
+const listDiaryCommentAvatarStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+  border: "1px solid rgba(124,58,237,0.38)",
+  background: "#08040D",
+  color: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "12px",
+  fontWeight: 950,
+};
+
+const listDiaryCommentReplyAvatarStyle: CSSProperties = {
+  ...listDiaryCommentAvatarStyle,
+  width: "28px",
+  height: "28px",
+  borderRadius: "10px",
+  fontSize: "10px",
+};
+
+const listDiaryCommentModernContentStyle: CSSProperties = {
+  minWidth: 0,
+  display: "grid",
+  gap: "3px",
+};
+
+const listDiaryCommentModernTopLineStyle: CSSProperties = {
+  minWidth: 0,
+  display: "flex",
+  alignItems: "baseline",
+  gap: "6px",
+  flexWrap: "wrap",
+};
+
+const listDiaryCommentModernAuthorStyle: CSSProperties = {
+  minWidth: 0,
+  color: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "11px",
+  fontWeight: 950,
+};
+
+const listDiaryCommentUsernameStyle: CSSProperties = {
+  minWidth: 0,
+  maxWidth: "150px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  color: "rgba(255,255,255,0.38)",
+  fontSize: "8.5px",
+  fontWeight: 750,
+};
+
+const listDiaryCommentModernDateStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.34)",
+  fontSize: "8px",
+  fontWeight: 700,
+};
+
+const listDiaryCommentModernTextStyle: CSSProperties = {
+  margin: 0,
+  color: "rgba(255,255,255,0.78)",
+  fontSize: "11px",
+  lineHeight: 1.45,
+  fontWeight: 650,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
+const listDiaryCommentModernActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+};
+
+const listDiaryCommentTextActionStyle: CSSProperties = {
+  width: "fit-content",
+  padding: "1px 0",
+  border: "none",
+  background: "transparent",
+  color: "rgba(255,255,255,0.45)",
+  fontFamily: "inherit",
+  fontSize: "8.5px",
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const listDiaryCommentRemoveTextActionStyle: CSSProperties = {
+  ...listDiaryCommentTextActionStyle,
+  color: "#FDA4AF",
+};
+
+const listDiaryCommentLikeWrapStyle: CSSProperties = {
+  minWidth: "28px",
+  display: "grid",
+  justifyItems: "center",
+  alignContent: "start",
+  gap: "2px",
+};
+
+const listDiaryCommentLikeButtonStyle: CSSProperties = {
+  width: "28px",
+  height: "28px",
+  padding: 0,
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+};
+
+const listDiaryCommentHeartStyle: CSSProperties = {
+  width: "18px",
+  height: "18px",
+};
+
+const listDiaryCommentLikeCountStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.42)",
+  fontSize: "8px",
+  fontWeight: 900,
+};
+
+const listDiaryEmptyCommentsModernStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.42)",
+  fontSize: "9px",
+  lineHeight: 1.4,
+};
+
+const listDiaryReplyingBannerStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  padding: "7px 9px",
+  borderRadius: "10px",
+  background: "rgba(124,58,237,0.11)",
+  color: "rgba(255,255,255,0.70)",
+  fontSize: "8.5px",
+  fontWeight: 800,
+};
+
+const listDiaryReplyingCancelStyle: CSSProperties = {
+  padding: 0,
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "8px",
+  fontWeight: 900,
+  cursor: "pointer",
+};
+
+const listDiaryComposerModernBoxStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) 34px",
+  alignItems: "end",
+  gap: "7px",
+  padding: "7px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  borderRadius: "13px",
+  background: "rgba(255,255,255,0.035)",
+};
+
+const listDiaryCommentTextareaModernStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "44px",
+  maxHeight: "130px",
+  resize: "vertical",
+  padding: "7px 8px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontSize: "10px",
+  lineHeight: 1.4,
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const listDiaryCommentSendModernStyle: CSSProperties = {
+  width: "32px",
+  height: "32px",
+  padding: 0,
+  border: "none",
+  borderRadius: "999px",
+  background: "#FFFFFF",
+  color: "#050505",
+  fontSize: "13px",
+  fontWeight: 950,
+  cursor: "pointer",
+};
+
+const listDiaryCommentsPermissionStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.40)",
+  fontSize: "8.5px",
+  lineHeight: 1.4,
+  fontWeight: 750,
+};
+
+const listDiaryCommentsSectionStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  minWidth: 0,
+  paddingTop: "9px",
+  borderTop: "1px solid rgba(255,255,255,0.075)",
+};
+
+const listDiaryCommentRowStyle: CSSProperties = {
+  display: "grid",
+  gap: "5px",
+  minWidth: 0,
+  padding: "8px 9px",
+  borderRadius: "10px",
+  background: "rgba(255,255,255,0.035)",
+};
+
+const listDiaryCommentAuthorStyle: CSSProperties = {
+  minWidth: 0,
+  color: "rgba(255,255,255,0.82)",
+  fontSize: "10px",
+  fontWeight: 900,
+  lineHeight: 1.2,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const listDiaryCommentDateStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.38)",
+  fontSize: "8px",
+  fontWeight: 700,
+  lineHeight: 1.2,
+  flex: "0 0 auto",
+};
+
+const listDiaryCommentActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+};
+
+const listDiaryCommentRemoveButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  minHeight: "26px",
+  padding: "4px 8px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
+  fontFamily: "inherit",
+  fontSize: "9px",
+  fontWeight: 850,
+  lineHeight: 1,
+  cursor: "pointer",
+};
+
+const listDiaryCommentComposerFooterStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+};
+
+const listDiaryCommentCounterStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.34)",
+  fontSize: "8px",
+  fontWeight: 700,
+};
+
+const listDiaryCommentSubmitStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  minHeight: "28px",
+  padding: "5px 10px",
+  border: "none",
+  borderRadius: "999px",
+  background:
+    "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
+  color: "#000000",
+  fontFamily: "inherit",
+  fontSize: "9px",
+  fontWeight: 950,
+  cursor: "pointer",
+};
+
+const listDiaryCommentSubmitDisabledStyle: CSSProperties = {
+  ...listDiaryCommentSubmitStyle,
+  opacity: 0.55,
+  cursor: "wait",
+};
+
+const listDiaryCommentErrorStyle: CSSProperties = {
+  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
+  fontSize: "9px",
+  fontWeight: 750,
+  lineHeight: 1.35,
 };
 
 const listDiaryPanelStyle: CSSProperties = {
@@ -5904,4 +8310,811 @@ const footerStyle: CSSProperties = {
   fontWeight: 750,
   textAlign: "center",
   boxSizing: "border-box",
+};
+const listDiaryProfileHeaderStyle: CSSProperties = {
+  width: "100%",
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+  boxSizing: "border-box",
+};
+
+const listDiaryProfileHeaderTopStyle: CSSProperties = {
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "42px minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: "9px",
+  minWidth: 0,
+  boxSizing: "border-box",
+};
+
+const listDiaryProfileAvatarStyle: CSSProperties = {
+  width: "42px",
+  maxWidth: "42px",
+  height: "42px",
+  borderRadius: "11px",
+  border: "none",
+  padding: 0,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--historietas-input-bg, #18181B)",
+  color: "#FFFFFF",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 950,
+  overflow: "hidden",
+  boxSizing: "border-box",
+  flex: "0 0 auto",
+};
+
+const listDiaryProfileTitleAreaStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "center",
+  justifyItems: "start",
+  gap: "7px",
+  minWidth: 0,
+};
+
+const listDiaryProfileTitleStyle: CSSProperties = {
+  ...rowTitleStyle,
+  width: "100%",
+  minWidth: 0,
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "clamp(15px, 3vw, 17px)",
+  fontWeight: 500,
+  letterSpacing: "-0.01em",
+  lineHeight: 1.2,
+  textAlign: "left",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  display: "block",
+  WebkitLineClamp: "unset",
+  WebkitBoxOrient: "initial",
+};
+
+const listDiaryHeaderRatingBoxStyle: CSSProperties = {
+  width: "min(420px, 100%)",
+  margin: "0 auto",
+  padding: 0,
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+  boxSizing: "border-box",
+};
+
+const listDiaryHeaderRatingStarsRowStyle: CSSProperties = {
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+  alignItems: "center",
+  gap: "6px",
+  minWidth: 0,
+  background: "transparent",
+  boxShadow: "none",
+};
+
+const listDiaryHeaderRatingStarButtonStyle: CSSProperties = {
+  minHeight: "34px",
+  borderRadius: "999px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-list-diary-rating-muted, rgba(249, 115, 22, 0.34))",
+  fontSize: "22px",
+  fontWeight: 950,
+  lineHeight: 1,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  boxShadow: "none",
+  filter: "none",
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+  padding: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+const listDiaryHeaderRatingStarActiveStyle: CSSProperties = {
+  ...listDiaryHeaderRatingStarButtonStyle,
+  color: "var(--historietas-list-diary-rating, #F97316)",
+};
+
+const listDiaryHeaderRatingStarVisualStyle: CSSProperties = {
+  position: "relative",
+  width: "1em",
+  height: "1em",
+  display: "inline-block",
+  lineHeight: 1,
+};
+
+const listDiaryHeaderRatingStarBaseStyle: CSSProperties = {
+  color: "var(--historietas-list-diary-rating-muted, rgba(249, 115, 22, 0.34))",
+  position: "absolute",
+  inset: 0,
+  lineHeight: 1,
+};
+
+const listDiaryHeaderRatingStarFillStyle: CSSProperties = {
+  color: "var(--historietas-list-diary-rating, #F97316)",
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  lineHeight: 1,
+};
+
+const listDiaryRatingSummaryStyle: CSSProperties = {
+  flex: "0 0 auto",
+  width: "fit-content",
+  maxWidth: "118px",
+  minHeight: "39px",
+  display: "grid",
+  justifyItems: "center",
+  alignContent: "center",
+  gap: "3px",
+  padding: "4px 2px",
+  background: "transparent",
+  border: "none",
+  boxShadow: "none",
+  boxSizing: "border-box",
+  textAlign: "center",
+};
+
+const listDiaryRatingNumberStyle: CSSProperties = {
+  color: "var(--historietas-list-diary-rating, #F97316)",
+  fontSize: "18.5px",
+  lineHeight: 1,
+  fontWeight: 950,
+  textAlign: "center",
+};
+
+const listDiaryRatingSummaryStarsStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "1px",
+  color: "var(--historietas-list-diary-rating, #F97316)",
+  fontSize: "10px",
+  lineHeight: 1,
+  letterSpacing: "-0.02em",
+};
+
+const listDiaryRatingSummaryStarVisualStyle: CSSProperties = {
+  position: "relative",
+  width: "1em",
+  height: "1em",
+  display: "inline-block",
+  lineHeight: 1,
+  flex: "0 0 auto",
+};
+
+const listDiaryRatingSummaryStarBaseStyle: CSSProperties = {
+  color: "var(--historietas-list-diary-rating-muted, rgba(249, 115, 22, 0.34))",
+  position: "absolute",
+  inset: 0,
+  lineHeight: 1,
+};
+
+const listDiaryRatingSummaryStarFillStyle: CSSProperties = {
+  color: "var(--historietas-list-diary-rating, #F97316)",
+  position: "absolute",
+  inset: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  lineHeight: 1,
+};
+
+const listDiaryRatingTotalStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "7.8px",
+  lineHeight: 1.1,
+  fontWeight: 850,
+  textTransform: "none",
+  letterSpacing: 0,
+  textAlign: "center",
+  whiteSpace: "nowrap",
+};
+
+const listDiaryCardAnnotationCommentButtonStyle: CSSProperties = {
+  minWidth: "44px",
+  height: "34px",
+  borderRadius: "999px",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "4px",
+  padding: "0 4px",
+  fontFamily: "inherit",
+  cursor: "pointer",
+};
+
+const listDiaryCardAnnotationCommentIconStyle: CSSProperties = {
+  width: "20px",
+  height: "20px",
+  display: "block",
+  flex: "0 0 auto",
+};
+
+const listDiaryCardAnnotationCommentCountStyle: CSSProperties = {
+  minWidth: "12px",
+  color: "rgba(255,255,255,0.92)",
+  fontSize: "10px",
+  lineHeight: 1,
+  fontWeight: 900,
+  textAlign: "center",
+};
+
+const commentsSheetOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 2147483647,
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "center",
+  pointerEvents: "none",
+  isolation: "isolate",
+};
+
+const commentsSheetBackdropStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  zIndex: 0,
+  border: "none",
+  background:
+    "color-mix(in srgb, var(--historietas-page-background, #070212) 66%, transparent)",
+  backdropFilter: "blur(4px)",
+  WebkitBackdropFilter: "blur(4px)",
+  pointerEvents: "auto",
+  cursor: "pointer",
+  padding: 0,
+};
+
+const commentsSheetStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  width: "min(720px, 100%)",
+  maxHeight: "calc(100dvh - env(safe-area-inset-top) - 10px)",
+  display: "grid",
+  gridTemplateRows: "auto auto minmax(0, 1fr) auto auto auto auto",
+  gap: "7px",
+  padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
+  borderRadius: "28px 28px 0 0",
+  background: "var(--historietas-page-background, #070212)",
+  border: "none",
+  borderBottom: "none",
+  boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
+  pointerEvents: "auto",
+  overflow: "hidden",
+  boxSizing: "border-box",
+  willChange: "height",
+  transition: "height 220ms ease",
+};
+
+const commentsSheetCompactStyle: CSSProperties = {
+  height: "min(64dvh, 540px)",
+};
+
+const commentsSheetExpandedStyle: CSSProperties = {
+  height: "min(90dvh, 760px)",
+};
+
+const desktopCommentsSheetStyle: CSSProperties = {
+  ...commentsSheetStyle,
+  width: "min(800px, calc(100% - 40px))",
+  height: "min(76dvh, 720px)",
+};
+
+const commentsSheetHandleWrapStyle: CSSProperties = {
+  minHeight: "24px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  touchAction: "none",
+  cursor: "grab",
+  willChange: "transform",
+  outline: "none",
+};
+
+const commentsSheetHandleStyle: CSSProperties = {
+  width: "44px",
+  height: "5px",
+  borderRadius: "999px",
+  background: "var(--historietas-border-soft, rgba(255,255,255,0.34))",
+};
+
+const commentsSheetHeaderStyle: CSSProperties = {
+  minHeight: "32px",
+  display: "grid",
+  gridTemplateColumns: "40px minmax(0, 1fr) 40px",
+  alignItems: "center",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const commentsSheetHeaderSpacerStyle: CSSProperties = {
+  width: "40px",
+  height: "1px",
+};
+
+const commentsSheetTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "14.5px",
+  fontWeight: 950,
+  textAlign: "center",
+  letterSpacing: "-0.02em",
+};
+
+const commentsSortMenuWrapStyle: CSSProperties = {
+  position: "relative",
+  width: "40px",
+  height: "34px",
+  justifySelf: "end",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+};
+
+const commentsSortMenuTriggerStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "27px",
+  lineHeight: 1,
+  fontWeight: 500,
+  fontFamily: "inherit",
+  padding: "0 0 2px",
+  cursor: "pointer",
+};
+
+const commentsSortMenuStyle: CSSProperties = {
+  position: "absolute",
+  top: "calc(100% + 6px)",
+  right: 0,
+  zIndex: 12,
+  width: "132px",
+  maxWidth: "calc(100vw - 24px)",
+  display: "grid",
+  gap: 0,
+  padding: "4px 8px",
+  boxSizing: "border-box",
+  borderRadius: "12px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background:
+    "var(--historietas-surface-strong, rgba(18, 12, 30, 0.98))",
+  boxShadow: "0 16px 36px rgba(0,0,0,0.48)",
+  backdropFilter: "blur(14px)",
+  WebkitBackdropFilter: "blur(14px)",
+};
+
+const commentsSortMenuItemStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "36px",
+  border: "none",
+  borderRadius: 0,
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  padding: "0 4px",
+  textAlign: "center",
+  fontSize: "11.5px",
+  fontWeight: 850,
+  fontFamily: "inherit",
+  cursor: "pointer",
+};
+
+const commentsSortMenuItemActiveStyle: CSSProperties = {
+  ...commentsSortMenuItemStyle,
+  color: "#FFFFFF",
+};
+
+const commentsSortMenuDividerStyle: CSSProperties = {
+  width: "100%",
+  height: "1px",
+  background: "var(--historietas-border-soft, rgba(255,255,255,0.12))",
+};
+
+const commentsSheetListStyle: CSSProperties = {
+  display: "grid",
+  alignContent: "start",
+  gap: "12px",
+  minHeight: 0,
+  overflowY: "auto",
+  padding: "6px 2px 9px",
+  WebkitOverflowScrolling: "touch",
+};
+
+const commentThreadStyle: CSSProperties = {
+  display: "grid",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const commentItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr) 28px",
+  gap: "10px",
+  alignItems: "start",
+  minWidth: 0,
+};
+
+const commentRepliesListStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  marginLeft: "34px",
+  paddingLeft: "10px",
+  borderLeft:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  minWidth: 0,
+};
+
+const commentReplyItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "28px minmax(0, 1fr) 28px",
+  gap: "8px",
+  alignItems: "start",
+  minWidth: 0,
+};
+
+const commentRepliesToggleStyle: CSSProperties = {
+  width: "fit-content",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
+
+const commentRepliesControlsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  flexWrap: "wrap",
+  minWidth: 0,
+};
+
+const commentRepliesHideButtonStyle: CSSProperties = {
+  width: "fit-content",
+  marginLeft: "44px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0",
+  cursor: "pointer",
+};
+
+const commentRepliesLineStyle: CSSProperties = {
+  width: "22px",
+  height: "1px",
+  background: "var(--historietas-border-soft, rgba(255,255,255,0.22))",
+};
+
+const commentAvatarLinkStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--historietas-page-background, #070212)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  color: "#FFFFFF",
+  fontSize: "12.5px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.03em",
+  textDecoration: "none",
+  boxShadow: "none",
+  flex: "0 0 auto",
+  overflow: "hidden",
+  boxSizing: "border-box",
+  cursor: "pointer",
+};
+
+const commentReplyAvatarLinkStyle: CSSProperties = {
+  ...commentAvatarLinkStyle,
+  width: "28px",
+  height: "28px",
+  borderRadius: "10px",
+  fontSize: "10.5px",
+};
+
+const commentContentStyle: CSSProperties = {
+  position: "relative",
+  display: "grid",
+  gap: "3px",
+  minWidth: 0,
+};
+
+const commentTopLineStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  gap: "6px",
+  minWidth: 0,
+};
+
+const commentAuthorLinkStyle: CSSProperties = {
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "12px",
+  fontWeight: 950,
+  textDecoration: "none",
+  cursor: "pointer",
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const commentTimeStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 750,
+  whiteSpace: "nowrap",
+};
+
+const commentTextStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12.5px",
+  lineHeight: 1.38,
+  fontWeight: 750,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+};
+
+const commentActionsRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+};
+
+const commentReplyButtonStyle: CSSProperties = {
+  width: "fit-content",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10.5px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "1px 0 0",
+  cursor: "pointer",
+};
+
+const commentRemoveButtonStyle: CSSProperties = {
+  ...commentReplyButtonStyle,
+  color: "var(--historietas-danger-button-text, #FCA5A5)",
+};
+
+const commentReportButtonStyle: CSSProperties = {
+  ...commentReplyButtonStyle,
+};
+
+const commentLikeWrapStyle: CSSProperties = {
+  minWidth: "28px",
+  display: "grid",
+  justifyItems: "center",
+  alignContent: "start",
+  gap: "2px",
+};
+
+const commentLikeButtonStyle: CSSProperties = {
+  width: "28px",
+  height: "28px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentLikeCountStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  lineHeight: 1,
+  minHeight: "10px",
+  textAlign: "center",
+};
+
+const commentHeartIconStyle: CSSProperties = {
+  width: "19px",
+  height: "19px",
+  display: "block",
+  flex: "0 0 auto",
+  transformOrigin: "center",
+};
+
+const commentsLoadingStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "58px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  fontWeight: 850,
+  boxSizing: "border-box",
+};
+
+const emptyCommentsStyle: CSSProperties = {
+  margin: "10px 0 0",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+  fontSize: "12px",
+  fontWeight: 800,
+  textAlign: "center",
+};
+
+const commentsSheetErrorStyle: CSSProperties = {
+  display: "block",
+  padding: "8px 10px",
+  borderRadius: "14px",
+  background: "rgba(239,68,68,0.12)",
+  border: "1px solid rgba(248,113,113,0.24)",
+  color: "#FCA5A5",
+  fontSize: "11px",
+  fontWeight: 850,
+  lineHeight: 1.35,
+  textAlign: "center",
+};
+
+const commentsReplyingBannerStyle: CSSProperties = {
+  minHeight: "30px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  padding: "5px 8px",
+  borderRadius: "12px",
+  background:
+    "var(--historietas-secondary-surface, rgba(255,255,255,0.05))",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "10.5px",
+  fontWeight: 800,
+};
+
+const commentsReplyingCancelStyle: CSSProperties = {
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontSize: "10.5px",
+  fontWeight: 900,
+  fontFamily: "inherit",
+  padding: "2px 0",
+  cursor: "pointer",
+};
+
+const commentsToolsStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  padding: "5px 0 0",
+};
+
+const commentsQuickReactionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "6px",
+  width: "100%",
+  overflowX: "auto",
+  padding: "0 1px",
+  scrollbarWidth: "none",
+  WebkitOverflowScrolling: "touch",
+};
+
+const commentsQuickReactionButtonStyle: CSSProperties = {
+  width: "30px",
+  height: "28px",
+  border: "none",
+  borderRadius: "999px",
+  background: "transparent",
+  fontSize: "18px",
+  lineHeight: 1,
+  padding: 0,
+  cursor: "pointer",
+  flex: "0 0 auto",
+};
+
+const commentsSheetFormStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "30px minmax(0, 1fr) 28px 38px",
+  alignItems: "center",
+  gap: "7px",
+  padding: "7px 0 0",
+  minWidth: 0,
+};
+
+const commentsInputAvatarStyle: CSSProperties = {
+  width: "30px",
+  height: "30px",
+  borderRadius: "11px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--historietas-page-background, #070212)",
+  border:
+    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+  color: "#FFFFFF",
+  fontSize: "11.5px",
+  fontWeight: 950,
+  overflow: "hidden",
+};
+
+const commentsInputBoxStyle: CSSProperties = {
+  minWidth: 0,
+  minHeight: "38px",
+  display: "flex",
+  alignItems: "center",
+};
+
+const commentsSheetInputStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "38px",
+  maxHeight: "82px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
+  background: "var(--historietas-page-background, #070212)",
+  color: "var(--historietas-input-text, #FFFFFF)",
+  padding: "9px 12px",
+  outline: "none",
+  fontSize: "12.5px",
+  lineHeight: 1.32,
+  fontWeight: 650,
+  resize: "none",
+  overflowY: "auto",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+};
+
+const commentsInputIconButtonStyle: CSSProperties = {
+  width: "26px",
+  height: "30px",
+  border: "none",
+  background: "transparent",
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "16px",
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
+  cursor: "pointer",
+};
+
+const commentsSheetSendStyle: CSSProperties = {
+  width: "36px",
+  height: "36px",
+  borderRadius: "999px",
+  border:
+    "1px solid var(--historietas-bottom-nav-publish-border, color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent))",
+  background:
+    "var(--historietas-bottom-nav-publish-bg, var(--historietas-accent, #F97316))",
+  color: "var(--historietas-list-comments-send-text, #FFFFFF)",
+  fontSize: "18px",
+  lineHeight: 1,
+  fontWeight: 950,
+  fontFamily: "inherit",
+  padding: 0,
 };
