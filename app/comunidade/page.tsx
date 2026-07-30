@@ -73,6 +73,7 @@ type PostComunidade = {
   fixadoPor: string;
   curtidas: string[];
   comentarios: ComentarioComunidade[];
+  visibilidade: VisibilidadePostComunidade;
 };
 
 type ObraRelacionadaSugestao = {
@@ -105,6 +106,21 @@ type SupabaseEnqueteVotoRow = {
 type OrdenacaoComunidade = "Recentes" | "Em alta" | "Mais comentadas";
 type TipoPublicacaoFiltro = TipoPublicacaoComunidade | "Todos";
 type GrupoPublicacaoObra = "" | "posts";
+type VisibilidadePostComunidade =
+  | "publico"
+  | "seguidores"
+  | "seguindo"
+  | "somente_eu";
+
+const VISIBILIDADES_POST_COMUNIDADE: Array<{
+  valor: VisibilidadePostComunidade;
+  rotulo: string;
+}> = [
+  { valor: "publico", rotulo: "Público" },
+  { valor: "seguidores", rotulo: "Seguidores" },
+  { valor: "seguindo", rotulo: "Pessoas que sigo" },
+  { valor: "somente_eu", rotulo: "Somente eu" },
+];
 
 const CATEGORIAS_COMUNIDADE: CategoriaComunidade[] = [
   "Geral",
@@ -267,6 +283,12 @@ const COMUNIDADE_UI_TRANSLATIONS: Record<
   "Abrir opções da publicação": { en: "Open post options", es: "Abrir opciones de la publicación" },
   "Ações da publicação": { en: "Post actions", es: "Acciones de la publicación" },
   "Fechar ações da publicação": { en: "Close post actions", es: "Cerrar acciones de la publicación" },
+  "Quem pode ver esta publicação?": { en: "Who can see this post?", es: "¿Quién puede ver esta publicación?" },
+  "Público": { en: "Public", es: "Público" },
+  "Seguidores": { en: "Followers", es: "Seguidores" },
+  "Pessoas que sigo": { en: "People I follow", es: "Personas que sigo" },
+  "Somente eu": { en: "Only me", es: "Solo yo" },
+  "Visibilidade da publicação atualizada.": { en: "Post visibility updated.", es: "Visibilidad de la publicación actualizada." },
   "Salvando...": { en: "Saving...", es: "Guardando..." },
   "Remover dos salvos": { en: "Remove from saved", es: "Eliminar de guardados" },
   "Salvar publicação": { en: "Save post", es: "Guardar publicación" },
@@ -1330,6 +1352,30 @@ function normalizarTipoPublicacao(valor: unknown): TipoPublicacaoComunidade {
     : "Discussão";
 }
 
+function normalizarVisibilidadePostComunidade(
+  valor: unknown,
+): VisibilidadePostComunidade {
+  return VISIBILIDADES_POST_COMUNIDADE.some((opcao) => opcao.valor === valor)
+    ? (valor as VisibilidadePostComunidade)
+    : "publico";
+}
+
+function obterRotuloVisibilidadePostComunidade(
+  visibilidade: VisibilidadePostComunidade,
+) {
+  return (
+    VISIBILIDADES_POST_COMUNIDADE.find(
+      (opcao) => opcao.valor === visibilidade,
+    )?.rotulo || "Público"
+  );
+}
+
+function obterVisibilidadeReviewNoDiario(
+  visibilidade: VisibilidadePostComunidade,
+): "publico" | "privado" {
+  return visibilidade === "publico" ? "publico" : "privado";
+}
+
 function criarLinkObraRelacionada(
   titulo: string,
   sugestoesObras: ObraRelacionadaSugestao[] = []
@@ -1794,6 +1840,7 @@ type SupabasePostRow = {
   fixado: boolean | null;
   fixado_em: string | null;
   fixado_por: string | null;
+  visibilidade: string | null;
 };
 
 type SupabaseComentarioRow = {
@@ -1871,6 +1918,7 @@ function mapearPostSupabase(
     fixadoPor: post.fixado_por || "",
     curtidas: curtidasPorPost.get(post.id) || [],
     comentarios: comentariosPorPost.get(post.id) || [],
+    visibilidade: normalizarVisibilidadePostComunidade(post.visibilidade),
   };
 }
 
@@ -2132,6 +2180,7 @@ async function registrarReviewComunidadeNoDiario({
   postId,
   criadaEm,
   sugestoesObras,
+  visibilidade,
 }: {
   userId: string;
   texto: string;
@@ -2139,6 +2188,7 @@ async function registrarReviewComunidadeNoDiario({
   postId: string;
   criadaEm: string;
   sugestoesObras: ObraRelacionadaSugestao[];
+  visibilidade: VisibilidadePostComunidade;
 }) {
   const userIdLimpo = userId.trim();
   const postIdLimpo = postId.trim();
@@ -2168,15 +2218,17 @@ async function registrarReviewComunidadeNoDiario({
     const criadaEmValida = Number.isNaN(dataReview.getTime())
       ? ""
       : dataReview.toISOString();
+    const visibilidadeDiario = obterVisibilidadeReviewNoDiario(visibilidade);
     const registroDiario: {
       user_id: string;
       tipo: "publicou_review";
       texto: string;
-      visibilidade: "publico";
+      visibilidade: "publico" | "privado";
       metadata: {
         post_id: string;
         obra_relacionada: string;
         origem: "comunidade";
+        visibilidade_post: VisibilidadePostComunidade;
       };
       obra_id?: string;
       criado_em?: string;
@@ -2185,11 +2237,12 @@ async function registrarReviewComunidadeNoDiario({
       user_id: userIdLimpo,
       tipo: "publicou_review",
       texto: texto.trim().slice(0, 420),
-      visibilidade: "publico",
+      visibilidade: visibilidadeDiario,
       metadata: {
         post_id: postIdLimpo,
         obra_relacionada: obraRelacionada.trim().slice(0, 90),
         origem: "comunidade",
+        visibilidade_post: visibilidade,
       },
     };
 
@@ -3253,6 +3306,8 @@ export default function ComunidadePage() {
     useState<CategoriaComunidade>("Geral");
   const [tipoPublicacaoPost, setTipoPublicacaoPost] =
     useState<TipoPublicacaoComunidade>("Discussão");
+  const [visibilidadePost, setVisibilidadePost] =
+    useState<VisibilidadePostComunidade>("publico");
   const [temSpoilerPost, setTemSpoilerPost] = useState(false);
   const [spoilersReveladosIds, setSpoilersReveladosIds] = useState<string[]>([]);
   const [termoBusca, setTermoBusca] = useState("");
@@ -3274,6 +3329,8 @@ export default function ComunidadePage() {
   >(null);
   const [postRemovendoId, setPostRemovendoId] = useState<string | null>(null);
   const [postFixandoId, setPostFixandoId] = useState<string | null>(null);
+  const [postVisibilidadeAtualizandoId, setPostVisibilidadeAtualizandoId] =
+    useState<string | null>(null);
   const [postMenuAbertoId, setPostMenuAbertoId] = useState<string | null>(null);
   const [denunciaAlvo, setDenunciaAlvo] =
     useState<DenunciaAlvoComunidade | null>(null);
@@ -3762,6 +3819,7 @@ export default function ComunidadePage() {
           postId: post.id,
           criadaEm: post.criadoEm,
           sugestoesObras: obrasRelacionadasSugestoes,
+          visibilidade: post.visibilidade,
         });
 
         if (!sincronizou) {
@@ -3785,6 +3843,7 @@ export default function ComunidadePage() {
     const fecharSugestoesTimer = window.setTimeout(() => {
       setSugestoesObrasAbertas(false);
       setObraRelacionadaBusca("");
+      setVisibilidadePost("publico");
     }, 0);
 
     return () => {
@@ -4613,7 +4672,7 @@ export default function ComunidadePage() {
       let consultaPosts = supabase
         .from("comunidade_posts")
         .select(
-          "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por"
+          "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por, visibilidade"
         );
 
       const obraFiltroLimpa = obraFiltro.trim().slice(0, 90);
@@ -4893,9 +4952,10 @@ export default function ComunidadePage() {
           tem_spoiler: temSpoilerPost,
           texto: textoLimpo.slice(0, 700),
           obra_relacionada: obraLimpa.slice(0, 90),
+          visibilidade: visibilidadePost,
         })
         .select(
-          "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por"
+          "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por, visibilidade"
         )
         .single();
 
@@ -4936,6 +4996,7 @@ export default function ComunidadePage() {
           postId: novoPost.id,
           criadaEm: novoPost.criadoEm,
           sugestoesObras: obrasRelacionadasSugestoes,
+          visibilidade: novoPost.visibilidade,
         });
 
         if (!reviewSincronizada) {
@@ -4955,6 +5016,7 @@ export default function ComunidadePage() {
       setSugestoesObrasAbertas(false);
       setCategoriaPost("Geral");
       setTipoPublicacaoPost("Discussão");
+      setVisibilidadePost("publico");
       setTemSpoilerPost(false);
       setComposerAberto(false);
       emitirFeedbackAcao("Publicação enviada para a Comunidade.");
@@ -5437,6 +5499,104 @@ export default function ComunidadePage() {
       await carregarPostsComunidade();
     } finally {
       finalizarAcaoComunidade(chaveAcao);
+    }
+  }
+
+  async function atualizarVisibilidadePost(
+    post: PostComunidade,
+    novaVisibilidade: VisibilidadePostComunidade,
+  ) {
+    const chaveAcao = `visibilidade-post:${post.id}`;
+
+    if (!iniciarAcaoComunidade(chaveAcao)) {
+      return;
+    }
+
+    setPostVisibilidadeAtualizandoId(post.id);
+    setErro("");
+
+    try {
+      if (!exigirLogin() || !usuario) {
+        return;
+      }
+
+      if (post.autorId.trim() !== usuario.id.trim()) {
+        return;
+      }
+
+      const visibilidadeSegura = normalizarVisibilidadePostComunidade(
+        novaVisibilidade,
+      );
+
+      if (post.visibilidade === visibilidadeSegura) {
+        return;
+      }
+
+      const reviewPrecisaSerProtegidaAntes =
+        post.tipoPublicacao === "Review" && visibilidadeSegura !== "publico";
+
+      if (reviewPrecisaSerProtegidaAntes) {
+        const reviewSincronizada = await registrarReviewComunidadeNoDiario({
+          userId: usuario.id,
+          texto: post.texto,
+          obraRelacionada: post.obraRelacionada,
+          postId: post.id,
+          criadaEm: post.criadoEm,
+          sugestoesObras: obrasRelacionadasSugestoes,
+          visibilidade: visibilidadeSegura,
+        });
+
+        if (!reviewSincronizada) {
+          setErro(
+            "Não foi possível atualizar a privacidade da review no Diário.",
+          );
+          return;
+        }
+      }
+
+      const { data, error } = await supabase
+        .from("comunidade_posts")
+        .update({ visibilidade: visibilidadeSegura })
+        .eq("id", post.id)
+        .eq("autor_id", usuario.id)
+        .select("id, visibilidade")
+        .maybeSingle();
+
+      if (error || !data) {
+        if (post.tipoPublicacao === "Review") {
+          reviewsDiarioSincronizadasRef.current.delete(post.id);
+        }
+
+        setErro(
+          error
+            ? formatarErroSupabase("Erro ao atualizar visibilidade", error)
+            : "Erro ao atualizar visibilidade: a publicação não foi retornada.",
+        );
+        return;
+      }
+
+      if (post.tipoPublicacao === "Review") {
+        if (reviewPrecisaSerProtegidaAntes) {
+          reviewsDiarioSincronizadasRef.current.add(post.id);
+        } else {
+          reviewsDiarioSincronizadasRef.current.delete(post.id);
+        }
+      }
+
+      setPosts((postsAtuais) =>
+        postsAtuais.map((postAtual) =>
+          postAtual.id === post.id
+            ? { ...postAtual, visibilidade: visibilidadeSegura }
+            : postAtual,
+        ),
+      );
+      setPostMenuAbertoId(null);
+      emitirFeedbackAcao("Visibilidade da publicação atualizada.");
+    } finally {
+      finalizarAcaoComunidade(chaveAcao);
+      setPostVisibilidadeAtualizandoId((postAtualId) =>
+        postAtualId === post.id ? null : postAtualId,
+      );
     }
   }
 
@@ -6129,6 +6289,13 @@ export default function ComunidadePage() {
                   const postCompartilhando = postCompartilhandoId === post.id;
                   const postRemovendo = postRemovendoId === post.id;
                   const postFixando = postFixandoId === post.id;
+                  const postVisibilidadeAtualizando =
+                    postVisibilidadeAtualizandoId === post.id;
+                  const podeAlterarVisibilidade = Boolean(
+                    !carregandoUsuario &&
+                      usuarioAtualId &&
+                      autorPostId === usuarioAtualId
+                  );
                   const postDenunciando = Boolean(
                     denunciaAlvo?.alvoTipo === "post" &&
                       denunciaAlvo.alvoId === post.id
@@ -6209,6 +6376,44 @@ export default function ComunidadePage() {
                             >
                               {postCompartilhando ? "Compartilhando..." : "Compartilhar"}
                             </button>
+
+                            {podeAlterarVisibilidade && (
+                              <div style={postVisibilityMenuStyle}>
+                                <span style={postVisibilityMenuTitleStyle}>
+                                  Quem pode ver esta publicação?
+                                </span>
+
+                                {VISIBILIDADES_POST_COMUNIDADE.map((opcao) => {
+                                  const ativa = post.visibilidade === opcao.valor;
+
+                                  return (
+                                    <button
+                                      key={`${post.id}-visibilidade-${opcao.valor}`}
+                                      type="button"
+                                      role="menuitemradio"
+                                      aria-checked={ativa}
+                                      onClick={() =>
+                                        void atualizarVisibilidadePost(
+                                          post,
+                                          opcao.valor,
+                                        )
+                                      }
+                                      disabled={postVisibilidadeAtualizando}
+                                      style={
+                                        ativa
+                                          ? postVisibilityMenuItemActiveStyle
+                                          : postVisibilityMenuItemStyle
+                                      }
+                                    >
+                                      <span>{opcao.rotulo}</span>
+                                      <span aria-hidden="true">
+                                        {ativa ? "✓" : ""}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
 
                             {usuarioEhAdmin && (
                               <button
@@ -6315,6 +6520,18 @@ export default function ComunidadePage() {
                                 <span style={pinnedPostBadgeStyle}>Fixado</span>
                               </>
                             )}
+                            {post.visibilidade !== "publico" && (
+                              <>
+                                {" "}
+                                <span style={postBadgeSeparatorStyle}>·</span>
+                                {" "}
+                                <span style={postVisibilityBadgeStyle}>
+                                  {obterRotuloVisibilidadePostComunidade(
+                                    post.visibilidade,
+                                  )}
+                                </span>
+                              </>
+                            )}
                           </span>
                         </div>
 
@@ -6412,8 +6629,13 @@ export default function ComunidadePage() {
                                         data-historietas-user-content="true"
                                         style={{
                                           ...pollPostOptionTextStyle,
-                                          color: "#FFFFFF",
-                                          WebkitTextFillColor: "#FFFFFF",
+                                          color: selecionada ? "#000000" : "#FFFFFF",
+                                          WebkitTextFillColor: selecionada
+                                            ? "#000000"
+                                            : "#FFFFFF",
+                                          textShadow: selecionada
+                                            ? "none"
+                                            : pollPostOptionTextStyle.textShadow,
                                         }}
                                       >
                                         {opcao}
@@ -6422,8 +6644,13 @@ export default function ComunidadePage() {
                                       <span
                                         style={{
                                           ...pollPostStatusStyle,
-                                          color: "#FFFFFF",
-                                          WebkitTextFillColor: "#FFFFFF",
+                                          color: selecionada ? "#000000" : "#FFFFFF",
+                                          WebkitTextFillColor: selecionada
+                                            ? "#000000"
+                                            : "#FFFFFF",
+                                          textShadow: selecionada
+                                            ? "none"
+                                            : pollPostStatusStyle.textShadow,
                                         }}
                                       >
                                         {usuarioVotouNaEnquete
@@ -6641,6 +6868,27 @@ export default function ComunidadePage() {
                     {TIPOS_PUBLICACAO_COMUNIDADE.map((tipo) => (
                       <option key={tipo} value={tipo}>
                         {tipo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label style={fieldStyle}>
+                  <span style={labelStyle}>Quem pode ver esta publicação?</span>
+
+                  <select
+                    disabled={publicandoPost}
+                    value={visibilidadePost}
+                    onChange={(event) =>
+                      setVisibilidadePost(
+                        normalizarVisibilidadePostComunidade(event.target.value),
+                      )
+                    }
+                    style={selectStyle}
+                  >
+                    {VISIBILIDADES_POST_COMUNIDADE.map((opcao) => (
+                      <option key={opcao.valor} value={opcao.valor}>
+                        {opcao.rotulo}
                       </option>
                     ))}
                   </select>
@@ -7734,8 +7982,8 @@ const pollPostOptionSelectedStyle: CSSProperties = {
   ...pollPostOptionStyle,
   border: "1px solid var(--historietas-comunidade-cyan-62, rgba(56,189,248,0.62))",
   background: "linear-gradient(135deg, var(--historietas-comunidade-blue, #2563EB) 0%, var(--historietas-comunidade-cyan, #38BDF8) 100%)",
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
+  color: "#000000",
+  WebkitTextFillColor: "#000000",
   opacity: 1,
 };
 
@@ -8767,6 +9015,39 @@ const communityActionsSheetDangerItemStyle: CSSProperties = {
   color: "var(--historietas-comunidade-pink, #FB7185)",
 };
 
+const postVisibilityMenuStyle: CSSProperties = {
+  display: "grid",
+  gap: "2px",
+  padding: "8px 12px 10px",
+  borderTop: "1px solid rgba(255,255,255,0.08)",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+};
+
+const postVisibilityMenuTitleStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "11px",
+  fontWeight: 900,
+  padding: "4px 8px 6px",
+};
+
+const postVisibilityMenuItemStyle: CSSProperties = {
+  ...communityFiltersSheetOptionStyle,
+  minHeight: "42px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  borderRadius: "12px",
+  fontSize: "15px",
+  fontWeight: 850,
+};
+
+const postVisibilityMenuItemActiveStyle: CSSProperties = {
+  ...postVisibilityMenuItemStyle,
+  background: "rgba(255,255,255,0.12)",
+  color: "#FFFFFF",
+};
+
 const communityToolsStyle: CSSProperties = {
   display: "grid",
   gap: "10px",
@@ -9290,7 +9571,7 @@ const communityUserSearchCardStyle: CSSProperties = {
 const communityUserSearchAvatarStyle: CSSProperties = {
   width: "44px",
   height: "44px",
-  borderRadius: "50%",
+  borderRadius: "12px",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -9565,6 +9846,11 @@ const pinnedPostBadgeStyle: CSSProperties = {
   ...postTypeBadgeStyle,
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontWeight: 800,
+};
+
+const postVisibilityBadgeStyle: CSSProperties = {
+  ...pinnedPostBadgeStyle,
+  color: "var(--historietas-text-secondary, #A1A1AA)",
 };
 
 

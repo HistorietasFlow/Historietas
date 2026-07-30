@@ -1353,49 +1353,6 @@ function erroOpcionalIgnoravel(erro: unknown) {
   );
 }
 
-async function removerConteudoComunidadeComCascata(
-  denuncia: Pick<DenunciaComContexto, "alvoTipo" | "alvoId">
-) {
-  const alvoId = denuncia.alvoId.trim();
-
-  if (!alvoId) {
-    throw new Error(
-      "O conteúdo denunciado não possui um identificador válido."
-    );
-  }
-
-  const tabelasPorTipo: Record<TipoAlvoDenuncia, string> = {
-    post: "comunidade_posts",
-    comentario: "comunidade_comentarios",
-    comentario_capitulo: "comentarios_capitulos",
-    obra: "obras",
-    capitulo: "capitulos",
-    comentario_obra: "comentarios_obras",
-    diario_anotacao: "diario_anotacoes",
-    comentario_diario: "diario_anotacao_comentarios",
-  };
-  const tabela = tabelasPorTipo[denuncia.alvoTipo];
-
-  const { data, error } = await supabase
-    .from(tabela)
-    .delete()
-    .eq("id", alvoId)
-    .select("id")
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  if (!data?.id) {
-    throw new Error(
-      "O conteúdo não foi encontrado ou o banco recusou a remoção."
-    );
-  }
-}
-
-
-
 export default function AdminComunidadePage() {
   const { language } = useHistorietasLanguage();
   const [carregando, setCarregando] = useState(true);
@@ -2388,32 +2345,20 @@ export default function AdminComunidadePage() {
     setSucesso("");
 
     try {
-      // As tabelas relacionadas devem usar ON DELETE CASCADE. Assim, a remoção
-      // do conteúdo e de suas dependências acontece dentro da mesma operação
-      // do banco, sem apagar registros auxiliares parcialmente pelo cliente.
-      await removerConteudoComunidadeComCascata(denuncia);
+      // A RPC executa a exclusão do conteúdo e a resolução de todas as
+      // denúncias correspondentes dentro da mesma transação do PostgreSQL.
+      // Se qualquer etapa falhar, nenhuma alteração é confirmada no banco.
+      const { error: erroRemocaoTransacional } = await supabase.rpc(
+        "remover_conteudo_denunciado_transacional",
+        {
+          p_alvo_tipo: denuncia.alvoTipo,
+          p_alvo_id: denuncia.alvoId,
+          p_observacao_admin: observacaoFinal.slice(0, 800),
+        }
+      );
 
-      const { data: denunciasAtualizadas, error: erroAtualizacao } =
-        await supabase
-          .from("comunidade_denuncias")
-          .update({
-            status: "resolvida",
-            observacao_admin: observacaoFinal.slice(0, 800),
-            analisado_por: usuarioId,
-            analisado_em: analisadoEm,
-          })
-          .eq("alvo_tipo", denuncia.alvoTipo)
-          .eq("alvo_id", denuncia.alvoId)
-          .select("id");
-
-      if (erroAtualizacao) {
-        throw erroAtualizacao;
-      }
-
-      if (!denunciasAtualizadas || denunciasAtualizadas.length === 0) {
-        throw new Error(
-          "O conteúdo foi removido, mas nenhuma denúncia correspondente pôde ser atualizada."
-        );
+      if (erroRemocaoTransacional) {
+        throw erroRemocaoTransacional;
       }
     } catch (error) {
       setErro(criarMensagemErro("Erro ao remover conteúdo denunciado", error));

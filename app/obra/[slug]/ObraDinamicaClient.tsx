@@ -3418,6 +3418,7 @@ export default function ObraDinamicaPage() {
     useState(false);
   const [agoraComentarios, setAgoraComentarios] = useState(() => Date.now());
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
   const [perfilUsuarioLogado, setPerfilUsuarioLogado] =
     useState<PerfilPublicoObra | null>(null);
   const comentarioInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -3455,10 +3456,12 @@ export default function ObraDinamicaPage() {
 
         if (!cancelado) {
           setUsuarioIdLogado(data.user?.id || "");
+          setAutenticacaoCarregada(true);
         }
       } catch {
         if (!cancelado) {
           setUsuarioIdLogado("");
+          setAutenticacaoCarregada(true);
         }
       }
     }
@@ -3470,6 +3473,7 @@ export default function ObraDinamicaPage() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!cancelado) {
         setUsuarioIdLogado(session?.user?.id || "");
+        setAutenticacaoCarregada(true);
       }
     });
 
@@ -3718,6 +3722,11 @@ export default function ObraDinamicaPage() {
     : "Não informado";
   const autorObraNome = perfilAutorObra?.nome || obra?.autor || "Autor não informado";
   const autorObraId = perfilAutorObra?.userId || obra?.autorId || "";
+  const usuarioEhAutorDaObra = Boolean(
+    usuarioIdLogado &&
+      autorObraId &&
+      usuarioIdLogado === autorObraId
+  );
   const obraDisponivel = Boolean(obra?.disponivel);
   const sinopseObraExibida =
     obra && obra.sinopse.trim()
@@ -4245,10 +4254,14 @@ export default function ObraDinamicaPage() {
 
     const obraAtual = obra;
     const versaoAoIniciar = avaliacaoVersaoRef.current;
-    const avaliacaoLocalInicial = obterAvaliacaoLocalDetalhada(
-      obraAtual,
-      usuarioIdLogado
+    const usuarioLogadoEhAutorInicial = Boolean(
+      usuarioIdLogado &&
+        obraAtual.autorId &&
+        usuarioIdLogado === obraAtual.autorId
     );
+    const avaliacaoLocalInicial = usuarioLogadoEhAutorInicial
+      ? { encontrada: false, nota: 0 }
+      : obterAvaliacaoLocalDetalhada(obraAtual, usuarioIdLogado);
 
     const aplicarAvaliacaoLocalTimer = window.setTimeout(() => {
       if (avaliacaoVersaoRef.current !== versaoAoIniciar) {
@@ -4276,10 +4289,15 @@ export default function ObraDinamicaPage() {
       try {
         const { data: usuarioData } = await supabase.auth.getUser();
         const userId = usuarioData.user?.id || usuarioIdLogado || "";
-        const avaliacaoLocal = obterAvaliacaoLocalDetalhada(
-          obraAtual,
-          userId
+        const autorIdObraAtual = obraAtual.autorId?.trim() || "";
+        const usuarioEhAutorDaObraAtual = Boolean(
+          userId &&
+            autorIdObraAtual &&
+            userId === autorIdObraAtual
         );
+        const avaliacaoLocal = usuarioEhAutorDaObraAtual
+          ? { encontrada: false, nota: 0 }
+          : obterAvaliacaoLocalDetalhada(obraAtual, userId);
 
         const { data: avaliacoesData, error: erroAvaliacoes } = await supabase
           .from("obra_avaliacoes")
@@ -4309,17 +4327,28 @@ export default function ObraDinamicaPage() {
               ? registro.user_id.trim()
               : `avaliacao-${indice}`;
 
+          if (autorIdObraAtual && chaveUsuario === autorIdObraAtual) {
+            return;
+          }
+
           notasPorUsuario.set(chaveUsuario, Math.round(nota * 2) / 2);
         });
 
-        const minhaNotaRemota = userId
-          ? notasPorUsuario.get(userId) || 0
-          : 0;
-        const minhaNota = avaliacaoLocal.encontrada
-          ? avaliacaoLocal.nota
-          : minhaNotaRemota;
+        const minhaNotaRemota =
+          userId && !usuarioEhAutorDaObraAtual
+            ? notasPorUsuario.get(userId) || 0
+            : 0;
+        const minhaNota = usuarioEhAutorDaObraAtual
+          ? 0
+          : avaliacaoLocal.encontrada
+            ? avaliacaoLocal.nota
+            : minhaNotaRemota;
 
-        if (userId && avaliacaoLocal.encontrada) {
+        if (
+          userId &&
+          !usuarioEhAutorDaObraAtual &&
+          avaliacaoLocal.encontrada
+        ) {
           if (avaliacaoLocal.nota > 0) {
             notasPorUsuario.set(userId, avaliacaoLocal.nota);
           } else {
@@ -4338,7 +4367,11 @@ export default function ObraDinamicaPage() {
               );
             });
           }
-        } else if (userId && minhaNotaRemota > 0) {
+        } else if (
+          userId &&
+          !usuarioEhAutorDaObraAtual &&
+          minhaNotaRemota > 0
+        ) {
           salvarAvaliacaoLocal(obraAtual, minhaNotaRemota, userId);
         }
 
@@ -4385,7 +4418,13 @@ export default function ObraDinamicaPage() {
       cancelado = true;
       window.clearTimeout(aplicarAvaliacaoLocalTimer);
     };
-  }, [obra?.id, obra?.slug, obraNormalizada, usuarioIdLogado]);
+  }, [
+    obra?.id,
+    obra?.slug,
+    obra?.autorId,
+    obraNormalizada,
+    usuarioIdLogado,
+  ]);
 
   async function obterUsuarioLogadoParaAcao(mensagem: string) {
     try {
@@ -5073,6 +5112,10 @@ export default function ObraDinamicaPage() {
     );
 
     if (!userId) {
+      return;
+    }
+
+    if (autorObraId && userId === autorObraId) {
       return;
     }
 
@@ -6319,53 +6362,55 @@ export default function ObraDinamicaPage() {
           </div>
         )}
 
-        <section style={isDesktop ? desktopWorkRatingBoxStyle : workRatingBoxStyle}>
-          <div style={workRatingHeaderStyle}>
-            <span style={workRatingTitleStyle}>AVALIE ESTA OBRA</span>
-          </div>
+        {autenticacaoCarregada && !usuarioEhAutorDaObra ? (
+          <section style={isDesktop ? desktopWorkRatingBoxStyle : workRatingBoxStyle}>
+            <div style={workRatingHeaderStyle}>
+              <span style={workRatingTitleStyle}>AVALIE ESTA OBRA</span>
+            </div>
 
-          <div style={workRatingStarsRowStyle}>
-            {NOTAS_AVALIACAO_OBRA.map((estrela) => {
-              const preenchimentoEstrela = obterPreenchimentoEstrela(
-                estrela,
-                avaliacaoObra.minhaNota
-              );
-              const proximaNota = obterProximaNotaAvaliacao(
-                estrela,
-                avaliacaoObra.minhaNota
-              );
+            <div style={workRatingStarsRowStyle}>
+              {NOTAS_AVALIACAO_OBRA.map((estrela) => {
+                const preenchimentoEstrela = obterPreenchimentoEstrela(
+                  estrela,
+                  avaliacaoObra.minhaNota
+                );
+                const proximaNota = obterProximaNotaAvaliacao(
+                  estrela,
+                  avaliacaoObra.minhaNota
+                );
 
-              return (
-                <button
-                  key={`avaliacao-obra-${estrela}`}
-                  type="button"
-                  onClick={() => void avaliarObra(proximaNota)}
-                  disabled={avaliacaoObra.salvando}
-                  style={
-                    preenchimentoEstrela === "0%"
-                      ? workRatingStarButtonStyle
-                      : workRatingStarActiveStyle
-                  }
-                  aria-label={`Avaliar com ${proximaNota
-                    .toString()
-                    .replace(".", ",")} estrela${proximaNota === 1 ? "" : "s"}`}
-                >
-                  <span style={workRatingStarVisualStyle} aria-hidden="true">
-                    <span style={workRatingStarBaseStyle}>★</span>
-                    <span
-                      style={{
-                        ...workRatingStarFillStyle,
-                        width: preenchimentoEstrela,
-                      }}
-                    >
-                      ★
+                return (
+                  <button
+                    key={`avaliacao-obra-${estrela}`}
+                    type="button"
+                    onClick={() => void avaliarObra(proximaNota)}
+                    disabled={avaliacaoObra.salvando}
+                    style={
+                      preenchimentoEstrela === "0%"
+                        ? workRatingStarButtonStyle
+                        : workRatingStarActiveStyle
+                    }
+                    aria-label={`Avaliar com ${proximaNota
+                      .toString()
+                      .replace(".", ",")} estrela${proximaNota === 1 ? "" : "s"}`}
+                  >
+                    <span style={workRatingStarVisualStyle} aria-hidden="true">
+                      <span style={workRatingStarBaseStyle}>★</span>
+                      <span
+                        style={{
+                          ...workRatingStarFillStyle,
+                          width: preenchimentoEstrela,
+                        }}
+                      >
+                        ★
+                      </span>
                     </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         <section style={isDesktop ? desktopCommunityBoxStyle : communityBoxStyle}>
           <div style={communityHeaderStyle}>

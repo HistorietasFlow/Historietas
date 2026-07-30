@@ -1133,6 +1133,9 @@ async function carregarResumoAvaliacoes(obras: ObraLista[]) {
     return obras;
   }
 
+  const autorIdPorObra = new Map(
+    obras.map((obra) => [obra.id, obra.autorId.trim()]),
+  );
   const notasPorObra = new Map<string, number[]>();
   const tamanhoChunk = 100;
 
@@ -1142,7 +1145,7 @@ async function carregarResumoAvaliacoes(obras: ObraLista[]) {
     try {
       const { data, error } = await supabase
         .from("obra_avaliacoes")
-        .select("obra_id,nota")
+        .select("obra_id,user_id,nota")
         .in("obra_id", chunk)
         .limit(Math.max(chunk.length * 100, 100));
 
@@ -1157,9 +1160,16 @@ async function carregarResumoAvaliacoes(obras: ObraLista[]) {
 
         const row = registro as RegistroGenerico;
         const obraId = pegarTexto(row.obra_id);
+        const avaliadorId = pegarTexto(row.user_id);
+        const autorId = autorIdPorObra.get(obraId) || "";
         const nota = pegarNumero(row.nota);
 
-        if (!obraId || nota <= 0 || nota > 5) {
+        if (
+          !obraId ||
+          nota <= 0 ||
+          nota > 5 ||
+          (autorId && avaliadorId === autorId)
+        ) {
           return;
         }
 
@@ -2358,7 +2368,11 @@ async function carregarListasDoPerfil(
         const obra = obrasPorId.get(pegarTexto(registro.obra_id));
         const nota = pegarNumero(registro.nota);
 
-        if (!obra || nota <= 0) {
+        if (
+          !obra ||
+          nota <= 0 ||
+          (obra.autorId && obra.autorId === userId)
+        ) {
           return null;
         }
 
@@ -4923,7 +4937,15 @@ function ListasUniversaisContent() {
     const obra = obraMenuAberta;
     const userId = usuarioAtualId.trim();
 
-    if (!obra || !perfilEhProprio || !userId || avaliacaoSalvando) {
+    const autorId = obra?.autorId.trim() || "";
+
+    if (
+      !obra ||
+      !perfilEhProprio ||
+      !userId ||
+      avaliacaoSalvando ||
+      (autorId && autorId === userId)
+    ) {
       return;
     }
 
@@ -6037,88 +6059,72 @@ function ListasUniversaisContent() {
                 )}
               </div>
 
-              {(perfilEhProprio ||
-                (avaliacaoDiario.visivel && avaliacaoDiario.podeAvaliar)) && (
-                <div
-                  style={listDiaryHeaderRatingBoxStyle}
-                  aria-label={
-                    perfilEhProprio
-                      ? `Média do Diário: ${formatarNotaListas(
-                          avaliacaoDiario.media,
-                        )} de 5`
-                      : "Avaliar este Diário"
-                  }
-                >
-                  <div style={listDiaryHeaderRatingStarsRowStyle}>
-                    {NOTAS_AVALIACAO_LISTAS.map((estrela) => {
-                      const notaExibida = perfilEhProprio
-                        ? avaliacaoDiario.media
-                        : avaliacaoDiario.minhaNota;
-                      const preenchimento = obterPreenchimentoEstrelaListas(
-                        estrela,
-                        notaExibida,
-                      );
-                      const interativa =
-                        !perfilEhProprio &&
-                        avaliacaoDiario.visivel &&
-                        avaliacaoDiario.podeAvaliar &&
-                        !avaliacaoDiario.salvando;
-                      const proximaNota = obterProximaNotaAvaliacaoListas(
-                        estrela,
-                        avaliacaoDiario.minhaNota,
-                      );
+              {!perfilEhProprio &&
+                avaliacaoDiario.visivel &&
+                avaliacaoDiario.podeAvaliar && (
+                  <div
+                    style={listDiaryHeaderRatingBoxStyle}
+                    aria-label="Avaliar este Diário"
+                  >
+                    <div style={listDiaryHeaderRatingStarsRowStyle}>
+                      {NOTAS_AVALIACAO_LISTAS.map((estrela) => {
+                        const preenchimento = obterPreenchimentoEstrelaListas(
+                          estrela,
+                          avaliacaoDiario.minhaNota,
+                        );
+                        const interativa = !avaliacaoDiario.salvando;
+                        const proximaNota = obterProximaNotaAvaliacaoListas(
+                          estrela,
+                          avaliacaoDiario.minhaNota,
+                        );
 
-                      return (
-                        <button
-                          key={`avaliacao-diario-cabecalho-${estrela}`}
-                          type="button"
-                          onClick={() => {
-                            if (!interativa) {
-                              return;
-                            }
+                        return (
+                          <button
+                            key={`avaliacao-diario-cabecalho-${estrela}`}
+                            type="button"
+                            onClick={() => {
+                              if (!interativa) {
+                                return;
+                              }
 
-                            void salvarAvaliacaoDiarioPerfil(proximaNota);
-                          }}
-                          disabled={!interativa}
-                          style={{
-                            ...(preenchimento === "0%"
-                              ? listDiaryHeaderRatingStarButtonStyle
-                              : listDiaryHeaderRatingStarActiveStyle),
-                            cursor: interativa ? "pointer" : "default",
-                            opacity: avaliacaoDiario.salvando ? 0.58 : 1,
-                          }}
-                          aria-label={
-                            interativa
-                              ? `Avaliar Diário com ${proximaNota
-                                  .toString()
-                                  .replace(".", ",")} estrela${
-                                  proximaNota === 1 ? "" : "s"
-                                }`
-                              : undefined
-                          }
-                        >
-                          <span
-                            style={listDiaryHeaderRatingStarVisualStyle}
-                            aria-hidden="true"
+                              void salvarAvaliacaoDiarioPerfil(proximaNota);
+                            }}
+                            disabled={!interativa}
+                            style={{
+                              ...(preenchimento === "0%"
+                                ? listDiaryHeaderRatingStarButtonStyle
+                                : listDiaryHeaderRatingStarActiveStyle),
+                              cursor: interativa ? "pointer" : "default",
+                              opacity: avaliacaoDiario.salvando ? 0.58 : 1,
+                            }}
+                            aria-label={`Avaliar Diário com ${proximaNota
+                              .toString()
+                              .replace(".", ",")} estrela${
+                              proximaNota === 1 ? "" : "s"
+                            }`}
                           >
-                            <span style={listDiaryHeaderRatingStarBaseStyle}>
-                              ★
-                            </span>
                             <span
-                              style={{
-                                ...listDiaryHeaderRatingStarFillStyle,
-                                width: preenchimento,
-                              }}
+                              style={listDiaryHeaderRatingStarVisualStyle}
+                              aria-hidden="true"
                             >
-                              ★
+                              <span style={listDiaryHeaderRatingStarBaseStyle}>
+                                ★
+                              </span>
+                              <span
+                                style={{
+                                  ...listDiaryHeaderRatingStarFillStyle,
+                                  width: preenchimento,
+                                }}
+                              >
+                                ★
+                              </span>
                             </span>
-                          </span>
-                        </button>
-                      );
-                    })}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           ) : (
             <h1 data-historietas-user-content="true" style={pageTitleStyle}>

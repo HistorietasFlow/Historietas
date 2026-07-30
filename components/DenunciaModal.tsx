@@ -769,7 +769,13 @@ export default function DenunciaModal({
                 disabled={enviando || !motivo}
                 style={{
                   ...botaoPrimarioStyle,
-                  opacity: enviando || !motivo ? 0.58 : 1,
+                  background:
+                    enviando || !motivo
+                      ? "#4B5563"
+                      : "var(--historietas-accent, #8b5cf6)",
+                  color: "#FFFFFF",
+                  WebkitTextFillColor: "#FFFFFF",
+                  opacity: 1,
                   cursor:
                     enviando || !motivo ? "not-allowed" : "pointer",
                 }}
@@ -1026,9 +1032,18 @@ const botaoSecundarioStyle: CSSProperties = {
 
 const botaoPrimarioStyle: CSSProperties = {
   ...botaoBaseStyle,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: "148px",
   border: 0,
   background: "var(--historietas-accent, #8b5cf6)",
-  color: "#ffffff",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  WebkitAppearance: "none",
+  appearance: "none",
+  lineHeight: 1.2,
+  whiteSpace: "nowrap",
 };
 
 const sucessoContainerStyle: CSSProperties = {

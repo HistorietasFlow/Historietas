@@ -6073,11 +6073,49 @@ function criarHrefPublicacaoComunidadePerfil(postId: string) {
   return `/comunidade?post=${encodeURIComponent(postId.trim())}`;
 }
 
+function analisarEnquetePublicacaoComunidadePerfil(
+  publicacao: PublicacaoComunidadePerfil,
+) {
+  const textoOriginal = publicacao.texto
+    .replace(/\r\n?/g, "\n")
+    .trim();
+  const marcadoresOpcoes =
+    textoOriginal.match(/op(?:ç|c)[aã]o\s+\d+\s*:/gi) || [];
+  const ehEnquete =
+    marcadoresOpcoes.length >= 2 ||
+    /enquete/i.test(publicacao.tipoPublicacao) ||
+    /enquete/i.test(publicacao.categoria) ||
+    /^enquete\s*:/i.test(textoOriginal);
+  const indicePrimeiraOpcao = textoOriginal.search(
+    /op(?:ç|c)[aã]o\s+\d+\s*:/i,
+  );
+  const perguntaBase =
+    indicePrimeiraOpcao >= 0
+      ? textoOriginal.slice(0, indicePrimeiraOpcao)
+      : textoOriginal.split("\n")[0] || "";
+  const pergunta = perguntaBase
+    .replace(/^enquete\s*:\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return {
+    ehEnquete,
+    pergunta: pergunta || "Enquete da comunidade",
+    totalOpcoes: ehEnquete ? marcadoresOpcoes.length : 0,
+  };
+}
+
 function criarResumoPublicacaoComunidadePerfil(
   publicacao: PublicacaoComunidadePerfil,
 ) {
   if (publicacao.temSpoiler) {
     return "Este post contém spoiler";
+  }
+
+  const enquete = analisarEnquetePublicacaoComunidadePerfil(publicacao);
+
+  if (enquete.ehEnquete) {
+    return enquete.pergunta;
   }
 
   const textoLimpo = publicacao.texto.replace(/\s+/g, " ").trim();
@@ -6086,7 +6124,7 @@ function criarResumoPublicacaoComunidadePerfil(
     return "Publicação sem texto.";
   }
 
-  return `${textoLimpo.slice(0, 180)}${textoLimpo.length > 180 ? "..." : ""}`;
+  return `${textoLimpo.slice(0, 150)}${textoLimpo.length > 150 ? "..." : ""}`;
 }
 
 function dataDiarioPerfilFormatada(dataIso: string) {
@@ -7522,6 +7560,7 @@ function PerfilAutorPageContent() {
   const [perfilUsuarioRemoto, setPerfilUsuarioRemoto] =
     useState<PerfilUsuarioRemoto | null>(null);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
+  const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
   const [podeEditarPerfil, setPodeEditarPerfil] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [menuPerfilAberto, setMenuPerfilAberto] = useState(false);
@@ -7631,11 +7670,15 @@ function PerfilAutorPageContent() {
         const { data } = await supabase.auth.getUser();
         const userId = data.user?.id || "";
 
-        if (componenteAtivo && userId) {
+        if (componenteAtivo) {
           setUsuarioIdLogado(userId);
+          setAutenticacaoCarregada(true);
         }
       } catch {
-        // A aba Biblioteca depende do usuário logado, mas o perfil continua abrindo sem travar.
+        if (componenteAtivo) {
+          setUsuarioIdLogado("");
+          setAutenticacaoCarregada(true);
+        }
       }
     }
 
@@ -7646,6 +7689,7 @@ function PerfilAutorPageContent() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (componenteAtivo) {
         setUsuarioIdLogado(session?.user?.id || "");
+        setAutenticacaoCarregada(true);
       }
     });
 
@@ -9097,10 +9141,20 @@ function PerfilAutorPageContent() {
     }
 
     const perfilAtualAutor = perfilParaMostrar;
-    const notaLocal = obterAvaliacaoAutorLocal(
-      perfilAtualAutor,
-      usuarioIdLogado,
-    );
+    const notaLocal = perfilPertenceAoUsuario
+      ? 0
+      : obterAvaliacaoAutorLocal(
+          perfilAtualAutor,
+          usuarioIdLogado,
+        );
+
+    if (perfilPertenceAoUsuario && usuarioIdLogado.trim()) {
+      salvarAvaliacaoAutorLocal(
+        perfilAtualAutor,
+        0,
+        usuarioIdLogado,
+      );
+    }
 
     setAvaliacaoAutor({
       media: notaLocal > 0 ? notaLocal : 0,
@@ -9125,7 +9179,7 @@ function PerfilAutorPageContent() {
 
         const { data: avaliacoesData, error: erroAvaliacoes } = await supabase
           .from("autor_avaliacoes")
-          .select("nota")
+          .select("user_id,nota")
           .eq("autor_id", autorId)
           .limit(1000);
 
@@ -9134,6 +9188,17 @@ function PerfilAutorPageContent() {
         }
 
         const notas = avaliacoesData
+          .filter((avaliacao) => {
+            const avaliadorId =
+              typeof (avaliacao as { user_id?: unknown }).user_id === "string"
+                ? String((avaliacao as { user_id?: unknown }).user_id).trim()
+                : "";
+
+            return (
+              !avaliadorId ||
+              avaliadorId.toLowerCase() !== autorId.toLowerCase()
+            );
+          })
           .map((avaliacao) => Number((avaliacao as { nota?: unknown }).nota))
           .filter((nota) => Number.isFinite(nota) && nota >= 0.5 && nota <= 5);
         const total = notas.length;
@@ -9141,9 +9206,13 @@ function PerfilAutorPageContent() {
           total > 0
             ? notas.reduce((soma, nota) => soma + nota, 0) / total
             : 0;
-        let minhaNota = notaLocal;
+        const usuarioEhDonoDoPerfil = Boolean(
+          userId &&
+            userId.trim().toLowerCase() === autorId.toLowerCase(),
+        );
+        let minhaNota = usuarioEhDonoDoPerfil ? 0 : notaLocal;
 
-        if (userId) {
+        if (userId && !usuarioEhDonoDoPerfil) {
           const { data: minhaAvaliacao } = await supabase
             .from("autor_avaliacoes")
             .select("nota")
@@ -9203,6 +9272,7 @@ function PerfilAutorPageContent() {
     perfilParaMostrar,
     autorPodeReceberAvaliacao,
     usuarioIdLogado,
+    perfilPertenceAoUsuario,
   ]);
 
   useEffect(() => {
@@ -9870,8 +9940,7 @@ function PerfilAutorPageContent() {
       return;
     }
 
-    if (podeEditarPerfil) {
-      setMensagemAcao("Você não pode avaliar seu próprio perfil.");
+    if (perfilPertenceAoUsuario) {
       return;
     }
 
@@ -9889,6 +9958,15 @@ function PerfilAutorPageContent() {
       return;
     }
 
+    const autorId = perfilParaMostrar.autorId.trim();
+
+    if (
+      autorId &&
+      userId.trim().toLowerCase() === autorId.toLowerCase()
+    ) {
+      return;
+    }
+
     const notaNormalizada = nota <= 0 ? 0 : Math.round(nota * 2) / 2;
     const proximaAvaliacao = calcularProximaAvaliacaoAutor(
       avaliacaoAutor,
@@ -9902,8 +9980,6 @@ function PerfilAutorPageContent() {
       notaNormalizada,
       usuarioIdLogado,
     );
-
-    const autorId = perfilParaMostrar.autorId.trim();
 
     if (!autorId || !idAutorSupabaseValido(autorId)) {
       setAvaliacaoAutor((avaliacaoAtual) => ({
@@ -9961,8 +10037,7 @@ function PerfilAutorPageContent() {
       return;
     }
 
-    if (podeEditarPerfil) {
-      setMensagemAcao("Você não pode avaliar seu próprio Diário.");
+    if (perfilPertenceAoUsuario) {
       return;
     }
 
@@ -9991,6 +10066,10 @@ function PerfilAutorPageContent() {
 
     if (!diarioUserId || !idAutorSupabaseValido(diarioUserId)) {
       setMensagemAcao("Este Diário não está disponível para avaliação.");
+      return;
+    }
+
+    if (userId.trim().toLowerCase() === diarioUserId.toLowerCase()) {
       return;
     }
 
@@ -12086,7 +12165,9 @@ function PerfilAutorPageContent() {
           </section>
         )}
 
-        {autorPodeReceberAvaliacao && !podeEditarPerfil && (
+        {autenticacaoCarregada &&
+          autorPodeReceberAvaliacao &&
+          !perfilPertenceAoUsuario && (
           <section
             style={isDesktop ? desktopAuthorRatingBoxStyle : authorRatingBoxStyle}
             aria-label="Avaliação do autor"
@@ -12138,8 +12219,9 @@ function PerfilAutorPageContent() {
           </section>
         )}
 
-        {perfilUsaAvaliacaoDiario &&
-          !podeEditarPerfil &&
+        {autenticacaoCarregada &&
+          perfilUsaAvaliacaoDiario &&
+          !perfilPertenceAoUsuario &&
           avaliacaoDiario.visivel &&
           avaliacaoDiario.podeAvaliar && (
             <section
@@ -12554,12 +12636,31 @@ function PerfilAutorPageContent() {
                                 </span>
                               </span>
 
-                              <span
-                                data-historietas-user-content="true"
-                                style={authorCommunityPostTextStyle}
-                              >
-                                {criarResumoPublicacaoComunidadePerfil(
+                              <span style={authorCommunityPostBodyStyle}>
+                                <span
+                                  data-historietas-user-content="true"
+                                  style={authorCommunityPostTextStyle}
+                                >
+                                  {criarResumoPublicacaoComunidadePerfil(
+                                    publicacao,
+                                  )}
+                                </span>
+
+                                {analisarEnquetePublicacaoComunidadePerfil(
                                   publicacao,
+                                ).totalOpcoes >= 2 && (
+                                  <span
+                                    style={authorCommunityPostPollInfoStyle}
+                                  >
+                                    Enquete
+                                    <span aria-hidden="true">•</span>
+                                    {
+                                      analisarEnquetePublicacaoComunidadePerfil(
+                                        publicacao,
+                                      ).totalOpcoes
+                                    }{" "}
+                                    opções
+                                  </span>
                                 )}
                               </span>
 
@@ -16116,19 +16217,22 @@ const authorCommunityPostsListStyle: CSSProperties = {
   width: "100%",
   display: "grid",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "6px",
+  gap: "8px",
   minWidth: 0,
   maxWidth: "100%",
+  alignItems: "stretch",
 };
 
 const authorCommunityPostWrapperStyle: CSSProperties = {
   position: "relative",
   minWidth: 0,
   maxWidth: "100%",
+  height: "100%",
 };
 
 const authorCommunityPostStyle: CSSProperties = {
-  minHeight: "104px",
+  minHeight: "118px",
+  height: "100%",
   padding: "10px",
   borderRadius: "17px",
   background: "var(--historietas-perfil-surface, #08030F)",
@@ -16136,7 +16240,8 @@ const authorCommunityPostStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "grid",
-  alignContent: "start",
+  gridTemplateRows: "auto minmax(0, 1fr) auto",
+  alignContent: "stretch",
   gap: "7px",
   minWidth: 0,
   maxWidth: "100%",
@@ -16168,6 +16273,8 @@ const authorCommunityPostHeaderStyle: CSSProperties = {
   justifyContent: "space-between",
   gap: "8px",
   minWidth: 0,
+  paddingBottom: "6px",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
 };
 
 const authorCommunityPostTypeStyle: CSSProperties = {
@@ -16190,20 +16297,43 @@ const authorCommunityPostDateStyle: CSSProperties = {
   flexShrink: 0,
 };
 
+const authorCommunityPostBodyStyle: CSSProperties = {
+  minWidth: 0,
+  display: "grid",
+  alignContent: "start",
+  gap: "6px",
+  paddingTop: "1px",
+};
+
 const authorCommunityPostTextStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #F4F4F5)",
   fontSize: "10px",
-  lineHeight: 1.35,
+  lineHeight: 1.38,
   fontWeight: 800,
   overflow: "hidden",
   display: "-webkit-box",
-  WebkitLineClamp: 4,
+  WebkitLineClamp: 3,
   WebkitBoxOrient: "vertical",
   ...safeTextStyle,
 };
 
+const authorCommunityPostPollInfoStyle: CSSProperties = {
+  width: "fit-content",
+  maxWidth: "100%",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "5px",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "8px",
+  lineHeight: 1.1,
+  fontWeight: 850,
+  whiteSpace: "nowrap",
+};
+
 const authorCommunityPostWorkStyle: CSSProperties = {
   marginTop: "auto",
+  paddingTop: "6px",
+  borderTop: "1px solid rgba(255,255,255,0.06)",
   display: "flex",
   alignItems: "center",
   gap: "5px",
@@ -17258,7 +17388,7 @@ const desktopAuthorCommunityGridStyle: CSSProperties = {
 const desktopAuthorCommunityPostsListStyle: CSSProperties = {
   ...authorCommunityPostsListStyle,
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "8px",
+  gap: "10px",
 };
 
 const desktopAuthorCommunityStatsGridStyle: CSSProperties = {
