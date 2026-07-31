@@ -7,7 +7,6 @@ import type { ChangeEvent, CSSProperties } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
-import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 
@@ -1519,7 +1518,6 @@ export default function PublicarPage() {
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const { notificacoesNaoLidas } = useNotificacoes();
   const { language: idioma } = useHistorietasLanguage();
   const t = (chave: ChaveTextoPublicar) => obterTextoPublicar(idioma, chave);
 
@@ -2354,27 +2352,6 @@ export default function PublicarPage() {
             </span>
           </Link>
 
-          {isDesktop ? (
-            <Link
-              href="/notificacoes"
-              style={desktopNotificationButtonStyle}
-              aria-label={
-                notificacoesNaoLidas > 0
-                  ? `${t("notificacoes")}: ${notificacoesNaoLidas} ${t("notificacoesNaoLidas")}`
-                  : t("notificacoes")
-              }
-            >
-              N
-
-              {notificacoesNaoLidas > 0 ? (
-                <span style={desktopNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99
-                    ? "99+"
-                    : notificacoesNaoLidas}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
         </header>
 
         <section style={isDesktop ? desktopMainGridSingleStyle : mainGridStyle}>
@@ -2387,7 +2364,7 @@ export default function PublicarPage() {
             )}
 
 
-            <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
+            <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
               <input
                 ref={capaInputRef}
                 type="file"
@@ -2397,7 +2374,16 @@ export default function PublicarPage() {
               />
 
               <div style={isDesktop ? desktopChapterImportBoxStyle : chapterImportBoxStyle}>
-                <div style={criarCoverUploadIconBoxStyle(capa)}>
+                <div
+                  style={
+                    isDesktop
+                      ? {
+                          ...criarCoverUploadIconBoxStyle(capa),
+                          ...desktopCoverUploadIconBoxStyle,
+                        }
+                      : criarCoverUploadIconBoxStyle(capa)
+                  }
+                >
                   {!capa && <span style={chapterImportIconStyle}>+</span>}
                 </div>
 
@@ -2572,7 +2558,7 @@ export default function PublicarPage() {
               </div>
             </div>
 
-            <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
+            <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
               <label style={labelStyle}>{t("tag")}</label>
 
               <select
@@ -2615,7 +2601,7 @@ export default function PublicarPage() {
               )}
             </div>
 
-            <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
+            <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
               <label style={labelStyle}>{t("classificacaoIndicativa")}</label>
 
               <select
@@ -2682,7 +2668,13 @@ export default function PublicarPage() {
                     : chapterImportBoxStyle
                 }
               >
-                <div style={chapterImportIconBoxStyle}>
+                <div
+                  style={
+                    isDesktop
+                      ? { ...chapterImportIconBoxStyle, ...desktopFileUploadIconBoxStyle }
+                      : chapterImportIconBoxStyle
+                  }
+                >
                   <span style={chapterImportIconStyle}>
                     {temCapituloImportado ? "⇧" : "▣"}
                   </span>
@@ -2867,7 +2859,7 @@ export default function PublicarPage() {
             <div
               style={
                 isDesktop
-                  ? { ...desktopProgressBoxStyle, gridColumn: "1 / -1", width: "100%" }
+                  ? { ...desktopProgressBoxStyle, width: "100%" }
                   : { ...progressBoxStyle, width: "100%" }
               }
             >
@@ -2983,7 +2975,9 @@ export default function PublicarPage() {
                 </div>
               </article>
             ) : (
-              <div style={emptyPreviewBoxStyle}>
+              <div
+                style={isDesktop ? desktopEmptyPreviewBoxStyle : emptyPreviewBoxStyle}
+              >
                 <div style={emptyPreviewCoverStyle}>
                   <span style={emptyPreviewIconStyle}>+</span>
                 </div>
@@ -3185,7 +3179,7 @@ const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100vh",
   width: "100%",
-  maxWidth: "100vw",
+  maxWidth: "100%",
   overflowX: "hidden",
   background: "var(--historietas-publicar-bg-page, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
@@ -3269,53 +3263,11 @@ const titleHeaderStyle: CSSProperties = {
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
   position: "relative",
-  marginBottom: "18px",
-};
-
-const desktopNotificationButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: 0,
-  transform: "translateY(-50%)",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, var(--historietas-publicar-bg-deep, #04000A))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
   justifyContent: "center",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  flex: "0 0 auto",
-  boxShadow: "none",
-  zIndex: 2,
-};
-
-const desktopNotificationBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, var(--historietas-publicar-bg-page, #070212))",
-  background: "var(--historietas-publicar-danger, #EF4444)",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
+  minHeight: "48px",
+  marginBottom: "24px",
+  paddingRight: 0,
+  textAlign: "center",
 };
 
 const headerTitleLinkStyle: CSSProperties = {
@@ -3337,6 +3289,10 @@ const headerTitleLinkStyle: CSSProperties = {
 
 const desktopHeaderTitleLinkStyle: CSSProperties = {
   ...headerTitleLinkStyle,
+  width: "100%",
+  justifyContent: "center",
+  textAlign: "center",
+  fontSize: "29px",
 };
 
 const headerTitleMarkStyle: CSSProperties = {
@@ -3367,6 +3323,8 @@ const headerTitleTextStyle: CSSProperties = {
 
 const desktopHeaderTitleTextStyle: CSSProperties = {
   ...headerTitleTextStyle,
+  fontSize: "29px",
+  letterSpacing: "-0.035em",
 };
 
 
@@ -4430,8 +4388,9 @@ const miniCounterWarningStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1120px, calc(100% - 48px))",
-  padding: "24px 0 64px",
+  width: "min(1180px, calc(100% - 64px))",
+  maxWidth: "100%",
+  padding: "30px 0 72px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -4466,37 +4425,47 @@ const desktopDescriptionStyle: CSSProperties = {
 
 const desktopProgressBoxStyle: CSSProperties = {
   ...progressBoxStyle,
-  width: "min(520px, 100%)",
+  gridColumn: "1 / -1",
+  width: "100%",
   padding: 0,
 };
 
 
 const desktopMainGridSingleStyle: CSSProperties = {
   ...mainGridStyle,
-  gridTemplateColumns: "minmax(0, 1.52fr) minmax(340px, 0.88fr)",
+  gridTemplateColumns: "minmax(0, 760px)",
+  justifyContent: "center",
   alignItems: "start",
-  gap: "18px",
+  gap: "28px",
+  width: "100%",
 };
 
 
 const desktopFormPanelStyle: CSSProperties = {
   ...formPanelStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gridTemplateColumns: "minmax(0, 1fr)",
   alignItems: "start",
+  width: "100%",
+  maxWidth: "760px",
   padding: 0,
   borderRadius: 0,
   gap: "16px",
+  background: "transparent",
+  border: "0",
+  boxShadow: "none",
   overflow: "visible",
 };
 
 const desktopHalfFieldStyle: CSSProperties = {
   ...fieldGroupStyle,
+  gridColumn: "auto",
   minWidth: 0,
 };
 
 const desktopFullWidthFieldStyle: CSSProperties = {
   ...fieldGroupStyle,
   gridColumn: "1 / -1",
+  minWidth: 0,
 };
 
 const desktopFullWidthErrorBoxStyle: CSSProperties = {
@@ -4514,7 +4483,7 @@ const desktopFormSectionHeaderStyle: CSSProperties = {
 const desktopDoubleFieldStyle: CSSProperties = {
   ...doubleFieldStyle,
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "14px",
+  gap: "16px",
 };
 
 const desktopFullWidthDoubleFieldStyle: CSSProperties = {
@@ -4541,55 +4510,83 @@ const desktopCoverUploadContentStyle: CSSProperties = {
 const desktopCoverButtonsStyle: CSSProperties = {
   ...coverButtonsStyle,
   justifyContent: "flex-start",
-  gap: "8px",
+  gap: "9px",
 };
 
 const desktopCoverButtonStyle: CSSProperties = {
   ...coverButtonStyle,
-  flex: "0 0 auto",
+  flex: "0 1 auto",
   width: "auto",
-  minWidth: "126px",
-  maxWidth: "180px",
-  padding: "0 16px",
-  whiteSpace: "nowrap",
+  minWidth: "138px",
+  maxWidth: "220px",
+  padding: "0 17px",
+  whiteSpace: "normal",
 };
 
 const desktopRemoveCoverButtonStyle: CSSProperties = {
   ...removeCoverButtonStyle,
-  flex: "0 0 auto",
+  flex: "0 1 auto",
   width: "auto",
-  minWidth: "104px",
-  maxWidth: "160px",
-  padding: "0 15px",
-  whiteSpace: "nowrap",
+  minWidth: "112px",
+  maxWidth: "180px",
+  padding: "0 16px",
+  whiteSpace: "normal",
 };
 
 const desktopChapterImportBoxStyle: CSSProperties = {
   ...chapterImportBoxStyle,
-  gridTemplateColumns: "64px minmax(0, 1fr)",
-  gap: "14px",
-  padding: 0,
-  borderRadius: 0,
-};
-
-const desktopFullWidthArquivoObraBoxStyle: CSSProperties = {
-  ...desktopChapterImportBoxStyle,
-  gridTemplateColumns: "76px minmax(0, 1fr)",
+  gridTemplateColumns: "108px minmax(0, 1fr)",
+  gap: "16px",
+  alignItems: "center",
   padding: 0,
   borderRadius: 0,
   background: "transparent",
   border: "0",
   boxShadow: "none",
+  overflow: "visible",
+};
+
+const desktopCoverUploadIconBoxStyle: CSSProperties = {
+  width: "108px",
+  minWidth: "108px",
+  minHeight: "144px",
+  height: "144px",
+  alignSelf: "center",
+  borderRadius: "18px",
+};
+
+const desktopFileUploadIconBoxStyle: CSSProperties = {
+  width: "88px",
+  minWidth: "88px",
+  minHeight: "96px",
+  height: "96px",
+  alignSelf: "center",
+  borderRadius: "18px",
+};
+
+const desktopFullWidthArquivoObraBoxStyle: CSSProperties = {
+  ...chapterImportBoxStyle,
+  gridTemplateColumns: "88px minmax(0, 1fr)",
+  gap: "16px",
+  alignItems: "center",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: "0",
+  boxShadow: "none",
+  overflow: "visible",
 };
 
 const desktopChapterImportContentStyle: CSSProperties = {
   ...chapterImportContentStyle,
   alignContent: "center",
-  gap: "8px",
+  gap: "9px",
 };
 
 const desktopFullWidthArquivoObraContentStyle: CSSProperties = {
-  ...desktopChapterImportContentStyle,
+  ...chapterImportContentStyle,
+  alignContent: "center",
+  gap: "9px",
   gridTemplateColumns: "minmax(0, 1fr)",
   maxWidth: "100%",
 };
@@ -4597,23 +4594,37 @@ const desktopFullWidthArquivoObraContentStyle: CSSProperties = {
 const desktopButtonAreaStyle: CSSProperties = {
   ...buttonAreaStyle,
   gridColumn: "1 / -1",
-  gridTemplateColumns: "minmax(150px, 190px) minmax(190px, 260px)",
-  justifyContent: "start",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  justifyContent: "stretch",
   gap: "10px",
+  marginTop: "4px",
 };
 
 const desktopPreviewPanelStyle: CSSProperties = {
   ...previewPanelStyle,
-  position: "sticky",
-  top: "24px",
-  alignSelf: "start",
+  position: "static",
+  top: "auto",
+  alignSelf: "stretch",
+  width: "100%",
+  maxWidth: "760px",
+  margin: "0 auto",
 };
 
 
 const desktopPreviewCardStyle: CSSProperties = {
   ...previewCardStyle,
-  gridTemplateColumns: "112px minmax(0, 1fr)",
-  gap: "15px",
-  padding: "13px",
-  borderRadius: "24px",
+  gridTemplateColumns: "132px minmax(0, 1fr)",
+  gap: "18px",
+  padding: "14px",
+  borderRadius: "22px",
+  width: "100%",
+};
+
+const desktopEmptyPreviewBoxStyle: CSSProperties = {
+  ...emptyPreviewBoxStyle,
+  gridTemplateColumns: "118px minmax(0, 1fr)",
+  gap: "18px",
+  padding: "14px",
+  borderRadius: "22px",
+  width: "100%",
 };

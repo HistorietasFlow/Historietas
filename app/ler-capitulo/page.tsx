@@ -8,7 +8,6 @@ import type { HistorietasLanguage } from "../../lib/i18n";
 import { createPortal } from "react-dom";
 import type { CSSProperties, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
-import { useNotificacoes } from "../../components/NotificacoesProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
@@ -3523,7 +3522,6 @@ export default function LerCapituloPage() {
     });
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
-  const { notificacoesNaoLidas } = useNotificacoes();
   const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(3);
   const [modoFoco, setModoFoco] = useState(false);
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
@@ -4954,32 +4952,6 @@ export default function LerCapituloPage() {
                 : headerActionsStyle
             }
           >
-            {isDesktop ? (
-              <Link
-                href="/notificacoes"
-                style={
-                  modoFoco
-                    ? desktopFocusNotificationButtonStyle
-                    : desktopNotificationButtonStyle
-                }
-                aria-label={
-                  notificacoesNaoLidas > 0
-                    ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                    : "Notificações"
-                }
-              >
-                N
-
-                {notificacoesNaoLidas > 0 ? (
-                  <span style={desktopNotificationBadgeStyle}>
-                    {notificacoesNaoLidas > 99
-                      ? "99+"
-                      : notificacoesNaoLidas}
-                  </span>
-                ) : null}
-              </Link>
-            ) : null}
-
             <button
               type="button"
               onClick={() => setMostrarAjustes((valorAtual) => !valorAtual)}
@@ -5742,50 +5714,8 @@ const desktopHeaderActionsStyle: CSSProperties = {
   gap: "10px",
 };
 
-const desktopNotificationButtonStyle: CSSProperties = {
-  position: "relative",
-  width: "40px",
-  height: "40px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-reader-surface, #08030F)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flex: "0 0 auto",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  boxShadow: "none",
-};
 
-const desktopFocusNotificationButtonStyle: CSSProperties = {
-  ...desktopNotificationButtonStyle,
-};
 
-const desktopNotificationBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, var(--historietas-reader-bg-page, #070212))",
-  background: "var(--historietas-reader-danger, #EF4444)",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
-};
 
 const logoStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",

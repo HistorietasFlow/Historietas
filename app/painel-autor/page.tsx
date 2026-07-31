@@ -225,6 +225,7 @@ const PAINEL_AUTOR_UI_TRANSLATIONS: Record<
   "arquivo": { en: "file", es: "archivo" },
   "arquivos": { en: "files", es: "archivos" },
   "Limpar filtros": { en: "Clear filters", es: "Limpiar filtros" },
+  "Filtros": { en: "Filters", es: "Filtros" },
   "MOSTRAR": { en: "SHOW", es: "MOSTRAR" },
   "ORDENAR": { en: "SORT", es: "ORDENAR" },
   "RESUMO": { en: "SUMMARY", es: "RESUMEN" },
@@ -3184,28 +3185,36 @@ export default function PainelAutorPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={topStyle}>
-          <button
-            type="button"
-            onClick={() => setMostrarFiltrosPainel(true)}
-            style={topFilterButtonStyle}
-            aria-label="Abrir painel do autor"
-          >
-            <span>Painel do autor</span>
-            <span style={topFilterIconStyle} aria-hidden="true">
-              +
-            </span>
-          </button>
+        {isDesktop ? (
+          <header style={desktopCommunityTopStyle}>
+            <h1 style={desktopCommunityTopTitleStyle}>Painel do autor</h1>
 
-          {buscaPainelAberta ? (
-            <>
-              <label
-                style={
-                  isDesktop
-                    ? desktopTopSearchShellStyle
-                    : topSearchShellStyle
-                }
-              >
+            <div style={desktopCommunityTopActionsStyle}>
+              <label style={desktopCommunitySearchShellStyle}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  style={desktopCommunitySearchIconStyle}
+                >
+                  <circle
+                    cx="10.85"
+                    cy="10.85"
+                    r="6.65"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M16.05 16.05L20.25 20.25"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
                 <input
                   value={busca}
                   onChange={(event) => setBusca(event.target.value)}
@@ -3214,20 +3223,93 @@ export default function PainelAutorPage() {
                   autoCorrect="off"
                   spellCheck={false}
                   maxLength={90}
-                  style={topSearchInputStyle}
+                  style={desktopCommunitySearchInputStyle}
                   type="text"
-                  autoFocus
                 />
               </label>
 
               <button
                 type="button"
-                onClick={() => {
-                  setBusca("");
-                  setBuscaPainelAberta(false);
-                }}
-                aria-label="Fechar busca"
-                aria-expanded="true"
+                onClick={() => setMostrarFiltrosPainel(true)}
+                style={desktopCommunityFilterButtonStyle}
+                aria-label="Abrir painel do autor"
+              >
+                <span>Filtros</span>
+                <span aria-hidden="true">+</span>
+              </button>
+            </div>
+          </header>
+        ) : (
+          <header style={topStyle}>
+            <button
+              type="button"
+              onClick={() => setMostrarFiltrosPainel(true)}
+              style={topFilterButtonStyle}
+              aria-label="Abrir painel do autor"
+            >
+              <span>Painel do autor</span>
+              <span style={topFilterIconStyle} aria-hidden="true">
+                +
+              </span>
+            </button>
+
+            {buscaPainelAberta ? (
+              <>
+                <label style={topSearchShellStyle}>
+                  <input
+                    value={busca}
+                    onChange={(event) => setBusca(event.target.value)}
+                    placeholder="Buscar obra..."
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    maxLength={90}
+                    style={topSearchInputStyle}
+                    type="text"
+                    autoFocus
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBusca("");
+                    setBuscaPainelAberta(false);
+                  }}
+                  aria-label="Fechar busca"
+                  aria-expanded="true"
+                  style={topSearchButtonStyle}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="10.85"
+                      cy="10.85"
+                      r="6.65"
+                      stroke="currentColor"
+                      strokeWidth="2.15"
+                    />
+                    <path
+                      d="M16.05 16.05L20.25 20.25"
+                      stroke="currentColor"
+                      strokeWidth="2.15"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setBuscaPainelAberta(true)}
+                aria-label="Abrir busca"
+                aria-expanded="false"
                 style={topSearchButtonStyle}
               >
                 <svg
@@ -3253,40 +3335,9 @@ export default function PainelAutorPage() {
                   />
                 </svg>
               </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setBuscaPainelAberta(true)}
-              aria-label="Abrir busca"
-              aria-expanded="false"
-              style={topSearchButtonStyle}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="10.85"
-                  cy="10.85"
-                  r="6.65"
-                  stroke="currentColor"
-                  strokeWidth="2.15"
-                />
-                <path
-                  d="M16.05 16.05L20.25 20.25"
-                  stroke="currentColor"
-                  strokeWidth="2.15"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-          )}
-        </header>
+            )}
+          </header>
+        )}
 
         <section style={isDesktop ? desktopStudioControlsStyle : studioControlsStyle}>
           {mostrarResumoPainel && (
@@ -4023,6 +4074,93 @@ const topStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
+};
+
+const desktopCommunityTopStyle: CSSProperties = {
+  width: "100%",
+  minHeight: "58px",
+  marginBottom: "18px",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: "24px",
+  minWidth: 0,
+  boxSizing: "border-box",
+};
+
+const desktopCommunityTopTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "32px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  ...safeTextStyle,
+};
+
+const desktopCommunityTopActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "10px",
+  minWidth: 0,
+};
+
+const desktopCommunitySearchShellStyle: CSSProperties = {
+  position: "relative",
+  width: "min(390px, 34vw)",
+  minWidth: "230px",
+  height: "42px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.045)",
+  display: "flex",
+  alignItems: "center",
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const desktopCommunitySearchIconStyle: CSSProperties = {
+  position: "absolute",
+  left: "13px",
+  top: "50%",
+  transform: "translateY(-50%)",
+  color: "rgba(255,255,255,0.56)",
+  pointerEvents: "none",
+};
+
+const desktopCommunitySearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  height: "100%",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  outline: "none",
+  padding: "0 14px 0 42px",
+  fontFamily: "inherit",
+  fontSize: "13px",
+  fontWeight: 800,
+  boxSizing: "border-box",
+};
+
+const desktopCommunityFilterButtonStyle: CSSProperties = {
+  minHeight: "42px",
+  padding: "0 16px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 900,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
 };
 
 const topFilterButtonStyle: CSSProperties = {
@@ -4821,7 +4959,7 @@ const workActionSheetMetaStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "24px 0 36px",
+  padding: "34px 0 36px",
 };
 
 const desktopStatsBoxStyle: CSSProperties = {
@@ -4852,8 +4990,8 @@ const desktopSectionHeaderStyle: CSSProperties = {
 
 const desktopWorksGridStyle: CSSProperties = {
   ...worksGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  columnGap: "14px",
+  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+  columnGap: "12px",
   rowGap: "18px",
 };
 

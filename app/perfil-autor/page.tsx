@@ -11218,28 +11218,6 @@ function PerfilAutorPageContent() {
             ) : null}
           </div>
 
-          {isDesktop ? (
-            <Link
-              href="/notificacoes"
-              style={profileNotificationButtonStyle}
-              aria-label={
-                notificacoesNaoLidas > 0
-                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                  : "Notificações"
-              }
-            >
-              N
-
-              {notificacoesNaoLidas > 0 ? (
-                <span style={profileNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99
-                    ? "99+"
-                    : notificacoesNaoLidas}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
-
           <button
             type="button"
             onClick={() => setMenuPerfilAberto(true)}
@@ -12390,7 +12368,13 @@ function PerfilAutorPageContent() {
                 : profileLibrarySectionStyle
             }
           >
-            <div style={profileLibraryTabsStyle}>
+            <div
+              style={
+                isDesktop
+                  ? desktopProfileLibraryTabsStyle
+                  : profileLibraryTabsStyle
+              }
+            >
               {[
                 ["tudo", "Tudo"],
                 ["quero-ler", "Quero ler"],
@@ -13535,9 +13519,9 @@ const diarySummaryGridStyle: CSSProperties = {
 
 const desktopDiarySummaryGridStyle: CSSProperties = {
   ...diarySummaryGridStyle,
-  gridTemplateColumns: "repeat(auto-fill, minmax(138px, 1fr))",
-  rowGap: "8px",
-  columnGap: "14px",
+  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+  columnGap: "12px",
+  rowGap: "18px",
   padding: "4px 0 0",
 };
 
@@ -13675,6 +13659,16 @@ const profileLibraryTabsStyle: CSSProperties = {
   padding: "0 2px 4px",
   minWidth: 0,
   maxWidth: "100%",
+};
+
+const desktopProfileLibraryTabsStyle: CSSProperties = {
+  ...profileLibraryTabsStyle,
+  width: "100%",
+  justifyContent: "center",
+  alignItems: "center",
+  flexWrap: "wrap",
+  overflowX: "visible",
+  padding: "0 0 4px",
 };
 
 const profileLibraryTabStyle: CSSProperties = {
@@ -14381,7 +14375,7 @@ const profileHeaderStyle: CSSProperties = {
 
 const profileHeaderDesktopStyle: CSSProperties = {
   ...profileHeaderStyle,
-  gridTemplateColumns: "minmax(0, 1fr) 34px 36px",
+  gridTemplateColumns: "minmax(0, 1fr) 36px",
 };
 
 const profileNotificationButtonStyle: CSSProperties = {
@@ -16646,8 +16640,8 @@ const profileWorksGridStyle: CSSProperties = {
 
 const desktopProfileWorksGridStyle: CSSProperties = {
   ...profileWorksGridStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  columnGap: "14px",
+  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+  columnGap: "12px",
   rowGap: "18px",
 };
 

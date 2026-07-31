@@ -6143,12 +6143,19 @@ function ListasUniversaisContent() {
       {modo === "perfil" && !bloqueado && (
         <section
           style={
-            origemPerfil === "diario"
-              ? listDiaryControlsStyle
-              : controlsStyle
+            isDesktop
+              ? origemPerfil === "diario"
+                ? desktopListDiaryControlsStyle
+                : desktopControlsStyle
+              : origemPerfil === "diario"
+                ? listDiaryControlsStyle
+                : controlsStyle
           }
         >
-          <div style={tabsStyle} aria-label="Categorias da lista">
+          <div
+            style={isDesktop ? desktopTabsStyle : tabsStyle}
+            aria-label="Categorias da lista"
+          >
             {CATEGORIAS_PERFIL.map((item) => (
               <button
                 key={item.valor}
@@ -6166,7 +6173,10 @@ function ListasUniversaisContent() {
         </section>
       )}
 
-      <section style={listSectionStyle} aria-live="polite">
+      <section
+        style={isDesktop ? desktopListSectionStyle : listSectionStyle}
+        aria-live="polite"
+      >
         {carregando && (
           <div style={stateStyle}>
             <span className="historietas-list-spinner" aria-hidden="true" />
@@ -6209,13 +6219,17 @@ function ListasUniversaisContent() {
                 ? gruposPerfil.map(([mes, itens]) => (
                     <section key={mes} style={monthGroupStyle}>
                       <h2 style={monthTitleStyle}>{mes}</h2>
-                      <div style={rowsStyle}>
+                      <div
+                        style={isDesktop ? desktopWorksRowsStyle : rowsStyle}
+                      >
                         {itens.map((item) => renderizarItemObra(item, categoria))}
                       </div>
                     </section>
                   ))
                 : (
-                    <div style={rowsStyle}>
+                    <div
+                      style={isDesktop ? desktopWorksRowsStyle : rowsStyle}
+                    >
                       {itensPerfilVisiveis.map((item) =>
                         renderizarItemObra(item, categoria),
                       )}
@@ -6223,7 +6237,7 @@ function ListasUniversaisContent() {
                   ))}
 
             {modo === "obras" && (
-              <div style={rowsStyle}>
+              <div style={isDesktop ? desktopWorksRowsStyle : rowsStyle}>
                 {obrasVisiveis.map(renderizarObraPublica)}
               </div>
             )}
@@ -6683,11 +6697,32 @@ const listDiaryControlsStyle: CSSProperties = {
   padding: "5px 14px 8px",
 };
 
+const desktopControlsStyle: CSSProperties = {
+  ...controlsStyle,
+  width: "min(1180px, calc(100% - 64px))",
+  padding: "12px 0 10px",
+};
+
+const desktopListDiaryControlsStyle: CSSProperties = {
+  ...desktopControlsStyle,
+  padding: "6px 0 10px",
+};
+
 const tabsStyle: CSSProperties = {
   display: "flex",
   gap: "7px",
   overflowX: "auto",
   scrollbarWidth: "none",
+  paddingBottom: "2px",
+};
+
+const desktopTabsStyle: CSSProperties = {
+  ...tabsStyle,
+  width: "100%",
+  justifyContent: "center",
+  alignItems: "center",
+  flexWrap: "wrap",
+  overflowX: "visible",
   paddingBottom: "2px",
 };
 
@@ -6740,7 +6775,22 @@ const listSectionStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
+const desktopListSectionStyle: CSSProperties = {
+  ...listSectionStyle,
+  width: "min(1180px, calc(100% - 64px))",
+  padding: 0,
+};
+
 const rowsStyle: CSSProperties = {};
+
+const desktopWorksRowsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  columnGap: "22px",
+  rowGap: "8px",
+  alignItems: "start",
+  minWidth: 0,
+};
 
 const rowMainLinkStyle: CSSProperties = {
   minHeight: "104px",

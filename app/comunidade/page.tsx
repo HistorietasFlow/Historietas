@@ -263,6 +263,7 @@ const COMUNIDADE_UI_TRANSLATIONS: Record<
   "Filtros, ordenação e ações da comunidade": { en: "Community filters, sorting, and actions", es: "Filtros, orden y acciones de la comunidad" },
   "Fechar filtros e ações da comunidade": { en: "Close Community filters and actions", es: "Cerrar filtros y acciones de la comunidad" },
   "Filtrar e ordenar": { en: "Filter and sort", es: "Filtrar y ordenar" },
+  "Filtros": { en: "Filters", es: "Filtros" },
   "Ações": { en: "Actions", es: "Acciones" },
   "Publicar": { en: "Post", es: "Publicar" },
   "Pedir recomendações": { en: "Ask for recommendations", es: "Pedir recomendaciones" },
@@ -5095,7 +5096,6 @@ export default function ComunidadePage() {
         });
       });
 
-      emitirFeedbackAcao(jaCurtiu ? "Curtida removida." : "Publicação curtida.");
     } finally {
       finalizarAcaoComunidade(chaveAcao);
       setPostCurtindoId((postAtualId) =>
@@ -5837,8 +5837,68 @@ export default function ComunidadePage() {
       )}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+        {isDesktop ? (
+          <header style={desktopTopStyle}>
+            <h1 style={desktopTopTitleStyle}>Comunidade</h1>
+
+            <div style={desktopTopActionsStyle}>
+              <label style={desktopSearchShellStyle}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  style={desktopSearchIconStyle}
+                >
+                  <circle
+                    cx="10.85"
+                    cy="10.85"
+                    r="6.65"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M16.05 16.05L20.25 20.25"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
+                <input
+                  value={termoBusca}
+                  onChange={(event) => setTermoBusca(event.target.value)}
+                  placeholder="Buscar publicações ou usuários"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={90}
+                  style={desktopSearchInputStyle}
+                  type="text"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
+                }
+                style={desktopFilterButtonStyle}
+                aria-label="Abrir filtros, ordenação e ações da comunidade"
+                aria-expanded={menuAcoesRapidasComunidadeAberto}
+              >
+                <span>Filtros</span>
+                <span aria-hidden="true">+</span>
+              </button>
+
+            </div>
+          </header>
+        ) : null}
+
         <section style={isDesktop ? desktopLayoutStyle : layoutStyle}>
-          <section style={feedColumnStyle}>
+          <section style={isDesktop ? desktopFeedColumnStyle : feedColumnStyle}>
             {usuario && erro && !composerAberto && (
               <span style={communityErrorNoticeStyle}>{erro}</span>
             )}
@@ -6264,7 +6324,7 @@ export default function ComunidadePage() {
               </div>
             ) : null}
 
-            <section style={postsListStyle}>
+            <section style={isDesktop ? desktopPostsListStyle : postsListStyle}>
               {!carregandoFeed && (
                 postsVisiveis.length > 0 ? (
                 postsVisiveis.map((post) => {
@@ -6760,6 +6820,7 @@ export default function ComunidadePage() {
                     fontSize: "12px",
                     fontWeight: 800,
                     textAlign: "center",
+                    gridColumn: isDesktop ? "1 / -1" : undefined,
                   }}
                 >
                   {mostrarApenasSalvos
@@ -7262,7 +7323,8 @@ const containerStyle: CSSProperties = {
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
   width: "min(1180px, calc(100% - 64px))",
-  padding: "18px 0 44px",
+  maxWidth: "100%",
+  padding: "34px 0 64px",
 };
 
 const topStyle: CSSProperties = {
@@ -7275,9 +7337,92 @@ const topStyle: CSSProperties = {
 };
 
 const desktopTopStyle: CSSProperties = {
-  ...topStyle,
+  width: "100%",
+  minHeight: "58px",
   marginBottom: "18px",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: "24px",
+  minWidth: 0,
+  boxSizing: "border-box",
 };
+
+const desktopTopTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "32px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  ...safeTextStyle,
+};
+
+const desktopTopActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "10px",
+  minWidth: 0,
+};
+
+const desktopSearchShellStyle: CSSProperties = {
+  position: "relative",
+  width: "min(390px, 34vw)",
+  minWidth: "230px",
+  height: "42px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.045)",
+  display: "flex",
+  alignItems: "center",
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const desktopSearchIconStyle: CSSProperties = {
+  position: "absolute",
+  left: "13px",
+  top: "50%",
+  transform: "translateY(-50%)",
+  color: "rgba(255,255,255,0.56)",
+  pointerEvents: "none",
+};
+
+const desktopSearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  height: "100%",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  outline: "none",
+  padding: "0 14px 0 42px",
+  fontFamily: "inherit",
+  fontSize: "13px",
+  fontWeight: 800,
+  boxSizing: "border-box",
+};
+
+const desktopFilterButtonStyle: CSSProperties = {
+  minHeight: "42px",
+  padding: "0 16px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 900,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
 
 
 const mobileNavStyle: CSSProperties = {
@@ -7679,10 +7824,11 @@ const layoutStyle: CSSProperties = {
 
 const desktopLayoutStyle: CSSProperties = {
   ...layoutStyle,
+  width: "100%",
   gridTemplateColumns: "minmax(0, 1fr)",
-  justifyItems: "center",
+  justifyItems: "stretch",
   gap: "18px",
-  marginTop: "18px",
+  marginTop: 0,
 };
 
 const feedColumnStyle: CSSProperties = {
@@ -7690,6 +7836,13 @@ const feedColumnStyle: CSSProperties = {
   display: "grid",
   gap: "3px",
   minWidth: 0,
+};
+
+const desktopFeedColumnStyle: CSSProperties = {
+  ...feedColumnStyle,
+  width: "100%",
+  maxWidth: "100%",
+  gap: "12px",
 };
 
 const focusedPostStyle: CSSProperties = {
@@ -8698,11 +8851,7 @@ const exploreLikeFilterBoxStyle: CSSProperties = {
 
 const desktopExploreLikeFilterBoxStyle: CSSProperties = {
   ...exploreLikeFilterBoxStyle,
-  gridTemplateColumns: "1fr",
-  alignItems: "stretch",
-  gap: "10px",
-  padding: "0",
-  borderRadius: 0,
+  display: "none",
 };
 
 const exploreLikeSearchInputStyle: CSSProperties = {
@@ -9675,6 +9824,14 @@ const postsListStyle: CSSProperties = {
   minWidth: 0,
 };
 
+const desktopPostsListStyle: CSSProperties = {
+  ...postsListStyle,
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  columnGap: "16px",
+  rowGap: "16px",
+  alignItems: "start",
+};
+
 const loadMorePostsWrapStyle: CSSProperties = {
   display: "flex",
   justifyContent: "center",
@@ -9715,8 +9872,12 @@ const postCardStyle: CSSProperties = {
 const postCardDesktopStyle: CSSProperties = {
   ...postCardStyle,
   gap: "12px",
-  padding: "16px 0",
-  borderRadius: 0,
+  padding: "16px",
+  borderRadius: "20px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.025)",
+  alignContent: "start",
+  overflow: "visible",
 };
 
 const postHeaderStyle: CSSProperties = {

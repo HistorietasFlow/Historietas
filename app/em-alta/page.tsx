@@ -9,7 +9,6 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
-import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
@@ -2177,7 +2176,6 @@ export default function EmAltaPage() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState("");
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const { notificacoesNaoLidas } = useNotificacoes();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -2805,24 +2803,6 @@ export default function EmAltaPage() {
             </span>
           </Link>
 
-          {isDesktop ? (
-            <Link
-              href="/notificacoes"
-              style={desktopNotificationButtonStyle}
-              aria-label={
-                notificacoesNaoLidas > 0
-                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                  : "Notificações"
-              }
-            >
-              N
-              {usuarioLogado && notificacoesNaoLidas > 0 ? (
-                <span style={desktopNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99 ? "99+" : notificacoesNaoLidas}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
         </header>
 
         {!carregandoRanking && ranking.length > 0 && rankingTemAtividadeReal && (
@@ -3212,7 +3192,7 @@ function RankingSection({
 
       {obras.length > 0 ? (
         <div style={isDesktop ? desktopCarouselShellStyle : carouselShellStyle}>
-          {isDesktop && (
+          {isDesktop && obras.length > 3 && (
             <button
               type="button"
               aria-label={`Voltar carrossel ${titulo}`}
@@ -3222,7 +3202,7 @@ function RankingSection({
               }}
               style={carouselArrowLeftStyle}
             >
-              <span style={carouselArrowIconStyle}>‹</span>
+              <span aria-hidden="true" style={carouselArrowLeftIconStyle} />
             </button>
           )}
 
@@ -3244,7 +3224,7 @@ function RankingSection({
             ))}
           </div>
 
-          {isDesktop && (
+          {isDesktop && obras.length > 3 && (
             <button
               type="button"
               aria-label={`Avançar carrossel ${titulo}`}
@@ -3254,7 +3234,7 @@ function RankingSection({
               }}
               style={carouselArrowRightStyle}
             >
-              <span style={carouselArrowIconStyle}>›</span>
+              <span aria-hidden="true" style={carouselArrowRightIconStyle} />
             </button>
           )}
         </div>
@@ -3349,7 +3329,7 @@ function AutoresEmAltaSection({
       </div>
 
       <div style={isDesktop ? desktopCarouselShellStyle : carouselShellStyle}>
-        {isDesktop && (
+        {isDesktop && autores.length > 3 && (
           <button
             type="button"
             aria-label="Voltar carrossel Autores em Alta"
@@ -3359,7 +3339,7 @@ function AutoresEmAltaSection({
             }}
             style={carouselArrowLeftStyle}
           >
-            <span style={carouselArrowIconStyle}>‹</span>
+            <span aria-hidden="true" style={carouselArrowLeftIconStyle} />
           </button>
         )}
 
@@ -3378,7 +3358,7 @@ function AutoresEmAltaSection({
           ))}
         </div>
 
-        {isDesktop && (
+        {isDesktop && autores.length > 3 && (
           <button
             type="button"
             aria-label="Avançar carrossel Autores em Alta"
@@ -3388,7 +3368,7 @@ function AutoresEmAltaSection({
             }}
             style={carouselArrowRightStyle}
           >
-            <span style={carouselArrowIconStyle}>›</span>
+            <span aria-hidden="true" style={carouselArrowRightIconStyle} />
           </button>
         )}
       </div>
@@ -4706,50 +4686,7 @@ const desktopTitleHeaderStyle: CSSProperties = {
   marginBottom: "22px",
 };
 
-const desktopNotificationButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: 0,
-  transform: "translateY(-50%)",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, var(--historietas-em-alta-hex-04000a, #04000A))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  flex: "0 0 auto",
-  boxShadow: "none",
-  zIndex: 2,
-};
 
-const desktopNotificationBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, var(--historietas-em-alta-hex-070212, #070212))",
-  background: "var(--historietas-em-alta-hex-ef4444, #EF4444)",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
-};
 
 const headerTitleLinkStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
@@ -4884,41 +4821,54 @@ const desktopCarouselShellStyle: CSSProperties = {
 const carouselArrowButtonStyle: CSSProperties = {
   position: "absolute",
   top: "50%",
+  transform: "translateY(-50%)",
   zIndex: 8,
-  width: "38px",
-  height: "38px",
-  borderRadius: "999px",
+  width: "52px",
+  height: "96px",
+  padding: 0,
+  borderRadius: 0,
   border: "none",
-  background: "var(--historietas-em-alta-hex-04000a, #04000A)",
-  color: "var(--historietas-em-alta-hex-ddd6fe, #DDD6FE)",
-  display: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
   boxShadow: "none",
-  transform: "translateY(-50%)",
+  outline: "none",
   WebkitTapHighlightColor: "transparent",
   touchAction: "manipulation",
 };
 
 const carouselArrowIconStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  lineHeight: 1,
-  transform: "translateY(-1px)",
+  display: "block",
+  width: "18px",
+  height: "18px",
+  borderTop: "4px solid #FFFFFF",
+  borderRight: "4px solid #FFFFFF",
+  filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.92))",
+  pointerEvents: "none",
+  boxSizing: "border-box",
+};
+
+const carouselArrowLeftIconStyle: CSSProperties = {
+  ...carouselArrowIconStyle,
+  transform: "rotate(-135deg)",
+};
+
+const carouselArrowRightIconStyle: CSSProperties = {
+  ...carouselArrowIconStyle,
+  transform: "rotate(45deg)",
 };
 
 const carouselArrowLeftStyle: CSSProperties = {
   ...carouselArrowButtonStyle,
-  left: "7px",
+  left: "-10px",
 };
 
 const carouselArrowRightStyle: CSSProperties = {
   ...carouselArrowButtonStyle,
-  right: "7px",
+  right: "-10px",
 };
 
 const carouselStyle: CSSProperties = {
@@ -4943,12 +4893,12 @@ const carouselStyle: CSSProperties = {
 const desktopCarouselStyle: CSSProperties = {
   ...carouselStyle,
   gap: "22px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "8px 0 30px",
-  margin: 0,
-  scrollPaddingLeft: "0px",
-  scrollPaddingRight: "0px",
+  width: "calc(100% + 24px)",
+  maxWidth: "calc(100% + 24px)",
+  padding: "8px 12px 30px",
+  margin: "0 -12px",
+  scrollPaddingLeft: "12px",
+  scrollPaddingRight: "12px",
 };
 
 const sectionHeaderContentStyle: CSSProperties = {
@@ -5008,9 +4958,10 @@ const cardStyle: CSSProperties = {
 
 const desktopCardStyle: CSSProperties = {
   ...cardStyle,
-  flex: "0 0 410px",
-  width: "410px",
-  maxWidth: "100%",
+  flex: "0 0 calc((100% - 44px) / 3)",
+  width: "calc((100% - 44px) / 3)",
+  maxWidth: "none",
+  minWidth: 0,
   gridTemplateColumns: "112px minmax(0, 1fr)",
   gap: "15px",
   padding: "13px",

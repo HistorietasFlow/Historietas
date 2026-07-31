@@ -8,7 +8,6 @@ import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
-import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 
 type CapituloLocal = {
@@ -1733,7 +1732,6 @@ export default function EditarObraPage() {
   const arquivoObraInputRef = useRef<HTMLInputElement | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const { notificacoesNaoLidas } = useNotificacoes();
 
 
   useEffect(() => {
@@ -2696,27 +2694,6 @@ export default function EditarObraPage() {
             </span>
           </Link>
 
-          {isDesktop ? (
-            <Link
-              href="/notificacoes"
-              style={desktopNotificationButtonStyle}
-              aria-label={
-                notificacoesNaoLidas > 0
-                  ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                  : "Notificações"
-              }
-            >
-              N
-
-              {notificacoesNaoLidas > 0 ? (
-                <span style={desktopNotificationBadgeStyle}>
-                  {notificacoesNaoLidas > 99
-                    ? "99+"
-                    : notificacoesNaoLidas}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
         </header>
 
         {erro && (
@@ -3478,53 +3455,14 @@ const titleHeaderStyle: CSSProperties = {
 const desktopTitleHeaderStyle: CSSProperties = {
   ...titleHeaderStyle,
   position: "relative",
-  marginBottom: "18px",
+  justifyContent: "center",
+  minHeight: "48px",
+  marginBottom: "24px",
+  paddingRight: 0,
+  textAlign: "center",
 };
 
-const desktopNotificationButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: 0,
-  transform: "translateY(-50%)",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, var(--historietas-editar-obra-bg-deep, #04000A))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  boxShadow: "none",
-  zIndex: 2,
-};
 
-const desktopNotificationBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, var(--historietas-editar-obra-bg-page, #070212))",
-  background: "var(--historietas-editar-obra-danger, #EF4444)",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
-};
 
 const headerTitleLinkStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
@@ -3545,6 +3483,10 @@ const headerTitleLinkStyle: CSSProperties = {
 
 const desktopHeaderTitleLinkStyle: CSSProperties = {
   ...headerTitleLinkStyle,
+  width: "100%",
+  justifyContent: "center",
+  textAlign: "center",
+  fontSize: "29px",
 };
 
 const headerTitleMarkStyle: CSSProperties = {
@@ -3577,6 +3519,8 @@ const headerTitleTextStyle: CSSProperties = {
 
 const desktopHeaderTitleTextStyle: CSSProperties = {
   ...headerTitleTextStyle,
+  fontSize: "29px",
+  letterSpacing: "-0.035em",
 };
 
 
@@ -4117,10 +4061,10 @@ const previewCardStyle: CSSProperties = {
 
 const desktopPreviewCardStyle: CSSProperties = {
   ...previewCardStyle,
-  gridTemplateColumns: "112px minmax(0, 1fr)",
-  gap: "15px",
-  padding: "13px",
-  borderRadius: "24px",
+  gridTemplateColumns: "132px minmax(0, 1fr)",
+  gap: "18px",
+  padding: "14px",
+  borderRadius: "22px",
 };
 
 const previewCoverGlowStyle: CSSProperties = {
@@ -4422,8 +4366,9 @@ const emptyButtonStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1120px, calc(100% - 48px))",
-  padding: "24px 0 64px",
+  width: "min(1180px, calc(100% - 64px))",
+  maxWidth: "100%",
+  padding: "30px 0 72px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -4455,22 +4400,24 @@ const desktopDescriptionStyle: CSSProperties = {
 
 const desktopProgressBoxStyle: CSSProperties = {
   ...progressBoxStyle,
-  width: "min(520px, 100%)",
+  width: "100%",
   padding: 0,
-  gridColumn: "1 / -1",
 };
 
 const desktopMainGridStyle: CSSProperties = {
   ...mainGridStyle,
-  gridTemplateColumns: "minmax(0, 1.52fr) minmax(340px, 0.88fr)",
+  gridTemplateColumns: "minmax(0, 760px)",
+  justifyContent: "center",
   alignItems: "start",
-  gap: "18px",
+  gap: "28px",
 };
 
 const desktopFormStyle: CSSProperties = {
   ...formStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gridTemplateColumns: "minmax(0, 1fr)",
   alignItems: "start",
+  width: "100%",
+  maxWidth: "760px",
   padding: 0,
   borderRadius: 0,
   gap: "16px",
@@ -4484,14 +4431,16 @@ const desktopFormHeaderStyle: CSSProperties = {
 
 const desktopCoverUploadBoxStyle: CSSProperties = {
   ...coverUploadBoxStyle,
-  gridTemplateColumns: "84px minmax(0, 1fr)",
-  gap: "12px",
+  gridTemplateColumns: "108px minmax(0, 1fr)",
+  gap: "16px",
+  alignItems: "center",
 };
 
 const desktopFileUploadBoxStyle: CSSProperties = {
   ...fileUploadBoxStyle,
-  gridTemplateColumns: "76px minmax(0, 1fr)",
-  gap: "14px",
+  gridTemplateColumns: "88px minmax(0, 1fr)",
+  gap: "16px",
+  alignItems: "center",
   padding: 0,
   borderRadius: 0,
   background: "transparent",
@@ -4502,21 +4451,20 @@ const desktopFileUploadBoxStyle: CSSProperties = {
 const desktopDoubleFieldStyle: CSSProperties = {
   ...doubleFieldStyle,
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "14px",
-  gridColumn: "1 / -1",
+  gap: "16px",
 };
 
 const desktopTextareaStyle: CSSProperties = {
   ...textareaStyle,
-  minHeight: "90px",
+  minHeight: "132px",
 };
 
 const desktopButtonAreaStyle: CSSProperties = {
   ...buttonAreaStyle,
-  gridColumn: "1 / -1",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   justifyContent: "stretch",
-  gap: "8px",
+  gap: "10px",
+  marginTop: "4px",
 };
 
 const desktopSaveButtonStyle: CSSProperties = {
@@ -4527,8 +4475,8 @@ const desktopSaveButtonStyle: CSSProperties = {
 
 const desktopDisabledButtonStyle: CSSProperties = {
   ...disabledButtonStyle,
-  minHeight: "50px",
-  fontSize: "14px",
+  minHeight: "46px",
+  fontSize: "13px",
 };
 
 const desktopSecondaryButtonStyle: CSSProperties = {
@@ -4545,7 +4493,10 @@ const desktopCancelButtonStyle: CSSProperties = {
 
 const desktopPreviewPanelStyle: CSSProperties = {
   ...previewPanelStyle,
-  position: "sticky",
-  top: "24px",
-  alignSelf: "start",
+  position: "static",
+  top: "auto",
+  alignSelf: "stretch",
+  width: "100%",
+  maxWidth: "760px",
+  margin: "0 auto",
 };

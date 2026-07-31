@@ -205,6 +205,7 @@ const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
   "Fechar busca": { en: "Close search", es: "Cerrar búsqueda" },
   "Abrir busca": { en: "Open search", es: "Abrir búsqueda" },
   "Categorias": { en: "Categories", es: "Categorías" },
+  "Filtros": { en: "Filters", es: "Filtros" },
   "Tudo": { en: "All", es: "Todo" },
   "Autores": { en: "Authors", es: "Autores" },
   "EXPLORAR": { en: "EXPLORE", es: "EXPLORAR" },
@@ -3241,35 +3242,38 @@ export default function ExplorarPage() {
       )}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
-          <button
-            type="button"
-            onClick={() => setMostrarFiltrosAvancados(true)}
-            style={
-              isDesktop
-                ? desktopExplorarHeaderFilterButtonStyle
-                : explorarHeaderFilterButtonStyle
-            }
-            aria-label={traduzirTextoExplorar(
-              "Abrir funções do Explorar",
-              language
-            )}
-          >
-            <span>{textoBotaoFiltrosAvancados}</span>
-            <span style={explorarHeaderFilterIconStyle} aria-hidden="true">
-              +
-            </span>
-          </button>
+        {isDesktop ? (
+          <header style={desktopTitleHeaderStyle}>
+            <h1 style={desktopExplorarHeaderTitleStyle}>
+              {traduzirTextoExplorar("Explorar", language)}
+            </h1>
 
-          {buscaMobileAberta ? (
-            <>
-              <label
-                style={
-                  isDesktop
-                    ? desktopExplorarHeaderSearchShellStyle
-                    : explorarHeaderSearchShellStyle
-                }
-              >
+            <div style={desktopExplorarHeaderActionsStyle}>
+              <label style={desktopExplorarHeaderSearchShellStyle}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  style={desktopExplorarHeaderSearchIconStyle}
+                >
+                  <circle
+                    cx="10.85"
+                    cy="10.85"
+                    r="6.65"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M16.05 16.05L20.25 20.25"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
                 <input
                   value={busca}
                   onChange={(event) => setBusca(event.target.value)}
@@ -3283,20 +3287,104 @@ export default function ExplorarPage() {
                   autoCorrect="off"
                   spellCheck={false}
                   maxLength={90}
-                  style={explorarHeaderSearchInputStyle}
+                  style={desktopExplorarHeaderSearchInputStyle}
                   type="text"
-                  autoFocus
                 />
               </label>
 
               <button
                 type="button"
-                onClick={() => {
-                  setBusca("");
-                  setBuscaMobileAberta(false);
-                }}
-                aria-label={traduzirTextoExplorar("Fechar busca", language)}
-                aria-expanded="true"
+                onClick={() => setMostrarFiltrosAvancados(true)}
+                style={desktopExplorarHeaderFilterButtonStyle}
+                aria-label={traduzirTextoExplorar(
+                  "Abrir funções do Explorar",
+                  language
+                )}
+              >
+                <span>{traduzirTextoExplorar("Filtros", language)}</span>
+                <span aria-hidden="true">+</span>
+              </button>
+            </div>
+          </header>
+        ) : (
+          <header style={titleHeaderStyle}>
+            <button
+              type="button"
+              onClick={() => setMostrarFiltrosAvancados(true)}
+              style={explorarHeaderFilterButtonStyle}
+              aria-label={traduzirTextoExplorar(
+                "Abrir funções do Explorar",
+                language
+              )}
+            >
+              <span>{textoBotaoFiltrosAvancados}</span>
+              <span style={explorarHeaderFilterIconStyle} aria-hidden="true">
+                +
+              </span>
+            </button>
+
+            {buscaMobileAberta ? (
+              <>
+                <label style={explorarHeaderSearchShellStyle}>
+                  <input
+                    value={busca}
+                    onChange={(event) => setBusca(event.target.value)}
+                    placeholder={traduzirTextoExplorar(
+                      modoConteudo === "autores"
+                        ? "Buscar autores..."
+                        : "Buscar histórias...",
+                      language
+                    )}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    maxLength={90}
+                    style={explorarHeaderSearchInputStyle}
+                    type="text"
+                    autoFocus
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBusca("");
+                    setBuscaMobileAberta(false);
+                  }}
+                  aria-label={traduzirTextoExplorar("Fechar busca", language)}
+                  aria-expanded="true"
+                  style={mobileSearchToggleStyle}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="10.85"
+                      cy="10.85"
+                      r="6.65"
+                      stroke="currentColor"
+                      strokeWidth="2.15"
+                    />
+                    <path
+                      d="M16.05 16.05L20.25 20.25"
+                      stroke="currentColor"
+                      strokeWidth="2.15"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setBuscaMobileAberta(true)}
+                aria-label={traduzirTextoExplorar("Abrir busca", language)}
+                aria-expanded="false"
                 style={mobileSearchToggleStyle}
               >
                 <svg
@@ -3322,40 +3410,9 @@ export default function ExplorarPage() {
                   />
                 </svg>
               </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setBuscaMobileAberta(true)}
-              aria-label={traduzirTextoExplorar("Abrir busca", language)}
-              aria-expanded="false"
-              style={mobileSearchToggleStyle}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="10.85"
-                  cy="10.85"
-                  r="6.65"
-                  stroke="currentColor"
-                  strokeWidth="2.15"
-                />
-                <path
-                  d="M16.05 16.05L20.25 20.25"
-                  stroke="currentColor"
-                  strokeWidth="2.15"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-          )}
-        </header>
+            )}
+          </header>
+        )}
 
         <section
           style={
@@ -4027,7 +4084,10 @@ function ExplorarCarouselRow({
         style={explorarCarouselArrowLeftStyle}
         aria-label={traduzirTextoExplorar("Rolar carrossel para a esquerda", language)}
       >
-        ‹
+        <span
+          aria-hidden="true"
+          style={explorarCarouselArrowLeftIconStyle}
+        />
       </button>
 
       <div ref={rowRef} style={listStyle}>
@@ -4040,7 +4100,10 @@ function ExplorarCarouselRow({
         style={explorarCarouselArrowRightStyle}
         aria-label={traduzirTextoExplorar("Rolar carrossel para a direita", language)}
       >
-        ›
+        <span
+          aria-hidden="true"
+          style={explorarCarouselArrowRightIconStyle}
+        />
       </button>
     </div>
   );
@@ -4121,7 +4184,7 @@ function ObraPublicadaCard({
 
         <div style={statsStyle}>
           <span style={metricItemStyle}>
-            <span style={metricIconStyle}>👁</span>
+            <span style={metricIconStyle}>👁️</span>
             {totalVisualizacoes}
           </span>
 
@@ -4218,9 +4281,11 @@ function criarDesktopSearchBoxStyle(
     alignItems: "stretch",
     gap: "5px",
     marginTop: "12px",
-    padding: "5px 8px",
-    borderRadius: "18px",
-    overflow: "hidden",
+    padding: 0,
+    borderRadius: 0,
+    background: "transparent",
+    border: "none",
+    overflow: "visible",
     boxShadow: "none",
   };
 }
@@ -4741,7 +4806,60 @@ const titleHeaderStyle: CSSProperties = {
 };
 
 const desktopTitleHeaderStyle: CSSProperties = {
-  ...titleHeaderStyle,
+  width: "100%",
+  minHeight: "58px",
+  margin: "0 0 18px",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: "24px",
+  minWidth: 0,
+  boxSizing: "border-box",
+  position: "relative",
+  zIndex: 2,
+};
+
+const desktopExplorarHeaderTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "32px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  ...safeTextStyle,
+};
+
+const desktopExplorarHeaderActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "10px",
+  minWidth: 0,
+};
+
+const desktopExplorarHeaderSearchIconStyle: CSSProperties = {
+  position: "absolute",
+  left: "13px",
+  top: "50%",
+  transform: "translateY(-50%)",
+  color: "rgba(255,255,255,0.56)",
+  pointerEvents: "none",
+};
+
+const desktopExplorarHeaderSearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  height: "100%",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  outline: "none",
+  padding: "0 14px 0 42px",
+  fontFamily: "inherit",
+  fontSize: "13px",
+  fontWeight: 800,
+  boxSizing: "border-box",
 };
 
 const mobileSearchToggleStyle: CSSProperties = {
@@ -4794,7 +4912,23 @@ const explorarHeaderFilterButtonStyle: CSSProperties = {
 };
 
 const desktopExplorarHeaderFilterButtonStyle: CSSProperties = {
-  ...explorarHeaderFilterButtonStyle,
+  appearance: "none",
+  WebkitAppearance: "none",
+  minHeight: "42px",
+  padding: "0 16px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 900,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
 };
 
 const explorarHeaderFilterIconStyle: CSSProperties = {
@@ -5026,9 +5160,17 @@ const explorarHeaderSearchShellStyle: CSSProperties = {
 };
 
 const desktopExplorarHeaderSearchShellStyle: CSSProperties = {
-  ...explorarHeaderSearchShellStyle,
-  flex: "0 1 480px",
-  maxWidth: "min(480px, calc(100% - 118px))",
+  position: "relative",
+  width: "min(390px, 34vw)",
+  minWidth: "230px",
+  height: "42px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.045)",
+  display: "flex",
+  alignItems: "center",
+  overflow: "hidden",
+  boxSizing: "border-box",
 };
 
 const explorarHeaderSearchInputStyle: CSSProperties = {
@@ -5334,12 +5476,14 @@ const obrasExplorarCarouselStyle: CSSProperties = {
 const desktopObrasExplorarCarouselStyle: CSSProperties = {
   ...obrasExplorarCarouselStyle,
   gap: "18px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "6px 0 20px",
-  margin: 0,
-  scrollPaddingLeft: "0px",
-  scrollPaddingRight: "0px",
+  width: "100vw",
+  maxWidth: "100vw",
+  marginLeft: "calc(50% - 50vw)",
+  marginRight: "calc(50% - 50vw)",
+  padding:
+    "6px max(32px, calc((100vw - 1220px) / 2)) 20px",
+  scrollPaddingLeft: "max(32px, calc((100vw - 1220px) / 2))",
+  scrollPaddingRight: "max(32px, calc((100vw - 1220px) / 2))",
 };
 
 const explorarObraCarouselItemStyle: CSSProperties = {
@@ -5351,9 +5495,9 @@ const explorarObraCarouselItemStyle: CSSProperties = {
 
 const desktopExplorarObraCarouselItemStyle: CSSProperties = {
   ...explorarObraCarouselItemStyle,
-  flex: "0 0 410px",
-  width: "410px",
-  maxWidth: "410px",
+  flex: "0 0 360px",
+  width: "360px",
+  maxWidth: "360px",
 };
 
 const autoresExplorarCarouselStyle: CSSProperties = {
@@ -5365,12 +5509,14 @@ const autoresExplorarCarouselStyle: CSSProperties = {
 const desktopAutoresExplorarCarouselStyle: CSSProperties = {
   ...autoresExplorarCarouselStyle,
   gap: "16px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "6px 0 18px",
-  margin: 0,
-  scrollPaddingLeft: "0px",
-  scrollPaddingRight: "0px",
+  width: "100vw",
+  maxWidth: "100vw",
+  marginLeft: "calc(50% - 50vw)",
+  marginRight: "calc(50% - 50vw)",
+  padding:
+    "6px max(32px, calc((100vw - 1220px) / 2)) 18px",
+  scrollPaddingLeft: "max(32px, calc((100vw - 1220px) / 2))",
+  scrollPaddingRight: "max(32px, calc((100vw - 1220px) / 2))",
 };
 
 const explorarCarouselShellStyle: CSSProperties = {
@@ -5381,32 +5527,54 @@ const explorarCarouselShellStyle: CSSProperties = {
 
 const explorarCarouselArrowBaseStyle: CSSProperties = {
   position: "absolute",
-  zIndex: 5,
   top: "50%",
-  width: "42px",
-  height: "42px",
-  marginTop: "-21px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(4,0,10,0.92)",
+  transform: "translateY(-50%)",
+  zIndex: 5,
+  width: "52px",
+  height: "96px",
+  padding: 0,
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   color: "#FFFFFF",
-  fontSize: "28px",
-  lineHeight: 1,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
-  boxShadow: "0 10px 24px rgba(0,0,0,0.28)",
+  boxShadow: "none",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
 };
 
 const explorarCarouselArrowLeftStyle: CSSProperties = {
   ...explorarCarouselArrowBaseStyle,
-  left: "-12px",
+  left: "-10px",
 };
 
 const explorarCarouselArrowRightStyle: CSSProperties = {
   ...explorarCarouselArrowBaseStyle,
-  right: "-12px",
+  right: "-10px",
+};
+
+const explorarCarouselArrowIconBaseStyle: CSSProperties = {
+  display: "block",
+  width: "18px",
+  height: "18px",
+  borderTop: "4px solid #FFFFFF",
+  borderRight: "4px solid #FFFFFF",
+  filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.92))",
+  pointerEvents: "none",
+  boxSizing: "border-box",
+};
+
+const explorarCarouselArrowLeftIconStyle: CSSProperties = {
+  ...explorarCarouselArrowIconBaseStyle,
+  transform: "rotate(-135deg)",
+};
+
+const explorarCarouselArrowRightIconStyle: CSSProperties = {
+  ...explorarCarouselArrowIconBaseStyle,
+  transform: "rotate(45deg)",
 };
 
 const autoresExplorarGridStyle: CSSProperties = {
@@ -5789,23 +5957,10 @@ const publishedInfoStyle: CSSProperties = {
 
 const desktopPublishedInfoStyle: CSSProperties = {
   ...publishedInfoStyle,
-  alignContent: "space-between",
-  alignItems: "start",
-  gap: "7px",
 };
 
 const desktopPublishedSynopsisStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #C9C0D8)",
-  fontSize: "12.5px",
-  ...listaAuthorMetaTypographyStyle,
-  lineHeight: 1.45,
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  maxWidth: "100%",
-  ...safeTextStyle,
+  display: "none",
 };
 
 const statsStyle: CSSProperties = {
@@ -5952,8 +6107,9 @@ const desktopCardPrimaryActionStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1220px, calc(100% - 64px))",
-  padding: "12px 0 40px",
+  width: "min(1180px, calc(100% - 64px))",
+  maxWidth: "100%",
+  padding: "34px 0 64px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -5993,13 +6149,18 @@ const desktopDescriptionStyle: CSSProperties = {
 
 const desktopCategoriesStyle: CSSProperties = {
   ...categoriesStyle,
-  flexWrap: "wrap",
-  overflowX: "visible",
-  justifyContent: "center",
-  marginLeft: 0,
-  marginRight: 0,
-  padding: "1px 0 3px",
-  maxWidth: "100%",
+  width: "100vw",
+  maxWidth: "100vw",
+  flexWrap: "nowrap",
+  overflowX: "auto",
+  overflowY: "hidden",
+  justifyContent: "flex-start",
+  marginLeft: "calc(50% - 50vw)",
+  marginRight: "calc(50% - 50vw)",
+  padding:
+    "1px max(32px, calc((100vw - 1220px) / 2)) 8px",
+  scrollPaddingLeft: "max(32px, calc((100vw - 1220px) / 2))",
+  scrollPaddingRight: "max(32px, calc((100vw - 1220px) / 2))",
 };
 
 const desktopSectionStyle: CSSProperties = {
@@ -6019,20 +6180,22 @@ const desktopSectionTitleStyle: CSSProperties = {
 
 const desktopPublishedGridStyle: CSSProperties = {
   ...gridStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  justifyContent: "stretch",
-  alignItems: "stretch",
-  gap: "16px",
+  gridTemplateColumns: "repeat(auto-fit, 360px)",
+  justifyContent: "space-between",
+  alignItems: "start",
+  gap: "18px",
 };
 
 const desktopPublishedCardStyle: CSSProperties = {
   ...publishedCardStyle,
-  gridTemplateColumns: "126px minmax(0, 1fr)",
-  gap: "17px",
-  padding: "14px",
-  borderRadius: "24px",
+  width: "360px",
+  maxWidth: "360px",
+  gridTemplateColumns: "98px minmax(0, 1fr)",
+  gap: "14px",
+  padding: "11px",
+  borderRadius: "22px",
   alignItems: "stretch",
-  minHeight: "178px",
+  minHeight: 0,
   background: "transparent",
   border: "none",
   boxShadow: "none",
@@ -6041,16 +6204,16 @@ const desktopPublishedCardStyle: CSSProperties = {
 
 const desktopPublishedCoverStyle: CSSProperties = {
   ...publishedCoverStyle,
-  minHeight: "150px",
-  borderRadius: "18px",
+  minHeight: "116px",
+  borderRadius: "16px",
 };
 
 
 
 const desktopPublishedTitleStyle: CSSProperties = {
   ...publishedTitleStyle,
-  fontSize: "22px",
-  lineHeight: 1.08,
+  fontSize: "20px",
+  lineHeight: 1.05,
 };
 
 

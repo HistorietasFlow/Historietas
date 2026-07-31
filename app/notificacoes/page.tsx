@@ -106,6 +106,7 @@ const NOTIFICACOES_UI_TRANSLATIONS: Record<string, TraducaoNotificacoes> = {
   "Capítulos": { en: "Chapters", es: "Capítulos" },
   "Comunidade": { en: "Community", es: "Comunidad" },
   "Classificar por": { en: "Sort by", es: "Ordenar por" },
+  "Filtros": { en: "Filters", es: "Filtros" },
   "Mais recentes": { en: "Newest", es: "Más recientes" },
   "Mais antigas": { en: "Oldest", es: "Más antiguas" },
   "Ações": { en: "Actions", es: "Acciones" },
@@ -4956,36 +4957,36 @@ export default function NotificacoesPage() {
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <section style={notificacoesTopFilterBoxStyle}>
-          <div style={isDesktop ? desktopTitleHeaderStyle : titleHeaderStyle}>
-            <button
-              type="button"
-              onClick={() => {
-                fecharMenusNotificacoes();
-                setMostrarPainelOrdenacao((aberto) => !aberto);
-              }}
-              style={
-                isDesktop
-                  ? desktopNotificacoesHeaderFilterButtonStyle
-                  : notificacoesHeaderFilterButtonStyle
-              }
-              aria-label="Abrir opções das notificações"
-              aria-expanded={mostrarPainelOrdenacao}
-            >
-              <span>Notificações</span>
-              <span style={notificacoesHeaderFilterIconStyle} aria-hidden="true">
-                +
-              </span>
-            </button>
+          {isDesktop ? (
+            <div style={desktopTitleHeaderStyle}>
+              <h1 style={desktopNotificationsTitleStyle}>Notificações</h1>
 
-            {buscaTopoAberta || Boolean(busca.trim()) ? (
-              <>
-                <label
-                  style={
-                    isDesktop
-                      ? desktopNotificationSearchShellStyle
-                      : notificationSearchShellStyle
-                  }
-                >
+              <div style={desktopNotificationsTopActionsStyle}>
+                <label style={desktopNotificationsSearchShellStyle}>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                    style={desktopNotificationsSearchIconStyle}
+                  >
+                    <circle
+                      cx="10.85"
+                      cy="10.85"
+                      r="6.65"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M16.05 16.05L20.25 20.25"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+
                   <input
                     value={busca}
                     onChange={(event) => {
@@ -4998,9 +4999,8 @@ export default function NotificacoesPage() {
                     autoCorrect="off"
                     spellCheck={false}
                     maxLength={90}
-                    style={notificationSearchInputStyle}
+                    style={desktopNotificationsSearchInputStyle}
                     type="text"
-                    autoFocus
                   />
                 </label>
 
@@ -5008,11 +5008,100 @@ export default function NotificacoesPage() {
                   type="button"
                   onClick={() => {
                     fecharMenusNotificacoes();
-                    setBusca("");
-                    setBuscaTopoAberta(false);
+                    setMostrarPainelOrdenacao((aberto) => !aberto);
                   }}
-                  aria-label="Fechar busca"
-                  aria-expanded="true"
+                  style={desktopNotificationsFilterButtonStyle}
+                  aria-label="Abrir opções das notificações"
+                  aria-expanded={mostrarPainelOrdenacao}
+                >
+                  <span>Filtros</span>
+                  <span aria-hidden="true">+</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={titleHeaderStyle}>
+              <button
+                type="button"
+                onClick={() => {
+                  fecharMenusNotificacoes();
+                  setMostrarPainelOrdenacao((aberto) => !aberto);
+                }}
+                style={notificacoesHeaderFilterButtonStyle}
+                aria-label="Abrir opções das notificações"
+                aria-expanded={mostrarPainelOrdenacao}
+              >
+                <span>Notificações</span>
+                <span style={notificacoesHeaderFilterIconStyle} aria-hidden="true">
+                  +
+                </span>
+              </button>
+
+              {buscaTopoAberta || Boolean(busca.trim()) ? (
+                <>
+                  <label style={notificationSearchShellStyle}>
+                    <input
+                      value={busca}
+                      onChange={(event) => {
+                        fecharMenusNotificacoes();
+                        setBusca(event.target.value);
+                      }}
+                      className="notificacoes-search-input"
+                      placeholder="Buscar notificações..."
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      maxLength={90}
+                      style={notificationSearchInputStyle}
+                      type="text"
+                      autoFocus
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fecharMenusNotificacoes();
+                      setBusca("");
+                      setBuscaTopoAberta(false);
+                    }}
+                    aria-label="Fechar busca"
+                    aria-expanded="true"
+                    style={mobileSearchToggleStyle}
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="10.85"
+                        cy="10.85"
+                        r="6.65"
+                        stroke="currentColor"
+                        strokeWidth="2.15"
+                      />
+                      <path
+                        d="M16.05 16.05L20.25 20.25"
+                        stroke="currentColor"
+                        strokeWidth="2.15"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    fecharMenusNotificacoes();
+                    setBuscaTopoAberta(true);
+                  }}
+                  aria-label="Abrir busca"
+                  aria-expanded="false"
                   style={mobileSearchToggleStyle}
                 >
                   <svg
@@ -5038,43 +5127,9 @@ export default function NotificacoesPage() {
                     />
                   </svg>
                 </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  fecharMenusNotificacoes();
-                  setBuscaTopoAberta(true);
-                }}
-                aria-label="Abrir busca"
-                aria-expanded="false"
-                style={mobileSearchToggleStyle}
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <circle
-                    cx="10.85"
-                    cy="10.85"
-                    r="6.65"
-                    stroke="currentColor"
-                    strokeWidth="2.15"
-                  />
-                  <path
-                    d="M16.05 16.05L20.25 20.25"
-                    stroke="currentColor"
-                    strokeWidth="2.15"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </section>
 
         {totalNotificacoes > 0 && filtrosAtivos && (
@@ -5980,7 +6035,92 @@ const titleHeaderStyle: CSSProperties = {
 };
 
 const desktopTitleHeaderStyle: CSSProperties = {
-  ...titleHeaderStyle,
+  width: "100%",
+  minHeight: "58px",
+  marginBottom: "18px",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: "24px",
+  minWidth: 0,
+  boxSizing: "border-box",
+};
+
+const desktopNotificationsTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "32px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  ...safeTextStyle,
+};
+
+const desktopNotificationsTopActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "10px",
+  minWidth: 0,
+};
+
+const desktopNotificationsSearchShellStyle: CSSProperties = {
+  position: "relative",
+  width: "min(390px, 34vw)",
+  minWidth: "230px",
+  height: "42px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.045)",
+  display: "flex",
+  alignItems: "center",
+  overflow: "hidden",
+  boxSizing: "border-box",
+};
+
+const desktopNotificationsSearchIconStyle: CSSProperties = {
+  position: "absolute",
+  left: "13px",
+  top: "50%",
+  transform: "translateY(-50%)",
+  color: "rgba(255,255,255,0.56)",
+  pointerEvents: "none",
+};
+
+const desktopNotificationsSearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  height: "100%",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  outline: "none",
+  padding: "0 14px 0 42px",
+  fontFamily: "inherit",
+  fontSize: "13px",
+  fontWeight: 800,
+  boxSizing: "border-box",
+};
+
+const desktopNotificationsFilterButtonStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  minHeight: "42px",
+  padding: "0 16px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 900,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
 };
 
 const mobileSearchToggleStyle: CSSProperties = {
@@ -7043,8 +7183,8 @@ const emptyStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1220px, calc(100% - 64px))",
-  padding: "14px 0 40px",
+  width: "min(1180px, calc(100% - 64px))",
+  padding: "34px 0 64px",
 };
 
 const desktopTopStyle: CSSProperties = {
@@ -7113,33 +7253,53 @@ const desktopActionBarStyle: CSSProperties = {
 
 const desktopListStyle: CSSProperties = {
   ...listStyle,
-  gridTemplateColumns: "1fr",
-  gap: 0,
-  alignItems: "stretch",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  columnGap: "16px",
+  rowGap: "16px",
+  alignItems: "start",
 };
 
 const desktopCardStyle: CSSProperties = {
   ...cardStyle,
-  padding: "10px 0",
-  borderRadius: 0,
+  minHeight: "100%",
+  padding: "16px",
+  borderRadius: "20px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.025)",
+  boxShadow: "none",
 };
 
 const desktopReadCardStyle: CSSProperties = {
   ...readCardStyle,
-  padding: "10px 0",
-  borderRadius: 0,
+  minHeight: "100%",
+  padding: "16px",
+  borderRadius: "20px",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
+  background: "rgba(255,255,255,0.018)",
+  boxShadow: "none",
 };
 
 const desktopCommunityCardStyle: CSSProperties = {
   ...communityCardStyle,
-  padding: "10px 0",
-  borderRadius: 0,
+  minHeight: "100%",
+  padding: "16px",
+  borderRadius: "20px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.025)",
+  boxShadow: "none",
 };
 
 const desktopReadCommunityCardStyle: CSSProperties = {
   ...readCommunityCardStyle,
-  padding: "10px 0",
-  borderRadius: 0,
+  minHeight: "100%",
+  padding: "16px",
+  borderRadius: "20px",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
+  background: "rgba(255,255,255,0.018)",
+  boxShadow: "none",
 };
 
 const desktopMetaGridStyle: CSSProperties = {

@@ -322,6 +322,10 @@ const HOME_UI_TRANSLATIONS: Record<string, HomeTranslationEntry> = {
     en: "My Works",
     es: "Mis obras",
   },
+  "Comunidade": {
+    en: "Community",
+    es: "Comunidad",
+  },
   "Biblioteca": {
     en: "Library",
     es: "Biblioteca",
@@ -1129,8 +1133,10 @@ function criarObraHeroLocalHome(obra: ObraLocal): Obra {
     titulo: obra.titulo,
     autor: obra.autor,
     genero: formatarGeneroHome(obra.genero),
+    formato: obra.formato || "História",
     classificacaoIndicativa: obra.classificacaoIndicativa,
     sinopse: obra.sinopse || "Nenhuma sinopse informada.",
+    tags: obra.tags,
     status: obra.capitulos.length > 0 ? "Em andamento" : "Publicado",
     views: compactarNumeroHome(obra.visualizacoes || 0),
     likes: compactarNumeroHome(obterTotalCurtidasObraHome(obra)),
@@ -1138,6 +1144,7 @@ function criarObraHeroLocalHome(obra: ObraLocal): Obra {
     disponivel: true,
     capa: obra.capa,
     capaUrl: obra.capa,
+    arquivoObra: obra.arquivoObra,
     slug: obra.slug,
     link: obra.link,
     capitulos: obra.capitulos,
@@ -1147,6 +1154,7 @@ function criarObraHeroLocalHome(obra: ObraLocal): Obra {
     capaUrl?: string;
     slug?: string;
     link?: string;
+    arquivoObra?: unknown;
     capitulos?: CapituloLocal[];
   };
 }
@@ -1582,13 +1590,13 @@ function obraCatalogoCombinaComTemasRecomendados(obra: Obra, temas: Set<string>)
   );
 }
 
-function criarHeroPosterStyle(obra: Obra): CSSProperties {
+function criarDesktopHeroPosterStyle(obra: Obra): CSSProperties {
   const imagemObra = obterImagemObraCatalogo(obra);
 
   if (imagemObra) {
     return {
       ...desktopHeroPosterStyle,
-      backgroundImage: `linear-gradient(180deg, rgba(4, 0, 10, 0.02) 0%, rgba(4, 0, 10, 0.58) 100%), url(${imagemObra})`,
+      backgroundImage: `url(${imagemObra})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
     };
@@ -1601,25 +1609,26 @@ function criarHeroPosterStyle(obra: Obra): CSSProperties {
   };
 }
 
-function criarHeroBackground(obra: Obra, usarImagemObra = false): CSSProperties {
-  if (usarImagemObra) {
-    const imagemObra = obterImagemObraCatalogo(obra);
+function criarDesktopHeroBackground(obra: Obra): CSSProperties {
+  const imagemObra = obterImagemObraCatalogo(obra);
 
-    if (imagemObra) {
-      return {
-        ...heroStyle,
-        backgroundImage: `url(${imagemObra})`,
-        backgroundSize: "cover",
-        backgroundPosition: obra.disponivel ? "center" : "center top",
-      };
-    }
+  if (imagemObra) {
+    return {
+      backgroundColor: "#050505",
+      backgroundImage: `linear-gradient(90deg, rgba(5, 5, 5, 0.99) 0%, rgba(5, 5, 5, 0.96) 31%, rgba(5, 5, 5, 0.78) 50%, rgba(5, 5, 5, 0.28) 72%, rgba(5, 5, 5, 0.10) 100%), linear-gradient(180deg, rgba(5, 5, 5, 0.04) 48%, rgba(5, 5, 5, 0.72) 100%), url(${imagemObra})`,
+      backgroundSize: "100% 100%, 100% 100%, auto 118%",
+      backgroundPosition: "center, center, right 5% center",
+      backgroundRepeat: "no-repeat",
+    };
   }
 
   return {
-    ...heroStyle,
-    backgroundImage: "linear-gradient(135deg, #070212 0%, #04000A 52%, #020006 100%)",
+    backgroundColor: "#050505",
+    backgroundImage:
+      "linear-gradient(105deg, #050505 0%, #0B0B0D 58%, #151517 100%)",
     backgroundSize: "cover",
     backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
   };
 }
 
@@ -3243,11 +3252,23 @@ export default function Home() {
   const heroTotalCapitulos = usandoHeroInicial
     ? 0
     : obterTotalCapitulosObraCatalogoHome(heroObra);
-  void heroTotalCapitulos;
+  const desktopHeroTemArquivo = Boolean(
+    !usandoHeroInicial && obraCatalogoTemArquivoAnexadoHome(heroObra),
+  );
+  const desktopHeroTotalConteudo = compactarNumeroHome(
+    desktopHeroTemArquivo ? 1 : heroTotalCapitulos,
+  );
   const metricasHeroHome = [
-    { icone: "👁", valor: heroObra.views || "0" },
+    { icone: "👁️", valor: heroObra.views || "0" },
     { icone: "❤️", valor: heroObra.likes || "0", destaque: true },
     { icone: "💬", valor: heroObra.comentarios || "0" },
+  ];
+  const desktopMetricasHeroHome = [
+    ...metricasHeroHome,
+    {
+      icone: desktopHeroTemArquivo ? "📄" : "📚",
+      valor: desktopHeroTotalConteudo,
+    },
   ];
   const heroEstaSalvo = Boolean(
     usuarioLogado &&
@@ -3846,62 +3867,183 @@ export default function Home() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <header className="historietas-home-header" style={isDesktop ? desktopNavStyle : mobileNavStyle}>
-        <div style={isDesktop ? desktopNavInnerStyle : navInnerStyle}>
-          <div style={isDesktop ? desktopNavTopRowStyle : navTopRowStyle}>
-            <Link href="/" className="historietas-home-logo" style={logoStyle} aria-label="Historietas">
-              <span className="historietas-home-logo-mark" style={logoMarkStyle}>H</span>
-              <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
+        {isDesktop && (
+          <div style={desktopNavInnerStyle}>
+            <Link
+              href="/"
+              className="historietas-home-logo"
+              style={desktopLogoStyle}
+              aria-label="Historietas"
+            >
+              <span className="historietas-home-logo-mark" style={desktopLogoMarkStyle}>H</span>
+              <span className="historietas-home-logo-text" style={desktopLogoTextStyle}>istorietas</span>
             </Link>
 
-            {!isDesktop && buscaMobileAberta ? (
-              <div className="historietas-home-mobile-search-area" style={mobileHeaderSearchAreaStyle}>
-                <input
-                  value={busca}
-                  onChange={(event) => setBusca(event.target.value)}
-                  placeholder="Buscar..."
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  maxLength={90}
-                  className="historietas-home-header-search-input"
-                  style={mobileHeaderSearchInputStyle}
-                  type="text"
-                  autoFocus
-                />
+            <div
+              className="historietas-home-desktop-links"
+              style={desktopMenuStyle}
+              role="navigation"
+              aria-label="Navegação principal"
+            >
+              <Link href="/" className="historietas-home-desktop-link" style={desktopActiveLinkStyle}>
+                Início
+              </Link>
 
-              </div>
-            ) : null}
+              <Link href="/explorar" className="historietas-home-desktop-link" style={desktopLinkStyle}>
+                Explorar
+              </Link>
 
-            <div className="historietas-home-header-actions" style={navIconsStyle}>
-              {isDesktop && (
-                <>
-                  <Link href="/configuracoes" style={publishSmallButtonStyle}>
-                    Configurações
-                  </Link>
+              <Link href="/publicar" className="historietas-home-desktop-link" style={desktopLinkStyle}>
+                Publicar
+              </Link>
 
-                  <Link
-                    href="/notificacoes"
-                    style={notificationDotStyle}
-                    aria-label={
-                      notificacoesNaoLidas > 0
-                        ? `Notificações: ${notificacoesNaoLidas} novas`
-                        : "Notificações"
-                    }
+              <Link href="/comunidade" className="historietas-home-desktop-link" style={desktopLinkStyle}>
+                Comunidade
+              </Link>
+
+              <Link href="/seguindo" className="historietas-home-desktop-link" style={desktopLinkStyle}>
+                Seguindo
+              </Link>
+
+            </div>
+
+            <div style={desktopInlineSearchAreaStyle}>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+                style={desktopSearchIconStyle}
+              >
+                <circle cx="10.75" cy="10.75" r="6.75" stroke="currentColor" strokeWidth="2" />
+                <path d="M16 16L20.25 20.25" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+
+              <input
+                value={busca}
+                onChange={(event) => setBusca(event.target.value)}
+                placeholder="Buscar obras, autor, gênero..."
+                className="historietas-home-header-search-input"
+                style={desktopInputStyle}
+              />
+            </div>
+
+            <div className="historietas-home-desktop-actions" style={desktopHeaderActionsStyle}>
+              <Link
+                href="/notificacoes"
+                className="historietas-home-desktop-icon-link"
+                style={desktopHeaderIconLinkStyle}
+                aria-label={
+                  notificacoesNaoLidas > 0
+                    ? `Notificações: ${notificacoesNaoLidas} novas`
+                    : "Notificações"
+                }
+                title="Notificações"
+              >
+                <svg
+                  width="21"
+                  height="21"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6.75 9.75C6.75 6.85 8.85 4.5 12 4.5C15.15 4.5 17.25 6.85 17.25 9.75V13.1L18.7 15.7H5.3L6.75 13.1V9.75Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                  />
+                  <path d="M9.75 18C10.15 18.8 10.9 19.25 12 19.25C13.1 19.25 13.85 18.8 14.25 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+
+                {usuarioLogado && notificacoesNaoLidas > 0 ? (
+                  <span style={desktopNotificationCountBadgeStyle}>
+                    {notificacoesNaoLidas > 99 ? "99+" : notificacoesNaoLidas}
+                  </span>
+                ) : null}
+              </Link>
+
+              <Link
+                href="/configuracoes"
+                className="historietas-home-desktop-icon-link"
+                style={desktopHeaderIconLinkStyle}
+                aria-label="Configurações"
+                title="Configurações"
+              >
+                <svg
+                  width="21"
+                  height="21"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M9.8 4.6L10.35 3H13.65L14.2 4.6L15.65 5.2L17.15 4.45L19.5 6.8L18.75 8.3L19.35 9.75L21 10.35V13.65L19.35 14.25L18.75 15.7L19.5 17.2L17.15 19.55L15.65 18.8L14.2 19.4L13.65 21H10.35L9.8 19.4L8.35 18.8L6.85 19.55L4.5 17.2L5.25 15.7L4.65 14.25L3 13.65V10.35L4.65 9.75L5.25 8.3L4.5 6.8L6.85 4.45L8.35 5.2L9.8 4.6Z"
+                    stroke="currentColor"
+                    strokeWidth="1.55"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+                </svg>
+              </Link>
+
+              <Link
+                href="/perfil-autor"
+                className="historietas-home-desktop-profile-link"
+                style={desktopProfileLinkStyle}
+                aria-label="Abrir perfil"
+                title="Perfil"
+              >
+                <span style={desktopProfileAvatarStyle}>
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
                   >
-                    N
+                    <circle cx="12" cy="8.25" r="3.25" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M5.75 19C6.3 15.75 8.6 14 12 14C15.4 14 17.7 15.75 18.25 19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </span>
+              </Link>
+            </div>
+          </div>
+        )}
 
-                    {usuarioLogado && notificacoesNaoLidas > 0 ? (
-                      <span style={notificationCountBadgeStyle}>
-                        {notificacoesNaoLidas > 99
-                          ? "99+"
-                          : notificacoesNaoLidas}
-                      </span>
-                    ) : null}
-                  </Link>
-                </>
-              )}
+        {!isDesktop && (
+          <div style={navInnerStyle}>
+            <div style={navTopRowStyle}>
+              <Link href="/" className="historietas-home-logo" style={logoStyle} aria-label="Historietas">
+                <span className="historietas-home-logo-mark" style={logoMarkStyle}>H</span>
+                <span className="historietas-home-logo-text" style={logoTextStyle}>istorietas</span>
+              </Link>
 
-              {!isDesktop && (
+              {buscaMobileAberta ? (
+                <div className="historietas-home-mobile-search-area" style={mobileHeaderSearchAreaStyle}>
+                  <input
+                    value={busca}
+                    onChange={(event) => setBusca(event.target.value)}
+                    placeholder="Buscar..."
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    maxLength={90}
+                    className="historietas-home-header-search-input"
+                    style={mobileHeaderSearchInputStyle}
+                    type="text"
+                    autoFocus
+                  />
+
+                </div>
+              ) : null}
+
+              <div className="historietas-home-header-actions" style={navIconsStyle}>
                 <button
                   type="button"
                   onClick={() => setBuscaMobileAberta((aberta) => !aberta)}
@@ -3937,62 +4079,20 @@ export default function Home() {
                     />
                   </svg>
                 </button>
-              )}
+              </div>
             </div>
           </div>
-
-          {isDesktop && (
-            <nav className="historietas-home-desktop-menu" style={desktopMenuStyle} aria-label="Navegação principal">
-              <Link href="/" style={activeLinkStyle}>
-                Início
-              </Link>
-
-              <Link href="/explorar" style={linkStyle}>
-                Explorar
-              </Link>
-
-              <Link href="/em-alta" style={linkStyle}>
-                Em Alta
-              </Link>
-
-
-              <Link href="/painel-autor" style={linkStyle}>
-                Minhas Obras
-              </Link>
-
-              <Link href="/perfil-autor?aba=biblioteca" style={linkStyle}>
-                Biblioteca
-              </Link>
-
-              <Link href="/seguindo" style={linkStyle}>
-                Seguindo
-              </Link>
-
-              <Link href="/painel-autor" style={linkStyle}>
-                Painel do Autor
-              </Link>
-
-              <div style={desktopInlineSearchAreaStyle}>
-                <input
-                  value={busca}
-                  onChange={(event) => setBusca(event.target.value)}
-                  placeholder="Buscar obras, autor, gênero..."
-                  className="historietas-home-header-search-input"
-                  style={inputStyle}
-                />
-
-              </div>
-            </nav>
-          )}
-
-        </div>
+        )}
       </header>
 
       <div style={isDesktop ? desktopContainerStyle : containerStyle}>
         <section
           style={
             isDesktop
-              ? { ...criarHeroBackground(heroObra), ...desktopHeroStyle }
+              ? {
+                  ...heroStyle,
+                  ...desktopHeroStyle,
+                }
               : criarMobileHeroFrameBackground(heroObra)
           }
         >
@@ -4000,20 +4100,17 @@ export default function Home() {
             <div style={criarMobileHeroImageLayerStyle(heroObra)} aria-hidden="true" />
           )}
 
-          <div
-            style={
-              !isDesktop && heroTemImagem
-                ? mobileHeroImageGlowStyle
-                : heroGlowStyle
-            }
-          />
-
-          {isDesktop && (
-            <div style={desktopHeroWaterLayerStyle} aria-hidden="true" />
+          {!isDesktop && (
+            <div
+              style={
+                heroTemImagem
+                  ? mobileHeroImageGlowStyle
+                  : heroGlowStyle
+              }
+            />
           )}
 
-
-          {(isDesktop || !heroTemImagem) && (
+          {!isDesktop && !heroTemImagem && (
             <div style={heroDecorationLayerStyle} aria-hidden="true">
               {["✦", "◌", "✧", "◇"].map((decoracao, index) => (
                 <span key={`hero-${decoracao}-${index}`} style={criarDecoracaoHomeStyle(index)}>
@@ -4025,55 +4122,80 @@ export default function Home() {
 
           {isDesktop ? (
             <div style={desktopHeroShellStyle}>
-              <Link
-                href={heroObraHref}
-                style={criarHeroPosterStyle(heroObra)}
-                aria-label={`Abrir destaque ${heroObra.titulo}`}
-              >
-                <span style={desktopHeroPosterGlowStyle} aria-hidden="true" />
-              </Link>
+              <div style={desktopHeroPosterFrameStyle}>
+                <Link
+                  href={heroObraHref}
+                  style={criarDesktopHeroPosterStyle(heroObra)}
+                  aria-label={`Abrir ${heroObra.titulo}`}
+                >
+                  {!heroTemImagem && (
+                    <>
+                      <span style={desktopHeroPosterGlowStyle} aria-hidden="true" />
+                      <strong style={desktopHeroPosterTitleStyle}>{heroObra.titulo}</strong>
+                      <span style={desktopHeroPosterStatusStyle}>
+                        {heroObra.status || "Obra em destaque"}
+                      </span>
+                    </>
+                  )}
+                </Link>
+              </div>
 
               <div style={desktopHeroContentStyle}>
-                <div style={desktopHeroMetaStyle}>
-                  <span style={heroPillStyle}>✦ {traduzirGeneroHome(heroObra.genero, language)}</span>
-                  <span style={heroPillStyle}>◆ {traduzirClassificacaoHome(heroObra.classificacaoIndicativa, language)}</span>
-                </div>
+                <span style={desktopHeroKickerStyle}>
+                  {usandoHeroInicial ? "Conheça o Historietas" : "Em destaque"}
+                </span>
 
-                <h1 className="historietas-home-hero-title" style={desktopHeroTitleStyle}>{heroObra.titulo}</h1>
+                <h1 className="historietas-home-hero-title" style={desktopHeroTitleStyle}>
+                  {heroObra.titulo}
+                </h1>
+
+                <div style={desktopHeroMetaStyle}>
+                  <span style={desktopHeroAuthorStyle}>
+                    Por {heroObra.autor || "Autor não informado"}
+                  </span>
+                  <span style={desktopHeroMetaDividerStyle} aria-hidden="true" />
+                  <span style={desktopHeroGenreStyle}>
+                    {traduzirGeneroHome(heroObra.genero, language)}
+                  </span>
+                  <span style={desktopHeroMetaDividerStyle} aria-hidden="true" />
+                  <span style={desktopHeroClassificationStyle}>
+                    {traduzirClassificacaoHome(heroObra.classificacaoIndicativa, language)}
+                  </span>
+                </div>
 
                 <p style={desktopHeroDescriptionStyle}>
                   {heroObra.sinopse || "Nenhuma sinopse informada."}
                 </p>
 
                 <div style={usandoHeroInicial ? desktopHeroInitialButtonsStyle : desktopHeroButtonsStyle}>
-                  <Link href={heroObraHref} style={primaryButtonStyle}>
-                    {usandoHeroInicial ? "Explorar obras" : "Ver obra"}
+                  <Link href={heroObraHref} style={desktopPrimaryButtonStyle}>
+                    {usandoHeroInicial ? "Explorar obras" : "Ler agora"}
                   </Link>
 
                   {usandoHeroInicial && (
-                    <Link href="/publicar" style={secondaryButtonStyle}>
+                    <Link href="/publicar" style={desktopSecondaryButtonStyle}>
                       Publicar obra
                     </Link>
                   )}
 
                   {!usandoHeroInicial && (
                     <button
-                    type="button"
-                    onClick={alternarHeroFavorito}
-                    aria-pressed={heroEstaSalvo}
-                    style={heroSaveButtonStyle}
-                  >
+                      type="button"
+                      onClick={alternarHeroFavorito}
+                      aria-pressed={heroEstaSalvo}
+                      style={desktopHeroSaveButtonStyle}
+                    >
                       {heroEstaSalvo ? "Salvo" : "Salvar"}
                     </button>
                   )}
                 </div>
 
-                {avisoLogin && <p style={heroLoginNoticeStyle}>{avisoLogin}</p>}
+                {avisoLogin && <p style={desktopHeroLoginNoticeStyle}>{avisoLogin}</p>}
 
                 {!usandoHeroInicial && (
                   <div style={desktopHeroFooterStyle}>
                     <div style={desktopHeroStatsStyle}>
-                      {metricasHeroHome.map((metrica) => (
+                      {desktopMetricasHeroHome.map((metrica) => (
                         <span
                           key={`hero-desktop-${metrica.icone}`}
                           style={desktopHeroStatItemStyle}
@@ -4102,7 +4224,9 @@ export default function Home() {
                           onClick={() => setHeroIndex(index)}
                           aria-label={`Mostrar ${obra.titulo}`}
                           style={
-                            index === heroIndex ? heroDotActiveStyle : heroDotStyle
+                            index === heroIndex
+                              ? desktopHeroDotActiveStyle
+                              : desktopHeroDotStyle
                           }
                         />
                       ))}
@@ -4705,7 +4829,7 @@ function MobileObraLocalCard({
 
         <div style={cardStatsStyle}>
           <span style={cardStatItemStyle}>
-            <span style={cardStatIconStyle}>👁</span>
+            <span style={cardStatIconStyle}>👁️</span>
             <span style={cardStatValueStyle}>{visualizacoesObra}</span>
           </span>
 
@@ -4883,8 +5007,8 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
           isDesktop
             ? {
                 ...criarMobileCoverThumbStyle(obra),
-                minHeight: "142px",
-                borderRadius: "18px",
+                minHeight: "122px",
+                borderRadius: "16px",
               }
             : criarMobileCoverThumbStyle(obra)
         }
@@ -4906,7 +5030,7 @@ function MobileObraCard({ obra, isDesktop }: { obra: Obra; isDesktop?: boolean }
 
         <div style={cardStatsStyle}>
           <span style={cardStatItemStyle}>
-            <span style={cardStatIconStyle}>👁</span>
+            <span style={cardStatIconStyle}>👁️</span>
             <span style={cardStatValueStyle}>{obra.views}</span>
           </span>
 
@@ -5074,7 +5198,10 @@ function CarouselRow({
         style={desktopCarouselArrowLeftStyle}
         aria-label="Rolar carrossel para a esquerda"
       >
-        <span style={desktopCarouselArrowIconStyle}>‹</span>
+        <span
+          aria-hidden="true"
+          style={desktopCarouselArrowLeftIconStyle}
+        />
       </button>
 
       <div ref={rowRef} style={listStyle}>
@@ -5087,7 +5214,10 @@ function CarouselRow({
         style={desktopCarouselArrowRightStyle}
         aria-label="Rolar carrossel para a direita"
       >
-        <span style={desktopCarouselArrowIconStyle}>›</span>
+        <span
+          aria-hidden="true"
+          style={desktopCarouselArrowRightIconStyle}
+        />
       </button>
     </div>
   );
@@ -5323,6 +5453,24 @@ const themePageCss = `
     color: #000000 !important;
   }
 
+  .historietas-home-desktop-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .historietas-home-desktop-link:hover,
+  .historietas-home-desktop-link:focus-visible {
+    color: #FFFFFF !important;
+  }
+
+  .historietas-home-desktop-icon-link:hover,
+  .historietas-home-desktop-icon-link:focus-visible,
+  .historietas-home-desktop-profile-link:hover,
+  .historietas-home-desktop-profile-link:focus-visible {
+    background: rgba(255,255,255,0.08) !important;
+    color: #FFFFFF !important;
+    outline: none !important;
+  }
+
 `;
 
 const safeTextStyle: CSSProperties = {
@@ -5465,9 +5613,10 @@ const navStyle: CSSProperties = {
 
 const desktopNavStyle: CSSProperties = {
   ...navStyle,
-  background: "#070212",
+  background: "#111113",
   borderBottom: "0",
   boxShadow: "none",
+  overflow: "visible",
 };
 const mobileNavStyle: CSSProperties = {
   ...navStyle,
@@ -5503,23 +5652,59 @@ const navTopRowStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1240px, calc(100% - 64px))",
+  width: "min(1760px, calc(100% - 48px))",
 };
 
 const desktopNavInnerStyle: CSSProperties = {
-  ...navInnerStyle,
-  width: "min(1240px, calc(100% - 64px))",
-  gridTemplateColumns: "1fr",
-  gridTemplateAreas: '"top" "menu"',
+  width: "min(1760px, calc(100% - 48px))",
+  maxWidth: "100%",
+  minHeight: "70px",
+  margin: "0 auto",
+  display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr) minmax(176px, 360px) auto",
   alignItems: "center",
-  gap: "10px",
-  padding: "12px 0 10px",
+  gap: "clamp(12px, 1.45vw, 26px)",
+  padding: "0",
+  boxSizing: "border-box",
+  minWidth: 0,
 };
 
-const desktopNavTopRowStyle: CSSProperties = {
-  ...navTopRowStyle,
-  gridArea: "top",
-  flexWrap: "nowrap",
+const desktopLogoStyle: CSSProperties = {
+  color: "#FFFFFF",
+  textDecoration: "none",
+  fontSize: "25px",
+  ...listaPageTitleTypographyStyle,
+  display: "flex",
+  alignItems: "center",
+  gap: "4px",
+  flex: "0 0 auto",
+  minWidth: 0,
+  ...safeTextStyle,
+};
+
+const desktopLogoMarkStyle: CSSProperties = {
+  width: "36px",
+  height: "36px",
+  borderRadius: "10px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#08080A",
+  color: "#FFFFFF",
+  fontSize: "20px",
+  fontWeight: 950,
+  letterSpacing: 0,
+  flex: "0 0 auto",
+  border: "1px solid rgba(255,255,255,0.18)",
+  boxShadow: "none",
+};
+
+const desktopLogoTextStyle: CSSProperties = {
+  marginLeft: "-1px",
+  background: "none",
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  textShadow: "none",
 };
 
 const logoStyle: CSSProperties = {
@@ -5601,67 +5786,11 @@ const mobileHeaderSearchInputStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const publishSmallButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  padding: "0 13px",
-  borderRadius: "999px",
-  background: "#04000A",
-  color: "#DDD6FE",
-  textDecoration: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "12px",
-  fontWeight: 950,
-  lineHeight: 1.15,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  textAlign: "center",
-  whiteSpace: "normal",
-  border: "1px solid rgba(59, 7, 100, 0.56)",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const notificationDotStyle: CSSProperties = {
-  position: "relative",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  background: "#04000A",
-  border: "1px solid rgba(59, 7, 100, 0.56)",
-  color: "#DDD6FE",
-  textDecoration: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "14px",
-  fontWeight: 950,
-  flex: "0 0 auto",
-  boxShadow: "none",
-};
 
-const notificationCountBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid #04000A",
-  background: "#EF4444",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
-};
+
+
+
 
 const mobileSearchToggleStyle: CSSProperties = {
   width: "34px",
@@ -5704,59 +5833,158 @@ const menuStyle: CSSProperties = {
 };
 
 const desktopMenuStyle: CSSProperties = {
-  ...menuStyle,
-  gridArea: "menu",
-  gap: "9px",
-  overflowX: "hidden",
-  padding: "0 0 2px",
+  display: "flex",
+  alignItems: "stretch",
+  gap: "clamp(15px, 1.15vw, 24px)",
+  minWidth: 0,
+  maxWidth: "100%",
+  height: "70px",
+  overflowX: "auto",
+  overflowY: "hidden",
+  padding: 0,
+  scrollbarWidth: "none",
 };
 
 const desktopInlineSearchAreaStyle: CSSProperties = {
   position: "relative",
   zIndex: 30,
-  flex: "1 1 320px",
-  minWidth: "280px",
-  maxWidth: "430px",
-  marginLeft: "2px",
+  width: "100%",
+  minWidth: 0,
+  maxWidth: "360px",
+  height: "40px",
+  display: "flex",
+  alignItems: "center",
 };
 
-const linkStyle: CSSProperties = {
+
+
+
+
+
+
+const desktopLinkStyle: CSSProperties = {
   position: "relative",
-  color: "#A995E8",
+  color: "#C5C5C8",
   textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 900,
+  fontSize: "13.5px",
+  fontWeight: 700,
+  lineHeight: 1,
   whiteSpace: "nowrap",
   flex: "0 0 auto",
-  padding: "9px 13px",
-  borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(59, 7, 100, 0.42)",
+  height: "70px",
+  padding: "0",
+  display: "inline-flex",
+  alignItems: "center",
+  borderBottom: "2px solid transparent",
+  background: "transparent",
+  borderRadius: 0,
+  transition: "color 160ms ease, border-color 160ms ease",
 };
 
-const activeLinkStyle: CSSProperties = {
-  ...linkStyle,
+const desktopActiveLinkStyle: CSSProperties = {
+  ...desktopLinkStyle,
   color: "#FFFFFF",
-  background: "rgba(46, 16, 101, 0.72)",
-  border: "1px solid rgba(91, 33, 182, 0.56)",
-  boxShadow: "none",
+  borderBottomColor: "#FFFFFF",
 };
 
-const inputStyle: CSSProperties = {
+const desktopInputStyle: CSSProperties = {
   width: "100%",
-  height: "44px",
-  borderRadius: "999px",
-  border: "1px solid transparent",
-  background: "#04000A",
-  color: "#FFFFFF",
-  padding: "0 15px",
-  outline: "none",
-  fontSize: "14px",
-  fontWeight: 700,
-  boxSizing: "border-box",
-  maxWidth: "100%",
   minWidth: 0,
-  boxShadow: "none",
+  height: "40px",
+  borderRadius: "6px",
+  border: "0",
+  background: "#1B1B1E",
+  color: "#FFFFFF",
+  padding: "0 13px 0 40px",
+  outline: "none",
+  fontFamily: "inherit",
+  fontSize: "13.5px",
+  fontWeight: 650,
+  boxSizing: "border-box",
+  boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+};
+
+const desktopSearchIconStyle: CSSProperties = {
+  position: "absolute",
+  zIndex: 1,
+  left: "12px",
+  top: "50%",
+  transform: "translateY(-50%)",
+  color: "#A5A5AA",
+  pointerEvents: "none",
+};
+
+const desktopHeaderActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "4px",
+  flex: "0 0 auto",
+};
+
+const desktopHeaderIconLinkStyle: CSSProperties = {
+  position: "relative",
+  width: "40px",
+  height: "40px",
+  borderRadius: "6px",
+  border: 0,
+  background: "transparent",
+  color: "#D8D8DA",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flex: "0 0 auto",
+  transition: "background 160ms ease, color 160ms ease",
+};
+
+const desktopNotificationCountBadgeStyle: CSSProperties = {
+  position: "absolute",
+  top: "2px",
+  right: "1px",
+  minWidth: "17px",
+  height: "17px",
+  padding: "0 4px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "2px solid #111113",
+  background: "#EF4444",
+  color: "#FFFFFF",
+  fontSize: "9px",
+  lineHeight: 1,
+  fontWeight: 900,
+  letterSpacing: "-0.03em",
+  boxSizing: "border-box",
+  pointerEvents: "none",
+};
+
+const desktopProfileLinkStyle: CSSProperties = {
+  width: "44px",
+  height: "44px",
+  marginLeft: "2px",
+  borderRadius: "6px",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#FFFFFF",
+  background: "transparent",
+  transition: "background 160ms ease",
+};
+
+const desktopProfileAvatarStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "999px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "#08080A",
+  color: "#FFFFFF",
+  border: "1px solid rgba(255,255,255,0.22)",
+  boxSizing: "border-box",
 };
 
 const heroStyle: CSSProperties = {
@@ -5772,26 +6000,51 @@ const heroStyle: CSSProperties = {
 };
 
 const desktopHeroStyle: CSSProperties = {
-  marginTop: "14px",
-  borderRadius: "30px",
-  backgroundPosition: "center",
+  marginTop: "-4px",
+  minHeight: 0,
+  borderRadius: 0,
+  border: "none",
+  boxShadow: "none",
+  background: "transparent",
+  overflow: "visible",
 };
 
 const desktopHeroShellStyle: CSSProperties = {
   position: "relative",
-  zIndex: 1,
+  zIndex: 2,
+  width: "100%",
   display: "grid",
-  gridTemplateColumns: "minmax(232px, 304px) minmax(0, 1fr)",
-  alignItems: "stretch",
-  gap: "24px",
-  minHeight: "304px",
-  padding: "22px 28px",
+  gridTemplateColumns: "minmax(350px, 1.03fr) minmax(0, 0.97fr)",
+  alignItems: "center",
+  gap: "clamp(34px, 4.5vw, 82px)",
+  minHeight: "clamp(440px, 40vw, 590px)",
+  padding: "clamp(18px, 2vw, 32px) 0",
+  boxSizing: "border-box",
+};
+
+const desktopHeroPosterFrameStyle: CSSProperties = {
+  position: "relative",
+  width: "100%",
+  maxWidth: "650px",
+  height: "clamp(400px, 35vw, 530px)",
+  minHeight: "400px",
+  justifySelf: "start",
+  padding: "5px",
+  borderRadius: "28px",
+  overflow: "hidden",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background:
+    "linear-gradient(145deg, #0A0314 0%, #04000A 58%, #020006 100%)",
+  boxShadow:
+    "0 24px 64px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(255,255,255,0.025)",
   boxSizing: "border-box",
 };
 
 const desktopHeroPosterStyle: CSSProperties = {
   position: "relative",
-  minHeight: "252px",
+  width: "100%",
+  height: "100%",
+  minHeight: 0,
   borderRadius: "22px",
   overflow: "hidden",
   border: "1px solid rgba(255,255,255,0.06)",
@@ -5802,10 +6055,11 @@ const desktopHeroPosterStyle: CSSProperties = {
   flexDirection: "column",
   justifyContent: "flex-end",
   gap: "10px",
-  padding: "18px",
+  padding: "22px",
   boxSizing: "border-box",
   backgroundSize: "cover",
   backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
 };
 
 const desktopHeroPosterGlowStyle: CSSProperties = {
@@ -5884,6 +6138,15 @@ const heroGlowStyle: CSSProperties = {
     "linear-gradient(180deg, rgba(4, 0, 10, 0.18) 0%, rgba(4, 0, 10, 0.72) 100%)",
 };
 
+const desktopHeroOverlayStyle: CSSProperties = {
+  position: "absolute",
+  zIndex: 1,
+  inset: 0,
+  background:
+    "linear-gradient(180deg, rgba(5,5,5,0.02) 50%, rgba(5,5,5,0.44) 100%)",
+  pointerEvents: "none",
+};
+
 const mobileHeroImageGlowStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
@@ -5905,17 +6168,20 @@ const heroContentStyle: CSSProperties = {
 };
 
 const desktopHeroContentStyle: CSSProperties = {
-  ...heroContentStyle,
-  minHeight: "auto",
-  justifyContent: "center",
-  alignItems: "flex-start",
-  alignSelf: "stretch",
-  width: "100%",
-  padding: "38px 14px 20px 0",
-  maxWidth: "100%",
-  gap: "10px",
   position: "relative",
+  zIndex: 3,
+  width: "100%",
+  maxWidth: "650px",
+  minWidth: 0,
+  justifySelf: "center",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  justifyContent: "center",
+  gap: "15px",
+  padding: "clamp(8px, 1vw, 18px) clamp(12px, 1.5vw, 28px)",
   textAlign: "left",
+  boxSizing: "border-box",
 };
 
 const heroMetaStyle: CSSProperties = {
@@ -5927,15 +6193,65 @@ const heroMetaStyle: CSSProperties = {
 };
 
 const desktopHeroMetaStyle: CSSProperties = {
-  ...heroMetaStyle,
-  position: "absolute",
-  top: "4px",
-  right: "4px",
-  zIndex: 4,
+  display: "flex",
   alignItems: "center",
-  justifyContent: "flex-end",
-  marginBottom: 0,
-  maxWidth: "46%",
+  gap: "10px",
+  flexWrap: "wrap",
+  maxWidth: "100%",
+  minWidth: 0,
+  color: "#D2D2D5",
+  fontSize: "13.5px",
+  fontWeight: 650,
+  lineHeight: 1.25,
+};
+
+const desktopHeroKickerStyle: CSSProperties = {
+  color: "#D7D7DA",
+  fontSize: "12px",
+  fontWeight: 800,
+  lineHeight: 1,
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  textShadow: "0 2px 12px rgba(0,0,0,0.70)",
+};
+
+const desktopHeroAuthorStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontWeight: 750,
+  textShadow: "0 2px 12px rgba(0,0,0,0.62)",
+  ...safeTextStyle,
+};
+
+const desktopHeroMetaDividerStyle: CSSProperties = {
+  width: "4px",
+  height: "4px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.50)",
+  flex: "0 0 auto",
+};
+
+const desktopHeroGenreStyle: CSSProperties = {
+  color: "#D2D2D5",
+  textShadow: "0 2px 12px rgba(0,0,0,0.62)",
+  ...safeTextStyle,
+};
+
+const desktopHeroClassificationStyle: CSSProperties = {
+  minHeight: 0,
+  padding: 0,
+  borderRadius: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  background: "transparent",
+  border: "none",
+  color: "#D2D2D5",
+  fontSize: "13.5px",
+  fontWeight: 650,
+  lineHeight: 1.25,
+  boxSizing: "border-box",
+  textShadow: "0 2px 12px rgba(0,0,0,0.62)",
+  ...safeTextStyle,
 };
 
 const heroKickerStyle: CSSProperties = {
@@ -5979,15 +6295,15 @@ const heroTitleStyle: CSSProperties = {
 
 const desktopHeroTitleStyle: CSSProperties = {
   ...heroTitleStyle,
-  fontSize: "clamp(34px, 4vw, 52px)",
-  lineHeight: 1.04,
   width: "100%",
-  maxWidth: "680px",
-  alignSelf: "center",
-  marginTop: 0,
-  textAlign: "center",
-  position: "relative",
-  left: "-64px",
+  maxWidth: "700px",
+  margin: 0,
+  fontSize: "clamp(46px, 5.2vw, 78px)",
+  lineHeight: 0.98,
+  textAlign: "left",
+  color: "#FFFFFF",
+  textShadow:
+    "0 2px 0 rgba(0,0,0,0.40), 0 8px 28px rgba(0,0,0,0.62)",
 };
 
 const heroDescriptionStyle: CSSProperties = {
@@ -6004,21 +6320,21 @@ const heroDescriptionStyle: CSSProperties = {
 
 const desktopHeroDescriptionStyle: CSSProperties = {
   ...heroDescriptionStyle,
-  fontSize: "15px",
-  lineHeight: 1.55,
   width: "100%",
-  maxWidth: "680px",
-  alignSelf: "center",
-  minHeight: "74px",
+  maxWidth: "620px",
+  minHeight: 0,
+  margin: 0,
+  color: "#D5D5D8",
+  fontSize: "15.5px",
+  lineHeight: 1.58,
   display: "-webkit-box",
-  WebkitLineClamp: 5,
+  WebkitLineClamp: 4,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
   overflowWrap: "anywhere",
   wordBreak: "break-word",
-  textAlign: "center",
-  position: "relative",
-  left: "-64px",
+  textAlign: "left",
+  textShadow: "0 2px 14px rgba(0,0,0,0.74)",
 };
 
 const heroStatsStyle: CSSProperties = {
@@ -6053,21 +6369,70 @@ const mobileHeroButtonsStyle: CSSProperties = {
 };
 
 const desktopHeroButtonsStyle: CSSProperties = {
-  ...heroButtonsStyle,
-  gridTemplateColumns: "repeat(2, minmax(164px, 198px))",
-  justifyContent: "center",
-  alignSelf: "center",
-  width: "100%",
-  marginTop: "8px",
-  position: "relative",
-  left: "-64px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "10px",
+  width: "auto",
+  maxWidth: "100%",
+  marginTop: "5px",
+  boxSizing: "border-box",
+  minWidth: 0,
 };
 
 const desktopHeroInitialButtonsStyle: CSSProperties = {
   ...desktopHeroButtonsStyle,
-  gridTemplateColumns: "repeat(2, minmax(150px, 190px))",
-  justifyItems: "stretch",
-  left: 0,
+  flexWrap: "wrap",
+};
+
+const desktopPrimaryButtonStyle: CSSProperties = {
+  minWidth: "164px",
+  minHeight: "50px",
+  padding: "0 22px",
+  borderRadius: "10px",
+  border: "1px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#08080A",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "14px",
+  fontWeight: 850,
+  lineHeight: 1.1,
+  textAlign: "center",
+  boxSizing: "border-box",
+  boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
+  cursor: "pointer",
+  ...safeTextStyle,
+};
+
+const desktopSecondaryButtonStyle: CSSProperties = {
+  ...desktopPrimaryButtonStyle,
+  minWidth: "154px",
+  background: "rgba(10,10,12,0.74)",
+  color: "#FFFFFF",
+  border: "1px solid rgba(255,255,255,0.34)",
+  boxShadow: "none",
+};
+
+const desktopHeroSaveButtonStyle: CSSProperties = {
+  ...desktopSecondaryButtonStyle,
+  minWidth: "140px",
+  fontFamily: "inherit",
+  appearance: "none",
+  WebkitAppearance: "none",
+};
+
+const desktopHeroLoginNoticeStyle: CSSProperties = {
+  margin: "-2px 0 0",
+  color: "#F4F4F5",
+  fontSize: "12.5px",
+  fontWeight: 700,
+  lineHeight: 1.35,
+  textShadow: "0 2px 12px rgba(0,0,0,0.72)",
+  maxWidth: "100%",
+  ...safeTextStyle,
 };
 
 const mobileHeroInitialButtonsStyle: CSSProperties = {
@@ -6168,48 +6533,44 @@ const heroDotActiveStyle: CSSProperties = {
 };
 
 const desktopHeroFooterStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  justifyContent: "center",
-  justifyItems: "center",
-  alignItems: "center",
-  gap: "10px",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  justifyContent: "flex-start",
+  gap: "16px",
   width: "100%",
   maxWidth: "100%",
   minWidth: 0,
-  marginTop: 0,
+  marginTop: "3px",
 };
 
 const desktopHeroStatsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(76px, 1fr))",
+  display: "flex",
   alignItems: "center",
-  justifySelf: "center",
-  gap: "10px",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
-  fontWeight: 900,
-  width: "100%",
-  maxWidth: "360px",
+  justifyContent: "flex-start",
+  gap: "22px",
+  color: "#E4E4E7",
+  fontSize: "12.5px",
+  fontWeight: 750,
+  width: "auto",
+  maxWidth: "100%",
   minWidth: 0,
-  position: "relative",
-  left: "-64px",
+  flexWrap: "wrap",
 };
 
 const desktopHeroStatItemStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  justifyContent: "center",
+  justifyContent: "flex-start",
   gap: "6px",
   minWidth: 0,
-  width: "100%",
-  padding: "9px 10px",
-  borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.58)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  padding: 0,
+  borderRadius: 0,
+  background: "transparent",
+  border: 0,
   boxSizing: "border-box",
   whiteSpace: "nowrap",
-  textShadow: "0 1px 0 rgba(0,0,0,0.28)",
+  textShadow: "0 2px 12px rgba(0,0,0,0.76)",
   ...safeTextStyle,
 };
 
@@ -6232,13 +6593,31 @@ const desktopHeroStatValueStyle: CSSProperties = {
 };
 
 const desktopHeroDotsStyle: CSSProperties = {
-  ...heroDotsStyle,
-  justifyContent: "flex-end",
-  justifySelf: "end",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "7px",
   width: "auto",
-  marginTop: "-2px",
-  flexWrap: "nowrap",
+  maxWidth: "100%",
   minWidth: 0,
+  marginTop: 0,
+  flexWrap: "nowrap",
+};
+
+const desktopHeroDotStyle: CSSProperties = {
+  width: "28px",
+  height: "4px",
+  borderRadius: "999px",
+  border: 0,
+  padding: 0,
+  background: "rgba(255,255,255,0.28)",
+  cursor: "pointer",
+};
+
+const desktopHeroDotActiveStyle: CSSProperties = {
+  ...desktopHeroDotStyle,
+  width: "46px",
+  background: "#FFFFFF",
 };
 
 const mobileHeroContentStyle: CSSProperties = {
@@ -6543,17 +6922,20 @@ const desktopCarouselShellStyle: CSSProperties = {
 const desktopStoryListStyle: CSSProperties = {
   ...storyListStyle,
   gap: "18px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "6px 0 20px",
-  margin: 0,
-  scrollPaddingLeft: "0px",
-  scrollPaddingRight: "0px",
+  width: "100vw",
+  maxWidth: "100vw",
+  marginLeft: "calc(50% - 50vw)",
+  marginRight: "calc(50% - 50vw)",
+  padding:
+    "6px max(24px, calc((100vw - 1760px) / 2)) 20px",
+  scrollPaddingLeft: "max(24px, calc((100vw - 1760px) / 2))",
+  scrollPaddingRight: "max(24px, calc((100vw - 1760px) / 2))",
 };
 
 const desktopStaticStoryListStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, 360px)",
+  justifyContent: "space-between",
   gap: "18px",
   width: "100%",
   maxWidth: "100%",
@@ -6568,43 +6950,51 @@ const desktopCarouselArrowBaseStyle: CSSProperties = {
   top: "50%",
   transform: "translateY(-50%)",
   zIndex: 4,
-  width: "30px",
-  height: "30px",
+  width: "52px",
+  height: "96px",
   padding: 0,
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.16)",
-  background:
-    "linear-gradient(135deg, rgba(18,8,31,0.92) 0%, rgba(38,20,62,0.94) 100%)",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
   color: "#FFFFFF",
-  fontSize: 0,
-  lineHeight: 1,
-  fontWeight: 950,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
+  boxShadow: "none",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
 };
 
 const desktopCarouselArrowLeftStyle: CSSProperties = {
   ...desktopCarouselArrowBaseStyle,
-  left: "6px",
+  left: "-10px",
 };
 
 const desktopCarouselArrowRightStyle: CSSProperties = {
   ...desktopCarouselArrowBaseStyle,
-  right: "6px",
+  right: "-10px",
 };
 
-const desktopCarouselArrowIconStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "100%",
-  height: "100%",
-  fontSize: "22px",
-  lineHeight: 1,
-  fontWeight: 950,
-  transform: "translateY(-1px)",
+const desktopCarouselArrowIconBaseStyle: CSSProperties = {
+  display: "block",
+  width: "18px",
+  height: "18px",
+  borderTop: "4px solid #FFFFFF",
+  borderRight: "4px solid #FFFFFF",
+  filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.92))",
+  pointerEvents: "none",
+  boxSizing: "border-box",
+};
+
+const desktopCarouselArrowLeftIconStyle: CSSProperties = {
+  ...desktopCarouselArrowIconBaseStyle,
+  transform: "rotate(-135deg)",
+};
+
+const desktopCarouselArrowRightIconStyle: CSSProperties = {
+  ...desktopCarouselArrowIconBaseStyle,
+  transform: "rotate(45deg)",
 };
 
 const authorListStyle: CSSProperties = {
@@ -6616,12 +7006,14 @@ const authorListStyle: CSSProperties = {
 const desktopAuthorListStyle: CSSProperties = {
   ...authorListStyle,
   gap: "16px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "6px 0 18px",
-  margin: 0,
-  scrollPaddingLeft: "0px",
-  scrollPaddingRight: "0px",
+  width: "100vw",
+  maxWidth: "100vw",
+  marginLeft: "calc(50% - 50vw)",
+  marginRight: "calc(50% - 50vw)",
+  padding:
+    "6px max(24px, calc((100vw - 1760px) / 2)) 18px",
+  scrollPaddingLeft: "max(24px, calc((100vw - 1760px) / 2))",
+  scrollPaddingRight: "max(24px, calc((100vw - 1760px) / 2))",
 };
 
 const desktopStaticAuthorListStyle: CSSProperties = {
@@ -6859,13 +7251,13 @@ const publishedCardStyle: CSSProperties = {
 
 const desktopPublishedCardStyle: CSSProperties = {
   ...publishedCardStyle,
-  flex: "0 0 410px",
-  width: "410px",
-  maxWidth: "100%",
-  gridTemplateColumns: "112px minmax(0, 1fr)",
-  gap: "15px",
-  padding: "13px",
-  borderRadius: "24px",
+  flex: "0 0 360px",
+  width: "360px",
+  maxWidth: "360px",
+  gridTemplateColumns: "98px minmax(0, 1fr)",
+  gap: "14px",
+  padding: "11px",
+  borderRadius: "22px",
   boxShadow: "none",
 };
 
@@ -6876,7 +7268,7 @@ const publishedCardCompactHeightStyle: CSSProperties = {
 
 const desktopPublishedCardCompactHeightStyle: CSSProperties = {
   ...desktopPublishedCardStyle,
-  padding: "10px",
+  padding: "8px",
 };
 
 const coverPlaceholderStyle: CSSProperties = {
@@ -6895,8 +7287,8 @@ const coverPlaceholderStyle: CSSProperties = {
 };
 
 const desktopCoverPlaceholderStyle: CSSProperties = {
-  minHeight: "142px",
-  borderRadius: "18px",
+  minHeight: "116px",
+  borderRadius: "16px",
 };
 
 const coverPlaceholderCompactHeightStyle: CSSProperties = {
@@ -6904,8 +7296,8 @@ const coverPlaceholderCompactHeightStyle: CSSProperties = {
 };
 
 const desktopCoverPlaceholderCompactHeightStyle: CSSProperties = {
-  minHeight: "130px",
-  borderRadius: "18px",
+  minHeight: "106px",
+  borderRadius: "16px",
 };
 
 
@@ -6940,8 +7332,8 @@ const publishedTitleStyle: CSSProperties = {
 
 const desktopPublishedTitleStyle: CSSProperties = {
   ...publishedTitleStyle,
-  fontSize: "21px",
-  lineHeight: 1.06,
+  fontSize: "20px",
+  lineHeight: 1.05,
 };
 
 const statusRowStyle: CSSProperties = {
@@ -7221,13 +7613,10 @@ const desktopCardActionRowStyle: CSSProperties = {
 
 const desktopCardGenreBadgeStyle: CSSProperties = {
   ...mobileCardGenreBadgeStyle,
-  flex: "0 1 46%",
-  maxWidth: "46%",
-  padding: "0 8px",
+  flex: "0 1 42%",
+  maxWidth: "42%",
+  padding: "0 10px",
   textAlign: "center",
-  whiteSpace: "normal",
-  overflow: "visible",
-  textOverflow: "clip",
 };
 
 const desktopCardPrimaryActionStyle: CSSProperties = {
@@ -7265,13 +7654,13 @@ const obraCardStyle: CSSProperties = {
 
 const desktopObraCardStyle: CSSProperties = {
   ...obraCardStyle,
-  flex: "0 0 410px",
-  width: "410px",
-  maxWidth: "100%",
-  gridTemplateColumns: "112px minmax(0, 1fr)",
-  gap: "15px",
-  padding: "13px",
-  borderRadius: "24px",
+  flex: "0 0 360px",
+  width: "360px",
+  maxWidth: "360px",
+  gridTemplateColumns: "98px minmax(0, 1fr)",
+  gap: "14px",
+  padding: "11px",
+  borderRadius: "22px",
   boxShadow: "none",
 };
 
@@ -7328,8 +7717,8 @@ const obraTitleStyle: CSSProperties = {
 
 const desktopObraTitleStyle: CSSProperties = {
   ...obraTitleStyle,
-  fontSize: "21px",
-  lineHeight: 1.06,
+  fontSize: "20px",
+  lineHeight: 1.05,
 };
 
 const statusBadgeStyle: CSSProperties = {

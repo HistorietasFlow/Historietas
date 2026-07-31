@@ -245,6 +245,7 @@ const SEGUINDO_UI_TRANSLATIONS: Record<string, TraducaoSeguindo> = {
   "Fechar busca": { en: "Close search", es: "Cerrar búsqueda" },
   "Abrir busca": { en: "Open search", es: "Abrir búsqueda" },
   "Classificar por": { en: "Sort by", es: "Ordenar por" },
+  "Filtros": { en: "Filters", es: "Filtros" },
   "Padrão": { en: "Default", es: "Predeterminado" },
   "Mais recentes": { en: "Newest", es: "Más recientes" },
   "Mais antigos": { en: "Oldest", es: "Más antiguos" },
@@ -4400,38 +4401,36 @@ export default function SeguindoPage() {
       {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-        <header
-          style={
-            isDesktop
-              ? desktopSeguindoHeaderStyle
-              : seguindoHeaderStyle
-          }
-        >
-          <button
-            type="button"
-            onClick={() => setMostrarPainelOrdenacao(true)}
-            style={
-              isDesktop
-                ? desktopSeguindoHeaderFilterButtonStyle
-                : seguindoHeaderFilterButtonStyle
-            }
-            aria-label="Abrir classificação de Seguindo"
-          >
-            <span>Seguindo</span>
-            <span style={seguindoHeaderFilterIconStyle} aria-hidden="true">
-              +
-            </span>
-          </button>
+        {isDesktop ? (
+          <header style={desktopSeguindoHeaderStyle}>
+            <h1 style={desktopSeguindoHeaderTitleStyle}>Seguindo</h1>
 
-          {buscaSeguindoAberta ? (
-            <>
-              <label
-                style={
-                  isDesktop
-                    ? desktopSeguindoHeaderSearchShellStyle
-                    : seguindoHeaderSearchShellStyle
-                }
-              >
+            <div style={desktopSeguindoHeaderActionsStyle}>
+              <label style={desktopSeguindoHeaderSearchShellStyle}>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  style={desktopSeguindoHeaderSearchIconStyle}
+                >
+                  <circle
+                    cx="10.85"
+                    cy="10.85"
+                    r="6.65"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M16.05 16.05L20.25 20.25"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
                 <input
                   value={busca}
                   onChange={(event) => setBusca(event.target.value)}
@@ -4448,20 +4447,101 @@ export default function SeguindoPage() {
                   autoCorrect="off"
                   spellCheck={false}
                   maxLength={90}
-                  style={seguindoHeaderSearchInputStyle}
+                  style={desktopSeguindoHeaderSearchInputStyle}
                   type="text"
-                  autoFocus
                 />
               </label>
 
               <button
                 type="button"
-                onClick={() => {
-                  setBusca("");
-                  setBuscaSeguindoAberta(false);
-                }}
-                aria-label="Fechar busca"
-                aria-expanded="true"
+                onClick={() => setMostrarPainelOrdenacao(true)}
+                style={desktopSeguindoHeaderFilterButtonStyle}
+                aria-label="Abrir classificação de Seguindo"
+              >
+                <span>Filtros</span>
+                <span aria-hidden="true">+</span>
+              </button>
+            </div>
+          </header>
+        ) : (
+          <header style={seguindoHeaderStyle}>
+            <button
+              type="button"
+              onClick={() => setMostrarPainelOrdenacao(true)}
+              style={seguindoHeaderFilterButtonStyle}
+              aria-label="Abrir classificação de Seguindo"
+            >
+              <span>Seguindo</span>
+              <span style={seguindoHeaderFilterIconStyle} aria-hidden="true">
+                +
+              </span>
+            </button>
+
+            {buscaSeguindoAberta ? (
+              <>
+                <label style={seguindoHeaderSearchShellStyle}>
+                  <input
+                    value={busca}
+                    onChange={(event) => setBusca(event.target.value)}
+                    placeholder={
+                      visualizandoListaSocialDoPerfil
+                        ? `Pesquisar em ${descricaoListaSocial}`
+                        : abaConteudo === "seguidores"
+                          ? "Pesquisar seguidor ou perfil"
+                          : abaConteudo === "obras"
+                            ? "Pesquisar obra, autor, gênero ou tag"
+                            : "Pesquisar pessoa, autor ou perfil"
+                    }
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    maxLength={90}
+                    style={seguindoHeaderSearchInputStyle}
+                    type="text"
+                    autoFocus
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBusca("");
+                    setBuscaSeguindoAberta(false);
+                  }}
+                  aria-label="Fechar busca"
+                  aria-expanded="true"
+                  style={seguindoSearchToggleStyle}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="10.85"
+                      cy="10.85"
+                      r="6.65"
+                      stroke="currentColor"
+                      strokeWidth="2.15"
+                    />
+                    <path
+                      d="M16.05 16.05L20.25 20.25"
+                      stroke="currentColor"
+                      strokeWidth="2.15"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setBuscaSeguindoAberta(true)}
+                aria-label="Abrir busca"
+                aria-expanded="false"
                 style={seguindoSearchToggleStyle}
               >
                 <svg
@@ -4487,50 +4567,23 @@ export default function SeguindoPage() {
                   />
                 </svg>
               </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setBuscaSeguindoAberta(true)}
-              aria-label="Abrir busca"
-              aria-expanded="false"
-              style={seguindoSearchToggleStyle}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="10.85"
-                  cy="10.85"
-                  r="6.65"
-                  stroke="currentColor"
-                  strokeWidth="2.15"
-                />
-                <path
-                  d="M16.05 16.05L20.25 20.25"
-                  stroke="currentColor"
-                  strokeWidth="2.15"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-          )}
-        </header>
+            )}
+          </header>
+        )}
 
         {totalDisponivelGeral > 0 && (
           <>
             <section style={isDesktop ? desktopSocialToolbarStyle : socialToolbarStyle}>
               <div
-                  style={{
-                    ...socialTabsStyle,
-                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                  }}
-                >
+                style={
+                  isDesktop
+                    ? desktopSocialTabsStyle
+                    : {
+                        ...socialTabsStyle,
+                        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                      }
+                }
+              >
                 <>
                   <button
                     type="button"
@@ -4539,7 +4592,11 @@ export default function SeguindoPage() {
                       ...(abaConteudo === "seguidores"
                         ? socialTabActiveStyle
                         : socialTabStyle),
-                      ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
+                      ...(isDesktop
+                        ? abaConteudo === "seguidores"
+                          ? desktopSocialTabActiveStyle
+                          : desktopSocialTabStyle
+                        : mobileThreeSocialTabStyle),
                     }}
                   >
                     Seguidores
@@ -4555,7 +4612,11 @@ export default function SeguindoPage() {
                       ...(abaConteudo === "obras"
                         ? socialTabActiveStyle
                         : socialTabStyle),
-                      ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
+                      ...(isDesktop
+                        ? abaConteudo === "obras"
+                          ? desktopSocialTabActiveStyle
+                          : desktopSocialTabStyle
+                        : mobileThreeSocialTabStyle),
                     }}
                   >
                     Obras seguidas
@@ -4571,7 +4632,11 @@ export default function SeguindoPage() {
                       ...(abaConteudo === "pessoas"
                         ? socialTabActiveStyle
                         : socialTabStyle),
-                      ...(!isDesktop ? mobileThreeSocialTabStyle : {}),
+                      ...(isDesktop
+                        ? abaConteudo === "pessoas"
+                          ? desktopSocialTabActiveStyle
+                          : desktopSocialTabStyle
+                        : mobileThreeSocialTabStyle),
                     }}
                   >
                     Pessoas seguidas
@@ -4738,6 +4803,7 @@ export default function SeguindoPage() {
                                   ? "minmax(0, 1fr)"
                                   : "minmax(0, 1fr) auto",
                               alignItems: "stretch",
+                              marginTop: isDesktop ? "auto" : undefined,
                             }}
                           >
                             <Link
@@ -4745,7 +4811,7 @@ export default function SeguindoPage() {
                               style={{
                                 ...readButtonStyle,
                                 width: "100%",
-                                minHeight: "28px",
+                                minHeight: isDesktop ? "32px" : "28px",
                               }}
                             >
                               Ver obra
@@ -4757,8 +4823,8 @@ export default function SeguindoPage() {
                                 onClick={() => deixarDeSeguirObra(obra)}
                                 style={{
                                   ...unfollowButtonStyle,
-                                  minWidth: isDesktop ? "124px" : "104px",
-                                  minHeight: "28px",
+                                  minWidth: isDesktop ? "112px" : "104px",
+                                  minHeight: isDesktop ? "32px" : "28px",
                                 }}
                               >
                                 Deixar de seguir
@@ -4785,13 +4851,13 @@ export default function SeguindoPage() {
                         : sectionHeaderStyle
                     }
                   >
-                    <div style={sectionHeaderTextStyle}>
-                      <h2 style={sectionTitleStyle}>
+                    <div style={isDesktop ? desktopSectionHeaderTextStyle : sectionHeaderTextStyle}>
+                      <h2 style={isDesktop ? desktopSectionTitleStyle : sectionTitleStyle}>
                         SOLICITAÇÕES PARA SEGUIR
                       </h2>
                     </div>
 
-                    <span style={sectionCounterStyle}>
+                    <span style={isDesktop ? desktopSectionCounterStyle : sectionCounterStyle}>
                       {solicitacoesSeguidoresFiltradas.length}
                     </span>
                   </div>
@@ -4817,14 +4883,18 @@ export default function SeguindoPage() {
                               ? "58px minmax(0, 1fr)"
                               : "52px minmax(0, 1fr)",
                             gap: isDesktop ? "10px" : "7px",
-                            width: isDesktop ? "104%" : "102%",
-                            margin: "0 auto",
+                            width: isDesktop ? "100%" : "102%",
+                            margin: isDesktop ? 0 : "0 auto",
                             padding: isDesktop
-                              ? "8px 10px 8px 0"
+                              ? "11px"
                               : "6px 8px 6px 0",
-                            borderRadius: 0,
-                            background: "transparent",
-                            border: "none",
+                            borderRadius: isDesktop ? "20px" : 0,
+                            background: isDesktop
+                              ? "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))"
+                              : "transparent",
+                            border: isDesktop
+                              ? "1px solid rgba(255,255,255,0.06)"
+                              : "none",
                             boxShadow: "none",
                           }}
                         >
@@ -4835,9 +4905,10 @@ export default function SeguindoPage() {
                               ...criarAvatarUsuarioSeguindoStyle(
                                 usuarioSolicitante.avatar,
                               ),
+                              ...(isDesktop ? desktopAuthorAvatarStyle : {}),
                               width: isDesktop ? "58px" : "52px",
                               height: isDesktop ? "58px" : "52px",
-                              borderRadius: "16px",
+                              borderRadius: isDesktop ? "17px" : "16px",
                               fontSize: isDesktop ? "25px" : "22px",
                             }}
                           >
@@ -4944,12 +5015,16 @@ export default function SeguindoPage() {
                             ? "58px minmax(0, 1fr)"
                             : "52px minmax(0, 1fr)",
                           gap: isDesktop ? "7px" : "6px",
-                          width: isDesktop ? "104%" : "102%",
-                          margin: "0 auto",
-                          padding: isDesktop ? "6px 8px 6px 0" : "4px 7px 4px 0",
-                          borderRadius: 0,
-                          background: "transparent",
-                          border: "none",
+                          width: isDesktop ? "100%" : "102%",
+                          margin: isDesktop ? 0 : "0 auto",
+                          padding: isDesktop ? "11px" : "4px 7px 4px 0",
+                          borderRadius: isDesktop ? "20px" : 0,
+                          background: isDesktop
+                            ? "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))"
+                            : "transparent",
+                          border: isDesktop
+                            ? "1px solid rgba(255,255,255,0.06)"
+                            : "none",
                           boxShadow: "none",
                           cursor: "pointer",
                         }}
@@ -4957,9 +5032,10 @@ export default function SeguindoPage() {
                         <div
                           style={{
                             ...criarAvatarUsuarioSeguindoStyle(usuarioSeguido.avatar),
+                            ...(isDesktop ? desktopAuthorAvatarStyle : {}),
                             width: isDesktop ? "58px" : "52px",
                             height: isDesktop ? "58px" : "52px",
-                            borderRadius: "16px",
+                            borderRadius: isDesktop ? "17px" : "16px",
                             fontSize: isDesktop ? "25px" : "22px",
                           }}
                         >
@@ -5067,11 +5143,11 @@ export default function SeguindoPage() {
             {buscaSugestoesUsuariosAtiva && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
                 <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-                  <div style={sectionHeaderTextStyle}>
-                    <h2 style={sectionTitleStyle}>SUGESTÕES PARA SEGUIR</h2>
+                  <div style={isDesktop ? desktopSectionHeaderTextStyle : sectionHeaderTextStyle}>
+                    <h2 style={isDesktop ? desktopSectionTitleStyle : sectionTitleStyle}>SUGESTÕES PARA SEGUIR</h2>
                   </div>
 
-                  <span style={sectionCounterStyle}>
+                  <span style={isDesktop ? desktopSectionCounterStyle : sectionCounterStyle}>
                     {carregandoUsuariosSugestoes
                       ? "..."
                       : usuariosSugestoesBusca.length}
@@ -5105,12 +5181,16 @@ export default function SeguindoPage() {
                               ? "58px minmax(0, 1fr) auto"
                               : "52px minmax(0, 1fr) auto",
                             gap: isDesktop ? "10px" : "7px",
-                            width: isDesktop ? "104%" : "102%",
-                            margin: "0 auto",
-                            padding: isDesktop ? "6px 8px 6px 0" : "4px 7px 4px 0",
-                            borderRadius: 0,
-                            background: "transparent",
-                            border: "none",
+                            width: isDesktop ? "100%" : "102%",
+                            margin: isDesktop ? 0 : "0 auto",
+                            padding: isDesktop ? "11px" : "4px 7px 4px 0",
+                            borderRadius: isDesktop ? "20px" : 0,
+                            background: isDesktop
+                              ? "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))"
+                              : "transparent",
+                            border: isDesktop
+                              ? "1px solid rgba(255,255,255,0.06)"
+                              : "none",
                             boxShadow: "none",
                           }}
                         >
@@ -5121,9 +5201,10 @@ export default function SeguindoPage() {
                               ...criarAvatarUsuarioSeguindoStyle(
                                 usuarioSugestao.avatar
                               ),
+                              ...(isDesktop ? desktopAuthorAvatarStyle : {}),
                               width: isDesktop ? "58px" : "52px",
                               height: isDesktop ? "58px" : "52px",
-                              borderRadius: "16px",
+                              borderRadius: isDesktop ? "17px" : "16px",
                               fontSize: isDesktop ? "25px" : "22px",
                             }}
                           >
@@ -5176,19 +5257,32 @@ export default function SeguindoPage() {
             {!visualizandoListaSocialDoPerfil && abaConteudo === "pessoas" && autoresFiltrados.length > 0 && (
               <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
                 <div style={isDesktop ? desktopSectionHeaderStyle : sectionHeaderStyle}>
-                  <div style={sectionHeaderTextStyle}>
-                    <h2 style={sectionTitleStyle}>AUTORES SEGUIDOS</h2>
+                  <div style={isDesktop ? desktopSectionHeaderTextStyle : sectionHeaderTextStyle}>
+                    <h2 style={isDesktop ? desktopSectionTitleStyle : sectionTitleStyle}>AUTORES SEGUIDOS</h2>
                   </div>
 
-                  <span style={sectionCounterStyle}>
+                  <span style={isDesktop ? desktopSectionCounterStyle : sectionCounterStyle}>
                     {autoresFiltrados.length}
                   </span>
                 </div>
 
                 <div style={isDesktop ? desktopAuthorsGridStyle : authorsGridStyle}>
                   {autoresFiltrados.map((autor) => (
-                    <article key={autor.chave} style={isDesktop ? desktopAuthorCardStyle : authorCardStyle}>
-                      <div style={authorAvatarStyle}>
+                    <article
+                      key={autor.chave}
+                      style={
+                        isDesktop
+                          ? desktopAuthorFollowedCardStyle
+                          : authorCardStyle
+                      }
+                    >
+                      <div
+                        style={
+                          isDesktop
+                            ? desktopAuthorFollowedAvatarStyle
+                            : authorAvatarStyle
+                        }
+                      >
                         {autor.nome.slice(0, 1).toUpperCase()}
                       </div>
 
@@ -5464,7 +5558,7 @@ const pageStyle: CSSProperties = {
   position: "relative",
   minHeight: "100vh",
   width: "100%",
-  maxWidth: "100vw",
+  maxWidth: "100%",
   overflowX: "hidden",
   background: "var(--historietas-seguindo-bg-page, #070212)",
   color: "var(--historietas-text-primary, #FFFFFF)",
@@ -5483,8 +5577,9 @@ const containerStyle: CSSProperties = {
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
-  width: "min(1220px, calc(100% - 64px))",
-  padding: "10px 0 40px",
+  width: "min(1180px, calc(100% - 64px))",
+  maxWidth: "100%",
+  padding: "34px 0 64px",
 };
 
 const seguindoHeaderStyle: CSSProperties = {
@@ -5500,7 +5595,60 @@ const seguindoHeaderStyle: CSSProperties = {
 };
 
 const desktopSeguindoHeaderStyle: CSSProperties = {
-  ...seguindoHeaderStyle,
+  width: "100%",
+  minHeight: "58px",
+  margin: "0 0 18px",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: "24px",
+  minWidth: 0,
+  boxSizing: "border-box",
+  position: "relative",
+  zIndex: 2,
+};
+
+const desktopSeguindoHeaderTitleStyle: CSSProperties = {
+  margin: 0,
+  color: "#FFFFFF",
+  fontSize: "32px",
+  lineHeight: 1,
+  fontWeight: 950,
+  letterSpacing: "-0.055em",
+  ...safeTextStyle,
+};
+
+const desktopSeguindoHeaderActionsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "10px",
+  minWidth: 0,
+};
+
+const desktopSeguindoHeaderSearchIconStyle: CSSProperties = {
+  position: "absolute",
+  left: "13px",
+  top: "50%",
+  transform: "translateY(-50%)",
+  color: "rgba(255,255,255,0.56)",
+  pointerEvents: "none",
+};
+
+const desktopSeguindoHeaderSearchInputStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  width: "100%",
+  height: "100%",
+  border: "none",
+  background: "transparent",
+  color: "#FFFFFF",
+  outline: "none",
+  padding: "0 14px 0 42px",
+  fontFamily: "inherit",
+  fontSize: "13px",
+  fontWeight: 800,
+  boxSizing: "border-box",
 };
 
 const seguindoSearchToggleStyle: CSSProperties = {
@@ -5554,7 +5702,23 @@ const seguindoHeaderFilterButtonStyle: CSSProperties = {
 };
 
 const desktopSeguindoHeaderFilterButtonStyle: CSSProperties = {
-  ...seguindoHeaderFilterButtonStyle,
+  appearance: "none",
+  WebkitAppearance: "none",
+  minHeight: "42px",
+  padding: "0 16px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "transparent",
+  color: "#FFFFFF",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  fontFamily: "inherit",
+  fontSize: "12px",
+  fontWeight: 900,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
 };
 
 const seguindoHeaderFilterIconStyle: CSSProperties = {
@@ -6030,9 +6194,10 @@ const socialToolbarStyle: CSSProperties = {
 
 const desktopSocialToolbarStyle: CSSProperties = {
   ...socialToolbarStyle,
-  width: "min(760px, 100%)",
-  margin: "-8px auto 22px",
+  width: "min(980px, 100%)",
+  margin: "0 auto 28px",
   padding: 0,
+  gap: "14px",
 };
 
 const socialTabsStyle: CSSProperties = {
@@ -6111,9 +6276,17 @@ const seguindoHeaderSearchShellStyle: CSSProperties = {
 };
 
 const desktopSeguindoHeaderSearchShellStyle: CSSProperties = {
-  ...seguindoHeaderSearchShellStyle,
-  flex: "0 1 480px",
-  maxWidth: "min(480px, calc(100% - 118px))",
+  position: "relative",
+  width: "min(390px, 34vw)",
+  minWidth: "230px",
+  height: "42px",
+  borderRadius: "10px",
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.045)",
+  display: "flex",
+  alignItems: "center",
+  overflow: "hidden",
+  boxSizing: "border-box",
 };
 
 const seguindoHeaderSearchInputStyle: CSSProperties = {
@@ -6463,7 +6636,7 @@ const sectionStyle: CSSProperties = {
 const desktopSectionStyle: CSSProperties = {
   ...sectionStyle,
   width: "min(980px, 100%)",
-  margin: "20px auto 0",
+  margin: "24px auto 0",
 };
 
 const sectionHeaderStyle: CSSProperties = {
@@ -6488,9 +6661,13 @@ const sectionHeaderStyle: CSSProperties = {
 
 const desktopSectionHeaderStyle: CSSProperties = {
   ...sectionHeaderStyle,
-  width: "min(980px, 100%)",
-  margin: "0 auto 12px",
-  padding: "4px 0",
+  width: "100%",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  justifyContent: "stretch",
+  columnGap: "14px",
+  margin: "0 auto 14px",
+  padding: "2px 0",
+  textAlign: "left",
 };
 
 const miniTitleStyle: CSSProperties = {
@@ -6556,10 +6733,11 @@ const gridStyle: CSSProperties = {
 
 const desktopGridStyle: CSSProperties = {
   ...gridStyle,
-  width: "min(980px, 100%)",
+  width: "100%",
   margin: "0 auto",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "14px"
+  gap: "16px",
+  alignItems: "stretch",
 };
 
 const authorsGridStyle: CSSProperties = {
@@ -6572,10 +6750,11 @@ const authorsGridStyle: CSSProperties = {
 
 const desktopAuthorsGridStyle: CSSProperties = {
   ...authorsGridStyle,
-  width: "min(980px, 100%)",
+  width: "100%",
   margin: "0 auto",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "14px"
+  gap: "14px",
+  alignItems: "stretch",
 };
 
 const cardStyle: CSSProperties = {
@@ -6597,13 +6776,15 @@ const cardStyle: CSSProperties = {
 
 const desktopCardStyle: CSSProperties = {
   ...cardStyle,
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gridTemplateRows: "104px 1fr",
-  gap: 0,
-  padding: 0,
-  borderRadius: "24px",
-  boxShadow: "none"
+  gridTemplateColumns: "104px minmax(0, 1fr)",
+  gridTemplateRows: "none",
+  alignItems: "stretch",
+  gap: "11px",
+  minHeight: "150px",
+  width: "100%",
+  padding: "7px",
+  borderRadius: "20px",
+  boxShadow: "none",
 };
 
 const coverStyle: CSSProperties = {
@@ -6628,10 +6809,13 @@ const coverStyle: CSSProperties = {
 
 const desktopCoverStyle: CSSProperties = {
   ...coverStyle,
-  height: "104px",
-  minHeight: "104px",
-  borderRadius: "24px 24px 0 0",
-  borderBottom: "none"
+  width: "104px",
+  height: "100%",
+  minHeight: "136px",
+  maxHeight: "150px",
+  alignSelf: "stretch",
+  borderRadius: "15px",
+  borderBottom: "none",
 };
 
 const overlayStyle: CSSProperties = {
@@ -6666,8 +6850,10 @@ const contentStyle: CSSProperties = {
 
 const desktopContentStyle: CSSProperties = {
   ...contentStyle,
-  padding: "8px",
-  gap: "5px"
+  minHeight: "136px",
+  padding: "5px 9px 5px 0",
+  gap: "6px",
+  alignContent: "start",
 };
 
 const badgeRowStyle: CSSProperties = {
@@ -6841,6 +7027,7 @@ const primaryActionsGridStyle: CSSProperties = {
 const desktopPrimaryActionsGridStyle: CSSProperties = {
   ...primaryActionsGridStyle,
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "8px",
 };
 
 const secondaryActionsRowStyle: CSSProperties = {
@@ -6855,7 +7042,7 @@ const secondaryActionsRowStyle: CSSProperties = {
 
 const desktopSecondaryActionsRowStyle: CSSProperties = {
   ...secondaryActionsRowStyle,
-  gap: "6px",
+  gap: "7px",
 };
 
 const readButtonStyle: CSSProperties = {
@@ -7000,10 +7187,15 @@ const authorCardStyle: CSSProperties = {
 
 const desktopAuthorCardStyle: CSSProperties = {
   ...authorCardStyle,
-  gridTemplateColumns: "84px minmax(0, 1fr)",
-  padding: "12px 14px",
-  borderRadius: "22px",
-  boxShadow: "none"
+  width: "100%",
+  minHeight: "82px",
+  gridTemplateColumns: "58px minmax(0, 1fr)",
+  gap: "11px",
+  padding: "11px",
+  borderRadius: "20px",
+  background: "var(--historietas-seguindo-panel, rgba(4, 0, 10, 0.72))",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
 };
 
 const authorAvatarStyle: CSSProperties = {
@@ -7054,6 +7246,80 @@ const authorActionsGridStyle: CSSProperties = {
 const desktopAuthorActionsGridStyle: CSSProperties = {
   ...authorActionsGridStyle,
   gap: "8px",
+};
+
+const desktopSeguindoSearchToggleStyle: CSSProperties = {
+  ...seguindoSearchToggleStyle,
+  width: "42px",
+  height: "42px",
+  marginRight: 0,
+};
+
+const desktopSocialTabsStyle: CSSProperties = {
+  ...socialTabsStyle,
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  alignItems: "stretch",
+  gap: "8px",
+  paddingBottom: "1px",
+};
+
+const desktopSocialTabStyle: CSSProperties = {
+  ...socialTabStyle,
+  minHeight: "48px",
+  padding: "0 12px 11px",
+  fontSize: "13px",
+  overflow: "visible",
+  textOverflow: "clip",
+};
+
+const desktopSocialTabActiveStyle: CSSProperties = {
+  ...desktopSocialTabStyle,
+  color: "#FFFFFF",
+  borderBottom: "2px solid #FFFFFF",
+};
+
+const desktopSectionHeaderTextStyle: CSSProperties = {
+  ...sectionHeaderTextStyle,
+  justifyItems: "start",
+  textAlign: "left",
+};
+
+const desktopSectionTitleStyle: CSSProperties = {
+  ...sectionTitleStyle,
+  color: "#FFFFFF",
+  WebkitTextFillColor: "#FFFFFF",
+  fontSize: "22px",
+  textAlign: "left",
+};
+
+const desktopSectionCounterStyle: CSSProperties = {
+  ...sectionCounterStyle,
+  width: "34px",
+  height: "34px",
+  fontSize: "14px",
+};
+
+const desktopAuthorAvatarStyle: CSSProperties = {
+  ...authorAvatarStyle,
+  width: "58px",
+  height: "58px",
+  borderRadius: "17px",
+  fontSize: "25px",
+};
+
+const desktopAuthorFollowedCardStyle: CSSProperties = {
+  ...desktopAuthorCardStyle,
+  gridTemplateColumns: "68px minmax(0, 1fr)",
+  minHeight: "94px",
+  padding: "12px",
+};
+
+const desktopAuthorFollowedAvatarStyle: CSSProperties = {
+  ...authorAvatarStyle,
+  width: "68px",
+  height: "68px",
+  borderRadius: "20px",
+  fontSize: "28px",
 };
 
 const authorNameStyle: CSSProperties = {

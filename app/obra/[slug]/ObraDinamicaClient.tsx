@@ -8,7 +8,6 @@ import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import type { CSSProperties, FormEvent, ReactNode, TouchEvent } from "react";
 import { supabase } from "../../../lib/supabase/client";
-import { useNotificacoes } from "../../../components/NotificacoesProvider";
 import DenunciaModal from "../../../components/DenunciaModal";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
 import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArquivo, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../../lib/utils";
@@ -3429,7 +3428,6 @@ export default function ObraDinamicaPage() {
   const comentariosDragResetTimerRef = useRef<number | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
-  const { notificacoesNaoLidas } = useNotificacoes();
   const visualizacaoObraRegistradaRef = useRef("");
   const avaliacaoVersaoRef = useRef(0);
 
@@ -6033,26 +6031,6 @@ export default function ObraDinamicaPage() {
 
             {isDesktop ? (
               <div style={desktopHeaderRightStyle}>
-                <Link
-                  href="/notificacoes"
-                  style={desktopNotificationButtonStyle}
-                  aria-label={
-                    notificacoesNaoLidas > 0
-                      ? `Notificações: ${notificacoesNaoLidas} não lidas`
-                      : "Notificações"
-                  }
-                >
-                  N
-
-                  {notificacoesNaoLidas > 0 ? (
-                    <span style={desktopNotificationBadgeStyle}>
-                      {notificacoesNaoLidas > 99
-                        ? "99+"
-                        : notificacoesNaoLidas}
-                    </span>
-                  ) : null}
-                </Link>
-
                 {resumoAvaliacaoCabecalho}
               </div>
             ) : (
@@ -6096,6 +6074,10 @@ export default function ObraDinamicaPage() {
                   : heroOverlayContentStyle
               }
             >
+              {isDesktop ? (
+                <span style={desktopHeroKickerStyle}>Obra em destaque</span>
+              ) : null}
+
               <h1
                 data-historietas-i18n-ignore="true"
                 className="historietas-theme-title"
@@ -6104,22 +6086,65 @@ export default function ObraDinamicaPage() {
                 {obra.titulo}
               </h1>
 
+              {isDesktop ? (
+                <>
+                  <div style={desktopHeroMetaStyle}>
+                    <Link
+                      href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
+                      style={desktopHeroAuthorStyle}
+                      aria-label={`Abrir perfil do autor ${autorObraNome}`}
+                      title={perfilAutorObra?.bio || undefined}
+                    >
+                      Por{" "}
+                      <span data-historietas-i18n-ignore="true">
+                        {autorObraNome}
+                      </span>
+                    </Link>
+
+                    <span style={desktopHeroMetaDividerStyle} aria-hidden="true" />
+
+                    <span style={desktopHeroMetaTextStyle}>
+                      {generoObraFormatado}
+                    </span>
+
+                    <span style={desktopHeroMetaDividerStyle} aria-hidden="true" />
+
+                    <span style={desktopHeroMetaTextStyle}>
+                      {obra.classificacaoIndicativa}
+                    </span>
+                  </div>
+
+                  <p
+                    data-historietas-i18n-ignore="true"
+                    style={desktopDescriptionStyle}
+                  >
+                    {obra.sinopse || "Nenhuma sinopse informada."}
+                  </p>
+                </>
+              ) : null}
 
               <div
                 style={
                   isDesktop ? desktopHeroBottomMetaBarStyle : heroBottomMetaBarStyle
                 }
               >
-                <Link
-                  href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
-                  style={heroBottomAuthorLinkStyle}
-                  aria-label={`Abrir perfil do autor ${autorObraNome}`}
-                  title={perfilAutorObra?.bio || undefined}
-                >
-                  Por <span data-historietas-i18n-ignore="true">{autorObraNome}</span>
-                </Link>
+                {!isDesktop ? (
+                  <Link
+                    href={criarLinkPerfilAutor(autorObraNome, autorObraId)}
+                    style={heroBottomAuthorLinkStyle}
+                    aria-label={`Abrir perfil do autor ${autorObraNome}`}
+                    title={perfilAutorObra?.bio || undefined}
+                  >
+                    Por{" "}
+                    <span data-historietas-i18n-ignore="true">
+                      {autorObraNome}
+                    </span>
+                  </Link>
+                ) : null}
 
-                <div style={heroBottomMetricsStyle}>
+                <div
+                  style={isDesktop ? desktopHeroStatsStyle : heroBottomMetricsStyle}
+                >
                   <span style={heroBottomMetricStyle}>
                     <span style={metricInlineContentStyle}>
                       <span style={metricEmojiIconStyle}>👁</span>
@@ -6154,7 +6179,15 @@ export default function ObraDinamicaPage() {
                 <button
                   type="button"
                   onClick={alternarSeguirObra}
-                  style={obraSeguida ? followedButtonStyle : secondaryButtonStyle}
+                  style={
+                    isDesktop
+                      ? obraSeguida
+                        ? desktopFollowedButtonStyle
+                        : desktopPrimaryFollowButtonStyle
+                      : obraSeguida
+                        ? followedButtonStyle
+                        : secondaryButtonStyle
+                  }
                 >
                   {obraSeguida ? "✓ Seguindo" : "Seguir obra"}
                 </button>
@@ -6164,7 +6197,7 @@ export default function ObraDinamicaPage() {
                   onClick={() =>
                     setAcoesObraAbertas((menuAberto) => !menuAberto)
                   }
-                  style={obraAddButtonStyle}
+                  style={isDesktop ? desktopObraAddButtonStyle : obraAddButtonStyle}
                   aria-label="Abrir ações da obra"
                   aria-expanded={acoesObraAbertas}
                   aria-haspopup="dialog"
@@ -7155,49 +7188,6 @@ const desktopHeaderRightStyle: CSSProperties = {
   gap: "12px",
   flex: "0 0 auto",
   minWidth: 0,
-};
-
-const desktopNotificationButtonStyle: CSSProperties = {
-  position: "relative",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, var(--historietas-obra-bg-deep, #04000A))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flex: "0 0 auto",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  boxShadow: "none",
-  zIndex: 2,
-};
-
-const desktopNotificationBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
-  background: "var(--historietas-obra-danger, #EF4444)",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
 };
 
 const logoStyle: CSSProperties = {
@@ -9075,69 +9065,254 @@ const desktopHeroStyle: CSSProperties = {
   ...heroStyle,
   width: "100%",
   maxWidth: "100%",
-  marginLeft: 0,
-  marginRight: 0,
-  borderRadius: "30px",
-  border: "1px solid rgba(255,255,255,0.06)",
-  background: "var(--historietas-obra-bg-deep, #04000A)",
+  margin: "-4px 0 0",
+  overflow: "visible",
+  borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  boxShadow: "none",
 };
 
 const desktopHeroContentStyle: CSSProperties = {
-  ...heroContentStyle,
-  minHeight: "560px",
+  position: "relative",
+  zIndex: 1,
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "minmax(340px, 1.03fr) minmax(0, 0.97fr)",
+  alignItems: "center",
+  gap: "clamp(34px, 4.5vw, 78px)",
+  minHeight: "clamp(440px, 40vw, 590px)",
+  padding: "clamp(18px, 2vw, 32px) 0",
+  overflow: "visible",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
 };
 
 const desktopCoverArtStyle: CSSProperties = {
   ...coverArtStyle,
-  minHeight: "560px",
+  width: "100%",
   height: "100%",
-  borderRadius: "26px",
+  minHeight: 0,
+  borderRadius: "22px",
   backgroundPosition: "center",
+  border: "1px solid rgba(255,255,255,0.06)",
+  boxShadow: "none",
 };
 
 const desktopHeroCoverLinkStyle: CSSProperties = {
-  ...heroCoverLinkStyle,
-  inset: "8px",
-  borderRadius: "26px",
+  position: "relative",
+  zIndex: 1,
+  gridColumn: "1",
+  width: "100%",
+  maxWidth: "650px",
+  height: "clamp(400px, 35vw, 530px)",
+  minHeight: "400px",
+  justifySelf: "start",
+  display: "block",
+  padding: "5px",
+  borderRadius: "28px",
+  overflow: "hidden",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background:
+    "linear-gradient(145deg, #0A0314 0%, #04000A 58%, #020006 100%)",
+  boxShadow:
+    "0 24px 64px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(255,255,255,0.025)",
+  color: "inherit",
+  textDecoration: "none",
+  boxSizing: "border-box",
 };
 
 const desktopHeroOverlayContentStyle: CSSProperties = {
-  ...heroOverlayContentStyle,
-  bottom: "8px",
-  alignItems: "end",
-  justifyItems: "start",
-  padding: "0 30px 10px",
-  gap: "10px",
+  position: "relative",
+  zIndex: 3,
+  gridColumn: "2",
+  width: "100%",
+  maxWidth: "650px",
+  minWidth: 0,
+  justifySelf: "center",
+  alignSelf: "stretch",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  justifyContent: "center",
+  gap: "15px",
+  padding: "clamp(8px, 1vw, 18px) clamp(12px, 1.5vw, 28px)",
   textAlign: "left",
+  background: "transparent",
+  boxSizing: "border-box",
 };
 
 const desktopHeroBottomMetaBarStyle: CSSProperties = {
-  ...heroBottomMetaBarStyle,
-  maxWidth: "320px",
+  position: "relative",
+  zIndex: 3,
+  order: 6,
+  width: "100%",
+  maxWidth: "100%",
+  marginTop: "3px",
   padding: 0,
   borderRadius: 0,
+  border: "none",
+  background: "transparent",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "22px",
+  minWidth: 0,
+  boxSizing: "border-box",
+  transform: "none",
 };
 
 const desktopTitleStyle: CSSProperties = {
   ...titleStyle,
-  fontSize: "clamp(48px, 6vw, 82px)",
-  lineHeight: 0.92,
+  width: "100%",
+  maxWidth: "700px",
+  margin: 0,
+  fontSize: "clamp(46px, 5.2vw, 78px)",
+  lineHeight: 0.98,
   textAlign: "left",
-  maxWidth: "900px",
+  color: "#FFFFFF",
+  textShadow:
+    "0 2px 0 rgba(0,0,0,0.40), 0 8px 28px rgba(0,0,0,0.62)",
+  transform: "none",
 };
 
 const desktopDescriptionStyle: CSSProperties = {
   ...descriptionStyle,
-  maxWidth: "760px",
-  fontSize: "15px",
-  lineHeight: 1.55,
+  width: "100%",
+  maxWidth: "620px",
+  minHeight: 0,
+  margin: 0,
+  color: "#D5D5D8",
+  WebkitTextFillColor: "#D5D5D8",
+  fontSize: "15.5px",
+  lineHeight: 1.58,
+  display: "-webkit-box",
+  WebkitLineClamp: 4,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
   textAlign: "left",
+  textShadow: "0 2px 14px rgba(0,0,0,0.74)",
+  transform: "none",
+};
+
+const desktopHeroKickerStyle: CSSProperties = {
+  color: "#D7D7DA",
+  fontSize: "12px",
+  fontWeight: 800,
+  lineHeight: 1,
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+  textShadow: "0 2px 12px rgba(0,0,0,0.70)",
+};
+
+const desktopHeroMetaStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flexWrap: "wrap",
+  maxWidth: "100%",
+  minWidth: 0,
+  color: "#D2D2D5",
+  fontSize: "13.5px",
+  fontWeight: 650,
+  lineHeight: 1.25,
+};
+
+const desktopHeroAuthorStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontWeight: 750,
+  textDecoration: "none",
+  textShadow: "0 2px 12px rgba(0,0,0,0.62)",
+  ...safeTextStyle,
+};
+
+const desktopHeroMetaDividerStyle: CSSProperties = {
+  width: "4px",
+  height: "4px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.50)",
+  flex: "0 0 auto",
+};
+
+const desktopHeroMetaTextStyle: CSSProperties = {
+  color: "#D2D2D5",
+  fontSize: "13.5px",
+  fontWeight: 650,
+  lineHeight: 1.25,
+  textShadow: "0 2px 12px rgba(0,0,0,0.62)",
+  ...safeTextStyle,
+};
+
+const desktopHeroStatsStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "22px",
+  color: "#E4E4E7",
+  fontSize: "12.5px",
+  fontWeight: 750,
+  width: "auto",
+  maxWidth: "100%",
+  minWidth: 0,
+  flexWrap: "wrap",
+};
+
+const desktopPrimaryFollowButtonStyle: CSSProperties = {
+  minWidth: "164px",
+  minHeight: "50px",
+  padding: "0 22px",
+  borderRadius: "10px",
+  border: "1px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#08080A",
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontFamily: "inherit",
+  fontSize: "14px",
+  fontWeight: 850,
+  lineHeight: 1.1,
+  textAlign: "center",
+  boxSizing: "border-box",
+  boxShadow: "0 10px 28px rgba(0,0,0,0.28)",
+  cursor: "pointer",
+  ...safeTextStyle,
+};
+
+const desktopFollowedButtonStyle: CSSProperties = {
+  ...desktopPrimaryFollowButtonStyle,
+  minWidth: "154px",
+  background: "rgba(10,10,12,0.74)",
+  color: "#FFFFFF",
+  border: "1px solid rgba(255,255,255,0.34)",
+  boxShadow: "none",
+};
+
+const desktopObraAddButtonStyle: CSSProperties = {
+  ...desktopFollowedButtonStyle,
+  minWidth: "50px",
+  width: "50px",
+  height: "50px",
+  padding: 0,
+  fontSize: "26px",
+  lineHeight: 1,
 };
 
 const desktopHeroActionsStyle: CSSProperties = {
-  ...heroActionsStyle,
-  gridTemplateColumns: "minmax(0, 280px) 50px",
-  maxWidth: "364px",
+  order: 5,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  gap: "10px",
+  width: "auto",
+  maxWidth: "100%",
+  minWidth: 0,
+  marginTop: "5px",
+  boxSizing: "border-box",
 };
 
 const desktopObraActionsMenuStyle: CSSProperties = {
