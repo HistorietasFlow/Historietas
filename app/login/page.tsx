@@ -10,7 +10,7 @@ import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 
-type ModoAuth = "entrar" | "criar";
+type ModoAuth = "entrar" | "criar" | "recuperar";
 
 type LoginTranslationKey =
   | "backHome"
@@ -44,7 +44,15 @@ type LoginTranslationKey =
   | "invalidEmail"
   | "connectionFailure"
   | "technicalError"
-  | "unknownError";
+  | "unknownError"
+  | "forgotPassword"
+  | "recoveryTitle"
+  | "recoveryDescription"
+  | "sendRecoveryLink"
+  | "backToSignIn"
+  | "recoveryHelperText"
+  | "recoveryEmailSent"
+  | "passwordChangedNotice";
 
 const LOGIN_TRANSLATIONS: Record<
   HistorietasLanguage,
@@ -90,6 +98,18 @@ const LOGIN_TRANSLATIONS: Record<
     connectionFailure: "Não consegui conectar ao Supabase agora.",
     technicalError: "Erro técnico",
     unknownError: "erro desconhecido",
+    forgotPassword: "Esqueci minha senha",
+    recoveryTitle: "RECUPERAR SENHA",
+    recoveryDescription:
+      "Digite o e-mail da sua conta. Enviaremos um link para você criar uma nova senha.",
+    sendRecoveryLink: "ENVIAR LINK DE RECUPERAÇÃO",
+    backToSignIn: "VOLTAR PARA ENTRAR",
+    recoveryHelperText:
+      "Por segurança, a mensagem será a mesma mesmo que não exista uma conta com o e-mail informado.",
+    recoveryEmailSent:
+      "Se existir uma conta com este e-mail, você receberá um link de recuperação. Verifique também a caixa de spam.",
+    passwordChangedNotice:
+      "Senha redefinida com sucesso. Entre usando sua nova senha.",
   },
   en: {
     backHome: "Back to the home page",
@@ -130,6 +150,18 @@ const LOGIN_TRANSLATIONS: Record<
     connectionFailure: "Supabase could not be reached right now.",
     technicalError: "Technical error",
     unknownError: "unknown error",
+    forgotPassword: "Forgot my password",
+    recoveryTitle: "RECOVER PASSWORD",
+    recoveryDescription:
+      "Enter your account email. We will send you a link to create a new password.",
+    sendRecoveryLink: "SEND RECOVERY LINK",
+    backToSignIn: "BACK TO SIGN IN",
+    recoveryHelperText:
+      "For security, the message will be the same even if there is no account with the email provided.",
+    recoveryEmailSent:
+      "If an account exists with this email, you will receive a recovery link. Also check your spam folder.",
+    passwordChangedNotice:
+      "Password reset successfully. Sign in using your new password.",
   },
   es: {
     backHome: "Volver a la página de inicio",
@@ -171,6 +203,18 @@ const LOGIN_TRANSLATIONS: Record<
     connectionFailure: "No se pudo conectar con Supabase ahora.",
     technicalError: "Error técnico",
     unknownError: "error desconocido",
+    forgotPassword: "Olvidé mi contraseña",
+    recoveryTitle: "RECUPERAR CONTRASEÑA",
+    recoveryDescription:
+      "Escribe el correo de tu cuenta. Te enviaremos un enlace para crear una nueva contraseña.",
+    sendRecoveryLink: "ENVIAR ENLACE DE RECUPERACIÓN",
+    backToSignIn: "VOLVER A INICIAR SESIÓN",
+    recoveryHelperText:
+      "Por seguridad, el mensaje será el mismo aunque no exista una cuenta con el correo indicado.",
+    recoveryEmailSent:
+      "Si existe una cuenta con este correo, recibirás un enlace de recuperación. Revisa también la carpeta de spam.",
+    passwordChangedNotice:
+      "Contraseña restablecida correctamente. Inicia sesión con tu nueva contraseña.",
   },
 };
 
@@ -460,6 +504,7 @@ export default function LoginPage() {
   const [aviso, setAviso] = useState("");
 
   const criandoConta = modo === "criar";
+  const recuperandoSenha = modo === "recuperar";
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
@@ -589,6 +634,16 @@ export default function LoginPage() {
   }, [router, salvarProfile]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("senhaRedefinida") === "1") {
+      setModo("entrar");
+      setErro("");
+      setAviso(t("passwordChangedNotice"));
+    }
+  }, [t]);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
 
     const atualizarModoDesktop = () => {
@@ -630,7 +685,7 @@ export default function LoginPage() {
       return;
     }
 
-    if (senha.length < 6) {
+    if (!recuperandoSenha && senha.length < 6) {
       setErro(t("passwordMin"));
       return;
     }
@@ -643,6 +698,25 @@ export default function LoginPage() {
     setCarregando(true);
 
     try {
+      if (recuperandoSenha) {
+        const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+          "/redefinir-senha",
+        )}`;
+
+        const { error } = await supabase.auth.resetPasswordForEmail(
+          emailFinal,
+          { redirectTo },
+        );
+
+        if (error) {
+          setErro(formatarErroAuth(error, language));
+          return;
+        }
+
+        setAviso(t("recoveryEmailSent"));
+        return;
+      }
+
       if (criandoConta) {
         const { data, error } = await supabase.auth.signUp({
           email: emailFinal,
@@ -747,40 +821,50 @@ export default function LoginPage() {
           <div style={heroContentStyle}>
             <div style={introStyle}>
               <h1 className="historietas-theme-title" style={titleStyle}>
-                {criandoConta ? t("createAccountTitle") : t("signInTitle")}
+                {recuperandoSenha
+                  ? t("recoveryTitle")
+                  : criandoConta
+                    ? t("createAccountTitle")
+                    : t("signInTitle")}
               </h1>
 
-              <p style={descriptionStyle}>{t("description")}</p>
+              <p style={descriptionStyle}>
+                {recuperandoSenha
+                  ? t("recoveryDescription")
+                  : t("description")}
+              </p>
             </div>
 
             <div style={formPanelStyle}>
-              <div style={tabsStyle}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModo("entrar");
-                    setErro("");
-                    setAviso("");
-                  }}
-                  style={modo === "entrar" ? tabActiveStyle : tabStyle}
-                  aria-pressed={modo === "entrar"}
-                >
-                  {t("signInTab")}
-                </button>
+              {!recuperandoSenha && (
+                <div style={tabsStyle}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModo("entrar");
+                      setErro("");
+                      setAviso("");
+                    }}
+                    style={modo === "entrar" ? tabActiveStyle : tabStyle}
+                    aria-pressed={modo === "entrar"}
+                  >
+                    {t("signInTab")}
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModo("criar");
-                    setErro("");
-                    setAviso("");
-                  }}
-                  style={modo === "criar" ? tabActiveStyle : tabStyle}
-                  aria-pressed={modo === "criar"}
-                >
-                  {t("createAccountTab")}
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModo("criar");
+                      setErro("");
+                      setAviso("");
+                    }}
+                    style={modo === "criar" ? tabActiveStyle : tabStyle}
+                    aria-pressed={modo === "criar"}
+                  >
+                    {t("createAccountTab")}
+                  </button>
+                </div>
+              )}
 
               <form onSubmit={enviarFormulario} style={formStyle}>
                 {criandoConta && (
@@ -810,10 +894,10 @@ export default function LoginPage() {
                   <input
                     value={email}
                     onChange={(event) => {
-                    setEmail(event.target.value.slice(0, 254));
-                    setErro("");
-                    setAviso("");
-                  }}
+                      setEmail(event.target.value.slice(0, 254));
+                      setErro("");
+                      setAviso("");
+                    }}
                     placeholder="seuemail@email.com"
                     style={inputStyle}
                     type="email"
@@ -824,24 +908,43 @@ export default function LoginPage() {
                   />
                 </label>
 
-                <label style={fieldStyle}>
-                  <span style={labelStyle}>{t("password")}</span>
+                {!recuperandoSenha && (
+                  <label style={fieldStyle}>
+                    <span style={labelStyle}>{t("password")}</span>
 
-                  <input
-                    value={senha}
-                    onChange={(event) => {
-                    setSenha(event.target.value);
-                    setErro("");
-                    setAviso("");
-                  }}
-                    placeholder={t("passwordPlaceholder")}
-                    style={inputStyle}
-                    type="password"
-                    autoComplete={criandoConta ? "new-password" : "current-password"}
-                    minLength={6}
-                    required
-                  />
-                </label>
+                    <input
+                      value={senha}
+                      onChange={(event) => {
+                        setSenha(event.target.value);
+                        setErro("");
+                        setAviso("");
+                      }}
+                      placeholder={t("passwordPlaceholder")}
+                      style={inputStyle}
+                      type="password"
+                      autoComplete={
+                        criandoConta ? "new-password" : "current-password"
+                      }
+                      minLength={6}
+                      required
+                    />
+                  </label>
+                )}
+
+                {!criandoConta && !recuperandoSenha && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModo("recuperar");
+                      setSenha("");
+                      setErro("");
+                      setAviso("");
+                    }}
+                    style={textButtonStyle}
+                  >
+                    {t("forgotPassword")}
+                  </button>
+                )}
 
                 {aviso && (
                   <span role="status" aria-live="polite" style={successStyle}>
@@ -866,13 +969,33 @@ export default function LoginPage() {
                 >
                   {carregando
                     ? t("wait")
-                    : criandoConta
-                    ? t("create")
-                    : t("signIn")}
+                    : recuperandoSenha
+                      ? t("sendRecoveryLink")
+                      : criandoConta
+                        ? t("create")
+                        : t("signIn")}
                 </button>
+
+                {recuperandoSenha && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModo("entrar");
+                      setErro("");
+                      setAviso("");
+                    }}
+                    style={secondaryButtonStyle}
+                  >
+                    {t("backToSignIn")}
+                  </button>
+                )}
               </form>
 
-              <p style={helperTextStyle}>{t("helperText")}</p>
+              <p style={helperTextStyle}>
+                {recuperandoSenha
+                  ? t("recoveryHelperText")
+                  : t("helperText")}
+              </p>
             </div>
           </div>
         </section>
@@ -1253,6 +1376,30 @@ const primaryButtonStyle: CSSProperties = {
   textAlign: "center",
   padding: "0 14px",
   boxShadow: "none",
+  ...safeTextStyle,
+};
+
+const secondaryButtonStyle: CSSProperties = {
+  ...primaryButtonStyle,
+  background: "transparent",
+  border:
+    "1px solid var(--historietas-login-purple-border-soft, rgba(59, 7, 100, 0.50))",
+  cursor: "pointer",
+};
+
+const textButtonStyle: CSSProperties = {
+  width: "fit-content",
+  justifySelf: "end",
+  border: "none",
+  background: "transparent",
+  color: "#DDD6FE",
+  padding: "2px 4px",
+  fontFamily: "inherit",
+  fontSize: "11px",
+  fontWeight: 850,
+  textDecoration: "underline",
+  textUnderlineOffset: "3px",
+  cursor: "pointer",
   ...safeTextStyle,
 };
 
