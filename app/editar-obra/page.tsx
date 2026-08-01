@@ -534,6 +534,25 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_ARQUIVO_OBRA = 5 * 1024 * 1024;
+const EXTENSOES_IMAGEM_ACEITAS = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+] as const;
+const TIPOS_MIME_IMAGEM_ACEITOS = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+]);
+const TIPOS_MIME_TEXTO_ACEITOS = new Set([
+  "text/plain",
+  "text/markdown",
+  "text/x-markdown",
+]);
+const TIPOS_MIME_PDF_ACEITOS = new Set(["application/pdf"]);
 const LIMITE_TAGS_OBRA = 1;
 const OUTRO_FORMATO_VALUE = "__outro_formato__";
 const OUTRO_GENERO_VALUE = "__outro_genero__";
@@ -1050,13 +1069,9 @@ function normalizarObraSupabase(
     } satisfies CapituloLocal;
   });
 
-  const capitulosRemotosIds = new Set(
-    capitulosRemotos.map((capitulo) => capitulo.id)
-  );
-  const capitulosApenasLocais = (obraLocal?.capitulos || []).filter(
-    (capitulo) => !capitulosRemotosIds.has(capitulo.id)
-  );
-  const capitulosMesclados = [...capitulosRemotos, ...capitulosApenasLocais];
+  // Para uma obra já existente no Supabase, a lista remota é a fonte
+  // de verdade. Isso impede capítulos apagados de reaparecerem pelo cache local.
+  const capitulosMesclados = capitulosRemotos;
   const tituloObra =
     obraSupabase.titulo?.trim() || obraLocal?.titulo || "Obra sem título";
   const slug =
@@ -1130,22 +1145,59 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
-function identificarCategoriaArquivo(arquivo: File): ArquivoObraLocal["categoria"] {
-  const nome = arquivo.name.toLowerCase();
+function arquivoTemExtensao(
+  nomeArquivo: string,
+  extensoes: readonly string[],
+) {
+  const nome = nomeArquivo.toLowerCase();
 
-  if (arquivo.type.startsWith("image/")) {
+  return extensoes.some((extensao) => nome.endsWith(extensao));
+}
+
+function tipoMimeCompativel(
+  arquivo: File,
+  tiposAceitos: ReadonlySet<string>,
+) {
+  const tipo = arquivo.type.trim().toLowerCase();
+
+  return (
+    !tipo ||
+    tipo === "application/octet-stream" ||
+    tiposAceitos.has(tipo)
+  );
+}
+
+function arquivoImagemAceito(arquivo: File) {
+  return (
+    arquivoTemExtensao(arquivo.name, EXTENSOES_IMAGEM_ACEITAS) &&
+    tipoMimeCompativel(arquivo, TIPOS_MIME_IMAGEM_ACEITOS)
+  );
+}
+
+function arquivoTextoAceito(arquivo: File) {
+  return (
+    arquivoTemExtensao(arquivo.name, [".txt", ".md"]) &&
+    tipoMimeCompativel(arquivo, TIPOS_MIME_TEXTO_ACEITOS)
+  );
+}
+
+function arquivoPdfAceito(arquivo: File) {
+  return (
+    arquivoTemExtensao(arquivo.name, [".pdf"]) &&
+    tipoMimeCompativel(arquivo, TIPOS_MIME_PDF_ACEITOS)
+  );
+}
+
+function identificarCategoriaArquivo(arquivo: File): ArquivoObraLocal["categoria"] {
+  if (arquivoImagemAceito(arquivo)) {
     return "imagem";
   }
 
-  if (
-    nome.endsWith(".txt") ||
-    nome.endsWith(".md") ||
-    arquivo.type.startsWith("text/")
-  ) {
+  if (arquivoTextoAceito(arquivo)) {
     return "texto";
   }
 
-  if (nome.endsWith(".pdf") || arquivo.type === "application/pdf") {
+  if (arquivoPdfAceito(arquivo)) {
     return "documento";
   }
 
@@ -1153,20 +1205,10 @@ function identificarCategoriaArquivo(arquivo: File): ArquivoObraLocal["categoria
 }
 
 function arquivoObraAceito(arquivo: File) {
-  const nome = arquivo.name.toLowerCase();
-
   return (
-    nome.endsWith(".pdf") ||
-    nome.endsWith(".txt") ||
-    nome.endsWith(".md") ||
-    nome.endsWith(".png") ||
-    nome.endsWith(".jpg") ||
-    nome.endsWith(".jpeg") ||
-    nome.endsWith(".webp") ||
-    nome.endsWith(".gif") ||
-    arquivo.type === "application/pdf" ||
-    arquivo.type.startsWith("text/") ||
-    arquivo.type.startsWith("image/")
+    arquivoPdfAceito(arquivo) ||
+    arquivoTextoAceito(arquivo) ||
+    arquivoImagemAceito(arquivo)
   );
 }
 
@@ -2134,7 +2176,9 @@ export default function EditarObraPage() {
       return;
     }
 
-    if (!arquivo.type.startsWith("image/")) {
+    setCapaArquivo(null);
+
+    if (!arquivoImagemAceito(arquivo)) {
       setCapaErro("Escolha um arquivo de imagem válido.");
       event.target.value = "";
       return;
@@ -2191,6 +2235,8 @@ export default function EditarObraPage() {
     if (!arquivo) {
       return;
     }
+
+    setArquivoObraArquivo(null);
 
     if (!arquivoObraAceito(arquivo)) {
       setArquivoObraErro(
@@ -2711,7 +2757,7 @@ export default function EditarObraPage() {
               <input
                 ref={capaInputRef}
                 type="file"
-                accept="image/*"
+                accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
                 onChange={selecionarCapa}
                 style={hiddenInputStyle}
               />
@@ -2768,7 +2814,7 @@ export default function EditarObraPage() {
               <input
                 ref={arquivoObraInputRef}
                 type="file"
-                accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp,.gif,application/pdf,text/plain,text/markdown,image/*"
+                accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp,.gif,application/pdf,text/plain,text/markdown,text/x-markdown,image/png,image/jpeg,image/webp,image/gif"
                 onChange={selecionarArquivoObra}
                 style={hiddenInputStyle}
               />
