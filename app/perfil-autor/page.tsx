@@ -2354,10 +2354,6 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
     "en": "You cannot report your own profile.",
     "es": "No puedes denunciar tu propio perfil."
   },
-  "Não consegui enviar a denúncia agora. Verifique se a tabela denuncias_perfis já existe no Supabase.": {
-    "en": "I could not submit the report now. Check whether the denuncias_perfis table already exists in Supabase.",
-    "es": "No se pudo enviar la denuncia ahora. Comprueba si la tabla denuncias_perfis ya existe en Supabase."
-  },
   "Não consegui enviar a denúncia agora.": {
     "en": "I could not submit the report now.",
     "es": "No se pudo enviar la denuncia ahora."
