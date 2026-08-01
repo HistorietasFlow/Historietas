@@ -18,11 +18,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://historietas.com.br";
+const SITE_URL = "https://www.historietas.com.br";
 const SITE_NAME = "Historietas";
+const SITE_TITLE = "Historietas — Leia, descubra e publique histórias";
 const SITE_DESCRIPTION =
-  "Plataforma para descobrir, ler e publicar webnovels, fanfics, mangás e histórias originais.";
-const DEFAULT_OG_IMAGE = "/favicon.ico";
+  "Leia, descubra e publique webnovels, fanfics, mangás e histórias originais no Historietas.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -32,6 +32,9 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: "/favicon.ico",
   },
@@ -40,20 +43,13 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     url: "/",
     siteName: SITE_NAME,
-    title: SITE_NAME,
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: [
-      {
-        url: DEFAULT_OG_IMAGE,
-        alt: SITE_NAME,
-      },
-    ],
   },
   twitter: {
-    card: "summary",
-    title: SITE_NAME,
+    card: "summary_large_image",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: [DEFAULT_OG_IMAGE],
   },
 };
 
