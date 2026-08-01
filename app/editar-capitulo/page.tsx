@@ -132,6 +132,9 @@ const EDITAR_CAPITULO_UI_TRANSLATIONS: Record<
   "Salvar alterações": { en: "Save changes", es: "Guardar cambios" },
   "Ler capítulo": { en: "Read chapter", es: "Leer capítulo" },
   "Cancelar": { en: "Cancel", es: "Cancelar" },
+  "Excluir capítulo": { en: "Delete chapter", es: "Eliminar capítulo" },
+  "Excluindo...": { en: "Deleting...", es: "Eliminando..." },
+  "Não foi possível excluir": { en: "Could not delete", es: "No se pudo eliminar" },
   "PRÉVIA DO CAPÍTULO": { en: "CHAPTER PREVIEW", es: "VISTA PREVIA DEL CAPÍTULO" },
   "O texto do capítulo vai aparecer aqui enquanto você edita.": { en: "The chapter text will appear here while you edit.", es: "El texto del capítulo aparecerá aquí mientras lo editas." },
   "Obra sem título": { en: "Untitled work", es: "Obra sin título" },
@@ -148,9 +151,13 @@ const EDITAR_CAPITULO_UI_TRANSLATIONS: Record<
   "O título do capítulo precisa ter pelo menos 3 letras ou números. Se quiser usar o título automático, deixe o campo vazio.": { en: "The chapter title must contain at least 3 letters or numbers. Leave the field blank to use the automatic title.", es: "El título del capítulo debe contener al menos 3 letras o números. Deja el campo vacío para usar el título automático." },
   "O texto do capítulo precisa ter pelo menos 20 letras ou números.": { en: "The chapter text must contain at least 20 letters or numbers.", es: "El texto del capítulo debe contener al menos 20 letras o números." },
   "Entre na sua conta antes de editar o capítulo.": { en: "Sign in before editing the chapter.", es: "Inicia sesión antes de editar el capítulo." },
+  "Entre na sua conta antes de excluir o capítulo.": { en: "Sign in before deleting the chapter.", es: "Inicia sesión antes de eliminar el capítulo." },
   "Você não tem permissão para editar este capítulo.": { en: "You do not have permission to edit this chapter.", es: "No tienes permiso para editar este capítulo." },
+  "Você não tem permissão para excluir este capítulo.": { en: "You do not have permission to delete this chapter.", es: "No tienes permiso para eliminar este capítulo." },
   "Não consegui confirmar a atualização do capítulo no Supabase.": { en: "I could not confirm the chapter update in Supabase.", es: "No pude confirmar la actualización del capítulo en Supabase." },
+  "Não consegui confirmar a exclusão do capítulo no Supabase.": { en: "I could not confirm the chapter deletion in Supabase.", es: "No pude confirmar la eliminación del capítulo en Supabase." },
   "Não consegui salvar as alterações. Atualize a página e tente novamente.": { en: "I could not save the changes. Refresh the page and try again.", es: "No pude guardar los cambios. Actualiza la página e inténtalo de nuevo." },
+  "Não consegui excluir o capítulo. Atualize a página e tente novamente.": { en: "I could not delete the chapter. Refresh the page and try again.", es: "No pude eliminar el capítulo. Actualiza la página e inténtalo de nuevo." },
 };
 
 function traduzirTextoEditarCapitulo(
@@ -1264,6 +1271,24 @@ function salvarObrasEditarCapituloStorage(
   return obrasDoUsuarioNormalizadas;
 }
 
+function criarMensagemConfirmacaoExclusaoCapitulo(
+  tituloCapitulo: string,
+  idioma: HistorietasLanguage
+) {
+  const tituloSeguro = tituloCapitulo.trim() || "Capítulo";
+
+  if (idioma === "en") {
+    return `Delete "${tituloSeguro}" permanently? This action cannot be undone.`;
+  }
+
+  if (idioma === "es") {
+    return `¿Eliminar "${tituloSeguro}" permanentemente? Esta acción no se puede deshacer.`;
+  }
+
+  return `Excluir "${tituloSeguro}" permanentemente? Esta ação não pode ser desfeita.`;
+}
+
+
 async function registrarDiarioEdicaoCapitulo({
   userId,
   obra,
@@ -1395,13 +1420,16 @@ export default function EditarCapituloPage() {
   const [verificandoAcesso, setVerificandoAcesso] = useState(true);
   const [salvou, setSalvou] = useState(false);
   const [processando, setProcessando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState("");
+  const [tipoErro, setTipoErro] = useState<"salvar" | "excluir">("salvar");
 
   const [titulo, setTitulo] = useState("");
   const [texto, setTexto] = useState("");
   const [arquivoImportadoNome, setArquivoImportadoNome] = useState("");
   const [arquivoImportadoErro, setArquivoImportadoErro] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
+  const { language } = useHistorietasLanguage();
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
 
   useEffect(() => {
@@ -1752,7 +1780,7 @@ export default function EditarCapituloPage() {
   async function salvarEdicao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (processando || !obraAtual || !capituloAtual) {
+    if (processando || excluindo || !obraAtual || !capituloAtual) {
       return;
     }
 
@@ -1766,6 +1794,7 @@ export default function EditarCapituloPage() {
 
     setProcessando(true);
     setErro("");
+    setTipoErro("salvar");
     setSalvou(false);
 
     const tituloFinal = titulo.trim() || `Capítulo ${numeroCapitulo || 1}`;
@@ -1959,6 +1988,161 @@ export default function EditarCapituloPage() {
     }
   }
 
+  async function excluirCapitulo() {
+    if (processando || excluindo || !obraAtual || !capituloAtual) {
+      return;
+    }
+
+    const confirmou = window.confirm(
+      criarMensagemConfirmacaoExclusaoCapitulo(
+        capituloAtual.titulo,
+        language
+      )
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    setExcluindo(true);
+    setErro("");
+    setTipoErro("excluir");
+    setSalvou(false);
+
+    try {
+      const { data: dadosUsuario, error: erroUsuario } =
+        await supabase.auth.getUser();
+      const userId = dadosUsuario.user?.id || "";
+
+      if (erroUsuario || !userId) {
+        router.replace(criarLoginHrefEditarCapitulo(obraId, capituloId));
+        throw new Error("Entre na sua conta antes de excluir o capítulo.");
+      }
+
+      const autorIdObra = obraAtual.autorId?.trim() || "";
+
+      if (autorIdObra && autorIdObra !== userId) {
+        throw new Error("Você não tem permissão para excluir este capítulo.");
+      }
+
+      const registroSupabase =
+        idObraSupabaseValido(obraId) && idObraSupabaseValido(capituloId);
+
+      if (registroSupabase) {
+        const { data: obraAutorizada, error: erroObraAutorizada } =
+          await supabase
+            .from("obras")
+            .select("id")
+            .eq("id", obraId)
+            .eq("user_id", userId)
+            .limit(1)
+            .maybeSingle();
+
+        if (erroObraAutorizada) {
+          throw new Error(
+            `Não consegui confirmar sua permissão para excluir o capítulo: ${erroObraAutorizada.message}`
+          );
+        }
+
+        if (!obraAutorizada?.id) {
+          throw new Error("Você não tem permissão para excluir este capítulo.");
+        }
+
+        const { data: capituloExcluido, error: erroExcluirCapitulo } =
+          await supabase
+            .from("capitulos")
+            .delete()
+            .eq("id", capituloId)
+            .eq("obra_id", obraId)
+            .eq("user_id", userId)
+            .select("id")
+            .maybeSingle();
+
+        if (erroExcluirCapitulo) {
+          throw new Error(
+            `Não consegui excluir o capítulo no Supabase: ${erroExcluirCapitulo.message}`
+          );
+        }
+
+        if (!capituloExcluido?.id) {
+          throw new Error(
+            "Não consegui confirmar a exclusão do capítulo no Supabase."
+          );
+        }
+      }
+
+      const novasObras = obras.map((obra, obraIndex) => {
+        const obraNormalizada = normalizarObra(obra, obraIndex);
+
+        if (obraNormalizada.id !== obraId) {
+          return obraNormalizada;
+        }
+
+        const capituloRemovido =
+          obraNormalizada.capitulos.find(
+            (capitulo) => capitulo.id === capituloId
+          ) || null;
+        const capitulosRestantes = obraNormalizada.capitulos.filter(
+          (capitulo) => capitulo.id !== capituloId
+        );
+
+        return {
+          ...obraNormalizada,
+          capitulos: capitulosRestantes,
+          ultimoCapituloLidoId:
+            obraNormalizada.ultimoCapituloLidoId === capituloId
+              ? ""
+              : obraNormalizada.ultimoCapituloLidoId,
+          progressoLeitura: calcularProgressoLeitura(capitulosRestantes),
+          totalCurtidas: Math.max(
+            0,
+            (obraNormalizada.totalCurtidas || 0) -
+              (capituloRemovido?.curtiu ? 1 : 0)
+          ),
+          totalComentarios: Math.max(
+            0,
+            (obraNormalizada.totalComentarios || 0) -
+              (capituloRemovido?.comentario.trim() ? 1 : 0)
+          ),
+          totalSalvos: Math.max(
+            0,
+            (obraNormalizada.totalSalvos || 0) -
+              (capituloRemovido?.salvo ? 1 : 0)
+          ),
+          totalLidos: Math.max(
+            0,
+            (obraNormalizada.totalLidos || 0) -
+              (capituloRemovido?.lido ? 1 : 0)
+          ),
+        };
+      });
+
+      const novasObrasDoUsuario = salvarObrasEditarCapituloStorage(
+        novasObras,
+        userId
+      );
+
+      setObras(novasObrasDoUsuario);
+      router.replace("/painel-autor");
+      router.refresh();
+    } catch (erroDesconhecido) {
+      const mensagem =
+        erroDesconhecido instanceof Error
+          ? erroDesconhecido.message
+          : "Não consegui excluir o capítulo. Atualize a página e tente novamente.";
+
+      setErro(mensagem);
+      setTipoErro("excluir");
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    } finally {
+      setExcluindo(false);
+    }
+  }
+
   if (carregando || verificandoAcesso) {
     return (
       <main data-historietas-editar-capitulo-root="true" style={pageThemeStyle}>
@@ -2024,7 +2208,11 @@ export default function EditarCapituloPage() {
 
         {erro && (
           <section style={errorBoxStyle}>
-            <h2 style={errorTitleStyle}>Não foi possível salvar</h2>
+            <h2 style={errorTitleStyle}>
+              {tipoErro === "excluir"
+                ? "Não foi possível excluir"
+                : "Não foi possível salvar"}
+            </h2>
 
             <p style={errorTextStyle}>{erro}</p>
           </section>
@@ -2127,7 +2315,7 @@ export default function EditarCapituloPage() {
               <button
                 type="submit"
                 style={{
-                  ...(processando
+                  ...((processando || excluindo)
                     ? isDesktop
                       ? desktopDisabledButtonStyle
                       : disabledButtonStyle
@@ -2139,7 +2327,7 @@ export default function EditarCapituloPage() {
                   justifyContent: "center",
                   gap: "7px",
                 }}
-                disabled={processando}
+                disabled={processando || excluindo}
               >
                 {processando ? (
                   "Salvando..."
@@ -2173,6 +2361,25 @@ export default function EditarCapituloPage() {
               <Link href={minhaObraHref} style={isDesktop ? desktopCancelButtonStyle : cancelButtonStyle}>
                 Cancelar
               </Link>
+
+              <button
+                type="button"
+                onClick={() => {
+                  void excluirCapitulo();
+                }}
+                style={
+                  excluindo || processando
+                    ? isDesktop
+                      ? desktopDisabledDeleteButtonStyle
+                      : disabledDeleteButtonStyle
+                    : isDesktop
+                      ? desktopDeleteButtonStyle
+                      : deleteButtonStyle
+                }
+                disabled={excluindo || processando}
+              >
+                {excluindo ? "Excluindo..." : "Excluir capítulo"}
+              </button>
             </div>
           </form>
 
@@ -2787,6 +2994,23 @@ const cancelButtonStyle: CSSProperties = {
   ...secondaryButtonStyle,
 };
 
+const deleteButtonStyle: CSSProperties = {
+  ...saveButtonStyle,
+  gridColumn: "1 / -1",
+  border:
+    "1px solid var(--historietas-editar-capitulo-danger-border-strong, rgba(239,68,68,0.28))",
+  background:
+    "var(--historietas-danger-surface, var(--historietas-editar-capitulo-danger-bg, rgba(239,68,68,0.13)))",
+  color:
+    "var(--historietas-danger-button-text, var(--historietas-editar-capitulo-danger-text, #FCA5A5))",
+};
+
+const disabledDeleteButtonStyle: CSSProperties = {
+  ...deleteButtonStyle,
+  cursor: "not-allowed",
+  opacity: 0.62,
+};
+
 const previewPanelStyle: CSSProperties = {
   display: "grid",
   gap: "12px",
@@ -2990,6 +3214,18 @@ const desktopCancelButtonStyle: CSSProperties = {
   ...cancelButtonStyle,
   minHeight: "46px",
   fontSize: "13px",
+};
+
+const desktopDeleteButtonStyle: CSSProperties = {
+  ...deleteButtonStyle,
+  minHeight: "46px",
+  fontSize: "13px",
+};
+
+const desktopDisabledDeleteButtonStyle: CSSProperties = {
+  ...desktopDeleteButtonStyle,
+  cursor: "not-allowed",
+  opacity: 0.62,
 };
 
 const desktopPreviewPanelStyle: CSSProperties = {
