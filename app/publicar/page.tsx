@@ -76,6 +76,19 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_ARQUIVO_TEXTO = 900 * 1024;
 const TAMANHO_MAXIMO_ARQUIVO_OBRA = 5 * 1024 * 1024;
+const EXTENSOES_IMAGEM_ACEITAS = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+] as const;
+const TIPOS_MIME_IMAGEM_ACEITOS = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+]);
 
 const OUTRO_FORMATO_VALUE = "__outro_formato__";
 const OUTRO_GENERO_VALUE = "__outro_genero__";
@@ -1027,6 +1040,22 @@ function identificarCategoriaArquivo(arquivo: File): ArquivoObraLocal["categoria
   return "outro";
 }
 
+function arquivoTemExtensao(
+  nomeArquivo: string,
+  extensoes: readonly string[],
+) {
+  const nome = nomeArquivo.toLowerCase();
+
+  return extensoes.some((extensao) => nome.endsWith(extensao));
+}
+
+function arquivoImagemAceito(arquivo: File) {
+  return (
+    arquivoTemExtensao(arquivo.name, EXTENSOES_IMAGEM_ACEITAS) ||
+    TIPOS_MIME_IMAGEM_ACEITOS.has(arquivo.type.toLowerCase())
+  );
+}
+
 function arquivoObraAceito(arquivo: File) {
   const nome = arquivo.name.toLowerCase();
 
@@ -1034,14 +1063,8 @@ function arquivoObraAceito(arquivo: File) {
     nome.endsWith(".pdf") ||
     nome.endsWith(".txt") ||
     nome.endsWith(".md") ||
-    nome.endsWith(".png") ||
-    nome.endsWith(".jpg") ||
-    nome.endsWith(".jpeg") ||
-    nome.endsWith(".webp") ||
-    nome.endsWith(".gif") ||
-    arquivo.type === "application/pdf" ||
-    arquivo.type.startsWith("text/") ||
-    arquivo.type.startsWith("image/")
+    arquivoImagemAceito(arquivo) ||
+    arquivo.type === "application/pdf"
   );
 }
 
@@ -1437,13 +1460,7 @@ function nomeArquivoParaTitulo(nomeArquivo: string) {
 function arquivoTextoAceito(arquivo: File) {
   const nome = arquivo.name.toLowerCase();
 
-  return (
-    nome.endsWith(".txt") ||
-    nome.endsWith(".md") ||
-    arquivo.type === "text/plain" ||
-    arquivo.type === "text/markdown" ||
-    arquivo.type === "text/x-markdown"
-  );
+  return nome.endsWith(".txt") || nome.endsWith(".md");
 }
 
 function criarPreviewCoverStyle(capa: string): CSSProperties {
@@ -1782,7 +1799,7 @@ export default function PublicarPage() {
       return;
     }
 
-    if (!arquivo.type.startsWith("image/")) {
+    if (!arquivoImagemAceito(arquivo)) {
       setCapaErro("Escolha um arquivo de imagem válido.");
       event.target.value = "";
       return;
@@ -2087,9 +2104,15 @@ export default function PublicarPage() {
       setAutor(autorFinalPublicacao);
 
       const obrasSalvasTexto = lerStorageUsuarioPublicar(STORAGE_KEY, userId);
-      const obrasSalvasJson = obrasSalvasTexto
-        ? JSON.parse(obrasSalvasTexto)
-        : [];
+      let obrasSalvasJson: unknown = [];
+
+      if (obrasSalvasTexto) {
+        try {
+          obrasSalvasJson = JSON.parse(obrasSalvasTexto);
+        } catch {
+          obrasSalvasJson = [];
+        }
+      }
 
       const obrasSalvas: ObraLocal[] = Array.isArray(obrasSalvasJson)
         ? (obrasSalvasJson as ObraSalva[]).map((obra, index) =>
@@ -2196,18 +2219,28 @@ export default function PublicarPage() {
         }
       }
 
-      const { error: erroPublicarObra } = await supabase
+      const { data: obraPublicada, error: erroPublicarObra } = await supabase
         .from("obras")
         .update({
           publicado: true,
           atualizado_em: criadaEm,
         })
         .eq("id", obraId)
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .select("id, publicado")
+        .maybeSingle();
 
-      if (erroPublicarObra) {
+      if (
+        erroPublicarObra ||
+        !obraPublicada?.id ||
+        obraPublicada.publicado !== true
+      ) {
+        const detalheErro =
+          erroPublicarObra?.message ||
+          "a atualização não confirmou a publicação da obra.";
+
         throw new Error(
-          `A obra foi preparada, mas não pôde ser publicada: ${erroPublicarObra.message}`
+          `A obra foi preparada, mas não pôde ser publicada: ${detalheErro}`
         );
       }
 
@@ -2368,7 +2401,7 @@ export default function PublicarPage() {
               <input
                 ref={capaInputRef}
                 type="file"
-                accept="image/*"
+                accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
                 onChange={selecionarCapa}
                 style={hiddenInputStyle}
               />
@@ -2656,7 +2689,7 @@ export default function PublicarPage() {
               <input
                 ref={arquivoConteudoInputRef}
                 type="file"
-                accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp,.gif,application/pdf,text/plain,text/markdown,image/*"
+                accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp,.gif,application/pdf,text/plain,text/markdown,image/png,image/jpeg,image/webp,image/gif"
                 onChange={selecionarConteudoArquivo}
                 style={hiddenInputStyle}
               />
