@@ -7,7 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:static": "node qa/scripts/static-audit.mjs",
+    "test:smoke": "node qa/scripts/http-smoke.mjs",
+    "test:e2e": "npm --prefix qa install && npm --prefix qa run install:browsers && npm --prefix qa test",
+    "test:e2e:headed": "npm --prefix qa install && npm --prefix qa run install:browsers && npm --prefix qa run test:headed",
+    "test:e2e:report": "npm --prefix qa run report",
+    "test:all": "npm run test:static && npm run typecheck && npm run lint && npm run test:smoke && npm run test:e2e"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

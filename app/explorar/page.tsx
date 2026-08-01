@@ -1928,11 +1928,8 @@ async function aplicarTotaisReaisExplorar(obrasParaAtualizar: ObraLocal[]) {
     usuariosCurtidasPorCapitulo,
     usuariosComentariosPorCapitulo,
     usuariosSalvosPorCapitulo,
-    usuariosLidosPorCapitulo,
     usuariosCurtidasDiretasPorObra,
     usuariosComentariosDiretosPorObra,
-    usuariosFavoritosPorObra,
-    usuariosConcluidasPorObra,
   ] = await Promise.all([
     carregarUsuariosPorColunaExplorar(
       "curtidas_capitulos",
@@ -1950,27 +1947,12 @@ async function aplicarTotaisReaisExplorar(obrasParaAtualizar: ObraLocal[]) {
       capituloIds
     ),
     carregarUsuariosPorColunaExplorar(
-      "progresso_leitura",
-      "capitulo_id",
-      capituloIds
-    ),
-    carregarUsuariosPorColunaExplorar(
       "obra_curtidas",
       "obra_id",
       obraIds
     ),
     carregarUsuariosPorColunaExplorar(
       "comentarios_obras",
-      "obra_id",
-      obraIds
-    ),
-    carregarUsuariosPorColunaExplorar(
-      "favoritos",
-      "obra_id",
-      obraIds
-    ),
-    carregarUsuariosPorColunaExplorar(
-      "concluidas",
       "obra_id",
       obraIds
     ),
@@ -1991,12 +1973,6 @@ async function aplicarTotaisReaisExplorar(obrasParaAtualizar: ObraLocal[]) {
       usuariosSalvosPorCapitulo,
       obraIdPorCapitulo
     );
-  const usuariosLidosCapitulosPorObra =
-    mapearUsuariosCapitulosParaObrasExplorar(
-      usuariosLidosPorCapitulo,
-      obraIdPorCapitulo
-    );
-
   const usuariosCurtidasPorObra = combinarUsuariosPorChaveExplorar(
     usuariosCurtidasDiretasPorObra,
     usuariosCurtidasCapitulosPorObra
@@ -2005,10 +1981,7 @@ async function aplicarTotaisReaisExplorar(obrasParaAtualizar: ObraLocal[]) {
     usuariosComentariosDiretosPorObra,
     usuariosComentariosCapitulosPorObra
   );
-  const usuariosSalvosPorObra = combinarUsuariosPorChaveExplorar(
-    usuariosFavoritosPorObra,
-    usuariosSalvosCapitulosPorObra
-  );
+  const usuariosSalvosPorObra = usuariosSalvosCapitulosPorObra;
 
   return obrasParaAtualizar.map((obra) => ({
     ...obra,
@@ -2020,22 +1993,15 @@ async function aplicarTotaisReaisExplorar(obrasParaAtualizar: ObraLocal[]) {
       usuariosComentariosPorObra,
       obra.id
     ),
-    totalSalvos: contarUsuariosUnicosExplorar(
-      usuariosSalvosPorObra,
-      obra.id
+    totalSalvos: Math.max(
+      normalizarContadorExplorar(obra.totalSalvos),
+      contarUsuariosUnicosExplorar(usuariosSalvosPorObra, obra.id)
     ),
-    totalLidos: contarUsuariosUnicosExplorar(
-      usuariosLidosCapitulosPorObra,
-      obra.id
-    ),
-    totalFavoritos: contarUsuariosUnicosExplorar(
-      usuariosFavoritosPorObra,
-      obra.id
-    ),
-    totalConcluidas: contarUsuariosUnicosExplorar(
-      usuariosConcluidasPorObra,
-      obra.id
-    ),
+    // Progresso, favoritos e concluídas são dados privados. A página pública
+    // preserva os totais já disponíveis sem consultar tabelas protegidas.
+    totalLidos: normalizarContadorExplorar(obra.totalLidos),
+    totalFavoritos: normalizarContadorExplorar(obra.totalFavoritos),
+    totalConcluidas: normalizarContadorExplorar(obra.totalConcluidas),
     capitulos: obra.capitulos.map((capitulo) => ({
       ...capitulo,
       totalCurtidas: contarUsuariosUnicosExplorar(
@@ -2050,10 +2016,7 @@ async function aplicarTotaisReaisExplorar(obrasParaAtualizar: ObraLocal[]) {
         usuariosSalvosPorCapitulo,
         capitulo.id
       ),
-      totalLidos: contarUsuariosUnicosExplorar(
-        usuariosLidosPorCapitulo,
-        capitulo.id
-      ),
+      totalLidos: normalizarContadorExplorar(capitulo.totalLidos),
     })),
   }));
 }

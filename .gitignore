@@ -1,4 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+﻿# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
@@ -44,3 +44,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+qa/node_modules/
+qa/playwright-report/
+qa/test-results/
+qa/reports/*.json
+qa/.env.e2e
+*.zip
+*.tsbuildinfo
+LEIA-ME.txt
