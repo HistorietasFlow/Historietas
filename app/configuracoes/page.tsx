@@ -2456,8 +2456,40 @@ export default function ConfiguracoesPage() {
         return;
       }
 
+      const emailUsuario = dadosUsuario.user.email?.trim().toLowerCase() || "";
+
+      if (!emailUsuario) {
+        setErroSenha(
+          t(
+            "Não foi possível confirmar o e-mail da sua conta. Entre novamente e tente de novo.",
+            "Your account email could not be confirmed. Sign in again and try once more.",
+            "No se pudo confirmar el correo de tu cuenta. Inicia sesión de nuevo e inténtalo otra vez.",
+          ),
+        );
+        return;
+      }
+
+      const { data: autenticacaoSenhaAtual, error: erroSenhaAtual } =
+        await supabase.auth.signInWithPassword({
+          email: emailUsuario,
+          password: senhaAtual,
+        });
+
+      if (
+        erroSenhaAtual ||
+        !autenticacaoSenhaAtual.user ||
+        autenticacaoSenhaAtual.user.id !== usuarioIdLogado
+      ) {
+        setErroSenha(
+          traduzirErroSenhaConfiguracoes(
+            erroSenhaAtual?.message || "invalid login credentials",
+            language,
+          ),
+        );
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
-        current_password: senhaAtual,
         password: novaSenha,
       });
 
