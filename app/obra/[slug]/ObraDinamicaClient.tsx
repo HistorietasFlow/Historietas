@@ -5987,19 +5987,6 @@ export default function ObraDinamicaPage() {
     );
   }
 
-  if (!obraDisponivel) {
-    return (
-      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${obraPageCss}`}</style>
-
-        <ObraDinamicaLanguageBridge />
-
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
-      </main>
-    );
-  }
-
   return (
     <>
       <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
