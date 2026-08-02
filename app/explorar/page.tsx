@@ -3399,7 +3399,6 @@ export default function ExplorarPage() {
           >
             <button
               type="button"
-              data-historietas-page-background-action="true"
               onClick={() => selecionarModoConteudo("obras")}
               style={
                 modoConteudo === "obras" && !categoriaSelecionada
@@ -3412,7 +3411,6 @@ export default function ExplorarPage() {
 
             <button
               type="button"
-              data-historietas-page-background-action="true"
               onClick={() => selecionarModoConteudo("autores")}
               style={
                 modoConteudo === "autores" && !categoriaSelecionada
@@ -3427,7 +3425,6 @@ export default function ExplorarPage() {
               <button
                 key={categoria}
                 type="button"
-                data-historietas-page-background-action="true"
                 onClick={() => selecionarCategoria(categoria)}
                 style={
                   categoriaSelecionada === categoria
@@ -4209,9 +4206,9 @@ function ObraPublicadaCard({
 function criarActiveCategoryStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...activeCategoryStyle,
-    background: "transparent",
-    border: "1px solid rgba(255,255,255,0.10)",
-    color: "#FFFFFF",
+    border: "1px solid #FFFFFF",
+    background: "#FFFFFF",
+    color: "#000000",
     boxShadow: "none",
   };
 }
@@ -4219,16 +4216,16 @@ function criarActiveCategoryStyle(_tema: ReturnType<typeof obterTemaCategoria>):
 function criarSearchBoxStyle(
   _tema: ReturnType<typeof obterTemaCategoria>,
   _categoriaAtiva = false,
-  temaVisual: TemaVisualHistorietas = "original"
+  _temaVisual: TemaVisualHistorietas = "original"
 ): CSSProperties {
   return {
     ...searchBoxStyle,
     marginBottom: "-6px",
-    background:
-      temaVisual === "original"
-        ? "#070212"
-        : "rgba(4, 0, 10, 0.72)",
+    padding: 0,
+    borderRadius: 0,
+    background: "transparent",
     border: "none",
+    overflow: "visible",
     boxShadow: "none",
   };
 }
@@ -5037,43 +5034,49 @@ const descriptionStyle: CSSProperties = {
 };
 
 const categoriesStyle: CSSProperties = {
+  width: "100%",
   display: "flex",
+  alignItems: "center",
   gap: "8px",
   overflowX: "auto",
   overflowY: "hidden",
-  marginLeft: "-12px",
-  marginRight: "-12px",
-  padding: "0 12px 2px",
-  maxWidth: "calc(100% + 24px)",
+  overscrollBehaviorX: "contain",
   scrollbarWidth: "none",
   msOverflowStyle: "none",
+  padding: "3px 0 9px",
+  margin: "0 0 3px",
   boxSizing: "border-box",
-  scrollSnapType: "x proximity",
+  WebkitOverflowScrolling: "touch",
 };
 
 const categoryStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
   flex: "0 0 auto",
-  maxWidth: "220px",
-  padding: "9px 13px",
+  minHeight: "38px",
   borderRadius: "999px",
-  background: "transparent",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  fontWeight: 950,
-  cursor: "pointer",
+  border: "1px solid rgba(255,255,255,0.13)",
+  background: "rgba(255,255,255,0.025)",
+  color: "rgba(255,255,255,0.66)",
+  padding: "0 16px",
   fontFamily: "inherit",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 900,
+  letterSpacing: "-0.025em",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
   textAlign: "center",
+  outline: "none",
   boxShadow: "none",
-  ...safeTextStyle,
+  WebkitTapHighlightColor: "transparent",
 };
 
 const activeCategoryStyle: CSSProperties = {
   ...categoryStyle,
-  background: "transparent",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  boxShadow: "none",
+  border: "1px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#000000",
 };
 
 const loginNoticeStyle: CSSProperties = {
@@ -6112,18 +6115,9 @@ const desktopDescriptionStyle: CSSProperties = {
 
 const desktopCategoriesStyle: CSSProperties = {
   ...categoriesStyle,
-  width: "100vw",
-  maxWidth: "100vw",
-  flexWrap: "nowrap",
-  overflowX: "auto",
-  overflowY: "hidden",
-  justifyContent: "flex-start",
-  marginLeft: "calc(50% - 50vw)",
-  marginRight: "calc(50% - 50vw)",
-  padding:
-    "1px max(32px, calc((100vw - 1220px) / 2)) 8px",
-  scrollPaddingLeft: "max(32px, calc((100vw - 1220px) / 2))",
-  scrollPaddingRight: "max(32px, calc((100vw - 1220px) / 2))",
+  gap: "10px",
+  padding: "2px 0 13px",
+  marginBottom: "5px",
 };
 
 const desktopSectionStyle: CSSProperties = {

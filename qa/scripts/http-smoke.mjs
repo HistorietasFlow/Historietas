@@ -34,9 +34,12 @@ async function check(route) {
 
     const problems = [];
     if (response.status >= 500) problems.push(`status ${response.status}`);
-    if (route === "/robots.txt" && (!body.includes("User-agent:") || !body.includes("Sitemap:"))) {
-      problems.push("robots incompleto");
-    }
+    if (
+  route === "/robots.txt" &&
+  (!/user-agent:/i.test(body) || !/sitemap:/i.test(body))
+) {
+  problems.push("robots incompleto");
+}
     if (route === "/sitemap.xml" && (!body.includes("<urlset") || !body.includes("historietas.com.br"))) {
       problems.push("sitemap inválido");
     }

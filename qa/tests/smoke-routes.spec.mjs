@@ -49,7 +49,7 @@ test("robots, sitemap, favicon e cabeçalhos de produção", async ({ request })
   const robots = await request.get("/robots.txt");
   expect(robots.ok()).toBeTruthy();
   const robotsText = await robots.text();
-  expect(robotsText).toMatch(/User-Agent:/i);
+  expect(robotsText).toMatch(/user-agent:/i);
   expect(robotsText).toContain("Sitemap:");
 
   const sitemap = await request.get("/sitemap.xml");

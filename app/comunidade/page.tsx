@@ -67,6 +67,7 @@ type PostComunidade = {
   temSpoiler: boolean;
   texto: string;
   obraRelacionada: string;
+  capituloRelacionado: string;
   criadoEm: string;
   fixado: boolean;
   fixadoEm: string;
@@ -104,6 +105,7 @@ type SupabaseEnqueteVotoRow = {
 };
 
 type OrdenacaoComunidade = "Recentes" | "Em alta" | "Mais comentadas";
+type AbaFeedComunidade = "Para você" | "Seguindo" | "Recentes" | "Teorias" | "Reviews";
 type TipoPublicacaoFiltro = TipoPublicacaoComunidade | "Todos";
 type GrupoPublicacaoObra = "" | "posts";
 type VisibilidadePostComunidade =
@@ -134,6 +136,14 @@ const ORDENACOES_COMUNIDADE: OrdenacaoComunidade[] = [
   "Recentes",
   "Em alta",
   "Mais comentadas",
+];
+
+const ABAS_FEED_COMUNIDADE: AbaFeedComunidade[] = [
+  "Para você",
+  "Seguindo",
+  "Recentes",
+  "Teorias",
+  "Reviews",
 ];
 
 const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
@@ -171,6 +181,9 @@ const COMUNIDADE_UI_TRANSLATIONS: Record<
   "Review": { en: "Review", es: "Reseña" },
   "Aviso de capítulo": { en: "Chapter update", es: "Aviso de capítulo" },
   "Dúvida": { en: "Question", es: "Duda" },
+  "Para você": { en: "For you", es: "Para ti" },
+  "Teorias": { en: "Theories", es: "Teorías" },
+  "Reviews": { en: "Reviews", es: "Reseñas" },
   "Recentes": { en: "Recent", es: "Recientes" },
   "Em alta": { en: "Trending", es: "Tendencias" },
   "Mais comentadas": { en: "Most commented", es: "Más comentadas" },
@@ -309,6 +322,8 @@ const COMUNIDADE_UI_TRANSLATIONS: Record<
   "Nenhuma publicação salva": { en: "No saved posts", es: "No hay publicaciones guardadas" },
   "Nenhuma publicação encontrada": { en: "No posts found", es: "No se encontraron publicaciones" },
   "Nenhuma publicação ainda": { en: "No posts yet", es: "Aún no hay publicaciones" },
+  "Nenhuma publicação de pessoas que você segue.": { en: "No posts from people you follow.", es: "No hay publicaciones de personas que sigues." },
+  "Entre na sua conta para ver publicações de quem você segue.": { en: "Sign in to see posts from people you follow.", es: "Inicia sesión para ver publicaciones de las personas que sigues." },
   "Carregando mais publicações": { en: "Loading more posts", es: "Cargando más publicaciones" },
   "Carregar mais publicações": { en: "Load more posts", es: "Cargar más publicaciones" },
   "Criar publicação": { en: "Create post", es: "Crear publicación" },
@@ -318,9 +333,23 @@ const COMUNIDADE_UI_TRANSLATIONS: Record<
   "Tipo": { en: "Type", es: "Tipo" },
   "Obra relacionada": { en: "Related work", es: "Obra relacionada" },
   "Opcional: nome da obra": { en: "Optional: work title", es: "Opcional: nombre de la obra" },
+  "Capítulo relacionado": { en: "Related chapter", es: "Capítulo relacionado" },
+  "Opcional: número ou título do capítulo": { en: "Optional: chapter number or title", es: "Opcional: número o título del capítulo" },
+  "Selecione uma obra antes de informar o capítulo.": { en: "Select a work before entering the chapter.", es: "Selecciona una obra antes de indicar el capítulo." },
+  "CAPÍTULO": { en: "CHAPTER", es: "CAPÍTULO" },
   "OBRA": { en: "WORK", es: "OBRA" },
   "Publicação": { en: "Post", es: "Publicación" },
   "Modelo de enquete": { en: "Poll template", es: "Plantilla de encuesta" },
+  "Sugestões para começar": { en: "Ideas to get started", es: "Ideas para comenzar" },
+  "O que você está lendo?": { en: "What are you reading?", es: "¿Qué estás leyendo?" },
+  "Compartilhe uma teoria": { en: "Share a theory", es: "Comparte una teoría" },
+  "Personagem com história própria": { en: "Character with their own story", es: "Personaje con historia propia" },
+  "Mostre o próximo capítulo": { en: "Show the next chapter", es: "Muestra el próximo capítulo" },
+  "O que você está lendo atualmente? Eu estou lendo:": { en: "What are you currently reading? I am reading:", es: "¿Qué estás leyendo actualmente? Yo estoy leyendo:" },
+  "Minha teoria sobre esta obra é:": { en: "My theory about this work is:", es: "Mi teoría sobre esta obra es:" },
+  "Qual personagem merece uma história própria? Para mim:": { en: "Which character deserves their own story? For me:", es: "¿Qué personaje merece su propia historia? Para mí:" },
+  "Autores: compartilhem um trecho do próximo capítulo. Aqui vai o meu:": { en: "Authors: share an excerpt from the next chapter. Here is mine:", es: "Autores: compartan un fragmento del próximo capítulo. Aquí va el mío:" },
+  "Que tipo de história você quer encontrar no HISTORIETAS? Eu gostaria de ler:": { en: "What kind of story do you want to find on HISTORIETAS? I would like to read:", es: "¿Qué tipo de historia quieres encontrar en HISTORIETAS? Me gustaría leer:" },
   "máx. 700": { en: "max. 700", es: "máx. 700" },
   "Abra uma conversa, peça indicação ou divulgue uma obra real publicada...": { en: "Start a conversation, ask for recommendations, or promote a published work...", es: "Inicia una conversación, pide recomendaciones o promociona una obra publicada..." },
   "Este post contém spoiler": { en: "This post contains spoilers", es: "Esta publicación contiene spoilers" },
@@ -951,15 +980,50 @@ async function salvarPostSalvoSupabaseComunidade(
   return false;
 }
 
-const DESAFIO_SEMANA_COMUNIDADE = {
-  titulo: "Primeiros leitores",
-  pergunta: "Que tipo de história você quer encontrar no HISTORIETAS?",
-};
-
 const MIN_OPCOES_ENQUETE = 2;
 const MAX_OPCOES_ENQUETE = 4;
 const MODELO_ENQUETE_COMUNIDADE =
   "Enquete: qual opção você escolheria?\nOpção 1:\nOpção 2:";
+
+type SugestaoPublicacaoComunidade = {
+  rotulo: string;
+  texto: string;
+  categoria: CategoriaComunidade;
+  tipo: TipoPublicacaoComunidade;
+};
+
+const SUGESTOES_PUBLICACAO_COMUNIDADE: SugestaoPublicacaoComunidade[] = [
+  {
+    rotulo: "O que você está lendo?",
+    texto: "O que você está lendo atualmente? Eu estou lendo: ",
+    categoria: "Geral",
+    tipo: "Discussão",
+  },
+  {
+    rotulo: "Compartilhe uma teoria",
+    texto: "Minha teoria sobre esta obra é: ",
+    categoria: "Discussão",
+    tipo: "Teoria",
+  },
+  {
+    rotulo: "Personagem com história própria",
+    texto: "Qual personagem merece uma história própria? Para mim: ",
+    categoria: "Discussão",
+    tipo: "Discussão",
+  },
+  {
+    rotulo: "Mostre o próximo capítulo",
+    texto: "Autores: compartilhem um trecho do próximo capítulo. Aqui vai o meu: ",
+    categoria: "Divulgação",
+    tipo: "Aviso de capítulo",
+  },
+  {
+    rotulo: "Pedir recomendações",
+    texto: "Que tipo de história você quer encontrar no HISTORIETAS? Eu gostaria de ler: ",
+    categoria: "Recomendações",
+    tipo: "Pedido de indicação",
+  },
+];
 
 function obterNomeUsuario(email: string, nomeProfile = "") {
   const nomeLimpo = nomeProfile.trim();
@@ -1375,6 +1439,52 @@ function obterVisibilidadeReviewNoDiario(
   visibilidade: VisibilidadePostComunidade,
 ): "publico" | "privado" {
   return visibilidade === "publico" ? "publico" : "privado";
+}
+
+const SEPARADOR_CAPITULO_RELACIONADO = "§§";
+
+function separarObraECapituloRelacionados(valor: string) {
+  const valorLimpo = valor.trim();
+  const separadorIndice = valorLimpo.indexOf(SEPARADOR_CAPITULO_RELACIONADO);
+
+  if (separadorIndice < 0) {
+    return {
+      obraRelacionada: valorLimpo.slice(0, 90),
+      capituloRelacionado: "",
+    };
+  }
+
+  return {
+    obraRelacionada: valorLimpo.slice(0, separadorIndice).trim().slice(0, 90),
+    capituloRelacionado: valorLimpo
+      .slice(separadorIndice + SEPARADOR_CAPITULO_RELACIONADO.length)
+      .trim()
+      .slice(0, 60),
+  };
+}
+
+function juntarObraECapituloRelacionados(obra: string, capitulo: string) {
+  const obraLimpa = obra.trim();
+  const capituloLimpo = capitulo.trim();
+
+  if (!obraLimpa) {
+    return "";
+  }
+
+  if (!capituloLimpo) {
+    return obraLimpa.slice(0, 90);
+  }
+
+  const obraCompacta = obraLimpa.slice(0, 60);
+  const limiteCapitulo = Math.max(
+    0,
+    90 - obraCompacta.length - SEPARADOR_CAPITULO_RELACIONADO.length,
+  );
+
+  return `${obraCompacta}${SEPARADOR_CAPITULO_RELACIONADO}${capituloLimpo.slice(
+    0,
+    limiteCapitulo,
+  )}`;
 }
 
 function criarLinkObraRelacionada(
@@ -1902,6 +2012,9 @@ function mapearPostSupabase(
   const profile = profilesPorUsuario.get(post.autor_id);
   const autorNome =
     obterNomeProfileComunidade(profile) || post.autor_nome?.trim() || "Usuário";
+  const relacaoPublicacao = separarObraECapituloRelacionados(
+    post.obra_relacionada || "",
+  );
 
   return {
     id: post.id,
@@ -1912,7 +2025,8 @@ function mapearPostSupabase(
     tipoPublicacao: normalizarTipoPublicacao(post.tipo_publicacao),
     temSpoiler: Boolean(post.tem_spoiler),
     texto: post.texto.trim().slice(0, 700),
-    obraRelacionada: (post.obra_relacionada || "").trim().slice(0, 90),
+    obraRelacionada: relacaoPublicacao.obraRelacionada,
+    capituloRelacionado: relacaoPublicacao.capituloRelacionado,
     criadoEm: post.criado_em,
     fixado: Boolean(post.fixado),
     fixadoEm: post.fixado_em || "",
@@ -3315,6 +3429,8 @@ export default function ComunidadePage() {
   const termoBuscaAdiado = useDeferredValue(termoBusca);
   const [ordenacaoAtiva, setOrdenacaoAtiva] =
     useState<OrdenacaoComunidade>("Recentes");
+  const [abaFeedAtiva, setAbaFeedAtiva] =
+    useState<AbaFeedComunidade>("Para você");
   const [mostrarApenasSalvos, setMostrarApenasSalvos] = useState(false);
   const [postsSalvosIds, setPostsSalvosIds] = useState<string[]>([]);
   const [votosEnquetes, setVotosEnquetes] = useState<Record<string, string>>({});
@@ -3342,6 +3458,7 @@ export default function ComunidadePage() {
   const [erro, setErro] = useState("");
   const [comentariosPostId, setComentariosPostId] = useState<string | null>(null);
   const [obraRelacionadaBusca, setObraRelacionadaBusca] = useState("");
+  const [capituloRelacionadoPost, setCapituloRelacionadoPost] = useState("");
   const [obrasRelacionadasSugestoes, setObrasRelacionadasSugestoes] = useState<
     ObraRelacionadaSugestao[]
   >([]);
@@ -3548,6 +3665,7 @@ export default function ComunidadePage() {
       setDenunciaAlvo(null);
       setFeedbackAcao("");
       setObraRelacionadaBusca("");
+      setCapituloRelacionadoPost("");
       setSugestoesObrasAbertas(false);
       reviewsDiarioSincronizadasRef.current.clear();
       usuarioReviewsDiarioRef.current = "";
@@ -3933,6 +4051,13 @@ export default function ComunidadePage() {
 
       if (tipoUrl) {
         setTipoPublicacaoAtiva(tipoUrl);
+        setAbaFeedAtiva(
+          tipoUrl === "Teoria"
+            ? "Teorias"
+            : tipoUrl === "Review"
+              ? "Reviews"
+              : "Recentes"
+        );
         setMenuAcoesRapidasComunidadeAberto(true);
       } else if (grupoObraUrl) {
         setTipoPublicacaoAtiva("Todos");
@@ -4101,12 +4226,21 @@ export default function ComunidadePage() {
         grupoPublicacaoObra !== "posts" ||
         (tipoVisualPublicacao !== "Teoria" &&
           tipoVisualPublicacao !== "Review");
+      const abaFeedCombina =
+        abaFeedAtiva === "Seguindo"
+          ? usuariosSeguidosIds.includes(post.autorId)
+          : abaFeedAtiva === "Teorias"
+            ? tipoVisualPublicacao === "Teoria"
+            : abaFeedAtiva === "Reviews"
+              ? tipoVisualPublicacao === "Review"
+              : true;
 
       if (
         !categoriaCombina ||
         !tipoPublicacaoCombina ||
         !obraRelacionadaCombina ||
-        !grupoPublicacaoCombina
+        !grupoPublicacaoCombina ||
+        !abaFeedCombina
       ) {
         return false;
       }
@@ -4126,6 +4260,7 @@ export default function ComunidadePage() {
           post.categoria,
           obterTipoVisualPublicacao(post),
           post.obraRelacionada,
+          post.capituloRelacionado,
         ]
           .filter(Boolean)
           .join(" ")
@@ -4153,6 +4288,20 @@ export default function ComunidadePage() {
         return fixadoOrdenacaoB - fixadoOrdenacaoA;
       }
 
+      if (abaFeedAtiva === "Para você" && ordenacaoAtiva === "Recentes") {
+        const seguindoA = usuariosSeguidosIds.includes(postA.autorId) ? 1 : 0;
+        const seguindoB = usuariosSeguidosIds.includes(postB.autorId) ? 1 : 0;
+
+        if (seguindoA !== seguindoB) {
+          return seguindoB - seguindoA;
+        }
+
+        const pontuacaoA = obterPontuacaoPost(postA);
+        const pontuacaoB = obterPontuacaoPost(postB);
+
+        return pontuacaoB - pontuacaoA || dataOrdenacaoB - dataOrdenacaoA;
+      }
+
       if (ordenacaoAtiva === "Mais comentadas") {
         const diferencaComentarios =
           contarComentaristasUnicosPostComunidade(postB) -
@@ -4171,6 +4320,7 @@ export default function ComunidadePage() {
       return dataOrdenacaoB - dataOrdenacaoA;
     });
   }, [
+    abaFeedAtiva,
     categoriaAtiva,
     tipoPublicacaoAtiva,
     obraRelacionadaFiltro,
@@ -4180,6 +4330,7 @@ export default function ComunidadePage() {
     posts,
     postsSalvosIds,
     termoBuscaNormalizado,
+    usuariosSeguidosIds,
   ]);
 
   const postComentariosAberto = useMemo(() => {
@@ -4297,7 +4448,21 @@ export default function ComunidadePage() {
     acoesComunidadeRef.current.delete(chave);
   }
 
+  function selecionarAbaFeedComunidade(aba: AbaFeedComunidade) {
+    setAbaFeedAtiva(aba);
+    setCategoriaAtiva("Todos");
+    setTipoPublicacaoAtiva("Todos");
+    setObraRelacionadaFiltro("");
+    setGrupoPublicacaoObra("");
+    setMostrarApenasSalvos(false);
+    setOrdenacaoAtiva("Recentes");
+    setMenuAcoesRapidasComunidadeAberto(false);
+
+    window.history.replaceState(null, "", "/comunidade");
+  }
+
   function limparFiltrosComunidade() {
+    setAbaFeedAtiva("Para você");
     setCategoriaAtiva("Todos");
     setTipoPublicacaoAtiva("Todos");
     setObraRelacionadaFiltro("");
@@ -4323,6 +4488,40 @@ export default function ComunidadePage() {
     }, 2600);
   }
 
+
+  function aplicarSugestaoPublicacaoComunidade(
+    sugestao: SugestaoPublicacaoComunidade,
+  ) {
+    if (publicandoPost) {
+      return;
+    }
+
+    setErro("");
+    setCategoriaPost(sugestao.categoria);
+    setTipoPublicacaoPost(sugestao.tipo);
+
+    window.setTimeout(() => {
+      const campoTexto = textoPostRef.current;
+
+      if (!campoTexto) {
+        return;
+      }
+
+      const textoSugestao = traduzirTextoComunidade(sugestao.texto, language);
+      const textoAtualSemEspacosFinais = campoTexto.value.replace(/\s+$/, "");
+      const proximoTexto = textoAtualSemEspacosFinais.trim()
+        ? `${textoAtualSemEspacosFinais}\n\n${textoSugestao}`
+        : textoSugestao;
+
+      // Preserva o que já foi digitado: a sugestão é acrescentada, nunca sobrescreve.
+      campoTexto.value = proximoTexto.slice(0, 700);
+      campoTexto.focus();
+      campoTexto.setSelectionRange(
+        campoTexto.value.length,
+        campoTexto.value.length,
+      );
+    }, 0);
+  }
 
   function prepararEnqueteComunidade() {
     if (!exigirLogin()) {
@@ -4494,27 +4693,6 @@ export default function ComunidadePage() {
     );
   }
 
-  function responderDesafioSemana() {
-    if (!exigirLogin()) {
-      return;
-    }
-
-    setErro("");
-    setCategoriaPost("Recomendações");
-    setTipoPublicacaoPost("Pedido de indicação");
-    setTemSpoilerPost(false);
-    setComposerAberto(true);
-
-    window.setTimeout(() => {
-      if (!textoPostRef.current) {
-        return;
-      }
-
-      textoPostRef.current.value = `${DESAFIO_SEMANA_COMUNIDADE.pergunta} — Eu gostaria de ver: `;
-      textoPostRef.current.focus();
-    }, 0);
-  }
-
   function abrirPublicacaoRapidaComunidade() {
     setMenuAcoesRapidasComunidadeAberto(false);
 
@@ -4524,11 +4702,6 @@ export default function ComunidadePage() {
 
     setErro("");
     setComposerAberto(true);
-  }
-
-  function abrirDesafioRapidoComunidade() {
-    setMenuAcoesRapidasComunidadeAberto(false);
-    responderDesafioSemana();
   }
 
   async function alternarPostSalvo(postId: string) {
@@ -4679,9 +4852,11 @@ export default function ComunidadePage() {
       const obraFiltroLimpa = obraFiltro.trim().slice(0, 90);
 
       if (obraFiltroLimpa) {
-        consultaPosts = consultaPosts.eq(
+        const obraFiltroLike = obraFiltroLimpa.replace(/[%_]/g, "\\$&");
+
+        consultaPosts = consultaPosts.like(
           "obra_relacionada",
-          obraFiltroLimpa
+          `${obraFiltroLike}%`,
         );
       }
 
@@ -4908,8 +5083,32 @@ export default function ComunidadePage() {
         return;
       }
 
+      const usuarioAutenticado = await obterUsuarioAutenticadoComunidadeAtual();
+      const usuarioAutenticadoId = usuarioAutenticado?.id?.trim() || "";
+      const usuarioEstadoId = usuario.id.trim();
+
+      if (
+        !usuarioAutenticadoId ||
+        usuarioAutenticadoId !== usuarioEstadoId
+      ) {
+        setUsuario(null);
+        setUsuarioEhAdmin(false);
+        setErro(
+          "Sua sessão expirou ou a conta mudou. Entre novamente antes de publicar."
+        );
+        return;
+      }
+
+      const visibilidadeSegura =
+        normalizarVisibilidadePostComunidade(visibilidadePost);
       const textoLimpo = textoPostRef.current?.value.trim() || "";
       const obraLimpa = obraRelacionadaRef.current?.value.trim() || "";
+      const capituloLimpo = capituloRelacionadoPost.trim();
+
+      if (capituloLimpo && !obraLimpa) {
+        setErro("Selecione uma obra antes de informar o capítulo.");
+        return;
+      }
 
       if (textoLimpo.length < 8) {
         setErro("Escreva uma publicação com pelo menos 8 caracteres.");
@@ -4943,55 +5142,78 @@ export default function ComunidadePage() {
 
       const autorNomeSeguro = await obterNomeSeguroUsuarioComunidade(usuario);
 
-      const { data, error } = await supabase
+      const textoPostBanco = textoLimpo.slice(0, 700);
+      const obraPostBanco = juntarObraECapituloRelacionados(
+        obraLimpa,
+        capituloLimpo,
+      );
+
+      // Não use INSERT ... RETURNING aqui. O RETURNING também passa pela
+      // política SELECT da tabela e pode fazer um INSERT válido ser rejeitado.
+      const { error } = await supabase
         .from("comunidade_posts")
         .insert({
-          autor_id: usuario.id,
+          autor_id: usuarioAutenticadoId,
           autor_nome: autorNomeSeguro,
           categoria: categoriaPost,
           tipo_publicacao: publicacaoEhEnquete ? "Discussão" : tipoPublicacaoPost,
           tem_spoiler: temSpoilerPost,
-          texto: textoLimpo.slice(0, 700),
-          obra_relacionada: obraLimpa.slice(0, 90),
-          visibilidade: visibilidadePost,
-        })
-        .select(
-          "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por, visibilidade"
-        )
-        .single();
+          texto: textoPostBanco,
+          obra_relacionada: obraPostBanco,
+          visibilidade: visibilidadeSegura,
+        });
 
-      if (error || !data) {
-        setErro(
-          error
-            ? formatarErroSupabase("Erro ao publicar", error)
-            : "Erro ao publicar: o Supabase não retornou a publicação criada."
-        );
+      if (error) {
+        setErro(formatarErroSupabase("Erro ao publicar", error));
         return;
       }
 
-      const profilesPostNovo = new Map<string, PerfilComunidadeRow>([
-        [
-          usuario.id,
-          {
-            nome: autorNomeSeguro,
-            avatar_url: usuario.avatar,
-          },
-        ],
-      ]);
-      const novoPost = mapearPostSupabase(
-        data as SupabasePostRow,
-        new Map<string, ComentarioComunidade[]>(),
-        new Map<string, string[]>(),
-        profilesPostNovo
-      );
+      // A leitura é feita em uma consulta separada, depois que o INSERT termina.
+      const { data: postCriado } = await supabase
+        .from("comunidade_posts")
+        .select(
+          "id, autor_id, autor_nome, categoria, tipo_publicacao, tem_spoiler, texto, obra_relacionada, criado_em, fixado, fixado_em, fixado_por, visibilidade"
+        )
+        .eq("autor_id", usuarioAutenticadoId)
+        .eq("texto", textoPostBanco)
+        .order("criado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      setPosts((postsAtuais) => [novoPost, ...postsAtuais]);
+      let novoPost: PostComunidade | null = null;
 
-      if (!publicacaoEhEnquete && tipoPublicacaoPost === "Review") {
+      if (postCriado) {
+        const profilesPostNovo = new Map<string, PerfilComunidadeRow>([
+          [
+            usuarioAutenticadoId,
+            {
+              nome: autorNomeSeguro,
+              avatar_url: usuario.avatar,
+            },
+          ],
+        ]);
+
+        novoPost = mapearPostSupabase(
+          postCriado as SupabasePostRow,
+          new Map<string, ComentarioComunidade[]>(),
+          new Map<string, string[]>(),
+          profilesPostNovo
+        );
+
+        setPosts((postsAtuais) => [novoPost as PostComunidade, ...postsAtuais]);
+      } else {
+        await carregarPostsComunidade(false, 0, obraRelacionadaFiltro);
+      }
+
+      if (
+        novoPost &&
+        !publicacaoEhEnquete &&
+        tipoPublicacaoPost === "Review"
+      ) {
         reviewsDiarioSincronizadasRef.current.add(novoPost.id);
 
         const reviewSincronizada = await registrarReviewComunidadeNoDiario({
-          userId: usuario.id,
+          userId: usuarioAutenticadoId,
           texto: textoLimpo,
           obraRelacionada: obraLimpa,
           postId: novoPost.id,
@@ -5014,6 +5236,7 @@ export default function ComunidadePage() {
       }
 
       setObraRelacionadaBusca("");
+      setCapituloRelacionadoPost("");
       setSugestoesObrasAbertas(false);
       setCategoriaPost("Geral");
       setTipoPublicacaoPost("Discussão");
@@ -6012,6 +6235,36 @@ export default function ComunidadePage() {
 
             </section>
 
+            <nav
+              role="tablist"
+              aria-label="Organizar publicações da Comunidade"
+              style={
+                isDesktop
+                  ? desktopCommunityFeedTabsStyle
+                  : communityFeedTabsStyle
+              }
+            >
+              {ABAS_FEED_COMUNIDADE.map((aba) => {
+                const ativa = abaFeedAtiva === aba;
+
+                return (
+                  <button
+                    key={aba}
+                    type="button"
+                    role="tab"
+                    aria-selected={ativa}
+                    onClick={() => selecionarAbaFeedComunidade(aba)}
+                    style={
+                      ativa
+                        ? communityFeedTabActiveStyle
+                        : communityFeedTabStyle
+                    }
+                  >
+                    {aba}
+                  </button>
+                );
+              })}
+            </nav>
 
             {menuAcoesRapidasComunidadeAberto && (
               <section
@@ -6042,14 +6295,6 @@ export default function ComunidadePage() {
                     style={communityActionsSheetItemStyle}
                   >
                     Publicar
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={abrirDesafioRapidoComunidade}
-                    style={communityActionsSheetItemStyle}
-                  >
-                    Pedir recomendações
                   </button>
 
                   <span style={communityFiltersSheetSectionLabelStyle}>
@@ -6616,6 +6861,19 @@ export default function ComunidadePage() {
                           </>
                         )}
 
+                        {post.capituloRelacionado && (
+                          <>
+                            <span style={obraBadgeStyle}>
+                              <span>CAPÍTULO&nbsp;</span>
+                              <span data-historietas-user-content="true">
+                                {post.capituloRelacionado}
+                              </span>
+                            </span>
+
+                            <span style={postBadgeSeparatorStyle}>·</span>
+                          </>
+                        )}
+
                         <span
                           data-historietas-user-content={
                             postEhEnquete(post) ? "true" : undefined
@@ -6823,11 +7081,15 @@ export default function ComunidadePage() {
                     gridColumn: isDesktop ? "1 / -1" : undefined,
                   }}
                 >
-                  {mostrarApenasSalvos
-                    ? "Nenhuma publicação salva"
-                    : filtrosAtivos
-                      ? "Nenhuma publicação encontrada"
-                      : "Nenhuma publicação ainda"}
+                  {abaFeedAtiva === "Seguindo"
+                    ? usuario
+                      ? "Nenhuma publicação de pessoas que você segue."
+                      : "Entre na sua conta para ver publicações de quem você segue."
+                    : mostrarApenasSalvos
+                      ? "Nenhuma publicação salva"
+                      : filtrosAtivos
+                        ? "Nenhuma publicação encontrada"
+                        : "Nenhuma publicação ainda"}
                 </p>
               )
               )}
@@ -6967,6 +7229,11 @@ export default function ComunidadePage() {
                         const valorDigitado = event.target.value;
 
                         setObraRelacionadaBusca(valorDigitado);
+
+                        if (!valorDigitado.trim()) {
+                          setCapituloRelacionadoPost("");
+                        }
+
                         setSugestoesObrasAbertas(Boolean(valorDigitado.trim()));
                       }}
                       onFocus={() => {
@@ -7019,6 +7286,30 @@ export default function ComunidadePage() {
                       )}
                   </div>
                 </label>
+
+                <label style={fieldStyle}>
+                  <span style={labelStyle}>Capítulo relacionado</span>
+
+                  <input
+                    disabled={publicandoPost || !obraRelacionadaBusca.trim()}
+                    value={capituloRelacionadoPost}
+                    onChange={(event) =>
+                      setCapituloRelacionadoPost(event.target.value)
+                    }
+                    placeholder="Opcional: número ou título do capítulo"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    maxLength={60}
+                    style={{
+                      ...inputStyle,
+                      opacity: obraRelacionadaBusca.trim() ? 1 : 0.58,
+                      cursor: obraRelacionadaBusca.trim()
+                        ? "text"
+                        : "not-allowed",
+                    }}
+                  />
+                </label>
               </div>
 
               <label style={fieldStyle}>
@@ -7040,6 +7331,32 @@ export default function ComunidadePage() {
                     </button>
 
                     <span style={charCountStyle}>máx. 700</span>
+                  </div>
+                </div>
+
+                <div style={postComposerSuggestionsSectionStyle}>
+                  <span style={postComposerSuggestionsLabelStyle}>
+                    Sugestões para começar
+                  </span>
+
+                  <div style={postComposerSuggestionsListStyle}>
+                    {SUGESTOES_PUBLICACAO_COMUNIDADE.map((sugestao) => (
+                      <button
+                        key={sugestao.rotulo}
+                        type="button"
+                        disabled={publicandoPost}
+                        onClick={() =>
+                          aplicarSugestaoPublicacaoComunidade(sugestao)
+                        }
+                        style={{
+                          ...postComposerSuggestionButtonStyle,
+                          opacity: publicandoPost ? 0.58 : 1,
+                          cursor: publicandoPost ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {sugestao.rotulo}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -8524,6 +8841,51 @@ const postComposerFieldsGridStyle: CSSProperties = {
   gridTemplateColumns: "150px 190px minmax(0, 1fr)",
 };
 
+const postComposerSuggestionsSectionStyle: CSSProperties = {
+  display: "grid",
+  gap: "6px",
+  minWidth: 0,
+  marginTop: "2px",
+  marginBottom: "2px",
+};
+
+const postComposerSuggestionsLabelStyle: CSSProperties = {
+  color: "var(--historietas-text-secondary, #A1A1AA)",
+  fontSize: "10px",
+  fontWeight: 900,
+  letterSpacing: "0.02em",
+  ...safeTextStyle,
+};
+
+const postComposerSuggestionsListStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+  minWidth: 0,
+  overflowX: "auto",
+  overflowY: "hidden",
+  paddingBottom: "2px",
+  scrollbarWidth: "none",
+  WebkitOverflowScrolling: "touch",
+};
+
+const postComposerSuggestionButtonStyle: CSSProperties = {
+  minHeight: "31px",
+  flex: "0 0 auto",
+  borderRadius: "999px",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
+  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
+  color: "var(--historietas-text, #FFFFFF)",
+  padding: "0 10px",
+  fontSize: "10px",
+  lineHeight: 1.2,
+  fontWeight: 900,
+  fontFamily: "inherit",
+  whiteSpace: "nowrap",
+  boxShadow: "none",
+  ...safeTextStyle,
+};
+
 const postComposerTextareaStyle: CSSProperties = {
   ...inputStyle,
   minHeight: "66px",
@@ -8833,6 +9195,55 @@ const mergedWeeklyChallengeDesktopStyle: CSSProperties = {
   gap: "11px",
 };
 
+
+const communityFeedTabsStyle: CSSProperties = {
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  overflowX: "auto",
+  overscrollBehaviorX: "contain",
+  scrollbarWidth: "none",
+  padding: "3px 0 9px",
+  margin: "0 0 3px",
+  boxSizing: "border-box",
+  WebkitOverflowScrolling: "touch",
+};
+
+const desktopCommunityFeedTabsStyle: CSSProperties = {
+  ...communityFeedTabsStyle,
+  gap: "10px",
+  padding: "2px 0 13px",
+  marginBottom: "5px",
+};
+
+const communityFeedTabStyle: CSSProperties = {
+  appearance: "none",
+  WebkitAppearance: "none",
+  flex: "0 0 auto",
+  minHeight: "38px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.13)",
+  background: "rgba(255,255,255,0.025)",
+  color: "rgba(255,255,255,0.66)",
+  padding: "0 16px",
+  fontFamily: "inherit",
+  fontSize: "14px",
+  lineHeight: 1,
+  fontWeight: 900,
+  letterSpacing: "-0.025em",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+  outline: "none",
+  WebkitTapHighlightColor: "transparent",
+};
+
+const communityFeedTabActiveStyle: CSSProperties = {
+  ...communityFeedTabStyle,
+  border: "1px solid #FFFFFF",
+  background: "#FFFFFF",
+  color: "#000000",
+};
 
 const exploreLikeFilterBoxStyle: CSSProperties = {
   marginTop: "0",

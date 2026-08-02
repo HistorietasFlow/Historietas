@@ -5002,7 +5002,7 @@ const securitySecondaryButtonStyle: CSSProperties = {
 const securityPrimaryButtonStyle: CSSProperties = {
   ...securityButtonBaseStyle,
   background: "var(--historietas-accent, #F97316)",
-  color: "var(--historietas-secondary-button-text, #FFFFFF)",
+  color: "#000000",
 };
 
 const securitySecondaryButtonDisabledStyle: CSSProperties = {
