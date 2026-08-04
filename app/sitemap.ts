@@ -61,6 +61,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.4,
     },
     {
+      url: `${SITE_URL}/excluir-conta`,
+      lastModified: agora,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
       url: `${SITE_URL}/diretrizes-da-comunidade`,
       lastModified: agora,
       changeFrequency: "monthly",

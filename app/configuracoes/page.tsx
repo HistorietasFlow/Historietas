@@ -480,6 +480,9 @@ const ALIASES_BUSCA_CONFIGURACOES: Record<string, string[]> = {
   sobre: ["about", "acerca"],
   versao: ["version", "version"],
   sair: ["sign out", "logout", "cerrar sesion"],
+  excluir: ["delete", "remove", "eliminar"],
+  apagar: ["delete", "erase", "borrar"],
+  permanente: ["permanent", "permanente"],
   login: ["login", "inicio de sesion"],
 };
 
@@ -546,6 +549,7 @@ type IconName =
   | "help"
   | "file"
   | "logout"
+  | "trash"
   | "admin"
   | "chart"
   | "pen"
@@ -1494,6 +1498,15 @@ function SvgIcon({
         <path {...common} d="M21 3v18" />
       </>
     ),
+    trash: (
+      <>
+        <path {...common} d="M3 6h18" />
+        <path {...common} d="M8 6V4h8v2" />
+        <path {...common} d="M19 6l-1 15H6L5 6" />
+        <path {...common} d="M10 11v5" />
+        <path {...common} d="M14 11v5" />
+      </>
+    ),
     admin: (
       <>
         <path {...common} d="M12 3 3 8l9 5 9-5-9-5Z" />
@@ -1816,6 +1829,11 @@ export default function ConfiguracoesPage() {
   const [salvandoSenha, setSalvandoSenha] = useState(false);
   const [erroSenha, setErroSenha] = useState("");
   const [senhaAlterada, setSenhaAlterada] = useState(false);
+  const [mostrarExclusaoConta, setMostrarExclusaoConta] = useState(false);
+  const [senhaExclusaoConta, setSenhaExclusaoConta] = useState("");
+  const [confirmacaoExclusaoConta, setConfirmacaoExclusaoConta] = useState("");
+  const [excluindoConta, setExcluindoConta] = useState(false);
+  const [erroExclusaoConta, setErroExclusaoConta] = useState("");
   const [mensagemAcao, setMensagemAcao] =
     useState<MensagemAcaoConfiguracoes | null>(null);
   const { pageThemeStyle, setTemaVisual } =
@@ -2343,6 +2361,182 @@ export default function ConfiguracoesPage() {
       mostrarMensagemAcao("erro", mensagem);
     } finally {
       setSalvando(false);
+    }
+  }
+
+  function abrirExclusaoConta() {
+    setSenhaExclusaoConta("");
+    setConfirmacaoExclusaoConta("");
+    setErroExclusaoConta("");
+    setMostrarExclusaoConta(true);
+  }
+
+  function fecharExclusaoConta() {
+    if (excluindoConta) {
+      return;
+    }
+
+    setMostrarExclusaoConta(false);
+    setSenhaExclusaoConta("");
+    setConfirmacaoExclusaoConta("");
+    setErroExclusaoConta("");
+  }
+
+  function traduzirErroExclusaoConta(codigo: string, mensagem: string) {
+    const mensagens: Record<string, [string, string, string]> = {
+      senha_obrigatoria: [
+        "Digite sua senha atual.",
+        "Enter your current password.",
+        "Escribe tu contraseña actual.",
+      ],
+      confirmacao_invalida: [
+        "Digite EXCLUIR exatamente como aparece para confirmar.",
+        "Type DELETE exactly as shown to confirm.",
+        "Escribe ELIMINAR exactamente como aparece para confirmar.",
+      ],
+      senha_incorreta: [
+        "A senha atual está incorreta.",
+        "The current password is incorrect.",
+        "La contraseña actual es incorrecta.",
+      ],
+      conta_nao_autenticada: [
+        "Sua sessão expirou. Entre novamente e tente de novo.",
+        "Your session has expired. Sign in again and try once more.",
+        "Tu sesión expiró. Inicia sesión de nuevo e inténtalo otra vez.",
+      ],
+      configuracao_servidor: [
+        "A exclusão ainda não foi configurada no servidor. Verifique a chave SUPABASE_SERVICE_ROLE_KEY na Vercel.",
+        "Account deletion has not been configured on the server yet. Check SUPABASE_SERVICE_ROLE_KEY in Vercel.",
+        "La eliminación aún no está configurada en el servidor. Revisa SUPABASE_SERVICE_ROLE_KEY en Vercel.",
+      ],
+      exclusao_falhou: [
+        "Não foi possível excluir sua conta agora. Tente novamente ou use a página pública de exclusão.",
+        "Your account could not be deleted right now. Try again or use the public deletion page.",
+        "No se pudo eliminar tu cuenta ahora. Inténtalo de nuevo o usa la página pública de eliminación.",
+      ],
+    };
+    const traducao = mensagens[codigo];
+
+    return traducao ? t(...traducao) : mensagem;
+  }
+
+  function limparDadosLocaisContaExcluida(userId: string) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const sufixoUsuario = `:${userId.trim()}`;
+
+    try {
+      for (let indice = localStorage.length - 1; indice >= 0; indice -= 1) {
+        const chave = localStorage.key(indice);
+
+        if (chave?.endsWith(sufixoUsuario)) {
+          localStorage.removeItem(chave);
+        }
+      }
+    } catch {
+      // A exclusão remota já foi concluída; falhas locais não devem bloquear a saída.
+    }
+
+    try {
+      for (let indice = sessionStorage.length - 1; indice >= 0; indice -= 1) {
+        const chave = sessionStorage.key(indice);
+
+        if (chave?.endsWith(sufixoUsuario)) {
+          sessionStorage.removeItem(chave);
+        }
+      }
+    } catch {
+      // A sessão do navegador será encerrada em seguida.
+    }
+  }
+
+  async function excluirConta(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (excluindoConta) {
+      return;
+    }
+
+    setErroExclusaoConta("");
+
+    if (!senhaExclusaoConta) {
+      setErroExclusaoConta(
+        t(
+          "Digite sua senha atual.",
+          "Enter your current password.",
+          "Escribe tu contraseña actual.",
+        ),
+      );
+      return;
+    }
+
+    const confirmacaoEsperada =
+      language === "en" ? "DELETE" : language === "es" ? "ELIMINAR" : "EXCLUIR";
+
+    if (confirmacaoExclusaoConta.trim().toUpperCase() !== confirmacaoEsperada) {
+      setErroExclusaoConta(
+        t(
+          "Digite EXCLUIR exatamente como aparece para confirmar.",
+          "Type DELETE exactly as shown to confirm.",
+          "Escribe ELIMINAR exactamente como aparece para confirmar.",
+        ),
+      );
+      return;
+    }
+
+    setExcluindoConta(true);
+
+    try {
+      const response = await fetch("/api/conta/excluir", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          senha: senhaExclusaoConta,
+          confirmacao: "EXCLUIR",
+        }),
+      });
+      const data = (await response.json().catch(() => null)) as
+        | { ok?: boolean; codigo?: string; mensagem?: string }
+        | null;
+
+      if (!response.ok || !data?.ok) {
+        setErroExclusaoConta(
+          traduzirErroExclusaoConta(
+            data?.codigo || "",
+            data?.mensagem ||
+              t(
+                "Não foi possível excluir sua conta agora.",
+                "Your account could not be deleted right now.",
+                "No se pudo eliminar tu cuenta ahora.",
+              ),
+          ),
+        );
+        return;
+      }
+
+      limparDadosLocaisContaExcluida(usuarioIdLogado);
+
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // A conta já foi removida no servidor.
+      }
+
+      router.replace("/login");
+      router.refresh();
+    } catch {
+      setErroExclusaoConta(
+        t(
+          "Não foi possível excluir sua conta agora. Verifique sua conexão e tente novamente.",
+          "Your account could not be deleted right now. Check your connection and try again.",
+          "No se pudo eliminar tu cuenta ahora. Revisa tu conexión e inténtalo de nuevo.",
+        ),
+      );
+    } finally {
+      setExcluindoConta(false);
     }
   }
 
@@ -3967,6 +4161,31 @@ export default function ConfiguracoesPage() {
           </SettingsSection>
         ) : null}
 
+        {deveMostrar("excluir", "apagar", "conta", "dados", "permanente") ? (
+          <section style={sectionStyle}>
+            <SectionTitle>
+              {t("Zona de risco", "Danger zone", "Zona de riesgo")}
+            </SectionTitle>
+            <div style={listCardTransparentStyle}>
+              <SettingsRow
+                icon="trash"
+                title={t(
+                  "Excluir minha conta",
+                  "Delete my account",
+                  "Eliminar mi cuenta",
+                )}
+                subtitle={t(
+                  "Apagar permanentemente a conta e os dados associados",
+                  "Permanently delete the account and associated data",
+                  "Eliminar permanentemente la cuenta y los datos asociados",
+                )}
+                onClick={abrirExclusaoConta}
+                danger
+              />
+            </div>
+          </section>
+        ) : null}
+
         {deveMostrar("sair", "conta", "login") ? (
           <section style={sectionStyle}>
             <div style={listCardTransparentStyle}>
@@ -4208,6 +4427,186 @@ export default function ConfiguracoesPage() {
                 {t("Concluído", "Done", "Listo")}
               </button>
             ) : null}
+          </section>
+        </div>
+      ) : null}
+
+      {mostrarExclusaoConta ? (
+        <div
+          role="presentation"
+          style={securityOverlayStyle}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              fecharExclusaoConta();
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-exclusao-conta"
+            style={securityModalStyle}
+          >
+            <header style={securityModalHeaderStyle}>
+              <span style={deleteModalIconStyle}>
+                <SvgIcon name="trash" size={24} strokeWidth={2.2} />
+              </span>
+
+              <div style={securityModalHeadingStyle}>
+                <h2 id="titulo-exclusao-conta" style={securityModalTitleStyle}>
+                  {t(
+                    "Excluir minha conta",
+                    "Delete my account",
+                    "Eliminar mi cuenta",
+                  )}
+                </h2>
+                <p style={securityModalSubtitleStyle}>
+                  {t(
+                    "Esta ação é permanente e não pode ser desfeita.",
+                    "This action is permanent and cannot be undone.",
+                    "Esta acción es permanente y no se puede deshacer.",
+                  )}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharExclusaoConta}
+                disabled={excluindoConta}
+                aria-label={t("Fechar", "Close", "Cerrar")}
+                style={
+                  excluindoConta
+                    ? securityCloseButtonDisabledStyle
+                    : securityCloseButtonStyle
+                }
+              >
+                ×
+              </button>
+            </header>
+
+            <div style={deleteWarningStyle}>
+              <strong>
+                {t(
+                  "Serão excluídos:",
+                  "The following will be deleted:",
+                  "Se eliminarán:",
+                )}
+              </strong>
+              <ul style={deleteWarningListStyle}>
+                <li>{t("conta, perfil e acesso;", "account, profile, and access;", "cuenta, perfil y acceso;")}</li>
+                <li>{t("obras, capítulos, capas e arquivos;", "works, chapters, covers, and files;", "obras, capítulos, portadas y archivos;")}</li>
+                <li>{t("comentários, curtidas, avaliações, seguidores e progresso.", "comments, likes, ratings, followers, and progress.", "comentarios, me gusta, valoraciones, seguidores y progreso.")}</li>
+              </ul>
+              <Link href="/excluir-conta" style={deletePublicLinkStyle}>
+                {t(
+                  "Ver página pública de exclusão",
+                  "View public deletion page",
+                  "Ver página pública de eliminación",
+                )}
+              </Link>
+            </div>
+
+            <form onSubmit={excluirConta} style={securityFormStyle}>
+              <label style={securityFieldStyle}>
+                <span style={securityFieldLabelStyle}>
+                  {t("Senha atual", "Current password", "Contraseña actual")}
+                </span>
+                <input
+                  className="configuracoes-input"
+                  type="password"
+                  value={senhaExclusaoConta}
+                  onChange={(event) => {
+                    setSenhaExclusaoConta(event.target.value);
+                    setErroExclusaoConta("");
+                  }}
+                  autoComplete="current-password"
+                  disabled={excluindoConta}
+                  style={securityPasswordInputStyle}
+                />
+              </label>
+
+              <label style={securityFieldStyle}>
+                <span style={securityFieldLabelStyle}>
+                  {t(
+                    "Digite EXCLUIR para confirmar",
+                    "Type DELETE to confirm",
+                    "Escribe ELIMINAR para confirmar",
+                  )}
+                </span>
+                <input
+                  className="configuracoes-input"
+                  type="text"
+                  value={confirmacaoExclusaoConta}
+                  onChange={(event) => {
+                    setConfirmacaoExclusaoConta(event.target.value);
+                    setErroExclusaoConta("");
+                  }}
+                  autoComplete="off"
+                  spellCheck={false}
+                  disabled={excluindoConta}
+                  style={securityPasswordInputStyle}
+                />
+              </label>
+
+              <p style={securityHintStyle}>
+                {t(
+                  "Antes de continuar, você pode baixar um backup no Resumo da conta.",
+                  "Before continuing, you can download a backup from Account summary.",
+                  "Antes de continuar, puedes descargar una copia en Resumen de la cuenta.",
+                )}
+              </p>
+
+              {erroExclusaoConta ? (
+                <div role="alert" aria-live="assertive" style={securityErrorStyle}>
+                  {erroExclusaoConta}
+                </div>
+              ) : null}
+
+              <div style={securityActionsStyle}>
+                <button
+                  type="button"
+                  onClick={fecharExclusaoConta}
+                  disabled={excluindoConta}
+                  style={
+                    excluindoConta
+                      ? securitySecondaryButtonDisabledStyle
+                      : securitySecondaryButtonStyle
+                  }
+                >
+                  {t("Cancelar", "Cancel", "Cancelar")}
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={excluindoConta}
+                  style={
+                    excluindoConta
+                      ? deleteDangerButtonDisabledStyle
+                      : deleteDangerButtonStyle
+                  }
+                >
+                  {excluindoConta ? (
+                    <>
+                      <LoadingSpinner
+                        compacto
+                        label={t(
+                          "Excluindo conta",
+                          "Deleting account",
+                          "Eliminando cuenta",
+                        )}
+                      />
+                      <span>{t("Excluindo...", "Deleting...", "Eliminando...")}</span>
+                    </>
+                  ) : (
+                    t(
+                      "Excluir definitivamente",
+                      "Delete permanently",
+                      "Eliminar definitivamente",
+                    )
+                  )}
+                </button>
+              </div>
+            </form>
           </section>
         </div>
       ) : null}
@@ -4846,6 +5245,13 @@ const securityModalIconStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
 };
 
+const deleteModalIconStyle: CSSProperties = {
+  ...securityModalIconStyle,
+  background: "rgba(127,29,29,0.28)",
+  color: "var(--configuracoes-danger-text, #FCA5A5)",
+  border: "1px solid rgba(248,113,113,0.22)",
+};
+
 const securityModalHeadingStyle: CSSProperties = {
   minWidth: 0,
 };
@@ -4969,6 +5375,31 @@ const securityFeedbackTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
+const deleteWarningStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  marginTop: "20px",
+  padding: "14px",
+  borderRadius: "14px",
+  border: "1px solid rgba(248,113,113,0.28)",
+  background: "rgba(127,29,29,0.18)",
+  color: "var(--configuracoes-danger-text, #FCA5A5)",
+  fontSize: "13px",
+  lineHeight: 1.4,
+};
+
+const deleteWarningListStyle: CSSProperties = {
+  margin: 0,
+  paddingLeft: "20px",
+  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.72))",
+};
+
+const deletePublicLinkStyle: CSSProperties = {
+  width: "fit-content",
+  color: "var(--configuracoes-danger-text, #FCA5A5)",
+  fontWeight: 780,
+};
+
 const securityActionsStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.25fr)",
@@ -5003,6 +5434,19 @@ const securityPrimaryButtonStyle: CSSProperties = {
   ...securityButtonBaseStyle,
   background: "var(--historietas-accent, #F97316)",
   color: "#000000",
+};
+
+const deleteDangerButtonStyle: CSSProperties = {
+  ...securityButtonBaseStyle,
+  background: "#DC2626",
+  color: "#FFFFFF",
+  boxShadow: "0 10px 28px rgba(220,38,38,0.24)",
+};
+
+const deleteDangerButtonDisabledStyle: CSSProperties = {
+  ...deleteDangerButtonStyle,
+  cursor: "not-allowed",
+  opacity: 0.62,
 };
 
 const securitySecondaryButtonDisabledStyle: CSSProperties = {

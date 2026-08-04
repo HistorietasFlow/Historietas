@@ -55,9 +55,9 @@ type DestaquePrivacidade = {
 };
 
 const ULTIMA_ATUALIZACAO: TextoTraduzido = {
-  pt: "28 de julho de 2026",
-  en: "July 28, 2026",
-  es: "28 de julio de 2026",
+  pt: "4 de agosto de 2026",
+  en: "August 4, 2026",
+  es: "4 de agosto de 2026",
 };
 
 const DESTAQUES_PRIVACIDADE: DestaquePrivacidade[] = [
@@ -129,9 +129,9 @@ const SECOES_PRIVACIDADE: SecaoPrivacidade[] = [
         es: "Para los tratamientos descritos en esta Política, Historietas es responsable de las decisiones sobre el uso de los datos personales, sin perjuicio de las responsabilidades propias de los proveedores que prestan servicios técnicos.",
       },
       {
-        pt: "Solicitações relacionadas à privacidade podem ser encaminhadas pela Central de ajuda. Quando forem disponibilizados dados adicionais do responsável legal ou do encarregado, eles também serão apresentados nesta área.",
-        en: "Privacy-related requests may be submitted through the Help center. When additional details about the legal representative or data protection contact become available, they will also be displayed in this area.",
-        es: "Las solicitudes relacionadas con la privacidad pueden enviarse mediante el Centro de ayuda. Cuando se disponga de datos adicionales del responsable legal o del contacto de protección de datos, también se mostrarán en esta área.",
+        pt: "Solicitações relacionadas à privacidade podem ser encaminhadas pela Central de ajuda. Para excluir a conta, use Configurações → Zona de risco → Excluir minha conta ou a página pública /excluir-conta caso não consiga entrar.",
+        en: "Privacy-related requests may be submitted through the Help center. To delete your account, use Settings → Danger zone → Delete my account, or the public /excluir-conta page if you cannot sign in.",
+        es: "Las solicitudes relacionadas con la privacidad pueden enviarse mediante el Centro de ayuda. Para eliminar la cuenta, usa Configuración → Zona de riesgo → Eliminar mi cuenta o la página pública /excluir-conta si no puedes iniciar sesión.",
       },
     ],
   },
@@ -599,9 +599,9 @@ const SECOES_PRIVACIDADE: SecaoPrivacidade[] = [
     },
     paragrafos: [
       {
-        pt: "Para exercer direitos, comunicar um incidente, questionar uma prática ou solicitar informações sobre esta Política, utilize a Central de ajuda e forneça os detalhes necessários para localizar a conta e compreender o pedido.",
-        en: "To exercise rights, report an incident, question a practice, or request information about this Policy, use the Help center and provide the details needed to locate the account and understand the request.",
-        es: "Para ejercer derechos, comunicar un incidente, cuestionar una práctica o solicitar información sobre esta Política, utiliza el Centro de ayuda y proporciona los datos necesarios para localizar la cuenta y comprender la solicitud.",
+        pt: "Para exercer direitos, comunicar um incidente, questionar uma prática ou solicitar informações sobre esta Política, utilize a Central de ajuda. Pedidos de exclusão de conta também podem ser feitos pela página pública /excluir-conta.",
+        en: "To exercise rights, report an incident, question a practice, or request information about this Policy, use the Help center. Account deletion requests may also be submitted through the public /excluir-conta page.",
+        es: "Para ejercer derechos, comunicar un incidente, cuestionar una práctica o solicitar información sobre esta Política, utiliza el Centro de ayuda. Las solicitudes de eliminación de cuenta también pueden enviarse desde la página pública /excluir-conta.",
       },
     ],
   },
