@@ -1,4 +1,4 @@
-# dependencies
+﻿# dependencies
 /node_modules
 /.pnp
 .pnp.*
@@ -30,3 +30,10 @@ next-env.d.ts
 
 # Supabase local/link metadata
 /supabase/.temp
+node_modules/
+.next/
+.env.local
+qa/node_modules/
+qa/playwright-report/
+qa/reports/
+qa/test-results/
