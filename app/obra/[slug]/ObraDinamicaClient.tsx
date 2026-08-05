@@ -17,7 +17,6 @@ import {
   ehClassificacao18,
   normalizarAvisosConteudo18,
   traduzirAvisoConteudo18,
-  traduzirTextoConteudo18,
   type AvisoConteudo18,
 } from "../../../lib/historietasAdultContent";
 
@@ -3419,6 +3418,8 @@ export default function ObraDinamicaPage() {
   const [denunciaAlvo, setDenunciaAlvo] =
     useState<AlvoDenunciaObraDinamica | null>(null);
   const [sinopseAberta, setSinopseAberta] = useState(false);
+  const [painelClassificacaoAberto, setPainelClassificacaoAberto] =
+    useState(false);
   const [comentariosObra, setComentariosObra] = useState<ComentarioObraPublico[]>([]);
   const [totalComentariosObra, setTotalComentariosObra] = useState(0);
   const [comentariosCarregando, setComentariosCarregando] = useState(false);
@@ -3673,6 +3674,7 @@ export default function ObraDinamicaPage() {
 
   useEffect(() => {
     setSinopseAberta(false);
+    setPainelClassificacaoAberto(false);
   }, [obra?.id]);
 
   const statusAcesso18 =
@@ -3789,6 +3791,33 @@ export default function ObraDinamicaPage() {
     obra && obra.sinopse.trim()
       ? obra.sinopse.trim()
       : "Nenhuma sinopse informada.";
+  const textosPainelClassificacao =
+    language === "en"
+      ? {
+          titulo: "Age rating",
+          descricao: "This work is rated",
+          avisos: "Content warnings",
+          semAvisos: "No additional content warnings were provided.",
+          fechar: "Close age rating",
+          abrir: "View age rating",
+        }
+      : language === "es"
+        ? {
+            titulo: "Clasificación por edad",
+            descricao: "Esta obra está clasificada como",
+            avisos: "Advertencias de contenido",
+            semAvisos: "No se indicaron advertencias de contenido adicionales.",
+            fechar: "Cerrar clasificación por edad",
+            abrir: "Ver clasificación por edad",
+          }
+        : {
+            titulo: "Classificação indicativa",
+            descricao: "Esta obra é classificada como",
+            avisos: "Avisos de conteúdo",
+            semAvisos: "Nenhum aviso adicional foi informado.",
+            fechar: "Fechar classificação indicativa",
+            abrir: "Ver classificação indicativa",
+          };
 
   const capitulosDaObra = useMemo<CapituloDinamico[]>(() => {
     if (!obra) {
@@ -6004,6 +6033,100 @@ export default function ObraDinamicaPage() {
         )
       : null;
 
+  const painelClassificacao =
+    obra && painelClassificacaoAberto && typeof document !== "undefined"
+      ? createPortal(
+          <section
+            data-historietas-obra-classificacao-root="true"
+            style={classificationPanelOverlayStyle}
+            aria-label={textosPainelClassificacao.titulo}
+          >
+            <button
+              type="button"
+              aria-label={textosPainelClassificacao.fechar}
+              onClick={() => setPainelClassificacaoAberto(false)}
+              style={classificationPanelBackdropStyle}
+            />
+
+            <article
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="historietas-classificacao-title"
+              style={classificationPanelStyle}
+            >
+              <header style={classificationPanelHeaderStyle}>
+                <span
+                  data-historietas-i18n-ignore="true"
+                  style={{
+                    ...classificationPanelBadgeStyle,
+                    ...(ehClassificacao18(obra.classificacaoIndicativa)
+                      ? classificationPanelBadgeAdultStyle
+                      : {}),
+                  }}
+                >
+                  {obra.classificacaoIndicativa}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setPainelClassificacaoAberto(false)}
+                  aria-label={textosPainelClassificacao.fechar}
+                  style={classificationPanelCloseStyle}
+                >
+                  ×
+                </button>
+              </header>
+
+              <div style={classificationPanelContentStyle}>
+                <div style={classificationPanelIntroStyle}>
+                  <strong
+                    id="historietas-classificacao-title"
+                    style={classificationPanelTitleStyle}
+                  >
+                    {textosPainelClassificacao.titulo}
+                  </strong>
+
+                  <p style={classificationPanelDescriptionStyle}>
+                    {textosPainelClassificacao.descricao}{" "}
+                    <strong data-historietas-i18n-ignore="true">
+                      {obra.classificacaoIndicativa}
+                    </strong>
+                    .
+                  </p>
+                </div>
+
+                {ehClassificacao18(obra.classificacaoIndicativa) ? (
+                  <section style={classificationWarningsStyle}>
+                    <span style={classificationWarningsTitleStyle}>
+                      {textosPainelClassificacao.avisos}
+                    </span>
+
+                    {obra.avisosConteudo.length > 0 ? (
+                      <div style={classificationWarningsGridStyle}>
+                        {obra.avisosConteudo.map((aviso) => (
+                          <div key={aviso} style={classificationWarningItemStyle}>
+                            <span
+                              style={classificationWarningDotStyle}
+                              aria-hidden="true"
+                            />
+                            <span>{traduzirAvisoConteudo18(aviso, language)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={classificationNoWarningsStyle}>
+                        {textosPainelClassificacao.semAvisos}
+                      </p>
+                    )}
+                  </section>
+                ) : null}
+              </div>
+            </article>
+          </section>,
+          document.body
+        )
+      : null;
+
   if (carregandoObras && !obra) {
     return (
       <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy="true">
@@ -6106,9 +6229,31 @@ export default function ObraDinamicaPage() {
           <header
             style={isDesktop ? desktopHeroTopOverlayStyle : heroTopOverlayStyle}
           >
-            <Link href="/" style={heroLogoStyle} aria-label="Historietas">
-              <span style={logoMarkStyle}>H</span>
-            </Link>
+            <button
+              type="button"
+              onClick={() => setPainelClassificacaoAberto(true)}
+              aria-label={`${textosPainelClassificacao.abrir}: ${obra.classificacaoIndicativa}`}
+              title={`${textosPainelClassificacao.abrir}: ${obra.classificacaoIndicativa}`}
+              style={{
+                ...classificationTriggerStyle,
+                ...(ehClassificacao18(obra.classificacaoIndicativa)
+                  ? classificationTriggerAdultStyle
+                  : {}),
+              }}
+            >
+              <span
+                data-historietas-i18n-ignore="true"
+                style={
+                  normalizarTexto(obra.classificacaoIndicativa) === "livre"
+                    ? classificationTriggerTextLivreStyle
+                    : classificationTriggerTextStyle
+                }
+              >
+                {normalizarTexto(obra.classificacaoIndicativa) === "livre"
+                  ? "L"
+                  : obra.classificacaoIndicativa}
+              </span>
+            </button>
 
             {isDesktop ? (
               <div style={desktopHeaderRightStyle}>
@@ -6202,19 +6347,6 @@ export default function ObraDinamicaPage() {
                     {obra.sinopse || "Nenhuma sinopse informada."}
                   </p>
                 </>
-              ) : null}
-
-              {ehClassificacao18(obra.classificacaoIndicativa) ? (
-                <div style={adultContentWarningsStyle}>
-                  <strong style={adultContentWarningsTitleStyle}>{traduzirTextoConteudo18("avisosConteudo", language)}</strong>
-                  <div style={adultContentWarningChipsStyle}>
-                    {obra.avisosConteudo.map((aviso) => (
-                      <span key={aviso} style={adultContentWarningChipStyle}>
-                        {traduzirAvisoConteudo18(aviso, language)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
               ) : null}
 
               <div
@@ -6678,6 +6810,7 @@ export default function ObraDinamicaPage() {
       </main>
 
       {painelComentariosObra}
+      {painelClassificacao}
 
       <DenunciaModal
         aberto={Boolean(denunciaAlvo)}
@@ -7014,37 +7147,164 @@ function CommunityItem({
   );
 }
 
-const adultContentWarningsStyle: CSSProperties = {
+const classificationPanelOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 1300,
   display: "grid",
-  gap: "7px",
-  marginTop: "10px",
-  padding: "10px 12px",
-  borderRadius: "14px",
-  border: "1px solid rgba(255, 105, 130, 0.26)",
-  background: "rgba(88, 22, 44, 0.14)",
+  placeItems: "center",
+  padding: "20px",
 };
 
-const adultContentWarningsTitleStyle: CSSProperties = {
-  color: "#FFD7DE",
-  fontSize: "10px",
-  fontWeight: 900,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
+const classificationPanelBackdropStyle: CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  border: 0,
+  background: "rgba(2, 0, 6, 0.72)",
+  backdropFilter: "blur(4px)",
+  WebkitBackdropFilter: "blur(4px)",
+  cursor: "pointer",
 };
 
-const adultContentWarningChipsStyle: CSSProperties = {
+const classificationPanelStyle: CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+  width: "min(100%, 360px)",
+  overflow: "hidden",
+  borderRadius: "22px",
+  border: "1px solid var(--historietas-obra-secondary-42, rgba(124, 58, 237, 0.42))",
+  background: "var(--historietas-obra-bg-deep-98, rgba(4, 0, 10, 0.98))",
+  boxShadow:
+    "0 24px 70px rgba(0, 0, 0, 0.62), 0 0 24px var(--historietas-obra-secondary-12, rgba(124, 58, 237, 0.12))",
+  color: "var(--historietas-text-primary, #FFFFFF)",
+};
+
+const classificationPanelHeaderStyle: CSSProperties = {
   display: "flex",
-  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  padding: "14px 14px 0",
+};
+
+const classificationPanelBadgeStyle: CSSProperties = {
+  minWidth: "40px",
+  height: "34px",
+  padding: "0 10px",
+  borderRadius: "12px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "1px solid var(--historietas-obra-secondary-72, rgba(124, 58, 237, 0.72))",
+  background: "var(--historietas-obra-bg-deep-96, rgba(4, 0, 10, 0.96))",
+  color: "#FFFFFF",
+  fontSize: "13px",
+  fontWeight: 950,
+  lineHeight: 1,
+  boxSizing: "border-box",
+};
+
+const classificationPanelBadgeAdultStyle: CSSProperties = {
+  borderColor: "rgba(248, 86, 110, 0.9)",
+  background: "rgba(34, 3, 10, 0.96)",
+  color: "#FFF5F6",
+  boxShadow:
+    "0 0 0 1px rgba(120, 15, 32, 0.55), 0 0 18px rgba(244, 63, 94, 0.38)",
+};
+
+const classificationPanelCloseStyle: CSSProperties = {
+  width: "34px",
+  height: "34px",
+  borderRadius: "12px",
+  border: "1px solid rgba(255, 255, 255, 0.1)",
+  background: "rgba(255, 255, 255, 0.035)",
+  color: "#FFFFFF",
+  display: "grid",
+  placeItems: "center",
+  fontFamily: "inherit",
+  fontSize: "24px",
+  lineHeight: 1,
+  cursor: "pointer",
+};
+
+const classificationPanelContentStyle: CSSProperties = {
+  display: "grid",
+  gap: "14px",
+  padding: "14px 16px 18px",
+};
+
+const classificationPanelIntroStyle: CSSProperties = {
+  display: "grid",
   gap: "6px",
 };
 
-const adultContentWarningChipStyle: CSSProperties = {
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "rgba(255, 255, 255, 0.055)",
-  color: "#F4EAF6",
+const classificationPanelTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: "17px",
+  fontWeight: 950,
+  letterSpacing: "-0.02em",
+};
+
+const classificationPanelDescriptionStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "12px",
+  fontWeight: 700,
+  lineHeight: 1.55,
+};
+
+const classificationWarningsStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+  paddingTop: "12px",
+  borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+};
+
+const classificationWarningsTitleStyle: CSSProperties = {
+  color: "var(--historietas-obra-logo-mid, #DDD6FE)",
   fontSize: "10px",
+  fontWeight: 950,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+};
+
+const classificationWarningsGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(138px, 1fr))",
+  gap: "7px",
+};
+
+const classificationWarningItemStyle: CSSProperties = {
+  minWidth: 0,
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "8px",
+  padding: "9px 10px",
+  borderRadius: "13px",
+  border: "1px solid rgba(255, 255, 255, 0.07)",
+  background: "rgba(255, 255, 255, 0.035)",
+  color: "#F5F3F7",
+  fontSize: "11px",
   fontWeight: 750,
+  lineHeight: 1.35,
+};
+
+const classificationWarningDotStyle: CSSProperties = {
+  width: "6px",
+  height: "6px",
+  marginTop: "4px",
+  borderRadius: "50%",
+  background: "#F43F5E",
+  boxShadow: "0 0 8px rgba(244, 63, 94, 0.55)",
+  flex: "0 0 auto",
+};
+
+const classificationNoWarningsStyle: CSSProperties = {
+  margin: 0,
+  color: "var(--historietas-text-secondary, #D4D4D8)",
+  fontSize: "11px",
+  fontWeight: 700,
+  lineHeight: 1.5,
 };
 
 const obraPageCss = `
@@ -7317,53 +7577,51 @@ const desktopHeaderRightStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  display: "flex",
+const classificationTriggerStyle: CSSProperties = {
+  width: "34px",
+  minWidth: "34px",
+  height: "34px",
+  padding: 0,
+  borderRadius: "12px",
+  display: "inline-flex",
   alignItems: "center",
-  gap: 0,
-  minWidth: 0,
-  maxWidth: "fit-content",
+  justifyContent: "center",
+  transform: "translate(4px, -5px)",
+  border: "1px solid var(--historietas-obra-secondary-72, rgba(124, 58, 237, 0.72))",
+  background: "var(--historietas-obra-bg-deep-96, rgba(4, 0, 10, 0.96))",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontWeight: 950,
+  lineHeight: 1,
+  flex: "0 0 auto",
+  boxSizing: "border-box",
+  cursor: "pointer",
+  overflow: "hidden",
+  boxShadow:
+    "0 0 0 1px var(--historietas-obra-purple-48, rgba(59, 7, 100, 0.48)), 0 0 14px var(--historietas-obra-secondary-22, rgba(124, 58, 237, 0.22))",
   ...safeTextStyle,
 };
 
-const heroLogoStyle: CSSProperties = {
-  ...logoStyle,
-  transform: "translate(4px, -5px)",
-};
-
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-obra-bg-deep-96, rgba(4, 0, 10, 0.96))",
-  color: "#FFFFFF",
-  fontSize: "19px",
+const classificationTriggerTextStyle: CSSProperties = {
+  fontSize: "11px",
   fontWeight: 950,
+  lineHeight: 1,
+  letterSpacing: "-0.03em",
+};
+
+const classificationTriggerTextLivreStyle: CSSProperties = {
+  ...classificationTriggerTextStyle,
+  fontSize: "19px",
   letterSpacing: 0,
-  flex: "0 0 auto",
-  border: "1px solid var(--historietas-obra-secondary-72, rgba(124, 58, 237, 0.72))",
+};
+
+const classificationTriggerAdultStyle: CSSProperties = {
+  borderColor: "rgba(248, 86, 110, 0.92)",
+  background: "rgba(34, 3, 10, 0.96)",
+  color: "#FFF5F6",
   boxShadow:
-    "0 0 0 1px var(--historietas-obra-purple-48, rgba(59, 7, 100, 0.48)), 0 0 14px var(--historietas-obra-secondary-22, rgba(124, 58, 237, 0.22))",
+    "0 0 0 1px rgba(120, 15, 32, 0.62), 0 0 16px rgba(244, 63, 94, 0.44)",
 };
-
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-obra-logo-mid, #DDD6FE) 44%, var(--historietas-obra-logo-end, #A78BFA) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-};
-
 
 const heroStyle: CSSProperties = {
   position: "relative",

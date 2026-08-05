@@ -101,12 +101,18 @@ export default function AdultContentGate({
         <strong style={workTitleStyle}>{titulo}</strong>
 
         <div style={warningsStyle}>
-          <span style={warningsTitleStyle}>{t.avisos}</span>
-          <ul style={warningsListStyle}>
+          <div style={warningsHeaderStyle}>
+            <span style={miniBadgeStyle}>18+</span>
+            <span style={warningsTitleStyle}>{t.avisos}</span>
+          </div>
+
+          <div style={warningsChipsStyle}>
             {avisos.map((aviso) => (
-              <li key={aviso}>{traduzirAvisoConteudo18(aviso, language)}</li>
+              <span key={aviso} style={warningChipStyle}>
+                {traduzirAvisoConteudo18(aviso, language)}
+              </span>
             ))}
-          </ul>
+          </div>
         </div>
 
         <label style={checkboxLabelStyle}>
@@ -145,49 +151,49 @@ const pageStyle: CSSProperties = {
   minHeight: "100dvh",
   display: "grid",
   placeItems: "center",
-  padding: "24px 16px",
+  padding: "28px 16px 112px",
   background:
-    "radial-gradient(circle at 50% 8%, rgba(92, 41, 181, 0.22), transparent 34%), #05020a",
+    "radial-gradient(circle at 50% 8%, rgba(92, 41, 181, 0.18), transparent 32%), #05020a",
   color: "#fff",
 };
 
 const cardStyle: CSSProperties = {
-  width: "min(100%, 520px)",
+  width: "min(100%, 500px)",
   display: "flex",
   flexDirection: "column",
   alignItems: "stretch",
-  gap: 14,
-  padding: "26px 22px",
-  border: "1px solid rgba(176, 134, 255, 0.28)",
+  gap: 12,
+  padding: "24px 20px 22px",
+  border: "1px solid rgba(151, 118, 219, 0.2)",
   borderRadius: 24,
-  background: "rgba(14, 7, 25, 0.97)",
-  boxShadow: "0 28px 80px rgba(0, 0, 0, 0.48)",
+  background: "linear-gradient(180deg, rgba(14, 7, 25, 0.98), rgba(11, 5, 20, 0.98))",
+  boxShadow: "0 24px 70px rgba(0, 0, 0, 0.42)",
 };
 
 const badgeStyle: CSSProperties = {
   alignSelf: "center",
-  padding: "6px 11px",
+  padding: "7px 14px",
   borderRadius: 999,
-  border: "1px solid rgba(255, 120, 140, 0.45)",
-  background: "rgba(123, 25, 45, 0.24)",
-  color: "#ffbdc8",
+  border: "1px solid rgba(255, 120, 140, 0.3)",
+  background: "rgba(123, 25, 45, 0.18)",
+  color: "#ffd4de",
   fontSize: 11,
   fontWeight: 900,
   letterSpacing: "0.08em",
 };
 
 const iconStyle: CSSProperties = {
-  width: 72,
-  height: 72,
+  width: 64,
+  height: 64,
   alignSelf: "center",
   display: "grid",
   placeItems: "center",
   borderRadius: "50%",
-  border: "2px solid #ff667d",
+  border: "2px solid rgba(255, 103, 131, 0.85)",
   color: "#fff",
-  fontSize: 23,
+  fontSize: 22,
   fontWeight: 950,
-  boxShadow: "0 0 32px rgba(255, 74, 107, 0.22)",
+  boxShadow: "0 0 22px rgba(255, 74, 107, 0.16)",
 };
 
 const titleStyle: CSSProperties = {
@@ -202,57 +208,85 @@ const descriptionStyle: CSSProperties = {
   textAlign: "center",
   color: "#d7cde5",
   fontSize: 14,
-  lineHeight: 1.6,
+  lineHeight: 1.55,
 };
 
 const workTitleStyle: CSSProperties = {
   textAlign: "center",
   color: "#fff",
-  fontSize: 16,
+  fontSize: 22,
+  fontWeight: 800,
 };
 
 const warningsStyle: CSSProperties = {
-  padding: "14px 16px",
-  borderRadius: 16,
-  background: "rgba(255, 255, 255, 0.045)",
-  border: "1px solid rgba(255, 255, 255, 0.08)",
+  display: "grid",
+  gap: 10,
+  padding: "14px 15px",
+  borderRadius: 18,
+  background: "rgba(255, 255, 255, 0.035)",
+  border: "1px solid rgba(255, 255, 255, 0.07)",
+};
+
+const warningsHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+};
+
+const miniBadgeStyle: CSSProperties = {
+  padding: "4px 9px",
+  borderRadius: 999,
+  background: "rgba(123, 25, 45, 0.18)",
+  border: "1px solid rgba(255, 120, 140, 0.24)",
+  color: "#ffd4de",
+  fontSize: 10,
+  fontWeight: 900,
+  letterSpacing: "0.06em",
+  flex: "0 0 auto",
 };
 
 const warningsTitleStyle: CSSProperties = {
-  display: "block",
-  marginBottom: 8,
-  color: "#c8a8ff",
+  color: "#cfb7ff",
   fontSize: 12,
   fontWeight: 900,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
 };
 
-const warningsListStyle: CSSProperties = {
-  margin: 0,
-  paddingLeft: 20,
-  color: "#f3edf9",
-  fontSize: 13,
-  lineHeight: 1.65,
+const warningsChipsStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+};
+
+const warningChipStyle: CSSProperties = {
+  padding: "7px 10px",
+  borderRadius: 999,
+  background: "rgba(255, 255, 255, 0.045)",
+  border: "1px solid rgba(255, 255, 255, 0.06)",
+  color: "#f2ebfb",
+  fontSize: 12,
+  lineHeight: 1.35,
+  fontWeight: 700,
 };
 
 const checkboxLabelStyle: CSSProperties = {
   display: "flex",
-  alignItems: "flex-start",
-  gap: 10,
-  padding: "13px 14px",
-  borderRadius: 14,
-  border: "1px solid rgba(163, 111, 255, 0.25)",
-  background: "rgba(116, 65, 204, 0.08)",
+  alignItems: "center",
+  gap: 12,
+  padding: "14px 15px",
+  borderRadius: 16,
+  border: "1px solid rgba(163, 111, 255, 0.18)",
+  background: "rgba(116, 65, 204, 0.06)",
   cursor: "pointer",
-  fontSize: 13,
+  fontSize: 14,
   lineHeight: 1.45,
 };
 
 const checkboxStyle: CSSProperties = {
   width: 18,
   height: 18,
-  marginTop: 1,
+  marginTop: 0,
   accentColor: "#8d4cf5",
   flex: "0 0 auto",
 };
