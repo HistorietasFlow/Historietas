@@ -4821,6 +4821,7 @@ async function salvarPerfilUsuarioSupabase({
       return supabase.from("profiles").insert({
         id: userIdLimpo,
         user_id: userIdLimpo,
+        tipo: "leitor",
         ...payloadAtualizacao,
       });
     }

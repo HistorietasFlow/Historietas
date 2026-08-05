@@ -1332,6 +1332,7 @@ async function salvarPerfilConfiguracoesSupabase({
       .insert({
         id: userIdLimpo,
         user_id: userIdLimpo,
+        tipo: "leitor",
         avatar_url: "",
         bio: "",
         sobre_bio: "",

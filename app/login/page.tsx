@@ -677,6 +677,7 @@ export default function LoginPage() {
 
       await supabase.from("profiles").insert({
         id: userIdLimpo,
+        tipo: "leitor",
         ...perfilPayload,
       });
     } catch {
@@ -815,6 +816,7 @@ export default function LoginPage() {
               nome: nomeFinal,
               name: nomeFinal,
               full_name: nomeFinal,
+              tipo: "leitor",
               ...metadataAceite,
             },
           },
