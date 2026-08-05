@@ -41,6 +41,7 @@ type ArquivoStoragePainel = {
 
 type ObraStoragePainelRow = {
   id: string;
+  user_id: string | null;
   capa_url: string | null;
   arquivo_url: string | null;
 };
@@ -3030,11 +3031,10 @@ export default function PainelAutorPage() {
       };
 
       if (idObraSupabaseValido(obraId)) {
-        const { data: obraAutorizada, error: erroAutorizacao } = await supabase
+        const { data: obraEncontrada, error: erroAutorizacao } = await supabase
           .from("obras")
-          .select("id,capa_url,arquivo_url")
+          .select("id,user_id,capa_url,arquivo_url")
           .eq("id", obraId)
-          .eq("user_id", userId)
           .limit(1)
           .maybeSingle();
 
@@ -3044,84 +3044,103 @@ export default function PainelAutorPage() {
           );
         }
 
-        if (!obraAutorizada?.id) {
-          throw new Error("Você não tem permissão para excluir esta obra.");
-        }
-
         const obraStorage =
-          obraAutorizada as unknown as ObraStoragePainelRow;
-        const caminhoCapa = obterCaminhoStoragePainel(
-          "capas-obras",
-          obraStorage.capa_url?.trim() || obraExcluida.capa || ""
-        );
-        const caminhoArquivoObra = obterCaminhoStoragePainel(
-          "arquivos-obras",
-          obraStorage.arquivo_url?.trim() ||
-            obraExcluida.arquivoObra?.conteudo ||
-            ""
-        );
-        const arquivosStorageParaRemover: ArquivoStoragePainel[] = [
-          {
-            bucket: "capas-obras",
-            caminho: caminhoStoragePertenceAoUsuarioPainel(
-              caminhoCapa,
-              userId
-            )
-              ? caminhoCapa
-              : "",
-          },
-          {
-            bucket: "arquivos-obras",
-            caminho: caminhoStoragePertenceAoUsuarioPainel(
-              caminhoArquivoObra,
-              userId
-            )
-              ? caminhoArquivoObra
-              : "",
-          },
-        ];
+          obraEncontrada as unknown as ObraStoragePainelRow | null;
 
-        await removerReferenciasSupabaseObraExcluidaPainel(
-          userId,
-          obraId,
-          obraExcluida.capitulos.map((capitulo) => capitulo.id)
-        );
+        /*
+         * Uma obra local também pode possuir um ID no formato UUID.
+         * Nesse caso, ela não existe em public.obras e deve ser removida
+         * apenas do armazenamento local, sem gerar erro de permissão.
+         */
+        if (obraStorage?.id) {
+          const donoObraId = normalizarIdUsuarioPainel(
+            obraStorage.user_id || ""
+          );
+          const usuarioAtualId = normalizarIdUsuarioPainel(userId);
 
-        const { error: erroCapitulos } = await supabase
-          .from("capitulos")
-          .delete()
-          .eq("obra_id", obraId)
-          .eq("user_id", userId);
+          if (!donoObraId || donoObraId !== usuarioAtualId) {
+            window.alert(
+              traduzirTextoPainelAutor(
+                "Você não tem permissão para excluir esta obra.",
+                language
+              )
+            );
+            return;
+          }
 
-        if (erroCapitulos) {
-          throw new Error(
-            `Não consegui excluir os capítulos da obra: ${erroCapitulos.message}`
+          const caminhoCapa = obterCaminhoStoragePainel(
+            "capas-obras",
+            obraStorage.capa_url?.trim() || obraExcluida.capa || ""
+          );
+          const caminhoArquivoObra = obterCaminhoStoragePainel(
+            "arquivos-obras",
+            obraStorage.arquivo_url?.trim() ||
+              obraExcluida.arquivoObra?.conteudo ||
+              ""
+          );
+          const arquivosStorageParaRemover: ArquivoStoragePainel[] = [
+            {
+              bucket: "capas-obras",
+              caminho: caminhoStoragePertenceAoUsuarioPainel(
+                caminhoCapa,
+                userId
+              )
+                ? caminhoCapa
+                : "",
+            },
+            {
+              bucket: "arquivos-obras",
+              caminho: caminhoStoragePertenceAoUsuarioPainel(
+                caminhoArquivoObra,
+                userId
+              )
+                ? caminhoArquivoObra
+                : "",
+            },
+          ];
+
+          await removerReferenciasSupabaseObraExcluidaPainel(
+            userId,
+            obraId,
+            obraExcluida.capitulos.map((capitulo) => capitulo.id)
+          );
+
+          const { error: erroCapitulos } = await supabase
+            .from("capitulos")
+            .delete()
+            .eq("obra_id", obraId)
+            .eq("user_id", userId);
+
+          if (erroCapitulos) {
+            throw new Error(
+              `Não consegui excluir os capítulos da obra: ${erroCapitulos.message}`
+            );
+          }
+
+          const { data: obraRemovida, error: erroObra } = await supabase
+            .from("obras")
+            .delete()
+            .eq("id", obraId)
+            .eq("user_id", userId)
+            .select("id")
+            .maybeSingle();
+
+          if (erroObra) {
+            throw new Error(
+              `Não consegui concluir a exclusão da obra: ${erroObra.message}`
+            );
+          }
+
+          if (!obraRemovida?.id) {
+            throw new Error(
+              "A exclusão da obra não foi confirmada pelo banco de dados."
+            );
+          }
+
+          await removerArquivosStorageObraExcluidaPainel(
+            arquivosStorageParaRemover
           );
         }
-
-        const { data: obraRemovida, error: erroObra } = await supabase
-          .from("obras")
-          .delete()
-          .eq("id", obraId)
-          .eq("user_id", userId)
-          .select("id")
-          .maybeSingle();
-
-        if (erroObra) {
-          throw new Error(
-            `Não consegui concluir a exclusão da obra: ${erroObra.message}`
-          );
-        }
-
-        if (!obraRemovida?.id) {
-          throw new Error(
-            "A exclusão da obra não foi confirmada pelo banco de dados."
-          );
-        }
-
-        await removerArquivosStorageObraExcluidaPainel(
-          arquivosStorageParaRemover
-        );
       }
 
       const novasObras = obras.filter((obra) => obra.id !== obraId);
@@ -3156,7 +3175,9 @@ export default function PainelAutorPage() {
           ? error.message
           : "Não consegui excluir a obra agora.";
 
-      console.warn("Não consegui excluir a obra no Estúdio:", error);
+      console.warn(
+        `Não consegui excluir a obra no Estúdio: ${mensagem}`
+      );
       window.alert(traduzirTextoPainelAutor(mensagem, language));
     }
   }
