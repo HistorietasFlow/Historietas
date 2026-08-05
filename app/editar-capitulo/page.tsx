@@ -2997,12 +2997,6 @@ const cancelButtonStyle: CSSProperties = {
 const deleteButtonStyle: CSSProperties = {
   ...saveButtonStyle,
   gridColumn: "1 / -1",
-  border:
-    "1px solid var(--historietas-editar-capitulo-danger-border-strong, rgba(239,68,68,0.28))",
-  background:
-    "var(--historietas-danger-surface, var(--historietas-editar-capitulo-danger-bg, rgba(239,68,68,0.13)))",
-  color:
-    "var(--historietas-danger-button-text, var(--historietas-editar-capitulo-danger-text, #FCA5A5))",
 };
 
 const disabledDeleteButtonStyle: CSSProperties = {

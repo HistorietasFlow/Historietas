@@ -9,7 +9,7 @@ import { createPortal } from "react-dom";
 import type { CSSProperties, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import DenunciaModal from "../../components/DenunciaModal";
-import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import { historietasThemeCss } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 
 type CapituloLocal = {
@@ -162,7 +162,6 @@ type TamanhoFonte = 1 | 2 | 3 | 4 | 5;
 
 type PreferenciasLeitura = {
   tamanhoFonte: TamanhoFonte;
-  modoFoco: boolean;
   mostrarLinhaProgresso: boolean;
   versaoTamanhoFonte: 2;
 };
@@ -202,8 +201,6 @@ const LER_CAPITULO_UI_TRANSLATIONS: Record<
   "palavras": { en: "words", es: "palabras" },
   "Tamanho da fonte": { en: "Font size", es: "Tamaño de fuente" },
   "Fonte": { en: "Font", es: "Fuente" },
-  "Foco ativo": { en: "Focus active", es: "Enfoque activo" },
-  "Modo foco": { en: "Focus mode", es: "Modo enfoque" },
   "Barra ativa": { en: "Progress bar active", es: "Barra activa" },
   "Barra de progresso": { en: "Progress bar", es: "Barra de progreso" },
   "Este capítulo ainda não possui texto.": { en: "This chapter does not have any text yet.", es: "Este capítulo todavía no tiene texto." },
@@ -1129,7 +1126,6 @@ function carregarPreferenciasLeitura(userId = ""): PreferenciasLeitura {
   if (typeof window === "undefined" || !userId.trim()) {
     return {
       tamanhoFonte: 3,
-      modoFoco: false,
       mostrarLinhaProgresso: false,
       versaoTamanhoFonte: 2,
     };
@@ -1151,7 +1147,6 @@ function carregarPreferenciasLeitura(userId = ""): PreferenciasLeitura {
     ) {
       return {
         tamanhoFonte: 3,
-        modoFoco: false,
         mostrarLinhaProgresso: false,
         versaoTamanhoFonte: 2,
       };
@@ -1164,14 +1159,12 @@ function carregarPreferenciasLeitura(userId = ""): PreferenciasLeitura {
         preferencias.tamanhoFonte,
         preferencias.versaoTamanhoFonte === 2
       ),
-      modoFoco: Boolean(preferencias.modoFoco),
       mostrarLinhaProgresso: Boolean(preferencias.mostrarLinhaProgresso),
       versaoTamanhoFonte: 2,
     };
   } catch {
     return {
       tamanhoFonte: 3,
-      modoFoco: false,
       mostrarLinhaProgresso: false,
       versaoTamanhoFonte: 2,
     };
@@ -3523,14 +3516,12 @@ export default function LerCapituloPage() {
   const [mensagemAcao, setMensagemAcao] = useState("");
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [tamanhoFonte, setTamanhoFonte] = useState<TamanhoFonte>(3);
-  const [modoFoco, setModoFoco] = useState(false);
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
   const [mostrarLinhaProgresso, setMostrarLinhaProgresso] = useState(false);
   const [mostrarComentario, setMostrarComentario] = useState(false);
   const [progressoRolagem, setProgressoRolagem] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
-  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const visualizacaoCapituloRegistradaRef = useRef("");
   const atividadeDiarioRegistradaRef = useRef("");
   const curtidaCapituloSalvandoRef = useRef(false);
@@ -3644,7 +3635,6 @@ export default function LerCapituloPage() {
       const preferencias = carregarPreferenciasLeitura(usuarioIdLogado);
 
       setTamanhoFonte(preferencias.tamanhoFonte);
-      setModoFoco(preferencias.modoFoco);
       setMostrarLinhaProgresso(preferencias.mostrarLinhaProgresso);
       setPreferenciasCarregadas(true);
     }, 0);
@@ -3662,13 +3652,12 @@ export default function LerCapituloPage() {
     salvarPreferenciasLeitura(
       {
         tamanhoFonte,
-        modoFoco,
         mostrarLinhaProgresso,
         versaoTamanhoFonte: 2,
       },
       usuarioIdLogado
     );
-  }, [preferenciasCarregadas, tamanhoFonte, modoFoco, mostrarLinhaProgresso]);
+  }, [preferenciasCarregadas, tamanhoFonte, mostrarLinhaProgresso]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -3700,12 +3689,12 @@ export default function LerCapituloPage() {
   }, []);
 
   useEffect(() => {
-    document.body.dataset.historietasReaderFocus = modoFoco ? "true" : "false";
+    document.body.dataset.historietasReaderFocus = "true";
 
     return () => {
       delete document.body.dataset.historietasReaderFocus;
     };
-  }, [modoFoco]);
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -4832,11 +4821,9 @@ export default function LerCapituloPage() {
 
   if (carregando) {
     return (
-      <main data-historietas-ler-capitulo-root="true" style={pageThemeStyle} aria-busy="true">
+      <main data-historietas-ler-capitulo-root="true" style={focusPageStyle} aria-busy="true">
         <style>{`${historietasThemeCss}${leitorPageCss}`}</style>
         <LerCapituloLanguageBridge />
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
         <LoadingSpinner label="Carregando capítulo" />
       </main>
     );
@@ -4844,11 +4831,9 @@ export default function LerCapituloPage() {
 
   if (!obraAtual || !capituloAtual) {
     return (
-      <main data-historietas-ler-capitulo-root="true" style={pageThemeStyle}>
+      <main data-historietas-ler-capitulo-root="true" style={focusPageStyle}>
         <style>{`${historietasThemeCss}${leitorPageCss}`}</style>
         <LerCapituloLanguageBridge />
-        {isDesktop && <div style={desktopTopWaterFadeStyle} aria-hidden="true" />}
-        {!isDesktop && <div style={mobileTopWaterFadeStyle} aria-hidden="true" />}
         <section style={isDesktop ? desktopContainerStyle : containerStyle}>
           <p
             style={{
@@ -4874,7 +4859,7 @@ export default function LerCapituloPage() {
     : "Leitura em andamento";
 
   return (
-    <main data-historietas-ler-capitulo-root="true" style={modoFoco ? focusPageStyle : pageThemeStyle}>
+    <main data-historietas-ler-capitulo-root="true" style={focusPageStyle}>
       {mostrarLinhaProgresso && (
         <div style={fixedReadingProgressOuterStyle}>
           <div
@@ -4890,13 +4875,6 @@ export default function LerCapituloPage() {
 
       <LerCapituloLanguageBridge />
       <style>{focusBottomNavigationCss}</style>
-
-      {!modoFoco && isDesktop && (
-        <div style={desktopTopWaterFadeStyle} aria-hidden="true" />
-      )}
-      {!modoFoco && !isDesktop && (
-        <div style={mobileTopWaterFadeStyle} aria-hidden="true" />
-      )}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
         <header style={isDesktop ? desktopTopStyle : topStyle}>
@@ -4956,13 +4934,9 @@ export default function LerCapituloPage() {
               type="button"
               onClick={() => setMostrarAjustes((valorAtual) => !valorAtual)}
               style={
-                modoFoco
-                  ? isDesktop
-                    ? desktopFocusSettingsButtonStyle
-                    : focusTopSingleSettingsButtonStyle
-                  : isDesktop
-                  ? desktopSettingsButtonStyle
-                  : topSingleSettingsButtonStyle
+                isDesktop
+                  ? desktopFocusSettingsButtonStyle
+                  : focusTopSingleSettingsButtonStyle
               }
             >
               {mostrarAjustes ? "Fechar" : "Ajustes"}
@@ -4972,13 +4946,9 @@ export default function LerCapituloPage() {
 
         <section
           style={
-            modoFoco
-              ? isDesktop
-                ? desktopFocusChapterHeaderStyle
-                : focusChapterHeaderStyle
-              : isDesktop
-              ? desktopChapterHeaderStyle
-              : chapterHeaderStyle
+            isDesktop
+              ? desktopFocusChapterHeaderStyle
+              : focusChapterHeaderStyle
           }
         >
           <h1
@@ -4996,13 +4966,9 @@ export default function LerCapituloPage() {
         {mostrarAjustes && (
           <section
             style={
-              modoFoco
-                ? isDesktop
-                  ? desktopFocusSettingsPanelStyle
-                  : focusSettingsPanelStyle
-                : isDesktop
-                ? desktopSettingsPanelStyle
-                : settingsPanelStyle
+              isDesktop
+                ? desktopFocusSettingsPanelStyle
+                : focusSettingsPanelStyle
             }
           >
             <div style={settingsInfoStyle}>
@@ -5032,7 +4998,7 @@ export default function LerCapituloPage() {
               ))}
             </select>
 
-            <div style={modoFoco ? focusFontScaleBoxStyle : fontScaleBoxStyle}>
+            <div style={focusFontScaleBoxStyle}>
               <div style={fontScaleHeaderStyle}>
                 <span style={fontScaleLabelStyle}>Tamanho da fonte</span>
                 <span style={fontScaleValueStyle}>Fonte {tamanhoFonte}</span>
@@ -5047,9 +5013,7 @@ export default function LerCapituloPage() {
                     style={
                       tamanhoFonte === valorFonte
                         ? fontScaleButtonActiveStyle
-                        : modoFoco
-                        ? focusFontScaleButtonStyle
-                        : fontScaleButtonStyle
+                        : focusFontScaleButtonStyle
                     }
                     aria-label={`Usar fonte ${valorFonte}`}
                   >
@@ -5066,27 +5030,17 @@ export default function LerCapituloPage() {
                   usuarioIdLogado &&
                   obterAutorIdSeguro(obraAtual) === usuarioIdLogado
                 )
-                  ? "repeat(3, minmax(0, 1fr))"
-                  : "repeat(2, minmax(0, 1fr))",
+                  ? "repeat(2, minmax(0, 1fr))"
+                  : "repeat(1, minmax(0, 1fr))",
               }}
             >
-              <button
-                type="button"
-                onClick={() => setModoFoco((valorAtual) => !valorAtual)}
-                style={modoFoco ? focusActionActiveStyle : settingsActionStyle}
-              >
-                {modoFoco ? "Foco ativo" : "Modo foco"}
-              </button>
-
               <button
                 type="button"
                 onClick={() => setMostrarLinhaProgresso((valorAtual) => !valorAtual)}
                 style={
                   mostrarLinhaProgresso
                     ? settingsActionActiveStyle
-                    : modoFoco
-                    ? focusMutedSettingsActionStyle
-                    : settingsActionStyle
+                    : focusMutedSettingsActionStyle
                 }
               >
                 {mostrarLinhaProgresso ? "Barra ativa" : "Barra de progresso"}
@@ -5099,11 +5053,7 @@ export default function LerCapituloPage() {
                 <button
                   type="button"
                   onClick={() => void abrirDenunciaCapituloAtual()}
-                  style={
-                    modoFoco
-                      ? focusMutedSettingsActionStyle
-                      : settingsActionStyle
-                  }
+                  style={focusMutedSettingsActionStyle}
                 >
                   Denunciar
                 </button>
@@ -5112,7 +5062,7 @@ export default function LerCapituloPage() {
           </section>
         )}
 
-        <article style={modoFoco ? (isDesktop ? desktopFocusTextCardStyle : focusTextCardStyle) : (isDesktop ? desktopTextCardStyle : textCardStyle)}>
+        <article style={isDesktop ? desktopFocusTextCardStyle : focusTextCardStyle}>
           <p style={isDesktop ? criarTextoLeituraDesktopStyle(tamanhoFonte) : criarTextoLeituraStyle(tamanhoFonte)}>
             {capituloAtual.texto ? (
               <span data-historietas-i18n-ignore="true">
@@ -5126,13 +5076,9 @@ export default function LerCapituloPage() {
 
         <section
           style={
-            modoFoco
-              ? isDesktop
-                ? desktopFocusReaderActionsStyle
-                : focusReaderActionsStyle
-              : isDesktop
-              ? desktopReaderActionsStyle
-              : readerActionsStyle
+            isDesktop
+              ? desktopFocusReaderActionsStyle
+              : focusReaderActionsStyle
           }
         >
           <button
@@ -5151,13 +5097,9 @@ export default function LerCapituloPage() {
               metricasCapitulo.totalCurtidas === 1 ? "curtida" : "curtidas"
             }`}
             style={{
-              ...(modoFoco
-                ? metricasCapitulo.curtiu
-                  ? focusActiveActionButtonStyle
-                  : focusActionButtonStyle
-                : metricasCapitulo.curtiu
-                ? activeActionButtonStyle
-                : actionButtonStyle),
+              ...(metricasCapitulo.curtiu
+                ? focusActiveActionButtonStyle
+                : focusActionButtonStyle),
               ...chapterLikeButtonLayoutStyle,
               opacity: curtidaCapituloSalvando ? 0.58 : 1,
               cursor: curtidaCapituloSalvando
@@ -5208,13 +5150,9 @@ export default function LerCapituloPage() {
                 : "Salvar capítulo"
             }
             style={{
-              ...(modoFoco
-                ? metricasCapitulo.salvo
-                  ? focusActiveSaveButtonStyle
-                  : focusActionButtonStyle
-                : metricasCapitulo.salvo
-                ? activeSaveButtonStyle
-                : actionButtonStyle),
+              ...(metricasCapitulo.salvo
+                ? focusActiveSaveButtonStyle
+                : focusActionButtonStyle),
               opacity: salvoCapituloSalvando ? 0.72 : 1,
               cursor: salvoCapituloSalvando ? "wait" : "pointer",
             }}
@@ -5227,13 +5165,9 @@ export default function LerCapituloPage() {
             type="button"
             onClick={() => void alternarComentarioVisivel()}
             style={
-              modoFoco
-                ? mostrarComentario || metricasCapitulo.totalComentarios > 0
-                  ? focusActiveCommentButtonStyle
-                  : focusActionButtonStyle
-                : mostrarComentario || metricasCapitulo.totalComentarios > 0
-                ? activeCommentButtonStyle
-                : actionButtonStyle
+              mostrarComentario || metricasCapitulo.totalComentarios > 0
+                ? focusActiveCommentButtonStyle
+                : focusActionButtonStyle
             }
           >
             💬 {formatarContadorCapituloLeitor(metricasCapitulo.totalComentarios)}
@@ -5250,13 +5184,9 @@ export default function LerCapituloPage() {
                 : "Marcar capítulo como lido"
             }
             style={{
-              ...(modoFoco
-                ? capituloAtual.lido
-                  ? focusActiveActionButtonStyle
-                  : focusActionButtonStyle
-                : capituloAtual.lido
-                ? activeActionButtonStyle
-                : actionButtonStyle),
+              ...(capituloAtual.lido
+                ? focusActiveActionButtonStyle
+                : focusActionButtonStyle),
               opacity: lidoCapituloSalvando ? 0.72 : 1,
               cursor: lidoCapituloSalvando ? "wait" : "pointer",
             }}
@@ -5274,37 +5204,33 @@ export default function LerCapituloPage() {
 
         <section
           style={
-            modoFoco
-              ? isDesktop
-                ? desktopFocusChapterNavigationStyle
-                : focusChapterNavigationStyle
-              : isDesktop
-              ? desktopChapterNavigationStyle
-              : chapterNavigationStyle
+            isDesktop
+              ? desktopFocusChapterNavigationStyle
+              : focusChapterNavigationStyle
           }
         >
           {capituloAnterior ? (
             <button
               type="button"
               onClick={() => trocarCapitulo(capituloAnterior.id)}
-              style={modoFoco ? focusChapterNavButtonStyle : chapterNavButtonStyle}
+              style={focusChapterNavButtonStyle}
             >
               ← Capítulo anterior
             </button>
           ) : (
-            <span style={modoFoco ? focusChapterNavDisabledStyle : chapterNavDisabledStyle}>← Sem anterior</span>
+            <span style={focusChapterNavDisabledStyle}>← Sem anterior</span>
           )}
 
           {proximoCapitulo ? (
             <button
               type="button"
               onClick={() => trocarCapitulo(proximoCapitulo.id)}
-              style={modoFoco ? focusChapterNavButtonPrimaryStyle : chapterNavButtonPrimaryStyle}
+              style={focusChapterNavButtonPrimaryStyle}
             >
               Próximo capítulo →
             </button>
           ) : (
-            <Link href={voltarHref} style={modoFoco ? focusReturnToWorkButtonStyle : returnToWorkButtonStyle}>
+            <Link href={voltarHref} style={focusReturnToWorkButtonStyle}>
               Voltar para obra
             </Link>
           )}
@@ -5576,30 +5502,6 @@ const safeTextStyle: CSSProperties = {
   minWidth: 0,
   overflowWrap: "anywhere",
   wordBreak: "break-word",
-};
-
-const mobileTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(520px, 72vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  opacity: 0,
-};
-
-const desktopTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(620px, 68vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  opacity: 0,
 };
 
 const loadingPageStyle: CSSProperties = {
@@ -6250,11 +6152,6 @@ const focusMutedSettingsActionStyle: CSSProperties = {
   ...settingsActionStyle,
 };
 
-const focusActionActiveStyle: CSSProperties = {
-  ...settingsActionStyle,
-  border: "1px solid rgba(255,255,255,0.18)",
-};
-
 const textCardStyle: CSSProperties = {
   marginTop: "10px",
   padding: "14px 12px",
@@ -6317,11 +6214,6 @@ const actionButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const activeActionButtonStyle: CSSProperties = {
-  ...actionButtonStyle,
-  border: "1px solid rgba(255,255,255,0.18)",
-};
-
 const chapterLikeButtonLayoutStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
@@ -6341,16 +6233,6 @@ const chapterLikeCountStyle: CSSProperties = {
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
   lineHeight: 1,
-};
-
-const activeSaveButtonStyle: CSSProperties = {
-  ...actionButtonStyle,
-  border: "1px solid rgba(255,255,255,0.18)",
-};
-
-const activeCommentButtonStyle: CSSProperties = {
-  ...actionButtonStyle,
-  border: "1px solid rgba(255,255,255,0.18)",
 };
 
 const focusReaderActionsStyle: CSSProperties = {
@@ -6970,26 +6852,6 @@ const chapterNavButtonStyle: CSSProperties = {
   whiteSpace: "normal",
   boxShadow: "none",
   ...safeTextStyle,
-};
-
-const chapterNavButtonPrimaryStyle: CSSProperties = {
-  ...chapterNavButtonStyle,
-  border: "1px solid rgba(255,255,255,0.18)",
-};
-
-const returnToWorkButtonStyle: CSSProperties = {
-  ...chapterNavButtonStyle,
-  boxShadow: "none",
-  textShadow: "none",
-  filter: "none",
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-};
-
-const chapterNavDisabledStyle: CSSProperties = {
-  ...chapterNavButtonStyle,
-  opacity: 0.55,
-  cursor: "default",
 };
 
 const focusChapterNavigationStyle: CSSProperties = {
