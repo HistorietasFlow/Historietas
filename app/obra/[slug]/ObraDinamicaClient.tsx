@@ -9,8 +9,17 @@ import { useParams, useRouter } from "next/navigation";
 import type { CSSProperties, FormEvent, ReactNode, TouchEvent } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import DenunciaModal from "../../../components/DenunciaModal";
+import AdultContentGate from "../../../components/AdultContentGate";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
 import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArquivo, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../../lib/utils";
+import {
+  acessoConteudo18Confirmado,
+  ehClassificacao18,
+  normalizarAvisosConteudo18,
+  traduzirAvisoConteudo18,
+  traduzirTextoConteudo18,
+  type AvisoConteudo18,
+} from "../../../lib/historietasAdultContent";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -761,6 +770,7 @@ type ObraLocal = {
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
+  avisosConteudo: AvisoConteudo18[];
   sinopse: string;
   tags: string[];
   capa: string;
@@ -789,6 +799,7 @@ type SupabaseObraRow = {
   genero: string | null;
   formato: string | null;
   classificacao_indicativa: string | null;
+  avisos_conteudo: string[] | null;
   sinopse: string | null;
   tags: string[] | null;
   capa_url: string | null;
@@ -853,6 +864,7 @@ type ObraDinamica = {
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
+  avisosConteudo: AvisoConteudo18[];
   status: string;
   views: string;
   likes: string;
@@ -1245,6 +1257,10 @@ function normalizarObraLocal(
       obra.classificacaoIndicativa.trim()
         ? obra.classificacaoIndicativa
         : "Não informada",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obra.avisosConteudo,
+      obra.classificacaoIndicativa,
+    ),
     sinopse:
       typeof obra.sinopse === "string" && obra.sinopse.trim()
         ? obra.sinopse
@@ -1494,6 +1510,10 @@ function normalizarObraSupabase(
       obra.classificacao_indicativa?.trim() ||
       obraLocal?.classificacaoIndicativa ||
       "Não informada",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obra.avisos_conteudo ?? obraLocal?.avisosConteudo,
+      obra.classificacao_indicativa ?? obraLocal?.classificacaoIndicativa,
+    ),
     sinopse:
       obra.sinopse?.trim() ||
       obraLocal?.sinopse ||
@@ -1664,7 +1684,7 @@ async function carregarObraSupabasePorSlug(
     const { data: obrasBanco, error: erroObra } = await supabase
       .from("obras")
       .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em"
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em"
       )
       .eq("slug", slugLimpo)
       .eq("publicado", true)
@@ -2078,6 +2098,7 @@ function converterObraLocalParaDinamica(obra: ObraLocal): ObraDinamica {
     genero: obra.genero,
     formato: obra.formato,
     classificacaoIndicativa: obra.classificacaoIndicativa,
+    avisosConteudo: obra.avisosConteudo,
     status: obra.publicado ? "Publicado" : "Rascunho",
     views: String(totalVisualizacoesObraPublica(obra)),
     likes: String(totalCurtidasObraPublica(obra)),
@@ -3366,6 +3387,7 @@ function LoadingSpinner({
 
 export default function ObraDinamicaPage() {
   const router = useRouter();
+  const { language } = useHistorietasLanguage();
   const params = useParams<{ slug?: string | string[] }>();
 
   const slug = useMemo(() => {
@@ -3418,6 +3440,10 @@ export default function ObraDinamicaPage() {
   const [agoraComentarios, setAgoraComentarios] = useState(() => Date.now());
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
+  const [controleAcesso18, setControleAcesso18] = useState<{
+    obraId: string;
+    status: "verificando" | "permitido" | "bloqueado";
+  }>({ obraId: "", status: "verificando" });
   const [perfilUsuarioLogado, setPerfilUsuarioLogado] =
     useState<PerfilPublicoObra | null>(null);
   const comentarioInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -3649,8 +3675,41 @@ export default function ObraDinamicaPage() {
     setSinopseAberta(false);
   }, [obra?.id]);
 
+  const statusAcesso18 =
+    obra && controleAcesso18.obraId === obra.id
+      ? controleAcesso18.status
+      : "verificando";
+
   useEffect(() => {
-    if (!obra || !idObraSupabaseValido(obra.id)) {
+    if (!obra) {
+      setControleAcesso18({ obraId: "", status: "verificando" });
+      return;
+    }
+
+    const proximoStatus = !ehClassificacao18(obra.classificacaoIndicativa)
+      ? "permitido"
+      : acessoConteudo18Confirmado()
+        ? "permitido"
+        : "bloqueado";
+
+    setControleAcesso18((controleAtual) => {
+      if (
+        controleAtual.obraId === obra.id &&
+        controleAtual.status === proximoStatus
+      ) {
+        return controleAtual;
+      }
+
+      return { obraId: obra.id, status: proximoStatus };
+    });
+  }, [obra?.id, obra?.classificacaoIndicativa]);
+
+  useEffect(() => {
+    if (
+      !obra ||
+      statusAcesso18 !== "permitido" ||
+      !idObraSupabaseValido(obra.id)
+    ) {
       return;
     }
 
@@ -3680,7 +3739,7 @@ export default function ObraDinamicaPage() {
     }
 
     void registrarVisualizacaoObraAtual();
-  }, [obra?.id]);
+  }, [obra?.id, statusAcesso18]);
 
   useEffect(() => {
     let cancelado = false;
@@ -3714,7 +3773,7 @@ export default function ObraDinamicaPage() {
     };
   }, [obra?.autorId, obra?.autor]);
 
-  const obraNormalizada = obra ? normalizarTexto(obra.titulo) : ""; 
+  const obraNormalizada = obra ? normalizarTexto(obra.titulo) : "";
   const generoObraFormatado = obra
     ? formatarGeneroObraPublica(obra.genero)
     : "Não informado";
@@ -5987,6 +6046,41 @@ export default function ObraDinamicaPage() {
     );
   }
 
+  if (
+    ehClassificacao18(obra.classificacaoIndicativa) &&
+    statusAcesso18 === "verificando"
+  ) {
+    return (
+      <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle} aria-busy="true">
+        <style>{`${historietasThemeCss}${obraPageCss}`}</style>
+        <LoadingSpinner label="Verificando acesso" />
+      </main>
+    );
+  }
+
+  if (
+    ehClassificacao18(obra.classificacaoIndicativa) &&
+    statusAcesso18 === "bloqueado"
+  ) {
+    return (
+      <AdultContentGate
+        titulo={obra.titulo}
+        avisos={obra.avisosConteudo}
+        language={language}
+        onConfirmar={() =>
+          setControleAcesso18({ obraId: obra.id, status: "permitido" })
+        }
+        onVoltar={() => {
+          if (window.history.length > 1) {
+            router.back();
+          } else {
+            router.replace("/explorar");
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <>
       <main data-historietas-obra-dinamica-root="true" style={pageThemeStyle}>
@@ -6108,6 +6202,19 @@ export default function ObraDinamicaPage() {
                     {obra.sinopse || "Nenhuma sinopse informada."}
                   </p>
                 </>
+              ) : null}
+
+              {ehClassificacao18(obra.classificacaoIndicativa) ? (
+                <div style={adultContentWarningsStyle}>
+                  <strong style={adultContentWarningsTitleStyle}>{traduzirTextoConteudo18("avisosConteudo", language)}</strong>
+                  <div style={adultContentWarningChipsStyle}>
+                    {obra.avisosConteudo.map((aviso) => (
+                      <span key={aviso} style={adultContentWarningChipStyle}>
+                        {traduzirAvisoConteudo18(aviso, language)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               ) : null}
 
               <div
@@ -6906,6 +7013,39 @@ function CommunityItem({
     </Link>
   );
 }
+
+const adultContentWarningsStyle: CSSProperties = {
+  display: "grid",
+  gap: "7px",
+  marginTop: "10px",
+  padding: "10px 12px",
+  borderRadius: "14px",
+  border: "1px solid rgba(255, 105, 130, 0.26)",
+  background: "rgba(88, 22, 44, 0.14)",
+};
+
+const adultContentWarningsTitleStyle: CSSProperties = {
+  color: "#FFD7DE",
+  fontSize: "10px",
+  fontWeight: 900,
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+};
+
+const adultContentWarningChipsStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "6px",
+};
+
+const adultContentWarningChipStyle: CSSProperties = {
+  padding: "5px 8px",
+  borderRadius: "999px",
+  background: "rgba(255, 255, 255, 0.055)",
+  color: "#F4EAF6",
+  fontSize: "10px",
+  fontWeight: 750,
+};
 
 const obraPageCss = `
   @keyframes historietas-loading-spin {
