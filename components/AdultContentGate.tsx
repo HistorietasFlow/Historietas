@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { HistorietasLanguage } from "../lib/i18n";
+import { useHistorietasTheme } from "../lib/historietasTheme";
 import {
   confirmarAcessoConteudo18,
   traduzirAvisoConteudo18,
@@ -25,7 +26,7 @@ const TEXTOS = {
       "Esta obra é destinada a pessoas com 18 anos ou mais. Confirme sua idade antes de continuar.",
     avisos: "Avisos de conteúdo",
     confirmacao: "Confirmo que tenho 18 anos ou mais.",
-    continuar: "Tenho 18 anos — continuar",
+    continuar: "Tenho 18 anos e quero continuar",
     voltar: "Voltar",
     observacao:
       "A confirmação fica salva neste dispositivo por 30 dias. O Historietas não permite pornografia, imagens sexuais explícitas nem conteúdo sexual envolvendo menores.",
@@ -37,7 +38,7 @@ const TEXTOS = {
       "This work is intended for people aged 18 or older. Confirm your age before continuing.",
     avisos: "Content warnings",
     confirmacao: "I confirm that I am 18 years old or older.",
-    continuar: "I am 18 — continue",
+    continuar: "I am 18 and want to continue",
     voltar: "Go back",
     observacao:
       "Confirmation is stored on this device for 30 days. Historietas does not allow pornography, sexually explicit images, or sexual content involving minors.",
@@ -49,7 +50,7 @@ const TEXTOS = {
       "Esta obra está destinada a personas de 18 años o más. Confirma tu edad antes de continuar.",
     avisos: "Advertencias de contenido",
     confirmacao: "Confirmo que tengo 18 años o más.",
-    continuar: "Tengo 18 años — continuar",
+    continuar: "Tengo 18 años y quiero continuar",
     voltar: "Volver",
     observacao:
       "La confirmación se guarda en este dispositivo durante 30 días. Historietas no permite pornografía, imágenes sexuales explícitas ni contenido sexual que involucre a menores.",
@@ -64,6 +65,8 @@ export default function AdultContentGate({
   onVoltar,
 }: AdultContentGateProps) {
   const [confirmouIdade, setConfirmouIdade] = useState(false);
+  const { temaVisual, pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const temaFoco = temaVisual === "foco";
   const t = TEXTOS[language] || TEXTOS["pt-BR"];
 
   function confirmar() {
@@ -76,9 +79,12 @@ export default function AdultContentGate({
   }
 
   return (
-    <main style={pageStyle} data-historietas-adult-content-gate="true">
+    <main style={pageThemeStyle} data-historietas-adult-content-gate="true">
       <section
-        style={cardStyle}
+        style={{
+          ...cardStyle,
+          ...(temaFoco ? cardFocusStyle : {}),
+        }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="historietas-adult-gate-title"
@@ -92,7 +98,13 @@ export default function AdultContentGate({
           {t.titulo}
         </h1>
 
-        <p id="historietas-adult-gate-description" style={descriptionStyle}>
+        <p
+          id="historietas-adult-gate-description"
+          style={{
+            ...descriptionStyle,
+            ...(temaFoco ? descriptionFocusStyle : {}),
+          }}
+        >
           {t.descricao}
         </p>
 
@@ -105,18 +117,33 @@ export default function AdultContentGate({
           </ul>
         </div>
 
-        <label style={checkboxLabelStyle}>
+        <label
+          style={{
+            ...checkboxLabelStyle,
+            ...(temaFoco ? checkboxLabelFocusStyle : {}),
+          }}
+        >
           <input
             type="checkbox"
             checked={confirmouIdade}
             onChange={(event) => setConfirmouIdade(event.target.checked)}
-            style={checkboxStyle}
+            style={{
+              ...checkboxStyle,
+              ...(temaFoco ? checkboxFocusStyle : {}),
+            }}
           />
           <span>{t.confirmacao}</span>
         </label>
 
         <div style={actionsStyle}>
-          <button type="button" onClick={onVoltar} style={backButtonStyle}>
+          <button
+            type="button"
+            onClick={onVoltar}
+            style={{
+              ...backButtonStyle,
+              ...(temaFoco ? backButtonFocusStyle : {}),
+            }}
+          >
             {t.voltar}
           </button>
 
@@ -126,6 +153,7 @@ export default function AdultContentGate({
             disabled={!confirmouIdade}
             style={{
               ...continueButtonStyle,
+              ...(temaFoco ? continueButtonFocusStyle : {}),
               ...(!confirmouIdade ? disabledButtonStyle : {}),
             }}
           >
@@ -133,7 +161,14 @@ export default function AdultContentGate({
           </button>
         </div>
 
-        <p style={noteStyle}>{t.observacao}</p>
+        <p
+          style={{
+            ...noteStyle,
+            ...(temaFoco ? noteFocusStyle : {}),
+          }}
+        >
+          {t.observacao}
+        </p>
       </section>
     </main>
   );
@@ -160,6 +195,12 @@ const cardStyle: CSSProperties = {
   borderRadius: 24,
   background: "rgba(14, 7, 25, 0.97)",
   boxShadow: "0 28px 80px rgba(0, 0, 0, 0.48)",
+};
+
+const cardFocusStyle: CSSProperties = {
+  borderColor: "rgba(255, 255, 255, 0.18)",
+  background: "#050505",
+  boxShadow: "none",
 };
 
 const badgeStyle: CSSProperties = {
@@ -198,6 +239,10 @@ const descriptionStyle: CSSProperties = {
   lineHeight: 1.6,
 };
 
+const descriptionFocusStyle: CSSProperties = {
+  color: "#A1A1AA",
+};
+
 const workTitleStyle: CSSProperties = {
   textAlign: "center",
   color: "#fff",
@@ -211,7 +256,7 @@ const warningsStyle: CSSProperties = {
 const warningsTitleStyle: CSSProperties = {
   display: "block",
   marginBottom: 8,
-  color: "#c8a8ff",
+  color: "#FFFFFF",
   fontSize: 12,
   fontWeight: 900,
   textTransform: "uppercase",
@@ -239,12 +284,21 @@ const checkboxLabelStyle: CSSProperties = {
   lineHeight: 1.45,
 };
 
+const checkboxLabelFocusStyle: CSSProperties = {
+  borderColor: "rgba(255, 255, 255, 0.18)",
+  background: "rgba(255, 255, 255, 0.05)",
+};
+
 const checkboxStyle: CSSProperties = {
   width: 18,
   height: 18,
   marginTop: 1,
   accentColor: "#8d4cf5",
   flex: "0 0 auto",
+};
+
+const checkboxFocusStyle: CSSProperties = {
+  accentColor: "#FFFFFF",
 };
 
 const actionsStyle: CSSProperties = {
@@ -264,6 +318,11 @@ const continueButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+const continueButtonFocusStyle: CSSProperties = {
+  background: "#FFFFFF",
+  color: "#000000",
+};
+
 const disabledButtonStyle: CSSProperties = {
   opacity: 0.45,
   cursor: "not-allowed",
@@ -280,10 +339,20 @@ const backButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+const backButtonFocusStyle: CSSProperties = {
+  borderColor: "rgba(255, 255, 255, 0.28)",
+  background: "#000000",
+  color: "#FFFFFF",
+};
+
 const noteStyle: CSSProperties = {
   margin: "2px 0 0",
   color: "#9d91aa",
   fontSize: 11,
   lineHeight: 1.55,
   textAlign: "center",
+};
+
+const noteFocusStyle: CSSProperties = {
+  color: "#A1A1AA",
 };
