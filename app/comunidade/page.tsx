@@ -14,6 +14,10 @@ import {
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import type { HistorietasLanguage } from "../../lib/i18n";
+import {
+  criarHrefAceiteTermos,
+  verificarAceiteTermosPublicacao,
+} from "../../lib/aceiteTermos";
 
 type CategoriaComunidade =
   | "Geral"
@@ -4523,8 +4527,8 @@ export default function ComunidadePage() {
     }, 0);
   }
 
-  function prepararEnqueteComunidade() {
-    if (!exigirLogin()) {
+  async function prepararEnqueteComunidade() {
+    if (!(await garantirAceiteAntesDePublicarComunidade())) {
       return;
     }
 
@@ -4693,10 +4697,13 @@ export default function ComunidadePage() {
     );
   }
 
-  function abrirPublicacaoRapidaComunidade() {
+  async function abrirPublicacaoRapidaComunidade() {
     setMenuAcoesRapidasComunidadeAberto(false);
 
-    if (carregandoUsuario || !exigirLogin()) {
+    if (
+      carregandoUsuario ||
+      !(await garantirAceiteAntesDePublicarComunidade())
+    ) {
       return;
     }
 
@@ -5001,6 +5008,21 @@ export default function ComunidadePage() {
     return false;
   }
 
+  async function garantirAceiteAntesDePublicarComunidade() {
+    if (!exigirLogin() || !usuario) {
+      return false;
+    }
+
+    const statusAceite = await verificarAceiteTermosPublicacao();
+
+    if (statusAceite.aceito) {
+      return true;
+    }
+
+    router.push(criarHrefAceiteTermos("/comunidade"));
+    return false;
+  }
+
   async function alternarSeguirUsuarioBusca(
     usuarioAlvo: UsuarioBuscaComunidade
   ) {
@@ -5080,6 +5102,10 @@ export default function ComunidadePage() {
 
     try {
       if (!exigirLogin() || !usuario) {
+        return;
+      }
+
+      if (!(await garantirAceiteAntesDePublicarComunidade())) {
         return;
       }
 

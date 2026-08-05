@@ -9,6 +9,12 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
+import {
+  criarMetadataAceiteTermos,
+  DIRETRIZES_COMUNIDADE_VERSAO_ATUAL,
+  POLITICA_PRIVACIDADE_VERSAO_ATUAL,
+  TERMOS_USO_VERSAO_ATUAL,
+} from "../../lib/aceiteTermos";
 
 type ModoAuth = "entrar" | "criar" | "recuperar";
 
@@ -52,7 +58,14 @@ type LoginTranslationKey =
   | "backToSignIn"
   | "recoveryHelperText"
   | "recoveryEmailSent"
-  | "passwordChangedNotice";
+  | "passwordChangedNotice"
+  | "acceptTermsPrefix"
+  | "termsLink"
+  | "guidelinesLink"
+  | "and"
+  | "privacyPrefix"
+  | "privacyLink"
+  | "consentRequired";
 
 const LOGIN_TRANSLATIONS: Record<
   HistorietasLanguage,
@@ -110,6 +123,14 @@ const LOGIN_TRANSLATIONS: Record<
       "Se existir uma conta com este e-mail, você receberá um link de recuperação. Verifique também a caixa de spam.",
     passwordChangedNotice:
       "Senha redefinida com sucesso. Entre usando sua nova senha.",
+    acceptTermsPrefix: "Li e aceito os",
+    termsLink: "Termos de Uso",
+    guidelinesLink: "Diretrizes da Comunidade",
+    and: "e as",
+    privacyPrefix: "Li e estou ciente da",
+    privacyLink: "Política de Privacidade",
+    consentRequired:
+      "Para criar a conta, aceite os Termos e as Diretrizes e confirme que leu a Política de Privacidade.",
   },
   en: {
     backHome: "Back to the home page",
@@ -162,6 +183,14 @@ const LOGIN_TRANSLATIONS: Record<
       "If an account exists with this email, you will receive a recovery link. Also check your spam folder.",
     passwordChangedNotice:
       "Password reset successfully. Sign in using your new password.",
+    acceptTermsPrefix: "I have read and accept the",
+    termsLink: "Terms of Use",
+    guidelinesLink: "Community Guidelines",
+    and: "and",
+    privacyPrefix: "I have read and acknowledge the",
+    privacyLink: "Privacy Policy",
+    consentRequired:
+      "To create the account, accept the Terms and Guidelines and confirm that you have read the Privacy Policy.",
   },
   es: {
     backHome: "Volver a la página de inicio",
@@ -215,6 +244,14 @@ const LOGIN_TRANSLATIONS: Record<
       "Si existe una cuenta con este correo, recibirás un enlace de recuperación. Revisa también la carpeta de spam.",
     passwordChangedNotice:
       "Contraseña restablecida correctamente. Inicia sesión con tu nueva contraseña.",
+    acceptTermsPrefix: "He leído y acepto los",
+    termsLink: "Términos de Uso",
+    guidelinesLink: "Normas de la Comunidad",
+    and: "y las",
+    privacyPrefix: "He leído y conozco la",
+    privacyLink: "Política de Privacidad",
+    consentRequired:
+      "Para crear la cuenta, acepta los Términos y las Normas y confirma que leíste la Política de Privacidad.",
   },
 };
 
@@ -499,6 +536,8 @@ export default function LoginPage() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [aceitouTermos, setAceitouTermos] = useState(false);
+  const [cientePrivacidade, setCientePrivacidade] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
@@ -573,7 +612,39 @@ export default function LoginPage() {
         }
       }
 
-      const perfilPayload = {
+      const termosVersaoMetadata =
+        typeof metadata.termos_uso_versao === "string"
+          ? metadata.termos_uso_versao.trim()
+          : "";
+      const termosAceitosEmMetadata =
+        typeof metadata.termos_uso_aceitos_em === "string"
+          ? metadata.termos_uso_aceitos_em.trim()
+          : "";
+      const diretrizesVersaoMetadata =
+        typeof metadata.diretrizes_comunidade_versao === "string"
+          ? metadata.diretrizes_comunidade_versao.trim()
+          : "";
+      const diretrizesAceitasEmMetadata =
+        typeof metadata.diretrizes_comunidade_aceitas_em === "string"
+          ? metadata.diretrizes_comunidade_aceitas_em.trim()
+          : "";
+      const politicaVersaoMetadata =
+        typeof metadata.politica_privacidade_versao === "string"
+          ? metadata.politica_privacidade_versao.trim()
+          : "";
+      const politicaCienteEmMetadata =
+        typeof metadata.politica_privacidade_ciente_em === "string"
+          ? metadata.politica_privacidade_ciente_em.trim()
+          : "";
+      const aceiteMetadataAtual =
+        termosVersaoMetadata === TERMOS_USO_VERSAO_ATUAL &&
+        Boolean(termosAceitosEmMetadata) &&
+        diretrizesVersaoMetadata === DIRETRIZES_COMUNIDADE_VERSAO_ATUAL &&
+        Boolean(diretrizesAceitasEmMetadata) &&
+        politicaVersaoMetadata === POLITICA_PRIVACIDADE_VERSAO_ATUAL &&
+        Boolean(politicaCienteEmMetadata);
+
+      const perfilPayload: Record<string, unknown> = {
         user_id: userIdLimpo,
         nome: perfilAtual?.nome?.trim() || nomeFinal,
         bio: perfilAtual?.bio?.trim() || "Perfil de leitor no Historietas.",
@@ -584,6 +655,17 @@ export default function LoginPage() {
         avatar_url: perfilAtual?.avatar_url || "",
         atualizado_em: agora,
       };
+
+      if (aceiteMetadataAtual) {
+        Object.assign(perfilPayload, {
+          termos_uso_versao: termosVersaoMetadata,
+          termos_uso_aceitos_em: termosAceitosEmMetadata,
+          diretrizes_comunidade_versao: diretrizesVersaoMetadata,
+          diretrizes_comunidade_aceitas_em: diretrizesAceitasEmMetadata,
+          politica_privacidade_versao: politicaVersaoMetadata,
+          politica_privacidade_ciente_em: politicaCienteEmMetadata,
+        });
+      }
 
       if (perfilAtual?.id) {
         await supabase
@@ -695,6 +777,11 @@ export default function LoginPage() {
       return;
     }
 
+    if (criandoConta && (!aceitouTermos || !cientePrivacidade)) {
+      setErro(t("consentRequired"));
+      return;
+    }
+
     setCarregando(true);
 
     try {
@@ -718,6 +805,8 @@ export default function LoginPage() {
       }
 
       if (criandoConta) {
+        const aceiteEm = new Date().toISOString();
+        const metadataAceite = criarMetadataAceiteTermos(aceiteEm);
         const { data, error } = await supabase.auth.signUp({
           email: emailFinal,
           password: senha,
@@ -726,6 +815,7 @@ export default function LoginPage() {
               nome: nomeFinal,
               name: nomeFinal,
               full_name: nomeFinal,
+              ...metadataAceite,
             },
           },
         });
@@ -755,6 +845,8 @@ export default function LoginPage() {
 
         setModo("entrar");
         setSenha("");
+        setAceitouTermos(false);
+        setCientePrivacidade(false);
         setAviso(t("accountCreatedNotice"));
         return;
       }
@@ -929,6 +1021,62 @@ export default function LoginPage() {
                       required
                     />
                   </label>
+                )}
+
+                {criandoConta && (
+                  <div style={consentGroupStyle}>
+                    <label style={consentLabelStyle}>
+                      <input
+                        type="checkbox"
+                        checked={aceitouTermos}
+                        onChange={(event) => {
+                          setAceitouTermos(event.target.checked);
+                          setErro("");
+                          setAviso("");
+                        }}
+                        style={checkboxStyle}
+                        required
+                      />
+                      <span>
+                        {t("acceptTermsPrefix")} {" "}
+                        <Link href="/termos-de-uso" target="_blank" style={legalLinkStyle}>
+                          {t("termsLink")}
+                        </Link>{" "}
+                        {t("and")} {" "}
+                        <Link
+                          href="/diretrizes-da-comunidade"
+                          target="_blank"
+                          style={legalLinkStyle}
+                        >
+                          {t("guidelinesLink")}
+                        </Link>.
+                      </span>
+                    </label>
+
+                    <label style={consentLabelStyle}>
+                      <input
+                        type="checkbox"
+                        checked={cientePrivacidade}
+                        onChange={(event) => {
+                          setCientePrivacidade(event.target.checked);
+                          setErro("");
+                          setAviso("");
+                        }}
+                        style={checkboxStyle}
+                        required
+                      />
+                      <span>
+                        {t("privacyPrefix")} {" "}
+                        <Link
+                          href="/politica-de-privacidade"
+                          target="_blank"
+                          style={legalLinkStyle}
+                        >
+                          {t("privacyLink")}
+                        </Link>.
+                      </span>
+                    </label>
+                  </div>
                 )}
 
                 {!criandoConta && !recuperandoSenha && (
@@ -1363,6 +1511,42 @@ const inputStyle: CSSProperties = {
   fontFamily: "inherit",
   boxSizing: "border-box",
   minWidth: 0,
+};
+
+const consentGroupStyle: CSSProperties = {
+  display: "grid",
+  gap: "9px",
+};
+
+const consentLabelStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "22px minmax(0, 1fr)",
+  alignItems: "start",
+  gap: "10px",
+  padding: "12px 13px",
+  borderRadius: "15px",
+  border:
+    "1px solid var(--historietas-login-purple-border-soft, rgba(59, 7, 100, 0.50))",
+  background: "var(--historietas-login-bg-deep, #04000A)",
+  color: "#E4E4E7",
+  fontSize: "12px",
+  fontWeight: 700,
+  lineHeight: 1.5,
+  cursor: "pointer",
+  minWidth: 0,
+};
+
+const checkboxStyle: CSSProperties = {
+  width: "18px",
+  height: "18px",
+  margin: "1px 0 0",
+  accentColor: "#FFFFFF",
+};
+
+const legalLinkStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontWeight: 900,
+  textUnderlineOffset: "3px",
 };
 
 const primaryButtonStyle: CSSProperties = {

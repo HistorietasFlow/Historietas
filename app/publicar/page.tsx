@@ -9,6 +9,10 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { criarSlugBase, formatarTamanhoArquivo, normalizarTexto } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
+import {
+  criarHrefAceiteTermos,
+  verificarAceiteTermosPublicacao,
+} from "../../lib/aceiteTermos";
 
 type CapituloLocal = {
   id: string;
@@ -1556,6 +1560,17 @@ export default function PublicarPage() {
             }
           }, 0);
           router.replace(criarLoginHrefPublicar());
+          return;
+        }
+
+        const statusAceite = await verificarAceiteTermosPublicacao();
+
+        if (cancelado) {
+          return;
+        }
+
+        if (!statusAceite.aceito) {
+          router.replace(criarHrefAceiteTermos("/publicar"));
           return;
         }
 

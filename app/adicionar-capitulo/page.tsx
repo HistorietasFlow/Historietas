@@ -9,6 +9,10 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
+import {
+  criarHrefAceiteTermos,
+  verificarAceiteTermosPublicacao,
+} from "../../lib/aceiteTermos";
 
 type CapituloLocal = {
   id: string;
@@ -1618,6 +1622,20 @@ export default function AdicionarCapituloPage() {
           setUsuarioIdLogado("");
           setCarregando(false);
           router.replace(criarLoginHrefAdicionarCapitulo(obraIdParam));
+          return;
+        }
+
+        const statusAceite = await verificarAceiteTermosPublicacao();
+
+        if (cancelado) {
+          return;
+        }
+
+        if (!statusAceite.aceito) {
+          const redirectTo = obraIdParam
+            ? `/adicionar-capitulo?obraId=${encodeURIComponent(obraIdParam)}`
+            : "/adicionar-capitulo";
+          router.replace(criarHrefAceiteTermos(redirectTo));
           return;
         }
 
