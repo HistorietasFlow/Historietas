@@ -1770,10 +1770,6 @@ const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
     "en": "Profile not found",
     "es": "Perfil no encontrado"
   },
-  "Entre para acessar seu perfil": {
-    "en": "Sign in to access your profile",
-    "es": "Inicia sesión para acceder a tu perfil"
-  },
   "Abrir menu do perfil": {
     "en": "Open profile menu",
     "es": "Abrir menú del perfil"
@@ -7616,9 +7612,6 @@ function PerfilAutorPageContent() {
     });
   const [bloqueioPerfilSalvando, setBloqueioPerfilSalvando] =
     useState(false);
-  const seguidoresTotalEstavelRef = useRef<Record<string, number>>({});
-  const seguindoTotalEstavelRef = useRef<Record<string, number>>({});
-
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
@@ -8269,6 +8262,17 @@ function PerfilAutorPageContent() {
         ? null
         : perfilDoUsuarioLogado || perfilUsuarioRemotoComoAutor || null;
 
+  const redirecionandoParaLogin =
+    autenticacaoCarregada && perfilSemLoginSemParametro;
+
+  useEffect(() => {
+    if (!redirecionandoParaLogin) {
+      return;
+    }
+
+    router.replace(criarLoginHrefPerfilAutor());
+  }, [redirecionandoParaLogin, router]);
+
   useEffect(() => {
     const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
     const topFiveUserId = perfilAutorId || usuarioIdLogado.trim();
@@ -8622,21 +8626,11 @@ function PerfilAutorPageContent() {
           : seguindoConfirmado
             ? "seguindo"
             : estadoRelacionamento;
-      const seguidoresMinimoPorEstadoAtual = seguindoConfirmado ? 1 : 0;
-      const seguidoresTotalSeguro = Math.max(
-        estadoSeguimento.seguidoresTotal,
-        seguidoresMinimoPorEstadoAtual,
-        seguidoresTotalEstavelRef.current[perfilUserId] || 0,
-      );
-      const seguindoTotalSeguro = estadoSeguimento.seguindoTotal;
-
-      seguidoresTotalEstavelRef.current[perfilUserId] = seguidoresTotalSeguro;
-      seguindoTotalEstavelRef.current[perfilUserId] = seguindoTotalSeguro;
 
       setEstadoRelacionamentoPerfil(estadoSeguro);
       setSeguindoUsuarioPerfil(seguindoConfirmado);
-      setSeguidoresUsuarioPerfilTotal(seguidoresTotalSeguro);
-      setSeguindoUsuarioPerfilTotal(seguindoTotalSeguro);
+      setSeguidoresUsuarioPerfilTotal(estadoSeguimento.seguidoresTotal);
+      setSeguindoUsuarioPerfilTotal(estadoSeguimento.seguindoTotal);
     }
 
     void carregarSeguimentoUsuario();
@@ -8662,8 +8656,6 @@ function PerfilAutorPageContent() {
   const podeUsarSeguimentoUsuario = Boolean(
     perfilUserIdParaSeguir && idAutorSupabaseValido(perfilUserIdParaSeguir),
   );
-  const chaveSeguimentoPerfil =
-    perfilUserIdParaSeguir || autorChavePerfil || autorNormalizadoParaSeguir;
   const seguindoPerfilAtual = podeUsarSeguimentoUsuario
     ? estadoRelacionamentoPerfil === "seguindo" || seguindoUsuarioPerfil
     : seguindoAutor;
@@ -8671,53 +8663,16 @@ function PerfilAutorPageContent() {
     podeUsarSeguimentoUsuario &&
       estadoRelacionamentoPerfil === "solicitado",
   );
-  const seguidoresTotal = useMemo(() => {
-    const totalMinimoPorSeguimentoAtual =
-      seguindoPerfilAtual || seguindoUsuarioPerfil || seguindoAutor ? 1 : 0;
-    const totalAtual = podeUsarSeguimentoUsuario
-      ? Math.max(
-          seguidoresUsuarioPerfilTotal,
-          totalMinimoPorSeguimentoAtual,
-        )
-      : seguindoAutor
-        ? 1
-        : 0;
-
-    if (!chaveSeguimentoPerfil) {
-      return totalAtual;
-    }
-
-    const ultimoTotalValido =
-      seguidoresTotalEstavelRef.current[chaveSeguimentoPerfil] || 0;
-    const totalSeguro = Math.max(totalAtual, ultimoTotalValido);
-
-    seguidoresTotalEstavelRef.current[chaveSeguimentoPerfil] = totalSeguro;
-
-    return totalSeguro;
-  }, [
-    chaveSeguimentoPerfil,
-    podeUsarSeguimentoUsuario,
-    seguidoresUsuarioPerfilTotal,
-    seguindoPerfilAtual,
-    seguindoUsuarioPerfil,
-    seguindoAutor,
-  ]);
-  const seguindoTotalPerfil = useMemo(() => {
-    if (podeUsarSeguimentoUsuario) {
-      seguindoTotalEstavelRef.current[chaveSeguimentoPerfil] =
-        seguindoUsuarioPerfilTotal;
-
-      return seguindoUsuarioPerfilTotal;
-    }
-
-    return podeEditarPerfil ? autoresSeguidos.length : 0;
-  }, [
-    chaveSeguimentoPerfil,
-    podeUsarSeguimentoUsuario,
-    seguindoUsuarioPerfilTotal,
-    podeEditarPerfil,
-    autoresSeguidos.length,
-  ]);
+  const seguidoresTotal = podeUsarSeguimentoUsuario
+    ? seguidoresUsuarioPerfilTotal
+    : seguindoAutor
+      ? 1
+      : 0;
+  const seguindoTotalPerfil = podeUsarSeguimentoUsuario
+    ? seguindoUsuarioPerfilTotal
+    : podeEditarPerfil
+      ? autoresSeguidos.length
+      : 0;
   const seguidoresPerfilHref = podeEditarPerfil
     ? "/seguindo?conteudo=seguidores"
     : criarHrefListaSeguimentoPerfilAutor(
@@ -10485,8 +10440,6 @@ function PerfilAutorPageContent() {
               ? totalAtual + 1
               : Math.max(0, totalAtual - 1);
 
-            seguidoresTotalEstavelRef.current[userIdPerfil] = proximoTotal;
-
             return proximoTotal;
           });
         }
@@ -11086,7 +11039,7 @@ function PerfilAutorPageContent() {
   }
 
 
-  if (carregando) {
+  if (carregando || redirecionandoParaLogin) {
     return (
       <main style={pageThemeStyle}>
         <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
@@ -11155,9 +11108,7 @@ function PerfilAutorPageContent() {
               textAlign: "center",
             }}
           >
-            {perfilSemLoginSemParametro
-              ? "Entre para acessar seu perfil"
-              : "Nenhum autor encontrado"}
+            Nenhum autor encontrado
           </p>
         </section>
       </main>

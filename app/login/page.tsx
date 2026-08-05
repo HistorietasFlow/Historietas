@@ -1350,14 +1350,15 @@ const labelStyle: CSSProperties = {
 
 const inputStyle: CSSProperties = {
   width: "100%",
-  minHeight: "42px",
+  height: "48px",
+  minHeight: "48px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-login-purple-border, rgba(59, 7, 100, 0.58))",
   background: "var(--historietas-login-bg-deep, #04000A)",
   color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
-  fontSize: "12.5px",
+  fontSize: "15px",
   fontWeight: 750,
   fontFamily: "inherit",
   boxSizing: "border-box",
@@ -1365,6 +1366,8 @@ const inputStyle: CSSProperties = {
 };
 
 const primaryButtonStyle: CSSProperties = {
+  width: "100%",
+  height: "44px",
   minHeight: "44px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
@@ -1392,13 +1395,12 @@ const textButtonStyle: CSSProperties = {
   justifySelf: "end",
   border: "none",
   background: "transparent",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   padding: "2px 4px",
   fontFamily: "inherit",
   fontSize: "11px",
   fontWeight: 850,
-  textDecoration: "underline",
-  textUnderlineOffset: "3px",
+  textDecoration: "none",
   cursor: "pointer",
   ...safeTextStyle,
 };
