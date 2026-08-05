@@ -13,6 +13,14 @@ import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
 } from "../../lib/aceiteTermos";
+import {
+  AVISOS_CONTEUDO_18,
+  ehClassificacao18,
+  normalizarAvisosConteudo18,
+  traduzirAvisoConteudo18,
+  traduzirTextoConteudo18,
+  type AvisoConteudo18,
+} from "../../lib/historietasAdultContent";
 
 type CapituloLocal = {
   id: string;
@@ -43,6 +51,7 @@ type ObraLocal = {
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
+  avisosConteudo: AvisoConteudo18[];
   sinopse: string;
   tags: string[];
   capa: string;
@@ -548,6 +557,7 @@ const MENSAGENS_ERRO_PUBLICAR: Record<HistorietasLanguage, Record<string, string
     "Escolha o gênero principal da obra.": "Choose the work's main genre.",
     "A tag personalizada precisa ter 2 a 10 caracteres, sem vírgula, emoji ou símbolo estranho, e não pode repetir gênero ou formato.": "The custom tag must contain 2 to 10 characters, without commas, emojis, or unsupported symbols, and cannot repeat the genre or format.",
     "Escolha a classificação indicativa da obra.": "Choose the work's age rating.",
+    "Selecione pelo menos um aviso de conteúdo para a obra 18+.": "Select at least one content warning for the 18+ work.",
     "A sinopse precisa ter pelo menos 20 letras ou números.": "The synopsis must contain at least 20 letters or numbers.",
     "O arquivo importado precisa ter pelo menos 20 letras ou números para virar o primeiro capítulo.": "The imported file must contain at least 20 letters or numbers to become the first chapter.",
     "Escolha um arquivo de imagem válido.": "Choose a valid image file.",
@@ -574,6 +584,7 @@ const MENSAGENS_ERRO_PUBLICAR: Record<HistorietasLanguage, Record<string, string
     "Escolha o gênero principal da obra.": "Elige el género principal de la obra.",
     "A tag personalizada precisa ter 2 a 10 caracteres, sem vírgula, emoji ou símbolo estranho, e não pode repetir gênero ou formato.": "La etiqueta personalizada debe tener entre 2 y 10 caracteres, sin comas, emojis ni símbolos no admitidos, y no puede repetir el género ni el formato.",
     "Escolha a classificação indicativa da obra.": "Elige la clasificación por edad de la obra.",
+    "Selecione pelo menos um aviso de conteúdo para a obra 18+.": "Selecciona al menos una advertencia de contenido para la obra 18+.",
     "A sinopse precisa ter pelo menos 20 letras ou números.": "La sinopsis debe tener al menos 20 letras o números.",
     "O arquivo importado precisa ter pelo menos 20 letras ou números para virar o primeiro capítulo.": "El archivo importado debe tener al menos 20 letras o números para convertirse en el primer capítulo.",
     "Escolha um arquivo de imagem válido.": "Elige un archivo de imagen válido.",
@@ -1170,6 +1181,10 @@ function normalizarObraSalva(obra: ObraSalva, obraIndex: number): ObraLocal {
       obra.classificacaoIndicativa.trim()
         ? obra.classificacaoIndicativa
         : "Não informada",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obra.avisosConteudo,
+      obra.classificacaoIndicativa,
+    ),
     sinopse:
       typeof obra.sinopse === "string" && obra.sinopse.trim()
         ? obra.sinopse
@@ -1517,6 +1532,7 @@ export default function PublicarPage() {
   const [formato, setFormato] = useState("");
   const [formatoPersonalizado, setFormatoPersonalizado] = useState("");
   const [classificacaoIndicativa, setClassificacaoIndicativa] = useState("");
+  const [avisosConteudo18, setAvisosConteudo18] = useState<AvisoConteudo18[]>([]);
   const [sinopse, setSinopse] = useState("");
   const [tags, setTags] = useState("");
   const [tagPersonalizada, setTagPersonalizada] = useState("");
@@ -1700,7 +1716,13 @@ export default function PublicarPage() {
   const classificacaoFinal = normalizarClassificacaoIndicativaPublicar(
     classificacaoIndicativa,
   );
-  const classificacaoValida = Boolean(classificacaoFinal);
+  const classificacao18Selecionada = ehClassificacao18(classificacaoFinal);
+  const avisosConteudo18Normalizados = normalizarAvisosConteudo18(
+    avisosConteudo18,
+    classificacaoFinal,
+  );
+  const classificacaoValida = Boolean(classificacaoFinal) &&
+    (!classificacao18Selecionada || avisosConteudo18.length > 0);
   const sinopseValida = campoValido(sinopse, 20);
 
   const sinopseCaracteresValidos = contarCaracteresValidos(sinopse);
@@ -1789,8 +1811,12 @@ export default function PublicarPage() {
       return "A tag personalizada precisa ter 2 a 10 caracteres, sem vírgula, emoji ou símbolo estranho, e não pode repetir gênero ou formato.";
     }
 
-    if (!classificacaoValida) {
+    if (!classificacaoFinal) {
       return "Escolha a classificação indicativa da obra.";
+    }
+
+    if (classificacao18Selecionada && avisosConteudo18.length === 0) {
+      return "Selecione pelo menos um aviso de conteúdo para a obra 18+.";
     }
 
     if (!sinopseValida) {
@@ -2189,6 +2215,7 @@ export default function PublicarPage() {
         genero: generoFinal,
         formato: formatoFinal,
         classificacao_indicativa: classificacaoFinal,
+        avisos_conteudo: avisosConteudo18Normalizados,
         sinopse: sinopse.trim(),
         tags: tagsDaObra.length > 0 ? tagsDaObra : ["sem tags"],
         capa_url: capaUrlSupabase,
@@ -2267,6 +2294,7 @@ export default function PublicarPage() {
         genero: generoFinal,
         formato: formatoFinal,
         classificacaoIndicativa: classificacaoFinal,
+        avisosConteudo: avisosConteudo18Normalizados,
         sinopse: sinopse.trim(),
         tags: tagsDaObra.length > 0 ? tagsDaObra : ["sem tags"],
         capa: capaUrlSupabase,
@@ -2655,7 +2683,13 @@ export default function PublicarPage() {
               <select
                 value={classificacaoIndicativa}
                 onChange={(event) => {
-                  setClassificacaoIndicativa(event.target.value);
+                  const novaClassificacao = event.target.value;
+                  setClassificacaoIndicativa(novaClassificacao);
+
+                  if (!ehClassificacao18(novaClassificacao)) {
+                    setAvisosConteudo18([]);
+                  }
+
                   setErro("");
                 }}
                 style={inputStyle}
@@ -2668,6 +2702,52 @@ export default function PublicarPage() {
                 <option>16+</option>
                 <option>18+</option>
               </select>
+
+              {classificacao18Selecionada ? (
+                <section style={adultWarningsBoxStyle} aria-label="Avisos de conteúdo 18+">
+                  <div style={adultWarningsHeaderStyle}>
+                    <strong style={adultWarningsTitleStyle}>{traduzirTextoConteudo18("avisosObrigatorios", idioma)}</strong>
+                    <span style={adultWarningsCounterStyle}>
+                      {avisosConteudo18.length} {traduzirTextoConteudo18(avisosConteudo18.length === 1 ? "selecionado" : "selecionados", idioma)}
+                    </span>
+                  </div>
+
+                  <p style={adultWarningsDescriptionStyle}>
+                    {traduzirTextoConteudo18("descricaoPublicacao", idioma)}
+                  </p>
+
+                  <div style={adultWarningsGridStyle}>
+                    {AVISOS_CONTEUDO_18.map((aviso) => {
+                      const selecionado = avisosConteudo18.includes(aviso);
+
+                      return (
+                        <label
+                          key={aviso}
+                          style={{
+                            ...adultWarningOptionStyle,
+                            ...(selecionado ? adultWarningOptionSelectedStyle : {}),
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selecionado}
+                            onChange={() => {
+                              setAvisosConteudo18((avisosAtuais) =>
+                                avisosAtuais.includes(aviso)
+                                  ? avisosAtuais.filter((item) => item !== aviso)
+                                  : [...avisosAtuais, aviso],
+                              );
+                              setErro("");
+                            }}
+                            style={adultWarningCheckboxStyle}
+                          />
+                          <span>{traduzirAvisoConteudo18(aviso, idioma)}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
             </div>
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
@@ -4432,6 +4512,77 @@ const miniCounterOkStyle: CSSProperties = {
 const miniCounterWarningStyle: CSSProperties = {
   ...miniCounterOkStyle,
   color: "#FFFFFF",
+};
+
+const adultWarningsBoxStyle: CSSProperties = {
+  display: "grid",
+  gap: "11px",
+  marginTop: "10px",
+  padding: "14px",
+  borderRadius: "16px",
+  border: "1px solid rgba(255, 105, 130, 0.28)",
+  background: "rgba(94, 20, 44, 0.12)",
+};
+
+const adultWarningsHeaderStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+};
+
+const adultWarningsTitleStyle: CSSProperties = {
+  color: "#FFD7DE",
+  fontSize: "12px",
+  fontWeight: 900,
+};
+
+const adultWarningsCounterStyle: CSSProperties = {
+  color: "#D7C8E9",
+  fontSize: "10px",
+  fontWeight: 800,
+};
+
+const adultWarningsDescriptionStyle: CSSProperties = {
+  margin: 0,
+  color: "#C9BFD2",
+  fontSize: "11px",
+  lineHeight: 1.55,
+};
+
+const adultWarningsGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+  gap: "8px",
+};
+
+const adultWarningOptionStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "9px",
+  padding: "10px 11px",
+  borderRadius: "12px",
+  borderWidth: "1px",
+  borderStyle: "solid",
+  borderColor: "rgba(255, 255, 255, 0.08)",
+  background: "rgba(255, 255, 255, 0.025)",
+  color: "#F2ECF8",
+  fontSize: "11px",
+  lineHeight: 1.4,
+  cursor: "pointer",
+};
+
+const adultWarningOptionSelectedStyle: CSSProperties = {
+  borderColor: "rgba(255, 113, 143, 0.5)",
+  background: "rgba(126, 35, 67, 0.2)",
+};
+
+const adultWarningCheckboxStyle: CSSProperties = {
+  width: "16px",
+  height: "16px",
+  marginTop: "1px",
+  accentColor: "#FF6680",
+  flex: "0 0 auto",
 };
 
 const desktopContainerStyle: CSSProperties = {

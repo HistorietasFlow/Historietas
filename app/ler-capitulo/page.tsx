@@ -9,8 +9,15 @@ import { createPortal } from "react-dom";
 import type { CSSProperties, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import DenunciaModal from "../../components/DenunciaModal";
+import AdultContentGate from "../../components/AdultContentGate";
 import { historietasThemeCss } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
+import {
+  acessoConteudo18Confirmado,
+  ehClassificacao18,
+  normalizarAvisosConteudo18,
+  type AvisoConteudo18,
+} from "../../lib/historietasAdultContent";
 
 type CapituloLocal = {
   id: string;
@@ -43,6 +50,7 @@ type ObraLocal = {
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
+  avisosConteudo: AvisoConteudo18[];
   sinopse: string;
   tags: string[];
   capa: string;
@@ -66,6 +74,7 @@ type ObraSupabaseRow = {
   genero: string | null;
   formato: string | null;
   classificacao_indicativa: string | null;
+  avisos_conteudo: string[] | null;
   sinopse: string | null;
   tags: string[] | null;
   capa_url: string | null;
@@ -1034,6 +1043,10 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
       obra.classificacaoIndicativa.trim()
         ? obra.classificacaoIndicativa
         : "Não informada",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obra.avisosConteudo,
+      obra.classificacaoIndicativa,
+    ),
     sinopse: obra.sinopse || "Nenhuma sinopse informada.",
     tags: tagsNormalizadas.length > 0 ? tagsNormalizadas : ["sem tags"],
     capa: typeof obra.capa === "string" ? obra.capa : "",
@@ -1387,6 +1400,10 @@ function mesclarObraSupabaseComLocal(
       obraSupabase.classificacao_indicativa?.trim() ||
       obraLocal?.classificacaoIndicativa ||
       "Não informada",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obraSupabase.avisos_conteudo ?? obraLocal?.avisosConteudo,
+      obraSupabase.classificacao_indicativa ?? obraLocal?.classificacaoIndicativa,
+    ),
     sinopse:
       obraSupabase.sinopse?.trim() ||
       obraLocal?.sinopse ||
@@ -1518,7 +1535,7 @@ async function carregarObraSupabase(
   const { data: obraSupabase, error: erroObra } = await supabase
     .from("obras")
     .select(
-      "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
+      "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,slug,link,criada_em,atualizado_em"
     )
     .eq("id", obraId)
     .limit(1)
@@ -3522,6 +3539,10 @@ export default function LerCapituloPage() {
   const [progressoRolagem, setProgressoRolagem] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
   const [preferenciasCarregadas, setPreferenciasCarregadas] = useState(false);
+  const [controleAcesso18, setControleAcesso18] = useState<{
+    obraId: string;
+    status: "verificando" | "permitido" | "bloqueado";
+  }>({ obraId: "", status: "verificando" });
   const visualizacaoCapituloRegistradaRef = useRef("");
   const atividadeDiarioRegistradaRef = useRef("");
   const curtidaCapituloSalvandoRef = useRef(false);
@@ -3810,6 +3831,37 @@ export default function LerCapituloPage() {
     );
   }, [obraAtual, capituloId]);
 
+  const statusAcesso18 =
+    obraAtual && controleAcesso18.obraId === obraAtual.id
+      ? controleAcesso18.status
+      : "verificando";
+
+  useEffect(() => {
+    if (!obraAtual) {
+      setControleAcesso18({ obraId: "", status: "verificando" });
+      return;
+    }
+
+    const proximoStatus = !ehClassificacao18(
+      obraAtual.classificacaoIndicativa,
+    )
+      ? "permitido"
+      : acessoConteudo18Confirmado()
+        ? "permitido"
+        : "bloqueado";
+
+    setControleAcesso18((controleAtual) => {
+      if (
+        controleAtual.obraId === obraAtual.id &&
+        controleAtual.status === proximoStatus
+      ) {
+        return controleAtual;
+      }
+
+      return { obraId: obraAtual.id, status: proximoStatus };
+    });
+  }, [obraAtual?.id, obraAtual?.classificacaoIndicativa]);
+
 
   useEffect(() => {
     let cancelado = false;
@@ -3956,7 +4008,11 @@ export default function LerCapituloPage() {
     : null;
 
   useEffect(() => {
-    if (!capituloAtual || !idObraSupabaseValido(capituloAtual.id)) {
+    if (
+      statusAcesso18 !== "permitido" ||
+      !capituloAtual ||
+      !idObraSupabaseValido(capituloAtual.id)
+    ) {
       return;
     }
 
@@ -3986,7 +4042,7 @@ export default function LerCapituloPage() {
     }
 
     void registrarVisualizacaoCapituloAtual();
-  }, [capituloAtual?.id]);
+  }, [capituloAtual?.id, statusAcesso18]);
 
   useEffect(() => {
     const atualizarComentarioTimer = window.setTimeout(() => {
@@ -4030,7 +4086,12 @@ export default function LerCapituloPage() {
   }, [capituloAtual?.id]);
 
   useEffect(() => {
-    if (!usuarioIdLogado || !obraAtual || !capituloAtual) {
+    if (
+      statusAcesso18 !== "permitido" ||
+      !usuarioIdLogado ||
+      !obraAtual ||
+      !capituloAtual
+    ) {
       return;
     }
 
@@ -4071,7 +4132,7 @@ export default function LerCapituloPage() {
         origem: "abertura_capitulo",
       },
     });
-  }, [usuarioIdLogado, obraAtual?.id, capituloAtual?.id]);
+  }, [usuarioIdLogado, obraAtual?.id, capituloAtual?.id, statusAcesso18]);
 
   async function obterUsuarioLogadoIdAtual() {
     if (usuarioIdLogado) {
@@ -4848,6 +4909,41 @@ export default function LerCapituloPage() {
           </p>
         </section>
       </main>
+    );
+  }
+
+  if (
+    ehClassificacao18(obraAtual.classificacaoIndicativa) &&
+    statusAcesso18 === "verificando"
+  ) {
+    return (
+      <main data-historietas-ler-capitulo-root="true" style={focusPageStyle} aria-busy="true">
+        <style>{`${historietasThemeCss}${leitorPageCss}`}</style>
+        <LoadingSpinner label="Verificando acesso" />
+      </main>
+    );
+  }
+
+  if (
+    ehClassificacao18(obraAtual.classificacaoIndicativa) &&
+    statusAcesso18 === "bloqueado"
+  ) {
+    return (
+      <AdultContentGate
+        titulo={obraAtual.titulo}
+        avisos={obraAtual.avisosConteudo}
+        language={language}
+        onConfirmar={() =>
+          setControleAcesso18({ obraId: obraAtual.id, status: "permitido" })
+        }
+        onVoltar={() => {
+          if (window.history.length > 1) {
+            router.back();
+          } else {
+            router.replace("/explorar");
+          }
+        }}
+      />
     );
   }
 

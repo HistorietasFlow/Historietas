@@ -366,6 +366,11 @@ const SECOES_DIRETRIZES: SecaoDiretriz[] = [
         en: "When age ratings, content warnings, or visibility controls are available, authors should use them honestly and consistently with the published material.",
         es: "Cuando existan clasificaciones por edad, avisos de contenido o controles de visibilidad, los autores deben utilizarlos de forma honesta y coherente con el material publicado.",
       },
+      {
+        pt: "Obras classificadas como 18+ devem informar os avisos de conteúdo aplicáveis. Temas sexuais não explícitos entre personagens adultos podem fazer parte de uma narrativa, mas o Historietas não é uma plataforma de pornografia e aplica regras mais restritivas a capas, avatares, miniaturas, mangás e outras imagens.",
+        en: "Works rated 18+ must include the applicable content warnings. Non-explicit sexual themes between adult characters may be part of a narrative, but Historietas is not a pornography platform and applies stricter rules to covers, avatars, thumbnails, comics, and other images.",
+        es: "Las obras clasificadas como 18+ deben incluir las advertencias de contenido aplicables. Los temas sexuales no explícitos entre personajes adultos pueden formar parte de una narrativa, pero Historietas no es una plataforma de pornografía y aplica reglas más estrictas a portadas, avatares, miniaturas, cómics y otras imágenes.",
+      },
     ],
     proibido: [
       {
@@ -377,6 +382,11 @@ const SECOES_DIRETRIZES: SecaoDiretriz[] = [
         pt: "Uso de comentários, perfil ou comunidade para solicitar encontros ou materiais íntimos de forma invasiva.",
         en: "Use of comments, profiles, or community areas to invasively request meetings or intimate materials.",
         es: "Uso de comentarios, perfiles o áreas comunitarias para solicitar encuentros o materiales íntimos de forma invasiva.",
+      },
+      {
+        pt: "Pornografia, descrições sexuais explícitas publicadas principalmente para excitação, imagens de genitais ou atos sexuais e capas ou miniaturas sexualmente explícitas.",
+        en: "Pornography, sexually explicit descriptions published primarily for arousal, images of genitals or sexual acts, and sexually explicit covers or thumbnails.",
+        es: "Pornografía, descripciones sexuales explícitas publicadas principalmente para la excitación, imágenes de genitales o actos sexuales y portadas o miniaturas sexualmente explícitas.",
       },
       {
         pt: "Qualquer sexualização de menores.",

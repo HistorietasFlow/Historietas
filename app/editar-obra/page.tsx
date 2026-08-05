@@ -9,6 +9,14 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
+import {
+  AVISOS_CONTEUDO_18,
+  ehClassificacao18,
+  normalizarAvisosConteudo18,
+  traduzirAvisoConteudo18,
+  traduzirTextoConteudo18,
+  type AvisoConteudo18,
+} from "../../lib/historietasAdultContent";
 
 type CapituloLocal = {
   id: string;
@@ -40,6 +48,7 @@ type ObraLocal = {
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
+  avisosConteudo: AvisoConteudo18[];
   sinopse: string;
   tags: string[];
   capa: string;
@@ -68,6 +77,7 @@ type ObraSupabaseRow = {
   genero: string | null;
   formato: string | null;
   classificacao_indicativa: string | null;
+  avisos_conteudo: string[] | null;
   sinopse: string | null;
   tags: string[] | null;
   capa_url: string | null;
@@ -158,6 +168,10 @@ const EDITAR_OBRA_UI_TRANSLATIONS: Record<
   "Outra tag": { en: "Other tag", es: "Otra etiqueta" },
   "Digite a tag": { en: "Enter the tag", es: "Escribe la etiqueta" },
   "Classificação indicativa": { en: "Age rating", es: "Clasificación por edad" },
+  "Selecione pelo menos um aviso de conteúdo para a obra 18+.": {
+    en: "Select at least one content warning for the 18+ work.",
+    es: "Selecciona al menos una advertencia de contenido para la obra 18+.",
+  },
   "Escolha a classificação": { en: "Choose the age rating", es: "Elige la clasificación" },
   "Sinopse": { en: "Synopsis", es: "Sinopsis" },
   "Escreva a sinopse da obra": { en: "Write the work synopsis", es: "Escribe la sinopsis de la obra" },
@@ -1090,6 +1104,10 @@ function normalizarObraSupabase(
       obraSupabase.classificacao_indicativa?.trim() ||
       obraLocal?.classificacaoIndicativa ||
       "Livre",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obraSupabase.avisos_conteudo ?? obraLocal?.avisosConteudo,
+      obraSupabase.classificacao_indicativa ?? obraLocal?.classificacaoIndicativa,
+    ),
     sinopse:
       obraSupabase.sinopse?.trim() ||
       obraLocal?.sinopse ||
@@ -1533,6 +1551,10 @@ function normalizarObra(obra: Partial<ObraLocal>, index: number): ObraLocal {
       obra.classificacaoIndicativa.trim() !== "Não informado"
         ? obra.classificacaoIndicativa.trim()
         : "Livre",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obra.avisosConteudo,
+      obra.classificacaoIndicativa,
+    ),
     sinopse:
       typeof obra.sinopse === "string" && obra.sinopse.trim()
         ? obra.sinopse
@@ -1737,6 +1759,7 @@ function criarPreviewCoverStyle(capa: string): CSSProperties {
 
 export default function EditarObraPage() {
   const router = useRouter();
+  const { language } = useHistorietasLanguage();
   const [obraId, setObraId] = useState("");
   const [, setUsuarioIdLogado] = useState("");
   const [obras, setObras] = useState<ObraLocal[]>([]);
@@ -1754,6 +1777,7 @@ export default function EditarObraPage() {
   const [formato, setFormato] = useState("");
   const [formatoPersonalizado, setFormatoPersonalizado] = useState("");
   const [classificacaoIndicativa, setClassificacaoIndicativa] = useState("");
+  const [avisosConteudo18, setAvisosConteudo18] = useState<AvisoConteudo18[]>([]);
   const [sinopse, setSinopse] = useState("");
   const [tags, setTags] = useState("");
   const [tagPersonalizada, setTagPersonalizada] = useState("");
@@ -1840,6 +1864,12 @@ export default function EditarObraPage() {
           obraAtual.classificacaoIndicativa === "Não informado"
           ? "Livre"
           : obraAtual.classificacaoIndicativa
+      );
+      setAvisosConteudo18(
+        normalizarAvisosConteudo18(
+          obraAtual.avisosConteudo,
+          obraAtual.classificacaoIndicativa,
+        ),
       );
       setSinopse(obraAtual.sinopse);
       setUsarTagPersonalizada(tagEhPersonalizada);
@@ -1938,7 +1968,7 @@ export default function EditarObraPage() {
         const { data: obraSupabase, error: erroObraSupabase } = await supabase
           .from("obras")
           .select(
-            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
+            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
           )
           .eq("id", obraIdParam)
           .eq("user_id", userId)
@@ -2083,7 +2113,8 @@ export default function EditarObraPage() {
       Boolean(formatoFinal) && formatoPersonalizadoValido,
       Boolean(classificacaoIndicativa.trim()) &&
         classificacaoIndicativa.trim() !== "Não informado" &&
-        classificacaoIndicativa.trim() !== "Não informada",
+        classificacaoIndicativa.trim() !== "Não informada" &&
+        (!ehClassificacao18(classificacaoIndicativa) || avisosConteudo18.length > 0),
       contarLetrasNumeros(sinopse.trim()) >= 20,
     ].filter(Boolean).length;
 
@@ -2096,6 +2127,7 @@ export default function EditarObraPage() {
     formatoFinal,
     formatoPersonalizadoValido,
     classificacaoIndicativa,
+    avisosConteudo18,
     sinopse,
   ]);
 
@@ -2157,6 +2189,10 @@ export default function EditarObraPage() {
       classificacaoLimpa === "Não informada"
     ) {
       return "Escolha a classificação indicativa da obra.";
+    }
+
+    if (ehClassificacao18(classificacaoLimpa) && avisosConteudo18.length === 0) {
+      return "Selecione pelo menos um aviso de conteúdo para a obra 18+.";
     }
 
     if (contarLetrasNumeros(sinopseLimpa) < 20) {
@@ -2369,6 +2405,10 @@ export default function EditarObraPage() {
     const generoFinalSalvo = generoFinal;
     const formatoFinalSalvo = formatoFinal;
     const classificacaoFinal = classificacaoIndicativa.trim();
+    const avisosConteudoFinal = normalizarAvisosConteudo18(
+      avisosConteudo18,
+      classificacaoFinal,
+    );
     const sinopseFinal = sinopse.trim();
     const tagsFinais = tagsTratadas.length > 0 ? tagsTratadas : ["sem tags"];
     const agora = new Date().toISOString();
@@ -2554,6 +2594,7 @@ export default function EditarObraPage() {
               genero: generoFinalSalvo,
               formato: formatoFinalSalvo,
               classificacao_indicativa: classificacaoFinal,
+              avisos_conteudo: avisosConteudoFinal,
               sinopse: sinopseFinal,
               tags: tagsFinais,
               capa_url: capaFinal,
@@ -2614,6 +2655,7 @@ export default function EditarObraPage() {
             genero: generoFinalSalvo,
             formato: formatoFinalSalvo,
             classificacaoIndicativa: classificacaoFinal,
+            avisosConteudo: avisosConteudoFinal,
             sinopse: sinopseFinal,
             tags: tagsFinais,
             capa: capaFinal,
@@ -3031,7 +3073,13 @@ export default function EditarObraPage() {
               <select
                 value={classificacaoIndicativa}
                 onChange={(event) => {
-                  setClassificacaoIndicativa(event.target.value);
+                  const novaClassificacao = event.target.value;
+                  setClassificacaoIndicativa(novaClassificacao);
+
+                  if (!ehClassificacao18(novaClassificacao)) {
+                    setAvisosConteudo18([]);
+                  }
+
                   marcarAlteracao();
                 }}
                 style={inputStyle}
@@ -3044,6 +3092,46 @@ export default function EditarObraPage() {
                 <option>16+</option>
                 <option>18+</option>
               </select>
+
+              {ehClassificacao18(classificacaoIndicativa) ? (
+                <section style={adultWarningsBoxStyle} aria-label="Avisos de conteúdo 18+">
+                  <strong style={adultWarningsTitleStyle}>{traduzirTextoConteudo18("avisosObrigatorios", language)}</strong>
+                  <p style={adultWarningsDescriptionStyle}>
+                    {traduzirTextoConteudo18("descricaoPublicacao", language)}
+                  </p>
+
+                  <div style={adultWarningsGridStyle}>
+                    {AVISOS_CONTEUDO_18.map((aviso) => {
+                      const selecionado = avisosConteudo18.includes(aviso);
+
+                      return (
+                        <label
+                          key={aviso}
+                          style={{
+                            ...adultWarningOptionStyle,
+                            ...(selecionado ? adultWarningOptionSelectedStyle : {}),
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selecionado}
+                            onChange={() => {
+                              setAvisosConteudo18((avisosAtuais) =>
+                                avisosAtuais.includes(aviso)
+                                  ? avisosAtuais.filter((item) => item !== aviso)
+                                  : [...avisosAtuais, aviso],
+                              );
+                              marcarAlteracao();
+                            }}
+                            style={adultWarningCheckboxStyle}
+                          />
+                          <span>{traduzirAvisoConteudo18(aviso, language)}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
             </div>
 
             <div style={fieldGroupStyle}>
@@ -3940,6 +4028,62 @@ const coverButtonStyle: CSSProperties = {
 
 const removeCoverButtonStyle: CSSProperties = {
   ...coverButtonStyle,
+};
+
+const adultWarningsBoxStyle: CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  marginTop: "10px",
+  padding: "14px",
+  borderRadius: "16px",
+  border: "1px solid rgba(255, 105, 130, 0.28)",
+  background: "rgba(94, 20, 44, 0.12)",
+};
+
+const adultWarningsTitleStyle: CSSProperties = {
+  color: "#FFD7DE",
+  fontSize: "12px",
+  fontWeight: 900,
+};
+
+const adultWarningsDescriptionStyle: CSSProperties = {
+  margin: 0,
+  color: "#C9BFD2",
+  fontSize: "11px",
+  lineHeight: 1.55,
+};
+
+const adultWarningsGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+  gap: "8px",
+};
+
+const adultWarningOptionStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "9px",
+  padding: "10px 11px",
+  borderRadius: "12px",
+  border: "1px solid rgba(255, 255, 255, 0.08)",
+  background: "rgba(255, 255, 255, 0.025)",
+  color: "#F2ECF8",
+  fontSize: "11px",
+  lineHeight: 1.4,
+  cursor: "pointer",
+};
+
+const adultWarningOptionSelectedStyle: CSSProperties = {
+  borderColor: "rgba(255, 113, 143, 0.5)",
+  background: "rgba(126, 35, 67, 0.2)",
+};
+
+const adultWarningCheckboxStyle: CSSProperties = {
+  width: "16px",
+  height: "16px",
+  marginTop: "1px",
+  accentColor: "#FF6680",
+  flex: "0 0 auto",
 };
 
 const inputStyle: CSSProperties = {
