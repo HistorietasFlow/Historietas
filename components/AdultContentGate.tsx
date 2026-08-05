@@ -84,8 +84,6 @@ export default function AdultContentGate({
         aria-labelledby="historietas-adult-gate-title"
         aria-describedby="historietas-adult-gate-description"
       >
-        <span style={badgeStyle}>{t.selo}</span>
-
         <div style={iconStyle} aria-hidden="true">
           18+
         </div>
@@ -98,21 +96,13 @@ export default function AdultContentGate({
           {t.descricao}
         </p>
 
-        <strong style={workTitleStyle}>{titulo}</strong>
-
         <div style={warningsStyle}>
-          <div style={warningsHeaderStyle}>
-            <span style={miniBadgeStyle}>18+</span>
-            <span style={warningsTitleStyle}>{t.avisos}</span>
-          </div>
-
-          <div style={warningsChipsStyle}>
+          <span style={warningsTitleStyle}>{t.avisos}</span>
+          <ul style={warningsListStyle}>
             {avisos.map((aviso) => (
-              <span key={aviso} style={warningChipStyle}>
-                {traduzirAvisoConteudo18(aviso, language)}
-              </span>
+              <li key={aviso}>{traduzirAvisoConteudo18(aviso, language)}</li>
             ))}
-          </div>
+          </ul>
         </div>
 
         <label style={checkboxLabelStyle}>
@@ -125,21 +115,23 @@ export default function AdultContentGate({
           <span>{t.confirmacao}</span>
         </label>
 
-        <button
-          type="button"
-          onClick={confirmar}
-          disabled={!confirmouIdade}
-          style={{
-            ...continueButtonStyle,
-            ...(!confirmouIdade ? disabledButtonStyle : {}),
-          }}
-        >
-          {t.continuar}
-        </button>
+        <div style={actionsStyle}>
+          <button type="button" onClick={onVoltar} style={backButtonStyle}>
+            {t.voltar}
+          </button>
 
-        <button type="button" onClick={onVoltar} style={backButtonStyle}>
-          {t.voltar}
-        </button>
+          <button
+            type="button"
+            onClick={confirmar}
+            disabled={!confirmouIdade}
+            style={{
+              ...continueButtonStyle,
+              ...(!confirmouIdade ? disabledButtonStyle : {}),
+            }}
+          >
+            {t.continuar}
+          </button>
+        </div>
 
         <p style={noteStyle}>{t.observacao}</p>
       </section>
@@ -151,49 +143,44 @@ const pageStyle: CSSProperties = {
   minHeight: "100dvh",
   display: "grid",
   placeItems: "center",
-  padding: "28px 16px 112px",
+  padding: "24px 16px",
   background:
-    "radial-gradient(circle at 50% 8%, rgba(92, 41, 181, 0.18), transparent 32%), #05020a",
+    "radial-gradient(circle at 50% 8%, rgba(92, 41, 181, 0.22), transparent 34%), #05020a",
   color: "#fff",
 };
 
 const cardStyle: CSSProperties = {
-  width: "min(100%, 500px)",
+  width: "min(100%, 520px)",
   display: "flex",
   flexDirection: "column",
   alignItems: "stretch",
-  gap: 12,
-  padding: "24px 20px 22px",
-  border: "1px solid rgba(151, 118, 219, 0.2)",
+  gap: 14,
+  padding: "26px 22px",
+  border: "1px solid rgba(176, 134, 255, 0.28)",
   borderRadius: 24,
-  background: "linear-gradient(180deg, rgba(14, 7, 25, 0.98), rgba(11, 5, 20, 0.98))",
-  boxShadow: "0 24px 70px rgba(0, 0, 0, 0.42)",
+  background: "rgba(14, 7, 25, 0.97)",
+  boxShadow: "0 28px 80px rgba(0, 0, 0, 0.48)",
 };
 
 const badgeStyle: CSSProperties = {
   alignSelf: "center",
-  padding: "7px 14px",
+  padding: "6px 11px",
   borderRadius: 999,
-  border: "1px solid rgba(255, 120, 140, 0.3)",
-  background: "rgba(123, 25, 45, 0.18)",
-  color: "#ffd4de",
+  border: "1px solid rgba(255, 120, 140, 0.45)",
+  background: "rgba(123, 25, 45, 0.24)",
+  color: "#ffbdc8",
   fontSize: 11,
   fontWeight: 900,
   letterSpacing: "0.08em",
 };
 
 const iconStyle: CSSProperties = {
-  width: 64,
-  height: 64,
   alignSelf: "center",
-  display: "grid",
-  placeItems: "center",
-  borderRadius: "50%",
-  border: "2px solid rgba(255, 103, 131, 0.85)",
-  color: "#fff",
-  fontSize: 22,
+  color: "#ff7b90",
+  fontSize: 28,
   fontWeight: 950,
-  boxShadow: "0 0 22px rgba(255, 74, 107, 0.16)",
+  lineHeight: 1,
+  textShadow: "0 0 18px rgba(255, 74, 107, 0.28)",
 };
 
 const titleStyle: CSSProperties = {
@@ -208,90 +195,66 @@ const descriptionStyle: CSSProperties = {
   textAlign: "center",
   color: "#d7cde5",
   fontSize: 14,
-  lineHeight: 1.55,
+  lineHeight: 1.6,
 };
 
 const workTitleStyle: CSSProperties = {
   textAlign: "center",
   color: "#fff",
-  fontSize: 22,
-  fontWeight: 800,
+  fontSize: 16,
 };
 
 const warningsStyle: CSSProperties = {
-  display: "grid",
-  gap: 10,
-  padding: "14px 15px",
-  borderRadius: 18,
-  background: "rgba(255, 255, 255, 0.035)",
-  border: "1px solid rgba(255, 255, 255, 0.07)",
-};
-
-const warningsHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-};
-
-const miniBadgeStyle: CSSProperties = {
-  padding: "4px 9px",
-  borderRadius: 999,
-  background: "rgba(123, 25, 45, 0.18)",
-  border: "1px solid rgba(255, 120, 140, 0.24)",
-  color: "#ffd4de",
-  fontSize: 10,
-  fontWeight: 900,
-  letterSpacing: "0.06em",
-  flex: "0 0 auto",
+  padding: "4px 2px 2px",
 };
 
 const warningsTitleStyle: CSSProperties = {
-  color: "#cfb7ff",
+  display: "block",
+  marginBottom: 8,
+  color: "#c8a8ff",
   fontSize: 12,
   fontWeight: 900,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
 };
 
-const warningsChipsStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 8,
-};
-
-const warningChipStyle: CSSProperties = {
-  padding: "7px 10px",
-  borderRadius: 999,
-  background: "rgba(255, 255, 255, 0.045)",
-  border: "1px solid rgba(255, 255, 255, 0.06)",
-  color: "#f2ebfb",
-  fontSize: 12,
-  lineHeight: 1.35,
-  fontWeight: 700,
+const warningsListStyle: CSSProperties = {
+  margin: 0,
+  paddingLeft: 20,
+  color: "#f3edf9",
+  fontSize: 13,
+  lineHeight: 1.65,
 };
 
 const checkboxLabelStyle: CSSProperties = {
   display: "flex",
-  alignItems: "center",
-  gap: 12,
-  padding: "14px 15px",
-  borderRadius: 16,
-  border: "1px solid rgba(163, 111, 255, 0.18)",
-  background: "rgba(116, 65, 204, 0.06)",
+  alignItems: "flex-start",
+  gap: 10,
+  padding: "13px 14px",
+  borderRadius: 14,
+  border: "1px solid rgba(163, 111, 255, 0.25)",
+  background: "rgba(116, 65, 204, 0.08)",
   cursor: "pointer",
-  fontSize: 14,
+  fontSize: 13,
   lineHeight: 1.45,
 };
 
 const checkboxStyle: CSSProperties = {
   width: 18,
   height: 18,
-  marginTop: 0,
+  marginTop: 1,
   accentColor: "#8d4cf5",
   flex: "0 0 auto",
 };
 
+const actionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.35fr)",
+  gap: 10,
+};
+
 const continueButtonStyle: CSSProperties = {
+  width: "100%",
   minHeight: 48,
   border: 0,
   borderRadius: 14,
@@ -307,7 +270,8 @@ const disabledButtonStyle: CSSProperties = {
 };
 
 const backButtonStyle: CSSProperties = {
-  minHeight: 42,
+  width: "100%",
+  minHeight: 48,
   border: "1px solid rgba(255, 255, 255, 0.12)",
   borderRadius: 13,
   background: "transparent",
