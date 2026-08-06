@@ -55,9 +55,9 @@ type DestaquePrivacidade = {
 };
 
 const ULTIMA_ATUALIZACAO: TextoTraduzido = {
-  pt: "4 de agosto de 2026",
-  en: "August 4, 2026",
-  es: "4 de agosto de 2026",
+  pt: "5 de agosto de 2026",
+  en: "August 5, 2026",
+  es: "5 de agosto de 2026",
 };
 
 const DESTAQUES_PRIVACIDADE: DestaquePrivacidade[] = [

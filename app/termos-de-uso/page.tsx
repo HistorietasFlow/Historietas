@@ -51,9 +51,9 @@ type DestaqueTermos = {
 };
 
 const ULTIMA_ATUALIZACAO: TextoTraduzido = {
-  pt: "28 de julho de 2026",
-  en: "July 28, 2026",
-  es: "28 de julio de 2026",
+  pt: "5 de agosto de 2026",
+  en: "August 5, 2026",
+  es: "5 de agosto de 2026",
 };
 
 const DESTAQUES_TERMOS: DestaqueTermos[] = [
