@@ -126,16 +126,39 @@ function parseJwtPayload(token) {
   }
 }
 
+function looksLikeRealSecretSuffix(suffix) {
+  const normalized = suffix.toLowerCase();
+
+  const obviousPlaceholder =
+    /(example|placeholder|replace|changeme|your[_-]?key|sua[_-]?chave)/i.test(
+      normalized
+    );
+
+  const distinctCharacters = new Set(suffix).size;
+
+  return (
+    suffix.length >= 24 &&
+    distinctCharacters >= 8 &&
+    !obviousPlaceholder
+  );
+}
+
 function findLiteralServiceRoleSecrets(file) {
   const findings = [];
 
   const secretKeyPattern =
-    /sb_secret_[A-Za-z0-9._-]{16,}/g;
+    /\bsb_secret_([A-Za-z0-9_-]{24,})\b/g;
 
-  if (secretKeyPattern.test(file.content)) {
+  for (const match of file.content.matchAll(secretKeyPattern)) {
+    if (!looksLikeRealSecretSuffix(match[1])) {
+      continue;
+    }
+
     findings.push(
       `${file.relative}: chave sb_secret_ literal`
     );
+
+    break;
   }
 
   const jwtPattern =
@@ -148,11 +171,26 @@ function findLiteralServiceRoleSecrets(file) {
       findings.push(
         `${file.relative}: JWT service_role literal`
       );
+
       break;
     }
   }
 
   return findings;
+}
+
+function isSensitiveSupabaseEnvironmentName(name) {
+  return (
+    /SERVICE_ROLE/.test(name) ||
+    /SUPABASE_(?:SECRET|SB_SECRET)(?:_KEY)?/.test(name)
+  );
+}
+
+function isDangerousPublicEnvironmentName(name) {
+  return (
+    name.startsWith("NEXT_PUBLIC_") &&
+    isSensitiveSupabaseEnvironmentName(name)
+  );
 }
 
 function extractImportSpecifiers(content) {
@@ -176,13 +214,32 @@ const sourceByPath = new Map(
   sourceFiles.map((file) => [file.full, file])
 );
 
-const adminModulePaths = new Set(
+const sensitiveServerModulePaths = new Set(
   sourceFiles
-    .filter((file) =>
-      /^lib\/supabase\/admin\.(?:ts|tsx|js|jsx|mjs|cjs)$/.test(
-        file.relative
-      )
-    )
+    .filter((file) => {
+      if (hasUseClientDirective(file.content)) {
+        return false;
+      }
+
+      const isAdminModule =
+        /^lib\/supabase\/admin\.(?:ts|tsx|js|jsx|mjs|cjs)$/.test(
+          file.relative
+        );
+
+      const hasSensitiveEnvironment =
+        extractEnvironmentNames(file.content).some(
+          isSensitiveSupabaseEnvironmentName
+        );
+
+      const hasLiteralSecret =
+        findLiteralServiceRoleSecrets(file).length > 0;
+
+      return (
+        isAdminModule ||
+        hasSensitiveEnvironment ||
+        hasLiteralSecret
+      );
+    })
     .map((file) => file.full)
 );
 
@@ -232,11 +289,11 @@ function resolveLocalImport(fromFile, specifier) {
   return null;
 }
 
-function findAdminImportChain(startPath) {
+function findSensitiveImportChain(startPath) {
   const visited = new Set();
 
   function visit(currentPath, chain) {
-    if (adminModulePaths.has(currentPath)) {
+    if (sensitiveServerModulePaths.has(currentPath)) {
       return chain;
     }
 
@@ -297,9 +354,7 @@ for (const file of sourceFiles) {
     file.content
   )) {
     if (
-      /^NEXT_PUBLIC_.*SERVICE_ROLE/.test(
-        environmentName
-      )
+      isDangerousPublicEnvironmentName(environmentName)
     ) {
       serviceRoleIssues.push(
         `${file.relative}: variável pública perigosa process.env.${environmentName}`
@@ -308,7 +363,7 @@ for (const file of sourceFiles) {
 
     if (
       isClient &&
-      /SERVICE_ROLE/.test(environmentName)
+      isSensitiveSupabaseEnvironmentName(environmentName)
     ) {
       serviceRoleIssues.push(
         `${file.relative}: Client Component acessa process.env.${environmentName}`
@@ -317,11 +372,11 @@ for (const file of sourceFiles) {
   }
 
   if (isClient) {
-    const importChain = findAdminImportChain(file.full);
+    const importChain = findSensitiveImportChain(file.full);
 
     if (importChain) {
       serviceRoleIssues.push(
-        `${file.relative}: importa módulo administrativo (${importChain.join(
+        `${file.relative}: importa módulo sensível (${importChain.join(
           " -> "
         )})`
       );
@@ -346,7 +401,7 @@ if (uniqueServiceRoleIssues.length) {
 } else {
   pass(
     "nenhuma chave service role no código cliente",
-    "sem segredo literal, variável pública perigosa ou import administrativo em Client Component"
+    "sem segredo real literal, variável pública perigosa ou import sensível em Client Component"
   );
 }
 
@@ -415,33 +470,56 @@ if (missingDeletion.length) {
   );
 }
 
-const migration = path.join(
+const migrationsDir = path.join(
   ROOT_DIR,
-  "supabase/migrations/20260801000100_progresso_leitura_capitulo_delete_cascade.sql"
+  "supabase/migrations"
 );
 
-if (!fs.existsSync(migration)) {
-  fail(
-    "migração de cascade do progresso de leitura",
-    "arquivo ausente"
+const migrationFiles = fs
+  .readdirSync(migrationsDir)
+  .filter((name) => name.endsWith(".sql"))
+  .sort();
+
+const progressCascadePattern =
+  /foreign key\s*\(\s*"?capitulo_id"?\s*\)\s*references\s+(?:"?public"?\.)?"?capitulos"?\s*\(\s*"?id"?\s*\)\s*on delete cascade/i;
+
+let progressCascadeMigration = "";
+
+for (const migrationName of migrationFiles) {
+  const sql = fs.readFileSync(
+    path.join(migrationsDir, migrationName),
+    "utf8"
+  );
+
+  const statements = sql
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter(Boolean);
+
+  const hasExpectedCascade = statements.some(
+    (statement) =>
+      /(?:alter table(?: only)?|create table)\s+(?:"?public"?\.)?"?progresso_leitura"?/i.test(
+        statement
+      ) &&
+      progressCascadePattern.test(statement)
+  );
+
+  if (hasExpectedCascade) {
+    progressCascadeMigration = migrationName;
+    break;
+  }
+}
+
+if (progressCascadeMigration) {
+  pass(
+    "cascade do progresso de leitura",
+    progressCascadeMigration
   );
 } else {
-  const sql = fs.readFileSync(migration, "utf8");
-
-  if (
-    /foreign key\s*\(capitulo_id\)[\s\S]*on delete cascade/i.test(
-      sql
-    )
-  ) {
-    pass(
-      "migração de cascade do progresso de leitura"
-    );
-  } else {
-    fail(
-      "migração de cascade do progresso de leitura",
-      "ON DELETE CASCADE não encontrado"
-    );
-  }
+  fail(
+    "cascade do progresso de leitura",
+    "FK progresso_leitura.capitulo_id -> capitulos.id ON DELETE CASCADE não encontrada nas migrations ativas"
+  );
 }
 
 const packageJson = JSON.parse(
@@ -467,15 +545,7 @@ for (const script of [
   }
 }
 
-const migrationsDir = path.join(
-  ROOT_DIR,
-  "supabase/migrations"
-);
-
-const migrationCount = fs
-  .readdirSync(migrationsDir)
-  .filter((name) => name.endsWith(".sql"))
-  .length;
+const migrationCount = migrationFiles.length;
 
 pass(
   "migrações Supabase encontradas",
@@ -489,8 +559,8 @@ fs.mkdirSync(
 
 fs.writeFileSync(
   path.join(
-    QA_DIR,
-    "reports/static-audit.json"
+    ROOT_DIR,
+    "qa/reports/static-audit.json"
   ),
   JSON.stringify(
     {

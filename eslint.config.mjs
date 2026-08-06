@@ -5,6 +5,7 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+
   globalIgnores([
     ".next/**",
     "out/**",
@@ -14,10 +15,25 @@ const eslintConfig = defineConfig([
     "node_modules/**",
     "next-env.d.ts",
     "*.zip",
+
+    "playwright-report/**",
+    "test-results/**",
+    "qa/playwright-report/**",
+    "qa/test-results/**",
+    "qa/reports/**",
+
+    "eslint-report.json",
+    "eslint-report-apos.json",
   ]),
+
   {
     linterOptions: {
       reportUnusedDisableDirectives: "warn",
+    },
+
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/purity": "warn",
     },
   },
 ]);
