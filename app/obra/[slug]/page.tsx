@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import ObraDinamicaClient from "./ObraDinamicaClient";
-import { criarSupabaseServerClient } from "../../../lib/supabase/server";
+import { obterObraMetadataPublica } from "../../../lib/cache/obrasPublicas";
 import {
   DEFAULT_HISTORIETAS_LANGUAGE,
   normalizeHistorietasLanguage,
@@ -12,14 +12,6 @@ type PageProps = {
   params: Promise<{
     slug: string;
   }>;
-};
-
-type ObraMetadataRow = {
-  titulo: string | null;
-  autor: string | null;
-  sinopse: string | null;
-  capa_url: string | null;
-  slug: string | null;
 };
 
 type TextosMetadataObra = {
@@ -202,7 +194,9 @@ function criarMetadataPadrao({
   };
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const [slug, idioma] = await Promise.all([
     obterSlug(params),
     obterIdiomaMetadata(),
@@ -218,16 +212,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   try {
-    const supabase = await criarSupabaseServerClient();
-    const { data, error } = await supabase
-      .from("obras")
-      .select("titulo,autor,sinopse,capa_url,slug")
-      .eq("slug", slug)
-      .eq("publicado", true)
-      .limit(1)
-      .maybeSingle();
+    const obra = await obterObraMetadataPublica(slug);
 
-    if (error || !data) {
+    if (!obra) {
       return criarMetadataPadrao({
         idioma,
         titulo: textos.tituloNaoEncontrado,
@@ -235,7 +222,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       });
     }
 
-    const obra = data as ObraMetadataRow;
     const tituloObra = limitarTexto(
       obra.titulo?.trim() || textos.tituloObraFallback,
       100,

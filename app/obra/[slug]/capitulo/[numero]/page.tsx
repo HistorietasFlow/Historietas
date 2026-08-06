@@ -1,20 +1,11 @@
 import { redirect } from "next/navigation";
-import { criarSupabaseServerClient } from "../../../../../lib/supabase/server";
-import { idObraSupabaseValido } from "../../../../../lib/utils";
+import { obterRotaCapituloPublico } from "../../../../../lib/cache/obrasPublicas";
 
 type PageProps = {
   params: Promise<{
     slug: string;
     numero: string;
   }>;
-};
-
-type ObraCapituloRouteRow = {
-  id: string;
-};
-
-type CapituloRouteRow = {
-  id: string;
 };
 
 function decodificarSlugSeguro(valor: string) {
@@ -70,48 +61,18 @@ export default async function CapituloCanonicoPage({ params }: PageProps) {
     redirect(obraHref);
   }
 
-  const supabase = await criarSupabaseServerClient();
+  const rotaCapitulo = await obterRotaCapituloPublico(
+    slugSeguro,
+    numeroCapitulo,
+  ).catch(() => null);
 
-  const { data: obraData, error: obraError } = await supabase
-    .from("obras")
-    .select("id")
-    .eq("slug", slugSeguro)
-    .eq("publicado", true)
-    .limit(1)
-    .maybeSingle();
-
-  if (obraError || !obraData) {
-    redirect(obraHref);
-  }
-
-  const obra = obraData as ObraCapituloRouteRow;
-
-  if (!idObraSupabaseValido(obra.id)) {
-    redirect(obraHref);
-  }
-
-  const { data: capituloData, error: capituloError } = await supabase
-    .from("capitulos")
-    .select("id")
-    .eq("obra_id", obra.id)
-    .eq("ordem", numeroCapitulo)
-    .eq("publicado", true)
-    .limit(1)
-    .maybeSingle();
-
-  if (capituloError || !capituloData) {
-    redirect(obraHref);
-  }
-
-  const capitulo = capituloData as CapituloRouteRow;
-
-  if (!idObraSupabaseValido(capitulo.id)) {
+  if (!rotaCapitulo) {
     redirect(obraHref);
   }
 
   const leituraParams = new URLSearchParams({
-    obraId: obra.id,
-    capituloId: capitulo.id,
+    obraId: rotaCapitulo.obraId,
+    capituloId: rotaCapitulo.capituloId,
   });
 
   redirect(`/ler-capitulo?${leituraParams.toString()}`);
