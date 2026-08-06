@@ -65,7 +65,8 @@ type LoginTranslationKey =
   | "and"
   | "privacyPrefix"
   | "privacyLink"
-  | "consentRequired";
+  | "consentRequired"
+  | "profileSyncWarning";
 
 const LOGIN_TRANSLATIONS: Record<
   HistorietasLanguage,
@@ -131,6 +132,8 @@ const LOGIN_TRANSLATIONS: Record<
     privacyLink: "Política de Privacidade",
     consentRequired:
       "Para criar a conta, aceite os Termos e as Diretrizes e confirme que leu a Política de Privacidade.",
+    profileSyncWarning:
+      "Sua conta foi acessada, mas o perfil não pôde ser sincronizado agora. Tentaremos novamente automaticamente no próximo acesso.",
   },
   en: {
     backHome: "Back to the home page",
@@ -191,6 +194,8 @@ const LOGIN_TRANSLATIONS: Record<
     privacyLink: "Privacy Policy",
     consentRequired:
       "To create the account, accept the Terms and Guidelines and confirm that you have read the Privacy Policy.",
+    profileSyncWarning:
+      "Your account was accessed, but the profile could not be synchronized right now. We will automatically try again the next time you sign in.",
   },
   es: {
     backHome: "Volver a la página de inicio",
@@ -252,6 +257,8 @@ const LOGIN_TRANSLATIONS: Record<
     privacyLink: "Política de Privacidad",
     consentRequired:
       "Para crear la cuenta, acepta los Términos y las Normas y confirma que leíste la Política de Privacidad.",
+    profileSyncWarning:
+      "Se accedió a tu cuenta, pero el perfil no pudo sincronizarse ahora. Lo intentaremos de nuevo automáticamente en el próximo acceso.",
   },
 };
 
@@ -356,6 +363,75 @@ function formatarErroAuth(
   }
 
   return `${mensagemAmigavel} ${technicalError}: ${textoErro}`;
+}
+
+type ResultadoSincronizacaoPerfil =
+  | { ok: true }
+  | { ok: false; error: unknown };
+
+const PROFILE_SYNC_FAILURE_STORAGE_KEY =
+  "historietas-profile-sync-failure";
+
+function aguardarLogin(milisegundos: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, milisegundos);
+  });
+}
+
+function obterDetalhesErroPerfil(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return typeof error === "string" && error.trim()
+      ? error.trim()
+      : "erro desconhecido";
+  }
+
+  const erroSupabase = error as {
+    message?: string;
+    code?: string;
+    details?: string;
+    hint?: string;
+  };
+
+  return [
+    erroSupabase.message,
+    erroSupabase.code ? `código ${erroSupabase.code}` : "",
+    erroSupabase.details,
+    erroSupabase.hint,
+  ]
+    .filter((valor): valor is string => Boolean(valor?.trim()))
+    .join(" | ") || "erro desconhecido";
+}
+
+function registrarFalhaSincronizacaoPerfil(
+  error: unknown,
+  userId: string,
+) {
+  const detalhes = obterDetalhesErroPerfil(error);
+
+  console.error(
+    "[Historietas] Falha ao sincronizar o perfil após a autenticação.",
+    {
+      userId,
+      detalhes,
+    },
+  );
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    sessionStorage.setItem(
+      PROFILE_SYNC_FAILURE_STORAGE_KEY,
+      JSON.stringify({
+        userId,
+        detalhes,
+        registradoEm: new Date().toISOString(),
+      }),
+    );
+  } catch {
+    // O registro local é apenas diagnóstico e não pode bloquear o login.
+  }
 }
 
 function obterRedirectToSeguro(valor: string | null, fallback: string) {
@@ -552,11 +628,16 @@ export default function LoginPage() {
     nomeInformado: string,
     emailInformado: string,
     userMetadata?: Record<string, unknown> | null,
-  ) => {
+  ): Promise<ResultadoSincronizacaoPerfil> => {
     const userIdLimpo = userId.trim();
 
     if (!userIdLimpo) {
-      return;
+      const error = new Error(
+        "Não foi possível sincronizar o perfil sem o identificador do usuário.",
+      );
+
+      registrarFalhaSincronizacaoPerfil(error, userIdLimpo);
+      return { ok: false, error };
     }
 
     const metadata =
@@ -574,7 +655,6 @@ export default function LoginPage() {
       nomeMetadata ||
       emailLimpo.split("@")[0] ||
       "Usuário";
-    const agora = new Date().toISOString();
 
     type PerfilExistenteLogin = {
       id?: string | null;
@@ -585,7 +665,7 @@ export default function LoginPage() {
       avatar_url?: string | null;
     };
 
-    try {
+    async function sincronizarUmaVez() {
       let perfilAtual: PerfilExistenteLogin | null = null;
 
       const { data: perfilPorUserId, error: erroPorUserId } = await supabase
@@ -599,17 +679,25 @@ export default function LoginPage() {
         perfilAtual = perfilPorUserId as PerfilExistenteLogin;
       }
 
+      let erroPorId: unknown = null;
+
       if (!perfilAtual) {
-        const { data: perfilPorId, error: erroPorId } = await supabase
+        const respostaPorId = await supabase
           .from("profiles")
           .select("id,user_id,nome,bio,sobre_bio,avatar_url")
           .eq("id", userIdLimpo)
           .limit(1)
           .maybeSingle();
 
-        if (!erroPorId && perfilPorId) {
-          perfilAtual = perfilPorId as PerfilExistenteLogin;
+        erroPorId = respostaPorId.error;
+
+        if (!respostaPorId.error && respostaPorId.data) {
+          perfilAtual = respostaPorId.data as PerfilExistenteLogin;
         }
+      }
+
+      if (!perfilAtual && (erroPorUserId || erroPorId)) {
+        throw erroPorUserId || erroPorId;
       }
 
       const termosVersaoMetadata =
@@ -643,6 +731,7 @@ export default function LoginPage() {
         Boolean(diretrizesAceitasEmMetadata) &&
         politicaVersaoMetadata === POLITICA_PRIVACIDADE_VERSAO_ATUAL &&
         Boolean(politicaCienteEmMetadata);
+      const agora = new Date().toISOString();
 
       const perfilPayload: Record<string, unknown> = {
         user_id: userIdLimpo,
@@ -668,21 +757,86 @@ export default function LoginPage() {
       }
 
       if (perfilAtual?.id) {
-        await supabase
-          .from("profiles")
-          .update(perfilPayload)
-          .eq("id", perfilAtual.id);
+        const { data: perfilAtualizado, error: erroAtualizacao } =
+          await supabase
+            .from("profiles")
+            .update(perfilPayload)
+            .eq("id", perfilAtual.id)
+            .select("id")
+            .maybeSingle();
+
+        if (erroAtualizacao) {
+          throw erroAtualizacao;
+        }
+
+        if (!perfilAtualizado) {
+          throw new Error(
+            "O perfil existente não pôde ser atualizado ou não ficou visível após a atualização.",
+          );
+        }
+
         return;
       }
 
-      await supabase.from("profiles").insert({
-        id: userIdLimpo,
-        tipo: "leitor",
-        ...perfilPayload,
-      });
-    } catch {
-      // O login não pode falhar só porque o perfil não sincronizou.
+      const { data: perfilCriado, error: erroCriacao } = await supabase
+        .from("profiles")
+        .upsert(
+          {
+            id: userIdLimpo,
+            tipo: "leitor",
+            ...perfilPayload,
+          },
+          {
+            onConflict: "id",
+            ignoreDuplicates: false,
+          },
+        )
+        .select("id")
+        .maybeSingle();
+
+      if (erroCriacao) {
+        throw erroCriacao;
+      }
+
+      if (!perfilCriado) {
+        throw new Error(
+          "O perfil não pôde ser criado ou não ficou visível após a criação.",
+        );
+      }
     }
+
+    let ultimoErro: unknown = new Error(
+      "A sincronização do perfil não foi concluída.",
+    );
+
+    for (let tentativa = 1; tentativa <= 2; tentativa += 1) {
+      try {
+        await sincronizarUmaVez();
+
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.removeItem(PROFILE_SYNC_FAILURE_STORAGE_KEY);
+          } catch {
+            // A limpeza do diagnóstico local não pode bloquear o login.
+          }
+        }
+
+        return { ok: true };
+      } catch (error) {
+        ultimoErro = error;
+
+        if (tentativa < 2) {
+          await aguardarLogin(350);
+        }
+      }
+    }
+
+    registrarFalhaSincronizacaoPerfil(ultimoErro, userIdLimpo);
+
+    return {
+      ok: false,
+      error: ultimoErro,
+    };
   }, []);
 
   useEffect(() => {
@@ -693,12 +847,18 @@ export default function LoginPage() {
         const { data } = await supabase.auth.getUser();
 
         if (componenteAtivo && data.user) {
-          await salvarProfile(
+          const resultadoPerfil = await salvarProfile(
             data.user.id,
             "",
             data.user.email || "",
-            data.user.user_metadata
+            data.user.user_metadata,
           );
+
+          if (!resultadoPerfil.ok && componenteAtivo) {
+            setErro(t("profileSyncWarning"));
+            await aguardarLogin(1600);
+          }
+
           sincronizarStorageUsuarioLogin(data.user.id);
 
           router.replace(obterRedirectToAtual("/perfil-autor"));
@@ -714,7 +874,7 @@ export default function LoginPage() {
     return () => {
       componenteAtivo = false;
     };
-  }, [router, salvarProfile]);
+  }, [router, salvarProfile, t]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -833,12 +993,18 @@ export default function LoginPage() {
         }
 
         if (data.session) {
-          await salvarProfile(
+          const resultadoPerfil = await salvarProfile(
             data.user.id,
             nomeFinal,
             data.user.email || emailFinal,
             data.user.user_metadata,
           );
+
+          if (!resultadoPerfil.ok) {
+            setErro(t("profileSyncWarning"));
+            await aguardarLogin(1600);
+          }
+
           sincronizarStorageUsuarioLogin(data.user.id);
           router.replace(obterRedirectToAtual("/perfil-autor"));
           router.refresh();
@@ -868,12 +1034,18 @@ export default function LoginPage() {
         return;
       }
 
-      await salvarProfile(
+      const resultadoPerfil = await salvarProfile(
         data.user.id,
         "",
         data.user.email || emailFinal,
         data.user.user_metadata,
       );
+
+      if (!resultadoPerfil.ok) {
+        setErro(t("profileSyncWarning"));
+        await aguardarLogin(1600);
+      }
+
       sincronizarStorageUsuarioLogin(data.user.id);
       router.replace(obterRedirectToAtual("/perfil-autor"));
       router.refresh();
