@@ -7,11 +7,6 @@
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       autor_avaliacoes: {
@@ -400,6 +395,7 @@ export type Database = {
       }
       comunidade_denuncias: {
         Row: {
+          alvo_autor_id: string | null
           alvo_id: string
           alvo_tipo: string
           analisado_em: string | null
@@ -415,6 +411,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          alvo_autor_id?: string | null
           alvo_id: string
           alvo_tipo: string
           analisado_em?: string | null
@@ -430,6 +427,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          alvo_autor_id?: string | null
           alvo_id?: string
           alvo_tipo?: string
           analisado_em?: string | null
@@ -1007,6 +1005,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      moderacao_historico: {
+        Row: {
+          acao: string
+          alvo_autor_id: string | null
+          alvo_id: string | null
+          alvo_tipo: string | null
+          criado_em: string
+          denuncia_criada_em: string | null
+          denuncia_id: string
+          denunciado_id: string | null
+          denunciante_id: string | null
+          id: string
+          moderador_id: string | null
+          observacao_admin: string
+          origem: string
+          snapshot: Json
+          status_anterior: string | null
+          status_novo: string | null
+        }
+        Insert: {
+          acao: string
+          alvo_autor_id?: string | null
+          alvo_id?: string | null
+          alvo_tipo?: string | null
+          criado_em?: string
+          denuncia_criada_em?: string | null
+          denuncia_id: string
+          denunciado_id?: string | null
+          denunciante_id?: string | null
+          id?: string
+          moderador_id?: string | null
+          observacao_admin?: string
+          origem: string
+          snapshot?: Json
+          status_anterior?: string | null
+          status_novo?: string | null
+        }
+        Update: {
+          acao?: string
+          alvo_autor_id?: string | null
+          alvo_id?: string | null
+          alvo_tipo?: string | null
+          criado_em?: string
+          denuncia_criada_em?: string | null
+          denuncia_id?: string
+          denunciado_id?: string | null
+          denunciante_id?: string | null
+          id?: string
+          moderador_id?: string | null
+          observacao_admin?: string
+          origem?: string
+          snapshot?: Json
+          status_anterior?: string | null
+          status_novo?: string | null
+        }
+        Relationships: []
       }
       notificacoes: {
         Row: {
@@ -2078,6 +2133,18 @@ export type Database = {
           status: string
         }[]
       }
+      listar_reincidencias_moderacao: {
+        Args: never
+        Returns: {
+          em_analise: number
+          pendentes: number
+          rejeitadas: number
+          resolvidas: number
+          total_denuncias: number
+          ultima_denuncia: string
+          user_id: string
+        }[]
+      }
       listar_usuarios_bloqueados: {
         Args: { p_limite?: number }
         Returns: {
@@ -2315,3 +2382,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

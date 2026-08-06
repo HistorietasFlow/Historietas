@@ -36,6 +36,7 @@ type DenunciaComunidade = {
   id: string;
   alvoTipo: TipoAlvoDenuncia;
   alvoId: string;
+  alvoAutorId: string;
   denuncianteId: string;
   motivo: string;
   detalhe: string;
@@ -72,12 +73,6 @@ type ComentarioCapituloDenunciado = {
   user_id: string;
   comentario: string;
   criado_em: string;
-};
-
-type CapituloContextoDenuncia = {
-  id: string;
-  obra_id: string;
-  titulo: string | null;
 };
 
 type CapituloDenunciado = {
@@ -177,6 +172,10 @@ type DenunciaPerfilComContexto = DenunciaPerfil & {
   perfilHref: string;
 };
 
+type ReincidenciaModeracaoRow = {
+  user_id: string | null;
+  total_denuncias: number | string | null;
+};
 
 type TraducaoAdminComunidade = {
   en: string;
@@ -362,6 +361,7 @@ const ADMIN_COMUNIDADE_UI_TRANSLATIONS: Record<
     es: "Contenido eliminado o no disponible.",
   },
   "Autor:": { en: "Author:", es: "Autor:" },
+  "Reincidências:": { en: "Repeat reports:", es: "Reincidencias:" },
   "Data:": { en: "Date:", es: "Fecha:" },
   "Categoria:": { en: "Category:", es: "Categoría:" },
   "Tipo:": { en: "Type:", es: "Tipo:" },
@@ -1362,6 +1362,7 @@ export default function AdminComunidadePage() {
   const [sucesso, setSucesso] = useState("");
   const [denuncias, setDenuncias] = useState<DenunciaComContexto[]>([]);
   const [denunciasPerfis, setDenunciasPerfis] = useState<DenunciaPerfilComContexto[]>([]);
+  const [reincidenciasPorUsuario, setReincidenciasPorUsuario] = useState<Record<string, number>>({});
   const [statusFiltro, setStatusFiltro] = useState<StatusFiltroDenuncia>(
     "todas"
   );
@@ -1408,7 +1409,7 @@ export default function AdminComunidadePage() {
     const { data: denunciasResposta, error: denunciasErro } = await supabase
       .from("comunidade_denuncias")
       .select(
-        "id, alvo_tipo, alvo_id, denunciante_id, motivo, detalhe, status, arquivada, observacao_admin, analisado_por, analisado_em, criado_em"
+        "id, alvo_tipo, alvo_id, alvo_autor_id, denunciante_id, motivo, detalhe, status, arquivada, observacao_admin, analisado_por, analisado_em, criado_em"
       )
       .order("criado_em", { ascending: false })
       .limit(200);
@@ -1423,6 +1424,7 @@ export default function AdminComunidadePage() {
       id: String(denuncia.id || ""),
       alvoTipo: normalizarTipoAlvo(denuncia.alvo_tipo),
       alvoId: String(denuncia.alvo_id || ""),
+      alvoAutorId: String(denuncia.alvo_autor_id || ""),
       denuncianteId: String(denuncia.denunciante_id || ""),
       motivo: formatarMotivoDenunciaConteudo(
         String(denuncia.motivo || "Conteúdo inadequado")
@@ -1897,6 +1899,29 @@ export default function AdminComunidadePage() {
     });
   }
 
+  async function carregarReincidenciasModeracao() {
+    const { data, error } = await supabase.rpc(
+      "listar_reincidencias_moderacao"
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    const proximoMapa: Record<string, number> = {};
+
+    ((data || []) as unknown as ReincidenciaModeracaoRow[]).forEach((item) => {
+      const userId = typeof item.user_id === "string" ? item.user_id.trim() : "";
+      const total = Number(item.total_denuncias || 0);
+
+      if (userId && Number.isFinite(total) && total > 0) {
+        proximoMapa[userId] = total;
+      }
+    });
+
+    setReincidenciasPorUsuario(proximoMapa);
+  }
+
   async function carregarDenunciasPerfis() {
     const { data: denunciasResposta, error: denunciasErro } = await supabase
       .from("denuncias_perfis")
@@ -2004,6 +2029,7 @@ export default function AdminComunidadePage() {
             setEhAdmin(false);
             setDenuncias([]);
             setDenunciasPerfis([]);
+            setReincidenciasPorUsuario({});
             router.replace(criarLoginHrefAdminModeracao());
           }
 
@@ -2025,7 +2051,11 @@ export default function AdminComunidadePage() {
         }
 
         if (adminConfirmado) {
-          await Promise.all([carregarDenuncias(), carregarDenunciasPerfis()]);
+          await Promise.all([
+            carregarDenuncias(),
+            carregarDenunciasPerfis(),
+            carregarReincidenciasModeracao(),
+          ]);
         }
       } catch (error) {
         if (!cancelado) {
@@ -2085,6 +2115,7 @@ export default function AdminComunidadePage() {
           denuncia.alvoTipo,
           denuncia.alvoResumo,
           denuncia.alvoAutor,
+          denuncia.alvoAutorId,
           denuncia.alvoPostId,
           denuncia.alvoCategoria || "",
           denuncia.alvoTipoPublicacao || "",
@@ -2980,6 +3011,8 @@ export default function AdminComunidadePage() {
               const acaoAtiva = acaoEmAndamento.startsWith(`perfil-${denuncia.id}`);
               const menuIdPerfil = `perfil-${denuncia.id}`;
               const menuAberto = menuDenunciaAbertoId === menuIdPerfil;
+              const totalReincidencias =
+                reincidenciasPorUsuario[denuncia.denunciadoId] || 0;
 
               return (
                 <article key={denuncia.id} style={reportCardStyle}>
@@ -3148,6 +3181,12 @@ export default function AdminComunidadePage() {
                         <span style={metaItemStyle}>
                           Denunciante: <strong>{denuncia.denuncianteNome}</strong>
                         </span>
+
+                        {totalReincidencias > 1 && (
+                          <span style={recurrenceMetaItemStyle}>
+                            Reincidências: <strong>{totalReincidencias}</strong>
+                          </span>
+                        )}
                       </div>
                     </section>
 
@@ -3195,6 +3234,9 @@ export default function AdminComunidadePage() {
                 conteudoDenunciadoIndisponivel(denuncia);
               const denunciaResolvidaComConteudoIndisponivel =
                 denuncia.status === "resolvida" && conteudoIndisponivel;
+              const totalReincidencias = denuncia.alvoAutorId
+                ? reincidenciasPorUsuario[denuncia.alvoAutorId] || 0
+                : 0;
 
               return (
                 <article key={denuncia.id} style={reportCardStyle}>
@@ -3471,6 +3513,12 @@ export default function AdminComunidadePage() {
                         <span style={metaItemStyle}>
                           Autor: <strong>{denuncia.alvoAutor}</strong>
                         </span>
+
+                        {totalReincidencias > 1 && (
+                          <span style={recurrenceMetaItemStyle}>
+                            Reincidências: <strong>{totalReincidencias}</strong>
+                          </span>
+                        )}
 
                         <span style={metaItemStyle}>
                           Data: <strong>{formatarData(denuncia.alvoData)}</strong>
@@ -4730,6 +4778,12 @@ const metaItemStyle: CSSProperties = {
   lineHeight: 1.35,
   fontWeight: 750,
   ...safeTextStyle,
+};
+
+const recurrenceMetaItemStyle: CSSProperties = {
+  ...metaItemStyle,
+  color: "var(--historietas-admin-comunidade-warning, #FBBF24)",
+  fontWeight: 900,
 };
 
 const spoilerMetaItemStyle: CSSProperties = {
