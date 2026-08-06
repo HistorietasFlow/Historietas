@@ -11,7 +11,7 @@ export const AVISOS_CONTEUDO_18 = [
 
 export type AvisoConteudo18 = (typeof AVISOS_CONTEUDO_18)[number];
 
-const AVISOS_VALIDOS = new Set<string>(AVISOS_CONTEUDO_18);
+const AVISOS_VALIDOS: ReadonlySet<string> = new Set(AVISOS_CONTEUDO_18);
 
 export type ChaveTextoConteudo18 =
   | "avisosObrigatorios"
@@ -56,6 +56,8 @@ const TEXTOS_CONTEUDO_18: Record<
 
 const CHAVE_CONFIRMACAO_18 = "historietas-acesso-conteudo-18";
 const VALIDADE_CONFIRMACAO_MS = 30 * 24 * 60 * 60 * 1000;
+
+let confirmacaoTemporariaNaMemoria = false;
 
 const ROTULOS_AVISOS: Record<
   AvisoConteudo18,
@@ -129,7 +131,58 @@ export function traduzirTextoConteudo18(
   chave: ChaveTextoConteudo18,
   language: HistorietasLanguage,
 ) {
-  return TEXTOS_CONTEUDO_18[chave][language] || TEXTOS_CONTEUDO_18[chave]["pt-BR"];
+  return (
+    TEXTOS_CONTEUDO_18[chave][language] ||
+    TEXTOS_CONTEUDO_18[chave]["pt-BR"]
+  );
+}
+
+function lerConfirmacaoArmazenada(
+  storage: Storage,
+): { valida: boolean; deveRemover: boolean } {
+  const valor = storage.getItem(CHAVE_CONFIRMACAO_18);
+
+  if (!valor) {
+    return { valida: false, deveRemover: false };
+  }
+
+  try {
+    const registro = JSON.parse(valor) as { confirmadoEm?: unknown };
+    const confirmadoEm =
+      typeof registro.confirmadoEm === "string"
+        ? Date.parse(registro.confirmadoEm)
+        : Number.NaN;
+
+    if (!Number.isFinite(confirmadoEm)) {
+      return { valida: false, deveRemover: true };
+    }
+
+    const agora = Date.now();
+    const dataFutura = confirmadoEm > agora;
+    const vencida = agora - confirmadoEm > VALIDADE_CONFIRMACAO_MS;
+
+    if (dataFutura || vencida) {
+      return { valida: false, deveRemover: true };
+    }
+
+    return { valida: true, deveRemover: false };
+  } catch {
+    return { valida: false, deveRemover: true };
+  }
+}
+
+function verificarStorage(storage: Storage) {
+  const resultado = lerConfirmacaoArmazenada(storage);
+
+  if (resultado.deveRemover) {
+    try {
+      storage.removeItem(CHAVE_CONFIRMACAO_18);
+    } catch {
+      // A falha de limpeza não deve interromper a navegação.
+    }
+  }
+
+  return resultado.valida;
 }
 
 export function acessoConteudo18Confirmado() {
@@ -138,33 +191,22 @@ export function acessoConteudo18Confirmado() {
   }
 
   try {
-    const valor = window.localStorage.getItem(CHAVE_CONFIRMACAO_18);
-
-    if (!valor) {
-      return false;
+    if (verificarStorage(window.localStorage)) {
+      return true;
     }
-
-    const registro = JSON.parse(valor) as { confirmadoEm?: unknown };
-    const confirmadoEm =
-      typeof registro.confirmadoEm === "string"
-        ? Date.parse(registro.confirmadoEm)
-        : Number.NaN;
-
-    if (!Number.isFinite(confirmadoEm)) {
-      window.localStorage.removeItem(CHAVE_CONFIRMACAO_18);
-      return false;
-    }
-
-    const aindaValido = Date.now() - confirmadoEm <= VALIDADE_CONFIRMACAO_MS;
-
-    if (!aindaValido) {
-      window.localStorage.removeItem(CHAVE_CONFIRMACAO_18);
-    }
-
-    return aindaValido;
   } catch {
-    return false;
+    // Navegadores podem bloquear o armazenamento local.
   }
+
+  try {
+    if (verificarStorage(window.sessionStorage)) {
+      return true;
+    }
+  } catch {
+    // Navegadores também podem bloquear o armazenamento da sessão.
+  }
+
+  return confirmacaoTemporariaNaMemoria;
 }
 
 export function confirmarAcessoConteudo18() {
@@ -172,12 +214,25 @@ export function confirmarAcessoConteudo18() {
     return;
   }
 
+  const registro = JSON.stringify({
+    confirmadoEm: new Date().toISOString(),
+  });
+
   try {
-    window.localStorage.setItem(
-      CHAVE_CONFIRMACAO_18,
-      JSON.stringify({ confirmadoEm: new Date().toISOString() }),
-    );
+    window.localStorage.setItem(CHAVE_CONFIRMACAO_18, registro);
+    confirmacaoTemporariaNaMemoria = true;
+    return;
   } catch {
-    // A confirmação continua válida para a sessão atual mesmo sem armazenamento.
+    // Usa a sessão como alternativa quando o armazenamento local falha.
   }
+
+  try {
+    window.sessionStorage.setItem(CHAVE_CONFIRMACAO_18, registro);
+    confirmacaoTemporariaNaMemoria = true;
+    return;
+  } catch {
+    // A memória mantém o acesso até a página ser recarregada.
+  }
+
+  confirmacaoTemporariaNaMemoria = true;
 }
