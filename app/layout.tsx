@@ -4,6 +4,7 @@ import Script from "next/script";
 import AdminBottomNavItem from "../components/AdminBottomNavItem";
 import { NotificacoesProvider } from "../components/NotificacoesProvider";
 import { HistorietasLanguageProvider } from "../components/HistorietasLanguageProvider";
+import PwaRegister from "../components/PwaRegister";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
@@ -35,8 +36,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     type: "website",
@@ -76,6 +79,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>
+        <PwaRegister />
 
         <Script
           id="historietas-tema-visual-inicial"
