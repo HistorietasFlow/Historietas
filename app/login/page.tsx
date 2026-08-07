@@ -30,12 +30,14 @@ type LoginTranslationKey =
   | "email"
   | "password"
   | "passwordPlaceholder"
+  | "signupPasswordPlaceholder"
   | "wait"
   | "create"
   | "signIn"
   | "helperText"
   | "emailRequired"
   | "passwordMin"
+  | "signupPasswordRequirements"
   | "displayNameMin"
   | "accountCreationNotConfirmed"
   | "accountCreatedNotice"
@@ -85,6 +87,7 @@ const LOGIN_TRANSLATIONS: Record<
     email: "E-mail",
     password: "Senha",
     passwordPlaceholder: "Mínimo de 6 caracteres",
+    signupPasswordPlaceholder: "Mínimo de 8 caracteres, com letra e número",
     wait: "Aguarde...",
     create: "CRIAR",
     signIn: "ENTRAR",
@@ -92,6 +95,8 @@ const LOGIN_TRANSLATIONS: Record<
       "Use seu e-mail e senha para acessar sua conta. Ao criar uma conta, confira os dados antes de continuar.",
     emailRequired: "Digite seu e-mail.",
     passwordMin: "A senha precisa ter pelo menos 6 caracteres.",
+    signupPasswordRequirements:
+      "A senha precisa ter pelo menos 8 caracteres, incluindo uma letra e um número.",
     displayNameMin:
       "Digite um nome de exibição com pelo menos 2 caracteres.",
     accountCreationNotConfirmed:
@@ -148,6 +153,7 @@ const LOGIN_TRANSLATIONS: Record<
     email: "Email",
     password: "Password",
     passwordPlaceholder: "At least 6 characters",
+    signupPasswordPlaceholder: "At least 8 characters, with a letter and a number",
     wait: "Please wait...",
     create: "CREATE",
     signIn: "SIGN IN",
@@ -155,6 +161,8 @@ const LOGIN_TRANSLATIONS: Record<
       "Use your email and password to access your account. When creating an account, check your details before continuing.",
     emailRequired: "Enter your email address.",
     passwordMin: "Your password must be at least 6 characters long.",
+    signupPasswordRequirements:
+      "Your password must be at least 8 characters long and include a letter and a number.",
     displayNameMin: "Enter a display name with at least 2 characters.",
     accountCreationNotConfirmed:
       "The account creation could not be confirmed.",
@@ -210,6 +218,7 @@ const LOGIN_TRANSLATIONS: Record<
     email: "Correo electrónico",
     password: "Contraseña",
     passwordPlaceholder: "Mínimo 6 caracteres",
+    signupPasswordPlaceholder: "Mínimo 8 caracteres, con una letra y un número",
     wait: "Espera...",
     create: "CREAR",
     signIn: "ENTRAR",
@@ -217,6 +226,8 @@ const LOGIN_TRANSLATIONS: Record<
       "Usa tu correo y contraseña para acceder a tu cuenta. Al crear una cuenta, revisa tus datos antes de continuar.",
     emailRequired: "Escribe tu correo electrónico.",
     passwordMin: "La contraseña debe tener al menos 6 caracteres.",
+    signupPasswordRequirements:
+      "La contraseña debe tener al menos 8 caracteres e incluir una letra y un número.",
     displayNameMin:
       "Escribe un nombre para mostrar de al menos 2 caracteres.",
     accountCreationNotConfirmed:
@@ -928,7 +939,17 @@ export default function LoginPage() {
       return;
     }
 
-    if (!recuperandoSenha && senha.length < 6) {
+    if (
+      criandoConta &&
+      (senha.length < 8 ||
+        !/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(senha) ||
+        !/\d/.test(senha))
+    ) {
+      setErro(t("signupPasswordRequirements"));
+      return;
+    }
+
+    if (!recuperandoSenha && !criandoConta && senha.length < 6) {
       setErro(t("passwordMin"));
       return;
     }
@@ -1185,13 +1206,17 @@ export default function LoginPage() {
                         setErro("");
                         setAviso("");
                       }}
-                      placeholder={t("passwordPlaceholder")}
+                      placeholder={
+                        criandoConta
+                          ? t("signupPasswordPlaceholder")
+                          : t("passwordPlaceholder")
+                      }
                       style={inputStyle}
                       type="password"
                       autoComplete={
                         criandoConta ? "new-password" : "current-password"
                       }
-                      minLength={6}
+                      minLength={criandoConta ? 8 : 6}
                       required
                     />
                   </label>
