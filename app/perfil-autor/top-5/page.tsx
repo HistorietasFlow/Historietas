@@ -1172,6 +1172,7 @@ export default function Top5PerfilAutorPage() {
             id="buscar-obra-top-5"
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
+            aria-label="Pesquisar obra, autor, gênero ou tag"
             placeholder="Pesquisar obra, autor, gênero ou tag"
             autoComplete="off"
             autoCorrect="off"

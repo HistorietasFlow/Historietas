@@ -3240,6 +3240,12 @@ export default function ExplorarPage() {
                 <input
                   value={busca}
                   onChange={(event) => setBusca(event.target.value)}
+                  aria-label={traduzirTextoExplorar(
+                    modoConteudo === "autores"
+                      ? "Buscar autores..."
+                      : "Buscar histórias...",
+                    language
+                  )}
                   placeholder={traduzirTextoExplorar(
                     modoConteudo === "autores"
                       ? "Buscar autores..."
@@ -3292,6 +3298,12 @@ export default function ExplorarPage() {
                   <input
                     value={busca}
                     onChange={(event) => setBusca(event.target.value)}
+                    aria-label={traduzirTextoExplorar(
+                      modoConteudo === "autores"
+                        ? "Buscar autores..."
+                        : "Buscar histórias...",
+                      language
+                    )}
                     placeholder={traduzirTextoExplorar(
                       modoConteudo === "autores"
                         ? "Buscar autores..."
@@ -4095,7 +4107,19 @@ function ObraPublicadaCard({
 
   return (
     <article style={isDesktop ? criarDesktopPublishedCardTemaStyle(tema) : criarPublishedCardTemaStyle(tema)}>
-      <Link href={paginaPublicaHref} style={isDesktop ? criarDesktopPublishedCoverStyle(obra.capa, tema) : criarPublishedCoverStyle(obra.capa, tema)}>
+      <Link
+        href={paginaPublicaHref}
+        style={
+          isDesktop
+            ? criarDesktopPublishedCoverStyle(obra.capa, tema)
+            : criarPublishedCoverStyle(obra.capa, tema)
+        }
+        aria-label={
+          obra.titulo === "Obra sem título"
+            ? traduzirTextoExplorar(obra.titulo, language)
+            : obra.titulo
+        }
+      >
         {!obra.capa && null}
       </Link>
 

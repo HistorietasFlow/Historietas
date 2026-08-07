@@ -2843,6 +2843,7 @@ export default function AdminComunidadePage() {
               <input
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
+                aria-label="Buscar denúncias..."
                 placeholder="Buscar denúncias..."
                 autoComplete="off"
                 autoCorrect="off"

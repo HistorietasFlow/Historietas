@@ -5863,6 +5863,13 @@ function ListasUniversaisContent() {
 
             <div style={commentsInputBoxStyle}>
               <textarea
+                aria-label={
+                  permissoes.podeComentar
+                    ? interacao.respondendoComentarioId
+                      ? "Adicionar resposta"
+                      : "Adicionar comentário"
+                    : "Comentários limitados pelo dono do Diário"
+                }
                 value={interacao.novoComentario}
                 onChange={(event) =>
                   atualizarComentarioAnotacaoListas(
@@ -6417,6 +6424,7 @@ function ListasUniversaisContent() {
                   <div style={listDiaryActionSheetEditorStyle}>
                     <div style={listDiaryAnnotationTextareaWrapStyle}>
                       <textarea
+                        aria-label="Anotação da leitura"
                         value={editorAnotacao.texto}
                         onChange={(event) =>
                           setEditorAnotacao((estadoAtual) => ({

@@ -2908,9 +2908,10 @@ export default function EditarObraPage() {
             </div>
 
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Título da obra</label>
+              <label htmlFor="editar-obra-titulo" style={labelStyle}>Título da obra</label>
 
               <input
+                id="editar-obra-titulo"
                 value={titulo}
                 onChange={(event) => {
                   setTitulo(event.target.value);
@@ -2925,9 +2926,10 @@ export default function EditarObraPage() {
             </div>
 
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Autor</label>
+              <label htmlFor="editar-obra-autor" style={labelStyle}>Autor</label>
 
               <input
+                id="editar-obra-autor"
                 value={autor}
                 onChange={(event) => {
                   setAutor(event.target.value);
@@ -2943,9 +2945,10 @@ export default function EditarObraPage() {
 
             <div style={isDesktop ? desktopDoubleFieldStyle : doubleFieldStyle}>
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>Formato</label>
+                <label htmlFor="editar-obra-formato" style={labelStyle}>Formato</label>
 
                 <select
+                  id="editar-obra-formato"
                   value={formato}
                   onChange={(event) => {
                     const novoFormato = event.target.value;
@@ -2969,6 +2972,7 @@ export default function EditarObraPage() {
 
                 {formatoEhPersonalizado && (
                   <input
+                    aria-label="Outro formato"
                     value={formatoPersonalizado}
                     onChange={(event) => {
                       setFormatoPersonalizado(
@@ -2988,9 +2992,10 @@ export default function EditarObraPage() {
               </div>
 
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>Gênero</label>
+                <label htmlFor="editar-obra-genero" style={labelStyle}>Gênero</label>
 
                 <select
+                  id="editar-obra-genero"
                   value={genero}
                   onChange={(event) => {
                     const novoGenero = event.target.value;
@@ -3014,6 +3019,7 @@ export default function EditarObraPage() {
 
                 {generoEhPersonalizado && (
                   <input
+                    aria-label="Outro gênero"
                     value={generoPersonalizado}
                     onChange={(event) => {
                       setGeneroPersonalizado(
@@ -3034,9 +3040,10 @@ export default function EditarObraPage() {
             </div>
 
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Tag</label>
+              <label htmlFor="editar-obra-tag" style={labelStyle}>Tag</label>
 
               <select
+                id="editar-obra-tag"
                 value={usarTagPersonalizada ? OUTRA_TAG_VALUE : tagsTratadas[0] || ""}
                 onChange={(event) => {
                   adicionarTagSelecionada(event.target.value);
@@ -3056,6 +3063,7 @@ export default function EditarObraPage() {
 
               {usarTagPersonalizada && (
                 <input
+                  aria-label="Outra tag"
                   value={tagPersonalizada}
                   onChange={(event) => atualizarTagPersonalizada(event.target.value)}
                   style={inputStyle}
@@ -3068,9 +3076,10 @@ export default function EditarObraPage() {
             </div>
 
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Classificação indicativa</label>
+              <label htmlFor="editar-obra-classificacao" style={labelStyle}>Classificação indicativa</label>
 
               <select
+                id="editar-obra-classificacao"
                 value={classificacaoIndicativa}
                 onChange={(event) => {
                   const novaClassificacao = event.target.value;
@@ -3135,9 +3144,10 @@ export default function EditarObraPage() {
             </div>
 
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Sinopse</label>
+              <label htmlFor="editar-obra-sinopse" style={labelStyle}>Sinopse</label>
 
               <textarea
+                id="editar-obra-sinopse"
                 value={sinopse}
                 onChange={(event) => {
                   setSinopse(event.target.value);

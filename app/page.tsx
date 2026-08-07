@@ -3924,6 +3924,7 @@ export default function Home() {
               <input
                 value={busca}
                 onChange={(event) => setBusca(event.target.value)}
+                aria-label="Buscar obras, autor, gênero..."
                 placeholder="Buscar obras, autor, gênero..."
                 className="historietas-home-header-search-input"
                 style={desktopInputStyle}
@@ -4029,6 +4030,7 @@ export default function Home() {
                   <input
                     value={busca}
                     onChange={(event) => setBusca(event.target.value)}
+                    aria-label="Buscar..."
                     placeholder="Buscar..."
                     autoComplete="off"
                     autoCorrect="off"

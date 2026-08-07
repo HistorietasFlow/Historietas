@@ -12205,7 +12205,7 @@ function PerfilAutorPageContent() {
 
         {totalAbasPerfilVisiveis > 0 && (
           <div
-            role="tablist"
+            role="group"
             style={{
               ...profileTabsStyle,
               gridTemplateColumns: `repeat(${totalAbasPerfilVisiveis}, minmax(0, 1fr))`,
@@ -12215,6 +12215,7 @@ function PerfilAutorPageContent() {
             {obrasPerfilVisivel && (
               <button
                 type="button"
+                aria-pressed={abaPerfil === "obras"}
                 onClick={() => selecionarAbaPerfil("obras")}
                 style={
                   abaPerfil === "obras"
@@ -12229,6 +12230,7 @@ function PerfilAutorPageContent() {
             {diarioPerfilVisivel && (
               <button
                 type="button"
+                aria-pressed={abaPerfil === "diario"}
                 onClick={() => selecionarAbaPerfil("diario")}
                 style={
                   abaPerfil === "diario"
@@ -12243,6 +12245,7 @@ function PerfilAutorPageContent() {
             {comunidadePerfilVisivel && (
               <button
                 type="button"
+                aria-pressed={abaPerfil === "comunidade"}
                 onClick={() => selecionarAbaPerfil("comunidade")}
                 style={
                   abaPerfil === "comunidade"
@@ -12257,6 +12260,7 @@ function PerfilAutorPageContent() {
             {sobrePerfilVisivel && (
               <button
                 type="button"
+                aria-pressed={abaPerfil === "sobre"}
                 onClick={() => selecionarAbaPerfil("sobre")}
                 style={
                   abaPerfil === "sobre"
@@ -12271,6 +12275,7 @@ function PerfilAutorPageContent() {
             {bibliotecaPerfilVisivel && (
               <button
                 type="button"
+                aria-pressed={abaPerfil === "biblioteca"}
                 onClick={() => selecionarAbaPerfil("biblioteca")}
                 style={
                   abaPerfil === "biblioteca"
@@ -12671,6 +12676,7 @@ function PerfilAutorPageContent() {
                     onChange={(event) => atualizarBioSobreAutor(event.target.value)}
                     placeholder={bioAutor}
                     maxLength={SOBRE_BIO_MAX_LENGTH}
+                    aria-label="Sinopse do Sobre"
                     style={profileAboutTextareaStyle}
                   />
 

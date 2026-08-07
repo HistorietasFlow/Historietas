@@ -5975,6 +5975,11 @@ export default function ObraDinamicaPage() {
 
                 <div style={commentsInputBoxStyle}>
                   <textarea
+                    aria-label={
+                      usuarioIdLogado
+                        ? "Adicionar comentário..."
+                        : "Entre para comentar."
+                    }
                     ref={comentarioInputRef}
                     value={comentarioTexto}
                     onChange={(event) => {

@@ -2505,9 +2505,10 @@ export default function PublicarPage() {
 
 
             <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>{t("tituloObra")}</label>
+              <label htmlFor="publicar-titulo" style={labelStyle}>{t("tituloObra")}</label>
 
               <input
+                id="publicar-titulo"
                 value={titulo}
                 onChange={(event) => {
                   setTitulo(event.target.value);
@@ -2522,9 +2523,10 @@ export default function PublicarPage() {
             </div>
 
             <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>{t("nomeAutor")}</label>
+              <label htmlFor="publicar-autor" style={labelStyle}>{t("nomeAutor")}</label>
 
               <input
+                id="publicar-autor"
                 value={autor}
                 onChange={(event) => {
                   setAutor(event.target.value);
@@ -2540,9 +2542,10 @@ export default function PublicarPage() {
 
             <div style={isDesktop ? desktopFullWidthDoubleFieldStyle : doubleFieldStyle}>
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>{t("formato")}</label>
+                <label htmlFor="publicar-formato" style={labelStyle}>{t("formato")}</label>
 
                 <select
+                  id="publicar-formato"
                   value={formato}
                   onChange={(event) => {
                     const novoFormato = event.target.value;
@@ -2568,6 +2571,7 @@ export default function PublicarPage() {
 
                 {formatoEhPersonalizado && (
                   <input
+                    aria-label={t("outroFormato")}
                     value={formatoPersonalizado}
                     onChange={(event) => {
                       setFormatoPersonalizado(
@@ -2587,9 +2591,10 @@ export default function PublicarPage() {
               </div>
 
               <div style={fieldGroupStyle}>
-                <label style={labelStyle}>{t("generoPrincipal")}</label>
+                <label htmlFor="publicar-genero" style={labelStyle}>{t("generoPrincipal")}</label>
 
                 <select
+                  id="publicar-genero"
                   value={genero}
                   onChange={(event) => {
                     const novoGenero = event.target.value;
@@ -2615,6 +2620,7 @@ export default function PublicarPage() {
 
                 {generoEhPersonalizado && (
                   <input
+                    aria-label={t("outroGenero")}
                     value={generoPersonalizado}
                     onChange={(event) => {
                       setGeneroPersonalizado(
@@ -2635,9 +2641,10 @@ export default function PublicarPage() {
             </div>
 
             <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>{t("tag")}</label>
+              <label htmlFor="publicar-tag" style={labelStyle}>{t("tag")}</label>
 
               <select
+                id="publicar-tag"
                 value={usarTagPersonalizada ? OUTRA_TAG_VALUE : tagsDaObra[0] || ""}
                 onChange={(event) => {
                   const novaTag = event.target.value;
@@ -2667,6 +2674,7 @@ export default function PublicarPage() {
 
               {usarTagPersonalizada && (
                 <input
+                  aria-label={t("outraTag")}
                   value={tagPersonalizada}
                   onChange={(event) => atualizarTagPersonalizada(event.target.value)}
                   style={inputStyle}
@@ -2678,9 +2686,10 @@ export default function PublicarPage() {
             </div>
 
             <div style={isDesktop ? desktopHalfFieldStyle : fieldGroupStyle}>
-              <label style={labelStyle}>{t("classificacaoIndicativa")}</label>
+              <label htmlFor="publicar-classificacao" style={labelStyle}>{t("classificacaoIndicativa")}</label>
 
               <select
+                id="publicar-classificacao"
                 value={classificacaoIndicativa}
                 onChange={(event) => {
                   const novaClassificacao = event.target.value;
@@ -2752,7 +2761,7 @@ export default function PublicarPage() {
 
             <div style={isDesktop ? desktopFullWidthFieldStyle : fieldGroupStyle}>
               <div style={labelRowStyle}>
-                <label style={labelStyle}>{t("sinopse")}</label>
+                <label htmlFor="publicar-sinopse" style={labelStyle}>{t("sinopse")}</label>
 
                 <span
                   style={
@@ -2764,6 +2773,7 @@ export default function PublicarPage() {
               </div>
 
               <textarea
+                id="publicar-sinopse"
                 value={sinopse}
                 onChange={(event) => {
                   setSinopse(event.target.value);

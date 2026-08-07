@@ -3410,6 +3410,7 @@ const ComentariosCapituloSheet = memo(function ComentariosCapituloSheet({
 
           <div style={commentsInputBoxStyle}>
             <textarea
+              aria-label="Adicionar comentário"
               ref={comentarioRef}
               placeholder={
                 podeComentar ? "Adicionar comentário..." : "Entre para comentar."
@@ -5082,6 +5083,13 @@ export default function LerCapituloPage() {
             </div>
 
             <select
+              aria-label={
+                language === "en"
+                  ? "Select chapter"
+                  : language === "es"
+                    ? "Seleccionar capítulo"
+                    : "Selecionar capítulo"
+              }
               data-historietas-i18n-ignore="true"
               value={capituloAtual.id}
               onChange={(event) => trocarCapitulo(event.target.value)}
@@ -5260,6 +5268,7 @@ export default function LerCapituloPage() {
           <button
             type="button"
             onClick={() => void alternarComentarioVisivel()}
+            aria-label={`${metricasCapitulo.totalComentarios} comentários`}
             style={
               mostrarComentario || metricasCapitulo.totalComentarios > 0
                 ? focusActiveCommentButtonStyle

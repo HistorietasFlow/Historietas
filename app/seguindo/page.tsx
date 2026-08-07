@@ -4434,6 +4434,15 @@ export default function SeguindoPage() {
                 <input
                   value={busca}
                   onChange={(event) => setBusca(event.target.value)}
+                  aria-label={
+                    visualizandoListaSocialDoPerfil
+                      ? `Pesquisar em ${descricaoListaSocial}`
+                      : abaConteudo === "seguidores"
+                        ? "Pesquisar seguidor ou perfil"
+                        : abaConteudo === "obras"
+                          ? "Pesquisar obra, autor, gênero ou tag"
+                          : "Pesquisar pessoa, autor ou perfil"
+                  }
                   placeholder={
                     visualizandoListaSocialDoPerfil
                       ? `Pesquisar em ${descricaoListaSocial}`
@@ -4483,6 +4492,15 @@ export default function SeguindoPage() {
                   <input
                     value={busca}
                     onChange={(event) => setBusca(event.target.value)}
+                    aria-label={
+                      visualizandoListaSocialDoPerfil
+                        ? `Pesquisar em ${descricaoListaSocial}`
+                        : abaConteudo === "seguidores"
+                          ? "Pesquisar seguidor ou perfil"
+                          : abaConteudo === "obras"
+                            ? "Pesquisar obra, autor, gênero ou tag"
+                            : "Pesquisar pessoa, autor ou perfil"
+                    }
                     placeholder={
                       visualizandoListaSocialDoPerfil
                         ? `Pesquisar em ${descricaoListaSocial}`

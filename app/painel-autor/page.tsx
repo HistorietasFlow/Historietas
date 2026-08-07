@@ -3239,6 +3239,7 @@ export default function PainelAutorPage() {
                 <input
                   value={busca}
                   onChange={(event) => setBusca(event.target.value)}
+                  aria-label="Buscar obra..."
                   placeholder="Buscar obra..."
                   autoComplete="off"
                   autoCorrect="off"
@@ -3280,7 +3281,8 @@ export default function PainelAutorPage() {
                   <input
                     value={busca}
                     onChange={(event) => setBusca(event.target.value)}
-                    placeholder="Buscar obra..."
+                    aria-label="Buscar obra..."
+                  placeholder="Buscar obra..."
                     autoComplete="off"
                     autoCorrect="off"
                     spellCheck={false}

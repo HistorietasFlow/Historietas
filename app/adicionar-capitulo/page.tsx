@@ -2263,9 +2263,10 @@ export default function AdicionarCapituloPage() {
             </div>
 
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Título do capítulo</label>
+              <label htmlFor="adicionar-capitulo-titulo" style={labelStyle}>Título do capítulo</label>
 
               <input
+                id="adicionar-capitulo-titulo"
                 value={titulo}
                 onChange={(event) => {
                   setTitulo(event.target.value);
@@ -2290,7 +2291,7 @@ export default function AdicionarCapituloPage() {
                   : fieldGroupStyle
               }
             >
-              <label style={labelStyle}>Texto do capítulo</label>
+              <label htmlFor="adicionar-capitulo-texto" style={labelStyle}>Texto do capítulo</label>
 
               <div style={isDesktop ? desktopImportBoxStyle : importBoxStyle}>
                 <div style={importIconBoxStyle}>
@@ -2327,6 +2328,7 @@ export default function AdicionarCapituloPage() {
               </div>
 
               <textarea
+                id="adicionar-capitulo-texto"
                 value={texto}
                 onChange={(event) => {
                   setTexto(event.target.value);

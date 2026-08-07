@@ -783,6 +783,11 @@ export default function AdminProblemasTecnicosPage() {
               className="admin-tech-search-input"
               value={busca}
               onChange={(event) => setBusca(event.target.value)}
+              aria-label={t({
+                pt: "Buscar chamados técnicos",
+                en: "Search technical tickets",
+                es: "Buscar solicitudes técnicas",
+              })}
               placeholder={t({
                 pt: "Buscar por título, descrição, usuário ou e-mail...",
                 en: "Search by title, description, user, or email...",

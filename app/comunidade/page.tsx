@@ -3318,6 +3318,9 @@ const ComentariosSheet = memo(function ComentariosSheet({
 
           <div style={commentsInputBoxStyle}>
             <textarea
+              aria-label={
+                podeComentar ? "Adicionar comentário..." : "Entre para comentar."
+              }
               ref={comentarioRef}
               placeholder={
                 podeComentar ? "Adicionar comentário..." : "Entre para comentar."
@@ -6117,6 +6120,7 @@ export default function ComunidadePage() {
                 </svg>
 
                 <input
+                  aria-label="Buscar publicações ou usuários"
                   value={termoBusca}
                   onChange={(event) => setTermoBusca(event.target.value)}
                   placeholder="Buscar publicações ou usuários"
@@ -6179,6 +6183,7 @@ export default function ComunidadePage() {
                   <>
                     <label style={communitySearchShellStyle}>
                       <input
+                        aria-label="Buscar publicações ou usuários"
                         value={termoBusca}
                         onChange={(event) => setTermoBusca(event.target.value)}
                         placeholder="Buscar publicações ou usuários"
@@ -7074,6 +7079,7 @@ export default function ComunidadePage() {
                           type="button"
                           onClick={() => abrirComentarios(post.id)}
                           style={postReactionButtonStyle}
+                          aria-label={`${contarComentaristasUnicosPostComunidade(post)} comentários`}
                         >
                           <span style={postReactionIconStyle} aria-hidden="true">
                             💬

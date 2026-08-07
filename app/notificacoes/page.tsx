@@ -4994,6 +4994,7 @@ export default function NotificacoesPage() {
                       setBusca(event.target.value);
                     }}
                     className="notificacoes-search-input"
+                    aria-label="Buscar notificações..."
                     placeholder="Buscar notificações..."
                     autoComplete="off"
                     autoCorrect="off"
@@ -5047,7 +5048,8 @@ export default function NotificacoesPage() {
                         setBusca(event.target.value);
                       }}
                       className="notificacoes-search-input"
-                      placeholder="Buscar notificações..."
+                      aria-label="Buscar notificações..."
+                    placeholder="Buscar notificações..."
                       autoComplete="off"
                       autoCorrect="off"
                       spellCheck={false}

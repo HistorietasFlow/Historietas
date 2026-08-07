@@ -2237,9 +2237,10 @@ export default function EditarCapituloPage() {
             </div>
 
             <div style={fieldGroupStyle}>
-              <label style={labelStyle}>Título do capítulo</label>
+              <label htmlFor="editar-capitulo-titulo" style={labelStyle}>Título do capítulo</label>
 
               <input
+                id="editar-capitulo-titulo"
                 value={titulo}
                 onChange={(event) => {
                   setTitulo(event.target.value);
@@ -2262,7 +2263,7 @@ export default function EditarCapituloPage() {
                   : fieldGroupStyle
               }
             >
-              <label style={labelStyle}>Texto do capítulo</label>
+              <label htmlFor="editar-capitulo-texto" style={labelStyle}>Texto do capítulo</label>
 
               <div style={isDesktop ? desktopImportBoxStyle : importBoxStyle}>
                 <div style={importIconBoxStyle}>
@@ -2299,6 +2300,7 @@ export default function EditarCapituloPage() {
               </div>
 
               <textarea
+                id="editar-capitulo-texto"
                 value={texto}
                 onChange={(event) => {
                   setTexto(event.target.value);
