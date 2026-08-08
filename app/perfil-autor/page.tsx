@@ -5777,7 +5777,7 @@ async function carregarAutoresSeguidosSupabase(
   try {
     const { data, error } = await supabase
       .from("seguindo_autores")
-      .select("autor")
+      .select("autor_nome")
       .eq("user_id", userId)
       .limit(1000);
 
@@ -5793,7 +5793,7 @@ async function carregarAutoresSeguidosSupabase(
       }
 
       const registro = item as Record<string, unknown>;
-      const autor = normalizarNomeAutor(pegarTexto(registro.autor));
+      const autor = normalizarNomeAutor(pegarTexto(registro.autor_nome));
 
       if (autor) {
         autores.push(autor);
@@ -7014,9 +7014,9 @@ async function sincronizarAutorSeguidoSupabase(autor: string, ativo: boolean) {
       await supabase.from("seguindo_autores").upsert(
         {
           user_id: userId,
-          autor,
+          autor_nome: autor,
         },
-        { onConflict: "user_id,autor" },
+        { onConflict: "user_id,autor_nome" },
       );
       return;
     }
@@ -7025,7 +7025,7 @@ async function sincronizarAutorSeguidoSupabase(autor: string, ativo: boolean) {
       .from("seguindo_autores")
       .delete()
       .eq("user_id", userId)
-      .eq("autor", autor);
+      .eq("autor_nome", autor);
   } catch {
     // A ação local permanece funcionando se o Supabase falhar.
   }
