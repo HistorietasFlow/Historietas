@@ -18,6 +18,7 @@ import type {
   TemaVisualHistorietasConfig,
 } from "../../lib/historietasTheme";
 import {
+  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   acessoConteudo18Confirmado,
   confirmarAcessoConteudo18,
   ehClassificacao18,
@@ -232,6 +233,14 @@ const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
   "Confirmação de idade": {
     en: "Age confirmation",
     es: "Confirmación de edad",
+  },
+  "Conteúdo 18+ temporariamente indisponível": {
+    en: "18+ content temporarily unavailable",
+    es: "Contenido 18+ temporalmente no disponible",
+  },
+  "O acesso a obras 18+ está temporariamente indisponível enquanto o Historietas implementa uma verificação de idade adequada.": {
+    en: "Access to 18+ works is temporarily unavailable while Historietas implements an appropriate age-verification system.",
+    es: "El acceso a obras 18+ no está disponible temporalmente mientras Historietas implementa un sistema adecuado de verificación de edad.",
   },
   "O conteúdo 18+ fica oculto por padrão. Para exibi-lo, confirme que você tem 18 anos ou mais.": {
     en: "18+ content is hidden by default. To show it, confirm that you are 18 years old or older.",
@@ -3221,6 +3230,13 @@ export default function ExplorarPage() {
       return;
     }
 
+    if (ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO) {
+      setFiltroClassificacao("todos");
+      setConfirmouIdadeConteudo18(false);
+      setMostrarConfirmacaoConteudo18(true);
+      return;
+    }
+
     if (acessoConteudo18Confirmado()) {
       setFiltroClassificacao("18+");
       setMostrarFiltrosAvancados(false);
@@ -3236,7 +3252,13 @@ export default function ExplorarPage() {
       return;
     }
 
-    confirmarAcessoConteudo18();
+    if (!confirmarAcessoConteudo18()) {
+      setFiltroClassificacao("todos");
+      setConfirmouIdadeConteudo18(false);
+      setMostrarConfirmacaoConteudo18(true);
+      return;
+    }
+
     setFiltroClassificacao("18+");
     setMostrarConfirmacaoConteudo18(false);
     setConfirmouIdadeConteudo18(false);
@@ -3659,61 +3681,96 @@ export default function ExplorarPage() {
                       </>
                     ) : (
                       <div style={explorarAdultConfirmationStyle}>
-                        <strong style={explorarAdultConfirmationTitleStyle}>
-                          {traduzirTextoExplorar("Confirmação de idade", language)}
-                        </strong>
-                        <p style={explorarAdultConfirmationTextStyle}>
-                          {traduzirTextoExplorar(
-                            "O conteúdo 18+ fica oculto por padrão. Para exibi-lo, confirme que você tem 18 anos ou mais.",
-                            language,
-                          )}
-                        </p>
+                        {ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO ? (
+                          <>
+                            <strong style={explorarAdultConfirmationTitleStyle}>
+                              {traduzirTextoExplorar(
+                                "Conteúdo 18+ temporariamente indisponível",
+                                language,
+                              )}
+                            </strong>
+                            <p style={explorarAdultConfirmationTextStyle}>
+                              {traduzirTextoExplorar(
+                                "O acesso a obras 18+ está temporariamente indisponível enquanto o Historietas implementa uma verificação de idade adequada.",
+                                language,
+                              )}
+                            </p>
 
-                        <label style={explorarAdultConfirmationCheckStyle}>
-                          <input
-                            type="checkbox"
-                            checked={confirmouIdadeConteudo18}
-                            onChange={(event) =>
-                              setConfirmouIdadeConteudo18(event.target.checked)
-                            }
-                            style={explorarAdultConfirmationCheckboxStyle}
-                          />
-                          <span>
-                            {traduzirTextoExplorar(
-                              "Confirmo que tenho 18 anos ou mais.",
-                              language,
-                            )}
-                          </span>
-                        </label>
+                            <div style={explorarAdultConfirmationActionsStyle}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMostrarConfirmacaoConteudo18(false);
+                                  setConfirmouIdadeConteudo18(false);
+                                }}
+                                style={{
+                                  ...explorarAdultConfirmationBackStyle,
+                                  gridColumn: "1 / -1",
+                                }}
+                              >
+                                {traduzirTextoExplorar("Voltar", language)}
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <strong style={explorarAdultConfirmationTitleStyle}>
+                              {traduzirTextoExplorar("Confirmação de idade", language)}
+                            </strong>
+                            <p style={explorarAdultConfirmationTextStyle}>
+                              {traduzirTextoExplorar(
+                                "O conteúdo 18+ fica oculto por padrão. Para exibi-lo, confirme que você tem 18 anos ou mais.",
+                                language,
+                              )}
+                            </p>
 
-                        <div style={explorarAdultConfirmationActionsStyle}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMostrarConfirmacaoConteudo18(false);
-                              setConfirmouIdadeConteudo18(false);
-                            }}
-                            style={explorarAdultConfirmationBackStyle}
-                          >
-                            {traduzirTextoExplorar("Voltar", language)}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={confirmarFiltroConteudo18Explorar}
-                            disabled={!confirmouIdadeConteudo18}
-                            style={{
-                              ...explorarAdultConfirmationContinueStyle,
-                              ...(!confirmouIdadeConteudo18
-                                ? explorarAdultConfirmationDisabledStyle
-                                : {}),
-                            }}
-                          >
-                            {traduzirTextoExplorar(
-                              "Ativar conteúdo 18+",
-                              language,
-                            )}
-                          </button>
-                        </div>
+                            <label style={explorarAdultConfirmationCheckStyle}>
+                              <input
+                                type="checkbox"
+                                checked={confirmouIdadeConteudo18}
+                                onChange={(event) =>
+                                  setConfirmouIdadeConteudo18(event.target.checked)
+                                }
+                                style={explorarAdultConfirmationCheckboxStyle}
+                              />
+                              <span>
+                                {traduzirTextoExplorar(
+                                  "Confirmo que tenho 18 anos ou mais.",
+                                  language,
+                                )}
+                              </span>
+                            </label>
+
+                            <div style={explorarAdultConfirmationActionsStyle}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMostrarConfirmacaoConteudo18(false);
+                                  setConfirmouIdadeConteudo18(false);
+                                }}
+                                style={explorarAdultConfirmationBackStyle}
+                              >
+                                {traduzirTextoExplorar("Voltar", language)}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={confirmarFiltroConteudo18Explorar}
+                                disabled={!confirmouIdadeConteudo18}
+                                style={{
+                                  ...explorarAdultConfirmationContinueStyle,
+                                  ...(!confirmouIdadeConteudo18
+                                    ? explorarAdultConfirmationDisabledStyle
+                                    : {}),
+                                }}
+                              >
+                                {traduzirTextoExplorar(
+                                  "Ativar conteúdo 18+",
+                                  language,
+                                )}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </>

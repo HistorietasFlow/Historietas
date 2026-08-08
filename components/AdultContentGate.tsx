@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import type { HistorietasLanguage } from "../lib/i18n";
 import { useHistorietasTheme } from "../lib/historietasTheme";
 import {
+  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   confirmarAcessoConteudo18,
   traduzirAvisoConteudo18,
   type AvisoConteudo18,
@@ -22,6 +23,9 @@ const TEXTOS = {
   "pt-BR": {
     selo: "CONTEÚDO 18+",
     titulo: "Confirmação de idade",
+    indisponivelTitulo: "Conteúdo 18+ temporariamente indisponível",
+    indisponivelDescricao:
+      "O acesso a obras 18+ está temporariamente indisponível enquanto o Historietas implementa uma verificação de idade adequada.",
     descricao:
       "Esta obra é destinada a pessoas com 18 anos ou mais. Confirme sua idade antes de continuar.",
     avisos: "Avisos de conteúdo",
@@ -30,10 +34,15 @@ const TEXTOS = {
     voltar: "Voltar",
     observacao:
       "A confirmação fica salva neste dispositivo por 30 dias. O Historietas não permite pornografia, imagens sexuais explícitas nem conteúdo sexual envolvendo menores.",
+    indisponivelObservacao:
+      "Esta proteção é temporária e não remove a obra. O acesso poderá ser reavaliado quando houver uma verificação de idade adequada.",
   },
   en: {
     selo: "18+ CONTENT",
     titulo: "Age confirmation",
+    indisponivelTitulo: "18+ content temporarily unavailable",
+    indisponivelDescricao:
+      "Access to 18+ works is temporarily unavailable while Historietas implements an appropriate age-verification system.",
     descricao:
       "This work is intended for people aged 18 or older. Confirm your age before continuing.",
     avisos: "Content warnings",
@@ -42,10 +51,15 @@ const TEXTOS = {
     voltar: "Go back",
     observacao:
       "Confirmation is stored on this device for 30 days. Historietas does not allow pornography, sexually explicit images, or sexual content involving minors.",
+    indisponivelObservacao:
+      "This protection is temporary and does not remove the work. Access may be reviewed once an appropriate age-verification system is available.",
   },
   es: {
     selo: "CONTENIDO 18+",
     titulo: "Confirmación de edad",
+    indisponivelTitulo: "Contenido 18+ temporalmente no disponible",
+    indisponivelDescricao:
+      "El acceso a obras 18+ no está disponible temporalmente mientras Historietas implementa un sistema adecuado de verificación de edad.",
     descricao:
       "Esta obra está destinada a personas de 18 años o más. Confirma tu edad antes de continuar.",
     avisos: "Advertencias de contenido",
@@ -54,6 +68,8 @@ const TEXTOS = {
     voltar: "Volver",
     observacao:
       "La confirmación se guarda en este dispositivo durante 30 días. Historietas no permite pornografía, imágenes sexuales explícitas ni contenido sexual que involucre a menores.",
+    indisponivelObservacao:
+      "Esta protección es temporal y no elimina la obra. El acceso podrá revisarse cuando exista un sistema adecuado de verificación de edad.",
   },
 } satisfies Record<HistorietasLanguage, Record<string, string>>;
 
@@ -68,13 +84,18 @@ export default function AdultContentGate({
   const { temaVisual, pageThemeStyle } = useHistorietasTheme(pageStyle);
   const temaFoco = temaVisual === "foco";
   const t = TEXTOS[language] || TEXTOS["pt-BR"];
+  const acesso18TemporariamenteBloqueado =
+    ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO;
 
   function confirmar() {
-    if (!confirmouIdade) {
+    if (!confirmouIdade || acesso18TemporariamenteBloqueado) {
       return;
     }
 
-    confirmarAcessoConteudo18();
+    if (!confirmarAcessoConteudo18()) {
+      return;
+    }
+
     onConfirmar();
   }
 
@@ -95,7 +116,7 @@ export default function AdultContentGate({
         </div>
 
         <h1 id="historietas-adult-gate-title" style={titleStyle}>
-          {t.titulo}
+          {acesso18TemporariamenteBloqueado ? t.indisponivelTitulo : t.titulo}
         </h1>
 
         <p
@@ -105,7 +126,9 @@ export default function AdultContentGate({
             ...(temaFoco ? descriptionFocusStyle : {}),
           }}
         >
-          {t.descricao}
+          {acesso18TemporariamenteBloqueado
+            ? t.indisponivelDescricao
+            : t.descricao}
         </p>
 
         <div style={warningsStyle}>
@@ -117,58 +140,84 @@ export default function AdultContentGate({
           </ul>
         </div>
 
-        <label
-          style={{
-            ...checkboxLabelStyle,
-            ...(temaFoco ? checkboxLabelFocusStyle : {}),
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={confirmouIdade}
-            onChange={(event) => setConfirmouIdade(event.target.checked)}
-            style={{
-              ...checkboxStyle,
-              ...(temaFoco ? checkboxFocusStyle : {}),
-            }}
-          />
-          <span>{t.confirmacao}</span>
-        </label>
+        {acesso18TemporariamenteBloqueado ? (
+          <>
+            <p
+              style={{
+                ...noteStyle,
+                ...(temaFoco ? noteFocusStyle : {}),
+              }}
+            >
+              {t.indisponivelObservacao}
+            </p>
 
-        <div style={actionsStyle}>
-          <button
-            type="button"
-            onClick={onVoltar}
-            style={{
-              ...backButtonStyle,
-              ...(temaFoco ? backButtonFocusStyle : {}),
-            }}
-          >
-            {t.voltar}
-          </button>
+            <button
+              type="button"
+              onClick={onVoltar}
+              style={{
+                ...backButtonStyle,
+                ...(temaFoco ? backButtonFocusStyle : {}),
+              }}
+            >
+              {t.voltar}
+            </button>
+          </>
+        ) : (
+          <>
+            <label
+              style={{
+                ...checkboxLabelStyle,
+                ...(temaFoco ? checkboxLabelFocusStyle : {}),
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={confirmouIdade}
+                onChange={(event) => setConfirmouIdade(event.target.checked)}
+                style={{
+                  ...checkboxStyle,
+                  ...(temaFoco ? checkboxFocusStyle : {}),
+                }}
+              />
+              <span>{t.confirmacao}</span>
+            </label>
 
-          <button
-            type="button"
-            onClick={confirmar}
-            disabled={!confirmouIdade}
-            style={{
-              ...continueButtonStyle,
-              ...(temaFoco ? continueButtonFocusStyle : {}),
-              ...(!confirmouIdade ? disabledButtonStyle : {}),
-            }}
-          >
-            {t.continuar}
-          </button>
-        </div>
+            <div style={actionsStyle}>
+              <button
+                type="button"
+                onClick={onVoltar}
+                style={{
+                  ...backButtonStyle,
+                  ...(temaFoco ? backButtonFocusStyle : {}),
+                }}
+              >
+                {t.voltar}
+              </button>
 
-        <p
-          style={{
-            ...noteStyle,
-            ...(temaFoco ? noteFocusStyle : {}),
-          }}
-        >
-          {t.observacao}
-        </p>
+              <button
+                type="button"
+                onClick={confirmar}
+                disabled={!confirmouIdade}
+                style={{
+                  ...continueButtonStyle,
+                  ...(temaFoco ? continueButtonFocusStyle : {}),
+                  ...(!confirmouIdade ? disabledButtonStyle : {}),
+                }}
+              >
+                {t.continuar}
+              </button>
+            </div>
+
+            <p
+              style={{
+                ...noteStyle,
+                ...(temaFoco ? noteFocusStyle : {}),
+              }}
+            >
+              {t.observacao}
+            </p>
+          </>
+        )}
       </section>
     </main>
   );

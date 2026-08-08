@@ -54,6 +54,8 @@ const TEXTOS_CONTEUDO_18: Record<
   },
 };
 
+export const ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO = true;
+
 const CHAVE_CONFIRMACAO_18 = "historietas-acesso-conteudo-18";
 const VALIDADE_CONFIRMACAO_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -185,8 +187,33 @@ function verificarStorage(storage: Storage) {
   return resultado.valida;
 }
 
+function limparConfirmacaoConteudo18() {
+  confirmacaoTemporariaNaMemoria = false;
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.removeItem(CHAVE_CONFIRMACAO_18);
+  } catch {
+    // O bloqueio continua mesmo quando o navegador impede acesso ao storage.
+  }
+
+  try {
+    window.sessionStorage.removeItem(CHAVE_CONFIRMACAO_18);
+  } catch {
+    // O bloqueio continua mesmo quando o navegador impede acesso ao storage.
+  }
+}
+
 export function acessoConteudo18Confirmado() {
   if (typeof window === "undefined") {
+    return false;
+  }
+
+  if (ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO) {
+    limparConfirmacaoConteudo18();
     return false;
   }
 
@@ -211,7 +238,12 @@ export function acessoConteudo18Confirmado() {
 
 export function confirmarAcessoConteudo18() {
   if (typeof window === "undefined") {
-    return;
+    return false;
+  }
+
+  if (ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO) {
+    limparConfirmacaoConteudo18();
+    return false;
   }
 
   const registro = JSON.stringify({
@@ -221,7 +253,7 @@ export function confirmarAcessoConteudo18() {
   try {
     window.localStorage.setItem(CHAVE_CONFIRMACAO_18, registro);
     confirmacaoTemporariaNaMemoria = true;
-    return;
+    return true;
   } catch {
     // Usa a sessão como alternativa quando o armazenamento local falha.
   }
@@ -229,7 +261,7 @@ export function confirmarAcessoConteudo18() {
   try {
     window.sessionStorage.setItem(CHAVE_CONFIRMACAO_18, registro);
     confirmacaoTemporariaNaMemoria = true;
-    return;
+    return true;
   } catch {
     // A memória mantém o acesso até a página ser recarregada.
   }
