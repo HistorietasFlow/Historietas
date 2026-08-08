@@ -923,11 +923,28 @@ export default function Top5PerfilAutorPage() {
         }
 
         const userId = authData.user?.id || "";
-        const nomeUsuario =
+        let nomeUsuario =
           pegarTexto(authData.user?.user_metadata?.nome) ||
           pegarTexto(authData.user?.user_metadata?.name) ||
           pegarTexto(authData.user?.email) ||
           "Usuário";
+
+        if (userId) {
+          const { data: perfilAtual, error: erroPerfilAtual } = await supabase
+            .from("profiles")
+            .select("nome")
+            .eq("user_id", userId)
+            .limit(1)
+            .maybeSingle();
+
+          if (!erroPerfilAtual) {
+            nomeUsuario = pegarTexto(perfilAtual?.nome) || nomeUsuario;
+          }
+        }
+
+        if (cancelado) {
+          return;
+        }
 
         const obrasMescladas = mesclarObrasTop5([
           ...carregarObrasLocaisTop5(userId),
