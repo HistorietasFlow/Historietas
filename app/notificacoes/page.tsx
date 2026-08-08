@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { supabase } from "../../lib/supabase/client";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
+import {
+  acessoConteudo18Confirmado,
+  ehClassificacao18,
+} from "../../lib/historietasAdultContent";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
 import { useEffect, useMemo, useState } from "react";
@@ -4547,9 +4551,20 @@ export default function NotificacoesPage() {
   const totalLidas = Math.max(totalNotificacoes - totalNaoLidas, 0);
   const termoBusca = normalizarTexto(busca);
 
+  const acessoConteudo18Liberado = acessoConteudo18Confirmado();
+
   const notificacoesFiltradas = useMemo(() => {
     const filtradas = notificacoes.filter((notificacao) => {
       const obra = obrasPorId.get(notificacao.obraId) || null;
+
+      if (
+        !acessoConteudo18Liberado &&
+        obra &&
+        ehClassificacao18(obra.classificacaoIndicativa)
+      ) {
+        return false;
+      }
+
       const capitulo =
         obra?.capitulos.find((item) => item.id === notificacao.capituloId) ||
         null;
@@ -4611,7 +4626,14 @@ export default function NotificacoesPage() {
 
       return dataNotificacao(notificacaoB) - dataNotificacao(notificacaoA);
     });
-  }, [notificacoes, obrasPorId, termoBusca, filtro, ordenacao]);
+  }, [
+    notificacoes,
+    obrasPorId,
+    termoBusca,
+    filtro,
+    ordenacao,
+    acessoConteudo18Liberado,
+  ]);
 
   const filtrosAtivos = Boolean(
     busca.trim() || filtro !== "todas" || ordenacao !== "recentes"
