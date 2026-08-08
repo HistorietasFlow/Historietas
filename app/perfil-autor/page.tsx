@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -8819,11 +8820,17 @@ function PerfilAutorPageContent() {
       return [];
     }
 
-    return [...perfilParaMostrar.obras].sort(
+    const obrasVisiveis = perfilPertenceAoUsuario
+      ? perfilParaMostrar.obras
+      : perfilParaMostrar.obras.filter(
+          (obra) => !ehClassificacao18(obra.classificacaoIndicativa),
+        );
+
+    return [...obrasVisiveis].sort(
       (obraA, obraB) =>
         obterTimestampData(obraB.criadaEm) - obterTimestampData(obraA.criadaEm),
     );
-  }, [perfilParaMostrar]);
+  }, [perfilParaMostrar, perfilPertenceAoUsuario]);
 
   const obrasEmDestaque = useMemo(() => {
     if (topFiveObraIds.length === 0) {
@@ -8833,6 +8840,10 @@ function PerfilAutorPageContent() {
     const obrasDisponiveis = mesclarObrasPorIdSlug(
       obras,
       perfilParaMostrar?.obras || [],
+    ).filter(
+      (obra) =>
+        perfilPertenceAoUsuario ||
+        !ehClassificacao18(obra.classificacaoIndicativa),
     );
     const obrasSelecionadas = new Map<string, ObraLocal>();
 
@@ -8857,7 +8868,12 @@ function PerfilAutorPageContent() {
     });
 
     return Array.from(obrasSelecionadas.values()).slice(0, TOP_FIVE_MAXIMO);
-  }, [obras, perfilParaMostrar?.obras, topFiveObraIds]);
+  }, [
+    obras,
+    perfilParaMostrar?.obras,
+    perfilPertenceAoUsuario,
+    topFiveObraIds,
+  ]);
 
   const destaquesPerfilVisivel =
     obrasPerfilVisivel &&
