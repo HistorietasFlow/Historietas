@@ -9,6 +9,7 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
   cancelarSolicitacaoSeguidor,
   deixarDeSeguirUsuario as deixarDeSeguirUsuarioPrivacidade,
@@ -3726,14 +3727,22 @@ export default function SeguindoPage() {
     usuariosSeguidos,
   ]);
 
+  const obrasVisiveisSeguindo = useMemo(() => {
+    return obras.filter(
+      (obra) => !ehClassificacao18(obra.classificacaoIndicativa),
+    );
+  }, [obras]);
+
   const obrasSeguidasBase = useMemo(() => {
-    return obras.filter((obra) => obraEstaNaLista(obra, obrasSeguidas));
-  }, [obras, obrasSeguidas]);
+    return obrasVisiveisSeguindo.filter((obra) =>
+      obraEstaNaLista(obra, obrasSeguidas),
+    );
+  }, [obrasVisiveisSeguindo, obrasSeguidas]);
 
   const autoresBase = useMemo<AutorSeguido[]>(() => {
     const mapa = new Map<string, { nome: string; obras: ObraLocal[] }>();
 
-    obras.forEach((obra) => {
+    obrasVisiveisSeguindo.forEach((obra) => {
       const nomeAutor = obra.autor.trim() || "Autor não informado";
       const chaveAutor = normalizarNomeAutor(nomeAutor);
 
@@ -3830,7 +3839,12 @@ export default function SeguindoPage() {
         };
       })
       .sort((autorA, autorB) => autorA.nome.localeCompare(autorB.nome));
-  }, [obras, autoresSeguidos, obrasFavoritas, obrasConcluidas]);
+  }, [
+    obrasVisiveisSeguindo,
+    autoresSeguidos,
+    obrasFavoritas,
+    obrasConcluidas,
+  ]);
 
   const obrasFiltradas = useMemo(() => {
     if (abaConteudo !== "obras") {
