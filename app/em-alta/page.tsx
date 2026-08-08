@@ -16,6 +16,7 @@ import {
   idObraSupabaseValido,
   normalizarTexto,
 } from "../../lib/utils";
+import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 
 type CapituloLocal = {
   id: string;
@@ -2360,7 +2361,10 @@ export default function EmAltaPage() {
 
   const ranking = useMemo<ObraRanking[]>(() => {
     return obrasLocais
-      .filter((obra) => obra.publicado)
+      .filter(
+        (obra) =>
+          obra.publicado && !ehClassificacao18(obra.classificacaoIndicativa),
+      )
       .map((obra) => {
         const totalCurtidas = Math.max(0, obra.totalCurtidasRanking || 0);
         const totalComentarios = Math.max(0, obra.totalComentariosRanking || 0);
