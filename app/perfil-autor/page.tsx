@@ -9782,6 +9782,28 @@ function PerfilAutorPageContent() {
       }
     }
 
+    let avisoMetadadosAuth = "";
+
+    if (resultadoPerfil.ok) {
+      const { error: erroMetadadosAuth } = await supabase.auth.updateUser({
+        data: {
+          nome: nomeFinal,
+          username: usernameFinal || null,
+          avatar_url: avatarFinal || null,
+          avatar: avatarFinal || null,
+        },
+      });
+
+      if (erroMetadadosAuth) {
+        avisoMetadadosAuth =
+          " Não consegui sincronizar os metadados da autenticação agora.";
+        console.warn(
+          "O perfil foi salvo, mas os metadados da autenticação não sincronizaram:",
+          erroMetadadosAuth.message,
+        );
+      }
+    }
+
     const resultadoObras = resultadoPerfil.ok
       ? await sincronizarNomeAutorObrasSupabase(perfilUserId, nomeFinal)
       : { ok: false, erro: "" };
@@ -9859,12 +9881,14 @@ function PerfilAutorPageContent() {
 
     if (!resultadoObras.ok) {
       setMensagemAcao(
-        `Perfil atualizado. Não consegui sincronizar o nome nas obras.${avisoAvatar}`,
+        `Perfil atualizado. Não consegui sincronizar o nome nas obras.${avisoAvatar}${avisoMetadadosAuth}`,
       );
       return;
     }
 
-    setMensagemAcao(`Perfil atualizado.${avisoAvatar}`);
+    setMensagemAcao(
+      `Perfil atualizado.${avisoAvatar}${avisoMetadadosAuth}`,
+    );
   }
 
   function atualizarBioSobreAutor(novaBioSobre: string) {
