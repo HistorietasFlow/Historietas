@@ -17,6 +17,13 @@ import type {
   TemaVisualHistorietas,
   TemaVisualHistorietasConfig,
 } from "../../lib/historietasTheme";
+import {
+  acessoConteudo18Confirmado,
+  confirmarAcessoConteudo18,
+  ehClassificacao18,
+  normalizarAvisosConteudo18,
+  type AvisoConteudo18,
+} from "../../lib/historietasAdultContent";
 
 type CapituloLocal = {
   id: string;
@@ -52,6 +59,7 @@ type ObraLocal = {
   genero: string;
   formato: string;
   classificacaoIndicativa: string;
+  avisosConteudo: AvisoConteudo18[];
   sinopse: string;
   tags: string[];
   capa: string;
@@ -82,6 +90,7 @@ type SupabaseObraRow = {
   genero: string | null;
   formato: string | null;
   classificacao_indicativa: string | null;
+  avisos_conteudo: string[] | null;
   sinopse: string | null;
   tags: string[] | null;
   capa_url: string | null;
@@ -211,6 +220,32 @@ const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
   "EXPLORAR": { en: "EXPLORE", es: "EXPLORAR" },
   "Mostrar": { en: "Show", es: "Mostrar" },
   "Todas": { en: "All", es: "Todas" },
+  "Conteúdo 18+": { en: "18+ content", es: "Contenido 18+" },
+  "Ocultar conteúdo 18+": {
+    en: "Hide 18+ content",
+    es: "Ocultar contenido 18+",
+  },
+  "Mostrar conteúdo 18+": {
+    en: "Show 18+ content",
+    es: "Mostrar contenido 18+",
+  },
+  "Confirmação de idade": {
+    en: "Age confirmation",
+    es: "Confirmación de edad",
+  },
+  "O conteúdo 18+ fica oculto por padrão. Para exibi-lo, confirme que você tem 18 anos ou mais.": {
+    en: "18+ content is hidden by default. To show it, confirm that you are 18 years old or older.",
+    es: "El contenido 18+ está oculto de forma predeterminada. Para mostrarlo, confirma que tienes 18 años o más.",
+  },
+  "Confirmo que tenho 18 anos ou mais.": {
+    en: "I confirm that I am 18 years old or older.",
+    es: "Confirmo que tengo 18 años o más.",
+  },
+  "Ativar conteúdo 18+": {
+    en: "Enable 18+ content",
+    es: "Activar contenido 18+",
+  },
+  "Voltar": { en: "Back", es: "Volver" },
   "Lendo agora": { en: "Reading now", es: "Leyendo ahora" },
   "Na lista": { en: "In my list", es: "En mi lista" },
   "Concluídas": { en: "Completed", es: "Completadas" },
@@ -1521,6 +1556,10 @@ function normalizarObra(
       obra.classificacaoIndicativa.trim()
         ? obra.classificacaoIndicativa
         : "Não informada",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obra.avisosConteudo,
+      obra.classificacaoIndicativa,
+    ),
     sinopse:
       typeof obra.sinopse === "string" && obra.sinopse.trim()
         ? obra.sinopse
@@ -1639,7 +1678,12 @@ function normalizarObraSupabase(
     formato: obra.formato?.trim() || "Não informado",
     classificacaoIndicativa:
       obra.classificacao_indicativa?.trim() ||
+      obraLocal?.classificacaoIndicativa ||
       "Não informada",
+    avisosConteudo: normalizarAvisosConteudo18(
+      obra.avisos_conteudo ?? obraLocal?.avisosConteudo,
+      obra.classificacao_indicativa ?? obraLocal?.classificacaoIndicativa,
+    ),
     sinopse:
       obra.sinopse?.trim() ||
       "Nenhuma sinopse informada.",
@@ -2132,7 +2176,7 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
       .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
       )
       .eq("publicado", true)
       .order("criada_em", { ascending: false })
@@ -2477,6 +2521,10 @@ export default function ExplorarPage() {
     useState<FiltroColecaoExplorar>("todos");
   const [ordenacao, setOrdenacao] = useState<OrdenacaoExplorar>("relevancia");
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
+  const [mostrarConfirmacaoConteudo18, setMostrarConfirmacaoConteudo18] =
+    useState(false);
+  const [confirmouIdadeConteudo18, setConfirmouIdadeConteudo18] =
+    useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
@@ -2738,10 +2786,14 @@ export default function ExplorarPage() {
       const passaFormato =
         filtroFormato === "todos" ? true : obra.formato === filtroFormato;
 
+      const classificacao18 = ehClassificacao18(obra.classificacaoIndicativa);
       const passaClassificacao =
-        filtroClassificacao === "todos"
-          ? true
-          : obra.classificacaoIndicativa === filtroClassificacao;
+        filtroClassificacao === "18+"
+          ? classificacao18
+          : filtroClassificacao === "todos"
+            ? !classificacao18
+            : !classificacao18 &&
+              obra.classificacaoIndicativa === filtroClassificacao;
 
       const passaPublicacao =
         obra.publicado && obraTemConteudoPublicadoExplorar(obra);
@@ -2898,6 +2950,8 @@ export default function ExplorarPage() {
     language,
   ]);
 
+  const filtroConteudo18Ativo = filtroClassificacao === "18+";
+
   const autoresFiltrados = useMemo(() => {
     return autoresExplorar.filter((autor) => {
       const passaCategoria = categoriaSelecionada
@@ -2915,7 +2969,7 @@ export default function ExplorarPage() {
   }, [autoresExplorar, categoriaSelecionada, termoBusca]);
 
   const secoesCriativasObras = useMemo(() => {
-    if (categoriaSelecionada || termoBusca) {
+    if (categoriaSelecionada || termoBusca || filtroConteudo18Ativo) {
       return [] as Array<{ titulo: string; obras: ObraLocal[] }>;
     }
 
@@ -2985,7 +3039,12 @@ export default function ExplorarPage() {
       { titulo: "Mais comentadas", obras: maisComentadas },
       { titulo: "Para ler agora", obras: paraLerAgora },
     ].filter((secao) => secao.obras.length > 0);
-  }, [obrasBaseFiltradas, categoriaSelecionada, termoBusca]);
+  }, [
+    obrasBaseFiltradas,
+    categoriaSelecionada,
+    termoBusca,
+    filtroConteudo18Ativo,
+  ]);
 
   const secoesCriativasAutores = useMemo(() => {
     if (categoriaSelecionada || termoBusca) {
@@ -3028,7 +3087,7 @@ export default function ExplorarPage() {
   }, [autoresExplorar, categoriaSelecionada, termoBusca]);
 
   const secoesObrasPorGenero = useMemo(() => {
-    if (categoriaSelecionada || termoBusca) {
+    if (categoriaSelecionada || termoBusca || filtroConteudo18Ativo) {
       return [] as Array<{ genero: string; obras: ObraLocal[] }>;
     }
 
@@ -3050,7 +3109,12 @@ export default function ExplorarPage() {
     return obrasOutros.length > 0
       ? [...secoes, { genero: "Outros", obras: obrasOutros }]
       : secoes;
-  }, [obrasBaseFiltradas, categoriaSelecionada, termoBusca]);
+  }, [
+    obrasBaseFiltradas,
+    categoriaSelecionada,
+    termoBusca,
+    filtroConteudo18Ativo,
+  ]);
 
   const secoesAutoresPorGenero = useMemo(() => {
     if (categoriaSelecionada || termoBusca) {
@@ -3138,8 +3202,45 @@ export default function ExplorarPage() {
     setModoConteudo(modo);
     setCategoriaSelecionada("");
     setMensagemLogin("");
+    setMostrarConfirmacaoConteudo18(false);
+    setConfirmouIdadeConteudo18(false);
+
+    if (modo === "autores") {
+      setFiltroClassificacao("todos");
+    }
+
     setMostrarFiltrosAvancados(false);
     atualizarUrl("", modo);
+  }
+
+  function selecionarFiltroClassificacaoExplorar(filtro: string) {
+    if (filtro !== "18+") {
+      setFiltroClassificacao(filtro);
+      setMostrarConfirmacaoConteudo18(false);
+      setConfirmouIdadeConteudo18(false);
+      return;
+    }
+
+    if (acessoConteudo18Confirmado()) {
+      setFiltroClassificacao("18+");
+      setMostrarFiltrosAvancados(false);
+      return;
+    }
+
+    setConfirmouIdadeConteudo18(false);
+    setMostrarConfirmacaoConteudo18(true);
+  }
+
+  function confirmarFiltroConteudo18Explorar() {
+    if (!confirmouIdadeConteudo18) {
+      return;
+    }
+
+    confirmarAcessoConteudo18();
+    setFiltroClassificacao("18+");
+    setMostrarConfirmacaoConteudo18(false);
+    setConfirmouIdadeConteudo18(false);
+    setMostrarFiltrosAvancados(false);
   }
 
   function selecionarCategoria(categoria: string) {
@@ -3175,6 +3276,8 @@ export default function ExplorarPage() {
     setFiltroColecao("todos");
     setOrdenacao("relevancia");
     setMensagemLogin("");
+    setMostrarConfirmacaoConteudo18(false);
+    setConfirmouIdadeConteudo18(false);
     setMostrarFiltrosAvancados(false);
     window.history.pushState(null, "", "/explorar");
   }
@@ -3460,7 +3563,11 @@ export default function ExplorarPage() {
         {mostrarFiltrosAvancados && (
           <div
             style={explorarModalOverlayStyle}
-            onClick={() => setMostrarFiltrosAvancados(false)}
+            onClick={() => {
+              setMostrarFiltrosAvancados(false);
+              setMostrarConfirmacaoConteudo18(false);
+              setConfirmouIdadeConteudo18(false);
+            }}
           >
             <section
               style={isDesktop ? desktopExplorarModalSheetStyle : explorarModalSheetStyle}
@@ -3498,29 +3605,146 @@ export default function ExplorarPage() {
                   </button>
                 ))}
 
-                <p style={explorarModalSectionLabelStyle}>
-                  {traduzirTextoExplorar("Ordenar", language)}
-                </p>
+                {modoConteudo === "obras" && (
+                  <>
+                    <p style={explorarModalSectionLabelStyle}>
+                      {traduzirTextoExplorar("Conteúdo 18+", language)}
+                    </p>
 
-                {[
-                  ["relevancia", "Relevância"],
-                  ["mais-curtidas", "Mais curtidas"],
-                  ["mais-recentes", "Mais recentes"],
-                ].map(([valor, rotulo]) => (
-                  <button
-                    key={valor}
-                    type="button"
-                    onClick={() => setOrdenacao(valor as OrdenacaoExplorar)}
-                    style={criarExplorarModalOptionStyle(ordenacao === valor)}
-                  >
-                    <span>{traduzirTextoExplorar(rotulo, language)}</span>
-                    <span style={criarExplorarModalRadioStyle(ordenacao === valor)}>
-                      {ordenacao === valor ? "✓" : ""}
-                    </span>
-                  </button>
-                ))}
+                    {!mostrarConfirmacaoConteudo18 ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => selecionarFiltroClassificacaoExplorar("todos")}
+                          style={criarExplorarModalOptionStyle(
+                            filtroClassificacao !== "18+",
+                          )}
+                        >
+                          <span>
+                            {traduzirTextoExplorar(
+                              "Ocultar conteúdo 18+",
+                              language,
+                            )}
+                          </span>
+                          <span
+                            style={criarExplorarModalRadioStyle(
+                              filtroClassificacao !== "18+",
+                            )}
+                          >
+                            {filtroClassificacao !== "18+" ? "✓" : ""}
+                          </span>
+                        </button>
 
-                {filtrosAtivos && (
+                        <button
+                          type="button"
+                          onClick={() => selecionarFiltroClassificacaoExplorar("18+")}
+                          style={criarExplorarModalOptionStyle(
+                            filtroClassificacao === "18+",
+                          )}
+                        >
+                          <span>
+                            {traduzirTextoExplorar(
+                              "Mostrar conteúdo 18+",
+                              language,
+                            )}
+                          </span>
+                          <span
+                            style={criarExplorarModalRadioStyle(
+                              filtroClassificacao === "18+",
+                            )}
+                          >
+                            {filtroClassificacao === "18+" ? "✓" : ""}
+                          </span>
+                        </button>
+                      </>
+                    ) : (
+                      <div style={explorarAdultConfirmationStyle}>
+                        <strong style={explorarAdultConfirmationTitleStyle}>
+                          {traduzirTextoExplorar("Confirmação de idade", language)}
+                        </strong>
+                        <p style={explorarAdultConfirmationTextStyle}>
+                          {traduzirTextoExplorar(
+                            "O conteúdo 18+ fica oculto por padrão. Para exibi-lo, confirme que você tem 18 anos ou mais.",
+                            language,
+                          )}
+                        </p>
+
+                        <label style={explorarAdultConfirmationCheckStyle}>
+                          <input
+                            type="checkbox"
+                            checked={confirmouIdadeConteudo18}
+                            onChange={(event) =>
+                              setConfirmouIdadeConteudo18(event.target.checked)
+                            }
+                            style={explorarAdultConfirmationCheckboxStyle}
+                          />
+                          <span>
+                            {traduzirTextoExplorar(
+                              "Confirmo que tenho 18 anos ou mais.",
+                              language,
+                            )}
+                          </span>
+                        </label>
+
+                        <div style={explorarAdultConfirmationActionsStyle}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMostrarConfirmacaoConteudo18(false);
+                              setConfirmouIdadeConteudo18(false);
+                            }}
+                            style={explorarAdultConfirmationBackStyle}
+                          >
+                            {traduzirTextoExplorar("Voltar", language)}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={confirmarFiltroConteudo18Explorar}
+                            disabled={!confirmouIdadeConteudo18}
+                            style={{
+                              ...explorarAdultConfirmationContinueStyle,
+                              ...(!confirmouIdadeConteudo18
+                                ? explorarAdultConfirmationDisabledStyle
+                                : {}),
+                            }}
+                          >
+                            {traduzirTextoExplorar(
+                              "Ativar conteúdo 18+",
+                              language,
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {!mostrarConfirmacaoConteudo18 && (
+                  <p style={explorarModalSectionLabelStyle}>
+                    {traduzirTextoExplorar("Ordenar", language)}
+                  </p>
+                )}
+
+                {!mostrarConfirmacaoConteudo18 &&
+                  [
+                    ["relevancia", "Relevância"],
+                    ["mais-curtidas", "Mais curtidas"],
+                    ["mais-recentes", "Mais recentes"],
+                  ].map(([valor, rotulo]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => setOrdenacao(valor as OrdenacaoExplorar)}
+                      style={criarExplorarModalOptionStyle(ordenacao === valor)}
+                    >
+                      <span>{traduzirTextoExplorar(rotulo, language)}</span>
+                      <span style={criarExplorarModalRadioStyle(ordenacao === valor)}>
+                        {ordenacao === valor ? "✓" : ""}
+                      </span>
+                    </button>
+                  ))}
+
+                {!mostrarConfirmacaoConteudo18 && filtrosAtivos && (
                   <>
                     <span style={explorarModalClearDividerStyle} aria-hidden="true" />
 
@@ -3634,14 +3858,18 @@ export default function ExplorarPage() {
           ))}
 
         {modoConteudo === "obras" &&
-          (Boolean(categoriaSelecionada) || Boolean(termoBusca)) &&
+          (Boolean(categoriaSelecionada) ||
+            Boolean(termoBusca) ||
+            filtroConteudo18Ativo) &&
           obrasLocaisFiltradas.length > 0 && (
             <section style={isDesktop ? desktopSectionStyle : sectionStyle}>
               <SectionHeader
                 title={
                   categoriaSelecionada
                     ? `Publicações em ${categoriaSelecionada}`
-                    : "Resultados da busca"
+                    : termoBusca
+                      ? "Resultados da busca"
+                      : "Conteúdo 18+"
                 }
                 tema={temaPagina}
                 isDesktop={isDesktop}
@@ -5369,6 +5597,84 @@ const explorarModalClearButtonStyle: CSSProperties = {
   fontFamily: "inherit",
   textAlign: "center",
   ...safeTextStyle,
+};
+
+const explorarAdultConfirmationStyle: CSSProperties = {
+  display: "grid",
+  gap: 12,
+  margin: "8px 30px 4px",
+  padding: "16px",
+  borderRadius: 18,
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.035)",
+};
+
+const explorarAdultConfirmationTitleStyle: CSSProperties = {
+  color: "#FFFFFF",
+  fontSize: 17,
+  lineHeight: 1.2,
+  fontWeight: 950,
+  ...safeTextStyle,
+};
+
+const explorarAdultConfirmationTextStyle: CSSProperties = {
+  margin: 0,
+  color: "rgba(244,244,245,0.72)",
+  fontSize: 13,
+  lineHeight: 1.55,
+  ...safeTextStyle,
+};
+
+const explorarAdultConfirmationCheckStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 10,
+  color: "#FFFFFF",
+  fontSize: 13,
+  lineHeight: 1.45,
+  cursor: "pointer",
+  ...safeTextStyle,
+};
+
+const explorarAdultConfirmationCheckboxStyle: CSSProperties = {
+  width: 18,
+  height: 18,
+  margin: 0,
+  flex: "0 0 auto",
+  accentColor: "#FFFFFF",
+};
+
+const explorarAdultConfirmationActionsStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.35fr)",
+  gap: 10,
+};
+
+const explorarAdultConfirmationBackStyle: CSSProperties = {
+  minHeight: 44,
+  borderRadius: 999,
+  border: "1px solid rgba(255,255,255,0.12)",
+  background: "transparent",
+  color: "#FFFFFF",
+  fontFamily: "inherit",
+  fontWeight: 850,
+  cursor: "pointer",
+};
+
+const explorarAdultConfirmationContinueStyle: CSSProperties = {
+  minHeight: 44,
+  borderRadius: 999,
+  border: "1px solid rgba(255,255,255,0.92)",
+  background: "#FFFFFF",
+  color: "#111111",
+  fontFamily: "inherit",
+  fontWeight: 950,
+  cursor: "pointer",
+};
+
+const explorarAdultConfirmationDisabledStyle: CSSProperties = {
+  opacity: 0.42,
+  cursor: "not-allowed",
 };
 
 
