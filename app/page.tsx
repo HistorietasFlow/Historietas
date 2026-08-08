@@ -13,6 +13,7 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../lib/historietasTheme";
+import { ehClassificacao18 } from "../lib/historietasAdultContent";
 
 type CapituloLocal = {
   id: string;
@@ -3138,7 +3139,11 @@ export default function Home() {
 
   const obrasPublicadas = useMemo(() => {
     return obrasLocais.filter((obra) => {
-      return obra.publicado && obraTemConteudoPublicoHome(obra);
+      return (
+        obra.publicado &&
+        obraTemConteudoPublicoHome(obra) &&
+        !ehClassificacao18(obra.classificacaoIndicativa)
+      );
     });
   }, [obrasLocais]);
 
