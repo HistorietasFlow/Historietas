@@ -11,6 +11,7 @@ import {
   historietasThemeCss,
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
+import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
   carregarEstadoRelacionamentoPerfil,
   carregarPermissoesAbasPerfil,
@@ -72,6 +73,7 @@ type ObraLista = {
   autor: string;
   genero: string;
   formato: string;
+  classificacaoIndicativa: string;
   capa: string;
   slug: string;
   link: string;
@@ -312,7 +314,7 @@ function criarInteracaoAnotacaoListasVazia(
 }
 
 const CAMPOS_OBRAS =
-  "id,user_id,titulo,autor,genero,formato,capa_url,publicado,visualizacoes,slug,criada_em";
+  "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,capa_url,publicado,visualizacoes,slug,criada_em";
 
 function pegarTexto(valor: unknown, fallback = "") {
   return typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
@@ -839,6 +841,7 @@ function criarObraLista(row: RegistroGenerico, index: number): ObraLista {
     autor: pegarTexto(row.autor, "Autor não informado"),
     genero: pegarTexto(row.genero, "Não informado"),
     formato: pegarTexto(row.formato, "Não informado"),
+    classificacaoIndicativa: pegarTexto(row.classificacao_indicativa),
     capa: pegarTexto(row.capa_url ?? row.capa),
     slug,
     link: `/obra/${slug}`,
@@ -3349,7 +3352,9 @@ function ListasUniversaisContent() {
           return;
         }
 
-        let obrasPreparadas = [...catalogo];
+        let obrasPreparadas = catalogo.filter(
+          (obra) => !ehClassificacao18(obra.classificacaoIndicativa),
+        );
 
         if (genero) {
           const generoNormalizado = normalizarTexto(genero);
