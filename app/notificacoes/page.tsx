@@ -4555,14 +4555,24 @@ export default function NotificacoesPage() {
 
   const notificacoesFiltradas = useMemo(() => {
     const filtradas = notificacoes.filter((notificacao) => {
-      const obra = obrasPorId.get(notificacao.obraId) || null;
+      const obraId = notificacao.obraId.trim();
+      const obra = obrasPorId.get(obraId) || null;
 
-      if (
-        !acessoConteudo18Liberado &&
-        obra &&
-        ehClassificacao18(obra.classificacaoIndicativa)
-      ) {
-        return false;
+      if (!acessoConteudo18Liberado && obraId) {
+        const classificacaoNormalizada = normalizarTexto(
+          obra?.classificacaoIndicativa || ""
+        );
+        const classificacaoDesconhecida =
+          !obra ||
+          !classificacaoNormalizada ||
+          classificacaoNormalizada.startsWith("nao informad");
+
+        if (
+          classificacaoDesconhecida ||
+          ehClassificacao18(obra?.classificacaoIndicativa || "")
+        ) {
+          return false;
+        }
       }
 
       const capitulo =
