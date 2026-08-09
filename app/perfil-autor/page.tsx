@@ -6191,16 +6191,12 @@ function criarItemAtividadeDiarioPerfil(
   const data = obterDataRegistroDiario(registro);
   const metadata = obterMetadataDiarioPerfil(registro);
   const obra = obterObraRegistroDiario(registro, obrasPorId, obrasPorCapituloId);
-  const obraRelacionada = pegarTexto(
-    registro.obra_relacionada ?? metadata.obra_relacionada,
-  );
   const postId = pegarTexto(metadata.post_id);
   const texto = pegarTexto(registro.texto);
   const nota = Number(registro.nota);
 
   const tituloBase =
     obra?.titulo ||
-    obraRelacionada ||
     (tipoAtividade === "publicou_review" ? "Review publicada" : "Atividade do Diário");
 
   let tipoItem: DiarioPerfilItem["tipo"] = "atividade";
@@ -6630,6 +6626,10 @@ async function carregarDiarioPerfilSupabase(
   const obrasParaDiario = mesclarObrasPorIdSlug(
     obrasDisponiveis,
     obrasFaltantes,
+  ).filter(
+    (obra) =>
+      incluirPrivados ||
+      !ehClassificacao18(obra.classificacaoIndicativa),
   );
   const { obrasPorId, obrasPorCapituloId } =
     montarMapaObrasDiario(obrasParaDiario);
