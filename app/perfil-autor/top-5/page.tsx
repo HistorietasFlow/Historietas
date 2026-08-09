@@ -12,6 +12,7 @@ import {
   useHistorietasTheme,
 } from "../../../lib/historietasTheme";
 import { criarSlugBase, normalizarTexto } from "../../../lib/utils";
+import { ehClassificacao18 } from "../../../lib/historietasAdultContent";
 
 type CapituloLocal = {
   id: string;
@@ -748,7 +749,7 @@ function mesclarObrasTop5(obras: ObraTop5[]) {
   const indicePorIdentificador = new Map<string, number>();
 
   obras.forEach((obra) => {
-    if (!obra.publicado) {
+    if (!obra.publicado || ehClassificacao18(obra.classificacaoIndicativa)) {
       return;
     }
 
