@@ -10,6 +10,7 @@ import { useNotificacoes } from "../../components/NotificacoesProvider";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
+import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 
 
 type TraducaoEmBreve = {
@@ -358,6 +359,7 @@ type SupabaseObraEmBreveRow = {
   autor: string | null;
   genero: string | null;
   formato: string | null;
+  classificacao_indicativa: string | null;
   capa_url: string | null;
   arquivo_url: string | null;
   publicado: boolean | null;
@@ -703,7 +705,7 @@ async function carregarObrasReaisEmBreve() {
     const { data: obrasBanco, error: erroObras } = await supabase
       .from("obras")
       .select(
-        "id,user_id,titulo,autor,genero,formato,capa_url,arquivo_url,publicado,slug,link,criada_em"
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,capa_url,arquivo_url,publicado,slug,link,criada_em"
       )
       .eq("publicado", true)
       .order("criada_em", { ascending: false })
@@ -720,7 +722,9 @@ async function carregarObrasReaisEmBreve() {
       return [] as ObraEmBreveCard[];
     }
 
-    const obrasPublicadas = obrasBanco as unknown as SupabaseObraEmBreveRow[];
+    const obrasPublicadas = (
+      obrasBanco as unknown as SupabaseObraEmBreveRow[]
+    ).filter((obra) => !ehClassificacao18(obra.classificacao_indicativa));
     const obraIds = obrasPublicadas
       .map((obra) => obra.id?.trim() || "")
       .filter(Boolean);
