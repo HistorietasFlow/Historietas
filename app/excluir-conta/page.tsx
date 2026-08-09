@@ -18,6 +18,7 @@ export default function ExcluirContaPage() {
   const [email, setEmail] = useState("");
   const [motivo, setMotivo] = useState("");
   const [confirmacao, setConfirmacao] = useState(false);
+  const [website, setWebsite] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [enviado, setEnviado] = useState(false);
@@ -43,7 +44,7 @@ export default function ExcluirContaPage() {
           email,
           motivo,
           confirmacao,
-          website: "",
+          website,
         }),
       });
       const data = (await response.json().catch(() => null)) as
@@ -66,6 +67,7 @@ export default function ExcluirContaPage() {
       setEmail("");
       setMotivo("");
       setConfirmacao(false);
+      setWebsite("");
     } catch {
       setErro(
         t(
@@ -154,6 +156,18 @@ export default function ExcluirContaPage() {
             </div>
           ) : (
             <form onSubmit={enviarSolicitacao} className="exclusao-conta-form">
+              <label className="exclusao-conta-honeypot" aria-hidden="true">
+                <span>Website</span>
+                <input
+                  type="text"
+                  name="website"
+                  value={website}
+                  onChange={(event) => setWebsite(event.target.value)}
+                  autoComplete="off"
+                  tabIndex={-1}
+                />
+              </label>
+
               <label>
                 <span>{t("E-mail da conta", "Account email", "Correo de la cuenta")}</span>
                 <input
@@ -225,6 +239,7 @@ const pageCss = `
   .exclusao-conta-botao.primario, .exclusao-conta-enviar { background: var(--historietas-accent, #8b5cf6); color: #fff; }
   .exclusao-conta-botao.secundario { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: #fff; }
   .exclusao-conta-form { display: grid; gap: 15px; margin-top: 18px; }
+  .exclusao-conta-honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; opacity: 0 !important; pointer-events: none !important; }
   .exclusao-conta-form label:not(.exclusao-conta-checkbox) { display: grid; gap: 7px; color: rgba(255,255,255,.75); font-size: 13px; font-weight: 800; }
   .exclusao-conta-form input[type=email], .exclusao-conta-form textarea { width: 100%; box-sizing: border-box; padding: 12px 13px; border-radius: 13px; border: 1px solid rgba(255,255,255,.14); outline: 0; background: rgba(255,255,255,.07); color: #fff; font: inherit; }
   .exclusao-conta-checkbox { display: grid; grid-template-columns: 20px minmax(0,1fr); gap: 10px; align-items: start; color: rgba(255,255,255,.75); line-height: 1.4; font-size: 13px; }
