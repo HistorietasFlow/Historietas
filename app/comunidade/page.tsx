@@ -7,6 +7,7 @@ import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from "re
 import type { CSSProperties, FormEvent, TouchEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
+import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -340,6 +341,7 @@ const COMUNIDADE_UI_TRANSLATIONS: Record<
   "Capítulo relacionado": { en: "Related chapter", es: "Capítulo relacionado" },
   "Opcional: número ou título do capítulo": { en: "Optional: chapter number or title", es: "Opcional: número o título del capítulo" },
   "Selecione uma obra antes de informar o capítulo.": { en: "Select a work before entering the chapter.", es: "Selecciona una obra antes de indicar el capítulo." },
+  "Selecione uma obra publicada disponível nas sugestões.": { en: "Select a published work available in the suggestions.", es: "Selecciona una obra publicada disponible en las sugerencias." },
   "CAPÍTULO": { en: "CHAPTER", es: "CAPÍTULO" },
   "OBRA": { en: "WORK", es: "OBRA" },
   "Publicação": { en: "Post", es: "Publicación" },
@@ -1541,8 +1543,18 @@ function normalizarSugestaoObraLocal(valor: unknown, index: number) {
     typeof obra.titulo === "string" && obra.titulo.trim()
       ? obra.titulo.trim()
       : "";
+  const classificacaoIndicativa =
+    typeof obra.classificacaoIndicativa === "string"
+      ? obra.classificacaoIndicativa
+      : typeof obra.classificacao_indicativa === "string"
+        ? obra.classificacao_indicativa
+        : "";
 
-  if (!titulo || obra.publicado !== true) {
+  if (
+    !titulo ||
+    obra.publicado !== true ||
+    ehClassificacao18(classificacaoIndicativa)
+  ) {
     return null;
   }
 
@@ -1937,10 +1949,37 @@ type SupabaseObraPublicaRow = {
   user_id: string | null;
   titulo: string | null;
   autor: string | null;
+  classificacao_indicativa: string | null;
   publicado: boolean | null;
   slug: string | null;
   link: string | null;
 };
+
+function normalizarSugestaoObraSupabase(
+  obra: SupabaseObraPublicaRow,
+  index = 0
+): ObraRelacionadaSugestao | null {
+  const titulo = obra.titulo?.trim() || "";
+
+  if (
+    !titulo ||
+    obra.publicado !== true ||
+    ehClassificacao18(obra.classificacao_indicativa)
+  ) {
+    return null;
+  }
+
+  const slug = obra.slug?.trim() || criarSlugBase(titulo);
+
+  return {
+    id: obra.id || `obra-supabase-${index}`,
+    titulo,
+    autor: obra.autor?.trim() || "Autor não informado",
+    autorId: obra.user_id?.trim() || "",
+    slug,
+    link: obra.link?.trim() || `/obra/${slug}`,
+  };
+}
 
 type SupabasePostRow = {
   id: string;
@@ -2223,7 +2262,7 @@ async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
   return profilesPorUsuario;
 }
 
-function obterObraRelacionadaParaDiario(
+function obterObraRelacionadaPermitida(
   titulo: string,
   sugestoesObras: ObraRelacionadaSugestao[]
 ) {
@@ -2328,10 +2367,33 @@ async function registrarReviewComunidadeNoDiario({
       postId: postIdLimpo,
     });
 
-    const obraDiario = obterObraRelacionadaParaDiario(
+    let obraDiario = obterObraRelacionadaPermitida(
       obraRelacionada,
       sugestoesObras
     );
+    const obraRelacionadaLimpa = obraRelacionada.trim();
+
+    if (obraRelacionadaLimpa && !obraDiario) {
+      const { data: obrasEncontradas, error: erroObraRelacionada } =
+        await supabase
+          .from("obras")
+          .select("id, user_id, titulo, autor, classificacao_indicativa, publicado, slug, link")
+          .eq("publicado", true)
+          .eq("titulo", obraRelacionadaLimpa)
+          .limit(5);
+
+      if (!erroObraRelacionada) {
+        obraDiario =
+          ((obrasEncontradas || []) as unknown as SupabaseObraPublicaRow[])
+            .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
+            .find((obra): obra is ObraRelacionadaSugestao => Boolean(obra)) || null;
+      }
+    }
+
+    if (obraRelacionadaLimpa && !obraDiario) {
+      return true;
+    }
+
     const obraId = obraDiario?.id?.trim() || "";
     const dataReview = new Date(criadaEm);
     const criadaEmValida = Number.isNaN(dataReview.getTime())
@@ -2359,7 +2421,7 @@ async function registrarReviewComunidadeNoDiario({
       visibilidade: visibilidadeDiario,
       metadata: {
         post_id: postIdLimpo,
-        obra_relacionada: obraRelacionada.trim().slice(0, 90),
+        obra_relacionada: obraDiario?.titulo.trim().slice(0, 90) || "",
         origem: "comunidade",
         visibilidade_post: visibilidade,
       },
@@ -3849,7 +3911,7 @@ export default function ComunidadePage() {
       try {
         const { data, error } = await supabase
           .from("obras")
-          .select("id, user_id, titulo, autor, publicado, slug, link")
+          .select("id, user_id, titulo, autor, classificacao_indicativa, publicado, slug, link")
           .eq("publicado", true)
           .order("criada_em", { ascending: false })
           .limit(120);
@@ -3859,24 +3921,7 @@ export default function ComunidadePage() {
         }
 
         const obrasSupabase = ((data || []) as unknown as SupabaseObraPublicaRow[])
-          .map((obra, index) => {
-            const titulo = obra.titulo?.trim() || "";
-
-            if (!titulo) {
-              return null;
-            }
-
-            const slug = obra.slug?.trim() || criarSlugBase(titulo);
-
-            return {
-              id: obra.id || `obra-supabase-${index}`,
-              titulo,
-              autor: obra.autor?.trim() || "Autor não informado",
-              autorId: obra.user_id?.trim() || "",
-              slug,
-              link: obra.link?.trim() || `/obra/${slug}`,
-            } satisfies ObraRelacionadaSugestao;
-          })
+          .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
           .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
 
         if (!cancelado) {
@@ -4893,6 +4938,44 @@ export default function ComunidadePage() {
         return;
       }
 
+      const titulosObrasRelacionadasPagina = Array.from(
+        new Set(
+          postsPagina
+            .map((post) =>
+              separarObraECapituloRelacionados(post.obra_relacionada || "")
+                .obraRelacionada.trim()
+            )
+            .filter(Boolean)
+        )
+      );
+
+      if (titulosObrasRelacionadasPagina.length > 0) {
+        const { data: obrasRelacionadasPagina, error: erroObrasRelacionadasPagina } =
+          await supabase
+            .from("obras")
+            .select("id, user_id, titulo, autor, classificacao_indicativa, publicado, slug, link")
+            .eq("publicado", true)
+            .in("titulo", titulosObrasRelacionadasPagina)
+            .limit(POSTS_COMUNIDADE_POR_PAGINA * 2);
+
+        if (!erroObrasRelacionadasPagina) {
+          const sugestoesObrasRelacionadasPagina = (
+            (obrasRelacionadasPagina || []) as unknown as SupabaseObraPublicaRow[]
+          )
+            .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
+            .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
+
+          if (sugestoesObrasRelacionadasPagina.length > 0) {
+            setObrasRelacionadasSugestoes((obrasAtuais) =>
+              removerSugestoesObrasDuplicadas([
+                ...obrasAtuais,
+                ...sugestoesObrasRelacionadasPagina,
+              ])
+            );
+          }
+        }
+      }
+
       const [comentariosResposta, curtidasResposta] = await Promise.all([
         supabase
           .from("comunidade_comentarios")
@@ -5133,9 +5216,47 @@ export default function ComunidadePage() {
       const textoLimpo = textoPostRef.current?.value.trim() || "";
       const obraLimpa = obraRelacionadaRef.current?.value.trim() || "";
       const capituloLimpo = capituloRelacionadoPost.trim();
+      let obraRelacionadaPermitida = obraLimpa
+        ? obterObraRelacionadaPermitida(
+            obraLimpa,
+            obrasRelacionadasSugestoes
+          )
+        : null;
 
       if (capituloLimpo && !obraLimpa) {
         setErro("Selecione uma obra antes de informar o capítulo.");
+        return;
+      }
+
+      if (obraLimpa && !obraRelacionadaPermitida) {
+        const { data: obrasEncontradas, error: erroObraRelacionada } =
+          await supabase
+            .from("obras")
+            .select("id, user_id, titulo, autor, classificacao_indicativa, publicado, slug, link")
+            .eq("publicado", true)
+            .eq("titulo", obraLimpa)
+            .limit(5);
+
+        if (!erroObraRelacionada) {
+          obraRelacionadaPermitida = (
+            (obrasEncontradas || []) as unknown as SupabaseObraPublicaRow[]
+          )
+            .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
+            .find((obra): obra is ObraRelacionadaSugestao => Boolean(obra)) || null;
+
+          if (obraRelacionadaPermitida) {
+            setObrasRelacionadasSugestoes((obrasAtuais) =>
+              removerSugestoesObrasDuplicadas([
+                obraRelacionadaPermitida as ObraRelacionadaSugestao,
+                ...obrasAtuais,
+              ])
+            );
+          }
+        }
+      }
+
+      if (obraLimpa && !obraRelacionadaPermitida) {
+        setErro("Selecione uma obra publicada disponível nas sugestões.");
         return;
       }
 
@@ -5173,7 +5294,7 @@ export default function ComunidadePage() {
 
       const textoPostBanco = textoLimpo.slice(0, 700);
       const obraPostBanco = juntarObraECapituloRelacionados(
-        obraLimpa,
+        obraRelacionadaPermitida?.titulo || "",
         capituloLimpo,
       );
 
@@ -6638,6 +6759,10 @@ export default function ComunidadePage() {
                   );
                   const spoilerRevelado = spoilersReveladosIds.includes(post.id);
                   const ocultarTextoSpoiler = post.temSpoiler && !spoilerRevelado;
+                  const obraRelacionadaPermitida = obterObraRelacionadaPermitida(
+                    post.obraRelacionada,
+                    obrasRelacionadasSugestoes
+                  );
                   const opcoesPublicacao = (
                     <div style={postOptionsWrapStyle}>
                       <button
@@ -6875,24 +7000,24 @@ export default function ComunidadePage() {
                       </div>
 
                       <div style={postBadgesRowStyle}>
-                        {post.obraRelacionada && (
+                        {obraRelacionadaPermitida && (
                           <>
                             <Link
                               href={criarLinkObraRelacionada(
-                                post.obraRelacionada,
+                                obraRelacionadaPermitida.titulo,
                                 obrasRelacionadasSugestoes
                               )}
                               data-historietas-user-content="true"
                               style={obraBadgeStyle}
                             >
-                              {post.obraRelacionada}
+                              {obraRelacionadaPermitida.titulo}
                             </Link>
 
                             <span style={postBadgeSeparatorStyle}>·</span>
                           </>
                         )}
 
-                        {post.capituloRelacionado && (
+                        {obraRelacionadaPermitida && post.capituloRelacionado && (
                           <>
                             <span style={obraBadgeStyle}>
                               <span>CAPÍTULO&nbsp;</span>
