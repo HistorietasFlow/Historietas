@@ -4132,11 +4132,13 @@ async function carregarNotificacoesDiarioSupabase(
     const perfilAutor = obterPerfilNotificacao(perfis, autorId, "Usuário");
     const tipoAtividade = pegarTexto(registro.tipo);
     const obraId = pegarTexto(registro.obra_id);
+
+    if (!obraId) {
+      return;
+    }
+
     const obra = obrasPorId.get(obraId);
-    const metadata = obterMetadataNotificacaoDiario(registro);
-    const tituloObra =
-      obra?.titulo ||
-      pegarTexto(metadata.obra_titulo ?? metadata.titulo, "uma obra");
+    const tituloObra = obra?.titulo || "uma obra";
     const nota = obterNumeroSeguro(registro.nota, 0);
     const id = `diario-atividade-${atividadeId}`;
     const mensagem =
