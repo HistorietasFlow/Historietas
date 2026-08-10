@@ -107,7 +107,7 @@ function origemPermitida(request: NextRequest) {
   const origem = request.headers.get("origin");
 
   if (!origem) {
-    return true;
+    return false;
   }
 
   try {
