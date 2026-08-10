@@ -2529,10 +2529,16 @@ export default function EditarObraPage() {
         capaNomeFinal = "";
 
         if (caminhoCapaRemotaAtual) {
-          arquivosAntigosParaRemover.push({
-            bucket: "capas-obras",
-            caminho: caminhoCapaRemotaAtual,
-          });
+          const { error: erroRemoverCapaBloqueada } =
+            await supabase.storage
+              .from("capas-obras")
+              .remove([caminhoCapaRemotaAtual]);
+
+          if (erroRemoverCapaBloqueada) {
+            throw new Error(
+              `Nao consegui remover a capa publica antes de bloquear a obra 18+: ${erroRemoverCapaBloqueada.message}`
+            );
+          }
         }
       }
 
