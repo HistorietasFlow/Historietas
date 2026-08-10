@@ -11,9 +11,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarMetadataAceiteTermos,
-  DIRETRIZES_COMUNIDADE_VERSAO_ATUAL,
-  POLITICA_PRIVACIDADE_VERSAO_ATUAL,
-  TERMOS_USO_VERSAO_ATUAL,
+  registrarAceiteTermosPublicacao,
 } from "../../lib/aceiteTermos";
 
 type ModoAuth = "entrar" | "criar" | "recuperar";
@@ -711,37 +709,6 @@ export default function LoginPage() {
         throw erroPorUserId || erroPorId;
       }
 
-      const termosVersaoMetadata =
-        typeof metadata.termos_uso_versao === "string"
-          ? metadata.termos_uso_versao.trim()
-          : "";
-      const termosAceitosEmMetadata =
-        typeof metadata.termos_uso_aceitos_em === "string"
-          ? metadata.termos_uso_aceitos_em.trim()
-          : "";
-      const diretrizesVersaoMetadata =
-        typeof metadata.diretrizes_comunidade_versao === "string"
-          ? metadata.diretrizes_comunidade_versao.trim()
-          : "";
-      const diretrizesAceitasEmMetadata =
-        typeof metadata.diretrizes_comunidade_aceitas_em === "string"
-          ? metadata.diretrizes_comunidade_aceitas_em.trim()
-          : "";
-      const politicaVersaoMetadata =
-        typeof metadata.politica_privacidade_versao === "string"
-          ? metadata.politica_privacidade_versao.trim()
-          : "";
-      const politicaCienteEmMetadata =
-        typeof metadata.politica_privacidade_ciente_em === "string"
-          ? metadata.politica_privacidade_ciente_em.trim()
-          : "";
-      const aceiteMetadataAtual =
-        termosVersaoMetadata === TERMOS_USO_VERSAO_ATUAL &&
-        Boolean(termosAceitosEmMetadata) &&
-        diretrizesVersaoMetadata === DIRETRIZES_COMUNIDADE_VERSAO_ATUAL &&
-        Boolean(diretrizesAceitasEmMetadata) &&
-        politicaVersaoMetadata === POLITICA_PRIVACIDADE_VERSAO_ATUAL &&
-        Boolean(politicaCienteEmMetadata);
       const agora = new Date().toISOString();
 
       const perfilPayload: Record<string, unknown> = {
@@ -755,17 +722,6 @@ export default function LoginPage() {
         avatar_url: perfilAtual?.avatar_url || "",
         atualizado_em: agora,
       };
-
-      if (aceiteMetadataAtual) {
-        Object.assign(perfilPayload, {
-          termos_uso_versao: termosVersaoMetadata,
-          termos_uso_aceitos_em: termosAceitosEmMetadata,
-          diretrizes_comunidade_versao: diretrizesVersaoMetadata,
-          diretrizes_comunidade_aceitas_em: diretrizesAceitasEmMetadata,
-          politica_privacidade_versao: politicaVersaoMetadata,
-          politica_privacidade_ciente_em: politicaCienteEmMetadata,
-        });
-      }
 
       if (perfilAtual?.id) {
         const { data: perfilAtualizado, error: erroAtualizacao } =
@@ -1024,6 +980,17 @@ export default function LoginPage() {
           if (!resultadoPerfil.ok) {
             setErro(t("profileSyncWarning"));
             await aguardarLogin(1600);
+          } else {
+            const resultadoAceite =
+              await registrarAceiteTermosPublicacao();
+
+            if (!resultadoAceite.aceito) {
+              setErro(
+                resultadoAceite.erro ||
+                  "Nao foi possivel registrar o aceite dos termos.",
+              );
+              return;
+            }
           }
 
           sincronizarStorageUsuarioLogin(data.user.id);
