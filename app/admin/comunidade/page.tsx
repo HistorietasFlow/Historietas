@@ -2350,6 +2350,15 @@ export default function AdminComunidadePage() {
       return;
     }
 
+    if (
+      denuncia.arquivada ||
+      (denuncia.status !== "pendente" && denuncia.status !== "em_analise")
+    ) {
+      setErro(
+        "Somente den\u00fancias ativas e n\u00e3o arquivadas podem remover conte\u00fado."
+      );
+      return;
+    }
     if (acaoEmAndamento) {
       return;
     }
@@ -3440,7 +3449,10 @@ export default function AdminComunidadePage() {
                               }}
                               disabled={
                                 acaoAtiva ||
-                                conteudoIndisponivel
+                                conteudoIndisponivel ||
+                                denunciaArquivada ||
+                                (denuncia.status !== "pendente" &&
+                                  denuncia.status !== "em_analise")
                               }
                               style={reportMenuDangerItemStyle}
                             >
