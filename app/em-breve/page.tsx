@@ -823,7 +823,7 @@ async function encontrarLinkObraComConteudoEmBreve(
     if (idObraSupabaseValido(obraIdLimpo)) {
       const { data, error } = await supabase
         .from("obras")
-        .select("id,titulo,slug,link,arquivo_url,publicado")
+        .select("id,titulo,slug,link,arquivo_url,publicado,classificacao_indicativa")
         .eq("id", obraIdLimpo)
         .eq("publicado", true)
         .limit(1)
@@ -837,7 +837,7 @@ async function encontrarLinkObraComConteudoEmBreve(
     if (!obraEncontrada && tituloLimpo) {
       const { data: obrasBanco, error: erroObras } = await supabase
         .from("obras")
-        .select("id,titulo,slug,link,arquivo_url,publicado")
+        .select("id,titulo,slug,link,arquivo_url,publicado,classificacao_indicativa")
         .ilike("titulo", tituloLimpo)
         .eq("publicado", true)
         .limit(5);
@@ -853,6 +853,10 @@ async function encontrarLinkObraComConteudoEmBreve(
           (obra) =>
             normalizarTexto(obra.titulo || "") === normalizarTexto(tituloLimpo)
         ) || obrasEncontradas[0] || null;
+    }
+
+    if (ehClassificacao18(obraEncontrada?.classificacao_indicativa)) {
+      return "";
     }
 
     if (!obraEncontrada?.id) {
