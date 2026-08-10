@@ -14,6 +14,7 @@ import {
   verificarAceiteTermosPublicacao,
 } from "../../lib/aceiteTermos";
 import {
+  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   AVISOS_CONTEUDO_18,
   ehClassificacao18,
   normalizarAvisosConteudo18,
@@ -2181,9 +2182,13 @@ export default function PublicarPage() {
           ]
         : [];
 
-      const capaEnviada = capaArquivo
-        ? await enviarArquivoStorage("capas-obras", userId, capaArquivo)
-        : null;
+      const capaBloqueadaPorClassificacao =
+        ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
+        ehClassificacao18(classificacaoFinal);
+      const capaEnviada =
+        capaArquivo && !capaBloqueadaPorClassificacao
+          ? await enviarArquivoStorage("capas-obras", userId, capaArquivo)
+          : null;
 
       if (capaEnviada) {
         arquivosEnviados.push(capaEnviada);
@@ -2203,6 +2208,7 @@ export default function PublicarPage() {
       }
 
       const capaUrlSupabase = capaEnviada?.publicUrl || "";
+      const capaNomePersistivel = capaBloqueadaPorClassificacao ? "" : capaNome;
       const arquivoObraReferenciaSupabase =
         arquivoObraEnviado?.caminho || "";
       const link = `/obra/${slug}`;
@@ -2219,7 +2225,7 @@ export default function PublicarPage() {
         sinopse: sinopse.trim(),
         tags: tagsDaObra.length > 0 ? tagsDaObra : ["sem tags"],
         capa_url: capaUrlSupabase,
-        capa_nome: capaNome,
+        capa_nome: capaNomePersistivel,
         arquivo_url: arquivoObraReferenciaSupabase,
         arquivo_nome: arquivoObra?.nome || "",
         arquivo_tipo: arquivoObra?.tipo || "",
@@ -2298,7 +2304,7 @@ export default function PublicarPage() {
         sinopse: sinopse.trim(),
         tags: tagsDaObra.length > 0 ? tagsDaObra : ["sem tags"],
         capa: capaUrlSupabase,
-        capaNome,
+        capaNome: capaNomePersistivel,
         arquivoObra: arquivoObra
           ? {
               ...arquivoObra,

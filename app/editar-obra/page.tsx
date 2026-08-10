@@ -10,6 +10,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import {
+  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   AVISOS_CONTEUDO_18,
   ehClassificacao18,
   normalizarAvisosConteudo18,
@@ -2405,6 +2406,9 @@ export default function EditarObraPage() {
     const generoFinalSalvo = generoFinal;
     const formatoFinalSalvo = formatoFinal;
     const classificacaoFinal = classificacaoIndicativa.trim();
+    const capaBloqueadaPorClassificacao =
+      ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
+      ehClassificacao18(classificacaoFinal);
     const avisosConteudoFinal = normalizarAvisosConteudo18(
       avisosConteudo18,
       classificacaoFinal,
@@ -2520,8 +2524,20 @@ export default function EditarObraPage() {
         arquivoRemotoAtual?.conteudo || ""
       );
 
+      if (capaBloqueadaPorClassificacao) {
+        capaFinal = "";
+        capaNomeFinal = "";
+
+        if (caminhoCapaRemotaAtual) {
+          arquivosAntigosParaRemover.push({
+            bucket: "capas-obras",
+            caminho: caminhoCapaRemotaAtual,
+          });
+        }
+      }
+
       try {
-        if (capaArquivo) {
+        if (capaArquivo && !capaBloqueadaPorClassificacao) {
           const novaCapa = await enviarArquivoStorage(
             "capas-obras",
             userId,
@@ -2541,7 +2557,11 @@ export default function EditarObraPage() {
               caminho: caminhoCapaRemotaAtual,
             });
           }
-        } else if (capaRemovidaManualmente && caminhoCapaRemotaAtual) {
+        } else if (
+          !capaBloqueadaPorClassificacao &&
+          capaRemovidaManualmente &&
+          caminhoCapaRemotaAtual
+        ) {
           arquivosAntigosParaRemover.push({
             bucket: "capas-obras",
             caminho: caminhoCapaRemotaAtual,
