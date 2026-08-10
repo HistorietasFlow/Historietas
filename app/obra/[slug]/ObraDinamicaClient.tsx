@@ -13,6 +13,7 @@ import AdultContentGate from "../../../components/AdultContentGate";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
 import { criarSlugBase, formatarData, formatarNumeroCompacto, formatarTamanhoArquivo, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../../lib/utils";
 import {
+  ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
   acessoConteudo18Confirmado,
   ehClassificacao18,
   normalizarAvisosConteudo18,
@@ -1336,6 +1337,13 @@ function carregarObrasLocaisComBackup(userId = "") {
     : [];
 
   const obrasPublicasLocais = obrasNormalizadas.filter((obraLocal) => {
+    if (
+      ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO &&
+      ehClassificacao18(obraLocal.classificacaoIndicativa)
+    ) {
+      return false;
+    }
+
     return obraLocal.publicado && obraLocal.capitulos.length > 0;
   });
 
