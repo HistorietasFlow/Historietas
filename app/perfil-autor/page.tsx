@@ -5995,6 +5995,7 @@ function normalizarPublicacaoComunidadePerfil(
 
 async function carregarComunidadePerfilSupabase(
   userId: string,
+  incluirObrasRelacionadasSemFiltro = false,
 ): Promise<Omit<ComunidadePerfilEstado, "carregando" | "erro">> {
   const userIdLimpo = userId.trim();
 
@@ -6034,7 +6035,7 @@ async function carregarComunidadePerfilSupabase(
     throw publicacoesResposta.error;
   }
 
-  const publicacoesRecentes = (
+  let publicacoesRecentes = (
     (publicacoesResposta.data || []) as unknown as Record<string, unknown>[]
   )
     .map((registro) => normalizarPublicacaoComunidadePerfil(registro))
@@ -6042,6 +6043,61 @@ async function carregarComunidadePerfilSupabase(
       (publicacao): publicacao is PublicacaoComunidadePerfil =>
         Boolean(publicacao),
     );
+
+  if (!incluirObrasRelacionadasSemFiltro) {
+    const titulosObrasRelacionadas = Array.from(
+      new Set(
+        publicacoesRecentes
+          .map((publicacao) => publicacao.obraRelacionada.trim())
+          .filter(Boolean),
+      ),
+    );
+
+    if (titulosObrasRelacionadas.length > 0) {
+      const { data: obrasRelacionadasData, error: obrasRelacionadasError } =
+        await supabase
+          .from("obras")
+          .select("titulo, classificacao_indicativa")
+          .eq("publicado", true)
+          .in("titulo", titulosObrasRelacionadas)
+          .limit(titulosObrasRelacionadas.length);
+
+      const titulosPermitidos = new Set<string>();
+
+      if (!obrasRelacionadasError && Array.isArray(obrasRelacionadasData)) {
+        (
+          obrasRelacionadasData as unknown as Record<string, unknown>[]
+        ).forEach((registroObra) => {
+          const titulo = pegarTexto(registroObra.titulo);
+          const classificacao = pegarTexto(
+            registroObra.classificacao_indicativa,
+          );
+          const classificacaoNormalizada = normalizarTexto(classificacao);
+
+          if (
+            titulo &&
+            classificacaoNormalizada &&
+            !classificacaoNormalizada.startsWith("nao informad") &&
+            !ehClassificacao18(classificacao)
+          ) {
+            titulosPermitidos.add(normalizarTexto(titulo));
+          }
+        });
+      }
+
+      publicacoesRecentes = publicacoesRecentes.map((publicacao) => {
+        if (!publicacao.obraRelacionada) {
+          return publicacao;
+        }
+
+        return titulosPermitidos.has(
+          normalizarTexto(publicacao.obraRelacionada),
+        )
+          ? publicacao
+          : { ...publicacao, obraRelacionada: "" };
+      });
+    }
+  }
 
   const totalTeoriasLocal = publicacoesRecentes.filter(
     (publicacao) => publicacao.tipoPublicacao === "Teoria",
@@ -8503,8 +8559,10 @@ function PerfilAutorPageContent() {
 
     async function carregarComunidadePerfil() {
       try {
-        const comunidadeCarregada =
-          await carregarComunidadePerfilSupabase(userIdPerfil);
+        const comunidadeCarregada = await carregarComunidadePerfilSupabase(
+          userIdPerfil,
+          perfilPertenceAoUsuario,
+        );
 
         if (!cancelado) {
           setComunidadePerfil({
@@ -8533,7 +8591,11 @@ function PerfilAutorPageContent() {
     return () => {
       cancelado = true;
     };
-  }, [perfilParaMostrar?.autorId, comunidadePerfilVisivel]);
+  }, [
+    perfilParaMostrar?.autorId,
+    comunidadePerfilVisivel,
+    perfilPertenceAoUsuario,
+  ]);
 
   useEffect(() => {
     const abaAtualVisivel =
