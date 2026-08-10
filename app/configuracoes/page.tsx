@@ -2882,11 +2882,34 @@ export default function ConfiguracoesPage() {
   }
 
   async function sairDaConta() {
+    setMensagemAcao(null);
+
     try {
-      await supabase.auth.signOut();
-    } finally {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        mostrarMensagemAcao(
+          "erro",
+          t(
+            "N\u00e3o foi poss\u00edvel sair da conta agora. Tente novamente.",
+            "Could not sign out right now. Please try again.",
+            "No se pudo cerrar la sesi\u00f3n ahora. Int\u00e9ntalo de nuevo.",
+          ),
+        );
+        return;
+      }
+
       router.replace("/login");
       router.refresh();
+    } catch {
+      mostrarMensagemAcao(
+        "erro",
+        t(
+          "N\u00e3o foi poss\u00edvel sair da conta agora. Tente novamente.",
+          "Could not sign out right now. Please try again.",
+          "No se pudo cerrar la sesi\u00f3n ahora. Int\u00e9ntalo de nuevo.",
+        ),
+      );
     }
   }
 

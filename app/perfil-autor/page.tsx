@@ -10461,12 +10461,17 @@ function PerfilAutorPageContent() {
     setMenuPerfilAberto(false);
 
     try {
-      await supabase.auth.signOut();
-    } catch {
-      // Mesmo se o Supabase falhar, leva o usuário para a tela de login.
-    }
+      const { error } = await supabase.auth.signOut();
 
-    router.push("/login");
+      if (error) {
+        setMensagemAcao("N\u00e3o foi poss\u00edvel sair da conta agora. Tente novamente.");
+        return;
+      }
+
+      router.push("/login");
+    } catch {
+      setMensagemAcao("N\u00e3o foi poss\u00edvel sair da conta agora. Tente novamente.");
+    }
   }
 
   async function alternarSeguirAutor() {
