@@ -125,6 +125,37 @@ function obterMensagemErro(error: unknown, fallback: string) {
   return mensagem || fallback;
 }
 
+async function sessaoEhRecuperacao() {
+  try {
+    const { data, error } = await supabase.auth.getClaims();
+
+    if (error || !data?.claims || typeof data.claims !== "object") {
+      return false;
+    }
+
+    const amr = (data.claims as { amr?: unknown }).amr;
+
+    if (!Array.isArray(amr)) {
+      return false;
+    }
+
+    return amr.some((item) => {
+      if (!item || typeof item !== "object") {
+        return false;
+      }
+
+      const metodo = (item as { method?: unknown }).method;
+
+      return (
+        typeof metodo === "string" &&
+        metodo.trim().toLowerCase() === "recovery"
+      );
+    });
+  } catch {
+    return false;
+  }
+}
+
 export default function RedefinirSenhaPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
@@ -168,12 +199,17 @@ export default function RedefinirSenhaPage() {
         const { data, error } =
           await supabase.auth.getUser();
 
+        const recuperacaoValida =
+          !error && data.user
+            ? await sessaoEhRecuperacao()
+            : false;
+
         if (!ativo) {
           return;
         }
 
         setEstadoLink(
-          !error && data.user ? "valido" : "invalido",
+          recuperacaoValida ? "valido" : "invalido",
         );
       } catch {
         if (ativo) {
@@ -227,6 +263,15 @@ export default function RedefinirSenhaPage() {
       } = await supabase.auth.getUser();
 
       if (erroUsuario || !usuarioAtual.user) {
+        setEstadoLink("invalido");
+        setErro(t("sessionInvalid"));
+        return;
+      }
+
+      const recuperacaoValida =
+        await sessaoEhRecuperacao();
+
+      if (!recuperacaoValida) {
         setEstadoLink("invalido");
         setErro(t("sessionInvalid"));
         return;

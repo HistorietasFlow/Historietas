@@ -27,24 +27,69 @@ function obterDestinoSeguro(valor: string | null) {
   }
 }
 
+function claimsTemRecuperacao(claims: unknown) {
+  if (!claims || typeof claims !== "object") {
+    return false;
+  }
+
+  const amr = (claims as { amr?: unknown }).amr;
+
+  if (!Array.isArray(amr)) {
+    return false;
+  }
+
+  return amr.some((item) => {
+    if (!item || typeof item !== "object") {
+      return false;
+    }
+
+    const metodo = (item as { method?: unknown }).method;
+
+    return (
+      typeof metodo === "string" &&
+      metodo.trim().toLowerCase() === "recovery"
+    );
+  });
+}
+
+function respostaLinkInvalido(origem: string) {
+  return NextResponse.redirect(
+    new URL("/redefinir-senha?erro=link-invalido", origem),
+  );
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const codigo = url.searchParams.get("code");
   const destino = obterDestinoSeguro(url.searchParams.get("next"));
 
   if (!codigo) {
-    return NextResponse.redirect(
-      new URL("/redefinir-senha?erro=link-invalido", url.origin),
-    );
+    return respostaLinkInvalido(url.origin);
   }
 
   const supabase = await criarSupabaseServerClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(codigo);
+  const { data, error } =
+    await supabase.auth.exchangeCodeForSession(codigo);
 
-  if (error) {
-    return NextResponse.redirect(
-      new URL("/redefinir-senha?erro=link-invalido", url.origin),
-    );
+  if (error || !data.user || !data.session) {
+    return respostaLinkInvalido(url.origin);
+  }
+
+  const { data: claimsData, error: claimsError } =
+    await supabase.auth.getClaims(data.session.access_token);
+
+  if (
+    claimsError ||
+    !claimsData ||
+    !claimsTemRecuperacao(claimsData.claims)
+  ) {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // A rejeicao continua valida mesmo se a limpeza da sessao falhar.
+    }
+
+    return respostaLinkInvalido(url.origin);
   }
 
   const destinoUrl = new URL(destino, url.origin);
