@@ -4032,7 +4032,7 @@ async function carregarNotificacoesDiarioSupabase(
     try {
       const { data: obrasData } = await supabase
         .from("obras")
-        .select("id, titulo, slug, publicado")
+        .select("id, titulo, slug, publicado, classificacao_indicativa")
         .in("id", Array.from(obrasIds))
         .limit(200);
 
@@ -4048,6 +4048,20 @@ async function carregarNotificacoesDiarioSupabase(
           if (!obraId) {
             return;
           }
+
+          const classificacaoIndicativa = pegarTexto(
+
+            registro.classificacao_indicativa
+
+          );
+
+
+          if (ehClassificacao18(classificacaoIndicativa)) {
+
+            return;
+
+          }
+
 
           const titulo = pegarTexto(registro.titulo, `Obra ${index + 1}`);
 
