@@ -3179,7 +3179,10 @@ async function carregarNotificacoesComunidadeSupabase(
   const reviewsComunidade: Record<string, unknown>[] = [];
   const obrasAutor = new Map<
     string,
-    Pick<ObraLocal, "id" | "titulo" | "slug" | "publicado">
+    Pick<
+      ObraLocal,
+      "id" | "titulo" | "slug" | "publicado" | "classificacaoIndicativa"
+    >
   >();
   const capitulosAutor = new Map<
     string,
@@ -3323,7 +3326,7 @@ async function carregarNotificacoesComunidadeSupabase(
   try {
     const { data: obrasAutorData } = await supabase
       .from("obras")
-      .select("id, titulo, slug, publicado, user_id")
+      .select("id, titulo, slug, publicado, user_id, classificacao_indicativa")
       .eq("user_id", userId)
       .limit(80);
 
@@ -3345,6 +3348,10 @@ async function carregarNotificacoesComunidadeSupabase(
         titulo,
         slug,
         publicado: pegarBooleano(obra.publicado, true),
+        classificacaoIndicativa: pegarTexto(
+          obra.classificacao_indicativa,
+          "Não informada"
+        ),
       });
     });
 
@@ -3421,7 +3428,7 @@ async function carregarNotificacoesComunidadeSupabase(
           const obraRelacionada = normalizarTexto(
             pegarTexto(registro.obra_relacionada)
           );
-          const pertenceAoAutor = Array.from(obrasAutor.values()).some((obra) => {
+          const obraDoAutor = Array.from(obrasAutor.values()).find((obra) => {
             const tituloNormalizado = normalizarTexto(obra.titulo);
 
             return (
@@ -3433,9 +3440,22 @@ async function carregarNotificacoesComunidadeSupabase(
             );
           });
 
-          if (!pertenceAoAutor) {
+          const classificacaoNormalizada = normalizarTexto(
+            obraDoAutor?.classificacaoIndicativa || ""
+          );
+
+          if (
+            !obraDoAutor ||
+            !obraDoAutor.publicado ||
+            !classificacaoNormalizada ||
+            classificacaoNormalizada.startsWith("nao informad") ||
+            ehClassificacao18(obraDoAutor.classificacaoIndicativa)
+          ) {
             return;
           }
+
+          registro.obra_id_validado = obraDoAutor.id;
+          registro.obra_titulo_validado = obraDoAutor.titulo;
 
           const autorId = pegarTexto(registro.autor_id);
           reviewsComunidade.push(registro);
@@ -3611,13 +3631,17 @@ async function carregarNotificacoesComunidadeSupabase(
       autorId,
       pegarTexto(registro.autor_nome, "Leitor")
     );
-    const obraRelacionada = pegarTexto(registro.obra_relacionada, "sua obra");
+    const obraId = pegarTexto(registro.obra_id_validado);
+    const obraRelacionada = pegarTexto(
+      registro.obra_titulo_validado,
+      "sua obra"
+    );
     const textoReview = pegarTexto(registro.texto);
     const id = `comunidade-review-${postId}`;
 
     notificacoesSociais.push({
       id,
-      obraId: "",
+      obraId,
       capituloId: "",
       link: `/comunidade?post=${encodeURIComponent(postId)}`,
       titulo: "Nova review publicada",
