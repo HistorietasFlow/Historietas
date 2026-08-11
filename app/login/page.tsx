@@ -934,7 +934,7 @@ export default function LoginPage() {
         );
 
         if (error) {
-          setErro(formatarErroAuth(error, language));
+          setErro(t("genericFailure"));
           return;
         }
 
