@@ -76,6 +76,19 @@ type ProblemaTecnicoResumo = {
   atualizadoEm: string;
 };
 
+type ProblemaTecnicoRpcRow = {
+  problema_id: string | null;
+  categoria: string | null;
+  titulo: string | null;
+  descricao: string | null;
+  pagina_url: string | null;
+  status: string | null;
+  prioridade: string | null;
+  observacao_admin: string | null;
+  criado_em: string | null;
+  atualizado_em: string | null;
+};
+
 type IconName =
   | "arrowLeft"
   | "search"
@@ -809,7 +822,9 @@ export default function AjudaPage() {
         throw error;
       }
 
-      const chamados = ((data || []) as unknown as Record<string, unknown>[])
+      const registros: ProblemaTecnicoRpcRow[] = Array.isArray(data) ? data : [];
+
+      const chamados = registros
         .map((item) => ({
           id: textoSeguro(item.problema_id),
           categoria: normalizarCategoriaProblemaTecnico(item.categoria),
