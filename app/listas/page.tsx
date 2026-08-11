@@ -864,11 +864,10 @@ function criarPerfilLista(
     userId: pegarTexto(row?.user_id ?? row?.id, userId),
     nome:
       pegarTexto(row?.nome) ||
-      pegarTexto(row?.display_name) ||
       nomeFallback.trim() ||
       "Usuário",
     username: pegarTexto(row?.username).replace(/^@+/, ""),
-    avatar: pegarTexto(row?.avatar_url ?? row?.avatar),
+    avatar: pegarTexto(row?.avatar_url),
     bio: pegarTexto(row?.bio ?? row?.sobre_bio, "Perfil no Historietas."),
   };
 }
@@ -878,32 +877,20 @@ async function carregarPerfil(userId: string, nomeFallback = "") {
     return criarPerfilLista(null, userId, nomeFallback);
   }
 
-  const selecoes = [
-    "id,user_id,nome,username,avatar_url,bio,sobre_bio",
-    "id,user_id,nome,avatar_url,bio,sobre_bio",
-    "id,user_id,nome,avatar_url,bio",
-  ];
-
   for (const campo of ["user_id", "id"] as const) {
-    for (const selecao of selecoes) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select(selecao)
-          .eq(campo, userId)
-          .limit(1)
-          .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,user_id,nome,username,avatar_url,bio,sobre_bio")
+        .eq(campo, userId)
+        .limit(1)
+        .maybeSingle();
 
-        if (!error && data && typeof data === "object" && !Array.isArray(data)) {
-          return criarPerfilLista(
-            data as unknown as RegistroGenerico,
-            userId,
-            nomeFallback,
-          );
-        }
-      } catch {
-        // Tenta uma seleção compatível com versões anteriores da tabela.
+      if (!error && data) {
+        return criarPerfilLista(data, userId, nomeFallback);
       }
+    } catch {
+      // Tenta buscar pelo identificador alternativo.
     }
   }
 
