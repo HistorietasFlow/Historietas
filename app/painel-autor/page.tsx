@@ -1803,7 +1803,7 @@ async function carregarProgressoUsuarioPainel(
 
     return {
       registros: Array.isArray(data)
-        ? (data as unknown as RegistroSupabaseGenerico[])
+        ? data
         : [],
       carregado: true,
     };
@@ -2287,7 +2287,7 @@ async function carregarPainelAutorSupabase(
     }
 
     const obrasSupabaseBanco = Array.isArray(obrasBanco)
-      ? (obrasBanco as unknown as SupabaseObraRow[])
+      ? obrasBanco
       : [];
     const obraIds = obrasSupabaseBanco
       .map((obra) => obra.id)
@@ -2316,7 +2316,7 @@ async function carregarPainelAutorSupabase(
     const capitulosSupabaseBanco = erroCapitulos
       ? []
       : Array.isArray(capitulosBanco)
-      ? (capitulosBanco as unknown as SupabaseCapituloRow[])
+      ? capitulosBanco
       : [];
 
     const capituloIds = capitulosSupabaseBanco
@@ -3045,7 +3045,7 @@ export default function PainelAutorPage() {
         }
 
         const obraStorage =
-          obraEncontrada as unknown as ObraStoragePainelRow | null;
+          obraEncontrada;
 
         /*
          * Uma obra local também pode possuir um ID no formato UUID.
