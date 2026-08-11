@@ -2012,9 +2012,9 @@ export default function EditarObraPage() {
           (obra) => obra.id === obraIdParam
         );
         const obraNormalizadaSupabase = normalizarObraSupabase(
-          obraSupabase as unknown as ObraSupabaseRow,
+          obraSupabase,
           Array.isArray(capitulosSupabase)
-            ? (capitulosSupabase as unknown as CapituloSupabaseRow[])
+            ? capitulosSupabase
             : [],
           obraLocal,
           0
@@ -2478,7 +2478,7 @@ export default function EditarObraPage() {
       }
 
       const obraRemotaAtual =
-        obraAutorizadaSupabase as unknown as ObraArquivosSupabaseRow;
+        obraAutorizadaSupabase;
       const capaLocalPersistivel =
         capa && !ehDataUrlEdicaoObra(capa) ? capa.trim() : "";
       const capaRemotaAtual = obraRemotaAtual.capa_url?.trim() || "";
