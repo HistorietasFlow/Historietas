@@ -1314,7 +1314,7 @@ async function carregarUsuariosSeguidosComunidade(seguidorId: string) {
 
     return Array.from(
       new Set(
-        (data as unknown as Array<{ seguido_id?: string | null }>)
+        data
           .map((registro) => registro.seguido_id?.trim() || "")
           .filter((id) => idSupabaseValidoComunidade(id))
       )
@@ -1750,7 +1750,7 @@ async function carregarVotosEnquetesSupabase(
 
     const meusVotos: Record<string, string> = {};
 
-    (meusVotosData as unknown as SupabaseEnqueteVotoRow[]).forEach((voto) => {
+    meusVotosData.forEach((voto) => {
       const postId = typeof voto.post_id === "string" ? voto.post_id : "";
       const opcao = typeof voto.opcao === "string" ? voto.opcao : "";
 
@@ -1783,7 +1783,7 @@ async function carregarVotosEnquetesSupabase(
 
     const resultados: ResultadoVotosEnquete = {};
 
-    (data as unknown as SupabaseEnqueteVotoRow[]).forEach((voto) => {
+    data.forEach((voto) => {
       const postId = typeof voto.post_id === "string" ? voto.post_id : "";
       const opcao = typeof voto.opcao === "string" ? voto.opcao : "";
 
@@ -2208,7 +2208,7 @@ async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
       .limit(1000);
 
     if (Array.isArray(data)) {
-      (data as unknown as PerfilComunidadeRow[]).forEach((profile) => {
+      data.forEach((profile) => {
         const profileUserId = obterTextoProfileComunidade(profile, "user_id");
 
         if (profileUserId) {
@@ -2233,7 +2233,7 @@ async function carregarProfilesComunidadePorUsuarios(userIds: string[]) {
         .limit(1000);
 
       if (Array.isArray(data)) {
-        (data as unknown as PerfilComunidadeRow[]).forEach((profile) => {
+        data.forEach((profile) => {
           const profileUserId =
             obterTextoProfileComunidade(profile, "user_id") ||
             obterTextoProfileComunidade(profile, "id");
@@ -2373,7 +2373,7 @@ async function registrarReviewComunidadeNoDiario({
 
       if (!erroObraRelacionada) {
         obraDiario =
-          ((obrasEncontradas || []) as unknown as SupabaseObraPublicaRow[])
+          (obrasEncontradas || [])
             .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
             .find((obra): obra is ObraRelacionadaSugestao => Boolean(obra)) || null;
       }
@@ -3909,7 +3909,7 @@ export default function ComunidadePage() {
           throw error;
         }
 
-        const obrasSupabase = ((data || []) as unknown as SupabaseObraPublicaRow[])
+        const obrasSupabase = (data || [])
           .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
           .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
 
@@ -4912,7 +4912,7 @@ export default function ComunidadePage() {
         throw postsResposta.error;
       }
 
-      const postsPagina = (postsResposta.data || []) as unknown as SupabasePostRow[];
+      const postsPagina = postsResposta.data || [];
       const postIds = postsPagina
         .map((post) => post.id)
         .filter((postId): postId is string => Boolean(postId));
@@ -4949,7 +4949,7 @@ export default function ComunidadePage() {
 
         if (!erroObrasRelacionadasPagina) {
           const sugestoesObrasRelacionadasPagina = (
-            (obrasRelacionadasPagina || []) as unknown as SupabaseObraPublicaRow[]
+            obrasRelacionadasPagina || []
           )
             .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
             .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
@@ -4988,7 +4988,7 @@ export default function ComunidadePage() {
       }
 
       const comentariosSupabase =
-        (comentariosResposta.data || []) as unknown as SupabaseComentarioRow[];
+        comentariosResposta.data || [];
       const comentarioIds = comentariosSupabase
         .map((comentario) => comentario.id)
         .filter((comentarioId): comentarioId is string => Boolean(comentarioId));
@@ -5021,8 +5021,8 @@ export default function ComunidadePage() {
       const postsSupabase = mapearPostsSupabase(
         postsPagina,
         comentariosSupabase,
-        (curtidasResposta.data || []) as unknown as SupabaseCurtidaRow[],
-        (comentarioCurtidasResposta.data || []) as unknown as SupabaseComentarioCurtidaRow[],
+        curtidasResposta.data || [],
+        comentarioCurtidasResposta.data || [],
         profilesPorUsuario
       );
 
@@ -5228,7 +5228,7 @@ export default function ComunidadePage() {
 
         if (!erroObraRelacionada) {
           obraRelacionadaPermitida = (
-            (obrasEncontradas || []) as unknown as SupabaseObraPublicaRow[]
+            obrasEncontradas || []
           )
             .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
             .find((obra): obra is ObraRelacionadaSugestao => Boolean(obra)) || null;
