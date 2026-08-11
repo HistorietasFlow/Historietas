@@ -2175,7 +2175,7 @@ async function carregarSeguindoSupabase(
     }
 
     const obrasSupabaseBanco = Array.isArray(obrasBanco)
-      ? (obrasBanco as unknown as SupabaseObraRow[])
+      ? obrasBanco
       : [];
     const obraIds = obrasSupabaseBanco
       .map((obra) => obra.id)
@@ -2205,7 +2205,7 @@ async function carregarSeguindoSupabase(
     const capitulosSupabaseBanco = erroCapitulos
       ? []
       : Array.isArray(capitulosBanco)
-      ? (capitulosBanco as unknown as SupabaseCapituloRow[])
+      ? capitulosBanco
       : [];
     const capituloIds = capitulosSupabaseBanco
       .map((capitulo) => capitulo.id)
