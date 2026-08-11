@@ -404,7 +404,7 @@ function carregarObrasLocaisListas(userId: string) {
   const userIdLimpo = userId.trim();
 
   if (typeof window === "undefined" || !userIdLimpo) {
-    return [] as RegistroGenerico[];
+    return [];
   }
 
   try {
@@ -420,7 +420,7 @@ function carregarObrasLocaisListas(userId: string) {
         )
       : [];
   } catch {
-    return [] as RegistroGenerico[];
+    return [];
   }
 }
 
@@ -903,7 +903,7 @@ async function carregarCapitulosDasObras(obras: ObraLista[]) {
           return;
         }
 
-        const row = registro as RegistroGenerico;
+        const row = registro;
         const obraId = pegarTexto(row.obra_id);
 
         if (!obraId) {
@@ -916,7 +916,7 @@ async function carregarCapitulosDasObras(obras: ObraLista[]) {
           obraId,
           titulo: pegarTexto(row.titulo, `Capítulo ${index + 1}`),
           ordem: Math.max(1, Math.round(pegarNumero(row.ordem, index + 1))),
-          criadoEm: pegarTexto(row.criado_em ?? row.created_at),
+          criadoEm: pegarTexto(row.criado_em),
         });
         capitulosPorObra.set(obraId, atuais);
       });
@@ -1123,7 +1123,7 @@ async function carregarResumoAvaliacoes(obras: ObraLista[]) {
           return;
         }
 
-        const row = registro as RegistroGenerico;
+        const row = registro;
         const obraId = pegarTexto(row.obra_id);
         const avaliadorId = pegarTexto(row.user_id);
         const autorId = autorIdPorObra.get(obraId) || "";
@@ -1216,7 +1216,7 @@ async function carregarRegistrosUsuario(
   userId: string,
 ) {
   if (!idUsuarioValido(userId)) {
-    return [] as RegistroGenerico[];
+    return [];
   }
 
   try {
@@ -1228,11 +1228,11 @@ async function carregarRegistrosUsuario(
 
     if (error) {
       console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, error.message);
-      return [] as RegistroGenerico[];
+      return [];
     }
 
     if (!Array.isArray(data)) {
-      return [] as RegistroGenerico[];
+      return [];
     }
 
     return data
@@ -1248,7 +1248,7 @@ async function carregarRegistrosUsuario(
   } catch (error) {
     const mensagem = error instanceof Error ? error.message : "Falha desconhecida";
     console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, mensagem);
-    return [] as RegistroGenerico[];
+    return [];
   }
 }
 
@@ -1323,7 +1323,7 @@ function criarChaveStorageAnotacoesListas(userId: string) {
 
 function carregarAnotacoesLocaisListas(userId: string) {
   if (typeof window === "undefined" || !userId.trim()) {
-    return [] as RegistroGenerico[];
+    return [];
   }
 
   try {
@@ -1341,7 +1341,7 @@ function carregarAnotacoesLocaisListas(userId: string) {
         )
       : [];
   } catch {
-    return [] as RegistroGenerico[];
+    return [];
   }
 }
 
@@ -1595,7 +1595,7 @@ async function salvarAvaliacaoRemotaListas({
 
   const confirmado = Array.isArray(data)
     ? data.some((registro) => {
-        const valor = pegarNumero((registro as RegistroGenerico).nota);
+        const valor = pegarNumero(registro.nota);
         return Math.round(valor * 2) / 2 === nota;
       })
     : false;
@@ -2616,7 +2616,7 @@ async function carregarAvaliacoesAutoresPublicos(autorIds: string[]) {
         return;
       }
 
-      const row = registro as RegistroGenerico;
+      const row = registro;
       const autorId = pegarTexto(row.autor_id);
       const nota = pegarNumero(row.nota);
 
@@ -2674,7 +2674,7 @@ async function carregarAutoresPublicos(obras: ObraLista[]) {
             return;
           }
 
-          const row = registro as RegistroGenerico;
+          const row = registro;
           const userId = pegarTexto(row.user_id ?? row.id);
 
           if (userId) {
@@ -4561,7 +4561,7 @@ function ListasUniversaisContent() {
 
       if (error) throw error;
 
-      const registro = data as unknown as RegistroGenerico | null;
+      const registro = data;
       const comentario: ComentarioAnotacaoListas = {
         id: pegarTexto(registro?.id),
         anotacaoId,
