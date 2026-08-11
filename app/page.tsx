@@ -2044,7 +2044,7 @@ async function carregarPerfisSupabaseHome(autorIds: string[], userId = "") {
     if (error) {
       console.warn("Não consegui carregar profiles da Home por user_id:", error.message);
     } else if (Array.isArray(data)) {
-      linhas.push(...(data as unknown as PerfilSupabaseHomeRow[]));
+      linhas.push(...data);
     }
   } catch (error) {
     console.warn("Não consegui acessar profiles da Home por user_id:", error);
@@ -2060,7 +2060,7 @@ async function carregarPerfisSupabaseHome(autorIds: string[], userId = "") {
     if (error) {
       console.warn("Não consegui carregar profiles da Home por id:", error.message);
     } else if (Array.isArray(data)) {
-      linhas.push(...(data as unknown as PerfilSupabaseHomeRow[]));
+      linhas.push(...data);
     }
   } catch (error) {
     console.warn("Não consegui acessar profiles da Home por id:", error);
@@ -2479,7 +2479,7 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
       return obrasLocais;
     }
 
-    const obrasSupabase = (obrasBanco || []) as unknown as SupabaseObraRow[];
+    const obrasSupabase = obrasBanco || [];
 
     if (obrasSupabase.length === 0) {
       return obrasLocais;
@@ -2513,7 +2513,7 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
           erroCapitulos.message
         );
       } else {
-        ((capitulosBanco || []) as unknown as SupabaseCapituloRow[]).forEach((capitulo) => {
+        (capitulosBanco || []).forEach((capitulo) => {
           const capitulosDaObra = capitulosPorObraId.get(capitulo.obra_id) || [];
           capitulosDaObra.push(capitulo);
           capitulosPorObraId.set(capitulo.obra_id, capitulosDaObra);
