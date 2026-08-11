@@ -338,10 +338,10 @@ export default function AdminProblemasTecnicosPage() {
     const perfis = [
       ...(porUserId.error
         ? []
-        : ((porUserId.data || []) as unknown as PerfilChamadoTecnico[])),
+        : (porUserId.data || [])),
       ...(porId.error
         ? []
-        : ((porId.data || []) as unknown as PerfilChamadoTecnico[])),
+        : (porId.data || [])),
     ];
     const mapa: Record<string, string> = {};
 
@@ -379,7 +379,7 @@ export default function AdminProblemasTecnicosPage() {
       throw error;
     }
 
-    const registros = ((data || []) as unknown as Record<string, unknown>[]).map(
+    const registros = (data || []).map(
       (registro): ProblemaTecnico => ({
         id: String(registro.id || ""),
         userId: String(registro.user_id || ""),
@@ -560,7 +560,7 @@ export default function AdminProblemasTecnicosPage() {
         throw new Error("O chamado não foi encontrado ou não pôde ser atualizado.");
       }
 
-      const atualizado = data as unknown as Record<string, unknown>;
+      const atualizado = data;
 
       setProblemas((atuais) =>
         atuais.map((item) =>
