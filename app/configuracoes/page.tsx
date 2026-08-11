@@ -329,11 +329,11 @@ async function salvarPreferenciasPrivacidade(
   const userIdLimpo = userId.trim();
   const preferenciasSeguras = normalizarPreferenciasPrivacidade(preferencias);
 
-  salvarPreferenciasPrivacidadeLocal(preferenciasSeguras, userIdLimpo);
-
   if (!userIdLimpo) {
     return { ok: false, erro: "Usuário inválido." };
   }
+
+salvarPreferenciasPrivacidadeLocal(preferenciasSeguras, userIdLimpo);
 
   const payloadLegado = {
     user_id: userIdLimpo,
