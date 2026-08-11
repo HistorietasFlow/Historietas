@@ -1705,7 +1705,7 @@ async function carregarObraSupabasePorSlug(
       return aplicarProgressoUsuarioObraPublica(obrasLocais, userId);
     }
 
-    const obraBanco = ((obrasBanco || []) as unknown as SupabaseObraRow[])[0] || null;
+    const obraBanco = (obrasBanco || [])[0] || null;
 
     if (!obraBanco) {
       return aplicarProgressoUsuarioObraPublica(obrasLocais, userId);
@@ -1734,7 +1734,7 @@ async function carregarObraSupabasePorSlug(
 
     const obraNormalizadaSemTotais = normalizarObraSupabase(
       obraBanco,
-      erroCapitulos ? [] : ((capitulosBanco || []) as unknown as SupabaseCapituloRow[]),
+      erroCapitulos ? [] : (capitulosBanco || []),
       obraLocal,
       0
     );
@@ -3129,7 +3129,7 @@ async function normalizarComentariosObraSupabase(
         .limit(5000);
 
       if (!error && Array.isArray(data)) {
-        (data as unknown as SupabaseCurtidaComentarioObraRow[]).forEach(
+        data.forEach(
           (curtida) => {
             const comentarioId = curtida.comentario_id?.trim() || "";
             const usuarioId = curtida.usuario_id?.trim() || "";
@@ -3896,7 +3896,7 @@ export default function ObraDinamicaPage() {
         }
 
         const comentariosRemotos = await normalizarComentariosObraSupabase(
-          data as unknown as SupabaseComentarioObraRow[]
+          data
         );
 
         if (cancelado) {
@@ -4284,7 +4284,7 @@ export default function ObraDinamicaPage() {
             throw erroPosts;
           }
 
-          const lotePosts = postsData as unknown as SupabaseComunidadePostRow[];
+          const lotePosts = postsData;
 
           postsRelacionados.push(
             ...lotePosts.filter((post) =>
@@ -4838,7 +4838,7 @@ export default function ObraDinamicaPage() {
       }
 
       const [comentarioSincronizado] = await normalizarComentariosObraSupabase([
-        data as unknown as SupabaseComentarioObraRow,
+        data,
       ]);
 
       if (!comentarioSincronizado) {
