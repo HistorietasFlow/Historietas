@@ -1,4 +1,4 @@
-﻿begin;
+begin;
 
 delete from public.diario_avaliacoes avaliacao
 where exists (

@@ -1,4 +1,4 @@
-﻿begin;
+begin;
 
 create or replace function public.definir_fixacao_comunidade_post()
 returns trigger

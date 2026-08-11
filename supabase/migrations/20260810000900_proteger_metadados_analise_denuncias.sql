@@ -1,4 +1,4 @@
-﻿begin;
+begin;
 
 create or replace function public.proteger_metadados_analise_denuncia()
 returns trigger

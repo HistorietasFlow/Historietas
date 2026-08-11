@@ -1,4 +1,4 @@
-﻿begin;
+begin;
 
 create or replace function public.bloquear_avaliacao_autor_usuarios_bloqueados()
 returns trigger

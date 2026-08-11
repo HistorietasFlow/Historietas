@@ -1,4 +1,4 @@
-﻿begin;
+begin;
 
 drop policy if exists profiles_insert_proprio on public.profiles;
 

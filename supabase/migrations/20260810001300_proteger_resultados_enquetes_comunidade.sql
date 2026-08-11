@@ -1,4 +1,4 @@
-﻿begin;
+begin;
 
 create or replace function public.comunidade_enquete_resultados(
   p_post_ids uuid[]

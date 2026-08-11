@@ -1,4 +1,4 @@
-﻿begin;
+begin;
 
 create or replace function public.bloquear_notificacao_entre_usuarios()
 returns trigger
