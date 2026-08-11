@@ -463,7 +463,7 @@ function criarLoginHrefEmBreve() {
   return `/login?${params.toString()}`;
 }
 
-function obraSupabaseTemArquivoEmBreve(obra: SupabaseObraEmBreveRow) {
+function obraSupabaseTemArquivoEmBreve(obra: Pick<SupabaseObraEmBreveRow, "arquivo_url">) {
   return Boolean(obra.arquivo_url?.trim());
 }
 
@@ -723,7 +723,7 @@ async function carregarObrasReaisEmBreve() {
     }
 
     const obrasPublicadas = (
-      obrasBanco as unknown as SupabaseObraEmBreveRow[]
+      obrasBanco
     ).filter((obra) => !ehClassificacao18(obra.classificacao_indicativa));
     const obraIds = obrasPublicadas
       .map((obra) => obra.id?.trim() || "")
@@ -752,7 +752,7 @@ async function carregarObrasReaisEmBreve() {
     }
 
     const obrasComCapituloPublicado = new Set(
-      (capitulosBanco as unknown as SupabaseCapituloEmBreveRow[])
+      (capitulosBanco)
         .map((capitulo) => capitulo.obra_id?.trim() || "")
         .filter(Boolean)
     );
@@ -818,7 +818,7 @@ async function encontrarLinkObraComConteudoEmBreve(
   }
 
   try {
-    let obraEncontrada: SupabaseObraEmBreveRow | null = null;
+    let obraEncontrada: Pick<SupabaseObraEmBreveRow, "id" | "titulo" | "slug" | "link" | "arquivo_url" | "publicado" | "classificacao_indicativa"> | null = null;
 
     if (idObraSupabaseValido(obraIdLimpo)) {
       const { data, error } = await supabase
@@ -830,7 +830,7 @@ async function encontrarLinkObraComConteudoEmBreve(
         .maybeSingle();
 
       if (!error && data) {
-        obraEncontrada = data as unknown as SupabaseObraEmBreveRow;
+        obraEncontrada = data;
       }
     }
 
@@ -847,7 +847,7 @@ async function encontrarLinkObraComConteudoEmBreve(
       }
 
       const obrasEncontradas =
-        obrasBanco as unknown as SupabaseObraEmBreveRow[];
+        obrasBanco;
       obraEncontrada =
         obrasEncontradas.find(
           (obra) =>
