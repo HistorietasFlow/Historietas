@@ -1419,7 +1419,7 @@ export default function AdminComunidadePage() {
     }
 
     const denunciasMapeadas: DenunciaComunidade[] = (
-      (denunciasResposta || []) as unknown as Record<string, unknown>[]
+      denunciasResposta || []
     ).map((denuncia) => ({
       id: String(denuncia.id || ""),
       alvoTipo: normalizarTipoAlvo(denuncia.alvo_tipo),
@@ -1511,22 +1511,22 @@ export default function AdminComunidadePage() {
 
     const posts = postsResposta.error
       ? []
-      : ((postsResposta.data || []) as unknown as PostDenunciado[]);
+      : (postsResposta.data || []);
     const comentarios = comentariosResposta.error
       ? []
-      : ((comentariosResposta.data || []) as unknown as ComentarioDenunciado[]);
+      : (comentariosResposta.data || []);
     const comentariosCapitulos = comentariosCapitulosResposta.error
       ? []
-      : ((comentariosCapitulosResposta.data ||
-          []) as unknown as ComentarioCapituloDenunciado[]);
+      : (comentariosCapitulosResposta.data ||
+          []);
     const comentariosObras = comentariosObrasResposta.error
       ? []
-      : ((comentariosObrasResposta.data ||
-          []) as unknown as ComentarioObraDenunciado[]);
+      : (comentariosObrasResposta.data ||
+          []);
     const comentariosDiario = comentariosDiarioResposta.error
       ? []
-      : ((comentariosDiarioResposta.data ||
-          []) as unknown as ComentarioDiarioDenunciado[]);
+      : (comentariosDiarioResposta.data ||
+          []);
 
     const diarioAnotacaoIdsContexto = Array.from(
       new Set([
@@ -1553,8 +1553,8 @@ export default function AdminComunidadePage() {
 
     const diarioAnotacoes = diarioAnotacoesErro
       ? []
-      : ((diarioAnotacoesResposta ||
-          []) as unknown as DiarioAnotacaoDenunciada[]);
+      : (diarioAnotacoesResposta ||
+          []);
 
     const capituloIdsContexto = Array.from(
       new Set([
@@ -1578,7 +1578,7 @@ export default function AdminComunidadePage() {
 
     const capitulos = capitulosErro
       ? []
-      : ((capitulosResposta || []) as unknown as CapituloDenunciado[]);
+      : (capitulosResposta || []);
 
     const obraIdsContexto = Array.from(
       new Set([
@@ -1606,7 +1606,7 @@ export default function AdminComunidadePage() {
 
     const obras = obrasErro
       ? []
-      : ((obrasResposta || []) as unknown as ObraDenunciada[]);
+      : (obrasResposta || []);
 
     const perfilIds = Array.from(
       new Set(
@@ -1640,17 +1640,15 @@ export default function AdminComunidadePage() {
     ]);
 
     const perfis = [
-      ...(perfisPorUserIdResposta.error
-        ? []
-        : ((perfisPorUserIdResposta.data ||
-            []) as unknown as PerfilModeracao[])),
-      ...(perfisPorIdResposta.error
-        ? []
-        : ((perfisPorIdResposta.data ||
-            []) as unknown as PerfilModeracao[])),
-    ];
+  ...(perfisPorUserIdResposta.error
+    ? []
+    : (perfisPorUserIdResposta.data || [])),
+  ...(perfisPorIdResposta.error
+    ? []
+    : (perfisPorIdResposta.data || [])),
+];
 
-    const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
+const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
     const postsPorId = new Map(posts.map((post) => [post.id, post]));
     const comentariosPorId = new Map(
       comentarios.map((comentario) => [comentario.id, comentario])
@@ -1941,7 +1939,7 @@ export default function AdminComunidadePage() {
     }
 
     const denunciasMapeadas: DenunciaPerfil[] = (
-      (denunciasResposta || []) as unknown as Record<string, unknown>[]
+      denunciasResposta || []
     ).map((denuncia) => ({
       id: String(denuncia.id || ""),
       denuncianteId: String(denuncia.denunciante_id || ""),
@@ -1983,10 +1981,10 @@ export default function AdminComunidadePage() {
     const perfis = [
       ...(perfisPorUserIdResposta.error
         ? []
-        : ((perfisPorUserIdResposta.data || []) as unknown as PerfilModeracao[])),
+        : (perfisPorUserIdResposta.data || [])),
       ...(perfisPorIdResposta.error
         ? []
-        : ((perfisPorIdResposta.data || []) as unknown as PerfilModeracao[])),
+        : (perfisPorIdResposta.data || [])),
     ];
 
     const nomesPorId = criarMapaNomesPerfisModeracao(perfis);
