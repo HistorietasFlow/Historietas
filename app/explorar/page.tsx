@@ -106,9 +106,9 @@ type SupabaseObraRow = {
   link: string | null;
   criada_em: string | null;
   atualizado_em: string | null;
-  visualizacoes?: number | null;
-  views?: number | null;
-  total_visualizacoes?: number | null;
+  visualizacoes: number | null;
+
+
 };
 
 type SupabaseCapituloRow = {
@@ -116,7 +116,7 @@ type SupabaseCapituloRow = {
   obra_id: string;
   user_id: string;
   titulo: string | null;
-  texto?: string | null;
+
   ordem: number | null;
   publicado: boolean | null;
   criado_em: string | null;
@@ -1725,7 +1725,7 @@ function normalizarObraSupabase(
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulosMesclados),
     visualizacoes: normalizarContadorExplorar(
-      obra.visualizacoes ?? obra.views ?? obra.total_visualizacoes ?? obraLocal?.visualizacoes
+      obra.visualizacoes ?? obraLocal?.visualizacoes
     ),
     totalCurtidas: normalizarContadorExplorar(obraLocal?.totalCurtidas),
     totalComentarios: normalizarContadorExplorar(
@@ -2116,7 +2116,7 @@ async function aplicarProgressoUsuarioExplorar(
     const progressoPorCapitulo =
       new Map<string, SupabaseProgressoLeituraExplorarRow>();
 
-    (data as unknown as SupabaseProgressoLeituraExplorarRow[]).forEach(
+    data.forEach(
       (registro) => {
         const obraId = registro.obra_id?.trim() || "";
         const capituloId = registro.capitulo_id?.trim() || "";
@@ -2201,7 +2201,7 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
       return aplicarProgressoUsuarioExplorar(obrasComTotais, userId);
     }
 
-    const obrasSupabase = ((obrasBanco || []) as unknown as SupabaseObraRow[]).filter(
+    const obrasSupabase = (obrasBanco || []).filter(
       (obra) => Boolean(obra.id)
     );
 
@@ -2240,7 +2240,7 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
 
     const capitulosPorObra = new Map<string, SupabaseCapituloRow[]>();
 
-    ((erroCapitulos ? [] : capitulosBanco || []) as unknown as SupabaseCapituloRow[]).forEach(
+    (erroCapitulos ? [] : capitulosBanco || []).forEach(
       (capitulo) => {
         const capitulosAtuais = capitulosPorObra.get(capitulo.obra_id) || [];
         capitulosAtuais.push(capitulo);
