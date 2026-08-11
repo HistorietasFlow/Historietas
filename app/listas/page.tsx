@@ -1210,7 +1210,7 @@ async function carregarObrasPublicadas(idsEspecificos: string[] = []) {
     }
 
     let obras = data.map((registro, index) =>
-      criarObraLista(registro as unknown as RegistroGenerico, index),
+      criarObraLista(registro, index),
     );
 
     obras = await carregarCapitulosDasObras(obras);
