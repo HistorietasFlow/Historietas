@@ -2444,7 +2444,7 @@ async function carregarObrasPublicadasSupabase() {
     }
 
     const obrasSupabase = obrasData.map((obra, index) =>
-      normalizarObraSupabase(obra as unknown as SupabaseObraRow, index)
+      normalizarObraSupabase(obra, index)
     );
 
     const idsObras = obrasSupabase.map((obra) => obra.id).filter(Boolean);
@@ -2469,7 +2469,7 @@ async function carregarObrasPublicadasSupabase() {
 
     capitulosData.forEach((capitulo, index) => {
       const capituloNormalizado = normalizarCapituloSupabase(
-        capitulo as unknown as SupabaseCapituloRow,
+        capitulo,
         index
       );
 
