@@ -1683,54 +1683,35 @@ async function carregarPerfisComentariosAnotacoesListas(userIds: string[]) {
     return perfis;
   }
 
-  const selecoes = [
-    "id,user_id,nome,nome_usuario,username,display_name,apelido,avatar_url,avatar",
-    "id,user_id,nome,username,display_name,avatar_url",
-    "id,user_id,nome,username,avatar_url",
-    "id,user_id,nome,avatar_url",
-    "id,user_id,nome",
-  ];
-
   for (const coluna of ["user_id", "id"] as const) {
-    for (const selecao of selecoes) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select(selecao)
-          .in(coluna, ids)
-          .limit(Math.max(ids.length, 1));
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,user_id,nome,username,avatar_url")
+        .in(coluna, ids)
+        .limit(Math.max(ids.length, 1));
 
-        if (error || !Array.isArray(data)) {
-          continue;
-        }
-
-        data.forEach((item) => {
-          const registro = item as unknown as RegistroGenerico;
-          const perfil: PerfilComentarioDiarioListas = {
-            nome:
-              pegarTexto(registro.nome) ||
-              pegarTexto(registro.display_name) ||
-              pegarTexto(registro.apelido) ||
-              pegarTexto(registro.nome_usuario) ||
-              pegarTexto(registro.username) ||
-              "Leitor",
-            username:
-              pegarTexto(registro.username) ||
-              pegarTexto(registro.nome_usuario),
-            avatar:
-              pegarTexto(registro.avatar_url) || pegarTexto(registro.avatar),
-          };
-          const userId = pegarTexto(registro.user_id);
-          const id = pegarTexto(registro.id);
-
-          if (userId) perfis.set(userId, perfil);
-          if (id) perfis.set(id, perfil);
-        });
-
-        break;
-      } catch {
-        // Tenta a próxima seleção compatível.
+      if (error || !Array.isArray(data)) {
+        continue;
       }
+
+      data.forEach((registro) => {
+        const perfil: PerfilComentarioDiarioListas = {
+          nome:
+            pegarTexto(registro.nome) ||
+            pegarTexto(registro.username) ||
+            "Leitor",
+          username: pegarTexto(registro.username),
+          avatar: pegarTexto(registro.avatar_url),
+        };
+        const userId = pegarTexto(registro.user_id);
+        const id = pegarTexto(registro.id);
+
+        if (userId) perfis.set(userId, perfil);
+        if (id) perfis.set(id, perfil);
+      });
+    } catch {
+      // Tenta buscar pelo identificador alternativo.
     }
   }
 
