@@ -1061,6 +1061,14 @@ type PerfilConfiguracoesSupabase = {
   username: string;
 };
 
+type UsuarioBloqueadoConfiguracoesRpcRow = {
+  user_id: string | null;
+  nome: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  bloqueado_em: string | null;
+};
+
 function normalizarPerfilConfiguracoesSupabase(
   perfil: Record<string, unknown>,
 ): PerfilConfiguracoesSupabase {
@@ -1082,8 +1090,8 @@ async function listarUsuariosBloqueadosConfiguracoes(): Promise<
     throw error;
   }
 
-  return ((data || []) as unknown as Record<string, unknown>[]).map(
-    (item) => ({
+  return (data || []).map(
+    (item: UsuarioBloqueadoConfiguracoesRpcRow) => ({
       userId: pegarTexto(item.user_id),
       nome: pegarTexto(item.nome, "Usuário"),
       username: normalizarUsernameConfiguracoes(
@@ -1092,7 +1100,7 @@ async function listarUsuariosBloqueadosConfiguracoes(): Promise<
       avatar: pegarTexto(item.avatar_url),
       bloqueadoEm: pegarTexto(item.bloqueado_em),
     }),
-  ).filter((item) => idUsuarioSupabaseValido(item.userId));
+  ).filter((item: UsuarioBloqueadoConfiguracoes) => idUsuarioSupabaseValido(item.userId));
 }
 
 async function carregarPerfilConfiguracoesSupabase(
