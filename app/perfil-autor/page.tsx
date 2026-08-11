@@ -4641,61 +4641,20 @@ async function carregarPerfilUsuarioSupabase(
     return null;
   }
 
-  const selecoesPerfil = [
-    "id,user_id,nome,avatar_url,bio,sobre_bio,criado_em",
-    "id,user_id,nome,avatar_url,bio,sobre_bio",
-    "id,user_id,nome,avatar_url,bio",
-  ];
-
   async function buscarPerfilPorCampo(campo: "user_id" | "id") {
-    for (const selecao of selecoesPerfil) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select(selecao)
-          .eq(campo, userIdLimpo)
-          .limit(1)
-          .maybeSingle();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id,user_id,nome,avatar_url,bio,sobre_bio,criado_em,username")
+      .eq(campo, userIdLimpo)
+      .limit(1)
+      .maybeSingle();
 
-        if (error) {
-          continue;
-        }
+    if (error) {
+      throw error;
+    }
 
-        if (data && typeof data === "object" && !Array.isArray(data)) {
-          const perfilBase = data as Record<string, unknown>;
-
-          try {
-            const { data: usernameData, error: usernameError } = await supabase
-              .from("profiles")
-              .select("username")
-              .eq(campo, userIdLimpo)
-              .limit(1)
-              .maybeSingle();
-
-            if (
-              !usernameError &&
-              usernameData &&
-              typeof usernameData === "object" &&
-              !Array.isArray(usernameData)
-            ) {
-              return {
-                ...perfilBase,
-                username: pegarTexto(
-                  (usernameData as Record<string, unknown>).username,
-                ),
-              };
-            }
-          } catch {
-            // Username é opcional em bancos antigos.
-          }
-
-          return perfilBase;
-        }
-
-        return null;
-      } catch {
-        // Tenta uma seleção mais compatível ou o próximo identificador.
-      }
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+      return data as Record<string, unknown>;
     }
 
     return null;
@@ -4744,43 +4703,28 @@ async function salvarPerfilUsuarioSupabase({
         ? null
         : normalizarUsernamePerfilAutor(username);
 
-  function erroIndicaUsernameAusente(mensagem: string) {
-    const mensagemNormalizada = mensagem.toLowerCase();
-
-    return (
-      mensagemNormalizada.includes("username") &&
-      (
-        mensagemNormalizada.includes("column") ||
-        mensagemNormalizada.includes("schema cache") ||
-        mensagemNormalizada.includes("does not exist") ||
-        mensagemNormalizada.includes("could not find")
-      )
-    );
-  }
-
   try {
     let perfilId = "";
 
-    try {
-      const { data: perfilPorUserId, error: erroUserId } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", userIdLimpo)
-        .limit(1)
-        .maybeSingle();
+    const { data: perfilPorUserId, error: erroUserId } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", userIdLimpo)
+      .limit(1)
+      .maybeSingle();
 
-      if (
-        !erroUserId &&
-        perfilPorUserId &&
-        typeof perfilPorUserId === "object" &&
-        !Array.isArray(perfilPorUserId)
-      ) {
-        perfilId = pegarTexto(
-          (perfilPorUserId as Record<string, unknown>).id,
-        );
-      }
-    } catch {
-      // Bancos antigos podem não possuir user_id.
+    if (erroUserId) {
+      throw erroUserId;
+    }
+
+    if (
+      perfilPorUserId &&
+      typeof perfilPorUserId === "object" &&
+      !Array.isArray(perfilPorUserId)
+    ) {
+      perfilId = pegarTexto(
+        (perfilPorUserId as Record<string, unknown>).id,
+      );
     }
 
     if (!perfilId) {
@@ -4791,8 +4735,11 @@ async function salvarPerfilUsuarioSupabase({
         .limit(1)
         .maybeSingle();
 
+      if (erroId) {
+        throw erroId;
+      }
+
       if (
-        !erroId &&
         perfilPorId &&
         typeof perfilPorId === "object" &&
         !Array.isArray(perfilPorId)
@@ -4803,39 +4750,25 @@ async function salvarPerfilUsuarioSupabase({
       }
     }
 
-    async function persistirPerfil(incluirUsername: boolean) {
-      const payloadAtualizacao: Record<string, unknown> = {
-        ...payloadPerfilBase,
-      };
+    const payloadAtualizacao: Record<string, unknown> = {
+      ...payloadPerfilBase,
+    };
 
-      if (incluirUsername && usernameNormalizado !== undefined) {
-        payloadAtualizacao.username = usernameNormalizado;
-      }
+    if (usernameNormalizado !== undefined) {
+      payloadAtualizacao.username = usernameNormalizado;
+    }
 
-      if (perfilId) {
-        return supabase
+    const { error } = perfilId
+      ? await supabase
           .from("profiles")
           .update(payloadAtualizacao)
-          .eq("id", perfilId);
-      }
-
-      return supabase.from("profiles").insert({
-        id: userIdLimpo,
-        user_id: userIdLimpo,
-        tipo: "leitor",
-        ...payloadAtualizacao,
-      });
-    }
-
-    let { error } = await persistirPerfil(true);
-
-    if (
-      error &&
-      usernameNormalizado !== undefined &&
-      erroIndicaUsernameAusente(error.message || "")
-    ) {
-      ({ error } = await persistirPerfil(false));
-    }
+          .eq("id", perfilId)
+      : await supabase.from("profiles").insert({
+          id: userIdLimpo,
+          user_id: userIdLimpo,
+          tipo: "leitor",
+          ...payloadAtualizacao,
+        });
 
     return {
       ok: !error,
