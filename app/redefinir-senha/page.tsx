@@ -290,7 +290,12 @@ export default function RedefinirSenhaPage() {
         return;
       }
 
-      await supabase.auth.signOut();
+      const { error: erroLogout } = await supabase.auth.signOut();
+
+      if (erroLogout) {
+        setErro(t("genericError"));
+        return;
+      }
 
       router.replace("/login?senhaRedefinida=1");
       router.refresh();
