@@ -1774,7 +1774,7 @@ async function carregarInteracoesAnotacoesListas(
 
   if (Array.isArray(curtidasResposta.data)) {
     curtidasResposta.data.forEach((item) => {
-      const registro = item as unknown as RegistroGenerico;
+      const registro = item;
       const anotacaoId = pegarTexto(registro.anotacao_id);
       const interacao = resultado[anotacaoId];
 
@@ -1787,9 +1787,7 @@ async function carregarInteracoesAnotacoesListas(
   }
 
   const comentarios = Array.isArray(comentariosResposta.data)
-    ? comentariosResposta.data.map(
-        (item) => item as unknown as RegistroGenerico,
-      )
+    ? comentariosResposta.data
     : [];
   const comentarioIds = comentarios
     .map((registro) => pegarTexto(registro.id))
@@ -1812,7 +1810,7 @@ async function carregarInteracoesAnotacoesListas(
 
   if (Array.isArray(curtidasComentariosResposta.data)) {
     curtidasComentariosResposta.data.forEach((item) => {
-      const registro = item as unknown as RegistroGenerico;
+      const registro = item;
       const comentarioId = pegarTexto(registro.comentario_id);
       const userId = pegarTexto(registro.user_id);
 
