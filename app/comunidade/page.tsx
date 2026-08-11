@@ -1067,10 +1067,7 @@ function obterTextoProfileComunidade(
 function obterNomeProfileComunidade(profile: PerfilComunidadeRow | undefined) {
   return (
     obterTextoProfileComunidade(profile, "nome") ||
-    obterTextoProfileComunidade(profile, "nome_usuario") ||
-    obterTextoProfileComunidade(profile, "username") ||
-    obterTextoProfileComunidade(profile, "display_name") ||
-    obterTextoProfileComunidade(profile, "apelido")
+    obterTextoProfileComunidade(profile, "username")
   );
 }
 
@@ -1142,11 +1139,7 @@ function criarPerfilHrefComunidade(userId: string, nomeUsuario: string) {
 function obterUsernameProfileComunidade(
   profile: PerfilComunidadeRow | undefined
 ) {
-  return (
-    obterTextoProfileComunidade(profile, "username") ||
-    obterTextoProfileComunidade(profile, "nome_usuario") ||
-    obterTextoProfileComunidade(profile, "apelido")
-  )
+  return obterTextoProfileComunidade(profile, "username")
     .replace(/^@+/, "")
     .trim();
 }
@@ -1187,10 +1180,6 @@ async function buscarUsuariosComunidadeSupabase(termo: string) {
     {
       coluna: "username",
       select: "id,user_id,nome,avatar_url,username",
-    },
-    {
-      coluna: "nome_usuario",
-      select: "id,user_id,nome,avatar_url,nome_usuario",
     },
   ] as const;
 
