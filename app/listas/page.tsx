@@ -360,31 +360,6 @@ function pegarBooleanoListas(valor: unknown, fallback = false) {
   return fallback;
 }
 
-function erroRelacionadoAoCampoSpoilerListas(error: unknown) {
-  if (!error || typeof error !== "object") {
-    return false;
-  }
-
-  const registro = error as Record<string, unknown>;
-  const textoErro = [
-    registro.message,
-    registro.details,
-    registro.hint,
-    registro.code,
-  ]
-    .filter((valor): valor is string => typeof valor === "string")
-    .join(" ")
-    .toLowerCase();
-
-  return (
-    textoErro.includes("contem_spoiler") &&
-    (textoErro.includes("column") ||
-      textoErro.includes("campo") ||
-      textoErro.includes("schema") ||
-      textoErro.includes("cache"))
-  );
-}
-
 function idUsuarioValido(valor: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     valor.trim(),
@@ -4078,157 +4053,70 @@ function ListasUniversaisContent() {
       };
       const camposComSpoiler =
         "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,atualizado_em";
-      const camposCompatibilidade =
-        "id,obra_id,tipo,texto,visibilidade,atualizado_em";
 
       async function atualizarRegistroAnotacao(id: string) {
-        const respostaComSpoiler = await supabase
-          .from("diario_anotacoes")
-          .update({
-            texto: payload.texto,
-            visibilidade: payload.visibilidade,
-            quem_pode_comentar: payload.quem_pode_comentar,
-            visibilidade_comentarios: payload.visibilidade_comentarios,
-            permitir_curtidas: payload.permitir_curtidas,
-            contem_spoiler: payload.contem_spoiler,
-            atualizado_em: payload.atualizado_em,
-          })
-          .eq("id", id)
-          .eq("user_id", userId)
-          .select(camposComSpoiler)
-          .maybeSingle();
+    const resposta = await supabase
+      .from("diario_anotacoes")
+      .update({
+        texto: payload.texto,
+        visibilidade: payload.visibilidade,
+        quem_pode_comentar: payload.quem_pode_comentar,
+        visibilidade_comentarios: payload.visibilidade_comentarios,
+        permitir_curtidas: payload.permitir_curtidas,
+        contem_spoiler: payload.contem_spoiler,
+        atualizado_em: payload.atualizado_em,
+      })
+      .eq("id", id)
+      .eq("user_id", userId)
+      .select(camposComSpoiler)
+      .maybeSingle();
 
-        if (!respostaComSpoiler.error) {
-          return respostaComSpoiler.data
-            ? (respostaComSpoiler.data as unknown as RegistroGenerico)
-            : null;
-        }
+    if (resposta.error) {
+      throw resposta.error;
+    }
 
-        if (
-          !erroRelacionadoAoCampoSpoilerListas(respostaComSpoiler.error)
-        ) {
-          throw respostaComSpoiler.error;
-        }
+    return resposta.data
+      ? resposta.data
+      : null;
+  }
 
-        const respostaCompatibilidade = await supabase
-          .from("diario_anotacoes")
-          .update({
-            texto: payload.texto,
-            visibilidade: payload.visibilidade,
-            atualizado_em: payload.atualizado_em,
-          })
-          .eq("id", id)
-          .eq("user_id", userId)
-          .select(camposCompatibilidade)
-          .maybeSingle();
+  async function buscarRegistroAnotacaoExistente() {
+    const resposta = await supabase
+      .from("diario_anotacoes")
+      .select(camposComSpoiler)
+      .eq("user_id", userId)
+      .eq("obra_id", obraId)
+      .order("atualizado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-        if (respostaCompatibilidade.error || !respostaCompatibilidade.data) {
-          throw (
-            respostaCompatibilidade.error ||
-            respostaComSpoiler.error ||
-            new Error("O banco não confirmou a anotação atualizada.")
-          );
-        }
+    if (resposta.error) {
+      throw resposta.error;
+    }
 
-        return {
-          ...(respostaCompatibilidade.data as unknown as RegistroGenerico),
-          contem_spoiler: payload.contem_spoiler,
-        };
-      }
+    return resposta.data
+      ? resposta.data
+      : null;
+  }
 
-      async function buscarRegistroAnotacaoExistente() {
-        const respostaComSpoiler = await supabase
-          .from("diario_anotacoes")
-          .select(camposComSpoiler)
-          .eq("user_id", userId)
-          .eq("obra_id", obraId)
-          .order("atualizado_em", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+  async function inserirRegistroAnotacao() {
+    const resposta = await supabase
+      .from("diario_anotacoes")
+      .insert(payload)
+      .select(camposComSpoiler)
+      .single();
 
-        if (!respostaComSpoiler.error) {
-          return respostaComSpoiler.data
-            ? (respostaComSpoiler.data as unknown as RegistroGenerico)
-            : null;
-        }
+    if (resposta.error || !resposta.data) {
+      throw (
+        resposta.error ||
+        new Error("O banco nao confirmou a anotacao salva.")
+      );
+    }
 
-        if (
-          !erroRelacionadoAoCampoSpoilerListas(respostaComSpoiler.error)
-        ) {
-          throw respostaComSpoiler.error;
-        }
+    return resposta.data;
+  }
 
-        const respostaCompatibilidade = await supabase
-          .from("diario_anotacoes")
-          .select(camposCompatibilidade)
-          .eq("user_id", userId)
-          .eq("obra_id", obraId)
-          .order("atualizado_em", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (respostaCompatibilidade.error) {
-          throw respostaCompatibilidade.error;
-        }
-
-        return respostaCompatibilidade.data
-          ? ({
-              ...(respostaCompatibilidade.data as unknown as RegistroGenerico),
-              contem_spoiler: false,
-            } as RegistroGenerico)
-          : null;
-      }
-
-      async function inserirRegistroAnotacao() {
-        const respostaComSpoiler = await supabase
-          .from("diario_anotacoes")
-          .insert(payload)
-          .select(camposComSpoiler)
-          .single();
-
-        if (!respostaComSpoiler.error) {
-          if (!respostaComSpoiler.data) {
-            throw new Error("O banco não confirmou a anotação salva.");
-          }
-
-          return respostaComSpoiler.data as unknown as RegistroGenerico;
-        }
-
-        if (
-          !erroRelacionadoAoCampoSpoilerListas(respostaComSpoiler.error)
-        ) {
-          throw respostaComSpoiler.error;
-        }
-
-        const payloadCompatibilidade = {
-          user_id: payload.user_id,
-          obra_id: payload.obra_id,
-          tipo: payload.tipo,
-          texto: payload.texto,
-          visibilidade: payload.visibilidade,
-          atualizado_em: payload.atualizado_em,
-        };
-        const respostaCompatibilidade = await supabase
-          .from("diario_anotacoes")
-          .insert(payloadCompatibilidade)
-          .select(camposCompatibilidade)
-          .single();
-
-        if (respostaCompatibilidade.error || !respostaCompatibilidade.data) {
-          throw (
-            respostaCompatibilidade.error ||
-            respostaComSpoiler.error ||
-            new Error("O banco não confirmou a anotação salva.")
-          );
-        }
-
-        return {
-          ...(respostaCompatibilidade.data as unknown as RegistroGenerico),
-          contem_spoiler: payload.contem_spoiler,
-        };
-      }
-
-      let registroSalvo: RegistroGenerico | null = null;
+  let registroSalvo: RegistroGenerico | null = null;
 
       if (editorAnotacao.anotacaoId) {
         registroSalvo = await atualizarRegistroAnotacao(
