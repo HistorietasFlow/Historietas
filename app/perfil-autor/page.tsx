@@ -5511,7 +5511,7 @@ async function carregarObrasPublicadasSupabase() {
     }
 
     const obrasSupabase = obrasData.map((obra, index) =>
-      normalizarObraSupabase(obra as unknown as SupabaseObraRow, index),
+      normalizarObraSupabase(obra, index),
     );
 
     const idsObras = obrasSupabase.map((obra) => obra.id).filter(Boolean);
@@ -5534,7 +5534,7 @@ async function carregarObrasPublicadasSupabase() {
 
         capitulosData.forEach((capitulo, index) => {
           const capituloNormalizado = normalizarCapituloSupabase(
-            capitulo as unknown as SupabaseCapituloRow,
+            capitulo,
             index,
             index,
           );
@@ -5606,7 +5606,7 @@ async function carregarObrasPublicadasPorIdsSupabase(obraIds: string[]) {
     }
 
     const obrasSupabase = obrasData.map((obra, index) =>
-      normalizarObraSupabase(obra as unknown as SupabaseObraRow, index),
+      normalizarObraSupabase(obra, index),
     );
     const idsEncontrados = obrasSupabase.map((obra) => obra.id).filter(Boolean);
 
@@ -5628,7 +5628,7 @@ async function carregarObrasPublicadasPorIdsSupabase(obraIds: string[]) {
 
         capitulosData.forEach((capitulo, index) => {
           const capituloNormalizado = normalizarCapituloSupabase(
-            capitulo as unknown as SupabaseCapituloRow,
+            capitulo,
             index,
             index,
           );
@@ -5969,7 +5969,7 @@ async function carregarComunidadePerfilSupabase(
   }
 
   let publicacoesRecentes = (
-    (publicacoesResposta.data || []) as unknown as Record<string, unknown>[]
+    publicacoesResposta.data || []
   )
     .map((registro) => normalizarPublicacaoComunidadePerfil(registro))
     .filter(
@@ -5999,7 +5999,7 @@ async function carregarComunidadePerfilSupabase(
 
       if (!obrasRelacionadasError && Array.isArray(obrasRelacionadasData)) {
         (
-          obrasRelacionadasData as unknown as Record<string, unknown>[]
+          obrasRelacionadasData
         ).forEach((registroObra) => {
           const titulo = pegarTexto(registroObra.titulo);
           const classificacao = pegarTexto(
