@@ -1545,7 +1545,7 @@ async function carregarObraSupabase(
     return null;
   }
 
-  const obraBanco = obraSupabase as unknown as ObraSupabaseRow;
+  const obraBanco = obraSupabase;
   const autorId = obraBanco.user_id?.trim() || "";
   const usuarioEhDono = Boolean(userId && autorId === userId);
 
@@ -1571,7 +1571,7 @@ async function carregarObraSupabase(
     obraBanco,
     erroCapitulos
       ? []
-      : ((capitulosSupabase || []) as unknown as CapituloSupabaseRow[]),
+      : (capitulosSupabase || []),
     obraLocal,
     usuarioEhDono
   );
@@ -2417,7 +2417,7 @@ async function carregarComentariosCapituloSupabase(
         .limit(5000);
 
       if (!erroCurtidas && Array.isArray(curtidasData)) {
-        (curtidasData as unknown as ComentarioCapituloCurtidaRow[]).forEach(
+        curtidasData.forEach(
           (curtida) => {
             const comentarioId = curtida.comentario_id;
             const usuarioId = curtida.usuario_id;
