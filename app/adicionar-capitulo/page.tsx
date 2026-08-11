@@ -1677,9 +1677,9 @@ export default function AdicionarCapituloPage() {
 
             const obrasSupabase = data.map((obra, index) =>
               normalizarObraSupabase(
-                obra as unknown as SupabaseObraRow,
+                obra,
                 index,
-                obrasLocaisPorId.get((obra as unknown as SupabaseObraRow).id),
+                obrasLocaisPorId.get(obra.id),
                 nomeProfileAutor
               )
             );
