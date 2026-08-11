@@ -85,9 +85,7 @@ const preferenciasPrivacidadePadrao: PreferenciasPrivacidadeHistorietas = {
 function criarChavePrivacidadeUsuario(userId: string) {
   const userIdLimpo = userId.trim();
 
-  return userIdLimpo
-    ? `${PRIVACIDADE_STORAGE_KEY}:${userIdLimpo}`
-    : PRIVACIDADE_STORAGE_KEY;
+  return userIdLimpo ? `${PRIVACIDADE_STORAGE_KEY}:${userIdLimpo}` : "";
 }
 
 function normalizarBooleanoPrivacidade(valor: unknown, fallback: boolean) {
@@ -233,7 +231,7 @@ function normalizarPreferenciasPrivacidade(
 function carregarPreferenciasPrivacidadeLocal(
   userId: string,
 ): PreferenciasPrivacidadeHistorietas {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || !userId.trim()) {
     return { ...preferenciasPrivacidadePadrao };
   }
 
@@ -252,7 +250,7 @@ function salvarPreferenciasPrivacidadeLocal(
   preferencias: PreferenciasPrivacidadeHistorietas,
   userId: string,
 ) {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || !userId.trim()) {
     return;
   }
 
