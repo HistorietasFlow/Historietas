@@ -100,7 +100,6 @@ type SupabaseCapituloRow = {
   obra_id: string;
   user_id: string | null;
   titulo: string | null;
-  texto: string | null;
   ordem: number | null;
   publicado: boolean | null;
   criado_em: string | null;
@@ -136,12 +135,8 @@ type SupabaseProfileAutorRankingRow = {
   id: string | null;
   user_id: string | null;
   nome: string | null;
-  avatar_url?: string | null;
-  avatar?: string | null;
-  foto_url?: string | null;
-  imagem_url?: string | null;
-  photo_url?: string | null;
-} & Record<string, unknown>;
+  avatar_url: string | null;
+};
 
 type AvaliacaoRankingObra = {
   total: number;
@@ -1106,20 +1101,9 @@ function obterNomeProfileAutorRanking(
 function obterAvatarProfileAutorRanking(
   profile?: SupabaseProfileAutorRankingRow | null,
 ) {
-  const candidatos = [
-    profile?.avatar_url,
-    profile?.avatar,
-    profile?.foto_url,
-    profile?.imagem_url,
-    profile?.photo_url,
-  ];
-
-  const avatar = candidatos.find(
-    (valor): valor is string =>
-      typeof valor === "string" && Boolean(valor.trim()),
-  );
-
-  return avatar?.trim() || "";
+  return typeof profile?.avatar_url === "string"
+    ? profile.avatar_url.trim()
+    : "";
 }
 
 function adicionarProfileAutorRankingNoMapa(
@@ -1162,7 +1146,7 @@ async function carregarProfilesAutoresRanking(userIds: string[]) {
         error.message,
       );
     } else {
-      ((data || []) as unknown as SupabaseProfileAutorRankingRow[]).forEach(
+      (data || []).forEach(
         (profile) => {
           adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
         },
@@ -1188,7 +1172,7 @@ async function carregarProfilesAutoresRanking(userIds: string[]) {
         error.message,
       );
     } else {
-      ((data || []) as unknown as SupabaseProfileAutorRankingRow[]).forEach(
+      (data || []).forEach(
         (profile) => {
           adicionarProfileAutorRankingNoMapa(profilesPorUsuario, profile);
         },
@@ -1602,7 +1586,7 @@ async function buscarContagemInteracoesObras(
           };
         }
 
-        const pagina = (data || []) as unknown as SupabaseInteracaoObraRow[];
+        const pagina = data || [];
         linhas.push(...pagina);
 
         if (pagina.length < tamanhoPagina) {
@@ -1641,7 +1625,7 @@ async function buscarAvaliacoesObras(obraIds: string[]) {
     }
 
     return calcularAvaliacoesPorObra(
-      (data || []) as unknown as SupabaseAvaliacaoObraRow[],
+      data || [],
     );
   } catch (error) {
     console.warn("Não consegui acessar obra_avaliacoes agora:", error);
@@ -1696,7 +1680,7 @@ async function carregarProgressoUsuarioEmAlta(
     const progressoPorCapitulo =
       new Map<string, SupabaseProgressoLeituraEmAltaRow>();
 
-    (data as unknown as SupabaseProgressoLeituraEmAltaRow[]).forEach(
+    (data).forEach(
       (registro) => {
         const obraId = registro.obra_id?.trim() || "";
         const capituloId = registro.capitulo_id?.trim() || "";
@@ -1904,7 +1888,7 @@ async function carregarObrasSupabasePublicadas(
       return [] as ObraLocal[];
     }
 
-    const obrasSupabase = (obrasBanco || []) as unknown as SupabaseObraRow[];
+    const obrasSupabase = obrasBanco || [];
 
     if (obrasSupabase.length === 0) {
       return [] as ObraLocal[];
@@ -1935,7 +1919,7 @@ async function carregarObrasSupabasePublicadas(
 
     const capitulosSupabase = erroCapitulos
       ? []
-      : ((capitulosBanco || []) as unknown as SupabaseCapituloRow[]);
+      : (capitulosBanco || []);
     const capituloIds = capitulosSupabase
       .map((capitulo) => capitulo.id)
       .filter(Boolean);
