@@ -1235,57 +1235,6 @@ async function carregarObrasPublicadas(idsEspecificos: string[] = []) {
   }
 }
 
-function obterCamposAlternativosRegistrosUsuario(
-  tabela: string,
-  camposPrincipais: string,
-) {
-  const alternativasPorTabela: Record<string, string[]> = {
-    seguindo_obras: [
-      "obra_id,visibilidade,criado_em",
-      "obra_id,criado_em",
-      "obra_id",
-    ],
-    favoritos: [
-      "obra_id,visibilidade,criado_em",
-      "obra_id,criado_em",
-      "obra_id",
-    ],
-    concluidas: [
-      "obra_id,visibilidade,criado_em",
-      "obra_id,criado_em",
-      "obra_id",
-    ],
-    obra_avaliacoes: [
-      "obra_id,nota,criado_em",
-      "obra_id,nota",
-    ],
-    diario_anotacoes: [
-      "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,criado_em,atualizado_em",
-      "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,atualizado_em",
-      "id,obra_id,tipo,texto,visibilidade,contem_spoiler,criado_em,atualizado_em",
-      "id,obra_id,tipo,texto,visibilidade,contem_spoiler,atualizado_em",
-      "id,obra_id,tipo,texto,visibilidade,criado_em,atualizado_em",
-      "id,obra_id,tipo,texto,visibilidade,atualizado_em",
-      "id,obra_id,tipo,texto,visibilidade",
-      "id,obra_id,tipo,texto",
-    ],
-    progresso_leitura: [
-      "obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
-      "obra_id,capitulo_id,lido,progresso,criado_em",
-      "obra_id,capitulo_id,lido,progresso",
-      "obra_id,capitulo_id,lido",
-      "capitulo_id,lido,criado_em,atualizado_em",
-      "capitulo_id,lido,atualizado_em",
-      "capitulo_id,lido,criado_em",
-      "capitulo_id,lido",
-    ],
-  };
-
-  return Array.from(
-    new Set([camposPrincipais, ...(alternativasPorTabela[tabela] || [])]),
-  );
-}
-
 async function carregarRegistrosUsuario(
   tabela: string,
   campos: string,
@@ -1295,53 +1244,37 @@ async function carregarRegistrosUsuario(
     return [] as RegistroGenerico[];
   }
 
-  const camposParaTentar = obterCamposAlternativosRegistrosUsuario(
-    tabela,
-    campos,
-  );
-  let ultimaMensagemErro = "";
+  try {
+    const { data, error } = await supabase
+      .from(tabela)
+      .select(campos)
+      .eq("user_id", userId)
+      .limit(2000);
 
-  for (const camposConsulta of camposParaTentar) {
-    try {
-      const { data, error } = await supabase
-        .from(tabela)
-        .select(camposConsulta)
-        .eq("user_id", userId)
-        .limit(2000);
-
-      if (error) {
-        ultimaMensagemErro = error.message;
-        continue;
-      }
-
-      if (!Array.isArray(data)) {
-        continue;
-      }
-
-      return data
-        .filter(
-          (registro) =>
-            Boolean(
-              registro &&
-                typeof registro === "object" &&
-                !Array.isArray(registro),
-            ),
-        )
-        .map((registro) => registro as unknown as RegistroGenerico);
-    } catch (error) {
-      ultimaMensagemErro =
-        error instanceof Error ? error.message : "Falha desconhecida";
+    if (error) {
+      console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, error.message);
+      return [] as RegistroGenerico[];
     }
-  }
 
-  if (ultimaMensagemErro) {
-    console.warn(
-      `Não consegui carregar ${tabela} na página Listas:`,
-      ultimaMensagemErro,
-    );
-  }
+    if (!Array.isArray(data)) {
+      return [] as RegistroGenerico[];
+    }
 
-  return [] as RegistroGenerico[];
+    return data
+      .filter(
+        (registro) =>
+          Boolean(
+            registro &&
+              typeof registro === "object" &&
+              !Array.isArray(registro),
+          ),
+      )
+      .map((registro) => registro as unknown as RegistroGenerico);
+  } catch (error) {
+    const mensagem = error instanceof Error ? error.message : "Falha desconhecida";
+    console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, mensagem);
+    return [] as RegistroGenerico[];
+  }
 }
 
 function dataRegistro(registro: RegistroGenerico) {
@@ -2143,17 +2076,17 @@ async function carregarListasDoPerfil(
     await Promise.all([
       carregarRegistrosUsuario(
         "seguindo_obras",
-        "obra_id,visibilidade,criado_em,atualizado_em",
+        "obra_id,visibilidade,criado_em",
         userId,
       ),
       carregarRegistrosUsuario(
         "favoritos",
-        "obra_id,visibilidade,criado_em,atualizado_em",
+        "obra_id,visibilidade,criado_em",
         userId,
       ),
       carregarRegistrosUsuario(
         "concluidas",
-        "obra_id,visibilidade,criado_em,atualizado_em",
+        "obra_id,visibilidade,criado_em",
         userId,
       ),
       carregarRegistrosUsuario(
