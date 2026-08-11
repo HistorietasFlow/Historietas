@@ -1612,7 +1612,7 @@ async function aplicarProgressoUsuarioObraPublica(
     const progressoPorCapitulo =
       new Map<string, SupabaseProgressoLeituraObraPublicaRow>();
 
-    (data as unknown as SupabaseProgressoLeituraObraPublicaRow[]).forEach(
+    data.forEach(
       (registro) => {
         const obraId = registro.obra_id?.trim() || "";
         const capituloId = registro.capitulo_id?.trim() || "";
