@@ -1134,47 +1134,30 @@ function mapearObraSupabase(
     ultimaLeituraEm: obraLocal?.ultimaLeituraEm || "",
     progressoLeitura: calcularProgressoLeitura(capitulos),
     visualizacoes: normalizarNumeroEditarCapitulo(
-      obra.visualizacoes ??
-        (obra as unknown as Record<string, unknown>).views ??
-        (obra as unknown as Record<string, unknown>).visualizacoes_total ??
-        (obra as unknown as Record<string, unknown>).total_visualizacoes ??
-        obraLocal?.visualizacoes,
-    ),
-    totalCurtidas: normalizarNumeroEditarCapitulo(
-      (obra as unknown as Record<string, unknown>).total_curtidas ??
-        (obra as unknown as Record<string, unknown>).curtidas ??
-        (obra as unknown as Record<string, unknown>).likes ??
-        obraLocal?.totalCurtidas,
-      capitulos.filter((capitulo) => capitulo.curtiu).length,
-    ),
-    totalComentarios: normalizarNumeroEditarCapitulo(
-      (obra as unknown as Record<string, unknown>).total_comentarios ??
-        (obra as unknown as Record<string, unknown>).comentarios ??
-        obraLocal?.totalComentarios,
-      capitulos.filter((capitulo) => capitulo.comentario.trim()).length,
-    ),
-    totalSalvos: normalizarNumeroEditarCapitulo(
-      (obra as unknown as Record<string, unknown>).total_salvos ??
-        (obra as unknown as Record<string, unknown>).salvos ??
-        obraLocal?.totalSalvos,
-      capitulos.filter((capitulo) => capitulo.salvo).length,
-    ),
-    totalLidos: normalizarNumeroEditarCapitulo(
-      (obra as unknown as Record<string, unknown>).total_lidos ??
-        (obra as unknown as Record<string, unknown>).leituras ??
-        obraLocal?.totalLidos,
-      capitulos.filter((capitulo) => capitulo.lido).length,
-    ),
-    totalFavoritos: normalizarNumeroEditarCapitulo(
-      (obra as unknown as Record<string, unknown>).total_favoritos ??
-        (obra as unknown as Record<string, unknown>).favoritos ??
-        obraLocal?.totalFavoritos,
-    ),
-    totalConcluidas: normalizarNumeroEditarCapitulo(
-      (obra as unknown as Record<string, unknown>).total_concluidas ??
-        (obra as unknown as Record<string, unknown>).concluidas ??
-        obraLocal?.totalConcluidas,
-    ),
+    obra.visualizacoes ?? obraLocal?.visualizacoes,
+  ),
+  totalCurtidas: normalizarNumeroEditarCapitulo(
+    obraLocal?.totalCurtidas,
+    capitulos.filter((capitulo) => capitulo.curtiu).length,
+  ),
+  totalComentarios: normalizarNumeroEditarCapitulo(
+    obraLocal?.totalComentarios,
+    capitulos.filter((capitulo) => capitulo.comentario.trim()).length,
+  ),
+  totalSalvos: normalizarNumeroEditarCapitulo(
+    obraLocal?.totalSalvos,
+    capitulos.filter((capitulo) => capitulo.salvo).length,
+  ),
+  totalLidos: normalizarNumeroEditarCapitulo(
+    obraLocal?.totalLidos,
+    capitulos.filter((capitulo) => capitulo.lido).length,
+  ),
+  totalFavoritos: normalizarNumeroEditarCapitulo(
+    obraLocal?.totalFavoritos,
+  ),
+  totalConcluidas: normalizarNumeroEditarCapitulo(
+    obraLocal?.totalConcluidas,
+  ),
     slug,
     link: obra.link?.trim() || obraLocal?.link || `/obra/${slug}`,
   };
@@ -1557,9 +1540,9 @@ export default function EditarCapituloPage() {
             }
 
             const obraNormalizadaSupabase = mapearObraSupabase(
-              obraSupabase as unknown as ObraSupabaseRow,
+              obraSupabase,
               Array.isArray(capitulosSupabase)
-                ? (capitulosSupabase as unknown as CapituloSupabaseRow[])
+                ? (capitulosSupabase)
                 : [],
               obraLocal,
               nomeProfileAutor
