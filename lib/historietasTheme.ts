@@ -104,8 +104,8 @@ export const TEMAS_VISUAIS_HISTORIETAS: Record<
   },
 };
 
-export function obterTemaVisualSeguro(valor: unknown): TemaVisualHistorietas {
-  return valor === "foco" ? "foco" : "original";
+export function obterTemaVisualSeguro(_valor: unknown): TemaVisualHistorietas {
+  return "foco";
 }
 
 function lerTemaVisualDaChave(chave: string) {
@@ -135,7 +135,7 @@ export function carregarTemaVisualSalvo(
   permitirLegadoGlobal = false
 ): TemaVisualHistorietas {
   if (typeof window === "undefined") {
-    return "original";
+    return "foco";
   }
 
   const userIdLimpo = userId.trim();
@@ -155,10 +155,10 @@ export function carregarTemaVisualSalvo(
   }
 
   if (permitirLegadoGlobal) {
-    return lerTemaVisualDaChave(THEME_STORAGE_KEY) || "original";
+    return lerTemaVisualDaChave(THEME_STORAGE_KEY) || "foco";
   }
 
-  return "original";
+  return "foco";
 }
 
 export function salvarTemaVisualSalvo(

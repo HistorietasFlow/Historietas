@@ -581,7 +581,7 @@ const preferenciasPadrao: PreferenciasConta = {
   username: "",
   emailContato: "",
   receberAvisos: true,
-  temaVisual: "original",
+  temaVisual: "foco",
 };
 
 const resumoPadrao: ResumoLocal = {
@@ -3954,78 +3954,6 @@ export default function ConfiguracoesPage() {
                 }
                 hideChevron
               />
-            ) : null}
-
-            {deveMostrar("tema", "visual", "aparência") ? (
-              <>
-                <SettingsRow
-                  icon="palette"
-                  title={t(
-                    "Tema visual",
-                    "Visual theme",
-                    "Tema visual",
-                  )}
-                  right={<ValorLinha>{temaAtual.nome}</ValorLinha>}
-                  onClick={() => setMostrarTemas((atual) => !atual)}
-                />
-
-                {mostrarTemas ? (
-                  <div style={themeListStyle}>
-                    {ORDEM_TEMAS_VISUAIS.map((temaVisual) => {
-                      const tema = obterTemaVisualTraduzido(
-                        temaVisual,
-                        language,
-                      );
-                      const ativo =
-                        preferencias.temaVisual === temaVisual;
-
-                      return (
-                        <button
-                          key={temaVisual}
-                          type="button"
-                          onClick={() =>
-                            atualizarTemaVisual(temaVisual)
-                          }
-                          style={
-                            ativo
-                              ? themeOptionActiveStyle
-                              : themeOptionStyle
-                          }
-                          aria-pressed={ativo}
-                        >
-                          <span
-                            className="configuracoes-theme-swatch"
-                            data-tema-visual-opcao={temaVisual}
-                            style={{
-                              ...themeSwatchStyle,
-                              background: `linear-gradient(135deg, ${tema.accent} 0%, ${tema.secondary} 100%)`,
-                            }}
-                          />
-
-                          <span style={themeTextStyle}>
-                            <strong style={themeNameStyle}>
-                              {tema.nome}
-                            </strong>
-                            <span style={themeDescriptionStyle}>
-                              {tema.descricao}
-                            </span>
-                          </span>
-
-                          <span
-                            style={
-                              ativo
-                                ? themeCheckActiveStyle
-                                : themeCheckStyle
-                            }
-                          >
-                            {ativo ? "✓" : ""}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </>
             ) : null}
 
             {deveMostrar("receber", "avisos") ? (

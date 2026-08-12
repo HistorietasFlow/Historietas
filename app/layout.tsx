@@ -90,8 +90,8 @@ export default function RootLayout({
                 const chaveTema = "historietas-tema-visual";
                 const raiz = document.documentElement;
 
-                function obterTemaSeguro(valor) {
-                  return valor === "foco" ? "foco" : "original";
+                function obterTemaSeguro(_valor) {
+                  return "foco";
                 }
 
                 function lerTemaSalvo() {
@@ -99,7 +99,7 @@ export default function RootLayout({
                     const texto = window.localStorage.getItem(chaveTema);
 
                     if (!texto) {
-                      return "original";
+                      return "foco";
                     }
 
                     try {
@@ -108,7 +108,7 @@ export default function RootLayout({
                       return obterTemaSeguro(texto);
                     }
                   } catch {
-                    return "original";
+                    return "foco";
                   }
                 }
 
