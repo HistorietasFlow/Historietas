@@ -148,11 +148,26 @@ export async function GET() {
       throw error;
     }
 
-    const operacoes = (data || []).filter(
-      (operacao) =>
-        operacao.status === "excluindo_auth" ||
-        (operacao.status === "falhou" && Boolean(operacao.auth_excluido_em)),
-    );
+    const agora = Date.now();
+    const operacoes = (data || [])
+      .filter(
+        (operacao) =>
+          operacao.status === "excluindo_auth" ||
+          (operacao.status === "falhou" && Boolean(operacao.auth_excluido_em)),
+      )
+      .map((operacao) => {
+        const lockExpiraEm =
+          typeof operacao.lock_expira_em === "string"
+            ? Date.parse(operacao.lock_expira_em)
+            : Number.NaN;
+
+        return {
+          ...operacao,
+          lock_ativo:
+            Number.isFinite(lockExpiraEm) &&
+            lockExpiraEm > agora,
+        };
+      });
 
     return resposta(200, {
       ok: true,

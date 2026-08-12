@@ -54,6 +54,7 @@ type OperacaoRecuperavel = {
   ultimoErroMensagem: string;
   ultimaFalhaEm: string;
   lockExpiraEm: string;
+  lockAtivo: boolean;
   criadaEm: string;
   atualizadaEm: string;
   storageLimpoEm: string;
@@ -226,6 +227,7 @@ function normalizarOperacaoRecuperavel(valor: unknown): OperacaoRecuperavel | nu
     ultimoErroMensagem: String(registro.ultimo_erro_mensagem || ""),
     ultimaFalhaEm: String(registro.ultima_falha_em || ""),
     lockExpiraEm: String(registro.lock_expira_em || ""),
+    lockAtivo: registro.lock_ativo === true,
     criadaEm: String(registro.criada_em || ""),
     atualizadaEm: String(registro.atualizada_em || ""),
     storageLimpoEm: String(registro.storage_limpo_em || ""),
@@ -831,6 +833,7 @@ export default function AdminExclusoesContaPage() {
             <div style={recoveryListStyle}>
               {operacoesRecuperaveis.map((operacao) => {
                 const recuperando = acaoEmAndamento === `operacao:${operacao.id}`;
+                const bloqueadoPorLock = operacao.lockAtivo && !recuperando;
 
                 return (
                   <article key={operacao.id} style={recoveryCardStyle}>
@@ -854,8 +857,21 @@ export default function AdminExclusoesContaPage() {
                       <button
                         type="button"
                         className="admin-delete-primary-button"
-                        disabled={recuperando || Boolean(acaoEmAndamento && !recuperando)}
+                        disabled={
+                          bloqueadoPorLock ||
+                          recuperando ||
+                          Boolean(acaoEmAndamento && !recuperando)
+                        }
                         onClick={() => void recuperarOperacao(operacao)}
+                        title={
+                          bloqueadoPorLock
+                            ? t({
+                                pt: "Esta exclusão ainda está sendo processada. Atualize a lista após o lock expirar.",
+                                en: "This deletion is still being processed. Refresh the list after the lock expires.",
+                                es: "Esta eliminación todavía se está procesando. Actualiza la lista después de que expire el bloqueo.",
+                              })
+                            : undefined
+                        }
                       >
                         {recuperando
                           ? t({
@@ -863,11 +879,17 @@ export default function AdminExclusoesContaPage() {
                               en: "Resuming...",
                               es: "Reanudando...",
                             })
-                          : t({
-                              pt: "Retomar recuperação",
-                              en: "Resume recovery",
-                              es: "Reanudar recuperación",
-                            })}
+                          : bloqueadoPorLock
+                            ? t({
+                                pt: "Em processamento",
+                                en: "Processing",
+                                es: "En proceso",
+                              })
+                            : t({
+                                pt: "Retomar recuperação",
+                                en: "Resume recovery",
+                                es: "Reanudar recuperación",
+                              })}
                       </button>
                     </div>
 
