@@ -126,6 +126,48 @@ async function autorizarAdministrador() {
   return { erro: null, admin: criarSupabaseAdminClient() };
 }
 
+
+export async function GET() {
+  const autorizacao = await autorizarAdministrador();
+
+  if (autorizacao.erro || !autorizacao.admin) {
+    return autorizacao.erro;
+  }
+
+  try {
+    const { data, error } = await autorizacao.admin
+      .from("operacoes_exclusao_conta")
+      .select(
+        "id,status,buckets_pendentes,buckets_concluidos,tentativas_storage,tentativas_auth,ultimo_erro_codigo,ultimo_erro_mensagem,ultima_falha_em,lock_expira_em,criada_em,atualizada_em,storage_limpo_em,auth_excluido_em",
+      )
+      .in("status", ["falhou", "excluindo_auth"])
+      .order("atualizada_em", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      throw error;
+    }
+
+    const operacoes = (data || []).filter(
+      (operacao) =>
+        operacao.status === "excluindo_auth" ||
+        (operacao.status === "falhou" && Boolean(operacao.auth_excluido_em)),
+    );
+
+    return resposta(200, {
+      ok: true,
+      operacoes,
+    });
+  } catch (error) {
+    console.error("Não foi possível carregar operações recuperáveis de exclusão:", error);
+    return resposta(500, {
+      ok: false,
+      codigo: "carregamento_operacoes_falhou",
+      mensagem: "Não foi possível carregar as operações de exclusão recuperáveis.",
+    });
+  }
+}
+
 export async function POST(request: NextRequest) {
   if (!origemPermitida(request)) {
     return resposta(403, {

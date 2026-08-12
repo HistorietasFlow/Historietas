@@ -40,6 +40,43 @@ type TextoTraduzido = {
   es: string;
 };
 
+
+type StatusOperacaoRecuperavel = "falhou" | "excluindo_auth";
+
+type OperacaoRecuperavel = {
+  id: string;
+  status: StatusOperacaoRecuperavel;
+  bucketsPendentes: string[];
+  bucketsConcluidos: string[];
+  tentativasStorage: number;
+  tentativasAuth: number;
+  ultimoErroCodigo: string;
+  ultimoErroMensagem: string;
+  ultimaFalhaEm: string;
+  lockExpiraEm: string;
+  criadaEm: string;
+  atualizadaEm: string;
+  storageLimpoEm: string;
+  authExcluidoEm: string;
+};
+
+type RespostaOperacoes = {
+  ok?: boolean;
+  codigo?: string;
+  mensagem?: string;
+  operacoes?: unknown[];
+};
+
+type RespostaRecuperacao = {
+  ok?: boolean;
+  codigo?: string;
+  mensagem?: string;
+  exclusaoConcluida?: boolean;
+  acompanhamentoPendente?: boolean;
+  operacaoId?: string;
+  statusOperacao?: string;
+};
+
 type RespostaLista = {
   ok?: boolean;
   codigo?: string;
@@ -159,6 +196,43 @@ function normalizarSolicitacao(valor: unknown): SolicitacaoExclusao | null {
   };
 }
 
+
+function normalizarOperacaoRecuperavel(valor: unknown): OperacaoRecuperavel | null {
+  if (!valor || typeof valor !== "object") {
+    return null;
+  }
+
+  const registro = valor as Record<string, unknown>;
+  const id = String(registro.id || "").trim();
+  const status = String(registro.status || "").trim();
+
+  if (!id || (status !== "falhou" && status !== "excluindo_auth")) {
+    return null;
+  }
+
+  const listaStrings = (item: unknown) =>
+    Array.isArray(item)
+      ? item.filter((valorLista): valorLista is string => typeof valorLista === "string")
+      : [];
+
+  return {
+    id,
+    status,
+    bucketsPendentes: listaStrings(registro.buckets_pendentes),
+    bucketsConcluidos: listaStrings(registro.buckets_concluidos),
+    tentativasStorage: Number(registro.tentativas_storage || 0),
+    tentativasAuth: Number(registro.tentativas_auth || 0),
+    ultimoErroCodigo: String(registro.ultimo_erro_codigo || ""),
+    ultimoErroMensagem: String(registro.ultimo_erro_mensagem || ""),
+    ultimaFalhaEm: String(registro.ultima_falha_em || ""),
+    lockExpiraEm: String(registro.lock_expira_em || ""),
+    criadaEm: String(registro.criada_em || ""),
+    atualizadaEm: String(registro.atualizada_em || ""),
+    storageLimpoEm: String(registro.storage_limpo_em || ""),
+    authExcluidoEm: String(registro.auth_excluido_em || ""),
+  };
+}
+
 function corStatus(status: StatusSolicitacaoExclusao) {
   if (status === "pendente") return "#F59E0B";
   if (status === "verificando") return "#60A5FA";
@@ -180,6 +254,7 @@ export default function AdminExclusoesContaPage() {
   const [carregando, setCarregando] = useState(true);
   const [acessoNegado, setAcessoNegado] = useState(false);
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoExclusao[]>([]);
+  const [operacoesRecuperaveis, setOperacoesRecuperaveis] = useState<OperacaoRecuperavel[]>([]);
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState<FiltroStatus>("todos");
   const [abertaId, setAbertaId] = useState("");
@@ -255,6 +330,48 @@ export default function AdminExclusoesContaPage() {
     );
   }, [router, t]);
 
+
+  const carregarOperacoesRecuperaveis = useCallback(async () => {
+    const response = await fetch("/api/admin/operacoes-exclusao", {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    const data = (await response.json().catch(() => null)) as RespostaOperacoes | null;
+
+    if (response.status === 401) {
+      router.replace(criarLoginHref());
+      return;
+    }
+
+    if (response.status === 403) {
+      setAcessoNegado(true);
+      setOperacoesRecuperaveis([]);
+      return;
+    }
+
+    if (!response.ok || !data?.ok) {
+      throw new Error(
+        data?.mensagem ||
+          t({
+            pt: "Não foi possível carregar as recuperações pendentes.",
+            en: "Pending recoveries could not be loaded.",
+            es: "No se pudieron cargar las recuperaciones pendientes.",
+          }),
+      );
+    }
+
+    setOperacoesRecuperaveis(
+      (data.operacoes || [])
+        .map(normalizarOperacaoRecuperavel)
+        .filter((item): item is OperacaoRecuperavel => Boolean(item)),
+    );
+  }, [router, t]);
+
   useEffect(() => {
     let cancelado = false;
 
@@ -264,7 +381,7 @@ export default function AdminExclusoesContaPage() {
       setSucesso("");
 
       try {
-        await carregarSolicitacoes();
+        await Promise.all([carregarSolicitacoes(), carregarOperacoesRecuperaveis()]);
       } catch (error) {
         if (!cancelado) {
           setErro(
@@ -289,7 +406,7 @@ export default function AdminExclusoesContaPage() {
     return () => {
       cancelado = true;
     };
-  }, [carregarSolicitacoes, t]);
+  }, [carregarOperacoesRecuperaveis, carregarSolicitacoes, t]);
 
   const solicitacoesFiltradas = useMemo(() => {
     const termo = normalizarTexto(busca);
@@ -441,6 +558,79 @@ export default function AdminExclusoesContaPage() {
     }
   }
 
+
+  async function recuperarOperacao(operacao: OperacaoRecuperavel) {
+    const chaveAcao = `operacao:${operacao.id}`;
+    setAcaoEmAndamento(chaveAcao);
+    setErro("");
+    setSucesso("");
+
+    try {
+      const response = await fetch("/api/admin/operacoes-exclusao", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ id: operacao.id }),
+      });
+
+      const data = (await response.json().catch(() => null)) as
+        | RespostaRecuperacao
+        | null;
+
+      if (response.status === 401) {
+        router.replace(criarLoginHref());
+        return;
+      }
+
+      if (response.status === 403) {
+        setAcessoNegado(true);
+        return;
+      }
+
+      if (!response.ok || !data?.ok) {
+        throw new Error(
+          data?.mensagem ||
+            t({
+              pt: "Não foi possível retomar esta exclusão.",
+              en: "This deletion could not be resumed.",
+              es: "No se pudo reanudar esta eliminación.",
+            }),
+        );
+      }
+
+      await carregarOperacoesRecuperaveis();
+
+      setSucesso(
+        data.exclusaoConcluida
+          ? t({
+              pt: "A recuperação foi concluída e a operação foi finalizada.",
+              en: "Recovery completed and the operation was finalized.",
+              es: "La recuperación se completó y la operación fue finalizada.",
+            })
+          : t({
+              pt: "A recuperação foi executada, mas ainda há acompanhamento pendente.",
+              en: "Recovery ran, but follow-up is still pending.",
+              es: "La recuperación se ejecutó, pero aún requiere seguimiento.",
+            }),
+      );
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : t({
+              pt: "Não foi possível retomar esta exclusão.",
+              en: "This deletion could not be resumed.",
+              es: "No se pudo reanudar esta eliminación.",
+            }),
+      );
+    } finally {
+      setAcaoEmAndamento("");
+    }
+  }
+
   if (carregando) {
     return (
       <main style={pageThemeStyle}>
@@ -550,7 +740,10 @@ export default function AdminExclusoesContaPage() {
                 setAcaoEmAndamento("recarregar");
                 setErro("");
                 setSucesso("");
-                void carregarSolicitacoes()
+                void Promise.all([
+                  carregarSolicitacoes(),
+                  carregarOperacoesRecuperaveis(),
+                ])
                   .catch((error) =>
                     setErro(
                       error instanceof Error
@@ -596,6 +789,141 @@ export default function AdminExclusoesContaPage() {
             })}
           </span>
         </div>
+
+
+        <section style={recoverySectionStyle}>
+          <div style={recoveryHeaderStyle}>
+            <div>
+              <span style={eyebrowStyle}>
+                {t({
+                  pt: "RECUPERAÇÃO OPERACIONAL",
+                  en: "OPERATIONAL RECOVERY",
+                  es: "RECUPERACIÓN OPERATIVA",
+                })}
+              </span>
+              <h2 style={recoveryTitleStyle}>
+                {t({
+                  pt: "Exclusões interrompidas",
+                  en: "Interrupted deletions",
+                  es: "Eliminaciones interrumpidas",
+                })}
+              </h2>
+              <p style={recoveryDescriptionStyle}>
+                {t({
+                  pt: "Aqui aparecem apenas operações que o servidor considera seguras para recuperação administrativa: exclusões interrompidas na etapa do Auth ou falhas ocorridas depois que o Auth já foi removido.",
+                  en: "Only operations the server considers safe for administrative recovery appear here: deletions interrupted during the Auth step or failures after Auth was already removed.",
+                  es: "Aquí solo aparecen operaciones que el servidor considera seguras para recuperación administrativa: eliminaciones interrumpidas en la etapa de Auth o fallos después de que Auth ya fue eliminado.",
+                })}
+              </p>
+            </div>
+            <strong style={recoveryCountStyle}>{operacoesRecuperaveis.length}</strong>
+          </div>
+
+          {operacoesRecuperaveis.length === 0 ? (
+            <div style={recoveryEmptyStyle}>
+              {t({
+                pt: "Nenhuma exclusão precisa de recuperação administrativa agora.",
+                en: "No deletion needs administrative recovery right now.",
+                es: "Ninguna eliminación necesita recuperación administrativa ahora.",
+              })}
+            </div>
+          ) : (
+            <div style={recoveryListStyle}>
+              {operacoesRecuperaveis.map((operacao) => {
+                const recuperando = acaoEmAndamento === `operacao:${operacao.id}`;
+
+                return (
+                  <article key={operacao.id} style={recoveryCardStyle}>
+                    <div style={recoveryCardTopStyle}>
+                      <div>
+                        <strong>
+                          {operacao.status === "excluindo_auth"
+                            ? t({
+                                pt: "Auth interrompido",
+                                en: "Auth interrupted",
+                                es: "Auth interrumpido",
+                              })
+                            : t({
+                                pt: "Falha pós-Auth",
+                                en: "Post-Auth failure",
+                                es: "Fallo posterior a Auth",
+                              })}
+                        </strong>
+                        <code style={operationIdStyle}>{operacao.id}</code>
+                      </div>
+                      <button
+                        type="button"
+                        className="admin-delete-primary-button"
+                        disabled={recuperando || Boolean(acaoEmAndamento && !recuperando)}
+                        onClick={() => void recuperarOperacao(operacao)}
+                      >
+                        {recuperando
+                          ? t({
+                              pt: "Retomando...",
+                              en: "Resuming...",
+                              es: "Reanudando...",
+                            })
+                          : t({
+                              pt: "Retomar recuperação",
+                              en: "Resume recovery",
+                              es: "Reanudar recuperación",
+                            })}
+                      </button>
+                    </div>
+
+                    <div style={recoveryMetaGridStyle}>
+                      <div style={detailItemStyle}>
+                        <span style={detailLabelStyle}>
+                          {t({ pt: "Atualizada", en: "Updated", es: "Actualizada" })}
+                        </span>
+                        <strong>{formatarData(operacao.atualizadaEm)}</strong>
+                      </div>
+                      <div style={detailItemStyle}>
+                        <span style={detailLabelStyle}>
+                          {t({ pt: "Tentativas Storage", en: "Storage attempts", es: "Intentos Storage" })}
+                        </span>
+                        <strong>{operacao.tentativasStorage}</strong>
+                      </div>
+                      <div style={detailItemStyle}>
+                        <span style={detailLabelStyle}>
+                          {t({ pt: "Tentativas Auth", en: "Auth attempts", es: "Intentos Auth" })}
+                        </span>
+                        <strong>{operacao.tentativasAuth}</strong>
+                      </div>
+                      {operacao.lockExpiraEm && (
+                        <div style={detailItemStyle}>
+                          <span style={detailLabelStyle}>
+                            {t({ pt: "Lock expira", en: "Lock expires", es: "Bloqueo expira" })}
+                          </span>
+                          <strong>{formatarData(operacao.lockExpiraEm)}</strong>
+                        </div>
+                      )}
+                    </div>
+
+                    {operacao.bucketsPendentes.length > 0 && (
+                      <div style={recoveryDetailStyle}>
+                        <span style={detailLabelStyle}>
+                          {t({ pt: "Buckets pendentes", en: "Pending buckets", es: "Buckets pendientes" })}
+                        </span>
+                        <span>{operacao.bucketsPendentes.join(", ")}</span>
+                      </div>
+                    )}
+
+                    {operacao.ultimoErroMensagem && (
+                      <div style={recoveryErrorStyle}>
+                        <strong>
+                          {operacao.ultimoErroCodigo ||
+                            t({ pt: "Último erro", en: "Last error", es: "Último error" })}
+                        </strong>
+                        <span>{operacao.ultimoErroMensagem}</span>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
         <div style={summaryGridStyle}>
           <div style={summaryCardStyle}>
@@ -1109,6 +1437,116 @@ const adminExclusoesCss = `
     }
   }
 `;
+
+
+const recoverySectionStyle: CSSProperties = {
+  display: "grid",
+  gap: 14,
+  padding: 18,
+  borderRadius: 18,
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
+  background: "color-mix(in srgb, var(--historietas-surface, #120C1E) 94%, transparent)",
+};
+
+const recoveryHeaderStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: 16,
+  flexWrap: "wrap",
+};
+
+const recoveryTitleStyle: CSSProperties = {
+  margin: "5px 0 0",
+  fontSize: 20,
+  lineHeight: 1.2,
+};
+
+const recoveryDescriptionStyle: CSSProperties = {
+  margin: "7px 0 0",
+  maxWidth: 820,
+  color: "var(--historietas-text-secondary, #C9C3D3)",
+  fontSize: 13,
+  lineHeight: 1.6,
+};
+
+const recoveryCountStyle: CSSProperties = {
+  minWidth: 42,
+  height: 42,
+  display: "grid",
+  placeItems: "center",
+  borderRadius: 999,
+  background: "rgba(245, 158, 11, 0.14)",
+  border: "1px solid rgba(245, 158, 11, 0.34)",
+  color: "#FBBF24",
+  fontSize: 16,
+};
+
+const recoveryEmptyStyle: CSSProperties = {
+  padding: "14px 16px",
+  borderRadius: 14,
+  background: "rgba(74, 222, 128, 0.08)",
+  border: "1px solid rgba(74, 222, 128, 0.2)",
+  color: "var(--historietas-text-secondary, #C9C3D3)",
+  fontSize: 13,
+};
+
+const recoveryListStyle: CSSProperties = {
+  display: "grid",
+  gap: 12,
+};
+
+const recoveryCardStyle: CSSProperties = {
+  display: "grid",
+  gap: 13,
+  padding: 15,
+  borderRadius: 15,
+  background: "rgba(255,255,255,0.025)",
+  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
+};
+
+const recoveryCardTopStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  flexWrap: "wrap",
+};
+
+const operationIdStyle: CSSProperties = {
+  display: "block",
+  marginTop: 5,
+  color: "var(--historietas-text-secondary, #C9C3D3)",
+  fontSize: 11,
+  overflowWrap: "anywhere",
+};
+
+const recoveryMetaGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gap: 10,
+};
+
+const recoveryDetailStyle: CSSProperties = {
+  display: "grid",
+  gap: 5,
+  padding: "10px 12px",
+  borderRadius: 12,
+  background: "rgba(255,255,255,0.025)",
+  fontSize: 12,
+};
+
+const recoveryErrorStyle: CSSProperties = {
+  display: "grid",
+  gap: 5,
+  padding: "11px 12px",
+  borderRadius: 12,
+  background: "rgba(251, 113, 133, 0.08)",
+  border: "1px solid rgba(251, 113, 133, 0.2)",
+  color: "var(--historietas-text-secondary, #E4DDEB)",
+  fontSize: 12,
+  lineHeight: 1.5,
+};
 
 const pageStyle: CSSProperties = {
   minHeight: "100vh",
