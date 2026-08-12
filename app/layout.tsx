@@ -611,10 +611,34 @@ export default function RootLayout({
                   return resultado;
                 };
 
-                nav.addEventListener("click", () => {
-                  window.setTimeout(() => atualizarPorCaminhoAtual(false), 120);
-                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 280);
-                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 520);
+                function aplicarItemClicadoImediatamente(evento) {
+                  const alvo =
+                    evento.target instanceof Element
+                      ? evento.target.closest(".historietas-bottom-nav-item[href]")
+                      : null;
+
+                  if (!alvo || !nav.contains(alvo)) {
+                    return;
+                  }
+
+                  nav
+                    .querySelectorAll(".historietas-bottom-nav-item[href]")
+                    .forEach((link) => {
+                      link.classList.remove("historietas-bottom-nav-item-active");
+                      link.removeAttribute("aria-current");
+                    });
+
+                  alvo.classList.add("historietas-bottom-nav-item-active");
+                  alvo.setAttribute("aria-current", "page");
+                }
+
+                nav.addEventListener("pointerdown", aplicarItemClicadoImediatamente);
+
+                nav.addEventListener("click", (evento) => {
+                  aplicarItemClicadoImediatamente(evento);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(false), 0);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(false), 90);
+                  window.setTimeout(() => atualizarPorCaminhoAtual(true), 220);
                 });
 
                 window.addEventListener("popstate", () => {
@@ -635,13 +659,13 @@ export default function RootLayout({
             __html: `
               html,
               body {
-                --historietas-bottom-nav-bg: rgba(7, 2, 18, 0.98);
-                --historietas-bottom-nav-border: rgba(7, 2, 18, 0.98);
-                --historietas-bottom-nav-text: rgba(173, 149, 234, 0.82);
+                --historietas-bottom-nav-bg: #000000;
+                --historietas-bottom-nav-border: transparent;
+                --historietas-bottom-nav-text: #A1A1AA;
                 --historietas-bottom-nav-active-text: #FFFFFF;
-                --historietas-bottom-nav-muted-text: rgba(173, 149, 234, 0.52);
-                --historietas-bottom-nav-publish-bg: rgba(59, 7, 100, 0.68);
-                --historietas-bottom-nav-publish-border: rgba(167, 139, 250, 0.30);
+                --historietas-bottom-nav-muted-text: #71717A;
+                --historietas-bottom-nav-publish-bg: #050505;
+                --historietas-bottom-nav-publish-border: #A1A1AA;
                 width: 100%;
                 max-width: 100vw;
                 min-height: 100%;
@@ -721,7 +745,7 @@ export default function RootLayout({
                 align-items: center;
                 justify-content: center;
                 gap: 0;
-                color: var(--historietas-bottom-nav-text, rgba(173, 149, 234, 0.82)) !important;
+                color: var(--historietas-bottom-nav-text, rgba(161,161,170,0.82)) !important;
                 text-decoration: none;
                 font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
                 border: 0 !important;
@@ -729,7 +753,7 @@ export default function RootLayout({
                 box-shadow: none !important;
                 outline: none !important;
                 -webkit-tap-highlight-color: transparent !important;
-                transition: color 80ms ease, opacity 80ms ease;
+                transition: none !important;
               }
 
               .historietas-bottom-nav-item:active,
@@ -742,7 +766,7 @@ export default function RootLayout({
               .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):active,
               .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):focus,
               .historietas-bottom-nav-item:not([aria-current="page"]):not(.historietas-bottom-nav-item-active):focus-visible {
-                color: var(--historietas-bottom-nav-text, rgba(173, 149, 234, 0.82)) !important;
+                color: var(--historietas-bottom-nav-text, rgba(161,161,170,0.82)) !important;
                 border-color: transparent !important;
                 background: transparent !important;
                 box-shadow: none !important;
@@ -761,19 +785,10 @@ export default function RootLayout({
                 background: transparent !important;
                 box-shadow: none !important;
               }
-
               .historietas-bottom-nav-item[aria-current="page"]::after,
               .historietas-bottom-nav-item-active::after {
-                content: "";
-                position: absolute;
-                left: 50%;
-                bottom: 1px;
-                width: 4px;
-                height: 4px;
-                border-radius: 999px;
-                transform: translateX(-50%);
-                background: #A78BFA;
-                opacity: 0.95;
+                content: none !important;
+                display: none !important;
               }
 
               .historietas-bottom-nav-icon {
@@ -810,14 +825,14 @@ export default function RootLayout({
                 height: 36px !important;
                 border-radius: 999px !important;
                 color: #FFFFFF !important;
-                background: var(--historietas-bottom-nav-publish-bg, rgba(59, 7, 100, 0.72)) !important;
-                border: 1px solid var(--historietas-bottom-nav-publish-border, rgba(167, 139, 250, 0.34)) !important;
+                background: var(--historietas-bottom-nav-publish-bg, rgba(5,5,5,0.72)) !important;
+                border: 1px solid var(--historietas-bottom-nav-publish-border, rgba(255,255,255,0.34)) !important;
               }
 
               .historietas-bottom-nav-item[href="/publicar"][aria-current="page"] .historietas-bottom-nav-publish-icon,
               .historietas-bottom-nav-item[href="/publicar"].historietas-bottom-nav-item-active .historietas-bottom-nav-publish-icon {
-                background: linear-gradient(135deg, #3B0764 0%, #581C87 100%) !important;
-                border-color: rgba(216, 180, 254, 0.5) !important;
+                background: linear-gradient(135deg, #050505 0%, #050505 100%) !important;
+                border-color: rgba(255,255,255,0.5) !important;
               }
 
               .historietas-bottom-nav-label {
@@ -846,11 +861,11 @@ export default function RootLayout({
                 overflow: hidden;
                 color: #FFFFFF;
                 background:
-                  radial-gradient(circle at 28% 24%, rgba(167, 139, 250, 0.56), transparent 34%),
-                  linear-gradient(135deg, #1B0632 0%, #070212 100%);
+                  radial-gradient(circle at 28% 24%, rgba(255,255,255,0.56), transparent 34%),
+                  linear-gradient(135deg, #050505 0%, #070212 100%);
                 background-size: cover;
                 background-position: center;
-                border: 1.5px solid rgba(173, 149, 234, 0.86);
+                border: 1.5px solid rgba(161,161,170,0.86);
                 font-size: 13px;
                 line-height: 1;
                 font-weight: 950;
@@ -897,7 +912,7 @@ export default function RootLayout({
               html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
                 min-width: 20% !important;
                 flex: 0 0 20% !important;
-                color: var(--historietas-bottom-nav-text, rgba(173, 149, 234, 0.82)) !important;
+                color: var(--historietas-bottom-nav-text, rgba(161,161,170,0.82)) !important;
                 border-color: transparent !important;
                 background: transparent !important;
                 box-shadow: none !important;
@@ -907,8 +922,8 @@ export default function RootLayout({
               html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
               html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon {
                 color: #FFFFFF !important;
-                background: var(--historietas-bottom-nav-publish-bg, rgba(59, 7, 100, 0.72)) !important;
-                border-color: var(--historietas-bottom-nav-publish-border, rgba(167, 139, 250, 0.34)) !important;
+                background: var(--historietas-bottom-nav-publish-bg, rgba(5,5,5,0.72)) !important;
+                border-color: var(--historietas-bottom-nav-publish-border, rgba(255,255,255,0.34)) !important;
               }
 
               .historietas-bottom-nav-item:not([href="/publicar"]) .historietas-bottom-nav-icon,
@@ -1095,8 +1110,8 @@ export default function RootLayout({
               html[data-historietas-tema-visual] nav.historietas-bottom-nav .historietas-bottom-nav-item:active,
               html[data-historietas-tema-visual] nav.historietas-bottom-nav .historietas-bottom-nav-item:focus,
               html[data-historietas-tema-visual] nav.historietas-bottom-nav .historietas-bottom-nav-item:focus-visible {
-                color: #AD95EA !important;
-                -webkit-text-fill-color: #AD95EA !important;
+                color: #A1A1AA !important;
+                -webkit-text-fill-color: #A1A1AA !important;
               }
 
               nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"],
@@ -1156,7 +1171,7 @@ export default function RootLayout({
               html[data-historietas-tema-visual] nav.historietas-bottom-nav .historietas-bottom-nav-profile-avatar {
                 color: #FFFFFF !important;
                 -webkit-text-fill-color: #FFFFFF !important;
-                border-color: rgba(173, 149, 234, 0.86) !important;
+                border-color: rgba(161,161,170,0.86) !important;
               }
 
 
@@ -1424,6 +1439,95 @@ export default function RootLayout({
               html[data-historietas-tema-visual="foco"] body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"].historietas-bottom-nav-item-active .historietas-bottom-nav-publish-icon .historietas-bottom-nav-svg * {
                 color: #FFFFFF !important;
                 stroke: #FFFFFF !important;
+              }
+
+
+              /* ESTADO ESTÁVEL DA BOTTOM NAV — antigo Modo Foco, agora permanente. */
+              html body nav.historietas-bottom-nav {
+                background: #000000 !important;
+                border: 0 !important;
+                box-shadow: none !important;
+                -webkit-tap-highlight-color: transparent !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:visited,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:hover,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:active,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:focus,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:focus-visible {
+                color: #A1A1AA !important;
+                -webkit-text-fill-color: #A1A1AA !important;
+                background: transparent !important;
+                background-image: none !important;
+                border: 0 !important;
+                outline: 0 !important;
+                box-shadow: none !important;
+                filter: none !important;
+                transition: none !important;
+                -webkit-tap-highlight-color: transparent !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"],
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item-active,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"]:active,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item-active:active,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"]:focus,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item-active:focus {
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+                background: transparent !important;
+                background-image: none !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([href="/publicar"]) .historietas-bottom-nav-icon,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([href="/publicar"]) .historietas-bottom-nav-svg,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item:not([href="/publicar"]) .historietas-bottom-nav-svg * {
+                color: currentColor !important;
+                stroke: currentColor !important;
+                background: transparent !important;
+                border: 0 !important;
+                box-shadow: none !important;
+                transition: none !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+                color: #A1A1AA !important;
+                -webkit-text-fill-color: #A1A1AA !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-publish-icon {
+                background: #050505 !important;
+                background-image: none !important;
+                border: 1px solid #A1A1AA !important;
+                color: #A1A1AA !important;
+                -webkit-text-fill-color: #A1A1AA !important;
+                box-shadow: none !important;
+                transition: none !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"][aria-current="page"] .historietas-bottom-nav-publish-icon,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[href="/publicar"].historietas-bottom-nav-item-active .historietas-bottom-nav-publish-icon {
+                background: #050505 !important;
+                background-image: none !important;
+                border: 1px solid #FFFFFF !important;
+                color: #FFFFFF !important;
+                -webkit-text-fill-color: #FFFFFF !important;
+                box-shadow: none !important;
+                transition: none !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-profile-avatar {
+                background: #050505 !important;
+                border-color: #A1A1AA !important;
+                color: #FFFFFF !important;
+                box-shadow: none !important;
+                transition: none !important;
+              }
+
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-profile-avatar,
+              html body nav.historietas-bottom-nav .historietas-bottom-nav-item-active .historietas-bottom-nav-profile-avatar {
+                border-color: #FFFFFF !important;
               }
 
               @media (min-width: 768px) {
