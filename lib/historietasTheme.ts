@@ -1,18 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import type { CSSProperties } from "react";
-import { supabase } from "./supabase/client";
 
-export const THEME_STORAGE_KEY = "historietas-tema-visual";
-
-export function criarStorageKeyUsuarioTema(chave: string, userId: string) {
-  const userIdLimpo = userId.trim();
-
-  return userIdLimpo ? `${chave}:${userIdLimpo}` : "";
-}
-
-export type TemaVisualHistorietas = "original" | "foco";
+export type TemaVisualHistorietas = "foco";
 
 export type TemaVisualHistorietasConfig = {
   accent: string;
@@ -46,35 +37,6 @@ export const TEMAS_VISUAIS_HISTORIETAS: Record<
   TemaVisualHistorietas,
   TemaVisualHistorietasConfig
 > = {
-  original: {
-    accent: "#F97316",
-    secondary: "#7C3AED",
-    bgStart: "#070212",
-    bgMid: "#070212",
-    bgEnd: "#070212",
-    glowPrimary: "transparent",
-    glowSecondary: "transparent",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#D4D4D8",
-    surface: "rgba(18,12,30,0.82)",
-    surfaceStrong: "rgba(18,12,30,0.98)",
-    borderSoft: "rgba(255,255,255,0.08)",
-    inputBg: "#18181B",
-    inputText: "#FFFFFF",
-    titleFrom: "#FFFFFF",
-    titleMid: "#F5F3FF",
-    titleTo: "#FDBA74",
-    heroShadow: "none",
-    cardShadow: "none",
-    logoShadow: "none",
-    activeSurface:
-      "color-mix(in srgb, #7C3AED 25%, rgba(18,12,30,0.92))",
-    secondarySurface:
-      "color-mix(in srgb, #7C3AED 18%, rgba(255,255,255,0.035))",
-    secondaryButtonText: "#DDD6FE",
-    dangerSurface: "rgba(239,68,68,0.105)",
-    dangerButtonText: "#FCA5A5",
-  },
   foco: {
     accent: "#FFFFFF",
     secondary: "#A1A1AA",
@@ -108,177 +70,45 @@ export function obterTemaVisualSeguro(_valor: unknown): TemaVisualHistorietas {
   return "foco";
 }
 
-function lerTemaVisualDaChave(chave: string) {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const texto = window.localStorage.getItem(chave);
-
-    if (!texto) {
-      return null;
-    }
-
-    try {
-      return obterTemaVisualSeguro(JSON.parse(texto));
-    } catch {
-      return obterTemaVisualSeguro(texto);
-    }
-  } catch {
-    return null;
-  }
-}
-
-export function carregarTemaVisualSalvo(
-  userId = "",
-  permitirLegadoGlobal = false
-): TemaVisualHistorietas {
-  if (typeof window === "undefined") {
-    return "foco";
-  }
-
-  const userIdLimpo = userId.trim();
-
-  if (userIdLimpo) {
-    const chaveUsuario = criarStorageKeyUsuarioTema(
-      THEME_STORAGE_KEY,
-      userIdLimpo
-    );
-    const temaUsuario = chaveUsuario
-      ? lerTemaVisualDaChave(chaveUsuario)
-      : null;
-
-    if (temaUsuario) {
-      return temaUsuario;
-    }
-  }
-
-  if (permitirLegadoGlobal) {
-    return lerTemaVisualDaChave(THEME_STORAGE_KEY) || "foco";
-  }
-
-  return "foco";
-}
-
-export function salvarTemaVisualSalvo(
-  temaVisual: TemaVisualHistorietas,
-  userId = ""
+export function criarFundoTemaHistorietas(
+  _temaVisual: TemaVisualHistorietas = "foco"
 ) {
-  if (typeof window === "undefined") {
+  return "#000000";
+}
+
+function aplicarVariaveisDaBarraInferior() {
+  if (typeof document === "undefined") {
     return;
   }
 
-  const temaSeguro = obterTemaVisualSeguro(temaVisual);
-  const userIdLimpo = userId.trim();
-
-  try {
-    window.localStorage.setItem(
-      THEME_STORAGE_KEY,
-      JSON.stringify(temaSeguro)
-    );
-
-    if (userIdLimpo) {
-      const chaveUsuario = criarStorageKeyUsuarioTema(
-        THEME_STORAGE_KEY,
-        userIdLimpo
-      );
-
-      if (chaveUsuario) {
-        window.localStorage.setItem(
-          chaveUsuario,
-          JSON.stringify(temaSeguro)
-        );
-      }
-    }
-  } catch {
-    // A preferência continua aplicada na sessão mesmo sem localStorage.
-  }
-
-  aplicarTemaVisual(temaSeguro);
-
-  window.dispatchEvent(
-    new CustomEvent("historietas:tema-visual-atualizado", {
-      detail: {
-        temaVisual: temaSeguro,
-        userId: userIdLimpo,
-      },
-    })
-  );
-}
-
-export function criarFundoTemaHistorietas(
-  temaVisual: TemaVisualHistorietas
-) {
-  return temaVisual === "foco" ? "#000000" : "#070212";
-}
-
-function aplicarVariaveisDaBarraInferior(
-  temaVisual: TemaVisualHistorietas
-) {
   const raiz = document.documentElement;
-  const foco = temaVisual === "foco";
-
-  const variaveis = foco
-    ? {
-        "--historietas-bottom-nav-bg": "#000000",
-        "--historietas-bottom-nav-background": "#000000",
-        "--historietas-bottom-nav-border": "rgba(255,255,255,0.18)",
-        "--historietas-bottom-nav-shadow": "none",
-        "--historietas-bottom-nav-text": "#A1A1AA",
-        "--historietas-bottom-nav-hover-bg": "rgba(255,255,255,0.06)",
-        "--historietas-bottom-nav-hover-text": "#FFFFFF",
-        "--historietas-bottom-nav-icon-text": "#FFFFFF",
-        "--historietas-bottom-nav-icon-bg": "#050505",
-        "--historietas-bottom-nav-icon-border": "rgba(255,255,255,0.18)",
-        "--historietas-bottom-nav-active-bg": "#000000",
-        "--historietas-bottom-nav-active-border": "#FFFFFF",
-        "--historietas-bottom-nav-active-text": "#FFFFFF",
-        "--historietas-bottom-nav-active-icon-bg": "#FFFFFF",
-        "--historietas-bottom-nav-active-icon-border": "#FFFFFF",
-        "--historietas-bottom-nav-active-icon-text": "#000000",
-        "--historietas-bottom-nav-main-bg": "#000000",
-        "--historietas-bottom-nav-main-border": "#FFFFFF",
-        "--historietas-bottom-nav-main-text": "#FFFFFF",
-        "--historietas-bottom-nav-main-shadow": "none",
-        "--historietas-bottom-nav-main-icon-bg": "#000000",
-        "--historietas-bottom-nav-main-icon-border": "#FFFFFF",
-        "--historietas-bottom-nav-publish-bg": "#000000",
-        "--historietas-bottom-nav-publish-border": "#FFFFFF",
-        "--historietas-bottom-nav-shine": "none",
-      }
-    : {
-        "--historietas-bottom-nav-bg": "#10051f",
-        "--historietas-bottom-nav-background": "#10051f",
-        "--historietas-bottom-nav-border": "rgba(124,58,237,0.42)",
-        "--historietas-bottom-nav-shadow": "none",
-        "--historietas-bottom-nav-text": "#C4B5FD",
-        "--historietas-bottom-nav-hover-bg": "rgba(124,58,237,0.18)",
-        "--historietas-bottom-nav-hover-text": "#FFFFFF",
-        "--historietas-bottom-nav-icon-text": "#DDD6FE",
-        "--historietas-bottom-nav-icon-bg": "rgba(124,58,237,0.20)",
-        "--historietas-bottom-nav-icon-border": "rgba(167,139,250,0.30)",
-        "--historietas-bottom-nav-active-bg": "rgba(124,58,237,0.38)",
-        "--historietas-bottom-nav-active-border": "rgba(196,181,253,0.62)",
-        "--historietas-bottom-nav-active-text": "#FFFFFF",
-        "--historietas-bottom-nav-active-icon-bg": "#7C3AED",
-        "--historietas-bottom-nav-active-icon-border":
-          "rgba(221,214,254,0.70)",
-        "--historietas-bottom-nav-active-icon-text": "#FFFFFF",
-        "--historietas-bottom-nav-main-bg": "#7C3AED",
-        "--historietas-bottom-nav-main-border":
-          "rgba(196,181,253,0.70)",
-        "--historietas-bottom-nav-main-text": "#FFFFFF",
-        "--historietas-bottom-nav-main-shadow": "none",
-        "--historietas-bottom-nav-main-icon-bg":
-          "rgba(255,255,255,0.16)",
-        "--historietas-bottom-nav-main-icon-border":
-          "rgba(255,255,255,0.18)",
-        "--historietas-bottom-nav-publish-bg": "#7C3AED",
-        "--historietas-bottom-nav-publish-border":
-          "rgba(196,181,253,0.70)",
-        "--historietas-bottom-nav-shine": "none",
-      };
+  const variaveis = {
+    "--historietas-bottom-nav-bg": "#000000",
+    "--historietas-bottom-nav-background": "#000000",
+    "--historietas-bottom-nav-border": "rgba(255,255,255,0.18)",
+    "--historietas-bottom-nav-shadow": "none",
+    "--historietas-bottom-nav-text": "#A1A1AA",
+    "--historietas-bottom-nav-hover-bg": "rgba(255,255,255,0.06)",
+    "--historietas-bottom-nav-hover-text": "#FFFFFF",
+    "--historietas-bottom-nav-icon-text": "#FFFFFF",
+    "--historietas-bottom-nav-icon-bg": "#050505",
+    "--historietas-bottom-nav-icon-border": "rgba(255,255,255,0.18)",
+    "--historietas-bottom-nav-active-bg": "#000000",
+    "--historietas-bottom-nav-active-border": "#FFFFFF",
+    "--historietas-bottom-nav-active-text": "#FFFFFF",
+    "--historietas-bottom-nav-active-icon-bg": "#FFFFFF",
+    "--historietas-bottom-nav-active-icon-border": "#FFFFFF",
+    "--historietas-bottom-nav-active-icon-text": "#000000",
+    "--historietas-bottom-nav-main-bg": "#000000",
+    "--historietas-bottom-nav-main-border": "#FFFFFF",
+    "--historietas-bottom-nav-main-text": "#FFFFFF",
+    "--historietas-bottom-nav-main-shadow": "none",
+    "--historietas-bottom-nav-main-icon-bg": "#000000",
+    "--historietas-bottom-nav-main-icon-border": "#FFFFFF",
+    "--historietas-bottom-nav-publish-bg": "#000000",
+    "--historietas-bottom-nav-publish-border": "#FFFFFF",
+    "--historietas-bottom-nav-shine": "none",
+  };
 
   Object.entries(variaveis).forEach(([variavel, valor]) => {
     raiz.style.setProperty(variavel, valor);
@@ -286,16 +116,15 @@ function aplicarVariaveisDaBarraInferior(
 }
 
 export function aplicarTemaVisual(
-  temaVisual: TemaVisualHistorietas
+  _temaVisual: TemaVisualHistorietas = "foco"
 ) {
   if (typeof document === "undefined") {
     return;
   }
 
-  const temaSeguro = obterTemaVisualSeguro(temaVisual);
-  const tema = TEMAS_VISUAIS_HISTORIETAS[temaSeguro];
+  const tema = TEMAS_VISUAIS_HISTORIETAS.foco;
   const raiz = document.documentElement;
-  const fundo = criarFundoTemaHistorietas(temaSeguro);
+  const fundo = "#000000";
 
   const variaveis = {
     "--historietas-page-background": fundo,
@@ -325,33 +154,21 @@ export function aplicarTemaVisual(
     "--historietas-secondary-button-text": tema.secondaryButtonText,
     "--historietas-danger-surface": tema.dangerSurface,
     "--historietas-danger-button-text": tema.dangerButtonText,
-    "--historietas-obra-bg-deep":
-      temaSeguro === "foco" ? "#000000" : "#04000A",
-    "--historietas-obra-bg-shadow-42":
-      temaSeguro === "foco"
-        ? "rgba(0,0,0,0.72)"
-        : "rgba(3,2,8,0.42)",
-    "--historietas-obra-menu-98":
-      temaSeguro === "foco" ? "#000000" : "rgba(18,9,35,0.98)",
-    "--historietas-obra-purple-58":
-      temaSeguro === "foco"
-        ? "rgba(255,255,255,0.18)"
-        : "rgba(59,7,100,0.58)",
-    "--historietas-obra-purple-72":
-      temaSeguro === "foco" ? "#050505" : "rgba(59,7,100,0.72)",
-    "--historietas-obra-secondary-soft-34":
-      temaSeguro === "foco"
-        ? "rgba(255,255,255,0.18)"
-        : "rgba(167,139,250,0.34)",
+    "--historietas-obra-bg-deep": "#000000",
+    "--historietas-obra-bg-shadow-42": "rgba(0,0,0,0.72)",
+    "--historietas-obra-menu-98": "#000000",
+    "--historietas-obra-purple-58": "rgba(255,255,255,0.18)",
+    "--historietas-obra-purple-72": "#050505",
+    "--historietas-obra-secondary-soft-34": "rgba(255,255,255,0.18)",
   };
 
   Object.entries(variaveis).forEach(([variavel, valor]) => {
     raiz.style.setProperty(variavel, valor);
   });
 
-  aplicarVariaveisDaBarraInferior(temaSeguro);
+  aplicarVariaveisDaBarraInferior();
 
-  raiz.dataset.historietasTemaVisual = temaSeguro;
+  raiz.removeAttribute("data-historietas-tema-visual");
   raiz.style.background = fundo;
   raiz.style.colorScheme = "dark";
 
@@ -362,108 +179,108 @@ export function aplicarTemaVisual(
 }
 
 export const historietasThemeCss = `
-  html[data-historietas-tema-visual="foco"],
-  html[data-historietas-tema-visual="foco"] body,
-  html[data-historietas-tema-visual="foco"] main {
+  html,
+  body,
+  main {
     background: #000000 !important;
     color: #FFFFFF !important;
     color-scheme: dark;
   }
 
-  html[data-historietas-tema-visual="foco"] main > div[aria-hidden="true"] {
+  main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
 
-  html[data-historietas-tema-visual="foco"] input,
-  html[data-historietas-tema-visual="foco"] textarea,
-  html[data-historietas-tema-visual="foco"] select {
+  input,
+  textarea,
+  select {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.18) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] input::placeholder,
-  html[data-historietas-tema-visual="foco"] textarea::placeholder {
+  input::placeholder,
+  textarea::placeholder {
     color: #A1A1AA !important;
     opacity: 1 !important;
   }
 
-  html[data-historietas-tema-visual="foco"] [role="dialog"],
-  html[data-historietas-tema-visual="foco"] [role="menu"],
-  html[data-historietas-tema-visual="foco"] [role="listbox"] {
+  [role="dialog"],
+  [role="menu"],
+  [role="listbox"] {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.18) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-theme-logo-text,
-  html[data-historietas-tema-visual="foco"] .historietas-theme-title {
+  .historietas-theme-logo-text,
+  .historietas-theme-title {
     background: none !important;
     color: #FFFFFF !important;
     -webkit-text-fill-color: #FFFFFF !important;
     text-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav="true"],
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav="true"],
-  html[data-historietas-tema-visual="foco"] nav:has(a[href="/publicar"]) {
+  nav.historietas-bottom-nav,
+  [data-bottom-nav="true"],
+  [data-mobile-nav="true"],
+  nav:has(a[href="/publicar"]) {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.18) !important;
     box-shadow: none !important;
     color: #A1A1AA !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav a,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav="true"] a,
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav="true"] a {
+  nav.historietas-bottom-nav a,
+  [data-bottom-nav="true"] a,
+  [data-mobile-nav="true"] a {
     color: #A1A1AA !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav="true"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav="true"] .historietas-bottom-nav-icon {
+  nav.historietas-bottom-nav .historietas-bottom-nav-icon,
+  [data-bottom-nav="true"] .historietas-bottom-nav-icon,
+  [data-mobile-nav="true"] .historietas-bottom-nav-icon {
     background: #050505 !important;
     border-color: rgba(255,255,255,0.18) !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"],
-  html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item-active,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav="true"] .historietas-bottom-nav-item[aria-current="page"],
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav="true"] .historietas-bottom-nav-item-active,
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav="true"] .historietas-bottom-nav-item[aria-current="page"],
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav="true"] .historietas-bottom-nav-item-active {
+  nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"],
+  nav.historietas-bottom-nav .historietas-bottom-nav-item-active,
+  [data-bottom-nav="true"] .historietas-bottom-nav-item[aria-current="page"],
+  [data-bottom-nav="true"] .historietas-bottom-nav-item-active,
+  [data-mobile-nav="true"] .historietas-bottom-nav-item[aria-current="page"],
+  [data-mobile-nav="true"] .historietas-bottom-nav-item-active {
     background: #000000 !important;
     border-color: #FFFFFF !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav .historietas-bottom-nav-item-active .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav="true"] .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav="true"] .historietas-bottom-nav-item-active .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav="true"] .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav="true"] .historietas-bottom-nav-item-active .historietas-bottom-nav-icon {
+  nav.historietas-bottom-nav .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+  nav.historietas-bottom-nav .historietas-bottom-nav-item-active .historietas-bottom-nav-icon,
+  [data-bottom-nav="true"] .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+  [data-bottom-nav="true"] .historietas-bottom-nav-item-active .historietas-bottom-nav-icon,
+  [data-mobile-nav="true"] .historietas-bottom-nav-item[aria-current="page"] .historietas-bottom-nav-icon,
+  [data-mobile-nav="true"] .historietas-bottom-nav-item-active .historietas-bottom-nav-icon {
     background: #FFFFFF !important;
     border-color: #FFFFFF !important;
     color: #000000 !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav.historietas-bottom-nav a[href="/publicar"],
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav="true"] a[href="/publicar"],
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav="true"] a[href="/publicar"] {
+  nav.historietas-bottom-nav a[href="/publicar"],
+  [data-bottom-nav="true"] a[href="/publicar"],
+  [data-mobile-nav="true"] a[href="/publicar"] {
     background: #000000 !important;
     border-color: #FFFFFF !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] {
+  [data-historietas-obra-comments="true"] {
     --historietas-obra-bg-deep: #000000;
     --historietas-obra-bg-shadow-42: rgba(0,0,0,0.72);
     --historietas-obra-menu-98: #000000;
@@ -480,26 +297,26 @@ export const historietasThemeCss = `
     color: #FFFFFF;
   }
 
-  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] [role="dialog"],
-  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] [role="menu"] {
+  [data-historietas-obra-comments="true"] [role="dialog"],
+  [data-historietas-obra-comments="true"] [role="menu"] {
     background-color: #000000 !important;
     border-color: rgba(255,255,255,0.18) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] textarea {
+  [data-historietas-obra-comments="true"] textarea {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.18) !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="foco"] [data-historietas-obra-comments="true"] textarea::placeholder {
+  [data-historietas-obra-comments="true"] textarea::placeholder {
     color: #A1A1AA !important;
     opacity: 1 !important;
   }
 
-  html[data-historietas-tema-visual="foco"] ::selection {
+  ::selection {
     background: #FFFFFF;
     color: #000000;
   }
@@ -507,12 +324,8 @@ export const historietasThemeCss = `
 
 export function criarPageThemeStyle(
   pageStyle: CSSProperties,
-  temaVisual: TemaVisualHistorietas
+  _temaVisual: TemaVisualHistorietas = "foco"
 ): CSSProperties {
-  if (temaVisual === "original") {
-    return pageStyle;
-  }
-
   return {
     ...pageStyle,
     background: "#000000",
@@ -521,89 +334,24 @@ export function criarPageThemeStyle(
 }
 
 export function useHistorietasTheme(pageStyle: CSSProperties) {
-  const [temaVisual, setTemaVisual] =
-    useState<TemaVisualHistorietas>("original");
+  const temaVisual: TemaVisualHistorietas = "foco";
 
   const pageThemeStyle = useMemo<CSSProperties>(
     () => criarPageThemeStyle(pageStyle, temaVisual),
-    [pageStyle, temaVisual]
+    [pageStyle]
   );
 
   useEffect(() => {
-    let cancelado = false;
-
-    async function carregarTemaDoUsuarioAtual() {
-      try {
-        const { data } = await supabase.auth.getUser();
-        const userId = data.user?.id || "";
-        const temaSalvo = carregarTemaVisualSalvo(userId, true);
-
-        if (cancelado) {
-          return;
-        }
-
-        setTemaVisual(temaSalvo);
-        aplicarTemaVisual(temaSalvo);
-      } catch {
-        if (!cancelado) {
-          const temaSalvo = carregarTemaVisualSalvo("", true);
-
-          setTemaVisual(temaSalvo);
-          aplicarTemaVisual(temaSalvo);
-        }
-      }
-    }
-
-    void carregarTemaDoUsuarioAtual();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const userId = session?.user.id || "";
-      const temaSalvo = carregarTemaVisualSalvo(userId, true);
-
-      setTemaVisual(temaSalvo);
-      aplicarTemaVisual(temaSalvo);
-    });
-
-    function atualizarTemaAoMudarStorage(evento: StorageEvent) {
-      const chave = evento.key || "";
-
-      if (
-        chave === THEME_STORAGE_KEY ||
-        chave.startsWith(`${THEME_STORAGE_KEY}:`)
-      ) {
-        void carregarTemaDoUsuarioAtual();
-      }
-    }
-
-    function atualizarTemaPorEvento() {
-      void carregarTemaDoUsuarioAtual();
-    }
-
-    window.addEventListener("storage", atualizarTemaAoMudarStorage);
-    window.addEventListener(
-      "historietas:tema-visual-atualizado",
-      atualizarTemaPorEvento
-    );
-
-    return () => {
-      cancelado = true;
-      subscription.unsubscribe();
-      window.removeEventListener("storage", atualizarTemaAoMudarStorage);
-      window.removeEventListener(
-        "historietas:tema-visual-atualizado",
-        atualizarTemaPorEvento
-      );
-    };
+    aplicarTemaVisual("foco");
   }, []);
 
   return {
     temaVisual,
     pageThemeStyle,
-    setTemaVisual,
+    setTemaVisual: (_temaVisual: TemaVisualHistorietas) => {
+      aplicarTemaVisual("foco");
+    },
     aplicarTemaVisual,
-    salvarTemaVisualSalvo,
     historietasThemeCss,
   };
 }

@@ -61,7 +61,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#070212",
+  themeColor: "#000000",
 };
 
 
@@ -75,6 +75,7 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable}`}
       data-scroll-behavior="smooth"
+      data-historietas-tema-visual="foco"
       data-historietas-bottom-nav-oculto="false"
       suppressHydrationWarning
     >
@@ -87,94 +88,48 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (() => {
-                const chaveTema = "historietas-tema-visual";
                 const raiz = document.documentElement;
+                const variaveis = {
+                  "--historietas-page-background": "#000000",
+                  "--historietas-accent": "#FFFFFF",
+                  "--historietas-secondary": "#A1A1AA",
+                  "--historietas-bg-start": "#000000",
+                  "--historietas-bg-mid": "#000000",
+                  "--historietas-bg-end": "#000000",
+                  "--historietas-glow-primary": "transparent",
+                  "--historietas-glow-secondary": "transparent",
+                  "--historietas-text-primary": "#FFFFFF",
+                  "--historietas-text-secondary": "#A1A1AA",
+                  "--historietas-surface": "#050505",
+                  "--historietas-surface-strong": "#000000",
+                  "--historietas-border-soft": "rgba(255,255,255,0.18)",
+                  "--historietas-input-bg": "#000000",
+                  "--historietas-input-text": "#FFFFFF",
+                  "--historietas-input-placeholder": "#A1A1AA",
+                  "--historietas-title-from": "#FFFFFF",
+                  "--historietas-title-mid": "#FFFFFF",
+                  "--historietas-title-to": "#FFFFFF",
+                  "--historietas-active-surface": "rgba(255,255,255,0.10)",
+                  "--historietas-secondary-surface": "rgba(255,255,255,0.06)",
+                  "--historietas-secondary-button-text": "#FFFFFF",
+                  "--historietas-danger-surface": "rgba(255,255,255,0.08)",
+                  "--historietas-danger-button-text": "#FFFFFF",
+                  "--historietas-bottom-nav-bg": "#000000",
+                  "--historietas-bottom-nav-border": "transparent",
+                  "--historietas-bottom-nav-text": "#A1A1AA",
+                  "--historietas-bottom-nav-active-text": "#FFFFFF",
+                  "--historietas-bottom-nav-muted-text": "#71717A",
+                  "--historietas-bottom-nav-publish-bg": "#000000",
+                  "--historietas-bottom-nav-publish-border": "#FFFFFF"
+                };
 
-                function obterTemaSeguro(_valor) {
-                  return "foco";
-                }
+                Object.entries(variaveis).forEach(([variavel, valor]) => {
+                  raiz.style.setProperty(variavel, valor);
+                });
 
-                function lerTemaSalvo() {
-                  try {
-                    const texto = window.localStorage.getItem(chaveTema);
-
-                    if (!texto) {
-                      return "foco";
-                    }
-
-                    try {
-                      return obterTemaSeguro(JSON.parse(texto));
-                    } catch {
-                      return obterTemaSeguro(texto);
-                    }
-                  } catch {
-                    return "foco";
-                  }
-                }
-
-                function aplicarVariaveisTemaInicial(temaVisual) {
-                  const foco = temaVisual === "foco";
-
-                  const variaveis = foco
-                    ? {
-                        "--historietas-page-background": "#000000",
-                        "--historietas-accent": "#FFFFFF",
-                        "--historietas-secondary": "#A1A1AA",
-                        "--historietas-bg-start": "#000000",
-                        "--historietas-bg-mid": "#000000",
-                        "--historietas-bg-end": "#000000",
-                        "--historietas-glow-primary": "transparent",
-                        "--historietas-glow-secondary": "transparent",
-                        "--historietas-text-primary": "#FFFFFF",
-                        "--historietas-text-secondary": "#A1A1AA",
-                        "--historietas-surface": "#050505",
-                        "--historietas-surface-strong": "#000000",
-                        "--historietas-border-soft": "rgba(255,255,255,0.18)",
-                        "--historietas-input-bg": "#000000",
-                        "--historietas-input-text": "#FFFFFF",
-                        "--historietas-input-placeholder": "#A1A1AA",
-                        "--historietas-title-from": "#FFFFFF",
-                        "--historietas-title-mid": "#FFFFFF",
-                        "--historietas-title-to": "#FFFFFF",
-                        "--historietas-active-surface": "rgba(255,255,255,0.10)",
-                        "--historietas-secondary-surface": "rgba(255,255,255,0.06)",
-                        "--historietas-secondary-button-text": "#FFFFFF",
-                        "--historietas-danger-surface": "rgba(255,255,255,0.08)",
-                        "--historietas-danger-button-text": "#FFFFFF",
-                        "--historietas-bottom-nav-bg": "#000000",
-                        "--historietas-bottom-nav-border": "transparent",
-                        "--historietas-bottom-nav-text": "#A1A1AA",
-                        "--historietas-bottom-nav-active-text": "#FFFFFF",
-                        "--historietas-bottom-nav-muted-text": "#71717A",
-                        "--historietas-bottom-nav-publish-bg": "#000000",
-                        "--historietas-bottom-nav-publish-border": "#FFFFFF"
-                      }
-                    : {
-                        "--historietas-page-background": "#070212",
-                        "--historietas-accent": "#F97316",
-                        "--historietas-secondary": "#7C3AED",
-                        "--historietas-bg-start": "#070212",
-                        "--historietas-bg-mid": "#070212",
-                        "--historietas-bg-end": "#070212",
-                        "--historietas-glow-primary": "transparent",
-                        "--historietas-glow-secondary": "transparent",
-                        "--historietas-text-primary": "#FFFFFF",
-                        "--historietas-text-secondary": "#D4D4D8"
-                      };
-
-                  Object.entries(variaveis).forEach(([variavel, valor]) => {
-                    raiz.style.setProperty(variavel, valor);
-                  });
-
-                  raiz.setAttribute(
-                    "data-historietas-tema-visual",
-                    temaVisual
-                  );
-                  raiz.style.background = foco ? "#000000" : "#070212";
-                  raiz.style.colorScheme = "dark";
-                }
-
-                aplicarVariaveisTemaInicial(lerTemaSalvo());
+                raiz.setAttribute("data-historietas-tema-visual", "foco");
+                raiz.style.background = "#000000";
+                raiz.style.colorScheme = "dark";
               })();
             `,
           }}

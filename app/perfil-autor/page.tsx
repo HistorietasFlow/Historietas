@@ -4497,7 +4497,7 @@ function criarCapaBibliotecaPerfilStyle(capa: string, desktop: boolean): CSSProp
 
   return {
     ...baseStyle,
-    background: "var(--historietas-perfil-bg-deep, #04000A)",
+    background: "var(--historietas-perfil-bg-deep, #000000)",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -12002,12 +12002,12 @@ function PerfilAutorPageContent() {
                           d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
                           fill={
                             topFiveCurtidoPorMim
-                              ? "var(--historietas-perfil-danger, #EF4444)"
+                              ? "var(--historietas-perfil-danger, #FFFFFF)"
                               : "none"
                           }
                           stroke={
                             topFiveCurtidoPorMim
-                              ? "var(--historietas-perfil-danger, #EF4444)"
+                              ? "var(--historietas-perfil-danger, #FFFFFF)"
                               : "#FFFFFF"
                           }
                           strokeWidth="2"
@@ -12068,12 +12068,12 @@ function PerfilAutorPageContent() {
                           d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
                           fill={
                             topFiveCurtidoPorMim
-                              ? "var(--historietas-perfil-danger, #EF4444)"
+                              ? "var(--historietas-perfil-danger, #FFFFFF)"
                               : "none"
                           }
                           stroke={
                             topFiveCurtidoPorMim
-                              ? "var(--historietas-perfil-danger, #EF4444)"
+                              ? "var(--historietas-perfil-danger, #FFFFFF)"
                               : "#FFFFFF"
                           }
                           strokeWidth="2"
@@ -13321,7 +13321,7 @@ const workActionSheetStyle: CSSProperties = {
   overflowY: "auto",
   overscrollBehavior: "contain",
   borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-perfil-bg-page, #070212)",
+  background: "var(--historietas-perfil-bg-page, #000000)",
   border: "none",
   borderBottom: "0",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
@@ -13562,7 +13562,7 @@ const diarySummaryCoverStyle: CSSProperties = {
   borderRadius: "12px",
   overflow: "hidden",
   background:
-    "linear-gradient(135deg, var(--historietas-perfil-surface, #08030F) 0%, var(--historietas-perfil-bg-deep, #04000A) 100%)",
+    "linear-gradient(135deg, var(--historietas-perfil-surface, #050505) 0%, var(--historietas-perfil-bg-deep, #000000) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "none",
@@ -13671,7 +13671,7 @@ const profileLibraryTabStyle: CSSProperties = {
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   background:
-    "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #070212))",
+    "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #000000))",
   color: "var(--historietas-text-secondary, #D4D4D8)",
   fontSize: "10.5px",
   fontWeight: 950,
@@ -13685,7 +13685,7 @@ const profileLibraryTabStyle: CSSProperties = {
 const profileLibraryTabActiveStyle: CSSProperties = {
   ...profileLibraryTabStyle,
   background:
-    "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #070212))",
+    "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #000000))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   border: "1px solid rgba(255,255,255,0.14)",
 };
@@ -13737,7 +13737,7 @@ const profileLibraryStatCardStyle: CSSProperties = {
 
 const profileLibraryStatCardActiveStyle: CSSProperties = {
   ...profileLibraryStatCardStyle,
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
@@ -13854,8 +13854,8 @@ const profileLibraryCoverStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
   textDecoration: "none",
-  background: "var(--historietas-perfil-bg-deep, #04000A)",
-  backgroundImage: "linear-gradient(135deg, var(--historietas-perfil-surface, #08030F) 0%, var(--historietas-perfil-bg-deep, #04000A) 100%)",
+  background: "var(--historietas-perfil-bg-deep, #000000)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-perfil-surface, #050505) 0%, var(--historietas-perfil-bg-deep, #000000) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "1px solid rgba(255,255,255,0.08)",
@@ -13913,7 +13913,7 @@ const profileLibraryStatusActiveStyle: CSSProperties = {
   ...profileLibraryChapterBadgeStyle,
   background: "var(--historietas-perfil-success-spaced-12, rgba(34, 197, 94, 0.12))",
   border: "1px solid var(--historietas-perfil-success-spaced-22, rgba(34, 197, 94, 0.22))",
-  color: "var(--historietas-perfil-success-soft, #86EFAC)",
+  color: "var(--historietas-perfil-success-soft, #FFFFFF)",
   fontWeight: 950,
 };
 
@@ -13985,7 +13985,7 @@ const profileLibraryReadButtonStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "0 12px",
   borderRadius: "999px",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "13px",
@@ -14047,7 +14047,7 @@ const profileLibraryDoneButtonStyle: CSSProperties = {
   ...profileLibraryListButtonStyle,
   background: "var(--historietas-perfil-success-spaced-12, rgba(34, 197, 94, 0.12))",
   border: "1px solid var(--historietas-perfil-success-spaced-22, rgba(34, 197, 94, 0.22))",
-  color: "var(--historietas-perfil-success-soft, #86EFAC)",
+  color: "var(--historietas-perfil-success-soft, #FFFFFF)",
 };
 
 const profileLibraryDoneButtonActiveStyle: CSSProperties = {
@@ -14060,7 +14060,7 @@ const profileLibraryRemoveButtonStyle: CSSProperties = {
   ...profileLibraryListButtonStyle,
   background: "var(--historietas-perfil-danger-dark-spaced-28, rgba(127, 29, 29, 0.28))",
   border: "1px solid var(--historietas-perfil-danger-spaced-22, rgba(248, 113, 113, 0.22))",
-  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
+  color: "var(--historietas-perfil-danger-soft, #FFFFFF)",
 };
 
 const mobileTopWaterFadeStyle: CSSProperties = {
@@ -14101,69 +14101,6 @@ const perfilAutorThemeCss = `
   }
 
   html {
-    --historietas-perfil-bg-page: #070212;
-    --historietas-perfil-bg-deep: #04000A;
-    --historietas-perfil-surface: #08030F;
-    --historietas-perfil-surface-alt: #120B1C;
-    --historietas-perfil-accent: #F97316;
-    --historietas-perfil-accent-strong: #FB923C;
-    --historietas-perfil-accent-soft: #FDBA74;
-    --historietas-perfil-gold: #FBBF24;
-    --historietas-perfil-danger-soft: #FCA5A5;
-    --historietas-perfil-danger: #EF4444;
-    --historietas-perfil-rose-soft: #FDA4AF;
-    --historietas-perfil-rose: #FB7185;
-    --historietas-perfil-success-soft: #86EFAC;
-    --historietas-perfil-lavender-text: #DDD6FE;
-    --historietas-perfil-purple-soft: #C084FC;
-    --historietas-perfil-blue-soft: #7DD3FC;
-    --historietas-perfil-lavender: #D8C8FF;
-    --historietas-perfil-purple: #A78BFA;
-    --historietas-perfil-secondary: #7C3AED;
-    --historietas-perfil-accent-14: rgba(249,115,22,0.14);
-    --historietas-perfil-rose-14: rgba(251,113,133,0.14);
-    --historietas-perfil-success-14: rgba(34,197,94,0.14);
-    --historietas-perfil-gold-14: rgba(251,191,36,0.14);
-    --historietas-perfil-purple-soft-14: rgba(192,132,252,0.14);
-    --historietas-perfil-blue-14: rgba(56,189,248,0.14);
-    --historietas-perfil-secondary-18: rgba(124,58,237,0.18);
-    --historietas-perfil-deep-72: rgba(4, 0, 10, 0.72);
-    --historietas-perfil-success-spaced-12: rgba(34, 197, 94, 0.12);
-    --historietas-perfil-success-spaced-22: rgba(34, 197, 94, 0.22);
-    --historietas-perfil-emerald-18: rgba(16,185,129,0.18);
-    --historietas-perfil-emerald-38: rgba(16,185,129,0.38);
-    --historietas-perfil-danger-dark-spaced-28: rgba(127, 29, 29, 0.28);
-    --historietas-perfil-danger-spaced-22: rgba(248, 113, 113, 0.22);
-    --historietas-perfil-purple-dark-58: rgba(59, 7, 100, 0.58);
-    --historietas-perfil-danger-42: rgba(248,113,113,0.42);
-    --historietas-perfil-danger-dark-24: rgba(127,29,29,0.24);
-    --historietas-perfil-danger-36: rgba(248,113,113,0.36);
-    --historietas-perfil-danger-dark-34: rgba(127,29,29,0.34);
-    --historietas-perfil-gold-spaced-34: rgba(251, 191, 36, 0.34);
-    --historietas-perfil-surface-fade-0: rgba(8,5,13,0);
-    --historietas-perfil-surface-fade-58: rgba(8,5,13,0.58);
-    --historietas-perfil-surface-fade-92: rgba(8,5,13,0.92);
-    --historietas-perfil-success-10: rgba(34,197,94,0.10);
-    --historietas-perfil-success-22: rgba(34,197,94,0.22);
-    --historietas-perfil-rose-dark-14: rgba(190,18,60,0.14);
-    --historietas-perfil-rose-28: rgba(251,113,133,0.28);
-    --historietas-perfil-surface-purple-92: rgba(18,8,31,0.92);
-    --historietas-perfil-surface-purple-94: rgba(38,20,62,0.94);
-  }
-
-  @keyframes historietas-loading-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .historietas-loading-spinner {
-      animation-duration: 1.4s !important;
-    }
-  }
-
-  html[data-historietas-tema-visual="foco"] {
     --historietas-perfil-bg-page: #000000;
     --historietas-perfil-bg-deep: #000000;
     --historietas-perfil-surface: #050505;
@@ -14213,6 +14150,20 @@ const perfilAutorThemeCss = `
     --historietas-perfil-surface-purple-92: rgba(0,0,0,0.92);
     --historietas-perfil-surface-purple-94: rgba(5,5,5,0.94);
   }
+
+  @keyframes historietas-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .historietas-loading-spinner {
+      animation-duration: 1.4s !important;
+    }
+  }
+
+  
 `;
 
 const pageStyle: CSSProperties = {
@@ -14223,7 +14174,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   boxSizing: "border-box",
   background:
-    "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #070212))",
+    "var(--historietas-bg-start, var(--historietas-perfil-bg-page, #000000))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -14330,7 +14281,7 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-perfil-bg-deep, #04000A)",
+  background: "var(--historietas-perfil-bg-deep, #000000)",
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
   fontSize: "21px",
@@ -14379,7 +14330,7 @@ const profileNotificationButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, var(--historietas-perfil-bg-deep, #04000A))",
+  background: "var(--historietas-surface-strong, var(--historietas-perfil-bg-deep, #000000))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -14402,8 +14353,8 @@ const profileNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, var(--historietas-perfil-bg-page, #070212))",
-  background: "var(--historietas-perfil-danger, #EF4444)",
+  border: "2px solid var(--historietas-bg-start, var(--historietas-perfil-bg-page, #000000))",
+  background: "var(--historietas-perfil-danger, #FFFFFF)",
   color: "#FFFFFF",
   fontSize: "9px",
   lineHeight: 1,
@@ -14501,7 +14452,7 @@ const menuSheetStyle: CSSProperties = {
   maxHeight: "100dvh",
   borderRadius: 0,
   border: "0",
-  background: "var(--historietas-perfil-bg-page, #070212)",
+  background: "var(--historietas-perfil-bg-page, #000000)",
   padding: "22px 16px calc(132px + env(safe-area-inset-bottom, 0px))",
   display: "grid",
   alignContent: "start",
@@ -14615,7 +14566,7 @@ const menuItemStyle: CSSProperties = {
 
 const menuDangerItemStyle: CSSProperties = {
   ...menuItemStyle,
-  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
+  color: "var(--historietas-perfil-danger-soft, #FFFFFF)",
 };
 
 const menuItemIconStyle: CSSProperties = {
@@ -14664,7 +14615,7 @@ const menuNotificationRightStyle: CSSProperties = {
 
 const menuNotificationBadgeStyle: CSSProperties = {
   display: "inline",
-  color: "var(--historietas-perfil-danger, #EF4444)",
+  color: "var(--historietas-perfil-danger, #FFFFFF)",
   fontSize: "12px",
   lineHeight: 1,
   fontWeight: 950,
@@ -14690,7 +14641,7 @@ const headerFollowButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
@@ -14774,7 +14725,7 @@ const avatarBaseStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-perfil-bg-deep, #04000A)",
+  background: "var(--historietas-perfil-bg-deep, #000000)",
   color: "#FFFFFF",
   fontSize: "24px",
   fontWeight: 950,
@@ -14827,7 +14778,7 @@ const profileEditorAvatarPreviewStyle: CSSProperties = {
   height: "88px",
   borderRadius: "24px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-bg-deep, #04000A)",
+  background: "var(--historietas-perfil-bg-deep, #000000)",
   color: "#FFFFFF",
   display: "flex",
   alignItems: "center",
@@ -14862,7 +14813,7 @@ const profileEditorSheetInputStyle: CSSProperties = {
   minHeight: "44px",
   borderRadius: "14px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   color: "#FFFFFF",
   padding: "0 14px",
   outline: "none",
@@ -14883,7 +14834,7 @@ const profileEditorSheetTextareaStyle: CSSProperties = {
   resize: "vertical",
   borderRadius: "16px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   color: "#FFFFFF",
   padding: "12px 14px",
   outline: "none",
@@ -14942,7 +14893,7 @@ const avatarSmallButtonStyle: CSSProperties = {
   padding: "0 9px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   color: "#FFFFFF",
   fontSize: "9px",
   fontWeight: 900,
@@ -14959,7 +14910,7 @@ const avatarRemoveButtonStyle: CSSProperties = {
 };
 
 const avatarErrorStyle: CSSProperties = {
-  color: "var(--historietas-perfil-danger-soft, #FCA5A5)",
+  color: "var(--historietas-perfil-danger-soft, #FFFFFF)",
   fontSize: "10px",
   fontWeight: 800,
   ...safeTextStyle,
@@ -15143,7 +15094,7 @@ const profileRatingPrivateLockStyle: CSSProperties = {
 
 const profileRatingNumberStyle: CSSProperties = {
   ...profileStatNumberStyle,
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   position: "relative",
   top: "5px",
 };
@@ -15375,7 +15326,7 @@ const profilePrimaryButtonStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "10px",
@@ -15485,7 +15436,7 @@ const authorHighlightsLikeButtonStyle: CSSProperties = {
 
 const authorHighlightsLikeButtonActiveStyle: CSSProperties = {
   ...authorHighlightsLikeButtonStyle,
-  color: "var(--historietas-perfil-danger, #EF4444)",
+  color: "var(--historietas-perfil-danger, #FFFFFF)",
 };
 
 const authorHighlightsLikeHeartIconStyle: CSSProperties = {
@@ -15575,7 +15526,7 @@ const authorHighlightCoverStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "none",
@@ -15718,7 +15669,7 @@ const profileAboutTextareaStyle: CSSProperties = {
   resize: "vertical",
   borderRadius: "16px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   color: "#FFFFFF",
   padding: "10px 11px",
   outline: "none",
@@ -15733,7 +15684,7 @@ const profileAboutTextareaStyle: CSSProperties = {
 };
 
 const profileAboutCounterStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   fontSize: "9px",
   fontWeight: 900,
   textAlign: "right",
@@ -15746,7 +15697,7 @@ const profileAboutStatsStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: "8px",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   fontSize: "10px",
   lineHeight: 1.25,
   fontWeight: 900,
@@ -15762,7 +15713,7 @@ const profileAboutHeroStyle: CSSProperties = {
 };
 
 const profileAboutEyebrowStyle: CSSProperties = {
-  color: "var(--historietas-text-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-text-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   fontSize: "9.5px",
   lineHeight: 1.2,
   fontWeight: 950,
@@ -15945,7 +15896,7 @@ const statCardStyle: CSSProperties = {
 };
 
 const statNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   fontSize: "22px",
   lineHeight: 1,
   fontWeight: 950,
@@ -15987,7 +15938,7 @@ const authorCommunityIntroStyle: CSSProperties = {
 };
 
 const authorCommunityEyebrowStyle: CSSProperties = {
-  color: "var(--historietas-text-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-text-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   fontSize: "9px",
   lineHeight: 1,
   fontWeight: 950,
@@ -16086,7 +16037,7 @@ const authorCommunityCardStyle: CSSProperties = {
   minHeight: "48px",
   padding: "6px 4px",
   borderRadius: "16px",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
@@ -16134,7 +16085,7 @@ const authorCommunityPreviewStyle: CSSProperties = {
   width: "100%",
   padding: "9px",
   borderRadius: "18px",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   gridTemplateColumns: "28px minmax(0, 1fr)",
@@ -16223,7 +16174,7 @@ const authorCommunityPostStyle: CSSProperties = {
   height: "100%",
   padding: "10px",
   borderRadius: "17px",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
@@ -16266,7 +16217,7 @@ const authorCommunityPostHeaderStyle: CSSProperties = {
 };
 
 const authorCommunityPostTypeStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   fontSize: "9px",
   lineHeight: 1,
   fontWeight: 950,
@@ -16348,7 +16299,7 @@ const authorCommunityPrimaryActionStyle: CSSProperties = {
   minHeight: "34px",
   padding: "0 14px",
   borderRadius: "999px",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -16367,7 +16318,7 @@ const authorCommunitySecondaryActionStyle: CSSProperties = {
   minHeight: "30px",
   padding: "0 10px",
   borderRadius: "999px",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -16383,7 +16334,7 @@ const authorCommunitySecondaryActionStyle: CSSProperties = {
 };
 
 const authorCommunityStatNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   fontSize: "14.5px",
   lineHeight: 1,
   fontWeight: 950,
@@ -16400,7 +16351,7 @@ const authorsBoxStyle: CSSProperties = {
   marginTop: "12px",
   padding: "12px",
   borderRadius: "22px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   display: "grid",
   gap: "9px",
@@ -16441,7 +16392,7 @@ const authorButtonStyle: CSSProperties = {
 
 const activeAuthorButtonStyle: CSSProperties = {
   ...authorButtonStyle,
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   border:
     "1px solid rgba(255,255,255,0.10)",
   color: "var(--historietas-text-primary, #FFFFFF)",
@@ -16464,7 +16415,7 @@ const sectionHeaderStyle: CSSProperties = {
 
 const miniTitleStyle: CSSProperties = {
   display: "inline-flex",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   fontSize: "13px",
   fontWeight: 950,
   letterSpacing: "0.09em",
@@ -16475,7 +16426,7 @@ const miniTitleStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
   fontSize: "28px",
   lineHeight: 1.12,
   fontWeight: 950,
@@ -16502,7 +16453,7 @@ const filterBoxStyle: CSSProperties = {
   padding: "10px",
   marginBottom: "12px",
   borderRadius: "18px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   minWidth: 0,
   maxWidth: "100%",
@@ -16515,7 +16466,7 @@ const filterInputStyle: CSSProperties = {
   minHeight: "40px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-input-bg, var(--historietas-perfil-bg-deep, #04000A))",
+  background: "var(--historietas-input-bg, var(--historietas-perfil-bg-deep, #000000))",
   color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 13px",
   outline: "none",
@@ -16541,7 +16492,7 @@ const filterSelectStyle: CSSProperties = {
   minHeight: "40px",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-input-bg, var(--historietas-perfil-bg-deep, #04000A))",
+  background: "var(--historietas-input-bg, var(--historietas-perfil-bg-deep, #000000))",
   color: "var(--historietas-input-text, #FFFFFF)",
   padding: "0 13px",
   outline: "none",
@@ -16675,7 +16626,7 @@ const profileWorkCoverStyle: CSSProperties = {
   borderRadius: "18px",
   position: "relative",
   overflow: "hidden",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "0",
@@ -16756,7 +16707,7 @@ const diaryCardCoverMetaStyle: CSSProperties = {
 };
 
 const diaryCardHeartMetaStyle: CSSProperties = {
-  color: "var(--historietas-perfil-danger, #EF4444)",
+  color: "var(--historietas-perfil-danger, #FFFFFF)",
   fontWeight: 950,
 };
 
@@ -16831,7 +16782,7 @@ const profileWorkHeartMetaStyle: CSSProperties = {
 };
 
 const profileWorkHeartIconMetaStyle: CSSProperties = {
-  color: "var(--historietas-perfil-danger, #EF4444)",
+  color: "var(--historietas-perfil-danger, #FFFFFF)",
   fontWeight: 950,
 };
 
@@ -16883,7 +16834,7 @@ const profileWorkOptionsMenuStyle: CSSProperties = {
   padding: "5px",
   borderRadius: "13px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-perfil-bg-page, #070212)",
+  background: "var(--historietas-perfil-bg-page, #000000)",
   boxShadow: "none",
   display: "flex",
   flexDirection: "column",
@@ -16925,7 +16876,7 @@ const profileWorkMenuItemStyle: CSSProperties = {
 
 const profileWorkMenuItemActiveStyle: CSSProperties = {
   ...profileWorkMenuItemStyle,
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
 };
 
 const profileWorkActionsCompactStyle: CSSProperties = {
@@ -16954,7 +16905,7 @@ const profileWorkActionButtonStyle: CSSProperties = {
 
 const profileWorkActionActiveStyle: CSSProperties = {
   ...profileWorkActionButtonStyle,
-  background: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
+  background: "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
   border:
     "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
@@ -16988,7 +16939,7 @@ const workCardStyle: CSSProperties = {
   gap: "10px",
   padding: "10px",
   borderRadius: "22px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
   boxShadow: "none",
   minWidth: 0,
@@ -17016,7 +16967,7 @@ const coverStyle: CSSProperties = {
   position: "relative",
   overflow: "hidden",
   background:
-    "var(--historietas-perfil-surface, #08030F)",
+    "var(--historietas-perfil-surface, #050505)",
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
@@ -17096,7 +17047,7 @@ const publishedStatusStyle: CSSProperties = {
   border:
     "1px solid var(--historietas-perfil-success-22, rgba(34,197,94,0.22))",
   color:
-    "var(--historietas-perfil-success-soft, #86EFAC)",
+    "var(--historietas-perfil-success-soft, #FFFFFF)",
   fontSize: "8px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -17108,7 +17059,7 @@ const draftStatusStyle: CSSProperties = {
     "rgba(255,255,255,0.06)",
   border:
     "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
 };
 
 const formatBadgeStyle: CSSProperties = {
@@ -17124,7 +17075,7 @@ const classificationBadgeStyle: CSSProperties = {
     "rgba(255,255,255,0.06)",
   border:
     "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-secondary, var(--historietas-perfil-lavender-text, #DDD6FE))",
+  color: "var(--historietas-secondary, var(--historietas-perfil-lavender-text, #FFFFFF))",
 };
 
 const favoriteBadgeStyle: CSSProperties = {
@@ -17133,7 +17084,7 @@ const favoriteBadgeStyle: CSSProperties = {
     "rgba(255,255,255,0.06)",
   border:
     "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
 };
 
 const completedBadgeStyle: CSSProperties = {
@@ -17143,7 +17094,7 @@ const completedBadgeStyle: CSSProperties = {
   border:
     "1px solid var(--historietas-perfil-success-22, rgba(34,197,94,0.22))",
   color:
-    "var(--historietas-perfil-success-soft, #86EFAC)",
+    "var(--historietas-perfil-success-soft, #FFFFFF)",
 };
 
 const workTitleStyle: CSSProperties = {
@@ -17198,7 +17149,7 @@ const workProgressFillStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
   background:
-    "linear-gradient(90deg, var(--historietas-accent, var(--historietas-perfil-accent, #F97316)) 0%, var(--historietas-secondary, var(--historietas-perfil-secondary, #7C3AED)) 100%)",
+    "linear-gradient(90deg, var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF)) 0%, var(--historietas-secondary, var(--historietas-perfil-secondary, #A1A1AA)) 100%)",
 };
 
 const workProgressTextStyle: CSSProperties = {
@@ -17221,7 +17172,7 @@ const openButtonStyle: CSSProperties = {
   minHeight: "32px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "10px",
@@ -17241,7 +17192,7 @@ const openButtonStyle: CSSProperties = {
 
 const readButtonStyle: CSSProperties = {
   ...openButtonStyle,
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
 };
 
 const smallButtonStyle: CSSProperties = {
@@ -17270,7 +17221,7 @@ const smallButtonActiveStyle: CSSProperties = {
     "1px solid rgba(255,255,255,0.10)",
   background:
     "rgba(255,255,255,0.06)",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
 };
 
 const desktopContainerStyle: CSSProperties = {
@@ -17410,7 +17361,7 @@ const desktopAuthorButtonStyle: CSSProperties = {
 
 const desktopActiveAuthorButtonStyle: CSSProperties = {
   ...desktopAuthorButtonStyle,
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   border:
     "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
@@ -17453,7 +17404,7 @@ const desktopWorkCardStyle: CSSProperties = {
   gap: "14px",
   padding: "12px",
   borderRadius: "24px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
   boxShadow: "none",
 };
 
@@ -17600,7 +17551,7 @@ const diaryTimelineDotStyle: CSSProperties = {
   width: "7px",
   height: "7px",
   borderRadius: "999px",
-  background: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
+  background: "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
 };
 
 const diaryTimelineTextStyle: CSSProperties = {
@@ -17634,7 +17585,7 @@ const desktopDiaryBoxStyle: CSSProperties = {
 const emptyBoxStyle: CSSProperties = {
   marginTop: "20px",
   borderRadius: "24px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
   border: "1px dashed var(--historietas-border-soft, rgba(255,255,255,0.14))",
   padding: "22px",
   display: "grid",
@@ -17647,7 +17598,7 @@ const emptyBoxStyle: CSSProperties = {
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
+  color: "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
   fontSize: "28px",
   fontWeight: 950,
   letterSpacing: "-0.055em",
@@ -17669,7 +17620,7 @@ const emptyButtonStyle: CSSProperties = {
   padding: "0 14px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #08030F)",
+  background: "var(--historietas-perfil-surface, #050505)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "12px",
@@ -17693,7 +17644,7 @@ const privateProfileNoticeStyle: CSSProperties = {
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.1))",
   background:
-    "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
+    "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
   display: "flex",
   alignItems: "center",
   gap: "11px",
@@ -17743,7 +17694,7 @@ const privateProfileNoticeTextStyle: CSSProperties = {
 const emptyMiniBoxStyle: CSSProperties = {
   borderRadius: "20px",
   padding: "16px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #08030F))",
+  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
   border: "1px dashed var(--historietas-border-soft, rgba(255,255,255,0.14))",
   color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",

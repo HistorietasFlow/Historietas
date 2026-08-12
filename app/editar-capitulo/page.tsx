@@ -2401,12 +2401,12 @@ export default function EditarCapituloPage() {
 
 const editarCapituloPageCss = `
   html {
-    --historietas-editar-capitulo-bg-page: #070212;
-    --historietas-editar-capitulo-bg-deep: #04000A;
-    --historietas-editar-capitulo-surface: #08030F;
-    --historietas-editar-capitulo-accent: #F97316;
-    --historietas-editar-capitulo-danger: #EF4444;
-    --historietas-editar-capitulo-danger-text: #FCA5A5;
+    --historietas-editar-capitulo-bg-page: #000000;
+    --historietas-editar-capitulo-bg-deep: #000000;
+    --historietas-editar-capitulo-surface: #050505;
+    --historietas-editar-capitulo-accent: #FFFFFF;
+    --historietas-editar-capitulo-danger: #FFFFFF;
+    --historietas-editar-capitulo-danger-text: #FFFFFF;
     --historietas-editar-capitulo-danger-text-soft: #FECACA;
     --historietas-editar-capitulo-success: #86EFAC;
     --historietas-editar-capitulo-panel: rgba(4, 0, 10, 0.72);
@@ -2418,7 +2418,7 @@ const editarCapituloPageCss = `
     --historietas-editar-capitulo-success-border: rgba(34,197,94,0.28);
   }
 
-  html[data-historietas-tema-visual="foco"] {
+  html {
     --historietas-editar-capitulo-bg-page: #000000;
     --historietas-editar-capitulo-bg-deep: #000000;
     --historietas-editar-capitulo-surface: #050505;
@@ -2438,11 +2438,11 @@ const editarCapituloPageCss = `
 
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
+    background: #000000 !important;
   }
 
-  html[data-historietas-tema-visual="foco"] body,
-  html[data-historietas-tema-visual="foco"] main {
+  html body,
+  html main {
     background: #000000 !important;
     color: #FFFFFF !important;
   }
@@ -2465,7 +2465,7 @@ const editarCapituloPageCss = `
   html[data-historietas-tema-visual] nav,
   html[data-historietas-tema-visual] [data-bottom-nav],
   html[data-historietas-tema-visual] [data-mobile-nav] {
-    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+    background: var(--historietas-bottom-nav-bg, #000000) !important;
   }
 
   html[data-historietas-tema-visual] nav a[href="/painel-autor"],
@@ -2497,18 +2497,18 @@ const editarCapituloPageCss = `
     ) !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav a[href="/painel-autor"],
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/painel-autor"],
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/painel-autor"] {
+  html nav a[href="/painel-autor"],
+  html [data-bottom-nav] a[href="/painel-autor"],
+  html [data-mobile-nav] a[href="/painel-autor"] {
     background: #050505 !important;
     border-color: #FFFFFF !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
+  html nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  html [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.24) !important;
     color: #FFFFFF !important;
@@ -2551,7 +2551,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background: "var(--historietas-editar-capitulo-bg-page, #070212)",
+  background: "var(--historietas-editar-capitulo-bg-page, #000000)",
   color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -2672,7 +2672,7 @@ const errorBoxStyle: CSSProperties = {
 
 const errorTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-danger-button-text, var(--historietas-editar-capitulo-danger-text, #FCA5A5))",
+  color: "var(--historietas-danger-button-text, var(--historietas-editar-capitulo-danger-text, #FFFFFF))",
   fontSize: "24px",
   fontWeight: 950,
   letterSpacing: "-0.045em",
@@ -2756,7 +2756,7 @@ const inputStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-editar-capitulo-bg-deep, #04000A)",
+  background: "var(--historietas-editar-capitulo-bg-deep, #000000)",
   color: "#FFFFFF",
   padding: "0 14px",
   outline: "none",
@@ -2774,7 +2774,7 @@ const textareaStyle: CSSProperties = {
   minHeight: "78px",
   borderRadius: "20px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-editar-capitulo-bg-deep, #04000A)",
+  background: "var(--historietas-editar-capitulo-bg-deep, #000000)",
   color: "#FFFFFF",
   padding: "14px",
   outline: "none",
@@ -2834,7 +2834,7 @@ const importTitleStyle: CSSProperties = {
 const importIconBoxStyle: CSSProperties = {
   minHeight: "82px",
   borderRadius: "18px",
-  background: "var(--historietas-editar-capitulo-bg-deep, #04000A)",
+  background: "var(--historietas-editar-capitulo-bg-deep, #000000)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "flex",
   alignItems: "center",
@@ -2880,7 +2880,7 @@ const importErrorStyle: CSSProperties = {
   borderRadius: "999px",
   background: "var(--historietas-danger-surface, var(--historietas-editar-capitulo-danger-bg, rgba(239,68,68,0.13)))",
   border: "1px solid var(--historietas-editar-capitulo-danger-border-strong, rgba(239,68,68,0.28))",
-  color: "var(--historietas-danger-button-text, var(--historietas-editar-capitulo-danger-text, #FCA5A5))",
+  color: "var(--historietas-danger-button-text, var(--historietas-editar-capitulo-danger-text, #FFFFFF))",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -2893,7 +2893,7 @@ const importButtonStyle: CSSProperties = {
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-editar-capitulo-surface, #08030F)",
+  background: "var(--historietas-editar-capitulo-surface, #050505)",
   color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
@@ -2927,7 +2927,7 @@ const saveButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-editar-capitulo-surface, #08030F)",
+  background: "var(--historietas-editar-capitulo-surface, #050505)",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -2956,7 +2956,7 @@ const secondaryButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-editar-capitulo-surface, #08030F)",
+  background: "var(--historietas-editar-capitulo-surface, #050505)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11.5px",

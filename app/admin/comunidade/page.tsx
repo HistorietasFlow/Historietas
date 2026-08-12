@@ -3661,34 +3661,34 @@ const perfisPorId = criarMapaNomesPerfisModeracao(perfis);
 
 const adminComunidadePageCss = `
   html {
-    --historietas-admin-comunidade-bg-page: #070212;
-    --historietas-admin-comunidade-bg-deep: #04000A;
-    --historietas-admin-comunidade-surface: #08030F;
-    --historietas-admin-comunidade-accent: #F97316;
-    --historietas-admin-comunidade-secondary: #7C3AED;
-    --historietas-admin-comunidade-accent-soft: #FDBA74;
-    --historietas-admin-comunidade-accent-pale: #FFD6A8;
-    --historietas-admin-comunidade-purple-text: #DDD6FE;
-    --historietas-admin-comunidade-title-mid: #F5F3FF;
-    --historietas-admin-comunidade-danger-text: #FCA5A5;
-    --historietas-admin-comunidade-danger-menu: #FB7185;
-    --historietas-admin-comunidade-success-text: #86EFAC;
-    --historietas-admin-comunidade-notification-badge-bg: #EF4444;
+    --historietas-admin-comunidade-bg-page: #000000;
+    --historietas-admin-comunidade-bg-deep: #000000;
+    --historietas-admin-comunidade-surface: #050505;
+    --historietas-admin-comunidade-accent: #FFFFFF;
+    --historietas-admin-comunidade-secondary: #A1A1AA;
+    --historietas-admin-comunidade-accent-soft: #FFFFFF;
+    --historietas-admin-comunidade-accent-pale: #FFFFFF;
+    --historietas-admin-comunidade-purple-text: #FFFFFF;
+    --historietas-admin-comunidade-title-mid: #FFFFFF;
+    --historietas-admin-comunidade-danger-text: #FFFFFF;
+    --historietas-admin-comunidade-danger-menu: #FFFFFF;
+    --historietas-admin-comunidade-success-text: #FFFFFF;
+    --historietas-admin-comunidade-notification-badge-bg: #FFFFFF;
     --historietas-admin-comunidade-notification-badge-text: #FFFFFF;
-    --historietas-admin-comunidade-accent-bg: rgba(249,115,22,0.10);
-    --historietas-admin-comunidade-accent-bg-strong: rgba(249,115,22,0.16);
-    --historietas-admin-comunidade-accent-border-soft: rgba(249,115,22,0.26);
-    --historietas-admin-comunidade-accent-border: rgba(249,115,22,0.28);
-    --historietas-admin-comunidade-secondary-bg: rgba(124,58,237,0.13);
-    --historietas-admin-comunidade-surface-gradient: rgba(18,12,30,0.90);
-    --historietas-admin-comunidade-surface-gradient-strong: rgba(18,12,30,0.92);
-    --historietas-admin-comunidade-surface-strong: rgba(8,3,18,0.98);
-    --historietas-admin-comunidade-danger-bg: rgba(248,113,113,0.12);
-    --historietas-admin-comunidade-danger-border: rgba(248,113,113,0.22);
-    --historietas-admin-comunidade-danger-border-strong: rgba(248,113,113,0.30);
-    --historietas-admin-comunidade-success-bg: rgba(34,197,94,0.12);
-    --historietas-admin-comunidade-success-border: rgba(34,197,94,0.22);
-    --historietas-admin-comunidade-panel: rgba(4,0,10,0.72);
+    --historietas-admin-comunidade-accent-bg: rgba(255,255,255,0.06);
+    --historietas-admin-comunidade-accent-bg-strong: rgba(255,255,255,0.08);
+    --historietas-admin-comunidade-accent-border-soft: rgba(255,255,255,0.18);
+    --historietas-admin-comunidade-accent-border: rgba(255,255,255,0.22);
+    --historietas-admin-comunidade-secondary-bg: rgba(255,255,255,0.06);
+    --historietas-admin-comunidade-surface-gradient: #050505;
+    --historietas-admin-comunidade-surface-gradient-strong: #050505;
+    --historietas-admin-comunidade-surface-strong: #000000;
+    --historietas-admin-comunidade-danger-bg: rgba(255,255,255,0.06);
+    --historietas-admin-comunidade-danger-border: rgba(255,255,255,0.18);
+    --historietas-admin-comunidade-danger-border-strong: rgba(255,255,255,0.22);
+    --historietas-admin-comunidade-success-bg: rgba(255,255,255,0.06);
+    --historietas-admin-comunidade-success-border: rgba(255,255,255,0.18);
+    --historietas-admin-comunidade-panel: rgba(5,5,5,0.92);
   }
 
   html[data-historietas-tema-visual="foco"] {
@@ -3724,7 +3724,7 @@ const adminComunidadePageCss = `
 
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
+    background: #000000 !important;
     color: #FFFFFF !important;
   }
 
@@ -3753,7 +3753,7 @@ const adminComunidadePageCss = `
   html[data-historietas-tema-visual] nav,
   html[data-historietas-tema-visual] [data-bottom-nav],
   html[data-historietas-tema-visual] [data-mobile-nav] {
-    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+    background: var(--historietas-bottom-nav-bg, #000000) !important;
   }
 
   html[data-historietas-tema-visual] nav a[href="/admin/comunidade"],
@@ -3761,11 +3761,11 @@ const adminComunidadePageCss = `
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/admin/comunidade"] {
     background: var(
       --historietas-bottom-nav-active-bg,
-      rgba(59, 7, 100, 0.54)
+      #050505
     ) !important;
     border-color: var(
       --historietas-bottom-nav-active-border,
-      rgba(109, 40, 217, 0.48)
+      #FFFFFF
     ) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
@@ -3777,11 +3777,11 @@ const adminComunidadePageCss = `
     color: #FFFFFF !important;
     background: var(
       --historietas-bottom-nav-active-icon-bg,
-      #3B0764
+      #000000
     ) !important;
     border-color: var(
       --historietas-bottom-nav-active-icon-border,
-      rgba(167, 139, 250, 0.46)
+      rgba(255,255,255,0.24)
     ) !important;
   }
 
@@ -3860,7 +3860,7 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "var(--historietas-admin-comunidade-bg-page, #070212)",
+  background: "var(--historietas-admin-comunidade-bg-page, #000000)",
   color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -3917,7 +3917,7 @@ const desktopTechnicalSupportButtonStyle: CSSProperties = {
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   padding: "7px 12px",
   background:
-    "var(--historietas-surface-strong, var(--historietas-admin-comunidade-bg-deep, #04000A))",
+    "var(--historietas-surface-strong, var(--historietas-admin-comunidade-bg-deep, #000000))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -3938,7 +3938,7 @@ const mobileTechnicalSupportButtonStyle: CSSProperties = {
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
   background:
-    "var(--historietas-surface-strong, var(--historietas-admin-comunidade-bg-deep, #04000A))",
+    "var(--historietas-surface-strong, var(--historietas-admin-comunidade-bg-deep, #000000))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -3958,7 +3958,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, var(--historietas-admin-comunidade-bg-deep, #04000A))",
+  background: "var(--historietas-surface-strong, var(--historietas-admin-comunidade-bg-deep, #000000))",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -3982,9 +3982,9 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, var(--historietas-admin-comunidade-bg-page, #070212))",
+  border: "2px solid var(--historietas-bg-start, var(--historietas-admin-comunidade-bg-page, #000000))",
   background:
-    "var(--historietas-admin-comunidade-notification-badge-bg, #EF4444)",
+    "var(--historietas-admin-comunidade-notification-badge-bg, #FFFFFF)",
   color:
     "var(--historietas-admin-comunidade-notification-badge-text, #FFFFFF)",
   fontSize: "9px",
@@ -4111,7 +4111,7 @@ const adminSearchShellStyle: CSSProperties = {
   minHeight: "44px",
   borderRadius: "999px",
   border: "1px solid transparent",
-  background: "var(--historietas-admin-comunidade-bg-deep, #04000A)",
+  background: "var(--historietas-admin-comunidade-bg-deep, #000000)",
   display: "flex",
   alignItems: "center",
   gap: "8px",
@@ -4220,7 +4220,7 @@ const filterButtonStyle: CSSProperties = {
 
 const activeFilterButtonStyle: CSSProperties = {
   ...filterButtonStyle,
-  background: "var(--historietas-admin-comunidade-surface, #08030F)",
+  background: "var(--historietas-admin-comunidade-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
@@ -4236,9 +4236,9 @@ const errorStyle: CSSProperties = {
   display: "block",
   padding: "10px 12px",
   borderRadius: "16px",
-  background: "var(--historietas-admin-comunidade-danger-bg, rgba(248,113,113,0.12))",
-  border: "1px solid var(--historietas-admin-comunidade-danger-border, rgba(248,113,113,0.22))",
-  color: "var(--historietas-admin-comunidade-danger-text, #FCA5A5)",
+  background: "var(--historietas-admin-comunidade-danger-bg, rgba(255,255,255,0.06))",
+  border: "1px solid var(--historietas-admin-comunidade-danger-border, rgba(255,255,255,0.18))",
+  color: "var(--historietas-admin-comunidade-danger-text, #FFFFFF)",
   fontSize: "12px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -4248,9 +4248,9 @@ const successStyle: CSSProperties = {
   display: "block",
   padding: "10px 12px",
   borderRadius: "16px",
-  background: "var(--historietas-admin-comunidade-success-bg, rgba(34,197,94,0.12))",
-  border: "1px solid var(--historietas-admin-comunidade-success-border, rgba(34,197,94,0.22))",
-  color: "var(--historietas-admin-comunidade-success-text, #86EFAC)",
+  background: "var(--historietas-admin-comunidade-success-bg, rgba(255,255,255,0.06))",
+  border: "1px solid var(--historietas-admin-comunidade-success-border, rgba(255,255,255,0.18))",
+  color: "var(--historietas-admin-comunidade-success-text, #FFFFFF)",
   fontSize: "12px",
   fontWeight: 850,
   ...safeTextStyle,
@@ -4283,8 +4283,8 @@ const clearButtonStyle: CSSProperties = {
   padding: "0 13px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-admin-comunidade-panel, rgba(4,0,10,0.72))",
-  color: "var(--historietas-admin-comunidade-purple-text, #DDD6FE)",
+  background: "var(--historietas-admin-comunidade-panel, rgba(5,5,5,0.92))",
+  color: "var(--historietas-admin-comunidade-purple-text, #FFFFFF)",
   fontSize: "10.5px",
   fontWeight: 900,
   cursor: "pointer",
@@ -4375,7 +4375,7 @@ const reportDateStyle: CSSProperties = {
 };
 
 const statusInlineStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FDBA74))",
+  color: "var(--historietas-accent, var(--historietas-admin-comunidade-accent-soft, #FFFFFF))",
   fontSize: "10.5px",
   lineHeight: 1.2,
   fontWeight: 950,
@@ -4470,7 +4470,7 @@ const adminFiltersSheetStyle: CSSProperties = {
   gap: "0",
   padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-admin-comunidade-bg-page, #070212)",
+  background: "var(--historietas-admin-comunidade-bg-page, #000000)",
   border: "none",
   overflowY: "auto",
   overflowX: "hidden",
@@ -4625,7 +4625,7 @@ const reportMenuStyle: CSSProperties = {
   gap: "0",
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-admin-comunidade-bg-page, #070212)",
+  background: "var(--historietas-admin-comunidade-bg-page, #000000)",
   border: "none",
   overflowY: "auto",
   overflowX: "hidden",
@@ -4696,7 +4696,7 @@ const reportMenuItemActiveStyle: CSSProperties = {
 
 const reportMenuDangerItemStyle: CSSProperties = {
   ...reportMenuItemStyle,
-  color: "var(--historietas-admin-comunidade-danger-menu, #FB7185)",
+  color: "var(--historietas-admin-comunidade-danger-menu, #FFFFFF)",
 };
 
 const reportMenuDividerStyle: CSSProperties = {
@@ -4793,13 +4793,13 @@ const metaItemStyle: CSSProperties = {
 
 const recurrenceMetaItemStyle: CSSProperties = {
   ...metaItemStyle,
-  color: "var(--historietas-admin-comunidade-warning, #FBBF24)",
+  color: "var(--historietas-admin-comunidade-warning, #FFFFFF)",
   fontWeight: 900,
 };
 
 const spoilerMetaItemStyle: CSSProperties = {
   ...metaItemStyle,
-  color: "var(--historietas-admin-comunidade-accent-soft, #FDBA74)",
+  color: "var(--historietas-admin-comunidade-accent-soft, #FFFFFF)",
 };
 
 const reasonGridStyle: CSSProperties = {

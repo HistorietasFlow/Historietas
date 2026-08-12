@@ -1345,8 +1345,8 @@ function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
   if (!capa) {
     return {
       ...baseStyle,
-      background: "var(--historietas-seguindo-bg-deep, #04000A)",
-      backgroundImage: "linear-gradient(135deg, var(--historietas-seguindo-surface, #08030F) 0%, var(--historietas-seguindo-bg-deep, #04000A) 100%)",
+      background: "var(--historietas-seguindo-bg-deep, #050505)",
+      backgroundImage: "linear-gradient(135deg, var(--historietas-seguindo-surface, #0A0A0A) 0%, var(--historietas-seguindo-bg-deep, #050505) 100%)",
       backgroundSize: "cover",
       backgroundPosition: "center",
     };
@@ -1354,7 +1354,7 @@ function criarCoverStyle(capa: string, isDesktop = false): CSSProperties {
 
   return {
     ...baseStyle,
-    background: "var(--historietas-seguindo-bg-deep, #04000A)",
+    background: "var(--historietas-seguindo-bg-deep, #050505)",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -5387,26 +5387,6 @@ const seguindoPageCss = `
   }
 
   html {
-    --historietas-seguindo-bg-page: #070212;
-    --historietas-seguindo-bg-deep: #04000A;
-    --historietas-seguindo-surface: #08030F;
-    --historietas-seguindo-bg-end: #020006;
-    --historietas-seguindo-purple-text: #DDD6FE;
-    --historietas-seguindo-purple-soft: #A78BFA;
-    --historietas-seguindo-success: #86EFAC;
-    --historietas-seguindo-success-soft: #BBF7D0;
-    --historietas-seguindo-danger-text: #FCA5A5;
-    --historietas-seguindo-purple-border: rgba(59, 7, 100, 0.58);
-    --historietas-seguindo-panel: rgba(4, 0, 10, 0.72);
-    --historietas-seguindo-success-border: rgba(34,197,94,0.20);
-    --historietas-seguindo-success-bg: rgba(34,197,94,0.085);
-    --historietas-seguindo-success-active-bg: rgba(34,197,94,0.14);
-    --historietas-seguindo-success-active-border: rgba(34,197,94,0.28);
-    --historietas-seguindo-danger-border: rgba(239,68,68,0.18);
-    --historietas-seguindo-danger-bg: rgba(239,68,68,0.075);
-  }
-
-  html[data-historietas-tema-visual="foco"] {
     --historietas-seguindo-bg-page: #000000;
     --historietas-seguindo-bg-deep: #000000;
     --historietas-seguindo-surface: #050505;
@@ -5425,32 +5405,26 @@ const seguindoPageCss = `
     --historietas-seguindo-danger-border: rgba(255,255,255,0.18);
     --historietas-seguindo-danger-bg: rgba(255,255,255,0.06);
   }
-
-  html[data-historietas-tema-visual="original"] body,
-  html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
-  }
-
-  html[data-historietas-tema-visual="foco"] body,
-  html[data-historietas-tema-visual="foco"] main {
+body,
+  main {
     background: #000000 !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
+  main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
 
-  html[data-historietas-tema-visual] nav,
-  html[data-historietas-tema-visual] [data-bottom-nav],
-  html[data-historietas-tema-visual] [data-mobile-nav] {
-    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  nav,
+  [data-bottom-nav],
+  [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #050505) !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/seguindo"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/seguindo"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/seguindo"] {
+  nav a[href="/seguindo"],
+  [data-bottom-nav] a[href="/seguindo"],
+  [data-mobile-nav] a[href="/seguindo"] {
     background: var(
       --historietas-bottom-nav-active-bg,
       rgba(59, 7, 100, 0.54)
@@ -5462,9 +5436,9 @@ const seguindoPageCss = `
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/seguindo"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/seguindo"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/seguindo"] .historietas-bottom-nav-icon {
+  nav a[href="/seguindo"] .historietas-bottom-nav-icon,
+  [data-bottom-nav] a[href="/seguindo"] .historietas-bottom-nav-icon,
+  [data-mobile-nav] a[href="/seguindo"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
     background: var(
       --historietas-bottom-nav-active-icon-bg,
@@ -5476,30 +5450,30 @@ const seguindoPageCss = `
     ) !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav a[href="/seguindo"],
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/seguindo"],
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/seguindo"] {
+  nav a[href="/seguindo"],
+  [data-bottom-nav] a[href="/seguindo"],
+  [data-mobile-nav] a[href="/seguindo"] {
     background: #050505 !important;
     border-color: #FFFFFF !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav a[href="/seguindo"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/seguindo"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/seguindo"] .historietas-bottom-nav-icon {
+  nav a[href="/seguindo"] .historietas-bottom-nav-icon,
+  [data-bottom-nav] a[href="/seguindo"] .historietas-bottom-nav-icon,
+  [data-mobile-nav] a[href="/seguindo"] .historietas-bottom-nav-icon {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.24) !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] input::placeholder {
+  input::placeholder {
     color: rgba(212,212,216,0.68) !important;
   }
 
-  html[data-historietas-tema-visual] input,
-  html[data-historietas-tema-visual] textarea,
-  html[data-historietas-tema-visual] select {
+  input,
+  textarea,
+  select {
     color: #FFFFFF !important;
   }
 
@@ -5779,7 +5753,7 @@ const soonTopButtonStyle: CSSProperties = {
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-seguindo-bg-deep, #04000A)",
+  background: "var(--historietas-seguindo-bg-deep, #050505)",
   color: "var(--historietas-seguindo-purple-text, #DDD6FE)",
   textDecoration: "none",
   fontSize: "11px",
@@ -5822,7 +5796,7 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-seguindo-bg-deep, #04000A)",
+  background: "var(--historietas-seguindo-bg-deep, #050505)",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
@@ -5879,7 +5853,7 @@ const titleLogoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-seguindo-bg-deep, #04000A)",
+  background: "var(--historietas-seguindo-bg-deep, #050505)",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
@@ -5935,7 +5909,7 @@ const heroStyle: CSSProperties = {
   gap: "12px",
   borderRadius: "30px",
   border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, var(--historietas-seguindo-bg-page, #070212) 0%, var(--historietas-seguindo-bg-deep, #04000A) 58%, var(--historietas-seguindo-bg-end, #020006) 100%)",
+  background: "linear-gradient(135deg, var(--historietas-seguindo-bg-page, #070212) 0%, var(--historietas-seguindo-bg-deep, #050505) 58%, var(--historietas-seguindo-bg-end, #020006) 100%)",
   padding: "18px",
   boxShadow: "none",
   minWidth: 0,
@@ -6157,7 +6131,7 @@ const suggestedUserFollowButtonStyle: CSSProperties = {
 const suggestedUserRequestPendingButtonStyle: CSSProperties = {
   ...suggestedUserFollowButtonStyle,
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
-  background: "var(--historietas-seguindo-surface, #08030F)",
+  background: "var(--historietas-seguindo-surface, #0A0A0A)",
   color: "var(--historietas-text-secondary, #A1A1AA)",
 };
 
@@ -6196,7 +6170,7 @@ const searchInputStyle: CSSProperties = {
   minHeight: "43px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-seguindo-bg-deep, #04000A)",
+  background: "var(--historietas-seguindo-bg-deep, #050505)",
   color: "#FFFFFF",
   padding: "0 15px",
   outline: "none",
@@ -6510,7 +6484,7 @@ const quickFilterStyle: CSSProperties = {
 
 const quickFilterActiveStyle: CSSProperties = {
   ...quickFilterStyle,
-  background: "var(--historietas-seguindo-surface, #08030F)",
+  background: "var(--historietas-seguindo-surface, #0A0A0A)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none"
@@ -6540,7 +6514,7 @@ const selectStyle: CSSProperties = {
   minHeight: "43px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-seguindo-bg-deep, #04000A)",
+  background: "var(--historietas-seguindo-bg-deep, #050505)",
   color: "#FFFFFF",
   padding: "0 15px",
   outline: "none",
@@ -6745,7 +6719,7 @@ const sectionCounterStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-seguindo-surface, #08030F)",
+  background: "var(--historietas-seguindo-surface, #0A0A0A)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "18px",
@@ -6828,8 +6802,8 @@ const coverStyle: CSSProperties = {
   alignSelf: "start",
   boxSizing: "border-box",
   borderRadius: "16px",
-  background: "var(--historietas-seguindo-bg-deep, #04000A)",
-  backgroundImage: "linear-gradient(135deg, var(--historietas-seguindo-surface, #08030F) 0%, var(--historietas-seguindo-bg-deep, #04000A) 100%)",
+  background: "var(--historietas-seguindo-bg-deep, #050505)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-seguindo-surface, #0A0A0A) 0%, var(--historietas-seguindo-bg-deep, #050505) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   overflow: "hidden",
@@ -7080,7 +7054,7 @@ const desktopSecondaryActionsRowStyle: CSSProperties = {
 const readButtonStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  background: "var(--historietas-seguindo-surface, #08030F)",
+  background: "var(--historietas-seguindo-surface, #0A0A0A)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11px",
@@ -7104,7 +7078,7 @@ const readButtonStyle: CSSProperties = {
 
 const continueButtonStyle: CSSProperties = {
   ...readButtonStyle,
-  background: "var(--historietas-seguindo-surface, #08030F)",
+  background: "var(--historietas-seguindo-surface, #0A0A0A)",
   border: "1px solid rgba(255,255,255,0.10)",
 };
 
@@ -7152,7 +7126,7 @@ const favoriteActionStyle: CSSProperties = {
 
 const favoriteActionActiveStyle: CSSProperties = {
   ...favoriteActionStyle,
-  background: "var(--historietas-seguindo-surface, #08030F)",
+  background: "var(--historietas-seguindo-surface, #0A0A0A)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none"
@@ -7237,7 +7211,7 @@ const authorAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-seguindo-bg-deep, #04000A)",
+  background: "var(--historietas-seguindo-bg-deep, #050505)",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   WebkitTextFillColor: "#FFFFFF",
@@ -7371,7 +7345,7 @@ const exploreButtonStyle: CSSProperties = {
   width: "100%",
   minHeight: "52px",
   borderRadius: "999px",
-  background: "var(--historietas-seguindo-surface, #08030F)",
+  background: "var(--historietas-seguindo-surface, #0A0A0A)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   fontSize: "14px",

@@ -752,8 +752,8 @@ function criarPainelCoverStyle(capa: string): CSSProperties {
   if (!capa) {
     return {
       ...coverStyle,
-      background: "#04000A",
-      backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+      background: "#000000",
+      backgroundImage: "linear-gradient(135deg, #050505 0%, #000000 100%)",
       backgroundSize: "cover",
       backgroundPosition: "center",
     };
@@ -761,7 +761,7 @@ function criarPainelCoverStyle(capa: string): CSSProperties {
 
   return {
     ...coverStyle,
-    background: "#04000A",
+    background: "#000000",
     backgroundImage: `url(${capa})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -3910,17 +3910,17 @@ const painelAutorPageCss = `
   }
 
   html {
-    --historietas-painel-bg: #070212;
-    --historietas-painel-bg-deep: #04000A;
-    --historietas-painel-surface: #08030F;
+    --historietas-painel-bg: #000000;
+    --historietas-painel-bg-deep: #000000;
+    --historietas-painel-surface: #050505;
     --historietas-painel-card-bg: rgba(4, 0, 10, 0.72);
     --historietas-painel-status-bg: rgba(8,5,13,0.52);
-    --historietas-painel-heart-meta: #EF4444;
+    --historietas-painel-heart-meta: #FFFFFF;
     --historietas-painel-heart-icon: #F43F5E;
     --historietas-painel-success: #86EFAC;
   }
 
-  html[data-historietas-tema-visual="foco"] {
+  html {
     --historietas-painel-bg: #000000;
     --historietas-painel-bg-deep: #000000;
     --historietas-painel-surface: #050505;
@@ -3933,17 +3933,17 @@ const painelAutorPageCss = `
 
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
+    background: #000000 !important;
   }
 
-  html[data-historietas-tema-visual="foco"] body,
-  html[data-historietas-tema-visual="foco"] main {
+  html body,
+  html main {
     background: #000000 !important;
     color: #FFFFFF !important;
   }
 
   html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="foco"] main > div[aria-hidden="true"] {
+  html main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -3951,7 +3951,7 @@ const painelAutorPageCss = `
   html[data-historietas-tema-visual] nav,
   html[data-historietas-tema-visual] [data-bottom-nav],
   html[data-historietas-tema-visual] [data-mobile-nav] {
-    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+    background: var(--historietas-bottom-nav-bg, #000000) !important;
   }
 
   html[data-historietas-tema-visual] nav a[href="/painel-autor"],
@@ -3974,7 +3974,7 @@ const painelAutorPageCss = `
   html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel"] .historietas-bottom-nav-icon {
     color: var(--historietas-bottom-nav-active-icon-text, #FFFFFF) !important;
     background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
-    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(255,255,255,0.46)) !important;
   }
 
   html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
@@ -3997,8 +3997,8 @@ const painelAutorPageCss = `
     color: var(--historietas-input-text, #FFFFFF) !important;
   }
 
-  html[data-historietas-tema-visual="foco"] button,
-  html[data-historietas-tema-visual="foco"] a {
+  html button,
+  html a {
     box-shadow: none !important;
   }
 
@@ -4042,7 +4042,7 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   opacity: 0,
 };
 
-const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)";
+const themeGradient = "linear-gradient(90deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)";
 
 const loadingPageStyle: CSSProperties = {
   position: "relative",
@@ -4072,7 +4072,7 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "var(--historietas-painel-bg, #070212)",
+  background: "var(--historietas-painel-bg, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -4393,7 +4393,7 @@ const filterSheetStyle: CSSProperties = {
   gap: "0",
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-painel-bg, #070212)",
+  background: "var(--historietas-painel-bg, #000000)",
   border: "none",
   borderBottom: "0",
   overflowY: "auto",
@@ -4602,8 +4602,8 @@ const coverStyle: CSSProperties = {
   borderRadius: "18px",
   position: "relative",
   overflow: "hidden",
-  background: "var(--historietas-painel-surface, #08030F)",
-  backgroundImage: "linear-gradient(135deg, var(--historietas-painel-surface, #08030F) 0%, var(--historietas-painel-bg-deep, #04000A) 100%)",
+  background: "var(--historietas-painel-surface, #050505)",
+  backgroundImage: "linear-gradient(135deg, var(--historietas-painel-surface, #050505) 0%, var(--historietas-painel-bg-deep, #000000) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   border: "0",
@@ -4743,7 +4743,7 @@ const workMetaLineStyle: CSSProperties = {
 };
 
 const workCardHeartMetaStyle: CSSProperties = {
-  color: "var(--historietas-painel-heart-meta, #EF4444)",
+  color: "var(--historietas-painel-heart-meta, #FFFFFF)",
   fontWeight: 950,
 };
 
@@ -4857,7 +4857,7 @@ const shareButtonStyle: CSSProperties = {
 
 const deleteButtonStyle: CSSProperties = {
   ...openButtonStyle,
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  color: "var(--historietas-danger-button-text, #FFFFFF)",
 };
 
 const workCardDotsButtonStyle: CSSProperties = {
@@ -4913,7 +4913,7 @@ const workActionSheetStyle: CSSProperties = {
   overflowY: "auto",
   overscrollBehavior: "contain",
   borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-painel-bg, #070212)",
+  background: "var(--historietas-painel-bg, #000000)",
   border: "none",
   borderBottom: "0",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
@@ -5101,7 +5101,7 @@ const emptyMiniButtonStyle: CSSProperties = {
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-accent, #FFFFFF)",
   fontSize: "28px",
   lineHeight: 1.12,
   fontWeight: 950,

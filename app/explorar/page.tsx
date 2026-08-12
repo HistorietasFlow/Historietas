@@ -10,12 +10,7 @@ import { supabase } from "../../lib/supabase/client";
 import { criarSlugBase, normalizarTexto } from "../../lib/utils";
 import {
   historietasThemeCss,
-  TEMAS_VISUAIS_HISTORIETAS,
   useHistorietasTheme,
-} from "../../lib/historietasTheme";
-import type {
-  TemaVisualHistorietas,
-  TemaVisualHistorietasConfig,
 } from "../../lib/historietasTheme";
 import {
   ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO,
@@ -2365,78 +2360,27 @@ type TemaCategoriaExplorar = {
   activeBackground: string;
 };
 
-function criarTemaCategoriaExplorar(
-  tema: Pick<
-    TemaVisualHistorietasConfig,
-    | "accent"
-    | "secondary"
-    | "bgStart"
-    | "bgMid"
-    | "bgEnd"
-    | "glowPrimary"
-    | "glowSecondary"
-    | "titleTo"
-    | "activeSurface"
-    | "secondarySurface"
-    | "secondaryButtonText"
-    | "surfaceStrong"
-  >,
-  temaVisual: TemaVisualHistorietas = "original"
-): TemaCategoriaExplorar {
-  if (temaVisual === "foco") {
-    return {
-      accent: tema.accent,
-      secondary: tema.secondary,
-      bgStart: tema.bgStart,
-      bgMid: tema.bgMid,
-      bgEnd: tema.bgEnd,
-      glowPrimary: tema.glowPrimary,
-      glowSecondary: tema.glowSecondary,
-      titleTo: tema.titleTo,
-      activeSurface: tema.activeSurface,
-      secondarySurface: tema.secondarySurface,
-      secondaryButtonText: tema.secondaryButtonText,
-      activeBackground: tema.surfaceStrong,
-      pageBackground: tema.bgStart,
-      heroBackground: tema.bgStart,
-    };
-  }
-
+function obterTemaCategoria(_categoria = ""): TemaCategoriaExplorar {
   return {
-    accent: "#A78BFA",
-    secondary: "#4C1D95",
-    bgStart: "#070212",
-    bgMid: "#070212",
-    bgEnd: "#070212",
+    accent: "#FFFFFF",
+    secondary: "#A1A1AA",
+    bgStart: "#000000",
+    bgMid: "#000000",
+    bgEnd: "#000000",
     glowPrimary: "transparent",
     glowSecondary: "transparent",
-    titleTo: "#DDD6FE",
-    activeSurface: "rgba(46, 16, 101, 0.54)",
+    titleTo: "#FFFFFF",
+    activeSurface: "rgba(255,255,255,0.10)",
     secondarySurface: "rgba(255,255,255,0.06)",
-    secondaryButtonText: "#DDD6FE",
-    activeBackground: "#08030F",
-    pageBackground: "#070212",
-    heroBackground: "#070212",
+    secondaryButtonText: "#FFFFFF",
+    activeBackground: "#050505",
+    pageBackground: "#000000",
+    heroBackground: "#000000",
   };
 }
 
-function obterTemaCategoria(
-  _categoria: string,
-  temaVisual: TemaVisualHistorietas = "original"
-) {
-  return criarTemaCategoriaExplorar(
-    TEMAS_VISUAIS_HISTORIETAS[temaVisual],
-    temaVisual
-  );
-}
-
-function criarTemaPaginaVisualExplorar(
-  temaVisual: TemaVisualHistorietas
-): TemaCategoriaExplorar {
-  return criarTemaCategoriaExplorar(
-    TEMAS_VISUAIS_HISTORIETAS[temaVisual],
-    temaVisual
-  );
+function criarTemaPaginaVisualExplorar(): TemaCategoriaExplorar {
+  return obterTemaCategoria();
 }
 
 function obterDecoracoesCategoria(categoria: string) {
@@ -2510,7 +2454,7 @@ function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
 export default function ExplorarPage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
-  const { temaVisual, pageThemeStyle } = useHistorietasTheme(pageStyle);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
   const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
@@ -3187,7 +3131,7 @@ export default function ExplorarPage() {
   );
 
   const categoriaAtiva = categoriaSelecionada.trim().length > 0;
-  const temaPagina = criarTemaPaginaVisualExplorar(temaVisual);
+  const temaPagina = criarTemaPaginaVisualExplorar();
 
   function atualizarUrl(
     categoria: string,
@@ -3519,13 +3463,11 @@ export default function ExplorarPage() {
             isDesktop
               ? criarDesktopSearchBoxStyle(
                   temaPagina,
-                  categoriaAtiva,
-                  temaVisual
+                  categoriaAtiva
                 )
               : criarSearchBoxStyle(
                   temaPagina,
-                  categoriaAtiva,
-                  temaVisual
+                  categoriaAtiva
                 )
           }
         >
@@ -3876,7 +3818,7 @@ export default function ExplorarPage() {
             >
               <SectionHeader
                 title={obterTituloCriativoObrasExplorar(secao.genero)}
-                tema={obterTemaCategoria(secao.genero, temaVisual)}
+                tema={obterTemaCategoria(secao.genero)}
                 isDesktop={isDesktop}
                 href={criarHrefListaExplorar({
                   titulo: obterTituloCriativoObrasExplorar(secao.genero),
@@ -3905,7 +3847,7 @@ export default function ExplorarPage() {
                         usuarioLogado &&
                         colecaoTemObraExplorar(obrasConcluidas, obra)
                       }
-                      tema={obterTemaCategoria(secao.genero, temaVisual)}
+                      tema={obterTemaCategoria(secao.genero)}
                       isDesktop={isDesktop}
                     />
                   </div>
@@ -3993,7 +3935,7 @@ export default function ExplorarPage() {
             >
               <SectionHeader
                 title={obterTituloCriativoAutoresExplorar(secao.genero)}
-                tema={obterTemaCategoria(secao.genero, temaVisual)}
+                tema={obterTemaCategoria(secao.genero)}
                 isDesktop={isDesktop}
                 href={criarHrefListaExplorar({
                   titulo: obterTituloCriativoAutoresExplorar(secao.genero),
@@ -4524,8 +4466,7 @@ function criarActiveCategoryStyle(_tema: ReturnType<typeof obterTemaCategoria>):
 
 function criarSearchBoxStyle(
   _tema: ReturnType<typeof obterTemaCategoria>,
-  _categoriaAtiva = false,
-  _temaVisual: TemaVisualHistorietas = "original"
+  _categoriaAtiva = false
 ): CSSProperties {
   return {
     ...searchBoxStyle,
@@ -4541,11 +4482,10 @@ function criarSearchBoxStyle(
 
 function criarDesktopSearchBoxStyle(
   tema: ReturnType<typeof obterTemaCategoria>,
-  categoriaAtiva = false,
-  temaVisual: TemaVisualHistorietas = "original"
+  categoriaAtiva = false
 ): CSSProperties {
   return {
-    ...criarSearchBoxStyle(tema, categoriaAtiva, temaVisual),
+    ...criarSearchBoxStyle(tema, categoriaAtiva),
     gridTemplateColumns: "1fr",
     alignItems: "stretch",
     gap: "5px",
@@ -4595,7 +4535,7 @@ function criarDesktopPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCa
 function criarPublishedCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...publishedCoverStyle,
-    backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+    backgroundImage: "linear-gradient(135deg, #050505 0%, #000000 100%)",
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -4624,7 +4564,7 @@ function criarDesktopPublishedCoverStyle(
 function criarDesktopPublishedCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
   return {
     ...desktopPublishedCoverStyle,
-    backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+    backgroundImage: "linear-gradient(135deg, #050505 0%, #000000 100%)",
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -4642,7 +4582,7 @@ function criarReadStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProper
   return {
     ...readStyle,
     color: "#FFFFFF",
-    background: "var(--historietas-bg-start, #070212)",
+    background: "var(--historietas-bg-start, #000000)",
     border: "1px solid rgba(255,255,255,0.10)",
     boxShadow: "none",
   };
@@ -4671,16 +4611,13 @@ const themePageCss = `
     }
   }
 
-  html[data-historietas-tema-visual] body,
-  html[data-historietas-tema-visual] main,
-  html[data-historietas-tema-visual="original"] body,
-  html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
+  body,
+  main {
+    background: #000000 !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"],
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
+  main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
@@ -4696,108 +4633,105 @@ const themePageCss = `
     display: none;
   }
 
-  html[data-historietas-tema-visual] nav,
-  html[data-historietas-tema-visual] [data-bottom-nav],
-  html[data-historietas-tema-visual] [data-mobile-nav],
-  html[data-historietas-tema-visual] nav:has(a[href="/publicar"]),
-  html[data-historietas-tema-visual] div:has(> a[href="/publicar"]):has(> a[href="/perfil-autor?aba=biblioteca"]) {
-    background: var(--historietas-bottom-nav-bg, #04000A) !important;
-    border-color: var(--historietas-bottom-nav-border, rgba(59, 7, 100, 0.52)) !important;
+  nav,
+  [data-bottom-nav],
+  [data-mobile-nav],
+  nav:has(a[href="/publicar"]),
+  div:has(> a[href="/publicar"]):has(> a[href="/perfil-autor?aba=biblioteca"]) {
+    background: var(--historietas-bottom-nav-bg, #000000) !important;
+    border-color: var(--historietas-bottom-nav-border, rgba(255,255,255,0.18)) !important;
     box-shadow: var(--historietas-bottom-nav-shadow, none) !important;
-    color: var(--historietas-bottom-nav-text, #9980D8) !important;
+    color: var(--historietas-bottom-nav-text, #A1A1AA) !important;
   }
 
-  html[data-historietas-tema-visual] nav::before,
-  html[data-historietas-tema-visual] [data-bottom-nav]::before,
-  html[data-historietas-tema-visual] [data-mobile-nav]::before {
+  nav::before,
+  [data-bottom-nav]::before,
+  [data-mobile-nav]::before {
     background: var(--historietas-bottom-nav-shine, none) !important;
   }
 
-  html[data-historietas-tema-visual] nav a,
-  html[data-historietas-tema-visual] [data-bottom-nav] a,
-  html[data-historietas-tema-visual] [data-mobile-nav] a,
-  html[data-historietas-tema-visual] nav button,
-  html[data-historietas-tema-visual] [data-bottom-nav] button,
-  html[data-historietas-tema-visual] [data-mobile-nav] button {
-    color: var(--historietas-bottom-nav-text, #9980D8) !important;
+  nav a,
+  [data-bottom-nav] a,
+  [data-mobile-nav] a,
+  nav button,
+  [data-bottom-nav] button,
+  [data-mobile-nav] button {
+    color: var(--historietas-bottom-nav-text, #A1A1AA) !important;
     box-shadow: none !important;
   }
 
   @media (hover: hover) and (pointer: fine) {
-    html[data-historietas-tema-visual] nav a:hover,
-    html[data-historietas-tema-visual] [data-bottom-nav] a:hover,
-    html[data-historietas-tema-visual] [data-mobile-nav] a:hover,
-    html[data-historietas-tema-visual] nav button:hover,
-    html[data-historietas-tema-visual] [data-bottom-nav] button:hover,
-    html[data-historietas-tema-visual] [data-mobile-nav] button:hover {
-      background: var(--historietas-bottom-nav-hover-bg, rgba(59, 7, 100, 0.20)) !important;
-      border-color: var(--historietas-bottom-nav-border, rgba(59, 7, 100, 0.52)) !important;
+    nav a:hover,
+    [data-bottom-nav] a:hover,
+    [data-mobile-nav] a:hover,
+    nav button:hover,
+    [data-bottom-nav] button:hover,
+    [data-mobile-nav] button:hover {
+      background: var(--historietas-bottom-nav-hover-bg, rgba(255,255,255,0.06)) !important;
+      border-color: var(--historietas-bottom-nav-border, rgba(255,255,255,0.18)) !important;
       color: var(--historietas-bottom-nav-hover-text, #FFFFFF) !important;
     }
   }
 
-  html[data-historietas-tema-visual] nav a[href="/explorar"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/explorar"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/explorar"] {
-    background: var(--historietas-bottom-nav-active-bg, rgba(59, 7, 100, 0.54)) !important;
-    border-color: var(--historietas-bottom-nav-active-border, rgba(109, 40, 217, 0.48)) !important;
+  nav a[href="/explorar"],
+  [data-bottom-nav] a[href="/explorar"],
+  [data-mobile-nav] a[href="/explorar"] {
+    background: var(--historietas-bottom-nav-active-bg, rgba(255,255,255,0.10)) !important;
+    border-color: var(--historietas-bottom-nav-active-border, #FFFFFF) !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
+  nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active),
+  [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) {
     background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
-    color: var(--historietas-bottom-nav-text, #9980D8) !important;
+    color: var(--historietas-bottom-nav-text, #A1A1AA) !important;
   }
 
-  html[data-historietas-tema-visual] nav .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-icon {
-    color: var(--historietas-bottom-nav-icon-text, #AD95EA) !important;
-    background: var(--historietas-bottom-nav-icon-bg, rgba(59, 7, 100, 0.28)) !important;
-    border-color: var(--historietas-bottom-nav-icon-border, rgba(76, 29, 149, 0.34)) !important;
+  nav .historietas-bottom-nav-icon,
+  [data-bottom-nav] .historietas-bottom-nav-icon,
+  [data-mobile-nav] .historietas-bottom-nav-icon {
+    color: var(--historietas-bottom-nav-icon-text, #A1A1AA) !important;
+    background: var(--historietas-bottom-nav-icon-bg, #050505) !important;
+    border-color: var(--historietas-bottom-nav-icon-border, rgba(255,255,255,0.18)) !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/explorar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/explorar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/explorar"] .historietas-bottom-nav-icon {
+  nav a[href="/explorar"] .historietas-bottom-nav-icon,
+  [data-bottom-nav] a[href="/explorar"] .historietas-bottom-nav-icon,
+  [data-mobile-nav] a[href="/explorar"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
-    background: var(--historietas-bottom-nav-active-icon-bg, #3B0764) !important;
-    border-color: var(--historietas-bottom-nav-active-icon-border, rgba(167, 139, 250, 0.46)) !important;
+    background: var(--historietas-bottom-nav-active-icon-bg, #050505) !important;
+    border-color: var(--historietas-bottom-nav-active-icon-border, #FFFFFF) !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon {
-    color: var(--historietas-bottom-nav-icon-text, #AD95EA) !important;
-    background: var(--historietas-bottom-nav-icon-bg, rgba(59, 7, 100, 0.28)) !important;
-    border-color: var(--historietas-bottom-nav-icon-border, rgba(76, 29, 149, 0.34)) !important;
+  nav a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+  [data-bottom-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon,
+  [data-mobile-nav] a[href="/publicar"]:not([aria-current="page"]):not(.historietas-bottom-nav-item-active) .historietas-bottom-nav-icon {
+    color: var(--historietas-bottom-nav-icon-text, #A1A1AA) !important;
+    background: var(--historietas-bottom-nav-icon-bg, #050505) !important;
+    border-color: var(--historietas-bottom-nav-icon-border, rgba(255,255,255,0.18)) !important;
   }
 
-  html[data-historietas-tema-visual] input::placeholder {
+  input::placeholder {
     color: rgba(212,212,216,0.68) !important;
   }
 
-  html[data-historietas-tema-visual] input,
-  html[data-historietas-tema-visual] textarea,
-  html[data-historietas-tema-visual] select {
+  input,
+  textarea,
+  select {
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] button {
+  button {
     color: inherit;
   }
 
 
-  html[data-historietas-tema-visual]
-    [data-historietas-page-background-action="true"],
-  html[data-historietas-tema-visual="original"]
-    [data-historietas-page-background-action="true"] {
-    background: var(--historietas-bg-start, #070212) !important;
-    background-color: var(--historietas-bg-start, #070212) !important;
+  [data-historietas-page-background-action="true"] {
+    background: var(--historietas-bg-start, #000000) !important;
+    background-color: var(--historietas-bg-start, #000000) !important;
     background-image: none !important;
     box-shadow: none !important;
   }
@@ -4918,7 +4852,7 @@ const pageStyle: CSSProperties = {
   width: "100%",
   maxWidth: "100vw",
   overflowX: "hidden",
-  background: "#070212",
+  background: "#000000",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily:
     'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -4999,7 +4933,7 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "#000000",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
@@ -5012,7 +4946,7 @@ const logoMarkStyle: CSSProperties = {
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 44%, #FFFFFF 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -5029,7 +4963,7 @@ const backButtonStyle: CSSProperties = {
   minHeight: "40px",
   padding: "0 15px",
   borderRadius: "999px",
-  background: "#04000A",
+  background: "#000000",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -5044,7 +4978,7 @@ const libraryButtonTopStyle: CSSProperties = {
   ...backButtonStyle,
   background: "rgba(4, 0, 10, 0.72)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
 };
 
 const soonTopButtonStyle: CSSProperties = {
@@ -5053,7 +4987,7 @@ const soonTopButtonStyle: CSSProperties = {
   padding: "0 13px",
   background: "rgba(4, 0, 10, 0.72)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   boxShadow: "none",
 };
 
@@ -5218,7 +5152,7 @@ const desktopNotificationButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #04000A)",
+  background: "var(--historietas-surface-strong, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   textDecoration: "none",
   display: "inline-flex",
@@ -5243,7 +5177,7 @@ const desktopNotificationBadgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #070212)",
+  border: "2px solid var(--historietas-bg-start, #000000)",
   background: "#EF4444",
   color: "#FFFFFF",
   fontSize: "9px",
@@ -5274,7 +5208,7 @@ const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "30px",
   border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, #070212 0%, #04000A 58%, #020006 100%)",
+  background: "linear-gradient(135deg, #000000 0%, #000000 58%, #000000 100%)",
   padding: "18px",
   boxShadow: "none",
   minWidth: 0,
@@ -5298,7 +5232,7 @@ const badgeStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(4, 0, 10, 0.72)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.10em",
@@ -5321,7 +5255,7 @@ const titleStyle: CSSProperties = {
   position: "relative",
   zIndex: 1,
   margin: "12px 0 0",
-  color: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-accent, #FFFFFF)",
   fontSize: "32px",
   lineHeight: 0.98,
   ...listaPageTitleTypographyStyle,
@@ -5471,7 +5405,7 @@ const searchInputStyle: CSSProperties = {
   height: "44px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "#04000A",
+  background: "#000000",
   color: "#FFFFFF",
   padding: "0 16px",
   outline: "none",
@@ -5520,7 +5454,7 @@ const explorarModalSheetStyle: CSSProperties = {
   gap: "0",
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-bg-start, #070212)",
+  background: "var(--historietas-bg-start, #000000)",
   border: "none",
   borderBottom: "0",
   overflowY: "auto",
@@ -5799,7 +5733,7 @@ const sectionMoreChevronStyle: CSSProperties = {
 
 const sectionTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-accent, #FFFFFF)",
   fontSize: "clamp(18px, 4.8vw, 23px)",
   lineHeight: 1.08,
   ...listaPageTitleTypographyStyle,
@@ -6025,7 +5959,7 @@ const autorExplorarAvatarInitialsStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   borderRadius: "18px",
-  background: "#08030F",
+  background: "#050505",
   color: "#FFFFFF",
   fontSize: "22px",
   lineHeight: 1,
@@ -6188,7 +6122,7 @@ const publishedCoverStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundImage: "linear-gradient(135deg, #050505 0%, #000000 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   minWidth: 0,
@@ -6280,7 +6214,7 @@ const fileStatusBadgeStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
+  color: "#FFFFFF",
   fontSize: "9px",
   fontWeight: 900,
   whiteSpace: "normal",
@@ -6291,7 +6225,7 @@ const authorLinkStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   margin: 0,
-  color: "var(--historietas-text-secondary, #D8C8FF)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",
   ...listaAuthorMetaTypographyStyle,
   textDecoration: "none",
@@ -6369,7 +6303,7 @@ const progressTrackStyle: CSSProperties = {
 const progressBarStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "linear-gradient(90deg, #F97316 0%, #7C3AED 100%)",
+  background: "linear-gradient(90deg, #FFFFFF 0%, #A1A1AA 100%)",
 };
 
 const progressTextStyle: CSSProperties = {
@@ -6387,7 +6321,7 @@ const readStyle: CSSProperties = {
   marginTop: "2px",
   padding: "0 14px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "#050505",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "13px",
@@ -6569,7 +6503,7 @@ const emptyStatePrimaryButtonStyle: CSSProperties = {
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.12)",
   background: "#FFFFFF",
-  color: "#070212",
+  color: "#000000",
   fontSize: "13px",
   fontWeight: 950,
   textDecoration: "none",

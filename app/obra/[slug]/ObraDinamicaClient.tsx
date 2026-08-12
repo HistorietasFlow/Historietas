@@ -5681,10 +5681,10 @@ export default function ObraDinamicaPage() {
             >
               <path
                 d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                fill={usuarioCurtiu ? "var(--historietas-obra-heart, #F43F5E)" : "none"}
+                fill={usuarioCurtiu ? "var(--historietas-obra-heart, #FFFFFF)" : "none"}
                 stroke={
                   usuarioCurtiu
-                    ? "var(--historietas-obra-heart, #F43F5E)"
+                    ? "var(--historietas-obra-heart, #FFFFFF)"
                     : "var(--historietas-text-secondary, #D4D4D8)"
                 }
                 strokeWidth="2"
@@ -6996,7 +6996,7 @@ function ArquivoObraPublico({
             <span
               style={{
                 ...fileMetaStyle,
-                color: "var(--historietas-obra-danger, #EF4444)",
+                color: "var(--historietas-obra-danger, #FFFFFF)",
               }}
             >
               {arquivoErro}
@@ -7093,8 +7093,8 @@ function MetricCard({
         >
           <path
             d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-            fill={ativo ? "var(--historietas-obra-danger, #EF4444)" : "none"}
-            stroke={ativo ? "var(--historietas-obra-danger, #EF4444)" : "#FFFFFF"}
+            fill={ativo ? "var(--historietas-obra-danger, #FFFFFF)" : "none"}
+            stroke={ativo ? "var(--historietas-obra-danger, #FFFFFF)" : "#FFFFFF"}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -7274,7 +7274,7 @@ const classificationWarningsStyle: CSSProperties = {
 };
 
 const classificationWarningsTitleStyle: CSSProperties = {
-  color: "var(--historietas-obra-logo-mid, #DDD6FE)",
+  color: "var(--historietas-obra-logo-mid, #FFFFFF)",
   fontSize: "10px",
   fontWeight: 950,
   letterSpacing: "0.08em",
@@ -7307,7 +7307,7 @@ const classificationWarningDotStyle: CSSProperties = {
   height: "6px",
   marginTop: "4px",
   borderRadius: "50%",
-  background: "#F43F5E",
+  background: "#FFFFFF",
   boxShadow: "0 0 8px rgba(244, 63, 94, 0.55)",
   flex: "0 0 auto",
 };
@@ -7351,39 +7351,6 @@ const obraPageCss = `
   }
 
   html {
-    --historietas-obra-bg-deep: #04000A;
-    --historietas-obra-bg-deeper: #020006;
-    --historietas-obra-surface: #08030F;
-    --historietas-obra-bg-deep-96: rgba(4, 0, 10, 0.96);
-    --historietas-obra-bg-deep-72: rgba(4, 0, 10, 0.72);
-    --historietas-obra-bg-shadow-42: rgba(3, 2, 8, 0.42);
-    --historietas-obra-menu-98: rgba(18, 9, 35, 0.98);
-    --historietas-obra-rating: #FBBF24;
-    --historietas-obra-rating-strong: #FF9C2B;
-    --historietas-obra-rating-muted: rgba(251, 191, 36, 0.34);
-    --historietas-obra-danger: #EF4444;
-    --historietas-obra-heart: #F43F5E;
-    --historietas-obra-logo-mid: #DDD6FE;
-    --historietas-obra-logo-end: #A78BFA;
-    --historietas-obra-purple-48: rgba(59, 7, 100, 0.48);
-    --historietas-obra-purple-58: rgba(59, 7, 100, 0.58);
-    --historietas-obra-purple-72: rgba(59, 7, 100, 0.72);
-    --historietas-obra-secondary-22: rgba(124, 58, 237, 0.22);
-    --historietas-obra-secondary-72: rgba(124, 58, 237, 0.72);
-    --historietas-obra-secondary-soft-34: rgba(167, 139, 250, 0.34);
-  }
-
-  html[data-historietas-tema-visual="original"] body,
-  html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
-  }
-
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
-    background: transparent !important;
-    opacity: 0 !important;
-  }
-
-  html[data-historietas-tema-visual="foco"] {
     --historietas-obra-bg-deep: #000000;
     --historietas-obra-bg-deeper: #000000;
     --historietas-obra-surface: #050505;
@@ -7404,18 +7371,13 @@ const obraPageCss = `
     --historietas-obra-secondary-22: rgba(255, 255, 255, 0.08);
     --historietas-obra-secondary-72: rgba(255, 255, 255, 0.24);
     --historietas-obra-secondary-soft-34: rgba(255, 255, 255, 0.18);
+
   }
 
-  html[data-historietas-tema-visual="foco"] body,
-  html[data-historietas-tema-visual="foco"] main {
-    background: #000000 !important;
-    color: #FFFFFF !important;
-  }
 
-  html[data-historietas-tema-visual="foco"] main > div[aria-hidden="true"] {
-    background: transparent !important;
-    opacity: 0 !important;
-  }
+
+
+
 `;
 
 const safeTextStyle: CSSProperties = {
@@ -7535,7 +7497,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "clip",
   boxSizing: "border-box",
-  background: "var(--historietas-bg-start, #070212)",
+  background: "var(--historietas-bg-start, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -7676,7 +7638,7 @@ const coverArtStyle: CSSProperties = {
   borderRadius: "0 0 28px 28px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage: "linear-gradient(145deg, var(--historietas-obra-surface, #08030F) 0%, var(--historietas-obra-bg-deep, #04000A) 58%, var(--historietas-obra-bg-deeper, #020006) 100%)",
+  backgroundImage: "linear-gradient(145deg, var(--historietas-obra-surface, #050505) 0%, var(--historietas-obra-bg-deep, #000000) 58%, var(--historietas-obra-bg-deeper, #000000) 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center top",
   border: "none",
@@ -7799,11 +7761,11 @@ const metricWhiteNumberStyle: CSSProperties = {
 };
 
 const metricStarIconStyle: CSSProperties = {
-  color: "var(--historietas-obra-rating, #FBBF24)",
+  color: "var(--historietas-obra-rating, #FFFFFF)",
 };
 
 const metricStarValueStyle: CSSProperties = {
-  color: "var(--historietas-obra-rating, #FBBF24)",
+  color: "var(--historietas-obra-rating, #FFFFFF)",
 };
 
 const heroBottomMetaBarStyle: CSSProperties = {
@@ -7862,7 +7824,7 @@ const primaryButtonStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-accent, #F97316)",
+  background: "var(--historietas-accent, #FFFFFF)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "10.5px",
@@ -7908,7 +7870,7 @@ const secondaryButtonStyle: CSSProperties = {
 const copyLinkButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
-  background: "var(--historietas-obra-bg-deep, #04000A)",
+  background: "var(--historietas-obra-bg-deep, #000000)",
   border: "1px solid rgba(255,255,255,0.28)",
   color: "#FFFFFF",
   textDecoration: "none",
@@ -8005,7 +7967,7 @@ const obraActionToastStyle: CSSProperties = {
   justifyContent: "center",
   borderRadius: "999px",
   border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
-  background: "var(--historietas-surface-strong, #120822)",
+  background: "var(--historietas-surface-strong, #0A0A0A)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   boxShadow: "0 14px 34px rgba(0,0,0,0.38)",
   padding: "9px 14px",
@@ -8027,7 +7989,7 @@ const obraActionsMenuStyle: CSSProperties = {
   overflowY: "auto",
   overscrollBehavior: "none",
   borderRadius: "24px 24px 0 0",
-  background: "#070212",
+  background: "#000000",
   border: "none",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
   padding: "8px 0 calc(12px + env(safe-area-inset-bottom))",
@@ -8255,7 +8217,7 @@ const statsGridStyle: CSSProperties = {
 
 const statCardStyle: CSSProperties = {
   borderRadius: "14px",
-  background: "var(--historietas-obra-bg-deep, #04000A)",
+  background: "var(--historietas-obra-bg-deep, #000000)",
   border: "1px solid rgba(255,255,255,0.08)",
   padding: "7px 5px",
   display: "grid",
@@ -8271,7 +8233,7 @@ const statCardStyle: CSSProperties = {
 
 const activeStatCardStyle: CSSProperties = {
   ...statCardStyle,
-  background: "var(--historietas-obra-bg-deep, #04000A)",
+  background: "var(--historietas-obra-bg-deep, #000000)",
   border: "1px solid rgba(255,255,255,0.08)",
   boxShadow: "none",
   filter: "none",
@@ -8363,7 +8325,7 @@ const commentsSheetStyle: CSSProperties = {
   gap: "7px",
   padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
   borderRadius: "28px 28px 0 0",
-  background: "var(--historietas-obra-bg-deep, #070212)",
+  background: "var(--historietas-obra-bg-deep, #000000)",
   border: "none",
   borderBottom: "none",
   boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
@@ -8589,7 +8551,7 @@ const commentSheetAvatarLinkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-obra-bg-deep, #04000A)",
+  background: "var(--historietas-obra-bg-deep, #000000)",
   color: "#FFFFFF",
   fontSize: "12.5px",
   fontWeight: 950,
@@ -8669,7 +8631,7 @@ const commentSheetRemoveButtonStyle: CSSProperties = {
   width: "fit-content",
   border: "none",
   background: "transparent",
-  color: "var(--historietas-danger-button-text, #FCA5A5)",
+  color: "var(--historietas-danger-button-text, #FFFFFF)",
   fontSize: "10.5px",
   fontWeight: 900,
   fontFamily: "inherit",
@@ -8778,7 +8740,7 @@ const commentsInputAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-obra-bg-deep, #04000A)",
+  background: "var(--historietas-obra-bg-deep, #000000)",
   border: "1px solid var(--historietas-obra-purple-58, rgba(59, 7, 100, 0.58))",
   color: "#FFFFFF",
   fontSize: "11.5px",
@@ -8799,7 +8761,7 @@ const commentsSheetInputStyle: CSSProperties = {
   maxHeight: "82px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-obra-bg-deep, #04000A)",
+  background: "var(--historietas-obra-bg-deep, #000000)",
   color: "#FFFFFF",
   padding: "9px 12px",
   outline: "none",
@@ -8874,7 +8836,7 @@ const fileBoxStyle: CSSProperties = {
   padding: "15px",
   borderRadius: "22px",
   background:
-    "linear-gradient(135deg, var(--historietas-obra-surface, #08030F) 0%, var(--historietas-obra-bg-deep, #04000A) 58%, var(--historietas-obra-bg-deeper, #020006) 100%)",
+    "linear-gradient(135deg, var(--historietas-obra-surface, #050505) 0%, var(--historietas-obra-bg-deep, #000000) 58%, var(--historietas-obra-bg-deeper, #000000) 100%)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   gap: "11px",
@@ -8924,7 +8886,7 @@ const fileIconBoxStyle: CSSProperties = {
   height: "100%",
   borderRadius: "18px",
   background:
-    "linear-gradient(135deg, var(--historietas-accent, #F97316) 0%, var(--historietas-secondary, #7C3AED) 100%)",
+    "linear-gradient(135deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)",
   color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
@@ -9063,7 +9025,7 @@ const workRatingStarActiveStyle: CSSProperties = {
   ...workRatingStarButtonStyle,
   border: "none",
   background: "transparent",
-  color: "var(--historietas-obra-rating, #FBBF24)",
+  color: "var(--historietas-obra-rating, #FFFFFF)",
   boxShadow: "none",
   filter: "none",
   backdropFilter: "none",
@@ -9086,7 +9048,7 @@ const workRatingStarBaseStyle: CSSProperties = {
 };
 
 const workRatingStarFillStyle: CSSProperties = {
-  color: "var(--historietas-obra-rating, #FBBF24)",
+  color: "var(--historietas-obra-rating, #FFFFFF)",
   position: "absolute",
   inset: 0,
   overflow: "hidden",
@@ -9142,7 +9104,7 @@ const communityGridStyle: CSSProperties = {
 const communityItemStyle: CSSProperties = {
   padding: "8px 6px",
   borderRadius: "14px",
-  background: "var(--historietas-obra-bg-deep, #04000A)",
+  background: "var(--historietas-obra-bg-deep, #000000)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "grid",
   gap: "3px",
@@ -9216,7 +9178,7 @@ const ratingSummaryStyle: CSSProperties = {
 };
 
 const ratingNumberStyle: CSSProperties = {
-  color: "var(--historietas-obra-rating-strong, #FF9C2B)",
+  color: "var(--historietas-obra-rating-strong, #FFFFFF)",
   fontSize: "28px",
   lineHeight: 1,
   fontWeight: 950,
@@ -9229,7 +9191,7 @@ const ratingStarsStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: "1px",
-  color: "var(--historietas-obra-rating, #FBBF24)",
+  color: "var(--historietas-obra-rating, #FFFFFF)",
   fontSize: "12px",
   lineHeight: 1,
   letterSpacing: "-0.02em",
@@ -9256,7 +9218,7 @@ const ratingTopStarBaseStyle: CSSProperties = {
 };
 
 const ratingTopStarFillStyle: CSSProperties = {
-  color: "var(--historietas-obra-rating, #FBBF24)",
+  color: "var(--historietas-obra-rating, #FFFFFF)",
   position: "absolute",
   inset: 0,
   overflow: "hidden",
@@ -9294,7 +9256,7 @@ const commentCardStyle: CSSProperties = {
 };
 
 const commentAuthorStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FDBA74)",
+  color: "var(--historietas-accent, #FFFFFF)",
   fontSize: "12px",
   fontWeight: 950,
   ...safeTextStyle,
@@ -9373,7 +9335,7 @@ const chapterCardStyle: CSSProperties = {
   padding: "9px",
   borderRadius: "17px",
   background:
-    "linear-gradient(135deg, var(--historietas-obra-surface, #08030F) 0%, var(--historietas-obra-bg-deep, #04000A) 100%)",
+    "linear-gradient(135deg, var(--historietas-obra-surface, #050505) 0%, var(--historietas-obra-bg-deep, #000000) 100%)",
   border: "1px solid rgba(255,255,255,0.07)",
   display: "grid",
   gridTemplateColumns: "38px minmax(0, 1fr)",
@@ -9513,7 +9475,7 @@ const desktopHeroCoverLinkStyle: CSSProperties = {
   overflow: "hidden",
   border: "1px solid rgba(255,255,255,0.08)",
   background:
-    "linear-gradient(145deg, #0A0314 0%, #04000A 58%, #020006 100%)",
+    "linear-gradient(145deg, #050505 0%, #000000 58%, #000000 100%)",
   boxShadow:
     "0 24px 64px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(255,255,255,0.025)",
   color: "inherit",
@@ -9780,7 +9742,7 @@ const desktopChapterCardStyle: CSSProperties = {
 
 const emptyTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-accent, #F97316)",
+  color: "var(--historietas-accent, #FFFFFF)",
   fontSize: "clamp(34px, 10vw, 58px)",
   lineHeight: 0.95,
   fontWeight: 950,

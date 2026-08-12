@@ -6327,17 +6327,6 @@ export default function ListasUniversaisPage() {
 
 const listasPageCss = `
   html {
-    --historietas-list-like-active: #EF4444;
-    --historietas-list-diary-rating: var(--historietas-accent, #F97316);
-    --historietas-list-diary-rating-muted: color-mix(
-      in srgb,
-      var(--historietas-list-diary-rating) 34%,
-      transparent
-    );
-    --historietas-list-comments-send-text: #FFFFFF;
-  }
-
-  html[data-historietas-tema-visual="foco"] {
     --historietas-list-like-active: #FFFFFF;
     --historietas-list-diary-rating: #FFFFFF;
     --historietas-list-diary-rating-muted: rgba(255,255,255,0.30);
@@ -6361,10 +6350,8 @@ const listasPageCss = `
     }
   }
 
-  html[data-historietas-tema-visual="original"] body,
-  html[data-historietas-tema-visual="original"] main,
-  html[data-historietas-tema-visual="foco"] body,
-  html[data-historietas-tema-visual="foco"] main {
+  body,
+  main {
     background: #000000 !important;
     color: #FFFFFF !important;
   }
@@ -6787,7 +6774,7 @@ const actionSheetStyle: CSSProperties = {
   maxHeight: "calc(100dvh - 72px)",
   overflowY: "auto",
   borderRadius: "24px 24px 0 0",
-  background: "#070212",
+  background: "#000000",
   boxShadow: "0 -18px 50px rgba(0,0,0,0.42)",
   padding: "8px 0 calc(14px + env(safe-area-inset-bottom))",
   boxSizing: "border-box",
@@ -7177,7 +7164,7 @@ const listDiaryEvaluationCheckboxStyle: CSSProperties = {
   width: "16px",
   height: "16px",
   margin: 0,
-  accentColor: "#F97316",
+  accentColor: "#FFFFFF",
   flex: "0 0 auto",
 };
 
@@ -7336,7 +7323,7 @@ const listDiaryAnnotationSpoilerCheckboxStyle: CSSProperties = {
   height: "13px",
   margin: 0,
   accentColor:
-    "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
+    "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
   cursor: "pointer",
   flex: "0 0 auto",
 };
@@ -7368,7 +7355,7 @@ const listDiaryAnnotationSaveStyle: CSSProperties = {
   borderRadius: "999px",
   border: "none",
   background:
-    "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
+    "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
   color: "#000000",
   fontSize: "7.8px",
   lineHeight: 1,
@@ -7863,7 +7850,7 @@ const listDiaryCommentSubmitStyle: CSSProperties = {
   border: "none",
   borderRadius: "999px",
   background:
-    "var(--historietas-accent, var(--historietas-perfil-accent, #F97316))",
+    "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
   color: "#000000",
   fontFamily: "inherit",
   fontSize: "9px",
@@ -8276,7 +8263,7 @@ const listDiaryHeaderRatingStarButtonStyle: CSSProperties = {
 
 const listDiaryHeaderRatingStarActiveStyle: CSSProperties = {
   ...listDiaryHeaderRatingStarButtonStyle,
-  color: "var(--historietas-list-diary-rating, #F97316)",
+  color: "var(--historietas-list-diary-rating, #FFFFFF)",
 };
 
 const listDiaryHeaderRatingStarVisualStyle: CSSProperties = {
@@ -8295,7 +8282,7 @@ const listDiaryHeaderRatingStarBaseStyle: CSSProperties = {
 };
 
 const listDiaryHeaderRatingStarFillStyle: CSSProperties = {
-  color: "var(--historietas-list-diary-rating, #F97316)",
+  color: "var(--historietas-list-diary-rating, #FFFFFF)",
   position: "absolute",
   inset: 0,
   overflow: "hidden",
@@ -8321,7 +8308,7 @@ const listDiaryRatingSummaryStyle: CSSProperties = {
 };
 
 const listDiaryRatingNumberStyle: CSSProperties = {
-  color: "var(--historietas-list-diary-rating, #F97316)",
+  color: "var(--historietas-list-diary-rating, #FFFFFF)",
   fontSize: "18.5px",
   lineHeight: 1,
   fontWeight: 950,
@@ -8333,7 +8320,7 @@ const listDiaryRatingSummaryStarsStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   gap: "1px",
-  color: "var(--historietas-list-diary-rating, #F97316)",
+  color: "var(--historietas-list-diary-rating, #FFFFFF)",
   fontSize: "10px",
   lineHeight: 1,
   letterSpacing: "-0.02em",
@@ -8356,7 +8343,7 @@ const listDiaryRatingSummaryStarBaseStyle: CSSProperties = {
 };
 
 const listDiaryRatingSummaryStarFillStyle: CSSProperties = {
-  color: "var(--historietas-list-diary-rating, #F97316)",
+  color: "var(--historietas-list-diary-rating, #FFFFFF)",
   position: "absolute",
   inset: 0,
   overflow: "hidden",
@@ -8424,7 +8411,7 @@ const commentsSheetBackdropStyle: CSSProperties = {
   zIndex: 0,
   border: "none",
   background:
-    "color-mix(in srgb, var(--historietas-page-background, #070212) 66%, transparent)",
+    "color-mix(in srgb, var(--historietas-page-background, #000000) 66%, transparent)",
   backdropFilter: "blur(4px)",
   WebkitBackdropFilter: "blur(4px)",
   pointerEvents: "auto",
@@ -8442,7 +8429,7 @@ const commentsSheetStyle: CSSProperties = {
   gap: "7px",
   padding: "5px 12px calc(10px + env(safe-area-inset-bottom))",
   borderRadius: "28px 28px 0 0",
-  background: "var(--historietas-page-background, #070212)",
+  background: "var(--historietas-page-background, #000000)",
   border: "none",
   borderBottom: "none",
   boxShadow: "0 -24px 70px rgba(0,0,0,0.72)",
@@ -8671,9 +8658,9 @@ const commentAvatarLinkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-page-background, #070212)",
+  background: "var(--historietas-page-background, #000000)",
   border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+    "1px solid color-mix(in srgb, var(--historietas-accent, #FFFFFF) 30%, transparent)",
   color: "#FFFFFF",
   fontSize: "12.5px",
   lineHeight: 1,
@@ -8910,9 +8897,9 @@ const commentsInputAvatarStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-page-background, #070212)",
+  background: "var(--historietas-page-background, #000000)",
   border:
-    "1px solid color-mix(in srgb, var(--historietas-accent, #F97316) 30%, transparent)",
+    "1px solid color-mix(in srgb, var(--historietas-accent, #FFFFFF) 30%, transparent)",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -8933,7 +8920,7 @@ const commentsSheetInputStyle: CSSProperties = {
   borderRadius: "999px",
   border:
     "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-page-background, #070212)",
+  background: "var(--historietas-page-background, #000000)",
   color: "var(--historietas-input-text, #FFFFFF)",
   padding: "9px 12px",
   outline: "none",
@@ -8964,9 +8951,9 @@ const commentsSheetSendStyle: CSSProperties = {
   height: "36px",
   borderRadius: "999px",
   border:
-    "1px solid var(--historietas-bottom-nav-publish-border, color-mix(in srgb, var(--historietas-accent, #F97316) 38%, transparent))",
+    "1px solid var(--historietas-bottom-nav-publish-border, color-mix(in srgb, var(--historietas-accent, #FFFFFF) 38%, transparent))",
   background:
-    "var(--historietas-bottom-nav-publish-bg, var(--historietas-accent, #F97316))",
+    "var(--historietas-bottom-nav-publish-bg, var(--historietas-accent, #FFFFFF))",
   color: "var(--historietas-list-comments-send-text, #FFFFFF)",
   fontSize: "18px",
   lineHeight: 1,

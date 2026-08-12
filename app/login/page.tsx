@@ -1320,21 +1320,21 @@ export default function LoginPage() {
 
 const loginPageCss = `
   html {
-    --historietas-login-bg-page: #070212;
-    --historietas-login-bg-deep: #04000A;
-    --historietas-login-surface: #08030F;
-    --historietas-login-logo-mid: #DDD6FE;
-    --historietas-login-logo-end: #A78BFA;
-    --historietas-login-danger: #FCA5A5;
-    --historietas-login-success: #86EFAC;
-    --historietas-login-purple-border: rgba(59, 7, 100, 0.58);
-    --historietas-login-purple-border-soft: rgba(59, 7, 100, 0.50);
-    --historietas-login-success-bg: rgba(34,197,94,0.10);
-    --historietas-login-success-border: rgba(34,197,94,0.24);
-    --historietas-login-placeholder: rgba(221, 214, 254, 0.62);
+    --historietas-login-bg-page: #000000;
+    --historietas-login-bg-deep: #000000;
+    --historietas-login-surface: #050505;
+    --historietas-login-logo-mid: #D4D4D8;
+    --historietas-login-logo-end: #FFFFFF;
+    --historietas-login-danger: #FFFFFF;
+    --historietas-login-success: #FFFFFF;
+    --historietas-login-purple-border: rgba(255,255,255,0.18);
+    --historietas-login-purple-border-soft: rgba(255,255,255,0.18);
+    --historietas-login-success-bg: rgba(255,255,255,0.06);
+    --historietas-login-success-border: rgba(255,255,255,0.18);
+    --historietas-login-placeholder: rgba(212,212,216,0.68);
   }
 
-  html[data-historietas-tema-visual="foco"] {
+  html {
     --historietas-login-bg-page: #000000;
     --historietas-login-bg-deep: #000000;
     --historietas-login-surface: #050505;
@@ -1358,11 +1358,12 @@ const loginPageCss = `
 
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
+    background: #000000 !important;
+    color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="foco"] body,
-  html[data-historietas-tema-visual="foco"] main {
+  html body,
+  html main {
     background: #000000 !important;
     color: #FFFFFF !important;
   }
@@ -1380,8 +1381,8 @@ const loginPageCss = `
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-theme-logo-text,
-  html[data-historietas-tema-visual="foco"] .historietas-theme-title {
+  html .historietas-theme-logo-text,
+  html .historietas-theme-title {
     background: none !important;
     color: #FFFFFF !important;
     -webkit-text-fill-color: #FFFFFF !important;
@@ -1427,7 +1428,7 @@ const pageStyle: CSSProperties = {
   overflowX: "hidden",
   overflowY: "auto",
   boxSizing: "border-box",
-  background: "var(--historietas-login-bg-page, #070212)",
+  background: "var(--historietas-login-bg-page, #000000)",
   color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -1470,8 +1471,8 @@ const languageSelectStyle: CSSProperties = {
   padding: "0 8px",
   borderRadius: "12px",
   border:
-    "1px solid var(--historietas-login-purple-border, rgba(59, 7, 100, 0.58))",
-  background: "var(--historietas-login-bg-deep, #04000A)",
+    "1px solid var(--historietas-login-purple-border, rgba(255,255,255,0.18))",
+  background: "var(--historietas-login-bg-deep, #000000)",
   color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 850,
@@ -1500,20 +1501,20 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-login-bg-deep, #04000A)",
+  background: "var(--historietas-login-bg-deep, #000000)",
   color: "#FFFFFF",
   fontSize: "19px",
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
-  border: "1px solid var(--historietas-login-purple-border, rgba(59, 7, 100, 0.58))",
+  border: "1px solid var(--historietas-login-purple-border, rgba(255,255,255,0.18))",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-login-logo-mid, #DDD6FE) 44%, var(--historietas-login-logo-end, #A78BFA) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-login-logo-mid, #D4D4D8) 44%, var(--historietas-login-logo-end, #FFFFFF) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -1623,8 +1624,8 @@ const tabsStyle: CSSProperties = {
 const tabStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-login-purple-border-soft, rgba(59, 7, 100, 0.50))",
-  background: "var(--historietas-login-bg-deep, #04000A)",
+  border: "1px solid var(--historietas-login-purple-border-soft, rgba(255,255,255,0.18))",
+  background: "var(--historietas-login-bg-deep, #000000)",
   color: "#FFFFFF",
   fontSize: "12px",
   fontWeight: 950,
@@ -1637,7 +1638,7 @@ const tabStyle: CSSProperties = {
 
 const tabActiveStyle: CSSProperties = {
   ...tabStyle,
-  background: "var(--historietas-login-surface, #08030F)",
+  background: "var(--historietas-login-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   boxShadow: "none",
@@ -1667,8 +1668,8 @@ const inputStyle: CSSProperties = {
   height: "48px",
   minHeight: "48px",
   borderRadius: "999px",
-  border: "1px solid var(--historietas-login-purple-border, rgba(59, 7, 100, 0.58))",
-  background: "var(--historietas-login-bg-deep, #04000A)",
+  border: "1px solid var(--historietas-login-purple-border, rgba(255,255,255,0.18))",
+  background: "var(--historietas-login-bg-deep, #000000)",
   color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
@@ -1692,8 +1693,8 @@ const consentLabelStyle: CSSProperties = {
   padding: "12px 13px",
   borderRadius: "15px",
   border:
-    "1px solid var(--historietas-login-purple-border-soft, rgba(59, 7, 100, 0.50))",
-  background: "var(--historietas-login-bg-deep, #04000A)",
+    "1px solid var(--historietas-login-purple-border-soft, rgba(255,255,255,0.18))",
+  background: "var(--historietas-login-bg-deep, #000000)",
   color: "#E4E4E7",
   fontSize: "12px",
   fontWeight: 700,
@@ -1721,7 +1722,7 @@ const primaryButtonStyle: CSSProperties = {
   minHeight: "44px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-login-surface, #08030F)",
+  background: "var(--historietas-login-surface, #050505)",
   color: "#FFFFFF",
   fontSize: "13px",
   fontWeight: 950,
@@ -1736,7 +1737,7 @@ const secondaryButtonStyle: CSSProperties = {
   ...primaryButtonStyle,
   background: "transparent",
   border:
-    "1px solid var(--historietas-login-purple-border-soft, rgba(59, 7, 100, 0.50))",
+    "1px solid var(--historietas-login-purple-border-soft, rgba(255,255,255,0.18))",
   cursor: "pointer",
 };
 
@@ -1761,7 +1762,7 @@ const errorStyle: CSSProperties = {
   borderRadius: 0,
   background: "transparent",
   border: "none",
-  color: "var(--historietas-login-danger, #FCA5A5)",
+  color: "var(--historietas-login-danger, #FFFFFF)",
   fontSize: "12px",
   fontWeight: 850,
   textAlign: "center",
@@ -1772,9 +1773,9 @@ const successStyle: CSSProperties = {
   display: "block",
   padding: "9px 12px",
   borderRadius: "14px",
-  background: "var(--historietas-login-success-bg, rgba(34,197,94,0.10))",
-  border: "1px solid var(--historietas-login-success-border, rgba(34,197,94,0.24))",
-  color: "var(--historietas-login-success, #86EFAC)",
+  background: "var(--historietas-login-success-bg, rgba(255,255,255,0.06))",
+  border: "1px solid var(--historietas-login-success-border, rgba(255,255,255,0.18))",
+  color: "var(--historietas-login-success, #FFFFFF)",
   fontSize: "12px",
   lineHeight: 1.45,
   fontWeight: 850,

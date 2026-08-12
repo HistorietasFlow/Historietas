@@ -5967,14 +5967,14 @@ const notificacoesPageCss = `
   }
 
   html {
-    --historietas-notificacoes-bg-page: #070212;
-    --historietas-notificacoes-bg-deep: #04000A;
-    --historietas-notificacoes-surface: #08030F;
+    --historietas-notificacoes-bg-page: #000000;
+    --historietas-notificacoes-bg-deep: #000000;
+    --historietas-notificacoes-surface: #050505;
     --historietas-notificacoes-bg-end: #020006;
-    --historietas-notificacoes-purple-text: #DDD6FE;
-    --historietas-notificacoes-purple-soft: #A78BFA;
-    --historietas-notificacoes-accent: #F97316;
-    --historietas-notificacoes-danger-text: #FCA5A5;
+    --historietas-notificacoes-purple-text: #FFFFFF;
+    --historietas-notificacoes-purple-soft: #D4D4D8;
+    --historietas-notificacoes-accent: #FFFFFF;
+    --historietas-notificacoes-danger-text: #FFFFFF;
     --historietas-notificacoes-purple-border: rgba(59, 7, 100, 0.58);
     --historietas-notificacoes-danger-border: rgba(239,68,68,0.18);
     --historietas-notificacoes-danger-bg: rgba(239,68,68,0.075);
@@ -5988,7 +5988,7 @@ const notificacoesPageCss = `
     --historietas-notificacoes-secondary-border: rgba(124,58,237,0.26);
   }
 
-  html[data-historietas-tema-visual="foco"] {
+  html {
     --historietas-notificacoes-bg-page: #000000;
     --historietas-notificacoes-bg-deep: #000000;
     --historietas-notificacoes-surface: #050505;
@@ -6012,11 +6012,11 @@ const notificacoesPageCss = `
 
   html[data-historietas-tema-visual="original"] body,
   html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
+    background: #000000 !important;
   }
 
-  html[data-historietas-tema-visual="foco"] body,
-  html[data-historietas-tema-visual="foco"] main {
+  html body,
+  html main {
     background: #000000 !important;
     color: #FFFFFF !important;
   }
@@ -6042,7 +6042,7 @@ const notificacoesPageCss = `
   html[data-historietas-tema-visual] nav,
   html[data-historietas-tema-visual] [data-bottom-nav],
   html[data-historietas-tema-visual] [data-mobile-nav] {
-    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+    background: var(--historietas-bottom-nav-bg, #000000) !important;
   }
 
   html[data-historietas-tema-visual] nav a[href="/notificacoes"],
@@ -6073,18 +6073,18 @@ const notificacoesPageCss = `
     ) !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav a[href="/notificacoes"],
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/notificacoes"],
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/notificacoes"] {
+  html nav a[href="/notificacoes"],
+  html [data-bottom-nav] a[href="/notificacoes"],
+  html [data-mobile-nav] a[href="/notificacoes"] {
     background: #050505 !important;
     border-color: #FFFFFF !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav a[href="/notificacoes"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon {
+  html nav a[href="/notificacoes"] .historietas-bottom-nav-icon,
+  html [data-bottom-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon,
+  html [data-mobile-nav] a[href="/notificacoes"] .historietas-bottom-nav-icon {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.24) !important;
     color: #FFFFFF !important;
@@ -6175,7 +6175,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background: "var(--historietas-notificacoes-bg-page, #070212)",
+  background: "var(--historietas-notificacoes-bg-page, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -6229,7 +6229,7 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-notificacoes-bg-deep, #04000A)",
+  background: "var(--historietas-notificacoes-bg-deep, #000000)",
   color: "#FFFFFF",
   fontSize: "17px",
   fontWeight: 950,
@@ -6242,7 +6242,7 @@ const logoMarkStyle: CSSProperties = {
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-notificacoes-purple-text, #DDD6FE) 44%, var(--historietas-notificacoes-purple-soft, #A78BFA) 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-notificacoes-purple-text, #FFFFFF) 44%, var(--historietas-notificacoes-purple-soft, #D4D4D8) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -6452,9 +6452,9 @@ const soonTopButtonStyle: CSSProperties = {
   justifyContent: "center",
   padding: "0 13px",
   borderRadius: "999px",
-  background: "var(--historietas-notificacoes-bg-deep, #04000A)",
+  background: "var(--historietas-notificacoes-bg-deep, #000000)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-notificacoes-purple-text, #DDD6FE)",
+  color: "var(--historietas-notificacoes-purple-text, #FFFFFF)",
   textDecoration: "none",
   fontSize: "12px",
   fontWeight: 950,
@@ -6474,7 +6474,7 @@ const heroStyle: CSSProperties = {
   position: "relative",
   borderRadius: "30px",
   border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, var(--historietas-notificacoes-bg-page, #070212) 0%, var(--historietas-notificacoes-bg-deep, #04000A) 58%, var(--historietas-notificacoes-bg-end, #020006) 100%)",
+  background: "linear-gradient(135deg, var(--historietas-notificacoes-bg-page, #000000) 0%, var(--historietas-notificacoes-bg-deep, #000000) 58%, var(--historietas-notificacoes-bg-end, #020006) 100%)",
   padding: "18px",
   boxShadow: "none",
   minWidth: 0,
@@ -6512,7 +6512,7 @@ const titleStyle: CSSProperties = {
   letterSpacing: "-0.085em",
   maxWidth: "100%",
   textAlign: "center",
-  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #F97316))",
+  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #FFFFFF))",
   textShadow: "none",
   ...safeTextStyle,
 };
@@ -6650,7 +6650,7 @@ const notificationSortingSheetStyle: CSSProperties = {
   gap: 0,
   padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
   borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-bg-start, var(--historietas-notificacoes-bg-page, #070212))",
+  background: "var(--historietas-bg-start, var(--historietas-notificacoes-bg-page, #000000))",
   border: "none",
   borderBottom: "0",
   overflowY: "auto",
@@ -6800,7 +6800,7 @@ const notificationActionsOptionDisabledStyle: CSSProperties = {
 
 const notificationActionsDangerOptionStyle: CSSProperties = {
   ...notificationActionsOptionStyle,
-  color: "var(--historietas-notificacoes-danger-text, #FCA5A5)",
+  color: "var(--historietas-notificacoes-danger-text, #FFFFFF)",
 };
 
 const notificationActionsDangerOptionDisabledStyle: CSSProperties = {
@@ -6852,7 +6852,7 @@ const desktopFilterHeaderTitleBoxStyle: CSSProperties = {
 };
 
 const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #F97316))",
+  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #FFFFFF))",
   fontSize: "10px",
   lineHeight: 1,
   fontWeight: 950,
@@ -6888,7 +6888,7 @@ const searchInputStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-notificacoes-bg-deep, #04000A)",
+  background: "var(--historietas-notificacoes-bg-deep, #000000)",
   color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
@@ -6916,7 +6916,7 @@ const selectStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-notificacoes-bg-deep, #04000A)",
+  background: "var(--historietas-notificacoes-bg-deep, #000000)",
   color: "#FFFFFF",
   padding: "0 13px",
   outline: "none",
@@ -6958,7 +6958,7 @@ const buttonBaseStyle: CSSProperties = {
 const primaryButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-notificacoes-surface, #08030F)",
+  background: "var(--historietas-notificacoes-surface, #050505)",
   boxShadow: "none",
 };
 
@@ -6987,7 +6987,7 @@ const dangerButtonStyle: CSSProperties = {
   ...buttonBaseStyle,
   border: "1px solid var(--historietas-notificacoes-danger-border, rgba(239,68,68,0.18))",
   background: "var(--historietas-notificacoes-danger-bg, rgba(239,68,68,0.075))",
-  color: "var(--historietas-notificacoes-danger-text, #FCA5A5)",
+  color: "var(--historietas-notificacoes-danger-text, #FFFFFF)",
 };
 
 const listStyle: CSSProperties = {
@@ -7054,7 +7054,7 @@ const notificationIconStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "var(--historietas-notificacoes-surface, #08030F)",
+  background: "var(--historietas-notificacoes-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "18px",
@@ -7084,7 +7084,7 @@ const readNotificationIconStyle: CSSProperties = {
 
 const communityNotificationIconStyle: CSSProperties = {
   ...notificationIconStyle,
-  background: "var(--historietas-notificacoes-surface, #08030F)",
+  background: "var(--historietas-notificacoes-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
 };
@@ -7116,7 +7116,7 @@ const chapterOriginBadgeStyle: CSSProperties = {
   borderRadius: "999px",
   background: "var(--historietas-notificacoes-accent-bg, rgba(249,115,22,0.12))",
   border: "1px solid var(--historietas-notificacoes-accent-border, rgba(249,115,22,0.20))",
-  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #F97316))",
+  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #FFFFFF))",
   fontSize: "9px",
   fontWeight: 950,
   textTransform: "uppercase",
@@ -7127,7 +7127,7 @@ const communityOriginBadgeStyle: CSSProperties = {
   ...chapterOriginBadgeStyle,
   background: "var(--historietas-notificacoes-secondary-bg, rgba(124,58,237,0.16))",
   border: "1px solid var(--historietas-notificacoes-secondary-border, rgba(124,58,237,0.26))",
-  color: "var(--historietas-notificacoes-purple-text, #DDD6FE)",
+  color: "var(--historietas-notificacoes-purple-text, #FFFFFF)",
 };
 
 const notificationKindBadgeStyle: CSSProperties = {
@@ -7352,7 +7352,7 @@ const followerRequestAcceptButtonStyle: CSSProperties = {
   minHeight: "36px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.18)",
-  background: "var(--historietas-accent, #7C3AED)",
+  background: "var(--historietas-accent, #A1A1AA)",
   color: "#000000",
   fontSize: "11px",
   fontWeight: 950,
@@ -7364,7 +7364,7 @@ const followerRequestAcceptButtonStyle: CSSProperties = {
 const followerRequestRejectButtonStyle: CSSProperties = {
   ...followerRequestAcceptButtonStyle,
   background: "transparent",
-  color: "var(--historietas-notificacoes-danger-text, #FCA5A5)",
+  color: "var(--historietas-notificacoes-danger-text, #FFFFFF)",
 };
 
 const followerRequestAcceptButtonDisabledStyle: CSSProperties = {
@@ -7396,7 +7396,7 @@ const communityCardActionsStyle: CSSProperties = {
 const openChapterLinkStyle: CSSProperties = {
   minHeight: "34px",
   borderRadius: "999px",
-  background: "var(--historietas-notificacoes-surface, #08030F)",
+  background: "var(--historietas-notificacoes-surface, #050505)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   textDecoration: "none",

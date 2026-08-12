@@ -1606,7 +1606,7 @@ function criarDesktopHeroPosterStyle(obra: Obra): CSSProperties {
   return {
     ...desktopHeroPosterStyle,
     backgroundImage:
-      "linear-gradient(145deg, #08030F 0%, #04000A 52%, #020006 100%)",
+      "linear-gradient(145deg, #050505 0%, #0B0B0D 52%, #000000 100%)",
   };
 }
 
@@ -1636,8 +1636,8 @@ function criarDesktopHeroBackground(obra: Obra): CSSProperties {
 function criarMobileHeroFrameBackground(_obra: Obra): CSSProperties {
   return {
     ...heroStyle,
-    backgroundColor: "#04000A",
-    backgroundImage: "linear-gradient(145deg, #070212 0%, #04000A 58%, #020006 100%)",
+    backgroundColor: "#000000",
+    backgroundImage: "linear-gradient(145deg, #000000 0%, #050505 58%, #0B0B0D 100%)",
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -1647,7 +1647,7 @@ function criarMobileHeroImageLayerStyle(obra: Obra): CSSProperties {
   const imagemObra = obterImagemObraCatalogo(obra);
   const imagemOuFallback = imagemObra
     ? `url(${imagemObra})`
-    : "linear-gradient(145deg, #08030F 0%, #04000A 58%, #020006 100%)";
+    : "linear-gradient(145deg, #050505 0%, #0B0B0D 58%, #000000 100%)";
 
   return {
     position: "absolute",
@@ -5243,87 +5243,77 @@ const themePageCss = `
     }
   }
 
-  html[data-historietas-tema-visual] body {
-    background: var(--historietas-bg-start, #070212) !important;
+  body {
+    background: var(--historietas-bg-start, #000000) !important;
     color: var(--historietas-text-primary, #FFFFFF) !important;
   }
 
-  html[data-historietas-tema-visual="original"] body,
-  html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
-  }
-
-  html[data-historietas-tema-visual="original"] main > div[aria-hidden="true"] {
-    background: transparent !important;
-    opacity: 0 !important;
-  }
-
-  html[data-historietas-tema-visual] nav,
-  html[data-historietas-tema-visual] [data-bottom-nav],
-  html[data-historietas-tema-visual] [data-mobile-nav],
-  html[data-historietas-tema-visual] nav:has(a[href="/publicar"]),
-  html[data-historietas-tema-visual] div:has(> a[href="/publicar"]):has(> a[href="/perfil-autor?aba=biblioteca"]) {
-    background: var(--historietas-bottom-nav-bg, var(--historietas-surface-strong, rgba(18,8,31,0.98))) !important;
+  nav,
+  [data-bottom-nav],
+  [data-mobile-nav],
+  nav:has(a[href="/publicar"]),
+  div:has(> a[href="/publicar"]):has(> a[href="/perfil-autor?aba=biblioteca"]) {
+    background: var(--historietas-bottom-nav-bg, #000000) !important;
     border-color: var(--historietas-bottom-nav-border, var(--historietas-border-soft, rgba(255,255,255,0.12))) !important;
     box-shadow: var(--historietas-bottom-nav-shadow, none) !important;
-    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
+    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #A1A1AA)) !important;
   }
 
-  html[data-historietas-tema-visual] nav::before,
-  html[data-historietas-tema-visual] [data-bottom-nav]::before,
-  html[data-historietas-tema-visual] [data-mobile-nav]::before {
+  nav::before,
+  [data-bottom-nav]::before,
+  [data-mobile-nav]::before {
     background: var(--historietas-bottom-nav-shine, none) !important;
   }
 
-  html[data-historietas-tema-visual] nav a,
-  html[data-historietas-tema-visual] [data-bottom-nav] a,
-  html[data-historietas-tema-visual] [data-mobile-nav] a,
-  html[data-historietas-tema-visual] nav button,
-  html[data-historietas-tema-visual] [data-bottom-nav] button,
-  html[data-historietas-tema-visual] [data-mobile-nav] button {
-    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #D4D4D8)) !important;
+  nav a,
+  [data-bottom-nav] a,
+  [data-mobile-nav] a,
+  nav button,
+  [data-bottom-nav] button,
+  [data-mobile-nav] button {
+    color: var(--historietas-bottom-nav-text, var(--historietas-text-secondary, #A1A1AA)) !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual] nav a:hover,
-  html[data-historietas-tema-visual] [data-bottom-nav] a:hover,
-  html[data-historietas-tema-visual] [data-mobile-nav] a:hover,
-  html[data-historietas-tema-visual] nav button:hover,
-  html[data-historietas-tema-visual] [data-bottom-nav] button:hover,
-  html[data-historietas-tema-visual] [data-mobile-nav] button:hover {
+  nav a:hover,
+  [data-bottom-nav] a:hover,
+  [data-mobile-nav] a:hover,
+  nav button:hover,
+  [data-bottom-nav] button:hover,
+  [data-mobile-nav] button:hover {
     background: var(--historietas-bottom-nav-hover-bg, var(--historietas-active-surface, rgba(255,255,255,0.055))) !important;
     border-color: var(--historietas-bottom-nav-border, var(--historietas-border-soft, rgba(255,255,255,0.10))) !important;
     color: var(--historietas-bottom-nav-hover-text, var(--historietas-text-primary, #FFFFFF)) !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/"] {
-    background: rgba(46, 16, 101, 0.54) !important;
-    border-color: rgba(91, 33, 182, 0.54) !important;
+  nav a[href="/"],
+  [data-bottom-nav] a[href="/"],
+  [data-mobile-nav] a[href="/"] {
+    background: #000000 !important;
+    border-color: rgba(255,255,255,0.18) !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] {
-    background: rgba(4, 0, 10, 0.72) !important;
-    border-color: rgba(59, 7, 100, 0.42) !important;
+  nav a[href="/publicar"],
+  [data-bottom-nav] a[href="/publicar"],
+  [data-mobile-nav] a[href="/publicar"] {
+    background: #000000 !important;
+    border-color: #FFFFFF !important;
     box-shadow: none !important;
-    color: #A995E8 !important;
+    color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] nav .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] .historietas-bottom-nav-icon {
-    color: var(--historietas-bottom-nav-icon-text, var(--historietas-accent, #F97316)) !important;
+  nav .historietas-bottom-nav-icon,
+  [data-bottom-nav] .historietas-bottom-nav-icon,
+  [data-mobile-nav] .historietas-bottom-nav-icon {
+    color: var(--historietas-bottom-nav-icon-text, #FFFFFF) !important;
     background: var(--historietas-bottom-nav-icon-bg, var(--historietas-surface, rgba(255,255,255,0.045))) !important;
     border-color: var(--historietas-bottom-nav-icon-border, var(--historietas-border-soft, rgba(255,255,255,0.055))) !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/publicar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/publicar"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/publicar"] .historietas-bottom-nav-icon {
+  nav a[href="/publicar"] .historietas-bottom-nav-icon,
+  [data-bottom-nav] a[href="/publicar"] .historietas-bottom-nav-icon,
+  [data-mobile-nav] a[href="/publicar"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
     background: var(--historietas-bottom-nav-main-icon-bg, rgba(255,255,255,0.16)) !important;
     border-color: var(--historietas-bottom-nav-main-icon-border, rgba(255,255,255,0.18)) !important;
@@ -5356,67 +5346,32 @@ const themePageCss = `
     backdrop-filter: none !important;
   }
 
-  html[data-historietas-tema-visual="branco"] input::placeholder {
-    color: #80868B !important;
-  }
-
-  html[data-historietas-tema-visual="branco"] header {
-    color: #202124;
-  }
-
-  html[data-historietas-tema-visual="branco"] .historietas-home-logo-text,
-  html[data-historietas-tema-visual="branco"] .historietas-home-hero-title {
-    background: none !important;
-    color: #1A73E8 !important;
-    -webkit-text-fill-color: #1A73E8 !important;
-    text-shadow: none !important;
-  }
-
-  html[data-historietas-tema-visual="branco"] input,
-  html[data-historietas-tema-visual="branco"] textarea,
-  html[data-historietas-tema-visual="branco"] select {
-    color: #202124 !important;
-  }
-
-  html[data-historietas-tema-visual="escuro"] {
-    --historietas-bg-start: #000000;
-    --historietas-bg-mid: #000000;
-    --historietas-bg-end: #000000;
-    --historietas-accent: #F97316;
-    --historietas-secondary: #7C3AED;
-    --historietas-glow-primary: rgba(249,115,22,0.030);
-    --historietas-glow-secondary: rgba(124,58,237,0.030);
-    --historietas-active-surface: rgba(124,58,237,0.14);
-    --historietas-secondary-surface: rgba(124,58,237,0.12);
-    --historietas-danger-surface: rgba(239,68,68,0.12);
-  }
-
-  html[data-historietas-tema-visual="foco"] .historietas-home-header {
+  .historietas-home-header {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.10) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-home-logo {
+  .historietas-home-logo {
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-home-logo-mark {
+  .historietas-home-logo-mark {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.22) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-home-logo-text {
+  .historietas-home-logo-text {
     background: none !important;
     color: #FFFFFF !important;
     -webkit-text-fill-color: #FFFFFF !important;
     text-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-home-header-search-input {
+  .historietas-home-header-search-input {
     background: #050505 !important;
     border-color: rgba(255,255,255,0.18) !important;
     color: #FFFFFF !important;
@@ -5424,15 +5379,15 @@ const themePageCss = `
     outline: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-home-header-search-input::placeholder {
+  .historietas-home-header-search-input::placeholder {
     color: #A1A1AA !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle,
-  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle:hover,
-  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle:active,
-  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle:focus,
-  html[data-historietas-tema-visual="foco"] .historietas-home-search-toggle:focus-visible {
+  .historietas-home-search-toggle,
+  .historietas-home-search-toggle:hover,
+  .historietas-home-search-toggle:active,
+  .historietas-home-search-toggle:focus,
+  .historietas-home-search-toggle:focus-visible {
     background: transparent !important;
     border: 0 !important;
     color: #FFFFFF !important;
@@ -5440,21 +5395,21 @@ const themePageCss = `
     outline: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-home-header-actions a {
+  .historietas-home-header-actions a {
     background: #050505 !important;
     border-color: rgba(255,255,255,0.18) !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-home-desktop-menu a {
+  .historietas-home-desktop-menu a {
     background: #050505 !important;
     border-color: rgba(255,255,255,0.14) !important;
     color: #D4D4D8 !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] .historietas-home-desktop-menu a[href="/"] {
+  .historietas-home-desktop-menu a[href="/"] {
     background: #FFFFFF !important;
     border-color: #FFFFFF !important;
     color: #000000 !important;
@@ -5590,7 +5545,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "clip",
   background:
-    "var(--historietas-bg-start, #070212)",
+    "var(--historietas-bg-start, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily:
     'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -5610,7 +5565,7 @@ const navStyle: CSSProperties = {
   position: "sticky",
   top: 0,
   zIndex: 30,
-  background: "#070212",
+  background: "#000000",
   borderBottom: "0",
   boxShadow: "none",
   maxWidth: "100vw",
@@ -5627,7 +5582,7 @@ const desktopNavStyle: CSSProperties = {
 };
 const mobileNavStyle: CSSProperties = {
   ...navStyle,
-  background: "#070212",
+  background: "#000000",
   borderBottom: "0",
   boxShadow: "none",
   overflow: "visible",
@@ -5734,20 +5689,20 @@ const logoMarkStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#04000A",
+  background: "#000000",
   color: "#FFFFFF",
   fontSize: "19px",
   fontWeight: 950,
   letterSpacing: 0,
   flex: "0 0 auto",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
+  border: "1px solid rgba(255,255,255,0.22)",
   boxShadow: "none",
 };
 
 const logoTextStyle: CSSProperties = {
   marginLeft: "-1px",
   background:
-    "linear-gradient(135deg, #FFFFFF 0%, #DDD6FE 44%, #A78BFA 100%)",
+    "linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -5782,7 +5737,7 @@ const mobileHeaderSearchInputStyle: CSSProperties = {
   height: "34px",
   borderRadius: "999px",
   border: "none",
-  background: "#04000A",
+  background: "#000000",
   color: "#FFFFFF",
   padding: "0 10px",
   outline: "none",
@@ -6041,7 +5996,7 @@ const desktopHeroPosterFrameStyle: CSSProperties = {
   overflow: "hidden",
   border: "1px solid rgba(255,255,255,0.08)",
   background:
-    "linear-gradient(145deg, #0A0314 0%, #04000A 58%, #020006 100%)",
+    "linear-gradient(145deg, #050505 0%, #0B0B0D 58%, #000000 100%)",
   boxShadow:
     "0 24px 64px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(255,255,255,0.025)",
   boxSizing: "border-box",
@@ -6098,7 +6053,7 @@ const desktopHeroPosterBadgeStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "8px 12px",
   borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "#000000",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   fontSize: "12px",
@@ -6131,7 +6086,7 @@ const desktopHeroPosterStatusStyle: CSSProperties = {
   zIndex: 1,
   width: "fit-content",
   maxWidth: "100%",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "13px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -6142,7 +6097,7 @@ const heroGlowStyle: CSSProperties = {
   position: "absolute",
   inset: 0,
   background:
-    "linear-gradient(180deg, rgba(4, 0, 10, 0.18) 0%, rgba(4, 0, 10, 0.72) 100%)",
+    "linear-gradient(180deg, rgba(4, 0, 10, 0.18) 0%, #000000 100%)",
 };
 
 const desktopHeroOverlayStyle: CSSProperties = {
@@ -6265,7 +6220,7 @@ const heroKickerStyle: CSSProperties = {
   maxWidth: "100%",
   padding: "8px 12px",
   borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "#000000",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#DDD6FE",
   fontSize: "12px",
@@ -6279,7 +6234,7 @@ const heroPillStyle: CSSProperties = {
   minHeight: "34px",
   padding: "8px 14px",
   borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "#000000",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   fontSize: "12.5px",
@@ -6315,7 +6270,7 @@ const desktopHeroTitleStyle: CSSProperties = {
 
 const heroDescriptionStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "15px",
   ...listaAuthorMetaTypographyStyle,
   lineHeight: 1.55,
@@ -6456,7 +6411,7 @@ const primaryButtonStyle: CSSProperties = {
   minHeight: "50px",
   padding: "0 22px",
   borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "#000000",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "15px",
@@ -6479,7 +6434,7 @@ const secondaryButtonStyle: CSSProperties = {
   minHeight: "50px",
   padding: "0 22px",
   borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "#000000",
   color: "#FFFFFF",
   textDecoration: "none",
   fontFamily: "inherit",
@@ -6652,7 +6607,7 @@ const mobileHeroMetaStyle: CSSProperties = {
 const mobileHeroPillStyle: CSSProperties = {
   ...heroPillStyle,
   padding: "8px 13px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "#000000",
   border: "1px solid rgba(255,255,255,0.08)",
   color: "#FFFFFF",
   boxShadow: "none",
@@ -6844,7 +6799,7 @@ const summaryNumberStyle: CSSProperties = {
 };
 
 const summaryLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10.5px",
   fontWeight: 850,
   textAlign: "center",
@@ -7103,7 +7058,7 @@ const authorAvatarInitialsStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   borderRadius: "18px",
-  background: "#08030F",
+  background: "#050505",
   color: "#FFFFFF",
   fontSize: "22px",
   lineHeight: 1,
@@ -7133,7 +7088,7 @@ const authorCardNameStyle: CSSProperties = {
 
 const authorCardBioStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",
   ...listaAuthorMetaTypographyStyle,
   lineHeight: 1.35,
@@ -7221,7 +7176,7 @@ const authorProfileButtonStyle: CSSProperties = {
   minHeight: "40px",
   padding: "0 12px",
   borderRadius: "999px",
-  background: "var(--historietas-bg-start, #070212)",
+  background: "var(--historietas-bg-start, #000000)",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "13px",
@@ -7283,7 +7238,7 @@ const coverPlaceholderStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundImage: "linear-gradient(135deg, #050505 0%, #0B0B0D 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   minWidth: 0,
@@ -7397,7 +7352,7 @@ const authorLinkStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
   margin: 0,
-  color: "var(--historietas-text-secondary, #D8C8FF)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",
   ...listaAuthorMetaTypographyStyle,
   textDecoration: "none",
@@ -7409,7 +7364,7 @@ const authorLinkStyle: CSSProperties = {
 const latestChapterInfoStyle: CSSProperties = {
   width: "fit-content",
   maxWidth: "100%",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
   lineHeight: 1.2,
   fontWeight: 900,
@@ -7516,11 +7471,11 @@ const progressTrackStyle: CSSProperties = {
 const progressBarStyle: CSSProperties = {
   height: "100%",
   borderRadius: "999px",
-  background: "linear-gradient(90deg, #F97316 0%, #7C3AED 100%)",
+  background: "linear-gradient(90deg, #FFFFFF 0%, #A1A1AA 100%)",
 };
 
 const progressTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "11px",
   fontWeight: 850,
   lineHeight: 1.2,
@@ -7534,7 +7489,7 @@ const readNowStyle: CSSProperties = {
   padding: "0 14px",
   marginTop: "4px",
   borderRadius: "999px",
-  background: "#08030F",
+  background: "#050505",
   border: "1px solid rgba(255,255,255,0.10)",
   color: "#FFFFFF",
   fontSize: "13px",
@@ -7587,7 +7542,7 @@ const mobileCardPrimaryActionStyle: CSSProperties = {
 };
 
 const pageBackgroundActionButtonStyle: CSSProperties = {
-  background: "var(--historietas-bg-start, #070212)",
+  background: "var(--historietas-bg-start, #000000)",
 };
 
 const mobileCardSecondaryActionStyle: CSSProperties = {
@@ -7600,7 +7555,7 @@ const mobileCardSecondaryActionStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "13px",
   fontWeight: 950,
   lineHeight: 1.15,
@@ -7686,7 +7641,7 @@ const coverThumbStyle: CSSProperties = {
   borderRadius: "16px",
   position: "relative",
   overflow: "hidden",
-  backgroundImage: "linear-gradient(135deg, #08030F 0%, #04000A 100%)",
+  backgroundImage: "linear-gradient(135deg, #050505 0%, #0B0B0D 100%)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   maxWidth: "100%",
@@ -7735,7 +7690,7 @@ const statusBadgeStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10.5px",
   fontWeight: 850,
   whiteSpace: "normal",
@@ -7749,7 +7704,7 @@ const soonBadgeStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(113, 113, 122, 0.18)",
   border: "1px solid rgba(161, 161, 170, 0.22)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "10px",
   fontWeight: 900,
   whiteSpace: "normal",
@@ -7758,7 +7713,7 @@ const soonBadgeStyle: CSSProperties = {
 
 const authorStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-text-secondary, #D8C8FF)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "12px",
   ...listaAuthorMetaTypographyStyle,
   maxWidth: "100%",
@@ -7774,7 +7729,7 @@ const soonLabelStyle: CSSProperties = {
   borderRadius: "999px",
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
+  color: "var(--historietas-text-secondary, #A1A1AA)",
   fontSize: "13px",
   fontWeight: 950,
   lineHeight: 1.15,
@@ -7793,7 +7748,7 @@ const homeEmptyStateStyle: CSSProperties = {
   gap: "10px",
   padding: "18px 14px",
   borderRadius: "24px",
-  background: "rgba(4, 0, 10, 0.72)",
+  background: "#000000",
   border: "1px solid rgba(255,255,255,0.06)",
   boxShadow: "none",
   textAlign: "center",

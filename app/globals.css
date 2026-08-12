@@ -1,20 +1,8 @@
 :root {
-  --background: #070212;
+  --background: #000000;
   --foreground: #ffffff;
   --muted: #a1a1aa;
-  --border: #2d2d32;
-  --accent-purple: #7c3aed;
-  --accent-orange: #f97316;
-  color-scheme: dark;
-}
-
-html[data-historietas-tema-visual="foco"] {
-  color-scheme: dark;
-}
-
-html[data-historietas-tema-visual="foco"] input,
-html[data-historietas-tema-visual="foco"] textarea,
-html[data-historietas-tema-visual="foco"] select {
+  --border: rgba(255, 255, 255, 0.18);
   color-scheme: dark;
 }
 
@@ -56,22 +44,15 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-html[data-historietas-tema-visual="original"],
-html[data-historietas-tema-visual="original"] body,
-html[data-historietas-tema-visual="original"] main,
-html[data-historietas-tema-visual="original"] .historietas-app-shell {
-  background: #070212 !important;
-}
-
-html[data-historietas-tema-visual="foco"],
-html[data-historietas-tema-visual="foco"] body,
-html[data-historietas-tema-visual="foco"] main,
-html[data-historietas-tema-visual="foco"] .historietas-app-shell {
+html,
+body,
+main,
+.historietas-app-shell {
   background: #000000 !important;
   color: #ffffff !important;
 }
 
-html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
+main > div[aria-hidden="true"] {
   background: transparent !important;
   opacity: 0 !important;
 }
@@ -190,45 +171,37 @@ pre {
 }
 
 ::selection {
-  background: rgba(124, 58, 237, 0.45);
-  color: #ffffff;
-}
-
-html[data-historietas-tema-visual="foco"] ::selection {
   background: #ffffff;
   color: #000000;
 }
 
 :focus-visible {
-  outline: 2px solid var(
-    --historietas-secondary,
-    var(--accent-purple)
-  );
+  outline: 2px solid var(--historietas-secondary, #a1a1aa);
   outline-offset: 3px;
 }
 
 /* Bottom Nav: nenhum item recebe bloco de fundo. */
-html[data-historietas-tema-visual] [data-bottom-nav]
+[data-bottom-nav]
   .historietas-bottom-nav-item,
-html[data-historietas-tema-visual] [data-mobile-nav]
+[data-mobile-nav]
   .historietas-bottom-nav-item {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
   color: var(
     --historietas-bottom-nav-text,
-    #c4b5fd
+    #a1a1aa
   ) !important;
 }
 
 /* O item ativo muda apenas para branco. */
-html[data-historietas-tema-visual] [data-bottom-nav]
+[data-bottom-nav]
   .historietas-bottom-nav-item[aria-current="page"],
-html[data-historietas-tema-visual] [data-bottom-nav]
+[data-bottom-nav]
   .historietas-bottom-nav-item-active,
-html[data-historietas-tema-visual] [data-mobile-nav]
+[data-mobile-nav]
   .historietas-bottom-nav-item[aria-current="page"],
-html[data-historietas-tema-visual] [data-mobile-nav]
+[data-mobile-nav]
   .historietas-bottom-nav-item-active {
   background: transparent !important;
   border-color: transparent !important;
@@ -240,10 +213,10 @@ html[data-historietas-tema-visual] [data-mobile-nav]
 }
 
 /* Ícones comuns permanecem sem bloco. */
-html[data-historietas-tema-visual] [data-bottom-nav]
+[data-bottom-nav]
   .historietas-bottom-nav-item:not([href="/publicar"])
   .historietas-bottom-nav-icon,
-html[data-historietas-tema-visual] [data-mobile-nav]
+[data-mobile-nav]
   .historietas-bottom-nav-item:not([href="/publicar"])
   .historietas-bottom-nav-icon {
   background: transparent !important;
@@ -253,45 +226,34 @@ html[data-historietas-tema-visual] [data-mobile-nav]
 }
 
 /* Publicar mantém somente o círculo próprio do botão +. */
-html[data-historietas-tema-visual] [data-bottom-nav]
+[data-bottom-nav]
   a[href="/publicar"]
   .historietas-bottom-nav-publish-icon,
-html[data-historietas-tema-visual] [data-mobile-nav]
+[data-mobile-nav]
   a[href="/publicar"]
   .historietas-bottom-nav-publish-icon {
   background: var(
     --historietas-bottom-nav-publish-bg,
-    rgba(59, 7, 100, 0.72)
+    #050505
   ) !important;
   border-color: var(
     --historietas-bottom-nav-publish-border,
-    rgba(167, 139, 250, 0.34)
+    #a1a1aa
   ) !important;
-  color: #ffffff !important;
+  color: #a1a1aa !important;
   box-shadow: none !important;
 }
 
-html[data-historietas-tema-visual="foco"] [data-bottom-nav]
-  a[href="/publicar"]
-  .historietas-bottom-nav-publish-icon,
-html[data-historietas-tema-visual="foco"] [data-mobile-nav]
-  a[href="/publicar"]
-  .historietas-bottom-nav-publish-icon {
-  background: #050505 !important;
-  border-color: #a1a1aa !important;
-  color: #a1a1aa !important;
-}
-
-html[data-historietas-tema-visual="foco"] [data-bottom-nav]
+[data-bottom-nav]
   a[href="/publicar"][aria-current="page"]
   .historietas-bottom-nav-publish-icon,
-html[data-historietas-tema-visual="foco"] [data-bottom-nav]
+[data-bottom-nav]
   a[href="/publicar"].historietas-bottom-nav-item-active
   .historietas-bottom-nav-publish-icon,
-html[data-historietas-tema-visual="foco"] [data-mobile-nav]
+[data-mobile-nav]
   a[href="/publicar"][aria-current="page"]
   .historietas-bottom-nav-publish-icon,
-html[data-historietas-tema-visual="foco"] [data-mobile-nav]
+[data-mobile-nav]
   a[href="/publicar"].historietas-bottom-nav-item-active
   .historietas-bottom-nav-publish-icon {
   border-color: #ffffff !important;
@@ -306,12 +268,12 @@ html[data-historietas-tema-visual="foco"] [data-mobile-nav]
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--historietas-bg-start, #070212);
+    background: var(--historietas-bg-start, #000000);
   }
 
   ::-webkit-scrollbar-thumb {
     background: rgba(161, 161, 170, 0.44);
-    border: 2px solid var(--historietas-bg-start, #070212);
+    border: 2px solid var(--historietas-bg-start, #000000);
     border-radius: 999px;
   }
 

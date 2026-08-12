@@ -2418,33 +2418,6 @@ export default function AdicionarCapituloPage() {
 
 const adicionarCapituloPageCss = `
   html {
-    --historietas-adicionar-capitulo-bg-page: #070212;
-    --historietas-adicionar-capitulo-bg-deep: #04000A;
-    --historietas-adicionar-capitulo-surface: #08030F;
-    --historietas-adicionar-capitulo-bg-end: #020006;
-    --historietas-adicionar-capitulo-accent: #F97316;
-    --historietas-adicionar-capitulo-secondary: #7C3AED;
-    --historietas-adicionar-capitulo-accent-soft: #FDBA74;
-    --historietas-adicionar-capitulo-purple-text: #DDD6FE;
-    --historietas-adicionar-capitulo-purple-soft: #A78BFA;
-    --historietas-adicionar-capitulo-danger: #EF4444;
-    --historietas-adicionar-capitulo-danger-text: #FCA5A5;
-    --historietas-adicionar-capitulo-danger-text-soft: #FECACA;
-    --historietas-adicionar-capitulo-success: #86EFAC;
-    --historietas-adicionar-capitulo-purple-border: rgba(59, 7, 100, 0.58);
-    --historietas-adicionar-capitulo-danger-surface: rgba(127,29,29,0.18);
-    --historietas-adicionar-capitulo-danger-border: rgba(239,68,68,0.26);
-    --historietas-adicionar-capitulo-danger-bg: rgba(239,68,68,0.13);
-    --historietas-adicionar-capitulo-danger-border-strong: rgba(239,68,68,0.28);
-    --historietas-adicionar-capitulo-success-bg: rgba(34,197,94,0.12);
-    --historietas-adicionar-capitulo-success-border: rgba(34,197,94,0.28);
-    --historietas-adicionar-capitulo-success-bg-soft: rgba(34,197,94,0.10);
-    --historietas-adicionar-capitulo-success-border-soft: rgba(34,197,94,0.24);
-    --historietas-adicionar-capitulo-accent-bg: rgba(249,115,22,0.12);
-    --historietas-adicionar-capitulo-accent-border: rgba(249,115,22,0.28);
-  }
-
-  html[data-historietas-tema-visual="foco"] {
     --historietas-adicionar-capitulo-bg-page: #000000;
     --historietas-adicionar-capitulo-bg-deep: #000000;
     --historietas-adicionar-capitulo-surface: #050505;
@@ -2470,42 +2443,36 @@ const adicionarCapituloPageCss = `
     --historietas-adicionar-capitulo-accent-bg: rgba(255,255,255,0.06);
     --historietas-adicionar-capitulo-accent-border: rgba(255,255,255,0.18);
   }
-
-  html[data-historietas-tema-visual="original"] body,
-  html[data-historietas-tema-visual="original"] main {
-    background: #070212 !important;
-  }
-
-  html[data-historietas-tema-visual="foco"] body,
-  html[data-historietas-tema-visual="foco"] main {
+body,
+  main {
     background: #000000 !important;
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] main > div[aria-hidden="true"] {
+  main > div[aria-hidden="true"] {
     background: transparent !important;
     opacity: 0 !important;
   }
 
-  html[data-historietas-tema-visual] input::placeholder,
-  html[data-historietas-tema-visual] textarea::placeholder {
+  input::placeholder,
+  textarea::placeholder {
     color: rgba(212,212,216,0.68) !important;
   }
 
-  html[data-historietas-tema-visual] input,
-  html[data-historietas-tema-visual] textarea {
+  input,
+  textarea {
     color: #FFFFFF !important;
   }
 
-  html[data-historietas-tema-visual] nav,
-  html[data-historietas-tema-visual] [data-bottom-nav],
-  html[data-historietas-tema-visual] [data-mobile-nav] {
-    background: var(--historietas-bottom-nav-bg, #04000A) !important;
+  nav,
+  [data-bottom-nav],
+  [data-mobile-nav] {
+    background: var(--historietas-bottom-nav-bg, #000000) !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/painel-autor"],
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"],
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] {
+  nav a[href="/painel-autor"],
+  [data-bottom-nav] a[href="/painel-autor"],
+  [data-mobile-nav] a[href="/painel-autor"] {
     background: var(
       --historietas-bottom-nav-active-bg,
       rgba(59, 7, 100, 0.54)
@@ -2518,9 +2485,9 @@ const adicionarCapituloPageCss = `
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual] nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual] [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
+  nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
     color: #FFFFFF !important;
     background: var(
       --historietas-bottom-nav-active-icon-bg,
@@ -2532,18 +2499,18 @@ const adicionarCapituloPageCss = `
     ) !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav a[href="/painel-autor"],
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/painel-autor"],
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/painel-autor"] {
+  nav a[href="/painel-autor"],
+  [data-bottom-nav] a[href="/painel-autor"],
+  [data-mobile-nav] a[href="/painel-autor"] {
     background: #050505 !important;
     border-color: #FFFFFF !important;
     color: #FFFFFF !important;
     box-shadow: none !important;
   }
 
-  html[data-historietas-tema-visual="foco"] nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
-  html[data-historietas-tema-visual="foco"] [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
+  nav a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  [data-bottom-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon,
+  [data-mobile-nav] a[href="/painel-autor"] .historietas-bottom-nav-icon {
     background: #000000 !important;
     border-color: rgba(255,255,255,0.24) !important;
     color: #FFFFFF !important;
@@ -2587,7 +2554,7 @@ const pageStyle: CSSProperties = {
   maxWidth: "100vw",
   overflowX: "hidden",
   boxSizing: "border-box",
-  background: "var(--historietas-adicionar-capitulo-bg-page, #070212)",
+  background: "var(--historietas-adicionar-capitulo-bg-page, #000000)",
   color: "#FFFFFF",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
@@ -2697,7 +2664,7 @@ const errorBoxStyle: CSSProperties = {
 
 const errorTitleStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-danger-button-text, var(--historietas-adicionar-capitulo-danger-text, #FCA5A5))",
+  color: "var(--historietas-danger-button-text, var(--historietas-adicionar-capitulo-danger-text, #FFFFFF))",
   fontSize: "24px",
   fontWeight: 950,
   letterSpacing: "-0.045em",
@@ -2706,7 +2673,7 @@ const errorTitleStyle: CSSProperties = {
 
 const errorTextStyle: CSSProperties = {
   margin: 0,
-  color: "var(--historietas-danger-button-text, var(--historietas-adicionar-capitulo-danger-text-soft, #FECACA))",
+  color: "var(--historietas-danger-button-text, var(--historietas-adicionar-capitulo-danger-text-soft, #FFFFFF))",
   fontSize: "14px",
   lineHeight: 1.7,
   fontWeight: 750,
@@ -2781,7 +2748,7 @@ const inputStyle: CSSProperties = {
   minHeight: "46px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-adicionar-capitulo-bg-deep, #04000A)",
+  background: "var(--historietas-adicionar-capitulo-bg-deep, #000000)",
   color: "#FFFFFF",
   padding: "0 14px",
   outline: "none",
@@ -2799,7 +2766,7 @@ const textareaStyle: CSSProperties = {
   minHeight: "78px",
   borderRadius: "20px",
   border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-adicionar-capitulo-bg-deep, #04000A)",
+  background: "var(--historietas-adicionar-capitulo-bg-deep, #000000)",
   color: "#FFFFFF",
   padding: "14px",
   outline: "none",
@@ -2863,7 +2830,7 @@ const importIconStyle: CSSProperties = {
 const importIconBoxStyle: CSSProperties = {
   minHeight: "82px",
   borderRadius: "18px",
-  background: "var(--historietas-adicionar-capitulo-bg-deep, #04000A)",
+  background: "var(--historietas-adicionar-capitulo-bg-deep, #000000)",
   border: "1px solid rgba(255,255,255,0.08)",
   display: "flex",
   alignItems: "center",
@@ -2889,7 +2856,7 @@ const importSuccessStyle: CSSProperties = {
   borderRadius: "999px",
   background: "var(--historietas-adicionar-capitulo-success-bg, rgba(34,197,94,0.12))",
   border: "1px solid var(--historietas-adicionar-capitulo-success-border, rgba(34,197,94,0.28))",
-  color: "var(--historietas-adicionar-capitulo-success, #86EFAC)",
+  color: "var(--historietas-adicionar-capitulo-success, #FFFFFF)",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -2902,7 +2869,7 @@ const importErrorStyle: CSSProperties = {
   borderRadius: "999px",
   background: "var(--historietas-danger-surface, var(--historietas-adicionar-capitulo-danger-bg, rgba(239,68,68,0.13)))",
   border: "1px solid var(--historietas-adicionar-capitulo-danger-border-strong, rgba(239,68,68,0.28))",
-  color: "var(--historietas-danger-button-text, var(--historietas-adicionar-capitulo-danger-text, #FCA5A5))",
+  color: "var(--historietas-danger-button-text, var(--historietas-adicionar-capitulo-danger-text, #FFFFFF))",
   fontSize: "11px",
   fontWeight: 900,
   ...safeTextStyle,
@@ -2915,7 +2882,7 @@ const importButtonStyle: CSSProperties = {
   padding: "0 12px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-adicionar-capitulo-surface, #08030F)",
+  background: "var(--historietas-adicionar-capitulo-surface, #050505)",
   color: "#FFFFFF",
   fontSize: "11px",
   fontWeight: 950,
@@ -2948,7 +2915,7 @@ const primaryButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-adicionar-capitulo-surface, #08030F)",
+  background: "var(--historietas-adicionar-capitulo-surface, #050505)",
   color: "#FFFFFF",
   fontSize: "11.5px",
   fontWeight: 950,
@@ -2977,7 +2944,7 @@ const secondaryButtonStyle: CSSProperties = {
   minHeight: "42px",
   borderRadius: "999px",
   border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-adicionar-capitulo-surface, #08030F)",
+  background: "var(--historietas-adicionar-capitulo-surface, #050505)",
   color: "#FFFFFF",
   textDecoration: "none",
   fontSize: "11.5px",

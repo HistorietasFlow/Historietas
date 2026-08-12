@@ -6,22 +6,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, FormEvent, ReactNode } from "react";
 import { supabase } from "../../lib/supabase/client";
 import {
-  aplicarTemaVisual,
-  carregarTemaVisualSalvo,
   historietasThemeCss,
-  obterTemaVisualSeguro,
-  salvarTemaVisualSalvo,
-  TEMAS_VISUAIS_HISTORIETAS,
-  THEME_STORAGE_KEY,
   useHistorietasTheme,
-  type TemaVisualHistorietas,
 } from "../../lib/historietasTheme";
 import { useNotificacoes } from "../../components/NotificacoesProvider";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
-type TemaVisual = TemaVisualHistorietas;
-
 type TipoMensagemAcaoConfiguracoes = "sucesso" | "erro" | "aviso";
 
 type MensagemAcaoConfiguracoes = {
@@ -490,7 +481,6 @@ type PreferenciasConta = {
   username: string;
   emailContato: string;
   receberAvisos: boolean;
-  temaVisual: TemaVisual;
 };
 
 type ResumoLocal = {
@@ -573,7 +563,6 @@ const CHAVES_RESUMO = [
   "historietas-autores-seguidos",
   "historietas-perfis-autores",
   "historietas-privacidade",
-  THEME_STORAGE_KEY,
 ];
 
 const preferenciasPadrao: PreferenciasConta = {
@@ -581,7 +570,6 @@ const preferenciasPadrao: PreferenciasConta = {
   username: "",
   emailContato: "",
   receberAvisos: true,
-  temaVisual: "foco",
 };
 
 const resumoPadrao: ResumoLocal = {
@@ -593,64 +581,6 @@ const resumoPadrao: ResumoLocal = {
   seguindoObras: 0,
   seguindoAutores: 0,
 };
-
-const TEMAS_VISUAIS: Record<
-  TemaVisual,
-  {
-    nome: string;
-    descricao: string;
-    accent: string;
-    secondary: string;
-  }
-> = {
-  original: {
-    nome: "Original",
-    descricao:
-      "Visual atual do Historietas em roxo escuro, preto e branco.",
-    accent: TEMAS_VISUAIS_HISTORIETAS.original.accent,
-    secondary: TEMAS_VISUAIS_HISTORIETAS.original.secondary,
-  },
-  foco: {
-    nome: "Foco",
-    descricao:
-      "Fundo e blocos pretos, textos brancos e secundários em cinza claro.",
-    accent: TEMAS_VISUAIS_HISTORIETAS.foco.accent,
-    secondary: TEMAS_VISUAIS_HISTORIETAS.foco.secondary,
-  },
-};
-
-const ORDEM_TEMAS_VISUAIS: TemaVisual[] = ["original", "foco"];
-
-function obterTemaVisualTraduzido(
-  temaVisual: TemaVisual,
-  language: HistorietasLanguage,
-) {
-  const temaBase = TEMAS_VISUAIS[temaVisual];
-
-  if (temaVisual === "foco") {
-    return {
-      ...temaBase,
-      nome: textoIdioma(language, "Foco", "Focus", "Enfoque"),
-      descricao: textoIdioma(
-        language,
-        "Fundo e blocos pretos, textos brancos e secundários em cinza claro.",
-        "Black background and sections, white text and light gray secondary text.",
-        "Fondo y bloques negros, textos blancos y secundarios en gris claro.",
-      ),
-    };
-  }
-
-  return {
-    ...temaBase,
-    nome: textoIdioma(language, "Original", "Original", "Original"),
-    descricao: textoIdioma(
-      language,
-      "Visual atual do Historietas em roxo escuro, preto e branco.",
-      "Current Historietas look in dark purple, black and white.",
-      "Diseño actual de Historietas en morado oscuro, negro y blanco.",
-    ),
-  };
-}
 
 function criarStorageKeyUsuarioConfiguracoes(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
@@ -877,8 +807,6 @@ async function carregarResumoContaSupabase(
 }
 
 function carregarPreferencias(userId = ""): PreferenciasConta {
-  const temaVisualSalvo = carregarTemaVisualSalvo(userId, true);
-
   try {
     const texto = lerStorageUsuarioConfiguracoes(CONFIG_STORAGE_KEY, userId);
     const json: unknown = texto ? JSON.parse(texto) : null;
@@ -886,7 +814,6 @@ function carregarPreferencias(userId = ""): PreferenciasConta {
     if (!json || typeof json !== "object") {
       return {
         ...preferenciasPadrao,
-        temaVisual: temaVisualSalvo,
       };
     }
 
@@ -909,12 +836,10 @@ function carregarPreferencias(userId = ""): PreferenciasConta {
         typeof preferencias.receberAvisos === "boolean"
           ? preferencias.receberAvisos
           : true,
-      temaVisual: temaVisualSalvo,
     };
   } catch {
     return {
       ...preferenciasPadrao,
-      temaVisual: temaVisualSalvo,
     };
   }
 }
@@ -927,7 +852,6 @@ function salvarPreferencias(preferencias: PreferenciasConta, userId = "") {
     userIdLimpo,
     preferencias,
   );
-  salvarTemaVisualSalvo(preferencias.temaVisual, userIdLimpo);
 
   if (typeof window !== "undefined" && userIdLimpo) {
     window.dispatchEvent(
@@ -1843,16 +1767,11 @@ export default function ConfiguracoesPage() {
   const [erroExclusaoConta, setErroExclusaoConta] = useState("");
   const [mensagemAcao, setMensagemAcao] =
     useState<MensagemAcaoConfiguracoes | null>(null);
-  const { pageThemeStyle, setTemaVisual } =
-    useHistorietasTheme(pageStyle);
+  const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { notificacoesNaoLidas } = useNotificacoes();
   const { language } = useHistorietasLanguage();
 
   const usuarioIdLogado = usuario?.id || "";
-  const temaAtual = obterTemaVisualTraduzido(
-    preferencias.temaVisual,
-    language,
-  );
 
   function t(portugues: string, ingles: string, espanhol: string) {
     return textoIdioma(language, portugues, ingles, espanhol);
@@ -1933,12 +1852,6 @@ export default function ConfiguracoesPage() {
           emailContato:
             preferenciasCarregadas.emailContato || usuarioCarregado.email,
         });
-        salvarTemaVisualSalvo(
-          preferenciasCarregadas.temaVisual,
-          usuarioCarregado.id,
-        );
-        setTemaVisual(preferenciasCarregadas.temaVisual);
-        aplicarTemaVisual(preferenciasCarregadas.temaVisual);
         setResumo(resumoCarregado);
         setVerificandoAcesso(false);
       } catch {
@@ -1953,7 +1866,7 @@ export default function ConfiguracoesPage() {
     return () => {
       cancelado = true;
     };
-  }, [router, setTemaVisual]);
+  }, [router]);
 
 
   useEffect(() => {
@@ -2199,24 +2112,6 @@ export default function ConfiguracoesPage() {
     });
   }
 
-  function atualizarTemaVisual(temaVisual: TemaVisual) {
-    const temaSeguro = obterTemaVisualSeguro(temaVisual);
-    const preferenciasAtualizadas: PreferenciasConta = {
-      ...preferencias,
-      temaVisual: temaSeguro,
-    };
-
-    setPreferencias(preferenciasAtualizadas);
-    setTemaVisual(temaSeguro);
-    aplicarTemaVisual(temaSeguro);
-
-    if (usuarioIdLogado) {
-      salvarPreferencias(preferenciasAtualizadas, usuarioIdLogado);
-      return;
-    }
-
-    salvarTemaVisualSalvo(temaSeguro);
-  }
 
   async function salvar() {
     if (salvando) {
