@@ -2036,7 +2036,7 @@ async function carregarPerfisSupabaseHome(autorIds: string[], userId = "") {
 
   try {
     const { data, error } = await supabase
-      .from("profiles")
+      .from("profiles_publicos")
       .select("id, user_id, nome, avatar_url, bio, sobre_bio")
       .in("user_id", idsUnicos)
       .limit(1000);
@@ -2052,7 +2052,7 @@ async function carregarPerfisSupabaseHome(autorIds: string[], userId = "") {
 
   try {
     const { data, error } = await supabase
-      .from("profiles")
+      .from("profiles_publicos")
       .select("id, user_id, nome, avatar_url, bio, sobre_bio")
       .in("id", idsUnicos)
       .limit(1000);

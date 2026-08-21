@@ -2701,7 +2701,7 @@ async function carregarSolicitacoesSeguidoresSupabase(
 
     try {
       const { data: profilesData } = await supabase
-        .from("profiles")
+        .from("profiles_publicos")
         .select("id,user_id,nome,username,avatar_url,bio,sobre_bio")
         .in("user_id", solicitantesIds)
         .limit(120);
@@ -2726,7 +2726,7 @@ async function carregarSolicitacoesSeguidoresSupabase(
     if (usuariosSemProfile.length > 0) {
       try {
         const { data: profilesDataPorId } = await supabase
-          .from("profiles")
+          .from("profiles_publicos")
           .select("id,user_id,nome,username,avatar_url,bio,sobre_bio")
           .in("id", usuariosSemProfile)
           .limit(120);

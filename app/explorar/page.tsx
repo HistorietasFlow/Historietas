@@ -916,7 +916,7 @@ async function carregarNomesProfilesExplorar(userIds: string[]) {
   try {
     const filtroIds = idsUnicos.join(",");
     const { data, error } = await supabase
-      .from("profiles")
+      .from("profiles_publicos")
       .select("id, user_id, nome, avatar_url, bio, sobre_bio")
       .or(`user_id.in.(${filtroIds}),id.in.(${filtroIds})`)
       .limit(Math.max(idsUnicos.length * 2, 1));
@@ -1061,7 +1061,7 @@ async function carregarPerfisAutoresExplorar(
 
   try {
     const { data } = await supabase
-      .from("profiles")
+      .from("profiles_publicos")
       .select("id, user_id, nome, avatar_url, bio, sobre_bio")
       .in("user_id", idsUnicos)
       .limit(1000);
@@ -1075,7 +1075,7 @@ async function carregarPerfisAutoresExplorar(
 
   try {
     const { data } = await supabase
-      .from("profiles")
+      .from("profiles_publicos")
       .select("id, user_id, nome, avatar_url, bio, sobre_bio")
       .in("id", idsUnicos)
       .limit(1000);

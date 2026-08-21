@@ -2296,7 +2296,7 @@ async function carregarPerfisPublicosObra(userIds: string[]) {
   for (const campos of selecoesPerfis) {
     try {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("profiles_publicos")
         .select(campos)
         .in("user_id", ids)
         .limit(1000);
@@ -2329,7 +2329,7 @@ async function carregarPerfisPublicosObra(userIds: string[]) {
     for (const campos of selecoesPerfis) {
       try {
         const { data, error } = await supabase
-          .from("profiles")
+          .from("profiles_publicos")
           .select(campos)
           .in("id", idsFaltantes)
           .limit(1000);

@@ -855,7 +855,7 @@ async function carregarPerfil(userId: string, nomeFallback = "") {
   for (const campo of ["user_id", "id"] as const) {
     try {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("profiles_publicos")
         .select("id,user_id,nome,username,avatar_url,bio,sobre_bio")
         .eq(campo, userId)
         .limit(1)
@@ -2660,7 +2660,7 @@ async function carregarAutoresPublicos(obras: ObraLista[]) {
     for (const campo of ["user_id", "id"] as const) {
       try {
         const { data, error } = await supabase
-          .from("profiles")
+          .from("profiles_publicos")
           .select("id,user_id,nome,username,avatar_url,bio,sobre_bio,criado_em")
           .in(campo, chunk)
           .limit(Math.max(chunk.length, 1));
