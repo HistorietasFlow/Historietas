@@ -2183,7 +2183,7 @@ async function carregarProfilePainelAutor(userId: string) {
   try {
     const camposProfile = "id, user_id, nome, avatar_url, bio, sobre_bio";
     const { data: profilePorUserId, error: erroUserId } = await supabase
-      .from("profiles")
+      .from("profiles_publicos")
       .select(camposProfile)
       .eq("user_id", userIdLimpo)
       .limit(1)
@@ -2194,7 +2194,7 @@ async function carregarProfilePainelAutor(userId: string) {
     }
 
     const { data: profilePorId, error: erroId } = await supabase
-      .from("profiles")
+      .from("profiles_publicos")
       .select(camposProfile)
       .eq("id", userIdLimpo)
       .limit(1)

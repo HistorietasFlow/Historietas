@@ -4643,7 +4643,7 @@ async function carregarPerfilUsuarioSupabase(
 
   async function buscarPerfilPorCampo(campo: "user_id" | "id") {
     const { data, error } = await supabase
-      .from("profiles")
+      .from("profiles_publicos")
       .select("id,user_id,nome,avatar_url,bio,sobre_bio,criado_em,username")
       .eq(campo, userIdLimpo)
       .limit(1)

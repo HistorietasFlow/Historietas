@@ -526,13 +526,10 @@ export async function carregarPreferenciasPrivacidade(
   }
 
   try {
-    const { data, error } = await supabase
-      .from("preferencias_privacidade")
-      .select(
-        "perfil_privado,aprovar_novos_seguidores,visibilidade_obras,visibilidade_sobre,visibilidade_diario,visibilidade_comunidade,visibilidade_biblioteca,visibilidade_atividades,anotacoes_privadas_padrao,quem_pode_comentar_diario",
-      )
-      .eq("user_id", userIdLimpo)
-      .maybeSingle();
+    const { data, error } = await supabase.rpc(
+      "carregar_preferencias_privacidade_publicas",
+      { p_user_id: userIdLimpo },
+    );
 
     if (error || !data) {
       return fallback;

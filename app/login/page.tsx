@@ -678,7 +678,7 @@ export default function LoginPage() {
       let perfilAtual: PerfilExistenteLogin | null = null;
 
       const { data: perfilPorUserId, error: erroPorUserId } = await supabase
-        .from("profiles")
+        .from("profiles_publicos")
         .select("id,user_id,nome,bio,sobre_bio,avatar_url")
         .eq("user_id", userIdLimpo)
         .limit(1)
@@ -692,7 +692,7 @@ export default function LoginPage() {
 
       if (!perfilAtual) {
         const respostaPorId = await supabase
-          .from("profiles")
+          .from("profiles_publicos")
           .select("id,user_id,nome,bio,sobre_bio,avatar_url")
           .eq("id", userIdLimpo)
           .limit(1)

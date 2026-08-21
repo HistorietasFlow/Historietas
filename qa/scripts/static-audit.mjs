@@ -480,6 +480,132 @@ const migrationFiles = fs
   .filter((name) => name.endsWith(".sql"))
   .sort();
 
+const rlsPrivacyMigrationName =
+  "20260821000100_corrigir_rls_capitulos_privacidade.sql";
+const rlsPrivacyMigrationPath = path.join(
+  migrationsDir,
+  rlsPrivacyMigrationName
+);
+
+if (!fs.existsSync(rlsPrivacyMigrationPath)) {
+  fail(
+    "migration RLS de capítulos e privacidade",
+    `${rlsPrivacyMigrationName} ausente`
+  );
+} else {
+  const rlsSql = fs.readFileSync(
+    rlsPrivacyMigrationPath,
+    "utf8"
+  );
+
+  const rlsContracts = [
+    {
+      name: "autoria de capítulo validada por trigger",
+      pattern:
+        /create trigger\s+capitulos_validar_autoria[\s\S]*?execute function\s+public\.validar_autoria_capitulo\(\)/i
+    },
+    {
+      name: "insert de capítulo exige dono da obra",
+      pattern:
+        /create policy\s+capitulos_insert_autor_obra[\s\S]*?user_id\s*=\s*auth\.uid\(\)[\s\S]*?obra\.user_id\s*=\s*auth\.uid\(\)/i
+    },
+    {
+      name: "coleções usam autorização da Biblioteca",
+      pattern:
+        /create or replace function\s+public\.usuario_pode_ver_registro_biblioteca[\s\S]*?visibilidade_biblioteca/i
+    },
+    {
+      name: "favoritos privados protegidos",
+      pattern: /create policy\s+favoritos_select_visiveis/i
+    },
+    {
+      name: "concluídas privadas protegidas",
+      pattern: /create policy\s+concluidas_select_visiveis/i
+    },
+    {
+      name: "avaliações privadas protegidas",
+      pattern: /create policy\s+obra_avaliacoes_select_visiveis/i
+    },
+    {
+      name: "obras seguidas privadas protegidas",
+      pattern: /create policy\s+seguindo_obras_select_visiveis/i
+    },
+    {
+      name: "capítulos salvos privados protegidos",
+      pattern: /create policy\s+salvos_capitulos_select_visiveis/i
+    },
+    {
+      name: "autores seguidos restritos ao dono",
+      pattern: /create policy\s+seguindo_autores_select_proprio/i
+    },
+    {
+      name: "grants de autores seguidos funcionais",
+      pattern:
+        /grant\s+select\s*,\s*insert\s*,\s*update\s*,\s*delete\s+on table\s+public\.seguindo_autores\s+to\s+authenticated/i
+    },
+    {
+      name: "preferências completas restritas ao dono",
+      pattern:
+        /create policy\s+preferencias_privacidade_select_proprio/i
+    },
+    {
+      name: "bio pública passa por máscara de privacidade",
+      pattern:
+        /create view\s+public\.profiles_publicos[\s\S]*?else null[\s\S]*?revoke all privileges on table public\.profiles[\s\S]*?revoke select\s*\(\s*bio\s*,\s*sobre_bio\s*\)[\s\S]*?grant select\s*\([\s\S]*?username[\s\S]*?\) on table public\.profiles to anon, authenticated/i
+    },
+    {
+      name: "gravação de profiles continua limitada por coluna",
+      pattern:
+        /grant insert\s*\([\s\S]*?username[\s\S]*?\) on table public\.profiles to authenticated;[\s\S]*?grant update\s*\([\s\S]*?username[\s\S]*?\) on table public\.profiles to authenticated;[\s\S]*?grant delete on table public\.profiles to authenticated/i
+    }
+  ];
+
+  for (const contract of rlsContracts) {
+    if (contract.pattern.test(rlsSql)) {
+      pass(contract.name, rlsPrivacyMigrationName);
+    } else {
+      fail(contract.name, `contrato ausente em ${rlsPrivacyMigrationName}`);
+    }
+  }
+
+  const unsafeGrantPatterns = [
+    /grant\s+all(?:\s+privileges)?\s+on table\s+public\.[a-z_]+\s+to\s+(?:anon|authenticated)/i,
+    /grant[^;]*\b(?:truncate|trigger|maintain)\b[^;]*\bto\s+(?:anon|authenticated)/i
+  ];
+
+  if (unsafeGrantPatterns.some((pattern) => pattern.test(rlsSql))) {
+    fail(
+      "migration RLS sem grants administrativos ao cliente",
+      "GRANT ALL/TRUNCATE/TRIGGER/MAINTAIN encontrado para anon ou authenticated"
+    );
+  } else {
+    pass(
+      "migration RLS sem grants administrativos ao cliente",
+      rlsPrivacyMigrationName
+    );
+  }
+}
+
+const rawSensitiveProfileReads = sourceFiles
+  .filter((file) =>
+    /\.from\(["']profiles["']\)[\s\S]{0,240}?\.select\([^)]*(?:bio|sobre_bio)/.test(
+      file.content
+    )
+  )
+  .map((file) => file.relative);
+
+if (rawSensitiveProfileReads.length) {
+  fail(
+    "bio não é lida diretamente de profiles",
+    rawSensitiveProfileReads.join(", ")
+  );
+} else {
+  pass(
+    "bio não é lida diretamente de profiles",
+    "consultas sensíveis usam profiles_publicos"
+  );
+}
+
 const progressCascadePattern =
   /foreign key\s*\(\s*"?capitulo_id"?\s*\)\s*references\s+(?:"?public"?\.)?"?capitulos"?\s*\(\s*"?id"?\s*\)\s*on delete cascade/i;
 
