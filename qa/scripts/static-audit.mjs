@@ -487,6 +487,13 @@ const rlsPrivacyMigrationPath = path.join(
   rlsPrivacyMigrationName
 );
 
+const rlsLibraryExecuteMigrationName =
+  "20260821222119_corrigir_execute_helper_biblioteca.sql";
+const rlsLibraryExecuteMigrationPath = path.join(
+  migrationsDir,
+  rlsLibraryExecuteMigrationName
+);
+
 if (!fs.existsSync(rlsPrivacyMigrationPath)) {
   fail(
     "migration RLS de capítulos e privacidade",
@@ -592,6 +599,62 @@ if (!fs.existsSync(rlsPrivacyMigrationPath)) {
     pass(
       "migration RLS sem grants administrativos ao cliente",
       rlsPrivacyMigrationName
+    );
+  }
+}
+
+if (!fs.existsSync(rlsLibraryExecuteMigrationPath)) {
+  fail(
+    "migration de execução do helper da Biblioteca",
+    `${rlsLibraryExecuteMigrationName} ausente`
+  );
+} else {
+  const libraryExecuteSql = fs.readFileSync(
+    rlsLibraryExecuteMigrationPath,
+    "utf8"
+  );
+
+  const libraryExecuteContracts = [
+    {
+      name: "roles de RLS acessam o schema privado",
+      pattern:
+        /grant usage on schema historietas_privado\s+to anon, authenticated/i
+    },
+    {
+      name: "roles de RLS executam o helper da Biblioteca",
+      pattern:
+        /grant execute on function historietas_privado\.usuario_pode_ver_registro_biblioteca\(uuid, text, text\)\s+to anon, authenticated/i
+    },
+    {
+      name: "helper da Biblioteca permanece negado a PUBLIC e service_role",
+      pattern:
+        /revoke execute on function historietas_privado\.usuario_pode_ver_registro_biblioteca\(uuid, text, text\)\s+from public, service_role/i
+    }
+  ];
+
+  for (const contract of libraryExecuteContracts) {
+    if (contract.pattern.test(libraryExecuteSql)) {
+      pass(contract.name, rlsLibraryExecuteMigrationName);
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${rlsLibraryExecuteMigrationName}`
+      );
+    }
+  }
+
+  const unsafeLibraryExecuteGrant =
+    /grant execute on function historietas_privado\.usuario_pode_ver_registro_biblioteca\(uuid, text, text\)\s+to[^;]*(?:\bpublic\b|\bservice_role\b)/i;
+
+  if (unsafeLibraryExecuteGrant.test(libraryExecuteSql)) {
+    fail(
+      "helper da Biblioteca sem execução ampla",
+      "grant para PUBLIC ou service_role encontrado"
+    );
+  } else {
+    pass(
+      "helper da Biblioteca sem execução ampla",
+      rlsLibraryExecuteMigrationName
     );
   }
 }
