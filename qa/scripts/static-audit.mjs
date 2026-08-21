@@ -512,7 +512,7 @@ if (!fs.existsSync(rlsPrivacyMigrationPath)) {
     {
       name: "coleções usam autorização da Biblioteca",
       pattern:
-        /create or replace function\s+public\.usuario_pode_ver_registro_biblioteca[\s\S]*?visibilidade_biblioteca/i
+        /create or replace function\s+historietas_privado\.usuario_pode_ver_registro_biblioteca[\s\S]*?visibilidade_biblioteca/i
     },
     {
       name: "favoritos privados protegidos",
@@ -551,7 +551,17 @@ if (!fs.existsSync(rlsPrivacyMigrationPath)) {
     {
       name: "bio pública passa por máscara de privacidade",
       pattern:
-        /create view\s+public\.profiles_publicos[\s\S]*?else null[\s\S]*?revoke all privileges on table public\.profiles[\s\S]*?revoke select\s*\(\s*bio\s*,\s*sobre_bio\s*\)[\s\S]*?grant select\s*\([\s\S]*?username[\s\S]*?\) on table public\.profiles to anon, authenticated/i
+        /create or replace function\s+historietas_privado\.carregar_bios_perfil_publicas[\s\S]*?else null[\s\S]*?create view\s+public\.profiles_publicos\s+with\s*\(\s*security_invoker\s*=\s*true[\s\S]*?revoke all privileges on table public\.profiles[\s\S]*?revoke select\s*\(\s*bio\s*,\s*sobre_bio\s*\)[\s\S]*?grant select\s*\([\s\S]*?username[\s\S]*?\) on table public\.profiles to anon, authenticated/i
+    },
+    {
+      name: "view pública respeita RLS do chamador",
+      pattern:
+        /create view\s+public\.profiles_publicos\s+with\s*\(\s*security_invoker\s*=\s*true\s*,\s*security_barrier\s*=\s*true\s*\)/i
+    },
+    {
+      name: "helper interno da Biblioteca não vira RPC pública",
+      pattern:
+        /revoke all on function\s+historietas_privado\.usuario_pode_ver_registro_biblioteca\(uuid, text, text\)\s+from public, anon, authenticated, service_role/i
     },
     {
       name: "gravação de profiles continua limitada por coluna",

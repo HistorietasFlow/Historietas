@@ -1,11 +1,17 @@
 begin;
 
+-- Funções internas ficam fora do schema exposto pela Data API.
+create schema if not exists historietas_privado authorization postgres;
+
+revoke all on schema historietas_privado
+  from public, anon, authenticated, service_role;
+
 -- Garante no banco que um capítulo sempre pertence ao mesmo usuário da obra.
 create or replace function public.validar_autoria_capitulo()
 returns trigger
 language plpgsql
-security definer
-set search_path to 'pg_catalog', 'public', 'auth', 'pg_temp'
+security invoker
+set search_path = ''
 as $$
 declare
   v_autor_obra_id uuid;
@@ -121,8 +127,9 @@ using (
   )
 );
 
--- Centraliza a decisão de leitura das coleções da Biblioteca.
-create or replace function public.usuario_pode_ver_registro_biblioteca(
+-- Centraliza a decisão de leitura das coleções da Biblioteca sem criar uma RPC
+-- pública. A função é usada somente pelas policies abaixo.
+create or replace function historietas_privado.usuario_pode_ver_registro_biblioteca(
   p_user_id uuid,
   p_visibilidade text,
   p_categoria text
@@ -131,7 +138,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path to 'pg_catalog', 'public', 'auth', 'pg_temp'
+set search_path = ''
 as $$
   select
     p_user_id is not null
@@ -169,10 +176,8 @@ as $$
     );
 $$;
 
-revoke all on function public.usuario_pode_ver_registro_biblioteca(uuid, text, text)
-  from public;
-grant execute on function public.usuario_pode_ver_registro_biblioteca(uuid, text, text)
-  to anon, authenticated, service_role;
+revoke all on function historietas_privado.usuario_pode_ver_registro_biblioteca(uuid, text, text)
+  from public, anon, authenticated, service_role;
 
 drop policy if exists favoritos_select_publico on public.favoritos;
 create policy favoritos_select_visiveis
@@ -180,7 +185,7 @@ on public.favoritos
 for select
 to anon, authenticated
 using (
-  public.usuario_pode_ver_registro_biblioteca(
+  historietas_privado.usuario_pode_ver_registro_biblioteca(
     user_id,
     visibilidade,
     'favoritos'
@@ -193,7 +198,7 @@ on public.concluidas
 for select
 to anon, authenticated
 using (
-  public.usuario_pode_ver_registro_biblioteca(
+  historietas_privado.usuario_pode_ver_registro_biblioteca(
     user_id,
     visibilidade,
     'concluidas'
@@ -206,7 +211,7 @@ on public.obra_avaliacoes
 for select
 to anon, authenticated
 using (
-  public.usuario_pode_ver_registro_biblioteca(
+  historietas_privado.usuario_pode_ver_registro_biblioteca(
     user_id,
     visibilidade,
     'obra_avaliacoes'
@@ -219,7 +224,7 @@ on public.seguindo_obras
 for select
 to anon, authenticated
 using (
-  public.usuario_pode_ver_registro_biblioteca(
+  historietas_privado.usuario_pode_ver_registro_biblioteca(
     user_id,
     visibilidade,
     'seguindo_obras'
@@ -232,7 +237,7 @@ on public.salvos_capitulos
 for select
 to anon, authenticated
 using (
-  public.usuario_pode_ver_registro_biblioteca(
+  historietas_privado.usuario_pode_ver_registro_biblioteca(
     user_id,
     'parcial',
     'salvos_capitulos'
@@ -284,7 +289,7 @@ returns jsonb
 language sql
 stable
 security definer
-set search_path to 'pg_catalog', 'public', 'auth', 'pg_temp'
+set search_path = ''
 as $$
   select coalesce(
     (
@@ -328,60 +333,85 @@ revoke all on function public.carregar_preferencias_privacidade_publicas(uuid)
 grant execute on function public.carregar_preferencias_privacidade_publicas(uuid)
   to anon, authenticated, service_role;
 
--- A tabela profiles continua servindo a identidade pública, mas bio/sobre
--- passam por uma visão que mascara o conteúdo quando a aba Sobre está oculta.
+-- O acesso privilegiado fica restrito a esta função, fora do schema exposto.
+-- Ela só devolve bio/sobre já mascarados e também elimina perfis bloqueados.
+create or replace function historietas_privado.carregar_bios_perfil_publicas(
+  p_user_id uuid
+)
+returns table (
+  bio text,
+  sobre_bio text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    case
+      when (select auth.uid()) = perfil.user_id
+        or public.usuario_pode_ver_aba_perfil(
+          perfil.user_id,
+          coalesce(preferencias.visibilidade_sobre, 'publico')
+        )
+        then perfil.bio
+      else null
+    end as bio,
+    case
+      when (select auth.uid()) = perfil.user_id
+        or public.usuario_pode_ver_aba_perfil(
+          perfil.user_id,
+          coalesce(preferencias.visibilidade_sobre, 'publico')
+        )
+        then perfil.sobre_bio
+      else null
+    end as sobre_bio
+  from public.profiles perfil
+  left join public.preferencias_privacidade preferencias
+    on preferencias.user_id = perfil.user_id
+  where perfil.user_id = p_user_id
+    and (
+      (select auth.uid()) = perfil.user_id
+      or public.usuario_pode_ver_aba_perfil(perfil.user_id, 'publico')
+    );
+$$;
+
+revoke all on function historietas_privado.carregar_bios_perfil_publicas(uuid)
+  from public, anon, authenticated, service_role;
+
+-- A view roda com os privilégios do chamador e enxerga apenas as colunas
+-- públicas de profiles. O único acesso a bio/sobre ocorre pela função acima.
 drop view if exists public.profiles_publicos;
 
 create view public.profiles_publicos
-with (security_barrier = true)
+with (security_invoker = true, security_barrier = true)
 as
 select
   perfil.id,
   perfil.user_id,
   perfil.nome,
   perfil.avatar_url,
-  case
-    when public.usuario_pode_ver_aba_perfil(
-      perfil.user_id,
-      coalesce(
-        (
-          select preferencias.visibilidade_sobre
-          from public.preferencias_privacidade preferencias
-          where preferencias.user_id = perfil.user_id
-        ),
-        'publico'
-      )
-    ) then perfil.bio
-    else null
-  end as bio,
+  bios.bio,
   perfil.tipo,
   perfil.criado_em,
   perfil.atualizado_em,
-  case
-    when public.usuario_pode_ver_aba_perfil(
-      perfil.user_id,
-      coalesce(
-        (
-          select preferencias.visibilidade_sobre
-          from public.preferencias_privacidade preferencias
-          where preferencias.user_id = perfil.user_id
-        ),
-        'publico'
-      )
-    ) then perfil.sobre_bio
-    else null
-  end as sobre_bio,
+  bios.sobre_bio,
   perfil.username
 from public.profiles perfil
-where
-  auth.uid() = perfil.user_id
-  or not public.usuarios_possuem_bloqueio(auth.uid(), perfil.user_id);
+cross join lateral historietas_privado.carregar_bios_perfil_publicas(
+  perfil.user_id
+) bios;
 
 alter view public.profiles_publicos owner to postgres;
 
 revoke all on table public.profiles_publicos
   from public, anon, authenticated;
 grant select on table public.profiles_publicos
+  to anon, authenticated, service_role;
+
+grant usage on schema historietas_privado
+  to anon, authenticated, service_role;
+grant execute on function historietas_privado.carregar_bios_perfil_publicas(uuid)
   to anon, authenticated, service_role;
 
 revoke all privileges on table public.profiles
@@ -475,13 +505,16 @@ grant all privileges on table public.preferencias_privacidade to service_role;
 comment on function public.validar_autoria_capitulo() is
   'Impede capítulos vinculados a uma obra de receberem user_id diferente do autor da obra.';
 
-comment on function public.usuario_pode_ver_registro_biblioteca(uuid, text, text) is
+comment on function historietas_privado.usuario_pode_ver_registro_biblioteca(uuid, text, text) is
   'Aplica visibilidade da Biblioteca, relacionamento, bloqueios e preferência específica da coleção.';
 
 comment on function public.carregar_preferencias_privacidade_publicas(uuid) is
   'Retorna somente regras de exibição necessárias ao cliente e preserva preferências internas do usuário.';
 
+comment on function historietas_privado.carregar_bios_perfil_publicas(uuid) is
+  'Retorna bio/sobre já mascarados pela visibilidade e omite perfis bloqueados.';
+
 comment on view public.profiles_publicos is
-  'Expõe identidade pública e mascara bio/sobre_bio conforme a visibilidade da aba Sobre.';
+  'View security invoker que expõe identidade pública e recebe bio/sobre_bio já mascarados.';
 
 commit;
