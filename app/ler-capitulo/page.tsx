@@ -1256,22 +1256,24 @@ async function incrementarVisualizacaoCapituloSupabase(
   }
 
   try {
-    const { data, error } = await supabase.rpc(
-      "incrementar_visualizacao_capitulo",
-      {
-        capitulo_id_param: capituloIdLimpo,
-      }
-    );
+    const response = await fetch("/api/visualizacoes", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo: "capitulo",
+        conteudoId: capituloIdLimpo,
+      }),
+    });
+    const data = (await response.json().catch(() => null)) as
+      | { ok?: boolean; total?: unknown }
+      | null;
 
-    if (error) {
-      console.warn(
-        "Não consegui registrar a visualização protegida do capítulo:",
-        error.message
-      );
+    if (!response.ok || !data?.ok || typeof data.total !== "number") {
       return null;
     }
 
-    return Math.max(0, obterNumeroSeguro(data, 0));
+    return Math.max(0, obterNumeroSeguro(data.total, 0));
   } catch {
     // A leitura continua mesmo se a contagem remota falhar.
     return null;

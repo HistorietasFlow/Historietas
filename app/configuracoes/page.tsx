@@ -2301,6 +2301,16 @@ export default function ConfiguracoesPage() {
         "The current password is incorrect.",
         "La contraseña actual es incorrecta.",
       ],
+      muitas_tentativas: [
+        "Muitas tentativas de confirmação. Aguarde antes de tentar novamente.",
+        "Too many confirmation attempts. Wait before trying again.",
+        "Demasiados intentos de confirmación. Espera antes de volver a intentarlo.",
+      ],
+      protecao_indisponivel: [
+        "Não foi possível validar a segurança da operação agora. Tente novamente.",
+        "The operation's security could not be validated right now. Try again.",
+        "No se pudo validar la seguridad de la operación ahora. Inténtalo de nuevo.",
+      ],
       conta_nao_autenticada: [
         "Sua sessão expirou. Entre novamente e tente de novo.",
         "Your session has expired. Sign in again and try once more.",

@@ -29,6 +29,7 @@ const expectedRoutes = [
   "app/ler-capitulo/page.tsx",
   "app/obra/[slug]/page.tsx",
   "app/obra/[slug]/capitulo/[numero]/page.tsx",
+  "app/api/visualizacoes/route.ts",
   "app/robots.ts",
   "app/sitemap.ts",
   "app/opengraph-image.tsx",
@@ -479,6 +480,127 @@ const migrationFiles = fs
   .readdirSync(migrationsDir)
   .filter((name) => name.endsWith(".sql"))
   .sort();
+
+const abuseProtectionMigrationName = migrationFiles.find((name) =>
+  name.endsWith(
+    "_proteger_endpoint_exclusao_rpcs_visualizacao.sql"
+  )
+);
+
+if (!abuseProtectionMigrationName) {
+  fail(
+    "migration de proteção contra abuso",
+    "migration proteger_endpoint_exclusao_rpcs_visualizacao ausente"
+  );
+} else {
+  const abuseProtectionSql = fs.readFileSync(
+    path.join(migrationsDir, abuseProtectionMigrationName),
+    "utf8"
+  );
+  const abuseProtectionContracts = [
+    {
+      name: "limitador persistente fica no schema privado com RLS",
+      pattern:
+        /create table if not exists historietas_privado\.limites_requisicao[\s\S]*?enable row level security[\s\S]*?revoke all privileges[\s\S]*?from public, anon, authenticated, service_role/i
+    },
+    {
+      name: "limitador serializa o bucket para concorrência",
+      pattern:
+        /create or replace function historietas_privado\.consumir_limite_requisicao[\s\S]*?set search_path\s*=\s*''[\s\S]*?for update/i
+    },
+    {
+      name: "entrada pública do limitador é exclusiva do servidor",
+      pattern:
+        /create or replace function public\.consumir_limite_requisicao[\s\S]*?security definer[\s\S]*?set search_path\s*=\s*''[\s\S]*?grant execute[\s\S]*?to service_role/i
+    },
+    {
+      name: "novos RPCs de visualização têm limites por visitante",
+      pattern:
+        /create or replace function public\.registrar_visualizacao_obra[\s\S]*?'visualizacao:minuto'[\s\S]*?'visualizacao:dia'[\s\S]*?create or replace function public\.registrar_visualizacao_capitulo[\s\S]*?'visualizacao:minuto'[\s\S]*?'visualizacao:dia'/i
+    },
+    {
+      name: "RPCs de visualização são exclusivos do servidor",
+      pattern:
+        /revoke all on function public\.registrar_visualizacao_obra\(uuid, text\)[\s\S]*?from public, anon, authenticated, service_role[\s\S]*?grant execute[\s\S]*?to service_role[\s\S]*?revoke all on function public\.registrar_visualizacao_capitulo\(uuid, text\)[\s\S]*?from public, anon, authenticated, service_role[\s\S]*?grant execute[\s\S]*?to service_role/i
+    },
+    {
+      name: "RPCs legados de visualização são revogados",
+      pattern:
+        /revoke all on function public\.incrementar_visualizacao_obra\(uuid\)[\s\S]*?from public, anon, authenticated, service_role[\s\S]*?revoke all on function public\.incrementar_visualizacao_capitulo\(uuid\)[\s\S]*?from public, anon, authenticated, service_role/i
+    }
+  ];
+
+  for (const contract of abuseProtectionContracts) {
+    if (contract.pattern.test(abuseProtectionSql)) {
+      pass(contract.name, abuseProtectionMigrationName);
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${abuseProtectionMigrationName}`
+      );
+    }
+  }
+}
+
+const deletionEndpoint = fs.readFileSync(
+  path.join(ROOT_DIR, "app/api/conta/excluir/route.ts"),
+  "utf8"
+);
+const limiterCallPosition = deletionEndpoint.indexOf(
+  "consumirLimiteRequisicao({"
+);
+const passwordAttemptPosition = deletionEndpoint.indexOf(
+  "signInWithPassword({"
+);
+
+if (
+  limiterCallPosition >= 0 &&
+  passwordAttemptPosition > limiterCallPosition &&
+  deletionEndpoint.includes('await cliente.auth.signOut({ scope: "local" })')
+) {
+  pass(
+    "exclusão limita tentativas antes da senha",
+    "limitador persistente + descarte da sessão temporária"
+  );
+} else {
+  fail(
+    "exclusão limita tentativas antes da senha",
+    "limitador ausente, tardio ou sessão temporária não descartada"
+  );
+}
+
+const viewRoute = fs.readFileSync(
+  path.join(ROOT_DIR, "app/api/visualizacoes/route.ts"),
+  "utf8"
+);
+const workPage = fs.readFileSync(
+  path.join(ROOT_DIR, "app/obra/[slug]/ObraDinamicaClient.tsx"),
+  "utf8"
+);
+const chapterPage = fs.readFileSync(
+  path.join(ROOT_DIR, "app/ler-capitulo/page.tsx"),
+  "utf8"
+);
+
+if (
+  /criarChaveProtecao\(\s*"visualizacao_visitante"/m.test(viewRoute) &&
+  viewRoute.includes('"registrar_visualizacao_obra"') &&
+  viewRoute.includes('"registrar_visualizacao_capitulo"') &&
+  workPage.includes('fetch("/api/visualizacoes"') &&
+  chapterPage.includes('fetch("/api/visualizacoes"') &&
+  !workPage.includes('rpc("incrementar_visualizacao_obra"') &&
+  !chapterPage.includes('"incrementar_visualizacao_capitulo"')
+) {
+  pass(
+    "visualizações passam exclusivamente pelo servidor",
+    "identidade HMAC e RPCs server-only"
+  );
+} else {
+  fail(
+    "visualizações passam exclusivamente pelo servidor",
+    "chamada direta legada ou proteção server-only ausente"
+  );
+}
 
 const interactionRlsMigrationName = migrationFiles.find((name) =>
   name.endsWith(
