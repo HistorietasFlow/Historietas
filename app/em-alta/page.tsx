@@ -17,6 +17,7 @@ import {
   normalizarTexto,
 } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
+import { carregarMetricasConteudos } from "../../lib/metricas";
 
 type CapituloLocal = {
   id: string;
@@ -106,29 +107,11 @@ type SupabaseCapituloRow = {
   atualizado_em: string | null;
 };
 
-type SupabaseInteracaoObraRow = {
-  obra_id: string | null;
-  user_id: string | null;
-};
-
 type SupabaseProgressoLeituraEmAltaRow = {
   obra_id: string | null;
   capitulo_id: string | null;
   lido: boolean | null;
   atualizado_em: string | null;
-};
-
-type SupabaseAvaliacaoObraRow = {
-  obra_id: string | null;
-  user_id: string | null;
-  nota: number | null;
-};
-
-type UsuariosPorObraRanking = Record<string, string[]>;
-
-type ResultadoInteracoesObrasRanking = {
-  porObra: Record<string, number>;
-  usuariosPorObra: UsuariosPorObraRanking;
 };
 
 type SupabaseProfileAutorRankingRow = {
@@ -1185,74 +1168,6 @@ async function carregarProfilesAutoresRanking(userIds: string[]) {
   return profilesPorUsuario;
 }
 
-async function buscarSeguidoresAutoresRanking(autorIds: string[]) {
-  const idsUnicos = Array.from(
-    new Set(autorIds.map((autorId) => autorId.trim()).filter(Boolean)),
-  );
-
-  if (idsUnicos.length === 0) {
-    return {} as Record<string, number>;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("seguindo_usuarios")
-      .select("seguido_id,seguidor_id")
-      .in("seguido_id", idsUnicos)
-      .limit(3000);
-
-    if (error || !Array.isArray(data)) {
-      if (error) {
-        console.warn(
-          "Não consegui carregar seguidores dos autores no ranking:",
-          error.message,
-        );
-      }
-
-      return {} as Record<string, number>;
-    }
-
-    const usuariosPorAutor = new Map<string, Set<string>>();
-
-    data.forEach((registro) => {
-      if (
-        !registro ||
-        typeof registro !== "object" ||
-        Array.isArray(registro)
-      ) {
-        return;
-      }
-
-      const linha = registro as Record<string, unknown>;
-      const autorId =
-        typeof linha.seguido_id === "string" ? linha.seguido_id.trim() : "";
-      const seguidorId =
-        typeof linha.seguidor_id === "string"
-          ? linha.seguidor_id.trim()
-          : "";
-
-      if (!autorId || !seguidorId) {
-        return;
-      }
-
-      const usuarios = usuariosPorAutor.get(autorId) || new Set<string>();
-      usuarios.add(seguidorId);
-      usuariosPorAutor.set(autorId, usuarios);
-    });
-
-    return Array.from(usuariosPorAutor.entries()).reduce<Record<string, number>>(
-      (contagem, [autorId, usuarios]) => {
-        contagem[autorId] = usuarios.size;
-        return contagem;
-      },
-      {},
-    );
-  } catch (error) {
-    console.warn("Não consegui acessar seguindo_usuarios no ranking:", error);
-    return {} as Record<string, number>;
-  }
-}
-
 function formatarNumero(numero: number) {
   if (!Number.isFinite(numero)) {
     return "0";
@@ -1402,314 +1317,6 @@ function normalizarTipoArquivoSupabase(
   }
 
   return "outro";
-}
-
-function adicionarUsuarioRanking(
-  usuariosPorChave: Map<string, Set<string>>,
-  chave: string,
-  userId: string,
-) {
-  const chaveLimpa = chave.trim();
-  const userIdLimpo = userId.trim();
-
-  if (!chaveLimpa || !userIdLimpo) {
-    return;
-  }
-
-  const usuarios = usuariosPorChave.get(chaveLimpa) || new Set<string>();
-  usuarios.add(userIdLimpo);
-  usuariosPorChave.set(chaveLimpa, usuarios);
-}
-
-function converterMapaUsuariosRanking(
-  usuariosPorChave: Map<string, Set<string>>,
-) {
-  return Array.from(usuariosPorChave.entries()).reduce<UsuariosPorObraRanking>(
-    (resultado, [chave, usuarios]) => {
-      resultado[chave] = Array.from(usuarios);
-      return resultado;
-    },
-    {},
-  );
-}
-
-function contarUsuariosRanking(usuariosPorObra: UsuariosPorObraRanking) {
-  return Object.entries(usuariosPorObra).reduce<Record<string, number>>(
-    (contagem, [obraId, usuarios]) => {
-      contagem[obraId] = new Set(
-        usuarios.map((userId) => userId.trim()).filter(Boolean),
-      ).size;
-
-      return contagem;
-    },
-    {},
-  );
-}
-
-function combinarUsuariosRanking(
-  ...fontes: UsuariosPorObraRanking[]
-): UsuariosPorObraRanking {
-  const usuariosCombinados = new Map<string, Set<string>>();
-
-  fontes.forEach((fonte) => {
-    Object.entries(fonte).forEach(([obraId, usuarios]) => {
-      usuarios.forEach((userId) => {
-        adicionarUsuarioRanking(usuariosCombinados, obraId, userId);
-      });
-    });
-  });
-
-  return converterMapaUsuariosRanking(usuariosCombinados);
-}
-
-function contarPorObra(
-  linhas: SupabaseInteracaoObraRow[],
-  contarCadaRegistro = false,
-): ResultadoInteracoesObrasRanking {
-  const usuariosPorObra = new Map<string, Set<string>>();
-  const registrosPorObra: Record<string, number> = {};
-
-  linhas.forEach((linha) => {
-    const obraId = linha.obra_id?.trim() || "";
-    const userId = linha.user_id?.trim() || "";
-
-    if (!obraId) {
-      return;
-    }
-
-    if (contarCadaRegistro) {
-      registrosPorObra[obraId] = (registrosPorObra[obraId] || 0) + 1;
-    }
-
-    adicionarUsuarioRanking(usuariosPorObra, obraId, userId);
-  });
-
-  const usuariosNormalizados = converterMapaUsuariosRanking(usuariosPorObra);
-
-  return {
-    porObra: contarCadaRegistro
-      ? registrosPorObra
-      : contarUsuariosRanking(usuariosNormalizados),
-    usuariosPorObra: usuariosNormalizados,
-  };
-}
-
-function calcularAvaliacoesPorObra(linhas: SupabaseAvaliacaoObraRow[]) {
-  const notasPorUsuarioObra = new Map<string, number>();
-  const obraPorChave = new Map<string, string>();
-
-  linhas.forEach((linha) => {
-    const obraId = linha.obra_id?.trim() || "";
-    const userId = linha.user_id?.trim() || "";
-    const nota =
-      typeof linha.nota === "number" && Number.isFinite(linha.nota)
-        ? linha.nota
-        : 0;
-
-    if (!obraId || !userId || nota <= 0) {
-      return;
-    }
-
-    const chave = `${obraId}::${userId}`;
-    notasPorUsuarioObra.set(chave, nota);
-    obraPorChave.set(chave, obraId);
-  });
-
-  const somaPorObra: Record<string, number> = {};
-  const totalPorObra: Record<string, number> = {};
-
-  notasPorUsuarioObra.forEach((nota, chave) => {
-    const obraId = obraPorChave.get(chave) || "";
-
-    if (!obraId) {
-      return;
-    }
-
-    somaPorObra[obraId] = (somaPorObra[obraId] || 0) + nota;
-    totalPorObra[obraId] = (totalPorObra[obraId] || 0) + 1;
-  });
-
-  return Object.entries(totalPorObra).reduce<
-    Record<string, AvaliacaoRankingObra>
-  >((avaliacoes, [obraId, total]) => {
-    const soma = somaPorObra[obraId] || 0;
-
-    avaliacoes[obraId] = {
-      total,
-      media: total > 0 ? soma / total : 0,
-    };
-
-    return avaliacoes;
-  }, {});
-}
-
-async function buscarContagemInteracoesObras(
-  tabela:
-    | "obra_curtidas"
-    | "seguindo_obras"
-    | "favoritos"
-    | "comentarios_obras",
-  obraIds: string[],
-  contarCadaRegistro = false,
-): Promise<ResultadoInteracoesObrasRanking> {
-  const idsUnicos = Array.from(
-    new Set(obraIds.map((obraId) => obraId.trim()).filter(Boolean)),
-  );
-
-  if (idsUnicos.length === 0) {
-    return {
-      porObra: {},
-      usuariosPorObra: {},
-    };
-  }
-
-  try {
-    const linhas: SupabaseInteracaoObraRow[] = [];
-    const tamanhoPagina = 1000;
-
-    for (let inicioIds = 0; inicioIds < idsUnicos.length; inicioIds += 80) {
-      const loteIds = idsUnicos.slice(inicioIds, inicioIds + 80);
-      let inicio = 0;
-
-      while (true) {
-        const { data, error } = await supabase
-          .from(tabela)
-          .select("obra_id,user_id")
-          .in("obra_id", loteIds)
-          .range(inicio, inicio + tamanhoPagina - 1);
-
-        if (error) {
-          console.warn(`Não consegui carregar ${tabela}:`, error.message);
-          return {
-            porObra: {},
-            usuariosPorObra: {},
-          };
-        }
-
-        const pagina = data || [];
-        linhas.push(...pagina);
-
-        if (pagina.length < tamanhoPagina) {
-          break;
-        }
-
-        inicio += tamanhoPagina;
-      }
-    }
-
-    return contarPorObra(linhas, contarCadaRegistro);
-  } catch (error) {
-    console.warn(`Não consegui acessar ${tabela} agora:`, error);
-    return {
-      porObra: {},
-      usuariosPorObra: {},
-    };
-  }
-}
-
-async function buscarAvaliacoesObras(obraIds: string[]) {
-  if (obraIds.length === 0) {
-    return {};
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("obra_avaliacoes")
-      .select("obra_id,user_id,nota")
-      .in("obra_id", obraIds)
-      .limit(3000);
-
-    if (error) {
-      console.warn("Não consegui carregar obra_avaliacoes:", error.message);
-      return {};
-    }
-
-    return calcularAvaliacoesPorObra(
-      data || [],
-    );
-  } catch (error) {
-    console.warn("Não consegui acessar obra_avaliacoes agora:", error);
-    return {};
-  }
-}
-
-async function carregarProgressoUsuarioEmAlta(
-  userId: string,
-  obraIds: string[],
-  capituloIds: string[],
-) {
-  const userIdLimpo = userId.trim();
-
-  if (
-    !userIdLimpo ||
-    obraIds.length === 0 ||
-    capituloIds.length === 0
-  ) {
-    return {
-      progressoPorCapitulo:
-        new Map<string, SupabaseProgressoLeituraEmAltaRow>(),
-      carregado: Boolean(userIdLimpo),
-    };
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("progresso_leitura")
-      .select("obra_id,capitulo_id,lido,atualizado_em")
-      .eq("user_id", userIdLimpo)
-      .in("obra_id", obraIds)
-      .in("capitulo_id", capituloIds)
-      .order("atualizado_em", { ascending: false })
-      .limit(5000);
-
-    if (error || !Array.isArray(data)) {
-      if (error) {
-        console.warn(
-          "Não consegui carregar o progresso pessoal no Em Alta:",
-          error.message,
-        );
-      }
-
-      return {
-        progressoPorCapitulo:
-          new Map<string, SupabaseProgressoLeituraEmAltaRow>(),
-        carregado: false,
-      };
-    }
-
-    const progressoPorCapitulo =
-      new Map<string, SupabaseProgressoLeituraEmAltaRow>();
-
-    (data).forEach(
-      (registro) => {
-        const obraId = registro.obra_id?.trim() || "";
-        const capituloId = registro.capitulo_id?.trim() || "";
-        const chave = obraId && capituloId
-          ? `${obraId}::${capituloId}`
-          : "";
-
-        if (chave && !progressoPorCapitulo.has(chave)) {
-          progressoPorCapitulo.set(chave, registro);
-        }
-      },
-    );
-
-    return {
-      progressoPorCapitulo,
-      carregado: true,
-    };
-  } catch (error) {
-    console.warn(
-      "Não consegui acessar o progresso pessoal no Em Alta:",
-      error,
-    );
-
-    return {
-      progressoPorCapitulo:
-        new Map<string, SupabaseProgressoLeituraEmAltaRow>(),
-      carregado: false,
-    };
-  }
 }
 
 function converterObraSupabaseParaLocal(
@@ -1923,33 +1530,61 @@ async function carregarObrasSupabasePublicadas(
     const capituloIds = capitulosSupabase
       .map((capitulo) => capitulo.id)
       .filter(Boolean);
-    const [
-      curtidasObraResultado,
-      seguidoresObraResultado,
-      favoritosObraResultado,
-      comentariosObraResultado,
-      avaliacoesPorObra,
-      profilesAutores,
-      seguidoresAutores,
-      progressoUsuario,
-    ] = await Promise.all([
-      buscarContagemInteracoesObras("obra_curtidas", obraIds),
-      buscarContagemInteracoesObras("seguindo_obras", obraIds),
-      buscarContagemInteracoesObras("favoritos", obraIds),
-      buscarContagemInteracoesObras("comentarios_obras", obraIds, true),
-      buscarAvaliacoesObras(obraIds),
+    const [metricas, profilesAutores] = await Promise.all([
+      carregarMetricasConteudos({
+        obraIds,
+        capituloIds,
+        autorIds,
+      }),
       carregarProfilesAutoresRanking(autorIds),
-      buscarSeguidoresAutoresRanking(autorIds),
-      carregarProgressoUsuarioEmAlta(userId, obraIds, capituloIds),
     ]);
+    const curtidasUnicasPorObra: Record<string, number> = {};
+    const comentariosTotaisPorObra: Record<string, number> = {};
+    const salvosUnicosPorObra: Record<string, number> = {};
+    const seguidoresPorObra: Record<string, number> = {};
+    const avaliacoesPorObra: Record<string, AvaliacaoRankingObra> = {};
+    const seguidoresAutores: Record<string, number> = {};
+    const progressoPorCapitulo =
+      new Map<string, SupabaseProgressoLeituraEmAltaRow>();
 
-    const curtidasUnicasPorObra = curtidasObraResultado.porObra;
-    const comentariosTotaisPorObra = comentariosObraResultado.porObra;
-    const usuariosSalvosPorObra = combinarUsuariosRanking(
-      seguidoresObraResultado.usuariosPorObra,
-      favoritosObraResultado.usuariosPorObra,
-    );
-    const salvosUnicosPorObra = contarUsuariosRanking(usuariosSalvosPorObra);
+    metricas.obras.forEach((metrica) => {
+      curtidasUnicasPorObra[metrica.id] =
+        metrica.interacoesDiretas.curtidas;
+      comentariosTotaisPorObra[metrica.id] =
+        metrica.interacoesDiretas.comentarios;
+      salvosUnicosPorObra[metrica.id] =
+        metrica.interacoesDiretas.bibliotecasUnicas;
+      seguidoresPorObra[metrica.id] =
+        metrica.interacoesDiretas.seguidores;
+      avaliacoesPorObra[metrica.id] = {
+        total: metrica.avaliacao.total,
+        media: metrica.avaliacao.media,
+      };
+    });
+
+    metricas.autores.forEach((metrica) => {
+      seguidoresAutores[metrica.id] = metrica.seguidores;
+    });
+
+    if (metricas.carregado && userId.trim()) {
+      metricas.capitulos.forEach((metrica) => {
+        if (!metrica.usuario.leu) {
+          return;
+        }
+
+        progressoPorCapitulo.set(`${metrica.obraId}::${metrica.id}`, {
+          obra_id: metrica.obraId,
+          capitulo_id: metrica.id,
+          lido: true,
+          atualizado_em: metrica.usuario.lidoEm,
+        });
+      });
+    }
+
+    const progressoUsuario = {
+      progressoPorCapitulo,
+      carregado: metricas.carregado && Boolean(userId.trim()),
+    };
 
     const capitulosPorObra = capitulosSupabase.reduce<
       Record<string, SupabaseCapituloRow[]>
@@ -1985,7 +1620,7 @@ async function carregarObrasSupabasePublicadas(
           curtidasUnicasPorObra,
           comentariosTotaisPorObra,
           salvosUnicosPorObra,
-          seguidoresObraResultado.porObra,
+          seguidoresPorObra,
           avaliacoesPorObra,
           profilesAutores,
           seguidoresAutores,

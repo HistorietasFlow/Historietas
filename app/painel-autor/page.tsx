@@ -9,6 +9,7 @@ import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasT
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties } from "react";
+import { carregarMetricasConteudos } from "../../lib/metricas";
 
 type CapituloLocal = {
   id: string;
@@ -120,8 +121,6 @@ type ProfilePainelAutorRow = {
   bio?: string | null;
   sobre_bio?: string | null;
 };
-
-type RegistroSupabaseGenerico = Record<string, unknown>;
 
 type ObraComMetricas = ObraLocal & {
   totalCurtidas: number;
@@ -1509,455 +1508,63 @@ function criarChaveInteracao(obraId: string, capituloId: string) {
   return `${obraId}::${capituloId}`;
 }
 
-function obterIdObraRegistro(registro: RegistroSupabaseGenerico) {
-  const possiveisCampos = [
-    registro.obra_id,
-    registro.obraId,
-    registro.id_obra,
-    registro.obra,
-  ];
-
-  const valorEncontrado = possiveisCampos.find(
-    (valor) => typeof valor === "string" && Boolean(valor.trim())
-  );
-
-  return typeof valorEncontrado === "string" ? valorEncontrado : "";
-}
-
-function obterIdCapituloRegistro(registro: RegistroSupabaseGenerico) {
-  const possiveisCampos = [
-    registro.capitulo_id,
-    registro.capituloId,
-    registro.id_capitulo,
-    registro.capitulo,
-  ];
-
-  const valorEncontrado = possiveisCampos.find(
-    (valor) => typeof valor === "string" && Boolean(valor.trim())
-  );
-
-  return typeof valorEncontrado === "string" ? valorEncontrado : "";
-}
-
-function obterTextoComentarioRegistro(registro: RegistroSupabaseGenerico) {
-  const possiveisCampos = [registro.comentario, registro.texto, registro.conteudo];
-  const valorEncontrado = possiveisCampos.find(
-    (valor) => typeof valor === "string" && Boolean(valor.trim())
-  );
-
-  return typeof valorEncontrado === "string" ? valorEncontrado : "";
-}
-
-function obterIdUsuarioRegistro(registro: RegistroSupabaseGenerico) {
-  const possiveisCampos = [
-    registro.user_id,
-    registro.usuario_id,
-    registro.userId,
-    registro.autor_id,
-    registro.leitor_id,
-  ];
-
-  const valorEncontrado = possiveisCampos.find(
-    (valor) => typeof valor === "string" && Boolean(valor.trim())
-  );
-
-  return typeof valorEncontrado === "string"
-    ? valorEncontrado.trim().toLowerCase()
-    : "";
-}
-
-function filtrarRegistrosPorUsuarioPainel(
-  registros: RegistroSupabaseGenerico[],
-  userId: string
-) {
-  const userIdLimpo = userId.trim().toLowerCase();
-
-  if (!userIdLimpo) {
-    return [] as RegistroSupabaseGenerico[];
-  }
-
-  return registros.filter(
-    (registro) => obterIdUsuarioRegistro(registro) === userIdLimpo
-  );
-}
-
-const CAMPOS_REGISTROS_PAINEL_AUTOR: Record<string, string> = {
-  favoritos: "user_id,obra_id",
-  concluidas: "user_id,obra_id",
-  salvos_capitulos: "user_id,capitulo_id",
-  curtidas_capitulos: "user_id,capitulo_id",
-  comentarios_capitulos: "user_id,capitulo_id,comentario",
-  comentarios_obras: "user_id,obra_id,comentario",
-  progresso_leitura: "user_id,obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
-  obra_curtidas: "user_id,obra_id",
-  seguindo_obras: "user_id,obra_id",
-};
-
-const TABELAS_PAINEL_POR_CAPITULO = new Set([
-  "salvos_capitulos",
-  "curtidas_capitulos",
-  "comentarios_capitulos",
-]);
-
-const TABELAS_PAINEL_POR_OBRA = new Set([
-  "favoritos",
-  "concluidas",
-  "obra_curtidas",
-  "seguindo_obras",
-  "comentarios_obras",
-]);
-
-function obterCamposRegistrosPainelAutor(tabela: string) {
-  return CAMPOS_REGISTROS_PAINEL_AUTOR[tabela] || "id";
-}
-
-async function carregarRegistrosObraSupabase(
-  tabela: string,
-  obraIds: string[],
-  userId?: string,
-  capituloIds: string[] = []
-) {
-  const deveBuscarPorObra = !TABELAS_PAINEL_POR_CAPITULO.has(tabela);
-  const deveBuscarPorCapitulo = !TABELAS_PAINEL_POR_OBRA.has(tabela);
-
-  if (
-    (!deveBuscarPorObra || obraIds.length === 0) &&
-    (!deveBuscarPorCapitulo || capituloIds.length === 0)
-  ) {
-    return [] as RegistroSupabaseGenerico[];
-  }
-
-  async function tentarPorObraId() {
-    if (!deveBuscarPorObra || obraIds.length === 0) {
-      return null as RegistroSupabaseGenerico[] | null;
-    }
-
-    let query = supabase
-      .from(tabela)
-      .select(obterCamposRegistrosPainelAutor(tabela))
-      .in("obra_id", obraIds);
-
-    if (userId) {
-      query = query.eq("user_id", userId);
-    }
-
-    const { data, error } = await query.limit(5000);
-
-    if (error) {
-      return null;
-    }
-
-    return Array.isArray(data) ? (data as unknown as RegistroSupabaseGenerico[]) : [];
-  }
-
-  async function tentarPorCapituloId() {
-    if (!deveBuscarPorCapitulo || capituloIds.length === 0) {
-      return null as RegistroSupabaseGenerico[] | null;
-    }
-
-    let query = supabase
-      .from(tabela)
-      .select(obterCamposRegistrosPainelAutor(tabela))
-      .in("capitulo_id", capituloIds);
-
-    if (userId) {
-      query = query.eq("user_id", userId);
-    }
-
-    const { data, error } = await query.limit(5000);
-
-    if (error) {
-      return null;
-    }
-
-    return Array.isArray(data) ? (data as unknown as RegistroSupabaseGenerico[]) : [];
-  }
-
-  try {
-    const porObraId = await tentarPorObraId();
-
-    if (porObraId) {
-      return porObraId;
-    }
-
-    const porCapituloId = await tentarPorCapituloId();
-
-    if (porCapituloId) {
-      return porCapituloId;
-    }
-
-    return [];
-  } catch (error) {
-    console.warn(`Não consegui acessar ${tabela} no Painel do Autor:`, error);
-
-    return [];
-  }
-}
-
-function registroProgressoPainelEstaLido(
-  registro: RegistroSupabaseGenerico
-) {
-  if (typeof registro.lido === "boolean") {
-    return registro.lido;
-  }
-
-  if (typeof registro.lido === "string") {
-    return registro.lido.trim().toLowerCase() === "true";
-  }
-
-  return true;
-}
-
-function obterDataProgressoPainel(registro: RegistroSupabaseGenerico) {
-  const possiveisDatas = [
-    registro.atualizado_em,
-    registro.updated_at,
-    registro.criado_em,
-    registro.created_at,
-  ];
-
-  const data = possiveisDatas.find(
-    (valor) => typeof valor === "string" && Boolean(valor.trim())
-  );
-
-  return typeof data === "string" ? data.trim() : "";
-}
-
-function criarMapaProgressoLeituraPainel(
-  registros: RegistroSupabaseGenerico[]
-) {
-  const progressoPorCapitulo = new Map<string, string>();
-
-  registros.forEach((registro) => {
-    if (!registroProgressoPainelEstaLido(registro)) {
-      return;
-    }
-
-    const obraId = obterIdObraRegistro(registro);
-    const capituloId = obterIdCapituloRegistro(registro);
-
-    if (!capituloId) {
-      return;
-    }
-
-    const lidoEm = obterDataProgressoPainel(registro);
-    const chaveCompleta = obraId
-      ? criarChaveInteracao(obraId, capituloId)
-      : "";
-
-    if (chaveCompleta && !progressoPorCapitulo.has(chaveCompleta)) {
-      progressoPorCapitulo.set(chaveCompleta, lidoEm);
-    }
-
-    if (!progressoPorCapitulo.has(capituloId)) {
-      progressoPorCapitulo.set(capituloId, lidoEm);
-    }
-  });
-
-  return progressoPorCapitulo;
-}
-
-async function carregarProgressoUsuarioPainel(
+async function carregarComentariosCapitulosUsuarioPainel(
   userId: string,
-  obraIds: string[],
-  capituloIds: string[]
+  capituloIds: string[],
 ) {
-  const userIdLimpo = userId.trim();
+  const comentarios = new Map<string, string>();
 
-  if (!userIdLimpo || (obraIds.length === 0 && capituloIds.length === 0)) {
-    return {
-      registros: [] as RegistroSupabaseGenerico[],
-      carregado: Boolean(userIdLimpo),
-    };
+  if (!userId.trim() || capituloIds.length === 0) {
+    return comentarios;
   }
 
   try {
-    let query = supabase
-      .from("progresso_leitura")
-      .select(
-        "user_id,obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em"
-      )
-      .eq("user_id", userIdLimpo);
-
-    if (obraIds.length > 0) {
-      query = query.in("obra_id", obraIds);
-    } else {
-      query = query.in("capitulo_id", capituloIds);
-    }
-
-    const { data, error } = await query
+    const { data, error } = await supabase
+      .from("comentarios_capitulos")
+      .select("obra_id,capitulo_id,comentario,atualizado_em")
+      .eq("user_id", userId)
+      .in("capitulo_id", capituloIds)
       .order("atualizado_em", { ascending: false })
       .limit(5000);
 
-    if (error) {
-      console.warn(
-        "Não consegui carregar o progresso pessoal no Painel do Autor:",
-        error.message
-      );
+    if (error || !Array.isArray(data)) {
+      if (error) {
+        console.warn(
+          "Não consegui carregar comentários pessoais no Painel do Autor:",
+          error.message,
+        );
+      }
 
-      return {
-        registros: [] as RegistroSupabaseGenerico[],
-        carregado: false,
-      };
+      return comentarios;
     }
 
-    return {
-      registros: Array.isArray(data)
-        ? data
-        : [],
-      carregado: true,
-    };
+    data.forEach((registro) => {
+      const obraId = registro.obra_id?.trim() || "";
+      const capituloId = registro.capitulo_id?.trim() || "";
+      const comentario = registro.comentario?.trim() || "";
+
+      if (!capituloId || !comentario) {
+        return;
+      }
+
+      if (!comentarios.has(capituloId)) {
+        comentarios.set(capituloId, comentario);
+      }
+
+      const chave = obraId ? criarChaveInteracao(obraId, capituloId) : "";
+
+      if (chave && !comentarios.has(chave)) {
+        comentarios.set(chave, comentario);
+      }
+    });
   } catch (error) {
     console.warn(
-      "Não consegui acessar o progresso pessoal no Painel do Autor:",
-      error
+      "Não consegui acessar comentários pessoais no Painel do Autor:",
+      error,
     );
-
-    return {
-      registros: [] as RegistroSupabaseGenerico[],
-      carregado: false,
-    };
   }
-}
 
-function criarSetObrasPorRegistro(registros: RegistroSupabaseGenerico[]) {
-  return new Set(
-    registros
-      .map((registro) => obterIdObraRegistro(registro))
-      .filter((obraId) => Boolean(obraId))
-  );
-}
-
-function criarSetCapitulosPorRegistro(registros: RegistroSupabaseGenerico[]) {
-  return new Set(
-    registros
-      .flatMap((registro) => {
-        const obraId = obterIdObraRegistro(registro);
-        const capituloId = obterIdCapituloRegistro(registro);
-
-        if (!capituloId) {
-          return [] as string[];
-        }
-
-        return obraId
-          ? [criarChaveInteracao(obraId, capituloId), capituloId]
-          : [capituloId];
-      })
-      .filter((chave) => Boolean(chave))
-  );
-}
-
-function criarMapaComentariosPorRegistro(registros: RegistroSupabaseGenerico[]) {
-  const mapa = new Map<string, string>();
-  const contagem = new Map<string, number>();
-
-  registros.forEach((registro) => {
-    const obraId = obterIdObraRegistro(registro);
-    const capituloId = obterIdCapituloRegistro(registro);
-
-    if (!capituloId) {
-      return;
-    }
-
-    const chave = obraId ? criarChaveInteracao(obraId, capituloId) : "";
-    const comentario = obterTextoComentarioRegistro(registro);
-
-    if (chave) {
-      contagem.set(chave, (contagem.get(chave) || 0) + 1);
-    }
-
-    contagem.set(capituloId, (contagem.get(capituloId) || 0) + 1);
-
-    if (chave && comentario && !mapa.has(chave)) {
-      mapa.set(chave, comentario);
-    }
-
-    if (comentario && !mapa.has(capituloId)) {
-      mapa.set(capituloId, comentario);
-    }
-  });
-
-  contagem.forEach((total, chave) => {
-    if (!mapa.has(chave) && total > 0) {
-      mapa.set(chave, total === 1 ? "1 comentário" : `${total} comentários`);
-    }
-  });
-
-  return mapa;
-}
-
-function registroPertenceAObraPainel(
-  registro: RegistroSupabaseGenerico,
-  obraId: string,
-  capituloIds: Set<string>
-) {
-  const obraRegistro = obterIdObraRegistro(registro).trim();
-  const capituloRegistro = obterIdCapituloRegistro(registro).trim();
-
-  return (
-    Boolean(obraId && obraRegistro === obraId) ||
-    Boolean(capituloRegistro && capituloIds.has(capituloRegistro))
-  );
-}
-
-function criarSetUsuariosRelacionadosObraPainel(
-  registros: RegistroSupabaseGenerico[],
-  obraId: string,
-  capitulos: SupabaseCapituloRow[]
-) {
-  const obraIdLimpo = obraId.trim();
-  const capituloIds = new Set(
-    capitulos
-      .map((capitulo) => capitulo.id.trim())
-      .filter(Boolean)
-  );
-  const usuarios = new Set<string>();
-
-  registros.forEach((registro, index) => {
-    if (!registroPertenceAObraPainel(registro, obraIdLimpo, capituloIds)) {
-      return;
-    }
-
-    const userId = obterIdUsuarioRegistro(registro);
-
-    if (userId) {
-      usuarios.add(userId);
-      return;
-    }
-
-    const idRegistro =
-      typeof registro.id === "string" && registro.id.trim()
-        ? registro.id.trim()
-        : "";
-    const obraRegistro = obterIdObraRegistro(registro).trim();
-    const capituloRegistro = obterIdCapituloRegistro(registro).trim();
-
-    usuarios.add(
-      `registro:${idRegistro || `${obraRegistro}:${capituloRegistro}:${index}`}`
-    );
-  });
-
-  return usuarios;
-}
-
-function contarUsuariosUnicosRelacionadosObraPainel(
-  fontes: RegistroSupabaseGenerico[][],
-  obraId: string,
-  capitulos: SupabaseCapituloRow[]
-) {
-  const usuarios = new Set<string>();
-
-  fontes.forEach((registros) => {
-    criarSetUsuariosRelacionadosObraPainel(
-      registros,
-      obraId,
-      capitulos
-    ).forEach((userId) => {
-      usuarios.add(userId);
-    });
-  });
-
-  return usuarios.size;
+  return comentarios;
 }
 
 function converterObraSupabaseParaLocalPainel({
@@ -1968,6 +1575,7 @@ function converterObraSupabaseParaLocalPainel({
   capitulosCurtidos,
   progressoPorCapitulo,
   progressoCarregado,
+  capitulosComMetricas,
   comentariosCapitulos,
   index,
 }: {
@@ -1978,6 +1586,7 @@ function converterObraSupabaseParaLocalPainel({
   capitulosCurtidos: Set<string>;
   progressoPorCapitulo: Map<string, string>;
   progressoCarregado: boolean;
+  capitulosComMetricas: ReadonlySet<string>;
   comentariosCapitulos: Map<string, string>;
   index: number;
 }): ObraLocal {
@@ -2000,7 +1609,9 @@ function converterObraSupabaseParaLocalPainel({
     const temProgressoRemoto =
       progressoPorCapitulo.has(chaveInteracao) ||
       progressoPorCapitulo.has(capitulo.id);
-    const lido = progressoCarregado
+    const progressoRemotoDisponivel =
+      progressoCarregado && capitulosComMetricas.has(capitulo.id);
+    const lido = progressoRemotoDisponivel
       ? temProgressoRemoto
       : capitulo.lido;
     const lidoEmRemoto =
@@ -2323,62 +1934,49 @@ async function carregarPainelAutorSupabase(
       .map((capitulo) => capitulo.id)
       .filter(Boolean);
 
-    const [
-      favoritosBanco,
-      concluidasBanco,
-      favoritosObraBanco,
-      salvosBanco,
-      curtidasBanco,
-      comentariosBanco,
-      comentariosObrasBanco,
-      progressoBanco,
-      progressoUsuarioResultado,
-      curtidasObraBanco,
-      seguidoresObraBanco,
-    ] = await Promise.all([
-      carregarRegistrosObraSupabase("favoritos", obraIds, userId),
-      carregarRegistrosObraSupabase("concluidas", obraIds, userId),
-      carregarRegistrosObraSupabase("favoritos", obraIds),
-      carregarRegistrosObraSupabase("salvos_capitulos", obraIds, undefined, capituloIds),
-      carregarRegistrosObraSupabase("curtidas_capitulos", obraIds, undefined, capituloIds),
-      carregarRegistrosObraSupabase("comentarios_capitulos", obraIds, undefined, capituloIds),
-      carregarRegistrosObraSupabase("comentarios_obras", obraIds),
-      carregarRegistrosObraSupabase("progresso_leitura", obraIds, undefined, capituloIds),
-      carregarProgressoUsuarioPainel(userId, obraIds, capituloIds),
-      carregarRegistrosObraSupabase("obra_curtidas", obraIds),
-      carregarRegistrosObraSupabase("seguindo_obras", obraIds),
+    const [metricas, comentariosCapitulos] = await Promise.all([
+      carregarMetricasConteudos({
+        obraIds,
+        capituloIds,
+      }),
+      carregarComentariosCapitulosUsuarioPainel(userId, capituloIds),
     ]);
+    const favoritosSupabase = new Set<string>();
+    const concluidasSupabase = new Set<string>();
+    const capitulosSalvos = new Set<string>();
+    const capitulosCurtidos = new Set<string>();
+    const progressoPorCapitulo = new Map<string, string>();
+    const progressoCarregado = metricas.carregado;
+    const capitulosComMetricas = new Set(metricas.capitulos.keys());
 
-    const favoritosSupabase = criarSetObrasPorRegistro(favoritosBanco);
-    const concluidasSupabase = criarSetObrasPorRegistro(concluidasBanco);
-    const salvosUsuarioBanco = filtrarRegistrosPorUsuarioPainel(
-      salvosBanco,
-      userId
-    );
-    const curtidasUsuarioBanco = filtrarRegistrosPorUsuarioPainel(
-      curtidasBanco,
-      userId
-    );
-    const comentariosUsuarioBanco = filtrarRegistrosPorUsuarioPainel(
-      comentariosBanco,
-      userId
-    );
-    const progressoUsuarioBanco = progressoUsuarioResultado.registros;
-    const progressoCarregado = progressoUsuarioResultado.carregado;
-    const progressoLidoBanco = progressoBanco.filter(
-      registroProgressoPainelEstaLido
-    );
-    const capitulosSalvos = criarSetCapitulosPorRegistro(salvosUsuarioBanco);
-    const capitulosCurtidos = criarSetCapitulosPorRegistro(
-      curtidasUsuarioBanco
-    );
-    const progressoPorCapitulo = criarMapaProgressoLeituraPainel(
-      progressoUsuarioBanco
-    );
-    const comentariosCapitulos = criarMapaComentariosPorRegistro(
-      comentariosUsuarioBanco
-    );
+    metricas.obras.forEach((metrica) => {
+      if (metrica.usuario.favoritou) {
+        favoritosSupabase.add(metrica.id);
+      }
 
+      if (metrica.usuario.concluiu) {
+        concluidasSupabase.add(metrica.id);
+      }
+    });
+
+    metricas.capitulos.forEach((metrica) => {
+      const chave = criarChaveInteracao(metrica.obraId, metrica.id);
+
+      if (metrica.usuario.salvou) {
+        capitulosSalvos.add(metrica.id);
+        capitulosSalvos.add(chave);
+      }
+
+      if (metrica.usuario.curtiu) {
+        capitulosCurtidos.add(metrica.id);
+        capitulosCurtidos.add(chave);
+      }
+
+      if (metrica.usuario.leu) {
+        progressoPorCapitulo.set(metrica.id, metrica.usuario.lidoEm);
+        progressoPorCapitulo.set(chave, metrica.usuario.lidoEm);
+      }
+    });
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
       const obraLocal = obrasLocaisUsuario.find((obraAtual) => {
         const slugLocal = obraAtual.slug || criarSlugBase(obraAtual.titulo);
@@ -2399,41 +1997,18 @@ async function carregarPainelAutorSupabase(
         capitulosCurtidos,
         progressoPorCapitulo,
         progressoCarregado,
+        capitulosComMetricas,
         comentariosCapitulos,
         index,
       });
 
-      const totalCurtidasUsuarios =
-        contarUsuariosUnicosRelacionadosObraPainel(
-          [curtidasBanco, curtidasObraBanco],
-          obraBanco.id,
-          capitulosDaObra
-        );
-      const totalComentariosUsuarios =
-        contarUsuariosUnicosRelacionadosObraPainel(
-          [comentariosBanco, comentariosObrasBanco],
-          obraBanco.id,
-          capitulosDaObra
-        );
-      const totalSalvosUsuarios =
-        contarUsuariosUnicosRelacionadosObraPainel(
-          [salvosBanco, seguidoresObraBanco, favoritosObraBanco],
-          obraBanco.id,
-          capitulosDaObra
-        );
-      const totalLeitoresUsuarios =
-        contarUsuariosUnicosRelacionadosObraPainel(
-          [progressoLidoBanco],
-          obraBanco.id,
-          capitulosDaObra
-        );
+      const metrica = metricas.obras.get(obraBanco.id);
 
       return {
         ...obraNormalizada,
-        totalCurtidasPainel: totalCurtidasUsuarios,
-        totalComentariosPainel: totalComentariosUsuarios,
-        totalSalvosPainel: totalSalvosUsuarios,
-        totalLidosPainel: totalLeitoresUsuarios,
+        totalCurtidasPainel: metrica?.audiencia.curtidoresUnicos || 0,
+        totalComentariosPainel: metrica?.audiencia.comentaristasUnicos || 0,
+        totalSalvosPainel: metrica?.audiencia.salvadoresUnicos || 0,
       };
     });
 

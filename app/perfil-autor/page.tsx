@@ -31,6 +31,7 @@ import {
   type PermissoesAbasPerfil,
   type PreferenciasPrivacidadeHistorietas,
 } from "../../lib/historietasPrivacy";
+import { carregarMetricasConteudos } from "../../lib/metricas";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 
@@ -5082,6 +5083,7 @@ function aplicarInteracoesNasObras(
   comentariosPorCapitulo: Map<string, string>,
   progressoPorCapitulo: Map<string, string>,
   progressoCarregado: boolean,
+  capitulosComMetricas: ReadonlySet<string>,
 ) {
   return obrasParaAtualizar.map((obra) => {
     let ultimoCapituloLidoId = progressoCarregado
@@ -5091,7 +5093,9 @@ function aplicarInteracoesNasObras(
 
     const capitulos = obra.capitulos.map((capitulo) => {
       const lidoEmRemoto = progressoPorCapitulo.get(capitulo.id) || "";
-      const lido = progressoCarregado
+      const progressoRemotoDisponivel =
+        progressoCarregado && capitulosComMetricas.has(capitulo.id);
+      const lido = progressoRemotoDisponivel
         ? Boolean(lidoEmRemoto)
         : Boolean(lidoEmRemoto) || capitulo.lido;
       const lidoEm = lido
@@ -5127,94 +5131,6 @@ function aplicarInteracoesNasObras(
       progressoLeitura: calcularProgressoLeitura(capitulos),
     };
   });
-}
-
-type UsuariosPorChavePerfilAutor = Record<string, string[]>;
-
-function adicionarUsuarioUnicoPerfilAutor(
-  usuariosPorChave: Map<string, Set<string>>,
-  chave: string,
-  userId: string,
-) {
-  const chaveLimpa = chave.trim();
-  const userIdLimpo = userId.trim();
-
-  if (!chaveLimpa || !userIdLimpo) {
-    return;
-  }
-
-  const usuarios = usuariosPorChave.get(chaveLimpa) || new Set<string>();
-
-  usuarios.add(userIdLimpo);
-  usuariosPorChave.set(chaveLimpa, usuarios);
-}
-
-function converterUsuariosPerfilAutor(
-  usuariosPorChave: Map<string, Set<string>>,
-): UsuariosPorChavePerfilAutor {
-  return Array.from(usuariosPorChave.entries()).reduce<
-    UsuariosPorChavePerfilAutor
-  >((resultado, [chave, usuarios]) => {
-    resultado[chave] = Array.from(usuarios);
-
-    return resultado;
-  }, {});
-}
-
-function combinarUsuariosPerfilAutor(
-  ...fontes: UsuariosPorChavePerfilAutor[]
-): UsuariosPorChavePerfilAutor {
-  const usuariosCombinados = new Map<string, Set<string>>();
-
-  fontes.forEach((fonte) => {
-    Object.entries(fonte).forEach(([chave, usuarios]) => {
-      usuarios.forEach((userId) => {
-        adicionarUsuarioUnicoPerfilAutor(
-          usuariosCombinados,
-          chave,
-          userId,
-        );
-      });
-    });
-  });
-
-  return converterUsuariosPerfilAutor(usuariosCombinados);
-}
-
-function contarUsuariosPerfilAutor(
-  usuariosPorChave: UsuariosPorChavePerfilAutor,
-) {
-  return Object.entries(usuariosPorChave).reduce<Record<string, number>>(
-    (contagens, [chave, usuarios]) => {
-      contagens[chave] = new Set(
-        usuarios.map((userId) => userId.trim()).filter(Boolean),
-      ).size;
-
-      return contagens;
-    },
-    {},
-  );
-}
-
-function mapearUsuariosCapitulosParaObrasPerfilAutor(
-  usuariosPorCapitulo: UsuariosPorChavePerfilAutor,
-  obraIdPorCapitulo: Record<string, string>,
-) {
-  const usuariosPorObra = new Map<string, Set<string>>();
-
-  Object.entries(usuariosPorCapitulo).forEach(([capituloId, usuarios]) => {
-    const obraId = obraIdPorCapitulo[capituloId]?.trim() || "";
-
-    usuarios.forEach((userId) => {
-      adicionarUsuarioUnicoPerfilAutor(
-        usuariosPorObra,
-        obraId,
-        userId,
-      );
-    });
-  });
-
-  return converterUsuariosPerfilAutor(usuariosPorObra);
 }
 
 function somarContagensCapitulosPerfilAutor(
@@ -5311,190 +5227,60 @@ function obterTotalConcluidasObraPerfilAutor(
     : 0;
 }
 
-function obterIdsUnicosPerfilAutor(ids: string[]) {
-  return Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean)));
-}
-
-async function carregarUsuariosTabelaPerfilAutor(
-  tabela: string,
-  coluna: string,
-  ids: string[],
-): Promise<UsuariosPorChavePerfilAutor> {
-  const idsUnicos = obterIdsUnicosPerfilAutor(ids);
-  const usuariosPorChave = new Map<string, Set<string>>();
-
-  if (idsUnicos.length === 0) {
-    return {};
-  }
-
-  const tamanhoChunk = 80;
-  const tamanhoPagina = 1000;
-
-  for (
-    let inicioChunk = 0;
-    inicioChunk < idsUnicos.length;
-    inicioChunk += tamanhoChunk
-  ) {
-    const idsChunk = idsUnicos.slice(inicioChunk, inicioChunk + tamanhoChunk);
-    let inicioPagina = 0;
-
-    while (true) {
-      try {
-        const { data, error } = await supabase
-          .from(tabela)
-          .select(`${coluna},user_id`)
-          .in(coluna, idsChunk)
-          .range(inicioPagina, inicioPagina + tamanhoPagina - 1);
-
-        if (error || !Array.isArray(data) || data.length === 0) {
-          break;
-        }
-
-        data.forEach((item: unknown) => {
-          if (!item || typeof item !== "object" || Array.isArray(item)) {
-            return;
-          }
-
-          const registro = item as Record<string, unknown>;
-          const id = pegarTexto(registro[coluna]);
-          const userId = pegarTexto(registro.user_id);
-
-          adicionarUsuarioUnicoPerfilAutor(
-            usuariosPorChave,
-            id,
-            userId,
-          );
-        });
-
-        if (data.length < tamanhoPagina) {
-          break;
-        }
-
-        inicioPagina += tamanhoPagina;
-      } catch {
-        break;
-      }
-    }
-  }
-
-  return converterUsuariosPerfilAutor(usuariosPorChave);
-}
-
 async function carregarTotaisInteracoesObrasPerfilAutor(
   obrasParaContar: ObraLocal[],
 ): Promise<TotaisInteracoesObrasPerfilAutor> {
-  const obraIds = obterIdsUnicosPerfilAutor(
-    obrasParaContar.map((obra) => obra.id),
+  const obraIds = Array.from(
+    new Set(obrasParaContar.map((obra) => obra.id.trim()).filter(Boolean)),
   );
-  const capituloIds = obterIdsUnicosPerfilAutor(
-    obrasParaContar.flatMap((obra) =>
-      obra.capitulos.map((capitulo) => capitulo.id),
+  const capituloIds = Array.from(
+    new Set(
+      obrasParaContar.flatMap((obra) =>
+        obra.capitulos.map((capitulo) => capitulo.id.trim()).filter(Boolean),
+      ),
     ),
-  );
-  const obraIdPorCapitulo = obrasParaContar.reduce<Record<string, string>>(
-    (mapa, obra) => {
-      const obraId = obra.id.trim();
-
-      obra.capitulos.forEach((capitulo) => {
-        const capituloId = capitulo.id.trim();
-
-        if (obraId && capituloId) {
-          mapa[capituloId] = obraId;
-        }
-      });
-
-      return mapa;
-    },
-    {},
   );
 
   if (obraIds.length === 0 && capituloIds.length === 0) {
     return totaisInteracoesObrasPerfilVazio;
   }
 
-  const [
-    usuariosCurtidasCapitulos,
-    usuariosComentariosCapitulos,
-    usuariosSalvosCapitulos,
-    usuariosCurtidasObras,
-    usuariosComentariosObras,
-    usuariosObrasSeguidas,
-    usuariosObrasFavoritas,
-    usuariosObrasConcluidas,
-  ] = await Promise.all([
-    carregarUsuariosTabelaPerfilAutor(
-      "curtidas_capitulos",
-      "capitulo_id",
-      capituloIds,
-    ),
-    carregarUsuariosTabelaPerfilAutor(
-      "comentarios_capitulos",
-      "capitulo_id",
-      capituloIds,
-    ),
-    carregarUsuariosTabelaPerfilAutor(
-      "salvos_capitulos",
-      "capitulo_id",
-      capituloIds,
-    ),
-    carregarUsuariosTabelaPerfilAutor("obra_curtidas", "obra_id", obraIds),
-    carregarUsuariosTabelaPerfilAutor("comentarios_obras", "obra_id", obraIds),
-    carregarUsuariosTabelaPerfilAutor("seguindo_obras", "obra_id", obraIds),
-    carregarUsuariosTabelaPerfilAutor("favoritos", "obra_id", obraIds),
-    carregarUsuariosTabelaPerfilAutor("concluidas", "obra_id", obraIds),
-  ]);
+  const metricas = await carregarMetricasConteudos({ obraIds, capituloIds });
 
-  const usuariosCurtidasCapitulosPorObra =
-    mapearUsuariosCapitulosParaObrasPerfilAutor(
-      usuariosCurtidasCapitulos,
-      obraIdPorCapitulo,
-    );
-  const usuariosComentariosCapitulosPorObra =
-    mapearUsuariosCapitulosParaObrasPerfilAutor(
-      usuariosComentariosCapitulos,
-      obraIdPorCapitulo,
-    );
-  const usuariosSalvosCapitulosPorObra =
-    mapearUsuariosCapitulosParaObrasPerfilAutor(
-      usuariosSalvosCapitulos,
-      obraIdPorCapitulo,
-    );
+  if (!metricas.carregado) {
+    return totaisInteracoesObrasPerfilVazio;
+  }
 
-  const usuariosCurtidasPorObra = combinarUsuariosPerfilAutor(
-    usuariosCurtidasObras,
-    usuariosCurtidasCapitulosPorObra,
-  );
-  const usuariosComentariosPorObra = combinarUsuariosPerfilAutor(
-    usuariosComentariosObras,
-    usuariosComentariosCapitulosPorObra,
-  );
-  const usuariosSalvosPorObra = combinarUsuariosPerfilAutor(
-    usuariosObrasSeguidas,
-    usuariosObrasFavoritas,
-    usuariosSalvosCapitulosPorObra,
-  );
-
-  return {
-    curtidasPorObra: contarUsuariosPerfilAutor(usuariosCurtidasPorObra),
-    comentariosPorObra: contarUsuariosPerfilAutor(
-      usuariosComentariosPorObra,
-    ),
-    curtidasPorCapitulo: contarUsuariosPerfilAutor(
-      usuariosCurtidasCapitulos,
-    ),
-    comentariosPorCapitulo: contarUsuariosPerfilAutor(
-      usuariosComentariosCapitulos,
-    ),
-    salvosPorObra: contarUsuariosPerfilAutor(usuariosSalvosPorObra),
-    salvosPorCapitulo: contarUsuariosPerfilAutor(
-      usuariosSalvosCapitulos,
-    ),
-    concluidasPorObra: contarUsuariosPerfilAutor(
-      usuariosObrasConcluidas,
-    ),
+  const totais: TotaisInteracoesObrasPerfilAutor = {
+    curtidasPorObra: {},
+    comentariosPorObra: {},
+    curtidasPorCapitulo: {},
+    comentariosPorCapitulo: {},
+    salvosPorObra: {},
+    salvosPorCapitulo: {},
+    concluidasPorObra: {},
   };
-}
 
+  metricas.obras.forEach((metrica) => {
+    totais.curtidasPorObra[metrica.id] =
+      metrica.audiencia.curtidoresUnicos;
+    totais.comentariosPorObra[metrica.id] =
+      metrica.audiencia.comentaristasUnicos;
+    totais.salvosPorObra[metrica.id] =
+      metrica.audiencia.salvadoresUnicos;
+    totais.concluidasPorObra[metrica.id] =
+      metrica.interacoesDiretas.concluidas;
+  });
+
+  metricas.capitulos.forEach((metrica) => {
+    totais.curtidasPorCapitulo[metrica.id] = metrica.interacoes.curtidas;
+    totais.comentariosPorCapitulo[metrica.id] =
+      metrica.interacoes.comentarios;
+    totais.salvosPorCapitulo[metrica.id] = metrica.interacoes.salvos;
+  });
+
+  return totais;
+}
 async function carregarObrasPublicadasSupabase() {
   try {
     const { data: obrasData, error: obrasError } = await supabase
@@ -5740,69 +5526,63 @@ async function carregarAutoresSeguidosSupabase(
   }
 }
 
-async function carregarInteracoesCapitulosSupabase(userId: string) {
-  const curtidas = new Set(
-    await carregarIdsTabelaUsuario("curtidas_capitulos", "capitulo_id", userId),
+async function carregarInteracoesCapitulosSupabase(
+  userId: string,
+  obras: ObraLocal[],
+) {
+  const capituloIds = Array.from(
+    new Set(
+      obras.flatMap((obra) =>
+        obra.capitulos
+          .map((capitulo) => capitulo.id.trim())
+          .filter(idObraSupabaseValido),
+      ),
+    ),
   );
-  const salvos = new Set(
-    await carregarIdsTabelaUsuario("salvos_capitulos", "capitulo_id", userId),
-  );
+  const metricas = await carregarMetricasConteudos({ capituloIds });
+  const curtidas = new Set<string>();
+  const salvos = new Set<string>();
   const comentarios = new Map<string, string>();
   const progresso = new Map<string, string>();
-  let progressoCarregado = false;
+  const progressoCarregado = metricas.carregado;
 
-  try {
-    const { data } = await supabase
-      .from("comentarios_capitulos")
-      .select("capitulo_id, comentario, texto")
-      .eq("user_id", userId)
-      .limit(1000);
-
-    if (Array.isArray(data)) {
-      data.forEach((item) => {
-        const registro = item as Record<string, unknown>;
-        const capituloId = pegarTexto(registro.capitulo_id);
-        const texto = pegarTexto(registro.comentario ?? registro.texto);
-
-        if (capituloId && texto) {
-          comentarios.set(capituloId, texto);
-        }
-      });
+  metricas.capitulos.forEach((metrica) => {
+    if (metrica.usuario.curtiu) {
+      curtidas.add(metrica.id);
     }
-  } catch {
-    // Comentários continuam apenas localmente se houver erro.
-  }
 
-  try {
-    const { data, error } = await supabase
-      .from("progresso_leitura")
-      .select("capitulo_id,lido,atualizado_em,criado_em")
-      .eq("user_id", userId)
-      .order("atualizado_em", { ascending: false })
-      .limit(1000);
-
-    if (!error && Array.isArray(data)) {
-      progressoCarregado = true;
-
-      data.forEach((item) => {
-        const registro = item as Record<string, unknown>;
-        const capituloId = pegarTexto(registro.capitulo_id);
-        const registroLido =
-          typeof registro.lido === "boolean" ? registro.lido : true;
-        const lidoEm = pegarTexto(
-          registro.atualizado_em ??
-            registro.criado_em ??
-            registro.updated_at ??
-            registro.created_at,
-        );
-
-        if (capituloId && registroLido && lidoEm) {
-          progresso.set(capituloId, lidoEm);
-        }
-      });
+    if (metrica.usuario.salvou) {
+      salvos.add(metrica.id);
     }
-  } catch {
-    // Progresso continua apenas localmente se houver erro.
+
+    if (metrica.usuario.leu && metrica.usuario.lidoEm) {
+      progresso.set(metrica.id, metrica.usuario.lidoEm);
+    }
+  });
+
+  if (capituloIds.length > 0) {
+    try {
+      const { data } = await supabase
+        .from("comentarios_capitulos")
+        .select("capitulo_id, comentario, texto")
+        .eq("user_id", userId)
+        .in("capitulo_id", capituloIds)
+        .limit(1000);
+
+      if (Array.isArray(data)) {
+        data.forEach((item) => {
+          const registro = item as Record<string, unknown>;
+          const capituloId = pegarTexto(registro.capitulo_id);
+          const texto = pegarTexto(registro.comentario ?? registro.texto);
+
+          if (capituloId && texto) {
+            comentarios.set(capituloId, texto);
+          }
+        });
+      }
+    } catch {
+      // Comentários continuam apenas localmente se houver erro.
+    }
   }
 
   return {
@@ -5811,6 +5591,7 @@ async function carregarInteracoesCapitulosSupabase(userId: string) {
     comentarios,
     progresso,
     progressoCarregado,
+    capitulosComMetricas: new Set(metricas.capitulos.keys()),
   };
 }
 
@@ -5823,13 +5604,12 @@ async function carregarEstadoUsuarioSupabase() {
       return null;
     }
 
-    const [favoritas, concluidas, obrasSeguidas, autoresSeguidos, interacoes] =
+    const [favoritas, concluidas, obrasSeguidas, autoresSeguidos] =
       await Promise.all([
         carregarIdsTabelaUsuario("favoritos", "obra_id", userId),
         carregarIdsTabelaUsuario("concluidas", "obra_id", userId),
         carregarIdsTabelaUsuario("seguindo_obras", "obra_id", userId),
         carregarAutoresSeguidosSupabase(userId),
-        carregarInteracoesCapitulosSupabase(userId),
       ]);
 
     return {
@@ -5838,7 +5618,6 @@ async function carregarEstadoUsuarioSupabase() {
       concluidas,
       obrasSeguidas,
       autoresSeguidos,
-      interacoes,
     };
   } catch {
     return null;
@@ -8000,14 +7779,6 @@ function PerfilAutorPageContent() {
           ]),
         );
 
-        obrasMescladas = aplicarInteracoesNasObras(
-          obrasMescladas,
-          estadoUsuarioSupabase.interacoes.curtidas,
-          estadoUsuarioSupabase.interacoes.salvos,
-          estadoUsuarioSupabase.interacoes.comentarios,
-          estadoUsuarioSupabase.interacoes.progresso,
-          estadoUsuarioSupabase.interacoes.progressoCarregado,
-        );
       }
 
       const idsBibliotecaLocal = Array.from(
@@ -8037,6 +7808,23 @@ function PerfilAutorPageContent() {
             obrasBibliotecaFaltantes,
           );
         }
+      }
+
+      if (estadoUsuarioSupabase) {
+        const interacoes = await carregarInteracoesCapitulosSupabase(
+          estadoUsuarioSupabase.userId,
+          obrasMescladas,
+        );
+
+        obrasMescladas = aplicarInteracoesNasObras(
+          obrasMescladas,
+          interacoes.curtidas,
+          interacoes.salvos,
+          interacoes.comentarios,
+          interacoes.progresso,
+          interacoes.progressoCarregado,
+          interacoes.capitulosComMetricas,
+        );
       }
 
       if (usuarioIdAtual) {
@@ -9140,57 +8928,26 @@ function PerfilAutorPageContent() {
         const { data: usuarioData } = await supabase.auth.getUser();
         const userId = usuarioData.user?.id || "";
 
-        const { data: avaliacoesData, error: erroAvaliacoes } = await supabase
-          .from("autor_avaliacoes")
-          .select("user_id,nota")
-          .eq("autor_id", autorId)
-          .limit(1000);
+        const contrato = await carregarMetricasConteudos({
+          autorIds: [autorId],
+        });
+        const metrica = contrato.autores.get(autorId);
 
-        if (erroAvaliacoes || !Array.isArray(avaliacoesData)) {
+        if (!contrato.carregado || !metrica) {
           return;
         }
 
-        const notas = avaliacoesData
-          .filter((avaliacao) => {
-            const avaliadorId =
-              typeof (avaliacao as { user_id?: unknown }).user_id === "string"
-                ? String((avaliacao as { user_id?: unknown }).user_id).trim()
-                : "";
-
-            return (
-              !avaliadorId ||
-              avaliadorId.toLowerCase() !== autorId.toLowerCase()
-            );
-          })
-          .map((avaliacao) => Number((avaliacao as { nota?: unknown }).nota))
-          .filter((nota) => Number.isFinite(nota) && nota >= 0.5 && nota <= 5);
-        const total = notas.length;
-        const media =
-          total > 0
-            ? notas.reduce((soma, nota) => soma + nota, 0) / total
-            : 0;
+        const total = metrica.avaliacao.total;
+        const media = metrica.avaliacao.media;
         const usuarioEhDonoDoPerfil = Boolean(
           userId &&
             userId.trim().toLowerCase() === autorId.toLowerCase(),
         );
-        let minhaNota = usuarioEhDonoDoPerfil ? 0 : notaLocal;
-
-        if (userId && !usuarioEhDonoDoPerfil) {
-          const { data: minhaAvaliacao } = await supabase
-            .from("autor_avaliacoes")
-            .select("nota")
-            .eq("autor_id", autorId)
-            .eq("user_id", userId)
-            .maybeSingle();
-
-          const notaUsuario = Number(
-            (minhaAvaliacao as { nota?: unknown } | null)?.nota,
-          );
-
-          if (Number.isFinite(notaUsuario) && notaUsuario >= 0.5 && notaUsuario <= 5) {
-            minhaNota = Math.round(notaUsuario * 2) / 2;
-          }
-        }
+        const minhaNota = usuarioEhDonoDoPerfil
+          ? 0
+          : metrica.avaliacao.minhaNota > 0
+            ? metrica.avaliacao.minhaNota
+            : notaLocal;
 
         if (cancelado) {
           return;

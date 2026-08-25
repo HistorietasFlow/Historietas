@@ -12,6 +12,7 @@ import {
   useHistorietasTheme,
 } from "../../lib/historietasTheme";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
+import { carregarMetricasConteudos } from "../../lib/metricas";
 import {
   carregarEstadoRelacionamentoPerfil,
   carregarPermissoesAbasPerfil,
@@ -931,236 +932,37 @@ async function carregarCapitulosDasObras(obras: ObraLista[]) {
   }));
 }
 
-function separarEmLotes<T>(itens: T[], tamanho = 400) {
-  const lotes: T[][] = [];
-
-  for (let indice = 0; indice < itens.length; indice += tamanho) {
-    lotes.push(itens.slice(indice, indice + tamanho));
-  }
-
-  return lotes;
-}
-
-function adicionarUsuarioUnico(
-  usuariosPorChave: Map<string, Set<string>>,
-  chave: string,
-  userId: string,
-) {
-  const chaveLimpa = chave.trim();
-  const userIdLimpo = userId.trim();
-
-  if (!chaveLimpa || !userIdLimpo) {
-    return;
-  }
-
-  const usuarios = usuariosPorChave.get(chaveLimpa) || new Set<string>();
-  usuarios.add(userIdLimpo);
-  usuariosPorChave.set(chaveLimpa, usuarios);
-}
-
-function combinarUsuariosPorChave(
-  ...fontes: Map<string, Set<string>>[]
-) {
-  const usuariosCombinados = new Map<string, Set<string>>();
-
-  fontes.forEach((fonte) => {
-    fonte.forEach((usuarios, chave) => {
-      usuarios.forEach((userId) =>
-        adicionarUsuarioUnico(usuariosCombinados, chave, userId),
-      );
-    });
-  });
-
-  return usuariosCombinados;
-}
-
-function mapearUsuariosCapitulosParaObras(
-  usuariosPorCapitulo: Map<string, Set<string>>,
-  obraIdPorCapitulo: Map<string, string>,
-) {
-  const usuariosPorObra = new Map<string, Set<string>>();
-
-  usuariosPorCapitulo.forEach((usuarios, capituloId) => {
-    const obraId = obraIdPorCapitulo.get(capituloId)?.trim() || "";
-
-    usuarios.forEach((userId) =>
-      adicionarUsuarioUnico(usuariosPorObra, obraId, userId),
-    );
-  });
-
-  return usuariosPorObra;
-}
-
-async function carregarUsuariosPorColuna(
-  tabela: string,
-  coluna: string,
-  ids: string[],
-) {
-  const idsUnicos = Array.from(
-    new Set(ids.map((id) => id.trim()).filter(Boolean)),
-  );
-  const usuariosPorChave = new Map<string, Set<string>>();
-
-  if (idsUnicos.length === 0) {
-    return usuariosPorChave;
-  }
-
-  const tamanhoPagina = 1000;
-
-  for (const loteIds of separarEmLotes(idsUnicos)) {
-    let inicio = 0;
-
-    while (inicio < 20000) {
-      try {
-        const { data, error } = await supabase
-          .from(tabela)
-          .select(`${coluna},user_id`)
-          .in(coluna, loteIds)
-          .range(inicio, inicio + tamanhoPagina - 1);
-
-        if (error || !Array.isArray(data) || data.length === 0) {
-          break;
-        }
-
-        data.forEach((registro) => {
-          if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
-            return;
-          }
-
-          const row = registro as RegistroGenerico;
-          adicionarUsuarioUnico(
-            usuariosPorChave,
-            pegarTexto(row[coluna]),
-            pegarTexto(row.user_id),
-          );
-        });
-
-        if (data.length < tamanhoPagina) {
-          break;
-        }
-
-        inicio += tamanhoPagina;
-      } catch {
-        break;
-      }
-    }
-  }
-
-  return usuariosPorChave;
-}
-
-async function aplicarTotaisInteracoesPublicas(obras: ObraLista[]) {
-  const obraIdPorCapitulo = new Map<string, string>();
-
-  obras.forEach((obra) => {
-    obra.capitulos.forEach((capitulo) => {
-      if (obra.id.trim() && capitulo.id.trim()) {
-        obraIdPorCapitulo.set(capitulo.id.trim(), obra.id.trim());
-      }
-    });
-  });
-
-  const obraIds = obras.map((obra) => obra.id.trim()).filter(Boolean);
-  const capituloIds = Array.from(obraIdPorCapitulo.keys());
-
-  const [
-    curtidasDiretasPorObra,
-    curtidasPorCapitulo,
-    comentariosDiretosPorObra,
-    comentariosPorCapitulo,
-  ] = await Promise.all([
-    carregarUsuariosPorColuna("obra_curtidas", "obra_id", obraIds),
-    carregarUsuariosPorColuna("curtidas_capitulos", "capitulo_id", capituloIds),
-    carregarUsuariosPorColuna("comentarios_obras", "obra_id", obraIds),
-    carregarUsuariosPorColuna("comentarios_capitulos", "capitulo_id", capituloIds),
-  ]);
-
-  const curtidasPorObra = combinarUsuariosPorChave(
-    curtidasDiretasPorObra,
-    mapearUsuariosCapitulosParaObras(curtidasPorCapitulo, obraIdPorCapitulo),
-  );
-  const comentariosPorObra = combinarUsuariosPorChave(
-    comentariosDiretosPorObra,
-    mapearUsuariosCapitulosParaObras(comentariosPorCapitulo, obraIdPorCapitulo),
+async function aplicarMetricasObrasListas(obras: ObraLista[]) {
+  const obraIds = Array.from(
+    new Set(obras.map((obra) => obra.id.trim()).filter(Boolean)),
   );
 
-  return obras.map((obra) => ({
-    ...obra,
-    totalCurtidas: curtidasPorObra.get(obra.id)?.size || 0,
-    totalComentarios: comentariosPorObra.get(obra.id)?.size || 0,
-  }));
-}
-
-async function carregarResumoAvaliacoes(obras: ObraLista[]) {
-  const ids = Array.from(new Set(obras.map((obra) => obra.id).filter(Boolean)));
-
-  if (ids.length === 0) {
+  if (obraIds.length === 0) {
     return obras;
   }
 
-  const autorIdPorObra = new Map(
-    obras.map((obra) => [obra.id, obra.autorId.trim()]),
-  );
-  const notasPorObra = new Map<string, number[]>();
-  const tamanhoChunk = 100;
+  const metricas = await carregarMetricasConteudos({ obraIds });
 
-  for (let inicio = 0; inicio < ids.length; inicio += tamanhoChunk) {
-    const chunk = ids.slice(inicio, inicio + tamanhoChunk);
-
-    try {
-      const { data, error } = await supabase
-        .from("obra_avaliacoes")
-        .select("obra_id,user_id,nota")
-        .in("obra_id", chunk)
-        .limit(Math.max(chunk.length * 100, 100));
-
-      if (error || !Array.isArray(data)) {
-        continue;
-      }
-
-      data.forEach((registro) => {
-        if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
-          return;
-        }
-
-        const row = registro;
-        const obraId = pegarTexto(row.obra_id);
-        const avaliadorId = pegarTexto(row.user_id);
-        const autorId = autorIdPorObra.get(obraId) || "";
-        const nota = pegarNumero(row.nota);
-
-        if (
-          !obraId ||
-          nota <= 0 ||
-          nota > 5 ||
-          (autorId && avaliadorId === autorId)
-        ) {
-          return;
-        }
-
-        const atuais = notasPorObra.get(obraId) || [];
-        atuais.push(nota);
-        notasPorObra.set(obraId, atuais);
-      });
-    } catch {
-      // Avaliações são informação complementar.
-    }
+  if (!metricas.carregado) {
+    return obras;
   }
 
   return obras.map((obra) => {
-    const notas = notasPorObra.get(obra.id) || [];
-    const notaMedia = notas.length
-      ? notas.reduce((total, nota) => total + nota, 0) / notas.length
-      : 0;
+    const metrica = metricas.obras.get(obra.id);
+
+    if (!metrica) {
+      return obra;
+    }
 
     return {
       ...obra,
-      notaMedia,
-      totalAvaliacoes: notas.length,
+      totalCurtidas: metrica.audiencia.curtidoresUnicos,
+      totalComentarios: metrica.audiencia.comentaristasUnicos,
+      notaMedia: metrica.avaliacao.media,
+      totalAvaliacoes: metrica.avaliacao.total,
     };
   });
 }
-
 async function carregarObrasPublicadas(idsEspecificos: string[] = []) {
   try {
     let consulta = supabase
@@ -1189,20 +991,7 @@ async function carregarObrasPublicadas(idsEspecificos: string[] = []) {
     );
 
     obras = await carregarCapitulosDasObras(obras);
-    obras = await Promise.all([
-      carregarResumoAvaliacoes(obras),
-      aplicarTotaisInteracoesPublicas(obras),
-    ]).then(([obrasAvaliadas, obrasComInteracoes]) => {
-      const interacoesPorId = new Map(
-        obrasComInteracoes.map((obra) => [obra.id, obra]),
-      );
-
-      return obrasAvaliadas.map((obra) => ({
-        ...obra,
-        totalCurtidas: interacoesPorId.get(obra.id)?.totalCurtidas || 0,
-        totalComentarios: interacoesPorId.get(obra.id)?.totalComentarios || 0,
-      }));
-    });
+    obras = await aplicarMetricasObrasListas(obras);
 
     return obras;
   } catch {
@@ -2598,54 +2387,21 @@ async function carregarAvaliacoesAutoresPublicos(autorIds: string[]) {
     return avaliacoes;
   }
 
-  try {
-    const { data, error } = await supabase
-      .from("autor_avaliacoes")
-      .select("autor_id,nota")
-      .in("autor_id", idsUnicos)
-      .limit(5000);
+  const metricas = await carregarMetricasConteudos({ autorIds: idsUnicos });
 
-    if (error || !Array.isArray(data)) {
-      return avaliacoes;
-    }
-
-    const acumulado = new Map<string, { soma: number; total: number }>();
-
-    data.forEach((registro) => {
-      if (!registro || typeof registro !== "object" || Array.isArray(registro)) {
-        return;
-      }
-
-      const row = registro;
-      const autorId = pegarTexto(row.autor_id);
-      const nota = pegarNumero(row.nota);
-
-      if (!autorId || nota < 0.5 || nota > 5) {
-        return;
-      }
-
-      const atual = acumulado.get(autorId) || { soma: 0, total: 0 };
-      acumulado.set(autorId, {
-        soma: atual.soma + nota,
-        total: atual.total + 1,
-      });
-    });
-
-    acumulado.forEach((valor, autorId) => {
-      if (valor.total > 0) {
-        avaliacoes.set(autorId, {
-          media: valor.soma / valor.total,
-          total: valor.total,
-        });
-      }
-    });
-  } catch {
-    // A lista de autores continua funcionando sem avaliações.
+  if (!metricas.carregado) {
+    return avaliacoes;
   }
+
+  metricas.autores.forEach((metrica) => {
+    avaliacoes.set(metrica.id, {
+      media: metrica.avaliacao.media,
+      total: metrica.avaliacao.total,
+    });
+  });
 
   return avaliacoes;
 }
-
 async function carregarAutoresPublicos(obras: ObraLista[]) {
   const idsAutores = Array.from(
     new Set(obras.map((obra) => obra.autorId).filter(idUsuarioValido)),

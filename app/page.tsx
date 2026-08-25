@@ -14,6 +14,7 @@ import {
   useHistorietasTheme,
 } from "../lib/historietasTheme";
 import { ehClassificacao18 } from "../lib/historietasAdultContent";
+import { carregarMetricasConteudos } from "../lib/metricas";
 
 type CapituloLocal = {
   id: string;
@@ -114,16 +115,6 @@ type SupabaseCapituloRow = {
   atualizado_em: string | null;
 };
 
-type SupabaseInteracaoCapituloHomeRow = {
-  capitulo_id: string | null;
-  user_id: string | null;
-};
-
-type SupabaseInteracaoObraHomeRow = {
-  obra_id: string | null;
-  user_id: string | null;
-};
-
 type SupabaseProgressoLeituraHomeRow = {
   obra_id: string | null;
   capitulo_id: string | null;
@@ -175,11 +166,6 @@ type AvaliacaoAutorHome = {
 };
 
 type AvaliacoesAutoresHome = Record<string, AvaliacaoAutorHome>;
-
-type SupabaseAvaliacaoAutorHomeRow = {
-  autor_id: string | null;
-  nota: number | null;
-};
 
 const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
@@ -2521,29 +2507,9 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
       }
     }
 
-    const usuariosCurtidasPorObraId = new Map<string, Set<string>>();
-    const usuariosComentariosPorObraId = new Map<string, Set<string>>();
     const capituloParaObraId = new Map<string, string>();
     const progressoPorCapituloId =
       new Map<string, SupabaseProgressoLeituraHomeRow>();
-    let progressoHomeCarregado = false;
-
-    function registrarUsuarioMetricaObraHome(
-      mapa: Map<string, Set<string>>,
-      obraId: string,
-      userId: string,
-    ) {
-      const obraIdLimpo = obraId.trim();
-      const userIdLimpo = userId.trim();
-
-      if (!obraIdLimpo || !userIdLimpo) {
-        return;
-      }
-
-      const usuarios = mapa.get(obraIdLimpo) || new Set<string>();
-      usuarios.add(userIdLimpo);
-      mapa.set(obraIdLimpo, usuarios);
-    }
 
     capitulosPorObraId.forEach((capitulosDaObra, obraId) => {
       capitulosDaObra.forEach((capitulo) => {
@@ -2555,150 +2521,25 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
 
     const capituloIdsPublicados = Array.from(capituloParaObraId.keys());
     const userIdLimpo = userId.trim();
+    const metricas = await carregarMetricasConteudos({
+      obraIds: obrasIds,
+      capituloIds: capituloIdsPublicados,
+    });
+    const progressoHomeCarregado = metricas.carregado && Boolean(userIdLimpo);
 
-    if (userIdLimpo && capituloIdsPublicados.length > 0) {
-      try {
-        const { data: progressoBanco, error: erroProgresso } = await supabase
-          .from("progresso_leitura")
-          .select("obra_id,capitulo_id,lido,atualizado_em")
-          .eq("user_id", userIdLimpo)
-          .in("obra_id", obrasIds)
-          .in("capitulo_id", capituloIdsPublicados)
-          .limit(5000);
-
-        if (!erroProgresso && Array.isArray(progressoBanco)) {
-          progressoHomeCarregado = true;
-
-          (
-            progressoBanco as unknown as SupabaseProgressoLeituraHomeRow[]
-          ).forEach((registro) => {
-            const obraId = registro.obra_id?.trim() || "";
-            const capituloId = registro.capitulo_id?.trim() || "";
-            const obraDoCapitulo = capituloParaObraId.get(capituloId) || "";
-
-            if (
-              capituloId &&
-              obraId &&
-              obraDoCapitulo === obraId &&
-              !progressoPorCapituloId.has(capituloId)
-            ) {
-              progressoPorCapituloId.set(capituloId, registro);
-            }
-          });
+    if (progressoHomeCarregado) {
+      metricas.capitulos.forEach((metrica) => {
+        if (!metrica.usuario.leu) {
+          return;
         }
-      } catch {
-        // O estado local continua como fallback se o progresso remoto falhar.
-      }
-    }
 
-    try {
-      if (obrasIds.length > 0) {
-        const { data: curtidasBanco } = await supabase
-          .from("obra_curtidas")
-          .select("obra_id,user_id")
-          .in("obra_id", obrasIds)
-          .limit(5000);
-
-        if (Array.isArray(curtidasBanco)) {
-          (curtidasBanco as unknown as SupabaseInteracaoObraHomeRow[]).forEach(
-            (registro) => {
-              registrarUsuarioMetricaObraHome(
-                usuariosCurtidasPorObraId,
-                registro.obra_id || "",
-                registro.user_id || "",
-              );
-            },
-          );
-        }
-      }
-    } catch {
-      // Métricas públicas são complementares; a Home continua sem travar.
-    }
-
-    try {
-      const capituloIds = Array.from(capituloParaObraId.keys());
-
-      if (capituloIds.length > 0) {
-        const { data: curtidasCapitulosBanco } = await supabase
-          .from("curtidas_capitulos")
-          .select("capitulo_id,user_id")
-          .in("capitulo_id", capituloIds)
-          .limit(5000);
-
-        if (Array.isArray(curtidasCapitulosBanco)) {
-          (
-            curtidasCapitulosBanco as unknown as SupabaseInteracaoCapituloHomeRow[]
-          ).forEach((registro) => {
-            const capituloId = registro.capitulo_id || "";
-            const obraId = capituloId
-              ? capituloParaObraId.get(capituloId) || ""
-              : "";
-
-            registrarUsuarioMetricaObraHome(
-              usuariosCurtidasPorObraId,
-              obraId,
-              registro.user_id || "",
-            );
-          });
-        }
-      }
-    } catch {
-      // Curtidas de capítulos são complementares; a Home continua sem travar.
-    }
-
-    try {
-      const capituloIds = Array.from(capituloParaObraId.keys());
-
-      if (capituloIds.length > 0) {
-        const { data: comentariosBanco } = await supabase
-          .from("comentarios_capitulos")
-          .select("capitulo_id,user_id")
-          .in("capitulo_id", capituloIds)
-          .limit(5000);
-
-        if (Array.isArray(comentariosBanco)) {
-          (
-            comentariosBanco as unknown as SupabaseInteracaoCapituloHomeRow[]
-          ).forEach((registro) => {
-            const capituloId = registro.capitulo_id || "";
-            const obraId = capituloId
-              ? capituloParaObraId.get(capituloId) || ""
-              : "";
-
-            registrarUsuarioMetricaObraHome(
-              usuariosComentariosPorObraId,
-              obraId,
-              registro.user_id || "",
-            );
-          });
-        }
-      }
-    } catch {
-      // Comentários públicos são complementares; a Home continua sem travar.
-    }
-
-    try {
-      if (obrasIds.length > 0) {
-        const { data: comentariosObrasBanco } = await supabase
-          .from("comentarios_obras")
-          .select("obra_id,user_id")
-          .in("obra_id", obrasIds)
-          .limit(5000);
-
-        if (Array.isArray(comentariosObrasBanco)) {
-          (
-            comentariosObrasBanco as unknown as SupabaseInteracaoObraHomeRow[]
-          ).forEach((registro) => {
-            registrarUsuarioMetricaObraHome(
-              usuariosComentariosPorObraId,
-              registro.obra_id || "",
-              registro.user_id || "",
-            );
-          });
-        }
-      }
-    } catch {
-      // Comentários diretos da obra são complementares; a Home continua sem travar.
+        progressoPorCapituloId.set(metrica.id, {
+          obra_id: metrica.obraId,
+          capitulo_id: metrica.id,
+          lido: true,
+          atualizado_em: metrica.usuario.lidoEm,
+        });
+      });
     }
 
     const obrasRemotas = obrasSupabase.map((obra, index) => {
@@ -2727,16 +2568,17 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
         progressoPorCapituloId,
         progressoHomeCarregado
       );
+      const metrica = metricas.obras.get(obra.id);
 
       return {
         ...obraNormalizada,
         totalCurtidas: Math.max(
           obraNormalizada.totalCurtidas,
-          usuariosCurtidasPorObraId.get(obra.id)?.size || 0,
+          metrica?.audiencia.curtidoresUnicos || 0,
         ),
         totalComentarios: Math.max(
           obraNormalizada.totalComentarios,
-          usuariosComentariosPorObraId.get(obra.id)?.size || 0,
+          metrica?.audiencia.comentaristasUnicos || 0,
         ),
       };
     });
@@ -3709,58 +3551,23 @@ export default function Home() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from("autor_avaliacoes")
-          .select("autor_id, nota")
-          .in("autor_id", autorIds)
-          .limit(5000);
+        const contrato = await carregarMetricasConteudos({ autorIds });
 
-        if (error || !Array.isArray(data)) {
+        if (!contrato.carregado) {
           if (!cancelado) {
             setAvaliacoesAutoresHome({});
           }
           return;
         }
 
-        const acumuladoPorAutor = new Map<
-          string,
-          { soma: number; total: number }
-        >();
-
-        (data as unknown as SupabaseAvaliacaoAutorHomeRow[]).forEach(
-          (avaliacao) => {
-            const autorId = avaliacao.autor_id?.trim() || "";
-            const nota = Number(avaliacao.nota);
-
-            if (
-              !autorId ||
-              !Number.isFinite(nota) ||
-              nota < 0.5 ||
-              nota > 5
-            ) {
-              return;
-            }
-
-            const acumuladoAtual = acumuladoPorAutor.get(autorId) || {
-              soma: 0,
-              total: 0,
-            };
-
-            acumuladoPorAutor.set(autorId, {
-              soma: acumuladoAtual.soma + nota,
-              total: acumuladoAtual.total + 1,
-            });
-          }
-        );
-
         const avaliacoesAtualizadas = autorIds.reduce<AvaliacoesAutoresHome>(
           (resultado, autorId) => {
-            const acumulado = acumuladoPorAutor.get(autorId);
+            const avaliacao = contrato.autores.get(autorId)?.avaliacao;
 
-            if (acumulado && acumulado.total > 0) {
+            if (avaliacao && avaliacao.total > 0) {
               resultado[autorId] = {
-                media: acumulado.soma / acumulado.total,
-                total: acumulado.total,
+                media: avaliacao.media,
+                total: avaliacao.total,
               };
             }
 

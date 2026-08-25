@@ -15,6 +15,7 @@ import {
   deixarDeSeguirUsuario as deixarDeSeguirUsuarioPrivacidade,
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
+import { carregarMetricasConteudos } from "../../lib/metricas";
 
 type CapituloLocal = {
   id: string;
@@ -171,8 +172,6 @@ const totaisInteracoesSeguindoVazios: TotaisInteracoesSeguindo = {
   salvosPorCapitulo: {},
   lidosPorCapitulo: {},
 };
-
-type UsuariosPorChaveSeguindo = Record<string, string[]>;
 
 type RegistroSupabaseGenerico = Record<string, unknown>;
 
@@ -1531,62 +1530,12 @@ function obterTextoComentarioRegistro(registro: RegistroSupabaseGenerico) {
   );
 }
 
-function registroIndicaLido(registro: RegistroSupabaseGenerico) {
-  const valor = registro.lido;
-
-  if (typeof valor === "boolean") {
-    return valor;
-  }
-
-  if (typeof valor === "string") {
-    return valor.toLowerCase() === "true";
-  }
-
-  return true;
-}
-
 function criarSetObrasPorRegistro(registros: RegistroSupabaseGenerico[]) {
   return new Set(
     registros
       .map((registro) => obterIdObraRegistro(registro))
       .filter((obraId) => Boolean(obraId))
   );
-}
-
-function criarSetCapitulosPorRegistro(registros: RegistroSupabaseGenerico[]) {
-  return new Set(
-    registros
-      .map((registro) => obterIdCapituloRegistro(registro))
-      .filter((capituloId) => Boolean(capituloId))
-  );
-}
-
-function criarMapaCapitulosLidosPorRegistro(
-  registros: RegistroSupabaseGenerico[]
-) {
-  const progressoPorCapitulo = new Map<string, string>();
-
-  registros.forEach((registro) => {
-    if (!registroIndicaLido(registro)) {
-      return;
-    }
-
-    const capituloId = obterIdCapituloRegistro(registro);
-
-    if (!capituloId || progressoPorCapitulo.has(capituloId)) {
-      return;
-    }
-
-    const lidoEm =
-      obterTextoRegistro(registro, "atualizado_em") ||
-      obterTextoRegistro(registro, "updated_at") ||
-      obterTextoRegistro(registro, "criado_em") ||
-      obterTextoRegistro(registro, "created_at");
-
-    progressoPorCapitulo.set(capituloId, lidoEm);
-  });
-
-  return progressoPorCapitulo;
 }
 
 function criarMapaComentariosPorCapitulo(
@@ -1633,34 +1582,22 @@ async function carregarIdsObrasUsuarioSupabase(
   }
 }
 
-async function carregarRegistrosCapitulosUsuarioSupabase(
-  tabela:
-    | "salvos_capitulos"
-    | "curtidas_capitulos"
-    | "comentarios_capitulos"
-    | "progresso_leitura",
+async function carregarComentariosCapitulosUsuarioSupabase(
   userId: string,
-  capituloIds: string[]
+  capituloIds: string[],
 ): Promise<RegistroSupabaseGenerico[]> {
   if (!userId || capituloIds.length === 0) {
-    return [] as RegistroSupabaseGenerico[];
+    return [];
   }
 
-  const camposPorTabela = {
-    salvos_capitulos: ["capitulo_id"],
-    curtidas_capitulos: ["capitulo_id"],
-    comentarios_capitulos: [
-      "capitulo_id,texto",
-      "capitulo_id,comentario",
-      "capitulo_id,conteudo",
-    ],
-    progresso_leitura: ["capitulo_id,lido"],
-  } satisfies Record<typeof tabela, string[]>;
-
-  for (const campos of camposPorTabela[tabela]) {
+  for (const campos of [
+    "capitulo_id,texto",
+    "capitulo_id,comentario",
+    "capitulo_id,conteudo",
+  ]) {
     try {
       const { data, error } = await supabase
-        .from(tabela)
+        .from("comentarios_capitulos")
         .select(campos)
         .eq("user_id", userId)
         .in("capitulo_id", capituloIds)
@@ -1669,232 +1606,13 @@ async function carregarRegistrosCapitulosUsuarioSupabase(
       if (!error) {
         return normalizarRegistrosSupabaseGenericos(data);
       }
-
-      if (tabela !== "comentarios_capitulos") {
-        console.warn(`Não consegui carregar ${tabela} no Supabase:`, error.message);
-        return [];
-      }
-    } catch (error) {
-      if (tabela !== "comentarios_capitulos") {
-        console.warn(`Não consegui acessar ${tabela} no Supabase:`, error);
-        return [];
-      }
+    } catch {
+      // O texto local do comentario continua como fallback.
     }
   }
 
-  return [] as RegistroSupabaseGenerico[];
+  return [];
 }
-
-
-async function carregarProgressoLeituraUsuarioSeguindo(
-  userId: string,
-  capituloIds: string[]
-) {
-  const userIdLimpo = userId.trim();
-  const idsUnicos = Array.from(
-    new Set(capituloIds.map((capituloId) => capituloId.trim()).filter(Boolean))
-  );
-
-  if (!userIdLimpo || idsUnicos.length === 0) {
-    return {
-      registros: [] as RegistroSupabaseGenerico[],
-      carregado: Boolean(userIdLimpo),
-    };
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("progresso_leitura")
-      .select("obra_id,capitulo_id,lido,atualizado_em,criado_em")
-      .eq("user_id", userIdLimpo)
-      .in("capitulo_id", idsUnicos)
-      .order("atualizado_em", { ascending: false })
-      .limit(5000);
-
-    if (error) {
-      console.warn(
-        "Não consegui carregar progresso_leitura no Supabase:",
-        error.message
-      );
-
-      return {
-        registros: [] as RegistroSupabaseGenerico[],
-        carregado: false,
-      };
-    }
-
-    return {
-      registros: normalizarRegistrosSupabaseGenericos(data),
-      carregado: true,
-    };
-  } catch (error) {
-    console.warn("Não consegui acessar progresso_leitura no Supabase:", error);
-
-    return {
-      registros: [] as RegistroSupabaseGenerico[],
-      carregado: false,
-    };
-  }
-}
-
-
-function adicionarUsuarioUnicoSeguindo(
-  usuariosPorChave: Map<string, Set<string>>,
-  chave: string,
-  userId: string,
-) {
-  const chaveLimpa = chave.trim();
-  const userIdLimpo = userId.trim();
-
-  if (!chaveLimpa || !userIdLimpo) {
-    return;
-  }
-
-  const usuarios = usuariosPorChave.get(chaveLimpa) || new Set<string>();
-
-  usuarios.add(userIdLimpo);
-  usuariosPorChave.set(chaveLimpa, usuarios);
-}
-
-function converterUsuariosSeguindo(
-  usuariosPorChave: Map<string, Set<string>>,
-): UsuariosPorChaveSeguindo {
-  return Array.from(usuariosPorChave.entries()).reduce<
-    UsuariosPorChaveSeguindo
-  >((resultado, [chave, usuarios]) => {
-    resultado[chave] = Array.from(usuarios);
-
-    return resultado;
-  }, {});
-}
-
-function combinarUsuariosSeguindo(
-  ...fontes: UsuariosPorChaveSeguindo[]
-): UsuariosPorChaveSeguindo {
-  const usuariosCombinados = new Map<string, Set<string>>();
-
-  fontes.forEach((fonte) => {
-    Object.entries(fonte).forEach(([chave, usuarios]) => {
-      usuarios.forEach((userId) => {
-        adicionarUsuarioUnicoSeguindo(usuariosCombinados, chave, userId);
-      });
-    });
-  });
-
-  return converterUsuariosSeguindo(usuariosCombinados);
-}
-
-function contarUsuariosSeguindo(
-  usuariosPorChave: UsuariosPorChaveSeguindo,
-) {
-  return Object.entries(usuariosPorChave).reduce<Record<string, number>>(
-    (contagens, [chave, usuarios]) => {
-      contagens[chave] = new Set(
-        usuarios.map((userId) => userId.trim()).filter(Boolean),
-      ).size;
-
-      return contagens;
-    },
-    {},
-  );
-}
-
-function mapearUsuariosCapitulosParaObrasSeguindo(
-  usuariosPorCapitulo: UsuariosPorChaveSeguindo,
-  obraIdPorCapitulo: Record<string, string>,
-) {
-  const usuariosPorObra = new Map<string, Set<string>>();
-
-  Object.entries(usuariosPorCapitulo).forEach(([capituloId, usuarios]) => {
-    const obraId = obraIdPorCapitulo[capituloId]?.trim() || "";
-
-    usuarios.forEach((userId) => {
-      adicionarUsuarioUnicoSeguindo(usuariosPorObra, obraId, userId);
-    });
-  });
-
-  return converterUsuariosSeguindo(usuariosPorObra);
-}
-
-async function carregarUsuariosTabelaSeguindo(
-  tabela: string,
-  coluna: string,
-  ids: string[],
-  somenteLidos = false,
-): Promise<UsuariosPorChaveSeguindo> {
-  const idsUnicos = Array.from(
-    new Set(ids.map((id) => id.trim()).filter(Boolean)),
-  );
-  const usuariosPorChave = new Map<string, Set<string>>();
-
-  if (idsUnicos.length === 0) {
-    return {};
-  }
-
-  const tamanhoLote = 80;
-  const tamanhoPagina = 1000;
-
-  for (
-    let inicioLote = 0;
-    inicioLote < idsUnicos.length;
-    inicioLote += tamanhoLote
-  ) {
-    const idsLote = idsUnicos.slice(inicioLote, inicioLote + tamanhoLote);
-    let inicioPagina = 0;
-
-    while (true) {
-      try {
-        let consulta = supabase
-          .from(tabela)
-          .select(`${coluna},user_id`)
-          .in(coluna, idsLote)
-          .range(inicioPagina, inicioPagina + tamanhoPagina - 1);
-
-        if (somenteLidos) {
-          consulta = consulta.eq("lido", true);
-        }
-
-        const { data, error } = await consulta;
-
-        if (error || !Array.isArray(data) || data.length === 0) {
-          break;
-        }
-
-        data.forEach((registro) => {
-          if (
-            !registro ||
-            typeof registro !== "object" ||
-            Array.isArray(registro)
-          ) {
-            return;
-          }
-
-          const linha = registro as RegistroSupabaseGenerico;
-          const id = obterTextoRegistro(linha, coluna);
-          const userId = obterTextoRegistro(linha, "user_id");
-
-          adicionarUsuarioUnicoSeguindo(
-            usuariosPorChave,
-            id,
-            userId,
-          );
-        });
-
-        if (data.length < tamanhoPagina) {
-          break;
-        }
-
-        inicioPagina += tamanhoPagina;
-      } catch {
-        break;
-      }
-    }
-  }
-
-  return converterUsuariosSeguindo(usuariosPorChave);
-}
-
-
 function somarTotaisCapitulosSeguindo(
   capitulos: Pick<SupabaseCapituloRow, "id">[],
   contagens: Record<string, number>,
@@ -2210,161 +1928,78 @@ async function carregarSeguindoSupabase(
     const capituloIds = capitulosSupabaseBanco
       .map((capitulo) => capitulo.id)
       .filter((capituloId) => Boolean(capituloId));
-    const obraIdPorCapitulo = capitulosSupabaseBanco.reduce<
-      Record<string, string>
-    >((mapa, capitulo) => {
-      if (capitulo.id && capitulo.obra_id) {
-        mapa[capitulo.id] = capitulo.obra_id;
-      }
-
-      return mapa;
-    }, {});
-
-    const [
-      seguidasBanco,
-      favoritasBanco,
-      concluidasBanco,
-      salvosCapitulosBanco,
-      curtidasCapitulosBanco,
-      comentariosCapitulosBanco,
-      progressoLeituraBanco,
-      usuariosCurtidasPublicasCapitulos,
-      usuariosComentariosPublicosCapitulos,
-      usuariosSalvosPublicosCapitulos,
-      usuariosLeiturasPublicasCapitulos,
-      usuariosCurtidasPublicasObras,
-      usuariosComentariosPublicosObras,
-      usuariosSeguidoresPublicosObras,
-      usuariosFavoritasPublicasObras,
-      usuariosConcluidasPublicasObras,
-    ] = await Promise.all([
-      carregarIdsObrasUsuarioSupabase("seguindo_obras", userIdObrasSeguidas),
-      carregarIdsObrasUsuarioSupabase("favoritos", userId),
-      carregarIdsObrasUsuarioSupabase("concluidas", userId),
-      carregarRegistrosCapitulosUsuarioSupabase(
-        "salvos_capitulos",
-        userId,
-        capituloIds
-      ),
-      carregarRegistrosCapitulosUsuarioSupabase(
-        "curtidas_capitulos",
-        userId,
-        capituloIds
-      ),
-      carregarRegistrosCapitulosUsuarioSupabase(
-        "comentarios_capitulos",
-        userId,
-        capituloIds
-      ),
-      carregarProgressoLeituraUsuarioSeguindo(
-        userId,
-        capituloIds
-      ),
-      carregarUsuariosTabelaSeguindo(
-        "curtidas_capitulos",
-        "capitulo_id",
-        capituloIds,
-      ),
-      carregarUsuariosTabelaSeguindo(
-        "comentarios_capitulos",
-        "capitulo_id",
-        capituloIds,
-      ),
-      carregarUsuariosTabelaSeguindo(
-        "salvos_capitulos",
-        "capitulo_id",
-        capituloIds,
-      ),
-      carregarUsuariosTabelaSeguindo(
-        "progresso_leitura",
-        "capitulo_id",
-        capituloIds,
-        true,
-      ),
-      carregarUsuariosTabelaSeguindo("obra_curtidas", "obra_id", obraIds),
-      carregarUsuariosTabelaSeguindo("comentarios_obras", "obra_id", obraIds),
-      carregarUsuariosTabelaSeguindo("seguindo_obras", "obra_id", obraIds),
-      carregarUsuariosTabelaSeguindo("favoritos", "obra_id", obraIds),
-      carregarUsuariosTabelaSeguindo("concluidas", "obra_id", obraIds),
-    ]);
+    const [seguidasBanco, comentariosCapitulosBanco, metricas] =
+      await Promise.all([
+        carregarIdsObrasUsuarioSupabase("seguindo_obras", userIdObrasSeguidas),
+        carregarComentariosCapitulosUsuarioSupabase(userId, capituloIds),
+        carregarMetricasConteudos({ obraIds, capituloIds }),
+      ]);
 
     const seguidasSupabase = criarSetObrasPorRegistro(seguidasBanco);
-    const favoritasSupabase = criarSetObrasPorRegistro(favoritasBanco);
-    const concluidasSupabase = criarSetObrasPorRegistro(concluidasBanco);
-    const capitulosSalvos = criarSetCapitulosPorRegistro(salvosCapitulosBanco);
-    const capitulosCurtidos = criarSetCapitulosPorRegistro(curtidasCapitulosBanco);
-    const progressoPorCapitulo = criarMapaCapitulosLidosPorRegistro(
-      progressoLeituraBanco.registros
-    );
-    const progressoCarregado = progressoLeituraBanco.carregado;
+    const favoritasSupabase = new Set<string>();
+    const concluidasSupabase = new Set<string>();
+    const capitulosSalvos = new Set<string>();
+    const capitulosCurtidos = new Set<string>();
+    const progressoPorCapitulo = new Map<string, string>();
     const comentariosCapitulos = criarMapaComentariosPorCapitulo(
-      comentariosCapitulosBanco
+      comentariosCapitulosBanco,
     );
-    const curtidasCapitulosPorObra =
-      mapearUsuariosCapitulosParaObrasSeguindo(
-        usuariosCurtidasPublicasCapitulos,
-        obraIdPorCapitulo,
-      );
-    const comentariosCapitulosPorObra =
-      mapearUsuariosCapitulosParaObrasSeguindo(
-        usuariosComentariosPublicosCapitulos,
-        obraIdPorCapitulo,
-      );
-    const salvosCapitulosPorObra =
-      mapearUsuariosCapitulosParaObrasSeguindo(
-        usuariosSalvosPublicosCapitulos,
-        obraIdPorCapitulo,
-      );
-    const leiturasCapitulosPorObra =
-      mapearUsuariosCapitulosParaObrasSeguindo(
-        usuariosLeiturasPublicasCapitulos,
-        obraIdPorCapitulo,
-      );
-
-    const usuariosCurtidasPorObra = combinarUsuariosSeguindo(
-      usuariosCurtidasPublicasObras,
-      curtidasCapitulosPorObra,
-    );
-    const usuariosComentariosPorObra = combinarUsuariosSeguindo(
-      usuariosComentariosPublicosObras,
-      comentariosCapitulosPorObra,
-    );
-    const usuariosSalvosPorObra = combinarUsuariosSeguindo(
-      usuariosSeguidoresPublicosObras,
-      usuariosFavoritasPublicasObras,
-      salvosCapitulosPorObra,
-    );
-
+    const progressoCarregado = metricas.carregado && Boolean(userId.trim());
     const totaisReais: TotaisInteracoesSeguindo = {
-      curtidasPorObra: contarUsuariosSeguindo(usuariosCurtidasPorObra),
-      comentariosPorObra: contarUsuariosSeguindo(
-        usuariosComentariosPorObra,
-      ),
-      salvosPorObra: contarUsuariosSeguindo(usuariosSalvosPorObra),
-      lidosPorObra: contarUsuariosSeguindo(leiturasCapitulosPorObra),
-      seguidoresPorObra: contarUsuariosSeguindo(
-        usuariosSeguidoresPublicosObras,
-      ),
-      favoritasPorObra: contarUsuariosSeguindo(
-        usuariosFavoritasPublicasObras,
-      ),
-      concluidasPorObra: contarUsuariosSeguindo(
-        usuariosConcluidasPublicasObras,
-      ),
-      curtidasPorCapitulo: contarUsuariosSeguindo(
-        usuariosCurtidasPublicasCapitulos,
-      ),
-      comentariosPorCapitulo: contarUsuariosSeguindo(
-        usuariosComentariosPublicosCapitulos,
-      ),
-      salvosPorCapitulo: contarUsuariosSeguindo(
-        usuariosSalvosPublicosCapitulos,
-      ),
-      lidosPorCapitulo: contarUsuariosSeguindo(
-        usuariosLeiturasPublicasCapitulos,
-      ),
+      curtidasPorObra: {},
+      comentariosPorObra: {},
+      salvosPorObra: {},
+      lidosPorObra: {},
+      seguidoresPorObra: {},
+      favoritasPorObra: {},
+      concluidasPorObra: {},
+      curtidasPorCapitulo: {},
+      comentariosPorCapitulo: {},
+      salvosPorCapitulo: {},
+      lidosPorCapitulo: {},
     };
 
+    metricas.obras.forEach((metrica) => {
+      totaisReais.curtidasPorObra[metrica.id] =
+        metrica.audiencia.curtidoresUnicos;
+      totaisReais.comentariosPorObra[metrica.id] =
+        metrica.audiencia.comentaristasUnicos;
+      totaisReais.salvosPorObra[metrica.id] =
+        metrica.audiencia.salvadoresUnicos;
+      totaisReais.seguidoresPorObra[metrica.id] =
+        metrica.interacoesDiretas.seguidores;
+      totaisReais.favoritasPorObra[metrica.id] =
+        metrica.interacoesDiretas.favoritos;
+      totaisReais.concluidasPorObra[metrica.id] =
+        metrica.interacoesDiretas.concluidas;
+
+      if (metrica.usuario.favoritou) {
+        favoritasSupabase.add(metrica.id);
+      }
+
+      if (metrica.usuario.concluiu) {
+        concluidasSupabase.add(metrica.id);
+      }
+    });
+
+    metricas.capitulos.forEach((metrica) => {
+      totaisReais.curtidasPorCapitulo[metrica.id] =
+        metrica.interacoes.curtidas;
+      totaisReais.comentariosPorCapitulo[metrica.id] =
+        metrica.interacoes.comentarios;
+      totaisReais.salvosPorCapitulo[metrica.id] = metrica.interacoes.salvos;
+      if (metrica.usuario.curtiu) {
+        capitulosCurtidos.add(metrica.id);
+      }
+
+      if (metrica.usuario.salvou) {
+        capitulosSalvos.add(metrica.id);
+      }
+
+      if (progressoCarregado && metrica.usuario.leu) {
+        progressoPorCapitulo.set(metrica.id, metrica.usuario.lidoEm);
+      }
+    });
     const obrasSupabase = obrasSupabaseBanco.map((obraBanco, index) => {
       const obraLocal = obrasLocais.find((obraAtual) => {
         const slugLocal = obraAtual.slug || criarSlugBase(obraAtual.titulo);
