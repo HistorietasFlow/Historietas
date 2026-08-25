@@ -11,7 +11,8 @@ import { supabase } from "../../lib/supabase/client";
 import DenunciaModal from "../../components/DenunciaModal";
 import AdultContentGate from "../../components/AdultContentGate";
 import { historietasThemeCss } from "../../lib/historietasTheme";
-import { criarSlugBase, formatarData, idObraSupabaseValido, normalizarTexto, obterNumeroSeguro } from "../../lib/utils";
+import { criarSlugBase, formatarData, idObraSupabaseValido, obterNumeroSeguro } from "../../lib/utils";
+import { carregarMetricasConteudos } from "../../lib/metricas";
 import {
   acessoConteudo18Confirmado,
   ehClassificacao18,
@@ -104,20 +105,9 @@ type CapituloSupabaseRow = {
   atualizado_em: string | null;
 };
 
-type RegistroCapituloId = {
-  capitulo_id?: unknown;
-};
-
 type RegistroComentarioCapitulo = {
   capitulo_id?: unknown;
   comentario?: unknown;
-};
-
-type RegistroProgressoLeitura = {
-  capitulo_id?: unknown;
-  lido?: unknown;
-  progresso?: unknown;
-  atualizado_em?: unknown;
 };
 
 type PerfilComentarioLeitor = {
@@ -155,11 +145,6 @@ type AlvoDenunciaLeitor = {
 type ComentariosCapituloPost = {
   id: string;
   comentarios: ComentarioCapituloPublico[];
-};
-
-type ComentarioCapituloCurtidaRow = {
-  comentario_id: string;
-  usuario_id: string;
 };
 
 type TipoNotificacaoInteracaoCapitulo =
@@ -1589,50 +1574,19 @@ async function aplicarInteracoesCapitulosSupabase(
     return obra;
   }
 
-  const [curtidasResposta, salvosResposta, comentariosResposta, progressoResposta] =
-    await Promise.all([
-      supabase
-        .from("curtidas_capitulos")
-        .select("capitulo_id")
-        .eq("user_id", userId)
-        .in("capitulo_id", capituloIds)
-        .limit(1000),
-      supabase
-        .from("salvos_capitulos")
-        .select("capitulo_id")
-        .eq("user_id", userId)
-        .in("capitulo_id", capituloIds)
-        .limit(1000),
-      supabase
-        .from("comentarios_capitulos")
-        .select("capitulo_id, comentario")
-        .eq("user_id", userId)
-        .in("capitulo_id", capituloIds)
-        .limit(1000),
-      supabase
-        .from("progresso_leitura")
-        .select("capitulo_id, lido, progresso, atualizado_em")
-        .eq("user_id", userId)
-        .eq("obra_id", obra.id)
-        .in("capitulo_id", capituloIds)
-        .order("atualizado_em", { ascending: false })
-        .limit(1000),
-    ]);
-
-  const curtidas = new Set(
-    Array.isArray(curtidasResposta.data)
-      ? curtidasResposta.data
-          .map((item: unknown) => (item as RegistroCapituloId).capitulo_id)
-          .filter((id: unknown): id is string => typeof id === "string")
-      : []
-  );
-  const salvos = new Set(
-    Array.isArray(salvosResposta.data)
-      ? salvosResposta.data
-          .map((item: unknown) => (item as RegistroCapituloId).capitulo_id)
-          .filter((id: unknown): id is string => typeof id === "string")
-      : []
-  );
+  const [metricas, comentariosResposta] = await Promise.all([
+    carregarMetricasConteudos({
+      obraIds: [obra.id],
+      capituloIds,
+    }),
+    supabase
+      .from("comentarios_capitulos")
+      .select("capitulo_id, comentario")
+      .eq("user_id", userId)
+      .in("capitulo_id", capituloIds)
+      .order("atualizado_em", { ascending: false })
+      .limit(1000),
+  ]);
   const comentarios = new Map<string, string>();
 
   if (Array.isArray(comentariosResposta.data)) {
@@ -1648,62 +1602,47 @@ async function aplicarInteracoesCapitulosSupabase(
     });
   }
 
-  const progressoCarregado =
-    !progressoResposta.error && Array.isArray(progressoResposta.data);
-  const progressoRegistros = progressoCarregado
-    ? (progressoResposta.data as RegistroProgressoLeitura[])
-    : [];
-  const progressoPorCapitulo = new Map<string, RegistroProgressoLeitura>();
-
-  progressoRegistros.forEach((registro) => {
-    const capituloIdRegistro =
-      typeof registro.capitulo_id === "string"
-        ? registro.capitulo_id.trim()
-        : "";
-
-    if (capituloIdRegistro && !progressoPorCapitulo.has(capituloIdRegistro)) {
-      progressoPorCapitulo.set(capituloIdRegistro, registro);
-    }
-  });
-
-  const ultimoProgressoLido =
-    progressoRegistros.find((registro) => {
-      return (
-        Boolean(registro.lido) &&
-        typeof registro.capitulo_id === "string" &&
-        Boolean(registro.capitulo_id.trim())
-      );
-    }) || null;
-  const ultimoCapituloLidoId =
-    typeof ultimoProgressoLido?.capitulo_id === "string"
-      ? ultimoProgressoLido.capitulo_id.trim()
-      : "";
-  const ultimaLeituraEm =
-    typeof ultimoProgressoLido?.atualizado_em === "string"
-      ? ultimoProgressoLido.atualizado_em
-      : "";
+  const progressoCarregado = metricas.carregado;
+  let ultimoCapituloLidoId = "";
+  let ultimaLeituraEm = "";
 
   const capitulos = obra.capitulos.map((capitulo) => {
-    const progressoCapitulo = progressoPorCapitulo.get(capitulo.id);
-    const lidoRemoto = Boolean(progressoCapitulo?.lido);
-    const lidoEmRemoto =
-      typeof progressoCapitulo?.atualizado_em === "string"
-        ? progressoCapitulo.atualizado_em
-        : "";
+    const metrica = metricas.capitulos.get(capitulo.id);
+    const progressoRemotoDisponivel =
+      progressoCarregado && Boolean(metrica);
+    const lidoRemoto = progressoRemotoDisponivel
+      ? Boolean(metrica?.usuario.leu)
+      : capitulo.lido;
+    const lidoEmRemoto = metrica?.usuario.lidoEm || "";
+    const lidoEm = progressoRemotoDisponivel
+      ? lidoRemoto
+        ? lidoEmRemoto || capitulo.lidoEm
+        : ""
+      : capitulo.lidoEm;
+
+    if (lidoRemoto) {
+      const tempoAtual = new Date(lidoEm).getTime();
+      const tempoUltimo = new Date(ultimaLeituraEm).getTime();
+
+      if (
+        !ultimoCapituloLidoId ||
+        (Number.isFinite(tempoAtual) ? tempoAtual : 0) >=
+          (Number.isFinite(tempoUltimo) ? tempoUltimo : 0)
+      ) {
+        ultimoCapituloLidoId = capitulo.id;
+        ultimaLeituraEm = lidoEm;
+      }
+    }
 
     return {
       ...capitulo,
-      curtiu: capitulo.curtiu || curtidas.has(capitulo.id),
-      salvo: capitulo.salvo || salvos.has(capitulo.id),
+      curtiu: capitulo.curtiu || Boolean(metrica?.usuario.curtiu),
+      salvo: capitulo.salvo || Boolean(metrica?.usuario.salvou),
       comentario: comentarios.has(capitulo.id)
         ? comentarios.get(capitulo.id) || ""
         : capitulo.comentario,
-      lido: progressoCarregado ? lidoRemoto : capitulo.lido,
-      lidoEm: progressoCarregado
-        ? lidoRemoto
-          ? lidoEmRemoto || capitulo.lidoEm
-          : ""
-        : capitulo.lidoEm,
+      lido: lidoRemoto,
+      lidoEm,
     };
   });
 
@@ -1913,86 +1852,8 @@ function criarMetricasCapituloLocais(
   };
 }
 
-async function contarRegistrosCapituloLeitor(
-  tabela: "curtidas_capitulos" | "salvos_capitulos" | "comentarios_capitulos",
-  capituloId: string
-): Promise<number | null> {
-  try {
-    const { count, error } = await supabase
-      .from(tabela)
-      .select("capitulo_id", { count: "exact", head: true })
-      .eq("capitulo_id", capituloId);
-
-    if (error) {
-      return null;
-    }
-
-    return Math.max(0, count ?? 0);
-  } catch {
-    return null;
-  }
-}
-
-async function usuarioTemRegistroCapituloLeitor(
-  tabela: "curtidas_capitulos" | "salvos_capitulos",
-  capituloId: string,
-  userId: string
-): Promise<boolean | null> {
-  const userIdLimpo = userId.trim();
-
-  if (!userIdLimpo) {
-    return null;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select("capitulo_id")
-      .eq("capitulo_id", capituloId)
-      .eq("user_id", userIdLimpo)
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      return null;
-    }
-
-    return Boolean(data);
-  } catch {
-    return null;
-  }
-}
-
-async function carregarVisualizacoesCapituloLeitor(
-  capituloId: string
-): Promise<number | null> {
-  try {
-    const { data, error } = await supabase
-      .from("capitulos")
-      .select("visualizacoes")
-      .eq("id", capituloId)
-      .limit(1)
-      .maybeSingle();
-
-    if (error || !data) {
-      return null;
-    }
-
-    return Math.max(
-      0,
-      obterNumeroSeguro(
-        (data as { visualizacoes?: number | null }).visualizacoes,
-        0
-      )
-    );
-  } catch {
-    return null;
-  }
-}
-
 async function carregarMetricasCapituloSupabase(
   capitulo: CapituloLocal,
-  userId: string,
   totalComentariosFallback: number
 ): Promise<MetricasCapituloLeitor> {
   const capituloId = capitulo.id.trim();
@@ -2001,37 +1862,28 @@ async function carregarMetricasCapituloSupabase(
     return criarMetricasCapituloLocais(capitulo, totalComentariosFallback);
   }
 
-  const [
-    totalVisualizacoes,
-    totalCurtidas,
-    totalSalvos,
-    totalComentarios,
-    curtiu,
-    salvo,
-  ] = await Promise.all([
-    carregarVisualizacoesCapituloLeitor(capituloId),
-    contarRegistrosCapituloLeitor("curtidas_capitulos", capituloId),
-    contarRegistrosCapituloLeitor("salvos_capitulos", capituloId),
-    contarRegistrosCapituloLeitor("comentarios_capitulos", capituloId),
-    usuarioTemRegistroCapituloLeitor("curtidas_capitulos", capituloId, userId),
-    usuarioTemRegistroCapituloLeitor("salvos_capitulos", capituloId, userId),
-  ]);
+  const contrato = await carregarMetricasConteudos({
+    capituloIds: [capituloId],
+  });
+  const metrica = contrato.capitulos.get(capituloId);
+
+  if (!contrato.carregado || !metrica) {
+    return {
+      ...criarMetricasCapituloLocais(capitulo, totalComentariosFallback),
+      carregado: true,
+    };
+  }
 
   return {
-    totalVisualizacoes:
-      totalVisualizacoes === null
-        ? Math.max(0, capitulo.visualizacoes || 0)
-        : totalVisualizacoes,
-    totalCurtidas:
-      totalCurtidas === null ? (capitulo.curtiu ? 1 : 0) : totalCurtidas,
-    totalSalvos:
-      totalSalvos === null ? (capitulo.salvo ? 1 : 0) : totalSalvos,
+    totalVisualizacoes: metrica.visualizacoes,
+    totalCurtidas: metrica.interacoes.curtidas,
+    totalSalvos: metrica.interacoes.salvos,
     totalComentarios: Math.max(
-      totalComentarios === null ? 0 : totalComentarios,
+      metrica.interacoes.comentarios,
       totalComentariosFallback
     ),
-    curtiu: curtiu === null ? capitulo.curtiu : curtiu,
-    salvo: salvo === null ? capitulo.salvo : salvo,
+    curtiu: metrica.usuario.curtiu,
+    salvo: metrica.usuario.salvou,
     carregado: true,
   };
 }
@@ -3929,7 +3781,6 @@ export default function LerCapituloPage() {
 
       const metricasReais = await carregarMetricasCapituloSupabase(
         capituloAtual,
-        usuarioIdLogado,
         comentariosCapitulo.length
       );
 
@@ -3998,9 +3849,6 @@ export default function LerCapituloPage() {
   }, [obraAtual, indiceCapitulo]);
 
   const totalPalavras = capituloAtual ? contarPalavras(capituloAtual.texto) : 0;
-  const progressoLeitura = obraAtual
-    ? calcularProgressoLeitura(obraAtual.capitulos)
-    : 0;
   const postComentariosCapitulo: ComentariosCapituloPost | null = capituloAtual
     ? {
         id: capituloAtual.id,
@@ -4166,7 +4014,7 @@ export default function LerCapituloPage() {
     return false;
   }
 
-  async function recarregarMetricasCapituloAtual(userId = usuarioIdLogado) {
+  async function recarregarMetricasCapituloAtual() {
     if (!capituloAtual) {
       setMetricasCapitulo(metricasCapituloVazias);
       return;
@@ -4174,7 +4022,6 @@ export default function LerCapituloPage() {
 
     const metricas = await carregarMetricasCapituloSupabase(
       capituloAtual,
-      userId,
       comentariosCapitulo.length
     );
 
@@ -4313,7 +4160,7 @@ export default function LerCapituloPage() {
         return;
       }
 
-      await recarregarMetricasCapituloAtual(userIdAtual);
+      await recarregarMetricasCapituloAtual();
       setMensagemAcao("");
 
       if (novoStatusCurtida && obraAtual) {
@@ -4391,7 +4238,7 @@ export default function LerCapituloPage() {
         return;
       }
 
-      await recarregarMetricasCapituloAtual(userIdAtual);
+      await recarregarMetricasCapituloAtual();
       setMensagemAcao("");
 
       if (novoStatusSalvo && obraAtual) {

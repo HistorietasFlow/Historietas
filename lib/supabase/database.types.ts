@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -7,6 +7,11 @@
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
       autor_avaliacoes: {
@@ -1917,7 +1922,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_publicos: {
+        Row: {
+          atualizado_em: string | null
+          avatar_url: string | null
+          bio: string | null
+          criado_em: string | null
+          id: string | null
+          nome: string | null
+          sobre_bio: string | null
+          tipo: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       aceitar_termos_publicacao: {
@@ -1942,6 +1961,10 @@ export type Database = {
         Returns: Json
       }
       carregar_permissoes_abas_perfil: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      carregar_preferencias_privacidade_publicas: {
         Args: { p_user_id: string }
         Returns: Json
       }
@@ -2172,6 +2195,51 @@ export type Database = {
       marcar_notificacoes_lidas: {
         Args: { notificacao_ids?: string[]; novo_estado?: boolean }
         Returns: number
+      }
+      notificacao_conteudo_18_liberado: {
+        Args: {
+          p_capitulo_id: string
+          p_link: string
+          p_obra_id: string
+          p_tipo: string
+        }
+        Returns: boolean
+      }
+      obter_metricas_conteudos: {
+        Args: {
+          p_autor_ids?: string[]
+          p_capitulo_ids?: string[]
+          p_obra_ids?: string[]
+        }
+        Returns: {
+          avaliacao_media: number
+          avaliacoes: number
+          comentarios: number
+          comentaristas_unicos: number
+          concluidas: number
+          concluido_por_mim: boolean
+          conteudo_id: string
+          contrato_versao: number
+          curtidas: number
+          curtido_por_mim: boolean
+          curtidores_unicos: number
+          favorito_por_mim: boolean
+          favoritos: number
+          lido_em: string
+          lido_por_mim: boolean
+          minha_avaliacao: number
+          obra_id: string
+          posts: number
+          reviews: number
+          salvadores_unicos: number
+          salvo_por_mim: boolean
+          salvos: number
+          seguido_por_mim: boolean
+          seguidores: number
+          teorias: number
+          tipo_conteudo: string
+          visualizacoes: number
+        }[]
       }
       obter_nome_usuario_notificacao: {
         Args: { p_user_id: string }

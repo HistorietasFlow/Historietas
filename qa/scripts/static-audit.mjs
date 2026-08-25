@@ -716,6 +716,172 @@ if (!interactionRlsMigrationName) {
   }
 }
 
+const metricsContractMigrationName = migrationFiles.find((name) =>
+  name.endsWith("_criar_contrato_metricas_agregadas.sql")
+);
+
+if (!metricsContractMigrationName) {
+  fail(
+    "migration do contrato de métricas",
+    "migration criar_contrato_metricas_agregadas ausente"
+  );
+} else {
+  const metricsContractSql = fs.readFileSync(
+    path.join(migrationsDir, metricsContractMigrationName),
+    "utf8"
+  );
+  const metricsContracts = [
+    {
+      name: "RPC pública de métricas preserva a identidade do chamador",
+      pattern:
+        /create or replace function public\.obter_metricas_conteudos[\s\S]*?security invoker[\s\S]*?set search_path\s*=\s*''/i
+    },
+    {
+      name: "RPC de métricas limita todos os lotes",
+      pattern:
+        /cardinality\(coalesce\(p_obra_ids[\s\S]*?>\s*100[\s\S]*?cardinality\(coalesce\(p_capitulo_ids[\s\S]*?>\s*600[\s\S]*?cardinality\(coalesce\(p_autor_ids[\s\S]*?>\s*100/i
+    },
+    {
+      name: "progresso privado fica restrito e limitado ao usuário",
+      pattern:
+        /create or replace function historietas_privado\.obter_progresso_metricas_usuario[\s\S]*?security definer[\s\S]*?set search_path\s*=\s*''[\s\S]*?p_obra_ids[\s\S]*?>\s*100[\s\S]*?p_capitulo_ids[\s\S]*?>\s*600[\s\S]*?progresso\.user_id\s*=\s*\(select auth\.uid\(\)\)/i
+    },
+    {
+      name: "helper de conteúdo reproduz visibilidade em lote",
+      pattern:
+        /create or replace function historietas_privado\.obter_conteudos_metricas[\s\S]*?security definer[\s\S]*?obra\.user_id\s*=\s*v_usuario_id[\s\S]*?obra\.classificacao_indicativa\s+in[\s\S]*?capitulo\.user_id\s*=\s*obra\.user_id/i
+    },
+    {
+      name: "helper da Biblioteca reutiliza autorização canônica",
+      pattern:
+        /create or replace function historietas_privado\.obter_interacoes_biblioteca_metricas[\s\S]*?historietas_privado\.usuario_pode_ver_registro_biblioteca[\s\S]*?select distinct/i
+    },
+    {
+      name: "helper de interações preserva conteúdo visível e moderação",
+      pattern:
+        /create or replace function historietas_privado\.obter_interacoes_conteudo_metricas[\s\S]*?security definer[\s\S]*?obra\.classificacao_indicativa\s+in[\s\S]*?capitulo\.interacao_permitida\s+or\s+v_usuario_admin/i
+    },
+    {
+      name: "contrato não publica contagem de progresso privado",
+      pattern:
+        /Progresso privado aparece somente em lido_por_mim\/lido_em e nunca e exposto como contador publico/i
+    },
+    {
+      name: "índices sustentam as novas agregações",
+      pattern:
+        /favoritos_obra_id_idx[\s\S]*?concluidas_obra_id_idx[\s\S]*?comunidade_posts_obra_tipo_idx[\s\S]*?curtidas_capitulos_obra_id_idx[\s\S]*?comentarios_capitulos_obra_id_idx[\s\S]*?salvos_capitulos_obra_id_idx/i
+    },
+    {
+      name: "execução da RPC de métricas é explícita",
+      pattern:
+        /revoke all on function public\.obter_metricas_conteudos\(uuid\[\], uuid\[\], uuid\[\]\)[\s\S]*?from public, anon, authenticated, service_role[\s\S]*?grant execute[\s\S]*?to anon, authenticated, service_role/i
+    },
+    {
+      name: "helpers de métricas têm grants explícitos",
+      pattern:
+        /revoke all on function historietas_privado\.obter_progresso_metricas_usuario[\s\S]*?grant execute on function historietas_privado\.obter_progresso_metricas_usuario[\s\S]*?revoke all on function historietas_privado\.obter_conteudos_metricas[\s\S]*?grant execute on function historietas_privado\.obter_conteudos_metricas[\s\S]*?revoke all on function historietas_privado\.obter_interacoes_biblioteca_metricas[\s\S]*?grant execute on function historietas_privado\.obter_interacoes_biblioteca_metricas[\s\S]*?revoke all on function historietas_privado\.obter_interacoes_conteudo_metricas[\s\S]*?grant execute on function historietas_privado\.obter_interacoes_conteudo_metricas/i
+    },
+    {
+      name: "migration de métricas valida pós-condições",
+      pattern:
+        /do \$metricas_pos_condicoes\$[\s\S]*?PUBLIC nao pode executar[\s\S]*?Nem todos os indices do contrato de metricas foram criados/i
+    }
+  ];
+
+  for (const contract of metricsContracts) {
+    if (contract.pattern.test(metricsContractSql)) {
+      pass(contract.name, metricsContractMigrationName);
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${metricsContractMigrationName}`
+      );
+    }
+  }
+}
+
+const metricsConsumerFiles = [
+  "app/page.tsx",
+  "app/em-alta/page.tsx",
+  "app/explorar/page.tsx",
+  "app/listas/page.tsx",
+  "app/seguindo/page.tsx",
+  "app/perfil-autor/page.tsx",
+  "app/painel-autor/page.tsx",
+  "app/obra/[slug]/ObraDinamicaClient.tsx",
+  "app/ler-capitulo/page.tsx"
+];
+const consumersOutsideMetricsContract = metricsConsumerFiles.filter(
+  (relative) => {
+    const content = fs.readFileSync(path.join(ROOT_DIR, relative), "utf8");
+
+    return !content.includes("carregarMetricasConteudos");
+  }
+);
+
+if (consumersOutsideMetricsContract.length) {
+  fail(
+    "consumidores usam o contrato único de métricas",
+    consumersOutsideMetricsContract.join(", ")
+  );
+} else {
+  pass(
+    "consumidores usam o contrato único de métricas",
+    `${metricsConsumerFiles.length} consumidores cobertos`
+  );
+}
+
+const metricsClientPath = path.join(ROOT_DIR, "lib/metricas.ts");
+
+if (!fs.existsSync(metricsClientPath)) {
+  fail("cliente do contrato único de métricas", "lib/metricas.ts ausente");
+} else {
+  const metricsClient = fs.readFileSync(metricsClientPath, "utf8");
+  const metricsClientContracts = [
+    {
+      name: "cliente pagina lotes dentro dos limites da RPC",
+      pattern:
+        /LIMITE_OBRAS_METRICAS\s*=\s*100[\s\S]*?LIMITE_CAPITULOS_METRICAS\s*=\s*600[\s\S]*?LIMITE_AUTORES_METRICAS\s*=\s*100[\s\S]*?dividirEmLotes[\s\S]*?for \(let indice = 0; indice < totalLotes/i
+    },
+    {
+      name: "cliente rejeita versão incompatível do contrato",
+      pattern:
+        /versao\s*!==\s*VERSAO_CONTRATO_METRICAS[\s\S]*?return contratoMetricasVazio\(false\)/i
+    },
+    {
+      name: "falha de qualquer lote invalida a resposta inteira",
+      pattern:
+        /if \(error\)[\s\S]*?return contratoMetricasVazio\(false\)[\s\S]*?if \(!lote\.carregado\)[\s\S]*?return contratoMetricasVazio\(false\)/i
+    }
+  ];
+
+  for (const contract of metricsClientContracts) {
+    if (contract.pattern.test(metricsClient)) {
+      pass(contract.name, "lib/metricas.ts");
+    } else {
+      fail(contract.name, "contrato ausente em lib/metricas.ts");
+    }
+  }
+}
+
+const legacyMetricsScanners = metricsConsumerFiles.filter((relative) => {
+  const content = fs.readFileSync(path.join(ROOT_DIR, relative), "utf8");
+
+  return /while\s*\([^)]*\)[\s\S]{0,1200}?\.range\(/i.test(content);
+});
+
+if (legacyMetricsScanners.length) {
+  fail(
+    "varreduras paginadas de métricas foram removidas do cliente",
+    legacyMetricsScanners.join(", ")
+  );
+} else {
+  pass(
+    "varreduras paginadas de métricas foram removidas do cliente",
+    `${metricsConsumerFiles.length} consumidores verificados`
+  );
+}
+
 const rlsPrivacyMigrationName =
   "20260821220055_corrigir_rls_capitulos_privacidade.sql";
 const rlsPrivacyMigrationPath = path.join(
