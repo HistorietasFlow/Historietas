@@ -1967,6 +1967,20 @@ export type Database = {
         Returns: boolean
       }
       comunidade_usuario_e_admin: { Args: never; Returns: boolean }
+      consumir_limite_requisicao: {
+        Args: {
+          p_bloqueio_segundos: number
+          p_chave_hash: string
+          p_escopo: string
+          p_janela_segundos: number
+          p_limite: number
+        }
+        Returns: {
+          permitido: boolean
+          restante: number
+          tentar_novamente_segundos: number
+        }[]
+      }
       criar_denuncia: {
         Args: {
           p_alvo_id: string
@@ -2166,6 +2180,14 @@ export type Database = {
       perfil_motivo_denuncia_valido: {
         Args: { p_motivo: string }
         Returns: boolean
+      }
+      registrar_visualizacao_capitulo: {
+        Args: { p_capitulo_id: string; p_chave_visitante: string }
+        Returns: number
+      }
+      registrar_visualizacao_obra: {
+        Args: { p_chave_visitante: string; p_obra_id: string }
+        Returns: number
       }
       reivindicar_operacao_exclusao_conta: {
         Args: {
@@ -2382,4 +2404,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

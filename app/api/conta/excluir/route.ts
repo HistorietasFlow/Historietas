@@ -6,6 +6,7 @@ import {
   erroOperacaoEmAndamento,
   processarOperacaoExclusaoConta,
 } from "@/lib/server/exclusaoConta";
+import { consumirLimiteRequisicao } from "@/lib/server/protecaoAbuso";
 import {
   criarSupabaseAdminClient,
   supabaseAdminConfigurado,
@@ -19,16 +20,25 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const CONFIRMACAO_EXCLUSAO = "EXCLUIR";
+const TAMANHO_MAXIMO_CORPO = 2_048;
 
 type CorpoExclusaoConta = {
   senha?: unknown;
   confirmacao?: unknown;
 };
 
-function respostaErro(status: number, codigo: string, mensagem: string) {
+function respostaErro(
+  status: number,
+  codigo: string,
+  mensagem: string,
+  headers?: Record<string, string>,
+) {
   return NextResponse.json(
     { ok: false, codigo, mensagem },
-    { status, headers: { "Cache-Control": "no-store" } },
+    {
+      status,
+      headers: { "Cache-Control": "no-store", ...headers },
+    },
   );
 }
 
@@ -44,17 +54,56 @@ function origemPermitida(request: NextRequest) {
   if (!origem) return false;
 
   try {
+    const origemRecebida = new URL(origem).origin;
     const hostEncaminhado = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const protocoloEncaminhado = request.headers
+      .get("x-forwarded-proto")
+      ?.split(",")[0]
+      ?.trim();
     const hostRecebido = request.headers.get("host")?.trim();
-    const hostsPermitidos = new Set(
-      [hostEncaminhado, hostRecebido, request.nextUrl.host].filter(
-        (host): host is string => Boolean(host),
-      ),
-    );
-    return hostsPermitidos.has(new URL(origem).host);
+    const origensPermitidas = new Set([request.nextUrl.origin]);
+
+    if (
+      hostEncaminhado &&
+      (protocoloEncaminhado === "https" || protocoloEncaminhado === "http")
+    ) {
+      origensPermitidas.add(`${protocoloEncaminhado}://${hostEncaminhado}`);
+    }
+
+    if (hostRecebido) {
+      origensPermitidas.add(`${request.nextUrl.protocol}//${hostRecebido}`);
+    }
+
+    return origensPermitidas.has(origemRecebida);
   } catch {
     return false;
   }
+}
+
+function requisicaoJson(request: NextRequest) {
+  return request.headers
+    .get("content-type")
+    ?.toLowerCase()
+    .startsWith("application/json");
+}
+
+async function lerCorpo(request: NextRequest) {
+  const tamanhoDeclarado = Number(request.headers.get("content-length"));
+
+  if (
+    Number.isFinite(tamanhoDeclarado) &&
+    tamanhoDeclarado > TAMANHO_MAXIMO_CORPO
+  ) {
+    throw new RangeError("corpo_excedeu_limite");
+  }
+
+  const texto = await request.text();
+
+  if (Buffer.byteLength(texto, "utf8") > TAMANHO_MAXIMO_CORPO) {
+    throw new RangeError("corpo_excedeu_limite");
+  }
+
+  return JSON.parse(texto) as CorpoExclusaoConta;
 }
 
 function criarClienteReautenticacao() {
@@ -90,9 +139,27 @@ async function encerrarSessaoComSeguranca(
   }
 }
 
+async function descartarSessaoReautenticacao(
+  cliente: ReturnType<typeof criarClienteReautenticacao>,
+) {
+  try {
+    await cliente.auth.signOut({ scope: "local" });
+  } catch (error) {
+    console.warn("Não foi possível descartar a sessão de reautenticação:", error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   if (!origemPermitida(request)) {
     return respostaErro(403, "origem_invalida", "Origem da solicitação inválida.");
+  }
+
+  if (!requisicaoJson(request)) {
+    return respostaErro(
+      415,
+      "tipo_conteudo_invalido",
+      "Envie a solicitação em JSON.",
+    );
   }
 
   if (!supabaseServerConfigurado || !supabaseAdminConfigurado) {
@@ -105,9 +172,13 @@ export async function POST(request: NextRequest) {
 
   let corpo: CorpoExclusaoConta;
   try {
-    corpo = (await request.json()) as CorpoExclusaoConta;
-  } catch {
-    return respostaErro(400, "requisicao_invalida", "Solicitação inválida.");
+    corpo = await lerCorpo(request);
+  } catch (error) {
+    return respostaErro(
+      error instanceof RangeError ? 413 : 400,
+      error instanceof RangeError ? "corpo_muito_grande" : "requisicao_invalida",
+      "Solicitação inválida.",
+    );
   }
 
   const senha = typeof corpo.senha === "string" ? corpo.senha : "";
@@ -153,6 +224,41 @@ export async function POST(request: NextRequest) {
   const lockToken = randomUUID();
 
   try {
+    let limiteExclusao;
+
+    try {
+      limiteExclusao = await consumirLimiteRequisicao({
+        admin,
+        escopo: "exclusao_conta",
+        identificador: usuario.id,
+        limite: 5,
+        janelaSegundos: 15 * 60,
+        bloqueioSegundos: 30 * 60,
+      });
+    } catch (error) {
+      console.error("Não foi possível consultar o limitador da exclusão:", error);
+
+      return respostaErro(
+        503,
+        "protecao_indisponivel",
+        "Não foi possível validar a segurança da operação agora. Tente novamente.",
+      );
+    }
+
+    if (!limiteExclusao.permitido) {
+      const tentarNovamente = Math.max(
+        1,
+        limiteExclusao.tentarNovamenteSegundos,
+      );
+
+      return respostaErro(
+        429,
+        "muitas_tentativas",
+        "Muitas tentativas de confirmação. Aguarde antes de tentar novamente.",
+        { "Retry-After": String(tentarNovamente) },
+      );
+    }
+
     const clienteReautenticacao = criarClienteReautenticacao();
     const { data: reautenticacao, error: erroReautenticacao } =
       await clienteReautenticacao.auth.signInWithPassword({
@@ -160,9 +266,14 @@ export async function POST(request: NextRequest) {
         password: senha,
       });
 
+    if (reautenticacao.session) {
+      await descartarSessaoReautenticacao(clienteReautenticacao);
+    }
+
     if (
       erroReautenticacao ||
       !reautenticacao.user ||
+      !reautenticacao.session ||
       reautenticacao.user.id !== usuario.id
     ) {
       return respostaErro(401, "senha_incorreta", "A senha atual está incorreta.");
