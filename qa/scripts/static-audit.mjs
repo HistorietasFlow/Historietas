@@ -481,14 +481,14 @@ const migrationFiles = fs
   .sort();
 
 const rlsPrivacyMigrationName =
-  "20260821000100_corrigir_rls_capitulos_privacidade.sql";
+  "20260821220055_corrigir_rls_capitulos_privacidade.sql";
 const rlsPrivacyMigrationPath = path.join(
   migrationsDir,
   rlsPrivacyMigrationName
 );
 
 const rlsLibraryExecuteMigrationName =
-  "20260821222119_corrigir_execute_helper_biblioteca.sql";
+  "20260821222837_corrigir_execute_helper_biblioteca.sql";
 const rlsLibraryExecuteMigrationPath = path.join(
   migrationsDir,
   rlsLibraryExecuteMigrationName
