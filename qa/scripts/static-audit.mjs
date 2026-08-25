@@ -480,6 +480,120 @@ const migrationFiles = fs
   .filter((name) => name.endsWith(".sql"))
   .sort();
 
+const interactionRlsMigrationName = migrationFiles.find((name) =>
+  name.endsWith(
+    "_corrigir_policies_interacoes_quarentenar_legado.sql"
+  )
+);
+
+if (!interactionRlsMigrationName) {
+  fail(
+    "migration RLS de interações",
+    "migration corrigir_policies_interacoes_quarentenar_legado ausente"
+  );
+} else {
+  const interactionRlsSql = fs.readFileSync(
+    path.join(migrationsDir, interactionRlsMigrationName),
+    "utf8"
+  );
+
+  const interactionRlsContracts = [
+    {
+      name: "helpers de interação ficam no schema privado",
+      pattern:
+        /create or replace function\s+historietas_privado\.pode_interagir_obra[\s\S]*?security definer[\s\S]*?set search_path\s*=\s*''/i
+    },
+    {
+      name: "interação de obra exige publicação e classificação permitida",
+      pattern:
+        /create or replace function\s+historietas_privado\.pode_interagir_obra[\s\S]*?coalesce\(obra\.publicado, false\)\s*=\s*true[\s\S]*?obra\.classificacao_indicativa\s+in[\s\S]*?usuarios_possuem_bloqueio/i
+    },
+    {
+      name: "interação de capítulo exige pais publicados",
+      pattern:
+        /create or replace function\s+historietas_privado\.pode_interagir_capitulo[\s\S]*?coalesce\(capitulo\.publicado, false\)\s*=\s*true[\s\S]*?coalesce\(obra\.publicado, false\)\s*=\s*true[\s\S]*?obra\.classificacao_indicativa\s+in/i
+    },
+    {
+      name: "curtida de obra usa autorização centralizada",
+      pattern:
+        /create policy\s+obra_curtidas_insert_proprio_visivel_sem_bloqueio[\s\S]*?historietas_privado\.pode_interagir_obra\(obra_id\)/i
+    },
+    {
+      name: "leituras de interações seguem visibilidade do conteúdo",
+      pattern:
+        /create policy\s+obra_curtidas_select_obras_visiveis[\s\S]*?create policy\s+curtidas_capitulos_select_capitulos_visiveis[\s\S]*?create policy\s+comentarios_capitulos_select_capitulo_visivel[\s\S]*?create policy\s+comentarios_capitulos_curtidas_select_capitulo_visivel[\s\S]*?create policy\s+comentarios_obras_select_obra_visivel[\s\S]*?create policy\s+comentarios_obras_curtidas_select_obra_visivel/i
+    },
+    {
+      name: "helpers SECURITY DEFINER públicos são removidos",
+      pattern:
+        /drop function if exists\s+public\.pode_interagir_comentario_capitulo\(uuid\)[\s\S]*?drop function if exists\s+public\.pode_interagir_obra\(uuid\)/i
+    },
+    {
+      name: "privilégios administrativos das interações são revogados",
+      pattern:
+        /revoke all privileges on table\s+public\.obra_curtidas[\s\S]*?from public, anon, authenticated/i
+    },
+    {
+      name: "estrutura legada é colocada em quarentena",
+      pattern:
+        /drop trigger if exists\s+exigir_aceite_termos_obra_comentarios[\s\S]*?drop policy if exists\s+obra_comentarios_leitura_publica[\s\S]*?drop policy if exists\s+obra_comentario_curtidas_leitura_publica[\s\S]*?revoke all privileges on table\s+public\.obra_comentarios[\s\S]*?from public, anon, authenticated, service_role[\s\S]*?revoke all privileges on table\s+public\.obra_comentario_curtidas[\s\S]*?from public, anon, authenticated, service_role/i
+    },
+    {
+      name: "migration verifica pós-condições de segurança",
+      pattern:
+        /A quarentena falhou: ainda existem policies[\s\S]*?A quarentena falhou: ainda existem grants[\s\S]*?ainda existe SELECT irrestrito em interação ativa/i
+    }
+  ];
+
+  for (const contract of interactionRlsContracts) {
+    if (contract.pattern.test(interactionRlsSql)) {
+      pass(contract.name, interactionRlsMigrationName);
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${interactionRlsMigrationName}`
+      );
+    }
+  }
+
+  const syncFunctionMatch =
+    /create or replace function\s+public\.sincronizar_nome_perfil_denormalizado\(\)[\s\S]*?\$\$;/i.exec(
+      interactionRlsSql
+    );
+
+  if (!syncFunctionMatch) {
+    fail(
+      "sincronização de perfil sem dependência legada",
+      `função não encontrada em ${interactionRlsMigrationName}`
+    );
+  } else if (/obra_comentarios/i.test(syncFunctionMatch[0])) {
+    fail(
+      "sincronização de perfil sem dependência legada",
+      "a função ainda referencia public.obra_comentarios"
+    );
+  } else {
+    pass(
+      "sincronização de perfil sem dependência legada",
+      interactionRlsMigrationName
+    );
+  }
+
+  const unsafeInteractionGrant =
+    /grant[^;]*\b(?:truncate|trigger|maintain|references)\b[^;]*\bto\s+(?:anon|authenticated)/i;
+
+  if (unsafeInteractionGrant.test(interactionRlsSql)) {
+    fail(
+      "migration de interações sem grants administrativos",
+      "grant administrativo encontrado para anon ou authenticated"
+    );
+  } else {
+    pass(
+      "migration de interações sem grants administrativos",
+      interactionRlsMigrationName
+    );
+  }
+}
+
 const rlsPrivacyMigrationName =
   "20260821220055_corrigir_rls_capitulos_privacidade.sql";
 const rlsPrivacyMigrationPath = path.join(
