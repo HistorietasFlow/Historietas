@@ -962,6 +962,140 @@ if (legacyMetricsScanners.length) {
   );
 }
 
+const storageQuotaMigrationName = migrationFiles.find((name) =>
+  name.endsWith("_proteger_storage_contra_esgotamento_cota.sql")
+);
+
+if (!storageQuotaMigrationName) {
+  fail(
+    "migration de proteção da cota do Storage",
+    "migration proteger_storage_contra_esgotamento_cota ausente"
+  );
+} else {
+  const storageQuotaSql = fs.readFileSync(
+    path.join(migrationsDir, storageQuotaMigrationName),
+    "utf8"
+  );
+  const storageQuotaContracts = [
+    {
+      name: "bucket de arquivos limita tamanho e MIME",
+      pattern:
+        /file_size_limit\s*=\s*5\s*\*\s*1024\s*\*\s*1024[\s\S]*?application\/pdf[\s\S]*?text\/plain[\s\S]*?image\/webp[\s\S]*?where id = 'arquivos-obras'/i
+    },
+    {
+      name: "helper privado do Storage usa DEFINER com search_path vazio",
+      pattern:
+        /create or replace function historietas_privado\.upload_storage_dentro_cota[\s\S]*?security definer[\s\S]*?set search_path\s*=\s*''/i
+    },
+    {
+      name: "cotas de usuário e projeto ficam limitadas",
+      pattern:
+        /v_limite_bytes_global constant bigint\s*:=\s*700\s*\*\s*1024\s*\*\s*1024[\s\S]*?v_limite_objetos_global constant bigint\s*:=\s*5000[\s\S]*?v_limite_bytes_usuario constant bigint\s*:=\s*100\s*\*\s*1024\s*\*\s*1024[\s\S]*?v_limite_objetos_usuario constant bigint\s*:=\s*100/i
+    },
+    {
+      name: "upload concorrente é serializado antes da contagem",
+      pattern:
+        /pg_advisory_xact_lock[\s\S]*?select[\s\S]*?from storage\.objects/i
+    },
+    {
+      name: "metadata pendente reserva o máximo do bucket",
+      pattern:
+        /primeiro INSERT com metadata nula[\s\S]*?v_tamanho_novo\s*:=\s*v_limite_arquivo[\s\S]*?when 'arquivos-obras' then 5::bigint \* 1024 \* 1024/i
+    },
+    {
+      name: "policies de cota são restritivas para insert e update",
+      pattern:
+        /create policy storage_cota_insert_restritiva[\s\S]*?as restrictive[\s\S]*?for insert[\s\S]*?create policy storage_cota_update_restritiva[\s\S]*?as restrictive[\s\S]*?for update/i
+    },
+    {
+      name: "helper da cota não vira RPC anônima",
+      pattern:
+        /revoke all on function historietas_privado\.upload_storage_dentro_cota[\s\S]*?from public, anon, authenticated, service_role[\s\S]*?grant execute on function historietas_privado\.upload_storage_dentro_cota[\s\S]*?to authenticated/i
+    },
+    {
+      name: "migration do Storage valida pós-condições",
+      pattern:
+        /A configuração dos três buckets não foi confirmada[\s\S]*?Os privilégios do helper de cota não ficaram restritos[\s\S]*?As policies restritivas de cota não foram confirmadas/i
+    }
+  ];
+
+  for (const contract of storageQuotaContracts) {
+    if (contract.pattern.test(storageQuotaSql)) {
+      pass(contract.name, storageQuotaMigrationName);
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${storageQuotaMigrationName}`
+      );
+    }
+  }
+}
+
+const storageClientPath = path.join(ROOT_DIR, "lib/storageUploads.ts");
+
+if (!fs.existsSync(storageClientPath)) {
+  fail("contrato único de uploads", "lib/storageUploads.ts ausente");
+} else {
+  const storageClient = fs.readFileSync(storageClientPath, "utf8");
+
+  if (
+    /avatars:\s*1\s*\*\s*1024\s*\*\s*1024[\s\S]*?"capas-obras":\s*2\s*\*\s*1024\s*\*\s*1024[\s\S]*?"arquivos-obras":\s*5\s*\*\s*1024\s*\*\s*1024/i.test(
+      storageClient
+    )
+  ) {
+    pass("cliente compartilha os limites dos buckets", "lib/storageUploads.ts");
+  } else {
+    fail(
+      "cliente compartilha os limites dos buckets",
+      "limites 1/2/5 MiB não encontrados em lib/storageUploads.ts"
+    );
+  }
+
+  if (
+    /return extensao \? `\$\{userId\}\/avatar\.\$\{extensao\}` : null/i.test(
+      storageClient
+    )
+  ) {
+    pass("avatar usa caminho estável e limitado", "lib/storageUploads.ts");
+  } else {
+    fail(
+      "avatar usa caminho estável e limitado",
+      "caminho determinístico do avatar não encontrado"
+    );
+  }
+}
+
+const profilePage = fs.readFileSync(
+  path.join(ROOT_DIR, "app/perfil-autor/page.tsx"),
+  "utf8"
+);
+
+if (
+  /avatar_url:[\s\S]*?avatarRemoto\.startsWith\("data:"\)[\s\S]*?avatarRemoto\.startsWith\("blob:"\)[\s\S]*?\? ""/i.test(
+    profilePage
+  )
+) {
+  pass("fallback Base64 do avatar não vai para o Postgres", "app/perfil-autor/page.tsx");
+} else {
+  fail(
+    "fallback Base64 do avatar não vai para o Postgres",
+    "proteção contra data URL remota ausente"
+  );
+}
+
+if (
+  /deveRemoverAvatarAnterior[\s\S]*?\.from\(AVATAR_STORAGE_BUCKET\)[\s\S]*?\.remove\(\[caminhoAvatarAnterior\]\)/i.test(
+    profilePage
+  )
+) {
+  pass("avatar anterior é removido após troca confirmada", "app/perfil-autor/page.tsx");
+} else {
+  fail(
+    "avatar anterior é removido após troca confirmada",
+    "limpeza do avatar anterior não encontrada"
+  );
+}
+
 const rlsPrivacyMigrationName =
   "20260821220055_corrigir_rls_capitulos_privacidade.sql";
 const rlsPrivacyMigrationPath = path.join(

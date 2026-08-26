@@ -18,6 +18,11 @@ import {
   traduzirTextoConteudo18,
   type AvisoConteudo18,
 } from "../../lib/historietasAdultContent";
+import {
+  LIMITES_BYTES_STORAGE,
+  mensagemAmigavelErroUploadStorage,
+  obterTipoMimeUploadStorage,
+} from "../../lib/storageUploads";
 
 type CapituloLocal = {
   id: string;
@@ -547,8 +552,9 @@ function EditarObraLanguageBridge() {
 
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
-const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
-const TAMANHO_MAXIMO_ARQUIVO_OBRA = 5 * 1024 * 1024;
+const TAMANHO_MAXIMO_CAPA = LIMITES_BYTES_STORAGE["capas-obras"];
+const TAMANHO_MAXIMO_ARQUIVO_OBRA =
+  LIMITES_BYTES_STORAGE["arquivos-obras"];
 const EXTENSOES_IMAGEM_ACEITAS = [
   ".png",
   ".jpg",
@@ -943,6 +949,12 @@ async function enviarArquivoStorage(
   userId: string,
   arquivo: File
 ): Promise<ArquivoStorageEdicaoObra> {
+  const contentType = obterTipoMimeUploadStorage(bucket, arquivo);
+
+  if (!contentType) {
+    throw new Error(`Tipo de arquivo não permitido para ${bucket}.`);
+  }
+
   const idSeguro =
     typeof window !== "undefined" &&
     window.crypto &&
@@ -956,12 +968,14 @@ async function enviarArquivoStorage(
 
   const { error } = await supabase.storage.from(bucket).upload(caminho, arquivo, {
     cacheControl: "3600",
-    contentType: arquivo.type || undefined,
+    contentType,
     upsert: false,
   });
 
   if (error) {
-    throw new Error(`Erro ao enviar ${arquivo.name}: ${error.message}`);
+    throw new Error(
+      `Erro ao enviar ${arquivo.name}: ${mensagemAmigavelErroUploadStorage(error.message)}`,
+    );
   }
 
   const referencia =
