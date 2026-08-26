@@ -22,6 +22,11 @@ import {
   traduzirTextoConteudo18,
   type AvisoConteudo18,
 } from "../../lib/historietasAdultContent";
+import {
+  LIMITES_BYTES_STORAGE,
+  mensagemAmigavelErroUploadStorage,
+  obterTipoMimeUploadStorage,
+} from "../../lib/storageUploads";
 
 type CapituloLocal = {
   id: string;
@@ -87,9 +92,10 @@ type ArquivoStoragePublicar = {
 
 const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
-const TAMANHO_MAXIMO_CAPA = 2 * 1024 * 1024;
+const TAMANHO_MAXIMO_CAPA = LIMITES_BYTES_STORAGE["capas-obras"];
 const TAMANHO_MAXIMO_ARQUIVO_TEXTO = 900 * 1024;
-const TAMANHO_MAXIMO_ARQUIVO_OBRA = 5 * 1024 * 1024;
+const TAMANHO_MAXIMO_ARQUIVO_OBRA =
+  LIMITES_BYTES_STORAGE["arquivos-obras"];
 const EXTENSOES_IMAGEM_ACEITAS = [
   ".png",
   ".jpg",
@@ -103,6 +109,12 @@ const TIPOS_MIME_IMAGEM_ACEITOS = new Set([
   "image/webp",
   "image/gif",
 ]);
+const TIPOS_MIME_TEXTO_ACEITOS = new Set([
+  "text/plain",
+  "text/markdown",
+  "text/x-markdown",
+]);
+const TIPOS_MIME_PDF_ACEITOS = new Set(["application/pdf"]);
 
 const OUTRO_FORMATO_VALUE = "__outro_formato__";
 const OUTRO_GENERO_VALUE = "__outro_genero__";
@@ -811,17 +823,26 @@ async function enviarArquivoStorage(
   userId: string,
   arquivo: File
 ): Promise<ArquivoStoragePublicar> {
+  const contentType = obterTipoMimeUploadStorage(bucket, arquivo);
+
+  if (!contentType) {
+    throw new Error(`Tipo de arquivo não permitido para ${bucket}.`);
+  }
+
   const caminho = `${userId}/${Date.now()}-${criarId()}-${limparNomeArquivoStorage(
     arquivo.name
   )}`;
 
   const { error } = await supabase.storage.from(bucket).upload(caminho, arquivo, {
     cacheControl: "3600",
+    contentType,
     upsert: false,
   });
 
   if (error) {
-    throw new Error(`Erro ao enviar ${arquivo.name}: ${error.message}`);
+    throw new Error(
+      `Erro ao enviar ${arquivo.name}: ${mensagemAmigavelErroUploadStorage(error.message)}`,
+    );
   }
 
   const publicUrl =
@@ -1067,20 +1088,32 @@ function arquivoTemExtensao(
 
 function arquivoImagemAceito(arquivo: File) {
   return (
-    arquivoTemExtensao(arquivo.name, EXTENSOES_IMAGEM_ACEITAS) ||
-    TIPOS_MIME_IMAGEM_ACEITOS.has(arquivo.type.toLowerCase())
+    arquivoTemExtensao(arquivo.name, EXTENSOES_IMAGEM_ACEITAS) &&
+    tipoMimeCompativel(arquivo, TIPOS_MIME_IMAGEM_ACEITOS)
+  );
+}
+
+function tipoMimeCompativel(
+  arquivo: File,
+  tiposAceitos: ReadonlySet<string>,
+) {
+  const tipo = arquivo.type.trim().toLowerCase();
+
+  return !tipo || tipo === "application/octet-stream" || tiposAceitos.has(tipo);
+}
+
+function arquivoPdfAceito(arquivo: File) {
+  return (
+    arquivoTemExtensao(arquivo.name, [".pdf"]) &&
+    tipoMimeCompativel(arquivo, TIPOS_MIME_PDF_ACEITOS)
   );
 }
 
 function arquivoObraAceito(arquivo: File) {
-  const nome = arquivo.name.toLowerCase();
-
   return (
-    nome.endsWith(".pdf") ||
-    nome.endsWith(".txt") ||
-    nome.endsWith(".md") ||
-    arquivoImagemAceito(arquivo) ||
-    arquivo.type === "application/pdf"
+    arquivoPdfAceito(arquivo) ||
+    arquivoTextoAceito(arquivo) ||
+    arquivoImagemAceito(arquivo)
   );
 }
 
@@ -1478,9 +1511,10 @@ function nomeArquivoParaTitulo(nomeArquivo: string) {
 }
 
 function arquivoTextoAceito(arquivo: File) {
-  const nome = arquivo.name.toLowerCase();
-
-  return nome.endsWith(".txt") || nome.endsWith(".md");
+  return (
+    arquivoTemExtensao(arquivo.name, [".txt", ".md"]) &&
+    tipoMimeCompativel(arquivo, TIPOS_MIME_TEXTO_ACEITOS)
+  );
 }
 
 function criarPreviewCoverStyle(capa: string): CSSProperties {

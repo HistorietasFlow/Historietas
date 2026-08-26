@@ -32,6 +32,14 @@ import {
   type PreferenciasPrivacidadeHistorietas,
 } from "../../lib/historietasPrivacy";
 import { carregarMetricasConteudos } from "../../lib/metricas";
+import {
+  LIMITES_BYTES_STORAGE,
+  criarCaminhoAvatarStorage,
+  mensagemAmigavelErroUploadStorage,
+  obterCaminhoObjetoStorage,
+  obterTipoMimeUploadStorage,
+  versionarUrlPublicaStorage,
+} from "../../lib/storageUploads";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 
@@ -150,7 +158,7 @@ const AUTHOR_RATINGS_STORAGE_KEY = "historietas-autores-avaliacoes";
 const TOP_FIVE_STORAGE_KEY = "historietas-top-5-obras";
 const TOP_FIVE_LIKES_STORAGE_KEY = "historietas-top-5-curtidas";
 const TOP_FIVE_MAXIMO = 5;
-const AVATAR_MAX_SIZE = 1 * 1024 * 1024;
+const AVATAR_MAX_SIZE = LIMITES_BYTES_STORAGE.avatars;
 const AVATAR_STORAGE_BUCKET = "avatars";
 const BIO_MAX_LENGTH = 90;
 const SOBRE_BIO_MAX_LENGTH = 600;
@@ -4690,9 +4698,15 @@ async function salvarPerfilUsuarioSupabase({
   }
 
   const atualizadoEm = new Date().toISOString();
+  const avatarRemoto = perfil.avatar.trim();
   const payloadPerfilBase: Record<string, unknown> = {
     nome: nome.trim() || "Usuário",
-    avatar_url: perfil.avatar,
+    // Data URLs pertencem somente ao fallback local. Persisti-las no Postgres
+    // duplicaria o arquivo e permitiria consumir a cota do banco por avatar.
+    avatar_url:
+      avatarRemoto.startsWith("data:") || avatarRemoto.startsWith("blob:")
+        ? ""
+        : avatarRemoto,
     bio: perfil.bio.slice(0, BIO_MAX_LENGTH),
     sobre_bio: perfil.sobreBio.slice(0, SOBRE_BIO_MAX_LENGTH),
     atualizado_em: atualizadoEm,
@@ -4816,22 +4830,6 @@ async function sincronizarNomeAutorObrasSupabase(userId: string, nome: string) {
   }
 }
 
-function limparNomeArquivoAvatarPerfil(nome: string) {
-  const extensao = nome.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
-  const base = nome
-    .replace(/\.[^.]+$/, "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 50);
-
-  return `${base || "avatar"}.${extensao}`;
-}
-
 async function enviarAvatarPerfilUsuarioSupabase({
   userId,
   arquivo,
@@ -4842,40 +4840,70 @@ async function enviarAvatarPerfilUsuarioSupabase({
   const userIdLimpo = userId.trim();
 
   if (!userIdLimpo || !idAutorSupabaseValido(userIdLimpo)) {
-    return { ok: false, url: "", erro: "ID de usuário inválido para enviar avatar." };
+    return {
+      ok: false,
+      url: "",
+      caminho: "",
+      erro: "ID de usuário inválido para enviar avatar.",
+    };
   }
 
   try {
-    const nomeSeguro = limparNomeArquivoAvatarPerfil(arquivo.name);
-    const caminho = `${userIdLimpo}/${Date.now()}-${nomeSeguro}`;
+    const contentType = obterTipoMimeUploadStorage("avatars", arquivo);
+    const caminho = criarCaminhoAvatarStorage(userIdLimpo, arquivo);
+
+    if (!contentType || !caminho) {
+      return {
+        ok: false,
+        url: "",
+        caminho: "",
+        erro: "Tipo de imagem não permitido para avatar.",
+      };
+    }
+
+    const versaoUrl = Date.now();
 
     const { error } = await supabase.storage
       .from(AVATAR_STORAGE_BUCKET)
       .upload(caminho, arquivo, {
         cacheControl: "3600",
-        contentType: arquivo.type || "image/png",
+        contentType,
         upsert: true,
       });
 
     if (error) {
-      return { ok: false, url: "", erro: error.message };
+      return {
+        ok: false,
+        url: "",
+        caminho: "",
+        erro: mensagemAmigavelErroUploadStorage(error.message),
+      };
     }
 
     const { data } = supabase.storage
       .from(AVATAR_STORAGE_BUCKET)
       .getPublicUrl(caminho);
 
-    const publicUrl = data.publicUrl || "";
+    const publicUrl = versionarUrlPublicaStorage(
+      data.publicUrl || "",
+      versaoUrl,
+    );
 
     if (!publicUrl) {
-      return { ok: false, url: "", erro: "Storage não retornou URL pública do avatar." };
+      return {
+        ok: false,
+        url: "",
+        caminho: "",
+        erro: "Storage não retornou URL pública do avatar.",
+      };
     }
 
-    return { ok: true, url: publicUrl, erro: "" };
+    return { ok: true, url: publicUrl, caminho, erro: "" };
   } catch (error) {
     return {
       ok: false,
       url: "",
+      caminho: "",
       erro: error instanceof Error ? error.message : "Erro inesperado ao enviar avatar.",
     };
   }
@@ -9443,12 +9471,21 @@ function PerfilAutorPageContent() {
       perfilUserId.toLowerCase() === usuarioIdLogado.trim().toLowerCase()
     ) {
       const nomePerfil = perfilParaMostrar?.nome || perfilUsuarioRemotoAtivo?.nome || "Usuário";
+      const avatarRemoto =
+        perfilNormalizado.avatar.startsWith("data:") ||
+        perfilNormalizado.avatar.startsWith("blob:")
+          ? perfilUsuarioRemotoAtivo?.avatar || ""
+          : perfilNormalizado.avatar;
+      const perfilRemoto = {
+        ...perfilNormalizado,
+        avatar: avatarRemoto,
+      };
 
       setPerfilUsuarioRemoto({
         userId: perfilUserId,
         nome: nomePerfil,
         username: perfilUsuarioRemotoAtivo?.username || "",
-        avatar: perfilNormalizado.avatar,
+        avatar: avatarRemoto,
         bio: perfilNormalizado.bio,
         sobreBio: perfilNormalizado.sobreBio,
         criadoEm: perfilUsuarioRemotoAtivo?.criadoEm || "",
@@ -9457,7 +9494,7 @@ function PerfilAutorPageContent() {
       void salvarPerfilUsuarioSupabase({
         userId: perfilUserId,
         nome: nomePerfil,
-        perfil: perfilNormalizado,
+        perfil: perfilRemoto,
         username: perfilUsuarioRemotoAtivo?.username || undefined,
       }).then((resultado) => {
         if (!resultado.ok && resultado.erro) {
@@ -9504,7 +9541,23 @@ function PerfilAutorPageContent() {
     setSalvandoEditorPerfil(true);
     setMensagemAcao("Salvando perfil...");
 
+    const avatarRemotoAnteriorBruto =
+      perfilUsuarioRemotoAtivo?.avatar.trim() || "";
+    const avatarRemotoAnterior =
+      avatarRemotoAnteriorBruto.startsWith("data:") ||
+      avatarRemotoAnteriorBruto.startsWith("blob:")
+        ? ""
+        : avatarRemotoAnteriorBruto;
+    const caminhoAvatarAnterior = obterCaminhoObjetoStorage(
+      "avatars",
+      avatarRemotoAnterior,
+    );
     let avatarFinal = avatarPerfilEditor;
+    let avatarRemotoFinal =
+      avatarFinal.startsWith("data:") || avatarFinal.startsWith("blob:")
+        ? avatarRemotoAnterior
+        : avatarFinal;
+    let caminhoAvatarNovo = "";
     let avisoAvatar = "";
 
     if (avatarArquivoPerfilEditor) {
@@ -9515,10 +9568,14 @@ function PerfilAutorPageContent() {
 
       if (resultadoUpload.ok && resultadoUpload.url) {
         avatarFinal = resultadoUpload.url;
+        avatarRemotoFinal = resultadoUpload.url;
+        caminhoAvatarNovo = resultadoUpload.caminho;
       } else {
         avisoAvatar =
-          " A imagem ficou salva neste aparelho, mas não foi enviada ao Storage.";
+          ` A imagem ficou salva neste aparelho, mas não foi enviada ao Storage: ${resultadoUpload.erro}`;
       }
+    } else if (!avatarFinal.trim()) {
+      avatarRemotoFinal = "";
     }
 
     const perfilFinal: PerfilAutorSalvo = {
@@ -9532,7 +9589,10 @@ function PerfilAutorPageContent() {
     const resultadoPerfil = await salvarPerfilUsuarioSupabase({
       userId: perfilUserId,
       nome: nomeFinal,
-      perfil: perfilFinal,
+      perfil: {
+        ...perfilFinal,
+        avatar: avatarRemotoFinal,
+      },
       username: usernameFinal || null,
     });
 
@@ -9557,8 +9617,8 @@ function PerfilAutorPageContent() {
         data: {
           nome: nomeFinal,
           username: usernameFinal || null,
-          avatar_url: avatarFinal || null,
-          avatar: avatarFinal || null,
+          avatar_url: avatarRemotoFinal || null,
+          avatar: avatarRemotoFinal || null,
         },
       });
 
@@ -9568,6 +9628,30 @@ function PerfilAutorPageContent() {
         console.warn(
           "O perfil foi salvo, mas os metadados da autenticação não sincronizaram:",
           erroMetadadosAuth.message,
+        );
+      }
+    }
+
+    const deveRemoverAvatarAnterior =
+      resultadoPerfil.ok &&
+      Boolean(caminhoAvatarAnterior) &&
+      (
+        !avatarRemotoFinal ||
+        (Boolean(caminhoAvatarNovo) &&
+          caminhoAvatarNovo !== caminhoAvatarAnterior)
+      );
+
+    if (deveRemoverAvatarAnterior) {
+      const { error: erroRemoverAvatarAnterior } = await supabase.storage
+        .from(AVATAR_STORAGE_BUCKET)
+        .remove([caminhoAvatarAnterior]);
+
+      if (erroRemoverAvatarAnterior) {
+        avisoAvatar +=
+          " Não consegui remover o avatar anterior do Storage agora.";
+        console.warn(
+          "O perfil foi salvo, mas o avatar anterior não foi removido:",
+          erroRemoverAvatarAnterior.message,
         );
       }
     }
@@ -9592,7 +9676,7 @@ function PerfilAutorPageContent() {
       userId: perfilUserId,
       nome: nomeFinal,
       username: usernameFinal,
-      avatar: avatarFinal,
+      avatar: avatarRemotoFinal,
       bio: perfilFinal.bio,
       sobreBio: perfilFinal.sobreBio,
       criadoEm: perfilUsuarioRemotoAtivo?.criadoEm || "",
@@ -9873,8 +9957,8 @@ function PerfilAutorPageContent() {
       return;
     }
 
-    if (!arquivo.type.startsWith("image/")) {
-      setAvatarErro("Escolha uma imagem válida.");
+    if (!obterTipoMimeUploadStorage("avatars", arquivo)) {
+      setAvatarErro("Escolha PNG, JPG, WEBP ou GIF.");
       event.target.value = "";
       return;
     }
