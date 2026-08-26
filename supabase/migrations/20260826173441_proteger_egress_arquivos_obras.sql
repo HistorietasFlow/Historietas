@@ -1,3 +1,4 @@
+-- Versão registrada pelo Supabase em produção: 20260826173441.
 -- Remove a emissão direta de URLs assinadas pelo navegador. O bucket continua
 -- privado e o acesso passa por um Route Handler server-only, com autorização,
 -- rate limit persistente e assinatura de curta duração.
