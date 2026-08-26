@@ -25,6 +25,7 @@ import {
 import {
   LIMITES_BYTES_STORAGE,
   mensagemAmigavelErroUploadStorage,
+  obterCacheControlUploadStorage,
   obterTipoMimeUploadStorage,
 } from "../../lib/storageUploads";
 
@@ -834,7 +835,7 @@ async function enviarArquivoStorage(
   )}`;
 
   const { error } = await supabase.storage.from(bucket).upload(caminho, arquivo, {
-    cacheControl: "3600",
+    cacheControl: obterCacheControlUploadStorage(bucket),
     contentType,
     upsert: false,
   });

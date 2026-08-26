@@ -11,6 +11,9 @@ export const LIMITES_BYTES_STORAGE: Readonly<
   "arquivos-obras": 5 * 1024 * 1024,
 };
 
+const CACHE_CONTROL_PUBLICO_SEGUNDOS = "31536000";
+const CACHE_CONTROL_PRIVADO_SEGUNDOS = "3600";
+
 const TIPOS_MIME_IMAGEM = new Set([
   "image/png",
   "image/jpeg",
@@ -68,6 +71,12 @@ export function obterTipoMimeUploadStorage(
   const tipoInferido = TIPO_MIME_POR_EXTENSAO[obterExtensao(arquivo.name)] || "";
 
   return tiposPermitidos.has(tipoInferido) ? tipoInferido : null;
+}
+
+export function obterCacheControlUploadStorage(bucket: BucketStorageUsuario) {
+  return bucket === "arquivos-obras"
+    ? CACHE_CONTROL_PRIVADO_SEGUNDOS
+    : CACHE_CONTROL_PUBLICO_SEGUNDOS;
 }
 
 export function criarCaminhoAvatarStorage(

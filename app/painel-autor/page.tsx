@@ -10,6 +10,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties } from "react";
 import { carregarMetricasConteudos } from "../../lib/metricas";
+import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
 
 type CapituloLocal = {
   id: string;
@@ -873,7 +874,10 @@ function caminhoStoragePertenceAoUsuarioPainel(
   );
 }
 
-async function criarUrlAssinadaArquivoObraPainel(referencia: string) {
+async function criarUrlAssinadaArquivoObraPainel(
+  obraId: string,
+  referencia: string,
+) {
   const referenciaLimpa = referencia.trim();
 
   if (!referenciaLimpa) {
@@ -889,18 +893,7 @@ async function criarUrlAssinadaArquivoObraPainel(referencia: string) {
     return referenciaLimpa;
   }
 
-  const { data, error } = await supabase.storage
-    .from("arquivos-obras")
-    .createSignedUrl(caminho, 60);
-
-  if (error || !data?.signedUrl) {
-    throw new Error(
-      error?.message ||
-        "Não consegui criar um acesso temporário ao arquivo da obra."
-    );
-  }
-
-  return data.signedUrl;
+  return solicitarUrlTemporariaArquivoObra(obraId);
 }
 
 async function removerArquivosStorageObraExcluidaPainel(
@@ -2513,7 +2506,10 @@ export default function PainelAutorPage() {
     }
 
     try {
-      const urlArquivo = await criarUrlAssinadaArquivoObraPainel(referencia);
+      const urlArquivo = await criarUrlAssinadaArquivoObraPainel(
+        obra.id,
+        referencia,
+      );
       const linkArquivo = document.createElement("a");
 
       linkArquivo.href = urlArquivo;
