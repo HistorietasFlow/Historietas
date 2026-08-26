@@ -29,6 +29,7 @@ const expectedRoutes = [
   "app/ler-capitulo/page.tsx",
   "app/obra/[slug]/page.tsx",
   "app/obra/[slug]/capitulo/[numero]/page.tsx",
+  "app/api/arquivos-obras/url/route.ts",
   "app/api/visualizacoes/route.ts",
   "app/robots.ts",
   "app/sitemap.ts",
@@ -1061,6 +1062,239 @@ if (!fs.existsSync(storageClientPath)) {
     fail(
       "avatar usa caminho estável e limitado",
       "caminho determinístico do avatar não encontrado"
+    );
+  }
+}
+
+const storageEgressMigrationName = migrationFiles.find((name) =>
+  name.endsWith("_proteger_egress_arquivos_obras.sql")
+);
+
+if (!storageEgressMigrationName) {
+  fail(
+    "migration de proteção do egress de arquivos",
+    "migration proteger_egress_arquivos_obras ausente"
+  );
+} else {
+  const storageEgressSql = fs.readFileSync(
+    path.join(migrationsDir, storageEgressMigrationName),
+    "utf8"
+  );
+  const storageEgressContracts = [
+    {
+      name: "migration exige bucket de arquivos privado",
+      pattern:
+        /where bucket\.id = 'arquivos-obras'[\s\S]*?bucket\.public is false/i
+    },
+    {
+      name: "migration remove leitura direta de arquivos pela API",
+      pattern:
+        /drop policy storage_arquivos_select_publicado_ou_proprio\s+on storage\.objects/i
+    },
+    {
+      name: "migration preserva apenas o SELECT técnico do upload",
+      pattern:
+        /create policy storage_arquivos_select_upload_proprio[\s\S]*?for select[\s\S]*?to authenticated[\s\S]*?bucket_id = 'arquivos-obras'[\s\S]*?storage\.allow_only_operation\('object\.upload'\)[\s\S]*?storage\.foldername\(name\)[\s\S]*?select auth\.uid\(\)[\s\S]*?::text/i
+    },
+    {
+      name: "migration valida ausência de policy de leitura residual",
+      pattern:
+        /policy\.polname <> 'storage_arquivos_select_upload_proprio'[\s\S]*?pg_catalog\.pg_get_expr[\s\S]*?arquivos-obras[\s\S]*?Ainda existe outra policy de leitura/i
+    },
+    {
+      name: "migration preserva privacidade do bucket",
+      pattern:
+        /if not exists \([\s\S]*?bucket\.id = 'arquivos-obras'[\s\S]*?bucket\.public is false[\s\S]*?O bucket arquivos-obras deixou de ser privado/i
+    }
+  ];
+
+  for (const contract of storageEgressContracts) {
+    if (contract.pattern.test(storageEgressSql)) {
+      pass(contract.name, storageEgressMigrationName);
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${storageEgressMigrationName}`
+      );
+    }
+  }
+}
+
+const storageEgressRoutePath = path.join(
+  ROOT_DIR,
+  "app/api/arquivos-obras/url/route.ts"
+);
+
+if (!fs.existsSync(storageEgressRoutePath)) {
+  fail(
+    "endpoint server-only para arquivos privados",
+    "app/api/arquivos-obras/url/route.ts ausente"
+  );
+} else {
+  const storageEgressRoute = fs.readFileSync(storageEgressRoutePath, "utf8");
+  const storageEgressRouteContracts = [
+    {
+      name: "endpoint de arquivos usa cliente administrativo server-only",
+      pattern:
+        /criarSupabaseAdminClient[\s\S]*?supabaseAdminConfigurado/i
+    },
+    {
+      name: "endpoint de arquivos valida origem e corpo limitado",
+      pattern:
+        /request\.headers\.get\("origin"\)[\s\S]*?origensPermitidas\.has[\s\S]*?content-type[\s\S]*?request\.body\?\.getReader\(\)[\s\S]*?tamanhoRecebido > TAMANHO_MAXIMO_CORPO[\s\S]*?leitor\.cancel\(\)/i
+    },
+    {
+      name: "endpoint de arquivos valida UUID da obra",
+      pattern: /UUID_VALIDO\.test\(obraId\)/i
+    },
+    {
+      name: "endpoint de arquivos respeita o bloqueio público 18+",
+      pattern:
+        /const CLASSIFICACOES_PUBLICAS = new Set\(\[\s*"Livre",\s*"10\+",\s*"12\+",\s*"14\+",\s*"16\+",?\s*\]\);/i
+    },
+    {
+      name: "endpoint de arquivos limita rede e usuário persistentemente",
+      pattern:
+        /escopo: "arquivo_obra_rede"[\s\S]*?limite: 60[\s\S]*?escopo: "arquivo_obra_usuario"[\s\S]*?limite: 30[\s\S]*?janelaSegundos: 5 \* 60[\s\S]*?bloqueioSegundos: 15 \* 60/i
+    },
+    {
+      name: "endpoint de arquivos autoriza publicação ou proprietário",
+      pattern:
+        /\.from\("obras"\)[\s\S]*?\.select\("id,user_id,publicado,classificacao_indicativa,arquivo_url"\)[\s\S]*?usuarioId !== data\.user_id[\s\S]*?!data\.publicado[\s\S]*?!CLASSIFICACOES_PUBLICAS\.has\(data\.classificacao_indicativa\)/i
+    },
+    {
+      name: "endpoint restringe o objeto ao diretório do proprietário",
+      pattern:
+        /partes\[0\]\?\.toLowerCase\(\) !== proprietarioId\.trim\(\)\.toLowerCase\(\)/i
+    },
+    {
+      name: "endpoint assina arquivos por apenas dez minutos",
+      pattern:
+        /DURACAO_URL_SEGUNDOS = 10 \* 60[\s\S]*?\.createSignedUrl\(caminho, DURACAO_URL_SEGUNDOS\)/i
+    },
+    {
+      name: "endpoint impede cache da resposta assinada",
+      pattern:
+        /"Cache-Control": "no-store"[\s\S]*?"X-Content-Type-Options": "nosniff"/i
+    }
+  ];
+
+  for (const contract of storageEgressRouteContracts) {
+    if (contract.pattern.test(storageEgressRoute)) {
+      pass(contract.name, "app/api/arquivos-obras/url/route.ts");
+    } else {
+      fail(
+        contract.name,
+        "contrato ausente em app/api/arquivos-obras/url/route.ts"
+      );
+    }
+  }
+
+  if (/SUPABASE_SERVICE_ROLE(?:_KEY)?/.test(storageEgressRoute)) {
+    fail(
+      "endpoint não referencia segredo administrativo diretamente",
+      "variável de service role encontrada no Route Handler"
+    );
+  } else {
+    pass(
+      "endpoint não referencia segredo administrativo diretamente",
+      "segredo encapsulado em lib/supabase/admin"
+    );
+  }
+}
+
+const privateFileClientPath = path.join(ROOT_DIR, "lib/arquivosObras.ts");
+
+if (!fs.existsSync(privateFileClientPath)) {
+  fail("cliente único de arquivos privados", "lib/arquivosObras.ts ausente");
+} else {
+  const privateFileClient = fs.readFileSync(privateFileClientPath, "utf8");
+
+  if (
+    /fetch\("\/api\/arquivos-obras\/url"[\s\S]*?method: "POST"[\s\S]*?credentials: "same-origin"[\s\S]*?cache: "no-store"/i.test(
+      privateFileClient
+    )
+  ) {
+    pass("cliente usa endpoint único para arquivos privados", "lib/arquivosObras.ts");
+  } else {
+    fail(
+      "cliente usa endpoint único para arquivos privados",
+      "contrato ausente em lib/arquivosObras.ts"
+    );
+  }
+}
+
+for (const relative of [
+  "app/obra/[slug]/ObraDinamicaClient.tsx",
+  "app/painel-autor/page.tsx"
+]) {
+  const content = fs.readFileSync(path.join(ROOT_DIR, relative), "utf8");
+
+  if (/solicitarUrlTemporariaArquivoObra/.test(content)) {
+    pass("consumidor usa endpoint protegido de arquivos", relative);
+  } else {
+    fail(
+      "consumidor usa endpoint protegido de arquivos",
+      `helper ausente em ${relative}`
+    );
+  }
+}
+
+const publicWorkClient = fs.readFileSync(
+  path.join(ROOT_DIR, "app/obra/[slug]/ObraDinamicaClient.tsx"),
+  "utf8"
+);
+
+if (
+  /arquivo\.categoria !== "imagem"[\s\S]*?arquivoAssinado\.expiraEm > Date\.now\(\)[\s\S]*?solicitarUrlTemporariaArquivoObra\(obraId\)[\s\S]*?onClick=\{abrirArquivo\}/i.test(
+    publicWorkClient
+  )
+) {
+  pass(
+    "cliente assina documentos e renova URLs apenas sob demanda",
+    "app/obra/[slug]/ObraDinamicaClient.tsx"
+  );
+} else {
+  fail(
+    "cliente assina documentos e renova URLs apenas sob demanda",
+    "assinatura sob demanda ausente na página pública"
+  );
+}
+
+const directSigningClients = sourceFiles.filter(
+  (file) =>
+    hasUseClientDirective(file.content) &&
+    /\.createSignedUrl\s*\(/.test(file.content)
+);
+
+if (directSigningClients.length) {
+  fail(
+    "clientes não assinam objetos privados diretamente",
+    directSigningClients.map((file) => file.relative).join(", ")
+  );
+} else {
+  pass(
+    "clientes não assinam objetos privados diretamente",
+    `${sourceFiles.filter((file) => hasUseClientDirective(file.content)).length} clientes verificados`
+  );
+}
+
+if (fs.existsSync(storageClientPath)) {
+  const storageClient = fs.readFileSync(storageClientPath, "utf8");
+
+  if (
+    /CACHE_CONTROL_PUBLICO_SEGUNDOS = "31536000"[\s\S]*?CACHE_CONTROL_PRIVADO_SEGUNDOS = "3600"[\s\S]*?bucket === "arquivos-obras"[\s\S]*?CACHE_CONTROL_PRIVADO_SEGUNDOS[\s\S]*?CACHE_CONTROL_PUBLICO_SEGUNDOS/i.test(
+      storageClient
+    )
+  ) {
+    pass(
+      "cache de uploads diferencia conteúdo público e privado",
+      "imagens públicas: 1 ano; arquivos privados: 1 hora"
+    );
+  } else {
+    fail(
+      "cache de uploads diferencia conteúdo público e privado",
+      "contrato de cache ausente em lib/storageUploads.ts"
     );
   }
 }

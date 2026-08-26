@@ -36,6 +36,7 @@ import {
   LIMITES_BYTES_STORAGE,
   criarCaminhoAvatarStorage,
   mensagemAmigavelErroUploadStorage,
+  obterCacheControlUploadStorage,
   obterCaminhoObjetoStorage,
   obterTipoMimeUploadStorage,
   versionarUrlPublicaStorage,
@@ -4866,7 +4867,7 @@ async function enviarAvatarPerfilUsuarioSupabase({
     const { error } = await supabase.storage
       .from(AVATAR_STORAGE_BUCKET)
       .upload(caminho, arquivo, {
-        cacheControl: "3600",
+        cacheControl: obterCacheControlUploadStorage("avatars"),
         contentType,
         upsert: true,
       });
