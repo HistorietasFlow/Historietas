@@ -716,6 +716,86 @@ if (!interactionRlsMigrationName) {
   }
 }
 
+const securityDefinerMigrationName = migrationFiles.find((name) =>
+  name.endsWith("_restringir_security_definer_expostos.sql")
+);
+
+if (!securityDefinerMigrationName) {
+  fail(
+    "migration de isolamento SECURITY DEFINER",
+    "migration restringir_security_definer_expostos ausente"
+  );
+} else {
+  const securityDefinerSql = fs.readFileSync(
+    path.join(migrationsDir, securityDefinerMigrationName),
+    "utf8"
+  );
+  const reviewedSignatures = securityDefinerSql.match(
+    /\('public\.[^']+',\s*'(?:api|internal|none)'/g
+  );
+
+  if (reviewedSignatures?.length === 41) {
+    pass(
+      "inventário SECURITY DEFINER é fechado",
+      "41 assinaturas revisadas"
+    );
+  } else {
+    fail(
+      "inventário SECURITY DEFINER é fechado",
+      `${reviewedSignatures?.length || 0}/41 assinaturas encontradas`
+    );
+  }
+
+  const securityDefinerContracts = [
+    {
+      name: "rls_auto_enable deixa de ser RPC pública",
+      pattern:
+        /\('public\.rls_auto_enable\(\)',\s*'none'[\s\S]*?public\.rls_auto_enable\(\)[\s\S]*?historietas_privado\.rls_auto_enable\(\)[\s\S]*?ensure_rls perdeu seu handler interno/i
+    },
+    {
+      name: "núcleos privilegiados migram por assinatura",
+      pattern:
+        /alter function %I\.%I\(%s\) set schema %I[\s\S]*?historietas_privado[\s\S]*?revoke all on function %s from public, anon, authenticated, service_role/i
+    },
+    {
+      name: "APIs públicas usam SECURITY INVOKER",
+      pattern:
+        /create function %I\.%I\(%s\) returns %s language sql %s security invoker set search_path = ''''/i
+    },
+    {
+      name: "helpers internos não recebem EXECUTE público",
+      pattern:
+        /wrapper_mode = 'api' and reviewed\.core_anon[\s\S]*?wrapper_mode = 'api' and reviewed\.core_authenticated[\s\S]*?wrapper_mode = 'api' and reviewed\.core_service_role/i
+    },
+    {
+      name: "novas funções exigem grants explícitos",
+      pattern:
+        /alter default privileges for role postgres in schema public[\s\S]*?revoke execute on functions from public, anon, authenticated, service_role[\s\S]*?alter default privileges for role postgres in schema historietas_privado[\s\S]*?revoke execute on functions from public, anon, authenticated, service_role/i
+    },
+    {
+      name: "migration bloqueia drift antes da mudança",
+      pattern:
+        /exposed_count\s*<>\s*41[\s\S]*?SECURITY DEFINER exposto fora do inventario revisado[\s\S]*?ACL inesperada antes da migracao/i
+    },
+    {
+      name: "migration valida ausência de DEFINER público exposto",
+      pattern:
+        /Ainda existe SECURITY DEFINER publico executavel pela API[\s\S]*?Default privileges ainda autoexpoem novas funcoes/i
+    }
+  ];
+
+  for (const contract of securityDefinerContracts) {
+    if (contract.pattern.test(securityDefinerSql)) {
+      pass(contract.name, securityDefinerMigrationName);
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${securityDefinerMigrationName}`
+      );
+    }
+  }
+}
+
 const metricsContractMigrationName = migrationFiles.find((name) =>
   name.endsWith("_criar_contrato_metricas_agregadas.sql")
 );
