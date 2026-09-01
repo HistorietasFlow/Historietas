@@ -1158,9 +1158,9 @@ if (!fs.existsSync(storageEgressRoutePath)) {
         /escopo: "arquivo_obra_rede"[\s\S]*?limite: 60[\s\S]*?escopo: "arquivo_obra_usuario"[\s\S]*?limite: 30[\s\S]*?janelaSegundos: 5 \* 60[\s\S]*?bloqueioSegundos: 15 \* 60/i
     },
     {
-      name: "endpoint de arquivos autoriza publicação ou proprietário",
+      name: "endpoint consulta obra por RPC administrativa mínima",
       pattern:
-        /\.from\("obras"\)[\s\S]*?\.select\("id,user_id,publicado,classificacao_indicativa,arquivo_url"\)[\s\S]*?usuarioId !== data\.user_id[\s\S]*?!data\.publicado[\s\S]*?!CLASSIFICACOES_PUBLICAS\.has\(data\.classificacao_indicativa\)/i
+        /\.rpc\(\s*"obter_arquivo_obra_para_assinatura"[\s\S]*?p_obra_id: obraId[\s\S]*?usuarioId !== data\.user_id[\s\S]*?!data\.publicado[\s\S]*?!CLASSIFICACOES_PUBLICAS\.has\(data\.classificacao_indicativa\)/i
     },
     {
       name: "endpoint restringe o objeto ao diretório do proprietário",
@@ -1200,6 +1200,72 @@ if (!fs.existsSync(storageEgressRoutePath)) {
       "endpoint não referencia segredo administrativo diretamente",
       "segredo encapsulado em lib/supabase/admin"
     );
+  }
+
+  if (/\.from\(\s*["']obras["']\s*\)/i.test(storageEgressRoute)) {
+    fail(
+      "endpoint não exige SELECT administrativo direto em obras",
+      "consulta direta de public.obras encontrada no Route Handler"
+    );
+  } else {
+    pass(
+      "endpoint não exige SELECT administrativo direto em obras",
+      "consulta limitada à RPC server-only"
+    );
+  }
+}
+
+const storageEgressLookupMigrationName = migrationFiles.find((name) =>
+  name.endsWith("_corrigir_consulta_server_arquivo_obra.sql")
+);
+
+if (!storageEgressLookupMigrationName) {
+  fail(
+    "migration da consulta server-only de arquivo",
+    "migration corrigir_consulta_server_arquivo_obra ausente"
+  );
+} else {
+  const storageEgressLookupSql = fs.readFileSync(
+    path.join(migrationsDir, storageEgressLookupMigrationName),
+    "utf8"
+  );
+  const storageEgressLookupContracts = [
+    {
+      name: "núcleo privado retorna somente campos necessários",
+      pattern:
+        /function historietas_privado\.obter_arquivo_obra_para_assinatura\(\s*p_obra_id uuid\s*\)[\s\S]*?returns table\s*\(\s*id uuid,\s*user_id uuid,\s*publicado boolean,\s*classificacao_indicativa text,\s*arquivo_url text\s*\)/i
+    },
+    {
+      name: "núcleo administrativo usa DEFINER somente no schema privado",
+      pattern:
+        /function historietas_privado\.obter_arquivo_obra_para_assinatura\([\s\S]*?security definer[\s\S]*?set search_path\s*=\s*''/i
+    },
+    {
+      name: "wrapper público usa SECURITY INVOKER",
+      pattern:
+        /function public\.obter_arquivo_obra_para_assinatura\([\s\S]*?security invoker[\s\S]*?from historietas_privado\.obter_arquivo_obra_para_assinatura\(p_obra_id\)/i
+    },
+    {
+      name: "núcleo e wrapper são executáveis somente por service_role",
+      pattern:
+        /revoke all on function historietas_privado\.obter_arquivo_obra_para_assinatura\(uuid\)[\s\S]*?from public, anon, authenticated, service_role[\s\S]*?grant execute on function historietas_privado\.obter_arquivo_obra_para_assinatura\(uuid\)[\s\S]*?to service_role[\s\S]*?revoke all on function public\.obter_arquivo_obra_para_assinatura\(uuid\)[\s\S]*?from public, anon, authenticated, service_role[\s\S]*?grant execute on function public\.obter_arquivo_obra_para_assinatura\(uuid\)[\s\S]*?to service_role/i
+    },
+    {
+      name: "migration preserva ausência de SELECT direto para service_role",
+      pattern:
+        /has_table_privilege\(\s*'service_role',\s*'public\.obras',\s*'select'\s*\)[\s\S]*?service_role recebeu SELECT direto indevido/i
+    }
+  ];
+
+  for (const contract of storageEgressLookupContracts) {
+    if (contract.pattern.test(storageEgressLookupSql)) {
+      pass(contract.name, storageEgressLookupMigrationName);
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${storageEgressLookupMigrationName}`
+      );
+    }
   }
 }
 

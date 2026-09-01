@@ -356,11 +356,10 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const { data, error } = await admin
-    .from("obras")
-    .select("id,user_id,publicado,classificacao_indicativa,arquivo_url")
-    .eq("id", obraId)
-    .maybeSingle<ObraArquivoRow>();
+  const { data: linhasObra, error } = await admin.rpc(
+    "obter_arquivo_obra_para_assinatura",
+    { p_obra_id: obraId },
+  );
 
   if (error) {
     console.error("Não foi possível consultar o arquivo da obra:", error);
@@ -371,6 +370,10 @@ export async function POST(request: NextRequest) {
       mensagem: "O arquivo está temporariamente indisponível.",
     });
   }
+
+  const data = Array.isArray(linhasObra)
+    ? (linhasObra[0] as ObraArquivoRow | undefined)
+    : undefined;
 
   if (
     !data ||
