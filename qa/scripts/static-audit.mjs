@@ -1271,6 +1271,152 @@ if (!storageEgressLookupMigrationName) {
 
 const privateFileClientPath = path.join(ROOT_DIR, "lib/arquivosObras.ts");
 
+const rlsPerformanceMigrationName = migrationFiles.find((name) =>
+  name.endsWith("_otimizar_policies_rls_indices.sql")
+);
+
+if (!rlsPerformanceMigrationName) {
+  fail(
+    "migration de performance RLS e índices",
+    "migration otimizar_policies_rls_indices ausente"
+  );
+} else {
+  const rlsPerformanceSql = fs.readFileSync(
+    path.join(migrationsDir, rlsPerformanceMigrationName),
+    "utf8"
+  );
+
+  const rlsPerformanceContracts = [
+    {
+      name: "migration RLS bloqueia drift no inventário",
+      pattern:
+        /rls_initplan_expected[\s\S]*?rls_policy_before[\s\S]*?inventario RLS deve conter exatamente 99 policies/i
+    },
+    {
+      name: "migration RLS usa initplan recomendado",
+      pattern:
+        /replace\(\s*reviewed\.(?:qual|with_check),\s*'auth\.uid\(\)',\s*'\(select auth\.uid\(\)\)'/i
+    },
+    {
+      name: "migration RLS compara semântica antes e depois",
+      pattern:
+        /rls_policy_before[\s\S]*?regexp_replace\([\s\S]*?A otimizacao de initplan alterou a semantica/i
+    },
+    {
+      name: "migration consolida policies permissivas",
+      pattern:
+        /select_policy_merges[\s\S]*?delete_policy_merges[\s\S]*?comunidade_posts_insert_autenticado[\s\S]*?usuarios podem criar publicacoes/i
+    },
+    {
+      name: "migration não remove índice de constraint",
+      pattern:
+        /pg_constraint[\s\S]*?conindid\s*=\s*snapshot\.index_oid[\s\S]*?tentou remover indice de constraint/i
+    },
+    {
+      name: "migration preserva equivalente de índice removido",
+      pattern:
+        /duplicate_index_snapshot[\s\S]*?indice inventariado nao possui equivalente preservado[\s\S]*?Um indice equivalente deixou de existir/i
+    },
+    {
+      name: "migration valida cobertura das FKs",
+      pattern:
+        /fk_indexes_expected[\s\S]*?index_row\.indkey\[0\]\s*=\s*attribute\.attnum[\s\S]*?FK permaneceu sem o indice de apoio esperado/i
+    }
+  ];
+
+  for (const contract of rlsPerformanceContracts) {
+    if (contract.pattern.test(rlsPerformanceSql)) {
+      pass(contract.name, rlsPerformanceMigrationName);
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${rlsPerformanceMigrationName}`
+      );
+    }
+  }
+
+  const initplanSection = rlsPerformanceSql.match(
+    /insert into pg_temp\.rls_initplan_expected[\s\S]*?values([\s\S]*?)create temporary table pg_temp\.rls_policy_before/i
+  )?.[1] ?? "";
+  const initplanPolicies = [
+    ...initplanSection.matchAll(
+      /\(\s*'([^']+)'\s*,\s*'([^']+)'\s*\)/g
+    )
+  ].map((match) => `${match[1]}|${match[2]}`);
+
+  if (
+    initplanPolicies.length === 99 &&
+    new Set(initplanPolicies).size === 99
+  ) {
+    pass(
+      "inventário initplan contém 99 policies únicas",
+      rlsPerformanceMigrationName
+    );
+  } else {
+    fail(
+      "inventário initplan contém 99 policies únicas",
+      `encontradas ${initplanPolicies.length} entradas e ${new Set(initplanPolicies).size} únicas`
+    );
+  }
+
+  const duplicateIndexSection = rlsPerformanceSql.match(
+    /insert into pg_temp\.duplicate_indexes_to_drop[\s\S]*?values([\s\S]*?)create temporary table pg_temp\.duplicate_index_snapshot/i
+  )?.[1] ?? "";
+  const duplicateIndexes = [
+    ...duplicateIndexSection.matchAll(/\(\s*'([^']+)'\s*\)/g)
+  ].map((match) => match[1]);
+
+  if (
+    duplicateIndexes.length === 23 &&
+    new Set(duplicateIndexes).size === 23
+  ) {
+    pass(
+      "inventário contém somente 23 índices duplicados",
+      rlsPerformanceMigrationName
+    );
+  } else {
+    fail(
+      "inventário contém somente 23 índices duplicados",
+      `encontrados ${duplicateIndexes.length} índices e ${new Set(duplicateIndexes).size} únicos`
+    );
+  }
+
+  const expectedFkIndexes = [
+    "comentarios_capitulos_user_id_idx",
+    "comunidade_comentarios_salvos_usuario_id_idx",
+    "comunidade_curtidas_usuario_id_idx",
+    "comunidade_denuncias_analisado_por_idx",
+    "comunidade_post_salvos_usuario_id_idx",
+    "comunidade_posts_fixado_por_idx",
+    "comunidade_salvos_usuario_id_idx",
+    "notificacoes_autor_id_idx",
+    "problemas_tecnicos_analisado_por_idx",
+    "progresso_leitura_capitulo_id_idx",
+    "progresso_leitura_obra_id_idx",
+    "top5_curtidas_usuario_id_idx"
+  ].sort();
+  const createdFkIndexes = [
+    ...rlsPerformanceSql.matchAll(
+      /create index\s+([a-z0-9_]+)\s+on public\.[a-z0-9_]+\s*\(\s*[a-z0-9_]+\s*\)/gi
+    )
+  ].map((match) => match[1]).sort();
+
+  if (
+    JSON.stringify(createdFkIndexes) ===
+    JSON.stringify(expectedFkIndexes)
+  ) {
+    pass(
+      "migration cria os 12 índices de FK esperados",
+      rlsPerformanceMigrationName
+    );
+  } else {
+    fail(
+      "migration cria os 12 índices de FK esperados",
+      `índices encontrados: ${createdFkIndexes.join(", ")}`
+    );
+  }
+}
+
 if (!fs.existsSync(privateFileClientPath)) {
   fail("cliente único de arquivos privados", "lib/arquivosObras.ts ausente");
 } else {
