@@ -1,3 +1,4 @@
+-- Versão registrada pelo Supabase em produção: 20260901201213.
 -- Corrige a consulta server-only usada para emitir URLs temporárias de arquivos.
 -- service_role continua sem SELECT direto em public.obras: a API recebe somente
 -- os cinco campos necessários e apenas quando informa o UUID exato da obra.
