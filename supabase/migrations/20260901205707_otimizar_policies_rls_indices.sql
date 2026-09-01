@@ -1,6 +1,7 @@
 -- Otimiza as policies RLS sem alterar o conjunto de linhas autorizado.
 -- Tambem adiciona os indices que cobrem FKs e remove somente indices
 -- estruturalmente identicos, preservando sempre um equivalente valido.
+-- Versao registrada pelo Supabase em producao: 20260901205707.
 
 begin;
 
