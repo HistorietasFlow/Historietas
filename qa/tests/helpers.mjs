@@ -5,6 +5,14 @@ export const authorEmail = (process.env.E2E_USER_EMAIL || "").trim();
 export const authorPassword = process.env.E2E_USER_PASSWORD || "";
 export const destructiveEnabled = process.env.E2E_ALLOW_DESTRUCTIVE === "true";
 export const hasAuthorCredentials = Boolean(authorEmail && authorPassword);
+const supabasePublicoConfigurado = Boolean(
+  (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim() &&
+    (
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      ""
+    ).trim(),
+);
 
 export function monitorRuntime(page) {
   const pageErrors = [];
@@ -19,6 +27,12 @@ export function monitorRuntime(page) {
     if (message.type() !== "error") return;
     const text = message.text();
     if (/net::ERR_ABORTED/i.test(text)) return;
+    if (
+      !supabasePublicoConfigurado &&
+      /Supabase não configurado\. Verifique NEXT_PUBLIC_SUPABASE_URL/i.test(text)
+    ) {
+      return;
+    }
     consoleErrors.push(text);
   });
 
