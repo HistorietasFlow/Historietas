@@ -1790,8 +1790,85 @@ const packageJson = JSON.parse(
   )
 );
 
+const paginationHelperPath = path.join(
+  ROOT_DIR,
+  "lib/supabase/paginacao.mjs"
+);
+const paginationHelper = fs.existsSync(paginationHelperPath)
+  ? fs.readFileSync(paginationHelperPath, "utf8")
+  : "";
+const paginationVolumeTestPath = path.join(
+  ROOT_DIR,
+  "qa/unit/paginacao-alto-volume.test.mjs"
+);
+const paginationVolumeTest = fs.existsSync(paginationVolumeTestPath)
+  ? fs.readFileSync(paginationVolumeTestPath, "utf8")
+  : "";
+const communityPagePath = path.join(
+  ROOT_DIR,
+  "app/comunidade/page.tsx"
+);
+const communityPage = fs.existsSync(communityPagePath)
+  ? fs.readFileSync(communityPagePath, "utf8")
+  : "";
+
+const paginationContracts = [
+  {
+    name: "paginador usa ranges inclusivos sem sobreposição",
+    valid:
+      /const inicio = pagina \* tamanhoPagina[\s\S]*?fim: inicio \+ tamanhoPagina - 1/.test(
+        paginationHelper
+      ) &&
+      /dadosPagina\.length < tamanhoPagina/.test(paginationHelper)
+  },
+  {
+    name: "paginador interrompe erros e respostas acima do limite",
+    valid:
+      /resposta\?\.error[\s\S]*?throw criarErroPagina/.test(
+        paginationHelper
+      ) &&
+      /dadosPagina\.length > tamanhoPagina[\s\S]*?throw new RangeError/.test(
+        paginationHelper
+      )
+  },
+  {
+    name: "Comunidade pagina posts com ordenação determinística",
+    valid:
+      /\.from\("comunidade_posts"\)[\s\S]*?\.order\("criado_em", \{ ascending: false \}\)[\s\S]*?\.order\("id", \{ ascending: false \}\)[\s\S]*?\.range\(inicio, fim\)/.test(
+        communityPage
+      )
+  },
+  {
+    name: "Comunidade pagina comentários, curtidas e obras relacionadas",
+    valid:
+      (communityPage.match(/carregarTodasPaginasSupabase</g) || []).length >= 4 &&
+      /dividirEmLotesSupabase\([\s\S]*?comentarioIds[\s\S]*?IDS_COMENTARIOS_POR_LOTE/.test(
+        communityPage
+      )
+  },
+  {
+    name: "testes cobrem volumes acima dos limites usuais",
+    valid:
+      /quantidade: 137[\s\S]*?quantidade: 2_501[\s\S]*?quantidade: 5_001[\s\S]*?quantidade: 1_201/.test(
+        paginationVolumeTest
+      ) &&
+      /new Set\(resultado\.map[\s\S]*?\.size, quantidade/.test(
+        paginationVolumeTest
+      )
+  }
+];
+
+for (const contract of paginationContracts) {
+  if (contract.valid) {
+    pass(contract.name, "paginação em alto volume");
+  } else {
+    fail(contract.name, "contrato de paginação ausente");
+  }
+}
+
 for (const script of [
   "test:static",
+  "test:pagination",
   "test:smoke",
   "test:e2e",
   "test:all"
@@ -1834,6 +1911,7 @@ const ciContracts = [
       "npm run lint",
       "npm run typecheck",
       "npm run test:static",
+      "npm run test:pagination",
       "npm --prefix qa test",
       "npm run build"
     ].every((command) => ciWorkflow.includes(command))

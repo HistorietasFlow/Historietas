@@ -92,6 +92,9 @@ jobs:
       - name: Executar testes estáticos
         run: npm run test:static
 
+      - name: Executar testes de paginação em alto volume
+        run: npm run test:pagination
+
       - name: Gerar aplicação para os testes públicos
         run: npm run build
 
