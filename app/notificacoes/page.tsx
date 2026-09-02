@@ -4014,15 +4014,6 @@ function obterRotuloTipoAnotacaoDiarioNotificacao(tipo: string) {
   return "anotação";
 }
 
-function obterMetadataNotificacaoDiario(registro: Record<string, unknown>) {
-  const metadata = registro.metadata;
-
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-    return {} as Record<string, unknown>;
-  }
-
-  return metadata as Record<string, unknown>;
-}
 
 async function carregarNotificacoesDiarioSupabase(
   userId: string,
@@ -6191,66 +6182,10 @@ const containerStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  marginBottom: "14px",
-  padding: "2px 0",
-  minWidth: 0,
-};
 
-const mobileTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "9px",
-  padding: "0",
-};
 
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "calc(100% - 118px)",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
 
-const logoMarkStyle: CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "14px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-notificacoes-bg-deep, #000000)",
-  color: "#FFFFFF",
-  fontSize: "17px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  border: "1px solid var(--historietas-notificacoes-purple-border, rgba(59, 7, 100, 0.58))",
-  boxShadow: "none",
-  flex: "0 0 auto",
-};
 
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-notificacoes-purple-text, #FFFFFF) 44%, var(--historietas-notificacoes-purple-soft, #D4D4D8) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
 
 const notificacoesTopFilterBoxStyle: CSSProperties = {
   marginTop: "0",
@@ -6420,9 +6355,6 @@ const notificacoesHeaderFilterButtonStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const desktopNotificacoesHeaderFilterButtonStyle: CSSProperties = {
-  ...notificacoesHeaderFilterButtonStyle,
-};
 
 const notificacoesHeaderFilterIconStyle: CSSProperties = {
   color: "#FFFFFF",
@@ -6432,103 +6364,17 @@ const notificacoesHeaderFilterIconStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
-const topActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flex: "0 0 auto",
-};
 
-const desktopTopActionsStyle: CSSProperties = {
-  ...topActionsStyle,
-  gap: "10px",
-};
 
-const soonTopButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 13px",
-  borderRadius: "999px",
-  background: "var(--historietas-notificacoes-bg-deep, #000000)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-notificacoes-purple-text, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  textAlign: "center",
-  boxShadow: "none",
-  whiteSpace: "nowrap",
-  ...safeTextStyle,
-};
 
-const desktopSoonTopButtonStyle: CSSProperties = {
-  ...soonTopButtonStyle,
-  minHeight: "42px",
-  padding: "0 18px",
-};
 
-const heroStyle: CSSProperties = {
-  position: "relative",
-  borderRadius: "30px",
-  border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, var(--historietas-notificacoes-bg-page, #000000) 0%, var(--historietas-notificacoes-bg-deep, #000000) 58%, var(--historietas-notificacoes-bg-end, #020006) 100%)",
-  padding: "18px",
-  boxShadow: "none",
-  minWidth: 0,
-  overflow: "hidden",
-};
 
-const mobileHeroStyle: CSSProperties = {
-  ...heroStyle,
-  borderRadius: "28px",
-};
 
-const heroDecorationLayerStyle: CSSProperties = {
-  display: "none",
-};
 
-const heroSparkTopStyle: CSSProperties = {
-  display: "none",
-};
 
-const heroSparkMiddleStyle: CSSProperties = {
-  display: "none",
-};
 
-const heroSparkBottomStyle: CSSProperties = {
-  display: "none",
-};
 
-const titleStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: "8px auto 0",
-  fontSize: "clamp(34px, 10vw, 60px)",
-  lineHeight: 0.92,
-  fontWeight: 950,
-  letterSpacing: "-0.085em",
-  maxWidth: "100%",
-  textAlign: "center",
-  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #FFFFFF))",
-  textShadow: "none",
-  ...safeTextStyle,
-};
 
-const descriptionStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: "10px auto 0",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.55,
-  fontWeight: 720,
-  maxWidth: "680px",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 
 
@@ -6582,9 +6428,6 @@ const notificationSearchShellStyle: CSSProperties = {
   transformOrigin: "right center",
 };
 
-const desktopNotificationSearchShellStyle: CSSProperties = {
-  ...notificationSearchShellStyle,
-};
 
 const notificationSearchInputStyle: CSSProperties = {
   appearance: "none",
@@ -6809,186 +6652,26 @@ const notificationActionsDangerOptionDisabledStyle: CSSProperties = {
   cursor: "not-allowed",
 };
 
-const filterBoxStyle: CSSProperties = {
-  position: "relative",
-  marginTop: "12px",
-  display: "grid",
-  gap: "10px",
-  padding: "12px",
-  borderRadius: "22px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "visible",
-  boxSizing: "border-box",
-};
-
-const filterHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  padding: "0 58px",
-};
-
-const filterHeaderTitleBoxStyle: CSSProperties = {
-  width: "100%",
-  minWidth: 0,
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-};
-
-const desktopFilterHeaderTitleBoxStyle: CSSProperties = {
-  width: "100%",
-  minWidth: 0,
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-};
-
-const miniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #FFFFFF))",
-  fontSize: "10px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "0.09em",
-  textTransform: "uppercase",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const filterTitleStyle: CSSProperties = {
-  display: "none",
-};
-
-const filterResultBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "12px",
-  left: "12px",
-  width: "fit-content",
-  maxWidth: "calc(100% - 24px)",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "0",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 950,
-  boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const searchInputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "42px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-notificacoes-bg-deep, #000000)",
-  color: "#FFFFFF",
-  padding: "0 13px",
-  outline: "none",
-  fontSize: "12px",
-  fontWeight: 750,
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  minWidth: 0,
-  boxShadow: "none",
-};
 
 
 
 
 
-const filterFooterStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  minWidth: 0,
-};
 
-const selectStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "42px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-notificacoes-bg-deep, #000000)",
-  color: "#FFFFFF",
-  padding: "0 13px",
-  outline: "none",
-  fontSize: "12px",
-  fontWeight: 850,
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  minWidth: 0,
-  textAlign: "center",
-  boxShadow: "none",
-};
 
-const actionBarStyle: CSSProperties = {
-  marginTop: "12px",
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 168px), 1fr))",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const buttonBaseStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  padding: "0 6px",
-  color: "#FFFFFF",
-  fontWeight: 900,
-  fontSize: "10.5px",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  maxWidth: "100%",
-  WebkitTapHighlightColor: "transparent",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const primaryButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-notificacoes-surface, #050505)",
-  boxShadow: "none",
-};
 
-const secondaryButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-};
 
-const secondaryLinkButtonStyle: CSSProperties = {
-  ...secondaryButtonStyle,
-  textDecoration: "none",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
 
-const fullWidthSecondaryLinkButtonStyle: CSSProperties = {
-  ...secondaryLinkButtonStyle,
-  gridColumn: "1 / -1",
-  minHeight: "32px",
-};
 
-const dangerButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: "1px solid var(--historietas-notificacoes-danger-border, rgba(239,68,68,0.18))",
-  background: "var(--historietas-notificacoes-danger-bg, rgba(239,68,68,0.075))",
-  color: "var(--historietas-notificacoes-danger-text, #FFFFFF)",
-};
+
+
+
+
+
+
+
 
 const listStyle: CSSProperties = {
   marginTop: "9px",
@@ -7099,51 +6782,9 @@ const cardHeaderTextStyle: CSSProperties = {
   justifyItems: "stretch",
 };
 
-const notificationOriginRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "6px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
 
-const chapterOriginBadgeStyle: CSSProperties = {
-  minHeight: "22px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 8px",
-  borderRadius: "999px",
-  background: "var(--historietas-notificacoes-accent-bg, rgba(249,115,22,0.12))",
-  border: "1px solid var(--historietas-notificacoes-accent-border, rgba(249,115,22,0.20))",
-  color: "var(--historietas-accent, var(--historietas-notificacoes-accent, #FFFFFF))",
-  fontSize: "9px",
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.055em",
-};
 
-const communityOriginBadgeStyle: CSSProperties = {
-  ...chapterOriginBadgeStyle,
-  background: "var(--historietas-notificacoes-secondary-bg, rgba(124,58,237,0.16))",
-  border: "1px solid var(--historietas-notificacoes-secondary-border, rgba(124,58,237,0.26))",
-  color: "var(--historietas-notificacoes-purple-text, #FFFFFF)",
-};
 
-const notificationKindBadgeStyle: CSSProperties = {
-  minHeight: "22px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 8px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 900,
-  ...safeTextStyle,
-};
 
 const notificationTitleStyle: CSSProperties = {
   margin: 0,
@@ -7379,53 +7020,9 @@ const followerRequestRejectButtonDisabledStyle: CSSProperties = {
   cursor: "not-allowed",
 };
 
-const cardActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "5px",
-  marginTop: "3px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const communityCardActionsStyle: CSSProperties = {
-  ...cardActionsStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-};
 
-const openChapterLinkStyle: CSSProperties = {
-  minHeight: "34px",
-  borderRadius: "999px",
-  background: "var(--historietas-notificacoes-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "10.5px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 6px",
-  boxSizing: "border-box",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const emptyStyle: CSSProperties = {
-  marginTop: "12px",
-  borderRadius: "24px",
-  padding: "24px 18px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  textAlign: "center",
-  display: "grid",
-  justifyItems: "center",
-  gap: "9px",
-  minWidth: 0,
-  overflow: "hidden",
-  boxShadow: "none",
-};
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
@@ -7433,69 +7030,16 @@ const desktopContainerStyle: CSSProperties = {
   padding: "34px 0 64px",
 };
 
-const desktopTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "13px",
-};
-
-const desktopHeroStyle: CSSProperties = {
-  ...heroStyle,
-  padding: "20px 28px",
-  borderRadius: "32px",
-  minHeight: "138px",
-  display: "grid",
-  alignContent: "center",
-};
-
-const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  margin: "0 auto",
-  fontSize: "clamp(46px, 4.7vw, 72px)",
-  lineHeight: 0.94,
-  maxWidth: "760px",
-};
-
-const desktopDescriptionStyle: CSSProperties = {
-  ...descriptionStyle,
-  margin: "10px auto 0",
-  fontSize: "15px",
-  lineHeight: 1.62,
-  maxWidth: "680px",
-};
 
 
-const desktopFilterBoxStyle: CSSProperties = {
-  ...filterBoxStyle,
-  padding: "16px",
-  borderRadius: "24px",
-  gap: "12px",
-};
-
-const desktopFilterHeaderStyle: CSSProperties = {
-  ...filterHeaderStyle,
-  flexWrap: "nowrap",
-};
-
-const desktopSearchInputStyle: CSSProperties = {
-  ...searchInputStyle,
-  minHeight: "44px",
-  fontSize: "13px",
-};
 
 
-const desktopFilterFooterStyle: CSSProperties = {
-  ...filterFooterStyle,
-  gridTemplateColumns: "minmax(220px, 280px) auto",
-  alignItems: "center",
-  justifyContent: "start",
-  gap: "10px",
-};
 
-const desktopActionBarStyle: CSSProperties = {
-  ...actionBarStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "10px",
-};
+
+
+
+
+
 
 const desktopListStyle: CSSProperties = {
   ...listStyle,
@@ -7558,21 +7102,4 @@ const desktopCommunityMetaGridStyle: CSSProperties = {
   ...communityMetaGridStyle,
   gridTemplateColumns: "1fr",
   gap: 0,
-};
-
-const desktopCardActionsStyle: CSSProperties = {
-  ...cardActionsStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "6px",
-};
-
-const desktopCommunityCardActionsStyle: CSSProperties = {
-  ...desktopCardActionsStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-};
-
-const desktopEmptyStyle: CSSProperties = {
-  ...emptyStyle,
-  minHeight: "360px",
-  padding: "34px",
 };
