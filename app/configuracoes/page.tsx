@@ -705,22 +705,50 @@ type ResultadoContagemResumoSupabase = {
   total: number;
 };
 
+type TabelaResumoSupabase =
+  | "obras"
+  | "favoritos"
+  | "concluidas"
+  | "seguindo_obras"
+  | "seguindo_usuarios";
+
 async function contarRegistrosResumoSupabase({
   tabela,
-  campoSelecionado,
-  colunaUsuario,
   userId,
 }: {
-  tabela: string;
-  campoSelecionado: string;
-  colunaUsuario: string;
+  tabela: TabelaResumoSupabase;
   userId: string;
 }): Promise<ResultadoContagemResumoSupabase> {
   try {
-    const { count, error } = await supabase
-      .from(tabela)
-      .select(campoSelecionado, { count: "exact", head: true })
-      .eq(colunaUsuario, userId);
+    const consultas = {
+      obras: () =>
+        supabase
+          .from("obras")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId),
+      favoritos: () =>
+        supabase
+          .from("favoritos")
+          .select("obra_id", { count: "exact", head: true })
+          .eq("user_id", userId),
+      concluidas: () =>
+        supabase
+          .from("concluidas")
+          .select("obra_id", { count: "exact", head: true })
+          .eq("user_id", userId),
+      seguindo_obras: () =>
+        supabase
+          .from("seguindo_obras")
+          .select("obra_id", { count: "exact", head: true })
+          .eq("user_id", userId),
+      seguindo_usuarios: () =>
+        supabase
+          .from("seguindo_usuarios")
+          .select("id", { count: "exact", head: true })
+          .eq("seguidor_id", userId),
+    } satisfies Record<TabelaResumoSupabase, () => PromiseLike<unknown>>;
+
+    const { count, error } = await consultas[tabela]();
 
     if (error) {
       console.warn(
@@ -762,32 +790,22 @@ async function carregarResumoContaSupabase(
   ] = await Promise.all([
     contarRegistrosResumoSupabase({
       tabela: "obras",
-      campoSelecionado: "id",
-      colunaUsuario: "user_id",
       userId: userIdLimpo,
     }),
     contarRegistrosResumoSupabase({
       tabela: "favoritos",
-      campoSelecionado: "obra_id",
-      colunaUsuario: "user_id",
       userId: userIdLimpo,
     }),
     contarRegistrosResumoSupabase({
       tabela: "concluidas",
-      campoSelecionado: "obra_id",
-      colunaUsuario: "user_id",
       userId: userIdLimpo,
     }),
     contarRegistrosResumoSupabase({
       tabela: "seguindo_obras",
-      campoSelecionado: "obra_id",
-      colunaUsuario: "user_id",
       userId: userIdLimpo,
     }),
     contarRegistrosResumoSupabase({
       tabela: "seguindo_usuarios",
-      campoSelecionado: "id",
-      colunaUsuario: "seguidor_id",
       userId: userIdLimpo,
     }),
   ]);

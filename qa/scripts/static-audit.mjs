@@ -217,6 +217,71 @@ const sourceByPath = new Map(
   sourceFiles.map((file) => [file.full, file])
 );
 
+const databaseTypesPath = path.join(
+  ROOT_DIR,
+  "lib/supabase/database.types.ts"
+);
+const databaseTypes = fs.existsSync(databaseTypesPath)
+  ? fs.readFileSync(databaseTypesPath, "utf8")
+  : "";
+
+if (
+  /obter_arquivo_obra_para_assinatura:\s*\{[\s\S]*?p_obra_id:\s*string[\s\S]*?arquivo_url:\s*string/.test(
+    databaseTypes
+  )
+) {
+  pass(
+    "tipos do Supabase refletem o schema remoto",
+    "RPC obter_arquivo_obra_para_assinatura presente"
+  );
+} else {
+  fail(
+    "tipos do Supabase refletem o schema remoto",
+    "RPC remota ausente em lib/supabase/database.types.ts"
+  );
+}
+
+const typedSupabaseClientContracts = [
+  {
+    name: "cliente Supabase do browser é tipado",
+    relative: "lib/supabase/client.ts",
+    factory: /createBrowserClient<Database>/,
+    client: /SupabaseClient<Database>/
+  },
+  {
+    name: "cliente Supabase do servidor é tipado",
+    relative: "lib/supabase/server.ts",
+    factory: /createServerClient<Database>/,
+    client: /SupabaseClient<Database>/
+  },
+  {
+    name: "cliente Supabase administrativo é tipado",
+    relative: "lib/supabase/admin.ts",
+    factory: /createClient<Database>/,
+    client: /SupabaseClient<Database>/
+  }
+];
+
+for (const contract of typedSupabaseClientContracts) {
+  const filePath = path.join(ROOT_DIR, contract.relative);
+  const content = fs.existsSync(filePath)
+    ? fs.readFileSync(filePath, "utf8")
+    : "";
+
+  if (
+    /import type \{ Database \}/.test(content) &&
+    contract.factory.test(content) &&
+    contract.client.test(content)
+  ) {
+    pass(contract.name, contract.relative);
+  } else {
+    fail(
+      contract.name,
+      `Database não propagado em ${contract.relative}`
+    );
+  }
+}
+
 const sensitiveServerModulePaths = new Set(
   sourceFiles
     .filter((file) => {

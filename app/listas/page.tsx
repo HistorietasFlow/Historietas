@@ -999,9 +999,16 @@ async function carregarObrasPublicadas(idsEspecificos: string[] = []) {
   }
 }
 
+type TabelaRegistrosUsuarioListas =
+  | "seguindo_obras"
+  | "favoritos"
+  | "concluidas"
+  | "obra_avaliacoes"
+  | "progresso_leitura"
+  | "diario_anotacoes";
+
 async function carregarRegistrosUsuario(
-  tabela: string,
-  campos: string,
+  tabela: TabelaRegistrosUsuarioListas,
   userId: string,
 ) {
   if (!idUsuarioValido(userId)) {
@@ -1009,11 +1016,53 @@ async function carregarRegistrosUsuario(
   }
 
   try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select(campos)
-      .eq("user_id", userId)
-      .limit(2000);
+    const consultas = {
+      seguindo_obras: () =>
+        supabase
+          .from("seguindo_obras")
+          .select("obra_id,visibilidade,criado_em")
+          .eq("user_id", userId)
+          .limit(2000),
+      favoritos: () =>
+        supabase
+          .from("favoritos")
+          .select("obra_id,visibilidade,criado_em")
+          .eq("user_id", userId)
+          .limit(2000),
+      concluidas: () =>
+        supabase
+          .from("concluidas")
+          .select("obra_id,visibilidade,criado_em")
+          .eq("user_id", userId)
+          .limit(2000),
+      obra_avaliacoes: () =>
+        supabase
+          .from("obra_avaliacoes")
+          .select("obra_id,nota,criado_em,atualizado_em")
+          .eq("user_id", userId)
+          .limit(2000),
+      progresso_leitura: () =>
+        supabase
+          .from("progresso_leitura")
+          .select(
+            "obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
+          )
+          .eq("user_id", userId)
+          .limit(2000),
+      diario_anotacoes: () =>
+        supabase
+          .from("diario_anotacoes")
+          .select(
+            "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,criado_em,atualizado_em",
+          )
+          .eq("user_id", userId)
+          .limit(2000),
+    } satisfies Record<
+      TabelaRegistrosUsuarioListas,
+      () => PromiseLike<unknown>
+    >;
+
+    const { data, error } = await consultas[tabela]();
 
     if (error) {
       console.warn(`Nao consegui carregar ${tabela} na pagina Listas:`, error.message);
@@ -1708,32 +1757,26 @@ async function carregarListasDoPerfil(
     await Promise.all([
       carregarRegistrosUsuario(
         "seguindo_obras",
-        "obra_id,visibilidade,criado_em",
         userId,
       ),
       carregarRegistrosUsuario(
         "favoritos",
-        "obra_id,visibilidade,criado_em",
         userId,
       ),
       carregarRegistrosUsuario(
         "concluidas",
-        "obra_id,visibilidade,criado_em",
         userId,
       ),
       carregarRegistrosUsuario(
         "obra_avaliacoes",
-        "obra_id,nota,criado_em,atualizado_em",
         userId,
       ),
       carregarRegistrosUsuario(
         "progresso_leitura",
-        "obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
         userId,
       ),
       carregarRegistrosUsuario(
         "diario_anotacoes",
-        "id,obra_id,tipo,texto,visibilidade,quem_pode_comentar,visibilidade_comentarios,permitir_curtidas,contem_spoiler,criado_em,atualizado_em",
         userId,
       ),
     ]);
@@ -2143,10 +2186,39 @@ async function carregarIdsInteracoesUsuario(userId: string) {
     return [] as string[];
   }
 
+  const carregarIds = async (
+    tabela: "favoritos" | "seguindo_obras" | "concluidas",
+  ) => {
+    const consultas = {
+      favoritos: () =>
+        supabase
+          .from("favoritos")
+          .select("obra_id")
+          .eq("user_id", userId),
+      seguindo_obras: () =>
+        supabase
+          .from("seguindo_obras")
+          .select("obra_id")
+          .eq("user_id", userId),
+      concluidas: () =>
+        supabase
+          .from("concluidas")
+          .select("obra_id")
+          .eq("user_id", userId),
+    };
+    const { data, error } = await consultas[tabela]();
+
+    if (error || !Array.isArray(data)) {
+      return [];
+    }
+
+    return data.map(({ obra_id }) => ({ obra_id }));
+  };
+
   const [favoritas, seguindo, concluidas] = await Promise.all([
-    carregarRegistrosUsuario("favoritos", "obra_id", userId),
-    carregarRegistrosUsuario("seguindo_obras", "obra_id", userId),
-    carregarRegistrosUsuario("concluidas", "obra_id", userId),
+    carregarIds("favoritos"),
+    carregarIds("seguindo_obras"),
+    carregarIds("concluidas"),
   ]);
 
   return Array.from(

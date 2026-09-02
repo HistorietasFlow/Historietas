@@ -974,6 +974,7 @@ async function salvarPostSalvoSupabaseComunidade(
 
       const { error: erroInsert } = await supabase.from(tabela).insert({
         user_id: userIdLimpo,
+        usuario_id: userIdLimpo,
         post_id: postIdLimpo,
       });
 
@@ -1887,8 +1888,6 @@ async function criarNotificacaoComunidadeSupabase({
       p_mensagem: mensagemLimpa,
       p_link: linkLimpo,
       p_notificacao_id: notificacaoIdLimpo,
-      p_obra_id: null,
-      p_capitulo_id: null,
     });
 
     return !error;

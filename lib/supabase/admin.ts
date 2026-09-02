@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
 const supabaseServiceRoleKey =
@@ -26,14 +27,14 @@ export const supabaseAdminConfigurado = Boolean(
   urlSupabaseValida(supabaseUrl) && supabaseServiceRoleKey,
 );
 
-export function criarSupabaseAdminClient(): SupabaseClient {
+export function criarSupabaseAdminClient(): SupabaseClient<Database> {
   if (!supabaseAdminConfigurado) {
     throw new Error(
       "Supabase Admin não configurado. Defina SUPABASE_SERVICE_ROLE_KEY somente no servidor.",
     );
   }
 
-  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+  return createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
