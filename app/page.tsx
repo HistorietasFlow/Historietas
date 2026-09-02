@@ -2871,14 +2871,13 @@ export default function Home() {
 
   useEffect(() => {
     let cancelado = false;
+    const reiniciarCarregamentoTimer = window.setTimeout(() => {
+      if (!cancelado) {
+        setDadosHomeCarregados(false);
+      }
+    }, 0);
 
     async function carregarDadosHome() {
-      window.setTimeout(() => {
-        if (!cancelado) {
-          setDadosHomeCarregados(false);
-        }
-      }, 0);
-
       try {
         let userIdHome = usuarioIdLogado.trim();
         if (!userIdHome) {
@@ -2955,12 +2954,14 @@ export default function Home() {
         );
 
         if (!cancelado) {
+          window.clearTimeout(reiniciarCarregamentoTimer);
           setObrasLocais(obrasComSupabase);
           setPerfisAutores(carregarPerfisAutoresHomeSalvos(userIdHome));
           setDadosHomeCarregados(true);
         }
       } catch {
         if (!cancelado) {
+          window.clearTimeout(reiniciarCarregamentoTimer);
           setObrasLocais([]);
           setObrasFavoritas([]);
           setObrasConcluidas([]);
@@ -2974,6 +2975,7 @@ export default function Home() {
 
     return () => {
       cancelado = true;
+      window.clearTimeout(reiniciarCarregamentoTimer);
     };
   }, [usuarioIdLogado]);
 

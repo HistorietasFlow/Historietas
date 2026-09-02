@@ -1806,6 +1806,92 @@ for (const script of [
   }
 }
 
+const ciWorkflowPath = path.join(
+  ROOT_DIR,
+  ".github/workflows/ci.yml"
+);
+const ciWorkflow = fs.existsSync(ciWorkflowPath)
+  ? fs.readFileSync(ciWorkflowPath, "utf8")
+  : "";
+const playwrightConfigPath = path.join(
+  ROOT_DIR,
+  "qa/playwright.config.mjs"
+);
+const playwrightConfig = fs.existsSync(playwrightConfigPath)
+  ? fs.readFileSync(playwrightConfigPath, "utf8")
+  : "";
+
+const ciContracts = [
+  {
+    name: "CI valida pull requests e a main",
+    valid:
+      /pull_request:[\s\S]*?branches:[\s\S]*?- main/.test(ciWorkflow) &&
+      /push:[\s\S]*?branches:[\s\S]*?- main/.test(ciWorkflow)
+  },
+  {
+    name: "CI executa lint, typecheck, testes e build",
+    valid: [
+      "npm run lint",
+      "npm run typecheck",
+      "npm run test:static",
+      "npm --prefix qa test",
+      "npm run build"
+    ].every((command) => ciWorkflow.includes(command))
+  },
+  {
+    name: "CI testa o código do PR sem segredos",
+    valid:
+      /E2E_BASE_URL:\s*http:\/\/127\.0\.0\.1:3000/.test(ciWorkflow) &&
+      !/\$\{\{\s*secrets\./.test(ciWorkflow)
+  },
+  {
+    name: "CI executa Playwright no build de produção",
+    valid:
+      (ciWorkflow.match(/npm run build/g) || []).length === 2 &&
+      /E2E_WEB_SERVER_COMMAND:\s*npm --prefix \.\. run start/.test(
+        ciWorkflow
+      ) &&
+      /process\.env\.E2E_WEB_SERVER_COMMAND/.test(playwrightConfig)
+  },
+  {
+    name: "CI usa Node.js 22 em todos os jobs",
+    valid: (ciWorkflow.match(/node-version:\s*22/g) || []).length === 4
+  },
+  {
+    name: "CI limita o token do GitHub a leitura",
+    valid:
+      /permissions:\s*\n\s*contents:\s*read/.test(ciWorkflow) &&
+      (ciWorkflow.match(/persist-credentials:\s*false/g) || []).length === 4
+  }
+];
+
+for (const contract of ciContracts) {
+  if (contract.valid) {
+    pass(contract.name, ".github/workflows/ci.yml");
+  } else {
+    fail(contract.name, "contrato ausente em .github/workflows/ci.yml");
+  }
+}
+
+const ciActions = [
+  ...ciWorkflow.matchAll(/^\s*uses:\s*([^\s#]+)/gm)
+].map((match) => match[1]);
+
+if (
+  ciActions.length > 0 &&
+  ciActions.every((action) => /@[0-9a-f]{40}$/.test(action))
+) {
+  pass(
+    "CI fixa GitHub Actions por SHA",
+    `${ciActions.length} usos verificados`
+  );
+} else {
+  fail(
+    "CI fixa GitHub Actions por SHA",
+    "há Action ausente ou referenciada por tag mutável"
+  );
+}
+
 const migrationCount = migrationFiles.length;
 
 pass(
