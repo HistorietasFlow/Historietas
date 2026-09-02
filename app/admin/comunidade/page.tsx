@@ -48,83 +48,13 @@ type DenunciaComunidade = {
   criadoEm: string;
 };
 
-type PostDenunciado = {
-  id: string;
-  autor_nome: string;
-  categoria: string;
-  tipo_publicacao: string | null;
-  tem_spoiler: boolean | null;
-  texto: string;
-  obra_relacionada: string | null;
-  criado_em: string;
-};
 
-type ComentarioDenunciado = {
-  id: string;
-  post_id: string;
-  autor_nome: string;
-  texto: string;
-  criado_em: string;
-};
 
-type ComentarioCapituloDenunciado = {
-  id: string;
-  capitulo_id: string;
-  user_id: string;
-  comentario: string;
-  criado_em: string;
-};
 
-type CapituloDenunciado = {
-  id: string;
-  obra_id: string;
-  user_id: string;
-  titulo: string | null;
-  texto: string | null;
-  ordem: number | null;
-  publicado: boolean | null;
-  criado_em: string;
-};
 
-type ObraDenunciada = {
-  id: string;
-  user_id: string;
-  titulo: string | null;
-  autor: string | null;
-  slug: string | null;
-  link: string | null;
-  publicado: boolean | null;
-  criada_em: string;
-};
 
-type ComentarioObraDenunciado = {
-  id: string;
-  obra_id: string;
-  user_id: string;
-  comentario: string;
-  criado_em: string;
-};
 
-type DiarioAnotacaoDenunciada = {
-  id: string;
-  obra_id: string;
-  user_id: string;
-  tipo: string | null;
-  texto: string;
-  visibilidade: string | null;
-  contem_spoiler: boolean | null;
-  criado_em: string;
-  atualizado_em: string | null;
-};
 
-type ComentarioDiarioDenunciado = {
-  id: string;
-  anotacao_id: string;
-  user_id: string;
-  texto: string;
-  criado_em: string;
-  atualizado_em: string | null;
-};
 
 
 type PerfilModeracao = {

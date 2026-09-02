@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../../lib/supabase/client";
 import {
@@ -54,12 +54,6 @@ type ProblemaTecnico = {
   atualizadoEm: string;
 };
 
-type PerfilChamadoTecnico = {
-  id?: string | null;
-  user_id?: string | null;
-  nome?: string | null;
-  username?: string | null;
-};
 
 type TextoTraduzido = {
   pt: string;
@@ -290,9 +284,10 @@ export default function AdminProblemasTecnicosPage() {
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
 
-  function t(texto: TextoTraduzido) {
-    return traduzir(texto, language);
-  }
+  const t = useCallback(
+    (texto: TextoTraduzido) => traduzir(texto, language),
+    [language],
+  );
 
   async function verificarAdministrador() {
     const { data: respostaPrincipal, error: erroPrincipal } =
@@ -312,7 +307,7 @@ export default function AdminProblemasTecnicosPage() {
     return respostaSuporte === true;
   }
 
-  async function carregarNomes(userIds: string[]) {
+  const carregarNomes = useCallback(async (userIds: string[]) => {
     const ids = Array.from(
       new Set(userIds.map((id) => id.trim()).filter(Boolean)),
     );
@@ -362,9 +357,9 @@ export default function AdminProblemasTecnicosPage() {
     });
 
     setNomesUsuarios(mapa);
-  }
+  }, [t]);
 
-  async function carregarProblemas() {
+  const carregarProblemas = useCallback(async () => {
     setErro("");
 
     const { data, error } = await supabase
@@ -408,7 +403,7 @@ export default function AdminProblemasTecnicosPage() {
       }, {}),
     );
     await carregarNomes(registros.map((problema) => problema.userId));
-  }
+  }, [carregarNomes]);
 
   useEffect(() => {
     let cancelado = false;
@@ -463,7 +458,7 @@ export default function AdminProblemasTecnicosPage() {
     return () => {
       cancelado = true;
     };
-  }, [router]);
+  }, [carregarProblemas, router]);
 
   const problemasFiltrados = useMemo(() => {
     const termo = normalizarTexto(busca);
@@ -494,7 +489,7 @@ export default function AdminProblemasTecnicosPage() {
 
       return conteudo.includes(termo);
     });
-  }, [busca, language, nomesUsuarios, problemas, statusFiltro]);
+  }, [busca, nomesUsuarios, problemas, statusFiltro, t]);
 
   const totais = useMemo(
     () => ({

@@ -41,12 +41,6 @@ type ArquivoStoragePainel = {
   caminho: string;
 };
 
-type ObraStoragePainelRow = {
-  id: string;
-  user_id: string | null;
-  capa_url: string | null;
-  arquivo_url: string | null;
-};
 
 type ObraLocal = {
   id: string;
@@ -680,11 +674,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulosPublicados.length) * 100);
 }
 
-function obraTemConteudoPainel(
-  obra: Pick<ObraLocal, "capitulos" | "arquivoObra">
-) {
-  return obra.capitulos.length > 0 || Boolean(normalizarArquivoObra(obra.arquivoObra));
-}
 
 function obraPublicadaComConteudoPainel(
   obra: Pick<ObraLocal, "publicado" | "capitulos" | "arquivoObra">
@@ -3125,8 +3114,6 @@ export default function PainelAutorPage() {
         ) : (
           <PainelSecao
             obras={obrasFiltradas}
-            obrasFavoritas={obrasFavoritas}
-            obrasConcluidas={obrasConcluidas}
             isDesktop={isDesktop}
             onAbrirArquivo={abrirArquivoObra}
             onCompartilhar={compartilharObra}
@@ -3159,16 +3146,12 @@ function criarPerfilAutorHref(autor: string, autorId?: string, userId?: string) 
 
 function PainelSecao({
   obras,
-  obrasFavoritas,
-  obrasConcluidas,
   isDesktop,
   onAbrirArquivo,
   onCompartilhar,
   onExcluirObra,
 }: {
   obras: ObraComMetricas[];
-  obrasFavoritas: string[];
-  obrasConcluidas: string[];
   isDesktop: boolean;
   onAbrirArquivo: (obra: ObraLocal) => void | Promise<void>;
   onCompartilhar: (obra: ObraLocal) => void | Promise<void>;
@@ -3185,8 +3168,6 @@ function PainelSecao({
           <ObraPainelCard
             key={obra.id}
             obra={obra}
-            favoritada={colecaoTemObraPainel(obrasFavoritas, obra)}
-            concluida={colecaoTemObraPainel(obrasConcluidas, obra)}
             isDesktop={isDesktop}
             onAbrirArquivo={onAbrirArquivo}
             onCompartilhar={onCompartilhar}
@@ -3200,16 +3181,12 @@ function PainelSecao({
 
 function ObraPainelCard({
   obra,
-  favoritada,
-  concluida,
   isDesktop,
   onAbrirArquivo,
   onCompartilhar,
   onExcluirObra,
 }: {
   obra: ObraComMetricas;
-  favoritada: boolean;
-  concluida: boolean;
   isDesktop: boolean;
   onAbrirArquivo: (obra: ObraLocal) => void | Promise<void>;
   onCompartilhar: (obra: ObraLocal) => void | Promise<void>;
@@ -3837,12 +3814,6 @@ const topSearchShellStyle: CSSProperties = {
   transformOrigin: "right center",
 };
 
-const desktopTopSearchShellStyle: CSSProperties = {
-  ...topSearchShellStyle,
-  flex: "1 1 auto",
-  width: "auto",
-  maxWidth: "520px",
-};
 
 const topSearchInputStyle: CSSProperties = {
   appearance: "none",
@@ -4103,26 +4074,8 @@ const sectionStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const sectionHeaderStyle: CSSProperties = {
-  marginBottom: "5px",
-  minWidth: 0,
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-};
 
 
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "28px",
-  lineHeight: 1.08,
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
-  maxWidth: "100%",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 
 const worksGridStyle: CSSProperties = {
@@ -4248,18 +4201,6 @@ const draftStatusStyle: CSSProperties = {
 };
 
 
-const panelTinyInfoStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.72)",
-  fontSize: "12px",
-  lineHeight: 1.2,
-  fontWeight: 850,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  textAlign: "center",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
 const workTitleStyle: CSSProperties = {
   margin: 0,
@@ -4536,18 +4477,6 @@ const workActionSheetTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const workActionSheetMetaStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.72)",
-  fontSize: "12px",
-  fontWeight: 850,
-  lineHeight: 1.2,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  textAlign: "center",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
 
 const desktopContainerStyle: CSSProperties = {
@@ -4577,10 +4506,6 @@ const desktopSectionStyle: CSSProperties = {
   marginTop: "12px",
 };
 
-const desktopSectionHeaderStyle: CSSProperties = {
-  ...sectionHeaderStyle,
-  marginBottom: "8px",
-};
 
 const desktopWorksGridStyle: CSSProperties = {
   ...worksGridStyle,
@@ -4608,20 +4533,6 @@ const desktopCardActionsGridStyle: CSSProperties = {
   ...actionsGridStyle,
 };
 
-const emptyBoxStyle: CSSProperties = {
-  marginTop: "24px",
-  borderRadius: "24px",
-  background: "var(--historietas-painel-card-bg, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.06)",
-  padding: "22px",
-  display: "grid",
-  gap: "12px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
 
 const emptyMiniBoxStyle: CSSProperties = {
   marginTop: "18px",
@@ -4668,25 +4579,4 @@ const emptyMiniButtonStyle: CSSProperties = {
   fontSize: "11px",
   fontWeight: 950,
   cursor: "pointer",
-};
-
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #FFFFFF)",
-  fontSize: "28px",
-  lineHeight: 1.12,
-  fontWeight: 950,
-  letterSpacing: "-0.05em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const emptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.7,
-  fontWeight: 600,
-  maxWidth: "100%",
-  ...safeTextStyle,
 };

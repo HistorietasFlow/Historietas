@@ -39,7 +39,6 @@ const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const DURACAO_UTIL_URL_ARQUIVO_OBRA_MS = 9 * 60 * 1000;
 const WORK_COMMENTS_STORAGE_KEY = "historietas-comentarios-obras";
 const WORK_COMMENT_LIKES_TABLE = "comentarios_obras_curtidas";
-const VERSAO_INTERACOES_OBRA_PUBLICA = "fix-interacoes-obra-2026-06-16-0022";
 
 type TraducaoObraDinamica = {
   en: string;
@@ -339,7 +338,6 @@ function traduzirTextoObraDinamica(
   if (correspondencia) {
     const quantidade = Number(correspondencia[1]);
     const unidade = correspondencia[2].toLowerCase();
-    const singular = quantidade === 1;
     const unidadesEn: Record<string, string> = {
       segundo: "second",
       segundos: "seconds",
@@ -919,10 +917,6 @@ type AlvoDenunciaObraDinamica = {
   alvoTitulo: string;
 };
 
-type SupabaseCurtidaComentarioObraRow = {
-  comentario_id: string | null;
-  usuario_id: string | null;
-};
 
 type MetricasObraPublica = {
   visualizacoes: number;
@@ -2336,9 +2330,6 @@ function obterAvaliacaoLocalDetalhada(
   };
 }
 
-function obterAvaliacaoLocal(obra: ObraDinamica, userId = "") {
-  return obterAvaliacaoLocalDetalhada(obra, userId).nota;
-}
 
 function salvarAvaliacaoLocal(obra: ObraDinamica, nota: number, userId = "") {
   const userIdLimpo = userId.trim();
@@ -3376,7 +3367,7 @@ export default function ObraDinamicaPage() {
 
       return { obraId: obra.id, status: proximoStatus };
     });
-  }, [obra?.id, obra?.classificacaoIndicativa]);
+  }, [obra]);
 
   useEffect(() => {
     if (
@@ -3413,7 +3404,7 @@ export default function ObraDinamicaPage() {
     }
 
     void registrarVisualizacaoObraAtual();
-  }, [obra?.id, statusAcesso18]);
+  }, [obra, statusAcesso18]);
 
   useEffect(() => {
     let cancelado = false;
@@ -3599,7 +3590,7 @@ export default function ObraDinamicaPage() {
     return () => {
       cancelado = true;
     };
-  }, [obra?.id, usuarioIdLogado]);
+  }, [obra, usuarioIdLogado]);
 
   useEffect(() => {
     if (!obraNormalizada) {
@@ -3665,7 +3656,7 @@ export default function ObraDinamicaPage() {
     return () => {
       window.clearTimeout(aplicarEstadoColecoesTimer);
     };
-  }, [obra?.id, obra?.slug, obraNormalizada, usuarioIdLogado]);
+  }, [obra, obraNormalizada, usuarioIdLogado]);
 
   useEffect(() => {
     if (!obra) {
@@ -3977,9 +3968,7 @@ export default function ObraDinamicaPage() {
       window.clearTimeout(aplicarAvaliacaoLocalTimer);
     };
   }, [
-    obra?.id,
-    obra?.slug,
-    obra?.autorId,
+    obra,
     obraNormalizada,
     usuarioIdLogado,
   ]);
@@ -6945,20 +6934,8 @@ const heroTitleOutlineStyle: CSSProperties = {
     "-1px -1px 0 rgba(0,0,0,0.86), 1px -1px 0 rgba(0,0,0,0.86), -1px 1px 0 rgba(0,0,0,0.86), 1px 1px 0 rgba(0,0,0,0.86)",
 };
 
-const heroTextOutlineStyle: CSSProperties = {
-  textShadow:
-    "-1px -1px 0 rgba(0,0,0,0.78), 1px -1px 0 rgba(0,0,0,0.78), -1px 1px 0 rgba(0,0,0,0.78), 1px 1px 0 rgba(0,0,0,0.78)",
-};
 
-const heroSmallTextOutlineStyle: CSSProperties = {
-  textShadow:
-    "-1px -1px 0 rgba(0,0,0,0.74), 1px -1px 0 rgba(0,0,0,0.74), -1px 1px 0 rgba(0,0,0,0.74), 1px 1px 0 rgba(0,0,0,0.74)",
-};
 
-const heroIconOutlineStyle: CSSProperties = {
-  textShadow:
-    "-1px -1px 0 rgba(0,0,0,0.72), 1px -1px 0 rgba(0,0,0,0.72), -1px 1px 0 rgba(0,0,0,0.72), 1px 1px 0 rgba(0,0,0,0.72)",
-};
 
 const mobileTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
@@ -7315,13 +7292,7 @@ const metricWhiteNumberStyle: CSSProperties = {
   lineHeight: 1,
 };
 
-const metricStarIconStyle: CSSProperties = {
-  color: "var(--historietas-obra-rating, #FFFFFF)",
-};
 
-const metricStarValueStyle: CSSProperties = {
-  color: "var(--historietas-obra-rating, #FFFFFF)",
-};
 
 const heroBottomMetaBarStyle: CSSProperties = {
   position: "relative",
@@ -7374,27 +7345,6 @@ const heroBottomMetricStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const primaryButtonStyle: CSSProperties = {
-  gridColumn: "1 / -1",
-  minHeight: "34px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-accent, #FFFFFF)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "10.5px",
-  fontWeight: 950,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 8px",
-  boxShadow: "none",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
 
 const secondaryButtonStyle: CSSProperties = {
   minHeight: "50px",
@@ -7624,10 +7574,6 @@ const obraMenuMetricStyle: CSSProperties = {
   color: "#FFFFFF",
 };
 
-const obraMenuStarMetricStyle: CSSProperties = {
-  ...obraMenuMetricStyle,
-  color: "#FFFFFF",
-};
 
 const obraMenuTagsStyle: CSSProperties = {
   display: "flex",
@@ -7752,15 +7698,6 @@ const synopsisToggleIconStyle: CSSProperties = {
   transition: "transform 220ms ease",
 };
 
-const actionMessageStyle: CSSProperties = {
-  gridColumn: "1 / -1",
-  justifySelf: "center",
-  color: "#FFFFFF",
-  fontSize: "10.5px",
-  fontWeight: 850,
-  ...heroSmallTextOutlineStyle,
-  ...safeTextStyle,
-};
 
 const statsGridStyle: CSSProperties = {
   display: "grid",
@@ -8692,28 +8629,7 @@ const communityLabelStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const reviewBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  display: "grid",
-  gap: "10px",
-  minWidth: 0,
-  overflow: "visible",
-  boxShadow: "none",
-};
 
-const reviewTopStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "10px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  textAlign: "center",
-};
 
 const ratingSummaryStyle: CSSProperties = {
   flex: "0 0 auto",
@@ -8793,38 +8709,9 @@ const ratingTotalStyle: CSSProperties = {
 };
 
 
-const commentsGridStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  minWidth: 0,
-};
 
-const commentCardStyle: CSSProperties = {
-  padding: "9px",
-  borderRadius: "15px",
-  background: "rgba(255,255,255,0.045)",
-  border: "1px solid rgba(255,255,255,0.07)",
-  display: "grid",
-  gap: "5px",
-  minWidth: 0,
-  boxShadow: "none",
-};
 
-const commentAuthorStyle: CSSProperties = {
-  color: "var(--historietas-accent, #FFFFFF)",
-  fontSize: "12px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const commentTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.5,
-  fontWeight: 650,
-  ...safeTextStyle,
-};
 
 const chaptersSectionStyle: CSSProperties = {
   marginTop: "14px",
@@ -8926,32 +8813,8 @@ const chapterContentStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const chapterTopLineStyle: CSSProperties = {
-  display: "flex",
-  gap: "6px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
 
-const chapterOrderBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const chapterStatusBadgeStyle: CSSProperties = {
-  ...chapterOrderBadgeStyle,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-};
 
 const chapterTitleStyle: CSSProperties = {
   margin: 0,
@@ -9269,19 +9132,7 @@ const desktopCommunityBoxStyle: CSSProperties = {
   gap: "10px",
 };
 
-const desktopReviewBoxStyle: CSSProperties = {
-  ...reviewBoxStyle,
-  marginTop: "14px",
-  padding: 0,
-  borderRadius: 0,
-  gap: "12px",
-};
 
-const desktopCommentsGridStyle: CSSProperties = {
-  ...commentsGridStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
-};
 
 const desktopChaptersListStyle: CSSProperties = {
   ...chaptersListStyle,
@@ -9293,14 +9144,4 @@ const desktopChapterCardStyle: CSSProperties = {
   gridTemplateColumns: "50px minmax(0, 1fr) 126px",
   padding: "10px",
   gap: "10px",
-};
-
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, #FFFFFF)",
-  fontSize: "clamp(34px, 10vw, 58px)",
-  lineHeight: 0.95,
-  fontWeight: 950,
-  letterSpacing: "-0.08em",
-  ...safeTextStyle,
 };

@@ -74,7 +74,6 @@ const TEXTOS = {
 } satisfies Record<HistorietasLanguage, Record<string, string>>;
 
 export default function AdultContentGate({
-  titulo,
   avisos,
   language,
   onConfirmar,
@@ -252,17 +251,6 @@ const cardFocusStyle: CSSProperties = {
   boxShadow: "none",
 };
 
-const badgeStyle: CSSProperties = {
-  alignSelf: "center",
-  padding: "6px 11px",
-  borderRadius: 999,
-  border: "1px solid rgba(255, 120, 140, 0.45)",
-  background: "rgba(123, 25, 45, 0.24)",
-  color: "#ffbdc8",
-  fontSize: 11,
-  fontWeight: 900,
-  letterSpacing: "0.08em",
-};
 
 const iconStyle: CSSProperties = {
   alignSelf: "center",
@@ -292,11 +280,6 @@ const descriptionFocusStyle: CSSProperties = {
   color: "#A1A1AA",
 };
 
-const workTitleStyle: CSSProperties = {
-  textAlign: "center",
-  color: "#fff",
-  fontSize: 16,
-};
 
 const warningsStyle: CSSProperties = {
   padding: "4px 2px 2px",

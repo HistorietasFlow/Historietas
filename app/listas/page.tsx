@@ -1183,26 +1183,12 @@ function removerAnotacaoLocalListas(userId: string, obraId: string) {
   }
 }
 
-function anotacaoPodeAparecerListas(
-  _registro: RegistroGenerico,
-  _proprioPerfil: boolean,
-) {
-  // A visibilidade é controlada pela configuração geral da aba Diário.
-  // Esta função só é chamada depois que o acesso ao Diário foi autorizado.
-  return true;
-}
-
 function montarMapaAnotacoesPorObraListas(
   registros: RegistroGenerico[],
-  proprioPerfil: boolean,
 ) {
   const mapa = new Map<string, AnotacaoObraListas>();
 
   registros.forEach((registro) => {
-    if (!anotacaoPodeAparecerListas(registro, proprioPerfil)) {
-      return;
-    }
-
     const obraId = pegarTexto(registro.obra_id ?? registro.obraId);
     const tipo = normalizarTipoDiarioListas(registro.tipo);
     const textoAnotacao = pegarTexto(registro.texto);
@@ -1340,104 +1326,7 @@ function obterPreenchimentoEstrelaListas(estrela: number, notaAtual: number) {
   return "0%";
 }
 
-async function salvarAvaliacaoRemotaListas({
-  obraId,
-  userId,
-  nota,
-}: {
-  obraId: string;
-  userId: string;
-  nota: number;
-}) {
-  const { error: erroRemocao } = await supabase
-    .from("obra_avaliacoes")
-    .delete()
-    .eq("obra_id", obraId)
-    .eq("user_id", userId);
 
-  if (erroRemocao) {
-    throw erroRemocao;
-  }
-
-  if (nota <= 0) {
-    return;
-  }
-
-  const { error: erroInsercao } = await supabase
-    .from("obra_avaliacoes")
-    .insert({ obra_id: obraId, user_id: userId, nota });
-
-  if (erroInsercao) {
-    throw erroInsercao;
-  }
-
-  const { data, error: erroVerificacao } = await supabase
-    .from("obra_avaliacoes")
-    .select("nota")
-    .eq("obra_id", obraId)
-    .eq("user_id", userId)
-    .limit(10);
-
-  if (erroVerificacao) {
-    throw erroVerificacao;
-  }
-
-  const confirmado = Array.isArray(data)
-    ? data.some((registro) => {
-        const valor = pegarNumero(registro.nota);
-        return Math.round(valor * 2) / 2 === nota;
-      })
-    : false;
-
-  if (!confirmado) {
-    throw new Error("A avaliação não foi confirmada pelo banco de dados.");
-  }
-}
-
-async function sincronizarAtividadeAvaliacaoListas(
-  userId: string,
-  obra: ObraLista,
-  nota: number,
-) {
-  try {
-    await supabase
-      .from("diario_atividades")
-      .delete()
-      .eq("user_id", userId)
-      .eq("obra_id", obra.id)
-      .eq("tipo", "avaliou_obra");
-
-    if (nota <= 0) {
-      return;
-    }
-
-    const payloadBase = {
-      user_id: userId,
-      obra_id: obra.id,
-      tipo: "avaliou_obra",
-      texto: `Avaliou ${obra.titulo} com ${formatarNotaListas(nota)} estrelas.`,
-      visibilidade: "publico",
-      metadata: {
-        origem: "listas",
-        titulo: obra.titulo,
-        slug: obra.slug,
-        autor: obra.autor,
-        genero: obra.genero,
-        formato: obra.formato,
-      },
-    };
-    const { error } = await supabase.from("diario_atividades").insert({
-      ...payloadBase,
-      nota,
-    });
-
-    if (error) {
-      await supabase.from("diario_atividades").insert(payloadBase);
-    }
-  } catch (error) {
-    console.warn("Não consegui sincronizar a atividade da avaliação:", error);
-  }
-}
 
 async function carregarPerfisComentariosAnotacoesListas(userIds: string[]) {
   const ids = Array.from(new Set(userIds.map((id) => id.trim()).filter(Boolean)));
@@ -1915,9 +1804,7 @@ async function carregarListasDoPerfil(
   const anotacoesLocais = proprioPerfil
     ? carregarAnotacoesLocaisListas(userId)
     : [];
-  const anotacoesVisiveis = [...anotacoesLocais, ...anotacoes].filter(
-    (registro) => anotacaoPodeAparecerListas(registro, proprioPerfil),
-  );
+  const anotacoesVisiveis = [...anotacoesLocais, ...anotacoes];
 
   const registrosVisiveis = [
     ...seguindo,
@@ -2224,10 +2111,7 @@ async function carregarListasDoPerfil(
     estado.historico,
   ]);
 
-  const anotacoesPorObra = montarMapaAnotacoesPorObraListas(
-    anotacoesVisiveis,
-    proprioPerfil,
-  );
+  const anotacoesPorObra = montarMapaAnotacoesPorObraListas(anotacoesVisiveis);
   const notasPorObra = new Map<string, number>();
 
   avaliacoes
@@ -2627,40 +2511,6 @@ function textoSecundarioItem(
   return textoCategorias(item.categorias) || `${item.obra.genero} • ${item.obra.formato}`;
 }
 
-function textoSecundarioObraPublica(obra: ObraLista, secao: string) {
-  const totalCapitulos = obra.capitulos.length;
-  const textoCapitulos = `${totalCapitulos} ${
-    totalCapitulos === 1 ? "capítulo" : "capítulos"
-  }`;
-
-  if (secao === "novos-capitulos") {
-    return `${textoCapitulos} • atualizado em ${formatarDataCurta(
-      new Date(dataUltimoCapitulo(obra)).toISOString(),
-    )}`;
-  }
-
-  if (secao === "mais-curtidas") {
-    return `${compactarNumero(obra.totalCurtidas)} ${
-      obra.totalCurtidas === 1 ? "curtida" : "curtidas"
-    } • ${textoCapitulos}`;
-  }
-
-  if (secao === "mais-comentadas") {
-    return `${compactarNumero(obra.totalComentarios)} ${
-      obra.totalComentarios === 1 ? "comentário" : "comentários"
-    } • ${textoCapitulos}`;
-  }
-
-  if (secao === "para-ler-agora") {
-    return `${textoCapitulos} • leitura rápida`;
-  }
-
-  return `${totalCapitulos > 0 ? textoCapitulos : obra.formato}${
-    obra.visualizacoes > 0
-      ? ` • ${compactarNumero(obra.visualizacoes)} visualizações`
-      : ""
-  }`;
-}
 
 function criarCapaStyle(capa: string): CSSProperties {
   return capa
@@ -2770,8 +2620,6 @@ function ListasUniversaisContent() {
     useState<PreferenciasPrivacidadeHistorietas>(preferenciasPrivacidadePadrao);
   const [relacionamentoPerfil, setRelacionamentoPerfil] =
     useState<EstadoRelacionamentoPerfil>("nenhum");
-  const [avaliacaoSalvando, setAvaliacaoSalvando] = useState(false);
-  const [avaliacaoErro, setAvaliacaoErro] = useState("");
   const [avaliacaoDiario, setAvaliacaoDiario] =
     useState<AvaliacaoDiarioListasEstado>(AVALIACAO_DIARIO_LISTAS_VAZIA);
   const [comentarioCurtindoId, setComentarioCurtindoId] = useState("");
@@ -3365,7 +3213,6 @@ function ListasUniversaisContent() {
     setCategoriaMenuAberta(categoriaAtual);
     setObraMenuNoQueroLer(false);
     setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
-    setAvaliacaoErro("");
 
     try {
       const userId =
@@ -3414,7 +3261,7 @@ function ListasUniversaisContent() {
   }
 
   function fecharMenuObra() {
-    if (salvandoQueroLer || editorAnotacao.salvando || avaliacaoSalvando) {
+    if (salvandoQueroLer || editorAnotacao.salvando) {
       return;
     }
 
@@ -3422,7 +3269,6 @@ function ListasUniversaisContent() {
     setItemPerfilMenuAberto(null);
     setObraMenuNoQueroLer(false);
     setEditorAnotacao(EDITOR_ANOTACAO_LISTAS_VAZIO);
-    setAvaliacaoErro("");
   }
 
   async function alternarObraNoQueroLer() {
@@ -3642,56 +3488,6 @@ function ListasUniversaisContent() {
     }
   }
 
-  async function salvarConfiguracoesAvaliacaoDiario() {
-    const perfilUserId = perfil?.userId.trim() || "";
-
-    if (
-      !perfilEhProprio ||
-      !perfilUserId ||
-      avaliacaoDiario.salvandoConfiguracoes
-    ) {
-      return;
-    }
-
-    setAvaliacaoDiario((atual) => ({
-      ...atual,
-      salvandoConfiguracoes: true,
-      erro: "",
-    }));
-
-    try {
-      const { error } = await supabase
-        .from("preferencias_privacidade")
-        .upsert(
-          {
-            user_id: perfilUserId,
-            mostrar_avaliacao_diario: avaliacaoDiario.mostrar,
-            permitir_avaliacao_diario: avaliacaoDiario.permitir,
-            quem_pode_avaliar_diario: avaliacaoDiario.quemPodeAvaliar,
-          },
-          { onConflict: "user_id" },
-        );
-
-      if (error) throw error;
-      const avaliacaoAtualizada = await carregarAvaliacaoDiarioListas(
-        perfilUserId,
-      );
-      setAvaliacaoDiario({
-        ...avaliacaoAtualizada,
-        configuracoesAbertas: false,
-      });
-      setMensagemAcao("Privacidade da Avaliação do Diário atualizada.");
-    } catch (error) {
-      setAvaliacaoDiario((atual) => ({
-        ...atual,
-        salvandoConfiguracoes: false,
-        erro: obterMensagemErroListas(
-          error,
-          "Não foi possível salvar as configurações da avaliação.",
-        ),
-      }));
-    }
-  }
 
   function atualizarAnotacaoNosItensListas(
     obraId: string,
@@ -4426,100 +4222,7 @@ function ListasUniversaisContent() {
     }
   }
 
-  function atualizarAvaliacaoNosItensListas(
-    obra: ObraLista,
-    nota: number,
-    data: string,
-  ) {
-    setListasPerfil((estadoAtual) => {
-      const categoriasSemTudo = [
-        "lendo",
-        "quero-ler",
-        "favoritas",
-        "concluidas",
-        "historico",
-      ] as CategoriaPerfil[];
-      const proximo = { ...estadoAtual };
 
-      categoriasSemTudo.forEach((categoriaEstado) => {
-        proximo[categoriaEstado] = proximo[categoriaEstado].map((item) =>
-          item.obra.id === obra.id ? { ...item, nota } : item,
-        );
-      });
-
-      const avaliacaoExistente = estadoAtual.avaliacoes.find(
-        (item) => item.obra.id === obra.id,
-      );
-      proximo.avaliacoes = nota > 0
-        ? ordenarPorData([
-            ...estadoAtual.avaliacoes.filter((item) => item.obra.id !== obra.id),
-            {
-              ...(avaliacaoExistente ||
-                criarItemPerfil("avaliacoes", obra, {
-                  obra_id: obra.id,
-                  atualizado_em: data,
-                })),
-              nota,
-              data,
-            },
-          ])
-        : estadoAtual.avaliacoes.filter((item) => item.obra.id !== obra.id);
-      proximo.tudo = mesclarTudoPerfil([
-        proximo.lendo,
-        proximo["quero-ler"],
-        proximo.favoritas,
-        proximo.concluidas,
-        proximo.avaliacoes,
-        proximo.historico,
-      ]).map((item) => (item.obra.id === obra.id ? { ...item, nota } : item));
-
-      return proximo;
-    });
-
-    setItemPerfilMenuAberto((itemAtual) =>
-      itemAtual?.obra.id === obra.id ? { ...itemAtual, nota, data } : itemAtual,
-    );
-  }
-
-  async function salvarAvaliacaoListas(novaNota: number) {
-    const obra = obraMenuAberta;
-    const userId = usuarioAtualId.trim();
-
-    const autorId = obra?.autorId.trim() || "";
-
-    if (
-      !obra ||
-      !perfilEhProprio ||
-      !userId ||
-      avaliacaoSalvando ||
-      (autorId && autorId === userId)
-    ) {
-      return;
-    }
-
-    const nota =
-      novaNota <= 0
-        ? 0
-        : Math.max(0.5, Math.min(5, Math.round(novaNota * 2) / 2));
-    setAvaliacaoSalvando(true);
-    setAvaliacaoErro("");
-
-    try {
-      await salvarAvaliacaoRemotaListas({ obraId: obra.id, userId, nota });
-      await sincronizarAtividadeAvaliacaoListas(userId, obra, nota);
-      const data = new Date().toISOString();
-      atualizarAvaliacaoNosItensListas(obra, nota, data);
-      setMensagemAcao(nota > 0 ? "Avaliação salva." : "Avaliação removida.");
-    } catch (error) {
-      setAvaliacaoErro(
-        error instanceof Error
-          ? error.message
-          : "Não foi possível salvar a avaliação.",
-      );
-    } finally {
-      setAvaliacaoSalvando(false);
-    }
-  }
 
   function abrirComentariosDiario(item: ItemObraLista) {
     const anotacaoId = item.anotacaoId?.trim() || "";
@@ -6793,231 +6496,30 @@ const listDiaryActionSheetEditorStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const listDiaryEvaluationCardStyle: CSSProperties = {
-  width: "min(calc(100% - 28px), 892px)",
-  margin: "0 auto 10px",
-  padding: "16px",
-  display: "grid",
-  gap: "12px",
-  border: "1px solid rgba(255,255,255,0.11)",
-  borderRadius: "18px",
-  background:
-    "linear-gradient(145deg, rgba(124,58,237,0.13), rgba(249,115,22,0.055)), rgba(255,255,255,0.025)",
-  boxSizing: "border-box",
-};
 
-const listDiaryEvaluationHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-};
 
-const listDiaryEvaluationTitleGroupStyle: CSSProperties = {
-  minWidth: 0,
-  display: "flex",
-  alignItems: "baseline",
-  gap: "8px",
-  flexWrap: "wrap",
-};
 
-const listDiaryEvaluationEyebrowStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.72)",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-};
 
-const listDiaryEvaluationScoreStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "25px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-};
 
-const listDiaryEvaluationTotalStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.48)",
-  fontSize: "10px",
-  fontWeight: 800,
-};
 
-const listDiaryEvaluationSettingsButtonStyle: CSSProperties = {
-  minHeight: "30px",
-  padding: "0 10px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.05)",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "9px",
-  fontWeight: 900,
-  cursor: "pointer",
-};
 
-const listDiaryEvaluationStarsRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "3px",
-};
 
-const listDiaryEvaluationStarButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  position: "relative",
-  width: "32px",
-  height: "32px",
-  padding: 0,
-  border: "none",
-  background: "transparent",
-  fontSize: "30px",
-  lineHeight: 1,
-  fontFamily: "inherit",
-};
 
-const listDiaryEvaluationStarBaseStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.16)",
-};
 
-const listDiaryEvaluationStarFillStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  overflow: "hidden",
-  color: "#FBBF24",
-  whiteSpace: "nowrap",
-  pointerEvents: "none",
-};
 
-const listDiaryEvaluationDescriptionStyle: CSSProperties = {
-  margin: 0,
-  color: "rgba(255,255,255,0.58)",
-  fontSize: "10.5px",
-  lineHeight: 1.45,
-  fontWeight: 700,
-};
 
-const listDiaryEvaluationSettingsPanelStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  paddingTop: "12px",
-  borderTop: "1px solid rgba(255,255,255,0.08)",
-};
 
-const listDiaryEvaluationToggleRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "14px",
-  padding: "9px 10px",
-  borderRadius: "12px",
-  background: "rgba(255,255,255,0.035)",
-  color: "#FFFFFF",
-  fontSize: "10px",
-  lineHeight: 1.35,
-};
 
-const listDiaryEvaluationCheckboxStyle: CSSProperties = {
-  width: "16px",
-  height: "16px",
-  margin: 0,
-  accentColor: "#FFFFFF",
-  flex: "0 0 auto",
-};
 
-const listDiaryEvaluationFieldStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  color: "rgba(255,255,255,0.64)",
-  fontSize: "9px",
-  fontWeight: 850,
-};
 
-const listDiaryEvaluationSelectStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "36px",
-  padding: "0 10px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: "11px",
-  background: "#080808",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "10px",
-  fontWeight: 800,
-};
 
-const listDiaryEvaluationSettingsActionsStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: "8px",
-};
 
-const listDiaryEvaluationCancelButtonStyle: CSSProperties = {
-  minHeight: "32px",
-  padding: "0 11px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: "999px",
-  background: "transparent",
-  color: "rgba(255,255,255,0.70)",
-  fontFamily: "inherit",
-  fontSize: "9px",
-  fontWeight: 900,
-  cursor: "pointer",
-};
 
-const listDiaryEvaluationSaveButtonStyle: CSSProperties = {
-  ...listDiaryEvaluationCancelButtonStyle,
-  border: "none",
-  background: "#FFFFFF",
-  color: "#050505",
-};
 
-const listDiaryEvaluationErrorStyle: CSSProperties = {
-  color: "#FDA4AF",
-  fontSize: "9px",
-  lineHeight: 1.4,
-  fontWeight: 800,
-};
 
-const listDiaryAnnotationPrivacyGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-  gap: "8px",
-  padding: "10px",
-  borderRadius: "12px",
-  background: "rgba(255,255,255,0.035)",
-};
 
-const listDiaryAnnotationFieldStyle: CSSProperties = {
-  minWidth: 0,
-  display: "grid",
-  gap: "5px",
-  color: "rgba(255,255,255,0.60)",
-  fontSize: "8px",
-  fontWeight: 850,
-};
 
-const listDiaryAnnotationPrivacySelectStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "32px",
-  padding: "0 8px",
-  border: "1px solid rgba(255,255,255,0.11)",
-  borderRadius: "9px",
-  background: "#090909",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "8.5px",
-  fontWeight: 800,
-};
 
-const listDiaryAnnotationToggleFieldStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  color: "rgba(255,255,255,0.74)",
-  fontSize: "8px",
-  lineHeight: 1.35,
-};
 
 const listDiaryAnnotationTextareaWrapStyle: CSSProperties = {
   position: "relative",
@@ -7252,653 +6754,79 @@ const listDiaryCardAnnotationTitleGroupStyle: CSSProperties = {
   gap: "7px",
 };
 
-const listDiaryCommentsModernHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  flexWrap: "wrap",
-};
-
-const listDiaryCommentsSortStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "4px",
-  padding: "3px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.04)",
-};
-
-const listDiaryCommentsSortButtonStyle: CSSProperties = {
-  minHeight: "25px",
-  padding: "0 8px",
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  color: "rgba(255,255,255,0.48)",
-  fontFamily: "inherit",
-  fontSize: "8px",
-  fontWeight: 900,
-  cursor: "pointer",
-};
-
-const listDiaryCommentsSortActiveStyle: CSSProperties = {
-  ...listDiaryCommentsSortButtonStyle,
-  background: "rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
-};
-
-const listDiaryCommentsModernListStyle: CSSProperties = {
-  display: "grid",
-  gap: "12px",
-};
-
-const listDiaryCommentThreadStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-};
-
-const listDiaryCommentModernRowStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr) 28px",
-  gap: "9px",
-  alignItems: "start",
-  minWidth: 0,
-};
-
-const listDiaryCommentReplyRowStyle: CSSProperties = {
-  ...listDiaryCommentModernRowStyle,
-  gridTemplateColumns: "28px minmax(0, 1fr) 28px",
-  gap: "8px",
-};
-
-const listDiaryCommentRepliesStyle: CSSProperties = {
-  display: "grid",
-  gap: "9px",
-  marginLeft: "34px",
-  paddingLeft: "10px",
-  borderLeft: "1px solid rgba(255,255,255,0.08)",
-};
-
-const listDiaryCommentAvatarStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-  border: "1px solid rgba(124,58,237,0.38)",
-  background: "#08040D",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-};
-
-const listDiaryCommentReplyAvatarStyle: CSSProperties = {
-  ...listDiaryCommentAvatarStyle,
-  width: "28px",
-  height: "28px",
-  borderRadius: "10px",
-  fontSize: "10px",
-};
-
-const listDiaryCommentModernContentStyle: CSSProperties = {
-  minWidth: 0,
-  display: "grid",
-  gap: "3px",
-};
-
-const listDiaryCommentModernTopLineStyle: CSSProperties = {
-  minWidth: 0,
-  display: "flex",
-  alignItems: "baseline",
-  gap: "6px",
-  flexWrap: "wrap",
-};
-
-const listDiaryCommentModernAuthorStyle: CSSProperties = {
-  minWidth: 0,
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 950,
-};
-
-const listDiaryCommentUsernameStyle: CSSProperties = {
-  minWidth: 0,
-  maxWidth: "150px",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  color: "rgba(255,255,255,0.38)",
-  fontSize: "8.5px",
-  fontWeight: 750,
-};
-
-const listDiaryCommentModernDateStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.34)",
-  fontSize: "8px",
-  fontWeight: 700,
-};
-
-const listDiaryCommentModernTextStyle: CSSProperties = {
-  margin: 0,
-  color: "rgba(255,255,255,0.78)",
-  fontSize: "11px",
-  lineHeight: 1.45,
-  fontWeight: 650,
-  whiteSpace: "pre-wrap",
-  overflowWrap: "anywhere",
-};
-
-const listDiaryCommentModernActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  flexWrap: "wrap",
-};
-
-const listDiaryCommentTextActionStyle: CSSProperties = {
-  width: "fit-content",
-  padding: "1px 0",
-  border: "none",
-  background: "transparent",
-  color: "rgba(255,255,255,0.45)",
-  fontFamily: "inherit",
-  fontSize: "8.5px",
-  fontWeight: 900,
-  cursor: "pointer",
-};
-
-const listDiaryCommentRemoveTextActionStyle: CSSProperties = {
-  ...listDiaryCommentTextActionStyle,
-  color: "#FDA4AF",
-};
-
-const listDiaryCommentLikeWrapStyle: CSSProperties = {
-  minWidth: "28px",
-  display: "grid",
-  justifyItems: "center",
-  alignContent: "start",
-  gap: "2px",
-};
-
-const listDiaryCommentLikeButtonStyle: CSSProperties = {
-  width: "28px",
-  height: "28px",
-  padding: 0,
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-};
-
-const listDiaryCommentHeartStyle: CSSProperties = {
-  width: "18px",
-  height: "18px",
-};
-
-const listDiaryCommentLikeCountStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.42)",
-  fontSize: "8px",
-  fontWeight: 900,
-};
-
-const listDiaryEmptyCommentsModernStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.42)",
-  fontSize: "9px",
-  lineHeight: 1.4,
-};
-
-const listDiaryReplyingBannerStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  padding: "7px 9px",
-  borderRadius: "10px",
-  background: "rgba(124,58,237,0.11)",
-  color: "rgba(255,255,255,0.70)",
-  fontSize: "8.5px",
-  fontWeight: 800,
-};
-
-const listDiaryReplyingCancelStyle: CSSProperties = {
-  padding: 0,
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "8px",
-  fontWeight: 900,
-  cursor: "pointer",
-};
-
-const listDiaryComposerModernBoxStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) 34px",
-  alignItems: "end",
-  gap: "7px",
-  padding: "7px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  borderRadius: "13px",
-  background: "rgba(255,255,255,0.035)",
-};
-
-const listDiaryCommentTextareaModernStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "44px",
-  maxHeight: "130px",
-  resize: "vertical",
-  padding: "7px 8px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "10px",
-  lineHeight: 1.4,
-  outline: "none",
-  boxSizing: "border-box",
-};
-
-const listDiaryCommentSendModernStyle: CSSProperties = {
-  width: "32px",
-  height: "32px",
-  padding: 0,
-  border: "none",
-  borderRadius: "999px",
-  background: "#FFFFFF",
-  color: "#050505",
-  fontSize: "13px",
-  fontWeight: 950,
-  cursor: "pointer",
-};
-
-const listDiaryCommentsPermissionStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.40)",
-  fontSize: "8.5px",
-  lineHeight: 1.4,
-  fontWeight: 750,
-};
-
-const listDiaryCommentsSectionStyle: CSSProperties = {
-  display: "grid",
-  gap: "9px",
-  minWidth: 0,
-  paddingTop: "9px",
-  borderTop: "1px solid rgba(255,255,255,0.075)",
-};
-
-const listDiaryCommentRowStyle: CSSProperties = {
-  display: "grid",
-  gap: "5px",
-  minWidth: 0,
-  padding: "8px 9px",
-  borderRadius: "10px",
-  background: "rgba(255,255,255,0.035)",
-};
-
-const listDiaryCommentAuthorStyle: CSSProperties = {
-  minWidth: 0,
-  color: "rgba(255,255,255,0.82)",
-  fontSize: "10px",
-  fontWeight: 900,
-  lineHeight: 1.2,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const listDiaryCommentDateStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.38)",
-  fontSize: "8px",
-  fontWeight: 700,
-  lineHeight: 1.2,
-  flex: "0 0 auto",
-};
-
-const listDiaryCommentActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-};
-
-const listDiaryCommentRemoveButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  minHeight: "26px",
-  padding: "4px 8px",
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
-  fontFamily: "inherit",
-  fontSize: "9px",
-  fontWeight: 850,
-  lineHeight: 1,
-  cursor: "pointer",
-};
-
-const listDiaryCommentComposerFooterStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-};
-
-const listDiaryCommentCounterStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.34)",
-  fontSize: "8px",
-  fontWeight: 700,
-};
-
-const listDiaryCommentSubmitStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  minHeight: "28px",
-  padding: "5px 10px",
-  border: "none",
-  borderRadius: "999px",
-  background:
-    "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
-  color: "#000000",
-  fontFamily: "inherit",
-  fontSize: "9px",
-  fontWeight: 950,
-  cursor: "pointer",
-};
-
-const listDiaryCommentSubmitDisabledStyle: CSSProperties = {
-  ...listDiaryCommentSubmitStyle,
-  opacity: 0.55,
-  cursor: "wait",
-};
-
-const listDiaryCommentErrorStyle: CSSProperties = {
-  color: "var(--historietas-perfil-rose-soft, #FDA4AF)",
-  fontSize: "9px",
-  fontWeight: 750,
-  lineHeight: 1.35,
-};
-
-const listDiaryPanelStyle: CSSProperties = {
-  display: "grid",
-  gap: "11px",
-  margin: "8px 16px 0",
-  padding: "14px",
-  borderRadius: "16px",
-  border: "1px solid rgba(255,255,255,0.11)",
-  background: "rgba(255,255,255,0.035)",
-};
-
-const listDiarySectionHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-};
-
-const listDiarySectionTitleStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 950,
-};
-
-const listDiaryRatingValueStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.62)",
-  fontSize: "11px",
-  fontWeight: 800,
-};
-
-const listDiaryStarsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "5px",
-};
-
-const listDiaryStarButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  position: "relative",
-  width: "31px",
-  height: "31px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-  border: 0,
-  background: "transparent",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  fontSize: "29px",
-  lineHeight: 1,
-};
-
-const listDiaryStarBaseStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.18)",
-};
-
-const listDiaryStarFillStyle: CSSProperties = {
-  position: "absolute",
-  left: 0,
-  top: 0,
-  height: "100%",
-  overflow: "hidden",
-  color: "#FBBF24",
-  whiteSpace: "nowrap",
-  pointerEvents: "none",
-};
-
-const listDiaryTextButtonStyle: CSSProperties = {
-  width: "fit-content",
-  padding: 0,
-  border: 0,
-  background: "transparent",
-  color: "rgba(255,255,255,0.58)",
-  fontSize: "11px",
-  fontWeight: 800,
-  cursor: "pointer",
-};
-
-const listDiaryTextareaStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "112px",
-  resize: "vertical",
-  boxSizing: "border-box",
-  border: "1px solid rgba(255,255,255,0.14)",
-  borderRadius: "12px",
-  background: "#050505",
-  color: "#FFFFFF",
-  padding: "11px",
-  fontFamily: "inherit",
-  fontSize: "13px",
-  lineHeight: 1.5,
-  outline: "none",
-};
-
-const listDiaryCounterStyle: CSSProperties = {
-  justifySelf: "end",
-  marginTop: "-7px",
-  color: "rgba(255,255,255,0.42)",
-  fontSize: "10px",
-  fontWeight: 750,
-};
-
-const listDiaryEditorControlsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  flexWrap: "wrap",
-  gap: "10px",
-};
-
-const listDiarySelectStyle: CSSProperties = {
-  minHeight: "36px",
-  borderRadius: "10px",
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "#090909",
-  color: "#FFFFFF",
-  padding: "0 10px",
-  fontFamily: "inherit",
-  fontSize: "12px",
-  fontWeight: 800,
-};
-
-const listDiaryEditorButtonsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-};
-
-const listDiarySecondaryButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 12px",
-  borderRadius: "10px",
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "transparent",
-  color: "rgba(255,255,255,0.72)",
-  fontFamily: "inherit",
-  fontSize: "12px",
-  fontWeight: 850,
-  cursor: "pointer",
-};
-
-const listDiaryPrimaryButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 14px",
-  borderRadius: "10px",
-  border: 0,
-  background: "#FFFFFF",
-  color: "#070707",
-  fontFamily: "inherit",
-  fontSize: "12px",
-  fontWeight: 950,
-  cursor: "pointer",
-};
-
-const listDiaryRemoveButtonStyle: CSSProperties = {
-  ...listDiaryTextButtonStyle,
-  color: "#FB7185",
-};
-
-const listDiaryErrorStyle: CSSProperties = {
-  display: "block",
-  color: "#FCA5A5",
-  fontSize: "11px",
-  fontWeight: 750,
-  lineHeight: 1.4,
-};
-
-const listDiaryAnnotationTitleWrapStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-};
-
-const listDiaryVisibilityStyle: CSSProperties = {
-  padding: "3px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.08)",
-  color: "rgba(255,255,255,0.54)",
-  fontSize: "9px",
-  fontWeight: 850,
-  textTransform: "uppercase",
-};
-
-const listDiaryLikeButtonStyle: CSSProperties = {
-  minHeight: "32px",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "5px",
-  padding: "0 9px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.11)",
-  background: "rgba(255,255,255,0.05)",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "11px",
-  fontWeight: 900,
-  cursor: "pointer",
-};
-
-const listDiaryAnnotationTextStyle: CSSProperties = {
-  margin: 0,
-  color: "rgba(255,255,255,0.86)",
-  fontSize: "13px",
-  lineHeight: 1.58,
-  whiteSpace: "pre-wrap",
-  overflowWrap: "anywhere",
-};
-
-const listDiaryCommentsStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  paddingTop: "3px",
-};
-
-const listDiaryCommentsTitleStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.78)",
-  fontSize: "11px",
-  fontWeight: 900,
-};
-
-const listDiaryCommentsListStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-};
-
-const listDiaryCommentStyle: CSSProperties = {
-  display: "grid",
-  gap: "5px",
-  padding: "10px",
-  borderRadius: "11px",
-  background: "rgba(0,0,0,0.28)",
-};
-
-const listDiaryCommentHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-  color: "rgba(255,255,255,0.55)",
-  fontSize: "9px",
-};
-
-const listDiaryCommentTextStyle: CSSProperties = {
-  margin: 0,
-  color: "rgba(255,255,255,0.80)",
-  fontSize: "12px",
-  lineHeight: 1.45,
-  whiteSpace: "pre-wrap",
-  overflowWrap: "anywhere",
-};
-
-const listDiaryCommentRemoveStyle: CSSProperties = {
-  ...listDiaryTextButtonStyle,
-  color: "#FB7185",
-};
-
-const listDiaryEmptyCommentsStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.46)",
-  fontSize: "11px",
-  lineHeight: 1.4,
-};
-
-const listDiaryCommentComposerStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-};
-
-const listDiaryCommentTextareaStyle: CSSProperties = {
-  ...listDiaryTextareaStyle,
-  minHeight: "76px",
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const footerStyle: CSSProperties = {
   width: "min(100%, 920px)",

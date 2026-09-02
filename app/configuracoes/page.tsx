@@ -1740,7 +1740,6 @@ export default function ConfiguracoesPage() {
   const [erroUsername, setErroUsername] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [busca, setBusca] = useState("");
-  const [mostrarTemas, setMostrarTemas] = useState(false);
   const [adminLiberado, setAdminLiberado] = useState(false);
   const [mostrarUsuariosBloqueados, setMostrarUsuariosBloqueados] =
     useState(false);
@@ -1781,11 +1780,11 @@ export default function ConfiguracoesPage() {
     tipo: TipoMensagemAcaoConfiguracoes,
     texto: string,
   ) {
-    setMensagemAcao({
-      id: Date.now(),
+    setMensagemAcao((mensagemAtual) => ({
+      id: (mensagemAtual?.id ?? 0) + 1,
       tipo,
       texto,
-    });
+    }));
   }
 
   useEffect(() => {
@@ -5491,84 +5490,4 @@ const privacySelectStyle: CSSProperties = {
 
 const toggleKnobOffStyle: CSSProperties = {
   ...toggleKnobBaseStyle,
-};
-
-const themeListStyle: CSSProperties = {
-  padding: "6px 0",
-  borderTop: "1px solid var(--configuracoes-border, rgba(255,255,255,0.065))",
-};
-
-const themeOptionStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "62px",
-  display: "grid",
-  gridTemplateColumns: "38px minmax(0, 1fr) 28px",
-  alignItems: "center",
-  gap: "12px",
-  padding: "10px 14px",
-  border: "0",
-  borderBottom: "1px solid var(--configuracoes-border, rgba(255,255,255,0.055))",
-  background: "transparent",
-  color: "inherit",
-  fontFamily: "inherit",
-  textAlign: "left",
-  cursor: "pointer",
-};
-
-const themeOptionActiveStyle: CSSProperties = {
-  ...themeOptionStyle,
-  background: "var(--configuracoes-theme-active-bg, rgba(255,255,255,0.055))",
-  boxShadow: "var(--configuracoes-theme-active-shadow, none)",
-};
-
-const themeSwatchStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  border: "1px solid rgba(255,255,255,0.13)",
-};
-
-const themeTextStyle: CSSProperties = {
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-};
-
-const themeNameStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "15px",
-  lineHeight: 1.1,
-  fontWeight: 850,
-};
-
-const themeDescriptionStyle: CSSProperties = {
-  color: "var(--configuracoes-text-secondary, rgba(255,255,255,0.52))",
-  fontSize: "12px",
-  lineHeight: 1.2,
-  fontWeight: 620,
-  ...safeTextStyle,
-};
-
-const themeCheckStyle: CSSProperties = {
-  width: "23px",
-  height: "23px",
-  borderRadius: "999px",
-  border: "2.5px solid rgba(161,161,170,0.72)",
-  background: "transparent",
-  color: "transparent",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-  flex: "0 0 auto",
-  fontSize: "15px",
-  lineHeight: 1,
-  fontWeight: 900,
-};
-
-const themeCheckActiveStyle: CSSProperties = {
-  ...themeCheckStyle,
-  border: "2px solid #FFFFFF",
-  background: "#FFFFFF",
-  color: "#111111",
 };

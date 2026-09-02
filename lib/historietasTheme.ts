@@ -66,13 +66,11 @@ export const TEMAS_VISUAIS_HISTORIETAS: Record<
   },
 };
 
-export function obterTemaVisualSeguro(_valor: unknown): TemaVisualHistorietas {
+export function obterTemaVisualSeguro(): TemaVisualHistorietas {
   return "foco";
 }
 
-export function criarFundoTemaHistorietas(
-  _temaVisual: TemaVisualHistorietas = "foco"
-) {
+export function criarFundoTemaHistorietas() {
   return "#000000";
 }
 
@@ -115,9 +113,7 @@ function aplicarVariaveisDaBarraInferior() {
   });
 }
 
-export function aplicarTemaVisual(
-  _temaVisual: TemaVisualHistorietas = "foco"
-) {
+export function aplicarTemaVisual() {
   if (typeof document === "undefined") {
     return;
   }
@@ -324,7 +320,6 @@ export const historietasThemeCss = `
 
 export function criarPageThemeStyle(
   pageStyle: CSSProperties,
-  _temaVisual: TemaVisualHistorietas = "foco"
 ): CSSProperties {
   return {
     ...pageStyle,
@@ -337,20 +332,18 @@ export function useHistorietasTheme(pageStyle: CSSProperties) {
   const temaVisual: TemaVisualHistorietas = "foco";
 
   const pageThemeStyle = useMemo<CSSProperties>(
-    () => criarPageThemeStyle(pageStyle, temaVisual),
+    () => criarPageThemeStyle(pageStyle),
     [pageStyle]
   );
 
   useEffect(() => {
-    aplicarTemaVisual("foco");
+    aplicarTemaVisual();
   }, []);
 
   return {
     temaVisual,
     pageThemeStyle,
-    setTemaVisual: (_temaVisual: TemaVisualHistorietas) => {
-      aplicarTemaVisual("foco");
-    },
+    setTemaVisual: aplicarTemaVisual,
     aplicarTemaVisual,
     historietasThemeCss,
   };
