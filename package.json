@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:static": "node qa/scripts/static-audit.mjs",
     "test:pagination": "node --test qa/unit/paginacao-alto-volume.test.mjs",
+    "test:pagination:integration": "node --test qa/integration/paginacao-supabase-real.test.mjs",
     "test:smoke": "node qa/scripts/http-smoke.mjs",
     "test:e2e": "npm --prefix qa install && npm --prefix qa run install:browsers && npm --prefix qa test",
     "test:e2e:headed": "npm --prefix qa install && npm --prefix qa run install:browsers && npm --prefix qa run test:headed",
