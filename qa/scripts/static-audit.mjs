@@ -30,6 +30,7 @@ const expectedRoutes = [
   "app/obra/[slug]/page.tsx",
   "app/obra/[slug]/capitulo/[numero]/page.tsx",
   "app/api/arquivos-obras/url/route.ts",
+  "app/api/conta/solicitar-exclusao/route.ts",
   "app/api/visualizacoes/route.ts",
   "app/robots.ts",
   "app/sitemap.ts",
@@ -567,6 +568,81 @@ if (
   fail(
     "exclusão limita tentativas antes da senha",
     "limitador ausente, tardio ou sessão temporária não descartada"
+  );
+}
+
+const publicDeletionRequestEndpoint = fs.readFileSync(
+  path.join(
+    ROOT_DIR,
+    "app/api/conta/solicitar-exclusao/route.ts"
+  ),
+  "utf8"
+);
+const publicDeletionNetworkLimitPosition =
+  publicDeletionRequestEndpoint.indexOf(
+    'escopo: "solicitacao_exclusao_rede"'
+  );
+const publicDeletionBodyReadPosition =
+  publicDeletionRequestEndpoint.indexOf(
+    "corpo = await lerCorpo(request)"
+  );
+const publicDeletionEmailLimitPosition =
+  publicDeletionRequestEndpoint.indexOf(
+    'escopo: "solicitacao_exclusao_email"'
+  );
+const publicDeletionInsertPosition =
+  publicDeletionRequestEndpoint.indexOf(
+    '.from("solicitacoes_exclusao_conta").insert('
+  );
+
+if (
+  publicDeletionNetworkLimitPosition >= 0 &&
+  publicDeletionBodyReadPosition > publicDeletionNetworkLimitPosition &&
+  publicDeletionEmailLimitPosition > publicDeletionBodyReadPosition &&
+  publicDeletionInsertPosition > publicDeletionEmailLimitPosition &&
+  publicDeletionRequestEndpoint.includes("obterIpConfiavel(request)") &&
+  publicDeletionRequestEndpoint.includes("Retry-After")
+) {
+  pass(
+    "solicitação pública de exclusão tem limites persistentes",
+    "rede antes do corpo + e-mail antes da gravação"
+  );
+} else {
+  fail(
+    "solicitação pública de exclusão tem limites persistentes",
+    "limitadores ausentes, tardios ou sem Retry-After"
+  );
+}
+
+if (
+  /const TAMANHO_MAXIMO_CORPO\s*=\s*8_192/.test(
+    publicDeletionRequestEndpoint
+  ) &&
+  publicDeletionRequestEndpoint.includes(
+    'request.headers.get("content-length")'
+  ) &&
+  publicDeletionRequestEndpoint.includes(
+    "request.body?.getReader()"
+  ) &&
+  publicDeletionRequestEndpoint.includes(
+    'codigo: "tipo_conteudo_invalido"'
+  ) &&
+  /if \(!origem\) \{\s*return false;\s*\}/.test(
+    publicDeletionRequestEndpoint
+  ) &&
+  publicDeletionRequestEndpoint.includes(
+    '? "corpo_muito_grande" : "requisicao_invalida"'
+  ) &&
+  !publicDeletionRequestEndpoint.includes("request.json()")
+) {
+  pass(
+    "solicitação pública de exclusão limita o corpo",
+    "JSON obrigatório + streaming com teto de 8 KiB"
+  );
+} else {
+  fail(
+    "solicitação pública de exclusão limita o corpo",
+    "validação de JSON ou limite por streaming ausente"
   );
 }
 
