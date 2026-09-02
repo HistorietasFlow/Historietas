@@ -27,6 +27,11 @@ import {
   criarHrefAceiteTermos,
   verificarAceiteTermosPublicacao,
 } from "../../lib/aceiteTermos";
+import {
+  calcularIntervaloPaginaSupabase,
+  carregarTodasPaginasSupabase,
+  dividirEmLotesSupabase,
+} from "../../lib/supabase/paginacao.mjs";
 
 type CategoriaComunidade =
   | "Geral"
@@ -163,6 +168,9 @@ const TIPOS_PUBLICACAO_COMUNIDADE: TipoPublicacaoComunidade[] = [
 const CHAVE_POSTS_SALVOS_COMUNIDADE = "historietas:comunidade:posts-salvos";
 const CHAVE_VOTOS_ENQUETES_COMUNIDADE = "historietas:comunidade:votos-enquetes";
 const POSTS_COMUNIDADE_POR_PAGINA = 50;
+const REGISTROS_COMUNIDADE_POR_PAGINA = 500;
+const OBRAS_RELACIONADAS_POR_PAGINA = 200;
+const IDS_COMENTARIOS_POR_LOTE = 100;
 
 type ComunidadeTranslationEntry = {
   en: string;
@@ -4885,8 +4893,10 @@ export default function ComunidadePage() {
       setCarregandoMaisPostsComunidade(true);
     }
 
-    const inicio = pagina * POSTS_COMUNIDADE_POR_PAGINA;
-    const fim = inicio + POSTS_COMUNIDADE_POR_PAGINA - 1;
+    const { inicio, fim } = calcularIntervaloPaginaSupabase(
+      pagina,
+      POSTS_COMUNIDADE_POR_PAGINA,
+    );
 
     try {
       let consultaPosts = supabase
@@ -4908,6 +4918,7 @@ export default function ComunidadePage() {
 
       const postsResposta = await consultaPosts
         .order("criado_em", { ascending: false })
+        .order("id", { ascending: false })
         .range(inicio, fim);
 
       if (postsResposta.error) {
@@ -4941,17 +4952,25 @@ export default function ComunidadePage() {
       );
 
       if (titulosObrasRelacionadasPagina.length > 0) {
-        const { data: obrasRelacionadasPagina, error: erroObrasRelacionadasPagina } =
-          await supabase
-            .from("obras")
-            .select("id, user_id, titulo, autor, classificacao_indicativa, publicado, slug, link")
-            .eq("publicado", true)
-            .in("titulo", titulosObrasRelacionadasPagina)
-            .limit(POSTS_COMUNIDADE_POR_PAGINA * 2);
-
-        if (!erroObrasRelacionadasPagina) {
+        try {
+          const obrasRelacionadasPagina =
+            await carregarTodasPaginasSupabase<SupabaseObraPublicaRow>({
+              nomeColecao: "obras relacionadas da Comunidade",
+              tamanhoPagina: OBRAS_RELACIONADAS_POR_PAGINA,
+              buscarPagina: async (inicioPagina, fimPagina) =>
+                supabase
+                  .from("obras")
+                  .select(
+                    "id, user_id, titulo, autor, classificacao_indicativa, publicado, slug, link",
+                  )
+                  .eq("publicado", true)
+                  .in("titulo", titulosObrasRelacionadasPagina)
+                  .order("titulo", { ascending: true })
+                  .order("id", { ascending: true })
+                  .range(inicioPagina, fimPagina),
+            });
           const sugestoesObrasRelacionadasPagina = (
-            obrasRelacionadasPagina || []
+            obrasRelacionadasPagina
           )
             .map((obra, index) => normalizarSugestaoObraSupabase(obra, index))
             .filter((obra): obra is ObraRelacionadaSugestao => Boolean(obra));
@@ -4964,48 +4983,65 @@ export default function ComunidadePage() {
               ])
             );
           }
+        } catch {
+          // A obra relacionada é complementar; os posts continuam disponíveis.
         }
       }
 
-      const [comentariosResposta, curtidasResposta] = await Promise.all([
-        supabase
-          .from("comunidade_comentarios")
-          .select("id, post_id, autor_id, autor_nome, texto, comentario_pai_id, criado_em")
-          .in("post_id", postIds)
-          .order("criado_em", { ascending: true })
-          .limit(2500),
-        supabase
-          .from("comunidade_curtidas")
-          .select("post_id, usuario_id")
-          .in("post_id", postIds)
-          .limit(5000),
+      const [comentariosSupabase, curtidasSupabase] = await Promise.all([
+        carregarTodasPaginasSupabase<SupabaseComentarioRow>({
+          nomeColecao: "comentários da Comunidade",
+          tamanhoPagina: REGISTROS_COMUNIDADE_POR_PAGINA,
+          buscarPagina: async (inicioPagina, fimPagina) =>
+            supabase
+              .from("comunidade_comentarios")
+              .select(
+                "id, post_id, autor_id, autor_nome, texto, comentario_pai_id, criado_em",
+              )
+              .in("post_id", postIds)
+              .order("criado_em", { ascending: true })
+              .order("id", { ascending: true })
+              .range(inicioPagina, fimPagina),
+        }),
+        carregarTodasPaginasSupabase<SupabaseCurtidaRow>({
+          nomeColecao: "curtidas de posts da Comunidade",
+          tamanhoPagina: REGISTROS_COMUNIDADE_POR_PAGINA,
+          buscarPagina: async (inicioPagina, fimPagina) =>
+            supabase
+              .from("comunidade_curtidas")
+              .select("post_id, usuario_id")
+              .in("post_id", postIds)
+              .order("post_id", { ascending: true })
+              .order("usuario_id", { ascending: true })
+              .range(inicioPagina, fimPagina),
+        }),
       ]);
 
-      if (comentariosResposta.error) {
-        throw comentariosResposta.error;
-      }
-
-      if (curtidasResposta.error) {
-        throw curtidasResposta.error;
-      }
-
-      const comentariosSupabase =
-        comentariosResposta.data || [];
       const comentarioIds = comentariosSupabase
         .map((comentario) => comentario.id)
         .filter((comentarioId): comentarioId is string => Boolean(comentarioId));
 
-      const comentarioCurtidasResposta =
-        comentarioIds.length > 0
-          ? await supabase
-              .from("comunidade_comentario_curtidas")
-              .select("comentario_id, usuario_id")
-              .in("comentario_id", comentarioIds)
-              .limit(5000)
-          : { data: [], error: null };
+      const comentarioCurtidasSupabase: SupabaseComentarioCurtidaRow[] = [];
 
-      if (comentarioCurtidasResposta.error) {
-        throw comentarioCurtidasResposta.error;
+      for (const loteComentarioIds of dividirEmLotesSupabase(
+        comentarioIds,
+        IDS_COMENTARIOS_POR_LOTE,
+      )) {
+        const curtidasDoLote =
+          await carregarTodasPaginasSupabase<SupabaseComentarioCurtidaRow>({
+            nomeColecao: "curtidas de comentários da Comunidade",
+            tamanhoPagina: REGISTROS_COMUNIDADE_POR_PAGINA,
+            buscarPagina: async (inicioPagina, fimPagina) =>
+              supabase
+                .from("comunidade_comentario_curtidas")
+                .select("comentario_id, usuario_id")
+                .in("comentario_id", loteComentarioIds)
+                .order("comentario_id", { ascending: true })
+                .order("usuario_id", { ascending: true })
+                .range(inicioPagina, fimPagina),
+          });
+
+        comentarioCurtidasSupabase.push(...curtidasDoLote);
       }
 
       const autoresIdsComunidade = Array.from(
@@ -5023,8 +5059,8 @@ export default function ComunidadePage() {
       const postsSupabase = mapearPostsSupabase(
         postsPagina,
         comentariosSupabase,
-        curtidasResposta.data || [],
-        comentarioCurtidasResposta.data || [],
+        curtidasSupabase,
+        comentarioCurtidasSupabase,
         profilesPorUsuario
       );
 
