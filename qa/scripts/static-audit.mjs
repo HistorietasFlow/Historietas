@@ -483,6 +483,59 @@ const migrationFiles = fs
   .filter((name) => name.endsWith(".sql"))
   .sort();
 
+const apiAdministrativePrivilegesMigrationName = migrationFiles.find(
+  (name) =>
+    name.endsWith(
+      "_revogar_privilegios_administrativos_api.sql"
+    )
+);
+
+if (!apiAdministrativePrivilegesMigrationName) {
+  fail(
+    "migration revoga privilégios administrativos da API",
+    "migration revogar_privilegios_administrativos_api ausente"
+  );
+} else {
+  const apiAdministrativePrivilegesSql = fs.readFileSync(
+    path.join(
+      migrationsDir,
+      apiAdministrativePrivilegesMigrationName
+    ),
+    "utf8"
+  );
+  const apiAdministrativePrivilegesContracts = [
+    {
+      name: "roles da API não administram tabelas de public",
+      pattern:
+        /revoke\s+truncate\s*,\s*trigger\s*,\s*references\s*,\s*maintain\s+on all tables in schema public\s+from anon\s*,\s*authenticated/i
+    },
+    {
+      name: "novas tabelas não restauram privilégios administrativos",
+      pattern:
+        /alter default privileges for role postgres in schema public\s+revoke\s+truncate\s*,\s*trigger\s*,\s*references\s*,\s*maintain\s+on tables\s+from anon\s*,\s*authenticated/i
+    },
+    {
+      name: "migration valida grants efetivos e privilégios padrão",
+      pattern:
+        /has_table_privilege[\s\S]*?pg_default_acl[\s\S]*?raise exception/i
+    }
+  ];
+
+  for (const contract of apiAdministrativePrivilegesContracts) {
+    if (contract.pattern.test(apiAdministrativePrivilegesSql)) {
+      pass(
+        contract.name,
+        apiAdministrativePrivilegesMigrationName
+      );
+    } else {
+      fail(
+        contract.name,
+        `contrato ausente em ${apiAdministrativePrivilegesMigrationName}`
+      );
+    }
+  }
+}
+
 const abuseProtectionMigrationName = migrationFiles.find((name) =>
   name.endsWith(
     "_proteger_endpoint_exclusao_rpcs_visualizacao.sql"
