@@ -859,22 +859,6 @@ async function carregarIdsColecaoUsuarioSupabaseEmAlta(
   }
 }
 
-function obterIdentificadoresObraLocalEmAlta(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
-) {
-  return Array.from(
-    new Set(
-      [
-        obra.id,
-        obra.slug,
-        criarSlugBase(obra.titulo),
-        normalizarTexto(obra.titulo),
-      ]
-        .map((id) => id.trim())
-        .filter(Boolean),
-    ),
-  );
-}
 
 function obterIdentificadoresRankingObra(
   obra: Pick<ObraRanking, "storageId" | "titulo" | "href">,
@@ -1665,7 +1649,6 @@ function encontrarCapituloParaContinuar(obra: ObraLocal) {
 function criarRankingCoverStyle(
   capa: string,
   isDesktop = false,
-  _posicao = 5,
 ): CSSProperties {
   const baseStyle = isDesktop ? desktopCoverStyle : coverStyle;
 
@@ -1824,7 +1807,7 @@ export default function EmAltaPage() {
       window.clearTimeout(atualizarModoDesktopTimer);
       mediaQuery.removeListener(atualizarModoDesktop);
     };
-  }, [usuarioLogadoId]);
+  }, []);
 
   useEffect(() => {
     let ativo = true;
@@ -1976,7 +1959,7 @@ export default function EmAltaPage() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [usuarioLogadoId]);
 
   const ranking = useMemo<ObraRanking[]>(() => {
     return obrasLocais
@@ -3043,7 +3026,7 @@ function AutorRankingCard({
 
       <div style={isDesktop ? desktopCardContentStyle : cardContentStyle}>
         <div style={authorRankingTitleAreaStyle}>
-          <h3 data-historietas-i18n-ignore="true" style={criarAutorCardTitleRankingStyle(posicao)}>{autor.nome}</h3>
+          <h3 data-historietas-i18n-ignore="true" style={criarAutorCardTitleRankingStyle()}>{autor.nome}</h3>
         </div>
 
         <div style={authorRankingMetaStackStyle}>
@@ -3110,7 +3093,7 @@ function AutorRankingCard({
         </div>
 
         <div style={authorRankingScoreRowStyle}>
-          <span className="historietas-ranking-level-line" style={criarAutorPointsBadgeStyle(posicao)}>
+          <span className="historietas-ranking-level-line" style={criarAutorPointsBadgeStyle()}>
             {formatarNumero(autor.pontuacao)} pts
           </span>
 
@@ -3197,13 +3180,13 @@ function RankingCard({
         }
       }}
     >
-      <div style={criarRankingCoverStyle(obra.capa, isDesktop, posicao)}>
+      <div style={criarRankingCoverStyle(obra.capa, isDesktop)}>
         {null}
       </div>
 
       <div style={isDesktop ? desktopCardContentStyle : cardContentStyle}>
         <div style={cardTopStyle}>
-          <h3 data-historietas-i18n-ignore="true" style={criarObraCardTitleRankingStyle(posicao)}>{obra.titulo}</h3>
+          <h3 data-historietas-i18n-ignore="true" style={criarObraCardTitleRankingStyle()}>{obra.titulo}</h3>
         </div>
 
         <Link
@@ -3504,41 +3487,6 @@ function criarCardRankingStyle(
     boxShadow: temaPosicao.shadow,
   };
 }
-function criarTierBadgeStyle(posicao: number): CSSProperties {
-  const temaPosicao = obterTemaPosicao(posicao);
-
-  return {
-    position: "absolute",
-    left: "8px",
-    right: "8px",
-    bottom: "8px",
-    zIndex: 5,
-    minHeight: "30px",
-    maxWidth: "calc(100% - 16px)",
-    padding: "0 8px",
-    borderRadius: "999px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexWrap: "nowrap",
-    gap: "5px",
-    background: temaPosicao.badgeBackground,
-    border: `1px solid ${temaPosicao.badgeBorder}`,
-    color: "#FFFFFF",
-    fontSize: "10px",
-    lineHeight: 1,
-    fontWeight: 950,
-    letterSpacing: "0.055em",
-    textTransform: "uppercase",
-    whiteSpace: "nowrap",
-    overflowWrap: "normal",
-    wordBreak: "normal",
-    overflow: "hidden",
-    boxShadow:
-      "0 8px 16px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.22)",
-    pointerEvents: "none",
-  };
-}
 
 function criarRankingTierInlineBadgeStyle(posicao: number): CSSProperties {
   const temaPosicao = obterTemaPosicao(posicao);
@@ -3567,45 +3515,13 @@ function criarRankingTierInlineBadgeStyle(posicao: number): CSSProperties {
   };
 }
 
-function criarCardTitleRankingStyle(_posicao: number): CSSProperties {
+function criarObraCardTitleRankingStyle(): CSSProperties {
   return {
     ...cardTitleStyle,
     color: "#FFFFFF",
   };
 }
-function criarObraCardTitleRankingStyle(_posicao: number): CSSProperties {
-  return {
-    ...cardTitleStyle,
-    color: "#FFFFFF",
-  };
-}
-function criarReadRankingStyle(
-  posicao: number,
-  disponivel: boolean,
-): CSSProperties {
-  const temaPosicao = obterTemaPosicao(posicao);
 
-  return {
-    ...(disponivel ? readStyle : soonReadStyle),
-    color: temaPosicao.readColor,
-  };
-}
-
-function criarAutorCardRankingStyle(
-  posicao: number,
-  isDesktop: boolean,
-): CSSProperties {
-  const temaPosicao = obterTemaPosicao(posicao);
-
-  return {
-    ...(isDesktop ? desktopAuthorRankingCardStyle : authorRankingCardStyle),
-    background: temaPosicao.cardBackground,
-    backgroundColor: temaPosicao.cardBackground,
-    border: `1px solid ${temaPosicao.border}`,
-    outline: "none",
-    boxShadow: temaPosicao.shadow,
-  };
-}
 function criarAutorAvatarRankingStyle(
   avatar: string,
   posicao: number,
@@ -3652,7 +3568,7 @@ function criarAutorTierInlineBadgeStyle(posicao: number): CSSProperties {
   };
 }
 
-function criarAutorPointsBadgeStyle(_posicao: number): CSSProperties {
+function criarAutorPointsBadgeStyle(): CSSProperties {
   return {
     ...highlightBadgeStyle,
     marginTop: 0,
@@ -3663,7 +3579,7 @@ function criarAutorPointsBadgeStyle(_posicao: number): CSSProperties {
   };
 }
 
-function criarAutorCardTitleRankingStyle(_posicao: number): CSSProperties {
+function criarAutorCardTitleRankingStyle(): CSSProperties {
   return {
     ...authorRankingCardTitleStyle,
     color: "#FFFFFF",
@@ -4141,13 +4057,6 @@ const titleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  fontSize: "clamp(38px, 4.4vw, 58px)",
-  maxWidth: "760px",
-  margin: "0 auto",
-  textAlign: "center",
-};
 
 const titleHeaderStyle: CSSProperties = {
   ...topStyle,
@@ -4767,154 +4676,22 @@ const starMetricIconStyle: CSSProperties = {
   transform: "translateY(-1px)",
 };
 
-const progressCompactStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr auto",
-  alignItems: "center",
-  gap: "8px",
-  minWidth: 0,
-};
 
-const progressTrackStyle: CSSProperties = {
-  width: "100%",
-  height: "7px",
-  borderRadius: "999px",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.1))",
-  overflow: "hidden",
-};
 
-const progressBarStyle: CSSProperties = {
-  height: "100%",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(135deg, var(--historietas-accent, #FFFFFF) 0%, var(--historietas-secondary, #A1A1AA) 100%)",
-};
 
-const progressTextStyle: CSSProperties = {
-  margin: 0,
-  color: "#D4D4D8",
-  fontSize: "11px",
-  fontWeight: 850,
-  lineHeight: 1.2,
-  whiteSpace: "nowrap",
-};
 
-const readStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  marginTop: "2px",
-  color: "var(--historietas-accent, #FFFFFF)",
-  fontSize: "14px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const soonReadStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  marginTop: "4px",
-  color: "#A1A1AA",
-  fontSize: "14px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const authorRankingSectionStyle: CSSProperties = {
-  ...sectionStyle,
-  marginTop: "38px",
-};
 
-const desktopAuthorRankingSectionStyle: CSSProperties = {
-  ...desktopSectionStyle,
-  marginTop: "44px",
-};
 
-const authorRankingSectionIconStyle: CSSProperties = {
-  width: "auto",
-  height: "auto",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
-  fontSize: "28px",
-  lineHeight: 1,
-  fontWeight: 950,
-};
 
-const authorRankingSectionTitleStyle: CSSProperties = {
-  ...sectionTitleStyle,
-  color: "var(--historietas-em-alta-hex-fbbf24, #FBBF24)",
-  textAlign: "center",
-};
 
-const authorRankingDescriptionStyle: CSSProperties = {
-  margin: "4px 0 0",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-  textAlign: "center",
-  maxWidth: "560px",
-  ...safeTextStyle,
-};
 
-const authorRankingCarouselStyle: CSSProperties = {
-  ...carouselStyle,
-  gridAutoColumns: "minmax(278px, calc(100vw - 52px))",
-};
 
-const desktopAuthorRankingCarouselStyle: CSSProperties = {
-  ...desktopCarouselStyle,
-  gridAutoColumns: "minmax(340px, 370px)",
-};
 
-const authorRankingCardStyle: CSSProperties = {
-  position: "relative",
-  display: "grid",
-  gridTemplateColumns: "88px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "12px",
-  minHeight: "154px",
-  padding: "12px",
-  paddingRight: "50px",
-  borderRadius: "24px",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  cursor: "pointer",
-  scrollSnapAlign: "start",
-  minWidth: 0,
-  overflow: "hidden",
-  boxSizing: "border-box",
-  boxShadow: "none",
-};
 
-const desktopAuthorRankingCardStyle: CSSProperties = {
-  ...authorRankingCardStyle,
-  gridTemplateColumns: "96px minmax(0, 1fr)",
-  minHeight: "164px",
-  padding: "14px",
-  paddingRight: "54px",
-  borderRadius: "26px",
-};
 
-const authorRankingAvatarStyle: CSSProperties = {
-  position: "relative",
-  width: "88px",
-  height: "112px",
-  borderRadius: "22px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden",
-  flex: "0 0 auto",
-};
 
-const desktopAuthorRankingAvatarStyle: CSSProperties = {
-  ...authorRankingAvatarStyle,
-  width: "96px",
-  height: "124px",
-  borderRadius: "24px",
-};
 
 const authorRankingAvatarInitialStyle: CSSProperties = {
   color: "#FFFFFF",
@@ -4947,12 +4724,6 @@ const authorRankingTierBadgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const authorRankingContentStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "center",
-  gap: "7px",
-  minWidth: 0,
-};
 
 const authorRankingCardTitleStyle: CSSProperties = {
   margin: 0,
@@ -4970,19 +4741,7 @@ const authorRankingCardTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const authorRankingWorksStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, var(--historietas-em-alta-hex-c4b5fd, #C4B5FD))",
-  fontSize: "11px",
-  lineHeight: 1.15,
-  fontWeight: 850,
-  ...safeTextStyle,
-};
 
-const authorRankingStatsStyle: CSSProperties = {
-  ...statsStyle,
-  columnGap: "7px",
-  fontSize: "11px",
-};
 
 const authorRankingTitleAreaStyle: CSSProperties = {
   ...cardTopStyle,
@@ -5025,22 +4784,4 @@ const authorRankingScoreRowStyle: CSSProperties = {
   marginTop: "4px",
   maxWidth: "100%",
   minWidth: 0,
-};
-
-const emptyButtonStyle: CSSProperties = {
-  width: "fit-content",
-  minHeight: "40px",
-  margin: "0 auto",
-  padding: "0 15px",
-  borderRadius: "999px",
-  background: "var(--historietas-em-alta-hex-08030f, #08030F)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "13px",
-  fontWeight: 950,
-  border: "1px solid rgba(255,255,255,0.10)",
-  boxShadow: "none",
 };

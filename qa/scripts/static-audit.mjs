@@ -1866,8 +1866,85 @@ const packageJson = JSON.parse(
   )
 );
 
+const paginationHelperPath = path.join(
+  ROOT_DIR,
+  "lib/supabase/paginacao.mjs"
+);
+const paginationHelper = fs.existsSync(paginationHelperPath)
+  ? fs.readFileSync(paginationHelperPath, "utf8")
+  : "";
+const paginationVolumeTestPath = path.join(
+  ROOT_DIR,
+  "qa/unit/paginacao-alto-volume.test.mjs"
+);
+const paginationVolumeTest = fs.existsSync(paginationVolumeTestPath)
+  ? fs.readFileSync(paginationVolumeTestPath, "utf8")
+  : "";
+const communityPagePath = path.join(
+  ROOT_DIR,
+  "app/comunidade/page.tsx"
+);
+const communityPage = fs.existsSync(communityPagePath)
+  ? fs.readFileSync(communityPagePath, "utf8")
+  : "";
+
+const paginationContracts = [
+  {
+    name: "paginador usa ranges inclusivos sem sobreposição",
+    valid:
+      /const inicio = pagina \* tamanhoPagina[\s\S]*?fim: inicio \+ tamanhoPagina - 1/.test(
+        paginationHelper
+      ) &&
+      /dadosPagina\.length < tamanhoPagina/.test(paginationHelper)
+  },
+  {
+    name: "paginador interrompe erros e respostas acima do limite",
+    valid:
+      /resposta\?\.error[\s\S]*?throw criarErroPagina/.test(
+        paginationHelper
+      ) &&
+      /dadosPagina\.length > tamanhoPagina[\s\S]*?throw new RangeError/.test(
+        paginationHelper
+      )
+  },
+  {
+    name: "Comunidade pagina posts com ordenação determinística",
+    valid:
+      /\.from\("comunidade_posts"\)[\s\S]*?\.order\("criado_em", \{ ascending: false \}\)[\s\S]*?\.order\("id", \{ ascending: false \}\)[\s\S]*?\.range\(inicio, fim\)/.test(
+        communityPage
+      )
+  },
+  {
+    name: "Comunidade pagina comentários, curtidas e obras relacionadas",
+    valid:
+      (communityPage.match(/carregarTodasPaginasSupabase</g) || []).length >= 4 &&
+      /dividirEmLotesSupabase\([\s\S]*?comentarioIds[\s\S]*?IDS_COMENTARIOS_POR_LOTE/.test(
+        communityPage
+      )
+  },
+  {
+    name: "testes cobrem volumes acima dos limites usuais",
+    valid:
+      /quantidade: 137[\s\S]*?quantidade: 2_501[\s\S]*?quantidade: 5_001[\s\S]*?quantidade: 1_201/.test(
+        paginationVolumeTest
+      ) &&
+      /new Set\(resultado\.map[\s\S]*?\.size, quantidade/.test(
+        paginationVolumeTest
+      )
+  }
+];
+
+for (const contract of paginationContracts) {
+  if (contract.valid) {
+    pass(contract.name, "paginação em alto volume");
+  } else {
+    fail(contract.name, "contrato de paginação ausente");
+  }
+}
+
 for (const script of [
   "test:static",
+  "test:pagination",
   "test:smoke",
   "test:e2e",
   "test:all"
@@ -1880,6 +1957,93 @@ for (const script of [
       "ausente"
     );
   }
+}
+
+const ciWorkflowPath = path.join(
+  ROOT_DIR,
+  ".github/workflows/ci.yml"
+);
+const ciWorkflow = fs.existsSync(ciWorkflowPath)
+  ? fs.readFileSync(ciWorkflowPath, "utf8")
+  : "";
+const playwrightConfigPath = path.join(
+  ROOT_DIR,
+  "qa/playwright.config.mjs"
+);
+const playwrightConfig = fs.existsSync(playwrightConfigPath)
+  ? fs.readFileSync(playwrightConfigPath, "utf8")
+  : "";
+
+const ciContracts = [
+  {
+    name: "CI valida pull requests e a main",
+    valid:
+      /pull_request:[\s\S]*?branches:[\s\S]*?- main/.test(ciWorkflow) &&
+      /push:[\s\S]*?branches:[\s\S]*?- main/.test(ciWorkflow)
+  },
+  {
+    name: "CI executa lint, typecheck, testes e build",
+    valid: [
+      "npm run lint",
+      "npm run typecheck",
+      "npm run test:static",
+      "npm run test:pagination",
+      "npm --prefix qa test",
+      "npm run build"
+    ].every((command) => ciWorkflow.includes(command))
+  },
+  {
+    name: "CI testa o código do PR sem segredos",
+    valid:
+      /E2E_BASE_URL:\s*http:\/\/127\.0\.0\.1:3000/.test(ciWorkflow) &&
+      !/\$\{\{\s*secrets\./.test(ciWorkflow)
+  },
+  {
+    name: "CI executa Playwright no build de produção",
+    valid:
+      (ciWorkflow.match(/npm run build/g) || []).length === 2 &&
+      /E2E_WEB_SERVER_COMMAND:\s*npm --prefix \.\. run start/.test(
+        ciWorkflow
+      ) &&
+      /process\.env\.E2E_WEB_SERVER_COMMAND/.test(playwrightConfig)
+  },
+  {
+    name: "CI usa Node.js 22 em todos os jobs",
+    valid: (ciWorkflow.match(/node-version:\s*22/g) || []).length === 4
+  },
+  {
+    name: "CI limita o token do GitHub a leitura",
+    valid:
+      /permissions:\s*\n\s*contents:\s*read/.test(ciWorkflow) &&
+      (ciWorkflow.match(/persist-credentials:\s*false/g) || []).length === 4
+  }
+];
+
+for (const contract of ciContracts) {
+  if (contract.valid) {
+    pass(contract.name, ".github/workflows/ci.yml");
+  } else {
+    fail(contract.name, "contrato ausente em .github/workflows/ci.yml");
+  }
+}
+
+const ciActions = [
+  ...ciWorkflow.matchAll(/^\s*uses:\s*([^\s#]+)/gm)
+].map((match) => match[1]);
+
+if (
+  ciActions.length > 0 &&
+  ciActions.every((action) => /@[0-9a-f]{40}$/.test(action))
+) {
+  pass(
+    "CI fixa GitHub Actions por SHA",
+    `${ciActions.length} usos verificados`
+  );
+} else {
+  fail(
+    "CI fixa GitHub Actions por SHA",
+    "há Action ausente ou referenciada por tag mutável"
+  );
 }
 
 const migrationCount = migrationFiles.length;

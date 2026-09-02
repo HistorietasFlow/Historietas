@@ -24,12 +24,10 @@ import {
   carregarPreferenciasPrivacidade,
   deixarDeSeguirUsuario,
   desbloquearUsuario,
-  preferenciasPrivacidadePadrao,
   solicitarOuSeguirUsuario,
   type EstadoBloqueioPerfil,
   type EstadoRelacionamentoPerfil,
   type PermissoesAbasPerfil,
-  type PreferenciasPrivacidadeHistorietas,
 } from "../../lib/historietasPrivacy";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import {
@@ -4496,45 +4494,9 @@ function mesclarItensBibliotecaPerfil(
 }
 
 
-function criarCapaBibliotecaPerfilStyle(capa: string, desktop: boolean): CSSProperties {
-  const baseStyle = desktop
-    ? profileLibraryCoverDesktopStyle
-    : profileLibraryCoverStyle;
-
-  if (!capa) {
-    return baseStyle;
-  }
-
-  return {
-    ...baseStyle,
-    background: "var(--historietas-perfil-bg-deep, #000000)",
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
 
 
-function criarCoverStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return coverStyle;
-  }
 
-  return {
-    ...coverStyle,
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.24) 100%), url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarCoverStyleDesktop(capa: string): CSSProperties {
-  return {
-    ...criarCoverStyle(capa),
-    minHeight: "180px",
-    borderRadius: "20px",
-  };
-}
 
 function criarCapaGridPerfilAutor(
   capa: string,
@@ -6908,61 +6870,6 @@ async function carregarEstadoSeguimentoUsuarioPerfil(
   }
 }
 
-async function sincronizarUsuarioSeguidoSupabase(
-  seguidorId: string,
-  seguidoId: string,
-  ativo: boolean,
-): Promise<{ ok: boolean; erro: string }> {
-  if (!seguidorId || !seguidoId) {
-    return { ok: false, erro: "IDs de usuário ausentes." };
-  }
-
-  if (!idAutorSupabaseValido(seguidorId) || !idAutorSupabaseValido(seguidoId)) {
-    return { ok: false, erro: "ID de usuário inválido para seguir perfil." };
-  }
-
-  if (seguidorId === seguidoId) {
-    return { ok: false, erro: "Você não pode seguir o próprio perfil." };
-  }
-
-  try {
-    const { error: erroDelete } = await supabase
-      .from("seguindo_usuarios")
-      .delete()
-      .eq("seguidor_id", seguidorId)
-      .eq("seguido_id", seguidoId);
-
-    if (erroDelete) {
-      const mensagem = erroDelete.message || "Erro ao limpar seguimento antigo.";
-      console.warn("Não consegui limpar seguimento antigo do perfil:", mensagem, erroDelete);
-
-      return { ok: false, erro: mensagem };
-    }
-
-    if (!ativo) {
-      return { ok: true, erro: "" };
-    }
-
-    const { error: erroInsert } = await supabase.from("seguindo_usuarios").insert({
-      seguidor_id: seguidorId,
-      seguido_id: seguidoId,
-    });
-
-    if (erroInsert) {
-      const mensagem = erroInsert.message || "Erro ao salvar seguimento.";
-      console.warn("Não consegui seguir o perfil:", mensagem, erroInsert);
-
-      return { ok: false, erro: mensagem };
-    }
-
-    return { ok: true, erro: "" };
-  } catch (error) {
-    const mensagem = error instanceof Error ? error.message : "Erro inesperado ao seguir perfil.";
-    console.warn("Não consegui sincronizar seguimento do perfil:", error);
-
-    return { ok: false, erro: mensagem };
-  }
-}
 
 
 type NotificacaoSocialPerfilAutorPayload = {
@@ -8598,7 +8505,6 @@ function PerfilAutorPageContent() {
     perfilSalvoAutor.avatarNome,
   ]);
 
-  const caracteresRestantesBio = BIO_MAX_LENGTH - bioAutorPersonalizada.length;
   const caracteresRestantesBioSobre =
     SOBRE_BIO_MAX_LENGTH - bioSobrePersonalizada.length;
   const autorPodeReceberAvaliacao = Boolean(
@@ -8837,6 +8743,8 @@ function PerfilAutorPageContent() {
     usuarioIdLogado,
     versaoSincronizacaoBiblioteca,
     permissoesAbasPerfil,
+    diarioPerfilVisivel,
+    atividadesPerfilVisivel,
   ]);
 
   const itensDiarioTudo = useMemo(() => {
@@ -9084,7 +8992,7 @@ function PerfilAutorPageContent() {
       cancelado = true;
     };
   }, [
-    perfilParaMostrar?.autorId,
+    perfilParaMostrar,
     perfilUsuarioRemotoAtivo?.userId,
     perfilUsaAvaliacaoDiario,
     podeEditarPerfil,
@@ -9324,32 +9232,6 @@ function PerfilAutorPageContent() {
   const descriptionAtualStyle = isDesktop
     ? desktopDescriptionStyle
     : descriptionStyle;
-  const sectionHeaderAtualStyle = isDesktop
-    ? desktopSectionHeaderStyle
-    : sectionHeaderStyle;
-  const filterBoxAtualStyle = isDesktop
-    ? desktopFilterBoxStyle
-    : filterBoxStyle;
-  const filterGridAtualStyle = isDesktop
-    ? desktopFilterGridStyle
-    : filterGridStyle;
-  const clearFilterButtonAtualStyle = isDesktop
-    ? desktopClearFilterButtonStyle
-    : clearFilterButtonStyle;
-  const worksGridAtualStyle = isDesktop
-    ? desktopWorksGridStyle
-    : worksGridStyle;
-  const workCardAtualStyle = isDesktop ? desktopWorkCardStyle : workCardStyle;
-  const workContentAtualStyle = isDesktop
-    ? desktopWorkContentStyle
-    : workContentStyle;
-  const workTitleAtualStyle = isDesktop
-    ? desktopWorkTitleStyle
-    : workTitleStyle;
-  const workTextAtualStyle = isDesktop ? desktopWorkTextStyle : workTextStyle;
-  const workActionsGridAtualStyle = isDesktop
-    ? desktopWorkActionsGridStyle
-    : workActionsGridStyle;
   const avatarActionsAtualStyle = isDesktop
     ? desktopAvatarActionsStyle
     : avatarActionsStyle;
@@ -12680,24 +12562,6 @@ function PerfilAutorPageContent() {
                   const obraHref =
                     obra.link ||
                     `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
-                  const ultimoCapitulo =
-                    encontrarCapituloParaContinuar(obra) ||
-                    obra.capitulos[obra.capitulos.length - 1] ||
-                    null;
-                  const numeroUltimoCapitulo = ultimoCapitulo
-                    ? obra.capitulos.findIndex(
-                        (capitulo) => capitulo.id === ultimoCapitulo.id,
-                      ) + 1
-                    : 0;
-                  const capituloHref = ultimoCapitulo
-                    ? criarHrefLeituraCapituloPerfilAutor(
-                        obra,
-                        ultimoCapitulo,
-                        numeroUltimoCapitulo || 1,
-                      )
-                    : "";
-                  const obraFavorita = colecaoTemObraPerfilBiblioteca(obrasFavoritas, obra);
-                  const obraConcluida = colecaoTemObraPerfilBiblioteca(obrasConcluidas, obra);
                   const totalCurtidas = obterTotalCurtidasObraPerfilAutor(
                     obra,
                     totaisInteracoesObras,
@@ -13323,13 +13187,6 @@ const workActionSheetItemActiveStyle: CSSProperties = {
   color: "#FFFFFF",
 };
 
-const workActionSheetCancelButtonStyle: CSSProperties = {
-  ...workActionSheetItemStyle,
-  justifyContent: "center",
-  textAlign: "center",
-  background: "transparent",
-  color: "rgba(255,255,255,0.58)",
-};
 
 const diarySummarySectionStyle: CSSProperties = {
   width: "100%",
@@ -13369,12 +13226,6 @@ const homeCardTitleTypographyStyle: CSSProperties = {
   letterSpacing: "-0.01em",
 };
 
-const homeCardMetaTypographyStyle: CSSProperties = {
-  fontFamily:
-    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  fontWeight: 450,
-  lineHeight: 1.25,
-};
 
 const homeCardStatsTypographyStyle: CSSProperties = {
   fontFamily:
@@ -13532,378 +13383,40 @@ const profileLibraryTabActiveStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.14)",
 };
 
-const profileLibraryStatsGridStyle: CSSProperties = {
-  display: "flex",
-  gap: "8px",
-  overflowX: "auto",
-  overflowY: "hidden",
-  scrollSnapType: "x mandatory",
-  scrollbarWidth: "none",
-  WebkitOverflowScrolling: "touch",
-  marginTop: "4px",
-  padding: "0 2px 2px",
-  maxWidth: "100%",
-  minWidth: 0,
-};
-
-const desktopProfileLibraryStatsGridStyle: CSSProperties = {
-  ...profileLibraryStatsGridStyle,
-  justifyContent: "center",
-  overflowX: "visible",
-  flexWrap: "wrap",
-  gap: "8px",
-  padding: 0,
-};
-
-const profileLibraryStatCardStyle: CSSProperties = {
-  flex: "0 0 84px",
-  scrollSnapAlign: "start",
-  borderRadius: "11px",
-  background: "var(--historietas-perfil-deep-72, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.06)",
-  padding: "4px 4px",
-  minHeight: "46px",
-  display: "grid",
-  gap: "1px",
-  alignContent: "center",
-  justifyItems: "center",
-  minWidth: 0,
-  overflow: "hidden",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  appearance: "none",
-  boxShadow: "none",
-};
-
-const profileLibraryStatCardActiveStyle: CSSProperties = {
-  ...profileLibraryStatCardStyle,
-  background: "var(--historietas-perfil-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  boxShadow: "none",
-};
-
-const profileLibraryStatNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "16px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
-};
-
-const profileLibraryStatLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "7.2px",
-  lineHeight: 1.02,
-  fontWeight: 950,
-  textAlign: "center",
-  textTransform: "uppercase",
-  letterSpacing: "0.02em",
-  ...safeTextStyle,
-};
-
-const profileLibrarySummaryTitleStyle: CSSProperties = {
-  margin: "14px 0 2px",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "clamp(18px, 4.4vw, 24px)",
-  lineHeight: 1.08,
-  fontWeight: 950,
-  textAlign: "center",
-  letterSpacing: "-0.04em",
-  ...safeTextStyle,
-};
-
-const profileLibraryListStyle: CSSProperties = {
-  marginTop: "14px",
-  display: "grid",
-  gap: "12px",
-  width: "100%",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const profileLibraryCardStyle: CSSProperties = {
-  display: "grid",
-  gap: "9px",
-  padding: "11px",
-  borderRadius: "22px",
-  background: "var(--historietas-perfil-deep-72, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-  boxShadow: "none",
-  boxSizing: "border-box",
-};
 
 
-const profileLibraryBookActionGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(58px, 66px) minmax(0, 1fr) minmax(0, 1fr)",
-  gridTemplateRows: "auto auto",
-  gap: "5px",
-  alignItems: "stretch",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
-
-const desktopProfileLibraryBookActionGridStyle: CSSProperties = {
-  ...profileLibraryBookActionGridStyle,
-  gridTemplateColumns: "minmax(76px, 88px) minmax(0, 1fr) minmax(0, 1fr)",
-  gap: "6px",
-};
-
-const profileLibraryBookInfoActionGridStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "start",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "100%",
-  gridColumn: "2 / 4",
-  gridRow: "1 / 2",
-};
-
-const desktopProfileLibraryBookInfoActionGridStyle: CSSProperties = {
-  ...profileLibraryBookInfoActionGridStyle,
-  gap: "5px",
-};
 
 
-const profileLibraryCoverLinkStyle: CSSProperties = {
-  display: "block",
-  textDecoration: "none",
-  minWidth: 0,
-  height: "100%",
-};
 
-const profileLibraryCoverStyle: CSSProperties = {
-  gridColumn: "1 / 2",
-  gridRow: "1 / 3",
-  width: "100%",
-  height: "100%",
-  minHeight: 0,
-  maxHeight: "none",
-  aspectRatio: "auto",
-  alignSelf: "stretch",
-  borderRadius: "16px",
-  position: "relative",
-  overflow: "hidden",
-  textDecoration: "none",
-  background: "var(--historietas-perfil-bg-deep, #000000)",
-  backgroundImage: "linear-gradient(135deg, var(--historietas-perfil-surface, #050505) 0%, var(--historietas-perfil-bg-deep, #000000) 100%)",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  border: "1px solid rgba(255,255,255,0.08)",
-  display: "block",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  boxShadow: "none",
-};
 
-const profileLibraryCoverDesktopStyle: CSSProperties = {
-  ...profileLibraryCoverStyle,
-  borderRadius: "16px",
-};
 
-const profileLibraryCardContentStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "start",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const profileLibraryBadgesRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
 
-const profileLibraryChapterBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "10px",
-  lineHeight: 1,
-  fontWeight: 900,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const profileLibraryStatusStyle: CSSProperties = {
-  ...profileLibraryChapterBadgeStyle,
-  background: "rgba(255,255,255,0.035)",
-  border: "1px solid rgba(255,255,255,0.07)",
-  color: "rgba(255,255,255,0.62)",
-};
 
-const profileLibraryStatusActiveStyle: CSSProperties = {
-  ...profileLibraryChapterBadgeStyle,
-  background: "var(--historietas-perfil-success-spaced-12, rgba(34, 197, 94, 0.12))",
-  border: "1px solid var(--historietas-perfil-success-spaced-22, rgba(34, 197, 94, 0.22))",
-  color: "var(--historietas-perfil-success-soft, #FFFFFF)",
-  fontWeight: 950,
-};
 
-const profileLibraryTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "20px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  maxWidth: "100%",
-  paddingBottom: "2px",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
 
-const profileLibraryMetaStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  lineHeight: 1.25,
-  fontWeight: 700,
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
 
-const profileLibraryAuthorStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  margin: 0,
-  color: "var(--historietas-text-secondary, var(--historietas-perfil-lavender, #D8C8FF))",
-  fontSize: "12px",
-  fontWeight: 800,
-  textDecoration: "none",
-  borderBottom: "0",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const profileLibraryPrimaryActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "8px",
-  minWidth: 0,
-};
 
-const profileLibrarySecondaryActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  alignItems: "stretch",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  paddingTop: "1px",
-  marginTop: 0,
-};
 
-const profileLibraryReadButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "0 12px",
-  borderRadius: "999px",
-  background: "var(--historietas-perfil-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 950,
-  lineHeight: 1.15,
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  textAlign: "center",
-  gridColumn: "2 / 3",
-  gridRow: "2 / 3",
-  ...safeTextStyle,
-};
 
-const profileLibraryViewButtonStyle: CSSProperties = {
-  ...profileLibraryReadButtonStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  gridColumn: "3 / 4",
-  gridRow: "2 / 3",
-};
 
-const profileLibraryListButtonStyle: CSSProperties = {
-  minHeight: "34px",
-  width: "100%",
-  maxWidth: "100%",
-  padding: "0 12px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.06)",
-  color: "#FFFFFF",
-  fontSize: "13px",
-  fontWeight: 950,
-  lineHeight: 1.15,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  textAlign: "center",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  ...safeTextStyle,
-};
 
-const profileLibraryListButtonActiveStyle: CSSProperties = {
-  ...profileLibraryListButtonStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.12)",
-};
 
-const profileLibraryDoneButtonStyle: CSSProperties = {
-  ...profileLibraryListButtonStyle,
-  background: "var(--historietas-perfil-success-spaced-12, rgba(34, 197, 94, 0.12))",
-  border: "1px solid var(--historietas-perfil-success-spaced-22, rgba(34, 197, 94, 0.22))",
-  color: "var(--historietas-perfil-success-soft, #FFFFFF)",
-};
 
-const profileLibraryDoneButtonActiveStyle: CSSProperties = {
-  ...profileLibraryDoneButtonStyle,
-  background: "var(--historietas-perfil-emerald-18, rgba(16,185,129,0.18))",
-  border: "1px solid var(--historietas-perfil-emerald-38, rgba(16,185,129,0.38))",
-};
 
-const profileLibraryRemoveButtonStyle: CSSProperties = {
-  ...profileLibraryListButtonStyle,
-  background: "var(--historietas-perfil-danger-dark-spaced-28, rgba(127, 29, 29, 0.28))",
-  border: "1px solid var(--historietas-perfil-danger-spaced-22, rgba(248, 113, 113, 0.22))",
-  color: "var(--historietas-perfil-danger-soft, #FFFFFF)",
-};
+
+
+
+
+
+
+
+
+
+
+
 
 const mobileTopWaterFadeStyle: CSSProperties = {
   position: "absolute",
@@ -14067,15 +13580,6 @@ const containerStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  flexWrap: "nowrap",
-  marginBottom: "16px",
-  minWidth: 0,
-};
 
 const logoStyle: CSSProperties = {
   display: "flex",
@@ -14165,83 +13669,14 @@ const profileHeaderDesktopStyle: CSSProperties = {
   gridTemplateColumns: "minmax(0, 1fr) 36px",
 };
 
-const profileNotificationButtonStyle: CSSProperties = {
-  position: "relative",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, var(--historietas-perfil-bg-deep, #000000))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  boxShadow: "none",
-};
 
-const profileNotificationBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, var(--historietas-perfil-bg-page, #000000))",
-  background: "var(--historietas-perfil-danger, #FFFFFF)",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
-};
 
 const profileHeaderLogoStyle: CSSProperties = {
   ...logoStyle,
 };
 
-const profileHeaderCenterStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "1px",
-  minWidth: 0,
-  textAlign: "center",
-};
 
-const profileHeaderHandleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12px",
-  lineHeight: 1.1,
-  fontWeight: 950,
-  letterSpacing: "-0.02em",
-  maxWidth: "100%",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
 
-const profileHeaderModeStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8.6px",
-  lineHeight: 1.1,
-  fontWeight: 900,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  maxWidth: "100%",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
 
 const profileMenuButtonStyle: CSSProperties = {
   width: "32px",
@@ -14310,13 +13745,6 @@ const desktopMenuSheetStyle: CSSProperties = {
   maxWidth: "calc(100vw - 80px)",
 };
 
-const menuHandleStyle: CSSProperties = {
-  width: "42px",
-  height: "4px",
-  borderRadius: "999px",
-  background: "var(--historietas-border-soft, rgba(255,255,255,0.20))",
-  margin: "0 auto 4px",
-};
 
 const menuHeaderStyle: CSSProperties = {
   display: "flex",
@@ -14465,42 +13893,8 @@ const menuNotificationBadgeStyle: CSSProperties = {
   pointerEvents: "none",
 };
 
-const menuCancelButtonStyle: CSSProperties = {
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-};
 
-const headerFollowButtonStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  border:
-    "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #050505)",
-  color: "#FFFFFF",
-  fontSize: "11px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  textAlign: "center",
-  boxShadow: "none",
-  flex: "0 0 auto",
-  ...safeTextStyle,
-};
 
-const headerFollowingButtonStyle: CSSProperties = {
-  ...headerFollowButtonStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-};
 
 const heroBoxStyle: CSSProperties = {
   display: "grid",
@@ -15036,14 +14430,6 @@ const authorRatingTitleStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const authorRatingMetaStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8.8px",
-  lineHeight: 1.1,
-  fontWeight: 850,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const authorRatingStarsRowStyle: CSSProperties = {
   display: "grid",
@@ -15533,18 +14919,6 @@ const profileAboutCounterStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const profileAboutStatsStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-  fontSize: "10px",
-  lineHeight: 1.25,
-  fontWeight: 900,
-  ...safeTextStyle,
-};
 
 
 const profileAboutHeroStyle: CSSProperties = {
@@ -15554,14 +14928,6 @@ const profileAboutHeroStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const profileAboutEyebrowStyle: CSSProperties = {
-  color: "var(--historietas-text-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-  fontSize: "9.5px",
-  lineHeight: 1.2,
-  fontWeight: 950,
-  letterSpacing: "0.13em",
-  textTransform: "uppercase",
-};
 
 const profileAboutContentGridStyle: CSSProperties = {
   display: "grid",
@@ -15683,78 +15049,11 @@ const profileAboutMemberSinceStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const filtersToggleButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "38px",
-  marginBottom: "10px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  padding: "0 14px",
-  boxSizing: "border-box",
-  textAlign: "center",
-};
 
-const filtersToggleIconStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "15px",
-  lineHeight: 1,
-  fontWeight: 950,
-};
 
-const statsBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const statCardStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  alignContent: "center",
-  gap: "3px",
-  minHeight: "64px",
-  borderRadius: "16px",
-  padding: "7px 4px",
-  background: "rgba(255,255,255,0.05)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.075))",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
 
-const statNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-  fontSize: "22px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
-const statLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "8.5px",
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const authorCommunityBoxStyle: CSSProperties = {
   marginTop: "10px",
@@ -15779,16 +15078,6 @@ const authorCommunityIntroStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const authorCommunityEyebrowStyle: CSSProperties = {
-  color: "var(--historietas-text-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.12em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const authorCommunityTitleStyle: CSSProperties = {
   margin: 0,
@@ -15840,16 +15129,6 @@ const diaryMainReadingLinkStyle: CSSProperties = {
   textDecoration: "none",
 };
 
-const authorCommunityDescriptionStyle: CSSProperties = {
-  margin: 0,
-  maxWidth: "460px",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const authorCommunityGridStyle: CSSProperties = {
   width: "100%",
@@ -15859,21 +15138,7 @@ const authorCommunityGridStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const authorCommunityStatsGridStyle: CSSProperties = {
-  width: "100%",
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "5px",
-  minWidth: 0,
-};
 
-const authorCommunityDividerStyle: CSSProperties = {
-  width: "100%",
-  height: "1px",
-  margin: "2px 0",
-  background:
-    "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.10) 50%, transparent 100%)",
-};
 
 const authorCommunityCardStyle: CSSProperties = {
   minHeight: "48px",
@@ -16128,244 +15393,24 @@ const authorCommunityPostWorkStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
-const authorCommunityActionsStyle: CSSProperties = {
-  width: "100%",
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "6px",
-  minWidth: 0,
-};
 
-const authorCommunityPrimaryActionStyle: CSSProperties = {
-  gridColumn: "1 / -1",
-  minHeight: "34px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  background: "var(--historietas-perfil-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "12px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const authorCommunitySecondaryActionStyle: CSSProperties = {
-  minHeight: "30px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  background: "var(--historietas-perfil-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "10px",
-  lineHeight: 1,
-  fontWeight: 900,
-  textAlign: "center",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const authorCommunityStatNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-  fontSize: "14.5px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
-const authorCommunityStatTextStyle: CSSProperties = {
-  ...authorCommunityCardTextStyle,
-  fontSize: "9px",
-};
 
-const authorsBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: "12px",
-  borderRadius: "22px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  display: "grid",
-  gap: "9px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
 
-const authorsListStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const authorButtonStyle: CSSProperties = {
-  flex: "1 1 132px",
-  minHeight: "34px",
-  maxWidth: "100%",
-  padding: "0 11px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "11px",
-  fontWeight: 900,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const activeAuthorButtonStyle: CSSProperties = {
-  ...authorButtonStyle,
-  background: "var(--historietas-perfil-surface, #050505)",
-  border:
-    "1px solid rgba(255,255,255,0.10)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-};
 
-const sectionStyle: CSSProperties = {
-  marginTop: "16px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const sectionHeaderStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  marginBottom: "12px",
-  minWidth: 0,
-  textAlign: "center",
-};
 
-const miniTitleStyle: CSSProperties = {
-  display: "inline-flex",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-  fontSize: "13px",
-  fontWeight: 950,
-  letterSpacing: "0.09em",
-  marginBottom: "4px",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-  fontSize: "28px",
-  lineHeight: 1.12,
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
-  maxWidth: "100%",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
-const sectionFilterTextStyle: CSSProperties = {
-  margin: "6px auto 0",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "12px",
-  lineHeight: 1.5,
-  fontWeight: 800,
-  maxWidth: "100%",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
-const filterBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  padding: "10px",
-  marginBottom: "12px",
-  borderRadius: "18px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
 
-const filterInputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-input-bg, var(--historietas-perfil-bg-deep, #000000))",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 13px",
-  outline: "none",
-  fontSize: "12px",
-  fontWeight: 750,
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
 
-const filterGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const filterSelectStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-input-bg, var(--historietas-perfil-bg-deep, #000000))",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 13px",
-  outline: "none",
-  fontSize: "12px",
-  fontWeight: 750,
-  fontFamily: "inherit",
-  textAlign: "center",
-  textAlignLast: "center",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
 
-const clearFilterButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "40px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.11))",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12px",
-  fontWeight: 900,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 12px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const profileWorksSectionStyle: CSSProperties = {
   marginTop: "10px",
@@ -16376,44 +15421,8 @@ const profileWorksSectionStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const profileWorksToolbarStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const profileWorksSummaryStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.35,
-  fontWeight: 850,
-  minWidth: 0,
-  ...safeTextStyle,
-};
 
-const profileWorksFilterButtonStyle: CSSProperties = {
-  minHeight: "28px",
-  padding: "0",
-  borderRadius: 0,
-  border: 0,
-  background: "transparent",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "7px",
-  boxSizing: "border-box",
-};
 
 const profileWorksGridStyle: CSSProperties = {
   display: "grid",
@@ -16558,80 +15567,14 @@ const diaryCardCommentMetaStyle: CSSProperties = {
   fontWeight: 950,
 };
 
-const profileWorkSmallActionHintStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  lineHeight: 1.2,
-  fontWeight: 850,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  minWidth: 0,
-  letterSpacing: "-0.01em",
-};
 
-const profileWorkInfoStyle: CSSProperties = {
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  padding: "0 1px",
-};
 
-const profileWorkTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12.75px",
-  lineHeight: 1.08,
-  ...homeCardTitleTypographyStyle,
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  textDecoration: "none",
-  ...safeTextStyle,
-};
 
-const profileWorkTitleLinkStyle: CSSProperties = {
-  ...profileWorkTitleStyle,
-};
 
-const profileWorkMetaRowStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) 22px",
-  alignItems: "center",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-  position: "relative",
-};
 
-const profileWorkMetaStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9.1px",
-  ...homeCardMetaTypographyStyle,
-  lineHeight: 1.2,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  minWidth: 0,
-  letterSpacing: "-0.01em",
-};
 
-const profileWorkHeartMetaStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontWeight: 950,
-};
 
-const profileWorkHeartIconMetaStyle: CSSProperties = {
-  color: "var(--historietas-perfil-danger, #FFFFFF)",
-  fontWeight: 950,
-};
 
-const profileWorkViewsMetaStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontWeight: 950,
-};
 
 const profileWorkMenuAnchorStyle: CSSProperties = {
   position: "absolute",
@@ -16665,406 +15608,41 @@ const profileWorkDotsButtonStyle: CSSProperties = {
   flexShrink: 0,
 };
 
-const profileWorkOptionsMenuStyle: CSSProperties = {
-  position: "absolute",
-  right: "calc(100% + 6px)",
-  top: "4px",
-  zIndex: 45,
-  width: "184px",
-  minWidth: "184px",
-  maxWidth: "calc(100vw - 36px)",
-  padding: "5px",
-  borderRadius: "13px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-perfil-bg-page, #000000)",
-  boxShadow: "none",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "stretch",
-  justifyContent: "flex-start",
-  gap: "1px",
-  whiteSpace: "nowrap",
-  boxSizing: "border-box",
-  overflow: "visible",
-};
 
-const profileWorkMenuItemStyle: CSSProperties = {
-  width: "100%",
-  minWidth: 0,
-  minHeight: "30px",
-  border: "none",
-  borderRadius: "9px",
-  background: "transparent",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "11.5px",
-  lineHeight: 1,
-  fontWeight: 850,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-start",
-  textAlign: "left",
-  whiteSpace: "nowrap",
-  overflowWrap: "normal",
-  wordBreak: "normal",
-  overflow: "visible",
-  textOverflow: "clip",
-  padding: "0 9px",
-  boxSizing: "border-box",
-  flexShrink: 0,
-};
 
-const profileWorkMenuItemActiveStyle: CSSProperties = {
-  ...profileWorkMenuItemStyle,
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-};
 
-const profileWorkActionsCompactStyle: CSSProperties = {
-  display: "none",
-};
 
-const profileWorkActionButtonStyle: CSSProperties = {
-  minHeight: "21px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.05))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "8px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 7px",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
 
-const profileWorkActionActiveStyle: CSSProperties = {
-  ...profileWorkActionButtonStyle,
-  background: "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
-  border:
-    "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-};
 
-const profileWorkOwnerActionStyle: CSSProperties = {
-  ...profileWorkActionButtonStyle,
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-};
 
-const profileWorkActionDisabledStyle: CSSProperties = {
-  ...profileWorkActionButtonStyle,
-  opacity: 0.58,
-  cursor: "default",
-};
 
-const worksGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const workCardStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(86px, 102px) minmax(0, 1fr)",
-  alignItems: "stretch",
-  gap: "10px",
-  padding: "10px",
-  borderRadius: "22px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
 
-const coverLinkStyle: CSSProperties = {
-  display: "flex",
-  alignSelf: "stretch",
-  height: "100%",
-  textDecoration: "none",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const coverStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  minHeight: "132px",
-  borderRadius: "17px",
-  position: "relative",
-  overflow: "hidden",
-  background:
-    "var(--historietas-perfil-surface, #050505)",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const genreBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 6px",
-  borderRadius: "999px",
-  background:
-    "rgba(255,255,255,0.06)",
-  border:
-    "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "8px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const coverBottomStyle: CSSProperties = {
-  position: "absolute",
-  left: "10px",
-  right: "10px",
-  bottom: "10px",
-  display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "space-between",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const coverNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "37px",
-  lineHeight: 0.85,
-  fontWeight: 950,
-  letterSpacing: "-0.08em",
-  ...safeTextStyle,
-};
 
-const coverLabelStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "8px",
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-  textAlign: "right",
-  ...safeTextStyle,
-};
 
-const workContentStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "start",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const statusRowStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const publishedStatusStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 6px",
-  borderRadius: "999px",
-  background:
-    "var(--historietas-perfil-success-10, rgba(34,197,94,0.10))",
-  border:
-    "1px solid var(--historietas-perfil-success-22, rgba(34,197,94,0.22))",
-  color:
-    "var(--historietas-perfil-success-soft, #FFFFFF)",
-  fontSize: "8px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const draftStatusStyle: CSSProperties = {
-  ...publishedStatusStyle,
-  background:
-    "rgba(255,255,255,0.06)",
-  border:
-    "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-};
 
-const formatBadgeStyle: CSSProperties = {
-  ...publishedStatusStyle,
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.09))",
-  color: "var(--historietas-text-primary, #E4E4E7)",
-};
 
-const classificationBadgeStyle: CSSProperties = {
-  ...publishedStatusStyle,
-  background:
-    "rgba(255,255,255,0.06)",
-  border:
-    "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-secondary, var(--historietas-perfil-lavender-text, #FFFFFF))",
-};
 
-const favoriteBadgeStyle: CSSProperties = {
-  ...publishedStatusStyle,
-  background:
-    "rgba(255,255,255,0.06)",
-  border:
-    "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-};
 
-const completedBadgeStyle: CSSProperties = {
-  ...publishedStatusStyle,
-  background:
-    "var(--historietas-perfil-success-10, rgba(34,197,94,0.10))",
-  border:
-    "1px solid var(--historietas-perfil-success-22, rgba(34,197,94,0.22))",
-  color:
-    "var(--historietas-perfil-success-soft, #FFFFFF)",
-};
 
-const workTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "22px",
-  lineHeight: 1.12,
-  ...homeCardTitleTypographyStyle,
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
-const workTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  ...homeCardMetaTypographyStyle,
-  lineHeight: 1.4,
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 1,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
 
-const workStatsStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "5px",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "9px",
-  ...homeCardStatsTypographyStyle,
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const workProgressBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const workProgressTrackStyle: CSSProperties = {
-  height: "6px",
-  borderRadius: "999px",
-  overflow: "hidden",
-  background: "rgba(255,255,255,0.06)",
-};
 
-const workProgressFillStyle: CSSProperties = {
-  height: "100%",
-  borderRadius: "999px",
-  background:
-    "linear-gradient(90deg, var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF)) 0%, var(--historietas-secondary, var(--historietas-perfil-secondary, #A1A1AA)) 100%)",
-};
 
-const workProgressTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "9px",
-  fontWeight: 850,
-  ...safeTextStyle,
-};
 
-const workActionsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(108px, 1fr))",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const openButtonStyle: CSSProperties = {
-  minHeight: "32px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #050505)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "10px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 8px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const readButtonStyle: CSSProperties = {
-  ...openButtonStyle,
-  background: "var(--historietas-perfil-surface, #050505)",
-};
 
-const smallButtonStyle: CSSProperties = {
-  minHeight: "30px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "10px",
-  fontWeight: 900,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 8px",
-  lineHeight: 1.15,
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const smallButtonActiveStyle: CSSProperties = {
-  ...smallButtonStyle,
-  border:
-    "1px solid rgba(255,255,255,0.10)",
-  background:
-    "rgba(255,255,255,0.06)",
-  color: "var(--historietas-accent, var(--historietas-perfil-accent-soft, #FFFFFF))",
-};
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
@@ -17141,19 +15719,7 @@ const desktopAvatarRemoveButtonStyle: CSSProperties = {
   ...desktopAvatarSmallButtonStyle,
 };
 
-const desktopStatsBoxStyle: CSSProperties = {
-  ...statsBoxStyle,
-  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-  gap: "10px",
-  marginTop: "14px",
-};
 
-const desktopStatCardStyle: CSSProperties = {
-  ...statCardStyle,
-  minHeight: "82px",
-  padding: "12px",
-  borderRadius: "18px",
-};
 
 const desktopAuthorCommunityBoxStyle: CSSProperties = {
   ...authorCommunityBoxStyle,
@@ -17172,107 +15738,21 @@ const desktopAuthorCommunityPostsListStyle: CSSProperties = {
   gap: "10px",
 };
 
-const desktopAuthorCommunityStatsGridStyle: CSSProperties = {
-  ...authorCommunityStatsGridStyle,
-  gap: "8px",
-};
 
-const desktopAuthorCommunityActionsStyle: CSSProperties = {
-  ...authorCommunityActionsStyle,
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "8px",
-};
 
-const desktopAuthorsBoxStyle: CSSProperties = {
-  ...authorsBoxStyle,
-  padding: "16px",
-  borderRadius: "24px",
-};
 
-const desktopAuthorsListStyle: CSSProperties = {
-  ...authorsListStyle,
-  alignItems: "center",
-};
 
-const desktopAuthorButtonStyle: CSSProperties = {
-  ...authorButtonStyle,
-  flex: "0 1 auto",
-  minWidth: "150px",
-  maxWidth: "260px",
-};
 
-const desktopActiveAuthorButtonStyle: CSSProperties = {
-  ...desktopAuthorButtonStyle,
-  background: "var(--historietas-perfil-surface, #050505)",
-  border:
-    "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-};
 
-const desktopSectionHeaderStyle: CSSProperties = {
-  ...sectionHeaderStyle,
-  marginBottom: "14px",
-};
 
-const desktopFilterBoxStyle: CSSProperties = {
-  ...filterBoxStyle,
-  gridTemplateColumns: "minmax(280px, 1fr) minmax(360px, 0.9fr) auto",
-  alignItems: "center",
-  gap: "12px",
-  padding: "14px",
-};
 
-const desktopFilterGridStyle: CSSProperties = {
-  ...filterGridStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-};
 
-const desktopClearFilterButtonStyle: CSSProperties = {
-  ...clearFilterButtonStyle,
-  width: "auto",
-  minWidth: "150px",
-};
 
-const desktopWorksGridStyle: CSSProperties = {
-  ...worksGridStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "14px",
-  alignItems: "stretch",
-};
 
-const desktopWorkCardStyle: CSSProperties = {
-  ...workCardStyle,
-  gridTemplateColumns: "minmax(126px, 146px) minmax(0, 1fr)",
-  gap: "14px",
-  padding: "12px",
-  borderRadius: "24px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
-  boxShadow: "none",
-};
 
-const desktopWorkContentStyle: CSSProperties = {
-  ...workContentStyle,
-  gap: "9px",
-};
 
-const desktopWorkTitleStyle: CSSProperties = {
-  ...workTitleStyle,
-  fontSize: "26px",
-  lineHeight: 1.12,
-};
 
-const desktopWorkTextStyle: CSSProperties = {
-  ...workTextStyle,
-  fontSize: "12px",
-  lineHeight: 1.5,
-  WebkitLineClamp: 2,
-};
 
-const desktopWorkActionsGridStyle: CSSProperties = {
-  ...workActionsGridStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "7px",
-};
 
 const diaryBoxStyle: CSSProperties = {
   width: "100%",
@@ -17424,28 +15904,7 @@ const desktopDiaryBoxStyle: CSSProperties = {
   gap: "10px",
 };
 
-const emptyBoxStyle: CSSProperties = {
-  marginTop: "20px",
-  borderRadius: "24px",
-  background: "var(--historietas-surface, var(--historietas-perfil-surface, #050505))",
-  border: "1px dashed var(--historietas-border-soft, rgba(255,255,255,0.14))",
-  padding: "22px",
-  display: "grid",
-  gap: "10px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
 
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-accent, var(--historietas-perfil-accent, #FFFFFF))",
-  fontSize: "28px",
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  ...safeTextStyle,
-};
 
 const emptyTextStyle: CSSProperties = {
   margin: 0,
@@ -17456,27 +15915,6 @@ const emptyTextStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const emptyButtonStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "42px",
-  padding: "0 14px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "var(--historietas-perfil-surface, #050505)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const privateProfileNoticeStyle: CSSProperties = {
   width: "100%",

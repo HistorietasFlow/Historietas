@@ -2087,7 +2087,6 @@ export default function EditarObraPage() {
       .slice(0, LIMITE_TAGS_OBRA);
   }, [tags]);
 
-  const tagsPreview = tagsTratadas.length > 0 ? tagsTratadas : ["sem tags"];
   const formatoEhPersonalizado = formato === OUTRO_FORMATO_VALUE;
   const generoEhPersonalizado = genero === OUTRO_GENERO_VALUE;
   const formatoFinal = formatoEhPersonalizado
@@ -3564,69 +3563,9 @@ const topStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "visible",
-  ...safeTextStyle,
-};
 
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-editar-obra-bg-deep, #000000)",
-  color: "#FFFFFF",
-  fontSize: "19px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  flex: "0 0 auto",
-  border: "1px solid var(--historietas-editar-obra-purple-border, rgba(59, 7, 100, 0.58))",
-  boxShadow: "none",
-};
 
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-editar-obra-purple-text, #FFFFFF) 44%, var(--historietas-editar-obra-purple-soft, #D4D4D8) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
 
-const pagePillStyle: CSSProperties = {
-  minHeight: "36px",
-  padding: "0 13px",
-  borderRadius: "999px",
-  background: "var(--historietas-editar-obra-accent-bg, rgba(249,115,22,0.11))",
-  border: "1px solid var(--historietas-editar-obra-accent-border, rgba(249,115,22,0.24))",
-  color: "var(--historietas-accent, var(--historietas-editar-obra-accent-soft, #FFFFFF))",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
 const titleHeaderStyle: CSSProperties = {
   ...topStyle,
@@ -3674,13 +3613,7 @@ const desktopHeaderTitleLinkStyle: CSSProperties = {
   fontSize: "29px",
 };
 
-const headerTitleMarkStyle: CSSProperties = {
-  display: "none",
-};
 
-const desktopHeaderTitleMarkStyle: CSSProperties = {
-  ...headerTitleMarkStyle,
-};
 
 const headerTitleTextStyle: CSSProperties = {
   display: "inline-block",
@@ -3709,53 +3642,8 @@ const desktopHeaderTitleTextStyle: CSSProperties = {
 };
 
 
-const heroBoxStyle: CSSProperties = {
-  position: "relative",
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-  gap: "10px",
-  padding: "24px 16px",
-  borderRadius: "30px",
-  border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, var(--historietas-editar-obra-bg-page, #000000) 0%, var(--historietas-editar-obra-bg-deep, #000000) 58%, var(--historietas-editar-obra-bg-end, #020006) 100%)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
 
-const titleStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: 0,
-  color: "var(--historietas-accent, var(--historietas-editar-obra-accent, #FFFFFF))",
-  WebkitTextFillColor: "var(--historietas-accent, var(--historietas-editar-obra-accent, #FFFFFF))",
-  fontSize: "clamp(30px, 8vw, 46px)",
-  lineHeight: 1.12,
-  fontWeight: 950,
-  letterSpacing: "-0.052em",
-  maxWidth: "100%",
-  textAlign: "center",
-  textShadow: "none",
-  overflow: "visible",
-  wordBreak: "normal",
-  overflowWrap: "normal",
-};
 
-const descriptionStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.55,
-  fontWeight: 720,
-  maxWidth: "720px",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const progressBoxStyle: CSSProperties = {
   position: "relative",
@@ -3866,21 +3754,7 @@ const formStyle: CSSProperties = {
   overflow: "visible",
 };
 
-const formHeaderStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  textAlign: "center",
-};
 
-const formMiniTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-editar-obra-accent-soft, #FFFFFF))",
-  fontSize: "11px",
-  fontWeight: 950,
-  letterSpacing: "0.08em",
-  ...safeTextStyle,
-};
 
 
 const fieldGroupStyle: CSSProperties = {
@@ -4551,59 +4425,9 @@ const previewActionBadgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const emptyBoxStyle: CSSProperties = {
-  marginTop: "24px",
-  borderRadius: "24px",
-  background: "var(--historietas-editar-obra-panel, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.06)",
-  padding: "24px 16px",
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
 
-const emptyTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "22px",
-  fontWeight: 950,
-  letterSpacing: "-0.045em",
-  ...safeTextStyle,
-};
 
-const emptyTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.5,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
 
-const emptyButtonStyle: CSSProperties = {
-  minHeight: "46px",
-  width: "min(280px, 100%)",
-  borderRadius: "999px",
-  background: "var(--historietas-editar-obra-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "13px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  textAlign: "center",
-  padding: "0 12px",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
@@ -4612,32 +4436,9 @@ const desktopContainerStyle: CSSProperties = {
   padding: "30px 0 72px",
 };
 
-const desktopTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "14px",
-};
 
-const desktopHeroBoxStyle: CSSProperties = {
-  ...heroBoxStyle,
-  padding: "30px 24px",
-  borderRadius: "30px",
-};
 
-const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  fontSize: "clamp(38px, 4.4vw, 58px)",
-  maxWidth: "760px",
-  margin: "0 auto",
-  textAlign: "center",
-};
 
-const desktopDescriptionStyle: CSSProperties = {
-  ...descriptionStyle,
-  margin: "10px auto 0",
-  maxWidth: "620px",
-  textAlign: "center",
-  fontSize: "14px",
-};
 
 const desktopProgressBoxStyle: CSSProperties = {
   ...progressBoxStyle,
@@ -4665,10 +4466,6 @@ const desktopFormStyle: CSSProperties = {
   overflow: "visible",
 };
 
-const desktopFormHeaderStyle: CSSProperties = {
-  ...formHeaderStyle,
-  gap: "5px",
-};
 
 const desktopCoverUploadBoxStyle: CSSProperties = {
   ...coverUploadBoxStyle,
