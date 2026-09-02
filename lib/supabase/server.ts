@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import type { Database } from "./database.types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
 const supabasePublishableKey =
@@ -73,7 +74,7 @@ function criarQueryBuilderIndisponivel(): unknown {
   return proxy;
 }
 
-function criarClienteSupabaseServerIndisponivel(): SupabaseClient {
+function criarClienteSupabaseServerIndisponivel(): SupabaseClient<Database> {
   return {
     auth: {
       getUser: async () => ({
@@ -138,17 +139,19 @@ function criarClienteSupabaseServerIndisponivel(): SupabaseClient {
         }),
       }),
     },
-  } as unknown as SupabaseClient;
+  } as unknown as SupabaseClient<Database>;
 }
 
-export async function criarSupabaseServerClient(): Promise<SupabaseClient> {
+export async function criarSupabaseServerClient(): Promise<
+  SupabaseClient<Database>
+> {
   if (!supabaseServerConfigurado) {
     return criarClienteSupabaseServerIndisponivel();
   }
 
   const cookieStore = await cookies();
 
-  return createServerClient(supabaseUrl, supabasePublishableKey, {
+  return createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

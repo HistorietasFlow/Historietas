@@ -2502,15 +2502,11 @@ async function carregarObrasPublicadasSupabase() {
   }
 }
 
-async function carregarIdsTabelaUsuario(
-  tabela: string,
-  colunaId: string,
-  userId: string
-): Promise<string[]> {
+async function carregarObrasSeguidasUsuario(userId: string): Promise<string[]> {
   try {
     const { data, error } = await supabase
-      .from(tabela)
-      .select(colunaId)
+      .from("seguindo_obras")
+      .select("obra_id")
       .eq("user_id", userId)
       .limit(1000);
 
@@ -2518,22 +2514,9 @@ async function carregarIdsTabelaUsuario(
       return [];
     }
 
-    const ids: string[] = [];
-
-    data.forEach((item: unknown) => {
-      if (!item || typeof item !== "object" || Array.isArray(item)) {
-        return;
-      }
-
-      const registro = item as Record<string, unknown>;
-      const id = pegarTexto(registro[colunaId]);
-
-      if (id) {
-        ids.push(id);
-      }
-    });
-
-    return ids;
+    return Array.from(
+      new Set(data.map(({ obra_id }) => obra_id.trim()).filter(Boolean)),
+    );
   } catch {
     return [];
   }
@@ -3215,7 +3198,7 @@ async function carregarEstadoSupabaseNotificacoes(): Promise<EstadoSupabaseNotif
       notificacoesLidasIds,
       notificacoesDiretas,
     ] = await Promise.all([
-      carregarIdsTabelaUsuario("seguindo_obras", "obra_id", userId),
+      carregarObrasSeguidasUsuario(userId),
       carregarNotificacoesLidasSupabase(userId),
       carregarNotificacoesDiretasSupabase(userId),
     ]);
@@ -3566,7 +3549,7 @@ async function carregarNotificacoesComunidadeSupabase(
       if (capituloIds.length > 0) {
         const { data: comentariosCapitulosData } = await supabase
           .from("comentarios_capitulos")
-          .select("id,capitulo_id,user_id,comentario,texto,criado_em,atualizado_em")
+          .select("id,capitulo_id,user_id,comentario,criado_em,atualizado_em")
           .in("capitulo_id", capituloIds)
           .neq("user_id", userId)
           .order("atualizado_em", { ascending: false })

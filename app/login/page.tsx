@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { supabase } from "../../lib/supabase/client";
+import type { TablesInsert } from "../../lib/supabase/database.types";
 import { historietasThemeCss, useHistorietasTheme } from "../../lib/historietasTheme";
 import LanguageSelect from "../../components/LanguageSelect";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
@@ -711,7 +712,7 @@ export default function LoginPage() {
 
       const agora = new Date().toISOString();
 
-      const perfilPayload: Record<string, unknown> = {
+      const perfilPayload: TablesInsert<"profiles"> = {
         user_id: userIdLimpo,
         nome: perfilAtual?.nome?.trim() || nomeFinal,
         bio: perfilAtual?.bio?.trim() || "Perfil de leitor no Historietas.",

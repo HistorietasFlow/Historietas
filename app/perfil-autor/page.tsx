@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
+import type { TablesUpdate } from "../../lib/supabase/database.types";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import {
@@ -4728,7 +4729,7 @@ async function salvarPerfilUsuarioSupabase({
       }
     }
 
-    const payloadAtualizacao: Record<string, unknown> = {
+    const payloadAtualizacao: TablesUpdate<"profiles"> = {
       ...payloadPerfilBase,
     };
 
@@ -5445,38 +5446,43 @@ async function carregarObrasPublicadasPorIdsSupabase(obraIds: string[]) {
   }
 }
 
-async function carregarIdsTabelaUsuario(
-  tabela: string,
-  colunaId: string,
+type TabelaObrasUsuario = "favoritos" | "concluidas" | "seguindo_obras";
+
+async function carregarIdsObrasTabelaUsuario(
+  tabela: TabelaObrasUsuario,
   userId: string,
 ): Promise<string[]> {
   try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select(colunaId)
-      .eq("user_id", userId)
-      .limit(1000);
+    const consultas = {
+      favoritos: () =>
+        supabase
+          .from("favoritos")
+          .select("obra_id")
+          .eq("user_id", userId)
+          .limit(1000),
+      concluidas: () =>
+        supabase
+          .from("concluidas")
+          .select("obra_id")
+          .eq("user_id", userId)
+          .limit(1000),
+      seguindo_obras: () =>
+        supabase
+          .from("seguindo_obras")
+          .select("obra_id")
+          .eq("user_id", userId)
+          .limit(1000),
+    } satisfies Record<TabelaObrasUsuario, () => PromiseLike<unknown>>;
+
+    const { data, error } = await consultas[tabela]();
 
     if (error || !Array.isArray(data)) {
       return [];
     }
 
-    const ids: string[] = [];
-
-    data.forEach((item: unknown) => {
-      if (!item || typeof item !== "object" || Array.isArray(item)) {
-        return;
-      }
-
-      const registro = item as Record<string, unknown>;
-      const id = pegarTexto(registro[colunaId]);
-
-      if (id) {
-        ids.push(id);
-      }
-    });
-
-    return ids;
+    return Array.from(
+      new Set(data.map(({ obra_id }) => obra_id.trim()).filter(Boolean)),
+    );
   } catch {
     return [];
   }
@@ -5555,7 +5561,7 @@ async function carregarInteracoesCapitulosSupabase(
     try {
       const { data } = await supabase
         .from("comentarios_capitulos")
-        .select("capitulo_id, comentario, texto")
+        .select("capitulo_id, comentario")
         .eq("user_id", userId)
         .in("capitulo_id", capituloIds)
         .limit(1000);
@@ -5564,7 +5570,7 @@ async function carregarInteracoesCapitulosSupabase(
         data.forEach((item) => {
           const registro = item as Record<string, unknown>;
           const capituloId = pegarTexto(registro.capitulo_id);
-          const texto = pegarTexto(registro.comentario ?? registro.texto);
+          const texto = pegarTexto(registro.comentario);
 
           if (capituloId && texto) {
             comentarios.set(capituloId, texto);
@@ -5597,9 +5603,9 @@ async function carregarEstadoUsuarioSupabase() {
 
     const [favoritas, concluidas, obrasSeguidas, autoresSeguidos] =
       await Promise.all([
-        carregarIdsTabelaUsuario("favoritos", "obra_id", userId),
-        carregarIdsTabelaUsuario("concluidas", "obra_id", userId),
-        carregarIdsTabelaUsuario("seguindo_obras", "obra_id", userId),
+        carregarIdsObrasTabelaUsuario("favoritos", userId),
+        carregarIdsObrasTabelaUsuario("concluidas", userId),
+        carregarIdsObrasTabelaUsuario("seguindo_obras", userId),
         carregarAutoresSeguidosSupabase(userId),
       ]);
 
@@ -6057,7 +6063,7 @@ function obterObraRegistroDiario(
   return null;
 }
 
-const CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR: Record<string, string> = {
+const CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR = {
   seguindo_obras: "obra_id,visibilidade,criado_em",
   favoritos: "obra_id,visibilidade,criado_em",
   concluidas: "obra_id,visibilidade,criado_em",
@@ -6065,19 +6071,64 @@ const CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR: Record<string, string> = {
   progresso_leitura: "obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
   diario_atividades:
     "id,tipo,texto,nota,obra_id,capitulo_id,metadata,visibilidade,criado_em",
-};
+} as const;
 
-function obterCamposRegistrosDiarioPerfilAutor(tabela: string) {
-  return CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR[tabela] || "id";
-}
+type TabelaRegistrosDiarioPerfil =
+  | "seguindo_obras"
+  | "favoritos"
+  | "concluidas"
+  | "obra_avaliacoes"
+  | "progresso_leitura"
+  | "diario_atividades";
 
-async function carregarRegistrosDiarioPerfil(tabela: string, userId: string) {
+async function carregarRegistrosDiarioPerfil(
+  tabela: TabelaRegistrosDiarioPerfil,
+  userId: string,
+) {
   try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select(obterCamposRegistrosDiarioPerfilAutor(tabela))
-      .eq("user_id", userId)
-      .limit(1000);
+    const consultas = {
+      seguindo_obras: () =>
+        supabase
+          .from("seguindo_obras")
+          .select(CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR.seguindo_obras)
+          .eq("user_id", userId)
+          .limit(1000),
+      favoritos: () =>
+        supabase
+          .from("favoritos")
+          .select(CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR.favoritos)
+          .eq("user_id", userId)
+          .limit(1000),
+      concluidas: () =>
+        supabase
+          .from("concluidas")
+          .select(CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR.concluidas)
+          .eq("user_id", userId)
+          .limit(1000),
+      obra_avaliacoes: () =>
+        supabase
+          .from("obra_avaliacoes")
+          .select(CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR.obra_avaliacoes)
+          .eq("user_id", userId)
+          .limit(1000),
+      progresso_leitura: () =>
+        supabase
+          .from("progresso_leitura")
+          .select(CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR.progresso_leitura)
+          .eq("user_id", userId)
+          .limit(1000),
+      diario_atividades: () =>
+        supabase
+          .from("diario_atividades")
+          .select(CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR.diario_atividades)
+          .eq("user_id", userId)
+          .limit(1000),
+    } satisfies Record<
+      TabelaRegistrosDiarioPerfil,
+      () => PromiseLike<unknown>
+    >;
+
+    const { data, error } = await consultas[tabela]();
 
     if (error) {
       console.warn(
@@ -6706,8 +6757,7 @@ async function carregarDiarioPerfilSupabase(
 }
 
 async function sincronizarTabelaUsuario(
-  tabela: string,
-  colunaId: string,
+  tabela: "favoritos" | "concluidas" | "salvos_capitulos" | "seguindo_obras",
   idValor: string,
   ativo: boolean,
   visibilidade: VisibilidadeDiarioPerfil = "parcial",
@@ -6720,11 +6770,65 @@ async function sincronizarTabelaUsuario(
       return;
     }
 
-    const { error: erroDelete } = await supabase
-      .from(tabela)
-      .delete()
-      .eq("user_id", userId)
-      .eq(colunaId, idValor);
+    const operacoes = {
+      favoritos: {
+        excluir: () =>
+          supabase
+            .from("favoritos")
+            .delete()
+            .eq("user_id", userId)
+            .eq("obra_id", idValor),
+        inserir: () =>
+          supabase.from("favoritos").insert({
+            user_id: userId,
+            obra_id: idValor,
+            visibilidade,
+          }),
+      },
+      concluidas: {
+        excluir: () =>
+          supabase
+            .from("concluidas")
+            .delete()
+            .eq("user_id", userId)
+            .eq("obra_id", idValor),
+        inserir: () =>
+          supabase.from("concluidas").insert({
+            user_id: userId,
+            obra_id: idValor,
+            visibilidade,
+          }),
+      },
+      salvos_capitulos: {
+        excluir: () =>
+          supabase
+            .from("salvos_capitulos")
+            .delete()
+            .eq("user_id", userId)
+            .eq("capitulo_id", idValor),
+        inserir: () =>
+          supabase.from("salvos_capitulos").insert({
+            user_id: userId,
+            capitulo_id: idValor,
+          }),
+      },
+      seguindo_obras: {
+        excluir: () =>
+          supabase
+            .from("seguindo_obras")
+            .delete()
+            .eq("user_id", userId)
+            .eq("obra_id", idValor),
+        inserir: () =>
+          supabase.from("seguindo_obras").insert({
+            user_id: userId,
+            obra_id: idValor,
+            visibilidade,
+          }),
+      },
+    };
+    const operacao = operacoes[tabela];
+    const { error: erroDelete } = await operacao.excluir();
 
     if (erroDelete) {
       throw erroDelete;
@@ -6734,26 +6838,10 @@ async function sincronizarTabelaUsuario(
       return;
     }
 
-    const payloadBase = {
-      user_id: userId,
-      [colunaId]: idValor,
-    };
+    const { error: erroInsert } = await operacao.inserir();
 
-    const { error: erroComVisibilidade } = await supabase.from(tabela).insert({
-      ...payloadBase,
-      visibilidade,
-    });
-
-    if (!erroComVisibilidade) {
-      return;
-    }
-
-    const { error: erroSemVisibilidade } = await supabase
-      .from(tabela)
-      .insert(payloadBase);
-
-    if (erroSemVisibilidade) {
-      throw erroSemVisibilidade;
+    if (erroInsert) {
+      throw erroInsert;
     }
   } catch (error) {
     console.warn(`Não consegui sincronizar ${tabela} no perfil:`, error);
@@ -6965,8 +7053,6 @@ async function criarNotificacaoSocialPerfilAutor({
       p_mensagem: mensagem.trim() || "Você recebeu uma nova notificação.",
       p_link: link.trim() || "/notificacoes",
       p_notificacao_id: notificacaoIdLimpo,
-      p_obra_id: null,
-      p_capitulo_id: null,
     });
 
     if (error) {
@@ -10340,7 +10426,6 @@ function PerfilAutorPageContent() {
     setObrasFavoritas(novasObrasFavoritas);
     await sincronizarTabelaUsuario(
       "favoritos",
-      "obra_id",
       obraId,
       proximoEstadoFavorito,
       "parcial",
@@ -10381,7 +10466,6 @@ function PerfilAutorPageContent() {
     setObrasConcluidas(novasObrasConcluidas);
     await sincronizarTabelaUsuario(
       "concluidas",
-      "obra_id",
       obraId,
       proximoEstadoConcluido,
       "parcial",
@@ -10447,7 +10531,6 @@ function PerfilAutorPageContent() {
 
     void sincronizarTabelaUsuario(
       "salvos_capitulos",
-      "capitulo_id",
       capituloId,
       proximoEstadoSalvo,
       "privado",
@@ -10485,7 +10568,6 @@ function PerfilAutorPageContent() {
 
     await sincronizarTabelaUsuario(
       "seguindo_obras",
-      "obra_id",
       obra.id,
       proximoEstadoSeguindo,
       "publico",

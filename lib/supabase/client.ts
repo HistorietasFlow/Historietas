@@ -1,5 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "";
 const supabasePublishableKey =
@@ -84,7 +85,7 @@ function criarCanalSupabaseIndisponivel() {
   return canal;
 }
 
-function criarClienteSupabaseIndisponivel(): SupabaseClient {
+function criarClienteSupabaseIndisponivel(): SupabaseClient<Database> {
   const criarRespostaAuthVazia = () => ({
     data: {
       user: null,
@@ -163,7 +164,7 @@ function criarClienteSupabaseIndisponivel(): SupabaseClient {
         }),
       }),
     },
-  } as unknown as SupabaseClient;
+  } as unknown as SupabaseClient<Database>;
 }
 
 if (!supabaseConfigurado && typeof window !== "undefined") {
@@ -172,6 +173,6 @@ if (!supabaseConfigurado && typeof window !== "undefined") {
   );
 }
 
-export const supabase: SupabaseClient = supabaseConfigurado
-  ? createBrowserClient(supabaseUrl, supabasePublishableKey)
+export const supabase: SupabaseClient<Database> = supabaseConfigurado
+  ? createBrowserClient<Database>(supabaseUrl, supabasePublishableKey)
   : criarClienteSupabaseIndisponivel();

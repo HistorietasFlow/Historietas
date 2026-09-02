@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import type { TablesUpdate } from "../../../lib/supabase/database.types";
 import {
   historietasThemeCss,
   useHistorietasTheme,
@@ -530,7 +531,7 @@ export default function AdminProblemasTecnicosPage() {
     setSucesso("");
 
     try {
-      const payload: Record<string, string> = {};
+      const payload: TablesUpdate<"problemas_tecnicos"> = {};
 
       if (alteracoes.status) payload.status = alteracoes.status;
       if (alteracoes.prioridade) payload.prioridade = alteracoes.prioridade;

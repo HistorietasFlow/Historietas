@@ -878,7 +878,9 @@ async function registrarNotificacaoInteracaoCapituloSupabase({
 }) {
   const obraId = obra?.id?.trim() || "";
   const capituloId = capitulo?.id?.trim() || "";
-  const comentarioIdLimpo = comentarioId?.trim() || null;
+  // O RPC exige um UUID mesmo para curtidas de capítulo. Nesse tipo de evento,
+  // o banco ignora p_comentario_id, então o capítulo serve como UUID neutro.
+  const comentarioIdRpc = comentarioId?.trim() || capituloId;
   const tituloLimpo = titulo.trim();
   const mensagemLimpa = mensagem.trim();
   const linkLimpo = link.trim();
@@ -892,7 +894,7 @@ async function registrarNotificacaoInteracaoCapituloSupabase({
       "criar_notificacao_interacao_capitulo",
       {
         p_capitulo_id: capituloId,
-        p_comentario_id: comentarioIdLimpo,
+        p_comentario_id: comentarioIdRpc,
         p_tipo: tipo,
         p_titulo: tituloLimpo,
         p_mensagem: mensagemLimpa,
@@ -1815,15 +1817,6 @@ async function salvarRegistroCapituloSupabase(
       user_id: userId,
       capitulo_id: capituloId,
     };
-
-    const { error: erroComVisibilidade } = await supabase.from(tabela).insert({
-      ...payloadBase,
-      visibilidade: "publico",
-    });
-
-    if (!erroComVisibilidade) {
-      return true;
-    }
 
     const { error: erroSemVisibilidade } = await supabase
       .from(tabela)

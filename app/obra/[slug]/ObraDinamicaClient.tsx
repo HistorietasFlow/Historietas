@@ -14,6 +14,7 @@ import type {
   TouchEvent,
 } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import type { TablesInsert } from "../../../lib/supabase/database.types";
 import DenunciaModal from "../../../components/DenunciaModal";
 import AdultContentGate from "../../../components/AdultContentGate";
 import { historietasThemeCss, useHistorietasTheme } from "../../../lib/historietasTheme";
@@ -2247,7 +2248,7 @@ async function salvarCurtidaObraPublicaSupabase(
     return;
   }
 
-  const tentativas: Array<Record<string, string>> = [
+  const tentativas: Array<TablesInsert<"obra_curtidas">> = [
     {
       obra_id: obraId,
       user_id: userId,
