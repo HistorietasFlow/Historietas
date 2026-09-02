@@ -1813,6 +1813,13 @@ const ciWorkflowPath = path.join(
 const ciWorkflow = fs.existsSync(ciWorkflowPath)
   ? fs.readFileSync(ciWorkflowPath, "utf8")
   : "";
+const playwrightConfigPath = path.join(
+  ROOT_DIR,
+  "qa/playwright.config.mjs"
+);
+const playwrightConfig = fs.existsSync(playwrightConfigPath)
+  ? fs.readFileSync(playwrightConfigPath, "utf8")
+  : "";
 
 const ciContracts = [
   {
@@ -1836,6 +1843,15 @@ const ciContracts = [
     valid:
       /E2E_BASE_URL:\s*http:\/\/127\.0\.0\.1:3000/.test(ciWorkflow) &&
       !/\$\{\{\s*secrets\./.test(ciWorkflow)
+  },
+  {
+    name: "CI executa Playwright no build de produção",
+    valid:
+      (ciWorkflow.match(/npm run build/g) || []).length === 2 &&
+      /E2E_WEB_SERVER_COMMAND:\s*npm --prefix \.\. run start/.test(
+        ciWorkflow
+      ) &&
+      /process\.env\.E2E_WEB_SERVER_COMMAND/.test(playwrightConfig)
   },
   {
     name: "CI usa Node.js 22 em todos os jobs",

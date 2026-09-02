@@ -92,6 +92,9 @@ jobs:
       - name: Executar testes estáticos
         run: npm run test:static
 
+      - name: Gerar aplicação para os testes públicos
+        run: npm run build
+
       - name: Instalar Chromium
         working-directory: qa
         run: npm exec -- playwright install --with-deps chromium
@@ -99,6 +102,7 @@ jobs:
       - name: Executar testes públicos no código do PR
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
+          E2E_WEB_SERVER_COMMAND: npm --prefix .. run start
         run: npm --prefix qa test
 
       - name: Salvar diagnóstico do Playwright em caso de falha

@@ -3,6 +3,9 @@ import { defineConfig } from "@playwright/test";
 
 const baseURL = (process.env.E2E_BASE_URL || "https://www.historietas.com.br").replace(/\/$/, "");
 const localBase = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(baseURL);
+const webServerCommand = (
+  process.env.E2E_WEB_SERVER_COMMAND || "npm --prefix .. run dev"
+).trim();
 
 export default defineConfig({
   testDir: "./tests",
@@ -31,7 +34,7 @@ export default defineConfig({
   },
   webServer: localBase
     ? {
-        command: "npm --prefix .. run dev",
+        command: webServerCommand,
         url: baseURL,
         reuseExistingServer: true,
         timeout: 120_000
