@@ -1220,18 +1220,6 @@ function obterTempoUltimaLeitura(obra: ObraLocal) {
   return Math.max(0, ...temposLeitura);
 }
 
-function criarCoverStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return coverPlaceholderStyle;
-  }
-
-  return {
-    ...coverPlaceholderStyle,
-    backgroundImage: `linear-gradient(180deg, rgba(15, 8, 32, 0.04) 0%, rgba(15, 8, 32, 0.82) 100%), url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
 
 function criarMobileCoverStyle(capa: string): CSSProperties {
   if (!capa) {
@@ -1596,30 +1584,8 @@ function criarDesktopHeroPosterStyle(obra: Obra): CSSProperties {
   };
 }
 
-function criarDesktopHeroBackground(obra: Obra): CSSProperties {
-  const imagemObra = obterImagemObraCatalogo(obra);
 
-  if (imagemObra) {
-    return {
-      backgroundColor: "#050505",
-      backgroundImage: `linear-gradient(90deg, rgba(5, 5, 5, 0.99) 0%, rgba(5, 5, 5, 0.96) 31%, rgba(5, 5, 5, 0.78) 50%, rgba(5, 5, 5, 0.28) 72%, rgba(5, 5, 5, 0.10) 100%), linear-gradient(180deg, rgba(5, 5, 5, 0.04) 48%, rgba(5, 5, 5, 0.72) 100%), url(${imagemObra})`,
-      backgroundSize: "100% 100%, 100% 100%, auto 118%",
-      backgroundPosition: "center, center, right 5% center",
-      backgroundRepeat: "no-repeat",
-    };
-  }
-
-  return {
-    backgroundColor: "#050505",
-    backgroundImage:
-      "linear-gradient(105deg, #050505 0%, #0B0B0D 58%, #151517 100%)",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-  };
-}
-
-function criarMobileHeroFrameBackground(_obra: Obra): CSSProperties {
+function criarMobileHeroFrameBackground(): CSSProperties {
   return {
     ...heroStyle,
     backgroundColor: "#000000",
@@ -1647,7 +1613,7 @@ function criarMobileHeroImageLayerStyle(obra: Obra): CSSProperties {
   };
 }
 
-function criarDecoracaoHomeStyle(_index: number): CSSProperties {
+function criarDecoracaoHomeStyle(): CSSProperties {
   return {
     display: "none",
   };
@@ -2782,7 +2748,6 @@ export default function Home() {
   const [busca, setBusca] = useState("");
   const [obrasLocais, setObrasLocais] = useState<ObraLocal[]>([]);
   const [obrasFavoritas, setObrasFavoritas] = useState<string[]>([]);
-  const [obrasConcluidas, setObrasConcluidas] = useState<string[]>([]);
   const [perfisAutores, setPerfisAutores] = useState<PerfisAutoresSalvos>({});
   const [avaliacoesAutoresHome, setAvaliacoesAutoresHome] =
     useState<AvaliacoesAutoresHome>({});
@@ -2871,14 +2836,13 @@ export default function Home() {
 
   useEffect(() => {
     let cancelado = false;
+    const reiniciarCarregamentoTimer = window.setTimeout(() => {
+      if (!cancelado) {
+        setDadosHomeCarregados(false);
+      }
+    }, 0);
 
     async function carregarDadosHome() {
-      window.setTimeout(() => {
-        if (!cancelado) {
-          setDadosHomeCarregados(false);
-        }
-      }, 0);
-
       try {
         let userIdHome = usuarioIdLogado.trim();
         if (!userIdHome) {
@@ -2945,7 +2909,6 @@ export default function Home() {
         if (!cancelado) {
           setObrasLocais(obrasNormalizadas);
           setObrasFavoritas(obrasFavoritasNormalizadas);
-          setObrasConcluidas(obrasConcluidasNormalizadas);
           setPerfisAutores(perfisAutoresNormalizados);
         }
 
@@ -2955,15 +2918,16 @@ export default function Home() {
         );
 
         if (!cancelado) {
+          window.clearTimeout(reiniciarCarregamentoTimer);
           setObrasLocais(obrasComSupabase);
           setPerfisAutores(carregarPerfisAutoresHomeSalvos(userIdHome));
           setDadosHomeCarregados(true);
         }
       } catch {
         if (!cancelado) {
+          window.clearTimeout(reiniciarCarregamentoTimer);
           setObrasLocais([]);
           setObrasFavoritas([]);
-          setObrasConcluidas([]);
           setPerfisAutores({});
           setDadosHomeCarregados(true);
         }
@@ -2974,6 +2938,7 @@ export default function Home() {
 
     return () => {
       cancelado = true;
+      window.clearTimeout(reiniciarCarregamentoTimer);
     };
   }, [usuarioIdLogado]);
 
@@ -3668,7 +3633,7 @@ export default function Home() {
 
       <div style={pageDecorationLayerStyle} aria-hidden="true">
         {["✦", "◌", "✧"].map((decoracao, index) => (
-          <span key={`${decoracao}-${index}`} style={criarDecoracaoHomeStyle(index)}>
+          <span key={`${decoracao}-${index}`} style={criarDecoracaoHomeStyle()}>
             {decoracao}
           </span>
         ))}
@@ -3907,7 +3872,7 @@ export default function Home() {
                   ...heroStyle,
                   ...desktopHeroStyle,
                 }
-              : criarMobileHeroFrameBackground(heroObra)
+              : criarMobileHeroFrameBackground()
           }
         >
           {!isDesktop && (
@@ -3927,7 +3892,7 @@ export default function Home() {
           {!isDesktop && !heroTemImagem && (
             <div style={heroDecorationLayerStyle} aria-hidden="true">
               {["✦", "◌", "✧", "◇"].map((decoracao, index) => (
-                <span key={`hero-${decoracao}-${index}`} style={criarDecoracaoHomeStyle(index)}>
+                <span key={`hero-${decoracao}-${index}`} style={criarDecoracaoHomeStyle()}>
                   {decoracao}
                 </span>
               ))}
@@ -5279,18 +5244,6 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   background: "transparent",
   opacity: 0,
 };
-const desktopHeroWaterLayerStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "56%",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  WebkitMaskImage: "none",
-  maskImage: "none",
-};
 
 const heroDecorationLayerStyle: CSSProperties = {
   position: "absolute",
@@ -5591,15 +5544,6 @@ const mobileSearchToggleActiveStyle: CSSProperties = {
   outline: "none",
 };
 
-const menuStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  overflowX: "auto",
-  padding: "2px 0 6px",
-  maxWidth: "100%",
-  scrollbarWidth: "none",
-};
 
 const desktopMenuStyle: CSSProperties = {
   display: "flex",
@@ -5839,40 +5783,8 @@ const desktopHeroPosterGlowStyle: CSSProperties = {
   pointerEvents: "none",
 };
 
-const desktopHeroPosterBadgesStyle: CSSProperties = {
-  position: "absolute",
-  zIndex: 1,
-  top: "18px",
-  left: "18px",
-  right: "18px",
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  flexWrap: "wrap",
-  maxWidth: "calc(100% - 36px)",
-  minWidth: 0,
-};
 
-const desktopHeroPosterBadgeStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "8px 12px",
-  borderRadius: "999px",
-  background: "#000000",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 950,
-  textShadow: "none",
-  ...safeTextStyle,
-};
 
-const desktopHeroPosterClassificationBadgeStyle: CSSProperties = {
-  ...desktopHeroPosterBadgeStyle,
-  border: "1px solid rgba(255,255,255,0.08)",
-};
 
 const desktopHeroPosterTitleStyle: CSSProperties = {
   position: "relative",
@@ -5907,14 +5819,6 @@ const heroGlowStyle: CSSProperties = {
     "linear-gradient(180deg, rgba(4, 0, 10, 0.18) 0%, #000000 100%)",
 };
 
-const desktopHeroOverlayStyle: CSSProperties = {
-  position: "absolute",
-  zIndex: 1,
-  inset: 0,
-  background:
-    "linear-gradient(180deg, rgba(5,5,5,0.02) 50%, rgba(5,5,5,0.44) 100%)",
-  pointerEvents: "none",
-};
 
 const mobileHeroImageGlowStyle: CSSProperties = {
   position: "absolute",
@@ -5953,13 +5857,6 @@ const desktopHeroContentStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const heroMetaStyle: CSSProperties = {
-  display: "flex",
-  gap: "9px",
-  flexWrap: "wrap",
-  maxWidth: "100%",
-  minWidth: 0,
-};
 
 const desktopHeroMetaStyle: CSSProperties = {
   display: "flex",
@@ -6023,18 +5920,6 @@ const desktopHeroClassificationStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const heroKickerStyle: CSSProperties = {
-  maxWidth: "100%",
-  padding: "8px 12px",
-  borderRadius: "999px",
-  background: "#000000",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#DDD6FE",
-  fontSize: "12px",
-  fontWeight: 950,
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 const heroPillStyle: CSSProperties = {
   maxWidth: "100%",
@@ -6106,16 +5991,6 @@ const desktopHeroDescriptionStyle: CSSProperties = {
   textShadow: "0 2px 14px rgba(0,0,0,0.74)",
 };
 
-const heroStatsStyle: CSSProperties = {
-  display: "flex",
-  gap: "11px",
-  flexWrap: "wrap",
-  color: "var(--historietas-text-secondary, #B9B4C7)",
-  fontSize: "13px",
-  fontWeight: 850,
-  maxWidth: "100%",
-  minWidth: 0,
-};
 
 const heroButtonsStyle: CSSProperties = {
   display: "grid",
@@ -6295,11 +6170,6 @@ const heroDotStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-const heroDotActiveStyle: CSSProperties = {
-  ...heroDotStyle,
-  width: "38px",
-  background: "rgba(255,255,255,0.58)",
-};
 
 const desktopHeroFooterStyle: CSSProperties = {
   display: "flex",
@@ -6348,10 +6218,6 @@ const desktopHeroStatIconStyle: CSSProperties = {
   flexShrink: 0,
 };
 
-const desktopHeroStatHeartIconStyle: CSSProperties = {
-  ...desktopHeroStatIconStyle,
-  color: "#E11D48",
-};
 
 const desktopHeroStatValueStyle: CSSProperties = {
   display: "inline-block",
@@ -6514,10 +6380,6 @@ const mobileHeroStatIconStyle: CSSProperties = {
   flexShrink: 0,
 };
 
-const mobileHeroStatHeartIconStyle: CSSProperties = {
-  ...mobileHeroStatIconStyle,
-  color: "#E11D48",
-};
 
 const mobileHeroStatValueStyle: CSSProperties = {
   display: "inline-block",
@@ -6605,14 +6467,6 @@ const summaryNumberStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const summaryLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  fontWeight: 850,
-  textAlign: "center",
-  lineHeight: 1.25,
-  ...safeTextStyle,
-};
 
 const sectionStyle: CSSProperties = {
   marginTop: "24px",
@@ -7113,19 +6967,6 @@ const statusRowStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const publishedBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "rgba(34, 197, 94, 0.14)",
-  border: "1px solid rgba(34, 197, 94, 0.3)",
-  color: "#86EFAC",
-  fontSize: "10px",
-  fontWeight: 900,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const formatBadgeStyle: CSSProperties = {
   width: "fit-content",
@@ -7456,11 +7297,6 @@ const coverThumbStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const desktopCoverThumbStyle: CSSProperties = {
-  ...coverThumbStyle,
-  minHeight: "142px",
-  borderRadius: "18px",
-};
 
 const obraInfoStyle: CSSProperties = {
   minWidth: 0,
@@ -7490,33 +7326,7 @@ const desktopObraTitleStyle: CSSProperties = {
   lineHeight: 1.05,
 };
 
-const statusBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  fontWeight: 850,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const soonBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "5px 8px",
-  borderRadius: "999px",
-  background: "rgba(113, 113, 122, 0.18)",
-  border: "1px solid rgba(161, 161, 170, 0.22)",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 900,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const authorStyle: CSSProperties = {
   margin: 0,
@@ -7524,66 +7334,5 @@ const authorStyle: CSSProperties = {
   fontSize: "12px",
   ...listaAuthorMetaTypographyStyle,
   maxWidth: "100%",
-  ...safeTextStyle,
-};
-
-const soonLabelStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  minHeight: "31px",
-  padding: "0 12px",
-  marginTop: "3px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "13px",
-  fontWeight: 950,
-  lineHeight: 1.15,
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
-
-const homeEmptyStateStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "10px",
-  padding: "18px 14px",
-  borderRadius: "24px",
-  background: "#000000",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  textAlign: "center",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-
-const homeEmptyActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr",
-  gap: "8px",
-  width: "min(100%, 360px)",
-  marginTop: "4px",
-  boxSizing: "border-box",
-};
-
-const emptyBoxStyle: CSSProperties = {
-  padding: "28px",
-  borderRadius: "22px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#B3B3B3",
-  fontWeight: 800,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  minWidth: 0,
-  overflow: "hidden",
   ...safeTextStyle,
 };

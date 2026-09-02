@@ -1288,9 +1288,6 @@ function prepararObraParaLocalStorage(obra: ObraLocal): ObraLocal {
   };
 }
 
-function criarStorageUsuarioPublicarKey(userId: string) {
-  return criarStorageKeyUsuarioPublicar(STORAGE_KEY, userId);
-}
 
 function obterAutorIdObraPublicar(obra: Pick<ObraLocal, "autorId">) {
   return typeof obra.autorId === "string" ? obra.autorId.trim() : "";
@@ -1546,17 +1543,12 @@ function criarCoverUploadIconBoxStyle(capaAtual: string): CSSProperties {
   };
 }
 
-function criarDecoracaoPaginaStyle(_index: number): CSSProperties {
+function criarDecoracaoPaginaStyle(): CSSProperties {
   return {
     display: "none",
   };
 }
 
-function criarDecoracaoPublicarStyle(_index: number): CSSProperties {
-  return {
-    display: "none",
-  };
-}
 
 export default function PublicarPage() {
   const router = useRouter();
@@ -1588,7 +1580,6 @@ export default function PublicarPage() {
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
   const [verificandoAutenticacao, setVerificandoAutenticacao] = useState(true);
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const { pageThemeStyle } = useHistorietasTheme(pageStyle);
   const { language: idioma } = useHistorietasLanguage();
@@ -1606,11 +1597,6 @@ export default function PublicarPage() {
         }
 
         if (error || !data.user) {
-          window.setTimeout(() => {
-            if (!cancelado) {
-              setUsuarioIdLogado("");
-            }
-          }, 0);
           router.replace(criarLoginHrefPublicar());
           return;
         }
@@ -1625,12 +1611,6 @@ export default function PublicarPage() {
           router.replace(criarHrefAceiteTermos("/publicar"));
           return;
         }
-
-        window.setTimeout(() => {
-          if (!cancelado) {
-            setUsuarioIdLogado(data.user.id);
-          }
-        }, 0);
 
         const nomeFallback = obterNomeMetadataPublicar({
           email: data.user.email || "",
@@ -1711,7 +1691,6 @@ export default function PublicarPage() {
       .slice(0, LIMITE_TAGS_OBRA);
   }, [tags]);
 
-  const tagsPreview = tagsDaObra.length > 0 ? tagsDaObra : ["sem tags"];
   const formatoEhPersonalizado = formato === OUTRO_FORMATO_VALUE;
   const generoEhPersonalizado = genero === OUTRO_GENERO_VALUE;
   const formatoFinal = formatoEhPersonalizado
@@ -2445,7 +2424,7 @@ export default function PublicarPage() {
 
       <div style={pageDecorationLayerStyle} aria-hidden="true">
         {["✦", "◇", "+"].map((decoracao, index) => (
-          <span key={`${decoracao}-${index}`} style={criarDecoracaoPaginaStyle(index)}>
+          <span key={`${decoracao}-${index}`} style={criarDecoracaoPaginaStyle()}>
             {decoracao}
           </span>
         ))}
@@ -3290,13 +3269,7 @@ const desktopTopWaterFadeStyle: CSSProperties = {
   opacity: 0,
 };
 
-const heroDecorationLayerStyle: CSSProperties = {
-  display: "none",
-};
 
-const heroPremiumShineStyle: CSSProperties = {
-  display: "none",
-};
 
 const pageStyle: CSSProperties = {
   position: "relative",
@@ -3329,50 +3302,8 @@ const topStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "25px",
-  fontWeight: 950,
-  letterSpacing: "-0.06em",
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "100%",
-  overflow: "visible",
-  ...safeTextStyle,
-};
 
-const logoMarkStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-publicar-bg-deep, #000000)",
-  color: "#FFFFFF",
-  fontSize: "19px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  flex: "0 0 auto",
-  border: "1px solid var(--historietas-publicar-purple-border, rgba(59, 7, 100, 0.58))",
-  boxShadow: "none",
-};
 
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-publicar-purple-text, #FFFFFF) 44%, var(--historietas-publicar-purple-soft, #D4D4D8) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
 
 const titleHeaderStyle: CSSProperties = {
   ...topStyle,
@@ -3418,13 +3349,7 @@ const desktopHeaderTitleLinkStyle: CSSProperties = {
   fontSize: "29px",
 };
 
-const headerTitleMarkStyle: CSSProperties = {
-  display: "none",
-};
 
-const desktopHeaderTitleMarkStyle: CSSProperties = {
-  ...headerTitleMarkStyle,
-};
 
 const headerTitleTextStyle: CSSProperties = {
   display: "inline-block",
@@ -3451,54 +3376,9 @@ const desktopHeaderTitleTextStyle: CSSProperties = {
 };
 
 
-const heroBoxStyle: CSSProperties = {
-  position: "relative",
-  display: "grid",
-  justifyItems: "center",
-  textAlign: "center",
-  gap: "10px",
-  padding: "24px 16px",
-  borderRadius: "30px",
-  border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, var(--historietas-publicar-bg-page, #000000) 0%, var(--historietas-publicar-bg-deep, #000000) 58%, var(--historietas-publicar-bg-end, #000000) 100%)",
-  boxShadow: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-};
 
 
-const titleStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: 0,
-  color: "var(--historietas-accent, var(--historietas-publicar-accent, #FFFFFF))",
-  WebkitTextFillColor: "var(--historietas-accent, var(--historietas-publicar-accent, #FFFFFF))",
-  fontSize: "clamp(30px, 8vw, 46px)",
-  lineHeight: 1.12,
-  fontWeight: 950,
-  letterSpacing: "-0.052em",
-  maxWidth: "100%",
-  textAlign: "center",
-  textShadow: "none",
-  overflow: "visible",
-  wordBreak: "normal",
-  overflowWrap: "normal",
-};
 
-const descriptionStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.55,
-  fontWeight: 720,
-  maxWidth: "720px",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const progressBoxStyle: CSSProperties = {
   position: "relative",
@@ -3557,24 +3437,7 @@ const progressFillStyle: CSSProperties = {
   transition: "width 0.2s ease",
 };
 
-const previewProgressBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  padding: "8px",
-  borderRadius: "16px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  boxShadow: "none",
-};
 
-const desktopPreviewProgressBoxStyle: CSSProperties = {
-  ...previewProgressBoxStyle,
-  padding: "9px 12px",
-  borderRadius: "17px",
-};
 
 const mainGridStyle: CSSProperties = {
   display: "grid",
@@ -3611,51 +3474,11 @@ const errorBoxStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const formSectionHeaderStyle: CSSProperties = {
-  display: "grid",
-  justifyItems: "center",
-  gap: "4px",
-  padding: "4px 0 2px",
-  textAlign: "center",
-  minWidth: 0,
-};
 
 
-const formSectionTitleStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-publicar-accent, #FFFFFF))",
-  fontSize: "18px",
-  lineHeight: 1.05,
-  fontWeight: 950,
-  letterSpacing: "-0.045em",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
-const formSectionTitleStandaloneStyle: CSSProperties = {
-  ...formSectionTitleStyle,
-  display: "block",
-  width: "100%",
-  padding: 0,
-  background: "transparent",
-  border: "0",
-  borderRadius: 0,
-  boxShadow: "none",
-};
 
-const desktopFormSectionTitleStandaloneStyle: CSSProperties = {
-  ...formSectionTitleStandaloneStyle,
-  gridColumn: "1 / -1",
-};
 
-const formSectionTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.45,
-  fontWeight: 700,
-  textAlign: "center",
-  maxWidth: "520px",
-  ...safeTextStyle,
-};
 
 
 const fieldGroupStyle: CSSProperties = {
@@ -3713,80 +3536,12 @@ const hiddenInputStyle: CSSProperties = {
   display: "none",
 };
 
-const coverUploadBoxStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(86px, 96px) minmax(0, 1fr)",
-  gap: "12px",
-  alignItems: "stretch",
-  padding: "10px",
-  borderRadius: "21px",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
 
-const coverUploadPreviewStyle: CSSProperties = {
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const coverPlaceholderStyle: CSSProperties = {
-  minHeight: "138px",
-  borderRadius: "18px",
-  background: "var(--historietas-publicar-bg-deep, #000000)",
-  backgroundImage: "linear-gradient(135deg, var(--historietas-publicar-surface, #050505) 0%, var(--historietas-publicar-bg-deep, #000000) 100%)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  display: "grid",
-  alignContent: "center",
-  justifyItems: "center",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
 
-const coverPlaceholderIconStyle: CSSProperties = {
-  width: "32px",
-  height: "32px",
-  borderRadius: "999px",
-  background: "var(--historietas-accent, var(--historietas-publicar-accent, #FFFFFF))",
-  color: "#FFFFFF",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "22px",
-  fontWeight: 950,
-};
 
-const coverPlaceholderTextStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "10px",
-  fontWeight: 900,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
-const coverUploadContentStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "center",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const coverUploadTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "17px",
-  fontWeight: 950,
-  letterSpacing: "-0.045em",
-  ...safeTextStyle,
-};
 
 const fileNameStyle: CSSProperties = {
   color: "var(--historietas-accent, var(--historietas-publicar-accent-soft, #FFFFFF))",
@@ -4163,40 +3918,8 @@ const previewCoverGlowStyle: CSSProperties = {
 };
 
 
-const previewCoverBottomStyle: CSSProperties = {
-  position: "absolute",
-  left: "9px",
-  right: "9px",
-  bottom: "9px",
-  display: "grid",
-  gridTemplateColumns: "auto minmax(0, 1fr)",
-  alignItems: "end",
-  gap: "5px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const previewCoverNumberStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "30px",
-  lineHeight: 0.88,
-  fontWeight: 950,
-  letterSpacing: "-0.07em",
-  textShadow: "0 1px 10px rgba(0,0,0,0.34)",
-  ...safeTextStyle,
-};
 
-const previewCoverTextStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "8.5px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "0.055em",
-  textAlign: "left",
-  textTransform: "uppercase",
-  textShadow: "0 1px 10px rgba(0,0,0,0.34)",
-  ...safeTextStyle,
-};
 
 const previewContentStyle: CSSProperties = {
   display: "grid",
@@ -4236,12 +3959,6 @@ const previewRatingBadgeStyle: CSSProperties = {
 };
 
 
-const previewImportedBadgeStyle: CSSProperties = {
-  ...previewBadgeStyle,
-  background: "var(--historietas-publicar-success-bg, rgba(34, 197, 94, 0.12))",
-  border: "1px solid var(--historietas-publicar-success-border, rgba(34, 197, 94, 0.22))",
-  color: "var(--historietas-publicar-success, #86EFAC)",
-};
 
 const previewObraTitleStyle: CSSProperties = {
   margin: 0,
@@ -4277,22 +3994,6 @@ const previewAuthorStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const previewSinopseStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.32,
-  fontWeight: 700,
-  whiteSpace: "pre-wrap",
-  maxWidth: "100%",
-  display: "-webkit-box",
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: "vertical",
-  overflow: "hidden",
-  overflowWrap: "break-word",
-  wordBreak: "break-word",
-  ...safeTextStyle,
-};
 
 const previewImportedChapterStyle: CSSProperties = {
   display: "grid",
@@ -4472,25 +4173,7 @@ const previewActionBadgeStyle: CSSProperties = {
 };
 
 
-const tagPreviewListStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
-};
 
-const previewTagStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 6px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
 const miniCounterOkStyle: CSSProperties = {
   width: "fit-content",
@@ -4587,34 +4270,11 @@ const desktopContainerStyle: CSSProperties = {
   padding: "30px 0 72px",
 };
 
-const desktopTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "14px",
-};
-
-const desktopHeroBoxStyle: CSSProperties = {
-  ...heroBoxStyle,
-  padding: "30px 24px",
-  borderRadius: "30px",
-};
 
 
-const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  fontSize: "clamp(38px, 4.4vw, 58px)",
-  maxWidth: "760px",
-  margin: "0 auto",
-  textAlign: "center",
-};
 
 
-const desktopDescriptionStyle: CSSProperties = {
-  ...descriptionStyle,
-  margin: "10px auto 0",
-  maxWidth: "620px",
-  textAlign: "center",
-  fontSize: "14px",
-};
+
 
 
 const desktopProgressBoxStyle: CSSProperties = {
@@ -4667,11 +4327,6 @@ const desktopFullWidthErrorBoxStyle: CSSProperties = {
   gridColumn: "1 / -1",
 };
 
-const desktopFormSectionHeaderStyle: CSSProperties = {
-  ...formSectionHeaderStyle,
-  gridColumn: "1 / -1",
-  padding: "8px 0 4px",
-};
 
 
 const desktopDoubleFieldStyle: CSSProperties = {
@@ -4686,20 +4341,8 @@ const desktopFullWidthDoubleFieldStyle: CSSProperties = {
 };
 
 
-const desktopCoverUploadBoxStyle: CSSProperties = {
-  ...coverUploadBoxStyle,
-  gridTemplateColumns: "116px minmax(0, 1fr)",
-  gap: "16px",
-  padding: "12px",
-  borderRadius: "22px",
-};
 
 
-const desktopCoverUploadContentStyle: CSSProperties = {
-  ...coverUploadContentStyle,
-  alignContent: "center",
-  gap: "8px",
-};
 
 const desktopCoverButtonsStyle: CSSProperties = {
   ...coverButtonsStyle,

@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  memo,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { createPortal } from "react-dom";
@@ -3533,7 +3541,7 @@ export default function LerCapituloPage() {
       },
       usuarioIdLogado
     );
-  }, [preferenciasCarregadas, tamanhoFonte, mostrarLinhaProgresso]);
+  }, [preferenciasCarregadas, tamanhoFonte, mostrarLinhaProgresso, usuarioIdLogado]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -3561,12 +3569,6 @@ export default function LerCapituloPage() {
     return () => {
       window.clearTimeout(atualizarModoDesktopTimer);
       mediaQuery.removeListener(atualizarModoDesktop);
-    };
-  }, []);
-
-  useEffect(() => {
-
-    return () => {
     };
   }, []);
 
@@ -3683,6 +3685,9 @@ export default function LerCapituloPage() {
       null
     );
   }, [obraAtual, capituloId]);
+  const atualizarCapituloPorMetricas = useEffectEvent(
+    (dados: Partial<CapituloLocal>) => atualizarCapitulo(dados),
+  );
 
   const statusAcesso18 =
     obraAtual && controleAcesso18.obraId === obraAtual.id
@@ -3713,7 +3718,7 @@ export default function LerCapituloPage() {
 
       return { obraId: obraAtual.id, status: proximoStatus };
     });
-  }, [obraAtual?.id, obraAtual?.classificacaoIndicativa]);
+  }, [obraAtual]);
 
 
   useEffect(() => {
@@ -3800,7 +3805,7 @@ export default function LerCapituloPage() {
         metricasReais.curtiu !== capituloAtual.curtiu ||
         metricasReais.salvo !== capituloAtual.salvo
       ) {
-        atualizarCapitulo({
+        atualizarCapituloPorMetricas({
           curtiu: metricasReais.curtiu,
           salvo: metricasReais.salvo,
         });
@@ -3813,9 +3818,7 @@ export default function LerCapituloPage() {
       cancelado = true;
     };
   }, [
-    capituloAtual?.id,
-    capituloAtual?.curtiu,
-    capituloAtual?.salvo,
+    capituloAtual,
     comentariosCapitulo.length,
     usuarioIdLogado,
   ]);
@@ -3891,7 +3894,7 @@ export default function LerCapituloPage() {
     }
 
     void registrarVisualizacaoCapituloAtual();
-  }, [capituloAtual?.id, statusAcesso18]);
+  }, [capituloAtual, statusAcesso18]);
 
   useEffect(() => {
     const atualizarComentarioTimer = window.setTimeout(() => {
@@ -3904,7 +3907,7 @@ export default function LerCapituloPage() {
     return () => {
       window.clearTimeout(atualizarComentarioTimer);
     };
-  }, [capituloAtual?.id, usuarioIdLogado]);
+  }, [capituloAtual?.id, capituloAtual?.comentario, usuarioIdLogado]);
 
   useEffect(() => {
     function atualizarProgressoRolagem() {
@@ -3981,7 +3984,7 @@ export default function LerCapituloPage() {
         origem: "abertura_capitulo",
       },
     });
-  }, [usuarioIdLogado, obraAtual?.id, capituloAtual?.id, statusAcesso18]);
+  }, [usuarioIdLogado, obraAtual, capituloAtual, numeroCapitulo, statusAcesso18]);
 
   async function obterUsuarioLogadoIdAtual() {
     if (usuarioIdLogado) {
@@ -5614,76 +5617,10 @@ const logoViewsCountStyle: CSSProperties = {
   textShadow: "none",
 };
 
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, var(--historietas-reader-logo-mid, #FFFFFF) 44%, var(--historietas-reader-logo-end, #D4D4D8) 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-};
 
-const topActionsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-  gap: "6px",
-  width: "100%",
-  minWidth: 0,
-};
 
-const desktopTopActionsStyle: CSSProperties = {
-  ...topActionsStyle,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  width: "auto",
-  flex: "0 0 auto",
-};
 
-const topMiniButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  padding: "0 13px",
-  borderRadius: "999px",
-  background: "var(--historietas-reader-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flex: "1 1 112px",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  textAlign: "center",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const backButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  padding: "0 13px",
-  borderRadius: "999px",
-  background: "var(--historietas-reader-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flex: "1 1 112px",
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  textAlign: "center",
-  whiteSpace: "normal",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 const settingsButtonStyle: CSSProperties = {
   minHeight: "38px",
@@ -5808,108 +5745,15 @@ function criarEstiloTituloCapitulo(
   };
 }
 
-const chapterViewsStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "13px",
-  lineHeight: 1.4,
-  fontWeight: 800,
-  letterSpacing: "0.01em",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "6px",
-  textAlign: "center",
-};
 
-const chapterViewsIconStyle: CSSProperties = {
-  width: "19px",
-  height: "19px",
-  flexShrink: 0,
-  display: "block",
-};
 
-const metaStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.35,
-  fontWeight: 750,
-  textAlign: "center",
-  maxWidth: "100%",
-  ...safeTextStyle,
-};
 
-const statusRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexWrap: "wrap",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-};
 
-const statusBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "9px",
-  fontWeight: 850,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
-const readingStatsStyle: CSSProperties = {
-  marginTop: "10px",
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: "7px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-};
 
-const desktopReadingStatsStyle: CSSProperties = {
-  ...readingStatsStyle,
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "10px",
-  marginTop: "14px",
-};
 
-const readingStatCardStyle: CSSProperties = {
-  display: "grid",
-  gap: "3px",
-  padding: "10px",
-  borderRadius: "16px",
-  background: "var(--historietas-reader-panel, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.06)",
-  boxShadow: "none",
-  minWidth: 0,
-  overflow: "hidden",
-};
 
-const readingStatNumberStyle: CSSProperties = {
-  color: "var(--historietas-accent, var(--historietas-reader-accent, #FFFFFF))",
-  fontSize: "20px",
-  lineHeight: 1,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
-const readingStatLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  lineHeight: 1.2,
-  fontWeight: 900,
-  textTransform: "uppercase",
-  letterSpacing: "0.055em",
-  ...safeTextStyle,
-};
 
 const settingsPanelStyle: CSSProperties = {
   display: "grid",
@@ -6829,29 +6673,7 @@ const focusChapterNavDisabledStyle: CSSProperties = {
   background: "rgba(255,255,255,0.018)",
 };
 
-const readerFooterBoxStyle: CSSProperties = {
-  marginTop: "12px",
-  padding: "12px",
-  borderRadius: "20px",
-  background: "var(--historietas-reader-panel, rgba(4, 0, 10, 0.72))",
-  border: "1px solid rgba(255,255,255,0.06)",
-  display: "grid",
-  gap: "6px",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "hidden",
-  boxShadow: "none",
-};
 
-const readerFooterTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.5,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
 
 const desktopContainerStyle: CSSProperties = {
   ...containerStyle,
@@ -6865,12 +6687,6 @@ const desktopTopStyle: CSSProperties = {
   marginBottom: "14px",
 };
 
-const desktopBackButtonStyle: CSSProperties = {
-  ...backButtonStyle,
-  flex: "0 0 auto",
-  minWidth: "126px",
-  minHeight: "40px",
-};
 
 const desktopSettingsButtonStyle: CSSProperties = {
   ...settingsButtonStyle,

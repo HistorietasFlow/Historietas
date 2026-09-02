@@ -1220,31 +1220,6 @@ function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
   return Math.round((capitulosLidos / capitulos.length) * 100);
 }
 
-function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const temCapituloLido = obra.capitulos.some((capitulo) => capitulo.lido);
-
-  if (!temCapituloLido) {
-    return null;
-  }
-
-  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
-    ? obra.capitulos.findIndex(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId
-      )
-    : -1;
-
-  if (indiceUltimoCapituloLido >= 0) {
-    const proximoCapituloNaoLido = obra.capitulos
-      .slice(indiceUltimoCapituloLido + 1)
-      .find((capitulo) => !capitulo.lido);
-
-    if (proximoCapituloNaoLido) {
-      return proximoCapituloNaoLido;
-    }
-  }
-
-  return obra.capitulos.find((capitulo) => !capitulo.lido) || null;
-}
 
 function dataCriacaoObra(obra: ObraLocal) {
   const data = new Date(obra.criadaEm).getTime();
@@ -2022,9 +1997,8 @@ function ordenarObrasLocais(lista: ObraLocal[], ordenacao: OrdenacaoExplorar) {
 
 function criarPublishedCoverStyle(
   capa: string,
-  tema?: ReturnType<typeof obterTemaCategoria>
 ): CSSProperties {
-  const baseStyle = tema ? criarPublishedCoverTemaStyle(tema) : publishedCoverStyle;
+  const baseStyle = criarPublishedCoverTemaStyle();
 
   if (!capa) {
     return baseStyle;
@@ -2057,7 +2031,7 @@ type TemaCategoriaExplorar = {
   activeBackground: string;
 };
 
-function obterTemaCategoria(_categoria = ""): TemaCategoriaExplorar {
+function obterTemaCategoria(): TemaCategoriaExplorar {
   return {
     accent: "#FFFFFF",
     secondary: "#A1A1AA",
@@ -2080,56 +2054,7 @@ function criarTemaPaginaVisualExplorar(): TemaCategoriaExplorar {
   return obterTemaCategoria();
 }
 
-function obterDecoracoesCategoria(categoria: string) {
-  const categoriaNormalizada = normalizarTexto(categoria);
 
-  if (categoriaNormalizada === "sobrenatural") {
-    return ["☾", "✦", "👻", "✧", "◌"];
-  }
-
-  if (categoriaNormalizada === "terror") {
-    return ["☾", "🕸", "✕", "◌", "✦"];
-  }
-
-  if (categoriaNormalizada === "fantasia") {
-    return ["✦", "✧", "◇", "☾", "✶"];
-  }
-
-  if (categoriaNormalizada === "ficcao" || categoriaNormalizada === "sci-fi" || categoriaNormalizada === "sci fi") {
-    return ["⌁", "◇", "＋", "◌", "⌬"];
-  }
-
-  if (categoriaNormalizada === "romance") {
-    return ["✦", "♡", "✧", "◌", "❀"];
-  }
-
-  if (categoriaNormalizada === "acao") {
-    return ["✦", "╱", "⚡", "✕", "╲"];
-  }
-
-  if (categoriaNormalizada === "drama") {
-    return ["☾", "✧", "◌", "✦", "◇"];
-  }
-
-  if (categoriaNormalizada === "aventura") {
-    return ["✦", "⌖", "◇", "☾", "✧"];
-  }
-
-  if (categoriaNormalizada === "comedia") {
-    return ["✦", "☺", "✧", "☆", "◌"];
-  }
-
-  return ["✦", "◌", "✧"];
-}
-
-function criarDecoracaoTemaStyle(
-  _index: number,
-  _tema: ReturnType<typeof obterTemaCategoria>
-): CSSProperties {
-  return {
-    display: "none",
-  };
-}
 
 function LoadingSpinner({ label = "Carregando" }: { label?: string }) {
   return (
@@ -2177,7 +2102,6 @@ export default function ExplorarPage() {
     useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [usuarioLogado, setUsuarioLogado] = useState(false);
-  const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [mensagemLogin, setMensagemLogin] = useState("");
   const [dadosExplorarCarregados, setDadosExplorarCarregados] = useState(false);
 
@@ -2192,12 +2116,10 @@ export default function ExplorarPage() {
           const userId = data.user?.id || "";
 
           setUsuarioLogado(Boolean(userId));
-          setUsuarioIdLogado(userId);
         }
       } catch {
         if (componenteAtivo) {
           setUsuarioLogado(false);
-          setUsuarioIdLogado("");
         }
       }
     }
@@ -2210,7 +2132,6 @@ export default function ExplorarPage() {
       const userId = session?.user?.id || "";
 
       setUsuarioLogado(Boolean(userId));
-      setUsuarioIdLogado(userId);
 
       if (session?.user) {
         setMensagemLogin("");
@@ -2290,7 +2211,6 @@ export default function ExplorarPage() {
 
         if (!cancelado) {
           setUsuarioLogado(Boolean(userIdAtual));
-          setUsuarioIdLogado(userIdAtual);
         }
 
         const obrasSalvasTexto = lerStorageUsuarioExplorar(
@@ -2827,7 +2747,6 @@ export default function ExplorarPage() {
     language
   );
 
-  const categoriaAtiva = categoriaSelecionada.trim().length > 0;
   const temaPagina = criarTemaPaginaVisualExplorar();
 
   function atualizarUrl(
@@ -2963,11 +2882,11 @@ export default function ExplorarPage() {
       <style>{explorarBuscaToggleCss}</style>
 
       {isDesktop && (
-        <div style={criarExplorarTopWaterFadeStyle(temaPagina, true)} aria-hidden="true" />
+        <div style={criarExplorarTopWaterFadeStyle(true)} aria-hidden="true" />
       )}
 
       {!isDesktop && (
-        <div style={criarExplorarTopWaterFadeStyle(temaPagina, false)} aria-hidden="true" />
+        <div style={criarExplorarTopWaterFadeStyle(false)} aria-hidden="true" />
       )}
 
       <section style={isDesktop ? desktopContainerStyle : containerStyle}>
@@ -3158,14 +3077,8 @@ export default function ExplorarPage() {
         <section
           style={
             isDesktop
-              ? criarDesktopSearchBoxStyle(
-                  temaPagina,
-                  categoriaAtiva
-                )
-              : criarSearchBoxStyle(
-                  temaPagina,
-                  categoriaAtiva
-                )
+              ? criarDesktopSearchBoxStyle()
+              : criarSearchBoxStyle()
           }
         >
           <section
@@ -3178,7 +3091,7 @@ export default function ExplorarPage() {
               onClick={() => selecionarModoConteudo("obras")}
               style={
                 modoConteudo === "obras" && !categoriaSelecionada
-                  ? criarActiveCategoryStyle(temaPagina)
+                  ? criarActiveCategoryStyle()
                   : categoryStyle
               }
             >
@@ -3190,7 +3103,7 @@ export default function ExplorarPage() {
               onClick={() => selecionarModoConteudo("autores")}
               style={
                 modoConteudo === "autores" && !categoriaSelecionada
-                  ? criarActiveCategoryStyle(temaPagina)
+                  ? criarActiveCategoryStyle()
                   : categoryStyle
               }
             >
@@ -3204,7 +3117,7 @@ export default function ExplorarPage() {
                 onClick={() => selecionarCategoria(categoria)}
                 style={
                   categoriaSelecionada === categoria
-                    ? criarActiveCategoryStyle(temaPagina)
+                    ? criarActiveCategoryStyle()
                     : categoryStyle
                 }
               >
@@ -3488,15 +3401,6 @@ export default function ExplorarPage() {
                   >
                     <ObraPublicadaCard
                       obra={obra}
-                      favorita={
-                        usuarioLogado &&
-                        colecaoTemObraExplorar(obrasFavoritas, obra)
-                      }
-                      concluida={
-                        usuarioLogado &&
-                        colecaoTemObraExplorar(obrasConcluidas, obra)
-                      }
-                      tema={temaPagina}
                       isDesktop={isDesktop}
                     />
                   </div>
@@ -3515,7 +3419,7 @@ export default function ExplorarPage() {
             >
               <SectionHeader
                 title={obterTituloCriativoObrasExplorar(secao.genero)}
-                tema={obterTemaCategoria(secao.genero)}
+                tema={obterTemaCategoria()}
                 isDesktop={isDesktop}
                 href={criarHrefListaExplorar({
                   titulo: obterTituloCriativoObrasExplorar(secao.genero),
@@ -3536,15 +3440,6 @@ export default function ExplorarPage() {
                   >
                     <ObraPublicadaCard
                       obra={obra}
-                      favorita={
-                        usuarioLogado &&
-                        colecaoTemObraExplorar(obrasFavoritas, obra)
-                      }
-                      concluida={
-                        usuarioLogado &&
-                        colecaoTemObraExplorar(obrasConcluidas, obra)
-                      }
-                      tema={obterTemaCategoria(secao.genero)}
                       isDesktop={isDesktop}
                     />
                   </div>
@@ -3576,15 +3471,6 @@ export default function ExplorarPage() {
                   <ObraPublicadaCard
                     key={obra.id}
                     obra={obra}
-                    favorita={
-                      usuarioLogado &&
-                      colecaoTemObraExplorar(obrasFavoritas, obra)
-                    }
-                    concluida={
-                      usuarioLogado &&
-                      colecaoTemObraExplorar(obrasConcluidas, obra)
-                    }
-                    tema={temaPagina}
                     isDesktop={isDesktop}
                   />
                 ))}
@@ -3632,7 +3518,7 @@ export default function ExplorarPage() {
             >
               <SectionHeader
                 title={obterTituloCriativoAutoresExplorar(secao.genero)}
-                tema={obterTemaCategoria(secao.genero)}
+                tema={obterTemaCategoria()}
                 isDesktop={isDesktop}
                 href={criarHrefListaExplorar({
                   titulo: obterTituloCriativoAutoresExplorar(secao.genero),
@@ -4007,15 +3893,9 @@ function ExplorarCarouselRow({
 
 function ObraPublicadaCard({
   obra,
-  favorita,
-  concluida,
-  tema,
   isDesktop,
 }: {
   obra: ObraLocal;
-  favorita: boolean;
-  concluida: boolean;
-  tema: ReturnType<typeof obterTemaCategoria>;
   isDesktop?: boolean;
 }) {
   const { language } = useHistorietasLanguage();
@@ -4030,13 +3910,13 @@ function ObraPublicadaCard({
   );
 
   return (
-    <article style={isDesktop ? criarDesktopPublishedCardTemaStyle(tema) : criarPublishedCardTemaStyle(tema)}>
+    <article style={isDesktop ? criarDesktopPublishedCardTemaStyle() : criarPublishedCardTemaStyle()}>
       <Link
         href={paginaPublicaHref}
         style={
           isDesktop
-            ? criarDesktopPublishedCoverStyle(obra.capa, tema)
-            : criarPublishedCoverStyle(obra.capa, tema)
+            ? criarDesktopPublishedCoverStyle(obra.capa)
+            : criarPublishedCoverStyle(obra.capa)
         }
         aria-label={
           obra.titulo === "Obra sem título"
@@ -4120,10 +4000,10 @@ function ObraPublicadaCard({
 
         {progressoLeitura > 0 && (
           <div style={progressCompactStyle}>
-            <div style={criarProgressTrackStyle(tema)}>
+            <div style={criarProgressTrackStyle()}>
               <div
                 style={{
-                  ...criarProgressBarStyle(tema),
+                  ...criarProgressBarStyle(),
                   width: `${progressoLeitura}%`,
                 }}
               />
@@ -4141,7 +4021,7 @@ function ObraPublicadaCard({
           <Link
             href={paginaPublicaHref}
             data-historietas-page-background-action="true"
-            style={criarCardPrimaryActionStyle(tema, isDesktop)}
+            style={criarCardPrimaryActionStyle(isDesktop)}
           >
             {traduzirTextoExplorar("Ver obra", language)}
           </Link>
@@ -4151,7 +4031,7 @@ function ObraPublicadaCard({
   );
 }
 
-function criarActiveCategoryStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarActiveCategoryStyle(): CSSProperties {
   return {
     ...activeCategoryStyle,
     border: "1px solid #FFFFFF",
@@ -4161,10 +4041,7 @@ function criarActiveCategoryStyle(_tema: ReturnType<typeof obterTemaCategoria>):
   };
 }
 
-function criarSearchBoxStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>,
-  _categoriaAtiva = false
-): CSSProperties {
+function criarSearchBoxStyle(): CSSProperties {
   return {
     ...searchBoxStyle,
     marginBottom: "-6px",
@@ -4177,12 +4054,9 @@ function criarSearchBoxStyle(
   };
 }
 
-function criarDesktopSearchBoxStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
-  categoriaAtiva = false
-): CSSProperties {
+function criarDesktopSearchBoxStyle(): CSSProperties {
   return {
-    ...criarSearchBoxStyle(tema, categoriaAtiva),
+    ...criarSearchBoxStyle(),
     gridTemplateColumns: "1fr",
     alignItems: "stretch",
     gap: "5px",
@@ -4196,20 +4070,13 @@ function criarDesktopSearchBoxStyle(
   };
 }
 
-function criarSearchInputStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>,
-  isDesktop: boolean,
-  _categoriaAtiva: boolean
-): CSSProperties {
-  return isDesktop ? desktopSearchInputStyle : searchInputStyle;
-}
 
 
 
 
 
 
-function criarPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarPublishedCardTemaStyle(): CSSProperties {
   return {
     ...publishedCardStyle,
     background: "transparent",
@@ -4218,7 +4085,7 @@ function criarPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria
   };
 }
 
-function criarDesktopPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarDesktopPublishedCardTemaStyle(): CSSProperties {
   return {
     ...desktopPublishedCardStyle,
     background: "transparent",
@@ -4229,7 +4096,7 @@ function criarDesktopPublishedCardTemaStyle(_tema: ReturnType<typeof obterTemaCa
 
 
 
-function criarPublishedCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarPublishedCoverTemaStyle(): CSSProperties {
   return {
     ...publishedCoverStyle,
     backgroundImage: "linear-gradient(135deg, #050505 0%, #000000 100%)",
@@ -4240,9 +4107,8 @@ function criarPublishedCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategori
 
 function criarDesktopPublishedCoverStyle(
   capa: string,
-  tema: ReturnType<typeof obterTemaCategoria>
 ): CSSProperties {
-  const baseStyle = criarDesktopPublishedCoverTemaStyle(tema);
+  const baseStyle = criarDesktopPublishedCoverTemaStyle();
 
   if (!capa) {
     return baseStyle;
@@ -4258,7 +4124,7 @@ function criarDesktopPublishedCoverStyle(
   };
 }
 
-function criarDesktopPublishedCoverTemaStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarDesktopPublishedCoverTemaStyle(): CSSProperties {
   return {
     ...desktopPublishedCoverStyle,
     backgroundImage: "linear-gradient(135deg, #050505 0%, #000000 100%)",
@@ -4267,15 +4133,15 @@ function criarDesktopPublishedCoverTemaStyle(_tema: ReturnType<typeof obterTemaC
   };
 }
 
-function criarProgressTrackStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarProgressTrackStyle(): CSSProperties {
   return progressTrackStyle;
 }
 
-function criarProgressBarStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarProgressBarStyle(): CSSProperties {
   return progressBarStyle;
 }
 
-function criarReadStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProperties {
+function criarReadStyle(): CSSProperties {
   return {
     ...readStyle,
     color: "#FFFFFF",
@@ -4286,11 +4152,10 @@ function criarReadStyle(_tema: ReturnType<typeof obterTemaCategoria>): CSSProper
 }
 
 function criarCardPrimaryActionStyle(
-  tema: ReturnType<typeof obterTemaCategoria>,
   isDesktop?: boolean
 ): CSSProperties {
   return {
-    ...criarReadStyle(tema),
+    ...criarReadStyle(),
     ...(isDesktop ? desktopCardPrimaryActionStyle : cardPrimaryActionStyle),
   };
 }
@@ -4565,7 +4430,6 @@ function criarExplorarPageStyle(
 }
 
 function criarExplorarTopWaterFadeStyle(
-  _tema: ReturnType<typeof obterTemaCategoria>,
   desktop: boolean
 ): CSSProperties {
   return {
@@ -4585,113 +4449,15 @@ const containerStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const topStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  marginBottom: "18px",
-  padding: "2px 0",
-  minWidth: 0,
-};
 
-const mobileTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "12px",
-  padding: "0",
-};
 
-const topActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flex: "0 0 auto",
-};
 
-const logoStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  fontSize: "23px",
-  ...listaPageTitleTypographyStyle,
-  display: "flex",
-  alignItems: "center",
-  gap: "4px",
-  minWidth: 0,
-  maxWidth: "calc(100% - 118px)",
-  overflow: "hidden",
-  ...safeTextStyle,
-};
 
-const logoMarkStyle: CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "14px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "#000000",
-  color: "#FFFFFF",
-  fontSize: "17px",
-  fontWeight: 950,
-  letterSpacing: "-0.04em",
-  border: "1px solid rgba(59, 7, 100, 0.58)",
-  boxShadow: "none",
-  flex: "0 0 auto",
-};
 
-const logoTextStyle: CSSProperties = {
-  marginLeft: "-1px",
-  background:
-    "linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 44%, #FFFFFF 100%)",
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-  textShadow: "none",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
 
-const backButtonStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minHeight: "40px",
-  padding: "0 15px",
-  borderRadius: "999px",
-  background: "#000000",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  textDecoration: "none",
-  fontSize: "12px",
-  fontWeight: 950,
-  textAlign: "center",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
-const libraryButtonTopStyle: CSSProperties = {
-  ...backButtonStyle,
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-};
 
-const soonTopButtonStyle: CSSProperties = {
-  ...backButtonStyle,
-  minHeight: "38px",
-  padding: "0 13px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  boxShadow: "none",
-};
 
-const desktopSoonTopButtonStyle: CSSProperties = {
-  ...soonTopButtonStyle,
-  minHeight: "40px",
-};
 
 const titleHeaderStyle: CSSProperties = {
   display: "flex",
@@ -4839,139 +4605,16 @@ const explorarHeaderFilterIconStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
-const desktopNotificationButtonStyle: CSSProperties = {
-  position: "absolute",
-  top: "50%",
-  right: 0,
-  transform: "translateY(-50%)",
-  width: "34px",
-  height: "34px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  background: "var(--historietas-surface-strong, #000000)",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  textDecoration: "none",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "14px",
-  lineHeight: 1,
-  fontWeight: 950,
-  flex: "0 0 auto",
-  boxShadow: "none",
-  zIndex: 2,
-};
 
-const desktopNotificationBadgeStyle: CSSProperties = {
-  position: "absolute",
-  top: "-7px",
-  right: "-9px",
-  minWidth: "18px",
-  height: "18px",
-  padding: "0 4px",
-  borderRadius: "999px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  border: "2px solid var(--historietas-bg-start, #000000)",
-  background: "#EF4444",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.38)",
-  pointerEvents: "none",
-};
 
-const soonTitleButtonStyle: CSSProperties = {
-  ...soonTopButtonStyle,
-  justifySelf: "center",
-  minHeight: "36px",
-  padding: "0 16px",
-  fontSize: "12px",
-};
 
-const desktopSoonTitleButtonStyle: CSSProperties = {
-  ...desktopSoonTopButtonStyle,
-  justifySelf: "center",
-  minHeight: "40px",
-  padding: "0 22px",
-  fontSize: "13px",
-};
 
-const heroStyle: CSSProperties = {
-  position: "relative",
-  borderRadius: "30px",
-  border: "1px solid rgba(255,255,255,0.06)",
-  background: "linear-gradient(135deg, #000000 0%, #000000 58%, #000000 100%)",
-  padding: "18px",
-  boxShadow: "none",
-  minWidth: 0,
-  overflow: "hidden",
-};
 
-const mobileHeroStyle: CSSProperties = {
-  ...heroStyle,
-  borderRadius: "28px",
-};
 
-const badgeStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "8px 12px",
-  borderRadius: "999px",
-  background: "rgba(4, 0, 10, 0.72)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  fontSize: "10px",
-  fontWeight: 950,
-  letterSpacing: "0.10em",
-  boxShadow: "none",
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
-const desktopBadgeStyle: CSSProperties = {
-  ...badgeStyle,
-  padding: "7px 12px",
-  fontSize: "11px",
-};
 
-const heroDecorationLayerStyle: CSSProperties = {
-  display: "none",
-};
 
-const titleStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: "12px 0 0",
-  color: "var(--historietas-accent, #FFFFFF)",
-  fontSize: "32px",
-  lineHeight: 0.98,
-  ...listaPageTitleTypographyStyle,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
-const descriptionStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  margin: "10px auto 0",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "14px",
-  ...listaAuthorMetaTypographyStyle,
-  lineHeight: 1.55,
-  textAlign: "center",
-  maxWidth: "680px",
-  ...safeTextStyle,
-};
 
 const categoriesStyle: CSSProperties = {
   width: "100%",
@@ -5097,27 +4740,7 @@ const explorarHeaderSearchInputStyle: CSSProperties = {
   boxSizing: "border-box",
 };
 
-const searchInputStyle: CSSProperties = {
-  width: "100%",
-  height: "44px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "#000000",
-  color: "#FFFFFF",
-  padding: "0 16px",
-  outline: "none",
-  fontSize: "14px",
-  fontWeight: 720,
-  textAlign: "center",
-  boxSizing: "border-box",
-  boxShadow: "none",
-  minWidth: 0,
-};
 
-const desktopSearchInputStyle: CSSProperties = {
-  ...searchInputStyle,
-  textAlign: "left",
-};
 
 
 
@@ -5904,19 +5527,6 @@ const classificationBadgeStyle: CSSProperties = {
   ...safeTextStyle,
 };
 
-const fileStatusBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: "4px 7px",
-  borderRadius: "999px",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  color: "#FFFFFF",
-  fontSize: "9px",
-  fontWeight: 900,
-  whiteSpace: "normal",
-  ...safeTextStyle,
-};
 
 const authorLinkStyle: CSSProperties = {
   width: "fit-content",
@@ -6096,40 +5706,10 @@ const desktopContainerStyle: CSSProperties = {
   padding: "34px 0 64px",
 };
 
-const desktopTopStyle: CSSProperties = {
-  ...topStyle,
-  marginBottom: "16px",
-};
 
-const desktopTopActionsStyle: CSSProperties = {
-  ...topActionsStyle,
-  gap: "10px",
-};
 
-const desktopHeroStyle: CSSProperties = {
-  ...heroStyle,
-  padding: "20px 28px",
-  borderRadius: "32px",
-  minHeight: "138px",
-  display: "grid",
-  alignContent: "center",
-};
 
-const desktopTitleStyle: CSSProperties = {
-  ...titleStyle,
-  margin: "0 auto",
-  fontSize: "clamp(46px, 4.7vw, 72px)",
-  lineHeight: 0.94,
-  maxWidth: "760px",
-};
 
-const desktopDescriptionStyle: CSSProperties = {
-  ...descriptionStyle,
-  margin: "10px auto 0",
-  fontSize: "15px",
-  lineHeight: 1.62,
-  maxWidth: "680px",
-};
 
 const desktopCategoriesStyle: CSSProperties = {
   ...categoriesStyle,
@@ -6189,28 +5769,4 @@ const desktopPublishedTitleStyle: CSSProperties = {
   ...publishedTitleStyle,
   fontSize: "20px",
   lineHeight: 1.05,
-};
-
-
-const emptyStatePrimaryButtonStyle: CSSProperties = {
-  display: "inline-flex",
-  minHeight: "48px",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "#FFFFFF",
-  color: "#000000",
-  fontSize: "13px",
-  fontWeight: 950,
-  textDecoration: "none",
-  cursor: "pointer",
-  boxShadow: "none",
-  whiteSpace: "nowrap",
-};
-
-const emptyStateSecondaryButtonStyle: CSSProperties = {
-  ...emptyStatePrimaryButtonStyle,
-  background: "rgba(255,255,255,0.06)",
-  color: "#FFFFFF",
 };
