@@ -1998,6 +1998,22 @@ const paginationVolumeTestPath = path.join(
 const paginationVolumeTest = fs.existsSync(paginationVolumeTestPath)
   ? fs.readFileSync(paginationVolumeTestPath, "utf8")
   : "";
+const paginationIntegrationTestPath = path.join(
+  ROOT_DIR,
+  "qa/integration/paginacao-supabase-real.test.mjs"
+);
+const paginationIntegrationTest = fs.existsSync(
+  paginationIntegrationTestPath
+)
+  ? fs.readFileSync(paginationIntegrationTestPath, "utf8")
+  : "";
+const localSeedPath = path.join(
+  ROOT_DIR,
+  "supabase/seed.sql"
+);
+const localSeed = fs.existsSync(localSeedPath)
+  ? fs.readFileSync(localSeedPath, "utf8")
+  : "";
 const communityPagePath = path.join(
   ROOT_DIR,
   "app/comunidade/page.tsx"
@@ -2049,6 +2065,42 @@ const paginationContracts = [
       /new Set\(resultado\.map[\s\S]*?\.size, quantidade/.test(
         paginationVolumeTest
       )
+  },
+  {
+    name: "fixtures locais usam as tabelas reais em alto volume",
+    valid:
+      [
+        "public.comunidade_posts",
+        "public.comunidade_comentarios",
+        "public.comunidade_curtidas",
+        "public.obras"
+      ].every((table) => localSeed.includes(table)) &&
+      /generate_series\(1, 137\)[\s\S]*?generate_series\(1, 2501\)[\s\S]*?generate_series\(1, 5001\)[\s\S]*?generate_series\(1, 1201\)/.test(
+        localSeed
+      )
+  },
+  {
+    name: "integração consulta Data API real sem aceitar destino remoto",
+    valid:
+      paginationIntegrationTest.includes(
+        'from("comunidade_posts")'
+      ) &&
+      paginationIntegrationTest.includes(
+        'from("comunidade_comentarios")'
+      ) &&
+      paginationIntegrationTest.includes(
+        'from("comunidade_curtidas")'
+      ) &&
+      paginationIntegrationTest.includes('from("obras")') &&
+      /LIMITE_PADRAO_DATA_API\s*=\s*1_000/.test(
+        paginationIntegrationTest
+      ) &&
+      /hostsPermitidos\.has\(destino\.hostname\)/.test(
+        paginationIntegrationTest
+      ) &&
+      !paginationIntegrationTest.includes(
+        "NEXT_PUBLIC_SUPABASE_URL"
+      )
   }
 ];
 
@@ -2063,6 +2115,7 @@ for (const contract of paginationContracts) {
 for (const script of [
   "test:static",
   "test:pagination",
+  "test:pagination:integration",
   "test:smoke",
   "test:e2e",
   "test:all"
@@ -2106,6 +2159,7 @@ const ciContracts = [
       "npm run typecheck",
       "npm run test:static",
       "npm run test:pagination",
+      "npm run test:pagination:integration",
       "npm --prefix qa test",
       "npm run build"
     ].every((command) => ciWorkflow.includes(command))
@@ -2115,6 +2169,15 @@ const ciContracts = [
     valid:
       /E2E_BASE_URL:\s*http:\/\/127\.0\.0\.1:3000/.test(ciWorkflow) &&
       !/\$\{\{\s*secrets\./.test(ciWorkflow)
+  },
+  {
+    name: "CI pagina contra Supabase local descartável",
+    valid:
+      /supabase\/setup-cli@[0-9a-f]{40}/.test(ciWorkflow) &&
+      /version:\s*2\.116\.0/.test(ciWorkflow) &&
+      ciWorkflow.includes("supabase init") &&
+      ciWorkflow.includes("supabase start") &&
+      ciWorkflow.includes("supabase stop --no-backup")
   },
   {
     name: "CI executa Playwright no build de produção",

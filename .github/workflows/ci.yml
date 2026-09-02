@@ -68,7 +68,7 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Baixar o código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -94,6 +94,26 @@ jobs:
 
       - name: Executar testes de paginação em alto volume
         run: npm run test:pagination
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: 2.116.0
+
+      - name: Iniciar ambiente Supabase local descartável
+        run: |
+          supabase init
+          supabase start
+
+      - name: Executar paginação real pela Data API
+        run: npm run test:pagination:integration
+
+      - name: Remover ambiente Supabase local
+        if: ${{ always() }}
+        run: |
+          if supabase status >/dev/null 2>&1; then
+            supabase stop --no-backup
+          fi
 
       - name: Gerar aplicação para os testes públicos
         run: npm run build
