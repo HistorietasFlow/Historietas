@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties, ChangeEvent, FormEvent } from "react";
+import { carregarTodasPaginasSupabase } from "../../lib/supabase/paginacao.mjs";
 
 type CapituloLocal = {
   id: string;
@@ -1517,19 +1518,26 @@ export default function EditarCapituloPage() {
           }
 
           if (obraSupabase) {
-            const { data: capitulosSupabase, error: erroCapitulosSupabase } =
-              await supabase
-                .from("capitulos")
-                .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
-                .eq("obra_id", obraIdParam)
-                .eq("user_id", userId)
-                .order("ordem", { ascending: true })
-                .limit(300);
+            let capitulosSupabase: CapituloSupabaseRow[];
 
-            if (erroCapitulosSupabase) {
+            try {
+              capitulosSupabase =
+                await carregarTodasPaginasSupabase<CapituloSupabaseRow>({
+                  nomeColecao: "capítulos da edição de capítulo",
+                  buscarPagina: async (inicio, fim) =>
+                    supabase
+                      .from("capitulos")
+                      .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
+                      .eq("obra_id", obraIdParam)
+                      .eq("user_id", userId)
+                      .order("ordem", { ascending: true })
+                      .order("id", { ascending: true })
+                      .range(inicio, fim),
+                });
+            } catch (error) {
               console.warn(
                 "Não consegui buscar capítulos no Supabase:",
-                erroCapitulosSupabase.message
+                error,
               );
 
               if (!cancelado) {
@@ -1541,9 +1549,7 @@ export default function EditarCapituloPage() {
 
             const obraNormalizadaSupabase = mapearObraSupabase(
               obraSupabase,
-              Array.isArray(capitulosSupabase)
-                ? (capitulosSupabase)
-                : [],
+              capitulosSupabase,
               obraLocal,
               nomeProfileAutor
             );

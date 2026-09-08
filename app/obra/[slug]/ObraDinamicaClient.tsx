@@ -29,6 +29,10 @@ import {
 } from "../../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../../lib/arquivosObras";
+import {
+  carregarTodasPaginasPorLotesSupabase,
+  carregarTodasPaginasSupabase,
+} from "../../../lib/supabase/paginacao.mjs";
 
 const FOLLOWED_WORKS_STORAGE_KEY = "historietas-obras-seguidas";
 const LIKED_WORKS_STORAGE_KEY = "historietas-obras-curtidas";
@@ -1670,18 +1674,26 @@ async function carregarObraSupabasePorSlug(
       return aplicarMetricasObraPublica(obrasLocais, userId);
     }
 
-    const { data: capitulosBanco, error: erroCapitulos } = await supabase
-      .from("capitulos")
-      .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
-      .eq("obra_id", obraBanco.id)
-      .eq("publicado", true)
-      .order("ordem", { ascending: true })
-      .limit(200);
+    let capitulosBanco: SupabaseCapituloRow[] = [];
 
-    if (erroCapitulos) {
+    try {
+      capitulosBanco =
+        await carregarTodasPaginasSupabase<SupabaseCapituloRow>({
+          nomeColecao: "capítulos da obra pública",
+          buscarPagina: async (inicio, fim) =>
+            supabase
+              .from("capitulos")
+              .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
+              .eq("obra_id", obraBanco.id)
+              .eq("publicado", true)
+              .order("ordem", { ascending: true })
+              .order("id", { ascending: true })
+              .range(inicio, fim),
+        });
+    } catch (error) {
       console.warn(
         "Não consegui carregar capítulos da obra pública no Supabase:",
-        erroCapitulos.message
+        error,
       );
     }
 
@@ -1693,7 +1705,7 @@ async function carregarObraSupabasePorSlug(
 
     const obraNormalizadaSemTotais = normalizarObraSupabase(
       obraBanco,
-      erroCapitulos ? [] : (capitulosBanco || []),
+      capitulosBanco,
       obraLocal,
       0
     );
@@ -2773,30 +2785,38 @@ async function normalizarComentariosObraSupabase(
 
   if (comentariosIds.length > 0) {
     try {
-      const { data, error } = await supabase
-        .from(WORK_COMMENT_LIKES_TABLE)
-        .select("comentario_id,usuario_id")
-        .in("comentario_id", comentariosIds)
-        .limit(5000);
+      const curtidas = await carregarTodasPaginasPorLotesSupabase<
+        { comentario_id: string; usuario_id: string },
+        string
+      >({
+        nomeColecao: "curtidas dos comentários da obra",
+        itens: comentariosIds,
+        buscarPaginaLote: async (comentarioIdsLote, inicio, fim) =>
+          supabase
+            .from(WORK_COMMENT_LIKES_TABLE)
+            .select("comentario_id,usuario_id")
+            .in("comentario_id", comentarioIdsLote)
+            .order("comentario_id", { ascending: true })
+            .order("usuario_id", { ascending: true })
+            .range(inicio, fim),
+      });
 
-      if (!error && Array.isArray(data)) {
-        data.forEach(
-          (curtida) => {
-            const comentarioId = curtida.comentario_id?.trim() || "";
-            const usuarioId = curtida.usuario_id?.trim() || "";
+      curtidas.forEach(
+        (curtida) => {
+          const comentarioId = curtida.comentario_id?.trim() || "";
+          const usuarioId = curtida.usuario_id?.trim() || "";
 
-            if (!comentarioId || !usuarioId) {
-              return;
-            }
-
-            const usuarios = curtidasPorComentario.get(comentarioId) || [];
-
-            if (!usuarios.includes(usuarioId)) {
-              curtidasPorComentario.set(comentarioId, [...usuarios, usuarioId]);
-            }
+          if (!comentarioId || !usuarioId) {
+            return;
           }
-        );
-      }
+
+          const usuarios = curtidasPorComentario.get(comentarioId) || [];
+
+          if (!usuarios.includes(usuarioId)) {
+            curtidasPorComentario.set(comentarioId, [...usuarios, usuarioId]);
+          }
+        }
+      );
     } catch {
       // Curtidas são complementares; os comentários continuam visíveis.
     }
@@ -3538,18 +3558,18 @@ export default function ObraDinamicaPage() {
       setComentariosObra([]);
 
       try {
-        const { data, error, count } = await supabase
-          .from("comentarios_obras")
-          .select("id,obra_id,user_id,comentario,comentario_pai_id,criado_em", {
-            count: "exact",
-          })
-          .eq("obra_id", obraId)
-          .order("criado_em", { ascending: false })
-          .limit(120);
-
-        if (error || !Array.isArray(data)) {
-          throw error || new Error("Comentários inválidos retornados pelo Supabase.");
-        }
+        const data =
+          await carregarTodasPaginasSupabase<SupabaseComentarioObraRow>({
+            nomeColecao: "comentários da obra",
+            buscarPagina: async (inicio, fim) =>
+              supabase
+                .from("comentarios_obras")
+                .select("id,obra_id,user_id,comentario,comentario_pai_id,criado_em")
+                .eq("obra_id", obraId)
+                .order("criado_em", { ascending: false })
+                .order("id", { ascending: false })
+                .range(inicio, fim),
+          });
 
         const comentariosRemotos = await normalizarComentariosObraSupabase(
           data
@@ -3560,9 +3580,7 @@ export default function ObraDinamicaPage() {
         }
 
         setComentariosObra(comentariosRemotos);
-        setTotalComentariosObra(
-          Math.max(comentariosRemotos.length, count ?? 0)
-        );
+        setTotalComentariosObra(comentariosRemotos.length);
 
         if (usuarioIdLogado) {
           salvarComentariosObraLocais(
@@ -4252,9 +4270,10 @@ export default function ObraDinamicaPage() {
       }));
     }
 
-    setComentariosObra((comentariosAtuais) =>
-      [comentarioTemporario, ...comentariosAtuais].slice(0, 120)
-    );
+    setComentariosObra((comentariosAtuais) => [
+      comentarioTemporario,
+      ...comentariosAtuais,
+    ]);
     setTotalComentariosObra((totalAtual) => totalAtual + 1);
 
     if (!idObraSupabaseValido(obra.id)) {

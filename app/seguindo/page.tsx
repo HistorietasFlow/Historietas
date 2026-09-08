@@ -16,6 +16,10 @@ import {
   solicitarOuSeguirUsuario,
 } from "../../lib/historietasPrivacy";
 import { carregarMetricasConteudos } from "../../lib/metricas";
+import {
+  carregarTodasPaginasPorLotesSupabase,
+  carregarTodasPaginasSupabase,
+} from "../../lib/supabase/paginacao.mjs";
 
 type CapituloLocal = {
   id: string;
@@ -1510,16 +1514,16 @@ async function carregarIdsObrasUsuarioSupabase(
   }
 
   try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select("obra_id")
-      .eq("user_id", userId)
-      .limit(1000);
-
-    if (error) {
-      console.warn(`Não consegui carregar ${tabela} no Supabase:`, error.message);
-      return [];
-    }
+    const data = await carregarTodasPaginasSupabase<RegistroSupabaseGenerico>({
+      nomeColecao: `${tabela} do Seguindo`,
+      buscarPagina: async (inicio, fim) =>
+        supabase
+          .from(tabela)
+          .select("obra_id")
+          .eq("user_id", userId)
+          .order("obra_id", { ascending: true })
+          .range(inicio, fim),
+    });
 
     return normalizarRegistrosSupabaseGenericos(data);
   } catch (error) {
@@ -1537,21 +1541,33 @@ async function carregarComentariosCapitulosUsuarioSupabase(
   }
 
   for (const campos of [
-    "capitulo_id,texto",
-    "capitulo_id,comentario",
-    "capitulo_id,conteudo",
+    "id,capitulo_id,texto",
+    "id,capitulo_id,comentario",
+    "id,capitulo_id,conteudo",
   ]) {
     try {
-      const { data, error } = await supabase
-        .from("comentarios_capitulos")
-        .select(campos)
-        .eq("user_id", userId)
-        .in("capitulo_id", capituloIds)
-        .limit(1000);
+      const data =
+        await carregarTodasPaginasPorLotesSupabase<RegistroSupabaseGenerico, string>({
+          nomeColecao: "comentários pessoais dos capítulos no Seguindo",
+          itens: capituloIds,
+          buscarPaginaLote: async (capituloIdsLote, inicio, fim) => {
+            const resposta = await supabase
+              .from("comentarios_capitulos")
+              .select(campos)
+              .eq("user_id", userId)
+              .in("capitulo_id", capituloIdsLote)
+              .order("capitulo_id", { ascending: true })
+              .order("id", { ascending: true })
+              .range(inicio, fim);
 
-      if (!error) {
-        return normalizarRegistrosSupabaseGenericos(data);
-      }
+            return resposta as unknown as {
+              data: RegistroSupabaseGenerico[] | null;
+              error: unknown;
+            };
+          },
+        });
+
+      return normalizarRegistrosSupabaseGenericos(data);
     } catch {
       // O texto local do comentario continua como fallback.
     }
@@ -1818,29 +1834,20 @@ async function carregarSeguindoSupabase(
       ? perfilSocialIdLimpo
       : userId;
 
-    const { data: obrasBanco, error: erroObras } = await supabase
-      .from("obras")
-      .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,publicado,slug,link,criada_em,atualizado_em"
-      )
-      .eq("publicado", true)
-      .order("criada_em", { ascending: false })
-      .limit(80);
-
-    if (erroObras) {
-      console.warn("Não consegui carregar obras no Seguindo:", erroObras.message);
-
-      return {
-        obras: obrasLocais,
-        obrasSeguidas: obrasSeguidasLocais,
-        obrasFavoritas: obrasFavoritasLocais,
-        obrasConcluidas: obrasConcluidasLocais,
-      };
-    }
-
-    const obrasSupabaseBanco = Array.isArray(obrasBanco)
-      ? obrasBanco
-      : [];
+    const obrasSupabaseBanco =
+      await carregarTodasPaginasSupabase<SupabaseObraRow>({
+        nomeColecao: "obras publicadas do Seguindo",
+        buscarPagina: async (inicio, fim) =>
+          supabase
+            .from("obras")
+            .select(
+              "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,publicado,slug,link,criada_em,atualizado_em"
+            )
+            .eq("publicado", true)
+            .order("criada_em", { ascending: false })
+            .order("id", { ascending: false })
+            .range(inicio, fim),
+      });
     const obraIds = obrasSupabaseBanco
       .map((obra) => obra.id)
       .filter((obraId) => Boolean(obraId));
@@ -1854,23 +1861,30 @@ async function carregarSeguindoSupabase(
       };
     }
 
-    const { data: capitulosBanco, error: erroCapitulos } = await supabase
-      .from("capitulos")
-      .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
-      .in("obra_id", obraIds)
-      .eq("publicado", true)
-      .order("ordem", { ascending: true })
-      .limit(600);
+    let capitulosSupabaseBanco: SupabaseCapituloRow[] = [];
 
-    if (erroCapitulos) {
-      console.warn("Não consegui carregar capítulos no Seguindo:", erroCapitulos.message);
+    try {
+      capitulosSupabaseBanco =
+        await carregarTodasPaginasPorLotesSupabase<SupabaseCapituloRow, string>({
+          nomeColecao: "capítulos publicados do Seguindo",
+          itens: obraIds,
+          buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
+            supabase
+              .from("capitulos")
+              .select("id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em")
+              .in("obra_id", obraIdsLote)
+              .eq("publicado", true)
+              .order("obra_id", { ascending: true })
+              .order("ordem", { ascending: true })
+              .order("id", { ascending: true })
+              .range(inicio, fim),
+        });
+    } catch (error) {
+      console.warn(
+        "Não consegui carregar capítulos no Seguindo:",
+        error,
+      );
     }
-
-    const capitulosSupabaseBanco = erroCapitulos
-      ? []
-      : Array.isArray(capitulosBanco)
-      ? capitulosBanco
-      : [];
     const capituloIds = capitulosSupabaseBanco
       .map((capitulo) => capitulo.id)
       .filter((capituloId) => Boolean(capituloId));

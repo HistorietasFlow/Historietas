@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   calcularIntervaloPaginaSupabase,
+  carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
   dividirEmLotesSupabase,
 } from "../../lib/supabase/paginacao.mjs";
@@ -151,4 +152,46 @@ test("divide muitos ids de comentários em lotes seguros para filtros in", () =>
   assert.equal(lotes[0].length, 100);
   assert.equal(lotes.at(-1).length, 1);
   assert.deepEqual(lotes.flat(), ids);
+});
+
+test("pagina cada lote de ids sem ocultar capítulos", async () => {
+  const obraIds = criarRegistros("obra", 205).map((registro) => registro.id);
+  const capitulosPorObra = new Map(
+    obraIds.map((obraId, indice) => [
+      obraId,
+      criarRegistros(`capitulo-${indice}`, 7).map((capitulo) => ({
+        ...capitulo,
+        obraId,
+      })),
+    ]),
+  );
+  const consultas = [];
+
+  const capitulos = await carregarTodasPaginasPorLotesSupabase({
+    nomeColecao: "capítulos das obras",
+    itens: obraIds,
+    tamanhoLote: 100,
+    tamanhoPagina: 250,
+    async buscarPaginaLote(lote, inicio, fim, _pagina, indiceLote) {
+      consultas.push({ indiceLote, quantidadeIds: lote.length, inicio, fim });
+      const registrosLote = lote.flatMap(
+        (obraId) => capitulosPorObra.get(obraId) || [],
+      );
+
+      return {
+        data: registrosLote.slice(inicio, fim + 1),
+        error: null,
+      };
+    },
+  });
+
+  assert.equal(capitulos.length, 1_435);
+  assert.equal(new Set(capitulos.map((capitulo) => capitulo.id)).size, 1_435);
+  assert.deepEqual(
+    consultas.filter((consulta) => consulta.inicio === 0).map((consulta) =>
+      consulta.quantidadeIds
+    ),
+    [100, 100, 5],
+  );
+  assert.ok(consultas.some((consulta) => consulta.inicio === 500));
 });

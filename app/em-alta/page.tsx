@@ -18,6 +18,10 @@ import {
 } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../lib/metricas";
+import {
+  carregarTodasPaginasPorLotesSupabase,
+  carregarTodasPaginasSupabase,
+} from "../../lib/supabase/paginacao.mjs";
 
 type CapituloLocal = {
   id: string;
@@ -821,22 +825,16 @@ async function carregarIdsColecaoUsuarioSupabaseEmAlta(
   }
 
   try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select("obra_id")
-      .eq("user_id", userIdLimpo)
-      .limit(1000);
-
-    if (error || !Array.isArray(data)) {
-      if (error) {
-        console.warn(
-          `Não consegui carregar ${tabela} no Em Alta:`,
-          error.message,
-        );
-      }
-
-      return [] as string[];
-    }
+    const data = await carregarTodasPaginasSupabase<{ obra_id: string }>({
+      nomeColecao: `${tabela} do Em Alta`,
+      buscarPagina: async (inicio, fim) =>
+        supabase
+          .from(tabela)
+          .select("obra_id")
+          .eq("user_id", userIdLimpo)
+          .order("obra_id", { ascending: true })
+          .range(inicio, fim),
+    });
 
     return normalizarListaIdsEmAlta(
       data.map((registro) => {
@@ -1462,24 +1460,19 @@ async function carregarObrasSupabasePublicadas(
   userId = "",
 ) {
   try {
-    const { data: obrasBanco, error: erroObras } = await supabase
-      .from("obras")
-      .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em",
-      )
-      .eq("publicado", true)
-      .order("criada_em", { ascending: false })
-      .limit(80);
-
-    if (erroObras) {
-      console.warn(
-        "Não consegui carregar obras publicadas do Supabase:",
-        erroObras.message,
-      );
-      return [] as ObraLocal[];
-    }
-
-    const obrasSupabase = obrasBanco || [];
+    const obrasSupabase = await carregarTodasPaginasSupabase<SupabaseObraRow>({
+      nomeColecao: "obras publicadas do ranking",
+      buscarPagina: async (inicio, fim) =>
+        supabase
+          .from("obras")
+          .select(
+            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em",
+          )
+          .eq("publicado", true)
+          .order("criada_em", { ascending: false })
+          .order("id", { ascending: false })
+          .range(inicio, fim),
+    });
 
     if (obrasSupabase.length === 0) {
       return [] as ObraLocal[];
@@ -1491,26 +1484,32 @@ async function carregarObrasSupabasePublicadas(
       .filter(Boolean);
     const avataresLocaisAutores = carregarAvataresAutoresLocaisEmAlta(autorIds);
 
-    const { data: capitulosBanco, error: erroCapitulos } = await supabase
-      .from("capitulos")
-      .select(
-        "id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em",
-      )
-      .in("obra_id", obraIds)
-      .eq("publicado", true)
-      .order("ordem", { ascending: true })
-      .limit(600);
+    let capitulosSupabase: SupabaseCapituloRow[] = [];
 
-    if (erroCapitulos) {
+    try {
+      capitulosSupabase =
+        await carregarTodasPaginasPorLotesSupabase<SupabaseCapituloRow, string>({
+          nomeColecao: "capítulos publicados do ranking",
+          itens: obraIds,
+          buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
+            supabase
+              .from("capitulos")
+              .select(
+                "id,obra_id,user_id,titulo,ordem,publicado,criado_em,atualizado_em",
+              )
+              .in("obra_id", obraIdsLote)
+              .eq("publicado", true)
+              .order("obra_id", { ascending: true })
+              .order("ordem", { ascending: true })
+              .order("id", { ascending: true })
+              .range(inicio, fim),
+        });
+    } catch (error) {
       console.warn(
         "Não consegui carregar capítulos publicados do ranking:",
-        erroCapitulos.message,
+        error,
       );
     }
-
-    const capitulosSupabase = erroCapitulos
-      ? []
-      : (capitulosBanco || []);
     const capituloIds = capitulosSupabase
       .map((capitulo) => capitulo.id)
       .filter(Boolean);
