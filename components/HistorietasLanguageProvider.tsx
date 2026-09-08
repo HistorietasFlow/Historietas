@@ -66,10 +66,16 @@ export function HistorietasLanguageProvider({
   );
 
   useEffect(() => {
-    const initialLanguage = resolveInitialHistorietasLanguage();
+    const carregarIdiomaTimer = window.setTimeout(() => {
+      const initialLanguage = resolveInitialHistorietasLanguage();
 
-    applyLanguage(initialLanguage, { save: true });
-    setIsLanguageReady(true);
+      applyLanguage(initialLanguage, { save: true });
+      setIsLanguageReady(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(carregarIdiomaTimer);
+    };
   }, [applyLanguage]);
 
   useEffect(() => {

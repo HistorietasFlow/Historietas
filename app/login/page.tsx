@@ -847,11 +847,19 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
-    if (params.get("senhaRedefinida") === "1") {
+    if (params.get("senhaRedefinida") !== "1") {
+      return;
+    }
+
+    const atualizarAvisoTimer = window.setTimeout(() => {
       setModo("entrar");
       setErro("");
       setAviso(t("passwordChangedNotice"));
-    }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(atualizarAvisoTimer);
+    };
   }, [t]);
 
   useEffect(() => {

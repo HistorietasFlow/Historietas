@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHistorietasLanguage } from "../../../components/HistorietasLanguageProvider";
 import type { HistorietasLanguage } from "../../../lib/i18n";
@@ -3357,8 +3358,14 @@ export default function ObraDinamicaPage() {
   }, [slug, obrasLocais]);
 
   useEffect(() => {
-    setSinopseAberta(false);
-    setPainelClassificacaoAberto(false);
+    const fecharPaineisTimer = window.setTimeout(() => {
+      setSinopseAberta(false);
+      setPainelClassificacaoAberto(false);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(fecharPaineisTimer);
+    };
   }, [obra?.id]);
 
   const statusAcesso18 =
@@ -3367,27 +3374,33 @@ export default function ObraDinamicaPage() {
       : "verificando";
 
   useEffect(() => {
-    if (!obra) {
-      setControleAcesso18({ obraId: "", status: "verificando" });
-      return;
-    }
-
-    const proximoStatus = !ehClassificacao18(obra.classificacaoIndicativa)
-      ? "permitido"
-      : acessoConteudo18Confirmado()
-        ? "permitido"
-        : "bloqueado";
-
-    setControleAcesso18((controleAtual) => {
-      if (
-        controleAtual.obraId === obra.id &&
-        controleAtual.status === proximoStatus
-      ) {
-        return controleAtual;
+    const atualizarAcessoTimer = window.setTimeout(() => {
+      if (!obra) {
+        setControleAcesso18({ obraId: "", status: "verificando" });
+        return;
       }
 
-      return { obraId: obra.id, status: proximoStatus };
-    });
+      const proximoStatus = !ehClassificacao18(obra.classificacaoIndicativa)
+        ? "permitido"
+        : acessoConteudo18Confirmado()
+          ? "permitido"
+          : "bloqueado";
+
+      setControleAcesso18((controleAtual) => {
+        if (
+          controleAtual.obraId === obra.id &&
+          controleAtual.status === proximoStatus
+        ) {
+          return controleAtual;
+        }
+
+        return { obraId: obra.id, status: proximoStatus };
+      });
+    }, 0);
+
+    return () => {
+      window.clearTimeout(atualizarAcessoTimer);
+    };
   }, [obra]);
 
   useEffect(() => {
@@ -5268,8 +5281,8 @@ export default function ObraDinamicaPage() {
                             ? commentsSortMenuItemActiveStyle
                             : commentsSortMenuItemStyle
                         }
-                        role="menuitem"
-                        aria-pressed={ordenacaoComentarios === "relevantes"}
+                        role="menuitemradio"
+                        aria-checked={ordenacaoComentarios === "relevantes"}
                       >
                         Relevantes
                       </button>
@@ -5287,8 +5300,8 @@ export default function ObraDinamicaPage() {
                             ? commentsSortMenuItemActiveStyle
                             : commentsSortMenuItemStyle
                         }
-                        role="menuitem"
-                        aria-pressed={ordenacaoComentarios === "recentes"}
+                        role="menuitemradio"
+                        aria-checked={ordenacaoComentarios === "recentes"}
                       >
                         Recentes
                       </button>
@@ -6539,9 +6552,12 @@ function ArquivoObraPublico({
           onClick={abrirArquivo}
         >
           {arquivo.categoria === "imagem" && arquivoHref ? (
-            <img
+            <Image
               src={arquivoHref}
               alt={`Prévia do arquivo ${arquivo.nome}`}
+              width={74}
+              height={74}
+              unoptimized
               style={fileImagePreviewStyle}
             />
           ) : (

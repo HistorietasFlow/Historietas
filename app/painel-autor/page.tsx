@@ -2192,9 +2192,15 @@ export default function PainelAutorPage() {
 
     let componenteAtivo = true;
 
-    setCarregandoDados(true);
-
     async function carregarDadosPainelAutor() {
+      await Promise.resolve();
+
+      if (!componenteAtivo) {
+        return;
+      }
+
+      setCarregandoDados(true);
+
       try {
         const obrasSalvasTexto = lerStorageUsuarioPainel(
           STORAGE_KEY,

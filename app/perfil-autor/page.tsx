@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import type { TablesUpdate } from "../../lib/supabase/database.types";
@@ -7365,7 +7366,6 @@ function PerfilAutorPageContent() {
     useState<PerfilUsuarioRemoto | null>(null);
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [autenticacaoCarregada, setAutenticacaoCarregada] = useState(false);
-  const [podeEditarPerfil, setPodeEditarPerfil] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [menuPerfilAberto, setMenuPerfilAberto] = useState(false);
   const [usernameCabecalhoVisivel, setUsernameCabecalhoVisivel] =
@@ -7506,8 +7506,13 @@ function PerfilAutorPageContent() {
     ).trim();
 
     if (!idAutorSupabaseValido(userIdSeguro)) {
-      setNotificacoesNaoLidasPerfil(null);
-      return;
+      const limparContadorTimer = window.setTimeout(() => {
+        setNotificacoesNaoLidasPerfil(null);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(limparContadorTimer);
+      };
     }
 
     let cancelado = false;
@@ -7713,7 +7718,8 @@ function PerfilAutorPageContent() {
       setAbaPerfil(abaParam);
       setAutorSelecionado(autorParam.trim());
       setAutorIdSelecionado(autorIdParam.trim());
-      setPodeEditarPerfil(false);
+      setMostrarDestaquesVisitante(false);
+      setUsernameCabecalhoVisivel(false);
 
       let obrasNormalizadas: ObraLocal[] = [];
       let autoresSeguidosNormalizados: string[] = [];
@@ -8102,11 +8108,10 @@ function PerfilAutorPageContent() {
       setTopFiveObraIds(carregarTopFivePerfilAutor(topFiveUserId));
     }
 
-    atualizarTopFivePerfil();
-
-    if (typeof window === "undefined") {
-      return;
-    }
+    const atualizarTopFiveTimer = window.setTimeout(
+      atualizarTopFivePerfil,
+      0,
+    );
 
     function atualizarQuandoVoltarParaTela() {
       if (document.visibilityState !== "hidden") {
@@ -8119,6 +8124,7 @@ function PerfilAutorPageContent() {
     document.addEventListener("visibilitychange", atualizarQuandoVoltarParaTela);
 
     return () => {
+      window.clearTimeout(atualizarTopFiveTimer);
       window.removeEventListener("focus", atualizarTopFivePerfil);
       window.removeEventListener("storage", atualizarTopFivePerfil);
       document.removeEventListener(
@@ -8129,21 +8135,16 @@ function PerfilAutorPageContent() {
   }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
 
   useEffect(() => {
-    setMostrarDestaquesVisitante(false);
-  }, [perfilParaMostrar?.autorId]);
-
-  useEffect(() => {
     const perfilAutorId = perfilParaMostrar?.autorId?.trim() || "";
-
-    if (!perfilAutorId) {
-      setTopFiveCurtidasTotal(0);
-      setTopFiveCurtidoPorMim(false);
-      return;
-    }
-
     let cancelado = false;
 
     async function atualizarCurtidasTopFive() {
+      if (!perfilAutorId) {
+        setTopFiveCurtidasTotal(0);
+        setTopFiveCurtidoPorMim(false);
+        return;
+      }
+
       const estadoLocal = carregarCurtidasTopFiveLocais(
         perfilAutorId,
         usuarioIdLogado,
@@ -8165,19 +8166,18 @@ function PerfilAutorPageContent() {
       setTopFiveCurtidoPorMim(estadoRemoto.curtiu);
     }
 
-    void atualizarCurtidasTopFive();
+    const atualizarCurtidasTimer = window.setTimeout(() => {
+      void atualizarCurtidasTopFive();
+    }, 0);
 
-    if (typeof window === "undefined") {
-      return () => {
-        cancelado = true;
-      };
+    if (perfilAutorId) {
+      window.addEventListener("focus", atualizarCurtidasTopFive);
+      window.addEventListener("storage", atualizarCurtidasTopFive);
     }
-
-    window.addEventListener("focus", atualizarCurtidasTopFive);
-    window.addEventListener("storage", atualizarCurtidasTopFive);
 
     return () => {
       cancelado = true;
+      window.clearTimeout(atualizarCurtidasTimer);
       window.removeEventListener("focus", atualizarCurtidasTopFive);
       window.removeEventListener("storage", atualizarCurtidasTopFive);
     };
@@ -8198,6 +8198,7 @@ function PerfilAutorPageContent() {
           autorIdUrlNormalizado === usuarioIdNormalizado),
     );
   }, [perfilParaMostrar, autorIdSelecionado, autorSelecionado, usuarioIdLogado]);
+  const podeEditarPerfil = perfilPertenceAoUsuario;
 
   const perfilBloqueadoEntreUsuarios =
     !perfilPertenceAoUsuario && estadoBloqueioPerfil.existeBloqueio;
@@ -8255,10 +8256,6 @@ function PerfilAutorPageContent() {
             : null;
 
   useEffect(() => {
-    setPodeEditarPerfil(perfilPertenceAoUsuario);
-  }, [perfilPertenceAoUsuario]);
-
-  useEffect(() => {
     const userIdPerfil = perfilParaMostrar?.autorId.trim() || "";
     let cancelado = false;
 
@@ -8306,21 +8303,21 @@ function PerfilAutorPageContent() {
     const userIdPerfil = perfilParaMostrar?.autorId.trim() || "";
     let cancelado = false;
 
-    if (
-      !comunidadePerfilVisivel ||
-      !userIdPerfil ||
-      !idAutorSupabaseValido(userIdPerfil)
-    ) {
-      setComunidadePerfil(comunidadePerfilVazia);
-      return;
-    }
-
-    setComunidadePerfil({
-      ...comunidadePerfilVazia,
-      carregando: true,
-    });
-
     async function carregarComunidadePerfil() {
+      if (
+        !comunidadePerfilVisivel ||
+        !userIdPerfil ||
+        !idAutorSupabaseValido(userIdPerfil)
+      ) {
+        setComunidadePerfil(comunidadePerfilVazia);
+        return;
+      }
+
+      setComunidadePerfil({
+        ...comunidadePerfilVazia,
+        carregando: true,
+      });
+
       try {
         const comunidadeCarregada = await carregarComunidadePerfilSupabase(
           userIdPerfil,
@@ -8349,10 +8346,13 @@ function PerfilAutorPageContent() {
       }
     }
 
-    void carregarComunidadePerfil();
+    const carregarComunidadeTimer = window.setTimeout(() => {
+      void carregarComunidadePerfil();
+    }, 0);
 
     return () => {
       cancelado = true;
+      window.clearTimeout(carregarComunidadeTimer);
     };
   }, [
     perfilParaMostrar?.autorId,
@@ -8369,7 +8369,13 @@ function PerfilAutorPageContent() {
       (abaPerfil === "biblioteca" && bibliotecaPerfilVisivel);
 
     if (!abaAtualVisivel && primeiraAbaPerfilVisivel) {
-      setAbaPerfil(primeiraAbaPerfilVisivel);
+      const corrigirAbaTimer = window.setTimeout(() => {
+        setAbaPerfil(primeiraAbaPerfilVisivel);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(corrigirAbaTimer);
+      };
     }
   }, [
     abaPerfil,
@@ -8386,21 +8392,21 @@ function PerfilAutorPageContent() {
     const usuarioAtualId = usuarioIdLogado.trim();
     let cancelado = false;
 
-    if (
-      !perfilUserId ||
-      !usuarioAtualId ||
-      perfilUserId === usuarioAtualId ||
-      !idAutorSupabaseValido(perfilUserId)
-    ) {
-      setEstadoBloqueioPerfil({
-        bloqueadoPorMim: false,
-        bloqueadoPeloPerfil: false,
-        existeBloqueio: false,
-      });
-      return;
-    }
-
     async function carregarBloqueioPerfil() {
+      if (
+        !perfilUserId ||
+        !usuarioAtualId ||
+        perfilUserId === usuarioAtualId ||
+        !idAutorSupabaseValido(perfilUserId)
+      ) {
+        setEstadoBloqueioPerfil({
+          bloqueadoPorMim: false,
+          bloqueadoPeloPerfil: false,
+          existeBloqueio: false,
+        });
+        return;
+      }
+
       const estado = await carregarEstadoBloqueioPerfil(perfilUserId);
 
       if (!cancelado) {
@@ -8408,10 +8414,13 @@ function PerfilAutorPageContent() {
       }
     }
 
-    void carregarBloqueioPerfil();
+    const carregarBloqueioTimer = window.setTimeout(() => {
+      void carregarBloqueioPerfil();
+    }, 0);
 
     return () => {
       cancelado = true;
+      window.clearTimeout(carregarBloqueioTimer);
     };
   }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
 
@@ -8419,15 +8428,15 @@ function PerfilAutorPageContent() {
     const perfilUserId = perfilParaMostrar?.autorId.trim() || "";
     const usuarioAtualId = usuarioIdLogado.trim();
 
-    if (!perfilUserId || !idAutorSupabaseValido(perfilUserId)) {
-      setSeguindoUsuarioPerfil(false);
-      setEstadoRelacionamentoPerfil("nenhum");
-      return;
-    }
-
     let cancelado = false;
 
     async function carregarSeguimentoUsuario() {
+      if (!perfilUserId || !idAutorSupabaseValido(perfilUserId)) {
+        setSeguindoUsuarioPerfil(false);
+        setEstadoRelacionamentoPerfil("nenhum");
+        return;
+      }
+
       const [estadoSeguimento, estadoRelacionamento] = await Promise.all([
         carregarEstadoSeguimentoUsuarioPerfil(
           usuarioAtualId,
@@ -8460,10 +8469,13 @@ function PerfilAutorPageContent() {
       setSeguindoUsuarioPerfilTotal(estadoSeguimento.seguindoTotal);
     }
 
-    void carregarSeguimentoUsuario();
+    const carregarSeguimentoTimer = window.setTimeout(() => {
+      void carregarSeguimentoUsuario();
+    }, 0);
 
     return () => {
       cancelado = true;
+      window.clearTimeout(carregarSeguimentoTimer);
     };
   }, [perfilParaMostrar?.autorId, usuarioIdLogado]);
 
@@ -8579,37 +8591,6 @@ function PerfilAutorPageContent() {
   const entradaHistorietasPerfil = formatarEntradaHistorietasPerfilAutor(
     perfilUsuarioRemotoAtivo?.criadoEm || "",
   );
-
-  useEffect(() => {
-    setUsernameCabecalhoVisivel(false);
-  }, [perfilParaMostrar?.autorId]);
-
-  useEffect(() => {
-    if (!editorPerfilAberto || !podeEditarPerfil || !perfilParaMostrar) {
-      return;
-    }
-
-    setNomePerfilEditor(
-      perfilUsuarioRemotoAtivo?.nome || perfilParaMostrar.nome || "",
-    );
-    setUsernamePerfilEditor(perfilUsuarioRemotoAtivo?.username || "");
-    setBioPerfilEditor(bioAutorPersonalizada);
-    setAvatarPerfilEditor(avatarAutor);
-    setAvatarNomePerfilEditor(perfilSalvoAutor.avatarNome || "");
-    setAvatarArquivoPerfilEditor(null);
-    setAvatarErro("");
-  }, [
-    editorPerfilAberto,
-    podeEditarPerfil,
-    perfilParaMostrar?.autorId,
-    perfilParaMostrar?.nome,
-    perfilParaMostrar,
-    perfilUsuarioRemotoAtivo?.nome,
-    perfilUsuarioRemotoAtivo?.username,
-    bioAutorPersonalizada,
-    avatarAutor,
-    perfilSalvoAutor.avatarNome,
-  ]);
 
   const caracteresRestantesBioSobre =
     SOBRE_BIO_MAX_LENGTH - bioSobrePersonalizada.length;
@@ -8752,16 +8733,15 @@ function PerfilAutorPageContent() {
 
   useEffect(() => {
     const perfilAtual = perfilParaMostrar;
-
-    if (!perfilAtual) {
-      setDiarioPerfil(diarioPerfilVazio);
-      return;
-    }
-
-    const perfilDiario = perfilAtual;
     let cancelado = false;
 
     async function carregarDiarioPerfil() {
+      if (!perfilAtual) {
+        setDiarioPerfil(diarioPerfilVazio);
+        return;
+      }
+
+      const perfilDiario = perfilAtual;
       const userIdPerfil = perfilDiario.autorId.trim();
       const bibliotecaUsaUsuarioLogado =
         bibliotecaPerfilVisivel &&
@@ -8832,10 +8812,13 @@ function PerfilAutorPageContent() {
       }
     }
 
-    void carregarDiarioPerfil();
+    const carregarDiarioTimer = window.setTimeout(() => {
+      void carregarDiarioPerfil();
+    }, 0);
 
     return () => {
       cancelado = true;
+      window.clearTimeout(carregarDiarioTimer);
     };
   }, [
     perfilParaMostrar,
@@ -8929,44 +8912,44 @@ function PerfilAutorPageContent() {
   }, [diarioPerfil]);
 
   useEffect(() => {
-    if (!perfilParaMostrar || !autorPodeReceberAvaliacao) {
-      setAvaliacaoAutor(avaliacaoAutorVazia);
-      return;
-    }
-
-    const perfilAtualAutor = perfilParaMostrar;
-    const notaLocal = perfilPertenceAoUsuario
-      ? 0
-      : obterAvaliacaoAutorLocal(
-          perfilAtualAutor,
-          usuarioIdLogado,
-        );
-
-    if (perfilPertenceAoUsuario && usuarioIdLogado.trim()) {
-      salvarAvaliacaoAutorLocal(
-        perfilAtualAutor,
-        0,
-        usuarioIdLogado,
-      );
-    }
-
-    setAvaliacaoAutor({
-      media: notaLocal > 0 ? notaLocal : 0,
-      total: notaLocal > 0 ? 1 : 0,
-      minhaNota: notaLocal,
-      carregado: true,
-      salvando: false,
-    });
-
-    const autorId = perfilAtualAutor.autorId.trim();
-
-    if (!autorId || !idAutorSupabaseValido(autorId)) {
-      return;
-    }
-
     let cancelado = false;
 
     async function carregarAvaliacaoRealAutor() {
+      if (!perfilParaMostrar || !autorPodeReceberAvaliacao) {
+        setAvaliacaoAutor(avaliacaoAutorVazia);
+        return;
+      }
+
+      const perfilAtualAutor = perfilParaMostrar;
+      const notaLocal = perfilPertenceAoUsuario
+        ? 0
+        : obterAvaliacaoAutorLocal(
+            perfilAtualAutor,
+            usuarioIdLogado,
+          );
+
+      if (perfilPertenceAoUsuario && usuarioIdLogado.trim()) {
+        salvarAvaliacaoAutorLocal(
+          perfilAtualAutor,
+          0,
+          usuarioIdLogado,
+        );
+      }
+
+      setAvaliacaoAutor({
+        media: notaLocal > 0 ? notaLocal : 0,
+        total: notaLocal > 0 ? 1 : 0,
+        minhaNota: notaLocal,
+        carregado: true,
+        salvando: false,
+      });
+
+      const autorId = perfilAtualAutor.autorId.trim();
+
+      if (!autorId || !idAutorSupabaseValido(autorId)) {
+        return;
+      }
+
       try {
         const { data: usuarioData } = await supabase.auth.getUser();
         const userId = usuarioData.user?.id || "";
@@ -9026,10 +9009,13 @@ function PerfilAutorPageContent() {
       }
     }
 
-    void carregarAvaliacaoRealAutor();
+    const carregarAvaliacaoAutorTimer = window.setTimeout(() => {
+      void carregarAvaliacaoRealAutor();
+    }, 0);
 
     return () => {
       cancelado = true;
+      window.clearTimeout(carregarAvaliacaoAutorTimer);
     };
   }, [
     perfilParaMostrar,
@@ -9039,33 +9025,33 @@ function PerfilAutorPageContent() {
   ]);
 
   useEffect(() => {
-    if (!perfilParaMostrar || !perfilUsaAvaliacaoDiario) {
-      setAvaliacaoDiario(avaliacaoDiarioVazia);
-      return;
-    }
-
-    const diarioUserId = (
-      perfilUsuarioRemotoAtivo?.userId || perfilParaMostrar.autorId
-    ).trim();
-
-    if (!diarioUserId || !idAutorSupabaseValido(diarioUserId)) {
-      setAvaliacaoDiario({
-        ...avaliacaoDiarioVazia,
-        carregado: true,
-        visivel: podeEditarPerfil,
-      });
-      return;
-    }
-
     let cancelado = false;
 
-    setAvaliacaoDiario((avaliacaoAtual) => ({
-      ...avaliacaoAtual,
-      carregado: false,
-      salvando: false,
-    }));
-
     async function carregarAvaliacaoRealDiario() {
+      if (!perfilParaMostrar || !perfilUsaAvaliacaoDiario) {
+        setAvaliacaoDiario(avaliacaoDiarioVazia);
+        return;
+      }
+
+      const diarioUserId = (
+        perfilUsuarioRemotoAtivo?.userId || perfilParaMostrar.autorId
+      ).trim();
+
+      if (!diarioUserId || !idAutorSupabaseValido(diarioUserId)) {
+        setAvaliacaoDiario({
+          ...avaliacaoDiarioVazia,
+          carregado: true,
+          visivel: podeEditarPerfil,
+        });
+        return;
+      }
+
+      setAvaliacaoDiario((avaliacaoAtual) => ({
+        ...avaliacaoAtual,
+        carregado: false,
+        salvando: false,
+      }));
+
       try {
         const { data, error } = await supabase.rpc(
           "carregar_avaliacao_diario",
@@ -9092,10 +9078,13 @@ function PerfilAutorPageContent() {
       }
     }
 
-    void carregarAvaliacaoRealDiario();
+    const carregarAvaliacaoDiarioTimer = window.setTimeout(() => {
+      void carregarAvaliacaoRealDiario();
+    }, 0);
 
     return () => {
       cancelado = true;
+      window.clearTimeout(carregarAvaliacaoDiarioTimer);
     };
   }, [
     perfilParaMostrar,
@@ -9406,6 +9395,19 @@ function PerfilAutorPageContent() {
   }
 
   function abrirEditorPerfil() {
+    if (!podeEditarPerfil || !perfilParaMostrar) {
+      return;
+    }
+
+    setNomePerfilEditor(
+      perfilUsuarioRemotoAtivo?.nome || perfilParaMostrar.nome || "",
+    );
+    setUsernamePerfilEditor(perfilUsuarioRemotoAtivo?.username || "");
+    setBioPerfilEditor(bioAutorPersonalizada);
+    setAvatarPerfilEditor(avatarAutor);
+    setAvatarNomePerfilEditor(perfilSalvoAutor.avatarNome || "");
+    setAvatarArquivoPerfilEditor(null);
+    setAvatarErro("");
     setMenuPerfilAberto(false);
     setEditorPerfilAberto(true);
   }
@@ -11293,9 +11295,12 @@ function PerfilAutorPageContent() {
                 <div style={profileEditorAvatarBlockStyle}>
                   <div style={profileEditorAvatarPreviewStyle}>
                     {avatarPerfilEditor ? (
-                      <img
+                      <Image
                         src={avatarPerfilEditor}
                         alt="Prévia da imagem do perfil"
+                        width={128}
+                        height={128}
+                        unoptimized
                         style={avatarImageStyle}
                       />
                     ) : (
@@ -11479,9 +11484,12 @@ function PerfilAutorPageContent() {
                 aria-label="Editar perfil"
               >
                 {avatarAutor ? (
-                  <img
+                  <Image
                     src={avatarAutor}
                     alt={`Imagem de ${perfilParaMostrar.nome}`}
+                    width={128}
+                    height={128}
+                    unoptimized
                     style={avatarImageStyle}
                   />
                 ) : (
@@ -11491,9 +11499,12 @@ function PerfilAutorPageContent() {
             ) : (
               <div style={avatarDisplayAtualStyle}>
                 {avatarAutor ? (
-                  <img
+                  <Image
                     src={avatarAutor}
                     alt={`Imagem de ${perfilParaMostrar.nome}`}
+                    width={128}
+                    height={128}
+                    unoptimized
                     style={avatarImageStyle}
                   />
                 ) : (

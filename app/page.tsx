@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Children, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
@@ -1855,7 +1856,7 @@ function encontrarPerfilAutor(
   );
 }
 
-function criarBioAutorPadrao(nomeAutor: string, generos: string[]) {
+function criarBioAutorPadrao(generos: string[]) {
   const generoPrincipal = formatarGeneroHome(generos[0] || "histórias");
 
   return `Autor de ${generoPrincipal.toLowerCase()} na Historietas.`;
@@ -2077,7 +2078,7 @@ function criarAutorHome(
     nome: nomeAutor.trim() || "Autor não informado",
     autorId: autorId.trim(),
     avatar: perfil?.avatar.trim() || "",
-    bio: bioPerfil || criarBioAutorPadrao(nomeAutor, generosUnicos),
+    bio: bioPerfil || criarBioAutorPadrao(generosUnicos),
     totalObras,
     totalCapitulos,
     totalCurtidas,
@@ -4709,9 +4710,12 @@ function MobileAutorCard({
       <div style={authorCardTopStyle}>
         <div style={authorAvatarShellStyle}>
           {autor.avatar ? (
-            <img
+            <Image
               src={autor.avatar}
               alt={`Avatar de ${autor.nome}`}
+              width={68}
+              height={68}
+              unoptimized
               style={authorAvatarImageStyle}
             />
           ) : (
