@@ -2125,6 +2125,9 @@ const paginationContracts = [
       /create event trigger ensure_rls[\s\S]*?execute function public\.rls_auto_enable\(\)/.test(
         localAclMigration
       ) &&
+      /revoke select on table public\.obras from service_role/.test(
+        localAclMigration
+      ) &&
       !fs.existsSync(productionAclMigrationPath)
   }
 ];

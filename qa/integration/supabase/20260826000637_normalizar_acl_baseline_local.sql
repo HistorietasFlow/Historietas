@@ -140,4 +140,9 @@ create event trigger ensure_rls
   on ddl_command_end
   execute function public.rls_auto_enable();
 
+-- O projeto remoto tambem ja negava a leitura administrativa direta desta
+-- tabela. A migration 20260901201213 substitui essa leitura por uma RPC minima
+-- e valida a precondicao antes de concluir.
+revoke select on table public.obras from service_role;
+
 commit;
