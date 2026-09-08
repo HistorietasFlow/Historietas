@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test:static": "node qa/scripts/static-audit.mjs",
     "test:pagination": "node --test qa/unit/paginacao-alto-volume.test.mjs",

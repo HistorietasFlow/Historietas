@@ -388,7 +388,9 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    void atualizarNotificacoesPorUsuario(userIdSeguro);
+    const atualizacaoInicialTimer = window.setTimeout(() => {
+      void atualizarNotificacoesPorUsuario(userIdSeguro);
+    }, 0);
 
     const canal = supabase
       .channel(`notificacoes-provider-${userIdSeguro}`)
@@ -409,6 +411,7 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
     canalRef.current = canal;
 
     return () => {
+      window.clearTimeout(atualizacaoInicialTimer);
       limparAtualizacaoAgendada();
 
       if (canalRef.current === canal) {

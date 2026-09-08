@@ -452,7 +452,13 @@ export default function DenunciaModal({
     : alvoNome;
 
   useEffect(() => {
-    setMontado(true);
+    const montarTimer = window.setTimeout(() => {
+      setMontado(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(montarTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -460,16 +466,15 @@ export default function DenunciaModal({
       return;
     }
 
-    setMotivo("");
-    setDescricao("");
-    setErro("");
-    setEnviado(false);
-    setEnviando(false);
-
     const overflowAnterior = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const focarTimer = window.setTimeout(() => {
+      setMotivo("");
+      setDescricao("");
+      setErro("");
+      setEnviado(false);
+      setEnviando(false);
       botaoFecharRef.current?.focus();
     }, 0);
 

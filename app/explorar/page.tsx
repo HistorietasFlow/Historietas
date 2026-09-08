@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Children, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
@@ -3714,13 +3715,16 @@ function AutorExplorarCard({
       <div style={autorExplorarTopStyle}>
         <div style={autorExplorarAvatarShellStyle}>
           {autor.avatar ? (
-            <img
+            <Image
               src={autor.avatar}
               alt={
                 language === "en"
                   ? `${nomeExibicao} avatar`
                   : `Avatar de ${nomeExibicao}`
               }
+              width={68}
+              height={68}
+              unoptimized
               style={autorExplorarAvatarImageStyle}
             />
           ) : (

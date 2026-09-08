@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, FormEvent, ReactNode } from "react";
@@ -3241,9 +3242,12 @@ export default function ConfiguracoesPage() {
                           style={blockedUserRowStyle}
                         >
                           {usuarioBloqueado.avatar ? (
-                            <img
+                            <Image
                               src={usuarioBloqueado.avatar}
                               alt=""
+                              width={38}
+                              height={38}
+                              unoptimized
                               style={blockedUserAvatarStyle}
                             />
                           ) : (

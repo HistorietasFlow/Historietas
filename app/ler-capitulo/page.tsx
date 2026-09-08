@@ -3734,29 +3734,35 @@ export default function LerCapituloPage() {
       : "verificando";
 
   useEffect(() => {
-    if (!obraAtual) {
-      setControleAcesso18({ obraId: "", status: "verificando" });
-      return;
-    }
-
-    const proximoStatus = !ehClassificacao18(
-      obraAtual.classificacaoIndicativa,
-    )
-      ? "permitido"
-      : acessoConteudo18Confirmado()
-        ? "permitido"
-        : "bloqueado";
-
-    setControleAcesso18((controleAtual) => {
-      if (
-        controleAtual.obraId === obraAtual.id &&
-        controleAtual.status === proximoStatus
-      ) {
-        return controleAtual;
+    const atualizarAcessoTimer = window.setTimeout(() => {
+      if (!obraAtual) {
+        setControleAcesso18({ obraId: "", status: "verificando" });
+        return;
       }
 
-      return { obraId: obraAtual.id, status: proximoStatus };
-    });
+      const proximoStatus = !ehClassificacao18(
+        obraAtual.classificacaoIndicativa,
+      )
+        ? "permitido"
+        : acessoConteudo18Confirmado()
+          ? "permitido"
+          : "bloqueado";
+
+      setControleAcesso18((controleAtual) => {
+        if (
+          controleAtual.obraId === obraAtual.id &&
+          controleAtual.status === proximoStatus
+        ) {
+          return controleAtual;
+        }
+
+        return { obraId: obraAtual.id, status: proximoStatus };
+      });
+    }, 0);
+
+    return () => {
+      window.clearTimeout(atualizarAcessoTimer);
+    };
   }, [obraAtual]);
 
 
