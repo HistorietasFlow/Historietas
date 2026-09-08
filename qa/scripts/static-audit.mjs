@@ -2122,6 +2122,9 @@ const paginationContracts = [
       /revoke all on function %s from public, anon, authenticated, service_role/.test(
         localAclMigration
       ) &&
+      /create event trigger ensure_rls[\s\S]*?execute function public\.rls_auto_enable\(\)/.test(
+        localAclMigration
+      ) &&
       !fs.existsSync(productionAclMigrationPath)
   }
 ];

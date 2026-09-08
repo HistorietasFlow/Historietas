@@ -133,4 +133,11 @@ begin
 end;
 $test_migration$;
 
+-- O dump usado como baseline contem o handler, mas nao o event trigger que ja
+-- existia no projeto remoto. A migration seguinte move o handler para o
+-- schema privado e valida que o trigger continua apontando para o mesmo OID.
+create event trigger ensure_rls
+  on ddl_command_end
+  execute function public.rls_auto_enable();
+
 commit;
