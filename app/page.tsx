@@ -15,6 +15,10 @@ import {
 } from "../lib/historietasTheme";
 import { ehClassificacao18 } from "../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../lib/metricas";
+import {
+  carregarTodasPaginasPorLotesSupabase,
+  carregarTodasPaginasSupabase,
+} from "../lib/supabase/paginacao.mjs";
 
 type CapituloLocal = {
   id: string;
@@ -2414,24 +2418,19 @@ function aplicarProgressoLeituraHome(
 
 async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") {
   try {
-    const { data: obrasBanco, error: erroObras } = await supabase
-      .from("obras")
-      .select(
-        "id, user_id, titulo, autor, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, arquivo_url, arquivo_nome, arquivo_tipo, arquivo_tamanho, arquivo_categoria, publicado, visualizacoes, slug, link, criada_em, atualizado_em"
-      )
-      .eq("publicado", true)
-      .order("criada_em", { ascending: false })
-      .limit(80);
-
-    if (erroObras) {
-      console.warn(
-        "Não consegui carregar obras da Home no Supabase:",
-        erroObras.message
-      );
-      return obrasLocais;
-    }
-
-    const obrasSupabase = obrasBanco || [];
+    const obrasSupabase = await carregarTodasPaginasSupabase<SupabaseObraRow>({
+      nomeColecao: "obras publicadas da Home",
+      buscarPagina: async (inicio, fim) =>
+        supabase
+          .from("obras")
+          .select(
+            "id, user_id, titulo, autor, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, arquivo_url, arquivo_nome, arquivo_tipo, arquivo_tamanho, arquivo_categoria, publicado, visualizacoes, slug, link, criada_em, atualizado_em"
+          )
+          .eq("publicado", true)
+          .order("criada_em", { ascending: false })
+          .order("id", { ascending: false })
+          .range(inicio, fim),
+    });
 
     if (obrasSupabase.length === 0) {
       return obrasLocais;
@@ -2451,26 +2450,36 @@ async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") 
     const capitulosPorObraId = new Map<string, SupabaseCapituloRow[]>();
 
     if (obrasIds.length > 0) {
-      const { data: capitulosBanco, error: erroCapitulos } = await supabase
-        .from("capitulos")
-        .select("id, obra_id, user_id, titulo, ordem, publicado, criado_em, atualizado_em")
-        .in("obra_id", obrasIds)
-        .eq("publicado", true)
-        .order("ordem", { ascending: true })
-        .limit(600);
+      let capitulosBanco: SupabaseCapituloRow[] = [];
 
-      if (erroCapitulos) {
+      try {
+        capitulosBanco =
+          await carregarTodasPaginasPorLotesSupabase<SupabaseCapituloRow, string>({
+            nomeColecao: "capítulos publicados da Home",
+            itens: obrasIds,
+            buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
+              supabase
+                .from("capitulos")
+                .select("id, obra_id, user_id, titulo, ordem, publicado, criado_em, atualizado_em")
+                .in("obra_id", obraIdsLote)
+                .eq("publicado", true)
+                .order("obra_id", { ascending: true })
+                .order("ordem", { ascending: true })
+                .order("id", { ascending: true })
+                .range(inicio, fim),
+          });
+      } catch (error) {
         console.warn(
           "Não consegui carregar capítulos da Home no Supabase:",
-          erroCapitulos.message
+          error,
         );
-      } else {
-        (capitulosBanco || []).forEach((capitulo) => {
-          const capitulosDaObra = capitulosPorObraId.get(capitulo.obra_id) || [];
-          capitulosDaObra.push(capitulo);
-          capitulosPorObraId.set(capitulo.obra_id, capitulosDaObra);
-        });
       }
+
+      capitulosBanco.forEach((capitulo) => {
+        const capitulosDaObra = capitulosPorObraId.get(capitulo.obra_id) || [];
+        capitulosDaObra.push(capitulo);
+        capitulosPorObraId.set(capitulo.obra_id, capitulosDaObra);
+      });
     }
 
     const capituloParaObraId = new Map<string, string>();
@@ -2582,15 +2591,16 @@ async function carregarIdsColecaoUsuarioHome(
   }
 
   try {
-    const { data, error } = await supabase
-      .from(tabela)
-      .select("obra_id")
-      .eq("user_id", userIdLimpo)
-      .limit(1000);
-
-    if (error || !Array.isArray(data)) {
-      return [] as string[];
-    }
+    const data = await carregarTodasPaginasSupabase<{ obra_id: string }>({
+      nomeColecao: `${tabela} da Home`,
+      buscarPagina: async (inicio, fim) =>
+        supabase
+          .from(tabela)
+          .select("obra_id")
+          .eq("user_id", userIdLimpo)
+          .order("obra_id", { ascending: true })
+          .range(inicio, fim),
+    });
 
     return normalizarListaIdsHome(
       data

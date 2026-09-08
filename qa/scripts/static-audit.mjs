@@ -2034,6 +2034,23 @@ const communityPagePath = path.join(
 const communityPage = fs.existsSync(communityPagePath)
   ? fs.readFileSync(communityPagePath, "utf8")
   : "";
+const contentPaginationFiles = [
+  "app/page.tsx",
+  "app/explorar/page.tsx",
+  "app/em-alta/page.tsx",
+  "app/em-breve/page.tsx",
+  "app/painel-autor/page.tsx",
+  "app/perfil-autor/page.tsx",
+  "app/seguindo/page.tsx",
+  "app/obra/[slug]/ObraDinamicaClient.tsx",
+  "app/ler-capitulo/page.tsx",
+  "app/editar-capitulo/page.tsx",
+  "app/editar-obra/page.tsx"
+];
+const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
+  relativePath,
+  source: fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8")
+}));
 
 const paginationContracts = [
   {
@@ -2070,12 +2087,47 @@ const paginationContracts = [
       )
   },
   {
+    name: "obras, capítulos e comentários não usam os antigos tetos fixos",
+    valid:
+      contentPaginationSources.every(({ source }) =>
+        source.includes("carregarTodasPaginasSupabase")
+      ) &&
+      !contentPaginationSources.some(({ source }) =>
+        /\.limit\((?:80|100|200|300|500|600)\)/.test(source)
+      )
+  },
+  {
+    name: "consultas relacionadas usam paginação por lotes de ids",
+    valid:
+      /carregarTodasPaginasPorLotesSupabase[\s\S]*?dividirEmLotesSupabase/.test(
+        paginationHelper
+      ) &&
+      [
+        "app/page.tsx",
+        "app/explorar/page.tsx",
+        "app/em-alta/page.tsx",
+        "app/em-breve/page.tsx",
+        "app/painel-autor/page.tsx",
+        "app/perfil-autor/page.tsx",
+        "app/seguindo/page.tsx",
+        "app/obra/[slug]/ObraDinamicaClient.tsx",
+        "app/ler-capitulo/page.tsx"
+      ].every((relativePath) =>
+        contentPaginationSources
+          .find((file) => file.relativePath === relativePath)
+          ?.source.includes("carregarTodasPaginasPorLotesSupabase")
+      )
+  },
+  {
     name: "testes cobrem volumes acima dos limites usuais",
     valid:
       /quantidade: 137[\s\S]*?quantidade: 2_501[\s\S]*?quantidade: 5_001[\s\S]*?quantidade: 1_201/.test(
         paginationVolumeTest
       ) &&
       /new Set\(resultado\.map[\s\S]*?\.size, quantidade/.test(
+        paginationVolumeTest
+      ) &&
+      /pagina cada lote de ids sem ocultar capítulos/.test(
         paginationVolumeTest
       )
   },

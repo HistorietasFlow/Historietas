@@ -22,6 +22,10 @@ import { historietasThemeCss } from "../../lib/historietasTheme";
 import { criarSlugBase, formatarData, idObraSupabaseValido, obterNumeroSeguro } from "../../lib/utils";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import {
+  carregarTodasPaginasPorLotesSupabase,
+  carregarTodasPaginasSupabase,
+} from "../../lib/supabase/paginacao.mjs";
+import {
   acessoConteudo18Confirmado,
   ehClassificacao18,
   normalizarAvisosConteudo18,
@@ -1550,25 +1554,34 @@ async function carregarObraSupabase(
     return null;
   }
 
-  let capitulosQuery = supabase
-    .from("capitulos")
-    .select("id,obra_id,user_id,titulo,texto,ordem,publicado,visualizacoes,criado_em,atualizado_em")
-    .eq("obra_id", obraId)
-    .order("ordem", { ascending: true })
-    .limit(300);
+  let capitulosSupabase: CapituloSupabaseRow[] = [];
 
-  if (!usuarioEhDono) {
-    capitulosQuery = capitulosQuery.eq("publicado", true);
+  try {
+    capitulosSupabase = await carregarTodasPaginasSupabase<CapituloSupabaseRow>({
+      nomeColecao: "capítulos da leitura",
+      buscarPagina: async (inicio, fim) => {
+        let query = supabase
+          .from("capitulos")
+          .select("id,obra_id,user_id,titulo,texto,ordem,publicado,visualizacoes,criado_em,atualizado_em")
+          .eq("obra_id", obraId);
+
+        if (!usuarioEhDono) {
+          query = query.eq("publicado", true);
+        }
+
+        return query
+          .order("ordem", { ascending: true })
+          .order("id", { ascending: true })
+          .range(inicio, fim);
+      },
+    });
+  } catch {
+    capitulosSupabase = [];
   }
-
-  const { data: capitulosSupabase, error: erroCapitulos } =
-    await capitulosQuery;
 
   return mesclarObraSupabaseComLocal(
     obraBanco,
-    erroCapitulos
-      ? []
-      : (capitulosSupabase || []),
+    capitulosSupabase,
     obraLocal,
     usuarioEhDono
   );
@@ -1589,18 +1602,24 @@ async function aplicarInteracoesCapitulosSupabase(
       obraIds: [obra.id],
       capituloIds,
     }),
-    supabase
-      .from("comentarios_capitulos")
-      .select("capitulo_id, comentario")
-      .eq("user_id", userId)
-      .in("capitulo_id", capituloIds)
-      .order("atualizado_em", { ascending: false })
-      .limit(1000),
+    carregarTodasPaginasPorLotesSupabase<RegistroComentarioCapitulo, string>({
+      nomeColecao: "comentários do leitor nos capítulos",
+      itens: capituloIds,
+      buscarPaginaLote: async (capituloIdsLote, inicio, fim) =>
+        supabase
+          .from("comentarios_capitulos")
+          .select("id,capitulo_id,comentario,atualizado_em")
+          .eq("user_id", userId)
+          .in("capitulo_id", capituloIdsLote)
+          .order("atualizado_em", { ascending: false })
+          .order("id", { ascending: false })
+          .range(inicio, fim),
+    }).catch(() => [] as RegistroComentarioCapitulo[]),
   ]);
   const comentarios = new Map<string, string>();
 
-  if (Array.isArray(comentariosResposta.data)) {
-    comentariosResposta.data.forEach((item: unknown) => {
+  if (Array.isArray(comentariosResposta)) {
+    comentariosResposta.forEach((item: unknown) => {
       const registro = item as RegistroComentarioCapitulo;
 
       if (
@@ -2099,21 +2118,26 @@ async function carregarProfilesPorUsuariosLeitor(userIds: string[]) {
   }
 
   try {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id,user_id,nome,avatar_url")
-      .in("user_id", idsValidos)
-      .limit(1000);
-
-    if (Array.isArray(data)) {
-      (data as Record<string, unknown>[]).forEach((profile) => {
-        const profileUserId = obterTextoRegistroLeitor(profile, "user_id");
-
-        if (profileUserId) {
-          profilesPorUsuario.set(profileUserId, profile);
-        }
+    const profiles =
+      await carregarTodasPaginasPorLotesSupabase<Record<string, unknown>, string>({
+        nomeColecao: "perfis dos comentários por usuário",
+        itens: idsValidos,
+        buscarPaginaLote: async (usuarioIdsLote, inicio, fim) =>
+          supabase
+            .from("profiles")
+            .select("id,user_id,nome,avatar_url")
+            .in("user_id", usuarioIdsLote)
+            .order("id", { ascending: true })
+            .range(inicio, fim),
       });
-    }
+
+    profiles.forEach((profile) => {
+      const profileUserId = obterTextoRegistroLeitor(profile, "user_id");
+
+      if (profileUserId) {
+        profilesPorUsuario.set(profileUserId, profile);
+      }
+    });
   } catch {
     // Bases antigas podem usar id como chave do profile. O fallback vem abaixo.
   }
@@ -2124,23 +2148,28 @@ async function carregarProfilesPorUsuariosLeitor(userIds: string[]) {
 
   if (idsSemProfile.length > 0) {
     try {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id,user_id,nome,avatar_url")
-        .in("id", idsSemProfile)
-        .limit(1000);
-
-      if (Array.isArray(data)) {
-        (data as Record<string, unknown>[]).forEach((profile) => {
-          const profileUserId =
-            obterTextoRegistroLeitor(profile, "user_id") ||
-            obterTextoRegistroLeitor(profile, "id");
-
-          if (profileUserId) {
-            profilesPorUsuario.set(profileUserId, profile);
-          }
+      const profiles =
+        await carregarTodasPaginasPorLotesSupabase<Record<string, unknown>, string>({
+          nomeColecao: "perfis dos comentários por id",
+          itens: idsSemProfile,
+          buscarPaginaLote: async (profileIdsLote, inicio, fim) =>
+            supabase
+              .from("profiles")
+              .select("id,user_id,nome,avatar_url")
+              .in("id", profileIdsLote)
+              .order("id", { ascending: true })
+              .range(inicio, fim),
         });
-      }
+
+      profiles.forEach((profile) => {
+        const profileUserId =
+          obterTextoRegistroLeitor(profile, "user_id") ||
+          obterTextoRegistroLeitor(profile, "id");
+
+        if (profileUserId) {
+          profilesPorUsuario.set(profileUserId, profile);
+        }
+      });
     } catch {
       // Profiles é complementar; comentários continuam com fallback.
     }
@@ -2201,7 +2230,7 @@ async function carregarComentariosCapituloSupabase(
     let error: unknown = null;
 
     const consultasComentarios = [
-      () =>
+      async (inicio: number, fim: number) =>
         supabase
           .from("comentarios_capitulos")
           .select(
@@ -2209,40 +2238,45 @@ async function carregarComentariosCapituloSupabase(
           )
           .eq("capitulo_id", capituloIdLimpo)
           .order("atualizado_em", { ascending: true })
-          .limit(500),
-      () =>
+          .order("id", { ascending: true })
+          .range(inicio, fim),
+      async (inicio: number, fim: number) =>
         supabase
           .from("comentarios_capitulos")
           .select("id,user_id,comentario,comentario_pai_id,criado_em")
           .eq("capitulo_id", capituloIdLimpo)
           .order("criado_em", { ascending: true })
-          .limit(500),
-      () =>
+          .order("id", { ascending: true })
+          .range(inicio, fim),
+      async (inicio: number, fim: number) =>
         supabase
           .from("comentarios_capitulos")
           .select("id,user_id,comentario,atualizado_em,criado_em")
           .eq("capitulo_id", capituloIdLimpo)
           .order("atualizado_em", { ascending: true })
-          .limit(500),
-      () =>
+          .order("id", { ascending: true })
+          .range(inicio, fim),
+      async (inicio: number, fim: number) =>
         supabase
           .from("comentarios_capitulos")
           .select("id,user_id,comentario,criado_em")
           .eq("capitulo_id", capituloIdLimpo)
           .order("criado_em", { ascending: true })
-          .limit(500),
+          .order("id", { ascending: true })
+          .range(inicio, fim),
     ];
 
     for (const consultar of consultasComentarios) {
-      const resposta = await consultar();
-
-      if (!resposta.error && Array.isArray(resposta.data)) {
-        data = resposta.data as Record<string, unknown>[];
+      try {
+        data = await carregarTodasPaginasSupabase<Record<string, unknown>>({
+          nomeColecao: "comentários do capítulo",
+          buscarPagina: consultar,
+        });
         error = null;
         break;
+      } catch (erroConsulta) {
+        error = erroConsulta;
       }
-
-      error = resposta.error;
     }
 
     if (error || !Array.isArray(data)) {
@@ -2265,13 +2299,23 @@ async function carregarComentariosCapituloSupabase(
     const curtidasPorComentario = new Map<string, string[]>();
 
     if (comentarioIds.length > 0) {
-      const { data: curtidasData, error: erroCurtidas } = await supabase
-        .from(TABELA_COMENTARIOS_CAPITULOS_CURTIDAS)
-        .select("comentario_id,usuario_id")
-        .in("comentario_id", comentarioIds)
-        .limit(5000);
+      try {
+        const curtidasData = await carregarTodasPaginasPorLotesSupabase<
+          { comentario_id: string; usuario_id: string },
+          string
+        >({
+          nomeColecao: "curtidas dos comentários do capítulo",
+          itens: comentarioIds,
+          buscarPaginaLote: async (comentarioIdsLote, inicio, fim) =>
+            supabase
+              .from(TABELA_COMENTARIOS_CAPITULOS_CURTIDAS)
+              .select("comentario_id,usuario_id")
+              .in("comentario_id", comentarioIdsLote)
+              .order("comentario_id", { ascending: true })
+              .order("usuario_id", { ascending: true })
+              .range(inicio, fim),
+        });
 
-      if (!erroCurtidas && Array.isArray(curtidasData)) {
         curtidasData.forEach(
           (curtida) => {
             const comentarioId = curtida.comentario_id;
@@ -2291,6 +2335,8 @@ async function carregarComentariosCapituloSupabase(
             }
           }
         );
+      } catch {
+        // Curtidas são complementares; os comentários continuam visíveis.
       }
     }
 

@@ -11,6 +11,10 @@ import type { HistorietasLanguage } from "../../lib/i18n";
 import type { CSSProperties } from "react";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import { solicitarUrlTemporariaArquivoObra } from "../../lib/arquivosObras";
+import {
+  carregarTodasPaginasPorLotesSupabase,
+  carregarTodasPaginasSupabase,
+} from "../../lib/supabase/paginacao.mjs";
 
 type CapituloLocal = {
   id: string;
@@ -1501,24 +1505,22 @@ async function carregarComentariosCapitulosUsuarioPainel(
   }
 
   try {
-    const { data, error } = await supabase
-      .from("comentarios_capitulos")
-      .select("obra_id,capitulo_id,comentario,atualizado_em")
-      .eq("user_id", userId)
-      .in("capitulo_id", capituloIds)
-      .order("atualizado_em", { ascending: false })
-      .limit(5000);
-
-    if (error || !Array.isArray(data)) {
-      if (error) {
-        console.warn(
-          "Não consegui carregar comentários pessoais no Painel do Autor:",
-          error.message,
-        );
-      }
-
-      return comentarios;
-    }
+    const data = await carregarTodasPaginasPorLotesSupabase<
+      { obra_id: string | null; capitulo_id: string; comentario: string },
+      string
+    >({
+      nomeColecao: "comentários pessoais no Painel do Autor",
+      itens: capituloIds,
+      buscarPaginaLote: async (capituloIdsLote, inicio, fim) =>
+        supabase
+          .from("comentarios_capitulos")
+          .select("id,obra_id,capitulo_id,comentario,atualizado_em")
+          .eq("user_id", userId)
+          .in("capitulo_id", capituloIdsLote)
+          .order("atualizado_em", { ascending: false })
+          .order("id", { ascending: false })
+          .range(inicio, fim),
+    });
 
     data.forEach((registro) => {
       const obraId = registro.obra_id?.trim() || "";
@@ -1861,27 +1863,20 @@ async function carregarPainelAutorSupabase(
       obrasLocaisUsuario
     );
 
-    const { data: obrasBanco, error: erroObras } = await supabase
-      .from("obras")
-      .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em"
-      )
-      .eq("user_id", userId)
-      .order("criada_em", { ascending: false })
-      .limit(80);
-
-    if (erroObras) {
-      console.warn("Não consegui carregar obras no Painel do Autor:", erroObras.message);
-      return {
-        obras: obrasLocaisUsuario,
-        favoritas: obrasFavoritasUsuario,
-        concluidas: obrasConcluidasUsuario,
-      };
-    }
-
-    const obrasSupabaseBanco = Array.isArray(obrasBanco)
-      ? obrasBanco
-      : [];
+    const obrasSupabaseBanco =
+      await carregarTodasPaginasSupabase<SupabaseObraRow>({
+        nomeColecao: "obras do Painel do Autor",
+        buscarPagina: async (inicio, fim) =>
+          supabase
+            .from("obras")
+            .select(
+              "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em"
+            )
+            .eq("user_id", userId)
+            .order("criada_em", { ascending: false })
+            .order("id", { ascending: false })
+            .range(inicio, fim),
+      });
     const obraIds = obrasSupabaseBanco
       .map((obra) => obra.id)
       .filter((obraId) => Boolean(obraId));
@@ -1894,23 +1889,30 @@ async function carregarPainelAutorSupabase(
       };
     }
 
-    const { data: capitulosBanco, error: erroCapitulos } = await supabase
-      .from("capitulos")
-      .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
-      .in("obra_id", obraIds)
-      .eq("user_id", userId)
-      .order("ordem", { ascending: true })
-      .limit(600);
+    let capitulosSupabaseBanco: SupabaseCapituloRow[] = [];
 
-    if (erroCapitulos) {
-      console.warn("Não consegui carregar capítulos no Painel do Autor:", erroCapitulos.message);
+    try {
+      capitulosSupabaseBanco =
+        await carregarTodasPaginasPorLotesSupabase<SupabaseCapituloRow, string>({
+          nomeColecao: "capítulos do Painel do Autor",
+          itens: obraIds,
+          buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
+            supabase
+              .from("capitulos")
+              .select("id,obra_id,user_id,titulo,texto,ordem,publicado,criado_em,atualizado_em")
+              .in("obra_id", obraIdsLote)
+              .eq("user_id", userId)
+              .order("obra_id", { ascending: true })
+              .order("ordem", { ascending: true })
+              .order("id", { ascending: true })
+              .range(inicio, fim),
+        });
+    } catch (error) {
+      console.warn(
+        "Não consegui carregar capítulos no Painel do Autor:",
+        error,
+      );
     }
-
-    const capitulosSupabaseBanco = erroCapitulos
-      ? []
-      : Array.isArray(capitulosBanco)
-      ? capitulosBanco
-      : [];
 
     const capituloIds = capitulosSupabaseBanco
       .map((capitulo) => capitulo.id)

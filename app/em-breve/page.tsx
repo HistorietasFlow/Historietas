@@ -11,6 +11,10 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import type { HistorietasLanguage } from "../../lib/i18n";
 import { criarSlugBase, idObraSupabaseValido, normalizarTexto } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
+import {
+  carregarTodasPaginasPorLotesSupabase,
+  carregarTodasPaginasSupabase,
+} from "../../lib/supabase/paginacao.mjs";
 
 
 type TraducaoEmBreve = {
@@ -575,22 +579,16 @@ async function carregarLancamentosSalvosSupabaseEmBreve(userId: string) {
   }
 
   try {
-    const { data, error } = await supabase
-      .from("seguindo_obras")
-      .select("obra_id")
-      .eq("user_id", userIdLimpo)
-      .limit(1000);
-
-    if (error || !Array.isArray(data)) {
-      if (error) {
-        console.warn(
-          "Não consegui carregar avisos reais do Em breve:",
-          error.message
-        );
-      }
-
-      return [] as string[];
-    }
+    const data = await carregarTodasPaginasSupabase<{ obra_id: string }>({
+      nomeColecao: "avisos reais do Em breve",
+      buscarPagina: async (inicio, fim) =>
+        supabase
+          .from("seguindo_obras")
+          .select("obra_id")
+          .eq("user_id", userIdLimpo)
+          .order("obra_id", { ascending: true })
+          .range(inicio, fim),
+    });
 
     return normalizarListaIdsEmBreve(
       data.map((registro) => {
@@ -699,25 +697,20 @@ async function sincronizarAvisoLancamentoSupabaseEmBreve(
 
 async function carregarObrasReaisEmBreve() {
   try {
-    const { data: obrasBanco, error: erroObras } = await supabase
-      .from("obras")
-      .select(
-        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,capa_url,arquivo_url,publicado,slug,link,criada_em"
-      )
-      .eq("publicado", true)
-      .order("criada_em", { ascending: false })
-      .limit(100);
-
-    if (erroObras || !Array.isArray(obrasBanco)) {
-      if (erroObras) {
-        console.warn(
-          "Não consegui carregar obras reais do Em breve:",
-          erroObras.message
-        );
-      }
-
-      return [] as ObraEmBreveCard[];
-    }
+    const obrasBanco =
+      await carregarTodasPaginasSupabase<SupabaseObraEmBreveRow>({
+        nomeColecao: "obras publicadas do Em breve",
+        buscarPagina: async (inicio, fim) =>
+          supabase
+            .from("obras")
+            .select(
+              "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,capa_url,arquivo_url,publicado,slug,link,criada_em"
+            )
+            .eq("publicado", true)
+            .order("criada_em", { ascending: false })
+            .order("id", { ascending: false })
+            .range(inicio, fim),
+      });
 
     const obrasPublicadas = (
       obrasBanco
@@ -730,23 +723,20 @@ async function carregarObrasReaisEmBreve() {
       return [] as ObraEmBreveCard[];
     }
 
-    const { data: capitulosBanco, error: erroCapitulos } = await supabase
-      .from("capitulos")
-      .select("obra_id")
-      .in("obra_id", obraIds)
-      .eq("publicado", true)
-      .limit(1000);
-
-    if (erroCapitulos || !Array.isArray(capitulosBanco)) {
-      if (erroCapitulos) {
-        console.warn(
-          "Não consegui verificar capítulos das obras do Em breve:",
-          erroCapitulos.message
-        );
-      }
-
-      return [] as ObraEmBreveCard[];
-    }
+    const capitulosBanco =
+      await carregarTodasPaginasPorLotesSupabase<{ obra_id: string }, string>({
+        nomeColecao: "capítulos publicados das obras do Em breve",
+        itens: obraIds,
+        buscarPaginaLote: async (obraIdsLote, inicio, fim) =>
+          supabase
+            .from("capitulos")
+            .select("id,obra_id")
+            .in("obra_id", obraIdsLote)
+            .eq("publicado", true)
+            .order("obra_id", { ascending: true })
+            .order("id", { ascending: true })
+            .range(inicio, fim),
+      });
 
     const obrasComCapituloPublicado = new Set(
       (capitulosBanco)
