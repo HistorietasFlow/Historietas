@@ -2014,6 +2014,19 @@ const localSeedPath = path.join(
 const localSeed = fs.existsSync(localSeedPath)
   ? fs.readFileSync(localSeedPath, "utf8")
   : "";
+const localAclMigrationRelative =
+  "qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql";
+const localAclMigrationPath = path.join(
+  ROOT_DIR,
+  localAclMigrationRelative
+);
+const localAclMigration = fs.existsSync(localAclMigrationPath)
+  ? fs.readFileSync(localAclMigrationPath, "utf8")
+  : "";
+const productionAclMigrationPath = path.join(
+  ROOT_DIR,
+  "supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql"
+);
 const communityPagePath = path.join(
   ROOT_DIR,
   "app/comunidade/page.tsx"
@@ -2101,6 +2114,15 @@ const paginationContracts = [
       !paginationIntegrationTest.includes(
         "NEXT_PUBLIC_SUPABASE_URL"
       )
+  },
+  {
+    name: "ajuste de ACL do baseline fica restrito ao ambiente de testes",
+    valid:
+      /SOMENTE TESTES LOCAIS/.test(localAclMigration) &&
+      /revoke all on function %s from public, anon, authenticated, service_role/.test(
+        localAclMigration
+      ) &&
+      !fs.existsSync(productionAclMigrationPath)
   }
 ];
 
@@ -2176,6 +2198,12 @@ const ciContracts = [
       /supabase\/setup-cli@[0-9a-f]{40}/.test(ciWorkflow) &&
       /version:\s*2\.116\.0/.test(ciWorkflow) &&
       ciWorkflow.includes("supabase init") &&
+      ciWorkflow.includes(
+        `qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql`
+      ) &&
+      ciWorkflow.includes(
+        `supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql`
+      ) &&
       ciWorkflow.includes("supabase start") &&
       ciWorkflow.includes("supabase stop --no-backup")
   },
