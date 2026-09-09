@@ -100,8 +100,18 @@ function exigirSucesso(resposta, contexto) {
 }
 
 function exigirLimite(resposta, rotulo) {
+  const diagnostico = JSON.stringify({
+    status: resposta.status,
+    statusText: resposta.statusText,
+    error: resposta.error,
+  });
+
   assert.ok(resposta.error, `${rotulo}: a ação excedente deveria falhar`);
-  assert.equal(resposta.status, 429, `${rotulo}: deveria responder HTTP 429`);
+  assert.equal(
+    resposta.status,
+    429,
+    `${rotulo}: deveria responder HTTP 429; recebido ${diagnostico}`,
+  );
   assert.equal(resposta.error.code, CODIGO_LIMITE);
   assert.match(resposta.error.message, /Muitas ações/i);
   assert.match(resposta.error.message, /Tente novamente em \d+ segundos/i);
