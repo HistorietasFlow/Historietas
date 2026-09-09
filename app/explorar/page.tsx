@@ -2434,9 +2434,10 @@ export default function ExplorarPage() {
   }, [obrasLocais]);
 
   const termoBusca = normalizarTexto(busca);
+  const buscaCatalogo = busca.trim();
 
   const consultaCatalogoAtual = useMemo<ConsultaCatalogo>(() => ({
-    busca: termoBusca,
+    busca: buscaCatalogo,
     genero: categoriaSelecionada,
     formato: filtroFormato === "todos" ? "" : filtroFormato,
     classificacao:
@@ -2449,12 +2450,12 @@ export default function ExplorarPage() {
     ordenacao,
     limite: 24,
   }), [
+    buscaCatalogo,
     categoriaSelecionada,
     filtroCapitulos,
     filtroClassificacao,
     filtroFormato,
     ordenacao,
-    termoBusca,
   ]);
   const consultaCatalogoPersonalizada = Boolean(
     termoBusca ||
