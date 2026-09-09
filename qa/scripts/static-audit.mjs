@@ -2270,6 +2270,9 @@ const ciContracts = [
       localE2ePreparation.includes('from("profiles").insert') &&
       localE2ePreparation.includes('from("obras").insert') &&
       localE2ePreparation.includes('from("capitulos").insert') &&
+      /secretKey:\s*variaveis\.SERVICE_ROLE_KEY\s*\|\|\s*variaveis\.SECRET_KEY/.test(
+        localE2ePreparation
+      ) &&
       /hostsPermitidos\.has\(destino\.hostname\)/.test(localE2ePreparation) &&
       /destino\.protocol[\s\S]*?"http:"/.test(localE2ePreparation)
   },

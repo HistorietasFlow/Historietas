@@ -69,8 +69,11 @@ function lerAmbienteSupabaseLocal() {
   const variaveis = lerVariaveisStatusSupabase();
   const ambiente = {
     url: variaveis.API_URL || variaveis.SUPABASE_URL || "",
-    publicKey: variaveis.PUBLISHABLE_KEY || variaveis.ANON_KEY || "",
-    secretKey: variaveis.SECRET_KEY || variaveis.SERVICE_ROLE_KEY || "",
+    // O projeto ainda usa supabase-js 2.105.x. Priorizamos as chaves JWT
+    // legadas emitidas pelo CLI, que são compatíveis com essa versão; as
+    // chaves modernas continuam como fallback para versões futuras.
+    publicKey: variaveis.ANON_KEY || variaveis.PUBLISHABLE_KEY || "",
+    secretKey: variaveis.SERVICE_ROLE_KEY || variaveis.SECRET_KEY || "",
   };
 
   assert.ok(
@@ -108,7 +111,14 @@ function criarCliente(url, key) {
 
 function exigirSemErro(error, contexto) {
   if (error) {
-    throw new Error(`${contexto}: ${error.message || "erro desconhecido"}`);
+    const detalhes = [
+      typeof error.message === "string" ? error.message : "",
+      typeof error.code === "string" ? `code=${error.code}` : "",
+      Number.isInteger(error.status) ? `status=${error.status}` : "",
+      error.name && error.name !== "Error" ? `tipo=${error.name}` : "",
+    ].filter(Boolean);
+
+    throw new Error(`${contexto}: ${detalhes.join(", ") || "erro desconhecido"}`);
   }
 }
 
