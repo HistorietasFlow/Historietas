@@ -69,6 +69,12 @@ jobs:
     name: Tests
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      E2E_USER_EMAIL: e2e-author@historietas.test
+      E2E_USER_PASSWORD: Historietas-E2E-2026!
+      E2E_ALLOW_DESTRUCTIVE: "true"
+      E2E_PUBLIC_WORK_SLUG: obra-publica-e2e
+      E2E_PUBLIC_CHAPTER_NUMBER: "1"
     steps:
       - name: Baixar o código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -111,25 +117,28 @@ jobs:
       - name: Executar paginação real pela Data API
         run: npm run test:pagination:integration
 
-      - name: Remover ambiente Supabase local
-        if: ${{ always() }}
-        run: |
-          if supabase status >/dev/null 2>&1; then
-            supabase stop --no-backup
-          fi
+      - name: Preparar autenticação e conteúdo E2E locais
+        run: npm run test:e2e:prepare:local -- --github-env "$GITHUB_ENV"
 
-      - name: Gerar aplicação para os testes públicos
+      - name: Gerar aplicação para os testes locais
         run: npm run build
 
       - name: Instalar Chromium
         working-directory: qa
         run: npm exec -- playwright install --with-deps chromium
 
-      - name: Executar testes públicos no código do PR
+      - name: Executar testes públicos e autenticados no código do PR
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
           E2E_WEB_SERVER_COMMAND: npm --prefix .. run start
         run: npm --prefix qa test
+
+      - name: Remover ambiente Supabase local
+        if: ${{ always() }}
+        run: |
+          if supabase status >/dev/null 2>&1; then
+            supabase stop --no-backup
+          fi
 
       - name: Salvar diagnóstico do Playwright em caso de falha
         if: ${{ failure() }}
