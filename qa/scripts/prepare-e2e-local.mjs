@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
 const DEFAULTS = Object.freeze({
+  userId: "e2e00000-0000-4000-8000-000000000001",
   email: "e2e-author@historietas.test",
   password: "Historietas-E2E-2026!",
   authorName: "Autor E2E",
@@ -122,30 +123,12 @@ function exigirSemErro(error, contexto) {
   }
 }
 
-async function excluirContaAnterior(admin, email) {
-  for (let pagina = 1; pagina <= 20; pagina += 1) {
-    const { data, error } = await admin.auth.admin.listUsers({
-      page: pagina,
-      perPage: 1_000,
-    });
-    exigirSemErro(error, "Não foi possível listar usuários locais");
+async function excluirContaAnterior(admin) {
+  const { error } = await admin.auth.admin.deleteUser(DEFAULTS.userId);
 
-    const usuario = (data?.users || []).find(
-      (item) => (item.email || "").toLowerCase() === email.toLowerCase(),
-    );
-
-    if (usuario) {
-      const { error: deleteError } = await admin.auth.admin.deleteUser(usuario.id);
-      exigirSemErro(deleteError, "Não foi possível recriar a conta E2E local");
-      return;
-    }
-
-    if ((data?.users || []).length < 1_000) {
-      return;
-    }
+  if (error && error.status !== 404) {
+    exigirSemErro(error, "Não foi possível recriar a conta E2E local");
   }
-
-  throw new Error("A busca pela conta E2E local excedeu o limite de segurança.");
 }
 
 function obterArquivoGithubEnv() {
@@ -194,9 +177,10 @@ async function preparar() {
   assert.equal(publicChapterNumber, "1", "A fixture E2E usa o capítulo público 1.");
 
   const admin = criarCliente(ambiente.url, ambiente.secretKey);
-  await excluirContaAnterior(admin, email);
+  await excluirContaAnterior(admin);
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
+    id: DEFAULTS.userId,
     email,
     password,
     email_confirm: true,
@@ -209,6 +193,7 @@ async function preparar() {
 
   const userId = created.user?.id || "";
   assert.ok(userId, "O Supabase local não retornou o ID da conta E2E.");
+  assert.equal(userId, DEFAULTS.userId, "O Supabase alterou o ID fixo da conta E2E.");
 
   const authenticated = criarCliente(ambiente.url, ambiente.publicKey);
   const { error: signInError } = await authenticated.auth.signInWithPassword({

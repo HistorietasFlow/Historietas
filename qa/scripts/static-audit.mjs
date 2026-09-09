@@ -2266,6 +2266,9 @@ const ciContracts = [
       /E2E_ALLOW_DESTRUCTIVE:\s*["']true["']/.test(ciWorkflow) &&
       /E2E_PUBLIC_WORK_SLUG:\s*obra-publica-e2e/.test(ciWorkflow) &&
       localE2ePreparation.includes("auth.admin.createUser") &&
+      localE2ePreparation.includes('id: DEFAULTS.userId') &&
+      localE2ePreparation.includes("auth.admin.deleteUser(DEFAULTS.userId)") &&
+      !localE2ePreparation.includes("auth.admin.listUsers") &&
       localE2ePreparation.includes("email_confirm: true") &&
       localE2ePreparation.includes('from("profiles").insert') &&
       localE2ePreparation.includes('from("obras").insert') &&
