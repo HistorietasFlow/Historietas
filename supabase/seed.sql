@@ -116,6 +116,7 @@ insert into public.obras (
   sinopse,
   publicado,
   slug,
+  visualizacoes,
   criada_em,
   atualizado_em
 )
@@ -133,6 +134,36 @@ select
   'Fixture local para validar paginação real pela Data API.',
   true,
   format('qa-paginacao-obra-%s', lpad(indice::text, 6, '0')),
+  1202 - indice,
+  timestamptz '2026-04-01 00:00:00+00' + indice * interval '1 second',
+  timestamptz '2026-04-01 00:00:00+00' + indice * interval '1 second'
+from generate_series(1, 1201) as indice;
+
+insert into public.capitulos (
+  id,
+  obra_id,
+  user_id,
+  titulo,
+  texto,
+  ordem,
+  publicado,
+  criado_em,
+  atualizado_em
+)
+select
+  format(
+    '50000000-0000-0000-0000-%s',
+    lpad(indice::text, 12, '0')
+  )::uuid,
+  format(
+    '40000000-0000-0000-0000-%s',
+    lpad(indice::text, 12, '0')
+  )::uuid,
+  'a0000000-0000-0000-0000-000000000001'::uuid,
+  format('Capítulo QA %s', lpad(indice::text, 6, '0')),
+  'Fixture local para validar o catálogo paginado.',
+  1,
+  true,
   timestamptz '2026-04-01 00:00:00+00' + indice * interval '1 second',
   timestamptz '2026-04-01 00:00:00+00' + indice * interval '1 second'
 from generate_series(1, 1201) as indice;
@@ -141,5 +172,6 @@ analyze public.comunidade_posts;
 analyze public.comunidade_comentarios;
 analyze public.comunidade_curtidas;
 analyze public.obras;
+analyze public.capitulos;
 
 commit;

@@ -18,6 +18,7 @@ import {
 } from "../../lib/utils";
 import { ehClassificacao18 } from "../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../lib/metricas";
+import { listarSelecaoCatalogo } from "../../lib/catalogo";
 import {
   carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
@@ -1460,19 +1461,57 @@ async function carregarObrasSupabasePublicadas(
   userId = "",
 ) {
   try {
-    const obrasSupabase = await carregarTodasPaginasSupabase<SupabaseObraRow>({
-      nomeColecao: "obras publicadas do ranking",
-      buscarPagina: async (inicio, fim) =>
-        supabase
-          .from("obras")
-          .select(
-            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em",
-          )
-          .eq("publicado", true)
-          .order("criada_em", { ascending: false })
-          .order("id", { ascending: false })
-          .range(inicio, fim),
-    });
+    let obraIdsCatalogo: readonly string[] = [];
+    let catalogoDisponivel = true;
+
+    try {
+      const selecao = await listarSelecaoCatalogo(
+        [
+          { ordenacao: "geral", limite: 50 },
+          { ordenacao: "lidas", limite: 5 },
+          { ordenacao: "curtidas", limite: 5 },
+          { ordenacao: "comentadas", limite: 5 },
+          { ordenacao: "salvas", limite: 5 },
+          { ordenacao: "recentes", limite: 5 },
+          { ordenacao: "capitulos", limite: 5 },
+        ] as const,
+      );
+      obraIdsCatalogo = selecao.obraIds;
+    } catch (error) {
+      catalogoDisponivel = false;
+      console.warn(
+        "O ranking paginado ainda não está disponível; usando uma amostra limitada:",
+        error,
+      );
+    }
+
+    let consultaObras = supabase
+      .from("obras")
+      .select(
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,visualizacoes,publicado,slug,link,criada_em,atualizado_em",
+      )
+      .eq("publicado", true);
+
+    if (catalogoDisponivel) {
+      if (obraIdsCatalogo.length === 0) {
+        return [] as ObraLocal[];
+      }
+
+      consultaObras = consultaObras.in("id", [...obraIdsCatalogo]);
+    } else {
+      consultaObras = consultaObras
+        .order("criada_em", { ascending: false })
+        .order("id", { ascending: false })
+        .range(0, 49);
+    }
+
+    const { data: obrasData, error: obrasError } = await consultaObras;
+
+    if (obrasError) {
+      throw obrasError;
+    }
+
+    const obrasSupabase = (obrasData || []) as SupabaseObraRow[];
 
     if (obrasSupabase.length === 0) {
       return [] as ObraLocal[];

@@ -23,6 +23,12 @@ import {
 } from "../../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../../lib/metricas";
 import {
+  listarSelecaoCatalogo,
+  type ConsultaCatalogo,
+  type CursorCatalogo,
+  type PaginaCatalogo,
+} from "../../lib/catalogo";
+import {
   carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
 } from "../../lib/supabase/paginacao.mjs";
@@ -183,6 +189,14 @@ const STORAGE_KEY = "historietas-obras";
 const FILE_BACKUP_STORAGE_KEY = "historietas-arquivos-obras-backup";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
+const CONSULTAS_INICIAIS_CATALOGO_EXPLORAR = [
+  { ordenacao: "recentes", limite: 50 },
+  { ordenacao: "geral", limite: 24 },
+  { ordenacao: "curtidas", limite: 12 },
+  { ordenacao: "comentadas", limite: 12 },
+  { ordenacao: "salvas", limite: 12 },
+  { ordenacao: "capitulos", limite: 12 },
+] as const satisfies readonly ConsultaCatalogo[];
 
 type ArquivosObrasBackup = Record<string, ArquivoObraLocal>;
 
@@ -193,6 +207,7 @@ type ExplorarTranslationEntry = {
 
 const EXPLORAR_UI_TRANSLATIONS: Record<string, ExplorarTranslationEntry> = {
   "Carregando": { en: "Loading", es: "Cargando" },
+  "Carregar mais": { en: "Load more", es: "Cargar más" },
   "Carregando Explorar": { en: "Loading Explore", es: "Cargando Explorar" },
   "Explorar": { en: "Explore", es: "Explorar" },
   "Abrir funções do Explorar": {
@@ -1858,21 +1873,59 @@ async function aplicarMetricasExplorar(
     };
   });
 }
-async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId = "") {
+async function carregarObrasPublicadasSupabase(
+  obrasLocais: ObraLocal[],
+  userId = "",
+  consultasCatalogo: readonly ConsultaCatalogo[] =
+    CONSULTAS_INICIAIS_CATALOGO_EXPLORAR,
+): Promise<{ obras: ObraLocal[]; pagina: PaginaCatalogo | null }> {
   try {
-    const obrasBanco = await carregarTodasPaginasSupabase<SupabaseObraRow>({
-      nomeColecao: "obras publicadas do Explorar",
-      buscarPagina: async (inicio, fim) =>
-        supabase
-          .from("obras")
-          .select(
-            "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
-          )
-          .eq("publicado", true)
-          .order("criada_em", { ascending: false })
-          .order("id", { ascending: false })
-          .range(inicio, fim),
-    });
+    let obraIdsCatalogo: readonly string[] = [];
+    let catalogoDisponivel = true;
+    let paginaCatalogo: PaginaCatalogo | null = null;
+
+    try {
+      const selecao = await listarSelecaoCatalogo(consultasCatalogo);
+      obraIdsCatalogo = selecao.obraIds;
+      paginaCatalogo = selecao.paginas.length === 1 ? selecao.paginas[0] : null;
+    } catch (error) {
+      catalogoDisponivel = false;
+      console.warn(
+        "O catálogo paginado do Explorar ainda não está disponível; usando uma amostra limitada:",
+        error,
+      );
+    }
+
+    let consultaObras = supabase
+      .from("obras")
+      .select(
+        "id,user_id,titulo,autor,genero,formato,classificacao_indicativa,avisos_conteudo,sinopse,tags,capa_url,capa_nome,arquivo_url,arquivo_nome,arquivo_tipo,arquivo_tamanho,arquivo_categoria,publicado,visualizacoes,slug,link,criada_em,atualizado_em"
+      )
+      .eq("publicado", true);
+
+    if (catalogoDisponivel) {
+      if (obraIdsCatalogo.length === 0) {
+        return {
+          obras: await aplicarMetricasExplorar(obrasLocais, userId),
+          pagina: paginaCatalogo,
+        };
+      }
+
+      consultaObras = consultaObras.in("id", [...obraIdsCatalogo]);
+    } else {
+      consultaObras = consultaObras
+        .order("criada_em", { ascending: false })
+        .order("id", { ascending: false })
+        .range(0, 49);
+    }
+
+    const { data: obrasData, error: obrasError } = await consultaObras;
+
+    if (obrasError) {
+      throw obrasError;
+    }
+
+    const obrasBanco = (obrasData || []) as SupabaseObraRow[];
 
     const obrasSupabase = obrasBanco.filter(
       (obra) => Boolean(obra.id)
@@ -1888,7 +1941,10 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
     );
 
     if (obrasSupabase.length === 0) {
-      return aplicarMetricasExplorar(obrasLocaisComProfiles, userId);
+      return {
+        obras: await aplicarMetricasExplorar(obrasLocaisComProfiles, userId),
+        pagina: paginaCatalogo,
+      };
     }
 
     const idsObras = obrasSupabase.map((obra) => obra.id);
@@ -1967,10 +2023,16 @@ async function carregarObrasPublicadasSupabase(obrasLocais: ObraLocal[], userId 
     salvarBackupsArquivosObras(obrasComProgresso, userId);
     salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userId, obrasComProgresso);
 
-    return obrasComProgresso;
+    return {
+      obras: obrasComProgresso,
+      pagina: paginaCatalogo,
+    };
   } catch (error) {
     console.warn("Não consegui acessar o Supabase no Explorar:", error);
-    return aplicarMetricasExplorar(obrasLocais, userId);
+    return {
+      obras: await aplicarMetricasExplorar(obrasLocais, userId),
+      pagina: null,
+    };
   }
 }
 
@@ -2113,6 +2175,14 @@ export default function ExplorarPage() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [mensagemLogin, setMensagemLogin] = useState("");
   const [dadosExplorarCarregados, setDadosExplorarCarregados] = useState(false);
+  const [proximoCursorCatalogo, setProximoCursorCatalogo] =
+    useState<CursorCatalogo | null>(null);
+  const [catalogoTemMais, setCatalogoTemMais] = useState(false);
+  const [carregandoMaisCatalogo, setCarregandoMaisCatalogo] = useState(false);
+  const obrasCacheLocalRef = useRef<ObraLocal[]>([]);
+  const usuarioIdExplorarRef = useRef("");
+  const consultaCatalogoRef = useRef(0);
+  const consultaPersonalizadaAtivaRef = useRef(false);
 
   useEffect(() => {
     let componenteAtivo = true;
@@ -2236,6 +2306,9 @@ export default function ExplorarPage() {
             )
           : [];
 
+        obrasCacheLocalRef.current = obrasNormalizadas;
+        usuarioIdExplorarRef.current = userIdAtual;
+
         salvarBackupsArquivosObras(obrasNormalizadas, userIdAtual);
         salvarJsonStorageUsuarioExplorar(STORAGE_KEY, userIdAtual, obrasNormalizadas);
 
@@ -2285,13 +2358,15 @@ export default function ExplorarPage() {
           setObrasConcluidas(obrasConcluidasNormalizadas);
         }
 
-        const obrasComSupabase = await carregarObrasPublicadasSupabase(
+        const resultadoCatalogo = await carregarObrasPublicadasSupabase(
           obrasNormalizadas,
           userIdAtual
         );
 
         if (!cancelado) {
-          setObrasLocais(obrasComSupabase);
+          setObrasLocais(resultadoCatalogo.obras);
+          setProximoCursorCatalogo(resultadoCatalogo.pagina?.proximoCursor || null);
+          setCatalogoTemMais(Boolean(resultadoCatalogo.pagina?.temMais));
         }
       } catch {
         if (!cancelado) {
@@ -2359,6 +2434,121 @@ export default function ExplorarPage() {
   }, [obrasLocais]);
 
   const termoBusca = normalizarTexto(busca);
+
+  const consultaCatalogoAtual = useMemo<ConsultaCatalogo>(() => ({
+    busca: termoBusca,
+    genero: categoriaSelecionada,
+    formato: filtroFormato === "todos" ? "" : filtroFormato,
+    classificacao:
+      filtroClassificacao === "todos" ? "" : filtroClassificacao,
+    filtroCapitulos:
+      filtroCapitulos === "com-capitulos" ||
+      filtroCapitulos === "sem-capitulos"
+        ? filtroCapitulos
+        : "todos",
+    ordenacao,
+    limite: 24,
+  }), [
+    categoriaSelecionada,
+    filtroCapitulos,
+    filtroClassificacao,
+    filtroFormato,
+    ordenacao,
+    termoBusca,
+  ]);
+  const consultaCatalogoPersonalizada = Boolean(
+    termoBusca ||
+      categoriaSelecionada ||
+      filtroFormato !== "todos" ||
+      filtroClassificacao !== "todos" ||
+      filtroCapitulos !== "todos" ||
+      ordenacao !== "relevancia",
+  );
+
+  useEffect(() => {
+    if (!dadosExplorarCarregados) {
+      return;
+    }
+
+    if (
+      !consultaCatalogoPersonalizada &&
+      !consultaPersonalizadaAtivaRef.current
+    ) {
+      return;
+    }
+
+    consultaPersonalizadaAtivaRef.current = consultaCatalogoPersonalizada;
+    const numeroConsulta = consultaCatalogoRef.current + 1;
+    consultaCatalogoRef.current = numeroConsulta;
+    let cancelado = false;
+    const timer = window.setTimeout(async () => {
+      setCarregandoMaisCatalogo(true);
+
+      try {
+        const consultas = consultaCatalogoPersonalizada
+          ? [consultaCatalogoAtual]
+          : CONSULTAS_INICIAIS_CATALOGO_EXPLORAR;
+        const resultado = await carregarObrasPublicadasSupabase(
+          obrasCacheLocalRef.current,
+          usuarioIdExplorarRef.current,
+          consultas,
+        );
+
+        if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
+          setObrasLocais(resultado.obras);
+          setProximoCursorCatalogo(
+            resultado.pagina?.proximoCursor || null,
+          );
+          setCatalogoTemMais(Boolean(resultado.pagina?.temMais));
+        }
+      } finally {
+        if (!cancelado && consultaCatalogoRef.current === numeroConsulta) {
+          setCarregandoMaisCatalogo(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      cancelado = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    consultaCatalogoAtual,
+    consultaCatalogoPersonalizada,
+    dadosExplorarCarregados,
+  ]);
+
+  async function carregarMaisObrasCatalogo() {
+    if (
+      !consultaCatalogoPersonalizada ||
+      !proximoCursorCatalogo ||
+      carregandoMaisCatalogo
+    ) {
+      return;
+    }
+
+    const numeroConsulta = consultaCatalogoRef.current + 1;
+    consultaCatalogoRef.current = numeroConsulta;
+    setCarregandoMaisCatalogo(true);
+
+    try {
+      const resultado = await carregarObrasPublicadasSupabase(
+        obrasLocais,
+        usuarioIdExplorarRef.current,
+        [{ ...consultaCatalogoAtual, cursor: proximoCursorCatalogo }],
+      );
+
+      if (consultaCatalogoRef.current === numeroConsulta) {
+        setObrasLocais(resultado.obras);
+        setProximoCursorCatalogo(resultado.pagina?.proximoCursor || null);
+        setCatalogoTemMais(Boolean(resultado.pagina?.temMais));
+      }
+    } finally {
+      if (consultaCatalogoRef.current === numeroConsulta) {
+        setCarregandoMaisCatalogo(false);
+      }
+    }
+  }
 
   const obrasBaseFiltradas = useMemo(() => {
     const filtradas = obrasLocais.filter((obra) => {
@@ -3484,6 +3674,20 @@ export default function ExplorarPage() {
                   />
                 ))}
               </div>
+
+              {consultaCatalogoPersonalizada && catalogoTemMais && (
+                <button
+                  type="button"
+                  onClick={() => void carregarMaisObrasCatalogo()}
+                  disabled={carregandoMaisCatalogo}
+                  style={explorarCarregarMaisButtonStyle}
+                >
+                  {traduzirTextoExplorar(
+                    carregandoMaisCatalogo ? "Carregando" : "Carregar mais",
+                    language,
+                  )}
+                </button>
+              )}
             </section>
           )}
 
@@ -4587,6 +4791,24 @@ const explorarHeaderFilterButtonStyle: CSSProperties = {
   outline: "none",
   WebkitTapHighlightColor: "transparent",
   ...safeTextStyle,
+};
+
+const explorarCarregarMaisButtonStyle: CSSProperties = {
+  minWidth: "180px",
+  minHeight: "44px",
+  margin: "24px auto 0",
+  padding: "0 24px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.2)",
+  background: "rgba(255,255,255,0.08)",
+  color: "#FFFFFF",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontFamily: "inherit",
+  fontSize: "14px",
+  fontWeight: 900,
+  cursor: "pointer",
 };
 
 const desktopExplorarHeaderFilterButtonStyle: CSSProperties = {
