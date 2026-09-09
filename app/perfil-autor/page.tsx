@@ -47,84 +47,39 @@ import {
 } from "../../lib/storageUploads";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
-
-type CapituloLocal = {
-  id: string;
-  titulo: string;
-  texto: string;
-  curtiu: boolean;
-  salvo: boolean;
-  comentario: string;
-  criadoEm: string;
-  lido: boolean;
-  lidoEm: string;
-};
-
-type ArquivoObraLocal = {
-  nome: string;
-  tipo: string;
-  tamanho: number;
-  conteudo: string;
-  categoria: "texto" | "documento" | "imagem" | "outro";
-  criadoEm: string;
-};
-
-type ObraLocal = {
-  id: string;
-  titulo: string;
-  autorId: string;
-  autor: string;
-  genero: string;
-  formato: string;
-  classificacaoIndicativa: string;
-  sinopse: string;
-  tags: string[];
-  capa: string;
-  capaNome: string;
-  arquivoObra?: ArquivoObraLocal | null;
-  publicado: boolean;
-  capitulos: CapituloLocal[];
-  criadaEm: string;
-  ultimoCapituloLidoId: string;
-  ultimaLeituraEm: string;
-  progressoLeitura: number;
-  visualizacoes: number;
-  slug: string;
-  link: string;
-};
-
-type CapituloSalvo = Partial<CapituloLocal> & Record<string, unknown>;
-
-type ObraSalva = Partial<ObraLocal> & {
-  capitulos?: CapituloSalvo[];
-} & Record<string, unknown>;
-
-type AutorPerfil = {
-  autorId: string;
-  nome: string;
-  obras: ObraLocal[];
-  totalCapitulos: number;
-  totalCurtidas: number;
-  totalComentarios: number;
-  totalPublicadas: number;
-};
-
-type PerfilUsuarioRemoto = {
-  userId: string;
-  nome: string;
-  username: string;
-  avatar: string;
-  bio: string;
-  sobreBio: string;
-  criadoEm: string;
-};
-
-type AbaPerfilAutor =
-  | "obras"
-  | "diario"
-  | "comunidade"
-  | "sobre"
-  | "biblioteca";
+import type {
+  AbaBibliotecaPerfil,
+  AbaPerfilAutor,
+  AlvoDenunciaConteudoPerfil,
+  ArquivoObraLocal,
+  AutorPerfil,
+  AvaliacaoAutorPublica,
+  AvaliacaoDiarioPublica,
+  CapituloLocal,
+  ComunidadePerfilEstado,
+  DadosCompartilhamentoPerfilAutor,
+  DiarioPerfilEstado,
+  DiarioPerfilItem,
+  DiarioPerfilResumoItem,
+  DiarioPerfilSemCarregando,
+  ItemBibliotecaPerfil,
+  MenuPerfilIconeTipo,
+  NavegadorCompartilhamentoPerfilAutor,
+  NotificacaoSocialPerfilAutorPayload,
+  ObraLocal,
+  ObraSalva,
+  PerfilAutorSalvo,
+  PerfilAutorTranslationEntry,
+  PerfisAutoresSalvos,
+  PerfilUsuarioRemoto,
+  PublicacaoComunidadePerfil,
+  SupabaseCapituloRow,
+  SupabaseObraRow,
+  TabelaObrasUsuario,
+  TabelaRegistrosDiarioPerfil,
+  TotaisInteracoesObrasPerfilAutor,
+  VisibilidadeDiarioPerfil,
+} from "./types";
 
 const PERMISSOES_ABAS_PERFIL_PADRAO: PermissoesAbasPerfil = {
   obras: true,
@@ -144,15 +99,6 @@ const PERMISSOES_ABAS_PERFIL_PROPRIO: PermissoesAbasPerfil = {
   atividades: true,
 };
 
-type AbaBibliotecaPerfil =
-  | "tudo"
-  | "quero-ler"
-  | "lendo-agora"
-  | "favoritas"
-  | "concluidas"
-  | "salvos"
-  | "historico";
-
 const STORAGE_KEY = "historietas-obras";
 const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
 const LIBRARY_FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
@@ -168,11 +114,6 @@ const AVATAR_STORAGE_BUCKET = "avatars";
 const BIO_MAX_LENGTH = 90;
 const SOBRE_BIO_MAX_LENGTH = 600;
 const NOTAS_AVALIACAO_AUTOR = [1, 2, 3, 4, 5] as const;
-type PerfilAutorTranslationEntry = {
-  en: string;
-  es: string;
-};
-
 const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
   string,
   PerfilAutorTranslationEntry
@@ -3048,100 +2989,6 @@ function normalizarAbaPerfilAutor(valor: string | null): AbaPerfilAutor {
   return "obras";
 }
 
-type PerfilAutorSalvo = {
-  avatar: string;
-  avatarNome: string;
-  bio: string;
-  sobreBio: string;
-  mostrarDestaques: boolean;
-};
-
-type AvaliacaoAutorPublica = {
-  media: number;
-  total: number;
-  minhaNota: number;
-  carregado: boolean;
-  salvando: boolean;
-};
-
-type AvaliacaoDiarioPublica = AvaliacaoAutorPublica & {
-  visivel: boolean;
-  mostrar: boolean;
-  podeAvaliar: boolean;
-};
-
-type DiarioPerfilItem = {
-  chave: string;
-  tipo:
-    | "lendo"
-    | "quero_ler"
-    | "favorita"
-    | "concluida"
-    | "avaliacao"
-    | "review"
-    | "atividade";
-  titulo: string;
-  descricao: string;
-  data: string;
-  obra: ObraLocal | null;
-  href?: string;
-  nota?: number;
-  progresso?: number;
-  visibilidade?: VisibilidadeDiarioPerfil;
-};
-
-type DiarioPerfilEstado = {
-  carregando: boolean;
-  lendoAgora: DiarioPerfilItem[];
-  queroLer: DiarioPerfilItem[];
-  favoritas: DiarioPerfilItem[];
-  concluidas: DiarioPerfilItem[];
-  avaliacoes: DiarioPerfilItem[];
-  reviews: DiarioPerfilItem[];
-  atividades: DiarioPerfilItem[];
-};
-
-type DiarioPerfilResumoItem = DiarioPerfilItem & {
-  tipos: DiarioPerfilItem["tipo"][];
-};
-
-type PublicacaoComunidadePerfil = {
-  id: string;
-  categoria: string;
-  tipoPublicacao: string;
-  temSpoiler: boolean;
-  texto: string;
-  obraRelacionada: string;
-  criadoEm: string;
-};
-
-type ComunidadePerfilEstado = {
-  carregando: boolean;
-  erro: string;
-  totalPublicacoes: number;
-  totalTeorias: number;
-  totalReviews: number;
-  publicacoesRecentes: PublicacaoComunidadePerfil[];
-};
-
-type AlvoDenunciaConteudoPerfil = {
-  alvoTipo: Extract<TipoAlvoDenuncia, "post" | "obra">;
-  alvoId: string;
-  alvoTitulo: string;
-} | null;
-
-type ItemBibliotecaPerfil = {
-  chave: string;
-  obra: ObraLocal;
-  capitulo: CapituloLocal | null;
-  numeroCapitulo: number;
-  tempoAtividade: number;
-  tipoDiario: DiarioPerfilItem["tipo"];
-  descricao: string;
-};
-
-type VisibilidadeDiarioPerfil = "publico" | "parcial" | "privado";
-
 const diarioPerfilVazio: DiarioPerfilEstado = {
   carregando: false,
   lendoAgora: [],
@@ -3225,16 +3072,6 @@ function normalizarAvaliacaoDiarioPerfil(
 }
 
 
-type TotaisInteracoesObrasPerfilAutor = {
-  curtidasPorObra: Record<string, number>;
-  comentariosPorObra: Record<string, number>;
-  curtidasPorCapitulo: Record<string, number>;
-  comentariosPorCapitulo: Record<string, number>;
-  salvosPorObra: Record<string, number>;
-  salvosPorCapitulo: Record<string, number>;
-  concluidasPorObra: Record<string, number>;
-};
-
 const totaisInteracoesObrasPerfilVazio: TotaisInteracoesObrasPerfilAutor = {
   curtidasPorObra: {},
   comentariosPorObra: {},
@@ -3244,8 +3081,6 @@ const totaisInteracoesObrasPerfilVazio: TotaisInteracoesObrasPerfilAutor = {
   salvosPorCapitulo: {},
   concluidasPorObra: {},
 };
-
-type PerfisAutoresSalvos = Record<string, PerfilAutorSalvo>;
 
 function normalizarNomeAutor(nome: string) {
   return nome.trim().replace(/\s+/g, " ").toLowerCase();
@@ -4550,9 +4385,6 @@ function criarCapaMiniCardDiarioPerfilStyle(capa: string): CSSProperties {
   };
 }
 
-type SupabaseObraRow = Record<string, unknown>;
-type SupabaseCapituloRow = Record<string, unknown>;
-
 function pegarTexto(valor: unknown, fallback = "") {
   return typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
 }
@@ -5457,8 +5289,6 @@ async function carregarObrasPublicadasPorIdsSupabase(obraIds: string[]) {
   }
 }
 
-type TabelaObrasUsuario = "favoritos" | "concluidas" | "seguindo_obras";
-
 async function carregarIdsObrasTabelaUsuario(
   tabela: TabelaObrasUsuario,
   userId: string,
@@ -6094,14 +5924,6 @@ const CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR = {
     "id,tipo,texto,nota,obra_id,capitulo_id,metadata,visibilidade,criado_em",
 } as const;
 
-type TabelaRegistrosDiarioPerfil =
-  | "seguindo_obras"
-  | "favoritos"
-  | "concluidas"
-  | "obra_avaliacoes"
-  | "progresso_leitura"
-  | "diario_atividades";
-
 async function carregarRegistrosDiarioPerfil(
   tabela: TabelaRegistrosDiarioPerfil,
   userId: string,
@@ -6270,8 +6092,6 @@ function montarDiarioPerfilLocal(
     atividades,
   };
 }
-
-type DiarioPerfilSemCarregando = Omit<DiarioPerfilEstado, "carregando">;
 
 function criarChaveMesclaDiarioPerfil(item: DiarioPerfilItem) {
   const obraId = item.obra?.id || "";
@@ -6981,15 +6801,6 @@ async function carregarEstadoSeguimentoUsuarioPerfil(
 
 
 
-type NotificacaoSocialPerfilAutorPayload = {
-  receptorId: string;
-  tipo: string;
-  titulo: string;
-  mensagem: string;
-  link: string;
-  notificacaoId: string;
-};
-
 function avisarAtualizacaoNotificacoesPerfilAutor() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(
@@ -7089,17 +6900,6 @@ async function criarNotificacaoSocialPerfilAutor({
   }
 }
 
-
-type MenuPerfilIconeTipo =
-  | "painel"
-  | "notificacoes"
-  | "configuracoes"
-  | "link"
-  | "sair"
-  | "comunidade"
-  | "denunciar"
-  | "bloquear"
-  | "explorar";
 
 function CadeadoAvaliacaoDiarioIcone() {
   return (
@@ -7233,17 +7033,6 @@ function MenuPerfilIcone({ tipo }: { tipo: MenuPerfilIconeTipo }) {
   );
 }
 
-
-type DadosCompartilhamentoPerfilAutor = {
-  title?: string;
-  text?: string;
-  url?: string;
-};
-
-type NavegadorCompartilhamentoPerfilAutor = Navigator & {
-  share?: (data: DadosCompartilhamentoPerfilAutor) => Promise<void>;
-  canShare?: (data: DadosCompartilhamentoPerfilAutor) => boolean;
-};
 
 function criarUrlAbsolutaCompartilhamentoPerfilAutor(href: string) {
   const hrefLimpo = href.trim();
