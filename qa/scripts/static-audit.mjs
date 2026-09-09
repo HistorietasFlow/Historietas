@@ -2538,6 +2538,108 @@ if (
   );
 }
 
+const seoHelperPath = path.join(ROOT_DIR, "lib/seo.ts");
+const seoHelper = fs.existsSync(seoHelperPath)
+  ? fs.readFileSync(seoHelperPath, "utf8")
+  : "";
+const sitemapPath = path.join(ROOT_DIR, "app/sitemap.ts");
+const sitemapSource = fs.existsSync(sitemapPath)
+  ? fs.readFileSync(sitemapPath, "utf8")
+  : "";
+const smokeRoutesPath = path.join(ROOT_DIR, "qa/tests/smoke-routes.spec.mjs");
+const smokeRoutesSource = fs.existsSync(smokeRoutesPath)
+  ? fs.readFileSync(smokeRoutesPath, "utf8")
+  : "";
+const seoPublicRoutes = [
+  "explorar",
+  "em-alta",
+  "em-breve",
+  "comunidade",
+  "ajuda",
+  "diretrizes-da-comunidade",
+  "politica-de-privacidade",
+  "termos",
+  "termos-de-uso",
+  "excluir-conta"
+];
+const seoRouteSources = seoPublicRoutes.map((route) => {
+  const relativePath = `app/${route}/layout.tsx`;
+  const fullPath = path.join(ROOT_DIR, relativePath);
+
+  return {
+    route,
+    relativePath,
+    source: fs.existsSync(fullPath) ? fs.readFileSync(fullPath, "utf8") : ""
+  };
+});
+
+const seoContracts = [
+  {
+    name: "rotas públicas possuem título, descrição e canonical próprios",
+    valid:
+      seoRouteSources.every(({ route, source }) =>
+        source.includes("criarMetadataPagina") &&
+        /titulo:\s*"[^"]+"/.test(source) &&
+        /descricao:\s*"[^"]+"/.test(source) &&
+        source.includes(`caminho: "/${route}"`)
+      ) &&
+      new Set(
+        seoRouteSources.map(({ source }) =>
+          /descricao:\s*"([^"]+)"/.exec(source)?.[1]
+        )
+      ).size === seoPublicRoutes.length
+  },
+  {
+    name: "helper SEO sincroniza canonical e URL social",
+    valid:
+      /alternates:\s*\{\s*canonical:\s*caminho\s*\}/.test(seoHelper) &&
+      /openGraph:[\s\S]*?url:\s*caminho/.test(seoHelper) &&
+      /title:\s*tituloSocial/.test(seoHelper)
+  },
+  {
+    name: "sitemap busca somente obras publicadas com cliente público",
+    valid:
+      sitemapSource.includes("criarSupabasePublicClient") &&
+      sitemapSource.includes('.from("obras")') &&
+      /\.eq\("publicado",\s*true\)/.test(sitemapSource) &&
+      !sitemapSource.includes("criarSupabaseAdminClient") &&
+      !sitemapSource.includes("SUPABASE_SERVICE_ROLE_KEY")
+  },
+  {
+    name: "sitemap pagina todas as obras com ordem determinística",
+    valid:
+      sitemapSource.includes("carregarTodasPaginasSupabase") &&
+      /\.order\("slug",\s*\{\s*ascending:\s*true\s*\}\)[\s\S]*?\.range\(inicio, fim\)/.test(
+        sitemapSource
+      ) &&
+      /export const revalidate\s*=\s*3600/.test(sitemapSource)
+  },
+  {
+    name: "sitemap exclui conteúdo bloqueado e tolera indisponibilidade",
+    valid:
+      sitemapSource.includes("ehClassificacao18") &&
+      sitemapSource.includes("ACESSO_CONTEUDO_18_TEMPORARIAMENTE_BLOQUEADO") &&
+      /catch \(error\)[\s\S]*?return ROTAS_ESTATICAS/.test(sitemapSource)
+  },
+  {
+    name: "E2E valida canonical e sitemap acima de mil obras",
+    valid:
+      smokeRoutesSource.includes("Explorar possui SEO próprio") &&
+      smokeRoutesSource.includes("https://www.historietas.com.br/explorar") &&
+      smokeRoutesSource.includes("E2E_PUBLIC_WORK_SLUG") &&
+      smokeRoutesSource.includes("/obra/${encodeURIComponent(publicWorkSlug)}") &&
+      smokeRoutesSource.includes("/obra/qa-paginacao-obra-001201")
+  }
+];
+
+for (const contract of seoContracts) {
+  if (contract.valid) {
+    pass(contract.name, "SEO técnico");
+  } else {
+    fail(contract.name, "contrato SEO ausente");
+  }
+}
+
 const migrationCount = migrationFiles.length;
 
 pass(
