@@ -2356,7 +2356,9 @@ const antiSpamContracts = [
       /serializa curtidas concorrentes/.test(antiSpamIntegrationTest) &&
       /serializa vinte seguimentos/.test(antiSpamIntegrationTest) &&
       /rpc\("solicitar_ou_seguir_usuario"/.test(antiSpamIntegrationTest) &&
-      /assert\.equal\(resposta\.status, 429/.test(antiSpamIntegrationTest)
+      /assert\.equal\(\s*resposta\.status,\s*429/.test(
+        antiSpamIntegrationTest
+      )
   }
 ];
 
