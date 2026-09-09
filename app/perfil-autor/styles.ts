@@ -520,7 +520,7 @@ export const perfilAutorThemeCss = `
     }
   }
 
-  
+
 `;
 
 export const pageStyle: CSSProperties = {
