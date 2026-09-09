@@ -2047,6 +2047,15 @@ const antiSpamMigrationName = migrationFiles.find((name) =>
 const antiSpamMigration = antiSpamMigrationName
   ? fs.readFileSync(path.join(migrationsDir, antiSpamMigrationName), "utf8")
   : "";
+const antiSpamRateLimitCorrectionName = migrationFiles.find((name) =>
+  name.includes("corrigir_status_rate_limit_comunidade")
+);
+const antiSpamRateLimitCorrection = antiSpamRateLimitCorrectionName
+  ? fs.readFileSync(
+      path.join(migrationsDir, antiSpamRateLimitCorrectionName),
+      "utf8"
+    )
+  : "";
 const localAclMigrationRelative =
   "qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql";
 const localAclMigrationPath = path.join(
@@ -2324,7 +2333,13 @@ const antiSpamContracts = [
       /raise sqlstate 'PGRST'/.test(antiSpamMigration) &&
       /HISTORIETAS_RATE_LIMIT/.test(antiSpamMigration) &&
       /'status', 429/.test(antiSpamMigration) &&
-      /'Retry-After'/.test(antiSpamMigration)
+      /'Retry-After'/.test(antiSpamMigration) &&
+      /Muitas ações de %s em pouco tempo\. Tente novamente em %s segundos\./.test(
+        antiSpamRateLimitCorrection
+      ) &&
+      /has_function_privilege\([\s\S]*?'anon'[\s\S]*?'authenticated'[\s\S]*?'service_role'/.test(
+        antiSpamRateLimitCorrection
+      )
   },
   {
     name: "seguimento direto é fechado e usa a RPC canônica",
