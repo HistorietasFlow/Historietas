@@ -37,7 +37,6 @@ import {
   carregarTodasPaginasSupabase,
 } from "../../lib/supabase/paginacao.mjs";
 import {
-  LIMITES_BYTES_STORAGE,
   criarCaminhoAvatarStorage,
   mensagemAmigavelErroUploadStorage,
   obterCacheControlUploadStorage,
@@ -80,40 +79,31 @@ import type {
   TotaisInteracoesObrasPerfilAutor,
   VisibilidadeDiarioPerfil,
 } from "./types";
-
-const PERMISSOES_ABAS_PERFIL_PADRAO: PermissoesAbasPerfil = {
-  obras: true,
-  sobre: true,
-  diario: true,
-  comunidade: true,
-  biblioteca: false,
-  atividades: false,
-};
-
-const PERMISSOES_ABAS_PERFIL_PROPRIO: PermissoesAbasPerfil = {
-  obras: true,
-  sobre: true,
-  diario: true,
-  comunidade: true,
-  biblioteca: true,
-  atividades: true,
-};
-
-const STORAGE_KEY = "historietas-obras";
-const AUTHOR_FOLLOW_STORAGE_KEY = "historietas-autores-seguidos";
-const LIBRARY_FOLLOW_STORAGE_KEY = "historietas-obras-seguidas";
-const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
-const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
-const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
-const AUTHOR_RATINGS_STORAGE_KEY = "historietas-autores-avaliacoes";
-const TOP_FIVE_STORAGE_KEY = "historietas-top-5-obras";
-const TOP_FIVE_LIKES_STORAGE_KEY = "historietas-top-5-curtidas";
-const TOP_FIVE_MAXIMO = 5;
-const AVATAR_MAX_SIZE = LIMITES_BYTES_STORAGE.avatars;
-const AVATAR_STORAGE_BUCKET = "avatars";
-const BIO_MAX_LENGTH = 90;
-const SOBRE_BIO_MAX_LENGTH = 600;
-const NOTAS_AVALIACAO_AUTOR = [1, 2, 3, 4, 5] as const;
+import {
+  AUTHOR_FOLLOW_STORAGE_KEY,
+  AUTHOR_PROFILE_STORAGE_KEY,
+  AUTHOR_RATINGS_STORAGE_KEY,
+  AVATAR_MAX_SIZE,
+  AVATAR_STORAGE_BUCKET,
+  BIO_MAX_LENGTH,
+  CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR,
+  COMPLETED_STORAGE_KEY,
+  FAVORITES_STORAGE_KEY,
+  LIBRARY_FOLLOW_STORAGE_KEY,
+  NOTAS_AVALIACAO_AUTOR,
+  PERMISSOES_ABAS_PERFIL_PADRAO,
+  PERMISSOES_ABAS_PERFIL_PROPRIO,
+  SOBRE_BIO_MAX_LENGTH,
+  STORAGE_KEY,
+  TOP_FIVE_LIKES_STORAGE_KEY,
+  TOP_FIVE_MAXIMO,
+  TOP_FIVE_STORAGE_KEY,
+  avaliacaoAutorVazia,
+  avaliacaoDiarioVazia,
+  comunidadePerfilVazia,
+  diarioPerfilVazio,
+  totaisInteracoesObrasPerfilVazio,
+} from "./constants";
 const PERFIL_AUTOR_UI_TRANSLATIONS: Record<
   string,
   PerfilAutorTranslationEntry
@@ -2989,17 +2979,6 @@ function normalizarAbaPerfilAutor(valor: string | null): AbaPerfilAutor {
   return "obras";
 }
 
-const diarioPerfilVazio: DiarioPerfilEstado = {
-  carregando: false,
-  lendoAgora: [],
-  queroLer: [],
-  favoritas: [],
-  concluidas: [],
-  avaliacoes: [],
-  reviews: [],
-  atividades: [],
-};
-
 function aplicarPermissoesAbasAoDiario(
   diario: Omit<DiarioPerfilEstado, "carregando">,
   permissoes: PermissoesAbasPerfil,
@@ -3015,25 +2994,6 @@ function aplicarPermissoesAbasAoDiario(
   };
 }
 
-
-const avaliacaoAutorVazia: AvaliacaoAutorPublica = {
-  media: 0,
-  total: 0,
-  minhaNota: 0,
-  carregado: false,
-  salvando: false,
-};
-
-const avaliacaoDiarioVazia: AvaliacaoDiarioPublica = {
-  media: 0,
-  total: 0,
-  minhaNota: 0,
-  carregado: false,
-  salvando: false,
-  visivel: false,
-  mostrar: true,
-  podeAvaliar: false,
-};
 
 function normalizarAvaliacaoDiarioPerfil(
   valor: unknown,
@@ -3071,16 +3031,6 @@ function normalizarAvaliacaoDiarioPerfil(
   };
 }
 
-
-const totaisInteracoesObrasPerfilVazio: TotaisInteracoesObrasPerfilAutor = {
-  curtidasPorObra: {},
-  comentariosPorObra: {},
-  curtidasPorCapitulo: {},
-  comentariosPorCapitulo: {},
-  salvosPorObra: {},
-  salvosPorCapitulo: {},
-  concluidasPorObra: {},
-};
 
 function normalizarNomeAutor(nome: string) {
   return nome.trim().replace(/\s+/g, " ").toLowerCase();
@@ -5524,15 +5474,6 @@ function criarEstadoDiarioPerfilVazio(): Omit<DiarioPerfilEstado, "carregando"> 
   };
 }
 
-const comunidadePerfilVazia: ComunidadePerfilEstado = {
-  carregando: false,
-  erro: "",
-  totalPublicacoes: 0,
-  totalTeorias: 0,
-  totalReviews: 0,
-  publicacoesRecentes: [],
-};
-
 function normalizarPublicacaoComunidadePerfil(
   registro: Record<string, unknown>,
 ): PublicacaoComunidadePerfil | null {
@@ -5913,16 +5854,6 @@ function obterObraRegistroDiario(
 
   return null;
 }
-
-const CAMPOS_REGISTROS_DIARIO_PERFIL_AUTOR = {
-  seguindo_obras: "obra_id,visibilidade,criado_em",
-  favoritos: "obra_id,visibilidade,criado_em",
-  concluidas: "obra_id,visibilidade,criado_em",
-  obra_avaliacoes: "obra_id,nota,criado_em,atualizado_em",
-  progresso_leitura: "obra_id,capitulo_id,lido,progresso,criado_em,atualizado_em",
-  diario_atividades:
-    "id,tipo,texto,nota,obra_id,capitulo_id,metadata,visibilidade,criado_em",
-} as const;
 
 async function carregarRegistrosDiarioPerfil(
   tabela: TabelaRegistrosDiarioPerfil,
