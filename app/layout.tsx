@@ -8,6 +8,12 @@ import PwaRegister from "../components/PwaRegister";
 import SupabaseSessionRecovery from "../components/SupabaseSessionRecovery";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+} from "../lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,12 +25,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
-const SITE_URL = "https://www.historietas.com.br";
-const SITE_NAME = "Historietas";
-const SITE_TITLE = "Historietas — Leia, descubra e publique histórias";
-const SITE_DESCRIPTION =
-  "Leia, descubra e publique webnovels, fanfics, mangás e histórias originais no Historietas.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

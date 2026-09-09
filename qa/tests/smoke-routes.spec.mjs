@@ -58,9 +58,32 @@ test("robots, sitemap, favicon e cabeçalhos de produção", async ({ request })
   expect(sitemapText).toContain("<urlset");
   expect(sitemapText).toContain("historietas.com.br");
 
+  const publicWorkSlug = (process.env.E2E_PUBLIC_WORK_SLUG || "").trim();
+  if (publicWorkSlug) {
+    expect(sitemapText).toContain(`/obra/${encodeURIComponent(publicWorkSlug)}`);
+  }
+
+  if (process.env.E2E_ALLOW_DESTRUCTIVE === "true") {
+    expect(sitemapText).toContain("/obra/qa-paginacao-obra-001201");
+  }
+
   const favicon = await request.get("/favicon.ico");
   expect(favicon.ok()).toBeTruthy();
   expect(favicon.headers()["content-type"] || "").toMatch(/image|icon/i);
+});
+
+test("Explorar possui SEO próprio e URL canônica correta", async ({ page }) => {
+  await page.goto("/explorar", { waitUntil: "domcontentloaded" });
+
+  await expect(page).toHaveTitle(/Explorar histórias \| Historietas/);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    "content",
+    /Explore webnovels, fanfics, mangás/,
+  );
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://www.historietas.com.br/explorar",
+  );
 });
 
 test("obra pública configurada abre sem erro", async ({ page }) => {
