@@ -2007,6 +2007,13 @@ const paginationIntegrationTest = fs.existsSync(
 )
   ? fs.readFileSync(paginationIntegrationTestPath, "utf8")
   : "";
+const localE2ePreparationPath = path.join(
+  ROOT_DIR,
+  "qa/scripts/prepare-e2e-local.mjs"
+);
+const localE2ePreparation = fs.existsSync(localE2ePreparationPath)
+  ? fs.readFileSync(localE2ePreparationPath, "utf8")
+  : "";
 const localSeedPath = path.join(
   ROOT_DIR,
   "supabase/seed.sql"
@@ -2196,6 +2203,7 @@ for (const script of [
   "test:static",
   "test:pagination",
   "test:pagination:integration",
+  "test:e2e:prepare:local",
   "test:smoke",
   "test:e2e",
   "test:all"
@@ -2251,6 +2259,27 @@ const ciContracts = [
       !/\$\{\{\s*secrets\./.test(ciWorkflow)
   },
   {
+    name: "CI habilita os testes autenticados somente no Supabase local",
+    valid:
+      ciWorkflow.includes("npm run test:e2e:prepare:local") &&
+      /E2E_USER_EMAIL:\s*e2e-author@historietas\.test/.test(ciWorkflow) &&
+      /E2E_ALLOW_DESTRUCTIVE:\s*["']true["']/.test(ciWorkflow) &&
+      /E2E_PUBLIC_WORK_SLUG:\s*obra-publica-e2e/.test(ciWorkflow) &&
+      localE2ePreparation.includes("auth.admin.createUser") &&
+      localE2ePreparation.includes('id: DEFAULTS.userId') &&
+      localE2ePreparation.includes("auth.admin.deleteUser(DEFAULTS.userId)") &&
+      !localE2ePreparation.includes("auth.admin.listUsers") &&
+      localE2ePreparation.includes("email_confirm: true") &&
+      localE2ePreparation.includes('from("profiles").insert') &&
+      localE2ePreparation.includes('from("obras").insert') &&
+      localE2ePreparation.includes('from("capitulos").insert') &&
+      /secretKey:\s*variaveis\.SERVICE_ROLE_KEY\s*\|\|\s*variaveis\.SECRET_KEY/.test(
+        localE2ePreparation
+      ) &&
+      /hostsPermitidos\.has\(destino\.hostname\)/.test(localE2ePreparation) &&
+      /destino\.protocol[\s\S]*?"http:"/.test(localE2ePreparation)
+  },
+  {
     name: "CI pagina contra Supabase local descartável",
     valid:
       /supabase\/setup-cli@[0-9a-f]{40}/.test(ciWorkflow) &&
@@ -2263,7 +2292,13 @@ const ciContracts = [
         `supabase/migrations/20260826000637_normalizar_acl_baseline_local.sql`
       ) &&
       ciWorkflow.includes("supabase start") &&
-      ciWorkflow.includes("supabase stop --no-backup")
+      ciWorkflow.includes("supabase stop --no-backup") &&
+      ciWorkflow.indexOf("supabase start") <
+        ciWorkflow.indexOf("npm run test:e2e:prepare:local") &&
+      ciWorkflow.indexOf("npm run test:e2e:prepare:local") <
+        ciWorkflow.indexOf("npm --prefix qa test") &&
+      ciWorkflow.indexOf("npm --prefix qa test") <
+        ciWorkflow.indexOf("supabase stop --no-backup")
   },
   {
     name: "CI executa Playwright no build de produção",
