@@ -35,7 +35,10 @@ const expectedRoutes = [
   "app/robots.ts",
   "app/sitemap.ts",
   "app/opengraph-image.tsx",
-  "app/twitter-image.tsx"
+  "app/twitter-image.tsx",
+  "app/error.tsx",
+  "app/global-error.tsx",
+  "app/loading.tsx"
 ];
 
 expectedRoutes.forEach(checkFile);
@@ -2007,6 +2010,13 @@ const paginationIntegrationTest = fs.existsSync(
 )
   ? fs.readFileSync(paginationIntegrationTestPath, "utf8")
   : "";
+const antiSpamIntegrationTestPath = path.join(
+  ROOT_DIR,
+  "qa/integration/anti-spam-supabase-real.test.mjs"
+);
+const antiSpamIntegrationTest = fs.existsSync(antiSpamIntegrationTestPath)
+  ? fs.readFileSync(antiSpamIntegrationTestPath, "utf8")
+  : "";
 const localE2ePreparationPath = path.join(
   ROOT_DIR,
   "qa/scripts/prepare-e2e-local.mjs"
@@ -2020,6 +2030,31 @@ const localSeedPath = path.join(
 );
 const localSeed = fs.existsSync(localSeedPath)
   ? fs.readFileSync(localSeedPath, "utf8")
+  : "";
+const catalogMigrationName = migrationFiles.find((name) =>
+  fs
+    .readFileSync(path.join(migrationsDir, name), "utf8")
+    .includes("function public.listar_obras_catalogo")
+);
+const catalogMigration = catalogMigrationName
+  ? fs.readFileSync(path.join(migrationsDir, catalogMigrationName), "utf8")
+  : "";
+const antiSpamMigrationName = migrationFiles.find((name) =>
+  fs
+    .readFileSync(path.join(migrationsDir, name), "utf8")
+    .includes("function historietas_privado.limitar_spam_comunidade")
+);
+const antiSpamMigration = antiSpamMigrationName
+  ? fs.readFileSync(path.join(migrationsDir, antiSpamMigrationName), "utf8")
+  : "";
+const antiSpamRateLimitCorrectionName = migrationFiles.find((name) =>
+  name.includes("corrigir_status_rate_limit_comunidade")
+);
+const antiSpamRateLimitCorrection = antiSpamRateLimitCorrectionName
+  ? fs.readFileSync(
+      path.join(migrationsDir, antiSpamRateLimitCorrectionName),
+      "utf8"
+    )
   : "";
 const localAclMigrationRelative =
   "qa/integration/supabase/20260826000637_normalizar_acl_baseline_local.sql";
@@ -2060,6 +2095,42 @@ const contentPaginationSources = contentPaginationFiles.map((relativePath) => ({
 }));
 
 const paginationContracts = [
+  {
+    name: "catálogo público pagina por cursor com limite defensivo",
+    valid:
+      /create or replace function public\.listar_obras_catalogo[\s\S]*?p_cursor_valor numeric[\s\S]*?least\(greatest\(coalesce\(p_limite, 24\), 1\), 50\)[\s\S]*?candidato\.valor_ordenacao,[\s\S]*?candidato\.criada_em,[\s\S]*?candidato\.id[\s\S]*?< \([\s\S]*?p_cursor_valor,[\s\S]*?p_cursor_data,[\s\S]*?p_cursor_id/.test(
+        catalogMigration
+      )
+  },
+  {
+    name: "catálogo mantém RLS e exposição mínima da RPC",
+    valid:
+      /security invoker[\s\S]*?set search_path\s*=\s*''/.test(
+        catalogMigration
+      ) &&
+      /revoke all on function public\.listar_obras_catalogo[\s\S]*?from public[\s\S]*?grant execute on function public\.listar_obras_catalogo[\s\S]*?to anon, authenticated, service_role/.test(
+        catalogMigration
+      )
+  },
+  {
+    name: "catálogo indexa busca e ordenação públicas",
+    valid:
+      /obras_catalogo_publico_recente_idx/.test(catalogMigration) &&
+      /obras_catalogo_busca_idx[\s\S]*?using gin/.test(catalogMigration) &&
+      /capitulos_catalogo_busca_idx[\s\S]*?using gin/.test(catalogMigration)
+  },
+  {
+    name: "Home, Explorar e Em Alta consultam seleção paginada",
+    valid: [
+      "app/page.tsx",
+      "app/explorar/page.tsx",
+      "app/em-alta/page.tsx"
+    ].every((relativePath) =>
+      contentPaginationSources
+        .find((file) => file.relativePath === relativePath)
+        ?.source.includes("listarSelecaoCatalogo")
+    )
+  },
   {
     name: "paginador usa ranges inclusivos sem sobreposição",
     valid:
@@ -2175,6 +2246,17 @@ const paginationContracts = [
       )
   },
   {
+    name: "integração percorre o catálogo real por cursor",
+    valid:
+      /rpc\("listar_obras_catalogo"/.test(paginationIntegrationTest) &&
+      /pagina o catálogo completo por cursor sem lacunas/.test(
+        paginationIntegrationTest
+      ) &&
+      /ordena o ranking no banco antes de limitar a página/.test(
+        paginationIntegrationTest
+      )
+  },
+  {
     name: "ajuste de ACL do baseline fica restrito ao ambiente de testes",
     valid:
       /SOMENTE TESTES LOCAIS/.test(localAclMigration) &&
@@ -2199,10 +2281,116 @@ for (const contract of paginationContracts) {
   }
 }
 
+const antiSpamContracts = [
+  {
+    name: "anti-spam reutiliza buckets privados e atômicos",
+    valid:
+      /historietas_privado\.consumir_limite_requisicao\(/.test(
+        antiSpamMigration
+      ) &&
+      /pg_catalog\.sha256/.test(antiSpamMigration) &&
+      /security definer[\s\S]*?set search_path\s*=\s*''/.test(
+        antiSpamMigration
+      ) &&
+      /revoke all on function historietas_privado\.limitar_spam_comunidade\(\)[\s\S]*?from public, anon, authenticated, service_role/.test(
+        antiSpamMigration
+      )
+  },
+  {
+    name: "anti-spam combina janelas curtas e diárias",
+    valid: [
+      "comunidade:post:10m",
+      "comunidade:post:dia",
+      "comunidade:comentario:5m",
+      "comunidade:comentario:dia",
+      "comunidade:curtida:minuto",
+      "comunidade:curtida:dia",
+      "comunidade:seguimento:10m",
+      "comunidade:seguimento:dia"
+    ].every((escopo) => antiSpamMigration.includes(escopo))
+  },
+  {
+    name: "anti-spam protege todas as entradas sociais da Comunidade",
+    valid: [
+      "public.comunidade_posts",
+      "public.comunidade_comentarios",
+      "public.comunidade_curtidas",
+      "public.comunidade_comentario_curtidas",
+      "public.seguindo_usuarios",
+      "public.solicitacoes_seguidores",
+      "public.seguindo_obras",
+      "public.seguindo_autores"
+    ].every((table) =>
+      new RegExp(
+        `before insert on ${table.replace(".", "\\.")}[\\s\\S]*?limitar_spam_comunidade\\(\\)`,
+        "i"
+      ).test(antiSpamMigration)
+    )
+  },
+  {
+    name: "anti-spam responde 429 com Retry-After",
+    valid:
+      /raise sqlstate 'PGRST'/.test(antiSpamMigration) &&
+      /HISTORIETAS_RATE_LIMIT/.test(antiSpamMigration) &&
+      /'status', 429/.test(antiSpamMigration) &&
+      /'Retry-After'/.test(antiSpamMigration) &&
+      /Muitas ações de %s em pouco tempo\. Tente novamente em %s segundos\./.test(
+        antiSpamRateLimitCorrection
+      ) &&
+      /has_function_privilege\([\s\S]*?'anon'[\s\S]*?'authenticated'[\s\S]*?'service_role'/.test(
+        antiSpamRateLimitCorrection
+      )
+  },
+  {
+    name: "seguimento direto é fechado e usa a RPC canônica",
+    valid:
+      /revoke insert on table public\.seguindo_usuarios[\s\S]*?from anon, authenticated/.test(
+        antiSpamMigration
+      ) &&
+      /revoke insert on table public\.solicitacoes_seguidores[\s\S]*?from anon, authenticated/.test(
+        antiSpamMigration
+      ) &&
+      communityPage.includes("solicitarOuSeguirUsuario") &&
+      communityPage.includes("deixarDeSeguirUsuario")
+  },
+  {
+    name: "integração anti-spam usa somente Supabase local",
+    valid:
+      /O teste recusa Supabase remoto/.test(antiSpamIntegrationTest) &&
+      /auth\.admin\.createUser/.test(antiSpamIntegrationTest) &&
+      /auth\.admin\.deleteUser/.test(antiSpamIntegrationTest) &&
+      !antiSpamIntegrationTest.includes("NEXT_PUBLIC_SUPABASE_URL")
+  },
+  {
+    name: "integração anti-spam cobre limites e concorrência",
+    valid:
+      /aceita cinco posts e rejeita o sexto/.test(antiSpamIntegrationTest) &&
+      /aceita quinze comentários e rejeita o décimo sexto/.test(
+        antiSpamIntegrationTest
+      ) &&
+      /serializa curtidas concorrentes/.test(antiSpamIntegrationTest) &&
+      /serializa vinte seguimentos/.test(antiSpamIntegrationTest) &&
+      /rpc\("solicitar_ou_seguir_usuario"/.test(antiSpamIntegrationTest) &&
+      /assert\.equal\(\s*resposta\.status,\s*429/.test(
+        antiSpamIntegrationTest
+      )
+  }
+];
+
+for (const contract of antiSpamContracts) {
+  if (contract.valid) {
+    pass(contract.name, "proteção anti-spam");
+  } else {
+    fail(contract.name, "contrato anti-spam ausente");
+  }
+}
+
 for (const script of [
   "test:static",
   "test:pagination",
+  "test:session",
   "test:pagination:integration",
+  "test:spam:integration",
   "test:e2e:prepare:local",
   "test:smoke",
   "test:e2e",
@@ -2247,7 +2435,9 @@ const ciContracts = [
       "npm run typecheck",
       "npm run test:static",
       "npm run test:pagination",
+      "npm run test:session",
       "npm run test:pagination:integration",
+      "npm run test:spam:integration",
       "npm --prefix qa test",
       "npm run build"
     ].every((command) => ciWorkflow.includes(command))

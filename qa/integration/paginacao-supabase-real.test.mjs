@@ -11,6 +11,7 @@ const QUANTIDADES = Object.freeze({
   comentarios: 2_501,
   curtidas: 5_001,
   obras: 1_201,
+  capitulos: 1_201,
 });
 
 const POSTS_POR_PAGINA = 50;
@@ -260,5 +261,70 @@ test("pagina dados reais pela Data API de um Supabase local descartável", async
     );
 
     exigirColecaoCompleta(obras, esperados, (registro) => registro.id);
+  });
+
+  const obrasCatalogo = [];
+  let cursorCatalogo = null;
+  let chamadasCatalogo = 0;
+
+  do {
+    const { data, error } = await supabase.rpc("listar_obras_catalogo", {
+      p_busca: "QA Paginação",
+      p_genero: "Teste",
+      p_formato: "Texto",
+      p_classificacao: "Livre",
+      p_filtro_capitulos: "com-capitulos",
+      p_ordenacao: "recentes",
+      p_limite: 50,
+      p_cursor_valor: cursorCatalogo?.cursor_valor,
+      p_cursor_data: cursorCatalogo?.cursor_data,
+      p_cursor_id: cursorCatalogo?.cursor_id,
+    });
+
+    const pagina = exigirRespostaSemErro(
+      { data, error },
+      `página ${chamadasCatalogo + 1} do catálogo`,
+    );
+    chamadasCatalogo += 1;
+    assert.ok(pagina.length <= 50, "a RPC excedeu o limite solicitado");
+    obrasCatalogo.push(...pagina);
+    cursorCatalogo = pagina.at(-1)?.tem_mais ? pagina.at(-1) : null;
+
+    assert.ok(
+      chamadasCatalogo <= 30,
+      "a paginação do catálogo não encerrou no limite esperado",
+    );
+  } while (cursorCatalogo);
+
+  await t.test("pagina o catálogo completo por cursor sem lacunas", () => {
+    const esperados = Array.from(
+      { length: QUANTIDADES.obras },
+      (_, indice) => uuidFixture("40000000", QUANTIDADES.obras - indice),
+    );
+
+    exigirColecaoCompleta(
+      obrasCatalogo,
+      esperados,
+      (registro) => registro.obra_id,
+    );
+    assert.equal(chamadasCatalogo, 25);
+  });
+
+  const rankingLidas = exigirRespostaSemErro(
+    await supabase.rpc("listar_obras_catalogo", {
+      p_ordenacao: "lidas",
+      p_limite: 5,
+    }),
+    "ranking de obras mais lidas",
+  );
+
+  await t.test("ordena o ranking no banco antes de limitar a página", () => {
+    assert.deepEqual(
+      rankingLidas.map((registro) => registro.obra_id),
+      Array.from({ length: 5 }, (_, indice) =>
+        uuidFixture("40000000", indice + 1),
+      ),
+    );
+    assert.equal(rankingLidas.at(-1)?.tem_mais, true);
   });
 });

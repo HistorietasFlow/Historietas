@@ -32,6 +32,10 @@ import {
   carregarTodasPaginasSupabase,
   dividirEmLotesSupabase,
 } from "../../lib/supabase/paginacao.mjs";
+import {
+  deixarDeSeguirUsuario,
+  solicitarOuSeguirUsuario,
+} from "../../lib/historietasPrivacy";
 
 type CategoriaComunidade =
   | "Geral"
@@ -1344,35 +1348,18 @@ async function salvarSeguindoUsuarioComunidade(
     !idSupabaseValidoComunidade(seguidoIdLimpo) ||
     seguidorIdLimpo === seguidoIdLimpo
   ) {
-    return false;
+    return {
+      ok: false,
+      estado: "nenhum" as const,
+      erro: "Usuário inválido.",
+    };
   }
 
-  try {
-    const { error: erroRemocao } = await supabase
-      .from("seguindo_usuarios")
-      .delete()
-      .eq("seguidor_id", seguidorIdLimpo)
-      .eq("seguido_id", seguidoIdLimpo);
-
-    if (erroRemocao) {
-      return false;
-    }
-
-    if (!ativo) {
-      return true;
-    }
-
-    const { error: erroInsercao } = await supabase
-      .from("seguindo_usuarios")
-      .insert({
-        seguidor_id: seguidorIdLimpo,
-        seguido_id: seguidoIdLimpo,
-      });
-
-    return !erroInsercao;
-  } catch {
-    return false;
+  if (!ativo) {
+    return deixarDeSeguirUsuario(seguidoIdLimpo);
   }
+
+  return solicitarOuSeguirUsuario(seguidoIdLimpo);
 }
 
 
@@ -5164,21 +5151,32 @@ export default function ComunidadePage() {
     );
 
     try {
-      const salvo = await salvarSeguindoUsuarioComunidade(
+      const resultado = await salvarSeguindoUsuarioComunidade(
         usuario.id,
         usuarioAlvo.id,
         deveSeguir
       );
 
-      if (!salvo) {
+      if (!resultado.ok) {
         setUsuariosSeguidosIds(idsAnteriores);
-        setErro("Não foi possível atualizar este usuário agora.");
+        setErro(
+          resultado.erro || "Não foi possível atualizar este usuário agora."
+        );
         return;
       }
 
+      const seguindoAgora = resultado.estado === "seguindo";
+
+      setUsuariosSeguidosIds((idsAtuais) =>
+        seguindoAgora
+          ? Array.from(new Set([...idsAtuais, usuarioAlvo.id]))
+          : idsAtuais.filter((id) => id !== usuarioAlvo.id)
+      );
       setErro("");
       emitirFeedbackAcao(
-        deveSeguir
+        resultado.estado === "solicitado"
+          ? `Solicitação para seguir ${usuarioAlvo.nome} enviada.`
+          : seguindoAgora
           ? `Você começou a seguir ${usuarioAlvo.nome}.`
           : `Você deixou de seguir ${usuarioAlvo.nome}.`
       );

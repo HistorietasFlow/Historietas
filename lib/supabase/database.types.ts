@@ -73,6 +73,7 @@ export type Database = {
       capitulos: {
         Row: {
           atualizado_em: string
+          busca_documento: unknown
           criado_em: string
           id: string
           obra_id: string
@@ -1310,6 +1311,7 @@ export type Database = {
           atualizado_em: string
           autor: string
           avisos_conteudo: string[]
+          busca_documento: unknown
           capa_nome: string
           capa_url: string
           classificacao_indicativa: string
@@ -2190,6 +2192,27 @@ export type Database = {
           nome: string
           user_id: string
           username: string
+        }[]
+      }
+      listar_obras_catalogo: {
+        Args: {
+          p_busca?: string
+          p_classificacao?: string
+          p_cursor_data?: string
+          p_cursor_id?: string
+          p_cursor_valor?: number
+          p_filtro_capitulos?: string
+          p_formato?: string
+          p_genero?: string
+          p_limite?: number
+          p_ordenacao?: string
+        }
+        Returns: {
+          cursor_data: string
+          cursor_id: string
+          cursor_valor: number
+          obra_id: string
+          tem_mais: boolean
         }[]
       }
       marcar_notificacoes_lidas: {

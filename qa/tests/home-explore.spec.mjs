@@ -112,6 +112,46 @@ test("Explorar aplica categoria, abre filtros e limpa estado", async ({
   runtime.assertClean();
 });
 
+test("Explorar busca no catálogo real e carrega a próxima página", async ({
+  page,
+}) => {
+  const runtime = monitorRuntime(page);
+
+  await page.goto("/explorar", {
+    waitUntil: "domcontentloaded",
+  });
+
+  const search = page
+    .getByPlaceholder("Buscar histórias...")
+    .first();
+  await expect(search).toBeVisible();
+  await search.fill("QA Paginação");
+
+  const loadMore = page.getByRole("button", {
+    name: "Carregar mais",
+    exact: true,
+  });
+  await expect(loadMore).toBeVisible();
+
+  const catalogLinks = page.locator(
+    'a[href^="/obra/qa-paginacao-obra-"]',
+  );
+  const firstPageLinkCount = await catalogLinks.count();
+  expect(firstPageLinkCount).toBeGreaterThan(0);
+
+  await loadMore.click();
+  await expect
+    .poll(() => catalogLinks.count())
+    .toBeGreaterThan(firstPageLinkCount);
+
+  await search.fill("QA Paginação Obra 000600");
+  await expect(
+    page.locator('a[href="/obra/qa-paginacao-obra-000600"]').first(),
+  ).toBeVisible();
+
+  runtime.assertClean();
+});
+
 test("Home e Explorar não criam rolagem horizontal no celular", async ({
   page,
 }) => {

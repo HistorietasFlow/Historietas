@@ -17,6 +17,10 @@ import {
 import { ehClassificacao18 } from "../lib/historietasAdultContent";
 import { carregarMetricasConteudos } from "../lib/metricas";
 import {
+  listarSelecaoCatalogo,
+  type ConsultaCatalogo,
+} from "../lib/catalogo";
+import {
   carregarTodasPaginasPorLotesSupabase,
   carregarTodasPaginasSupabase,
 } from "../lib/supabase/paginacao.mjs";
@@ -175,6 +179,14 @@ type AvaliacoesAutoresHome = Record<string, AvaliacaoAutorHome>;
 const STORAGE_KEY = "historietas-obras";
 const FAVORITES_STORAGE_KEY = "historietas-obras-favoritas";
 const COMPLETED_STORAGE_KEY = "historietas-obras-concluidas";
+const CONSULTAS_INICIAIS_CATALOGO_HOME = [
+  { ordenacao: "recentes", limite: 50 },
+  { ordenacao: "geral", limite: 12 },
+  { ordenacao: "curtidas", limite: 12 },
+  { ordenacao: "comentadas", limite: 12 },
+  { ordenacao: "salvas", limite: 12 },
+  { ordenacao: "capitulos", limite: 12 },
+] as const satisfies readonly ConsultaCatalogo[];
 const AUTHOR_PROFILE_STORAGE_KEY = "historietas-perfis-autores";
 
 const OBRAS_CATALOGO_HOME: Obra[] = [];
@@ -2417,21 +2429,54 @@ function aplicarProgressoLeituraHome(
   };
 }
 
-async function carregarObrasSupabaseHome(obrasLocais: ObraLocal[], userId = "") {
+async function carregarObrasSupabaseHome(
+  obrasLocais: ObraLocal[],
+  userId = "",
+  consultasCatalogo: readonly ConsultaCatalogo[] =
+    CONSULTAS_INICIAIS_CATALOGO_HOME,
+) {
   try {
-    const obrasSupabase = await carregarTodasPaginasSupabase<SupabaseObraRow>({
-      nomeColecao: "obras publicadas da Home",
-      buscarPagina: async (inicio, fim) =>
-        supabase
-          .from("obras")
-          .select(
-            "id, user_id, titulo, autor, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, arquivo_url, arquivo_nome, arquivo_tipo, arquivo_tamanho, arquivo_categoria, publicado, visualizacoes, slug, link, criada_em, atualizado_em"
-          )
-          .eq("publicado", true)
-          .order("criada_em", { ascending: false })
-          .order("id", { ascending: false })
-          .range(inicio, fim),
-    });
+    let obraIdsCatalogo: readonly string[] = [];
+    let catalogoDisponivel = true;
+
+    try {
+      const selecao = await listarSelecaoCatalogo(consultasCatalogo);
+      obraIdsCatalogo = selecao.obraIds;
+    } catch (error) {
+      catalogoDisponivel = false;
+      console.warn(
+        "O catálogo paginado da Home ainda não está disponível; usando uma amostra limitada:",
+        error,
+      );
+    }
+
+    let consultaObras = supabase
+      .from("obras")
+      .select(
+        "id, user_id, titulo, autor, genero, formato, classificacao_indicativa, sinopse, tags, capa_url, capa_nome, arquivo_url, arquivo_nome, arquivo_tipo, arquivo_tamanho, arquivo_categoria, publicado, visualizacoes, slug, link, criada_em, atualizado_em"
+      )
+      .eq("publicado", true);
+
+    if (catalogoDisponivel) {
+      if (obraIdsCatalogo.length === 0) {
+        return obrasLocais;
+      }
+
+      consultaObras = consultaObras.in("id", [...obraIdsCatalogo]);
+    } else {
+      consultaObras = consultaObras
+        .order("criada_em", { ascending: false })
+        .order("id", { ascending: false })
+        .range(0, 49);
+    }
+
+    const { data: obrasData, error: obrasError } = await consultaObras;
+
+    if (obrasError) {
+      throw obrasError;
+    }
+
+    const obrasSupabase = (obrasData || []) as SupabaseObraRow[];
 
     if (obrasSupabase.length === 0) {
       return obrasLocais;
@@ -2770,6 +2815,9 @@ export default function Home() {
   const [usuarioIdLogado, setUsuarioIdLogado] = useState("");
   const [dadosHomeCarregados, setDadosHomeCarregados] = useState(false);
   const [avisoLogin, setAvisoLogin] = useState("");
+  const obrasCacheLocalHomeRef = useRef<ObraLocal[]>([]);
+  const consultaCatalogoHomeRef = useRef(0);
+  const buscaCatalogoHomeAtivaRef = useRef(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -2875,6 +2923,8 @@ export default function Home() {
 
         const obrasNormalizadas = normalizarObrasHomeSalvas(obrasSalvasJson);
 
+        obrasCacheLocalHomeRef.current = obrasNormalizadas;
+
         salvarJsonStorageUsuarioHome(STORAGE_KEY, userIdHome, obrasNormalizadas);
 
         let obrasFavoritasNormalizadas = carregarListaIdsHome(
@@ -2954,6 +3004,48 @@ export default function Home() {
   }, [usuarioIdLogado]);
 
   const termoBusca = normalizarTexto(busca);
+
+  useEffect(() => {
+    if (!dadosHomeCarregados) {
+      return;
+    }
+
+    const buscaAtiva = Boolean(termoBusca);
+
+    if (!buscaAtiva && !buscaCatalogoHomeAtivaRef.current) {
+      return;
+    }
+
+    buscaCatalogoHomeAtivaRef.current = buscaAtiva;
+    const numeroConsulta = consultaCatalogoHomeRef.current + 1;
+    consultaCatalogoHomeRef.current = numeroConsulta;
+    let cancelado = false;
+    const timer = window.setTimeout(async () => {
+      const consultas = buscaAtiva
+        ? ([
+            {
+              busca: termoBusca,
+              ordenacao: "relevancia",
+              limite: 50,
+            },
+          ] satisfies readonly ConsultaCatalogo[])
+        : CONSULTAS_INICIAIS_CATALOGO_HOME;
+      const obras = await carregarObrasSupabaseHome(
+        obrasCacheLocalHomeRef.current,
+        usuarioIdLogado,
+        consultas,
+      );
+
+      if (!cancelado && consultaCatalogoHomeRef.current === numeroConsulta) {
+        setObrasLocais(obras);
+      }
+    }, 350);
+
+    return () => {
+      cancelado = true;
+      window.clearTimeout(timer);
+    };
+  }, [dadosHomeCarregados, termoBusca, usuarioIdLogado]);
 
   const obrasPublicadas = useMemo(() => {
     return obrasLocais.filter((obra) => {

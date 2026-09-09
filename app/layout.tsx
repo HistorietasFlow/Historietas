@@ -5,6 +5,7 @@ import AdminBottomNavItem from "../components/AdminBottomNavItem";
 import { NotificacoesProvider } from "../components/NotificacoesProvider";
 import { HistorietasLanguageProvider } from "../components/HistorietasLanguageProvider";
 import PwaRegister from "../components/PwaRegister";
+import SupabaseSessionRecovery from "../components/SupabaseSessionRecovery";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
@@ -81,6 +82,7 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning>
         <PwaRegister />
+        <SupabaseSessionRecovery />
 
         <Script
           id="historietas-tema-visual-inicial"

@@ -71,7 +71,6 @@ jobs:
     timeout-minutes: 30
     env:
       E2E_USER_EMAIL: e2e-author@historietas.test
-      E2E_USER_PASSWORD: Historietas-E2E-2026!
       E2E_ALLOW_DESTRUCTIVE: "true"
       E2E_PUBLIC_WORK_SLUG: obra-publica-e2e
       E2E_PUBLIC_CHAPTER_NUMBER: "1"
@@ -101,6 +100,9 @@ jobs:
       - name: Executar testes de paginação em alto volume
         run: npm run test:pagination
 
+      - name: Executar testes de recuperação de sessão
+        run: npm run test:session
+
       - name: Instalar Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
         with:
@@ -116,6 +118,9 @@ jobs:
 
       - name: Executar paginação real pela Data API
         run: npm run test:pagination:integration
+
+      - name: Executar proteção anti-spam pela Data API
+        run: npm run test:spam:integration
 
       - name: Preparar autenticação e conteúdo E2E locais
         run: npm run test:e2e:prepare:local -- --github-env "$GITHUB_ENV"

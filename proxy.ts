@@ -1,5 +1,9 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  erroExigeLimpezaSessaoLocal,
+  obterNomesCookiesSessaoSupabase,
+} from "@/lib/supabase/session-recovery.mjs";
 
 const rotasProtegidas = [
   "/aceitar-termos",
@@ -160,6 +164,37 @@ function chaveCookie(cookie: CookieParaSalvar) {
   ].join(":");
 }
 
+function combinarCookiesPendentes(
+  cookiesAtuais: CookieParaSalvar[],
+  novosCookies: CookieParaSalvar[],
+) {
+  const cookiesPorChave = new Map(
+    cookiesAtuais.map((cookie) => [chaveCookie(cookie), cookie]),
+  );
+
+  novosCookies.forEach((cookie) => {
+    cookiesPorChave.set(chaveCookie(cookie), cookie);
+  });
+
+  return Array.from(cookiesPorChave.values());
+}
+
+function criarCookiesAuthExpirados(request: NextRequest, supabaseUrl: string) {
+  return obterNomesCookiesSessaoSupabase(
+    request.cookies.getAll().map(({ name }) => name),
+    supabaseUrl,
+  ).map<CookieParaSalvar>((name) => ({
+    name,
+    value: "",
+    options: {
+      path: "/",
+      sameSite: "lax",
+      httpOnly: false,
+      maxAge: 0,
+    },
+  }));
+}
+
 export async function proxy(request: NextRequest) {
   const pathname = normalizarPathname(request.nextUrl.pathname);
   const estaNoLogin = pathname === "/login";
@@ -190,15 +225,10 @@ export async function proxy(request: NextRequest) {
           request.cookies.set(name, value);
         });
 
-        const cookiesPorChave = new Map(
-          cookiesPendentes.map((cookie) => [chaveCookie(cookie), cookie]),
+        cookiesPendentes = combinarCookiesPendentes(
+          cookiesPendentes,
+          cookiesToSet,
         );
-
-        cookiesToSet.forEach((cookie) => {
-          cookiesPorChave.set(chaveCookie(cookie), cookie);
-        });
-
-        cookiesPendentes = Array.from(cookiesPorChave.values());
         response = criarRespostaContinuar(request, cookiesPendentes);
       },
     },
@@ -206,14 +236,31 @@ export async function proxy(request: NextRequest) {
 
   let usuarioAutenticado = false;
   let falhaAoValidarSessao = false;
+  let sessaoIrrecuperavel = false;
 
   try {
     const { data, error } = await supabase.auth.getUser();
 
     usuarioAutenticado = Boolean(data.user);
     falhaAoValidarSessao = Boolean(error);
-  } catch {
+    sessaoIrrecuperavel = erroExigeLimpezaSessaoLocal(error);
+  } catch (error) {
     falhaAoValidarSessao = true;
+    sessaoIrrecuperavel = erroExigeLimpezaSessaoLocal(error);
+  }
+
+  if (sessaoIrrecuperavel) {
+    const cookiesExpirados = criarCookiesAuthExpirados(request, supabaseUrl);
+
+    cookiesExpirados.forEach(({ name }) => {
+      request.cookies.set(name, "");
+    });
+
+    cookiesPendentes = combinarCookiesPendentes(
+      cookiesPendentes,
+      cookiesExpirados,
+    );
+    response = criarRespostaContinuar(request, cookiesPendentes);
   }
 
   if (precisaLogin && (falhaAoValidarSessao || !usuarioAutenticado)) {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import fs from "node:fs";
 
 import { createClient } from "@supabase/supabase-js";
@@ -8,7 +8,6 @@ import { createClient } from "@supabase/supabase-js";
 const DEFAULTS = Object.freeze({
   userId: "e2e00000-0000-4000-8000-000000000001",
   email: "e2e-author@historietas.test",
-  password: "Historietas-E2E-2026!",
   authorName: "Autor E2E",
   username: "autor-e2e",
   publicWorkSlug: "obra-publica-e2e",
@@ -164,7 +163,8 @@ async function preparar() {
   exigirDestinoLocal(ambiente.url);
 
   const email = (process.env.E2E_USER_EMAIL || DEFAULTS.email).trim();
-  const password = process.env.E2E_USER_PASSWORD || DEFAULTS.password;
+  const password =
+    process.env.E2E_USER_PASSWORD || randomBytes(24).toString("base64url");
   const publicWorkSlug = (
     process.env.E2E_PUBLIC_WORK_SLUG || DEFAULTS.publicWorkSlug
   ).trim();

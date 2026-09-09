@@ -97,5 +97,5 @@ export async function cleanupWorkByTitle(title) {
     await supabase.from("obras").delete().eq("id", work.id);
   }
 
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
 }
