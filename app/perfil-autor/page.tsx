@@ -174,6 +174,8 @@ import {
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
 import { PrivateProfileNotice } from "./components/private-profile-notice";
+import { DiarySummaryCard } from "./components/diary-summary-card";
+import { LibraryItemCard } from "./components/library-item-card";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -188,18 +190,12 @@ import {
   criarProfileSelectionDotStyle,
   criarCapaDestaquePerfilAutor,
   criarCapaGridPerfilAutor,
-  criarCapaMiniCardDiarioPerfilStyle,
   workActionSheetItemStyle,
   workActionSheetDangerItemStyle,
   workActionSheetItemActiveStyle,
   diarySummarySectionStyle,
   diarySummaryGridStyle,
   desktopDiarySummaryGridStyle,
-  diarySummaryCardLinkStyle,
-  diarySummaryCardTitleStyle,
-  diaryVisualCardStyle,
-  desktopDiaryVisualCardStyle,
-  diaryVisualCoverLinkStyle,
   profileLibrarySectionStyle,
   desktopProfileLibrarySectionStyle,
   profileLibraryTabsStyle,
@@ -375,8 +371,6 @@ import {
   profileWorkCoverLinkStyle,
   profileWorkCoverOverlayStyle,
   profileWorkCoverTitleStyle,
-  diaryCardCoverOverlayStyle,
-  diaryCardCoverTitleStyle,
   diaryCardCoverMetaStyle,
   diaryCardHeartMetaStyle,
   diaryCardCommentMetaStyle,
@@ -6357,124 +6351,6 @@ function PerfilAutorPageContent() {
     await removerHistoricoLeituraBibliotecaPerfil(item.obra);
   }
 
-  function renderizarMiniCardDiarioPerfil(
-    item: DiarioPerfilResumoItem,
-  ) {
-    const obra = item.obra;
-
-    if (!obra) {
-      return null;
-    }
-
-    const parametrosLista = new URLSearchParams({
-      modo: "perfil",
-      origem: "diario",
-      categoria: "tudo",
-      obra: obra.id,
-    });
-    const perfilIdLista = perfilParaMostrar?.autorId.trim() || "";
-
-    if (perfilIdLista) {
-      parametrosLista.set("usuario", perfilIdLista);
-    }
-
-    const hrefLista = `/listas?${parametrosLista.toString()}`;
-
-    return (
-      <Link
-        key={obra.id || item.chave}
-        href={hrefLista}
-        style={diarySummaryCardLinkStyle}
-        aria-label={`Abrir ${obra.titulo} na página Listas`}
-        title={`Ver ${obra.titulo} nas Listas`}
-      >
-        <div
-          style={criarCapaMiniCardDiarioPerfilStyle(obra.capa)}
-          aria-hidden="true"
-        />
-
-        <strong
-          data-historietas-user-content="true"
-          style={diarySummaryCardTitleStyle}
-        >
-          {obra.titulo}
-        </strong>
-
-      </Link>
-    );
-  }
-
-  function renderizarItemBibliotecaPerfil(item: ItemBibliotecaPerfil) {
-    const obraHref =
-      item.obra.link ||
-      `/obra/${item.obra.slug || criarSlugBase(item.obra.titulo)}`;
-    const capituloHref = item.capitulo
-      ? criarHrefLeituraCapituloPerfilAutor(
-          item.obra,
-          item.capitulo,
-          item.numeroCapitulo || 1,
-        )
-      : obraHref;
-    const totalCurtidasBiblioteca = obterTotalCurtidasObraPerfilAutor(
-      item.obra,
-      totaisInteracoesObras,
-    );
-    const totalComentariosBiblioteca = obterTotalComentariosObraPerfilAutor(
-      item.obra,
-      totaisInteracoesObras,
-    );
-    const visualizacoesBiblioteca = compactarNumeroPerfilAutor(
-      item.obra.visualizacoes || 0,
-    );
-
-    return (
-      <article
-        key={item.chave}
-        style={isDesktop ? desktopDiaryVisualCardStyle : diaryVisualCardStyle}
-      >
-        <Link
-          href={capituloHref}
-          style={diaryVisualCoverLinkStyle}
-          aria-label={`Abrir ${item.obra.titulo}`}
-        >
-          <div style={criarCapaGridPerfilAutor(item.obra.capa, isDesktop)}>
-            <div style={diaryCardCoverOverlayStyle}>
-              <strong data-historietas-user-content="true" style={diaryCardCoverTitleStyle}>{item.obra.titulo}</strong>
-
-              <span style={diaryCardCoverMetaStyle}>
-                <span>👁 {visualizacoesBiblioteca}</span>
-                <span>
-                  <span style={diaryCardHeartMetaStyle}>❤️</span>{" "}
-                  {totalCurtidasBiblioteca}
-                </span>
-                <span>
-                  <span style={diaryCardCommentMetaStyle}>💬</span>{" "}
-                  {totalComentariosBiblioteca}
-                </span>
-              </span>
-            </div>
-          </div>
-        </Link>
-
-        <div style={profileWorkMenuAnchorStyle}>
-          <button
-            type="button"
-            onClick={() =>
-              setBibliotecaMenuAbertoChave((chaveAtual) =>
-                chaveAtual === item.chave ? "" : item.chave,
-              )
-            }
-            style={profileWorkDotsButtonStyle}
-            aria-label={`Abrir opções de ${item.obra.titulo}`}
-            aria-expanded={bibliotecaMenuAbertoChave === item.chave}
-          >
-            ⋮
-          </button>
-        </div>
-      </article>
-    );
-  }
-
   function renderizarAtividadeRecenteSobrePerfil() {
     return (
       <section style={diaryTimelineStyle}>
@@ -7806,9 +7682,51 @@ function PerfilAutorPageContent() {
                     : profileWorksGridStyle
                 }
               >
-                {itensBibliotecaAtivos.map((item) =>
-                  renderizarItemBibliotecaPerfil(item),
-                )}
+                {itensBibliotecaAtivos.map((item) => {
+                  const obraHref =
+                    item.obra.link ||
+                    `/obra/${
+                      item.obra.slug || criarSlugBase(item.obra.titulo)
+                    }`;
+                  const capituloHref = item.capitulo
+                    ? criarHrefLeituraCapituloPerfilAutor(
+                        item.obra,
+                        item.capitulo,
+                        item.numeroCapitulo || 1,
+                      )
+                    : obraHref;
+                  const totalCurtidasBiblioteca =
+                    obterTotalCurtidasObraPerfilAutor(
+                      item.obra,
+                      totaisInteracoesObras,
+                    );
+                  const totalComentariosBiblioteca =
+                    obterTotalComentariosObraPerfilAutor(
+                      item.obra,
+                      totaisInteracoesObras,
+                    );
+                  const visualizacoesBiblioteca = compactarNumeroPerfilAutor(
+                    item.obra.visualizacoes || 0,
+                  );
+
+                  return (
+                    <LibraryItemCard
+                      key={item.chave}
+                      item={item}
+                      href={capituloHref}
+                      isDesktop={isDesktop}
+                      menuAberto={bibliotecaMenuAbertoChave === item.chave}
+                      totalComentarios={totalComentariosBiblioteca}
+                      totalCurtidas={totalCurtidasBiblioteca}
+                      visualizacoes={visualizacoesBiblioteca}
+                      onToggleMenu={() =>
+                        setBibliotecaMenuAbertoChave((chaveAtual) =>
+                          chaveAtual === item.chave ? "" : item.chave,
+                        )
+                      }
+                    />
+                  );
+                })}
               </div>
             )}
           </section>
@@ -7856,9 +7774,36 @@ function PerfilAutorPageContent() {
                       : diarySummaryGridStyle
                   }
                 >
-                  {itensDiarioTudo.map((item) =>
-                    renderizarMiniCardDiarioPerfil(item),
-                  )}
+                  {itensDiarioTudo.map((item) => {
+                    const obra = item.obra;
+
+                    if (!obra) {
+                      return null;
+                    }
+
+                    const parametrosLista = new URLSearchParams({
+                      modo: "perfil",
+                      origem: "diario",
+                      categoria: "tudo",
+                      obra: obra.id,
+                    });
+                    const perfilIdLista =
+                      perfilParaMostrar?.autorId.trim() || "";
+
+                    if (perfilIdLista) {
+                      parametrosLista.set("usuario", perfilIdLista);
+                    }
+
+                    const hrefLista = `/listas?${parametrosLista.toString()}`;
+
+                    return (
+                      <DiarySummaryCard
+                        key={obra.id || item.chave}
+                        href={hrefLista}
+                        obra={obra}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </section>
