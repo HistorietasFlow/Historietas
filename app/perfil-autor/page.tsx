@@ -173,6 +173,8 @@ import { LibraryTabs } from "./components/library-tabs";
 import { ProfileRatingBox } from "./components/profile-rating-box";
 import { ProfileStats } from "./components/profile-stats";
 import { ProfileBio } from "./components/profile-bio";
+import { ProfileAvatar } from "./components/profile-avatar";
+import { ProfileHeaderInfo } from "./components/profile-header-info";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -231,9 +233,6 @@ import {
   menuNotificationBadgeStyle,
   heroBoxStyle,
   authorTopRowStyle,
-  authorHeaderInfoStyle,
-  avatarButtonStyle,
-  avatarDisplayStyle,
   avatarImageStyle,
   hiddenInputStyle,
   profileEditorSheetContentStyle,
@@ -251,8 +250,6 @@ import {
   avatarRemoveButtonStyle,
   avatarErrorStyle,
   bioCounterStyle,
-  titleStyle,
-  profileNameRowStyle,
   profileActionsStyle,
   desktopProfileActionsStyle,
   profileVisitorActionsStyle,
@@ -340,9 +337,6 @@ import {
   desktopContainerStyle,
   desktopHeroBoxStyle,
   desktopAuthorTopRowStyle,
-  desktopAvatarButtonStyle,
-  desktopAvatarDisplayStyle,
-  desktopTitleStyle,
   desktopAvatarActionsStyle,
   desktopAvatarSmallButtonStyle,
   desktopAvatarRemoveButtonStyle,
@@ -4897,13 +4891,6 @@ function PerfilAutorPageContent() {
   const authorTopRowAtualStyle = isDesktop
     ? desktopAuthorTopRowStyle
     : authorTopRowStyle;
-  const avatarButtonAtualStyle = isDesktop
-    ? desktopAvatarButtonStyle
-    : avatarButtonStyle;
-  const avatarDisplayAtualStyle = isDesktop
-    ? desktopAvatarDisplayStyle
-    : avatarDisplayStyle;
-  const titleAtualStyle = isDesktop ? desktopTitleStyle : titleStyle;
   const avatarActionsAtualStyle = isDesktop
     ? desktopAvatarActionsStyle
     : avatarActionsStyle;
@@ -6886,50 +6873,18 @@ function PerfilAutorPageContent() {
 
         <section style={heroAtualStyle}>
           <div style={authorTopRowAtualStyle}>
-            {podeEditarPerfil ? (
-              <button
-                type="button"
-                onClick={abrirEditorPerfil}
-                style={avatarButtonAtualStyle}
-                aria-label="Editar perfil"
-              >
-                {avatarAutor ? (
-                  <Image
-                    src={avatarAutor}
-                    alt={`Imagem de ${perfilParaMostrar.nome}`}
-                    width={128}
-                    height={128}
-                    unoptimized
-                    style={avatarImageStyle}
-                  />
-                ) : (
-                  <span>{perfilParaMostrar.nome.charAt(0)}</span>
-                )}
-              </button>
-            ) : (
-              <div style={avatarDisplayAtualStyle}>
-                {avatarAutor ? (
-                  <Image
-                    src={avatarAutor}
-                    alt={`Imagem de ${perfilParaMostrar.nome}`}
-                    width={128}
-                    height={128}
-                    unoptimized
-                    style={avatarImageStyle}
-                  />
-                ) : (
-                  <span>{perfilParaMostrar.nome.charAt(0)}</span>
-                )}
-              </div>
-            )}
+            <ProfileAvatar
+              autorNome={perfilParaMostrar.nome}
+              avatar={avatarAutor}
+              isDesktop={isDesktop}
+              podeEditar={podeEditarPerfil}
+              onEdit={abrirEditorPerfil}
+            />
 
-            <div style={authorHeaderInfoStyle}>
-              <div style={profileNameRowStyle}>
-                <h1 data-historietas-user-content="true" className="historietas-theme-title" style={titleAtualStyle}>
-                  {perfilParaMostrar.nome}
-                </h1>
-              </div>
-
+            <ProfileHeaderInfo
+              autorNome={perfilParaMostrar.nome}
+              isDesktop={isDesktop}
+            >
               <ProfileStats
                 avaliacaoDiarioPrivada={avaliacaoDiarioPrivada}
                 avaliacaoEhDiario={avaliacaoResumoEhDiario}
@@ -6946,7 +6901,7 @@ function PerfilAutorPageContent() {
                 seguindoHref={seguindoPerfilHref}
                 seguindoTotal={seguindoTotalPerfil}
               />
-            </div>
+            </ProfileHeaderInfo>
           </div>
 
           <ProfileBio
