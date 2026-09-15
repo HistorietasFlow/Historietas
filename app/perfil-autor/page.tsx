@@ -44,7 +44,7 @@ import {
   versionarUrlPublicaStorage,
 } from "../../lib/storageUploads";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, CSSProperties } from "react";
+import type { ChangeEvent } from "react";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
@@ -180,6 +180,9 @@ import {
   workActionSheetMetricsStyle,
   workActionSheetActionsStyle,
   criarProfileSelectionDotStyle,
+  criarCapaDestaquePerfilAutor,
+  criarCapaGridPerfilAutor,
+  criarCapaMiniCardDiarioPerfilStyle,
   workActionSheetItemStyle,
   workActionSheetDangerItemStyle,
   workActionSheetItemActiveStyle,
@@ -187,7 +190,6 @@ import {
   diarySummaryGridStyle,
   desktopDiarySummaryGridStyle,
   diarySummaryCardLinkStyle,
-  diarySummaryCoverStyle,
   diarySummaryCardTitleStyle,
   diaryVisualCardStyle,
   desktopDiaryVisualCardStyle,
@@ -311,7 +313,6 @@ import {
   authorHighlightsListStyle,
   desktopAuthorHighlightsListStyle,
   authorHighlightItemStyle,
-  authorHighlightCoverStyle,
   profileTabsStyle,
   profileTabStyle,
   profileTabActiveStyle,
@@ -370,8 +371,6 @@ import {
   desktopProfileWorksGridStyle,
   profileWorkCardStyle,
   profileWorkCoverLinkStyle,
-  profileWorkCoverStyle,
-  desktopProfileWorkCoverStyle,
   profileWorkCoverOverlayStyle,
   profileWorkCoverTitleStyle,
   diaryCardCoverOverlayStyle,
@@ -801,52 +800,6 @@ async function salvarCurtidaTopFiveSupabase(
   } catch {
     return false;
   }
-}
-
-function criarCapaGridPerfilAutor(
-  capa: string,
-  desktop: boolean,
-): CSSProperties {
-  const estiloBase = desktop
-    ? desktopProfileWorkCoverStyle
-    : profileWorkCoverStyle;
-
-  if (!capa) {
-    return estiloBase;
-  }
-
-  return {
-    ...estiloBase,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarCapaDestaquePerfilAutor(capa: string): CSSProperties {
-  if (!capa) {
-    return authorHighlightCoverStyle;
-  }
-
-  return {
-    ...authorHighlightCoverStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarCapaMiniCardDiarioPerfilStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return diarySummaryCoverStyle;
-  }
-
-  return {
-    ...diarySummaryCoverStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
 }
 
 async function carregarPerfilUsuarioSupabase(
