@@ -86,7 +86,6 @@ import {
   COMPLETED_STORAGE_KEY,
   FAVORITES_STORAGE_KEY,
   LIBRARY_FOLLOW_STORAGE_KEY,
-  NOTAS_AVALIACAO_AUTOR,
   PERMISSOES_ABAS_PERFIL_PADRAO,
   PERMISSOES_ABAS_PERFIL_PROPRIO,
   SOBRE_BIO_MAX_LENGTH,
@@ -118,16 +117,12 @@ import {
   formatarFormatoPerfilAutor,
   formatarGeneroPerfilAutor,
   formatarMediaAvaliacaoAutor,
-  formatarTotalAvaliacoesAutor,
-  formatarTotalAvaliacoesDiario,
   idAutorSupabaseValido,
   normalizarAbaPerfilAutor,
   normalizarNomeAutor,
   normalizarNumeroPerfilAutor,
   normalizarUsernamePerfilAutor,
   obterChaveAvaliacaoAutor,
-  obterPreenchimentoEstrelaAutor,
-  obterProximaNotaAvaliacaoAutor,
   obterTagPrincipalPerfilAutor,
   obterTimestampData,
 } from "./lib/profile-formatters";
@@ -167,10 +162,7 @@ import {
   pegarNumero,
   pegarTexto,
 } from "./lib/data-normalizers";
-import {
-  CadeadoAvaliacaoDiarioIcone,
-  MenuPerfilIcone,
-} from "./components/profile-icons";
+import { MenuPerfilIcone } from "./components/profile-icons";
 import { LoadingSpinner } from "./components/loading-spinner";
 import { ProfilePageState } from "./components/profile-page-state";
 import { PrivateProfileNotice } from "./components/private-profile-notice";
@@ -178,6 +170,8 @@ import { DiarySummaryCard } from "./components/diary-summary-card";
 import { LibraryItemCard } from "./components/library-item-card";
 import { ProfileSectionTabs } from "./components/profile-section-tabs";
 import { LibraryTabs } from "./components/library-tabs";
+import { ProfileRatingSummary } from "./components/profile-rating-summary";
+import { ProfileRatingBox } from "./components/profile-rating-box";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -268,25 +262,6 @@ import {
   profileStatWorksNumberStyle,
   profileStatLabelStyle,
   profileStatWorksLabelStyle,
-  profileRatingStatItemStyle,
-  profileRatingPrivateLockStyle,
-  profileRatingNumberStyle,
-  profileRatingStackedMetaStyle,
-  profileRatingMiniStarsStyle,
-  profileRatingMiniStarVisualStyle,
-  profileRatingMiniStarBaseStyle,
-  profileRatingMiniStarFillStyle,
-  profileRatingTotalStyle,
-  authorRatingBoxStyle,
-  desktopAuthorRatingBoxStyle,
-  authorRatingHeaderStyle,
-  authorRatingTitleStyle,
-  authorRatingStarsRowStyle,
-  authorRatingStarButtonStyle,
-  authorRatingStarActiveStyle,
-  authorRatingStarVisualStyle,
-  authorRatingStarBaseStyle,
-  authorRatingStarFillStyle,
   profileActionsStyle,
   desktopProfileActionsStyle,
   profileVisitorActionsStyle,
@@ -7032,76 +7007,13 @@ function PerfilAutorPageContent() {
                 </Link>
 
                 {avaliacaoResumoPerfilVisivel && (
-                  <div
-                    style={profileRatingStatItemStyle}
-                    aria-label={
-                      avaliacaoResumoEhDiario
-                        ? "Avaliação do Diário"
-                        : "Avaliação do autor"
-                    }
-                  >
-                    {avaliacaoResumoEhDiario && avaliacaoDiarioPrivada ? (
-                      <span
-                        style={profileRatingPrivateLockStyle}
-                        title="Avaliação do Diário privada"
-                        aria-label="Avaliação do Diário privada"
-                      >
-                        <CadeadoAvaliacaoDiarioIcone />
-                      </span>
-                    ) : (
-                      <>
-                        <strong style={profileRatingNumberStyle}>
-                          {formatarMediaAvaliacaoAutor(
-                            avaliacaoResumoPerfil.media,
-                          )}
-                        </strong>
-
-                        <span style={profileRatingStackedMetaStyle}>
-                          <span
-                            style={profileRatingMiniStarsStyle}
-                            aria-label={`Média ${formatarMediaAvaliacaoAutor(
-                              avaliacaoResumoPerfil.media,
-                            )} de 5`}
-                          >
-                            {NOTAS_AVALIACAO_AUTOR.map((estrela) => (
-                              <span
-                                key={`${
-                                  avaliacaoResumoEhDiario ? "diario" : "autor"
-                                }-media-topo-${estrela}`}
-                                style={profileRatingMiniStarVisualStyle}
-                                aria-hidden="true"
-                              >
-                                <span style={profileRatingMiniStarBaseStyle}>★</span>
-                                <span
-                                  style={{
-                                    ...profileRatingMiniStarFillStyle,
-                                    width: obterPreenchimentoEstrelaAutor(
-                                      estrela,
-                                      avaliacaoResumoPerfil.media,
-                                    ),
-                                  }}
-                                >
-                                  ★
-                                </span>
-                              </span>
-                            ))}
-                          </span>
-
-                          <span style={profileRatingTotalStyle}>
-                            {avaliacaoResumoEhDiario
-                              ? formatarTotalAvaliacoesDiario(
-                                  avaliacaoResumoPerfil.total,
-                                  language,
-                                )
-                              : formatarTotalAvaliacoesAutor(
-                                  avaliacaoResumoPerfil.total,
-                                  language,
-                                )}
-                          </span>
-                        </span>
-                      </>
-                    )}
-                  </div>
+                  <ProfileRatingSummary
+                    diarioPrivada={avaliacaoDiarioPrivada}
+                    ehDiario={avaliacaoResumoEhDiario}
+                    language={language}
+                    media={avaliacaoResumoPerfil.media}
+                    total={avaliacaoResumoPerfil.total}
+                  />
                 )}
               </div>
             </div>
@@ -7422,55 +7334,15 @@ function PerfilAutorPageContent() {
         {autenticacaoCarregada &&
           autorPodeReceberAvaliacao &&
           !perfilPertenceAoUsuario && (
-          <section
-            style={isDesktop ? desktopAuthorRatingBoxStyle : authorRatingBoxStyle}
-            aria-label="Avaliação do autor"
-          >
-            <div style={authorRatingHeaderStyle}>
-              <span style={authorRatingTitleStyle}>AVALIE ESTE AUTOR</span>
-            </div>
-
-            <div style={authorRatingStarsRowStyle}>
-              {NOTAS_AVALIACAO_AUTOR.map((estrela) => {
-                const preenchimentoEstrela = obterPreenchimentoEstrelaAutor(
-                  estrela,
-                  avaliacaoAutor.minhaNota,
-                );
-                const proximaNota = obterProximaNotaAvaliacaoAutor(
-                  estrela,
-                  avaliacaoAutor.minhaNota,
-                );
-
-                return (
-                  <button
-                    key={`avaliacao-autor-${estrela}`}
-                    type="button"
-                    onClick={() => void avaliarAutor(proximaNota)}
-                    style={
-                      preenchimentoEstrela === "0%"
-                        ? authorRatingStarButtonStyle
-                        : authorRatingStarActiveStyle
-                    }
-                    aria-label={`Avaliar autor com ${proximaNota
-                      .toString()
-                      .replace(".", ",")} estrela${proximaNota === 1 ? "" : "s"}`}
-                  >
-                    <span style={authorRatingStarVisualStyle} aria-hidden="true">
-                      <span style={authorRatingStarBaseStyle}>★</span>
-                      <span
-                        style={{
-                          ...authorRatingStarFillStyle,
-                          width: preenchimentoEstrela,
-                        }}
-                      >
-                        ★
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+          <ProfileRatingBox
+            ariaLabel="Avaliação do autor"
+            entidadeAvaliacao="autor"
+            isDesktop={isDesktop}
+            keyPrefix="avaliacao-autor"
+            minhaNota={avaliacaoAutor.minhaNota}
+            titulo="AVALIE ESTE AUTOR"
+            onRate={avaliarAutor}
+          />
         )}
 
         {autenticacaoCarregada &&
@@ -7478,57 +7350,16 @@ function PerfilAutorPageContent() {
           !perfilPertenceAoUsuario &&
           avaliacaoDiario.visivel &&
           avaliacaoDiario.podeAvaliar && (
-            <section
-              style={isDesktop ? desktopAuthorRatingBoxStyle : authorRatingBoxStyle}
-              aria-label="Avaliação do Diário"
-            >
-              <div style={authorRatingHeaderStyle}>
-                <span style={authorRatingTitleStyle}>AVALIE ESTE DIÁRIO</span>
-              </div>
-
-              <div style={authorRatingStarsRowStyle}>
-                {NOTAS_AVALIACAO_AUTOR.map((estrela) => {
-                  const preenchimentoEstrela = obterPreenchimentoEstrelaAutor(
-                    estrela,
-                    avaliacaoDiario.minhaNota,
-                  );
-                  const proximaNota = obterProximaNotaAvaliacaoAutor(
-                    estrela,
-                    avaliacaoDiario.minhaNota,
-                  );
-
-                  return (
-                    <button
-                      key={`avaliacao-diario-perfil-${estrela}`}
-                      type="button"
-                      onClick={() => void avaliarDiarioPerfil(proximaNota)}
-                      disabled={avaliacaoDiario.salvando}
-                      style={{
-                        ...(preenchimentoEstrela === "0%"
-                          ? authorRatingStarButtonStyle
-                          : authorRatingStarActiveStyle),
-                        opacity: avaliacaoDiario.salvando ? 0.58 : 1,
-                      }}
-                      aria-label={`Avaliar Diário com ${proximaNota
-                        .toString()
-                        .replace(".", ",")} estrela${proximaNota === 1 ? "" : "s"}`}
-                    >
-                      <span style={authorRatingStarVisualStyle} aria-hidden="true">
-                        <span style={authorRatingStarBaseStyle}>★</span>
-                        <span
-                          style={{
-                            ...authorRatingStarFillStyle,
-                            width: preenchimentoEstrela,
-                          }}
-                        >
-                          ★
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
+            <ProfileRatingBox
+              ariaLabel="Avaliação do Diário"
+              entidadeAvaliacao="Diário"
+              isDesktop={isDesktop}
+              keyPrefix="avaliacao-diario-perfil"
+              minhaNota={avaliacaoDiario.minhaNota}
+              salvando={avaliacaoDiario.salvando}
+              titulo="AVALIE ESTE DIÁRIO"
+              onRate={avaliarDiarioPerfil}
+            />
           )}
 
         {totalAbasPerfilVisiveis > 0 && (
