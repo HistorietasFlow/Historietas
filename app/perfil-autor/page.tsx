@@ -16,7 +16,6 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import DenunciaModal, {
   type TipoAlvoDenuncia,
 } from "../../components/DenunciaModal";
-import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   bloquearUsuario,
   cancelarSolicitacaoSeguidor,
@@ -45,12 +44,11 @@ import {
   versionarUrlPublicaStorage,
 } from "../../lib/storageUploads";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, CSSProperties } from "react";
+import type { ChangeEvent } from "react";
 import type {
   AbaBibliotecaPerfil,
   AbaPerfilAutor,
   AlvoDenunciaConteudoPerfil,
-  ArquivoObraLocal,
   AutorPerfil,
   AvaliacaoAutorPublica,
   AvaliacaoDiarioPublica,
@@ -109,6 +107,68 @@ import {
   traduzirTextoPerfilAutor,
 } from "./translations";
 import {
+  aplicarPermissoesAbasAoDiario,
+  calcularProximaAvaliacaoAutor,
+  compactarNumeroPerfilAutor,
+  criarChaveAutorPerfil,
+  criarHandlePerfilAutor,
+  criarHrefLeituraCapituloPerfilAutor,
+  criarHrefListaSeguimentoPerfilAutor,
+  criarPerfilAutorHref,
+  formatarEntradaHistorietasPerfilAutor,
+  formatarFormatoPerfilAutor,
+  formatarGeneroPerfilAutor,
+  formatarMediaAvaliacaoAutor,
+  formatarTotalAvaliacoesAutor,
+  formatarTotalAvaliacoesDiario,
+  idAutorSupabaseValido,
+  normalizarAbaPerfilAutor,
+  normalizarNomeAutor,
+  normalizarNumeroPerfilAutor,
+  normalizarUsernamePerfilAutor,
+  obterChaveAvaliacaoAutor,
+  obterPreenchimentoEstrelaAutor,
+  obterProximaNotaAvaliacaoAutor,
+  obterTagPrincipalPerfilAutor,
+  obterTimestampData,
+} from "./lib/profile-formatters";
+import {
+  calcularProgressoLeitura,
+  criarBioAutor,
+  encontrarCapituloParaContinuar,
+  filtrarObrasLocaisDoUsuarioPerfilAutor,
+  mesclarObrasLocalStoragePerfilAutor,
+  mostrarClassificacao,
+  normalizarObra,
+  normalizarPerfisAutores,
+  obraPertenceAoUsuarioPerfilAutor,
+} from "./lib/work-normalizers";
+import {
+  colecaoTemObraPerfilBiblioteca,
+  converterCapitulosSalvosParaBiblioteca,
+  converterItensDiarioParaBiblioteca,
+  criarChaveCurtidaTopFivePerfil,
+  encontrarObraPorIdentificadorTopFivePerfil,
+  mesclarItensBibliotecaPerfil,
+  normalizarCurtidasTopFiveLocais,
+  removerObraDaColecaoPerfilBiblioteca,
+} from "./lib/library-normalizers";
+import {
+  aplicarInteracoesNasObras,
+  criarPerfilUsuarioRemotoComoAutor,
+  mesclarObrasPorIdSlug,
+  normalizarAvaliacaoDiarioPerfil,
+  normalizarCapituloSupabase,
+  normalizarObraSupabase,
+  normalizarPerfilUsuarioSupabase,
+  obterTotalComentariosObraPerfilAutor,
+  obterTotalConcluidasObraPerfilAutor,
+  obterTotalCurtidasObraPerfilAutor,
+  obterTotalSalvosObraPerfilAutor,
+  pegarNumero,
+  pegarTexto,
+} from "./lib/data-normalizers";
+import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
   workActionSheetHandleStyle,
@@ -120,6 +180,9 @@ import {
   workActionSheetMetricsStyle,
   workActionSheetActionsStyle,
   criarProfileSelectionDotStyle,
+  criarCapaDestaquePerfilAutor,
+  criarCapaGridPerfilAutor,
+  criarCapaMiniCardDiarioPerfilStyle,
   workActionSheetItemStyle,
   workActionSheetDangerItemStyle,
   workActionSheetItemActiveStyle,
@@ -127,7 +190,6 @@ import {
   diarySummaryGridStyle,
   desktopDiarySummaryGridStyle,
   diarySummaryCardLinkStyle,
-  diarySummaryCoverStyle,
   diarySummaryCardTitleStyle,
   diaryVisualCardStyle,
   desktopDiaryVisualCardStyle,
@@ -251,7 +313,6 @@ import {
   authorHighlightsListStyle,
   desktopAuthorHighlightsListStyle,
   authorHighlightItemStyle,
-  authorHighlightCoverStyle,
   profileTabsStyle,
   profileTabStyle,
   profileTabActiveStyle,
@@ -310,8 +371,6 @@ import {
   desktopProfileWorksGridStyle,
   profileWorkCardStyle,
   profileWorkCoverLinkStyle,
-  profileWorkCoverStyle,
-  desktopProfileWorkCoverStyle,
   profileWorkCoverOverlayStyle,
   profileWorkCoverTitleStyle,
   diaryCardCoverOverlayStyle,
@@ -358,108 +417,6 @@ import {
 
 
 
-function normalizarAbaPerfilAutor(valor: string | null): AbaPerfilAutor {
-  if (
-    valor === "obras" ||
-    valor === "diario" ||
-    valor === "comunidade" ||
-    valor === "sobre" ||
-    valor === "biblioteca"
-  ) {
-    return valor;
-  }
-
-  return "obras";
-}
-
-function aplicarPermissoesAbasAoDiario(
-  diario: Omit<DiarioPerfilEstado, "carregando">,
-  permissoes: PermissoesAbasPerfil,
-): Omit<DiarioPerfilEstado, "carregando"> {
-  return {
-    lendoAgora: permissoes.diario ? diario.lendoAgora : [],
-    queroLer: permissoes.diario ? diario.queroLer : [],
-    favoritas: permissoes.diario ? diario.favoritas : [],
-    concluidas: permissoes.diario ? diario.concluidas : [],
-    avaliacoes: permissoes.diario ? diario.avaliacoes : [],
-    reviews: permissoes.diario ? diario.reviews : [],
-    atividades: permissoes.atividades ? diario.atividades : [],
-  };
-}
-
-
-function normalizarAvaliacaoDiarioPerfil(
-  valor: unknown,
-  estadoAnterior: AvaliacaoDiarioPublica = avaliacaoDiarioVazia,
-): AvaliacaoDiarioPublica {
-  const registro =
-    valor && typeof valor === "object" && !Array.isArray(valor)
-      ? (valor as Record<string, unknown>)
-      : {};
-
-  return {
-    ...estadoAnterior,
-    media: Math.max(0, Math.min(5, pegarNumero(registro.media, 0))),
-    total: Math.max(0, Math.trunc(pegarNumero(registro.total, 0))),
-    minhaNota: Math.max(
-      0,
-      Math.min(
-        5,
-        Math.round(
-          pegarNumero(registro.minha_nota ?? registro.minhaNota, 0) * 2,
-        ) / 2,
-      ),
-    ),
-    carregado: true,
-    salvando: false,
-    visivel: pegarBooleano(registro.visivel, false),
-    mostrar: pegarBooleano(
-      registro.mostrar ?? registro.mostrar_avaliacao_diario,
-      true,
-    ),
-    podeAvaliar: pegarBooleano(
-      registro.pode_avaliar ?? registro.podeAvaliar,
-      false,
-    ),
-  };
-}
-
-
-function normalizarNomeAutor(nome: string) {
-  return nome.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function normalizarUsernamePerfilAutor(valor: string) {
-  return valor
-    .trim()
-    .replace(/^@+/, "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9._]+/g, ".")
-    .replace(/[._]{2,}/g, ".")
-    .replace(/^[._]+|[._]+$/g, "")
-    .slice(0, 30);
-}
-
-function criarUsernameSugeridoPerfilAutor(nomeAutor: string, autorId: string) {
-  const base = normalizarUsernamePerfilAutor(nomeAutor);
-  const sufixo = autorId
-    .replace(/[^a-z0-9]/gi, "")
-    .slice(0, 4)
-    .toLowerCase();
-
-  if (base) {
-    return base;
-  }
-
-  return sufixo ? `autor.${sufixo}` : "autor.historietas";
-}
-
-function criarChaveAutorPerfil(autorId: string, nomeAutor: string) {
-  return autorId.trim().toLowerCase() || normalizarNomeAutor(nomeAutor);
-}
-
 function criarLoginHrefPerfilAutor() {
   const redirectTo =
     typeof window !== "undefined"
@@ -474,316 +431,6 @@ function criarLoginHrefPerfilAutor() {
   });
 
   return `/login?${params.toString()}`;
-}
-
-function criarPerfilAutorHref(autor: string, autorId?: string) {
-  const params = new URLSearchParams();
-  const autorLimpo = autor.trim();
-  const autorIdLimpo = autorId?.trim() || "";
-
-  if (autorLimpo) {
-    params.set("autor", autorLimpo);
-  }
-
-  if (autorIdLimpo) {
-    params.set("autorId", autorIdLimpo);
-    params.set("userId", autorIdLimpo);
-  }
-
-  const query = params.toString();
-
-  return query ? `/perfil-autor?${query}` : "/perfil-autor";
-}
-
-function criarHrefListaSeguimentoPerfilAutor(
-  aba: "seguidores" | "seguindo",
-  perfil: Pick<AutorPerfil, "autorId" | "nome"> | null,
-) {
-  const params = new URLSearchParams();
-
-  params.set("aba", aba);
-
-  if (perfil?.autorId?.trim()) {
-    params.set("userId", perfil.autorId.trim());
-    params.set("autorId", perfil.autorId.trim());
-  }
-
-  if (perfil?.nome?.trim()) {
-    params.set("autor", perfil.nome.trim());
-  }
-
-  return `/seguindo?${params.toString()}`;
-}
-
-function criarHandlePerfilAutor(
-  nomeAutor: string,
-  autorId: string,
-  username = "",
-) {
-  const usernameLimpo = normalizarUsernamePerfilAutor(username);
-
-  if (usernameLimpo) {
-    return `@${usernameLimpo}`;
-  }
-
-  return `@${criarUsernameSugeridoPerfilAutor(nomeAutor, autorId)}`;
-}
-
-function criarHrefLeituraCapituloPerfilAutor(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo" | "publicado">,
-  capitulo: Pick<CapituloLocal, "id">,
-  numeroCapitulo: number,
-) {
-  const slugSeguro = obra.slug?.trim() || criarSlugBase(obra.titulo);
-
-  if (
-    obra.publicado &&
-    idObraSupabaseValido(obra.id) &&
-    slugSeguro &&
-    Number.isInteger(numeroCapitulo) &&
-    numeroCapitulo > 0
-  ) {
-    return `/obra/${encodeURIComponent(slugSeguro)}/capitulo/${numeroCapitulo}`;
-  }
-
-  return `/ler-capitulo?obraId=${encodeURIComponent(
-    obra.id,
-  )}&capituloId=${encodeURIComponent(capitulo.id)}`;
-}
-
-function formatarGeneroPerfilAutor(genero: string) {
-  const generoLimpo = genero.trim();
-  const generoNormalizado = normalizarTexto(generoLimpo);
-
-  if (generoNormalizado === "fantasia sombria") {
-    return "Fantasia";
-  }
-
-  if (generoNormalizado === "sci-fi" || generoNormalizado === "sci fi") {
-    return "Ficção";
-  }
-
-  return generoLimpo || "Não informado";
-}
-
-function formatarFormatoPerfilAutor(formato: string) {
-  const formatoLimpo = formato.trim();
-
-  if (
-    !formatoLimpo ||
-    normalizarTexto(formatoLimpo) === "nao informado" ||
-    normalizarTexto(formatoLimpo) === "nao informada"
-  ) {
-    return "";
-  }
-
-  return formatoLimpo;
-}
-
-function obterTagPrincipalPerfilAutor(
-  obra: Pick<ObraLocal, "tags" | "genero" | "formato">,
-) {
-  const generoNormalizado = normalizarTexto(obra.genero);
-  const formatoNormalizado = normalizarTexto(obra.formato);
-
-  return (obra.tags || [])
-    .map((tag) => tag.trim())
-    .find((tag) => {
-      const tagNormalizada = normalizarTexto(tag);
-
-      return (
-        tag &&
-        tagNormalizada !== "sem tags" &&
-        tagNormalizada !== generoNormalizado &&
-        tagNormalizada !== formatoNormalizado
-      );
-    }) || "";
-}
-
-function obterTimestampData(dataIso: string) {
-  const data = new Date(dataIso).getTime();
-
-  return Number.isNaN(data) ? 0 : data;
-}
-
-function normalizarNumeroPerfilAutor(valor: unknown, fallback = 0) {
-  if (typeof valor === "number" && Number.isFinite(valor)) {
-    return Math.max(0, Math.round(valor));
-  }
-
-  if (typeof valor === "string" && valor.trim()) {
-    const numero = Number(valor.replace(/\./g, "").replace(",", "."));
-
-    if (Number.isFinite(numero)) {
-      return Math.max(0, Math.round(numero));
-    }
-  }
-
-  return fallback;
-}
-
-function compactarNumeroPerfilAutor(valor: number) {
-  const numero = Math.max(0, Math.round(valor));
-  const locale = obterLocaleDocumentoPerfilAutor();
-  const idiomaIngles = locale.startsWith("en");
-
-  if (numero >= 1000000) {
-    return `${(numero / 1000000).toLocaleString(locale, {
-      maximumFractionDigits: 1,
-    })} ${idiomaIngles ? "M" : "mi"}`;
-  }
-
-  if (numero >= 1000) {
-    return `${(numero / 1000).toLocaleString(locale, {
-      maximumFractionDigits: 1,
-    })} ${idiomaIngles ? "K" : "mil"}`;
-  }
-
-  return String(numero);
-}
-
-function idAutorSupabaseValido(id: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-}
-
-function formatarMediaAvaliacaoAutor(media: number) {
-  if (!Number.isFinite(media) || media <= 0) {
-    return "0";
-  }
-
-  const mediaArredondada = Math.round(media * 10) / 10;
-
-  return Number.isInteger(mediaArredondada)
-    ? String(mediaArredondada)
-    : mediaArredondada.toFixed(1);
-}
-
-function formatarTotalAvaliacoesAutor(
-  total: number,
-  idioma: HistorietasLanguage,
-) {
-  const totalSeguro = Math.max(0, Math.trunc(total));
-
-  if (idioma === "en") {
-    return totalSeguro === 1 ? "1 rating" : `${totalSeguro || ""} ratings`.trim();
-  }
-
-  if (idioma === "es") {
-    return totalSeguro === 1
-      ? "1 valoración"
-      : `${totalSeguro || ""} valoraciones`.trim();
-  }
-
-  if (totalSeguro <= 0) {
-    return "avaliações";
-  }
-
-  return totalSeguro === 1 ? "1 avaliação" : `${totalSeguro} avaliações`;
-}
-
-function formatarTotalAvaliacoesDiario(
-  total: number,
-  idioma: HistorietasLanguage,
-) {
-  const totalSeguro = Math.max(0, Math.trunc(total));
-
-  if (idioma === "en") {
-    return totalSeguro === 1
-      ? "1 Journal rating"
-      : `${totalSeguro} Journal ratings`;
-  }
-
-  if (idioma === "es") {
-    return `${totalSeguro} Val. Diario`;
-  }
-
-  return `${totalSeguro} Av. Diário`;
-}
-
-function formatarEntradaHistorietasPerfilAutor(criadoEm: string) {
-  const criadoEmLimpo = criadoEm.trim();
-  const dataCriacao = new Date(criadoEmLimpo);
-
-  if (!criadoEmLimpo || Number.isNaN(dataCriacao.getTime())) {
-    return new Intl.DateTimeFormat(obterLocaleDocumentoPerfilAutor(), {
-      month: "long",
-      year: "numeric",
-    }).format(new Date(2026, 6, 1));
-  }
-
-  return new Intl.DateTimeFormat(obterLocaleDocumentoPerfilAutor(), {
-    month: "long",
-    year: "numeric",
-  }).format(dataCriacao);
-}
-
-function obterProximaNotaAvaliacaoAutor(estrela: number, notaAtual: number) {
-  const meiaNota = estrela - 0.5;
-  const notaNormalizada = Math.round(notaAtual * 2) / 2;
-
-  if (notaNormalizada === meiaNota) {
-    return estrela;
-  }
-
-  if (notaNormalizada === estrela) {
-    return 0;
-  }
-
-  return meiaNota;
-}
-
-function obterPreenchimentoEstrelaAutor(estrela: number, notaAtual: number) {
-  const notaNormalizada = Math.max(0, Math.min(5, Math.round(notaAtual * 2) / 2));
-
-  if (notaNormalizada >= estrela) {
-    return "100%";
-  }
-
-  if (notaNormalizada >= estrela - 0.5) {
-    return "50%";
-  }
-
-  return "0%";
-}
-
-function calcularProximaAvaliacaoAutor(
-  avaliacaoAtual: AvaliacaoAutorPublica,
-  novaNota: number,
-): AvaliacaoAutorPublica {
-  const notaAnterior = avaliacaoAtual.minhaNota;
-  const totalAtual = avaliacaoAtual.total;
-  const somaAtual = avaliacaoAtual.media * totalAtual;
-
-  if (novaNota <= 0) {
-    const totalNovo = notaAnterior > 0 ? Math.max(0, totalAtual - 1) : totalAtual;
-    const somaNova = notaAnterior > 0 ? somaAtual - notaAnterior : somaAtual;
-
-    return {
-      ...avaliacaoAtual,
-      media: totalNovo > 0 ? somaNova / totalNovo : 0,
-      total: totalNovo,
-      minhaNota: 0,
-      carregado: true,
-      salvando: false,
-    };
-  }
-
-  const totalNovo = notaAnterior > 0 ? totalAtual : totalAtual + 1;
-  const somaNova =
-    notaAnterior > 0 ? somaAtual - notaAnterior + novaNota : somaAtual + novaNota;
-
-  return {
-    ...avaliacaoAtual,
-    media: totalNovo > 0 ? somaNova / totalNovo : 0,
-    total: totalNovo,
-    minhaNota: novaNota,
-    carregado: true,
-    salvando: false,
-  };
-}
-
-function obterChaveAvaliacaoAutor(perfil: Pick<AutorPerfil, "autorId" | "nome">) {
-  return criarChaveAutorPerfil(perfil.autorId, perfil.nome);
 }
 
 function carregarAvaliacoesAutoresLocais(userId = "") {
@@ -856,265 +503,6 @@ function salvarAvaliacaoAutorLocal(
   }
 }
 
-function calcularProgressoLeitura(capitulos: CapituloLocal[]) {
-  if (capitulos.length === 0) {
-    return 0;
-  }
-
-  const capitulosLidos = capitulos.filter((capitulo) => capitulo.lido).length;
-
-  return Math.round((capitulosLidos / capitulos.length) * 100);
-}
-
-function normalizarCapitulo(
-  capitulo: Partial<CapituloLocal>,
-  capituloIndex: number,
-  obraIndex: number,
-): CapituloLocal {
-  return {
-    id:
-      typeof capitulo.id === "string" && capitulo.id.trim()
-        ? capitulo.id
-        : `capitulo-${obraIndex + 1}-${capituloIndex + 1}`,
-    titulo:
-      typeof capitulo.titulo === "string" && capitulo.titulo.trim()
-        ? capitulo.titulo
-        : "Capítulo sem título",
-    texto: typeof capitulo.texto === "string" ? capitulo.texto : "",
-    curtiu: Boolean(capitulo.curtiu),
-    salvo: Boolean(capitulo.salvo),
-    comentario:
-      typeof capitulo.comentario === "string" ? capitulo.comentario : "",
-    criadoEm: typeof capitulo.criadoEm === "string" ? capitulo.criadoEm : "",
-    lido: Boolean(capitulo.lido),
-    lidoEm: typeof capitulo.lidoEm === "string" ? capitulo.lidoEm : "",
-  };
-}
-
-function normalizarArquivoObra(valor: unknown): ArquivoObraLocal | null {
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-    return null;
-  }
-
-  const arquivo = valor as Partial<ArquivoObraLocal>;
-
-  if (
-    typeof arquivo.nome !== "string" ||
-    !arquivo.nome.trim() ||
-    typeof arquivo.conteudo !== "string" ||
-    !arquivo.conteudo.trim()
-  ) {
-    return null;
-  }
-
-  let categoria: ArquivoObraLocal["categoria"] = "outro";
-
-  if (
-    arquivo.categoria === "texto" ||
-    arquivo.categoria === "documento" ||
-    arquivo.categoria === "imagem" ||
-    arquivo.categoria === "outro"
-  ) {
-    categoria = arquivo.categoria;
-  }
-
-  return {
-    nome: arquivo.nome.trim(),
-    tipo: typeof arquivo.tipo === "string" ? arquivo.tipo : "",
-    tamanho:
-      typeof arquivo.tamanho === "number" && Number.isFinite(arquivo.tamanho)
-        ? arquivo.tamanho
-        : 0,
-    conteudo: arquivo.conteudo,
-    categoria,
-    criadoEm: typeof arquivo.criadoEm === "string" ? arquivo.criadoEm : "",
-  };
-}
-
-function normalizarObra(obra: ObraSalva, obraIndex: number): ObraLocal {
-  const capitulosNormalizados: CapituloLocal[] = Array.isArray(obra.capitulos)
-    ? obra.capitulos.map((capitulo, capituloIndex) =>
-        normalizarCapitulo(capitulo, capituloIndex, obraIndex),
-      )
-    : [];
-
-  const tagsNormalizadas = Array.isArray(obra.tags)
-    ? obra.tags
-        .filter(
-          (tag): tag is string =>
-            typeof tag === "string" && Boolean(tag.trim()),
-        )
-        .map((tag) => tag.trim())
-    : [];
-
-  return {
-    id:
-      typeof obra.id === "string" && obra.id.trim()
-        ? obra.id
-        : `obra-${obraIndex + 1}`,
-    titulo:
-      typeof obra.titulo === "string" && obra.titulo.trim()
-        ? obra.titulo
-        : "Obra sem título",
-    autorId:
-      typeof obra.autorId === "string" && obra.autorId.trim()
-        ? obra.autorId.trim()
-        : typeof obra.user_id === "string" && obra.user_id.trim()
-          ? obra.user_id.trim()
-          : typeof obra.autor_id === "string" && obra.autor_id.trim()
-            ? obra.autor_id.trim()
-            : "",
-    autor:
-      typeof obra.autor === "string" && obra.autor.trim()
-        ? obra.autor
-        : "Autor não informado",
-    genero:
-      typeof obra.genero === "string" && obra.genero.trim()
-        ? obra.genero
-        : "Não informado",
-    formato:
-      typeof obra.formato === "string" && obra.formato.trim()
-        ? obra.formato
-        : "Não informado",
-    classificacaoIndicativa:
-      typeof obra.classificacaoIndicativa === "string" &&
-      obra.classificacaoIndicativa.trim()
-        ? obra.classificacaoIndicativa
-        : "Não informada",
-    sinopse:
-      typeof obra.sinopse === "string" && obra.sinopse.trim()
-        ? obra.sinopse
-        : "Nenhuma sinopse informada.",
-    tags: tagsNormalizadas.length > 0 ? tagsNormalizadas : ["sem tags"],
-    capa: typeof obra.capa === "string" ? obra.capa : "",
-    capaNome: typeof obra.capaNome === "string" ? obra.capaNome : "",
-    arquivoObra: normalizarArquivoObra(obra.arquivoObra),
-    publicado: Boolean(obra.publicado),
-    capitulos: capitulosNormalizados,
-    criadaEm: typeof obra.criadaEm === "string" ? obra.criadaEm : "",
-    ultimoCapituloLidoId:
-      typeof obra.ultimoCapituloLidoId === "string"
-        ? obra.ultimoCapituloLidoId
-        : "",
-    ultimaLeituraEm:
-      typeof obra.ultimaLeituraEm === "string" ? obra.ultimaLeituraEm : "",
-    progressoLeitura: calcularProgressoLeitura(capitulosNormalizados),
-    visualizacoes: normalizarNumeroPerfilAutor(
-      obra.visualizacoes ??
-        obra.views ??
-        obra.visualizacoesTotal ??
-        obra.totalVisualizacoes ??
-        obra.total_visualizacoes,
-    ),
-    slug:
-      typeof obra.slug === "string" && obra.slug.trim()
-        ? obra.slug
-        : criarSlugBase(
-            typeof obra.titulo === "string" && obra.titulo.trim()
-              ? obra.titulo
-              : `obra-${obraIndex + 1}`,
-          ),
-    link:
-      typeof obra.link === "string" && obra.link.trim()
-        ? obra.link
-        : `/obra/${
-            typeof obra.slug === "string" && obra.slug.trim()
-              ? obra.slug
-              : criarSlugBase(
-                  typeof obra.titulo === "string" && obra.titulo.trim()
-                    ? obra.titulo
-                    : `obra-${obraIndex + 1}`,
-                )
-          }`,
-  };
-}
-
-function mostrarClassificacao(obra: ObraLocal) {
-  return (
-    obra.classificacaoIndicativa &&
-    obra.classificacaoIndicativa !== "Não informada" &&
-    obra.classificacaoIndicativa !== "Não informado"
-  );
-}
-
-function normalizarUsuarioIdPerfilAutor(valor: string) {
-  return valor.trim().toLowerCase();
-}
-
-function obraPertenceAoUsuarioPerfilAutor(obra: ObraLocal, userId: string) {
-  const userIdNormalizado = normalizarUsuarioIdPerfilAutor(userId);
-  const autorIdNormalizado = normalizarUsuarioIdPerfilAutor(obra.autorId || "");
-
-  return Boolean(userIdNormalizado && autorIdNormalizado === userIdNormalizado);
-}
-
-function filtrarObrasLocaisDoUsuarioPerfilAutor(
-  obrasLocais: ObraLocal[],
-  userId: string,
-) {
-  const userIdNormalizado = normalizarUsuarioIdPerfilAutor(userId);
-
-  if (!userIdNormalizado) {
-    return [] as ObraLocal[];
-  }
-
-  return obrasLocais.filter((obra) =>
-    obraPertenceAoUsuarioPerfilAutor(obra, userIdNormalizado),
-  );
-}
-
-function mesclarObrasLocalStoragePerfilAutor(
-  obrasLocaisOriginais: ObraLocal[],
-  obrasAtualizadasDoUsuario: ObraLocal[],
-  userId: string,
-) {
-  const userIdNormalizado = normalizarUsuarioIdPerfilAutor(userId);
-
-  if (!userIdNormalizado) {
-    return obrasLocaisOriginais;
-  }
-
-  const obrasDeOutrasContas = obrasLocaisOriginais.filter(
-    (obra) => !obraPertenceAoUsuarioPerfilAutor(obra, userIdNormalizado),
-  );
-
-  return [...obrasAtualizadasDoUsuario, ...obrasDeOutrasContas];
-}
-
-
-function normalizarPerfisAutores(valor: unknown): PerfisAutoresSalvos {
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-    return {};
-  }
-
-  const perfisValidos: PerfisAutoresSalvos = {};
-
-  Object.entries(valor as Record<string, Partial<PerfilAutorSalvo>>).forEach(
-    ([autor, perfil]) => {
-      if (!autor.trim() || !perfil || typeof perfil !== "object") {
-        return;
-      }
-
-      perfisValidos[normalizarNomeAutor(autor)] = {
-        avatar: typeof perfil.avatar === "string" ? perfil.avatar : "",
-        avatarNome:
-          typeof perfil.avatarNome === "string" ? perfil.avatarNome : "",
-        bio:
-          typeof perfil.bio === "string"
-            ? perfil.bio.slice(0, BIO_MAX_LENGTH)
-            : "",
-        sobreBio:
-          typeof perfil.sobreBio === "string"
-            ? perfil.sobreBio.slice(0, SOBRE_BIO_MAX_LENGTH)
-            : "",
-        mostrarDestaques: perfil.mostrarDestaques === true,
-      };
-    },
-  );
-
-  return perfisValidos;
-}
-
 function carregarPerfisAutores(userId = ""): PerfisAutoresSalvos {
   const userIdLimpo = userId.trim();
 
@@ -1140,50 +528,6 @@ function carregarPerfisAutores(userId = ""): PerfisAutoresSalvos {
     return {};
   }
 }
-
-function criarBioAutor(perfil: AutorPerfil) {
-  if (perfil.obras.length === 0) {
-    return `${perfil.nome} participa da Historietas como leitor, com Diário, comunidade e atividades de leitura.`;
-  }
-
-  const generos = Array.from(
-    new Set(
-      perfil.obras
-        .map((obra) => formatarGeneroPerfilAutor(obra.genero))
-        .filter((genero) => genero && genero !== "Não informado"),
-    ),
-  );
-
-  const generosTexto =
-    generos.length > 0 ? generos.slice(0, 3).join(", ") : "histórias variadas";
-
-  return `${perfil.nome} publica histórias na Historietas, com foco em ${generosTexto}.`;
-}
-
-function encontrarCapituloParaContinuar(obra: ObraLocal) {
-  const indiceUltimoCapituloLido = obra.ultimoCapituloLidoId
-    ? obra.capitulos.findIndex(
-        (capitulo) => capitulo.id === obra.ultimoCapituloLidoId,
-      )
-    : -1;
-
-  if (indiceUltimoCapituloLido >= 0) {
-    const proximoCapituloNaoLido = obra.capitulos
-      .slice(indiceUltimoCapituloLido + 1)
-      .find((capitulo) => !capitulo.lido);
-
-    if (proximoCapituloNaoLido) {
-      return proximoCapituloNaoLido;
-    }
-  }
-
-  return (
-    obra.capitulos.find((capitulo) => !capitulo.lido) ||
-    obra.capitulos[obra.capitulos.length - 1] ||
-    null
-  );
-}
-
 
 function criarStorageKeyUsuarioPerfilBiblioteca(chave: string, userId: string) {
   const userIdLimpo = userId.trim();
@@ -1275,41 +619,6 @@ function salvarJsonUsuarioPerfilAutor(chave: string, userId: string, valor: unkn
   }
 }
 
-function obterIdentificadoresObraPerfilBiblioteca(
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
-) {
-  return Array.from(
-    new Set(
-      [
-        obra.id,
-        obra.slug,
-        criarSlugBase(obra.titulo),
-        normalizarTexto(obra.titulo),
-      ].filter((valor): valor is string => typeof valor === "string" && Boolean(valor.trim())),
-    ),
-  );
-}
-
-function colecaoTemObraPerfilBiblioteca(
-  colecao: string[],
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
-) {
-  const idsColecao = new Set(colecao.filter((id) => typeof id === "string"));
-
-  return obterIdentificadoresObraPerfilBiblioteca(obra).some((identificador) =>
-    idsColecao.has(identificador),
-  );
-}
-
-function removerObraDaColecaoPerfilBiblioteca(
-  colecao: string[],
-  obra: Pick<ObraLocal, "id" | "slug" | "titulo">,
-) {
-  const identificadores = new Set(obterIdentificadoresObraPerfilBiblioteca(obra));
-
-  return colecao.filter((id) => !identificadores.has(id));
-}
-
 function carregarTopFivePerfilAutor(userId = "") {
   if (typeof window === "undefined" || !userId.trim()) {
     return [] as string[];
@@ -1334,55 +643,6 @@ function carregarTopFivePerfilAutor(userId = "") {
   } catch {
     return [] as string[];
   }
-}
-
-function encontrarObraPorIdentificadorTopFivePerfil(
-  obrasDisponiveis: ObraLocal[],
-  identificador: string,
-) {
-  const identificadorLimpo = identificador.trim();
-
-  if (!identificadorLimpo) {
-    return null;
-  }
-
-  return (
-    obrasDisponiveis.find((obra) =>
-      obterIdentificadoresObraPerfilBiblioteca(obra).includes(
-        identificadorLimpo,
-      ),
-    ) || null
-  );
-}
-
-function criarChaveCurtidaTopFivePerfil(perfilUserId: string) {
-  return perfilUserId.trim().toLowerCase();
-}
-
-function normalizarCurtidasTopFiveLocais(valor: unknown) {
-  const curtidasNormalizadas: Record<string, string[]> = {};
-
-  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
-    return curtidasNormalizadas;
-  }
-
-  Object.entries(valor as Record<string, unknown>).forEach(([perfilId, curtidas]) => {
-    if (!perfilId.trim() || !Array.isArray(curtidas)) {
-      return;
-    }
-
-    curtidasNormalizadas[criarChaveCurtidaTopFivePerfil(perfilId)] = Array.from(
-      new Set(
-        curtidas
-          .filter((usuarioId): usuarioId is string =>
-            typeof usuarioId === "string" && Boolean(usuarioId.trim()),
-          )
-          .map((usuarioId) => usuarioId.trim().toLowerCase()),
-      ),
-    );
-  });
-
-  return curtidasNormalizadas;
 }
 
 function carregarCurtidasTopFiveLocais(
@@ -1540,248 +800,6 @@ async function salvarCurtidaTopFiveSupabase(
   } catch {
     return false;
   }
-}
-
-function obterTempoAtividadeBibliotecaPerfil(obra: ObraLocal) {
-  const tempos = [
-    obterTimestampData(obra.ultimaLeituraEm),
-    obterTimestampData(obra.criadaEm),
-    ...obra.capitulos.map((capitulo) =>
-      Math.max(
-        obterTimestampData(capitulo.lidoEm),
-        obterTimestampData(capitulo.criadoEm),
-      ),
-    ),
-  ];
-
-  return Math.max(0, ...tempos);
-}
-
-function obterCapituloBibliotecaPerfil(obra: ObraLocal) {
-  return (
-    obra.capitulos.find((capitulo) => capitulo.salvo) ||
-    encontrarCapituloParaContinuar(obra) ||
-    obra.capitulos.find((capitulo) => capitulo.lido) ||
-    obra.capitulos[0] ||
-    null
-  );
-}
-
-
-function converterItensDiarioParaBiblioteca(
-  itens: DiarioPerfilItem[],
-  prefixo: string,
-): ItemBibliotecaPerfil[] {
-  const itensPorObra = new Map<string, ItemBibliotecaPerfil>();
-
-  [...itens]
-    .sort(
-      (itemA, itemB) =>
-        obterTimestampData(itemB.data) - obterTimestampData(itemA.data),
-    )
-    .forEach((item) => {
-      const obra = item.obra;
-
-      if (!obra) {
-        return;
-      }
-
-      const chaveObra =
-        obra.id.trim() ||
-        obra.slug.trim() ||
-        normalizarTexto(obra.titulo);
-
-      if (!chaveObra || itensPorObra.has(chaveObra)) {
-        return;
-      }
-
-      const capitulo =
-        item.tipo === "lendo"
-          ? encontrarCapituloParaContinuar(obra)
-          : obterCapituloBibliotecaPerfil(obra);
-      const numeroCapitulo = capitulo
-        ? obra.capitulos.findIndex(
-            (capituloObra) => capituloObra.id === capitulo.id,
-          ) + 1
-        : 0;
-
-      itensPorObra.set(chaveObra, {
-        chave: `${prefixo}-${item.chave}`,
-        obra,
-        capitulo,
-        numeroCapitulo: Math.max(0, numeroCapitulo),
-        tempoAtividade:
-          obterTimestampData(item.data) ||
-          obterTempoAtividadeBibliotecaPerfil(obra),
-        tipoDiario: item.tipo,
-        descricao: item.descricao,
-      });
-    });
-
-  return Array.from(itensPorObra.values()).sort(
-    (itemA, itemB) => itemB.tempoAtividade - itemA.tempoAtividade,
-  );
-}
-
-function converterCapitulosSalvosParaBiblioteca(
-  obrasDisponiveis: ObraLocal[],
-): ItemBibliotecaPerfil[] {
-  const itens: ItemBibliotecaPerfil[] = [];
-
-  obrasDisponiveis.forEach((obra) => {
-    obra.capitulos.forEach((capitulo, capituloIndex) => {
-      if (!capitulo.salvo) {
-        return;
-      }
-
-      itens.push({
-        chave: `salvo-${obra.id || obra.slug}-${capitulo.id}`,
-        obra,
-        capitulo,
-        numeroCapitulo: capituloIndex + 1,
-        tempoAtividade:
-          obterTimestampData(capitulo.lidoEm) ||
-          obterTimestampData(capitulo.criadoEm) ||
-          obterTempoAtividadeBibliotecaPerfil(obra),
-        tipoDiario: "quero_ler",
-        descricao: "Capítulo salvo na Biblioteca",
-      });
-    });
-  });
-
-  return itens.sort(
-    (itemA, itemB) => itemB.tempoAtividade - itemA.tempoAtividade,
-  );
-}
-
-function mesclarItensBibliotecaPerfil(
-  ...listas: ItemBibliotecaPerfil[][]
-): ItemBibliotecaPerfil[] {
-  const itensPorChave = new Map<string, ItemBibliotecaPerfil>();
-
-  listas.flat().forEach((item) => {
-    const chave =
-      item.capitulo?.id.trim()
-        ? `${item.obra.id || item.obra.slug}::${item.capitulo.id}`
-        : item.obra.id || item.obra.slug || normalizarTexto(item.obra.titulo);
-
-    if (!chave || itensPorChave.has(chave)) {
-      return;
-    }
-
-    itensPorChave.set(chave, item);
-  });
-
-  return Array.from(itensPorChave.values()).sort(
-    (itemA, itemB) => itemB.tempoAtividade - itemA.tempoAtividade,
-  );
-}
-
-
-
-
-
-
-function criarCapaGridPerfilAutor(
-  capa: string,
-  desktop: boolean,
-): CSSProperties {
-  const estiloBase = desktop
-    ? desktopProfileWorkCoverStyle
-    : profileWorkCoverStyle;
-
-  if (!capa) {
-    return estiloBase;
-  }
-
-  return {
-    ...estiloBase,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarCapaDestaquePerfilAutor(capa: string): CSSProperties {
-  if (!capa) {
-    return authorHighlightCoverStyle;
-  }
-
-  return {
-    ...authorHighlightCoverStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function criarCapaMiniCardDiarioPerfilStyle(capa: string): CSSProperties {
-  if (!capa) {
-    return diarySummaryCoverStyle;
-  }
-
-  return {
-    ...diarySummaryCoverStyle,
-    backgroundImage: `url(${capa})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-}
-
-function pegarTexto(valor: unknown, fallback = "") {
-  return typeof valor === "string" && valor.trim() ? valor.trim() : fallback;
-}
-
-function normalizarPerfilUsuarioSupabase(
-  row: Record<string, unknown> | null,
-  userIdFallback: string,
-  nomeFallback: string,
-): PerfilUsuarioRemoto {
-  const userId =
-    pegarTexto(row?.user_id) ||
-    pegarTexto(row?.id) ||
-    userIdFallback.trim();
-
-  const nome =
-    pegarTexto(row?.nome) ||
-    pegarTexto(row?.nome_usuario) ||
-    pegarTexto(row?.username) ||
-    pegarTexto(row?.display_name) ||
-    pegarTexto(row?.apelido) ||
-    nomeFallback.trim() ||
-    "Usuário";
-
-  const username = normalizarUsernamePerfilAutor(pegarTexto(row?.username));
-
-  const avatar =
-    pegarTexto(row?.avatar_url) ||
-    pegarTexto(row?.avatar) ||
-    pegarTexto(row?.foto_url) ||
-    pegarTexto(row?.imagem_url) ||
-    pegarTexto(row?.photo_url);
-
-  const bio =
-    pegarTexto(row?.bio) ||
-    pegarTexto(row?.sobre) ||
-    pegarTexto(row?.descricao) ||
-    "Perfil de leitor no Historietas.";
-
-  const sobreBio =
-    pegarTexto(row?.sobre_bio) ||
-    pegarTexto(row?.sobreBio) ||
-    pegarTexto(row?.sobre) ||
-    pegarTexto(row?.descricao) ||
-    bio;
-
-  return {
-    userId,
-    nome: nome.slice(0, 80),
-    username,
-    avatar,
-    bio: bio.slice(0, BIO_MAX_LENGTH),
-    sobreBio: sobreBio.slice(0, SOBRE_BIO_MAX_LENGTH),
-    criadoEm: pegarTexto(row?.created_at ?? row?.criado_em),
-  };
 }
 
 async function carregarPerfilUsuarioSupabase(
@@ -2051,352 +1069,6 @@ async function enviarAvatarPerfilUsuarioSupabase({
       erro: error instanceof Error ? error.message : "Erro inesperado ao enviar avatar.",
     };
   }
-}
-
-function criarPerfilUsuarioRemotoComoAutor(
-  perfilUsuario: PerfilUsuarioRemoto,
-): AutorPerfil {
-  return {
-    autorId: perfilUsuario.userId,
-    nome: perfilUsuario.nome,
-    obras: [],
-    totalCapitulos: 0,
-    totalCurtidas: 0,
-    totalComentarios: 0,
-    totalPublicadas: 0,
-  };
-}
-
-function pegarNumero(valor: unknown, fallback = 0) {
-  return typeof valor === "number" && Number.isFinite(valor) ? valor : fallback;
-}
-
-function pegarBooleano(valor: unknown, fallback = false) {
-  return typeof valor === "boolean" ? valor : fallback;
-}
-
-function pegarTagsSupabase(valor: unknown): string[] {
-  if (Array.isArray(valor)) {
-    const tags = valor
-      .filter(
-        (tag): tag is string => typeof tag === "string" && Boolean(tag.trim()),
-      )
-      .map((tag) => tag.trim());
-
-    return tags.length > 0 ? tags : ["sem tags"];
-  }
-
-  if (typeof valor === "string" && valor.trim()) {
-    const tags = valor
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean);
-
-    return tags.length > 0 ? tags : ["sem tags"];
-  }
-
-  return ["sem tags"];
-}
-
-function normalizarCategoriaArquivo(
-  tipo: string,
-): ArquivoObraLocal["categoria"] {
-  const tipoNormalizado = tipo.toLowerCase();
-
-  if (tipoNormalizado.startsWith("image/")) {
-    return "imagem";
-  }
-
-  if (tipoNormalizado.includes("pdf") || tipoNormalizado.includes("document")) {
-    return "documento";
-  }
-
-  if (
-    tipoNormalizado.startsWith("text/") ||
-    tipoNormalizado.includes("markdown")
-  ) {
-    return "texto";
-  }
-
-  return "outro";
-}
-
-function criarArquivoObraSupabase(
-  row: SupabaseObraRow,
-): ArquivoObraLocal | null {
-  const conteudo = pegarTexto(
-    row.arquivo_url ??
-      row.arquivoUrl ??
-      row.arquivo_conteudo ??
-      row.arquivoObra,
-  );
-
-  if (!conteudo) {
-    return null;
-  }
-
-  const tipo = pegarTexto(row.arquivo_tipo ?? row.arquivoTipo, "outro");
-
-  return {
-    nome: pegarTexto(row.arquivo_nome ?? row.arquivoNome, "arquivo-da-obra"),
-    tipo,
-    tamanho: pegarNumero(row.arquivo_tamanho ?? row.arquivoTamanho, 0),
-    conteudo,
-    categoria: normalizarCategoriaArquivo(tipo),
-    criadoEm: pegarTexto(
-      row.arquivo_criado_em ?? row.arquivoCriadoEm ?? row.created_at,
-    ),
-  };
-}
-
-function normalizarObraSupabase(
-  row: SupabaseObraRow,
-  index: number,
-): ObraLocal {
-  const titulo = pegarTexto(row.titulo, `Obra ${index + 1}`);
-  const slug = pegarTexto(row.slug, criarSlugBase(titulo));
-
-  return {
-    id: pegarTexto(row.id, `supabase-${index + 1}`),
-    titulo,
-    autorId: pegarTexto(row.user_id ?? row.autor_id ?? row.autorId, ""),
-    autor: pegarTexto(
-      row.autor ?? row.nome_autor ?? row.autor_nome,
-      "Autor não informado",
-    ),
-    genero: pegarTexto(row.genero, "Não informado"),
-    formato: pegarTexto(row.formato, "Não informado"),
-    classificacaoIndicativa: pegarTexto(
-      row.classificacao_indicativa ?? row.classificacaoIndicativa,
-      "Não informada",
-    ),
-    sinopse: pegarTexto(row.sinopse, "Nenhuma sinopse informada."),
-    tags: pegarTagsSupabase(row.tags),
-    capa: pegarTexto(row.capa_url ?? row.capaUrl ?? row.capa, ""),
-    capaNome: pegarTexto(row.capa_nome ?? row.capaNome, ""),
-    arquivoObra: criarArquivoObraSupabase(row),
-    publicado: pegarBooleano(row.publicado, false),
-    capitulos: [],
-    criadaEm: pegarTexto(row.created_at ?? row.criada_em ?? row.criadaEm, ""),
-    ultimoCapituloLidoId: "",
-    ultimaLeituraEm: "",
-    progressoLeitura: 0,
-    visualizacoes: normalizarNumeroPerfilAutor(
-      row.visualizacoes ??
-        row.views ??
-        row.visualizacoes_total ??
-        row.total_visualizacoes ??
-        row.totalVisualizacoes,
-    ),
-    slug,
-    link: `/obra/${slug}`,
-  };
-}
-
-function normalizarCapituloSupabase(
-  row: SupabaseCapituloRow,
-  capituloIndex: number,
-  obraIndex: number,
-): CapituloLocal & { obraId: string } {
-  return {
-    id: pegarTexto(
-      row.id,
-      `capitulo-supabase-${obraIndex + 1}-${capituloIndex + 1}`,
-    ),
-    titulo: pegarTexto(row.titulo, `Capítulo ${capituloIndex + 1}`),
-    texto: "",
-    curtiu: false,
-    salvo: false,
-    comentario: "",
-    criadoEm: pegarTexto(row.created_at ?? row.criado_em ?? row.criadoEm, ""),
-    lido: false,
-    lidoEm: "",
-    obraId: pegarTexto(row.obra_id ?? row.obraId, ""),
-  };
-}
-
-function mesclarObrasPorIdSlug(
-  obrasBase: ObraLocal[],
-  obrasNovas: ObraLocal[],
-) {
-  const mapa = new Map<string, ObraLocal>();
-
-  [...obrasBase, ...obrasNovas].forEach((obra) => {
-    const chave = obra.id || obra.slug || criarSlugBase(obra.titulo);
-    const existente = mapa.get(chave);
-
-    if (!existente) {
-      mapa.set(chave, obra);
-      return;
-    }
-
-    mapa.set(chave, {
-      ...existente,
-      ...obra,
-      capitulos:
-        obra.capitulos.length > 0 ? obra.capitulos : existente.capitulos,
-      arquivoObra: obra.arquivoObra || existente.arquivoObra,
-      capa: obra.capa || existente.capa,
-      capaNome: obra.capaNome || existente.capaNome,
-      visualizacoes: Math.max(existente.visualizacoes, obra.visualizacoes),
-      ultimaLeituraEm: obra.ultimaLeituraEm || existente.ultimaLeituraEm,
-      ultimoCapituloLidoId:
-        obra.ultimoCapituloLidoId || existente.ultimoCapituloLidoId,
-    });
-  });
-
-  return Array.from(mapa.values());
-}
-
-function aplicarInteracoesNasObras(
-  obrasParaAtualizar: ObraLocal[],
-  idsCapitulosCurtidos: Set<string>,
-  idsCapitulosSalvos: Set<string>,
-  comentariosPorCapitulo: Map<string, string>,
-  progressoPorCapitulo: Map<string, string>,
-  progressoCarregado: boolean,
-  capitulosComMetricas: ReadonlySet<string>,
-) {
-  return obrasParaAtualizar.map((obra) => {
-    let ultimoCapituloLidoId = progressoCarregado
-      ? ""
-      : obra.ultimoCapituloLidoId;
-    let ultimaLeituraEm = progressoCarregado ? "" : obra.ultimaLeituraEm;
-
-    const capitulos = obra.capitulos.map((capitulo) => {
-      const lidoEmRemoto = progressoPorCapitulo.get(capitulo.id) || "";
-      const progressoRemotoDisponivel =
-        progressoCarregado && capitulosComMetricas.has(capitulo.id);
-      const lido = progressoRemotoDisponivel
-        ? Boolean(lidoEmRemoto)
-        : Boolean(lidoEmRemoto) || capitulo.lido;
-      const lidoEm = lido
-        ? lidoEmRemoto || capitulo.lidoEm
-        : "";
-
-      if (lido && lidoEm) {
-        const tempoAtual = obterTimestampData(lidoEm);
-        const tempoAnterior = obterTimestampData(ultimaLeituraEm);
-
-        if (tempoAtual >= tempoAnterior) {
-          ultimoCapituloLidoId = capitulo.id;
-          ultimaLeituraEm = lidoEm;
-        }
-      }
-
-      return {
-        ...capitulo,
-        curtiu: capitulo.curtiu || idsCapitulosCurtidos.has(capitulo.id),
-        salvo: capitulo.salvo || idsCapitulosSalvos.has(capitulo.id),
-        comentario:
-          comentariosPorCapitulo.get(capitulo.id) || capitulo.comentario,
-        lido,
-        lidoEm,
-      };
-    });
-
-    return {
-      ...obra,
-      capitulos,
-      ultimoCapituloLidoId,
-      ultimaLeituraEm,
-      progressoLeitura: calcularProgressoLeitura(capitulos),
-    };
-  });
-}
-
-function somarContagensCapitulosPerfilAutor(
-  obra: Pick<ObraLocal, "capitulos">,
-  contagensPorCapitulo: Record<string, number>,
-) {
-  return obra.capitulos.reduce((total, capitulo) => {
-    const capituloId = capitulo.id.trim();
-
-    if (!capituloId) {
-      return total;
-    }
-
-    return total + normalizarNumeroPerfilAutor(contagensPorCapitulo[capituloId], 0);
-  }, 0);
-}
-
-function obterTotalCurtidasObraPerfilAutor(
-  obra: Pick<ObraLocal, "id" | "capitulos">,
-  totais: TotaisInteracoesObrasPerfilAutor,
-) {
-  const obraId = obra.id.trim();
-  const totalUsuariosUnicos = obraId
-    ? normalizarNumeroPerfilAutor(totais.curtidasPorObra[obraId], 0)
-    : 0;
-
-  if (totalUsuariosUnicos > 0) {
-    return totalUsuariosUnicos;
-  }
-
-  const totalCapitulos = somarContagensCapitulosPerfilAutor(
-    obra,
-    totais.curtidasPorCapitulo,
-  );
-  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.curtiu).length;
-
-  return Math.max(totalCapitulos, totalLocal);
-}
-
-function obterTotalComentariosObraPerfilAutor(
-  obra: Pick<ObraLocal, "id" | "capitulos">,
-  totais: TotaisInteracoesObrasPerfilAutor,
-) {
-  const obraId = obra.id.trim();
-  const totalUsuariosUnicos = obraId
-    ? normalizarNumeroPerfilAutor(totais.comentariosPorObra[obraId], 0)
-    : 0;
-
-  if (totalUsuariosUnicos > 0) {
-    return totalUsuariosUnicos;
-  }
-
-  const totalCapitulos = somarContagensCapitulosPerfilAutor(
-    obra,
-    totais.comentariosPorCapitulo,
-  );
-  const totalLocal = obra.capitulos.filter((capitulo) =>
-    capitulo.comentario.trim(),
-  ).length;
-
-  return Math.max(totalCapitulos, totalLocal);
-}
-
-function obterTotalSalvosObraPerfilAutor(
-  obra: Pick<ObraLocal, "id" | "capitulos">,
-  totais: TotaisInteracoesObrasPerfilAutor,
-) {
-  const obraId = obra.id.trim();
-  const totalUsuariosUnicos = obraId
-    ? normalizarNumeroPerfilAutor(totais.salvosPorObra[obraId], 0)
-    : 0;
-
-  if (totalUsuariosUnicos > 0) {
-    return totalUsuariosUnicos;
-  }
-
-  const totalCapitulos = somarContagensCapitulosPerfilAutor(
-    obra,
-    totais.salvosPorCapitulo,
-  );
-  const totalLocal = obra.capitulos.filter((capitulo) => capitulo.salvo).length;
-
-  return Math.max(totalCapitulos, totalLocal);
-}
-
-function obterTotalConcluidasObraPerfilAutor(
-  obra: Pick<ObraLocal, "id">,
-  totais: TotaisInteracoesObrasPerfilAutor,
-) {
-  const obraId = obra.id.trim();
-
-  return obraId
-    ? normalizarNumeroPerfilAutor(totais.concluidasPorObra[obraId], 0)
-    : 0;
 }
 
 async function carregarTotaisInteracoesObrasPerfilAutor(

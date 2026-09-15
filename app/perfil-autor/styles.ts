@@ -2988,3 +2988,51 @@ export const emptyMiniBoxStyle: CSSProperties = {
   boxSizing: "border-box",
   ...safeTextStyle,
 };
+
+export function criarCapaGridPerfilAutor(
+  capa: string,
+  desktop: boolean,
+): CSSProperties {
+  const estiloBase = desktop
+    ? desktopProfileWorkCoverStyle
+    : profileWorkCoverStyle;
+
+  if (!capa) {
+    return estiloBase;
+  }
+
+  return {
+    ...estiloBase,
+    backgroundImage: `url(${capa})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
+
+export function criarCapaDestaquePerfilAutor(capa: string): CSSProperties {
+  if (!capa) {
+    return authorHighlightCoverStyle;
+  }
+
+  return {
+    ...authorHighlightCoverStyle,
+    backgroundImage: `url(${capa})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
+
+export function criarCapaMiniCardDiarioPerfilStyle(
+  capa: string,
+): CSSProperties {
+  if (!capa) {
+    return diarySummaryCoverStyle;
+  }
+
+  return {
+    ...diarySummaryCoverStyle,
+    backgroundImage: `url(${capa})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+}
