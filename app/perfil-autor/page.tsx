@@ -174,6 +174,7 @@ import { ProfileRatingBox } from "./components/profile-rating-box";
 import { ProfileStats } from "./components/profile-stats";
 import { ProfileBio } from "./components/profile-bio";
 import { ProfileAvatar } from "./components/profile-avatar";
+import { ProfileHeaderInfo } from "./components/profile-header-info";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -232,7 +233,6 @@ import {
   menuNotificationBadgeStyle,
   heroBoxStyle,
   authorTopRowStyle,
-  authorHeaderInfoStyle,
   avatarImageStyle,
   hiddenInputStyle,
   profileEditorSheetContentStyle,
@@ -250,8 +250,6 @@ import {
   avatarRemoveButtonStyle,
   avatarErrorStyle,
   bioCounterStyle,
-  titleStyle,
-  profileNameRowStyle,
   profileActionsStyle,
   desktopProfileActionsStyle,
   profileVisitorActionsStyle,
@@ -339,7 +337,6 @@ import {
   desktopContainerStyle,
   desktopHeroBoxStyle,
   desktopAuthorTopRowStyle,
-  desktopTitleStyle,
   desktopAvatarActionsStyle,
   desktopAvatarSmallButtonStyle,
   desktopAvatarRemoveButtonStyle,
@@ -4894,7 +4891,6 @@ function PerfilAutorPageContent() {
   const authorTopRowAtualStyle = isDesktop
     ? desktopAuthorTopRowStyle
     : authorTopRowStyle;
-  const titleAtualStyle = isDesktop ? desktopTitleStyle : titleStyle;
   const avatarActionsAtualStyle = isDesktop
     ? desktopAvatarActionsStyle
     : avatarActionsStyle;
@@ -6885,13 +6881,10 @@ function PerfilAutorPageContent() {
               onEdit={abrirEditorPerfil}
             />
 
-            <div style={authorHeaderInfoStyle}>
-              <div style={profileNameRowStyle}>
-                <h1 data-historietas-user-content="true" className="historietas-theme-title" style={titleAtualStyle}>
-                  {perfilParaMostrar.nome}
-                </h1>
-              </div>
-
+            <ProfileHeaderInfo
+              autorNome={perfilParaMostrar.nome}
+              isDesktop={isDesktop}
+            >
               <ProfileStats
                 avaliacaoDiarioPrivada={avaliacaoDiarioPrivada}
                 avaliacaoEhDiario={avaliacaoResumoEhDiario}
@@ -6908,7 +6901,7 @@ function PerfilAutorPageContent() {
                 seguindoHref={seguindoPerfilHref}
                 seguindoTotal={seguindoTotalPerfil}
               />
-            </div>
+            </ProfileHeaderInfo>
           </div>
 
           <ProfileBio
