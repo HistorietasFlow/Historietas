@@ -172,6 +172,7 @@ import { ProfileSectionTabs } from "./components/profile-section-tabs";
 import { LibraryTabs } from "./components/library-tabs";
 import { ProfileRatingBox } from "./components/profile-rating-box";
 import { ProfileStats } from "./components/profile-stats";
+import { ProfileBio } from "./components/profile-bio";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -231,7 +232,6 @@ import {
   heroBoxStyle,
   authorTopRowStyle,
   authorHeaderInfoStyle,
-  authorTextBlockStyle,
   avatarButtonStyle,
   avatarDisplayStyle,
   avatarImageStyle,
@@ -252,9 +252,7 @@ import {
   avatarErrorStyle,
   bioCounterStyle,
   titleStyle,
-  descriptionStyle,
   profileNameRowStyle,
-  profileAddBioButtonStyle,
   profileActionsStyle,
   desktopProfileActionsStyle,
   profileVisitorActionsStyle,
@@ -345,7 +343,6 @@ import {
   desktopAvatarButtonStyle,
   desktopAvatarDisplayStyle,
   desktopTitleStyle,
-  desktopDescriptionStyle,
   desktopAvatarActionsStyle,
   desktopAvatarSmallButtonStyle,
   desktopAvatarRemoveButtonStyle,
@@ -4907,9 +4904,6 @@ function PerfilAutorPageContent() {
     ? desktopAvatarDisplayStyle
     : avatarDisplayStyle;
   const titleAtualStyle = isDesktop ? desktopTitleStyle : titleStyle;
-  const descriptionAtualStyle = isDesktop
-    ? desktopDescriptionStyle
-    : descriptionStyle;
   const avatarActionsAtualStyle = isDesktop
     ? desktopAvatarActionsStyle
     : avatarActionsStyle;
@@ -6955,21 +6949,13 @@ function PerfilAutorPageContent() {
             </div>
           </div>
 
-          <div style={authorTextBlockStyle}>
-            {bioAutorPersonalizada ? (
-              <p data-historietas-user-content="true" style={descriptionAtualStyle}>{bioAutorPersonalizada}</p>
-            ) : podeEditarPerfil ? (
-              <button
-                type="button"
-                onClick={abrirEditorPerfil}
-                style={profileAddBioButtonStyle}
-              >
-                + Adicionar biografia
-              </button>
-            ) : (
-              <p style={descriptionAtualStyle}>{bioAutor}</p>
-            )}
-          </div>
+          <ProfileBio
+            bioFallback={bioAutor}
+            bioPersonalizada={bioAutorPersonalizada}
+            isDesktop={isDesktop}
+            podeEditar={podeEditarPerfil}
+            onEdit={abrirEditorPerfil}
+          />
 
           <div
             style={
