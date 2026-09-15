@@ -176,6 +176,8 @@ import { ProfilePageState } from "./components/profile-page-state";
 import { PrivateProfileNotice } from "./components/private-profile-notice";
 import { DiarySummaryCard } from "./components/diary-summary-card";
 import { LibraryItemCard } from "./components/library-item-card";
+import { ProfileSectionTabs } from "./components/profile-section-tabs";
+import { LibraryTabs } from "./components/library-tabs";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -198,10 +200,6 @@ import {
   desktopDiarySummaryGridStyle,
   profileLibrarySectionStyle,
   desktopProfileLibrarySectionStyle,
-  profileLibraryTabsStyle,
-  desktopProfileLibraryTabsStyle,
-  profileLibraryTabStyle,
-  profileLibraryTabActiveStyle,
   mobileTopWaterFadeStyle,
   desktopTopWaterFadeStyle,
   perfilAutorThemeCss,
@@ -311,9 +309,6 @@ import {
   authorHighlightsListStyle,
   desktopAuthorHighlightsListStyle,
   authorHighlightItemStyle,
-  profileTabsStyle,
-  profileTabStyle,
-  profileTabActiveStyle,
   profileAboutBoxStyle,
   profileAboutTitleStyle,
   profileAboutTextStyle,
@@ -7537,90 +7532,16 @@ function PerfilAutorPageContent() {
           )}
 
         {totalAbasPerfilVisiveis > 0 && (
-          <div
-            role="group"
-            style={{
-              ...profileTabsStyle,
-              gridTemplateColumns: `repeat(${totalAbasPerfilVisiveis}, minmax(0, 1fr))`,
-            }}
-            aria-label="Seções do perfil"
-          >
-            {obrasPerfilVisivel && (
-              <button
-                type="button"
-                aria-pressed={abaPerfil === "obras"}
-                onClick={() => selecionarAbaPerfil("obras")}
-                style={
-                  abaPerfil === "obras"
-                    ? profileTabActiveStyle
-                    : profileTabStyle
-                }
-              >
-                Obras
-              </button>
-            )}
-
-            {diarioPerfilVisivel && (
-              <button
-                type="button"
-                aria-pressed={abaPerfil === "diario"}
-                onClick={() => selecionarAbaPerfil("diario")}
-                style={
-                  abaPerfil === "diario"
-                    ? profileTabActiveStyle
-                    : profileTabStyle
-                }
-              >
-                Diário
-              </button>
-            )}
-
-            {comunidadePerfilVisivel && (
-              <button
-                type="button"
-                aria-pressed={abaPerfil === "comunidade"}
-                onClick={() => selecionarAbaPerfil("comunidade")}
-                style={
-                  abaPerfil === "comunidade"
-                    ? profileTabActiveStyle
-                    : profileTabStyle
-                }
-              >
-                Comunidade
-              </button>
-            )}
-
-            {sobrePerfilVisivel && (
-              <button
-                type="button"
-                aria-pressed={abaPerfil === "sobre"}
-                onClick={() => selecionarAbaPerfil("sobre")}
-                style={
-                  abaPerfil === "sobre"
-                    ? profileTabActiveStyle
-                    : profileTabStyle
-                }
-              >
-                Sobre
-              </button>
-            )}
-
-            {bibliotecaPerfilVisivel && (
-              <button
-                type="button"
-                aria-pressed={abaPerfil === "biblioteca"}
-                onClick={() => selecionarAbaPerfil("biblioteca")}
-                style={
-                  abaPerfil === "biblioteca"
-                    ? profileTabActiveStyle
-                    : profileTabStyle
-                }
-              >
-                Biblioteca
-              </button>
-            )}
-
-          </div>
+          <ProfileSectionTabs
+            abaAtiva={abaPerfil}
+            bibliotecaVisivel={bibliotecaPerfilVisivel}
+            comunidadeVisivel={comunidadePerfilVisivel}
+            diarioVisivel={diarioPerfilVisivel}
+            obrasVisivel={obrasPerfilVisivel}
+            sobreVisivel={sobrePerfilVisivel}
+            totalAbasVisiveis={totalAbasPerfilVisiveis}
+            onSelect={selecionarAbaPerfil}
+          />
         )}
 
         {conteudoPrivadoBloqueado && (
@@ -7637,36 +7558,11 @@ function PerfilAutorPageContent() {
                 : profileLibrarySectionStyle
             }
           >
-            <div
-              style={
-                isDesktop
-                  ? desktopProfileLibraryTabsStyle
-                  : profileLibraryTabsStyle
-              }
-            >
-              {[
-                ["tudo", "Tudo"],
-                ["quero-ler", "Quero ler"],
-                ["favoritas", "Na lista"],
-                ["salvos", "Salvos"],
-                ["lendo-agora", "Lendo"],
-                ["concluidas", "Concluídas"],
-                ["historico", "Histórico"],
-              ].map(([valor, rotulo]) => (
-                <button
-                  key={valor}
-                  type="button"
-                  onClick={() => setAbaBibliotecaPerfil(valor as AbaBibliotecaPerfil)}
-                  style={
-                    abaBibliotecaPerfil === valor
-                      ? profileLibraryTabActiveStyle
-                      : profileLibraryTabStyle
-                  }
-                >
-                  {rotulo}
-                </button>
-              ))}
-            </div>
+            <LibraryTabs
+              abaAtiva={abaBibliotecaPerfil}
+              isDesktop={isDesktop}
+              onSelect={setAbaBibliotecaPerfil}
+            />
 
             {diarioPerfil.carregando ? (
               <LoadingSpinner label="Carregando biblioteca" compacto />
