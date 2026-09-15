@@ -172,6 +172,8 @@ import {
   MenuPerfilIcone,
 } from "./components/profile-icons";
 import { LoadingSpinner } from "./components/loading-spinner";
+import { ProfilePageState } from "./components/profile-page-state";
+import { PrivateProfileNotice } from "./components/private-profile-notice";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -407,11 +409,6 @@ import {
   diaryTimelineDateStyle,
   desktopDiaryBoxStyle,
   emptyTextStyle,
-  privateProfileNoticeStyle,
-  privateProfileLockStyle,
-  privateProfileNoticeTextBlockStyle,
-  privateProfileNoticeTitleStyle,
-  privateProfileNoticeTextStyle,
   emptyMiniBoxStyle,
 } from "./styles";
 
@@ -6539,77 +6536,31 @@ function PerfilAutorPageContent() {
 
   if (carregando || redirecionandoParaLogin) {
     return (
-      <main style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
-
-        {isDesktop && (
-          <div style={desktopTopWaterFadeStyle} aria-hidden="true" />
-        )}
-        {!isDesktop && (
-          <div style={mobileTopWaterFadeStyle} aria-hidden="true" />
-        )}
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <LoadingSpinner label="Carregando perfil" />
-        </section>
-      </main>
+      <ProfilePageState
+        isDesktop={isDesktop}
+        pageThemeStyle={pageThemeStyle}
+        loadingLabel="Carregando perfil"
+      />
     );
   }
 
   if (autorNaoEncontrado) {
     return (
-      <main style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
-
-        {isDesktop && (
-          <div style={desktopTopWaterFadeStyle} aria-hidden="true" />
-        )}
-        {!isDesktop && (
-          <div style={mobileTopWaterFadeStyle} aria-hidden="true" />
-        )}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <p
-            style={{
-              margin: "10px 0 0",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              fontWeight: 800,
-              textAlign: "center",
-            }}
-          >
-            Perfil não encontrado
-          </p>
-        </section>
-      </main>
+      <ProfilePageState
+        isDesktop={isDesktop}
+        pageThemeStyle={pageThemeStyle}
+        message="Perfil não encontrado"
+      />
     );
   }
 
   if (!perfilParaMostrar) {
     return (
-      <main style={pageThemeStyle}>
-        <style>{`${historietasThemeCss}${perfilAutorThemeCss}`}</style>
-
-        {isDesktop && (
-          <div style={desktopTopWaterFadeStyle} aria-hidden="true" />
-        )}
-        {!isDesktop && (
-          <div style={mobileTopWaterFadeStyle} aria-hidden="true" />
-        )}
-
-        <section style={isDesktop ? desktopContainerStyle : containerStyle}>
-          <p
-            style={{
-              margin: "10px 0 0",
-              color: "#FFFFFF",
-              fontSize: "12px",
-              fontWeight: 800,
-              textAlign: "center",
-            }}
-          >
-            Nenhum autor encontrado
-          </p>
-        </section>
-      </main>
+      <ProfilePageState
+        isDesktop={isDesktop}
+        pageThemeStyle={pageThemeStyle}
+        message="Nenhum autor encontrado"
+      />
     );
   }
 
@@ -7797,26 +7748,9 @@ function PerfilAutorPageContent() {
         )}
 
         {conteudoPrivadoBloqueado && (
-          <section
-            style={privateProfileNoticeStyle}
-            aria-label="Conteúdo privado"
-          >
-            <span style={privateProfileLockStyle} aria-hidden="true">
-              🔒
-            </span>
-            <div style={privateProfileNoticeTextBlockStyle}>
-              <strong style={privateProfileNoticeTitleStyle}>
-                {perfilBloqueadoEntreUsuarios
-                  ? "Perfil bloqueado"
-                  : "Conteúdo privado"}
-              </strong>
-              <p style={privateProfileNoticeTextStyle}>
-                {perfilBloqueadoEntreUsuarios
-                  ? "O conteúdo deste perfil está oculto porque existe um bloqueio entre vocês."
-                  : "Este autor manteve todas as seções do perfil privadas."}
-              </p>
-            </div>
-          </section>
+          <PrivateProfileNotice
+            perfilBloqueadoEntreUsuarios={perfilBloqueadoEntreUsuarios}
+          />
         )}
 
         {abaPerfil === "biblioteca" && bibliotecaPerfilVisivel && (
