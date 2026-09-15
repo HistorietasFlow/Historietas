@@ -173,6 +173,7 @@ import { LibraryTabs } from "./components/library-tabs";
 import { ProfileRatingBox } from "./components/profile-rating-box";
 import { ProfileStats } from "./components/profile-stats";
 import { ProfileBio } from "./components/profile-bio";
+import { ProfileAvatar } from "./components/profile-avatar";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -232,8 +233,6 @@ import {
   heroBoxStyle,
   authorTopRowStyle,
   authorHeaderInfoStyle,
-  avatarButtonStyle,
-  avatarDisplayStyle,
   avatarImageStyle,
   hiddenInputStyle,
   profileEditorSheetContentStyle,
@@ -340,8 +339,6 @@ import {
   desktopContainerStyle,
   desktopHeroBoxStyle,
   desktopAuthorTopRowStyle,
-  desktopAvatarButtonStyle,
-  desktopAvatarDisplayStyle,
   desktopTitleStyle,
   desktopAvatarActionsStyle,
   desktopAvatarSmallButtonStyle,
@@ -4897,12 +4894,6 @@ function PerfilAutorPageContent() {
   const authorTopRowAtualStyle = isDesktop
     ? desktopAuthorTopRowStyle
     : authorTopRowStyle;
-  const avatarButtonAtualStyle = isDesktop
-    ? desktopAvatarButtonStyle
-    : avatarButtonStyle;
-  const avatarDisplayAtualStyle = isDesktop
-    ? desktopAvatarDisplayStyle
-    : avatarDisplayStyle;
   const titleAtualStyle = isDesktop ? desktopTitleStyle : titleStyle;
   const avatarActionsAtualStyle = isDesktop
     ? desktopAvatarActionsStyle
@@ -6886,42 +6877,13 @@ function PerfilAutorPageContent() {
 
         <section style={heroAtualStyle}>
           <div style={authorTopRowAtualStyle}>
-            {podeEditarPerfil ? (
-              <button
-                type="button"
-                onClick={abrirEditorPerfil}
-                style={avatarButtonAtualStyle}
-                aria-label="Editar perfil"
-              >
-                {avatarAutor ? (
-                  <Image
-                    src={avatarAutor}
-                    alt={`Imagem de ${perfilParaMostrar.nome}`}
-                    width={128}
-                    height={128}
-                    unoptimized
-                    style={avatarImageStyle}
-                  />
-                ) : (
-                  <span>{perfilParaMostrar.nome.charAt(0)}</span>
-                )}
-              </button>
-            ) : (
-              <div style={avatarDisplayAtualStyle}>
-                {avatarAutor ? (
-                  <Image
-                    src={avatarAutor}
-                    alt={`Imagem de ${perfilParaMostrar.nome}`}
-                    width={128}
-                    height={128}
-                    unoptimized
-                    style={avatarImageStyle}
-                  />
-                ) : (
-                  <span>{perfilParaMostrar.nome.charAt(0)}</span>
-                )}
-              </div>
-            )}
+            <ProfileAvatar
+              autorNome={perfilParaMostrar.nome}
+              avatar={avatarAutor}
+              isDesktop={isDesktop}
+              podeEditar={podeEditarPerfil}
+              onEdit={abrirEditorPerfil}
+            />
 
             <div style={authorHeaderInfoStyle}>
               <div style={profileNameRowStyle}>
