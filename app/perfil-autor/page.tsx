@@ -175,6 +175,7 @@ import { ProfileStats } from "./components/profile-stats";
 import { ProfileBio } from "./components/profile-bio";
 import { ProfileAvatar } from "./components/profile-avatar";
 import { ProfileHeaderInfo } from "./components/profile-header-info";
+import { ProfileOwnerActions } from "./components/profile-owner-actions";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -6920,33 +6921,12 @@ function PerfilAutorPageContent() {
             }
           >
             {podeEditarPerfil ? (
-              <>
-                <button
-                  type="button"
-                  onClick={abrirEditorPerfil}
-                  style={profilePrimaryButtonStyle}
-                >
-                  Editar perfil
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void copiarLinkPerfil()}
-                  style={profilePrimaryButtonStyle}
-                >
-                  Compartilhar
-                </button>
-
-                <button
-                  type="button"
-                  onClick={alternarDestaquesPerfil}
-                  style={profilePrimaryButtonStyle}
-                >
-                  {perfilSalvoAutor.mostrarDestaques
-                    ? "Ocultar destaques"
-                    : "Mostrar destaques"}
-                </button>
-              </>
+              <ProfileOwnerActions
+                mostrarDestaques={perfilSalvoAutor.mostrarDestaques}
+                onEdit={abrirEditorPerfil}
+                onShare={() => void copiarLinkPerfil()}
+                onToggleHighlights={alternarDestaquesPerfil}
+              />
             ) : (
               <>
                 {!estadoBloqueioPerfil.existeBloqueio && (
