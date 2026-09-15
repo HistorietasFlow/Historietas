@@ -170,8 +170,8 @@ import { DiarySummaryCard } from "./components/diary-summary-card";
 import { LibraryItemCard } from "./components/library-item-card";
 import { ProfileSectionTabs } from "./components/profile-section-tabs";
 import { LibraryTabs } from "./components/library-tabs";
-import { ProfileRatingSummary } from "./components/profile-rating-summary";
 import { ProfileRatingBox } from "./components/profile-rating-box";
+import { ProfileStats } from "./components/profile-stats";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -255,13 +255,6 @@ import {
   descriptionStyle,
   profileNameRowStyle,
   profileAddBioButtonStyle,
-  profileStatsStyle,
-  desktopProfileStatsStyle,
-  profileStatLinkStyle,
-  profileStatNumberStyle,
-  profileStatWorksNumberStyle,
-  profileStatLabelStyle,
-  profileStatWorksLabelStyle,
   profileActionsStyle,
   desktopProfileActionsStyle,
   profileVisitorActionsStyle,
@@ -4926,9 +4919,6 @@ function PerfilAutorPageContent() {
   const avatarRemoveButtonAtualStyle = isDesktop
     ? desktopAvatarRemoveButtonStyle
     : avatarRemoveButtonStyle;
-  const profileStatsAtualStyle = isDesktop
-    ? desktopProfileStatsStyle
-    : profileStatsStyle;
   const profileActionsAtualStyle = isDesktop
     ? desktopProfileActionsStyle
     : profileActionsStyle;
@@ -6946,76 +6936,22 @@ function PerfilAutorPageContent() {
                 </h1>
               </div>
 
-              <div
-                style={
-                  avaliacaoResumoPerfilVisivel
-                    ? {
-                        ...profileStatsAtualStyle,
-                        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                      }
-                    : profileStatsAtualStyle
-                }
-              >
-                <Link
-                  href={obrasSeguidasPerfilHref}
-                  style={profileStatLinkStyle}
-                  aria-label={`Abrir obras seguidas por ${perfilParaMostrar.nome}`}
-                >
-                  <strong style={profileStatWorksNumberStyle}>
-                    {obrasSeguidasPerfilTotal}
-                  </strong>
-                  <span style={profileStatWorksLabelStyle}>
-                    {language === "en" ? (
-                      <>
-                        <span>works</span>
-                        <span>followed</span>
-                      </>
-                    ) : language === "es" ? (
-                      <>
-                        <span>obras</span>
-                        <span>seguidas</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>obras</span>
-                        <span>seguidas</span>
-                      </>
-                    )}
-                  </span>
-                </Link>
-
-                <Link
-                  href={seguidoresPerfilHref}
-                  style={profileStatLinkStyle}
-                  aria-label={`Abrir lista de seguidores de ${perfilParaMostrar.nome}`}
-                >
-                  <strong style={profileStatNumberStyle}>
-                    {seguidoresTotal}
-                  </strong>
-                  <span style={profileStatLabelStyle}>seguidores</span>
-                </Link>
-
-                <Link
-                  href={seguindoPerfilHref}
-                  style={profileStatLinkStyle}
-                  aria-label={`Abrir lista de perfis que ${perfilParaMostrar.nome} segue`}
-                >
-                  <strong style={profileStatNumberStyle}>
-                    {seguindoTotalPerfil}
-                  </strong>
-                  <span style={profileStatLabelStyle}>seguindo</span>
-                </Link>
-
-                {avaliacaoResumoPerfilVisivel && (
-                  <ProfileRatingSummary
-                    diarioPrivada={avaliacaoDiarioPrivada}
-                    ehDiario={avaliacaoResumoEhDiario}
-                    language={language}
-                    media={avaliacaoResumoPerfil.media}
-                    total={avaliacaoResumoPerfil.total}
-                  />
-                )}
-              </div>
+              <ProfileStats
+                avaliacaoDiarioPrivada={avaliacaoDiarioPrivada}
+                avaliacaoEhDiario={avaliacaoResumoEhDiario}
+                avaliacaoMedia={avaliacaoResumoPerfil.media}
+                avaliacaoTotal={avaliacaoResumoPerfil.total}
+                avaliacaoVisivel={avaliacaoResumoPerfilVisivel}
+                autorNome={perfilParaMostrar.nome}
+                isDesktop={isDesktop}
+                language={language}
+                obrasSeguidasHref={obrasSeguidasPerfilHref}
+                obrasSeguidasTotal={obrasSeguidasPerfilTotal}
+                seguidoresHref={seguidoresPerfilHref}
+                seguidoresTotal={seguidoresTotal}
+                seguindoHref={seguindoPerfilHref}
+                seguindoTotal={seguindoTotalPerfil}
+              />
             </div>
           </div>
 
