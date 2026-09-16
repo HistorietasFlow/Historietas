@@ -188,6 +188,7 @@ import { ProfileHighlightsSection } from "./components/profile-highlights-sectio
 import { ProfileLibrarySection } from "./components/profile-library-section";
 import { ProfileDiarySection } from "./components/profile-diary-section";
 import { ProfileCommunitySection } from "./components/profile-community-section";
+import { ProfileAboutSection } from "./components/profile-about-section";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -267,7 +268,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutBoxStyle,
   profileAboutTitleStyle,
   profileAboutTextStyle,
   profileAboutTextRowStyle,
@@ -7458,7 +7458,7 @@ function PerfilAutorPageContent() {
         )}
 
         {abaPerfil === "sobre" && sobrePerfilVisivel && (
-          <section style={profileAboutBoxStyle}>
+          <ProfileAboutSection>
             <div style={profileAboutHeroStyle}>
               <h2 style={profileAboutTitleStyle}>
                 Sobre {perfilParaMostrar.nome}
@@ -7590,7 +7590,7 @@ function PerfilAutorPageContent() {
 
             {atividadesPerfilVisivel &&
               renderizarAtividadeRecenteSobrePerfil()}
-          </section>
+          </ProfileAboutSection>
         )}
 
         {abaPerfil === "obras" && obrasPerfilVisivel && (
