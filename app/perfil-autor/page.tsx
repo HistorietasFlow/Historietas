@@ -194,6 +194,7 @@ import { ProfileWorksGrid } from "./components/profile-works-grid";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileDiaryEmptyState } from "./components/profile-diary-empty-state";
 import { ProfileRecentActivityList } from "./components/profile-recent-activity-list";
+import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -343,10 +344,6 @@ import {
   diaryToggleButtonIconStyle,
   diarySectionTitleStyle,
   diaryTimelineStyle,
-  diaryTimelineItemStyle,
-  diaryTimelineDotStyle,
-  diaryTimelineTextStyle,
-  diaryTimelineDateStyle,
 } from "./styles";
 
 
@@ -6317,21 +6314,13 @@ function PerfilAutorPageContent() {
           ) : (
             <ProfileRecentActivityList>
               {diarioPerfil.atividades.slice(0, 8).map((item) => (
-                <Link
+                <ProfileRecentActivityItem
                   key={`timeline-${item.chave}`}
                   href={obterHrefItemDiarioPerfil(item)}
-                  style={diaryTimelineItemStyle}
-                >
-                  <span style={diaryTimelineDotStyle} aria-hidden="true" />
-                  <span style={diaryTimelineTextStyle}>
-                    <strong data-historietas-user-content="true">{item.titulo}</strong>
-                    {" — "}
-                    {item.descricao}
-                  </span>
-                  <span style={diaryTimelineDateStyle}>
-                    {dataDiarioPerfilFormatada(item.data)}
-                  </span>
-                </Link>
+                  title={item.titulo}
+                  description={item.descricao}
+                  formattedDate={dataDiarioPerfilFormatada(item.data)}
+                />
               ))}
             </ProfileRecentActivityList>
           ))}
