@@ -183,6 +183,7 @@ import { ProfileHighlightItem } from "./components/profile-highlight-item";
 import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
 import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-link";
 import { ProfileHighlightsHeader } from "./components/profile-highlights-header";
+import { ProfileHighlightsList } from "./components/profile-highlights-list";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -266,8 +267,6 @@ import {
   profileActiveButtonStyle,
   authorHighlightsStyle,
   desktopAuthorHighlightsStyle,
-  authorHighlightsListStyle,
-  desktopAuthorHighlightsListStyle,
   profileAboutBoxStyle,
   profileAboutTitleStyle,
   profileAboutTextStyle,
@@ -7038,7 +7037,7 @@ function PerfilAutorPageContent() {
                   }
                 />
               ) : (
-                <div style={isDesktop ? desktopAuthorHighlightsListStyle : authorHighlightsListStyle}>
+                <ProfileHighlightsList isDesktop={isDesktop}>
                   {obrasEmDestaque.map((obra) => {
                     const obraHref =
                       obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
@@ -7051,7 +7050,7 @@ function PerfilAutorPageContent() {
                       />
                     );
                   })}
-                </div>
+                </ProfileHighlightsList>
               )}
           </section>
         )}
