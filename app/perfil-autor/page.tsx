@@ -178,6 +178,7 @@ import { ProfileHeaderInfo } from "./components/profile-header-info";
 import { ProfileOwnerActions } from "./components/profile-owner-actions";
 import { ProfileVisitorSecondaryActions } from "./components/profile-visitor-secondary-actions";
 import { ProfileActionToast } from "./components/profile-action-toast";
+import { ProfileHighlightsEmptyState } from "./components/profile-highlights-empty-state";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -357,7 +358,6 @@ import {
   diaryTimelineTextStyle,
   diaryTimelineDateStyle,
   desktopDiaryBoxStyle,
-  emptyTextStyle,
   emptyMiniBoxStyle,
 } from "./styles";
 
@@ -7125,27 +7125,13 @@ function PerfilAutorPageContent() {
               </div>
 
               {obrasEmDestaque.length === 0 ? (
-                podeEditarPerfil ? (
-                  <p
-                    style={{
-                      ...emptyTextStyle,
-                      textAlign: "center",
-                      fontWeight: 800,
-                    }}
-                  >
-                    Monte seu TOP 5 para destacar suas obras favoritas.
-                  </p>
-                ) : (
-                  <p
-                    style={{
-                      ...emptyTextStyle,
-                      textAlign: "center",
-                      fontWeight: 800,
-                    }}
-                  >
-                    {`${perfilParaMostrar.nome} nao montou top 5`}
-                  </p>
-                )
+                <ProfileHighlightsEmptyState
+                  message={
+                    podeEditarPerfil
+                      ? "Monte seu TOP 5 para destacar suas obras favoritas."
+                      : `${perfilParaMostrar.nome} nao montou top 5`
+                  }
+                />
               ) : (
                 <div style={isDesktop ? desktopAuthorHighlightsListStyle : authorHighlightsListStyle}>
                   {obrasEmDestaque.map((obra) => {
