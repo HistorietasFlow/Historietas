@@ -190,6 +190,7 @@ import { ProfileDiarySection } from "./components/profile-diary-section";
 import { ProfileCommunitySection } from "./components/profile-community-section";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileWorksSection } from "./components/profile-works-section";
+import { ProfileWorksGrid } from "./components/profile-works-grid";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -7604,13 +7605,7 @@ function PerfilAutorPageContent() {
                   : "Nenhuma obra encontrada."}
               </div>
             ) : (
-              <div
-                style={
-                  isDesktop
-                    ? desktopProfileWorksGridStyle
-                    : profileWorksGridStyle
-                }
-              >
+              <ProfileWorksGrid isDesktop={isDesktop}>
                 {obrasDoPerfilFiltradas.map((obra) => {
                   const obraHref =
                     obra.link ||
@@ -7672,7 +7667,7 @@ function PerfilAutorPageContent() {
                     </article>
                   );
                 })}
-              </div>
+              </ProfileWorksGrid>
             )}
           </ProfileWorksSection>
         )}
