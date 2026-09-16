@@ -177,6 +177,7 @@ import { ProfileAvatar } from "./components/profile-avatar";
 import { ProfileHeaderInfo } from "./components/profile-header-info";
 import { ProfileOwnerActions } from "./components/profile-owner-actions";
 import { ProfileVisitorSecondaryActions } from "./components/profile-visitor-secondary-actions";
+import { ProfileActionToast } from "./components/profile-action-toast";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -256,7 +257,6 @@ import {
   desktopProfileActionsStyle,
   profileVisitorActionsStyle,
   desktopProfileVisitorActionsStyle,
-  profileActionToastStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
   authorHighlightsStyle,
@@ -6976,15 +6976,7 @@ function PerfilAutorPageContent() {
             )}
           </div>
 
-          {mensagemAcao && (
-            <div
-              style={profileActionToastStyle}
-              role="status"
-              aria-live="polite"
-            >
-              {mensagemAcao}
-            </div>
-          )}
+          <ProfileActionToast message={mensagemAcao} />
 
           {podeEditarPerfil && (
             <input
