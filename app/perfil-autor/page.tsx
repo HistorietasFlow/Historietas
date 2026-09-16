@@ -318,8 +318,6 @@ import {
   authorCommunityPostTextStyle,
   authorCommunityPostPollInfoStyle,
   authorCommunityPostWorkStyle,
-  profileWorksGridStyle,
-  desktopProfileWorksGridStyle,
   profileWorkCardStyle,
   profileWorkCoverLinkStyle,
   profileWorkCoverOverlayStyle,
@@ -7114,13 +7112,7 @@ function PerfilAutorPageContent() {
                 Sua Biblioteca ainda não tem itens em {rotuloBibliotecaAtiva}.
               </div>
             ) : (
-              <div
-                style={
-                  isDesktop
-                    ? desktopProfileWorksGridStyle
-                    : profileWorksGridStyle
-                }
-              >
+              <ProfileWorksGrid isDesktop={isDesktop}>
                 {itensBibliotecaAtivos.map((item) => {
                   const obraHref =
                     item.obra.link ||
@@ -7166,7 +7158,7 @@ function PerfilAutorPageContent() {
                     />
                   );
                 })}
-              </div>
+              </ProfileWorksGrid>
             )}
           </ProfileLibrarySection>
         )}
