@@ -187,6 +187,7 @@ import { ProfileHighlightsList } from "./components/profile-highlights-list";
 import { ProfileHighlightsSection } from "./components/profile-highlights-section";
 import { ProfileLibrarySection } from "./components/profile-library-section";
 import { ProfileDiarySection } from "./components/profile-diary-section";
+import { ProfileCommunitySection } from "./components/profile-community-section";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -287,7 +288,6 @@ import {
   profileAboutRowsStyle,
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
-  authorCommunityBoxStyle,
   authorCommunityIntroStyle,
   authorCommunityTitleStyle,
   diaryMainTitleStyle,
@@ -334,7 +334,6 @@ import {
   desktopAvatarActionsStyle,
   desktopAvatarSmallButtonStyle,
   desktopAvatarRemoveButtonStyle,
-  desktopAuthorCommunityBoxStyle,
   desktopAuthorCommunityGridStyle,
   desktopAuthorCommunityPostsListStyle,
   diaryCollapsibleHeaderStyle,
@@ -7250,13 +7249,7 @@ function PerfilAutorPageContent() {
         )}
 
         {abaPerfil === "comunidade" && comunidadePerfilVisivel && (
-          <section
-            style={
-              isDesktop
-                ? desktopAuthorCommunityBoxStyle
-                : authorCommunityBoxStyle
-            }
-          >
+          <ProfileCommunitySection isDesktop={isDesktop}>
             <div style={authorCommunityIntroStyle}>
               <h2 style={authorCommunityTitleStyle}>
                 {language === "en"
@@ -7461,7 +7454,7 @@ function PerfilAutorPageContent() {
                 )}
               </>
             )}
-          </section>
+          </ProfileCommunitySection>
         )}
 
         {abaPerfil === "sobre" && sobrePerfilVisivel && (
