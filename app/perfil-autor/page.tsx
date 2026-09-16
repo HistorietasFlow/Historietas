@@ -176,6 +176,7 @@ import { ProfileBio } from "./components/profile-bio";
 import { ProfileAvatar } from "./components/profile-avatar";
 import { ProfileHeaderInfo } from "./components/profile-header-info";
 import { ProfileOwnerActions } from "./components/profile-owner-actions";
+import { ProfileVisitorSecondaryActions } from "./components/profile-visitor-secondary-actions";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -257,7 +258,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profileActionToastStyle,
   profilePrimaryButtonStyle,
-  profileSecondaryButtonStyle,
   profileActiveButtonStyle,
   authorHighlightsStyle,
   desktopAuthorHighlightsStyle,
@@ -6964,27 +6964,14 @@ function PerfilAutorPageContent() {
                 </button>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => void copiarLinkPerfil()}
-                  style={profileSecondaryButtonStyle}
-                >
-                  Compartilhar
-                </button>
-
-                {obrasPerfilVisivel && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMostrarDestaquesVisitante((valorAtual) => !valorAtual)
-                    }
-                    style={profileSecondaryButtonStyle}
-                  >
-                    {mostrarDestaquesVisitante
-                      ? "Ocultar destaque"
-                      : "Mostrar destaque"}
-                  </button>
-                )}
+                <ProfileVisitorSecondaryActions
+                  mostrarDestaques={mostrarDestaquesVisitante}
+                  obrasVisiveis={obrasPerfilVisivel}
+                  onShare={() => void copiarLinkPerfil()}
+                  onToggleHighlights={() =>
+                    setMostrarDestaquesVisitante((valorAtual) => !valorAtual)
+                  }
+                />
               </>
             )}
           </div>
