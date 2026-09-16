@@ -192,6 +192,7 @@ import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
 import { ProfileLibraryEmptyState } from "./components/profile-library-empty-state";
+import { ProfileWorksEmptyState } from "./components/profile-works-empty-state";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -347,7 +348,6 @@ import {
   diaryTimelineDotStyle,
   diaryTimelineTextStyle,
   diaryTimelineDateStyle,
-  emptyMiniBoxStyle,
 } from "./styles";
 
 
@@ -7588,13 +7588,13 @@ function PerfilAutorPageContent() {
         {abaPerfil === "obras" && obrasPerfilVisivel && (
           <ProfileWorksSection>
             {obrasDoPerfilFiltradas.length === 0 ? (
-              <div style={emptyMiniBoxStyle}>
-                {perfilParaMostrar.obras.length === 0
+              <ProfileWorksEmptyState
+                message={perfilParaMostrar.obras.length === 0
                   ? podeEditarPerfil
                     ? "Você ainda não publicou obras. Seu perfil continua ativo como leitor, com Diário e Comunidade."
                     : "Este perfil ainda não publicou obras. O Diário e a Comunidade continuam disponíveis."
                   : "Nenhuma obra encontrada."}
-              </div>
+              />
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {obrasDoPerfilFiltradas.map((obra) => {
