@@ -341,7 +341,6 @@ import {
   diaryToggleButtonStyle,
   diaryToggleButtonIconStyle,
   diarySectionTitleStyle,
-  diaryEmptyStateStyle,
   diaryTimelineStyle,
   diaryTimelineListStyle,
   diaryTimelineItemStyle,
@@ -6312,9 +6311,9 @@ function PerfilAutorPageContent() {
           (diarioPerfil.carregando ? (
             <LoadingSpinner label="Carregando atividades" compacto />
           ) : diarioPerfil.atividades.length === 0 ? (
-            <div style={diaryEmptyStateStyle}>
+            <ProfileDiaryEmptyState>
               Nenhuma atividade recente para mostrar.
-            </div>
+            </ProfileDiaryEmptyState>
           ) : (
             <div style={diaryTimelineListStyle}>
               {diarioPerfil.atividades.slice(0, 8).map((item) => (
