@@ -189,6 +189,7 @@ import { ProfileLibrarySection } from "./components/profile-library-section";
 import { ProfileDiarySection } from "./components/profile-diary-section";
 import { ProfileCommunitySection } from "./components/profile-community-section";
 import { ProfileAboutSection } from "./components/profile-about-section";
+import { ProfileWorksSection } from "./components/profile-works-section";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -316,7 +317,6 @@ import {
   authorCommunityPostTextStyle,
   authorCommunityPostPollInfoStyle,
   authorCommunityPostWorkStyle,
-  profileWorksSectionStyle,
   profileWorksGridStyle,
   desktopProfileWorksGridStyle,
   profileWorkCardStyle,
@@ -7594,7 +7594,7 @@ function PerfilAutorPageContent() {
         )}
 
         {abaPerfil === "obras" && obrasPerfilVisivel && (
-          <section style={profileWorksSectionStyle}>
+          <ProfileWorksSection>
             {obrasDoPerfilFiltradas.length === 0 ? (
               <div style={emptyMiniBoxStyle}>
                 {perfilParaMostrar.obras.length === 0
@@ -7674,7 +7674,7 @@ function PerfilAutorPageContent() {
                 })}
               </div>
             )}
-          </section>
+          </ProfileWorksSection>
         )}
 
         {obraMenuAberta &&
