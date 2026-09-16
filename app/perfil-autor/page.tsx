@@ -191,6 +191,7 @@ import { ProfileCommunitySection } from "./components/profile-community-section"
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
+import { ProfileLibraryEmptyState } from "./components/profile-library-empty-state";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -7108,9 +7109,7 @@ function PerfilAutorPageContent() {
             {diarioPerfil.carregando ? (
               <LoadingSpinner label="Carregando biblioteca" compacto />
             ) : itensBibliotecaAtivos.length === 0 ? (
-              <div style={emptyMiniBoxStyle}>
-                Sua Biblioteca ainda não tem itens em {rotuloBibliotecaAtiva}.
-              </div>
+              <ProfileLibraryEmptyState message={`Sua Biblioteca ainda não tem itens em ${rotuloBibliotecaAtiva}.`} />
             ) : (
               <ProfileWorksGrid isDesktop={isDesktop}>
                 {itensBibliotecaAtivos.map((item) => {
