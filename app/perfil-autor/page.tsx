@@ -184,6 +184,7 @@ import { ProfileHighlightsLikeButton } from "./components/profile-highlights-lik
 import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-link";
 import { ProfileHighlightsHeader } from "./components/profile-highlights-header";
 import { ProfileHighlightsList } from "./components/profile-highlights-list";
+import { ProfileHighlightsSection } from "./components/profile-highlights-section";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -265,8 +266,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  authorHighlightsStyle,
-  desktopAuthorHighlightsStyle,
   profileAboutBoxStyle,
   profileAboutTitleStyle,
   profileAboutTextStyle,
@@ -6985,10 +6984,7 @@ function PerfilAutorPageContent() {
 
         {destaquesPerfilVisivel &&
           (obrasEmDestaque.length > 0 || podeEditarPerfil || mostrarDestaquesVisitante) && (
-            <section
-              style={isDesktop ? desktopAuthorHighlightsStyle : authorHighlightsStyle}
-              aria-label="TOP 5"
-            >
+            <ProfileHighlightsSection isDesktop={isDesktop}>
               <ProfileHighlightsHeader
                 titleActions={
                   podeEditarPerfil && obrasEmDestaque.length > 0 ? (
@@ -7052,7 +7048,7 @@ function PerfilAutorPageContent() {
                   })}
                 </ProfileHighlightsList>
               )}
-          </section>
+            </ProfileHighlightsSection>
         )}
 
         {autenticacaoCarregada &&
