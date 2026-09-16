@@ -181,6 +181,7 @@ import { ProfileActionToast } from "./components/profile-action-toast";
 import { ProfileHighlightsEmptyState } from "./components/profile-highlights-empty-state";
 import { ProfileHighlightItem } from "./components/profile-highlight-item";
 import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
+import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-link";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -268,7 +269,6 @@ import {
   authorHighlightsTitleGroupStyle,
   authorHighlightsTitleStyle,
   authorHighlightsHeaderActionsStyle,
-  authorHighlightsTopFiveButtonStyle,
   authorHighlightsListStyle,
   desktopAuthorHighlightsListStyle,
   profileAboutBoxStyle,
@@ -7016,13 +7016,7 @@ function PerfilAutorPageContent() {
 
                 <div style={authorHighlightsHeaderActionsStyle}>
                   {podeEditarPerfil ? (
-                    <Link
-                      href="/perfil-autor/top-5"
-                      style={authorHighlightsTopFiveButtonStyle}
-                      aria-label="Montar ou editar TOP 5"
-                    >
-                      +
-                    </Link>
+                    <ProfileHighlightsEditLink href="/perfil-autor/top-5" />
                   ) : (
                     obrasEmDestaque.length > 0 && (
                       <ProfileHighlightsLikeButton
