@@ -186,6 +186,7 @@ import { ProfileHighlightsHeader } from "./components/profile-highlights-header"
 import { ProfileHighlightsList } from "./components/profile-highlights-list";
 import { ProfileHighlightsSection } from "./components/profile-highlights-section";
 import { ProfileLibrarySection } from "./components/profile-library-section";
+import { ProfileDiarySection } from "./components/profile-diary-section";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -336,7 +337,6 @@ import {
   desktopAuthorCommunityBoxStyle,
   desktopAuthorCommunityGridStyle,
   desktopAuthorCommunityPostsListStyle,
-  diaryBoxStyle,
   diaryCollapsibleHeaderStyle,
   diaryToggleButtonStyle,
   diaryToggleButtonIconStyle,
@@ -348,7 +348,6 @@ import {
   diaryTimelineDotStyle,
   diaryTimelineTextStyle,
   diaryTimelineDateStyle,
-  desktopDiaryBoxStyle,
   emptyMiniBoxStyle,
 } from "./styles";
 
@@ -7173,7 +7172,7 @@ function PerfilAutorPageContent() {
         )}
 
         {abaPerfil === "diario" && diarioPerfilVisivel && (
-          <section style={isDesktop ? desktopDiaryBoxStyle : diaryBoxStyle}>
+          <ProfileDiarySection isDesktop={isDesktop}>
             <div style={diaryTitleToolbarStyle}>
               <h2 style={diaryMainTitleStyle}>
                 {podeEditarPerfil
@@ -7247,7 +7246,7 @@ function PerfilAutorPageContent() {
                 </div>
               )}
             </section>
-          </section>
+          </ProfileDiarySection>
         )}
 
         {abaPerfil === "comunidade" && comunidadePerfilVisivel && (
