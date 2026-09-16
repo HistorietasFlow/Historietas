@@ -185,6 +185,7 @@ import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-
 import { ProfileHighlightsHeader } from "./components/profile-highlights-header";
 import { ProfileHighlightsList } from "./components/profile-highlights-list";
 import { ProfileHighlightsSection } from "./components/profile-highlights-section";
+import { ProfileLibrarySection } from "./components/profile-library-section";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -205,8 +206,6 @@ import {
   diarySummarySectionStyle,
   diarySummaryGridStyle,
   desktopDiarySummaryGridStyle,
-  profileLibrarySectionStyle,
-  desktopProfileLibrarySectionStyle,
   mobileTopWaterFadeStyle,
   desktopTopWaterFadeStyle,
   perfilAutorThemeCss,
@@ -7102,13 +7101,7 @@ function PerfilAutorPageContent() {
         )}
 
         {abaPerfil === "biblioteca" && bibliotecaPerfilVisivel && (
-          <section
-            style={
-              isDesktop
-                ? desktopProfileLibrarySectionStyle
-                : profileLibrarySectionStyle
-            }
-          >
+          <ProfileLibrarySection isDesktop={isDesktop}>
             <LibraryTabs
               abaAtiva={abaBibliotecaPerfil}
               isDesktop={isDesktop}
@@ -7176,7 +7169,7 @@ function PerfilAutorPageContent() {
                 })}
               </div>
             )}
-          </section>
+          </ProfileLibrarySection>
         )}
 
         {abaPerfil === "diario" && diarioPerfilVisivel && (
