@@ -180,6 +180,7 @@ import { ProfileVisitorSecondaryActions } from "./components/profile-visitor-sec
 import { ProfileActionToast } from "./components/profile-action-toast";
 import { ProfileHighlightsEmptyState } from "./components/profile-highlights-empty-state";
 import { ProfileHighlightItem } from "./components/profile-highlight-item";
+import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -267,10 +268,6 @@ import {
   authorHighlightsTitleGroupStyle,
   authorHighlightsTitleStyle,
   authorHighlightsHeaderActionsStyle,
-  authorHighlightsLikeButtonStyle,
-  authorHighlightsLikeButtonActiveStyle,
-  authorHighlightsLikeHeartIconStyle,
-  authorHighlightsLikeCountStyle,
   authorHighlightsTopFiveButtonStyle,
   authorHighlightsListStyle,
   desktopAuthorHighlightsListStyle,
@@ -7001,58 +6998,19 @@ function PerfilAutorPageContent() {
                   <strong style={authorHighlightsTitleStyle}>TOP 5</strong>
 
                   {podeEditarPerfil && obrasEmDestaque.length > 0 && (
-                    <button
-                      type="button"
-                      data-historietas-top-five-like="true"
+                    <ProfileHighlightsLikeButton
                       onClick={() => void alternarCurtidaTopFivePerfil()}
-                      disabled={topFiveCurtidaSalvando}
-                      style={{
-                        ...(topFiveCurtidoPorMim
-                          ? authorHighlightsLikeButtonActiveStyle
-                          : authorHighlightsLikeButtonStyle),
-                        opacity: topFiveCurtidaSalvando ? 0.58 : 1,
-                        cursor: topFiveCurtidaSalvando
-                          ? "not-allowed"
-                          : "pointer",
-                      }}
-                      aria-pressed={topFiveCurtidoPorMim}
-                      aria-label={`${
+                      salvando={topFiveCurtidaSalvando}
+                      curtido={topFiveCurtidoPorMim}
+                      totalFormatado={compactarNumeroPerfilAutor(topFiveCurtidasTotal)}
+                      ariaLabel={`${
                         topFiveCurtidoPorMim
                           ? "Remover curtida do TOP 5"
                           : "Curtir TOP 5"
                       }. ${compactarNumeroPerfilAutor(topFiveCurtidasTotal)} ${
                         topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
                       }`}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                        style={{
-                          ...authorHighlightsLikeHeartIconStyle,
-                          animation: topFiveCurtidoPorMim
-                            ? "historietas-perfil-heart-pop 260ms ease-out"
-                            : "none",
-                        }}
-                      >
-                        <path
-                          d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                          fill={
-                            topFiveCurtidoPorMim
-                              ? "var(--historietas-perfil-danger, #FFFFFF)"
-                              : "none"
-                          }
-                          stroke={
-                            topFiveCurtidoPorMim
-                              ? "var(--historietas-perfil-danger, #FFFFFF)"
-                              : "#FFFFFF"
-                          }
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      <span style={authorHighlightsLikeCountStyle}>{compactarNumeroPerfilAutor(topFiveCurtidasTotal)}</span>
-                    </button>
+                    />
                   )}
                 </div>
 
@@ -7067,58 +7025,19 @@ function PerfilAutorPageContent() {
                     </Link>
                   ) : (
                     obrasEmDestaque.length > 0 && (
-                      <button
-                        type="button"
-                        data-historietas-top-five-like="true"
-                      onClick={() => void alternarCurtidaTopFivePerfil()}
-                        disabled={topFiveCurtidaSalvando}
-                        style={{
-                        ...(topFiveCurtidoPorMim
-                          ? authorHighlightsLikeButtonActiveStyle
-                          : authorHighlightsLikeButtonStyle),
-                        opacity: topFiveCurtidaSalvando ? 0.58 : 1,
-                        cursor: topFiveCurtidaSalvando
-                          ? "not-allowed"
-                          : "pointer",
-                      }}
-                        aria-pressed={topFiveCurtidoPorMim}
-                      aria-label={`${
-                        topFiveCurtidoPorMim
-                          ? "Remover curtida do TOP 5"
-                          : "Curtir TOP 5"
-                      }. ${compactarNumeroPerfilAutor(topFiveCurtidasTotal)} ${
-                        topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
-                      }`}
-                      >
-                        <svg
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                        style={{
-                          ...authorHighlightsLikeHeartIconStyle,
-                          animation: topFiveCurtidoPorMim
-                            ? "historietas-perfil-heart-pop 260ms ease-out"
-                            : "none",
-                        }}
-                      >
-                        <path
-                          d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                          fill={
-                            topFiveCurtidoPorMim
-                              ? "var(--historietas-perfil-danger, #FFFFFF)"
-                              : "none"
-                          }
-                          stroke={
-                            topFiveCurtidoPorMim
-                              ? "var(--historietas-perfil-danger, #FFFFFF)"
-                              : "#FFFFFF"
-                          }
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                        <span style={authorHighlightsLikeCountStyle}>{compactarNumeroPerfilAutor(topFiveCurtidasTotal)}</span>
-                      </button>
+                      <ProfileHighlightsLikeButton
+                        onClick={() => void alternarCurtidaTopFivePerfil()}
+                        salvando={topFiveCurtidaSalvando}
+                        curtido={topFiveCurtidoPorMim}
+                        totalFormatado={compactarNumeroPerfilAutor(topFiveCurtidasTotal)}
+                        ariaLabel={`${
+                          topFiveCurtidoPorMim
+                            ? "Remover curtida do TOP 5"
+                            : "Curtir TOP 5"
+                        }. ${compactarNumeroPerfilAutor(topFiveCurtidasTotal)} ${
+                          topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
+                        }`}
+                      />
                     )
                   )}
                 </div>
