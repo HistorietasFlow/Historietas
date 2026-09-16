@@ -179,6 +179,7 @@ import { ProfileOwnerActions } from "./components/profile-owner-actions";
 import { ProfileVisitorSecondaryActions } from "./components/profile-visitor-secondary-actions";
 import { ProfileActionToast } from "./components/profile-action-toast";
 import { ProfileHighlightsEmptyState } from "./components/profile-highlights-empty-state";
+import { ProfileHighlightItem } from "./components/profile-highlight-item";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -273,7 +274,6 @@ import {
   authorHighlightsTopFiveButtonStyle,
   authorHighlightsListStyle,
   desktopAuthorHighlightsListStyle,
-  authorHighlightItemStyle,
   profileAboutBoxStyle,
   profileAboutTitleStyle,
   profileAboutTextStyle,
@@ -7138,14 +7138,12 @@ function PerfilAutorPageContent() {
                     const obraHref =
                       obra.link || `/obra/${obra.slug || criarSlugBase(obra.titulo)}`;
                     return (
-                      <Link
+                      <ProfileHighlightItem
                         key={`destaque-${obra.id}`}
                         href={obraHref}
-                        style={authorHighlightItemStyle}
-                        aria-label={obra.titulo}
-                      >
-                        <div style={criarCapaDestaquePerfilAutor(obra.capa)} />
-                      </Link>
+                        titulo={obra.titulo}
+                        capaStyle={criarCapaDestaquePerfilAutor(obra.capa)}
+                      />
                     );
                   })}
                 </div>
