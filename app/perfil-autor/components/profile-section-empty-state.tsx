@@ -1,11 +1,11 @@
 import { emptyMiniBoxStyle } from "../styles";
 
-type ProfileLibraryEmptyStateProps = {
+type ProfileSectionEmptyStateProps = {
   message: string;
 };
 
-export function ProfileLibraryEmptyState({
+export function ProfileSectionEmptyState({
   message,
-}: ProfileLibraryEmptyStateProps) {
+}: ProfileSectionEmptyStateProps) {
   return <div style={emptyMiniBoxStyle}>{message}</div>;
 }
