@@ -192,6 +192,7 @@ import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
+import { ProfileDiaryEmptyState } from "./components/profile-diary-empty-state";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -7190,11 +7191,11 @@ function PerfilAutorPageContent() {
               {diarioPerfil.carregando ? (
                 <LoadingSpinner label="Carregando diário" compacto />
               ) : itensDiarioTudo.length === 0 ? (
-                <div style={diaryEmptyStateStyle}>
+                <ProfileDiaryEmptyState>
                   {podeEditarPerfil
                     ? "Suas obras e atividades de leitura aparecerão aqui."
                     : "Este perfil ainda não compartilhou itens no Diário."}
-                </div>
+                </ProfileDiaryEmptyState>
               ) : (
                 <div
                   style={
