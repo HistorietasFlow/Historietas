@@ -193,6 +193,7 @@ import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileDiaryEmptyState } from "./components/profile-diary-empty-state";
+import { ProfileRecentActivityList } from "./components/profile-recent-activity-list";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -342,7 +343,6 @@ import {
   diaryToggleButtonIconStyle,
   diarySectionTitleStyle,
   diaryTimelineStyle,
-  diaryTimelineListStyle,
   diaryTimelineItemStyle,
   diaryTimelineDotStyle,
   diaryTimelineTextStyle,
@@ -6315,7 +6315,7 @@ function PerfilAutorPageContent() {
               Nenhuma atividade recente para mostrar.
             </ProfileDiaryEmptyState>
           ) : (
-            <div style={diaryTimelineListStyle}>
+            <ProfileRecentActivityList>
               {diarioPerfil.atividades.slice(0, 8).map((item) => (
                 <Link
                   key={`timeline-${item.chave}`}
@@ -6333,7 +6333,7 @@ function PerfilAutorPageContent() {
                   </span>
                 </Link>
               ))}
-            </div>
+            </ProfileRecentActivityList>
           ))}
       </section>
     );
