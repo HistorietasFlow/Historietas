@@ -182,6 +182,7 @@ import { ProfileHighlightsEmptyState } from "./components/profile-highlights-emp
 import { ProfileHighlightItem } from "./components/profile-highlight-item";
 import { ProfileHighlightsLikeButton } from "./components/profile-highlights-like-button";
 import { ProfileHighlightsEditLink } from "./components/profile-highlights-edit-link";
+import { ProfileHighlightsHeader } from "./components/profile-highlights-header";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -265,10 +266,6 @@ import {
   profileActiveButtonStyle,
   authorHighlightsStyle,
   desktopAuthorHighlightsStyle,
-  authorHighlightsHeaderStyle,
-  authorHighlightsTitleGroupStyle,
-  authorHighlightsTitleStyle,
-  authorHighlightsHeaderActionsStyle,
   authorHighlightsListStyle,
   desktopAuthorHighlightsListStyle,
   profileAboutBoxStyle,
@@ -6993,11 +6990,9 @@ function PerfilAutorPageContent() {
               style={isDesktop ? desktopAuthorHighlightsStyle : authorHighlightsStyle}
               aria-label="TOP 5"
             >
-              <div style={authorHighlightsHeaderStyle}>
-                <div style={authorHighlightsTitleGroupStyle}>
-                  <strong style={authorHighlightsTitleStyle}>TOP 5</strong>
-
-                  {podeEditarPerfil && obrasEmDestaque.length > 0 && (
+              <ProfileHighlightsHeader
+                titleActions={
+                  podeEditarPerfil && obrasEmDestaque.length > 0 ? (
                     <ProfileHighlightsLikeButton
                       onClick={() => void alternarCurtidaTopFivePerfil()}
                       salvando={topFiveCurtidaSalvando}
@@ -7011,31 +7006,28 @@ function PerfilAutorPageContent() {
                         topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
                       }`}
                     />
-                  )}
-                </div>
-
-                <div style={authorHighlightsHeaderActionsStyle}>
-                  {podeEditarPerfil ? (
+                  ) : null
+                }
+                headerActions={
+                  podeEditarPerfil ? (
                     <ProfileHighlightsEditLink href="/perfil-autor/top-5" />
-                  ) : (
-                    obrasEmDestaque.length > 0 && (
-                      <ProfileHighlightsLikeButton
-                        onClick={() => void alternarCurtidaTopFivePerfil()}
-                        salvando={topFiveCurtidaSalvando}
-                        curtido={topFiveCurtidoPorMim}
-                        totalFormatado={compactarNumeroPerfilAutor(topFiveCurtidasTotal)}
-                        ariaLabel={`${
-                          topFiveCurtidoPorMim
-                            ? "Remover curtida do TOP 5"
-                            : "Curtir TOP 5"
-                        }. ${compactarNumeroPerfilAutor(topFiveCurtidasTotal)} ${
-                          topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
-                        }`}
-                      />
-                    )
-                  )}
-                </div>
-              </div>
+                  ) : obrasEmDestaque.length > 0 ? (
+                    <ProfileHighlightsLikeButton
+                      onClick={() => void alternarCurtidaTopFivePerfil()}
+                      salvando={topFiveCurtidaSalvando}
+                      curtido={topFiveCurtidoPorMim}
+                      totalFormatado={compactarNumeroPerfilAutor(topFiveCurtidasTotal)}
+                      ariaLabel={`${
+                        topFiveCurtidoPorMim
+                          ? "Remover curtida do TOP 5"
+                          : "Curtir TOP 5"
+                      }. ${compactarNumeroPerfilAutor(topFiveCurtidasTotal)} ${
+                        topFiveCurtidasTotal === 1 ? "curtida" : "curtidas"
+                      }`}
+                    />
+                  ) : null
+                }
+              />
 
               {obrasEmDestaque.length === 0 ? (
                 <ProfileHighlightsEmptyState
