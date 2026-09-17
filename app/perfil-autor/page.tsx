@@ -196,6 +196,7 @@ import { ProfileDiaryEmptyState } from "./components/profile-diary-empty-state";
 import { ProfileRecentActivityList } from "./components/profile-recent-activity-list";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivitySection } from "./components/profile-recent-activity-section";
+import { ProfileRecentActivityHeader } from "./components/profile-recent-activity-header";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -340,7 +341,6 @@ import {
   desktopAvatarRemoveButtonStyle,
   desktopAuthorCommunityGridStyle,
   desktopAuthorCommunityPostsListStyle,
-  diaryCollapsibleHeaderStyle,
   diaryToggleButtonStyle,
   diaryToggleButtonIconStyle,
   diarySectionTitleStyle,
@@ -6281,7 +6281,7 @@ function PerfilAutorPageContent() {
   function renderizarAtividadeRecenteSobrePerfil() {
     return (
       <ProfileRecentActivitySection>
-        <div style={diaryCollapsibleHeaderStyle}>
+        <ProfileRecentActivityHeader>
           <strong style={diarySectionTitleStyle}>Atividade recente</strong>
 
           <button
@@ -6302,7 +6302,7 @@ function PerfilAutorPageContent() {
               {atividadeSobreAberta ? "↑" : "↓"}
             </span>
           </button>
-        </div>
+        </ProfileRecentActivityHeader>
 
         {atividadeSobreAberta &&
           (diarioPerfil.carregando ? (
