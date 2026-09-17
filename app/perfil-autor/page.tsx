@@ -195,6 +195,7 @@ import { ProfileSectionEmptyState } from "./components/profile-section-empty-sta
 import { ProfileDiaryEmptyState } from "./components/profile-diary-empty-state";
 import { ProfileRecentActivityList } from "./components/profile-recent-activity-list";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
+import { ProfileRecentActivitySection } from "./components/profile-recent-activity-section";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -343,7 +344,6 @@ import {
   diaryToggleButtonStyle,
   diaryToggleButtonIconStyle,
   diarySectionTitleStyle,
-  diaryTimelineStyle,
 } from "./styles";
 
 
@@ -6280,7 +6280,7 @@ function PerfilAutorPageContent() {
 
   function renderizarAtividadeRecenteSobrePerfil() {
     return (
-      <section style={diaryTimelineStyle}>
+      <ProfileRecentActivitySection>
         <div style={diaryCollapsibleHeaderStyle}>
           <strong style={diarySectionTitleStyle}>Atividade recente</strong>
 
@@ -6324,7 +6324,7 @@ function PerfilAutorPageContent() {
               ))}
             </ProfileRecentActivityList>
           ))}
-      </section>
+      </ProfileRecentActivitySection>
     );
   }
 
