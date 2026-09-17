@@ -199,6 +199,7 @@ import { ProfileRecentActivitySection } from "./components/profile-recent-activi
 import { ProfileRecentActivityHeader } from "./components/profile-recent-activity-header";
 import { ProfileRecentActivityTitle } from "./components/profile-recent-activity-title";
 import { ProfileRecentActivityToggleIcon } from "./components/profile-recent-activity-toggle-icon";
+import { ProfileRecentActivityToggleButton } from "./components/profile-recent-activity-toggle-button";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -343,7 +344,6 @@ import {
   desktopAvatarRemoveButtonStyle,
   desktopAuthorCommunityGridStyle,
   desktopAuthorCommunityPostsListStyle,
-  diaryToggleButtonStyle,
 } from "./styles";
 
 
@@ -6284,24 +6284,22 @@ function PerfilAutorPageContent() {
         <ProfileRecentActivityHeader>
           <ProfileRecentActivityTitle>Atividade recente</ProfileRecentActivityTitle>
 
-          <button
-            type="button"
+          <ProfileRecentActivityToggleButton
             onClick={() =>
               setAtividadeSobreAberta((valorAtual) => !valorAtual)
             }
-            style={diaryToggleButtonStyle}
-            aria-label={
+            ariaLabel={
               atividadeSobreAberta
                 ? "Ocultar atividade recente"
                 : "Abrir atividade recente"
             }
-            aria-expanded={atividadeSobreAberta}
+            expanded={atividadeSobreAberta}
           >
             <span>{atividadeSobreAberta ? "Ocultar" : "Abrir"}</span>
             <ProfileRecentActivityToggleIcon>
               {atividadeSobreAberta ? "↑" : "↓"}
             </ProfileRecentActivityToggleIcon>
-          </button>
+          </ProfileRecentActivityToggleButton>
         </ProfileRecentActivityHeader>
 
         {atividadeSobreAberta &&
