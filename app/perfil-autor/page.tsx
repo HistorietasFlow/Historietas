@@ -193,10 +193,10 @@ import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileDiaryEmptyState } from "./components/profile-diary-empty-state";
-import { ProfileRecentActivityList } from "./components/profile-recent-activity-list";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivitySection } from "./components/profile-recent-activity-section";
 import { ProfileRecentActivityHeader } from "./components/profile-recent-activity-header";
+import { ProfileRecentActivityContent } from "./components/profile-recent-activity-content";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -6293,26 +6293,22 @@ function PerfilAutorPageContent() {
           expanded={atividadeSobreAberta}
         />
 
-        {atividadeSobreAberta &&
-          (diarioPerfil.carregando ? (
-            <LoadingSpinner label="Carregando atividades" compacto />
-          ) : diarioPerfil.atividades.length === 0 ? (
-            <ProfileDiaryEmptyState>
-              Nenhuma atividade recente para mostrar.
-            </ProfileDiaryEmptyState>
-          ) : (
-            <ProfileRecentActivityList>
-              {diarioPerfil.atividades.slice(0, 8).map((item) => (
-                <ProfileRecentActivityItem
-                  key={`timeline-${item.chave}`}
-                  href={obterHrefItemDiarioPerfil(item)}
-                  title={item.titulo}
-                  description={item.descricao}
-                  formattedDate={dataDiarioPerfilFormatada(item.data)}
-                />
-              ))}
-            </ProfileRecentActivityList>
-          ))}
+        <ProfileRecentActivityContent
+          isOpen={atividadeSobreAberta}
+          getIsLoading={() => diarioPerfil.carregando}
+          getIsEmpty={() => diarioPerfil.atividades.length === 0}
+          renderItems={() =>
+            diarioPerfil.atividades.slice(0, 8).map((item) => (
+              <ProfileRecentActivityItem
+                key={`timeline-${item.chave}`}
+                href={obterHrefItemDiarioPerfil(item)}
+                title={item.titulo}
+                description={item.descricao}
+                formattedDate={dataDiarioPerfilFormatada(item.data)}
+              />
+            ))
+          }
+        />
       </ProfileRecentActivitySection>
     );
   }
