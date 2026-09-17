@@ -197,6 +197,8 @@ import { ProfileRecentActivityList } from "./components/profile-recent-activity-
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivitySection } from "./components/profile-recent-activity-section";
 import { ProfileRecentActivityHeader } from "./components/profile-recent-activity-header";
+import { ProfileRecentActivityTitle } from "./components/profile-recent-activity-title";
+import { ProfileRecentActivityToggleIcon } from "./components/profile-recent-activity-toggle-icon";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -342,8 +344,6 @@ import {
   desktopAuthorCommunityGridStyle,
   desktopAuthorCommunityPostsListStyle,
   diaryToggleButtonStyle,
-  diaryToggleButtonIconStyle,
-  diarySectionTitleStyle,
 } from "./styles";
 
 
@@ -6282,7 +6282,7 @@ function PerfilAutorPageContent() {
     return (
       <ProfileRecentActivitySection>
         <ProfileRecentActivityHeader>
-          <strong style={diarySectionTitleStyle}>Atividade recente</strong>
+          <ProfileRecentActivityTitle>Atividade recente</ProfileRecentActivityTitle>
 
           <button
             type="button"
@@ -6298,9 +6298,9 @@ function PerfilAutorPageContent() {
             aria-expanded={atividadeSobreAberta}
           >
             <span>{atividadeSobreAberta ? "Ocultar" : "Abrir"}</span>
-            <span style={diaryToggleButtonIconStyle}>
+            <ProfileRecentActivityToggleIcon>
               {atividadeSobreAberta ? "↑" : "↓"}
-            </span>
+            </ProfileRecentActivityToggleIcon>
           </button>
         </ProfileRecentActivityHeader>
 
