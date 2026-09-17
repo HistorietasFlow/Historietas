@@ -197,9 +197,6 @@ import { ProfileRecentActivityList } from "./components/profile-recent-activity-
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivitySection } from "./components/profile-recent-activity-section";
 import { ProfileRecentActivityHeader } from "./components/profile-recent-activity-header";
-import { ProfileRecentActivityTitle } from "./components/profile-recent-activity-title";
-import { ProfileRecentActivityToggleIcon } from "./components/profile-recent-activity-toggle-icon";
-import { ProfileRecentActivityToggleButton } from "./components/profile-recent-activity-toggle-button";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -6281,26 +6278,20 @@ function PerfilAutorPageContent() {
   function renderizarAtividadeRecenteSobrePerfil() {
     return (
       <ProfileRecentActivitySection>
-        <ProfileRecentActivityHeader>
-          <ProfileRecentActivityTitle>Atividade recente</ProfileRecentActivityTitle>
-
-          <ProfileRecentActivityToggleButton
-            onClick={() =>
-              setAtividadeSobreAberta((valorAtual) => !valorAtual)
-            }
-            ariaLabel={
-              atividadeSobreAberta
-                ? "Ocultar atividade recente"
-                : "Abrir atividade recente"
-            }
-            expanded={atividadeSobreAberta}
-          >
-            <span>{atividadeSobreAberta ? "Ocultar" : "Abrir"}</span>
-            <ProfileRecentActivityToggleIcon>
-              {atividadeSobreAberta ? "↑" : "↓"}
-            </ProfileRecentActivityToggleIcon>
-          </ProfileRecentActivityToggleButton>
-        </ProfileRecentActivityHeader>
+        <ProfileRecentActivityHeader
+          title="Atividade recente"
+          toggleLabel={atividadeSobreAberta ? "Ocultar" : "Abrir"}
+          toggleIcon={atividadeSobreAberta ? "↑" : "↓"}
+          onToggle={() =>
+            setAtividadeSobreAberta((valorAtual) => !valorAtual)
+          }
+          ariaLabel={
+            atividadeSobreAberta
+              ? "Ocultar atividade recente"
+              : "Abrir atividade recente"
+          }
+          expanded={atividadeSobreAberta}
+        />
 
         {atividadeSobreAberta &&
           (diarioPerfil.carregando ? (
