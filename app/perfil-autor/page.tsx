@@ -186,17 +186,14 @@ import { ProfileHighlightsHeader } from "./components/profile-highlights-header"
 import { ProfileHighlightsList } from "./components/profile-highlights-list";
 import { ProfileHighlightsSection } from "./components/profile-highlights-section";
 import { ProfileLibrarySection } from "./components/profile-library-section";
-import { ProfileDiarySection } from "./components/profile-diary-section";
 import { ProfileCommunitySection } from "./components/profile-community-section";
 import { ProfileAboutSection } from "./components/profile-about-section";
+import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
-import { ProfileDiaryHeader } from "./components/profile-diary-header";
-import { ProfileDiarySummarySection } from "./components/profile-diary-summary-section";
-import { ProfileDiarySummaryContent } from "./components/profile-diary-summary-content";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -7124,70 +7121,63 @@ function PerfilAutorPageContent() {
         )}
 
         {abaPerfil === "diario" && diarioPerfilVisivel && (
-          <ProfileDiarySection isDesktop={isDesktop}>
-            <ProfileDiaryHeader
-              title={
-                podeEditarPerfil
-                  ? "Meu Diário"
-                  : `Diário de ${perfilParaMostrar.nome}`
-              }
-              href={`/listas?modo=perfil&origem=diario&categoria=tudo${
-                perfilParaMostrar?.autorId.trim()
-                  ? `&usuario=${encodeURIComponent(
-                      perfilParaMostrar.autorId.trim(),
-                    )}`
-                  : ""
-              }`}
-              linkAriaLabel="Abrir tudo na página Listas"
-              linkTitle="Ver tudo"
-              linkLabel="+"
-            />
+          <ProfileDiaryPanel
+            isDesktop={isDesktop}
+            title={
+              podeEditarPerfil
+                ? "Meu Diário"
+                : `Diário de ${perfilParaMostrar.nome}`
+            }
+            href={`/listas?modo=perfil&origem=diario&categoria=tudo${
+              perfilParaMostrar?.autorId.trim()
+                ? `&usuario=${encodeURIComponent(
+                    perfilParaMostrar.autorId.trim(),
+                  )}`
+                : ""
+            }`}
+            linkAriaLabel="Abrir tudo na página Listas"
+            linkTitle="Ver tudo"
+            linkLabel="+"
+            getIsLoading={() => diarioPerfil.carregando}
+            getIsEmpty={() => itensDiarioTudo.length === 0}
+            emptyMessage={
+              podeEditarPerfil
+                ? "Suas obras e atividades de leitura aparecerão aqui."
+                : "Este perfil ainda não compartilhou itens no Diário."
+            }
+            renderItems={() =>
+              itensDiarioTudo.map((item) => {
+                const obra = item.obra;
 
-            <ProfileDiarySummarySection>
-              <ProfileDiarySummaryContent
-                isDesktop={isDesktop}
-                getIsLoading={() => diarioPerfil.carregando}
-                getIsEmpty={() => itensDiarioTudo.length === 0}
-                emptyMessage={
-                  podeEditarPerfil
-                    ? "Suas obras e atividades de leitura aparecerão aqui."
-                    : "Este perfil ainda não compartilhou itens no Diário."
+                if (!obra) {
+                  return null;
                 }
-                renderItems={() =>
-                  itensDiarioTudo.map((item) => {
-                    const obra = item.obra;
 
-                    if (!obra) {
-                      return null;
-                    }
+                const parametrosLista = new URLSearchParams({
+                  modo: "perfil",
+                  origem: "diario",
+                  categoria: "tudo",
+                  obra: obra.id,
+                });
+                const perfilIdLista =
+                  perfilParaMostrar?.autorId.trim() || "";
 
-                    const parametrosLista = new URLSearchParams({
-                      modo: "perfil",
-                      origem: "diario",
-                      categoria: "tudo",
-                      obra: obra.id,
-                    });
-                    const perfilIdLista =
-                      perfilParaMostrar?.autorId.trim() || "";
-
-                    if (perfilIdLista) {
-                      parametrosLista.set("usuario", perfilIdLista);
-                    }
-
-                    const hrefLista = `/listas?${parametrosLista.toString()}`;
-
-                    return (
-                      <DiarySummaryCard
-                        key={obra.id || item.chave}
-                        href={hrefLista}
-                        obra={obra}
-                      />
-                    );
-                  })
+                if (perfilIdLista) {
+                  parametrosLista.set("usuario", perfilIdLista);
                 }
-              />
-            </ProfileDiarySummarySection>
-          </ProfileDiarySection>
+
+                const hrefLista = `/listas?${parametrosLista.toString()}`;
+
+                return (
+                  <DiarySummaryCard
+                    key={obra.id || item.chave}
+                    href={hrefLista}
+                    obra={obra}
+                  />
+                );
+              })
+            }
+          />
         )}
 
         {abaPerfil === "comunidade" && comunidadePerfilVisivel && (
