@@ -195,6 +195,7 @@ import { ProfileSectionEmptyState } from "./components/profile-section-empty-sta
 import { ProfileDiaryEmptyState } from "./components/profile-diary-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
+import { ProfileDiaryHeader } from "./components/profile-diary-header";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -296,9 +297,6 @@ import {
   profileAboutMemberSinceStyle,
   authorCommunityIntroStyle,
   authorCommunityTitleStyle,
-  diaryMainTitleStyle,
-  diaryTitleToolbarStyle,
-  diaryMainReadingLinkStyle,
   authorCommunityGridStyle,
   authorCommunityCardStyle,
   authorCommunityCardNumberStyle,
@@ -7129,28 +7127,23 @@ function PerfilAutorPageContent() {
 
         {abaPerfil === "diario" && diarioPerfilVisivel && (
           <ProfileDiarySection isDesktop={isDesktop}>
-            <div style={diaryTitleToolbarStyle}>
-              <h2 style={diaryMainTitleStyle}>
-                {podeEditarPerfil
+            <ProfileDiaryHeader
+              title={
+                podeEditarPerfil
                   ? "Meu Diário"
-                  : `Diário de ${perfilParaMostrar.nome}`}
-              </h2>
-
-              <Link
-                href={`/listas?modo=perfil&origem=diario&categoria=tudo${
-                  perfilParaMostrar?.autorId.trim()
-                    ? `&usuario=${encodeURIComponent(
-                        perfilParaMostrar.autorId.trim(),
-                      )}`
-                    : ""
-                }`}
-                style={diaryMainReadingLinkStyle}
-                aria-label="Abrir tudo na página Listas"
-                title="Ver tudo"
-              >
-                +
-              </Link>
-            </div>
+                  : `Diário de ${perfilParaMostrar.nome}`
+              }
+              href={`/listas?modo=perfil&origem=diario&categoria=tudo${
+                perfilParaMostrar?.autorId.trim()
+                  ? `&usuario=${encodeURIComponent(
+                      perfilParaMostrar.autorId.trim(),
+                    )}`
+                  : ""
+              }`}
+              linkAriaLabel="Abrir tudo na página Listas"
+              linkTitle="Ver tudo"
+              linkLabel="+"
+            />
 
             <section style={diarySummarySectionStyle}>
               {diarioPerfil.carregando ? (
