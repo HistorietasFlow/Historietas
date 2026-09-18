@@ -187,6 +187,7 @@ import { ProfileHighlightsList } from "./components/profile-highlights-list";
 import { ProfileHighlightsSection } from "./components/profile-highlights-section";
 import { ProfileLibrarySection } from "./components/profile-library-section";
 import { ProfileCommunitySection } from "./components/profile-community-section";
+import { ProfileCommunityHeader } from "./components/profile-community-header";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -290,8 +291,6 @@ import {
   profileAboutRowsStyle,
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
-  authorCommunityIntroStyle,
-  authorCommunityTitleStyle,
   authorCommunityGridStyle,
   authorCommunityCardStyle,
   authorCommunityCardNumberStyle,
@@ -7182,15 +7181,15 @@ function PerfilAutorPageContent() {
 
         {abaPerfil === "comunidade" && comunidadePerfilVisivel && (
           <ProfileCommunitySection isDesktop={isDesktop}>
-            <div style={authorCommunityIntroStyle}>
-              <h2 style={authorCommunityTitleStyle}>
-                {language === "en"
+            <ProfileCommunityHeader
+              title={
+                language === "en"
                   ? `${perfilParaMostrar.nome}'s Community`
                   : language === "es"
                     ? `Comunidad de ${perfilParaMostrar.nome}`
-                    : `Comunidade de ${perfilParaMostrar.nome}`}
-              </h2>
-            </div>
+                    : `Comunidade de ${perfilParaMostrar.nome}`
+              }
+            />
 
             {comunidadePerfil.carregando ? (
               <LoadingSpinner
