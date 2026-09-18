@@ -196,6 +196,7 @@ import { ProfileDiaryEmptyState } from "./components/profile-diary-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import { ProfileDiaryHeader } from "./components/profile-diary-header";
+import { ProfileDiarySummarySection } from "./components/profile-diary-summary-section";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -213,7 +214,6 @@ import {
   workActionSheetItemStyle,
   workActionSheetDangerItemStyle,
   workActionSheetItemActiveStyle,
-  diarySummarySectionStyle,
   diarySummaryGridStyle,
   desktopDiarySummaryGridStyle,
   mobileTopWaterFadeStyle,
@@ -7145,7 +7145,7 @@ function PerfilAutorPageContent() {
               linkLabel="+"
             />
 
-            <section style={diarySummarySectionStyle}>
+            <ProfileDiarySummarySection>
               {diarioPerfil.carregando ? (
                 <LoadingSpinner label="Carregando diário" compacto />
               ) : itensDiarioTudo.length === 0 ? (
@@ -7194,7 +7194,7 @@ function PerfilAutorPageContent() {
                   })}
                 </div>
               )}
-            </section>
+            </ProfileDiarySummarySection>
           </ProfileDiarySection>
         )}
 
