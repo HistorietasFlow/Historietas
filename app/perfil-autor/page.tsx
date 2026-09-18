@@ -192,12 +192,11 @@ import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
-import { ProfileDiaryEmptyState } from "./components/profile-diary-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import { ProfileDiaryHeader } from "./components/profile-diary-header";
 import { ProfileDiarySummarySection } from "./components/profile-diary-summary-section";
-import { ProfileDiarySummaryGrid } from "./components/profile-diary-summary-grid";
+import { ProfileDiarySummaryContent } from "./components/profile-diary-summary-content";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -7145,17 +7144,17 @@ function PerfilAutorPageContent() {
             />
 
             <ProfileDiarySummarySection>
-              {diarioPerfil.carregando ? (
-                <LoadingSpinner label="Carregando diário" compacto />
-              ) : itensDiarioTudo.length === 0 ? (
-                <ProfileDiaryEmptyState>
-                  {podeEditarPerfil
+              <ProfileDiarySummaryContent
+                isDesktop={isDesktop}
+                getIsLoading={() => diarioPerfil.carregando}
+                getIsEmpty={() => itensDiarioTudo.length === 0}
+                emptyMessage={
+                  podeEditarPerfil
                     ? "Suas obras e atividades de leitura aparecerão aqui."
-                    : "Este perfil ainda não compartilhou itens no Diário."}
-                </ProfileDiaryEmptyState>
-              ) : (
-                <ProfileDiarySummaryGrid isDesktop={isDesktop}>
-                  {itensDiarioTudo.map((item) => {
+                    : "Este perfil ainda não compartilhou itens no Diário."
+                }
+                renderItems={() =>
+                  itensDiarioTudo.map((item) => {
                     const obra = item.obra;
 
                     if (!obra) {
@@ -7184,9 +7183,9 @@ function PerfilAutorPageContent() {
                         obra={obra}
                       />
                     );
-                  })}
-                </ProfileDiarySummaryGrid>
-              )}
+                  })
+                }
+              />
             </ProfileDiarySummarySection>
           </ProfileDiarySection>
         )}
