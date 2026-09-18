@@ -197,6 +197,7 @@ import { ProfileRecentActivityItem } from "./components/profile-recent-activity-
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import { ProfileDiaryHeader } from "./components/profile-diary-header";
 import { ProfileDiarySummarySection } from "./components/profile-diary-summary-section";
+import { ProfileDiarySummaryGrid } from "./components/profile-diary-summary-grid";
 import {
   workActionSheetOverlayStyle,
   workActionSheetStyle,
@@ -214,8 +215,6 @@ import {
   workActionSheetItemStyle,
   workActionSheetDangerItemStyle,
   workActionSheetItemActiveStyle,
-  diarySummaryGridStyle,
-  desktopDiarySummaryGridStyle,
   mobileTopWaterFadeStyle,
   desktopTopWaterFadeStyle,
   perfilAutorThemeCss,
@@ -7155,13 +7154,7 @@ function PerfilAutorPageContent() {
                     : "Este perfil ainda não compartilhou itens no Diário."}
                 </ProfileDiaryEmptyState>
               ) : (
-                <div
-                  style={
-                    isDesktop
-                      ? desktopDiarySummaryGridStyle
-                      : diarySummaryGridStyle
-                  }
-                >
+                <ProfileDiarySummaryGrid isDesktop={isDesktop}>
                   {itensDiarioTudo.map((item) => {
                     const obra = item.obra;
 
@@ -7192,7 +7185,7 @@ function PerfilAutorPageContent() {
                       />
                     );
                   })}
-                </div>
+                </ProfileDiarySummaryGrid>
               )}
             </ProfileDiarySummarySection>
           </ProfileDiarySection>
