@@ -191,6 +191,7 @@ import { ProfileCommunityHeader } from "./components/profile-community-header";
 import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
 import { ProfileCommunityStatCard } from "./components/profile-community-stat-card";
 import { ProfileCommunityNotice } from "./components/profile-community-notice";
+import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -294,8 +295,6 @@ import {
   profileAboutRowsStyle,
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
-  authorCommunityPostsBlockStyle,
-  authorCommunityPostsTitleStyle,
   authorCommunityPostsListStyle,
   authorCommunityPostWrapperStyle,
   authorCommunityPostStyle,
@@ -7243,10 +7242,7 @@ function PerfilAutorPageContent() {
                     }
                   />
                 ) : (
-                  <div style={authorCommunityPostsBlockStyle}>
-                    <strong style={authorCommunityPostsTitleStyle}>
-                      Publicações recentes
-                    </strong>
+                  <ProfileCommunityRecentPostsSection title="Publicações recentes">
 
                     <div
                       style={
@@ -7344,7 +7340,7 @@ function PerfilAutorPageContent() {
                         ),
                       )}
                     </div>
-                  </div>
+                  </ProfileCommunityRecentPostsSection>
                 )}
               </>
             )}
