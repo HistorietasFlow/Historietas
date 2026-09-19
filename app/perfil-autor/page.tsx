@@ -237,12 +237,11 @@ import { ProfileWorkOptionsButton } from "./components/profile-work-options-butt
 import { ProfileWorkActionSheetOverlay } from "./components/profile-work-action-sheet-overlay";
 import { ProfileWorkActionSheetPanel } from "./components/profile-work-action-sheet-panel";
 import { ProfileWorkActionSheetHandle } from "./components/profile-work-action-sheet-handle";
+import { ProfileWorkActionSheetHeader } from "./components/profile-work-action-sheet-header";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import {
-  workActionSheetHeaderStyle,
-  workActionSheetTextBlockStyle,
   workActionSheetTitleStyle,
   workActionSheetAuthorStyle,
   workActionSheetMetaStyle,
@@ -7587,8 +7586,7 @@ function PerfilAutorPageContent() {
                 >
                   <ProfileWorkActionSheetHandle />
 
-                  <div style={workActionSheetHeaderStyle}>
-                    <div style={workActionSheetTextBlockStyle}>
+                  <ProfileWorkActionSheetHeader>
                       <strong data-historietas-user-content="true" style={workActionSheetTitleStyle}>
                         {obra.titulo}
                       </strong>
@@ -7604,8 +7602,7 @@ function PerfilAutorPageContent() {
                       <span style={workActionSheetMetricsStyle}>
                         {metricasObraSheet}
                       </span>
-                    </div>
-                  </div>
+                  </ProfileWorkActionSheetHeader>
 
                   <div style={workActionSheetActionsStyle}>
                     {ultimoCapitulo && (
@@ -7751,14 +7748,12 @@ function PerfilAutorPageContent() {
                 >
                   <ProfileWorkActionSheetHandle />
 
-                  <div style={workActionSheetHeaderStyle}>
-                    <div style={workActionSheetTextBlockStyle}>
+                  <ProfileWorkActionSheetHeader>
                       <strong data-historietas-user-content="true" style={workActionSheetTitleStyle}>
                         {obra.titulo}
                       </strong>
                       <span style={workActionSheetMetaStyle}>{metaSheet}</span>
-                    </div>
-                  </div>
+                  </ProfileWorkActionSheetHeader>
 
                   <div style={workActionSheetActionsStyle}>
                     <Link
