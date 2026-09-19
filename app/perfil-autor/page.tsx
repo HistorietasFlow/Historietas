@@ -206,6 +206,7 @@ import { ProfileAboutHero } from "./components/profile-about-hero";
 import { ProfileAboutTitle } from "./components/profile-about-title";
 import { ProfileAboutTextRow } from "./components/profile-about-text-row";
 import { ProfileAboutText } from "./components/profile-about-text";
+import { ProfileAboutEditButton } from "./components/profile-about-edit-button";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -288,7 +289,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutEditButtonStyle,
   profileAboutEditorStyle,
   profileAboutTextareaStyle,
   profileAboutCounterStyle,
@@ -7335,14 +7335,9 @@ function PerfilAutorPageContent() {
                 </ProfileAboutText>
 
                 {podeEditarPerfil && (
-                  <button
-                    type="button"
+                  <ProfileAboutEditButton
                     onClick={() => setEditorSobreAberto((aberto) => !aberto)}
-                    style={profileAboutEditButtonStyle}
-                    aria-label="Editar sinopse do Sobre"
-                  >
-                    ✎
-                  </button>
+                  />
                 )}
               </ProfileAboutTextRow>
 
