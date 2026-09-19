@@ -193,6 +193,7 @@ import { ProfileCommunityStatCard } from "./components/profile-community-stat-ca
 import { ProfileCommunityNotice } from "./components/profile-community-notice";
 import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
 import { ProfileCommunityRecentPostsList } from "./components/profile-community-recent-posts-list";
+import { ProfileCommunityPostItem } from "./components/profile-community-post-item";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -296,7 +297,6 @@ import {
   profileAboutRowsStyle,
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
-  authorCommunityPostWrapperStyle,
   authorCommunityPostStyle,
   authorCommunityPostReportButtonStyle,
   authorCommunityPostHeaderStyle,
@@ -7246,10 +7246,7 @@ function PerfilAutorPageContent() {
                     <ProfileCommunityRecentPostsList isDesktop={isDesktop}>
                       {comunidadePerfil.publicacoesRecentes.map(
                         (publicacao) => (
-                          <article
-                            key={publicacao.id}
-                            style={authorCommunityPostWrapperStyle}
-                          >
+                          <ProfileCommunityPostItem key={publicacao.id}>
                             <Link
                               href={criarHrefPublicacaoComunidadePerfil(
                                 publicacao.id,
@@ -7329,7 +7326,7 @@ function PerfilAutorPageContent() {
                                 Denunciar
                               </button>
                             )}
-                          </article>
+                          </ProfileCommunityPostItem>
                         ),
                       )}
                     </ProfileCommunityRecentPostsList>
