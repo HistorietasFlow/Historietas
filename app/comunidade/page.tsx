@@ -22,6 +22,7 @@ import {
 } from "../../lib/historietasTheme";
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
+import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -3412,46 +3413,6 @@ const ComentariosSheet = memo(function ComentariosSheet({
   );
 });
 
-function LoadingSpinner({
-  label = "Carregando",
-  compacto = false,
-}: {
-  label?: string;
-  compacto?: boolean;
-}) {
-  if (compacto) {
-    return (
-      <span
-        role="status"
-        aria-live="polite"
-        aria-label={label}
-        style={loadingInlineStyle}
-      >
-        <span
-          className="historietas-loading-spinner"
-          style={loadingSpinnerCompactStyle}
-          aria-hidden="true"
-        />
-      </span>
-    );
-  }
-
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label={label}
-      style={loadingPageStyle}
-    >
-      <span
-        className="historietas-loading-spinner"
-        style={loadingSpinnerStyle}
-        aria-hidden="true"
-      />
-    </div>
-  );
-}
-
 export default function ComunidadePage() {
   const router = useRouter();
   const { language } = useHistorietasLanguage();
@@ -6217,7 +6178,7 @@ export default function ComunidadePage() {
       <main style={pageThemeStyle} aria-busy="true">
         <CommunityLanguageBridge />
         <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
-        <LoadingSpinner label="Carregando Comunidade" />
+        <CommunityLoadingSpinner label="Carregando Comunidade" />
       </main>
     );
   }
@@ -6640,7 +6601,7 @@ export default function ComunidadePage() {
                   </p>
                 ) : carregandoUsuariosBuscaComunidade ? (
                   <div style={communityUserSearchLoadingStyle}>
-                    <LoadingSpinner
+                    <CommunityLoadingSpinner
                       compacto
                       label="Buscando usuários"
                     />
@@ -7291,7 +7252,7 @@ export default function ComunidadePage() {
                   }}
                 >
                   {carregandoMaisPostsComunidade ? (
-                    <LoadingSpinner
+                    <CommunityLoadingSpinner
                       compacto
                       label="Carregando mais publicações"
                     />
@@ -7717,44 +7678,6 @@ const comunidadeThemeCss = `
     color: #FFFFFF !important;
   }
 `;
-
-const loadingPageStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 2,
-  width: "100%",
-  minHeight: "100dvh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxSizing: "border-box",
-};
-
-const loadingInlineStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minWidth: "22px",
-  minHeight: "22px",
-  boxSizing: "border-box",
-};
-
-const loadingSpinnerStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
-  borderRadius: "999px",
-  border: "3px solid rgba(255,255,255,0.20)",
-  borderTopColor: "#FFFFFF",
-  boxSizing: "border-box",
-  animation: "historietas-loading-spin 0.78s linear infinite",
-  flex: "0 0 auto",
-};
-
-const loadingSpinnerCompactStyle: CSSProperties = {
-  ...loadingSpinnerStyle,
-  width: "22px",
-  height: "22px",
-  borderWidth: "2.5px",
-};
 
 const pageStyle: CSSProperties = {
   position: "relative",
