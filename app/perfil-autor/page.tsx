@@ -238,6 +238,7 @@ import { ProfileWorkActionSheetOverlay } from "./components/profile-work-action-
 import { ProfileWorkActionSheetPanel } from "./components/profile-work-action-sheet-panel";
 import { ProfileWorkActionSheetHandle } from "./components/profile-work-action-sheet-handle";
 import { ProfileWorkActionSheetHeader } from "./components/profile-work-action-sheet-header";
+import { ProfileWorkActionSheetActions } from "./components/profile-work-action-sheet-actions";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -246,7 +247,6 @@ import {
   workActionSheetAuthorStyle,
   workActionSheetMetaStyle,
   workActionSheetMetricsStyle,
-  workActionSheetActionsStyle,
   criarProfileSelectionDotStyle,
   criarCapaDestaquePerfilAutor,
   criarCapaGridPerfilAutor,
@@ -7604,7 +7604,7 @@ function PerfilAutorPageContent() {
                       </span>
                   </ProfileWorkActionSheetHeader>
 
-                  <div style={workActionSheetActionsStyle}>
+                  <ProfileWorkActionSheetActions>
                     {ultimoCapitulo && (
                       <Link
                         href={capituloHref}
@@ -7684,7 +7684,7 @@ function PerfilAutorPageContent() {
                     >
                       Compartilhar
                     </button>
-                  </div>
+                  </ProfileWorkActionSheetActions>
                 </ProfileWorkActionSheetPanel>
               </ProfileWorkActionSheetOverlay>
             );
@@ -7755,7 +7755,7 @@ function PerfilAutorPageContent() {
                       <span style={workActionSheetMetaStyle}>{metaSheet}</span>
                   </ProfileWorkActionSheetHeader>
 
-                  <div style={workActionSheetActionsStyle}>
+                  <ProfileWorkActionSheetActions>
                     <Link
                       href={capituloHref}
                       onClick={() => setBibliotecaMenuAbertoChave("")}
@@ -7852,7 +7852,7 @@ function PerfilAutorPageContent() {
                     >
                       Compartilhar
                     </button>
-                  </div>
+                  </ProfileWorkActionSheetActions>
                 </ProfileWorkActionSheetPanel>
               </ProfileWorkActionSheetOverlay>
             );
