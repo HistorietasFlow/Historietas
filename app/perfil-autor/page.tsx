@@ -197,6 +197,7 @@ import { ProfileCommunityPostItem } from "./components/profile-community-post-it
 import { ProfileCommunityPostLink } from "./components/profile-community-post-link";
 import { ProfileCommunityPostHeader } from "./components/profile-community-post-header";
 import { ProfileCommunityPostBody } from "./components/profile-community-post-body";
+import { ProfileCommunityPostSummary } from "./components/profile-community-post-summary";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -301,7 +302,6 @@ import {
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
   authorCommunityPostReportButtonStyle,
-  authorCommunityPostTextStyle,
   authorCommunityPostPollInfoStyle,
   authorCommunityPostWorkStyle,
   profileWorkCardStyle,
@@ -7262,14 +7262,11 @@ function PerfilAutorPageContent() {
                               />
 
                               <ProfileCommunityPostBody>
-                                <span
-                                  data-historietas-user-content="true"
-                                  style={authorCommunityPostTextStyle}
-                                >
+                                <ProfileCommunityPostSummary>
                                   {criarResumoPublicacaoComunidadePerfil(
                                     publicacao,
                                   )}
-                                </span>
+                                </ProfileCommunityPostSummary>
 
                                 {analisarEnquetePublicacaoComunidadePerfil(
                                   publicacao,
