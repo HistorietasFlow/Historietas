@@ -234,6 +234,7 @@ import { ProfileWorkCoverLikeIcon } from "./components/profile-work-cover-like-i
 import { ProfileWorkCoverCommentIcon } from "./components/profile-work-cover-comment-icon";
 import { ProfileWorkMenuAnchor } from "./components/profile-work-menu-anchor";
 import { ProfileWorkOptionsButton } from "./components/profile-work-options-button";
+import { ProfileWorkActionSheetOverlay } from "./components/profile-work-action-sheet-overlay";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -7578,9 +7579,7 @@ function PerfilAutorPageContent() {
               .join(" • ");
 
             return (
-              <div
-                style={workActionSheetOverlayStyle}
-                role="presentation"
+              <ProfileWorkActionSheetOverlay
                 onClick={() => setObraMenuAbertoId("")}
               >
                 <section
@@ -7693,7 +7692,7 @@ function PerfilAutorPageContent() {
                     </button>
                   </div>
                 </section>
-              </div>
+              </ProfileWorkActionSheetOverlay>
             );
           })()}
 
