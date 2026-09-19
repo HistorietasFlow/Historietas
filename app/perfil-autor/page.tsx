@@ -212,6 +212,7 @@ import { ProfileAboutTextarea } from "./components/profile-about-textarea";
 import { ProfileAboutCounter } from "./components/profile-about-counter";
 import { ProfileAboutContentGrid } from "./components/profile-about-content-grid";
 import { ProfileAboutPanel } from "./components/profile-about-panel";
+import { ProfileAboutPanelTitle } from "./components/profile-about-panel-title";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -294,7 +295,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutPanelTitleStyle,
   profileAboutChipsStyle,
   profileAboutChipStyle,
   profileAboutMetricsGridStyle,
@@ -7359,7 +7359,7 @@ function PerfilAutorPageContent() {
 
             <ProfileAboutContentGrid>
               <ProfileAboutPanel>
-                <strong style={profileAboutPanelTitleStyle}>Especialidades</strong>
+                <ProfileAboutPanelTitle>Especialidades</ProfileAboutPanelTitle>
 
                 <div style={profileAboutChipsStyle}>
                   {(generosPrincipaisPerfil.length > 0
@@ -7374,7 +7374,7 @@ function PerfilAutorPageContent() {
               </ProfileAboutPanel>
 
               <ProfileAboutPanel>
-                <strong style={profileAboutPanelTitleStyle}>Números do perfil</strong>
+                <ProfileAboutPanelTitle>Números do perfil</ProfileAboutPanelTitle>
 
                 <div style={profileAboutMetricsGridStyle}>
                   <div style={profileAboutMetricCardStyle}>
@@ -7408,7 +7408,7 @@ function PerfilAutorPageContent() {
               </ProfileAboutPanel>
 
               <ProfileAboutPanel>
-                <strong style={profileAboutPanelTitleStyle}>Atividade</strong>
+                <ProfileAboutPanelTitle>Atividade</ProfileAboutPanelTitle>
 
                 <div style={profileAboutRowsStyle}>
                   <span style={profileAboutRowStyle}>
