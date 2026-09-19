@@ -225,6 +225,7 @@ import { ProfileAboutMemberSince } from "./components/profile-about-member-since
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
+import { ProfileWorkCard } from "./components/profile-work-card";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -304,7 +305,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileWorkCardStyle,
   profileWorkCoverLinkStyle,
   profileWorkCoverOverlayStyle,
   profileWorkCoverTitleStyle,
@@ -7476,7 +7476,7 @@ function PerfilAutorPageContent() {
                   const menuObraAberto = obraMenuAbertoId === obra.id;
 
                   return (
-                    <article key={obra.id} style={profileWorkCardStyle}>
+                    <ProfileWorkCard key={obra.id}>
                       <Link href={obraHref} style={profileWorkCoverLinkStyle}>
                         <div
                           style={criarCapaGridPerfilAutor(obra.capa, isDesktop)}
@@ -7516,7 +7516,7 @@ function PerfilAutorPageContent() {
                           ⋮
                         </button>
                       </div>
-                    </article>
+                    </ProfileWorkCard>
                   );
                 })}
               </ProfileWorksGrid>
