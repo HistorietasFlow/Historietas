@@ -199,6 +199,7 @@ import { ProfileCommunityPostHeader } from "./components/profile-community-post-
 import { ProfileCommunityPostBody } from "./components/profile-community-post-body";
 import { ProfileCommunityPostSummary } from "./components/profile-community-post-summary";
 import { ProfileCommunityPostPollInfo } from "./components/profile-community-post-poll-info";
+import { ProfileCommunityPostWork } from "./components/profile-community-post-work";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -303,7 +304,6 @@ import {
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
   authorCommunityPostReportButtonStyle,
-  authorCommunityPostWorkStyle,
   profileWorkCardStyle,
   profileWorkCoverLinkStyle,
   profileWorkCoverOverlayStyle,
@@ -7285,12 +7285,12 @@ function PerfilAutorPageContent() {
                               </ProfileCommunityPostBody>
 
                               {publicacao.obraRelacionada && (
-                                <span style={authorCommunityPostWorkStyle}>
+                                <ProfileCommunityPostWork>
                                   <span>OBRA</span>
                                   <strong data-historietas-user-content="true">
                                     {publicacao.obraRelacionada}
                                   </strong>
-                                </span>
+                                </ProfileCommunityPostWork>
                               )}
                             </ProfileCommunityPostLink>
 
