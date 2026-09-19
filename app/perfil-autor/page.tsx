@@ -232,6 +232,7 @@ import { ProfileWorkCoverTitle } from "./components/profile-work-cover-title";
 import { ProfileWorkCoverMetrics } from "./components/profile-work-cover-metrics";
 import { ProfileWorkCoverLikeIcon } from "./components/profile-work-cover-like-icon";
 import { ProfileWorkCoverCommentIcon } from "./components/profile-work-cover-comment-icon";
+import { ProfileWorkMenuAnchor } from "./components/profile-work-menu-anchor";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -311,7 +312,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileWorkMenuAnchorStyle,
   profileWorkDotsButtonStyle,
   desktopContainerStyle,
   desktopHeroBoxStyle,
@@ -7501,7 +7501,7 @@ function PerfilAutorPageContent() {
                         </div>
                       </ProfileWorkCoverLink>
 
-                      <div style={profileWorkMenuAnchorStyle}>
+                      <ProfileWorkMenuAnchor>
                         <button
                           type="button"
                           onClick={() =>
@@ -7515,7 +7515,7 @@ function PerfilAutorPageContent() {
                         >
                           ⋮
                         </button>
-                      </div>
+                      </ProfileWorkMenuAnchor>
                     </ProfileWorkCard>
                   );
                 })}
