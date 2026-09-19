@@ -227,6 +227,7 @@ import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
 import { ProfileWorkCard } from "./components/profile-work-card";
 import { ProfileWorkCoverLink } from "./components/profile-work-cover-link";
+import { ProfileWorkCoverOverlay } from "./components/profile-work-cover-overlay";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -306,7 +307,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileWorkCoverOverlayStyle,
   profileWorkCoverTitleStyle,
   diaryCardCoverMetaStyle,
   diaryCardHeartMetaStyle,
@@ -7481,7 +7481,7 @@ function PerfilAutorPageContent() {
                         <div
                           style={criarCapaGridPerfilAutor(obra.capa, isDesktop)}
                         >
-                          <div style={profileWorkCoverOverlayStyle}>
+                          <ProfileWorkCoverOverlay>
                             <strong data-historietas-user-content="true" style={profileWorkCoverTitleStyle}>
                               {obra.titulo}
                             </strong>
@@ -7497,7 +7497,7 @@ function PerfilAutorPageContent() {
                                 {totalComentarios}
                               </span>
                             </span>
-                          </div>
+                          </ProfileWorkCoverOverlay>
                         </div>
                       </ProfileWorkCoverLink>
 
