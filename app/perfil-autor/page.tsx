@@ -208,6 +208,7 @@ import { ProfileAboutTextRow } from "./components/profile-about-text-row";
 import { ProfileAboutText } from "./components/profile-about-text";
 import { ProfileAboutEditButton } from "./components/profile-about-edit-button";
 import { ProfileAboutEditor } from "./components/profile-about-editor";
+import { ProfileAboutTextarea } from "./components/profile-about-textarea";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -290,7 +291,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutTextareaStyle,
   profileAboutCounterStyle,
   profileAboutContentGridStyle,
   profileAboutPanelStyle,
@@ -7343,13 +7343,11 @@ function PerfilAutorPageContent() {
 
               {podeEditarPerfil && editorSobreAberto && (
                 <ProfileAboutEditor>
-                  <textarea
+                  <ProfileAboutTextarea
                     value={perfilSalvoAutor.sobreBio}
                     onChange={(event) => atualizarBioSobreAutor(event.target.value)}
                     placeholder={bioAutor}
                     maxLength={SOBRE_BIO_MAX_LENGTH}
-                    aria-label="Sinopse do Sobre"
-                    style={profileAboutTextareaStyle}
                   />
 
                   <span style={profileAboutCounterStyle}>
