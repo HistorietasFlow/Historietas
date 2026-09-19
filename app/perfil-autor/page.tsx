@@ -239,7 +239,6 @@ import { ProfileSectionEmptyState } from "./components/profile-section-empty-sta
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import {
-  workActionSheetOverlayStyle,
   workActionSheetStyle,
   workActionSheetHandleStyle,
   workActionSheetHeaderStyle,
@@ -7745,9 +7744,7 @@ function PerfilAutorPageContent() {
             } • ${progresso}% concluído`;
 
             return (
-              <div
-                style={workActionSheetOverlayStyle}
-                role="presentation"
+              <ProfileWorkActionSheetOverlay
                 onClick={() => setBibliotecaMenuAbertoChave("")}
               >
                 <section
@@ -7866,7 +7863,7 @@ function PerfilAutorPageContent() {
                     </button>
                   </div>
                 </section>
-              </div>
+              </ProfileWorkActionSheetOverlay>
             );
           })()}
 
