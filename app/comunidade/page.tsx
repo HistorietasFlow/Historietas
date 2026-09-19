@@ -28,6 +28,7 @@ import { CommunityPageContainer } from "./components/community-page-container";
 import { CommunityContentContainer } from "./components/community-content-container";
 import { CommunityTopWaterFade } from "./components/community-top-water-fade";
 import { CommunityDesktopHeader } from "./components/community-desktop-header";
+import { CommunityDesktopTitle } from "./components/community-desktop-title";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6198,7 +6199,7 @@ export default function ComunidadePage() {
       <CommunityContentContainer isDesktop={isDesktop}>
         {isDesktop ? (
           <CommunityDesktopHeader>
-            <h1 style={desktopTopTitleStyle}>Comunidade</h1>
+            <CommunityDesktopTitle>Comunidade</CommunityDesktopTitle>
 
             <div style={desktopTopActionsStyle}>
               <label style={desktopSearchShellStyle}>
@@ -7689,16 +7690,6 @@ const pageStyle: CSSProperties = {
   background: "var(--historietas-comunidade-bg-page, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const desktopTopTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#FFFFFF",
-  fontSize: "32px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.055em",
-  ...safeTextStyle,
 };
 
 const desktopTopActionsStyle: CSSProperties = {
