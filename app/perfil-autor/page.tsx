@@ -190,6 +190,7 @@ import { ProfileCommunitySection } from "./components/profile-community-section"
 import { ProfileCommunityHeader } from "./components/profile-community-header";
 import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
 import { ProfileCommunityStatCard } from "./components/profile-community-stat-card";
+import { ProfileCommunityNotice } from "./components/profile-community-notice";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -293,11 +294,6 @@ import {
   profileAboutRowsStyle,
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
-  authorCommunityPreviewStyle,
-  authorCommunityPreviewIconStyle,
-  authorCommunityPreviewTextBlockStyle,
-  authorCommunityPreviewTitleStyle,
-  authorCommunityPreviewTextStyle,
   authorCommunityPostsBlockStyle,
   authorCommunityPostsTitleStyle,
   authorCommunityPostsListStyle,
@@ -7227,36 +7223,25 @@ function PerfilAutorPageContent() {
                 </ProfileCommunityStatsGrid>
 
                 {comunidadePerfil.erro ? (
-                  <div style={authorCommunityPreviewStyle}>
-                    <span style={authorCommunityPreviewIconStyle}>!</span>
-
-                    <div style={authorCommunityPreviewTextBlockStyle}>
-                      <strong style={authorCommunityPreviewTitleStyle}>
-                        Comunidade indisponível
-                      </strong>
-                      <p style={authorCommunityPreviewTextStyle}>
-                        {comunidadePerfil.erro}
-                      </p>
-                    </div>
-                  </div>
+                  <ProfileCommunityNotice
+                    icon="!"
+                    title="Comunidade indisponível"
+                    description={comunidadePerfil.erro}
+                  />
                 ) : comunidadePerfil.publicacoesRecentes.length === 0 ? (
-                  <div style={authorCommunityPreviewStyle}>
-                    <span style={authorCommunityPreviewIconStyle}>💬</span>
-
-                    <div style={authorCommunityPreviewTextBlockStyle}>
-                      <strong style={authorCommunityPreviewTitleStyle}>
-                        {podeEditarPerfil
-                          ? "Sua comunidade ainda está vazia"
-                          : "Nenhuma publicação por aqui ainda"}
-                      </strong>
-
-                      <p style={authorCommunityPreviewTextStyle}>
-                        {podeEditarPerfil
-                          ? "Publique avisos, bastidores, teorias e chamadas para aproximar leitores das suas obras."
-                          : `Quando ${perfilParaMostrar.nome} publicar posts, teorias ou reviews, eles aparecerão nesta área.`}
-                      </p>
-                    </div>
-                  </div>
+                  <ProfileCommunityNotice
+                    icon="💬"
+                    title={
+                      podeEditarPerfil
+                        ? "Sua comunidade ainda está vazia"
+                        : "Nenhuma publicação por aqui ainda"
+                    }
+                    description={
+                      podeEditarPerfil
+                        ? "Publique avisos, bastidores, teorias e chamadas para aproximar leitores das suas obras."
+                        : `Quando ${perfilParaMostrar.nome} publicar posts, teorias ou reviews, eles aparecerão nesta área.`
+                    }
+                  />
                 ) : (
                   <div style={authorCommunityPostsBlockStyle}>
                     <strong style={authorCommunityPostsTitleStyle}>
