@@ -241,12 +241,12 @@ import { ProfileWorkActionSheetHeader } from "./components/profile-work-action-s
 import { ProfileWorkActionSheetActions } from "./components/profile-work-action-sheet-actions";
 import { ProfileWorkActionSheetTitle } from "./components/profile-work-action-sheet-title";
 import { ProfileWorkActionSheetMeta } from "./components/profile-work-action-sheet-meta";
+import { ProfileWorkActionSheetAuthor } from "./components/profile-work-action-sheet-author";
+import { ProfileWorkActionSheetMetrics } from "./components/profile-work-action-sheet-metrics";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import {
-  workActionSheetAuthorStyle,
-  workActionSheetMetricsStyle,
   criarProfileSelectionDotStyle,
   criarCapaDestaquePerfilAutor,
   criarCapaGridPerfilAutor,
@@ -7591,17 +7591,17 @@ function PerfilAutorPageContent() {
                         {obra.titulo}
                       </ProfileWorkActionSheetTitle>
 
-                      <span style={workActionSheetAuthorStyle}>
+                      <ProfileWorkActionSheetAuthor>
                         Por {obra.autor}
-                      </span>
+                      </ProfileWorkActionSheetAuthor>
 
                       <ProfileWorkActionSheetMeta>
                         {metaObraSheet}
                       </ProfileWorkActionSheetMeta>
 
-                      <span style={workActionSheetMetricsStyle}>
+                      <ProfileWorkActionSheetMetrics>
                         {metricasObraSheet}
-                      </span>
+                      </ProfileWorkActionSheetMetrics>
                   </ProfileWorkActionSheetHeader>
 
                   <ProfileWorkActionSheetActions>
