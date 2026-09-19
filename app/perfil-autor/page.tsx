@@ -236,11 +236,11 @@ import { ProfileWorkMenuAnchor } from "./components/profile-work-menu-anchor";
 import { ProfileWorkOptionsButton } from "./components/profile-work-options-button";
 import { ProfileWorkActionSheetOverlay } from "./components/profile-work-action-sheet-overlay";
 import { ProfileWorkActionSheetPanel } from "./components/profile-work-action-sheet-panel";
+import { ProfileWorkActionSheetHandle } from "./components/profile-work-action-sheet-handle";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import {
-  workActionSheetHandleStyle,
   workActionSheetHeaderStyle,
   workActionSheetTextBlockStyle,
   workActionSheetTitleStyle,
@@ -7585,7 +7585,7 @@ function PerfilAutorPageContent() {
                   ariaLabel={`Ações da obra ${obra.titulo}`}
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div style={workActionSheetHandleStyle} aria-hidden="true" />
+                  <ProfileWorkActionSheetHandle />
 
                   <div style={workActionSheetHeaderStyle}>
                     <div style={workActionSheetTextBlockStyle}>
@@ -7749,7 +7749,7 @@ function PerfilAutorPageContent() {
                   ariaLabel={`Ações da Biblioteca ${obra.titulo}`}
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <div style={workActionSheetHandleStyle} aria-hidden="true" />
+                  <ProfileWorkActionSheetHandle />
 
                   <div style={workActionSheetHeaderStyle}>
                     <div style={workActionSheetTextBlockStyle}>
