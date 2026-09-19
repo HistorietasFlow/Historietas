@@ -214,6 +214,7 @@ import { ProfileAboutContentGrid } from "./components/profile-about-content-grid
 import { ProfileAboutPanel } from "./components/profile-about-panel";
 import { ProfileAboutPanelTitle } from "./components/profile-about-panel-title";
 import { ProfileAboutChips } from "./components/profile-about-chips";
+import { ProfileAboutChip } from "./components/profile-about-chip";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -296,7 +297,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutChipStyle,
   profileAboutMetricsGridStyle,
   profileAboutMetricCardStyle,
   profileAboutMetricNumberStyle,
@@ -7366,9 +7366,9 @@ function PerfilAutorPageContent() {
                     ? generosPrincipaisPerfil
                     : ["Histórias variadas"]
                   ).map((genero) => (
-                    <span key={`sobre-genero-${genero}`} style={profileAboutChipStyle}>
+                    <ProfileAboutChip key={`sobre-genero-${genero}`}>
                       {genero}
-                    </span>
+                    </ProfileAboutChip>
                   ))}
                 </ProfileAboutChips>
               </ProfileAboutPanel>
