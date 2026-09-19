@@ -189,6 +189,7 @@ import { ProfileLibrarySection } from "./components/profile-library-section";
 import { ProfileCommunitySection } from "./components/profile-community-section";
 import { ProfileCommunityHeader } from "./components/profile-community-header";
 import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
+import { ProfileCommunityStatCard } from "./components/profile-community-stat-card";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -292,10 +293,6 @@ import {
   profileAboutRowsStyle,
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
-  authorCommunityCardStyle,
-  authorCommunityCardNumberStyle,
-  authorCommunityCardTitleStyle,
-  authorCommunityCardTextStyle,
   authorCommunityPreviewStyle,
   authorCommunityPreviewIconStyle,
   authorCommunityPreviewTextBlockStyle,
@@ -7198,47 +7195,35 @@ function PerfilAutorPageContent() {
             ) : (
               <>
                 <ProfileCommunityStatsGrid isDesktop={isDesktop}>
-                  <Link
+                  <ProfileCommunityStatCard
                     href={comunidadeAutorHref}
-                    style={authorCommunityCardStyle}
-                    aria-label={`Abrir publicações de ${perfilParaMostrar.nome} na comunidade`}
-                  >
-                    <strong style={authorCommunityCardNumberStyle}>
-                      {compactarNumeroPerfilAutor(
-                        comunidadePerfil.totalPublicacoes,
-                      )}
-                    </strong>
-                    <span style={authorCommunityCardTitleStyle}>
-                      PUBLICAÇÕES
-                    </span>
-                    <span style={authorCommunityCardTextStyle}>
-                      posts do perfil
-                    </span>
-                  </Link>
+                    ariaLabel={`Abrir publicações de ${perfilParaMostrar.nome} na comunidade`}
+                    value={compactarNumeroPerfilAutor(
+                      comunidadePerfil.totalPublicacoes,
+                    )}
+                    title="PUBLICAÇÕES"
+                    description="posts do perfil"
+                  />
 
-                  <Link
+                  <ProfileCommunityStatCard
                     href={comunidadeAutorTeoriasHref}
-                    style={authorCommunityCardStyle}
-                    aria-label={`Abrir teorias de ${perfilParaMostrar.nome} na comunidade`}
-                  >
-                    <strong style={authorCommunityCardNumberStyle}>
-                      {compactarNumeroPerfilAutor(comunidadePerfil.totalTeorias)}
-                    </strong>
-                    <span style={authorCommunityCardTitleStyle}>TEORIAS</span>
-                    <span style={authorCommunityCardTextStyle}>discussões</span>
-                  </Link>
+                    ariaLabel={`Abrir teorias de ${perfilParaMostrar.nome} na comunidade`}
+                    value={compactarNumeroPerfilAutor(
+                      comunidadePerfil.totalTeorias,
+                    )}
+                    title="TEORIAS"
+                    description="discussões"
+                  />
 
-                  <Link
+                  <ProfileCommunityStatCard
                     href={comunidadeAutorReviewsHref}
-                    style={authorCommunityCardStyle}
-                    aria-label={`Abrir reviews de ${perfilParaMostrar.nome} na comunidade`}
-                  >
-                    <strong style={authorCommunityCardNumberStyle}>
-                      {compactarNumeroPerfilAutor(comunidadePerfil.totalReviews)}
-                    </strong>
-                    <span style={authorCommunityCardTitleStyle}>REVIEWS</span>
-                    <span style={authorCommunityCardTextStyle}>opiniões</span>
-                  </Link>
+                    ariaLabel={`Abrir reviews de ${perfilParaMostrar.nome} na comunidade`}
+                    value={compactarNumeroPerfilAutor(
+                      comunidadePerfil.totalReviews,
+                    )}
+                    title="REVIEWS"
+                    description="opiniões"
+                  />
                 </ProfileCommunityStatsGrid>
 
                 {comunidadePerfil.erro ? (
