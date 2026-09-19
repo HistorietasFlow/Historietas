@@ -23,6 +23,7 @@ import {
 import { useHistorietasLanguage } from "../../components/HistorietasLanguageProvider";
 import DenunciaModal from "../../components/DenunciaModal";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
+import { CommunityLoadingContainer } from "./components/community-loading-container";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6175,11 +6176,11 @@ export default function ComunidadePage() {
 
   if (carregandoFeed) {
     return (
-      <main style={pageThemeStyle} aria-busy="true">
+      <CommunityLoadingContainer style={pageThemeStyle}>
         <CommunityLanguageBridge />
         <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
         <CommunityLoadingSpinner label="Carregando Comunidade" />
-      </main>
+      </CommunityLoadingContainer>
     );
   }
 
