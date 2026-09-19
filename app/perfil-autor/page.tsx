@@ -192,6 +192,7 @@ import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-
 import { ProfileCommunityStatCard } from "./components/profile-community-stat-card";
 import { ProfileCommunityNotice } from "./components/profile-community-notice";
 import { ProfileCommunityRecentPostsSection } from "./components/profile-community-recent-posts-section";
+import { ProfileCommunityRecentPostsList } from "./components/profile-community-recent-posts-list";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -295,7 +296,6 @@ import {
   profileAboutRowsStyle,
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
-  authorCommunityPostsListStyle,
   authorCommunityPostWrapperStyle,
   authorCommunityPostStyle,
   authorCommunityPostReportButtonStyle,
@@ -321,7 +321,6 @@ import {
   desktopAvatarActionsStyle,
   desktopAvatarSmallButtonStyle,
   desktopAvatarRemoveButtonStyle,
-  desktopAuthorCommunityPostsListStyle,
 } from "./styles";
 
 
@@ -7244,13 +7243,7 @@ function PerfilAutorPageContent() {
                 ) : (
                   <ProfileCommunityRecentPostsSection title="Publicações recentes">
 
-                    <div
-                      style={
-                        isDesktop
-                          ? desktopAuthorCommunityPostsListStyle
-                          : authorCommunityPostsListStyle
-                      }
-                    >
+                    <ProfileCommunityRecentPostsList isDesktop={isDesktop}>
                       {comunidadePerfil.publicacoesRecentes.map(
                         (publicacao) => (
                           <article
@@ -7339,7 +7332,7 @@ function PerfilAutorPageContent() {
                           </article>
                         ),
                       )}
-                    </div>
+                    </ProfileCommunityRecentPostsList>
                   </ProfileCommunityRecentPostsSection>
                 )}
               </>
