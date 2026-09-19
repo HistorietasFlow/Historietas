@@ -239,11 +239,11 @@ import { ProfileWorkActionSheetPanel } from "./components/profile-work-action-sh
 import { ProfileWorkActionSheetHandle } from "./components/profile-work-action-sheet-handle";
 import { ProfileWorkActionSheetHeader } from "./components/profile-work-action-sheet-header";
 import { ProfileWorkActionSheetActions } from "./components/profile-work-action-sheet-actions";
+import { ProfileWorkActionSheetTitle } from "./components/profile-work-action-sheet-title";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import {
-  workActionSheetTitleStyle,
   workActionSheetAuthorStyle,
   workActionSheetMetaStyle,
   workActionSheetMetricsStyle,
@@ -7587,9 +7587,9 @@ function PerfilAutorPageContent() {
                   <ProfileWorkActionSheetHandle />
 
                   <ProfileWorkActionSheetHeader>
-                      <strong data-historietas-user-content="true" style={workActionSheetTitleStyle}>
+                      <ProfileWorkActionSheetTitle>
                         {obra.titulo}
-                      </strong>
+                      </ProfileWorkActionSheetTitle>
 
                       <span style={workActionSheetAuthorStyle}>
                         Por {obra.autor}
@@ -7749,9 +7749,9 @@ function PerfilAutorPageContent() {
                   <ProfileWorkActionSheetHandle />
 
                   <ProfileWorkActionSheetHeader>
-                      <strong data-historietas-user-content="true" style={workActionSheetTitleStyle}>
+                      <ProfileWorkActionSheetTitle>
                         {obra.titulo}
-                      </strong>
+                      </ProfileWorkActionSheetTitle>
                       <span style={workActionSheetMetaStyle}>{metaSheet}</span>
                   </ProfileWorkActionSheetHeader>
 
