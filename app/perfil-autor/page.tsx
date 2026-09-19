@@ -209,6 +209,7 @@ import { ProfileAboutText } from "./components/profile-about-text";
 import { ProfileAboutEditButton } from "./components/profile-about-edit-button";
 import { ProfileAboutEditor } from "./components/profile-about-editor";
 import { ProfileAboutTextarea } from "./components/profile-about-textarea";
+import { ProfileAboutCounter } from "./components/profile-about-counter";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -291,7 +292,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutCounterStyle,
   profileAboutContentGridStyle,
   profileAboutPanelStyle,
   profileAboutPanelTitleStyle,
@@ -7350,9 +7350,9 @@ function PerfilAutorPageContent() {
                     maxLength={SOBRE_BIO_MAX_LENGTH}
                   />
 
-                  <span style={profileAboutCounterStyle}>
+                  <ProfileAboutCounter>
                     {caracteresRestantesBioSobre} caracteres
-                  </span>
+                  </ProfileAboutCounter>
                 </ProfileAboutEditor>
               )}
             </ProfileAboutHero>
