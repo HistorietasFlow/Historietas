@@ -202,6 +202,7 @@ import { ProfileCommunityPostPollInfo } from "./components/profile-community-pos
 import { ProfileCommunityPostWork } from "./components/profile-community-post-work";
 import { ProfileCommunityPostReportButton } from "./components/profile-community-post-report-button";
 import { ProfileAboutSection } from "./components/profile-about-section";
+import { ProfileAboutHero } from "./components/profile-about-hero";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -291,7 +292,6 @@ import {
   profileAboutEditorStyle,
   profileAboutTextareaStyle,
   profileAboutCounterStyle,
-  profileAboutHeroStyle,
   profileAboutContentGridStyle,
   profileAboutPanelStyle,
   profileAboutPanelTitleStyle,
@@ -7320,7 +7320,7 @@ function PerfilAutorPageContent() {
 
         {abaPerfil === "sobre" && sobrePerfilVisivel && (
           <ProfileAboutSection>
-            <div style={profileAboutHeroStyle}>
+            <ProfileAboutHero>
               <h2 style={profileAboutTitleStyle}>
                 Sobre {perfilParaMostrar.nome}
               </h2>
@@ -7363,7 +7363,7 @@ function PerfilAutorPageContent() {
                   </span>
                 </div>
               )}
-            </div>
+            </ProfileAboutHero>
 
             <div style={profileAboutContentGridStyle}>
               <section style={profileAboutPanelStyle}>
