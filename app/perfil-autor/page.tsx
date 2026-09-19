@@ -233,6 +233,7 @@ import { ProfileWorkCoverMetrics } from "./components/profile-work-cover-metrics
 import { ProfileWorkCoverLikeIcon } from "./components/profile-work-cover-like-icon";
 import { ProfileWorkCoverCommentIcon } from "./components/profile-work-cover-comment-icon";
 import { ProfileWorkMenuAnchor } from "./components/profile-work-menu-anchor";
+import { ProfileWorkOptionsButton } from "./components/profile-work-options-button";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -312,7 +313,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileWorkDotsButtonStyle,
   desktopContainerStyle,
   desktopHeroBoxStyle,
   desktopAuthorTopRowStyle,
@@ -7502,19 +7502,15 @@ function PerfilAutorPageContent() {
                       </ProfileWorkCoverLink>
 
                       <ProfileWorkMenuAnchor>
-                        <button
-                          type="button"
+                        <ProfileWorkOptionsButton
                           onClick={() =>
                             setObraMenuAbertoId((idAtual) =>
                               idAtual === obra.id ? "" : obra.id,
                             )
                           }
-                          style={profileWorkDotsButtonStyle}
-                          aria-label={`Abrir opções de ${obra.titulo}`}
-                          aria-expanded={menuObraAberto}
-                        >
-                          ⋮
-                        </button>
+                          ariaLabel={`Abrir opções de ${obra.titulo}`}
+                          expanded={menuObraAberto}
+                        />
                       </ProfileWorkMenuAnchor>
                     </ProfileWorkCard>
                   );
