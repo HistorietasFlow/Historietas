@@ -203,6 +203,7 @@ import { ProfileCommunityPostWork } from "./components/profile-community-post-wo
 import { ProfileCommunityPostReportButton } from "./components/profile-community-post-report-button";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileAboutHero } from "./components/profile-about-hero";
+import { ProfileAboutTitle } from "./components/profile-about-title";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -285,7 +286,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutTitleStyle,
   profileAboutTextStyle,
   profileAboutTextRowStyle,
   profileAboutEditButtonStyle,
@@ -7321,9 +7321,9 @@ function PerfilAutorPageContent() {
         {abaPerfil === "sobre" && sobrePerfilVisivel && (
           <ProfileAboutSection>
             <ProfileAboutHero>
-              <h2 style={profileAboutTitleStyle}>
+              <ProfileAboutTitle>
                 Sobre {perfilParaMostrar.nome}
-              </h2>
+              </ProfileAboutTitle>
 
               <div style={profileAboutTextRowStyle}>
                 <p
