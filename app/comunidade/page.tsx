@@ -25,6 +25,7 @@ import DenunciaModal from "../../components/DenunciaModal";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityLoadingContainer } from "./components/community-loading-container";
 import { CommunityPageContainer } from "./components/community-page-container";
+import { CommunityContentContainer } from "./components/community-content-container";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6196,7 +6197,7 @@ export default function ComunidadePage() {
         <div style={mobileTopWaterFadeStyle} aria-hidden="true" />
       )}
 
-      <section style={isDesktop ? desktopContainerStyle : containerStyle}>
+      <CommunityContentContainer isDesktop={isDesktop}>
         {isDesktop ? (
           <header style={desktopTopStyle}>
             <h1 style={desktopTopTitleStyle}>Comunidade</h1>
@@ -7268,7 +7269,7 @@ export default function ComunidadePage() {
           </section>
 
         </section>
-      </section>
+      </CommunityContentContainer>
 
       {composerAberto && usuario && typeof document !== "undefined"
         ? createPortal(
@@ -7691,24 +7692,6 @@ const pageStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
-
-const containerStyle: CSSProperties = {
-  position: "relative",
-  width: "min(1120px, calc(100% - 24px))",
-  maxWidth: "100%",
-  margin: "0 auto",
-  padding: "4px 0 calc(20px + env(safe-area-inset-bottom))",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
-
-const desktopContainerStyle: CSSProperties = {
-  ...containerStyle,
-  width: "min(1180px, calc(100% - 64px))",
-  maxWidth: "100%",
-  padding: "34px 0 64px",
-};
-
 
 const desktopTopStyle: CSSProperties = {
   width: "100%",
