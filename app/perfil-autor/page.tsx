@@ -215,6 +215,7 @@ import { ProfileAboutPanel } from "./components/profile-about-panel";
 import { ProfileAboutPanelTitle } from "./components/profile-about-panel-title";
 import { ProfileAboutChips } from "./components/profile-about-chips";
 import { ProfileAboutChip } from "./components/profile-about-chip";
+import { ProfileAboutMetricsGrid } from "./components/profile-about-metrics-grid";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -297,7 +298,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutMetricsGridStyle,
   profileAboutMetricCardStyle,
   profileAboutMetricNumberStyle,
   profileAboutMetricLabelStyle,
@@ -7376,7 +7376,7 @@ function PerfilAutorPageContent() {
               <ProfileAboutPanel>
                 <ProfileAboutPanelTitle>Números do perfil</ProfileAboutPanelTitle>
 
-                <div style={profileAboutMetricsGridStyle}>
+                <ProfileAboutMetricsGrid>
                   <div style={profileAboutMetricCardStyle}>
                     <strong style={profileAboutMetricNumberStyle}>
                       {compactarNumeroPerfilAutor(perfilParaMostrar.totalPublicadas)}
@@ -7404,7 +7404,7 @@ function PerfilAutorPageContent() {
                     </strong>
                     <span style={profileAboutMetricLabelStyle}>visualizações</span>
                   </div>
-                </div>
+                </ProfileAboutMetricsGrid>
               </ProfileAboutPanel>
 
               <ProfileAboutPanel>
