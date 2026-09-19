@@ -240,12 +240,12 @@ import { ProfileWorkActionSheetHandle } from "./components/profile-work-action-s
 import { ProfileWorkActionSheetHeader } from "./components/profile-work-action-sheet-header";
 import { ProfileWorkActionSheetActions } from "./components/profile-work-action-sheet-actions";
 import { ProfileWorkActionSheetTitle } from "./components/profile-work-action-sheet-title";
+import { ProfileWorkActionSheetMeta } from "./components/profile-work-action-sheet-meta";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import {
   workActionSheetAuthorStyle,
-  workActionSheetMetaStyle,
   workActionSheetMetricsStyle,
   criarProfileSelectionDotStyle,
   criarCapaDestaquePerfilAutor,
@@ -7595,9 +7595,9 @@ function PerfilAutorPageContent() {
                         Por {obra.autor}
                       </span>
 
-                      <span style={workActionSheetMetaStyle}>
+                      <ProfileWorkActionSheetMeta>
                         {metaObraSheet}
-                      </span>
+                      </ProfileWorkActionSheetMeta>
 
                       <span style={workActionSheetMetricsStyle}>
                         {metricasObraSheet}
@@ -7752,7 +7752,7 @@ function PerfilAutorPageContent() {
                       <ProfileWorkActionSheetTitle>
                         {obra.titulo}
                       </ProfileWorkActionSheetTitle>
-                      <span style={workActionSheetMetaStyle}>{metaSheet}</span>
+                      <ProfileWorkActionSheetMeta>{metaSheet}</ProfileWorkActionSheetMeta>
                   </ProfileWorkActionSheetHeader>
 
                   <ProfileWorkActionSheetActions>
