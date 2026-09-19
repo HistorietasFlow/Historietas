@@ -195,6 +195,7 @@ import { ProfileCommunityRecentPostsSection } from "./components/profile-communi
 import { ProfileCommunityRecentPostsList } from "./components/profile-community-recent-posts-list";
 import { ProfileCommunityPostItem } from "./components/profile-community-post-item";
 import { ProfileCommunityPostLink } from "./components/profile-community-post-link";
+import { ProfileCommunityPostHeader } from "./components/profile-community-post-header";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -299,9 +300,6 @@ import {
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
   authorCommunityPostReportButtonStyle,
-  authorCommunityPostHeaderStyle,
-  authorCommunityPostTypeStyle,
-  authorCommunityPostDateStyle,
   authorCommunityPostBodyStyle,
   authorCommunityPostTextStyle,
   authorCommunityPostPollInfoStyle,
@@ -7256,16 +7254,12 @@ function PerfilAutorPageContent() {
                               }
                               ariaLabel={`Abrir ${publicacao.tipoPublicacao} na Comunidade`}
                             >
-                              <span style={authorCommunityPostHeaderStyle}>
-                                <strong style={authorCommunityPostTypeStyle}>
-                                  {publicacao.tipoPublicacao}
-                                </strong>
-                                <span style={authorCommunityPostDateStyle}>
-                                  {dataDiarioPerfilFormatada(
-                                    publicacao.criadoEm,
-                                  )}
-                                </span>
-                              </span>
+                              <ProfileCommunityPostHeader
+                                typeLabel={publicacao.tipoPublicacao}
+                                dateLabel={dataDiarioPerfilFormatada(
+                                  publicacao.criadoEm,
+                                )}
+                              />
 
                               <span style={authorCommunityPostBodyStyle}>
                                 <span
