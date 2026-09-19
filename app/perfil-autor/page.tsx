@@ -210,6 +210,7 @@ import { ProfileAboutEditButton } from "./components/profile-about-edit-button";
 import { ProfileAboutEditor } from "./components/profile-about-editor";
 import { ProfileAboutTextarea } from "./components/profile-about-textarea";
 import { ProfileAboutCounter } from "./components/profile-about-counter";
+import { ProfileAboutContentGrid } from "./components/profile-about-content-grid";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -292,7 +293,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutContentGridStyle,
   profileAboutPanelStyle,
   profileAboutPanelTitleStyle,
   profileAboutChipsStyle,
@@ -7357,7 +7357,7 @@ function PerfilAutorPageContent() {
               )}
             </ProfileAboutHero>
 
-            <div style={profileAboutContentGridStyle}>
+            <ProfileAboutContentGrid>
               <section style={profileAboutPanelStyle}>
                 <strong style={profileAboutPanelTitleStyle}>Especialidades</strong>
 
@@ -7435,7 +7435,7 @@ function PerfilAutorPageContent() {
                   )}
                 </div>
               </section>
-            </div>
+            </ProfileAboutContentGrid>
 
             <p style={profileAboutMemberSinceStyle}>
               Na Historietas desde {entradaHistorietasPerfil}
