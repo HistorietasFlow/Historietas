@@ -221,6 +221,7 @@ import { ProfileAboutMetricNumber } from "./components/profile-about-metric-numb
 import { ProfileAboutMetricLabel } from "./components/profile-about-metric-label";
 import { ProfileAboutRows } from "./components/profile-about-rows";
 import { ProfileAboutRow } from "./components/profile-about-row";
+import { ProfileAboutMemberSince } from "./components/profile-about-member-since";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -303,7 +304,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutMemberSinceStyle,
   profileWorkCardStyle,
   profileWorkCoverLinkStyle,
   profileWorkCoverOverlayStyle,
@@ -7437,9 +7437,9 @@ function PerfilAutorPageContent() {
               </ProfileAboutPanel>
             </ProfileAboutContentGrid>
 
-            <p style={profileAboutMemberSinceStyle}>
+            <ProfileAboutMemberSince>
               Na Historietas desde {entradaHistorietasPerfil}
-            </p>
+            </ProfileAboutMemberSince>
 
             {atividadesPerfilVisivel &&
               renderizarAtividadeRecenteSobrePerfil()}
