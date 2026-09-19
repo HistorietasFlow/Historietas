@@ -217,6 +217,7 @@ import { ProfileAboutChips } from "./components/profile-about-chips";
 import { ProfileAboutChip } from "./components/profile-about-chip";
 import { ProfileAboutMetricsGrid } from "./components/profile-about-metrics-grid";
 import { ProfileAboutMetricCard } from "./components/profile-about-metric-card";
+import { ProfileAboutMetricNumber } from "./components/profile-about-metric-number";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -299,7 +300,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutMetricNumberStyle,
   profileAboutMetricLabelStyle,
   profileAboutRowsStyle,
   profileAboutRowStyle,
@@ -7378,30 +7378,30 @@ function PerfilAutorPageContent() {
 
                 <ProfileAboutMetricsGrid>
                   <ProfileAboutMetricCard>
-                    <strong style={profileAboutMetricNumberStyle}>
+                    <ProfileAboutMetricNumber>
                       {compactarNumeroPerfilAutor(perfilParaMostrar.totalPublicadas)}
-                    </strong>
+                    </ProfileAboutMetricNumber>
                     <span style={profileAboutMetricLabelStyle}>publicadas</span>
                   </ProfileAboutMetricCard>
 
                   <ProfileAboutMetricCard>
-                    <strong style={profileAboutMetricNumberStyle}>
+                    <ProfileAboutMetricNumber>
                       {compactarNumeroPerfilAutor(perfilParaMostrar.totalCapitulos)}
-                    </strong>
+                    </ProfileAboutMetricNumber>
                     <span style={profileAboutMetricLabelStyle}>capítulos</span>
                   </ProfileAboutMetricCard>
 
                   <ProfileAboutMetricCard>
-                    <strong style={profileAboutMetricNumberStyle}>
+                    <ProfileAboutMetricNumber>
                       {compactarNumeroPerfilAutor(perfilParaMostrar.totalCurtidas)}
-                    </strong>
+                    </ProfileAboutMetricNumber>
                     <span style={profileAboutMetricLabelStyle}>curtidas</span>
                   </ProfileAboutMetricCard>
 
                   <ProfileAboutMetricCard>
-                    <strong style={profileAboutMetricNumberStyle}>
+                    <ProfileAboutMetricNumber>
                       {compactarNumeroPerfilAutor(totalVisualizacoesPerfil)}
-                    </strong>
+                    </ProfileAboutMetricNumber>
                     <span style={profileAboutMetricLabelStyle}>visualizações</span>
                   </ProfileAboutMetricCard>
                 </ProfileAboutMetricsGrid>
