@@ -220,6 +220,7 @@ import { ProfileAboutMetricCard } from "./components/profile-about-metric-card";
 import { ProfileAboutMetricNumber } from "./components/profile-about-metric-number";
 import { ProfileAboutMetricLabel } from "./components/profile-about-metric-label";
 import { ProfileAboutRows } from "./components/profile-about-rows";
+import { ProfileAboutRow } from "./components/profile-about-row";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -302,7 +303,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutRowStyle,
   profileAboutMemberSinceStyle,
   profileWorkCardStyle,
   profileWorkCoverLinkStyle,
@@ -7411,27 +7411,27 @@ function PerfilAutorPageContent() {
                 <ProfileAboutPanelTitle>Atividade</ProfileAboutPanelTitle>
 
                 <ProfileAboutRows>
-                  <span style={profileAboutRowStyle}>
+                  <ProfileAboutRow>
                     obras no perfil
                     <strong>{perfilParaMostrar.obras.length}</strong>
-                  </span>
-                  <span style={profileAboutRowStyle}>
+                  </ProfileAboutRow>
+                  <ProfileAboutRow>
                     rascunhos em desenvolvimento
                     <strong>{totalRascunhosPerfil}</strong>
-                  </span>
-                  <span style={profileAboutRowStyle}>
+                  </ProfileAboutRow>
+                  <ProfileAboutRow>
                     comentários recebidos
                     <strong>{perfilParaMostrar.totalComentarios}</strong>
-                  </span>
-                  <span style={profileAboutRowStyle}>
+                  </ProfileAboutRow>
+                  <ProfileAboutRow>
                     concluídas por leitores
                     <strong>{obrasConcluidasPerfilTotal}</strong>
-                  </span>
+                  </ProfileAboutRow>
                   {totalObrasSemCapitulosPerfil > 0 && (
-                    <span style={profileAboutRowStyle}>
+                    <ProfileAboutRow>
                       sem capítulos ainda
                       <strong>{totalObrasSemCapitulosPerfil}</strong>
-                    </span>
+                    </ProfileAboutRow>
                   )}
                 </ProfileAboutRows>
               </ProfileAboutPanel>
