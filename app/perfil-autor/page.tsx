@@ -207,6 +207,7 @@ import { ProfileAboutTitle } from "./components/profile-about-title";
 import { ProfileAboutTextRow } from "./components/profile-about-text-row";
 import { ProfileAboutText } from "./components/profile-about-text";
 import { ProfileAboutEditButton } from "./components/profile-about-edit-button";
+import { ProfileAboutEditor } from "./components/profile-about-editor";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -289,7 +290,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutEditorStyle,
   profileAboutTextareaStyle,
   profileAboutCounterStyle,
   profileAboutContentGridStyle,
@@ -7342,7 +7342,7 @@ function PerfilAutorPageContent() {
               </ProfileAboutTextRow>
 
               {podeEditarPerfil && editorSobreAberto && (
-                <div style={profileAboutEditorStyle}>
+                <ProfileAboutEditor>
                   <textarea
                     value={perfilSalvoAutor.sobreBio}
                     onChange={(event) => atualizarBioSobreAutor(event.target.value)}
@@ -7355,7 +7355,7 @@ function PerfilAutorPageContent() {
                   <span style={profileAboutCounterStyle}>
                     {caracteresRestantesBioSobre} caracteres
                   </span>
-                </div>
+                </ProfileAboutEditor>
               )}
             </ProfileAboutHero>
 
