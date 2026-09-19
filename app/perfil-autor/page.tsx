@@ -229,6 +229,7 @@ import { ProfileWorkCard } from "./components/profile-work-card";
 import { ProfileWorkCoverLink } from "./components/profile-work-cover-link";
 import { ProfileWorkCoverOverlay } from "./components/profile-work-cover-overlay";
 import { ProfileWorkCoverTitle } from "./components/profile-work-cover-title";
+import { ProfileWorkCoverMetrics } from "./components/profile-work-cover-metrics";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -308,7 +309,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  diaryCardCoverMetaStyle,
   diaryCardHeartMetaStyle,
   diaryCardCommentMetaStyle,
   profileWorkMenuAnchorStyle,
@@ -7486,7 +7486,7 @@ function PerfilAutorPageContent() {
                               {obra.titulo}
                             </ProfileWorkCoverTitle>
 
-                            <span style={diaryCardCoverMetaStyle}>
+                            <ProfileWorkCoverMetrics>
                               <span>👁 {visualizacoesObra}</span>
                               <span>
                                 <span style={diaryCardHeartMetaStyle}>❤️</span>{" "}
@@ -7496,7 +7496,7 @@ function PerfilAutorPageContent() {
                                 <span style={diaryCardCommentMetaStyle}>💬</span>{" "}
                                 {totalComentarios}
                               </span>
-                            </span>
+                            </ProfileWorkCoverMetrics>
                           </ProfileWorkCoverOverlay>
                         </div>
                       </ProfileWorkCoverLink>
