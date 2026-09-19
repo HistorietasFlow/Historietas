@@ -219,6 +219,7 @@ import { ProfileAboutMetricsGrid } from "./components/profile-about-metrics-grid
 import { ProfileAboutMetricCard } from "./components/profile-about-metric-card";
 import { ProfileAboutMetricNumber } from "./components/profile-about-metric-number";
 import { ProfileAboutMetricLabel } from "./components/profile-about-metric-label";
+import { ProfileAboutRows } from "./components/profile-about-rows";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -301,7 +302,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutRowsStyle,
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
   profileWorkCardStyle,
@@ -7410,7 +7410,7 @@ function PerfilAutorPageContent() {
               <ProfileAboutPanel>
                 <ProfileAboutPanelTitle>Atividade</ProfileAboutPanelTitle>
 
-                <div style={profileAboutRowsStyle}>
+                <ProfileAboutRows>
                   <span style={profileAboutRowStyle}>
                     obras no perfil
                     <strong>{perfilParaMostrar.obras.length}</strong>
@@ -7433,7 +7433,7 @@ function PerfilAutorPageContent() {
                       <strong>{totalObrasSemCapitulosPerfil}</strong>
                     </span>
                   )}
-                </div>
+                </ProfileAboutRows>
               </ProfileAboutPanel>
             </ProfileAboutContentGrid>
 
