@@ -26,6 +26,7 @@ import { CommunityLoadingSpinner } from "./components/community-loading-spinner"
 import { CommunityLoadingContainer } from "./components/community-loading-container";
 import { CommunityPageContainer } from "./components/community-page-container";
 import { CommunityContentContainer } from "./components/community-content-container";
+import { CommunityTopWaterFade } from "./components/community-top-water-fade";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6191,11 +6192,7 @@ export default function ComunidadePage() {
       <CommunityLanguageBridge />
       <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
 
-      {isDesktop ? (
-        <div style={desktopTopWaterFadeStyle} aria-hidden="true" />
-      ) : (
-        <div style={mobileTopWaterFadeStyle} aria-hidden="true" />
-      )}
+      <CommunityTopWaterFade isDesktop={isDesktop} />
 
       <CommunityContentContainer isDesktop={isDesktop}>
         {isDesktop ? (
@@ -7788,29 +7785,6 @@ const desktopFilterButtonStyle: CSSProperties = {
 
 
 
-const mobileTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(520px, 72vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  opacity: 0,
-};
-
-const desktopTopWaterFadeStyle: CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "min(620px, 68vh)",
-  pointerEvents: "none",
-  zIndex: 0,
-  background: "transparent",
-  opacity: 0,
-};
 
 
 
