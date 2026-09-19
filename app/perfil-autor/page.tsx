@@ -226,6 +226,7 @@ import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
 import { ProfileWorkCard } from "./components/profile-work-card";
+import { ProfileWorkCoverLink } from "./components/profile-work-cover-link";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -305,7 +306,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileWorkCoverLinkStyle,
   profileWorkCoverOverlayStyle,
   profileWorkCoverTitleStyle,
   diaryCardCoverMetaStyle,
@@ -7477,7 +7477,7 @@ function PerfilAutorPageContent() {
 
                   return (
                     <ProfileWorkCard key={obra.id}>
-                      <Link href={obraHref} style={profileWorkCoverLinkStyle}>
+                      <ProfileWorkCoverLink href={obraHref}>
                         <div
                           style={criarCapaGridPerfilAutor(obra.capa, isDesktop)}
                         >
@@ -7499,7 +7499,7 @@ function PerfilAutorPageContent() {
                             </span>
                           </div>
                         </div>
-                      </Link>
+                      </ProfileWorkCoverLink>
 
                       <div style={profileWorkMenuAnchorStyle}>
                         <button
