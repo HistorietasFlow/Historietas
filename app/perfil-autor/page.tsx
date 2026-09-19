@@ -204,6 +204,7 @@ import { ProfileCommunityPostReportButton } from "./components/profile-community
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileAboutHero } from "./components/profile-about-hero";
 import { ProfileAboutTitle } from "./components/profile-about-title";
+import { ProfileAboutTextRow } from "./components/profile-about-text-row";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -287,7 +288,6 @@ import {
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
   profileAboutTextStyle,
-  profileAboutTextRowStyle,
   profileAboutEditButtonStyle,
   profileAboutEditorStyle,
   profileAboutTextareaStyle,
@@ -7325,7 +7325,7 @@ function PerfilAutorPageContent() {
                 Sobre {perfilParaMostrar.nome}
               </ProfileAboutTitle>
 
-              <div style={profileAboutTextRowStyle}>
+              <ProfileAboutTextRow>
                 <p
                   data-historietas-user-content={
                     bioSobreAutorEhPadrao ? undefined : "true"
@@ -7345,7 +7345,7 @@ function PerfilAutorPageContent() {
                     ✎
                   </button>
                 )}
-              </div>
+              </ProfileAboutTextRow>
 
               {podeEditarPerfil && editorSobreAberto && (
                 <div style={profileAboutEditorStyle}>
