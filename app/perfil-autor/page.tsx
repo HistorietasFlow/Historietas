@@ -205,6 +205,7 @@ import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileAboutHero } from "./components/profile-about-hero";
 import { ProfileAboutTitle } from "./components/profile-about-title";
 import { ProfileAboutTextRow } from "./components/profile-about-text-row";
+import { ProfileAboutText } from "./components/profile-about-text";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -287,7 +288,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutTextStyle,
   profileAboutEditButtonStyle,
   profileAboutEditorStyle,
   profileAboutTextareaStyle,
@@ -7326,14 +7326,13 @@ function PerfilAutorPageContent() {
               </ProfileAboutTitle>
 
               <ProfileAboutTextRow>
-                <p
-                  data-historietas-user-content={
+                <ProfileAboutText
+                  userContent={
                     bioSobreAutorEhPadrao ? undefined : "true"
                   }
-                  style={profileAboutTextStyle}
                 >
                   {bioSobreAutorExibido}
-                </p>
+                </ProfileAboutText>
 
                 {podeEditarPerfil && (
                   <button
