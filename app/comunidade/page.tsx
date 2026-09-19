@@ -24,6 +24,7 @@ import { useHistorietasLanguage } from "../../components/HistorietasLanguageProv
 import DenunciaModal from "../../components/DenunciaModal";
 import { CommunityLoadingSpinner } from "./components/community-loading-spinner";
 import { CommunityLoadingContainer } from "./components/community-loading-container";
+import { CommunityPageContainer } from "./components/community-page-container";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6185,7 +6186,7 @@ export default function ComunidadePage() {
   }
 
   return (
-    <main style={pageThemeStyle}>
+    <CommunityPageContainer style={pageThemeStyle}>
       <CommunityLanguageBridge />
       <style>{`${historietasThemeCss}${comunidadeThemeCss}`}</style>
 
@@ -7601,7 +7602,7 @@ export default function ComunidadePage() {
           {feedbackAcao}
         </div>
       )}
-    </main>
+    </CommunityPageContainer>
   );
 }
 
