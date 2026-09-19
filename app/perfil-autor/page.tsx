@@ -235,6 +235,7 @@ import { ProfileWorkCoverCommentIcon } from "./components/profile-work-cover-com
 import { ProfileWorkMenuAnchor } from "./components/profile-work-menu-anchor";
 import { ProfileWorkOptionsButton } from "./components/profile-work-options-button";
 import { ProfileWorkActionSheetOverlay } from "./components/profile-work-action-sheet-overlay";
+import { ProfileWorkActionSheetPanel } from "./components/profile-work-action-sheet-panel";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -7581,10 +7582,8 @@ function PerfilAutorPageContent() {
               <ProfileWorkActionSheetOverlay
                 onClick={() => setObraMenuAbertoId("")}
               >
-                <section
-                  style={workActionSheetStyle}
-                  role="dialog"
-                  aria-label={`Ações da obra ${obra.titulo}`}
+                <ProfileWorkActionSheetPanel
+                  ariaLabel={`Ações da obra ${obra.titulo}`}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div style={workActionSheetHandleStyle} aria-hidden="true" />
@@ -7690,7 +7689,7 @@ function PerfilAutorPageContent() {
                       Compartilhar
                     </button>
                   </div>
-                </section>
+                </ProfileWorkActionSheetPanel>
               </ProfileWorkActionSheetOverlay>
             );
           })()}
