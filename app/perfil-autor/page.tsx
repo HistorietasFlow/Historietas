@@ -211,6 +211,7 @@ import { ProfileAboutEditor } from "./components/profile-about-editor";
 import { ProfileAboutTextarea } from "./components/profile-about-textarea";
 import { ProfileAboutCounter } from "./components/profile-about-counter";
 import { ProfileAboutContentGrid } from "./components/profile-about-content-grid";
+import { ProfileAboutPanel } from "./components/profile-about-panel";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
 import { ProfileWorksGrid } from "./components/profile-works-grid";
@@ -293,7 +294,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  profileAboutPanelStyle,
   profileAboutPanelTitleStyle,
   profileAboutChipsStyle,
   profileAboutChipStyle,
@@ -7358,7 +7358,7 @@ function PerfilAutorPageContent() {
             </ProfileAboutHero>
 
             <ProfileAboutContentGrid>
-              <section style={profileAboutPanelStyle}>
+              <ProfileAboutPanel>
                 <strong style={profileAboutPanelTitleStyle}>Especialidades</strong>
 
                 <div style={profileAboutChipsStyle}>
@@ -7371,9 +7371,9 @@ function PerfilAutorPageContent() {
                     </span>
                   ))}
                 </div>
-              </section>
+              </ProfileAboutPanel>
 
-              <section style={profileAboutPanelStyle}>
+              <ProfileAboutPanel>
                 <strong style={profileAboutPanelTitleStyle}>Números do perfil</strong>
 
                 <div style={profileAboutMetricsGridStyle}>
@@ -7405,9 +7405,9 @@ function PerfilAutorPageContent() {
                     <span style={profileAboutMetricLabelStyle}>visualizações</span>
                   </div>
                 </div>
-              </section>
+              </ProfileAboutPanel>
 
-              <section style={profileAboutPanelStyle}>
+              <ProfileAboutPanel>
                 <strong style={profileAboutPanelTitleStyle}>Atividade</strong>
 
                 <div style={profileAboutRowsStyle}>
@@ -7434,7 +7434,7 @@ function PerfilAutorPageContent() {
                     </span>
                   )}
                 </div>
-              </section>
+              </ProfileAboutPanel>
             </ProfileAboutContentGrid>
 
             <p style={profileAboutMemberSinceStyle}>
