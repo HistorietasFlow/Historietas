@@ -230,6 +230,7 @@ import { ProfileWorkCoverLink } from "./components/profile-work-cover-link";
 import { ProfileWorkCoverOverlay } from "./components/profile-work-cover-overlay";
 import { ProfileWorkCoverTitle } from "./components/profile-work-cover-title";
 import { ProfileWorkCoverMetrics } from "./components/profile-work-cover-metrics";
+import { ProfileWorkCoverLikeIcon } from "./components/profile-work-cover-like-icon";
 import { ProfileSectionEmptyState } from "./components/profile-section-empty-state";
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
@@ -309,7 +310,6 @@ import {
   desktopProfileVisitorActionsStyle,
   profilePrimaryButtonStyle,
   profileActiveButtonStyle,
-  diaryCardHeartMetaStyle,
   diaryCardCommentMetaStyle,
   profileWorkMenuAnchorStyle,
   profileWorkDotsButtonStyle,
@@ -7489,7 +7489,7 @@ function PerfilAutorPageContent() {
                             <ProfileWorkCoverMetrics>
                               <span>👁 {visualizacoesObra}</span>
                               <span>
-                                <span style={diaryCardHeartMetaStyle}>❤️</span>{" "}
+                                <ProfileWorkCoverLikeIcon />{" "}
                                 {totalCurtidas}
                               </span>
                               <span>
