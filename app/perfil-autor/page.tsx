@@ -198,6 +198,7 @@ import { ProfileCommunityPostLink } from "./components/profile-community-post-li
 import { ProfileCommunityPostHeader } from "./components/profile-community-post-header";
 import { ProfileCommunityPostBody } from "./components/profile-community-post-body";
 import { ProfileCommunityPostSummary } from "./components/profile-community-post-summary";
+import { ProfileCommunityPostPollInfo } from "./components/profile-community-post-poll-info";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -302,7 +303,6 @@ import {
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
   authorCommunityPostReportButtonStyle,
-  authorCommunityPostPollInfoStyle,
   authorCommunityPostWorkStyle,
   profileWorkCardStyle,
   profileWorkCoverLinkStyle,
@@ -7271,9 +7271,7 @@ function PerfilAutorPageContent() {
                                 {analisarEnquetePublicacaoComunidadePerfil(
                                   publicacao,
                                 ).totalOpcoes >= 2 && (
-                                  <span
-                                    style={authorCommunityPostPollInfoStyle}
-                                  >
+                                  <ProfileCommunityPostPollInfo>
                                     Enquete
                                     <span aria-hidden="true">•</span>
                                     {
@@ -7282,7 +7280,7 @@ function PerfilAutorPageContent() {
                                       ).totalOpcoes
                                     }{" "}
                                     opções
-                                  </span>
+                                  </ProfileCommunityPostPollInfo>
                                 )}
                               </ProfileCommunityPostBody>
 
