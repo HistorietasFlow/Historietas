@@ -240,7 +240,6 @@ import { ProfileSectionEmptyState } from "./components/profile-section-empty-sta
 import { ProfileRecentActivityItem } from "./components/profile-recent-activity-item";
 import { ProfileRecentActivityPanel } from "./components/profile-recent-activity-panel";
 import {
-  workActionSheetStyle,
   workActionSheetHandleStyle,
   workActionSheetHeaderStyle,
   workActionSheetTextBlockStyle,
@@ -7746,10 +7745,8 @@ function PerfilAutorPageContent() {
               <ProfileWorkActionSheetOverlay
                 onClick={() => setBibliotecaMenuAbertoChave("")}
               >
-                <section
-                  style={workActionSheetStyle}
-                  role="dialog"
-                  aria-label={`Ações da Biblioteca ${obra.titulo}`}
+                <ProfileWorkActionSheetPanel
+                  ariaLabel={`Ações da Biblioteca ${obra.titulo}`}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div style={workActionSheetHandleStyle} aria-hidden="true" />
@@ -7861,7 +7858,7 @@ function PerfilAutorPageContent() {
                       Compartilhar
                     </button>
                   </div>
-                </section>
+                </ProfileWorkActionSheetPanel>
               </ProfileWorkActionSheetOverlay>
             );
           })()}
