@@ -188,6 +188,7 @@ import { ProfileHighlightsSection } from "./components/profile-highlights-sectio
 import { ProfileLibrarySection } from "./components/profile-library-section";
 import { ProfileCommunitySection } from "./components/profile-community-section";
 import { ProfileCommunityHeader } from "./components/profile-community-header";
+import { ProfileCommunityStatsGrid } from "./components/profile-community-stats-grid";
 import { ProfileAboutSection } from "./components/profile-about-section";
 import { ProfileDiaryPanel } from "./components/profile-diary-panel";
 import { ProfileWorksSection } from "./components/profile-works-section";
@@ -291,7 +292,6 @@ import {
   profileAboutRowsStyle,
   profileAboutRowStyle,
   profileAboutMemberSinceStyle,
-  authorCommunityGridStyle,
   authorCommunityCardStyle,
   authorCommunityCardNumberStyle,
   authorCommunityCardTitleStyle,
@@ -329,7 +329,6 @@ import {
   desktopAvatarActionsStyle,
   desktopAvatarSmallButtonStyle,
   desktopAvatarRemoveButtonStyle,
-  desktopAuthorCommunityGridStyle,
   desktopAuthorCommunityPostsListStyle,
 } from "./styles";
 
@@ -7198,13 +7197,7 @@ function PerfilAutorPageContent() {
               />
             ) : (
               <>
-                <div
-                  style={
-                    isDesktop
-                      ? desktopAuthorCommunityGridStyle
-                      : authorCommunityGridStyle
-                  }
-                >
+                <ProfileCommunityStatsGrid isDesktop={isDesktop}>
                   <Link
                     href={comunidadeAutorHref}
                     style={authorCommunityCardStyle}
@@ -7246,7 +7239,7 @@ function PerfilAutorPageContent() {
                     <span style={authorCommunityCardTitleStyle}>REVIEWS</span>
                     <span style={authorCommunityCardTextStyle}>opiniões</span>
                   </Link>
-                </div>
+                </ProfileCommunityStatsGrid>
 
                 {comunidadePerfil.erro ? (
                   <div style={authorCommunityPreviewStyle}>
