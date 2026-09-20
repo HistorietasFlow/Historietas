@@ -61,6 +61,7 @@ import { CommunityUserSearchLoading } from "./components/community-user-search-l
 import { CommunityUserSearchList } from "./components/community-user-search-list";
 import { CommunityUserSearchCard } from "./components/community-user-search-card";
 import { CommunityUserSearchAvatar } from "./components/community-user-search-avatar";
+import { CommunityUserSearchInfo } from "./components/community-user-search-info";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6527,7 +6528,7 @@ export default function ComunidadePage() {
                                 "U")}
                           </CommunityUserSearchAvatar>
 
-                          <div style={communityUserSearchInfoStyle}>
+                          <CommunityUserSearchInfo>
                             <Link
                               href={criarPerfilHrefComunidade(
                                 usuarioBusca.id,
@@ -6543,7 +6544,7 @@ export default function ComunidadePage() {
                                 ? `@${usuarioBusca.username}`
                                 : "Perfil da comunidade"}
                             </span>
-                          </div>
+                          </CommunityUserSearchInfo>
 
                           {ehUsuarioAtual ? (
                             <span style={communityUserSearchSelfBadgeStyle}>
@@ -8250,12 +8251,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communityUserSearchInfoStyle: CSSProperties = {
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-};
 
 const communityUserSearchNameStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
