@@ -66,6 +66,7 @@ import { CommunityUserSearchName } from "./components/community-user-search-name
 import { CommunityUserSearchUsername } from "./components/community-user-search-username";
 import { CommunityUserSearchFollowButton } from "./components/community-user-search-follow-button";
 import { CommunityUserSearchSelfBadge } from "./components/community-user-search-self-badge";
+import { CommunityPostsList } from "./components/community-posts-list";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6595,7 +6596,7 @@ export default function ComunidadePage() {
               </CommunitySearchResultsHeader>
             ) : null}
 
-            <section style={isDesktop ? desktopPostsListStyle : postsListStyle}>
+            <CommunityPostsList isDesktop={isDesktop}>
               {!carregandoFeed && (
                 postsVisiveis.length > 0 ? (
                 postsVisiveis.map((post) => {
@@ -7073,7 +7074,7 @@ export default function ComunidadePage() {
                 </p>
               )
               )}
-            </section>
+            </CommunityPostsList>
 
             {!carregandoFeed && postsVisiveis.length > 0 && temMaisPostsComunidade && (
               <section style={loadMorePostsWrapStyle}>
@@ -8249,20 +8250,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const postsListStyle: CSSProperties = {
-  display: "grid",
-  gap: 0,
-  minWidth: 0,
-};
-
-const desktopPostsListStyle: CSSProperties = {
-  ...postsListStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  columnGap: "16px",
-  rowGap: "16px",
-  alignItems: "start",
-};
 
 const loadMorePostsWrapStyle: CSSProperties = {
   display: "flex",
