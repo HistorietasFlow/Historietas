@@ -76,6 +76,7 @@ import { CommunityPostAuthorMeta } from "./components/community-post-author-meta
 import { CommunityPostAuthorLink } from "./components/community-post-author-link";
 import { CommunityPostStatusLine } from "./components/community-post-status-line";
 import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
+import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -6842,7 +6843,7 @@ export default function ComunidadePage() {
                               {obraRelacionadaPermitida.titulo}
                             </CommunityRelatedWorkBadge>
 
-                            <span style={postBadgeSeparatorStyle}>·</span>
+                            <CommunityPostBadgeSeparator />
                           </>
                         )}
 
@@ -6852,7 +6853,7 @@ export default function ComunidadePage() {
                               {post.capituloRelacionado}
                             </CommunityRelatedChapterBadge>
 
-                            <span style={postBadgeSeparatorStyle}>·</span>
+                            <CommunityPostBadgeSeparator />
                           </>
                         )}
 
