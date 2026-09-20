@@ -51,6 +51,7 @@ import { CommunitySheetMenuAction } from "./components/community-sheet-menu-acti
 import { CommunitySheetDangerAction } from "./components/community-sheet-danger-action";
 import { CommunitySheetVisibilityMenu } from "./components/community-sheet-visibility-menu";
 import { CommunitySheetVisibilityTitle } from "./components/community-sheet-visibility-title";
+import { CommunitySheetVisibilityOption } from "./components/community-sheet-visibility-option";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6702,11 +6703,9 @@ export default function ComunidadePage() {
                                   const ativa = post.visibilidade === opcao.valor;
 
                                   return (
-                                    <button
+                                    <CommunitySheetVisibilityOption
                                       key={`${post.id}-visibilidade-${opcao.valor}`}
-                                      type="button"
-                                      role="menuitemradio"
-                                      aria-checked={ativa}
+                                      active={ativa}
                                       onClick={() =>
                                         void atualizarVisibilidadePost(
                                           post,
@@ -6714,17 +6713,9 @@ export default function ComunidadePage() {
                                         )
                                       }
                                       disabled={postVisibilidadeAtualizando}
-                                      style={
-                                        ativa
-                                          ? postVisibilityMenuItemActiveStyle
-                                          : postVisibilityMenuItemStyle
-                                      }
                                     >
-                                      <span>{opcao.rotulo}</span>
-                                      <span aria-hidden="true">
-                                        {ativa ? "✓" : ""}
-                                      </span>
-                                    </button>
+                                      {opcao.rotulo}
+                                    </CommunitySheetVisibilityOption>
                                   );
                                 })}
                               </CommunitySheetVisibilityMenu>
@@ -8254,99 +8245,6 @@ const communityFilterActionIconStyle: CSSProperties = {
   fontWeight: 700,
   flex: "0 0 auto",
 };
-
-
-
-
-
-
-const communityFiltersSheetOptionStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "100%",
-  minHeight: "44px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontSize: "18px",
-  lineHeight: 1,
-  fontWeight: 650,
-  letterSpacing: "-0.035em",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "16px",
-  padding: "0 30px",
-  textAlign: "left",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
-
-
-const postVisibilityMenuItemStyle: CSSProperties = {
-  ...communityFiltersSheetOptionStyle,
-  minHeight: "42px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  borderRadius: "12px",
-  fontSize: "15px",
-  fontWeight: 850,
-};
-
-const postVisibilityMenuItemActiveStyle: CSSProperties = {
-  ...postVisibilityMenuItemStyle,
-  background: "rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
