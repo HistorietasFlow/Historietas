@@ -65,6 +65,7 @@ import { CommunityUserSearchInfo } from "./components/community-user-search-info
 import { CommunityUserSearchName } from "./components/community-user-search-name";
 import { CommunityUserSearchUsername } from "./components/community-user-search-username";
 import { CommunityUserSearchFollowButton } from "./components/community-user-search-follow-button";
+import { CommunityUserSearchSelfBadge } from "./components/community-user-search-self-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6549,9 +6550,9 @@ export default function ComunidadePage() {
                           </CommunityUserSearchInfo>
 
                           {ehUsuarioAtual ? (
-                            <span style={communityUserSearchSelfBadgeStyle}>
+                            <CommunityUserSearchSelfBadge>
                               Você
-                            </span>
+                            </CommunityUserSearchSelfBadge>
                           ) : (
                             <CommunityUserSearchFollowButton
                               onClick={() =>
@@ -8248,21 +8249,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communityUserSearchSelfBadgeStyle: CSSProperties = {
-  minWidth: "58px",
-  minHeight: "30px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  padding: "0 10px",
-  fontSize: "10px",
-  fontWeight: 900,
-  whiteSpace: "nowrap",
-};
 
 const postsListStyle: CSSProperties = {
   display: "grid",
