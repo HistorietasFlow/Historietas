@@ -48,6 +48,7 @@ import { CommunitySheetSectionLabel } from "./components/community-sheet-section
 import { CommunitySheetFilterOption } from "./components/community-sheet-filter-option";
 import { CommunitySheetPrimaryAction } from "./components/community-sheet-primary-action";
 import { CommunitySheetMenuAction } from "./components/community-sheet-menu-action";
+import { CommunitySheetDangerAction } from "./components/community-sheet-danger-action";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6744,41 +6745,27 @@ export default function ComunidadePage() {
                             )}
 
                             {podeRemover && (
-                              <button
-                                type="button"
-                                role="menuitem"
+                              <CommunitySheetDangerAction
                                 onClick={() => {
                                   setPostMenuAbertoId(null);
                                   removerPost(post.id);
                                 }}
                                 disabled={postRemovendo}
-                                style={{
-                                  ...communityActionsSheetDangerItemStyle,
-                                  opacity: postRemovendo ? 0.58 : 1,
-                                  cursor: postRemovendo ? "not-allowed" : "pointer",
-                                }}
                               >
                                 {postRemovendo ? "Removendo..." : "Remover publicação"}
-                              </button>
+                              </CommunitySheetDangerAction>
                             )}
 
                             {podeDenunciarPost && (
-                              <button
-                                type="button"
-                                role="menuitem"
+                              <CommunitySheetDangerAction
                                 onClick={() => {
                                   setPostMenuAbertoId(null);
                                   denunciarConteudo("post", post.id);
                                 }}
                                 disabled={postDenunciando}
-                                style={{
-                                  ...communityActionsSheetDangerItemStyle,
-                                  opacity: postDenunciando ? 0.58 : 1,
-                                  cursor: postDenunciando ? "not-allowed" : "pointer",
-                                }}
                               >
                                 {postDenunciando ? "Enviando..." : "Denunciar"}
-                              </button>
+                              </CommunitySheetDangerAction>
                             )}
                           </CommunitySheetSurface>
                         </CommunitySheetOverlay>,
@@ -8296,18 +8283,6 @@ const communityFiltersSheetOptionStyle: CSSProperties = {
 };
 
 
-
-const communityActionsSheetItemStyle: CSSProperties = {
-  ...communityFiltersSheetOptionStyle,
-  minHeight: "48px",
-  fontSize: "18px",
-  fontWeight: 900,
-};
-
-const communityActionsSheetDangerItemStyle: CSSProperties = {
-  ...communityActionsSheetItemStyle,
-  color: "var(--historietas-comunidade-pink, #FFFFFF)",
-};
 
 const postVisibilityMenuStyle: CSSProperties = {
   display: "grid",
