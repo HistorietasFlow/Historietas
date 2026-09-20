@@ -45,6 +45,7 @@ import { CommunitySheetSurface } from "./components/community-sheet-surface";
 import { CommunitySheetHandle } from "./components/community-sheet-handle";
 import { CommunitySheetTitle } from "./components/community-sheet-title";
 import { CommunitySheetSectionLabel } from "./components/community-sheet-section-label";
+import { CommunitySheetRadioIndicator } from "./components/community-sheet-radio-indicator";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6406,15 +6407,7 @@ export default function ComunidadePage() {
                     }
                   >
                     <span>Todas</span>
-                    <span
-                      style={
-                        !filtrosAtivos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
-                      }
-                    >
-                      {!filtrosAtivos ? "✓" : ""}
-                    </span>
+                    <CommunitySheetRadioIndicator active={!filtrosAtivos} />
                   </button>
 
                   <button
@@ -6430,15 +6423,7 @@ export default function ComunidadePage() {
                     }
                   >
                     <span>Posts salvos</span>
-                    <span
-                      style={
-                        mostrarApenasSalvos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
-                      }
-                    >
-                      {mostrarApenasSalvos ? "✓" : ""}
-                    </span>
+                    <CommunitySheetRadioIndicator active={mostrarApenasSalvos} />
                   </button>
 
                   <CommunitySheetSectionLabel>
@@ -6459,17 +6444,11 @@ export default function ComunidadePage() {
                     }
                   >
                     <span>Recentes</span>
-                    <span
-                      style={
+                    <CommunitySheetRadioIndicator
+                      active={
                         ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
                       }
-                    >
-                      {ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
-                        ? "✓"
-                        : ""}
-                    </span>
+                    />
                   </button>
 
                   <button
@@ -6486,17 +6465,11 @@ export default function ComunidadePage() {
                     }
                   >
                     <span>Em alta</span>
-                    <span
-                      style={
+                    <CommunitySheetRadioIndicator
+                      active={
                         ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
                       }
-                    >
-                      {ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
-                        ? "✓"
-                        : ""}
-                    </span>
+                    />
                   </button>
 
                   <button
@@ -6513,17 +6486,12 @@ export default function ComunidadePage() {
                     }
                   >
                     <span>Mais comentadas</span>
-                    <span
-                      style={
-                        ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
-                          ? communityFiltersSheetRadioActiveStyle
-                          : communityFiltersSheetRadioStyle
+                    <CommunitySheetRadioIndicator
+                      active={
+                        ordenacaoAtiva === "Mais comentadas" &&
+                        !mostrarApenasSalvos
                       }
-                    >
-                      {ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
-                        ? "✓"
-                        : ""}
-                    </span>
+                    />
                   </button>
 
                 </CommunitySheetSurface>
@@ -8391,29 +8359,6 @@ const communityFiltersSheetOptionActiveStyle: CSSProperties = {
   background: "transparent",
 };
 
-const communityFiltersSheetRadioStyle: CSSProperties = {
-  width: "23px",
-  height: "23px",
-  borderRadius: "999px",
-  border: "2.5px solid rgba(161,161,170,0.72)",
-  background: "transparent",
-  color: "transparent",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flex: "0 0 auto",
-  boxSizing: "border-box",
-  fontSize: "15px",
-  lineHeight: 1,
-  fontWeight: 900,
-};
-
-const communityFiltersSheetRadioActiveStyle: CSSProperties = {
-  ...communityFiltersSheetRadioStyle,
-  border: "2px solid #FFFFFF",
-  background: "#FFFFFF",
-  color: "#111111",
-};
 
 
 
