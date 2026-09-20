@@ -54,6 +54,7 @@ import { CommunitySheetVisibilityTitle } from "./components/community-sheet-visi
 import { CommunitySheetVisibilityOption } from "./components/community-sheet-visibility-option";
 import { CommunityUserSearchSection } from "./components/community-user-search-section";
 import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
+import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6470,9 +6471,9 @@ export default function ComunidadePage() {
             {termoBuscaNormalizado ? (
               <CommunityUserSearchSection ariaLabel="Usuários encontrados">
                 <CommunitySearchResultsHeader>
-                  <strong style={communitySearchResultsTitleStyle}>
+                  <CommunitySearchResultsTitle>
                     Usuários
-                  </strong>
+                  </CommunitySearchResultsTitle>
                   <span style={communitySearchResultsCountStyle}>
                     {carregandoUsuariosBuscaComunidade
                       ? traduzirTextoComunidade("Buscando...", language)
@@ -6582,9 +6583,9 @@ export default function ComunidadePage() {
 
             {termoBuscaNormalizado ? (
               <CommunitySearchResultsHeader>
-                <strong style={communitySearchResultsTitleStyle}>
+                <CommunitySearchResultsTitle>
                   Publicações
-                </strong>
+                </CommunitySearchResultsTitle>
                 <span style={communitySearchResultsCountStyle}>
                   {traduzirContagemResultadosComunidade(
                     postsVisiveis.length,
@@ -8249,15 +8250,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communitySearchResultsTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
-  lineHeight: 1.2,
-  fontWeight: 950,
-  letterSpacing: "-0.02em",
-  ...safeTextStyle,
-};
 
 const communitySearchResultsCountStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
