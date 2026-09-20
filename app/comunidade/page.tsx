@@ -31,6 +31,7 @@ import { CommunityDesktopHeader } from "./components/community-desktop-header";
 import { CommunityDesktopTitle } from "./components/community-desktop-title";
 import { CommunityDesktopHeaderActions } from "./components/community-desktop-header-actions";
 import { CommunityDesktopSearchContainer } from "./components/community-desktop-search-container";
+import { CommunityDesktopSearchIcon } from "./components/community-desktop-search-icon";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6205,29 +6206,7 @@ export default function ComunidadePage() {
 
             <CommunityDesktopHeaderActions>
               <CommunityDesktopSearchContainer>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                  style={desktopSearchIconStyle}
-                >
-                  <circle
-                    cx="10.85"
-                    cy="10.85"
-                    r="6.65"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d="M16.05 16.05L20.25 20.25"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                <CommunityDesktopSearchIcon />
 
                 <input
                   aria-label="Buscar publicações ou usuários"
@@ -7692,15 +7671,6 @@ const pageStyle: CSSProperties = {
   background: "var(--historietas-comunidade-bg-page, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const desktopSearchIconStyle: CSSProperties = {
-  position: "absolute",
-  left: "13px",
-  top: "50%",
-  transform: "translateY(-50%)",
-  color: "rgba(255,255,255,0.56)",
-  pointerEvents: "none",
 };
 
 const desktopSearchInputStyle: CSSProperties = {
