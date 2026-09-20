@@ -53,6 +53,7 @@ import { CommunitySheetVisibilityMenu } from "./components/community-sheet-visib
 import { CommunitySheetVisibilityTitle } from "./components/community-sheet-visibility-title";
 import { CommunitySheetVisibilityOption } from "./components/community-sheet-visibility-option";
 import { CommunityUserSearchSection } from "./components/community-user-search-section";
+import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6468,7 +6469,7 @@ export default function ComunidadePage() {
 
             {termoBuscaNormalizado ? (
               <CommunityUserSearchSection ariaLabel="Usuários encontrados">
-                <div style={communitySearchResultsHeaderStyle}>
+                <CommunitySearchResultsHeader>
                   <strong style={communitySearchResultsTitleStyle}>
                     Usuários
                   </strong>
@@ -6481,7 +6482,7 @@ export default function ComunidadePage() {
                           language
                         )}
                   </span>
-                </div>
+                </CommunitySearchResultsHeader>
 
                 {termoBusca.trim().replace(/^@+/, "").length < 2 ? (
                   <p style={communitySearchResultsEmptyStyle}>
@@ -6580,7 +6581,7 @@ export default function ComunidadePage() {
             ) : null}
 
             {termoBuscaNormalizado ? (
-              <div style={communitySearchResultsHeaderStyle}>
+              <CommunitySearchResultsHeader>
                 <strong style={communitySearchResultsTitleStyle}>
                   Publicações
                 </strong>
@@ -6591,7 +6592,7 @@ export default function ComunidadePage() {
                     language
                   )}
                 </span>
-              </div>
+              </CommunitySearchResultsHeader>
             ) : null}
 
             <section style={isDesktop ? desktopPostsListStyle : postsListStyle}>
@@ -8248,15 +8249,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communitySearchResultsHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  minWidth: 0,
-  padding: "8px 0 4px",
-};
 
 const communitySearchResultsTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
