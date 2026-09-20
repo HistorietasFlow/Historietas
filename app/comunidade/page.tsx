@@ -43,6 +43,7 @@ import { CommunityFeedTabButton } from "./components/community-feed-tab-button";
 import { CommunitySheetOverlay } from "./components/community-sheet-overlay";
 import { CommunitySheetSurface } from "./components/community-sheet-surface";
 import { CommunitySheetHandle } from "./components/community-sheet-handle";
+import { CommunitySheetTitle } from "./components/community-sheet-title";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6371,9 +6372,9 @@ export default function ComunidadePage() {
                 <CommunitySheetSurface>
                   <CommunitySheetHandle />
 
-                  <strong style={communityFiltersSheetTitleStyle}>
+                  <CommunitySheetTitle>
                     Filtrar e ordenar
-                  </strong>
+                  </CommunitySheetTitle>
 
                   <span style={communityFiltersSheetSectionLabelStyle}>
                     Ações
@@ -6728,9 +6729,9 @@ export default function ComunidadePage() {
                           <CommunitySheetSurface role="menu">
                             <CommunitySheetHandle />
 
-                            <strong style={communityFiltersSheetTitleStyle}>
+                            <CommunitySheetTitle>
                               Ações da publicação
-                            </strong>
+                            </CommunitySheetTitle>
 
                             <button
                               type="button"
@@ -8357,18 +8358,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-const communityFiltersSheetTitleStyle: CSSProperties = {
-  display: "block",
-  margin: "0 0 12px",
-  padding: 0,
-  color: "#FFFFFF",
-  fontSize: "21px",
-  lineHeight: 1.1,
-  fontWeight: 950,
-  textAlign: "center",
-  letterSpacing: "-0.04em",
-  ...safeTextStyle,
-};
 
 const communityFiltersSheetSectionLabelStyle: CSSProperties = {
   display: "block",
