@@ -29,6 +29,7 @@ import { CommunityContentContainer } from "./components/community-content-contai
 import { CommunityTopWaterFade } from "./components/community-top-water-fade";
 import { CommunityDesktopHeader } from "./components/community-desktop-header";
 import { CommunityDesktopTitle } from "./components/community-desktop-title";
+import { CommunityDesktopHeaderActions } from "./components/community-desktop-header-actions";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6201,7 +6202,7 @@ export default function ComunidadePage() {
           <CommunityDesktopHeader>
             <CommunityDesktopTitle>Comunidade</CommunityDesktopTitle>
 
-            <div style={desktopTopActionsStyle}>
+            <CommunityDesktopHeaderActions>
               <label style={desktopSearchShellStyle}>
                 <svg
                   width="20"
@@ -6254,7 +6255,7 @@ export default function ComunidadePage() {
                 <span aria-hidden="true">+</span>
               </button>
 
-            </div>
+            </CommunityDesktopHeaderActions>
           </CommunityDesktopHeader>
         ) : null}
 
@@ -7690,14 +7691,6 @@ const pageStyle: CSSProperties = {
   background: "var(--historietas-comunidade-bg-page, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const desktopTopActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "10px",
-  minWidth: 0,
 };
 
 const desktopSearchShellStyle: CSSProperties = {
