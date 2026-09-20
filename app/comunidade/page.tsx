@@ -80,6 +80,7 @@ import { CommunityPostBadgeSeparator } from "./components/community-post-badge-s
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityPostText } from "./components/community-post-text";
+import { CommunityPostActions } from "./components/community-post-actions";
 import { CommunityPollBox } from "./components/community-poll-box";
 import { CommunityPollOptions } from "./components/community-poll-options";
 import { CommunityPollOptionButton } from "./components/community-poll-option-button";
@@ -6948,7 +6949,7 @@ export default function ComunidadePage() {
                         </>
                       )}
 
-                      <div style={isDesktop ? postActionsDesktopStyle : postActionsStyle}>
+                      <CommunityPostActions desktop={isDesktop}>
                         <button
                           type="button"
                           data-historietas-community-like="post"
@@ -7025,7 +7026,7 @@ export default function ComunidadePage() {
                             {ocultarTextoSpoiler ? "REVELAR" : "OCULTAR"}
                           </button>
                         )}
-                      </div>
+                      </CommunityPostActions>
                     </CommunityPostCard>
                   );
                 })
@@ -8212,20 +8213,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-
-const postActionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "stretch",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
-
-const postActionsDesktopStyle: CSSProperties = {
-  ...postActionsStyle,
-  alignItems: "center",
-};
 
 
 const actionButtonStyle: CSSProperties = {
