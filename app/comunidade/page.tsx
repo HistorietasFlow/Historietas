@@ -77,6 +77,7 @@ import { CommunityPostAuthorLink } from "./components/community-post-author-link
 import { CommunityPostStatusLine } from "./components/community-post-status-line";
 import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
+import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -6857,20 +6858,13 @@ export default function ComunidadePage() {
                           </>
                         )}
 
-                        <span
-                          data-historietas-user-content={
-                            postEhEnquete(post) ? "true" : undefined
-                          }
-                          style={
-                            postEhEnquete(post)
-                              ? pollPostInlineQuestionStyle
-                              : postTypeBadgeStyle
-                          }
+                        <CommunityPostTypeBadge
+                          isPoll={postEhEnquete(post)}
                         >
                           {postEhEnquete(post)
                             ? obterPerguntaEnquete(post.texto)
                             : obterTipoVisualPublicacao(post)}
-                        </span>
+                        </CommunityPostTypeBadge>
                       </CommunityPostBadgesRow>
 
                       {ocultarTextoSpoiler ? (
@@ -8264,11 +8258,6 @@ const postTypeBadgeStyle: CSSProperties = {
   fontSize: "11px",
   fontWeight: 950,
   ...safeTextStyle,
-};
-
-const pollPostInlineQuestionStyle: CSSProperties = {
-  ...postTypeBadgeStyle,
-  color: "var(--historietas-text-primary, #FFFFFF)",
 };
 
 const pinnedPostBadgeStyle: CSSProperties = {
