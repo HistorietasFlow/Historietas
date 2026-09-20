@@ -83,6 +83,7 @@ import { CommunityPollBox } from "./components/community-poll-box";
 import { CommunityPollOptions } from "./components/community-poll-options";
 import { CommunityPollOptionButton } from "./components/community-poll-option-button";
 import { CommunityPollResultBar } from "./components/community-poll-result-bar";
+import { CommunityPollOptionText } from "./components/community-poll-option-text";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -6917,21 +6918,11 @@ export default function ComunidadePage() {
                                         visible={usuarioVotouNaEnquete}
                                       />
 
-                                      <span
-                                        data-historietas-user-content="true"
-                                        style={{
-                                          ...pollPostOptionTextStyle,
-                                          color: selecionada ? "#000000" : "#FFFFFF",
-                                          WebkitTextFillColor: selecionada
-                                            ? "#000000"
-                                            : "#FFFFFF",
-                                          textShadow: selecionada
-                                            ? "none"
-                                            : pollPostOptionTextStyle.textShadow,
-                                        }}
+                                      <CommunityPollOptionText
+                                        selected={selecionada}
                                       >
                                         {opcao}
-                                      </span>
+                                      </CommunityPollOptionText>
 
                                       <span
                                         style={{
@@ -7611,18 +7602,6 @@ const pollTemplateButtonStyle: CSSProperties = {
   fontFamily: "inherit",
   cursor: "pointer",
   boxShadow: "none",
-  ...safeTextStyle,
-};
-
-const pollPostOptionTextStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  minWidth: 0,
-  textAlign: "left",
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  opacity: 1,
-  textShadow: "0 1px 2px rgba(0,0,0,0.38)",
   ...safeTextStyle,
 };
 
