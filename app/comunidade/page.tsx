@@ -58,6 +58,7 @@ import { CommunitySearchResultsTitle } from "./components/community-search-resul
 import { CommunitySearchResultsCount } from "./components/community-search-results-count";
 import { CommunitySearchResultsEmpty } from "./components/community-search-results-empty";
 import { CommunityUserSearchLoading } from "./components/community-user-search-loading";
+import { CommunityUserSearchList } from "./components/community-user-search-list";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6500,7 +6501,7 @@ export default function ComunidadePage() {
                     />
                   </CommunityUserSearchLoading>
                 ) : usuariosBuscaComunidade.length > 0 ? (
-                  <div style={communityUserSearchListStyle}>
+                  <CommunityUserSearchList>
                     {usuariosBuscaComunidade.map((usuarioBusca) => {
                       const ehUsuarioAtual = usuario?.id === usuarioBusca.id;
                       const seguindoUsuario = usuariosSeguidosIds.includes(
@@ -6575,7 +6576,7 @@ export default function ComunidadePage() {
                         </article>
                       );
                     })}
-                  </div>
+                  </CommunityUserSearchList>
                 ) : (
                   <CommunitySearchResultsEmpty>
                     Nenhum usuário encontrado.
@@ -8253,12 +8254,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communityUserSearchListStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  minWidth: 0,
-};
 
 const communityUserSearchCardStyle: CSSProperties = {
   display: "grid",
