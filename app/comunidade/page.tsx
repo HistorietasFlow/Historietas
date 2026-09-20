@@ -71,6 +71,7 @@ import { CommunityLoadMorePostsContainer } from "./components/community-load-mor
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
 import { CommunityPostHeader } from "./components/community-post-header";
+import { CommunityPostAuthorAvatar } from "./components/community-post-author-avatar";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6775,19 +6776,16 @@ export default function ComunidadePage() {
                   return (
                     <CommunityPostCard key={post.id} isDesktop={isDesktop}>
                       <CommunityPostHeader>
-                        <Link
+                        <CommunityPostAuthorAvatar
                           href={criarPerfilHrefComunidade(
                             post.autorId,
                             post.autorNome
                           )}
-                          aria-label={`Abrir perfil de ${post.autorNome}`}
-                          style={criarAvatarComunidadeStyle(
-                            authorAvatarLinkStyle,
-                            post.autorAvatar
-                          )}
+                          ariaLabel={`Abrir perfil de ${post.autorNome}`}
+                          avatar={post.autorAvatar}
                         >
                           {!post.autorAvatar && post.autorNome.slice(0, 1).toUpperCase()}
-                        </Link>
+                        </CommunityPostAuthorAvatar>
 
                         <div style={postMetaStyle}>
                           <Link
@@ -8245,30 +8243,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-
-const authorAvatarStyle: CSSProperties = {
-  width: "38px",
-  height: "38px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-comunidade-bg-deep, #000000)",
-  border: "1px solid var(--historietas-comunidade-purple-58, rgba(255,255,255,0.10))",
-  color: "#FFFFFF",
-  fontSize: "22px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "none",
-};
-
-const authorAvatarLinkStyle: CSSProperties = {
-  ...authorAvatarStyle,
-  textDecoration: "none",
-  cursor: "pointer",
-};
 
 
 const postMetaStyle: CSSProperties = {
