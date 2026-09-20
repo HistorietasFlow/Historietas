@@ -37,6 +37,7 @@ import { CommunityDesktopFilterButton } from "./components/community-desktop-fil
 import { CommunityMainLayout } from "./components/community-main-layout";
 import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
+import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6236,13 +6237,7 @@ export default function ComunidadePage() {
               <CommunityFeedErrorNotice>{erro}</CommunityFeedErrorNotice>
             )}
 
-            <section
-              style={
-                isDesktop
-                  ? desktopExploreLikeFilterBoxStyle
-                  : exploreLikeFilterBoxStyle
-              }
-            >
+            <CommunityFeedFiltersContainer isDesktop={isDesktop}>
               <div style={communityFilterControlsRowStyle}>
                 <button
                   type="button"
@@ -6344,7 +6339,7 @@ export default function ComunidadePage() {
                 )}
               </div>
 
-            </section>
+            </CommunityFeedFiltersContainer>
 
             <nav
               role="tablist"
@@ -8313,25 +8308,6 @@ const communityFeedTabActiveStyle: CSSProperties = {
   color: "#000000",
 };
 
-const exploreLikeFilterBoxStyle: CSSProperties = {
-  marginTop: "0",
-  display: "grid",
-  gap: "5px",
-  padding: "0",
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  boxShadow: "none",
-  minWidth: 0,
-  overflow: "visible",
-  backdropFilter: "none",
-  WebkitBackdropFilter: "none",
-};
-
-const desktopExploreLikeFilterBoxStyle: CSSProperties = {
-  ...exploreLikeFilterBoxStyle,
-  display: "none",
-};
 
 
 
