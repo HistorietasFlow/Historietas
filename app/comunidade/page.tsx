@@ -79,6 +79,7 @@ import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
+import { CommunityPostText } from "./components/community-post-text";
 import { CommunityPollBox } from "./components/community-poll-box";
 import { CommunityPollOptions } from "./components/community-poll-options";
 import { CommunityPollOptionButton } from "./components/community-poll-option-button";
@@ -6942,7 +6943,7 @@ export default function ComunidadePage() {
                               </CommunityPollOptions>
                             </CommunityPollBox>
                           ) : (
-                            <p data-historietas-user-content="true" style={postTextStyle}>{post.texto}</p>
+                            <CommunityPostText>{post.texto}</CommunityPostText>
                           )}
                         </>
                       )}
@@ -8168,16 +8169,6 @@ const postVisibilityBadgeStyle: CSSProperties = {
 };
 
 
-
-const postTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-primary, #F4F4F5)",
-  fontSize: "13.5px",
-  lineHeight: 1.55,
-  fontWeight: 720,
-  whiteSpace: "pre-wrap",
-  ...safeTextStyle,
-};
 
 const postOptionsWrapStyle: CSSProperties = {
   position: "relative",
