@@ -82,6 +82,7 @@ import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidd
 import { CommunityPollBox } from "./components/community-poll-box";
 import { CommunityPollOptions } from "./components/community-poll-options";
 import { CommunityPollOptionButton } from "./components/community-poll-option-button";
+import { CommunityPollResultBar } from "./components/community-poll-result-bar";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -6911,12 +6912,9 @@ export default function ComunidadePage() {
                                       disabled={Boolean(votoAtual) || votandoEnqueteId === post.id}
                                       selected={selecionada}
                                     >
-                                      <span
-                                        style={{
-                                          ...pollPostResultBarStyle,
-                                          width: larguraResultado,
-                                          opacity: usuarioVotouNaEnquete ? 1 : 0,
-                                        }}
+                                      <CommunityPollResultBar
+                                        width={larguraResultado}
+                                        visible={usuarioVotouNaEnquete}
                                       />
 
                                       <span
@@ -7614,13 +7612,6 @@ const pollTemplateButtonStyle: CSSProperties = {
   cursor: "pointer",
   boxShadow: "none",
   ...safeTextStyle,
-};
-
-const pollPostResultBarStyle: CSSProperties = {
-  position: "absolute",
-  inset: "0 auto 0 0",
-  background: "var(--historietas-comunidade-cyan-22, rgba(255,255,255,0.10))",
-  pointerEvents: "none",
 };
 
 const pollPostOptionTextStyle: CSSProperties = {
