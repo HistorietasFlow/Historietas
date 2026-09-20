@@ -74,6 +74,7 @@ import { CommunityPostHeader } from "./components/community-post-header";
 import { CommunityPostAuthorAvatar } from "./components/community-post-author-avatar";
 import { CommunityPostAuthorMeta } from "./components/community-post-author-meta";
 import { CommunityPostAuthorLink } from "./components/community-post-author-link";
+import { CommunityPostStatusLine } from "./components/community-post-status-line";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6798,7 +6799,7 @@ export default function ComunidadePage() {
                           >
                             {post.autorNome}
                           </CommunityPostAuthorLink>
-                          <span style={postSubMetaStyle}>
+                          <CommunityPostStatusLine>
                             {formatarDataComunidade(post.criadoEm)}
                             {post.fixado && (
                               <>
@@ -6820,7 +6821,7 @@ export default function ComunidadePage() {
                                 </span>
                               </>
                             )}
-                          </span>
+                          </CommunityPostStatusLine>
                         </CommunityPostAuthorMeta>
 
                         {opcoesPublicacao}
@@ -8244,14 +8245,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-
-const postSubMetaStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontWeight: 800,
-  ...safeTextStyle,
-};
 
 
 const obraBadgeStyle: CSSProperties = {
