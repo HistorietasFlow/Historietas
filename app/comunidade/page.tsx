@@ -42,6 +42,7 @@ import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-con
 import { CommunityFeedTabButton } from "./components/community-feed-tab-button";
 import { CommunitySheetOverlay } from "./components/community-sheet-overlay";
 import { CommunitySheetSurface } from "./components/community-sheet-surface";
+import { CommunitySheetHandle } from "./components/community-sheet-handle";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6368,7 +6369,7 @@ export default function ComunidadePage() {
                 onClose={() => setMenuAcoesRapidasComunidadeAberto(false)}
               >
                 <CommunitySheetSurface>
-                  <div style={communityFiltersSheetHandleStyle} />
+                  <CommunitySheetHandle />
 
                   <strong style={communityFiltersSheetTitleStyle}>
                     Filtrar e ordenar
@@ -6725,7 +6726,7 @@ export default function ComunidadePage() {
                           onClose={() => setPostMenuAbertoId(null)}
                         >
                           <CommunitySheetSurface role="menu">
-                            <div style={communityFiltersSheetHandleStyle} />
+                            <CommunitySheetHandle />
 
                             <strong style={communityFiltersSheetTitleStyle}>
                               Ações da publicação
@@ -7230,7 +7231,7 @@ export default function ComunidadePage() {
           />
 
           <article style={isDesktop ? postComposerDesktopSheetStyle : postComposerSheetStyle}>
-            <div style={communityFiltersSheetHandleStyle} />
+            <CommunitySheetHandle />
 
             <header style={postComposerHeaderStyle}>
               <strong style={postComposerTitleStyle}>Nova publicação</strong>
@@ -8355,14 +8356,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-const communityFiltersSheetHandleStyle: CSSProperties = {
-  justifySelf: "center",
-  width: "72px",
-  height: "5px",
-  borderRadius: "999px",
-  background: "rgba(244,244,245,0.62)",
-  margin: "0 auto 14px",
-};
 
 const communityFiltersSheetTitleStyle: CSSProperties = {
   display: "block",
