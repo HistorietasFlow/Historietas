@@ -49,6 +49,7 @@ import { CommunitySheetFilterOption } from "./components/community-sheet-filter-
 import { CommunitySheetPrimaryAction } from "./components/community-sheet-primary-action";
 import { CommunitySheetMenuAction } from "./components/community-sheet-menu-action";
 import { CommunitySheetDangerAction } from "./components/community-sheet-danger-action";
+import { CommunitySheetVisibilityMenu } from "./components/community-sheet-visibility-menu";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6691,7 +6692,7 @@ export default function ComunidadePage() {
                             </CommunitySheetMenuAction>
 
                             {podeAlterarVisibilidade && (
-                              <div style={postVisibilityMenuStyle}>
+                              <CommunitySheetVisibilityMenu>
                                 <span style={postVisibilityMenuTitleStyle}>
                                   Quem pode ver esta publicação?
                                 </span>
@@ -6725,7 +6726,7 @@ export default function ComunidadePage() {
                                     </button>
                                   );
                                 })}
-                              </div>
+                              </CommunitySheetVisibilityMenu>
                             )}
 
                             {usuarioEhAdmin && (
@@ -8283,14 +8284,6 @@ const communityFiltersSheetOptionStyle: CSSProperties = {
 };
 
 
-
-const postVisibilityMenuStyle: CSSProperties = {
-  display: "grid",
-  gap: "2px",
-  padding: "8px 12px 10px",
-  borderTop: "1px solid rgba(255,255,255,0.08)",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
-};
 
 const postVisibilityMenuTitleStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
