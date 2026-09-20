@@ -84,6 +84,7 @@ import { CommunityPollOptions } from "./components/community-poll-options";
 import { CommunityPollOptionButton } from "./components/community-poll-option-button";
 import { CommunityPollResultBar } from "./components/community-poll-result-bar";
 import { CommunityPollOptionText } from "./components/community-poll-option-text";
+import { CommunityPollOptionStatus } from "./components/community-poll-option-status";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -6924,17 +6925,8 @@ export default function ComunidadePage() {
                                         {opcao}
                                       </CommunityPollOptionText>
 
-                                      <span
-                                        style={{
-                                          ...pollPostStatusStyle,
-                                          color: selecionada ? "#000000" : "#FFFFFF",
-                                          WebkitTextFillColor: selecionada
-                                            ? "#000000"
-                                            : "#FFFFFF",
-                                          textShadow: selecionada
-                                            ? "none"
-                                            : pollPostStatusStyle.textShadow,
-                                        }}
+                                      <CommunityPollOptionStatus
+                                        selected={selecionada}
                                       >
                                         {usuarioVotouNaEnquete
                                           ? selecionada
@@ -6943,7 +6935,7 @@ export default function ComunidadePage() {
                                           : votandoEnqueteId === post.id
                                             ? "..."
                                             : "Votar"}
-                                      </span>
+                                      </CommunityPollOptionStatus>
                                     </CommunityPollOptionButton>
                                   );
                                 })}
@@ -7604,19 +7596,6 @@ const pollTemplateButtonStyle: CSSProperties = {
   boxShadow: "none",
   ...safeTextStyle,
 };
-
-const pollPostStatusStyle: CSSProperties = {
-  position: "relative",
-  zIndex: 1,
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  opacity: 1,
-  textShadow: "0 1px 2px rgba(0,0,0,0.38)",
-  fontSize: "10px",
-  fontWeight: 950,
-  whiteSpace: "nowrap",
-};
-
 
 
 
