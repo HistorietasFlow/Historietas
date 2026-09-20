@@ -56,6 +56,7 @@ import { CommunityUserSearchSection } from "./components/community-user-search-s
 import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
 import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
 import { CommunitySearchResultsCount } from "./components/community-search-results-count";
+import { CommunitySearchResultsEmpty } from "./components/community-search-results-empty";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6487,9 +6488,9 @@ export default function ComunidadePage() {
                 </CommunitySearchResultsHeader>
 
                 {termoBusca.trim().replace(/^@+/, "").length < 2 ? (
-                  <p style={communitySearchResultsEmptyStyle}>
+                  <CommunitySearchResultsEmpty>
                     Digite pelo menos 2 caracteres para encontrar usuários.
-                  </p>
+                  </CommunitySearchResultsEmpty>
                 ) : carregandoUsuariosBuscaComunidade ? (
                   <div style={communityUserSearchLoadingStyle}>
                     <CommunityLoadingSpinner
@@ -6575,9 +6576,9 @@ export default function ComunidadePage() {
                     })}
                   </div>
                 ) : (
-                  <p style={communitySearchResultsEmptyStyle}>
+                  <CommunitySearchResultsEmpty>
                     Nenhum usuário encontrado.
-                  </p>
+                  </CommunitySearchResultsEmpty>
                 )}
               </CommunityUserSearchSection>
             ) : null}
@@ -8349,15 +8350,6 @@ const communityUserSearchSelfBadgeStyle: CSSProperties = {
   fontSize: "10px",
   fontWeight: 900,
   whiteSpace: "nowrap",
-};
-
-const communitySearchResultsEmptyStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  lineHeight: 1.4,
-  fontWeight: 780,
-  textAlign: "center",
 };
 
 const communityUserSearchLoadingStyle: CSSProperties = {
