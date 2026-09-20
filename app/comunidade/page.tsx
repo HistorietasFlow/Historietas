@@ -55,6 +55,7 @@ import { CommunitySheetVisibilityOption } from "./components/community-sheet-vis
 import { CommunityUserSearchSection } from "./components/community-user-search-section";
 import { CommunitySearchResultsHeader } from "./components/community-search-results-header";
 import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
+import { CommunitySearchResultsCount } from "./components/community-search-results-count";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6474,7 +6475,7 @@ export default function ComunidadePage() {
                   <CommunitySearchResultsTitle>
                     Usuários
                   </CommunitySearchResultsTitle>
-                  <span style={communitySearchResultsCountStyle}>
+                  <CommunitySearchResultsCount>
                     {carregandoUsuariosBuscaComunidade
                       ? traduzirTextoComunidade("Buscando...", language)
                       : traduzirContagemResultadosComunidade(
@@ -6482,7 +6483,7 @@ export default function ComunidadePage() {
                           "usuarios",
                           language
                         )}
-                  </span>
+                  </CommunitySearchResultsCount>
                 </CommunitySearchResultsHeader>
 
                 {termoBusca.trim().replace(/^@+/, "").length < 2 ? (
@@ -6586,13 +6587,13 @@ export default function ComunidadePage() {
                 <CommunitySearchResultsTitle>
                   Publicações
                 </CommunitySearchResultsTitle>
-                <span style={communitySearchResultsCountStyle}>
+                <CommunitySearchResultsCount>
                   {traduzirContagemResultadosComunidade(
                     postsVisiveis.length,
                     "publicacoes",
                     language
                   )}
-                </span>
+                </CommunitySearchResultsCount>
               </CommunitySearchResultsHeader>
             ) : null}
 
@@ -8250,15 +8251,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communitySearchResultsCountStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  lineHeight: 1.2,
-  fontWeight: 850,
-  whiteSpace: "nowrap",
-  ...safeTextStyle,
-};
 
 const communityUserSearchListStyle: CSSProperties = {
   display: "grid",
