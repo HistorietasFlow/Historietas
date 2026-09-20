@@ -67,6 +67,7 @@ import { CommunityUserSearchUsername } from "./components/community-user-search-
 import { CommunityUserSearchFollowButton } from "./components/community-user-search-follow-button";
 import { CommunityUserSearchSelfBadge } from "./components/community-user-search-self-badge";
 import { CommunityPostsList } from "./components/community-posts-list";
+import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -7077,7 +7078,7 @@ export default function ComunidadePage() {
             </CommunityPostsList>
 
             {!carregandoFeed && postsVisiveis.length > 0 && temMaisPostsComunidade && (
-              <section style={loadMorePostsWrapStyle}>
+              <CommunityLoadMorePostsContainer>
                 <button
                   type="button"
                   onClick={carregarMaisPostsComunidade}
@@ -7099,7 +7100,7 @@ export default function ComunidadePage() {
                     "Carregar mais publicações"
                   )}
                 </button>
-              </section>
+              </CommunityLoadMorePostsContainer>
             )}
 
           </CommunityFeedColumn>
@@ -8250,13 +8251,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const loadMorePostsWrapStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "center",
-  margin: "2px 0 4px",
-  minWidth: 0,
-};
 
 const loadMorePostsButtonStyle: CSSProperties = {
   minHeight: "38px",
