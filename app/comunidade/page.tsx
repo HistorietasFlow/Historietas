@@ -30,6 +30,7 @@ import { CommunityTopWaterFade } from "./components/community-top-water-fade";
 import { CommunityDesktopHeader } from "./components/community-desktop-header";
 import { CommunityDesktopTitle } from "./components/community-desktop-title";
 import { CommunityDesktopHeaderActions } from "./components/community-desktop-header-actions";
+import { CommunityDesktopSearchContainer } from "./components/community-desktop-search-container";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6203,7 +6204,7 @@ export default function ComunidadePage() {
             <CommunityDesktopTitle>Comunidade</CommunityDesktopTitle>
 
             <CommunityDesktopHeaderActions>
-              <label style={desktopSearchShellStyle}>
+              <CommunityDesktopSearchContainer>
                 <svg
                   width="20"
                   height="20"
@@ -6240,7 +6241,7 @@ export default function ComunidadePage() {
                   style={desktopSearchInputStyle}
                   type="text"
                 />
-              </label>
+              </CommunityDesktopSearchContainer>
 
               <button
                 type="button"
@@ -7691,20 +7692,6 @@ const pageStyle: CSSProperties = {
   background: "var(--historietas-comunidade-bg-page, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const desktopSearchShellStyle: CSSProperties = {
-  position: "relative",
-  width: "min(390px, 34vw)",
-  minWidth: "230px",
-  height: "42px",
-  borderRadius: "10px",
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.045)",
-  display: "flex",
-  alignItems: "center",
-  overflow: "hidden",
-  boxSizing: "border-box",
 };
 
 const desktopSearchIconStyle: CSSProperties = {
