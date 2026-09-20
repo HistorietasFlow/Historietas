@@ -46,6 +46,7 @@ import { CommunitySheetHandle } from "./components/community-sheet-handle";
 import { CommunitySheetTitle } from "./components/community-sheet-title";
 import { CommunitySheetSectionLabel } from "./components/community-sheet-section-label";
 import { CommunitySheetFilterOption } from "./components/community-sheet-filter-option";
+import { CommunitySheetPrimaryAction } from "./components/community-sheet-primary-action";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6382,13 +6383,11 @@ export default function ComunidadePage() {
                     Ações
                   </CommunitySheetSectionLabel>
 
-                  <button
-                    type="button"
+                  <CommunitySheetPrimaryAction
                     onClick={abrirPublicacaoRapidaComunidade}
-                    style={communityActionsSheetItemStyle}
                   >
                     Publicar
-                  </button>
+                  </CommunitySheetPrimaryAction>
 
                   <CommunitySheetSectionLabel>
                     Mostrar
