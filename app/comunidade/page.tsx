@@ -57,6 +57,7 @@ import { CommunitySearchResultsHeader } from "./components/community-search-resu
 import { CommunitySearchResultsTitle } from "./components/community-search-results-title";
 import { CommunitySearchResultsCount } from "./components/community-search-results-count";
 import { CommunitySearchResultsEmpty } from "./components/community-search-results-empty";
+import { CommunityUserSearchLoading } from "./components/community-user-search-loading";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6492,12 +6493,12 @@ export default function ComunidadePage() {
                     Digite pelo menos 2 caracteres para encontrar usuários.
                   </CommunitySearchResultsEmpty>
                 ) : carregandoUsuariosBuscaComunidade ? (
-                  <div style={communityUserSearchLoadingStyle}>
+                  <CommunityUserSearchLoading>
                     <CommunityLoadingSpinner
                       compacto
                       label="Buscando usuários"
                     />
-                  </div>
+                  </CommunityUserSearchLoading>
                 ) : usuariosBuscaComunidade.length > 0 ? (
                   <div style={communityUserSearchListStyle}>
                     {usuariosBuscaComunidade.map((usuarioBusca) => {
@@ -8350,14 +8351,6 @@ const communityUserSearchSelfBadgeStyle: CSSProperties = {
   fontSize: "10px",
   fontWeight: 900,
   whiteSpace: "nowrap",
-};
-
-const communityUserSearchLoadingStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "54px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
 };
 
 const postsListStyle: CSSProperties = {
