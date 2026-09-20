@@ -44,6 +44,7 @@ import { CommunitySheetOverlay } from "./components/community-sheet-overlay";
 import { CommunitySheetSurface } from "./components/community-sheet-surface";
 import { CommunitySheetHandle } from "./components/community-sheet-handle";
 import { CommunitySheetTitle } from "./components/community-sheet-title";
+import { CommunitySheetSectionLabel } from "./components/community-sheet-section-label";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6376,9 +6377,9 @@ export default function ComunidadePage() {
                     Filtrar e ordenar
                   </CommunitySheetTitle>
 
-                  <span style={communityFiltersSheetSectionLabelStyle}>
+                  <CommunitySheetSectionLabel>
                     Ações
-                  </span>
+                  </CommunitySheetSectionLabel>
 
                   <button
                     type="button"
@@ -6388,9 +6389,9 @@ export default function ComunidadePage() {
                     Publicar
                   </button>
 
-                  <span style={communityFiltersSheetSectionLabelStyle}>
+                  <CommunitySheetSectionLabel>
                     Mostrar
-                  </span>
+                  </CommunitySheetSectionLabel>
 
                   <button
                     type="button"
@@ -6440,9 +6441,9 @@ export default function ComunidadePage() {
                     </span>
                   </button>
 
-                  <span style={communityFiltersSheetSectionLabelStyle}>
+                  <CommunitySheetSectionLabel>
                     Ordenar
-                  </span>
+                  </CommunitySheetSectionLabel>
 
                   <button
                     type="button"
@@ -8359,17 +8360,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-const communityFiltersSheetSectionLabelStyle: CSSProperties = {
-  display: "block",
-  padding: "11px 30px 5px",
-  color: "rgba(244,244,245,0.56)",
-  fontSize: "11px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  ...safeTextStyle,
-};
 
 const communityFiltersSheetOptionStyle: CSSProperties = {
   appearance: "none",
