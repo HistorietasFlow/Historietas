@@ -33,6 +33,7 @@ import { CommunityDesktopHeaderActions } from "./components/community-desktop-he
 import { CommunityDesktopSearchContainer } from "./components/community-desktop-search-container";
 import { CommunityDesktopSearchIcon } from "./components/community-desktop-search-icon";
 import { CommunityDesktopSearchInput } from "./components/community-desktop-search-input";
+import { CommunityDesktopFilterButton } from "./components/community-desktop-filter-button";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6215,18 +6216,12 @@ export default function ComunidadePage() {
                 />
               </CommunityDesktopSearchContainer>
 
-              <button
-                type="button"
+              <CommunityDesktopFilterButton
                 onClick={() =>
                   setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
                 }
-                style={desktopFilterButtonStyle}
-                aria-label="Abrir filtros, ordenação e ações da comunidade"
-                aria-expanded={menuAcoesRapidasComunidadeAberto}
-              >
-                <span>Filtros</span>
-                <span aria-hidden="true">+</span>
-              </button>
+                expanded={menuAcoesRapidasComunidadeAberto}
+              />
 
             </CommunityDesktopHeaderActions>
           </CommunityDesktopHeader>
@@ -7666,23 +7661,6 @@ const pageStyle: CSSProperties = {
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
 };
 
-const desktopFilterButtonStyle: CSSProperties = {
-  minHeight: "42px",
-  padding: "0 16px",
-  borderRadius: "10px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "transparent",
-  color: "#FFFFFF",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  fontFamily: "inherit",
-  fontSize: "12px",
-  fontWeight: 900,
-  cursor: "pointer",
-  whiteSpace: "nowrap",
-};
 
 
 
