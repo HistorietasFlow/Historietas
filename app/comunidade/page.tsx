@@ -75,6 +75,7 @@ import { CommunityPostAuthorAvatar } from "./components/community-post-author-av
 import { CommunityPostAuthorMeta } from "./components/community-post-author-meta";
 import { CommunityPostAuthorLink } from "./components/community-post-author-link";
 import { CommunityPostStatusLine } from "./components/community-post-status-line";
+import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6827,7 +6828,7 @@ export default function ComunidadePage() {
                         {opcoesPublicacao}
                       </CommunityPostHeader>
 
-                      <div style={postBadgesRowStyle}>
+                      <CommunityPostBadgesRow>
                         {obraRelacionadaPermitida && (
                           <>
                             <Link
@@ -6872,7 +6873,7 @@ export default function ComunidadePage() {
                             ? obterPerguntaEnquete(post.texto)
                             : obterTipoVisualPublicacao(post)}
                         </span>
-                      </div>
+                      </CommunityPostBadgesRow>
 
                       {ocultarTextoSpoiler ? (
                         <strong style={spoilerHiddenTitleStyle}>
@@ -8262,14 +8263,6 @@ const obraBadgeStyle: CSSProperties = {
   alignItems: "center",
   minWidth: 0,
   ...safeTextStyle,
-};
-
-const postBadgesRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "7px",
-  flexWrap: "wrap",
-  minWidth: 0,
 };
 
 const postBadgeSeparatorStyle: CSSProperties = {
