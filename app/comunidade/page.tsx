@@ -47,6 +47,7 @@ import { CommunitySheetTitle } from "./components/community-sheet-title";
 import { CommunitySheetSectionLabel } from "./components/community-sheet-section-label";
 import { CommunitySheetFilterOption } from "./components/community-sheet-filter-option";
 import { CommunitySheetPrimaryAction } from "./components/community-sheet-primary-action";
+import { CommunitySheetMenuAction } from "./components/community-sheet-menu-action";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6664,43 +6665,29 @@ export default function ComunidadePage() {
                               Ações da publicação
                             </CommunitySheetTitle>
 
-                            <button
-                              type="button"
-                              role="menuitem"
+                            <CommunitySheetMenuAction
                               onClick={() => {
                                 setPostMenuAbertoId(null);
                                 alternarPostSalvo(post.id);
                               }}
                               disabled={postSalvando}
-                              style={{
-                                ...communityActionsSheetItemStyle,
-                                opacity: postSalvando ? 0.58 : 1,
-                                cursor: postSalvando ? "not-allowed" : "pointer",
-                              }}
                             >
                               {postSalvando
                                 ? "Salvando..."
                                 : postSalvo
                                   ? "Remover dos salvos"
                                   : "Salvar publicação"}
-                            </button>
+                            </CommunitySheetMenuAction>
 
-                            <button
-                              type="button"
-                              role="menuitem"
+                            <CommunitySheetMenuAction
                               onClick={() => {
                                 setPostMenuAbertoId(null);
                                 compartilharPublicacao(post);
                               }}
                               disabled={postCompartilhando}
-                              style={{
-                                ...communityActionsSheetItemStyle,
-                                opacity: postCompartilhando ? 0.58 : 1,
-                                cursor: postCompartilhando ? "not-allowed" : "pointer",
-                              }}
                             >
                               {postCompartilhando ? "Compartilhando..." : "Compartilhar"}
-                            </button>
+                            </CommunitySheetMenuAction>
 
                             {podeAlterarVisibilidade && (
                               <div style={postVisibilityMenuStyle}>
@@ -6741,26 +6728,19 @@ export default function ComunidadePage() {
                             )}
 
                             {usuarioEhAdmin && (
-                              <button
-                                type="button"
-                                role="menuitem"
+                              <CommunitySheetMenuAction
                                 onClick={() => {
                                   setPostMenuAbertoId(null);
                                   alternarFixadoPost(post);
                                 }}
                                 disabled={postFixando}
-                                style={{
-                                  ...communityActionsSheetItemStyle,
-                                  opacity: postFixando ? 0.58 : 1,
-                                  cursor: postFixando ? "not-allowed" : "pointer",
-                                }}
                               >
                                 {postFixando
                                   ? "Atualizando..."
                                   : post.fixado
                                     ? "Desfixar publicação"
                                     : "Fixar publicação"}
-                              </button>
+                              </CommunitySheetMenuAction>
                             )}
 
                             {podeRemover && (
