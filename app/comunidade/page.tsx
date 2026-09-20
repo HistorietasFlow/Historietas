@@ -60,6 +60,7 @@ import { CommunitySearchResultsEmpty } from "./components/community-search-resul
 import { CommunityUserSearchLoading } from "./components/community-user-search-loading";
 import { CommunityUserSearchList } from "./components/community-user-search-list";
 import { CommunityUserSearchCard } from "./components/community-user-search-card";
+import { CommunityUserSearchAvatar } from "./components/community-user-search-avatar";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6513,21 +6514,18 @@ export default function ComunidadePage() {
 
                       return (
                         <CommunityUserSearchCard key={usuarioBusca.id}>
-                          <Link
+                          <CommunityUserSearchAvatar
                             href={criarPerfilHrefComunidade(
                               usuarioBusca.id,
                               usuarioBusca.nome
                             )}
-                            aria-label={`Abrir perfil de ${usuarioBusca.nome}`}
-                            style={criarAvatarComunidadeStyle(
-                              communityUserSearchAvatarStyle,
-                              usuarioBusca.avatar
-                            )}
+                            ariaLabel={`Abrir perfil de ${usuarioBusca.nome}`}
+                            avatar={usuarioBusca.avatar}
                           >
                             {!usuarioBusca.avatar &&
                               (usuarioBusca.nome.slice(0, 1).toUpperCase() ||
                                 "U")}
-                          </Link>
+                          </CommunityUserSearchAvatar>
 
                           <div style={communityUserSearchInfoStyle}>
                             <Link
@@ -8252,24 +8250,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communityUserSearchAvatarStyle: CSSProperties = {
-  width: "44px",
-  height: "44px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flex: "0 0 auto",
-  background: "var(--historietas-comunidade-bg-deep, #000000)",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.14))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "18px",
-  lineHeight: 1,
-  fontWeight: 950,
-  textDecoration: "none",
-  overflow: "hidden",
-};
 
 const communityUserSearchInfoStyle: CSSProperties = {
   display: "grid",
