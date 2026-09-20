@@ -35,6 +35,7 @@ import { CommunityDesktopSearchIcon } from "./components/community-desktop-searc
 import { CommunityDesktopSearchInput } from "./components/community-desktop-search-input";
 import { CommunityDesktopFilterButton } from "./components/community-desktop-filter-button";
 import { CommunityMainLayout } from "./components/community-main-layout";
+import { CommunityFeedColumn } from "./components/community-feed-column";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6229,7 +6230,7 @@ export default function ComunidadePage() {
         ) : null}
 
         <CommunityMainLayout isDesktop={isDesktop}>
-          <section style={isDesktop ? desktopFeedColumnStyle : feedColumnStyle}>
+          <CommunityFeedColumn isDesktop={isDesktop}>
             {usuario && erro && !composerAberto && (
               <span style={communityErrorNoticeStyle}>{erro}</span>
             )}
@@ -7235,7 +7236,7 @@ export default function ComunidadePage() {
               </section>
             )}
 
-          </section>
+          </CommunityFeedColumn>
 
         </CommunityMainLayout>
       </CommunityContentContainer>
@@ -7714,19 +7715,6 @@ const pageStyle: CSSProperties = {
 
 
 
-const feedColumnStyle: CSSProperties = {
-  width: "min(880px, 100%)",
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-};
-
-const desktopFeedColumnStyle: CSSProperties = {
-  ...feedColumnStyle,
-  width: "100%",
-  maxWidth: "100%",
-  gap: "12px",
-};
 
 
 
