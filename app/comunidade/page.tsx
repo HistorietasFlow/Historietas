@@ -45,7 +45,7 @@ import { CommunitySheetSurface } from "./components/community-sheet-surface";
 import { CommunitySheetHandle } from "./components/community-sheet-handle";
 import { CommunitySheetTitle } from "./components/community-sheet-title";
 import { CommunitySheetSectionLabel } from "./components/community-sheet-section-label";
-import { CommunitySheetRadioIndicator } from "./components/community-sheet-radio-indicator";
+import { CommunitySheetFilterOption } from "./components/community-sheet-filter-option";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6394,105 +6394,68 @@ export default function ComunidadePage() {
                     Mostrar
                   </CommunitySheetSectionLabel>
 
-                  <button
-                    type="button"
+                  <CommunitySheetFilterOption
+                    active={!filtrosAtivos}
                     onClick={() => {
                       limparFiltrosComunidade();
                       setMenuAcoesRapidasComunidadeAberto(false);
                     }}
-                    style={
-                      !filtrosAtivos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
                   >
-                    <span>Todas</span>
-                    <CommunitySheetRadioIndicator active={!filtrosAtivos} />
-                  </button>
+                    Todas
+                  </CommunitySheetFilterOption>
 
-                  <button
-                    type="button"
+                  <CommunitySheetFilterOption
+                    active={mostrarApenasSalvos}
                     onClick={() => {
                       setMostrarApenasSalvos(true);
                       setMenuAcoesRapidasComunidadeAberto(false);
                     }}
-                    style={
-                      mostrarApenasSalvos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
                   >
-                    <span>Posts salvos</span>
-                    <CommunitySheetRadioIndicator active={mostrarApenasSalvos} />
-                  </button>
+                    Posts salvos
+                  </CommunitySheetFilterOption>
 
                   <CommunitySheetSectionLabel>
                     Ordenar
                   </CommunitySheetSectionLabel>
 
-                  <button
-                    type="button"
+                  <CommunitySheetFilterOption
+                    active={
+                      ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
+                    }
                     onClick={() => {
                       setOrdenacaoAtiva("Recentes");
                       setMostrarApenasSalvos(false);
                       setMenuAcoesRapidasComunidadeAberto(false);
                     }}
-                    style={
-                      ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
                   >
-                    <span>Recentes</span>
-                    <CommunitySheetRadioIndicator
-                      active={
-                        ordenacaoAtiva === "Recentes" && !mostrarApenasSalvos
-                      }
-                    />
-                  </button>
+                    Recentes
+                  </CommunitySheetFilterOption>
 
-                  <button
-                    type="button"
+                  <CommunitySheetFilterOption
+                    active={
+                      ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
+                    }
                     onClick={() => {
                       setOrdenacaoAtiva("Em alta");
                       setMostrarApenasSalvos(false);
                       setMenuAcoesRapidasComunidadeAberto(false);
                     }}
-                    style={
-                      ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
                   >
-                    <span>Em alta</span>
-                    <CommunitySheetRadioIndicator
-                      active={
-                        ordenacaoAtiva === "Em alta" && !mostrarApenasSalvos
-                      }
-                    />
-                  </button>
+                    Em alta
+                  </CommunitySheetFilterOption>
 
-                  <button
-                    type="button"
+                  <CommunitySheetFilterOption
+                    active={
+                      ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
+                    }
                     onClick={() => {
                       setOrdenacaoAtiva("Mais comentadas");
                       setMostrarApenasSalvos(false);
                       setMenuAcoesRapidasComunidadeAberto(false);
                     }}
-                    style={
-                      ordenacaoAtiva === "Mais comentadas" && !mostrarApenasSalvos
-                        ? communityFiltersSheetOptionActiveStyle
-                        : communityFiltersSheetOptionStyle
-                    }
                   >
-                    <span>Mais comentadas</span>
-                    <CommunitySheetRadioIndicator
-                      active={
-                        ordenacaoAtiva === "Mais comentadas" &&
-                        !mostrarApenasSalvos
-                      }
-                    />
-                  </button>
+                    Mais comentadas
+                  </CommunitySheetFilterOption>
 
                 </CommunitySheetSurface>
               </CommunitySheetOverlay>
@@ -8352,13 +8315,6 @@ const communityFiltersSheetOptionStyle: CSSProperties = {
   boxSizing: "border-box",
   ...safeTextStyle,
 };
-
-const communityFiltersSheetOptionActiveStyle: CSSProperties = {
-  ...communityFiltersSheetOptionStyle,
-  fontWeight: 900,
-  background: "transparent",
-};
-
 
 
 
