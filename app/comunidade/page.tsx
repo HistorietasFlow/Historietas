@@ -73,6 +73,7 @@ import { CommunityPostCard } from "./components/community-post-card";
 import { CommunityPostHeader } from "./components/community-post-header";
 import { CommunityPostAuthorAvatar } from "./components/community-post-author-avatar";
 import { CommunityPostAuthorMeta } from "./components/community-post-author-meta";
+import { CommunityPostAuthorLink } from "./components/community-post-author-link";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6789,15 +6790,14 @@ export default function ComunidadePage() {
                         </CommunityPostAuthorAvatar>
 
                         <CommunityPostAuthorMeta>
-                          <Link
+                          <CommunityPostAuthorLink
                             href={criarPerfilHrefComunidade(
                               post.autorId,
                               post.autorNome
                             )}
-                            style={postAuthorLinkStyle}
                           >
                             {post.autorNome}
-                          </Link>
+                          </CommunityPostAuthorLink>
                           <span style={postSubMetaStyle}>
                             {formatarDataComunidade(post.criadoEm)}
                             {post.fixado && (
@@ -8244,20 +8244,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-
-const postAuthorStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "14px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const postAuthorLinkStyle: CSSProperties = {
-  ...postAuthorStyle,
-  textDecoration: "none",
-  cursor: "pointer",
-};
 
 
 const postSubMetaStyle: CSSProperties = {
