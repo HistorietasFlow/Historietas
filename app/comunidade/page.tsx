@@ -79,6 +79,7 @@ import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
+import { CommunityPollBox } from "./components/community-poll-box";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -6875,7 +6876,7 @@ export default function ComunidadePage() {
                       ) : (
                         <>
                           {postEhEnquete(post) ? (
-                            <div style={pollPostBoxStyle}>
+                            <CommunityPollBox>
                               <div style={pollPostOptionsStyle}>
                                 {obterOpcoesEnquete(post.texto).map((opcao) => {
                                   const votoAtual = votosEnquetes[post.id] || "";
@@ -6961,7 +6962,7 @@ export default function ComunidadePage() {
                                   );
                                 })}
                               </div>
-                            </div>
+                            </CommunityPollBox>
                           ) : (
                             <p data-historietas-user-content="true" style={postTextStyle}>{post.texto}</p>
                           )}
@@ -7617,21 +7618,6 @@ const pollTemplateButtonStyle: CSSProperties = {
   boxShadow: "none",
   ...safeTextStyle,
 };
-
-const pollPostBoxStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  marginTop: "2px",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflow: "visible",
-};
-
 
 const pollPostOptionsStyle: CSSProperties = {
   display: "grid",
