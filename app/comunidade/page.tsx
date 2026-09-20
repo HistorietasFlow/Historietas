@@ -81,6 +81,7 @@ import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityPollBox } from "./components/community-poll-box";
 import { CommunityPollOptions } from "./components/community-poll-options";
+import { CommunityPollOptionButton } from "./components/community-poll-option-button";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -6904,16 +6905,11 @@ export default function ComunidadePage() {
                                         : "0%";
 
                                   return (
-                                    <button
+                                    <CommunityPollOptionButton
                                       key={opcao}
-                                      type="button"
                                       onClick={() => votarEnquete(post.id, opcao)}
                                       disabled={Boolean(votoAtual) || votandoEnqueteId === post.id}
-                                      style={
-                                        selecionada
-                                          ? pollPostOptionSelectedStyle
-                                          : pollPostOptionStyle
-                                      }
+                                      selected={selecionada}
                                     >
                                       <span
                                         style={{
@@ -6959,7 +6955,7 @@ export default function ComunidadePage() {
                                             ? "..."
                                             : "Votar"}
                                       </span>
-                                    </button>
+                                    </CommunityPollOptionButton>
                                   );
                                 })}
                               </CommunityPollOptions>
@@ -7618,37 +7614,6 @@ const pollTemplateButtonStyle: CSSProperties = {
   cursor: "pointer",
   boxShadow: "none",
   ...safeTextStyle,
-};
-
-const pollPostOptionStyle: CSSProperties = {
-  position: "relative",
-  minHeight: "36px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-  padding: "0 10px",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.10))",
-  background: "rgba(255,255,255,0.045)",
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  opacity: 1,
-  fontSize: "11px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  overflow: "hidden",
-  boxShadow: "none",
-};
-
-const pollPostOptionSelectedStyle: CSSProperties = {
-  ...pollPostOptionStyle,
-  border: "1px solid var(--historietas-comunidade-cyan-62, rgba(255,255,255,0.62))",
-  background: "linear-gradient(135deg, var(--historietas-comunidade-blue, #FFFFFF) 0%, var(--historietas-comunidade-cyan, #D4D4D8) 100%)",
-  color: "#000000",
-  WebkitTextFillColor: "#000000",
-  opacity: 1,
 };
 
 const pollPostResultBarStyle: CSSProperties = {
