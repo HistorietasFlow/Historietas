@@ -40,6 +40,7 @@ import { CommunityFeedErrorNotice } from "./components/community-feed-error-noti
 import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
 import { CommunityFeedTabButton } from "./components/community-feed-tab-button";
+import { CommunitySheetOverlay } from "./components/community-sheet-overlay";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6360,17 +6361,11 @@ export default function ComunidadePage() {
             </CommunityFeedTabsContainer>
 
             {menuAcoesRapidasComunidadeAberto && (
-              <section
-                style={communityFiltersSheetOverlayStyle}
-                aria-label="Filtros, ordenação e ações da comunidade"
+              <CommunitySheetOverlay
+                ariaLabel="Filtros, ordenação e ações da comunidade"
+                closeAriaLabel="Fechar filtros e ações da comunidade"
+                onClose={() => setMenuAcoesRapidasComunidadeAberto(false)}
               >
-                <button
-                  type="button"
-                  aria-label="Fechar filtros e ações da comunidade"
-                  onClick={() => setMenuAcoesRapidasComunidadeAberto(false)}
-                  style={communityFiltersSheetBackdropStyle}
-                />
-
                 <article style={communityActionsSheetStyle}>
                   <div style={communityFiltersSheetHandleStyle} />
 
@@ -6528,7 +6523,7 @@ export default function ComunidadePage() {
                   </button>
 
                 </article>
-              </section>
+              </CommunitySheetOverlay>
             )}
 
             {termoBuscaNormalizado ? (
@@ -6723,17 +6718,11 @@ export default function ComunidadePage() {
 
                       {postMenuAbertoId === post.id && typeof document !== "undefined"
                         ? createPortal(
-                        <section
-                          style={communityFiltersSheetOverlayStyle}
-                          aria-label="Ações da publicação"
+                        <CommunitySheetOverlay
+                          ariaLabel="Ações da publicação"
+                          closeAriaLabel="Fechar ações da publicação"
+                          onClose={() => setPostMenuAbertoId(null)}
                         >
-                          <button
-                            type="button"
-                            aria-label="Fechar ações da publicação"
-                            onClick={() => setPostMenuAbertoId(null)}
-                            style={communityFiltersSheetBackdropStyle}
-                          />
-
                           <article role="menu" style={communityActionsSheetStyle}>
                             <div style={communityFiltersSheetHandleStyle} />
 
@@ -6878,7 +6867,7 @@ export default function ComunidadePage() {
                               </button>
                             )}
                           </article>
-                        </section>,
+                        </CommunitySheetOverlay>,
                             document.body
                           )
                         : null}
@@ -8363,31 +8352,6 @@ const communityFilterActionIconStyle: CSSProperties = {
   flex: "0 0 auto",
 };
 
-const communityFiltersSheetOverlayStyle: CSSProperties = {
-  position: "fixed",
-  left: 0,
-  right: 0,
-  top: 0,
-  bottom: 0,
-  height: "100dvh",
-  zIndex: 240,
-  display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "center",
-  background: "rgba(0,0,0,0.68)",
-  padding: 0,
-  boxSizing: "border-box",
-  overscrollBehavior: "none",
-  touchAction: "none",
-};
-
-const communityFiltersSheetBackdropStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  border: "none",
-  background: "transparent",
-  cursor: "pointer",
-};
 
 const communityFiltersSheetStyle: CSSProperties = {
   position: "fixed",
