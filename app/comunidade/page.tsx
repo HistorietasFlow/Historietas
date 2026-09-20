@@ -64,6 +64,7 @@ import { CommunityUserSearchAvatar } from "./components/community-user-search-av
 import { CommunityUserSearchInfo } from "./components/community-user-search-info";
 import { CommunityUserSearchName } from "./components/community-user-search-name";
 import { CommunityUserSearchUsername } from "./components/community-user-search-username";
+import { CommunityUserSearchFollowButton } from "./components/community-user-search-follow-button";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6552,24 +6553,19 @@ export default function ComunidadePage() {
                               Você
                             </span>
                           ) : (
-                            <button
-                              type="button"
+                            <CommunityUserSearchFollowButton
                               onClick={() =>
                                 alternarSeguirUsuarioBusca(usuarioBusca)
                               }
                               disabled={atualizandoSeguindo}
-                              style={
-                                seguindoUsuario
-                                  ? communityUserSearchFollowingButtonStyle
-                                  : communityUserSearchFollowButtonStyle
-                              }
+                              following={seguindoUsuario}
                             >
                               {atualizandoSeguindo
                                 ? "..."
                                 : seguindoUsuario
                                   ? "Seguindo"
                                   : "Seguir"}
-                            </button>
+                            </CommunityUserSearchFollowButton>
                           )}
                         </CommunityUserSearchCard>
                       );
@@ -8252,30 +8248,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communityUserSearchFollowButtonStyle: CSSProperties = {
-  minWidth: "76px",
-  minHeight: "34px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.16))",
-  background: "var(--historietas-accent, #FFFFFF)",
-  color: "#FFFFFF",
-  padding: "0 12px",
-  fontSize: "10.5px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  whiteSpace: "nowrap",
-};
-
-const communityUserSearchFollowingButtonStyle: CSSProperties = {
-  ...communityUserSearchFollowButtonStyle,
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.08))",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-};
 
 const communityUserSearchSelfBadgeStyle: CSSProperties = {
   minWidth: "58px",
