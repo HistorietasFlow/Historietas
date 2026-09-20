@@ -76,6 +76,7 @@ import { CommunityPostAuthorMeta } from "./components/community-post-author-meta
 import { CommunityPostAuthorLink } from "./components/community-post-author-link";
 import { CommunityPostStatusLine } from "./components/community-post-status-line";
 import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
+import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6831,16 +6832,14 @@ export default function ComunidadePage() {
                       <CommunityPostBadgesRow>
                         {obraRelacionadaPermitida && (
                           <>
-                            <Link
+                            <CommunityRelatedWorkBadge
                               href={criarLinkObraRelacionada(
                                 obraRelacionadaPermitida.titulo,
                                 obrasRelacionadasSugestoes
                               )}
-                              data-historietas-user-content="true"
-                              style={obraBadgeStyle}
                             >
                               {obraRelacionadaPermitida.titulo}
-                            </Link>
+                            </CommunityRelatedWorkBadge>
 
                             <span style={postBadgeSeparatorStyle}>·</span>
                           </>
