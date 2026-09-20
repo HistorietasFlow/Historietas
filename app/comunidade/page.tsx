@@ -78,6 +78,7 @@ import { CommunityPostStatusLine } from "./components/community-post-status-line
 import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
+import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -6868,9 +6869,9 @@ export default function ComunidadePage() {
                       </CommunityPostBadgesRow>
 
                       {ocultarTextoSpoiler ? (
-                        <strong style={spoilerHiddenTitleStyle}>
+                        <CommunitySpoilerHiddenTitle>
                           Conteúdo com spoiler oculto
-                        </strong>
+                        </CommunitySpoilerHiddenTitle>
                       ) : (
                         <>
                           {postEhEnquete(post) ? (
@@ -8271,19 +8272,6 @@ const postVisibilityBadgeStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
 };
 
-
-
-const spoilerHiddenTitleStyle: CSSProperties = {
-  display: "inline-flex",
-  width: "fit-content",
-  maxWidth: "100%",
-  margin: 0,
-  color: "var(--historietas-comunidade-danger-text, #FFFFFF)",
-  fontSize: "13px",
-  fontWeight: 950,
-  lineHeight: 1.35,
-  ...safeTextStyle,
-};
 
 
 const postTextStyle: CSSProperties = {
