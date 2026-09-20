@@ -70,6 +70,7 @@ import { CommunityPostsList } from "./components/community-posts-list";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
+import { CommunityPostHeader } from "./components/community-post-header";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6773,7 +6774,7 @@ export default function ComunidadePage() {
 
                   return (
                     <CommunityPostCard key={post.id} isDesktop={isDesktop}>
-                      <div style={postHeaderStyle}>
+                      <CommunityPostHeader>
                         <Link
                           href={criarPerfilHrefComunidade(
                             post.autorId,
@@ -6824,7 +6825,7 @@ export default function ComunidadePage() {
                         </div>
 
                         {opcoesPublicacao}
-                      </div>
+                      </CommunityPostHeader>
 
                       <div style={postBadgesRowStyle}>
                         {obraRelacionadaPermitida && (
@@ -8245,15 +8246,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const postHeaderStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "38px minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: "10px",
-  minWidth: 0,
-  overflow: "visible",
-};
 
 const authorAvatarStyle: CSSProperties = {
   width: "38px",
