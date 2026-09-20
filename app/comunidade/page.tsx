@@ -50,6 +50,7 @@ import { CommunitySheetPrimaryAction } from "./components/community-sheet-primar
 import { CommunitySheetMenuAction } from "./components/community-sheet-menu-action";
 import { CommunitySheetDangerAction } from "./components/community-sheet-danger-action";
 import { CommunitySheetVisibilityMenu } from "./components/community-sheet-visibility-menu";
+import { CommunitySheetVisibilityTitle } from "./components/community-sheet-visibility-title";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6693,9 +6694,9 @@ export default function ComunidadePage() {
 
                             {podeAlterarVisibilidade && (
                               <CommunitySheetVisibilityMenu>
-                                <span style={postVisibilityMenuTitleStyle}>
+                                <CommunitySheetVisibilityTitle>
                                   Quem pode ver esta publicação?
-                                </span>
+                                </CommunitySheetVisibilityTitle>
 
                                 {VISIBILIDADES_POST_COMUNIDADE.map((opcao) => {
                                   const ativa = post.visibilidade === opcao.valor;
@@ -8284,13 +8285,6 @@ const communityFiltersSheetOptionStyle: CSSProperties = {
 };
 
 
-
-const postVisibilityMenuTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontWeight: 900,
-  padding: "4px 8px 6px",
-};
 
 const postVisibilityMenuItemStyle: CSSProperties = {
   ...communityFiltersSheetOptionStyle,
