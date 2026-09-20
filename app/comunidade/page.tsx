@@ -69,6 +69,7 @@ import { CommunityUserSearchSelfBadge } from "./components/community-user-search
 import { CommunityPostsList } from "./components/community-posts-list";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
+import { CommunityPostCard } from "./components/community-post-card";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6771,7 +6772,7 @@ export default function ComunidadePage() {
                   );
 
                   return (
-                    <article key={post.id} style={isDesktop ? postCardDesktopStyle : postCardStyle}>
+                    <CommunityPostCard key={post.id} isDesktop={isDesktop}>
                       <div style={postHeaderStyle}>
                         <Link
                           href={criarPerfilHrefComunidade(
@@ -7050,7 +7051,7 @@ export default function ComunidadePage() {
                           </button>
                         )}
                       </div>
-                    </article>
+                    </CommunityPostCard>
                   );
                 })
               ) : (
@@ -8244,29 +8245,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const postCardStyle: CSSProperties = {
-  display: "grid",
-  gap: "11px",
-  padding: "14px 0",
-  borderRadius: 0,
-  background: "transparent",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
-  boxShadow: "none",
-  minWidth: 0,
-  overflow: "visible",
-};
-
-const postCardDesktopStyle: CSSProperties = {
-  ...postCardStyle,
-  gap: "12px",
-  padding: "16px",
-  borderRadius: "20px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.025)",
-  alignContent: "start",
-  overflow: "visible",
-};
 
 const postHeaderStyle: CSSProperties = {
   display: "grid",
