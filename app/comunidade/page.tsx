@@ -34,6 +34,7 @@ import { CommunityDesktopSearchContainer } from "./components/community-desktop-
 import { CommunityDesktopSearchIcon } from "./components/community-desktop-search-icon";
 import { CommunityDesktopSearchInput } from "./components/community-desktop-search-input";
 import { CommunityDesktopFilterButton } from "./components/community-desktop-filter-button";
+import { CommunityMainLayout } from "./components/community-main-layout";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6227,7 +6228,7 @@ export default function ComunidadePage() {
           </CommunityDesktopHeader>
         ) : null}
 
-        <section style={isDesktop ? desktopLayoutStyle : layoutStyle}>
+        <CommunityMainLayout isDesktop={isDesktop}>
           <section style={isDesktop ? desktopFeedColumnStyle : feedColumnStyle}>
             {usuario && erro && !composerAberto && (
               <span style={communityErrorNoticeStyle}>{erro}</span>
@@ -7236,7 +7237,7 @@ export default function ComunidadePage() {
 
           </section>
 
-        </section>
+        </CommunityMainLayout>
       </CommunityContentContainer>
 
       {composerAberto && usuario && typeof document !== "undefined"
@@ -7712,21 +7713,6 @@ const pageStyle: CSSProperties = {
 
 
 
-
-const layoutStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  marginTop: "6px",
-};
-
-const desktopLayoutStyle: CSSProperties = {
-  ...layoutStyle,
-  width: "100%",
-  gridTemplateColumns: "minmax(0, 1fr)",
-  justifyItems: "stretch",
-  gap: "18px",
-  marginTop: 0,
-};
 
 const feedColumnStyle: CSSProperties = {
   width: "min(880px, 100%)",
