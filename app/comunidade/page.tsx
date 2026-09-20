@@ -59,6 +59,7 @@ import { CommunitySearchResultsCount } from "./components/community-search-resul
 import { CommunitySearchResultsEmpty } from "./components/community-search-results-empty";
 import { CommunityUserSearchLoading } from "./components/community-user-search-loading";
 import { CommunityUserSearchList } from "./components/community-user-search-list";
+import { CommunityUserSearchCard } from "./components/community-user-search-card";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6511,10 +6512,7 @@ export default function ComunidadePage() {
                         usuarioSeguindoId === usuarioBusca.id;
 
                       return (
-                        <article
-                          key={usuarioBusca.id}
-                          style={communityUserSearchCardStyle}
-                        >
+                        <CommunityUserSearchCard key={usuarioBusca.id}>
                           <Link
                             href={criarPerfilHrefComunidade(
                               usuarioBusca.id,
@@ -6573,7 +6571,7 @@ export default function ComunidadePage() {
                                   : "Seguir"}
                             </button>
                           )}
-                        </article>
+                        </CommunityUserSearchCard>
                       );
                     })}
                   </CommunityUserSearchList>
@@ -8254,15 +8252,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communityUserSearchCardStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "44px minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: "10px",
-  minWidth: 0,
-  padding: "8px 0",
-};
 
 const communityUserSearchAvatarStyle: CSSProperties = {
   width: "44px",
