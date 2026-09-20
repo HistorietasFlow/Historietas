@@ -41,6 +41,7 @@ import { CommunityFeedFiltersContainer } from "./components/community-feed-filte
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
 import { CommunityFeedTabButton } from "./components/community-feed-tab-button";
 import { CommunitySheetOverlay } from "./components/community-sheet-overlay";
+import { CommunitySheetSurface } from "./components/community-sheet-surface";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6366,7 +6367,7 @@ export default function ComunidadePage() {
                 closeAriaLabel="Fechar filtros e ações da comunidade"
                 onClose={() => setMenuAcoesRapidasComunidadeAberto(false)}
               >
-                <article style={communityActionsSheetStyle}>
+                <CommunitySheetSurface>
                   <div style={communityFiltersSheetHandleStyle} />
 
                   <strong style={communityFiltersSheetTitleStyle}>
@@ -6522,7 +6523,7 @@ export default function ComunidadePage() {
                     </span>
                   </button>
 
-                </article>
+                </CommunitySheetSurface>
               </CommunitySheetOverlay>
             )}
 
@@ -6723,7 +6724,7 @@ export default function ComunidadePage() {
                           closeAriaLabel="Fechar ações da publicação"
                           onClose={() => setPostMenuAbertoId(null)}
                         >
-                          <article role="menu" style={communityActionsSheetStyle}>
+                          <CommunitySheetSurface role="menu">
                             <div style={communityFiltersSheetHandleStyle} />
 
                             <strong style={communityFiltersSheetTitleStyle}>
@@ -6866,7 +6867,7 @@ export default function ComunidadePage() {
                                 {postDenunciando ? "Enviando..." : "Denunciar"}
                               </button>
                             )}
-                          </article>
+                          </CommunitySheetSurface>
                         </CommunitySheetOverlay>,
                             document.body
                           )
@@ -8353,28 +8354,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 };
 
 
-const communityFiltersSheetStyle: CSSProperties = {
-  position: "fixed",
-  left: "50%",
-  bottom: 0,
-  transform: "translateX(-50%)",
-  zIndex: 241,
-  width: "min(820px, 100%)",
-  maxHeight: "calc(100dvh - 116px)",
-  display: "grid",
-  gap: "0",
-  padding: "8px 0 calc(104px + env(safe-area-inset-bottom))",
-  borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-comunidade-bg-page, #000000)",
-  border: "none",
-  borderBottom: "none",
-  overflowY: "auto",
-  overflowX: "hidden",
-  overscrollBehavior: "none",
-  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
-  boxSizing: "border-box",
-  touchAction: "none",
-};
 
 const communityFiltersSheetHandleStyle: CSSProperties = {
   justifySelf: "center",
@@ -8465,11 +8444,6 @@ const communityFiltersSheetRadioActiveStyle: CSSProperties = {
 };
 
 
-const communityActionsSheetStyle: CSSProperties = {
-  ...communityFiltersSheetStyle,
-  maxHeight: "calc(100dvh - 190px)",
-  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
-};
 
 const communityActionsSheetItemStyle: CSSProperties = {
   ...communityFiltersSheetOptionStyle,
