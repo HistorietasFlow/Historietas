@@ -80,6 +80,7 @@ import { CommunityPostBadgeSeparator } from "./components/community-post-badge-s
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityPollBox } from "./components/community-poll-box";
+import { CommunityPollOptions } from "./components/community-poll-options";
 import { CommunityRelatedWorkBadge } from "./components/community-related-work-badge";
 import { CommunityRelatedChapterBadge } from "./components/community-related-chapter-badge";
 import type { HistorietasLanguage } from "../../lib/i18n";
@@ -6877,7 +6878,7 @@ export default function ComunidadePage() {
                         <>
                           {postEhEnquete(post) ? (
                             <CommunityPollBox>
-                              <div style={pollPostOptionsStyle}>
+                              <CommunityPollOptions>
                                 {obterOpcoesEnquete(post.texto).map((opcao) => {
                                   const votoAtual = votosEnquetes[post.id] || "";
                                   const selecionada = votoAtual === opcao;
@@ -6961,7 +6962,7 @@ export default function ComunidadePage() {
                                     </button>
                                   );
                                 })}
-                              </div>
+                              </CommunityPollOptions>
                             </CommunityPollBox>
                           ) : (
                             <p data-historietas-user-content="true" style={postTextStyle}>{post.texto}</p>
@@ -7617,12 +7618,6 @@ const pollTemplateButtonStyle: CSSProperties = {
   cursor: "pointer",
   boxShadow: "none",
   ...safeTextStyle,
-};
-
-const pollPostOptionsStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  minWidth: 0,
 };
 
 const pollPostOptionStyle: CSSProperties = {
