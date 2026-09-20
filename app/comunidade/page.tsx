@@ -32,6 +32,7 @@ import { CommunityDesktopTitle } from "./components/community-desktop-title";
 import { CommunityDesktopHeaderActions } from "./components/community-desktop-header-actions";
 import { CommunityDesktopSearchContainer } from "./components/community-desktop-search-container";
 import { CommunityDesktopSearchIcon } from "./components/community-desktop-search-icon";
+import { CommunityDesktopSearchInput } from "./components/community-desktop-search-input";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6208,17 +6209,9 @@ export default function ComunidadePage() {
               <CommunityDesktopSearchContainer>
                 <CommunityDesktopSearchIcon />
 
-                <input
-                  aria-label="Buscar publicações ou usuários"
+                <CommunityDesktopSearchInput
                   value={termoBusca}
                   onChange={(event) => setTermoBusca(event.target.value)}
-                  placeholder="Buscar publicações ou usuários"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  maxLength={90}
-                  style={desktopSearchInputStyle}
-                  type="text"
                 />
               </CommunityDesktopSearchContainer>
 
@@ -7671,22 +7664,6 @@ const pageStyle: CSSProperties = {
   background: "var(--historietas-comunidade-bg-page, #000000)",
   color: "var(--historietas-text-primary, #FFFFFF)",
   fontFamily: "Inter, Poppins, Manrope, Arial, Helvetica, sans-serif",
-};
-
-const desktopSearchInputStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "100%",
-  height: "100%",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  outline: "none",
-  padding: "0 14px 0 42px",
-  fontFamily: "inherit",
-  fontSize: "13px",
-  fontWeight: 800,
-  boxSizing: "border-box",
 };
 
 const desktopFilterButtonStyle: CSSProperties = {
