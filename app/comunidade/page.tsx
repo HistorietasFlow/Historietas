@@ -38,6 +38,7 @@ import { CommunityMainLayout } from "./components/community-main-layout";
 import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
 import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
+import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6341,15 +6342,7 @@ export default function ComunidadePage() {
 
             </CommunityFeedFiltersContainer>
 
-            <nav
-              role="tablist"
-              aria-label="Organizar publicações da Comunidade"
-              style={
-                isDesktop
-                  ? desktopCommunityFeedTabsStyle
-                  : communityFeedTabsStyle
-              }
-            >
+            <CommunityFeedTabsContainer isDesktop={isDesktop}>
               {ABAS_FEED_COMUNIDADE.map((aba) => {
                 const ativa = abaFeedAtiva === aba;
 
@@ -6370,7 +6363,7 @@ export default function ComunidadePage() {
                   </button>
                 );
               })}
-            </nav>
+            </CommunityFeedTabsContainer>
 
             {menuAcoesRapidasComunidadeAberto && (
               <section
@@ -8259,26 +8252,6 @@ const errorStyle: CSSProperties = {
 
 
 
-const communityFeedTabsStyle: CSSProperties = {
-  width: "100%",
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  overflowX: "auto",
-  overscrollBehaviorX: "contain",
-  scrollbarWidth: "none",
-  padding: "3px 0 9px",
-  margin: "0 0 3px",
-  boxSizing: "border-box",
-  WebkitOverflowScrolling: "touch",
-};
-
-const desktopCommunityFeedTabsStyle: CSSProperties = {
-  ...communityFeedTabsStyle,
-  gap: "10px",
-  padding: "2px 0 13px",
-  marginBottom: "5px",
-};
 
 const communityFeedTabStyle: CSSProperties = {
   appearance: "none",
