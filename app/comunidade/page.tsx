@@ -52,6 +52,7 @@ import { CommunitySheetDangerAction } from "./components/community-sheet-danger-
 import { CommunitySheetVisibilityMenu } from "./components/community-sheet-visibility-menu";
 import { CommunitySheetVisibilityTitle } from "./components/community-sheet-visibility-title";
 import { CommunitySheetVisibilityOption } from "./components/community-sheet-visibility-option";
+import { CommunityUserSearchSection } from "./components/community-user-search-section";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -6466,10 +6467,7 @@ export default function ComunidadePage() {
             )}
 
             {termoBuscaNormalizado ? (
-              <section
-                style={communityUserSearchSectionStyle}
-                aria-label="Usuários encontrados"
-              >
+              <CommunityUserSearchSection ariaLabel="Usuários encontrados">
                 <div style={communitySearchResultsHeaderStyle}>
                   <strong style={communitySearchResultsTitleStyle}>
                     Usuários
@@ -6578,7 +6576,7 @@ export default function ComunidadePage() {
                     Nenhum usuário encontrado.
                   </p>
                 )}
-              </section>
+              </CommunityUserSearchSection>
             ) : null}
 
             {termoBuscaNormalizado ? (
@@ -8250,14 +8248,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const communityUserSearchSectionStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  padding: "12px 0 8px",
-  borderBottom: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.08))",
-  minWidth: 0,
-};
 
 const communitySearchResultsHeaderStyle: CSSProperties = {
   display: "flex",
