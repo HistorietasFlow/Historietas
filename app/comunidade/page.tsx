@@ -68,6 +68,7 @@ import { CommunityUserSearchFollowButton } from "./components/community-user-sea
 import { CommunityUserSearchSelfBadge } from "./components/community-user-search-self-badge";
 import { CommunityPostsList } from "./components/community-posts-list";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
+import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import type { HistorietasLanguage } from "../../lib/i18n";
 import {
   criarHrefAceiteTermos,
@@ -7079,17 +7080,9 @@ export default function ComunidadePage() {
 
             {!carregandoFeed && postsVisiveis.length > 0 && temMaisPostsComunidade && (
               <CommunityLoadMorePostsContainer>
-                <button
-                  type="button"
+                <CommunityLoadMorePostsButton
                   onClick={carregarMaisPostsComunidade}
                   disabled={carregandoMaisPostsComunidade}
-                  style={{
-                    ...loadMorePostsButtonStyle,
-                    opacity: carregandoMaisPostsComunidade ? 0.58 : 1,
-                    cursor: carregandoMaisPostsComunidade
-                      ? "not-allowed"
-                      : "pointer",
-                  }}
                 >
                   {carregandoMaisPostsComunidade ? (
                     <CommunityLoadingSpinner
@@ -7099,7 +7092,7 @@ export default function ComunidadePage() {
                   ) : (
                     "Carregar mais publicações"
                   )}
-                </button>
+                </CommunityLoadMorePostsButton>
               </CommunityLoadMorePostsContainer>
             )}
 
@@ -8251,24 +8244,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const loadMorePostsButtonStyle: CSSProperties = {
-  minHeight: "38px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 16px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "var(--historietas-comunidade-surface, #050505)",
-  color: "#FFFFFF",
-  fontSize: "11.5px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  textAlign: "center",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 const postCardStyle: CSSProperties = {
   display: "grid",
