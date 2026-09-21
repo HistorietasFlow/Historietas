@@ -111,6 +111,7 @@ import { CommunityCommentRepliesToggleButton } from "./components/community-comm
 import { CommunityCommentRepliesControlsContainer } from "./components/community-comment-replies-controls-container";
 import { CommunityCommentRepliesHideButton } from "./components/community-comment-replies-hide-button";
 import { CommunityCommentAvatar } from "./components/community-comment-avatar";
+import { CommunityCommentContentContainer } from "./components/community-comment-content-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3090,7 +3091,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           isReply={resposta}
         />
 
-        <div style={commentContentStyle}>
+        <CommunityCommentContentContainer>
           <div style={commentTopLineStyle}>
             <Link
               href={criarPerfilHrefComunidade(
@@ -3160,7 +3161,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
               </button>
             ) : null}
           </div>
-        </div>
+        </CommunityCommentContentContainer>
 
         <div style={commentLikeWrapStyle}>
           <button
@@ -7835,13 +7836,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentContentStyle: CSSProperties = {
-  position: "relative",
-  display: "grid",
-  gap: "3px",
-  minWidth: 0,
-};
 
 const commentTopLineStyle: CSSProperties = {
   display: "flex",
