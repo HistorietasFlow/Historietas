@@ -72,6 +72,7 @@ import { CommunityPostComposerOverlay } from "./components/community-post-compos
 import { CommunityPostComposerBackdrop } from "./components/community-post-composer-backdrop";
 import { CommunityPostComposerPanel } from "./components/community-post-composer-panel";
 import { CommunityPostComposerHeader } from "./components/community-post-composer-header";
+import { CommunityPostComposerForm } from "./components/community-post-composer-form";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7047,7 +7048,7 @@ export default function ComunidadePage() {
               Nova publicação
             </CommunityPostComposerHeader>
 
-            <form onSubmit={publicarPost} style={postComposerFormStyle}>
+            <CommunityPostComposerForm onSubmit={publicarPost}>
               <div
                 style={
                   isDesktop
@@ -7315,7 +7316,7 @@ export default function ComunidadePage() {
                   {publicandoPost ? "Publicando..." : "Publicar"}
                 </button>
               </div>
-            </form>
+            </CommunityPostComposerForm>
           </CommunityPostComposerPanel>
             </CommunityPostComposerOverlay>,
             document.body
@@ -7686,16 +7687,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerFormStyle: CSSProperties = {
-  display: "grid",
-  gap: "9px",
-  minWidth: 0,
-  overflowY: "auto",
-  overscrollBehavior: "contain",
-  padding: "0 12px",
-  WebkitOverflowScrolling: "touch",
-};
 
 const postComposerFieldsStackStyle: CSSProperties = {
   display: "grid",
