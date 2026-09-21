@@ -82,6 +82,7 @@ import { CommunityPostComposerForm } from "./components/community-post-composer-
 import { CommunityPostComposerFields } from "./components/community-post-composer-fields";
 import { CommunityPostComposerField } from "./components/community-post-composer-field";
 import { CommunityPostComposerFieldLabel } from "./components/community-post-composer-field-label";
+import { CommunityPostComposerSelect } from "./components/community-post-composer-select";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -6956,26 +6957,25 @@ export default function ComunidadePage() {
                 <CommunityPostComposerField>
                   <CommunityPostComposerFieldLabel>Categoria</CommunityPostComposerFieldLabel>
 
-                  <select
+                  <CommunityPostComposerSelect
                     disabled={publicandoPost}
                     value={categoriaPost}
                     onChange={(event) =>
                       setCategoriaPost(event.target.value as CategoriaComunidade)
                     }
-                    style={selectStyle}
                   >
                     {CATEGORIAS_COMUNIDADE.map((categoria) => (
                       <option key={categoria} value={categoria}>
                         {categoria}
                       </option>
                     ))}
-                  </select>
+                  </CommunityPostComposerSelect>
                 </CommunityPostComposerField>
 
                 <CommunityPostComposerField>
                   <CommunityPostComposerFieldLabel>Tipo</CommunityPostComposerFieldLabel>
 
-                  <select
+                  <CommunityPostComposerSelect
                     disabled={publicandoPost}
                     value={tipoPublicacaoPost}
                     onChange={(event) =>
@@ -6983,20 +6983,19 @@ export default function ComunidadePage() {
                         event.target.value as TipoPublicacaoComunidade
                       )
                     }
-                    style={selectStyle}
                   >
                     {TIPOS_PUBLICACAO_COMUNIDADE.map((tipo) => (
                       <option key={tipo} value={tipo}>
                         {tipo}
                       </option>
                     ))}
-                  </select>
+                  </CommunityPostComposerSelect>
                 </CommunityPostComposerField>
 
                 <CommunityPostComposerField>
                   <CommunityPostComposerFieldLabel>Quem pode ver esta publicação?</CommunityPostComposerFieldLabel>
 
-                  <select
+                  <CommunityPostComposerSelect
                     disabled={publicandoPost}
                     value={visibilidadePost}
                     onChange={(event) =>
@@ -7004,14 +7003,13 @@ export default function ComunidadePage() {
                         normalizarVisibilidadePostComunidade(event.target.value),
                       )
                     }
-                    style={selectStyle}
                   >
                     {VISIBILIDADES_POST_COMUNIDADE.map((opcao) => (
                       <option key={opcao.valor} value={opcao.valor}>
                         {opcao.rotulo}
                       </option>
                     ))}
-                  </select>
+                  </CommunityPostComposerSelect>
                 </CommunityPostComposerField>
 
                 <CommunityPostComposerField>
@@ -7506,10 +7504,7 @@ const relatedWorkSuggestionBadgeStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
-const selectStyle: CSSProperties = {
-  ...inputStyle,
-  cursor: "pointer",
-};
+
 
 
 
