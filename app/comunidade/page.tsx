@@ -114,6 +114,7 @@ import { CommunityCommentContentContainer } from "./components/community-comment
 import { CommunityCommentAuthorTimeRow } from "./components/community-comment-author-time-row";
 import { CommunityCommentAuthorLink } from "./components/community-comment-author-link";
 import { CommunityCommentTime } from "./components/community-comment-time";
+import { CommunityCommentText } from "./components/community-comment-text";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3112,7 +3113,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
             </CommunityCommentTime>
           </CommunityCommentAuthorTimeRow>
 
-          <p data-historietas-user-content="true" style={commentTextStyle}>{comentario.texto}</p>
+          <CommunityCommentText>{comentario.texto}</CommunityCommentText>
 
           <div style={commentActionsRowStyle}>
             <button
@@ -7837,16 +7838,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentTextStyle: CSSProperties = {
-  margin: 0,
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "12.5px",
-  lineHeight: 1.38,
-  fontWeight: 750,
-  whiteSpace: "pre-wrap",
-  ...safeTextStyle,
-};
 
 const commentActionsRowStyle: CSSProperties = {
   display: "flex",
