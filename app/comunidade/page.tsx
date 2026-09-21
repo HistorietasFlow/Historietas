@@ -38,6 +38,7 @@ import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
 import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
 import { CommunityFilterControlsRow } from "./components/community-filter-controls-row";
+import { CommunitySearchContainer } from "./components/community-search-container";
 import { CommunityAdvancedFiltersButton } from "./components/community-advanced-filters-button";
 import { CommunityAdvancedFiltersIcon } from "./components/community-advanced-filters-icon";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
@@ -6258,7 +6259,7 @@ export default function ComunidadePage() {
 
                 {buscaComunidadeAberta || Boolean(termoBusca.trim()) ? (
                   <>
-                    <label style={communitySearchShellStyle}>
+                    <CommunitySearchContainer>
                       <input
                         aria-label="Buscar publicações ou usuários"
                         value={termoBusca}
@@ -6271,7 +6272,7 @@ export default function ComunidadePage() {
                         style={communitySearchInputStyle}
                         autoFocus
                       />
-                    </label>
+                    </CommunitySearchContainer>
 
                     <button
                       type="button"
@@ -7589,26 +7590,6 @@ const selectStyle: CSSProperties = {
 
 
 
-
-const communitySearchShellStyle: CSSProperties = {
-  flex: "1 1 auto",
-  minWidth: 0,
-  maxWidth: "calc(100% - 104px)",
-  height: "36px",
-  marginLeft: "auto",
-  marginRight: "-6px",
-  borderRadius: "999px",
-  border: "none",
-  background: "#000000",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  overflow: "hidden",
-  padding: "0 0 0 13px",
-  boxSizing: "border-box",
-  boxShadow: "none",
-  transformOrigin: "right center",
-};
 
 const communitySearchInputStyle: CSSProperties = {
   appearance: "none",
