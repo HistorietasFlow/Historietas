@@ -81,6 +81,7 @@ import { CommunityPostComposerCharacterCount } from "./components/community-post
 import { CommunityPostComposerSuggestionsSection } from "./components/community-post-composer-suggestions-section";
 import { CommunityPostComposerSuggestionsLabel } from "./components/community-post-composer-suggestions-label";
 import { CommunityPostComposerSuggestionsList } from "./components/community-post-composer-suggestions-list";
+import { CommunityPostComposerSuggestionButton } from "./components/community-post-composer-suggestion-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7239,21 +7240,15 @@ export default function ComunidadePage() {
 
                   <CommunityPostComposerSuggestionsList>
                     {SUGESTOES_PUBLICACAO_COMUNIDADE.map((sugestao) => (
-                      <button
+                      <CommunityPostComposerSuggestionButton
                         key={sugestao.rotulo}
-                        type="button"
                         disabled={publicandoPost}
                         onClick={() =>
                           aplicarSugestaoPublicacaoComunidade(sugestao)
                         }
-                        style={{
-                          ...postComposerSuggestionButtonStyle,
-                          opacity: publicandoPost ? 0.58 : 1,
-                          cursor: publicandoPost ? "not-allowed" : "pointer",
-                        }}
                       >
                         {sugestao.rotulo}
-                      </button>
+                      </CommunityPostComposerSuggestionButton>
                     ))}
                   </CommunityPostComposerSuggestionsList>
                 </CommunityPostComposerSuggestionsSection>
@@ -7656,23 +7651,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerSuggestionButtonStyle: CSSProperties = {
-  minHeight: "31px",
-  flex: "0 0 auto",
-  borderRadius: "999px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.12))",
-  background: "var(--historietas-secondary-surface, rgba(255,255,255,0.07))",
-  color: "var(--historietas-text, #FFFFFF)",
-  padding: "0 10px",
-  fontSize: "10px",
-  lineHeight: 1.2,
-  fontWeight: 900,
-  fontFamily: "inherit",
-  whiteSpace: "nowrap",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 const postComposerTextareaStyle: CSSProperties = {
   ...inputStyle,
