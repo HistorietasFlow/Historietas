@@ -125,6 +125,7 @@ import { CommunityCommentLikeCount } from "./components/community-comment-like-c
 import { CommunityCommentHeartIcon } from "./components/community-comment-heart-icon";
 import { CommunityCommentsEmptyMessage } from "./components/community-comments-empty-message";
 import { CommunityCommentsErrorNotice } from "./components/community-comments-error-notice";
+import { CommunityCommentsToolsContainer } from "./components/community-comments-tools-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3366,7 +3367,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           </CommunityCommentsErrorNotice>
         ) : null}
 
-        <section style={commentsToolsStyle}>
+        <CommunityCommentsToolsContainer>
           <div style={commentsQuickReactionsStyle}>
             {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
               <button
@@ -3381,7 +3382,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
               </button>
             ))}
           </div>
-        </section>
+        </CommunityCommentsToolsContainer>
 
         <form onSubmit={enviarComentario} style={commentsSheetFormStyle}>
           <div
@@ -7800,12 +7801,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsToolsStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  padding: "5px 0 0",
-};
 
 const commentsQuickReactionsStyle: CSSProperties = {
   display: "flex",
