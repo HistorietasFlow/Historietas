@@ -131,6 +131,7 @@ import { CommunityCommentsQuickReactionButton } from "./components/community-com
 import { CommunityCommentsFormContainer } from "./components/community-comments-form-container";
 import { CommunityCommentsInputAvatar } from "./components/community-comments-input-avatar";
 import { CommunityCommentsInputBox } from "./components/community-comments-input-box";
+import { CommunityCommentsTextarea } from "./components/community-comments-textarea";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3377,7 +3378,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           </CommunityCommentsInputAvatar>
 
           <CommunityCommentsInputBox>
-            <textarea
+            <CommunityCommentsTextarea
               aria-label={
                 podeComentar ? "Adicionar comentário..." : "Entre para comentar."
               }
@@ -3393,7 +3394,6 @@ const ComentariosSheet = memo(function ComentariosSheet({
               enterKeyHint="send"
               maxLength={420}
               rows={1}
-              style={commentsSheetInputStyle}
             />
           </CommunityCommentsInputBox>
 
@@ -7782,25 +7782,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetInputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "38px",
-  maxHeight: "82px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-comunidade-bg-deep, #000000)",
-  color: "#FFFFFF",
-  padding: "9px 12px",
-  outline: "none",
-  fontSize: "12.5px",
-  lineHeight: 1.32,
-  fontWeight: 650,
-  resize: "none",
-  overflowY: "auto",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-};
 
 const commentsInputIconButtonStyle: CSSProperties = {
   width: "26px",
