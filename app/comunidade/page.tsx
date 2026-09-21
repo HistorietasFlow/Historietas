@@ -118,6 +118,7 @@ import { CommunityCommentText } from "./components/community-comment-text";
 import { CommunityCommentActionsRow } from "./components/community-comment-actions-row";
 import { CommunityCommentReplyButton } from "./components/community-comment-reply-button";
 import { CommunityCommentRemoveButton } from "./components/community-comment-remove-button";
+import { CommunityCommentReportButton } from "./components/community-comment-report-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3140,18 +3141,12 @@ const ComentariosSheet = memo(function ComentariosSheet({
             ) : null}
 
             {podeDenunciarComentario ? (
-              <button
-                type="button"
+              <CommunityCommentReportButton
                 onClick={() => denunciarComentarioSeguro(comentario.id)}
                 disabled={comentarioDenunciando}
-                style={{
-                  ...commentReportButtonStyle,
-                  opacity: comentarioDenunciando ? 0.58 : 1,
-                  cursor: comentarioDenunciando ? "not-allowed" : "pointer",
-                }}
               >
                 {comentarioDenunciando ? "Enviando..." : "Denunciar"}
-              </button>
+              </CommunityCommentReportButton>
             ) : null}
           </CommunityCommentActionsRow>
         </CommunityCommentContentContainer>
@@ -7829,18 +7824,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentReportButtonStyle: CSSProperties = {
-  width: "fit-content",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: "1px 0 0",
-  cursor: "pointer",
-};
 
 const commentLikeWrapStyle: CSSProperties = {
   minWidth: "28px",
