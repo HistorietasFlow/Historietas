@@ -75,6 +75,7 @@ import { CommunityPostComposerHeader } from "./components/community-post-compose
 import { CommunityPostComposerForm } from "./components/community-post-composer-form";
 import { CommunityPostComposerFields } from "./components/community-post-composer-fields";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
+import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7212,7 +7213,7 @@ export default function ComunidadePage() {
                 <CommunityPostComposerPublicationHeader>
                   <span style={labelStyle}>Publicação</span>
 
-                  <div style={postComposerHeaderToolsStyle}>
+                  <CommunityPostComposerPublicationTools>
                     <button
                       type="button"
                       disabled={publicandoPost}
@@ -7227,7 +7228,7 @@ export default function ComunidadePage() {
                     </button>
 
                     <span style={charCountStyle}>máx. 700</span>
-                  </div>
+                  </CommunityPostComposerPublicationTools>
                 </CommunityPostComposerPublicationHeader>
 
                 <div style={postComposerSuggestionsSectionStyle}>
@@ -7519,15 +7520,6 @@ const pageStyle: CSSProperties = {
 
 
 
-
-const postComposerHeaderToolsStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
 
 const pollTemplateButtonStyle: CSSProperties = {
   minHeight: "auto",
