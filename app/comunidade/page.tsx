@@ -98,6 +98,7 @@ import { CommunityCommentsSheetHandleBar } from "./components/community-comments
 import { CommunityCommentsSheetHeaderContainer } from "./components/community-comments-sheet-header-container";
 import { CommunityCommentsSheetHeaderSpacer } from "./components/community-comments-sheet-header-spacer";
 import { CommunityCommentsSheetTitle } from "./components/community-comments-sheet-title";
+import { CommunityCommentsSortMenuContainer } from "./components/community-comments-sort-menu-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3267,7 +3268,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
               : `${post.comentarios.length} comentários`}
           </CommunityCommentsSheetTitle>
 
-          <div style={commentsSortMenuWrapStyle}>
+          <CommunityCommentsSortMenuContainer>
             <button
               type="button"
               onClick={() => setMenuOrdenacaoAberto((aberto) => !aberto)}
@@ -3316,7 +3317,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                 </button>
               </div>
             ) : null}
-          </div>
+          </CommunityCommentsSortMenuContainer>
         </CommunityCommentsSheetHeaderContainer>
 
         <section style={commentsSheetListStyle}>
@@ -7848,16 +7849,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSortMenuWrapStyle: CSSProperties = {
-  position: "relative",
-  width: "40px",
-  height: "34px",
-  justifySelf: "end",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-};
 
 const commentsSortMenuTriggerStyle: CSSProperties = {
   width: "34px",
