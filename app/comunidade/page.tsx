@@ -104,6 +104,7 @@ import { CommunityCommentsSortMenuPanel } from "./components/community-comments-
 import { CommunityCommentsSortMenuItem } from "./components/community-comments-sort-menu-item";
 import { CommunityCommentsSortMenuDivider } from "./components/community-comments-sort-menu-divider";
 import { CommunityCommentsListContainer } from "./components/community-comments-list-container";
+import { CommunityCommentThreadContainer } from "./components/community-comment-thread-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3333,7 +3334,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
               const respostasExpandidas = quantidadeVisivel > 0;
 
               return (
-                <section key={comentario.id} style={commentThreadStyle}>
+                <CommunityCommentThreadContainer key={comentario.id}>
                   {renderizarComentario(comentario, comentario.id)}
 
                   {respostasVisiveis.length > 0 ? (
@@ -3399,7 +3400,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                       </button>
                     </div>
                   ) : null}
-                </section>
+                </CommunityCommentThreadContainer>
               );
             })
           ) : (
@@ -7845,12 +7846,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentThreadStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-};
 
 const commentItemStyle: CSSProperties = {
   display: "grid",
