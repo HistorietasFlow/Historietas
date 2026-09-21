@@ -79,6 +79,7 @@ import { CommunityPostComposerPublicationTools } from "./components/community-po
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
 import { CommunityPostComposerCharacterCount } from "./components/community-post-composer-character-count";
 import { CommunityPostComposerSuggestionsSection } from "./components/community-post-composer-suggestions-section";
+import { CommunityPostComposerSuggestionsLabel } from "./components/community-post-composer-suggestions-label";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7231,9 +7232,9 @@ export default function ComunidadePage() {
                 </CommunityPostComposerPublicationHeader>
 
                 <CommunityPostComposerSuggestionsSection>
-                  <span style={postComposerSuggestionsLabelStyle}>
+                  <CommunityPostComposerSuggestionsLabel>
                     Sugestões para começar
-                  </span>
+                  </CommunityPostComposerSuggestionsLabel>
 
                   <div style={postComposerSuggestionsListStyle}>
                     {SUGESTOES_PUBLICACAO_COMUNIDADE.map((sugestao) => (
@@ -7654,14 +7655,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerSuggestionsLabelStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 900,
-  letterSpacing: "0.02em",
-  ...safeTextStyle,
-};
 
 const postComposerSuggestionsListStyle: CSSProperties = {
   display: "flex",
