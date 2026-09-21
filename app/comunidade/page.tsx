@@ -105,6 +105,7 @@ import { CommunityCommentsSortMenuItem } from "./components/community-comments-s
 import { CommunityCommentsSortMenuDivider } from "./components/community-comments-sort-menu-divider";
 import { CommunityCommentsListContainer } from "./components/community-comments-list-container";
 import { CommunityCommentThreadContainer } from "./components/community-comment-thread-container";
+import { CommunityCommentItemContainer } from "./components/community-comment-item-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3077,10 +3078,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
       : commentAvatarLinkStyle;
 
     return (
-      <article
-        key={comentario.id}
-        style={resposta ? commentReplyItemStyle : commentItemStyle}
-      >
+      <CommunityCommentItemContainer key={comentario.id} isReply={resposta}>
         <Link
           href={criarPerfilHrefComunidade(
             comentario.autorId,
@@ -3226,7 +3224,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
             {comentario.curtidas.length}
           </span>
         </div>
-      </article>
+      </CommunityCommentItemContainer>
     );
   }
 
@@ -7847,28 +7845,12 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-const commentItemStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr) 28px",
-  gap: "10px",
-  alignItems: "start",
-  minWidth: 0,
-};
-
 const commentRepliesListStyle: CSSProperties = {
   display: "grid",
   gap: "9px",
   marginLeft: "34px",
   paddingLeft: "10px",
   borderLeft: "1px solid rgba(255,255,255,0.08)",
-  minWidth: 0,
-};
-
-const commentReplyItemStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "28px minmax(0, 1fr) 28px",
-  gap: "8px",
-  alignItems: "start",
   minWidth: 0,
 };
 
