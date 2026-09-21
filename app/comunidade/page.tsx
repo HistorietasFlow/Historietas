@@ -93,6 +93,7 @@ import { CommunityActionFeedbackToast } from "./components/community-action-feed
 import { CommunityCommentsSheetPanel } from "./components/community-comments-sheet-panel";
 import { CommunityCommentsSheetOverlay } from "./components/community-comments-sheet-overlay";
 import { CommunityCommentsSheetBackdrop } from "./components/community-comments-sheet-backdrop";
+import { CommunityCommentsSheetHandleContainer } from "./components/community-comments-sheet-handle-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3231,9 +3232,8 @@ const ComentariosSheet = memo(function ComentariosSheet({
         isDesktop={isDesktop}
         expanded={sheetExpandido}
       >
-        <div
+        <CommunityCommentsSheetHandleContainer
           data-comments-sheet-handle="true"
-          style={commentsSheetHandleWrapStyle}
           onClick={alternarExpansaoComentarios}
           onTouchStart={iniciarArraste}
           onTouchMove={moverArraste}
@@ -3252,7 +3252,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           }}
         >
           <div style={commentsSheetHandleStyle} />
-        </div>
+        </CommunityCommentsSheetHandleContainer>
 
         <header style={commentsSheetHeaderStyle}>
           <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
@@ -7844,17 +7844,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetHandleWrapStyle: CSSProperties = {
-  minHeight: "24px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  touchAction: "none",
-  cursor: "grab",
-  willChange: "transform",
-  outline: "none",
-};
 
 const commentsSheetHandleStyle: CSSProperties = {
   width: "44px",
