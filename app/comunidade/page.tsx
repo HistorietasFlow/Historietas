@@ -84,6 +84,7 @@ import { CommunityPostComposerField } from "./components/community-post-composer
 import { CommunityPostComposerFieldLabel } from "./components/community-post-composer-field-label";
 import { CommunityPostComposerSelect } from "./components/community-post-composer-select";
 import { CommunityPostComposerInput } from "./components/community-post-composer-input";
+import { CommunityPostComposerRelatedWorkSearch } from "./components/community-post-composer-related-work-search";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -7016,7 +7017,7 @@ export default function ComunidadePage() {
                 <CommunityPostComposerField>
                   <CommunityPostComposerFieldLabel>Obra relacionada</CommunityPostComposerFieldLabel>
 
-                  <div style={relatedWorkSearchWrapStyle}>
+                  <CommunityPostComposerRelatedWorkSearch>
                     <CommunityPostComposerInput
                       ref={obraRelacionadaRef}
                       disabled={publicandoPost}
@@ -7079,7 +7080,7 @@ export default function ComunidadePage() {
                           ))}
                         </div>
                       )}
-                  </div>
+                  </CommunityPostComposerRelatedWorkSearch>
                 </CommunityPostComposerField>
 
                 <CommunityPostComposerField>
@@ -7407,11 +7408,7 @@ const pageStyle: CSSProperties = {
 
 
 
-const relatedWorkSearchWrapStyle: CSSProperties = {
-  position: "relative",
-  minWidth: 0,
-  zIndex: 4,
-};
+
 
 const relatedWorkSuggestionsStyle: CSSProperties = {
   position: "relative",
