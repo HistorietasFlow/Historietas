@@ -40,6 +40,7 @@ import { CommunityFeedFiltersContainer } from "./components/community-feed-filte
 import { CommunityFilterControlsRow } from "./components/community-filter-controls-row";
 import { CommunitySearchContainer } from "./components/community-search-container";
 import { CommunitySearchInput } from "./components/community-search-input";
+import { CommunitySearchToggleButton } from "./components/community-search-toggle-button";
 import { CommunityAdvancedFiltersButton } from "./components/community-advanced-filters-button";
 import { CommunityAdvancedFiltersIcon } from "./components/community-advanced-filters-icon";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
@@ -6274,7 +6275,7 @@ export default function ComunidadePage() {
                       />
                     </CommunitySearchContainer>
 
-                    <button
+                    <CommunitySearchToggleButton
                       type="button"
                       onClick={() => {
                         setTermoBusca("");
@@ -6282,7 +6283,6 @@ export default function ComunidadePage() {
                       }}
                       aria-label="Fechar busca"
                       aria-expanded="true"
-                      style={communitySearchToggleStyle}
                     >
                       <svg
                         width="24"
@@ -6306,15 +6306,14 @@ export default function ComunidadePage() {
                           strokeLinecap="round"
                         />
                       </svg>
-                    </button>
+                    </CommunitySearchToggleButton>
                   </>
                 ) : (
-                  <button
+                  <CommunitySearchToggleButton
                     type="button"
                     onClick={() => setBuscaComunidadeAberta(true)}
                     aria-label="Abrir busca"
                     aria-expanded="false"
-                    style={communitySearchToggleStyle}
                   >
                     <svg
                       width="24"
@@ -6338,7 +6337,7 @@ export default function ComunidadePage() {
                         strokeLinecap="round"
                       />
                     </svg>
-                  </button>
+                  </CommunitySearchToggleButton>
                 )}
               </CommunityFilterControlsRow>
 
@@ -7590,29 +7589,6 @@ const selectStyle: CSSProperties = {
 
 
 
-
-const communitySearchToggleStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  width: "34px",
-  height: "34px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  fontFamily: "inherit",
-  fontSize: "24px",
-  lineHeight: 1,
-  fontWeight: 950,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  padding: 0,
-  boxShadow: "none",
-  flex: "0 0 auto",
-  outline: "none",
-  WebkitTapHighlightColor: "transparent",
-};
 
 
 
