@@ -69,6 +69,7 @@ import { CommunityUserSearchSelfBadge } from "./components/community-user-search
 import { CommunityPostsList } from "./components/community-posts-list";
 import { CommunityFeedEmptyMessage } from "./components/community-feed-empty-message";
 import { CommunityPostComposerOverlay } from "./components/community-post-composer-overlay";
+import { CommunityPostComposerBackdrop } from "./components/community-post-composer-backdrop";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7028,16 +7029,13 @@ export default function ComunidadePage() {
       {composerAberto && usuario && typeof document !== "undefined"
         ? createPortal(
             <CommunityPostComposerOverlay>
-          <button
-            type="button"
-            aria-label="Fechar publicação"
+          <CommunityPostComposerBackdrop
             onClick={() => {
               if (!publicandoPost) {
                 setErro("");
                 setComposerAberto(false);
               }
             }}
-            style={postComposerBackdropStyle}
           />
 
           <article style={isDesktop ? postComposerDesktopSheetStyle : postComposerSheetStyle}>
@@ -7686,14 +7684,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerBackdropStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  border: "none",
-  background: "transparent",
-  cursor: "pointer",
-};
 
 const postComposerSheetStyle: CSSProperties = {
   position: "fixed",
