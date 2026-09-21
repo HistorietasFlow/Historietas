@@ -116,6 +116,7 @@ import { CommunityCommentAuthorLink } from "./components/community-comment-autho
 import { CommunityCommentTime } from "./components/community-comment-time";
 import { CommunityCommentText } from "./components/community-comment-text";
 import { CommunityCommentActionsRow } from "./components/community-comment-actions-row";
+import { CommunityCommentReplyButton } from "./components/community-comment-reply-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3117,20 +3118,14 @@ const ComentariosSheet = memo(function ComentariosSheet({
           <CommunityCommentText>{comentario.texto}</CommunityCommentText>
 
           <CommunityCommentActionsRow>
-            <button
-              type="button"
+            <CommunityCommentReplyButton
               onClick={() =>
                 responderComentario(comentario, comentarioRaizId)
               }
               disabled={!podeComentar}
-              style={{
-                ...commentReplyButtonStyle,
-                opacity: podeComentar ? 1 : 0.52,
-                cursor: podeComentar ? "pointer" : "not-allowed",
-              }}
             >
               Responder
-            </button>
+            </CommunityCommentReplyButton>
 
             {podeRemoverComentario ? (
               <button
@@ -7839,18 +7834,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentReplyButtonStyle: CSSProperties = {
-  width: "fit-content",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: "1px 0 0",
-  cursor: "pointer",
-};
 
 const commentRemoveButtonStyle: CSSProperties = {
   width: "fit-content",
