@@ -78,6 +78,7 @@ import { CommunityPostComposerPublicationHeader } from "./components/community-p
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
 import { CommunityPostComposerCharacterCount } from "./components/community-post-composer-character-count";
+import { CommunityPostComposerSuggestionsSection } from "./components/community-post-composer-suggestions-section";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7229,7 +7230,7 @@ export default function ComunidadePage() {
                   </CommunityPostComposerPublicationTools>
                 </CommunityPostComposerPublicationHeader>
 
-                <div style={postComposerSuggestionsSectionStyle}>
+                <CommunityPostComposerSuggestionsSection>
                   <span style={postComposerSuggestionsLabelStyle}>
                     Sugestões para começar
                   </span>
@@ -7253,7 +7254,7 @@ export default function ComunidadePage() {
                       </button>
                     ))}
                   </div>
-                </div>
+                </CommunityPostComposerSuggestionsSection>
 
                 <textarea
                   ref={textoPostRef}
@@ -7653,14 +7654,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerSuggestionsSectionStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px",
-  minWidth: 0,
-  marginTop: "2px",
-  marginBottom: "2px",
-};
 
 const postComposerSuggestionsLabelStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
