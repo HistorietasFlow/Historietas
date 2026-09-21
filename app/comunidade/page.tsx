@@ -132,6 +132,7 @@ import { CommunityCommentsFormContainer } from "./components/community-comments-
 import { CommunityCommentsInputAvatar } from "./components/community-comments-input-avatar";
 import { CommunityCommentsInputBox } from "./components/community-comments-input-box";
 import { CommunityCommentsTextarea } from "./components/community-comments-textarea";
+import { CommunityCommentsMentionButton } from "./components/community-comments-mention-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3397,15 +3398,14 @@ const ComentariosSheet = memo(function ComentariosSheet({
             />
           </CommunityCommentsInputBox>
 
-          <button
+          <CommunityCommentsMentionButton
             type="button"
             onClick={() => inserirNoComentario("@")}
             disabled={!podeComentar}
-            style={commentsInputIconButtonStyle}
             aria-label="Adicionar menção"
           >
             @
-          </button>
+          </CommunityCommentsMentionButton>
 
           <button
             type="submit"
@@ -7782,19 +7782,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsInputIconButtonStyle: CSSProperties = {
-  width: "26px",
-  height: "30px",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "16px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  padding: 0,
-  cursor: "pointer",
-};
 
 const commentsSheetSendStyle: CSSProperties = {
   width: "36px",
