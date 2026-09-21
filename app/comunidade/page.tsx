@@ -87,6 +87,7 @@ import { CommunityPostComposerErrorMessage } from "./components/community-post-c
 import { CommunityPostComposerActionRow } from "./components/community-post-composer-action-row";
 import { CommunityPostComposerSpoilerButton } from "./components/community-post-composer-spoiler-button";
 import { CommunityPostComposerSpoilerLabel } from "./components/community-post-composer-spoiler-label";
+import { CommunityPostComposerSpoilerIndicator } from "./components/community-post-composer-spoiler-indicator";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7280,16 +7281,11 @@ export default function ComunidadePage() {
                     Este post contém spoiler
                   </CommunityPostComposerSpoilerLabel>
 
-                  <span
-                    aria-hidden="true"
-                    style={
-                      temSpoilerPost
-                        ? spoilerComposerCheckActiveStyle
-                        : spoilerComposerCheckStyle
-                    }
+                  <CommunityPostComposerSpoilerIndicator
+                    active={temSpoilerPost}
                   >
                     {temSpoilerPost ? "✓" : ""}
-                  </span>
+                  </CommunityPostComposerSpoilerIndicator>
                 </CommunityPostComposerSpoilerButton>
 
                 <button
@@ -7646,29 +7642,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const spoilerComposerCheckStyle: CSSProperties = {
-  width: "17px",
-  height: "17px",
-  borderRadius: "5px",
-  border: "1px solid var(--historietas-border-soft, rgba(255,255,255,0.18))",
-  background: "rgba(255,255,255,0.035)",
-  color: "transparent",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flex: "0 0 auto",
-  fontSize: "13px",
-  lineHeight: 1,
-  fontWeight: 950,
-};
-
-const spoilerComposerCheckActiveStyle: CSSProperties = {
-  ...spoilerComposerCheckStyle,
-  border: "1px solid var(--historietas-comunidade-success-70, rgba(255,255,255,0.70))",
-  background: "var(--historietas-comunidade-success-10, rgba(255,255,255,0.06))",
-  color: "var(--historietas-comunidade-success, #FFFFFF)",
-};
 
 const primaryButtonStyle: CSSProperties = {
   minHeight: "39px",
