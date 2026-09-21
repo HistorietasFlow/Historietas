@@ -80,6 +80,7 @@ import { CommunityPostComposerPollTemplateButton } from "./components/community-
 import { CommunityPostComposerCharacterCount } from "./components/community-post-composer-character-count";
 import { CommunityPostComposerSuggestionsSection } from "./components/community-post-composer-suggestions-section";
 import { CommunityPostComposerSuggestionsLabel } from "./components/community-post-composer-suggestions-label";
+import { CommunityPostComposerSuggestionsList } from "./components/community-post-composer-suggestions-list";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7236,7 +7237,7 @@ export default function ComunidadePage() {
                     Sugestões para começar
                   </CommunityPostComposerSuggestionsLabel>
 
-                  <div style={postComposerSuggestionsListStyle}>
+                  <CommunityPostComposerSuggestionsList>
                     {SUGESTOES_PUBLICACAO_COMUNIDADE.map((sugestao) => (
                       <button
                         key={sugestao.rotulo}
@@ -7254,7 +7255,7 @@ export default function ComunidadePage() {
                         {sugestao.rotulo}
                       </button>
                     ))}
-                  </div>
+                  </CommunityPostComposerSuggestionsList>
                 </CommunityPostComposerSuggestionsSection>
 
                 <textarea
@@ -7655,18 +7656,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerSuggestionsListStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "6px",
-  minWidth: 0,
-  overflowX: "auto",
-  overflowY: "hidden",
-  paddingBottom: "2px",
-  scrollbarWidth: "none",
-  WebkitOverflowScrolling: "touch",
-};
 
 const postComposerSuggestionButtonStyle: CSSProperties = {
   minHeight: "31px",
