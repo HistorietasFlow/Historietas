@@ -95,6 +95,7 @@ import { CommunityCommentsSheetOverlay } from "./components/community-comments-s
 import { CommunityCommentsSheetBackdrop } from "./components/community-comments-sheet-backdrop";
 import { CommunityCommentsSheetHandleContainer } from "./components/community-comments-sheet-handle-container";
 import { CommunityCommentsSheetHandleBar } from "./components/community-comments-sheet-handle-bar";
+import { CommunityCommentsSheetHeaderContainer } from "./components/community-comments-sheet-header-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3255,7 +3256,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           <CommunityCommentsSheetHandleBar />
         </CommunityCommentsSheetHandleContainer>
 
-        <header style={commentsSheetHeaderStyle}>
+        <CommunityCommentsSheetHeaderContainer>
           <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
 
           <strong style={commentsSheetTitleStyle}>
@@ -3314,7 +3315,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
               </div>
             ) : null}
           </div>
-        </header>
+        </CommunityCommentsSheetHeaderContainer>
 
         <section style={commentsSheetListStyle}>
           {estruturaComentarios.comentariosRaiz.length > 0 ? (
@@ -7845,15 +7846,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetHeaderStyle: CSSProperties = {
-  minHeight: "32px",
-  display: "grid",
-  gridTemplateColumns: "40px minmax(0, 1fr) 40px",
-  alignItems: "center",
-  gap: "6px",
-  minWidth: 0,
-};
 
 const commentsSheetHeaderSpacerStyle: CSSProperties = {
   width: "40px",
