@@ -128,6 +128,7 @@ import { CommunityCommentsErrorNotice } from "./components/community-comments-er
 import { CommunityCommentsToolsContainer } from "./components/community-comments-tools-container";
 import { CommunityCommentsQuickReactionsContainer } from "./components/community-comments-quick-reactions-container";
 import { CommunityCommentsQuickReactionButton } from "./components/community-comments-quick-reaction-button";
+import { CommunityCommentsFormContainer } from "./components/community-comments-form-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3385,7 +3386,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           </CommunityCommentsQuickReactionsContainer>
         </CommunityCommentsToolsContainer>
 
-        <form onSubmit={enviarComentario} style={commentsSheetFormStyle}>
+        <CommunityCommentsFormContainer onSubmit={enviarComentario}>
           <div
             style={criarAvatarComunidadeStyle(
               commentsInputAvatarStyle,
@@ -3442,7 +3443,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           >
             {comentarioEnviando ? "..." : "↑"}
           </button>
-        </form>
+        </CommunityCommentsFormContainer>
       </CommunityCommentsSheetPanel>
     </CommunityCommentsSheetOverlay>,
     document.body
@@ -7802,15 +7803,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetFormStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "30px minmax(0, 1fr) 28px 38px",
-  alignItems: "center",
-  gap: "7px",
-  padding: "7px 0 0",
-  minWidth: 0,
-};
 
 const commentsInputAvatarStyle: CSSProperties = {
   width: "30px",
