@@ -133,6 +133,7 @@ import { CommunityCommentsInputAvatar } from "./components/community-comments-in
 import { CommunityCommentsInputBox } from "./components/community-comments-input-box";
 import { CommunityCommentsTextarea } from "./components/community-comments-textarea";
 import { CommunityCommentsMentionButton } from "./components/community-comments-mention-button";
+import { CommunityCommentsSendButton } from "./components/community-comments-send-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3407,21 +3408,14 @@ const ComentariosSheet = memo(function ComentariosSheet({
             @
           </CommunityCommentsMentionButton>
 
-          <button
+          <CommunityCommentsSendButton
             type="submit"
             aria-label="Enviar comentário"
             disabled={!podeComentar || comentarioEnviando}
-            style={{
-              ...commentsSheetSendStyle,
-              opacity: podeComentar && !comentarioEnviando ? 1 : 0.58,
-              cursor:
-                podeComentar && !comentarioEnviando
-                  ? "pointer"
-                  : "not-allowed",
-            }}
+            active={podeComentar && !comentarioEnviando}
           >
             {comentarioEnviando ? "..." : "↑"}
-          </button>
+          </CommunityCommentsSendButton>
         </CommunityCommentsFormContainer>
       </CommunityCommentsSheetPanel>
     </CommunityCommentsSheetOverlay>,
@@ -7782,22 +7776,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetSendStyle: CSSProperties = {
-  width: "36px",
-  height: "36px",
-  borderRadius: "999px",
-  border:
-    "1px solid var(--historietas-bottom-nav-publish-border, var(--historietas-comunidade-purple-soft-34, rgba(255,255,255,0.18)))",
-  background:
-    "var(--historietas-bottom-nav-publish-bg, var(--historietas-comunidade-purple-72, rgba(255,255,255,0.12)))",
-  color: "#FFFFFF",
-  fontSize: "18px",
-  lineHeight: 1,
-  fontWeight: 950,
-  fontFamily: "inherit",
-  padding: 0,
-};
 
 
 
