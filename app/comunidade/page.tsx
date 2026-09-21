@@ -107,6 +107,7 @@ import { CommunityCommentsListContainer } from "./components/community-comments-
 import { CommunityCommentThreadContainer } from "./components/community-comment-thread-container";
 import { CommunityCommentItemContainer } from "./components/community-comment-item-container";
 import { CommunityCommentRepliesListContainer } from "./components/community-comment-replies-list-container";
+import { CommunityCommentRepliesToggleButton } from "./components/community-comment-replies-toggle-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3345,7 +3346,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                   ) : null}
 
                   {respostas.length > 0 && !respostasExpandidas ? (
-                    <button
+                    <CommunityCommentRepliesToggleButton
                       type="button"
                       onClick={() =>
                         setRespostasVisiveisPorComentario((estadoAtual) => ({
@@ -3353,19 +3354,17 @@ const ComentariosSheet = memo(function ComentariosSheet({
                           [comentario.id]: Math.min(5, respostas.length),
                         }))
                       }
-                      style={commentRepliesToggleStyle}
                     >
-                      <span style={commentRepliesLineStyle} />
                       {`Ver ${respostas.length} ${
                         respostas.length === 1 ? "resposta" : "respostas"
                       }`}
-                    </button>
+                    </CommunityCommentRepliesToggleButton>
                   ) : null}
 
                   {respostasExpandidas ? (
                     <div style={commentRepliesControlsStyle}>
                       {respostasOcultas > 0 ? (
-                        <button
+                        <CommunityCommentRepliesToggleButton
                           type="button"
                           onClick={() =>
                             setRespostasVisiveisPorComentario((estadoAtual) => ({
@@ -3376,13 +3375,11 @@ const ComentariosSheet = memo(function ComentariosSheet({
                               ),
                             }))
                           }
-                          style={commentRepliesToggleStyle}
                         >
-                          <span style={commentRepliesLineStyle} />
                           {`Ver mais ${respostasOcultas} ${
                             respostasOcultas === 1 ? "resposta" : "respostas"
                           }`}
-                        </button>
+                        </CommunityCommentRepliesToggleButton>
                       ) : null}
 
                       <button
@@ -7846,22 +7843,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-const commentRepliesToggleStyle: CSSProperties = {
-  width: "fit-content",
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "8px",
-  marginLeft: "44px",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: "1px 0",
-  cursor: "pointer",
-};
-
 const commentRepliesControlsStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
@@ -7881,12 +7862,6 @@ const commentRepliesHideButtonStyle: CSSProperties = {
   fontFamily: "inherit",
   padding: "1px 0",
   cursor: "pointer",
-};
-
-const commentRepliesLineStyle: CSSProperties = {
-  width: "22px",
-  height: "1px",
-  background: "rgba(255,255,255,0.22)",
 };
 
 const commentAvatarStyle: CSSProperties = {
