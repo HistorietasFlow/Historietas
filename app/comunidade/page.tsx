@@ -83,6 +83,7 @@ import { CommunityPostText } from "./components/community-post-text";
 import { CommunityPostActions } from "./components/community-post-actions";
 import { CommunityPostLikeButton } from "./components/community-post-like-button";
 import { CommunityPostCommentsButton } from "./components/community-post-comments-button";
+import { CommunityPostSpoilerButton } from "./components/community-post-spoiler-button";
 import { CommunityPollBox } from "./components/community-poll-box";
 import { CommunityPollOptions } from "./components/community-poll-options";
 import { CommunityPollOptionButton } from "./components/community-poll-option-button";
@@ -6973,13 +6974,11 @@ export default function ComunidadePage() {
                         />
 
                         {post.temSpoiler && (
-                          <button
-                            type="button"
+                          <CommunityPostSpoilerButton
                             onClick={() => alternarSpoilerRevelado(post.id)}
-                            style={actionButtonStyle}
                           >
                             {ocultarTextoSpoiler ? "REVELAR" : "OCULTAR"}
-                          </button>
+                          </CommunityPostSpoilerButton>
                         )}
                       </CommunityPostActions>
                     </CommunityPostCard>
@@ -8169,26 +8168,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const actionButtonStyle: CSSProperties = {
-  minHeight: "26px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "0",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  padding: "0 4px",
-  cursor: "pointer",
-  minWidth: "0",
-  textAlign: "center",
-  whiteSpace: "nowrap",
-  boxShadow: "none",
-};
 
 const commentsSheetOverlayStyle: CSSProperties = {
   position: "fixed",
