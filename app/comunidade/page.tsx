@@ -37,6 +37,7 @@ import { CommunityMainLayout } from "./components/community-main-layout";
 import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
 import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
+import { CommunityAdvancedFiltersButton } from "./components/community-advanced-filters-button";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
 import { CommunityFeedTabButton } from "./components/community-feed-tab-button";
 import { CommunitySheetOverlay } from "./components/community-sheet-overlay";
@@ -6239,20 +6240,19 @@ export default function ComunidadePage() {
 
             <CommunityFeedFiltersContainer isDesktop={isDesktop}>
               <div style={communityFilterControlsRowStyle}>
-                <button
+                <CommunityAdvancedFiltersButton
                   type="button"
                   aria-label="Abrir filtros, ordenação e ações da comunidade"
                   aria-expanded={menuAcoesRapidasComunidadeAberto}
                   onClick={() =>
                     setMenuAcoesRapidasComunidadeAberto((aberto) => !aberto)
                   }
-                  style={communityFilterLabelButtonStyle}
                 >
                   <span>{textoBotaoFiltrosAvancadosComunidade}</span>
                   <span style={communityFilterActionIconStyle} aria-hidden="true">
                     +
                   </span>
-                </button>
+                </CommunityAdvancedFiltersButton>
 
                 {buscaComunidadeAberta || Boolean(termoBusca.trim()) ? (
                   <>
@@ -7660,34 +7660,6 @@ const communityFilterControlsRowStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: "100%",
   boxSizing: "border-box",
-};
-
-const communityFilterLabelButtonStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  padding: 0,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "flex-start",
-  gap: "8px",
-  minWidth: 0,
-  maxWidth: "46%",
-  flex: "0 1 auto",
-  fontSize: "16px",
-  lineHeight: 1.15,
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  textAlign: "left",
-  letterSpacing: "-0.04em",
-  boxShadow: "none",
-  outline: "none",
-  whiteSpace: "nowrap",
-  WebkitTapHighlightColor: "transparent",
-  ...safeTextStyle,
 };
 
 
