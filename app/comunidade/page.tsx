@@ -77,6 +77,7 @@ import { CommunityPostComposerFields } from "./components/community-post-compose
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
+import { CommunityPostComposerCharacterCount } from "./components/community-post-composer-character-count";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7222,7 +7223,9 @@ export default function ComunidadePage() {
                       Modelo de enquete
                     </CommunityPostComposerPollTemplateButton>
 
-                    <span style={charCountStyle}>máx. 700</span>
+                    <CommunityPostComposerCharacterCount>
+                      máx. 700
+                    </CommunityPostComposerCharacterCount>
                   </CommunityPostComposerPublicationTools>
                 </CommunityPostComposerPublicationHeader>
 
@@ -7530,12 +7533,6 @@ const pageStyle: CSSProperties = {
 
 
 
-
-const charCountStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontWeight: 850,
-};
 
 
 
