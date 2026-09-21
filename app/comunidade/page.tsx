@@ -86,6 +86,7 @@ import { CommunityPostComposerTextarea } from "./components/community-post-compo
 import { CommunityPostComposerErrorMessage } from "./components/community-post-composer-error-message";
 import { CommunityPostComposerActionRow } from "./components/community-post-composer-action-row";
 import { CommunityPostComposerSpoilerButton } from "./components/community-post-composer-spoiler-button";
+import { CommunityPostComposerSpoilerLabel } from "./components/community-post-composer-spoiler-label";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7275,9 +7276,9 @@ export default function ComunidadePage() {
                   disabled={publicandoPost}
                   onClick={() => setTemSpoilerPost((valorAtual) => !valorAtual)}
                 >
-                  <span style={spoilerComposerLabelStyle}>
+                  <CommunityPostComposerSpoilerLabel>
                     Este post contém spoiler
-                  </span>
+                  </CommunityPostComposerSpoilerLabel>
 
                   <span
                     aria-hidden="true"
@@ -7645,13 +7646,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const spoilerComposerLabelStyle: CSSProperties = {
-  minWidth: 0,
-  flex: "1 1 auto",
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const spoilerComposerCheckStyle: CSSProperties = {
   width: "17px",
