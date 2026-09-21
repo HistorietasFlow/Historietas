@@ -115,6 +115,7 @@ import { CommunityCommentAuthorTimeRow } from "./components/community-comment-au
 import { CommunityCommentAuthorLink } from "./components/community-comment-author-link";
 import { CommunityCommentTime } from "./components/community-comment-time";
 import { CommunityCommentText } from "./components/community-comment-text";
+import { CommunityCommentActionsRow } from "./components/community-comment-actions-row";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3115,7 +3116,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
 
           <CommunityCommentText>{comentario.texto}</CommunityCommentText>
 
-          <div style={commentActionsRowStyle}>
+          <CommunityCommentActionsRow>
             <button
               type="button"
               onClick={() =>
@@ -3162,7 +3163,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                 {comentarioDenunciando ? "Enviando..." : "Denunciar"}
               </button>
             ) : null}
-          </div>
+          </CommunityCommentActionsRow>
         </CommunityCommentContentContainer>
 
         <div style={commentLikeWrapStyle}>
@@ -7838,13 +7839,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentActionsRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
-  flexWrap: "wrap",
-};
 
 const commentReplyButtonStyle: CSSProperties = {
   width: "fit-content",
