@@ -142,6 +142,7 @@ import { CommunityPostAuthorAvatar } from "./components/community-post-author-av
 import { CommunityPostAuthorMeta } from "./components/community-post-author-meta";
 import { CommunityPostAuthorLink } from "./components/community-post-author-link";
 import { CommunityPostStatusLine } from "./components/community-post-status-line";
+import { CommunityPostStatusSeparator } from "./components/community-post-status-separator";
 import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
 import { CommunityPostOptionsContainer } from "./components/community-post-options-container";
@@ -6766,7 +6767,7 @@ export default function ComunidadePage() {
                             {post.fixado && (
                               <>
                                 {" "}
-                                <span style={postBadgeSeparatorStyle}>·</span>
+                                <CommunityPostStatusSeparator />
                                 {" "}
                                 <CommunityPostPinnedBadge>Fixado</CommunityPostPinnedBadge>
                               </>
@@ -6774,7 +6775,7 @@ export default function ComunidadePage() {
                             {post.visibilidade !== "publico" && (
                               <>
                                 {" "}
-                                <span style={postBadgeSeparatorStyle}>·</span>
+                                <CommunityPostStatusSeparator />
                                 {" "}
                                 <CommunityPostVisibilityBadge>
                                   {obterRotuloVisibilidadePostComunidade(
@@ -7703,13 +7704,6 @@ const communityFilterActionIconStyle: CSSProperties = {
 
 
 
-
-const postBadgeSeparatorStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "11px",
-  fontWeight: 900,
-  lineHeight: 1,
-};
 
 
 
