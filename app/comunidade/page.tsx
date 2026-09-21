@@ -92,6 +92,7 @@ import { CommunityPostComposerPublishButton } from "./components/community-post-
 import { CommunityActionFeedbackToast } from "./components/community-action-feedback-toast";
 import { CommunityCommentsSheetPanel } from "./components/community-comments-sheet-panel";
 import { CommunityCommentsSheetOverlay } from "./components/community-comments-sheet-overlay";
+import { CommunityCommentsSheetBackdrop } from "./components/community-comments-sheet-backdrop";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3223,12 +3224,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
 
   return createPortal(
     <CommunityCommentsSheetOverlay>
-      <button
-        type="button"
-        aria-label="Fechar comentários"
-        onClick={fecharComentarios}
-        style={commentsSheetBackdropStyle}
-      />
+      <CommunityCommentsSheetBackdrop onClick={fecharComentarios} />
 
       <CommunityCommentsSheetPanel
         ref={sheetRef}
@@ -7848,19 +7844,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetBackdropStyle: CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  zIndex: 0,
-  border: "none",
-  background: "rgba(3, 2, 8, 0.42)",
-  backdropFilter: "blur(4px)",
-  WebkitBackdropFilter: "blur(4px)",
-  pointerEvents: "auto",
-  cursor: "pointer",
-  padding: 0,
-};
 
 const commentsSheetHandleWrapStyle: CSSProperties = {
   minHeight: "24px",
