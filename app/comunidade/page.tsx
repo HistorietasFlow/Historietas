@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -113,6 +112,7 @@ import { CommunityCommentRepliesHideButton } from "./components/community-commen
 import { CommunityCommentAvatar } from "./components/community-comment-avatar";
 import { CommunityCommentContentContainer } from "./components/community-comment-content-container";
 import { CommunityCommentAuthorTimeRow } from "./components/community-comment-author-time-row";
+import { CommunityCommentAuthorLink } from "./components/community-comment-author-link";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3094,15 +3094,14 @@ const ComentariosSheet = memo(function ComentariosSheet({
 
         <CommunityCommentContentContainer>
           <CommunityCommentAuthorTimeRow>
-            <Link
+            <CommunityCommentAuthorLink
               href={criarPerfilHrefComunidade(
                 comentario.autorId,
                 comentario.autorNome
               )}
-              style={commentAuthorLinkStyle}
             >
               {comentario.autorNome}
-            </Link>
+            </CommunityCommentAuthorLink>
 
             <span style={commentTimeStyle}>
               {formatarTempoRelativoComentarioComunidade(
@@ -7837,19 +7836,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentAuthorStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "12px",
-  fontWeight: 950,
-};
-
-const commentAuthorLinkStyle: CSSProperties = {
-  ...commentAuthorStyle,
-  textDecoration: "none",
-  cursor: "pointer",
-  ...safeTextStyle,
-};
 
 const commentTimeStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
