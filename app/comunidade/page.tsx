@@ -126,6 +126,7 @@ import { CommunityCommentHeartIcon } from "./components/community-comment-heart-
 import { CommunityCommentsEmptyMessage } from "./components/community-comments-empty-message";
 import { CommunityCommentsErrorNotice } from "./components/community-comments-error-notice";
 import { CommunityCommentsToolsContainer } from "./components/community-comments-tools-container";
+import { CommunityCommentsQuickReactionsContainer } from "./components/community-comments-quick-reactions-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3368,7 +3369,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
         ) : null}
 
         <CommunityCommentsToolsContainer>
-          <div style={commentsQuickReactionsStyle}>
+          <CommunityCommentsQuickReactionsContainer>
             {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
               <button
                 key={emoji}
@@ -3381,7 +3382,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                 {emoji}
               </button>
             ))}
-          </div>
+          </CommunityCommentsQuickReactionsContainer>
         </CommunityCommentsToolsContainer>
 
         <form onSubmit={enviarComentario} style={commentsSheetFormStyle}>
@@ -7801,18 +7802,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsQuickReactionsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "6px",
-  width: "100%",
-  overflowX: "auto",
-  padding: "0 1px",
-  scrollbarWidth: "none",
-  WebkitOverflowScrolling: "touch",
-};
 
 const commentsQuickReactionButtonStyle: CSSProperties = {
   width: "30px",
