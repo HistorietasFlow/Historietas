@@ -88,6 +88,7 @@ import { CommunityPostComposerActionRow } from "./components/community-post-comp
 import { CommunityPostComposerSpoilerButton } from "./components/community-post-composer-spoiler-button";
 import { CommunityPostComposerSpoilerLabel } from "./components/community-post-composer-spoiler-label";
 import { CommunityPostComposerSpoilerIndicator } from "./components/community-post-composer-spoiler-indicator";
+import { CommunityPostComposerPublishButton } from "./components/community-post-composer-publish-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7288,17 +7289,11 @@ export default function ComunidadePage() {
                   </CommunityPostComposerSpoilerIndicator>
                 </CommunityPostComposerSpoilerButton>
 
-                <button
-                  type="submit"
+                <CommunityPostComposerPublishButton
                   disabled={publicandoPost}
-                  style={{
-                    ...primaryButtonStyle,
-                    opacity: publicandoPost ? 0.64 : 1,
-                    cursor: publicandoPost ? "not-allowed" : "pointer",
-                  }}
                 >
                   {publicandoPost ? "Publicando..." : "Publicar"}
-                </button>
+                </CommunityPostComposerPublishButton>
               </CommunityPostComposerActionRow>
             </CommunityPostComposerForm>
           </CommunityPostComposerPanel>
@@ -7642,22 +7637,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const primaryButtonStyle: CSSProperties = {
-  minHeight: "39px",
-  borderRadius: "999px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "var(--historietas-comunidade-surface, #050505)",
-  color: "#FFFFFF",
-  fontSize: "12.5px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  textAlign: "center",
-  padding: "0 14px",
-  boxShadow: "none",
-  cursor: "pointer",
-  ...safeTextStyle,
-};
 
 
 
