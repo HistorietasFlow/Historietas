@@ -101,6 +101,7 @@ import { CommunityCommentsSheetTitle } from "./components/community-comments-she
 import { CommunityCommentsSortMenuContainer } from "./components/community-comments-sort-menu-container";
 import { CommunityCommentsSortMenuTrigger } from "./components/community-comments-sort-menu-trigger";
 import { CommunityCommentsSortMenuPanel } from "./components/community-comments-sort-menu-panel";
+import { CommunityCommentsSortMenuItem } from "./components/community-comments-sort-menu-item";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3283,39 +3284,31 @@ const ComentariosSheet = memo(function ComentariosSheet({
 
             {menuOrdenacaoAberto ? (
               <CommunityCommentsSortMenuPanel role="menu">
-                <button
+                <CommunityCommentsSortMenuItem
                   type="button"
                   onClick={() => {
                     setOrdenacaoComentarios("relevantes");
                     setMenuOrdenacaoAberto(false);
                   }}
-                  style={
-                    ordenacaoComentarios === "relevantes"
-                      ? commentsSortMenuItemActiveStyle
-                      : commentsSortMenuItemStyle
-                  }
+                  active={ordenacaoComentarios === "relevantes"}
                   role="menuitem"
                 >
                   Relevantes
-                </button>
+                </CommunityCommentsSortMenuItem>
 
                 <div style={commentsSortMenuDividerStyle} aria-hidden="true" />
 
-                <button
+                <CommunityCommentsSortMenuItem
                   type="button"
                   onClick={() => {
                     setOrdenacaoComentarios("recentes");
                     setMenuOrdenacaoAberto(false);
                   }}
-                  style={
-                    ordenacaoComentarios === "recentes"
-                      ? commentsSortMenuItemActiveStyle
-                      : commentsSortMenuItemStyle
-                  }
+                  active={ordenacaoComentarios === "recentes"}
                   role="menuitem"
                 >
                   Recentes
-                </button>
+                </CommunityCommentsSortMenuItem>
               </CommunityCommentsSortMenuPanel>
             ) : null}
           </CommunityCommentsSortMenuContainer>
@@ -7850,26 +7843,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSortMenuItemStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "36px",
-  border: "none",
-  borderRadius: 0,
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  padding: "0 4px",
-  textAlign: "center",
-  fontSize: "11.5px",
-  fontWeight: 850,
-  fontFamily: "inherit",
-  cursor: "pointer",
-};
-
-const commentsSortMenuItemActiveStyle: CSSProperties = {
-  ...commentsSortMenuItemStyle,
-  color: "#FFFFFF",
-};
 
 const commentsSortMenuDividerStyle: CSSProperties = {
   width: "100%",
