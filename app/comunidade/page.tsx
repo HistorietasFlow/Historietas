@@ -38,6 +38,7 @@ import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
 import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
 import { CommunityAdvancedFiltersButton } from "./components/community-advanced-filters-button";
+import { CommunityAdvancedFiltersIcon } from "./components/community-advanced-filters-icon";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
 import { CommunityFeedTabButton } from "./components/community-feed-tab-button";
 import { CommunitySheetOverlay } from "./components/community-sheet-overlay";
@@ -6249,9 +6250,9 @@ export default function ComunidadePage() {
                   }
                 >
                   <span>{textoBotaoFiltrosAvancadosComunidade}</span>
-                  <span style={communityFilterActionIconStyle} aria-hidden="true">
+                  <CommunityAdvancedFiltersIcon>
                     +
-                  </span>
+                  </CommunityAdvancedFiltersIcon>
                 </CommunityAdvancedFiltersButton>
 
                 {buscaComunidadeAberta || Boolean(termoBusca.trim()) ? (
@@ -7663,14 +7664,6 @@ const communityFilterControlsRowStyle: CSSProperties = {
 };
 
 
-
-const communityFilterActionIconStyle: CSSProperties = {
-  color: "#FFFFFF",
-  fontSize: "21px",
-  lineHeight: 1,
-  fontWeight: 700,
-  flex: "0 0 auto",
-};
 
 
 
