@@ -122,6 +122,7 @@ import { CommunityCommentReportButton } from "./components/community-comment-rep
 import { CommunityCommentLikeContainer } from "./components/community-comment-like-container";
 import { CommunityCommentLikeButton } from "./components/community-comment-like-button";
 import { CommunityCommentLikeCount } from "./components/community-comment-like-count";
+import { CommunityCommentHeartIcon } from "./components/community-comment-heart-icon";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3169,33 +3170,9 @@ const ComentariosSheet = memo(function ComentariosSheet({
             }
             disabled={!podeComentar || comentarioCurtindo}
           >
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              style={{
-                ...commentHeartIconStyle,
-                animation: usuarioCurtiuComentario
-                  ? "historietas-comunidade-heart-pop 260ms ease-out"
-                  : "none",
-              }}
-            >
-              <path
-                d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                fill={
-                  usuarioCurtiuComentario
-                    ? "var(--historietas-comunidade-heart, #FFFFFF)"
-                    : "none"
-                }
-                stroke={
-                  usuarioCurtiuComentario
-                    ? "var(--historietas-comunidade-heart, #FFFFFF)"
-                    : "#FFFFFF"
-                }
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <CommunityCommentHeartIcon
+              liked={usuarioCurtiuComentario}
+            />
           </CommunityCommentLikeButton>
 
           <CommunityCommentLikeCount>
@@ -7817,14 +7794,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentHeartIconStyle: CSSProperties = {
-  width: "19px",
-  height: "19px",
-  display: "block",
-  flex: "0 0 auto",
-  transformOrigin: "center",
-};
 
 const emptyCommentsStyle: CSSProperties = {
   margin: "10px 0 0",
