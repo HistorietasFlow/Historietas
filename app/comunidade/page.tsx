@@ -68,6 +68,7 @@ import { CommunityUserSearchFollowButton } from "./components/community-user-sea
 import { CommunityUserSearchSelfBadge } from "./components/community-user-search-self-badge";
 import { CommunityPostsList } from "./components/community-posts-list";
 import { CommunityFeedEmptyMessage } from "./components/community-feed-empty-message";
+import { CommunityPostComposerOverlay } from "./components/community-post-composer-overlay";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7026,7 +7027,7 @@ export default function ComunidadePage() {
 
       {composerAberto && usuario && typeof document !== "undefined"
         ? createPortal(
-            <section style={postComposerOverlayStyle} aria-label="Criar publicação">
+            <CommunityPostComposerOverlay>
           <button
             type="button"
             aria-label="Fechar publicação"
@@ -7316,7 +7317,7 @@ export default function ComunidadePage() {
               </div>
             </form>
           </article>
-            </section>,
+            </CommunityPostComposerOverlay>,
             document.body
           )
         : null}
@@ -7685,24 +7686,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerOverlayStyle: CSSProperties = {
-  position: "fixed",
-  left: 0,
-  right: 0,
-  top: 0,
-  bottom: 0,
-  height: "100dvh",
-  zIndex: 240,
-  display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "center",
-  background: "rgba(0,0,0,0.68)",
-  padding: 0,
-  boxSizing: "border-box",
-  overscrollBehavior: "none",
-  touchAction: "none",
-};
 
 const postComposerBackdropStyle: CSSProperties = {
   position: "absolute",
