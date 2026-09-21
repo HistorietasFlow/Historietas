@@ -88,6 +88,7 @@ import { CommunityPostComposerRelatedWorkSearch } from "./components/community-p
 import { CommunityPostComposerRelatedWorkSuggestions } from "./components/community-post-composer-related-work-suggestions";
 import { CommunityPostComposerRelatedWorkSuggestionButton } from "./components/community-post-composer-related-work-suggestion-button";
 import { CommunityPostComposerRelatedWorkSuggestionContent } from "./components/community-post-composer-related-work-suggestion-content";
+import { CommunityPostComposerRelatedWorkSuggestionTitle } from "./components/community-post-composer-related-work-suggestion-title";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -7066,9 +7067,9 @@ export default function ComunidadePage() {
                               }}
                             >
                               <CommunityPostComposerRelatedWorkSuggestionContent>
-                                <strong data-historietas-user-content="true" style={relatedWorkSuggestionTitleStyle}>
+                                <CommunityPostComposerRelatedWorkSuggestionTitle>
                                   {obra.titulo}
-                                </strong>
+                                </CommunityPostComposerRelatedWorkSuggestionTitle>
 
                                 <span data-historietas-user-content="true" style={relatedWorkSuggestionAuthorStyle}>
                                   {obra.autor}
@@ -7418,13 +7419,7 @@ const pageStyle: CSSProperties = {
 
 
 
-const relatedWorkSuggestionTitleStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "13px",
-  lineHeight: 1.15,
-  fontWeight: 950,
-  ...safeTextStyle,
-};
+
 
 const relatedWorkSuggestionAuthorStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #D4D4D8)",
