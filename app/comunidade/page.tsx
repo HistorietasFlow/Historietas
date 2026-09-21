@@ -76,6 +76,7 @@ import { CommunityPostComposerForm } from "./components/community-post-composer-
 import { CommunityPostComposerFields } from "./components/community-post-composer-fields";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
+import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7214,18 +7215,12 @@ export default function ComunidadePage() {
                   <span style={labelStyle}>Publicação</span>
 
                   <CommunityPostComposerPublicationTools>
-                    <button
-                      type="button"
+                    <CommunityPostComposerPollTemplateButton
                       disabled={publicandoPost}
                       onClick={prepararEnqueteComunidade}
-                      style={{
-                        ...pollTemplateButtonStyle,
-                        opacity: publicandoPost ? 0.58 : 1,
-                        cursor: publicandoPost ? "not-allowed" : "pointer",
-                      }}
                     >
                       Modelo de enquete
-                    </button>
+                    </CommunityPostComposerPollTemplateButton>
 
                     <span style={charCountStyle}>máx. 700</span>
                   </CommunityPostComposerPublicationTools>
@@ -7520,20 +7515,6 @@ const pageStyle: CSSProperties = {
 
 
 
-
-const pollTemplateButtonStyle: CSSProperties = {
-  minHeight: "auto",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  padding: 0,
-  fontSize: "10px",
-  fontWeight: 950,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  boxShadow: "none",
-  ...safeTextStyle,
-};
 
 
 
