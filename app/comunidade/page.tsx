@@ -123,6 +123,7 @@ import { CommunityCommentLikeContainer } from "./components/community-comment-li
 import { CommunityCommentLikeButton } from "./components/community-comment-like-button";
 import { CommunityCommentLikeCount } from "./components/community-comment-like-count";
 import { CommunityCommentHeartIcon } from "./components/community-comment-heart-icon";
+import { CommunityCommentsEmptyMessage } from "./components/community-comments-empty-message";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3352,7 +3353,9 @@ const ComentariosSheet = memo(function ComentariosSheet({
               );
             })
           ) : (
-            <p style={emptyCommentsStyle}>Sem comentários ainda</p>
+            <CommunityCommentsEmptyMessage>
+              Sem comentários ainda
+            </CommunityCommentsEmptyMessage>
           )}
         </CommunityCommentsListContainer>
 
@@ -7794,14 +7797,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const emptyCommentsStyle: CSSProperties = {
-  margin: "10px 0 0",
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 800,
-  textAlign: "center",
-};
 
 const commentsSheetErrorStyle: CSSProperties = {
   display: "block",
