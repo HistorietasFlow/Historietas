@@ -39,6 +39,7 @@ import { CommunityFeedErrorNotice } from "./components/community-feed-error-noti
 import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
 import { CommunityFilterControlsRow } from "./components/community-filter-controls-row";
 import { CommunitySearchContainer } from "./components/community-search-container";
+import { CommunitySearchInput } from "./components/community-search-input";
 import { CommunityAdvancedFiltersButton } from "./components/community-advanced-filters-button";
 import { CommunityAdvancedFiltersIcon } from "./components/community-advanced-filters-icon";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
@@ -6260,7 +6261,7 @@ export default function ComunidadePage() {
                 {buscaComunidadeAberta || Boolean(termoBusca.trim()) ? (
                   <>
                     <CommunitySearchContainer>
-                      <input
+                      <CommunitySearchInput
                         aria-label="Buscar publicações ou usuários"
                         value={termoBusca}
                         onChange={(event) => setTermoBusca(event.target.value)}
@@ -6269,7 +6270,6 @@ export default function ComunidadePage() {
                         autoCorrect="off"
                         spellCheck={false}
                         maxLength={90}
-                        style={communitySearchInputStyle}
                         autoFocus
                       />
                     </CommunitySearchContainer>
@@ -7590,24 +7590,6 @@ const selectStyle: CSSProperties = {
 
 
 
-
-const communitySearchInputStyle: CSSProperties = {
-  appearance: "none",
-  WebkitAppearance: "none",
-  flex: "1 1 auto",
-  width: "100%",
-  minWidth: 0,
-  height: "34px",
-  border: "none",
-  background: "transparent",
-  color: "#FFFFFF",
-  outline: "none",
-  fontFamily: "inherit",
-  fontSize: "14px",
-  fontWeight: 800,
-  letterSpacing: "-0.025em",
-  boxSizing: "border-box",
-};
 
 const communitySearchToggleStyle: CSSProperties = {
   appearance: "none",
