@@ -120,6 +120,7 @@ import { CommunityCommentReplyButton } from "./components/community-comment-repl
 import { CommunityCommentRemoveButton } from "./components/community-comment-remove-button";
 import { CommunityCommentReportButton } from "./components/community-comment-report-button";
 import { CommunityCommentLikeContainer } from "./components/community-comment-like-container";
+import { CommunityCommentLikeButton } from "./components/community-comment-like-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3153,9 +3154,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
         </CommunityCommentContentContainer>
 
         <CommunityCommentLikeContainer>
-          <button
-            type="button"
-            data-historietas-community-like="comment"
+          <CommunityCommentLikeButton
             aria-pressed={usuarioCurtiuComentario}
             aria-label={`${
               usuarioCurtiuComentario
@@ -3168,14 +3167,6 @@ const ComentariosSheet = memo(function ComentariosSheet({
               curtirComentarioSeguro(post?.id || "", comentario.id)
             }
             disabled={!podeComentar || comentarioCurtindo}
-            style={{
-              ...commentLikeButtonStyle,
-              opacity: podeComentar && !comentarioCurtindo ? 1 : 0.58,
-              cursor:
-                podeComentar && !comentarioCurtindo
-                  ? "pointer"
-                  : "not-allowed",
-            }}
           >
             <svg
               viewBox="0 0 24 24"
@@ -3204,7 +3195,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                 strokeLinejoin="round"
               />
             </svg>
-          </button>
+          </CommunityCommentLikeButton>
 
           <span style={commentLikeCountStyle}>
             {comentario.curtidas.length}
@@ -7825,19 +7816,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentLikeButtonStyle: CSSProperties = {
-  width: "28px",
-  height: "28px",
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-  cursor: "pointer",
-};
 
 const commentLikeCountStyle: CSSProperties = {
   color: "var(--historietas-text-secondary, #A1A1AA)",
