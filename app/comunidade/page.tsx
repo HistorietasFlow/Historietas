@@ -91,6 +91,7 @@ import { CommunityPostComposerSpoilerIndicator } from "./components/community-po
 import { CommunityPostComposerPublishButton } from "./components/community-post-composer-publish-button";
 import { CommunityActionFeedbackToast } from "./components/community-action-feedback-toast";
 import { CommunityCommentsSheetPanel } from "./components/community-comments-sheet-panel";
+import { CommunityCommentsSheetOverlay } from "./components/community-comments-sheet-overlay";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3221,11 +3222,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
   }
 
   return createPortal(
-    <section
-      data-historietas-comunidade-sheet="true"
-      style={commentsSheetOverlayStyle}
-      aria-label="Comentários"
-    >
+    <CommunityCommentsSheetOverlay>
       <button
         type="button"
         aria-label="Fechar comentários"
@@ -3493,7 +3490,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           </button>
         </form>
       </CommunityCommentsSheetPanel>
-    </section>,
+    </CommunityCommentsSheetOverlay>,
     document.body
   );
 });
@@ -7851,17 +7848,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetOverlayStyle: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 2147483647,
-  display: "flex",
-  alignItems: "flex-end",
-  justifyContent: "center",
-  pointerEvents: "none",
-  isolation: "isolate",
-};
 
 const commentsSheetBackdropStyle: CSSProperties = {
   position: "absolute",
