@@ -113,6 +113,7 @@ import { CommunityCommentAvatar } from "./components/community-comment-avatar";
 import { CommunityCommentContentContainer } from "./components/community-comment-content-container";
 import { CommunityCommentAuthorTimeRow } from "./components/community-comment-author-time-row";
 import { CommunityCommentAuthorLink } from "./components/community-comment-author-link";
+import { CommunityCommentTime } from "./components/community-comment-time";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3103,12 +3104,12 @@ const ComentariosSheet = memo(function ComentariosSheet({
               {comentario.autorNome}
             </CommunityCommentAuthorLink>
 
-            <span style={commentTimeStyle}>
+            <CommunityCommentTime>
               {formatarTempoRelativoComentarioComunidade(
                 comentario.criadoEm,
                 agoraComentarios
               )}
-            </span>
+            </CommunityCommentTime>
           </CommunityCommentAuthorTimeRow>
 
           <p data-historietas-user-content="true" style={commentTextStyle}>{comentario.texto}</p>
@@ -7836,13 +7837,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentTimeStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10.5px",
-  fontWeight: 750,
-  whiteSpace: "nowrap",
-};
 
 const commentTextStyle: CSSProperties = {
   margin: 0,
