@@ -87,6 +87,7 @@ import { CommunityPostComposerInput } from "./components/community-post-composer
 import { CommunityPostComposerRelatedWorkSearch } from "./components/community-post-composer-related-work-search";
 import { CommunityPostComposerRelatedWorkSuggestions } from "./components/community-post-composer-related-work-suggestions";
 import { CommunityPostComposerRelatedWorkSuggestionButton } from "./components/community-post-composer-related-work-suggestion-button";
+import { CommunityPostComposerRelatedWorkSuggestionContent } from "./components/community-post-composer-related-work-suggestion-content";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -7064,7 +7065,7 @@ export default function ComunidadePage() {
                                 selecionarObraRelacionada(obra.titulo);
                               }}
                             >
-                              <span style={relatedWorkSuggestionContentStyle}>
+                              <CommunityPostComposerRelatedWorkSuggestionContent>
                                 <strong data-historietas-user-content="true" style={relatedWorkSuggestionTitleStyle}>
                                   {obra.titulo}
                                 </strong>
@@ -7072,7 +7073,7 @@ export default function ComunidadePage() {
                                 <span data-historietas-user-content="true" style={relatedWorkSuggestionAuthorStyle}>
                                   {obra.autor}
                                 </span>
-                              </span>
+                              </CommunityPostComposerRelatedWorkSuggestionContent>
 
                               <span style={relatedWorkSuggestionBadgeStyle}>
                                 OBRA
@@ -7415,11 +7416,7 @@ const pageStyle: CSSProperties = {
 
 
 
-const relatedWorkSuggestionContentStyle: CSSProperties = {
-  display: "grid",
-  gap: "4px",
-  minWidth: 0,
-};
+
 
 const relatedWorkSuggestionTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
