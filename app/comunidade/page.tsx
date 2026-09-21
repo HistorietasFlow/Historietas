@@ -94,6 +94,7 @@ import { CommunityCommentsSheetPanel } from "./components/community-comments-she
 import { CommunityCommentsSheetOverlay } from "./components/community-comments-sheet-overlay";
 import { CommunityCommentsSheetBackdrop } from "./components/community-comments-sheet-backdrop";
 import { CommunityCommentsSheetHandleContainer } from "./components/community-comments-sheet-handle-container";
+import { CommunityCommentsSheetHandleBar } from "./components/community-comments-sheet-handle-bar";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3251,7 +3252,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
             }
           }}
         >
-          <div style={commentsSheetHandleStyle} />
+          <CommunityCommentsSheetHandleBar />
         </CommunityCommentsSheetHandleContainer>
 
         <header style={commentsSheetHeaderStyle}>
@@ -7844,13 +7845,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetHandleStyle: CSSProperties = {
-  width: "44px",
-  height: "5px",
-  borderRadius: "999px",
-  background: "var(--historietas-border-soft, rgba(255,255,255,0.34))",
-};
 
 const commentsSheetHeaderStyle: CSSProperties = {
   minHeight: "32px",
