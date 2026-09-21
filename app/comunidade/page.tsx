@@ -85,6 +85,7 @@ import { CommunityPostComposerFieldLabel } from "./components/community-post-com
 import { CommunityPostComposerSelect } from "./components/community-post-composer-select";
 import { CommunityPostComposerInput } from "./components/community-post-composer-input";
 import { CommunityPostComposerRelatedWorkSearch } from "./components/community-post-composer-related-work-search";
+import { CommunityPostComposerRelatedWorkSuggestions } from "./components/community-post-composer-related-work-suggestions";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -7052,7 +7053,7 @@ export default function ComunidadePage() {
 
                     {sugestoesObrasAbertas &&
                       sugestoesObrasRelacionadasVisiveis.length > 0 && (
-                        <div style={relatedWorkSuggestionsStyle}>
+                        <CommunityPostComposerRelatedWorkSuggestions>
                           {sugestoesObrasRelacionadasVisiveis.map((obra) => (
                             <button
                               key={obra.id}
@@ -7078,7 +7079,7 @@ export default function ComunidadePage() {
                               </span>
                             </button>
                           ))}
-                        </div>
+                        </CommunityPostComposerRelatedWorkSuggestions>
                       )}
                   </CommunityPostComposerRelatedWorkSearch>
                 </CommunityPostComposerField>
@@ -7410,25 +7411,7 @@ const pageStyle: CSSProperties = {
 
 
 
-const relatedWorkSuggestionsStyle: CSSProperties = {
-  position: "relative",
-  top: "auto",
-  left: "auto",
-  right: "auto",
-  zIndex: 1,
-  display: "grid",
-  gap: 0,
-  marginTop: "8px",
-  padding: "0 8px",
-  borderRadius: 0,
-  border: "none",
-  background: "transparent",
-  boxShadow: "none",
-  maxHeight: "260px",
-  overflowY: "auto",
-  WebkitOverflowScrolling: "touch",
-  boxSizing: "border-box",
-};
+
 
 const relatedWorkSuggestionButtonStyle: CSSProperties = {
   minHeight: "58px",
