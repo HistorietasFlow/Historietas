@@ -83,6 +83,7 @@ import { CommunityPostComposerSuggestionsLabel } from "./components/community-po
 import { CommunityPostComposerSuggestionsList } from "./components/community-post-composer-suggestions-list";
 import { CommunityPostComposerSuggestionButton } from "./components/community-post-composer-suggestion-button";
 import { CommunityPostComposerTextarea } from "./components/community-post-composer-textarea";
+import { CommunityPostComposerErrorMessage } from "./components/community-post-composer-error-message";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7260,7 +7261,11 @@ export default function ComunidadePage() {
                 />
               </label>
 
-              {erro && <span style={errorStyle}>{erro}</span>}
+              {erro && (
+                <CommunityPostComposerErrorMessage>
+                  {erro}
+                </CommunityPostComposerErrorMessage>
+              )}
 
               <div style={postComposerActionRowStyle}>
                 <button
@@ -7730,20 +7735,6 @@ const primaryButtonStyle: CSSProperties = {
 };
 
 
-
-const errorStyle: CSSProperties = {
-  display: "block",
-  padding: "9px 11px",
-  borderRadius: "15px",
-  background: "var(--historietas-danger-surface, var(--historietas-comunidade-danger-bg-12, rgba(255,255,255,0.08)))",
-  border:
-    "1px solid var(--historietas-comunidade-danger-24, rgba(255,255,255,0.12))",
-  color: "var(--historietas-danger-button-text, var(--historietas-comunidade-danger-text, #FFFFFF))",
-  fontSize: "12px",
-  fontWeight: 850,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 
 
