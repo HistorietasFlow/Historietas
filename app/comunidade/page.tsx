@@ -147,6 +147,7 @@ import { CommunityPostBadgeSeparator } from "./components/community-post-badge-s
 import { CommunityPostOptionsContainer } from "./components/community-post-options-container";
 import { CommunityPostOptionsButton } from "./components/community-post-options-button";
 import { CommunityPostPinnedBadge } from "./components/community-post-pinned-badge";
+import { CommunityPostVisibilityBadge } from "./components/community-post-visibility-badge";
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityPostText } from "./components/community-post-text";
@@ -6775,11 +6776,11 @@ export default function ComunidadePage() {
                                 {" "}
                                 <span style={postBadgeSeparatorStyle}>·</span>
                                 {" "}
-                                <span style={postVisibilityBadgeStyle}>
+                                <CommunityPostVisibilityBadge>
                                   {obterRotuloVisibilidadePostComunidade(
                                     post.visibilidade,
                                   )}
-                                </span>
+                                </CommunityPostVisibilityBadge>
                               </>
                             )}
                           </CommunityPostStatusLine>
@@ -7708,30 +7709,6 @@ const postBadgeSeparatorStyle: CSSProperties = {
   fontSize: "11px",
   fontWeight: 900,
   lineHeight: 1,
-};
-
-const postTypeBadgeStyle: CSSProperties = {
-  width: "fit-content",
-  maxWidth: "100%",
-  padding: 0,
-  borderRadius: 0,
-  background: "transparent",
-  border: "none",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
-
-const pinnedPostBadgeStyle: CSSProperties = {
-  ...postTypeBadgeStyle,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontWeight: 800,
-};
-
-const postVisibilityBadgeStyle: CSSProperties = {
-  ...pinnedPostBadgeStyle,
-  color: "var(--historietas-text-secondary, #A1A1AA)",
 };
 
 
