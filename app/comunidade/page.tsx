@@ -83,6 +83,7 @@ import { CommunityPostComposerFields } from "./components/community-post-compose
 import { CommunityPostComposerField } from "./components/community-post-composer-field";
 import { CommunityPostComposerFieldLabel } from "./components/community-post-composer-field-label";
 import { CommunityPostComposerSelect } from "./components/community-post-composer-select";
+import { CommunityPostComposerInput } from "./components/community-post-composer-input";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -7016,7 +7017,7 @@ export default function ComunidadePage() {
                   <CommunityPostComposerFieldLabel>Obra relacionada</CommunityPostComposerFieldLabel>
 
                   <div style={relatedWorkSearchWrapStyle}>
-                    <input
+                    <CommunityPostComposerInput
                       ref={obraRelacionadaRef}
                       disabled={publicandoPost}
                       value={obraRelacionadaBusca}
@@ -7046,7 +7047,6 @@ export default function ComunidadePage() {
                       autoCorrect="off"
                       spellCheck={false}
                       maxLength={90}
-                      style={inputStyle}
                     />
 
                     {sugestoesObrasAbertas &&
@@ -7085,7 +7085,7 @@ export default function ComunidadePage() {
                 <CommunityPostComposerField>
                   <CommunityPostComposerFieldLabel>Capítulo relacionado</CommunityPostComposerFieldLabel>
 
-                  <input
+                  <CommunityPostComposerInput
                     disabled={publicandoPost || !obraRelacionadaBusca.trim()}
                     value={capituloRelacionadoPost}
                     onChange={(event) =>
@@ -7097,7 +7097,6 @@ export default function ComunidadePage() {
                     spellCheck={false}
                     maxLength={60}
                     style={{
-                      ...inputStyle,
                       opacity: obraRelacionadaBusca.trim() ? 1 : 0.58,
                       cursor: obraRelacionadaBusca.trim()
                         ? "text"
@@ -7406,21 +7405,7 @@ const pageStyle: CSSProperties = {
 
 
 
-const inputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "38px",
-  borderRadius: "15px",
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "var(--historietas-comunidade-bg-deep, #000000)",
-  color: "var(--historietas-input-text, #FFFFFF)",
-  padding: "0 12px",
-  outline: "none",
-  fontSize: "13px",
-  fontWeight: 750,
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-  minWidth: 0,
-};
+
 
 const relatedWorkSearchWrapStyle: CSSProperties = {
   position: "relative",
