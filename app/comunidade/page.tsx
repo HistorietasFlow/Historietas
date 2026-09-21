@@ -103,6 +103,7 @@ import { CommunityCommentsSortMenuTrigger } from "./components/community-comment
 import { CommunityCommentsSortMenuPanel } from "./components/community-comments-sort-menu-panel";
 import { CommunityCommentsSortMenuItem } from "./components/community-comments-sort-menu-item";
 import { CommunityCommentsSortMenuDivider } from "./components/community-comments-sort-menu-divider";
+import { CommunityCommentsListContainer } from "./components/community-comments-list-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3315,7 +3316,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           </CommunityCommentsSortMenuContainer>
         </CommunityCommentsSheetHeaderContainer>
 
-        <section style={commentsSheetListStyle}>
+        <CommunityCommentsListContainer>
           {estruturaComentarios.comentariosRaiz.length > 0 ? (
             estruturaComentarios.comentariosRaiz.map((comentario) => {
               const respostas =
@@ -3404,7 +3405,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           ) : (
             <p style={emptyCommentsStyle}>Sem comentários ainda</p>
           )}
-        </section>
+        </CommunityCommentsListContainer>
 
         {erroInteracao ? (
           <span style={commentsSheetErrorStyle}>{erroInteracao}</span>
@@ -7844,16 +7845,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetListStyle: CSSProperties = {
-  display: "grid",
-  alignContent: "start",
-  gap: "12px",
-  minHeight: 0,
-  overflowY: "auto",
-  padding: "6px 2px 9px",
-  WebkitOverflowScrolling: "touch",
-};
 
 const commentThreadStyle: CSSProperties = {
   display: "grid",
