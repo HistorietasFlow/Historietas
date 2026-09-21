@@ -102,6 +102,7 @@ import { CommunityCommentsSortMenuContainer } from "./components/community-comme
 import { CommunityCommentsSortMenuTrigger } from "./components/community-comments-sort-menu-trigger";
 import { CommunityCommentsSortMenuPanel } from "./components/community-comments-sort-menu-panel";
 import { CommunityCommentsSortMenuItem } from "./components/community-comments-sort-menu-item";
+import { CommunityCommentsSortMenuDivider } from "./components/community-comments-sort-menu-divider";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3296,7 +3297,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                   Relevantes
                 </CommunityCommentsSortMenuItem>
 
-                <div style={commentsSortMenuDividerStyle} aria-hidden="true" />
+                <CommunityCommentsSortMenuDivider />
 
                 <CommunityCommentsSortMenuItem
                   type="button"
@@ -7843,12 +7844,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSortMenuDividerStyle: CSSProperties = {
-  width: "100%",
-  height: "1px",
-  background: "rgba(255,255,255,0.12)",
-};
 
 const commentsSheetListStyle: CSSProperties = {
   display: "grid",
