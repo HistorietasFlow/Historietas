@@ -144,6 +144,7 @@ import { CommunityPostAuthorLink } from "./components/community-post-author-link
 import { CommunityPostStatusLine } from "./components/community-post-status-line";
 import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
+import { CommunityPostOptionsContainer } from "./components/community-post-options-container";
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityPostText } from "./components/community-post-text";
@@ -6605,7 +6606,7 @@ export default function ComunidadePage() {
                     obrasRelacionadasSugestoes
                   );
                   const opcoesPublicacao = (
-                    <div style={postOptionsWrapStyle}>
+                    <CommunityPostOptionsContainer>
                       <button
                         type="button"
                         aria-label="Abrir opções da publicação"
@@ -6731,7 +6732,7 @@ export default function ComunidadePage() {
                             document.body
                           )
                         : null}
-                    </div>
+                    </CommunityPostOptionsContainer>
                   );
 
                   return (
@@ -7732,18 +7733,6 @@ const postVisibilityBadgeStyle: CSSProperties = {
 };
 
 
-
-const postOptionsWrapStyle: CSSProperties = {
-  position: "relative",
-  display: "flex",
-  justifyContent: "flex-end",
-  alignItems: "center",
-  flex: "0 0 24px",
-  width: "24px",
-  minWidth: "24px",
-  overflow: "visible",
-  zIndex: 40,
-};
 
 const postOptionsButtonStyle: CSSProperties = {
   width: "24px",
