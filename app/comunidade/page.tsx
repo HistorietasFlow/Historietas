@@ -124,6 +124,7 @@ import { CommunityCommentLikeButton } from "./components/community-comment-like-
 import { CommunityCommentLikeCount } from "./components/community-comment-like-count";
 import { CommunityCommentHeartIcon } from "./components/community-comment-heart-icon";
 import { CommunityCommentsEmptyMessage } from "./components/community-comments-empty-message";
+import { CommunityCommentsErrorNotice } from "./components/community-comments-error-notice";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3360,7 +3361,9 @@ const ComentariosSheet = memo(function ComentariosSheet({
         </CommunityCommentsListContainer>
 
         {erroInteracao ? (
-          <span style={commentsSheetErrorStyle}>{erroInteracao}</span>
+          <CommunityCommentsErrorNotice>
+            {erroInteracao}
+          </CommunityCommentsErrorNotice>
         ) : null}
 
         <section style={commentsToolsStyle}>
@@ -7797,20 +7800,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetErrorStyle: CSSProperties = {
-  display: "block",
-  padding: "8px 10px",
-  borderRadius: "14px",
-  background: "var(--historietas-danger-surface, var(--historietas-comunidade-danger-bg-12, rgba(255,255,255,0.08)))",
-  border: "1px solid var(--historietas-comunidade-danger-24, rgba(255,255,255,0.12))",
-  color: "var(--historietas-danger-button-text, var(--historietas-comunidade-danger-text, #FFFFFF))",
-  fontSize: "11px",
-  fontWeight: 850,
-  lineHeight: 1.35,
-  textAlign: "center",
-  ...safeTextStyle,
-};
 
 const commentsToolsStyle: CSSProperties = {
   display: "grid",
