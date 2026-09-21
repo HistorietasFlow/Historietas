@@ -81,6 +81,7 @@ import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityPostText } from "./components/community-post-text";
 import { CommunityPostActions } from "./components/community-post-actions";
+import { CommunityPostLikeButton } from "./components/community-post-like-button";
 import { CommunityPollBox } from "./components/community-poll-box";
 import { CommunityPollOptions } from "./components/community-poll-options";
 import { CommunityPollOptionButton } from "./components/community-poll-option-button";
@@ -6950,58 +6951,19 @@ export default function ComunidadePage() {
                       )}
 
                       <CommunityPostActions desktop={isDesktop}>
-                        <button
-                          type="button"
-                          data-historietas-community-like="post"
+                        <CommunityPostLikeButton
                           onClick={() => alternarCurtida(post.id)}
                           disabled={postCurtindo}
-                          style={{
-                            ...postReactionButtonStyle,
-                            opacity: postCurtindo ? 0.58 : 1,
-                            cursor: postCurtindo ? "not-allowed" : "pointer",
-                          }}
-                          aria-pressed={usuarioCurtiu}
-                          aria-label={`${
-                            usuarioCurtiu
+                          liked={usuarioCurtiu}
+                          count={contarCurtidasUnicasPostComunidade(post)}
+                          ariaLabel={`${usuarioCurtiu
                               ? "Remover curtida da publicação"
                               : "Curtir publicação"
-                          }. ${contarCurtidasUnicasPostComunidade(post)} ${
-                            contarCurtidasUnicasPostComunidade(post) === 1
+                          }. ${contarCurtidasUnicasPostComunidade(post)} ${contarCurtidasUnicasPostComunidade(post) === 1
                               ? "curtida"
                               : "curtidas"
                           }`}
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            style={{
-                              ...postHeartIconStyle,
-                              animation: usuarioCurtiu
-                                ? "historietas-comunidade-heart-pop 260ms ease-out"
-                                : "none",
-                            }}
-                          >
-                            <path
-                              d="M20.7 5.3c-1.8-1.9-4.7-1.9-6.5 0L12 7.6 9.8 5.3c-1.8-1.9-4.7-1.9-6.5 0-1.8 1.9-1.8 5 0 6.9L12 21l8.7-8.8c1.8-1.9 1.8-5 0-6.9Z"
-                              fill={
-                                usuarioCurtiu
-                                  ? "var(--historietas-comunidade-heart, #FFFFFF)"
-                                  : "none"
-                              }
-                              stroke={
-                                usuarioCurtiu
-                                  ? "var(--historietas-comunidade-heart, #FFFFFF)"
-                                  : "#FFFFFF"
-                              }
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                          <span style={postReactionCountStyle}>
-                            {contarCurtidasUnicasPostComunidade(post)}
-                          </span>
-                        </button>
+                        />
 
                         <button
                           type="button"
@@ -8249,14 +8211,6 @@ const postReactionIconStyle: CSSProperties = {
   flex: "0 0 14px",
   fontSize: "13px",
   lineHeight: 1,
-};
-
-const postHeartIconStyle: CSSProperties = {
-  width: "18px",
-  height: "18px",
-  display: "block",
-  flex: "0 0 auto",
-  transformOrigin: "center",
 };
 
 const postReactionCountStyle: CSSProperties = {
