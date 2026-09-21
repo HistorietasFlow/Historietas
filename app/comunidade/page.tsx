@@ -109,6 +109,7 @@ import { CommunityCommentItemContainer } from "./components/community-comment-it
 import { CommunityCommentRepliesListContainer } from "./components/community-comment-replies-list-container";
 import { CommunityCommentRepliesToggleButton } from "./components/community-comment-replies-toggle-button";
 import { CommunityCommentRepliesControlsContainer } from "./components/community-comment-replies-controls-container";
+import { CommunityCommentRepliesHideButton } from "./components/community-comment-replies-hide-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3383,7 +3384,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                         </CommunityCommentRepliesToggleButton>
                       ) : null}
 
-                      <button
+                      <CommunityCommentRepliesHideButton
                         type="button"
                         onClick={() =>
                           setRespostasVisiveisPorComentario((estadoAtual) => ({
@@ -3391,10 +3392,9 @@ const ComentariosSheet = memo(function ComentariosSheet({
                             [comentario.id]: 0,
                           }))
                         }
-                        style={commentRepliesHideButtonStyle}
                       >
                         Ocultar respostas
-                      </button>
+                      </CommunityCommentRepliesHideButton>
                     </CommunityCommentRepliesControlsContainer>
                   ) : null}
                 </CommunityCommentThreadContainer>
@@ -7843,19 +7843,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentRepliesHideButtonStyle: CSSProperties = {
-  width: "fit-content",
-  marginLeft: "44px",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: "1px 0",
-  cursor: "pointer",
-};
 
 const commentAvatarStyle: CSSProperties = {
   width: "34px",
