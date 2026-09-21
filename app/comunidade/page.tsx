@@ -121,6 +121,7 @@ import { CommunityCommentRemoveButton } from "./components/community-comment-rem
 import { CommunityCommentReportButton } from "./components/community-comment-report-button";
 import { CommunityCommentLikeContainer } from "./components/community-comment-like-container";
 import { CommunityCommentLikeButton } from "./components/community-comment-like-button";
+import { CommunityCommentLikeCount } from "./components/community-comment-like-count";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3197,9 +3198,9 @@ const ComentariosSheet = memo(function ComentariosSheet({
             </svg>
           </CommunityCommentLikeButton>
 
-          <span style={commentLikeCountStyle}>
+          <CommunityCommentLikeCount>
             {comentario.curtidas.length}
-          </span>
+          </CommunityCommentLikeCount>
         </CommunityCommentLikeContainer>
       </CommunityCommentItemContainer>
     );
@@ -7816,15 +7817,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentLikeCountStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #A1A1AA)",
-  fontSize: "10px",
-  fontWeight: 900,
-  lineHeight: 1,
-  minHeight: "10px",
-  textAlign: "center",
-};
 
 const commentHeartIconStyle: CSSProperties = {
   width: "19px",
