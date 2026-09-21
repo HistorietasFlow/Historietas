@@ -82,6 +82,7 @@ import { CommunityPostComposerSuggestionsSection } from "./components/community-
 import { CommunityPostComposerSuggestionsLabel } from "./components/community-post-composer-suggestions-label";
 import { CommunityPostComposerSuggestionsList } from "./components/community-post-composer-suggestions-list";
 import { CommunityPostComposerSuggestionButton } from "./components/community-post-composer-suggestion-button";
+import { CommunityPostComposerTextarea } from "./components/community-post-composer-textarea";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7253,16 +7254,9 @@ export default function ComunidadePage() {
                   </CommunityPostComposerSuggestionsList>
                 </CommunityPostComposerSuggestionsSection>
 
-                <textarea
+                <CommunityPostComposerTextarea
                   ref={textoPostRef}
                   disabled={publicandoPost}
-                  placeholder="Abra uma conversa, peça indicação ou divulgue uma obra real publicada..."
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  maxLength={700}
-                  rows={3}
-                  style={postComposerTextareaStyle}
                 />
               </label>
 
@@ -7651,18 +7645,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerTextareaStyle: CSSProperties = {
-  ...inputStyle,
-  minHeight: "66px",
-  maxHeight: "130px",
-  borderRadius: "17px",
-  padding: "10px 12px",
-  resize: "none",
-  lineHeight: 1.45,
-  overflowY: "auto",
-  WebkitOverflowScrolling: "touch",
-};
 
 const postComposerActionRowStyle: CSSProperties = {
   display: "grid",
