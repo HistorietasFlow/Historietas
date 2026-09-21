@@ -82,6 +82,7 @@ import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidd
 import { CommunityPostText } from "./components/community-post-text";
 import { CommunityPostActions } from "./components/community-post-actions";
 import { CommunityPostLikeButton } from "./components/community-post-like-button";
+import { CommunityPostCommentsButton } from "./components/community-post-comments-button";
 import { CommunityPollBox } from "./components/community-poll-box";
 import { CommunityPollOptions } from "./components/community-poll-options";
 import { CommunityPollOptionButton } from "./components/community-poll-option-button";
@@ -6965,19 +6966,11 @@ export default function ComunidadePage() {
                           }`}
                         />
 
-                        <button
-                          type="button"
+                        <CommunityPostCommentsButton
                           onClick={() => abrirComentarios(post.id)}
-                          style={postReactionButtonStyle}
-                          aria-label={`${contarComentaristasUnicosPostComunidade(post)} comentários`}
-                        >
-                          <span style={postReactionIconStyle} aria-hidden="true">
-                            💬
-                          </span>
-                          <span style={postReactionCountStyle}>
-                            {contarComentaristasUnicosPostComunidade(post)}
-                          </span>
-                        </button>
+                          count={contarComentaristasUnicosPostComunidade(post)}
+                          ariaLabel={`${contarComentaristasUnicosPostComunidade(post)} comentários`}
+                        />
 
                         {post.temSpoiler && (
                           <button
@@ -8196,30 +8189,6 @@ const actionButtonStyle: CSSProperties = {
   whiteSpace: "nowrap",
   boxShadow: "none",
 };
-
-const postReactionButtonStyle: CSSProperties = {
-  ...actionButtonStyle,
-  gap: "4px",
-};
-
-const postReactionIconStyle: CSSProperties = {
-  width: "14px",
-  height: "14px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flex: "0 0 14px",
-  fontSize: "13px",
-  lineHeight: 1,
-};
-
-const postReactionCountStyle: CSSProperties = {
-  color: "#FFFFFF",
-  WebkitTextFillColor: "#FFFFFF",
-  fontSize: "12px",
-  lineHeight: 1,
-};
-
 
 const commentsSheetOverlayStyle: CSSProperties = {
   position: "fixed",
