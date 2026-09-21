@@ -84,6 +84,7 @@ import { CommunityPostComposerSuggestionsList } from "./components/community-pos
 import { CommunityPostComposerSuggestionButton } from "./components/community-post-composer-suggestion-button";
 import { CommunityPostComposerTextarea } from "./components/community-post-composer-textarea";
 import { CommunityPostComposerErrorMessage } from "./components/community-post-composer-error-message";
+import { CommunityPostComposerActionRow } from "./components/community-post-composer-action-row";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7267,7 +7268,7 @@ export default function ComunidadePage() {
                 </CommunityPostComposerErrorMessage>
               )}
 
-              <div style={postComposerActionRowStyle}>
+              <CommunityPostComposerActionRow>
                 <button
                   type="button"
                   disabled={publicandoPost}
@@ -7307,7 +7308,7 @@ export default function ComunidadePage() {
                 >
                   {publicandoPost ? "Publicando..." : "Publicar"}
                 </button>
-              </div>
+              </CommunityPostComposerActionRow>
             </CommunityPostComposerForm>
           </CommunityPostComposerPanel>
             </CommunityPostComposerOverlay>,
@@ -7650,14 +7651,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerActionRowStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: "8px",
-  minWidth: 0,
-};
 
 const spoilerComposerStyle: CSSProperties = {
   minHeight: "39px",
