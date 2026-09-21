@@ -110,6 +110,7 @@ import { CommunityCommentRepliesListContainer } from "./components/community-com
 import { CommunityCommentRepliesToggleButton } from "./components/community-comment-replies-toggle-button";
 import { CommunityCommentRepliesControlsContainer } from "./components/community-comment-replies-controls-container";
 import { CommunityCommentRepliesHideButton } from "./components/community-comment-replies-hide-button";
+import { CommunityCommentAvatar } from "./components/community-comment-avatar";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3077,26 +3078,17 @@ const ComentariosSheet = memo(function ComentariosSheet({
     const comentarioCurtindo = comentarioCurtindoId === comentario.id;
     const comentarioRemovendo = comentarioRemovendoId === comentario.id;
     const comentarioDenunciando = comentarioDenunciandoId === comentario.id;
-    const avatarBaseStyle = resposta
-      ? commentReplyAvatarLinkStyle
-      : commentAvatarLinkStyle;
-
     return (
       <CommunityCommentItemContainer key={comentario.id} isReply={resposta}>
-        <Link
+        <CommunityCommentAvatar
           href={criarPerfilHrefComunidade(
             comentario.autorId,
             comentario.autorNome
           )}
-          aria-label={`Abrir perfil de ${comentario.autorNome}`}
-          style={criarAvatarComunidadeStyle(
-            avatarBaseStyle,
-            comentario.autorAvatar
-          )}
-        >
-          {!comentario.autorAvatar &&
-            (comentario.autorNome.slice(0, 1).toUpperCase() || "U")}
-        </Link>
+          authorName={comentario.autorNome}
+          avatar={comentario.autorAvatar}
+          isReply={resposta}
+        />
 
         <div style={commentContentStyle}>
           <div style={commentTopLineStyle}>
@@ -7843,40 +7835,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentAvatarStyle: CSSProperties = {
-  width: "34px",
-  height: "34px",
-  borderRadius: "12px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-comunidade-bg-deep, #000000)",
-  border: "1px solid var(--historietas-comunidade-purple-58, rgba(255,255,255,0.10))",
-  color: "#FFFFFF",
-  fontSize: "12.5px",
-  lineHeight: 1,
-  fontWeight: 950,
-  letterSpacing: "-0.03em",
-  boxShadow: "none",
-  flex: "0 0 auto",
-  overflow: "hidden",
-  boxSizing: "border-box",
-};
-
-const commentAvatarLinkStyle: CSSProperties = {
-  ...commentAvatarStyle,
-  textDecoration: "none",
-  cursor: "pointer",
-};
-
-const commentReplyAvatarLinkStyle: CSSProperties = {
-  ...commentAvatarLinkStyle,
-  width: "28px",
-  height: "28px",
-  borderRadius: "10px",
-  fontSize: "10.5px",
-};
 
 const commentContentStyle: CSSProperties = {
   position: "relative",
