@@ -146,6 +146,7 @@ import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
 import { CommunityPostOptionsContainer } from "./components/community-post-options-container";
 import { CommunityPostOptionsButton } from "./components/community-post-options-button";
+import { CommunityPostPinnedBadge } from "./components/community-post-pinned-badge";
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityPostText } from "./components/community-post-text";
@@ -6766,7 +6767,7 @@ export default function ComunidadePage() {
                                 {" "}
                                 <span style={postBadgeSeparatorStyle}>·</span>
                                 {" "}
-                                <span style={pinnedPostBadgeStyle}>Fixado</span>
+                                <CommunityPostPinnedBadge>Fixado</CommunityPostPinnedBadge>
                               </>
                             )}
                             {post.visibilidade !== "publico" && (
