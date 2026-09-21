@@ -85,6 +85,7 @@ import { CommunityPostComposerSuggestionButton } from "./components/community-po
 import { CommunityPostComposerTextarea } from "./components/community-post-composer-textarea";
 import { CommunityPostComposerErrorMessage } from "./components/community-post-composer-error-message";
 import { CommunityPostComposerActionRow } from "./components/community-post-composer-action-row";
+import { CommunityPostComposerSpoilerButton } from "./components/community-post-composer-spoiler-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7269,17 +7270,10 @@ export default function ComunidadePage() {
               )}
 
               <CommunityPostComposerActionRow>
-                <button
-                  type="button"
+                <CommunityPostComposerSpoilerButton
+                  active={temSpoilerPost}
                   disabled={publicandoPost}
                   onClick={() => setTemSpoilerPost((valorAtual) => !valorAtual)}
-                  style={{
-                    ...(temSpoilerPost
-                      ? spoilerComposerActiveStyle
-                      : spoilerComposerStyle),
-                    opacity: publicandoPost ? 0.58 : 1,
-                    cursor: publicandoPost ? "not-allowed" : "pointer",
-                  }}
                 >
                   <span style={spoilerComposerLabelStyle}>
                     Este post contém spoiler
@@ -7295,7 +7289,7 @@ export default function ComunidadePage() {
                   >
                     {temSpoilerPost ? "✓" : ""}
                   </span>
-                </button>
+                </CommunityPostComposerSpoilerButton>
 
                 <button
                   type="submit"
@@ -7651,35 +7645,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const spoilerComposerStyle: CSSProperties = {
-  minHeight: "39px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "8px",
-  padding: "0 10px 0 12px",
-  borderRadius: "999px",
-  background: "var(--historietas-comunidade-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
-  fontSize: "12px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  width: "100%",
-  maxWidth: "100%",
-  textAlign: "center",
-  boxSizing: "border-box",
-  ...safeTextStyle,
-};
-
-const spoilerComposerActiveStyle: CSSProperties = {
-  ...spoilerComposerStyle,
-  background: "var(--historietas-comunidade-surface, #050505)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  color: "#FFFFFF",
-};
 
 const spoilerComposerLabelStyle: CSSProperties = {
   minWidth: 0,
