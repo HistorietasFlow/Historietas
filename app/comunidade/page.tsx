@@ -86,6 +86,7 @@ import { CommunityPostComposerSelect } from "./components/community-post-compose
 import { CommunityPostComposerInput } from "./components/community-post-composer-input";
 import { CommunityPostComposerRelatedWorkSearch } from "./components/community-post-composer-related-work-search";
 import { CommunityPostComposerRelatedWorkSuggestions } from "./components/community-post-composer-related-work-suggestions";
+import { CommunityPostComposerRelatedWorkSuggestionButton } from "./components/community-post-composer-related-work-suggestion-button";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -7055,14 +7056,13 @@ export default function ComunidadePage() {
                       sugestoesObrasRelacionadasVisiveis.length > 0 && (
                         <CommunityPostComposerRelatedWorkSuggestions>
                           {sugestoesObrasRelacionadasVisiveis.map((obra) => (
-                            <button
+                            <CommunityPostComposerRelatedWorkSuggestionButton
                               key={obra.id}
                               type="button"
                               onMouseDown={(event) => {
                                 event.preventDefault();
                                 selecionarObraRelacionada(obra.titulo);
                               }}
-                              style={relatedWorkSuggestionButtonStyle}
                             >
                               <span style={relatedWorkSuggestionContentStyle}>
                                 <strong data-historietas-user-content="true" style={relatedWorkSuggestionTitleStyle}>
@@ -7077,7 +7077,7 @@ export default function ComunidadePage() {
                               <span style={relatedWorkSuggestionBadgeStyle}>
                                 OBRA
                               </span>
-                            </button>
+                            </CommunityPostComposerRelatedWorkSuggestionButton>
                           ))}
                         </CommunityPostComposerRelatedWorkSuggestions>
                       )}
@@ -7413,25 +7413,7 @@ const pageStyle: CSSProperties = {
 
 
 
-const relatedWorkSuggestionButtonStyle: CSSProperties = {
-  minHeight: "58px",
-  width: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  padding: "12px 0",
-  borderRadius: 0,
-  border: "none",
-  borderBottom: "1px solid rgba(255,255,255,0.10)",
-  background: "transparent",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontFamily: "inherit",
-  cursor: "pointer",
-  textAlign: "left",
-  minWidth: 0,
-  boxSizing: "border-box",
-};
+
 
 const relatedWorkSuggestionContentStyle: CSSProperties = {
   display: "grid",
