@@ -129,6 +129,7 @@ import { CommunityCommentsToolsContainer } from "./components/community-comments
 import { CommunityCommentsQuickReactionsContainer } from "./components/community-comments-quick-reactions-container";
 import { CommunityCommentsQuickReactionButton } from "./components/community-comments-quick-reaction-button";
 import { CommunityCommentsFormContainer } from "./components/community-comments-form-container";
+import { CommunityCommentsInputAvatar } from "./components/community-comments-input-avatar";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -1222,26 +1223,6 @@ function obterAvatarProfileComunidade(profile: PerfilComunidadeRow | undefined) 
     obterTextoProfileComunidade(profile, "imagem_url") ||
     obterTextoProfileComunidade(profile, "photo_url")
   );
-}
-
-function criarAvatarComunidadeStyle(
-  estiloBase: CSSProperties,
-  avatar: string
-): CSSProperties {
-  const avatarLimpo = avatar.trim();
-
-  if (!avatarLimpo) {
-    return estiloBase;
-  }
-
-  return {
-    ...estiloBase,
-    backgroundImage: `url(${avatarLimpo})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    color: "transparent",
-    WebkitTextFillColor: "transparent",
-  };
 }
 
 function criarLoginHrefComunidade() {
@@ -3387,15 +3368,12 @@ const ComentariosSheet = memo(function ComentariosSheet({
         </CommunityCommentsToolsContainer>
 
         <CommunityCommentsFormContainer onSubmit={enviarComentario}>
-          <div
-            style={criarAvatarComunidadeStyle(
-              commentsInputAvatarStyle,
-              podeComentar ? usuarioAvatar : ""
-            )}
+          <CommunityCommentsInputAvatar
+            avatar={podeComentar ? usuarioAvatar : ""}
           >
             {!(podeComentar && usuarioAvatar) &&
               (podeComentar ? usuarioNome : "H").slice(0, 1).toUpperCase()}
-          </div>
+          </CommunityCommentsInputAvatar>
 
           <div style={commentsInputBoxStyle}>
             <textarea
@@ -7803,21 +7781,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsInputAvatarStyle: CSSProperties = {
-  width: "30px",
-  height: "30px",
-  borderRadius: "11px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "var(--historietas-comunidade-bg-deep, #000000)",
-  border: "1px solid var(--historietas-comunidade-purple-58, rgba(255,255,255,0.10))",
-  color: "#FFFFFF",
-  fontSize: "11.5px",
-  fontWeight: 950,
-  overflow: "hidden",
-};
 
 const commentsInputBoxStyle: CSSProperties = {
   minWidth: 0,
