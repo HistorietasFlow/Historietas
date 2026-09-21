@@ -96,6 +96,7 @@ import { CommunityCommentsSheetBackdrop } from "./components/community-comments-
 import { CommunityCommentsSheetHandleContainer } from "./components/community-comments-sheet-handle-container";
 import { CommunityCommentsSheetHandleBar } from "./components/community-comments-sheet-handle-bar";
 import { CommunityCommentsSheetHeaderContainer } from "./components/community-comments-sheet-header-container";
+import { CommunityCommentsSheetHeaderSpacer } from "./components/community-comments-sheet-header-spacer";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3257,7 +3258,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
         </CommunityCommentsSheetHandleContainer>
 
         <CommunityCommentsSheetHeaderContainer>
-          <span style={commentsSheetHeaderSpacerStyle} aria-hidden="true" />
+          <CommunityCommentsSheetHeaderSpacer />
 
           <strong style={commentsSheetTitleStyle}>
             {post.comentarios.length === 1
@@ -7846,11 +7847,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSheetHeaderSpacerStyle: CSSProperties = {
-  width: "40px",
-  height: "1px",
-};
 
 const commentsSheetTitleStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
