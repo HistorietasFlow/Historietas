@@ -119,6 +119,7 @@ import { CommunityCommentActionsRow } from "./components/community-comment-actio
 import { CommunityCommentReplyButton } from "./components/community-comment-reply-button";
 import { CommunityCommentRemoveButton } from "./components/community-comment-remove-button";
 import { CommunityCommentReportButton } from "./components/community-comment-report-button";
+import { CommunityCommentLikeContainer } from "./components/community-comment-like-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3151,7 +3152,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           </CommunityCommentActionsRow>
         </CommunityCommentContentContainer>
 
-        <div style={commentLikeWrapStyle}>
+        <CommunityCommentLikeContainer>
           <button
             type="button"
             data-historietas-community-like="comment"
@@ -3208,7 +3209,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
           <span style={commentLikeCountStyle}>
             {comentario.curtidas.length}
           </span>
-        </div>
+        </CommunityCommentLikeContainer>
       </CommunityCommentItemContainer>
     );
   }
@@ -7824,14 +7825,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentLikeWrapStyle: CSSProperties = {
-  minWidth: "28px",
-  display: "grid",
-  justifyItems: "center",
-  alignContent: "start",
-  gap: "2px",
-};
 
 const commentLikeButtonStyle: CSSProperties = {
   width: "28px",
