@@ -41,6 +41,7 @@ import { CommunityFilterControlsRow } from "./components/community-filter-contro
 import { CommunitySearchContainer } from "./components/community-search-container";
 import { CommunitySearchInput } from "./components/community-search-input";
 import { CommunitySearchToggleButton } from "./components/community-search-toggle-button";
+import { CommunitySearchIcon } from "./components/community-search-icon";
 import { CommunityAdvancedFiltersButton } from "./components/community-advanced-filters-button";
 import { CommunityAdvancedFiltersIcon } from "./components/community-advanced-filters-icon";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
@@ -6284,28 +6285,7 @@ export default function ComunidadePage() {
                       aria-label="Fechar busca"
                       aria-expanded="true"
                     >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        aria-hidden="true"
-                      >
-                        <circle
-                          cx="10.85"
-                          cy="10.85"
-                          r="6.65"
-                          stroke="currentColor"
-                          strokeWidth="2.15"
-                        />
-                        <path
-                          d="M16.05 16.05L20.25 20.25"
-                          stroke="currentColor"
-                          strokeWidth="2.15"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                      <CommunitySearchIcon />
                     </CommunitySearchToggleButton>
                   </>
                 ) : (
@@ -6315,28 +6295,7 @@ export default function ComunidadePage() {
                     aria-label="Abrir busca"
                     aria-expanded="false"
                   >
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <circle
-                        cx="10.85"
-                        cy="10.85"
-                        r="6.65"
-                        stroke="currentColor"
-                        strokeWidth="2.15"
-                      />
-                      <path
-                        d="M16.05 16.05L20.25 20.25"
-                        stroke="currentColor"
-                        strokeWidth="2.15"
-                        strokeLinecap="round"
-                      />
-                    </svg>
+                    <CommunitySearchIcon />
                   </CommunitySearchToggleButton>
                 )}
               </CommunityFilterControlsRow>
