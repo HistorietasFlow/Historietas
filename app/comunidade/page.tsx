@@ -74,6 +74,7 @@ import { CommunityPostComposerPanel } from "./components/community-post-composer
 import { CommunityPostComposerHeader } from "./components/community-post-composer-header";
 import { CommunityPostComposerForm } from "./components/community-post-composer-form";
 import { CommunityPostComposerFields } from "./components/community-post-composer-fields";
+import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7208,7 +7209,7 @@ export default function ComunidadePage() {
               </CommunityPostComposerFields>
 
               <label style={fieldStyle}>
-                <div style={postComposerPublicationHeaderStyle}>
+                <CommunityPostComposerPublicationHeader>
                   <span style={labelStyle}>Publicação</span>
 
                   <div style={postComposerHeaderToolsStyle}>
@@ -7227,7 +7228,7 @@ export default function ComunidadePage() {
 
                     <span style={charCountStyle}>máx. 700</span>
                   </div>
-                </div>
+                </CommunityPostComposerPublicationHeader>
 
                 <div style={postComposerSuggestionsSectionStyle}>
                   <span style={postComposerSuggestionsLabelStyle}>
@@ -7738,14 +7739,6 @@ const postComposerTextareaStyle: CSSProperties = {
   lineHeight: 1.45,
   overflowY: "auto",
   WebkitOverflowScrolling: "touch",
-};
-
-const postComposerPublicationHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  minWidth: 0,
 };
 
 const postComposerActionRowStyle: CSSProperties = {
