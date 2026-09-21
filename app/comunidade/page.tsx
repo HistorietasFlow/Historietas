@@ -117,6 +117,7 @@ import { CommunityCommentTime } from "./components/community-comment-time";
 import { CommunityCommentText } from "./components/community-comment-text";
 import { CommunityCommentActionsRow } from "./components/community-comment-actions-row";
 import { CommunityCommentReplyButton } from "./components/community-comment-reply-button";
+import { CommunityCommentRemoveButton } from "./components/community-comment-remove-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3128,20 +3129,14 @@ const ComentariosSheet = memo(function ComentariosSheet({
             </CommunityCommentReplyButton>
 
             {podeRemoverComentario ? (
-              <button
-                type="button"
+              <CommunityCommentRemoveButton
                 onClick={() =>
                   removerComentarioSeguro(post?.id || "", comentario.id)
                 }
                 disabled={comentarioRemovendo}
-                style={{
-                  ...commentRemoveButtonStyle,
-                  opacity: comentarioRemovendo ? 0.58 : 1,
-                  cursor: comentarioRemovendo ? "not-allowed" : "pointer",
-                }}
               >
                 {comentarioRemovendo ? "Removendo..." : "Remover"}
-              </button>
+              </CommunityCommentRemoveButton>
             ) : null}
 
             {podeDenunciarComentario ? (
@@ -7834,18 +7829,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentRemoveButtonStyle: CSSProperties = {
-  width: "fit-content",
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-danger-button-text, var(--historietas-comunidade-danger-text, #FFFFFF))",
-  fontSize: "10.5px",
-  fontWeight: 900,
-  fontFamily: "inherit",
-  padding: "1px 0 0",
-  cursor: "pointer",
-};
 
 const commentReportButtonStyle: CSSProperties = {
   width: "fit-content",
