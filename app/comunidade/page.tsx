@@ -37,6 +37,7 @@ import { CommunityMainLayout } from "./components/community-main-layout";
 import { CommunityFeedColumn } from "./components/community-feed-column";
 import { CommunityFeedErrorNotice } from "./components/community-feed-error-notice";
 import { CommunityFeedFiltersContainer } from "./components/community-feed-filters-container";
+import { CommunityFilterControlsRow } from "./components/community-filter-controls-row";
 import { CommunityAdvancedFiltersButton } from "./components/community-advanced-filters-button";
 import { CommunityAdvancedFiltersIcon } from "./components/community-advanced-filters-icon";
 import { CommunityFeedTabsContainer } from "./components/community-feed-tabs-container";
@@ -6240,7 +6241,7 @@ export default function ComunidadePage() {
             )}
 
             <CommunityFeedFiltersContainer isDesktop={isDesktop}>
-              <div style={communityFilterControlsRowStyle}>
+              <CommunityFilterControlsRow>
                 <CommunityAdvancedFiltersButton
                   type="button"
                   aria-label="Abrir filtros, ordenação e ações da comunidade"
@@ -6338,7 +6339,7 @@ export default function ComunidadePage() {
                     </svg>
                   </button>
                 )}
-              </div>
+              </CommunityFilterControlsRow>
 
             </CommunityFeedFiltersContainer>
 
@@ -7648,19 +7649,6 @@ const communitySearchToggleStyle: CSSProperties = {
   flex: "0 0 auto",
   outline: "none",
   WebkitTapHighlightColor: "transparent",
-};
-
-const communityFilterControlsRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "10px",
-  flexWrap: "nowrap",
-  marginBottom: "4px",
-  width: "100%",
-  minWidth: 0,
-  maxWidth: "100%",
-  boxSizing: "border-box",
 };
 
 
