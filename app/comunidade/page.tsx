@@ -108,6 +108,7 @@ import { CommunityCommentThreadContainer } from "./components/community-comment-
 import { CommunityCommentItemContainer } from "./components/community-comment-item-container";
 import { CommunityCommentRepliesListContainer } from "./components/community-comment-replies-list-container";
 import { CommunityCommentRepliesToggleButton } from "./components/community-comment-replies-toggle-button";
+import { CommunityCommentRepliesControlsContainer } from "./components/community-comment-replies-controls-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3362,7 +3363,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                   ) : null}
 
                   {respostasExpandidas ? (
-                    <div style={commentRepliesControlsStyle}>
+                    <CommunityCommentRepliesControlsContainer>
                       {respostasOcultas > 0 ? (
                         <CommunityCommentRepliesToggleButton
                           type="button"
@@ -3394,7 +3395,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                       >
                         Ocultar respostas
                       </button>
-                    </div>
+                    </CommunityCommentRepliesControlsContainer>
                   ) : null}
                 </CommunityCommentThreadContainer>
               );
@@ -7842,14 +7843,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentRepliesControlsStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  flexWrap: "wrap",
-  minWidth: 0,
-};
 
 const commentRepliesHideButtonStyle: CSSProperties = {
   width: "fit-content",
