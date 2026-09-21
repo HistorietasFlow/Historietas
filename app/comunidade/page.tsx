@@ -127,6 +127,7 @@ import { CommunityCommentsEmptyMessage } from "./components/community-comments-e
 import { CommunityCommentsErrorNotice } from "./components/community-comments-error-notice";
 import { CommunityCommentsToolsContainer } from "./components/community-comments-tools-container";
 import { CommunityCommentsQuickReactionsContainer } from "./components/community-comments-quick-reactions-container";
+import { CommunityCommentsQuickReactionButton } from "./components/community-comments-quick-reaction-button";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3371,16 +3372,15 @@ const ComentariosSheet = memo(function ComentariosSheet({
         <CommunityCommentsToolsContainer>
           <CommunityCommentsQuickReactionsContainer>
             {["💜", "🔥", "😂", "😮", "😭", "👏"].map((emoji) => (
-              <button
+              <CommunityCommentsQuickReactionButton
                 key={emoji}
                 type="button"
                 onClick={() => inserirNoComentario(emoji)}
                 disabled={!podeComentar}
-                style={commentsQuickReactionButtonStyle}
                 aria-label={`Adicionar ${emoji} ao comentário`}
               >
                 {emoji}
-              </button>
+              </CommunityCommentsQuickReactionButton>
             ))}
           </CommunityCommentsQuickReactionsContainer>
         </CommunityCommentsToolsContainer>
@@ -7802,19 +7802,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsQuickReactionButtonStyle: CSSProperties = {
-  width: "30px",
-  height: "28px",
-  border: "none",
-  borderRadius: "999px",
-  background: "transparent",
-  fontSize: "18px",
-  lineHeight: 1,
-  padding: 0,
-  cursor: "pointer",
-  flex: "0 0 auto",
-};
 
 const commentsSheetFormStyle: CSSProperties = {
   display: "grid",
