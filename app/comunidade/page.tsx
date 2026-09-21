@@ -71,6 +71,7 @@ import { CommunityFeedEmptyMessage } from "./components/community-feed-empty-mes
 import { CommunityPostComposerOverlay } from "./components/community-post-composer-overlay";
 import { CommunityPostComposerBackdrop } from "./components/community-post-composer-backdrop";
 import { CommunityPostComposerPanel } from "./components/community-post-composer-panel";
+import { CommunityPostComposerHeader } from "./components/community-post-composer-header";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7042,9 +7043,9 @@ export default function ComunidadePage() {
           <CommunityPostComposerPanel desktop={isDesktop}>
             <CommunitySheetHandle />
 
-            <header style={postComposerHeaderStyle}>
-              <strong style={postComposerTitleStyle}>Nova publicação</strong>
-            </header>
+            <CommunityPostComposerHeader>
+              Nova publicação
+            </CommunityPostComposerHeader>
 
             <form onSubmit={publicarPost} style={postComposerFormStyle}>
               <div
@@ -7685,24 +7686,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerHeaderStyle: CSSProperties = {
-  display: "block",
-  minWidth: 0,
-};
-
-const postComposerTitleStyle: CSSProperties = {
-  display: "block",
-  margin: "0 0 12px",
-  padding: 0,
-  color: "#FFFFFF",
-  fontSize: "21px",
-  lineHeight: 1.1,
-  fontWeight: 950,
-  textAlign: "center",
-  letterSpacing: "-0.04em",
-  ...safeTextStyle,
-};
 
 const postComposerFormStyle: CSSProperties = {
   display: "grid",
