@@ -67,6 +67,7 @@ import { CommunityUserSearchUsername } from "./components/community-user-search-
 import { CommunityUserSearchFollowButton } from "./components/community-user-search-follow-button";
 import { CommunityUserSearchSelfBadge } from "./components/community-user-search-self-badge";
 import { CommunityPostsList } from "./components/community-posts-list";
+import { CommunityFeedEmptyMessage } from "./components/community-feed-empty-message";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -6985,16 +6986,7 @@ export default function ComunidadePage() {
                   );
                 })
               ) : (
-                <p
-                  style={{
-                    margin: "10px 0 0",
-                    color: "#FFFFFF",
-                    fontSize: "12px",
-                    fontWeight: 800,
-                    textAlign: "center",
-                    gridColumn: isDesktop ? "1 / -1" : undefined,
-                  }}
-                >
+                <CommunityFeedEmptyMessage desktop={isDesktop}>
                   {abaFeedAtiva === "Seguindo"
                     ? usuario
                       ? "Nenhuma publicação de pessoas que você segue."
@@ -7004,7 +6996,7 @@ export default function ComunidadePage() {
                       : filtrosAtivos
                         ? "Nenhuma publicação encontrada"
                         : "Nenhuma publicação ainda"}
-                </p>
+                </CommunityFeedEmptyMessage>
               )
               )}
             </CommunityPostsList>
