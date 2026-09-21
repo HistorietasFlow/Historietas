@@ -70,6 +70,7 @@ import { CommunityPostsList } from "./components/community-posts-list";
 import { CommunityFeedEmptyMessage } from "./components/community-feed-empty-message";
 import { CommunityPostComposerOverlay } from "./components/community-post-composer-overlay";
 import { CommunityPostComposerBackdrop } from "./components/community-post-composer-backdrop";
+import { CommunityPostComposerPanel } from "./components/community-post-composer-panel";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7038,7 +7039,7 @@ export default function ComunidadePage() {
             }}
           />
 
-          <article style={isDesktop ? postComposerDesktopSheetStyle : postComposerSheetStyle}>
+          <CommunityPostComposerPanel desktop={isDesktop}>
             <CommunitySheetHandle />
 
             <header style={postComposerHeaderStyle}>
@@ -7314,7 +7315,7 @@ export default function ComunidadePage() {
                 </button>
               </div>
             </form>
-          </article>
+          </CommunityPostComposerPanel>
             </CommunityPostComposerOverlay>,
             document.body
           )
@@ -7684,34 +7685,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerSheetStyle: CSSProperties = {
-  position: "fixed",
-  left: "50%",
-  bottom: 0,
-  transform: "translateX(-50%)",
-  zIndex: 241,
-  width: "min(820px, 100%)",
-  maxHeight: "calc(100dvh - 190px)",
-  display: "grid",
-  gridTemplateRows: "auto auto minmax(0, 1fr)",
-  gap: "0",
-  padding: "8px 0 calc(18px + env(safe-area-inset-bottom))",
-  borderRadius: "24px 24px 0 0",
-  background: "var(--historietas-comunidade-bg-page, #000000)",
-  border: "none",
-  borderBottom: "none",
-  overflowY: "auto",
-  overflowX: "hidden",
-  overscrollBehavior: "none",
-  boxShadow: "0 -18px 50px rgba(0,0,0,0.38)",
-  boxSizing: "border-box",
-  touchAction: "none",
-};
-
-const postComposerDesktopSheetStyle: CSSProperties = {
-  ...postComposerSheetStyle,
-};
 
 const postComposerHeaderStyle: CSSProperties = {
   display: "block",
