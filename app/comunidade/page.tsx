@@ -112,6 +112,7 @@ import { CommunityCommentRepliesControlsContainer } from "./components/community
 import { CommunityCommentRepliesHideButton } from "./components/community-comment-replies-hide-button";
 import { CommunityCommentAvatar } from "./components/community-comment-avatar";
 import { CommunityCommentContentContainer } from "./components/community-comment-content-container";
+import { CommunityCommentAuthorTimeRow } from "./components/community-comment-author-time-row";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3092,7 +3093,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
         />
 
         <CommunityCommentContentContainer>
-          <div style={commentTopLineStyle}>
+          <CommunityCommentAuthorTimeRow>
             <Link
               href={criarPerfilHrefComunidade(
                 comentario.autorId,
@@ -3109,7 +3110,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                 agoraComentarios
               )}
             </span>
-          </div>
+          </CommunityCommentAuthorTimeRow>
 
           <p data-historietas-user-content="true" style={commentTextStyle}>{comentario.texto}</p>
 
@@ -7836,13 +7837,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentTopLineStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "baseline",
-  gap: "6px",
-  minWidth: 0,
-};
 
 const commentAuthorStyle: CSSProperties = {
   color: "var(--historietas-text-primary, #FFFFFF)",
