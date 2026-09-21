@@ -89,6 +89,7 @@ import { CommunityPostComposerRelatedWorkSuggestions } from "./components/commun
 import { CommunityPostComposerRelatedWorkSuggestionButton } from "./components/community-post-composer-related-work-suggestion-button";
 import { CommunityPostComposerRelatedWorkSuggestionContent } from "./components/community-post-composer-related-work-suggestion-content";
 import { CommunityPostComposerRelatedWorkSuggestionTitle } from "./components/community-post-composer-related-work-suggestion-title";
+import { CommunityPostComposerRelatedWorkSuggestionAuthor } from "./components/community-post-composer-related-work-suggestion-author";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -7071,9 +7072,9 @@ export default function ComunidadePage() {
                                   {obra.titulo}
                                 </CommunityPostComposerRelatedWorkSuggestionTitle>
 
-                                <span data-historietas-user-content="true" style={relatedWorkSuggestionAuthorStyle}>
+                                <CommunityPostComposerRelatedWorkSuggestionAuthor>
                                   {obra.autor}
-                                </span>
+                                </CommunityPostComposerRelatedWorkSuggestionAuthor>
                               </CommunityPostComposerRelatedWorkSuggestionContent>
 
                               <span style={relatedWorkSuggestionBadgeStyle}>
@@ -7228,12 +7229,6 @@ export default function ComunidadePage() {
     </CommunityPageContainer>
   );
 }
-
-const safeTextStyle: CSSProperties = {
-  overflowWrap: "anywhere",
-  wordBreak: "break-word",
-};
-
 
 const comunidadeThemeCss = `
   @keyframes historietas-comunidade-heart-pop {
@@ -7420,14 +7415,6 @@ const pageStyle: CSSProperties = {
 
 
 
-
-const relatedWorkSuggestionAuthorStyle: CSSProperties = {
-  color: "var(--historietas-text-secondary, #D4D4D8)",
-  fontSize: "11px",
-  lineHeight: 1.25,
-  fontWeight: 750,
-  ...safeTextStyle,
-};
 
 const relatedWorkSuggestionBadgeStyle: CSSProperties = {
   flex: "0 0 auto",
