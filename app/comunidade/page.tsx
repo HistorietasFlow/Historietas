@@ -106,6 +106,7 @@ import { CommunityCommentsSortMenuDivider } from "./components/community-comment
 import { CommunityCommentsListContainer } from "./components/community-comments-list-container";
 import { CommunityCommentThreadContainer } from "./components/community-comment-thread-container";
 import { CommunityCommentItemContainer } from "./components/community-comment-item-container";
+import { CommunityCommentRepliesListContainer } from "./components/community-comment-replies-list-container";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3336,11 +3337,11 @@ const ComentariosSheet = memo(function ComentariosSheet({
                   {renderizarComentario(comentario, comentario.id)}
 
                   {respostasVisiveis.length > 0 ? (
-                    <div style={commentRepliesListStyle}>
+                    <CommunityCommentRepliesListContainer>
                       {respostasVisiveis.map((resposta) =>
                         renderizarComentario(resposta, comentario.id, true)
                       )}
-                    </div>
+                    </CommunityCommentRepliesListContainer>
                   ) : null}
 
                   {respostas.length > 0 && !respostasExpandidas ? (
@@ -7844,15 +7845,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentRepliesListStyle: CSSProperties = {
-  display: "grid",
-  gap: "9px",
-  marginLeft: "34px",
-  paddingLeft: "10px",
-  borderLeft: "1px solid rgba(255,255,255,0.08)",
-  minWidth: 0,
-};
 
 const commentRepliesToggleStyle: CSSProperties = {
   width: "fit-content",
