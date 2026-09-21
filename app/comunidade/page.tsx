@@ -145,6 +145,7 @@ import { CommunityPostStatusLine } from "./components/community-post-status-line
 import { CommunityPostBadgesRow } from "./components/community-post-badges-row";
 import { CommunityPostBadgeSeparator } from "./components/community-post-badge-separator";
 import { CommunityPostOptionsContainer } from "./components/community-post-options-container";
+import { CommunityPostOptionsButton } from "./components/community-post-options-button";
 import { CommunityPostTypeBadge } from "./components/community-post-type-badge";
 import { CommunitySpoilerHiddenTitle } from "./components/community-spoiler-hidden-title";
 import { CommunityPostText } from "./components/community-post-text";
@@ -6607,7 +6608,7 @@ export default function ComunidadePage() {
                   );
                   const opcoesPublicacao = (
                     <CommunityPostOptionsContainer>
-                      <button
+                      <CommunityPostOptionsButton
                         type="button"
                         aria-label="Abrir opções da publicação"
                         aria-haspopup="menu"
@@ -6617,10 +6618,10 @@ export default function ComunidadePage() {
                             postIdAtual === post.id ? null : post.id
                           )
                         }
-                        style={postMenuAbertoId ? postOptionsButtonActiveStyle : postOptionsButtonStyle}
+                        menuOpen={Boolean(postMenuAbertoId)}
                       >
                         ⋮
-                      </button>
+                      </CommunityPostOptionsButton>
 
                       {postMenuAbertoId === post.id && typeof document !== "undefined"
                         ? createPortal(
@@ -7733,34 +7734,6 @@ const postVisibilityBadgeStyle: CSSProperties = {
 };
 
 
-
-const postOptionsButtonStyle: CSSProperties = {
-  width: "24px",
-  height: "30px",
-  borderRadius: 0,
-  border: "none",
-  background: "transparent",
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "24px",
-  fontWeight: 950,
-  letterSpacing: 0,
-  lineHeight: 1,
-  fontFamily: "inherit",
-  cursor: "pointer",
-  padding: 0,
-  position: "relative",
-  zIndex: 2,
-  boxShadow: "none",
-};
-
-const postOptionsButtonActiveStyle: CSSProperties = {
-  ...postOptionsButtonStyle,
-  opacity: 0,
-  pointerEvents: "none",
-};
 
 
 
