@@ -81,6 +81,7 @@ import { CommunityPostComposerHeader } from "./components/community-post-compose
 import { CommunityPostComposerForm } from "./components/community-post-composer-form";
 import { CommunityPostComposerFields } from "./components/community-post-composer-fields";
 import { CommunityPostComposerField } from "./components/community-post-composer-field";
+import { CommunityPostComposerFieldLabel } from "./components/community-post-composer-field-label";
 import { CommunityPostComposerPublicationHeader } from "./components/community-post-composer-publication-header";
 import { CommunityPostComposerPublicationTools } from "./components/community-post-composer-publication-tools";
 import { CommunityPostComposerPollTemplateButton } from "./components/community-post-composer-poll-template-button";
@@ -6953,7 +6954,7 @@ export default function ComunidadePage() {
             <CommunityPostComposerForm onSubmit={publicarPost}>
               <CommunityPostComposerFields desktop={isDesktop}>
                 <CommunityPostComposerField>
-                  <span style={labelStyle}>Categoria</span>
+                  <CommunityPostComposerFieldLabel>Categoria</CommunityPostComposerFieldLabel>
 
                   <select
                     disabled={publicandoPost}
@@ -6972,7 +6973,7 @@ export default function ComunidadePage() {
                 </CommunityPostComposerField>
 
                 <CommunityPostComposerField>
-                  <span style={labelStyle}>Tipo</span>
+                  <CommunityPostComposerFieldLabel>Tipo</CommunityPostComposerFieldLabel>
 
                   <select
                     disabled={publicandoPost}
@@ -6993,7 +6994,7 @@ export default function ComunidadePage() {
                 </CommunityPostComposerField>
 
                 <CommunityPostComposerField>
-                  <span style={labelStyle}>Quem pode ver esta publicação?</span>
+                  <CommunityPostComposerFieldLabel>Quem pode ver esta publicação?</CommunityPostComposerFieldLabel>
 
                   <select
                     disabled={publicandoPost}
@@ -7014,7 +7015,7 @@ export default function ComunidadePage() {
                 </CommunityPostComposerField>
 
                 <CommunityPostComposerField>
-                  <span style={labelStyle}>Obra relacionada</span>
+                  <CommunityPostComposerFieldLabel>Obra relacionada</CommunityPostComposerFieldLabel>
 
                   <div style={relatedWorkSearchWrapStyle}>
                     <input
@@ -7084,7 +7085,7 @@ export default function ComunidadePage() {
                 </CommunityPostComposerField>
 
                 <CommunityPostComposerField>
-                  <span style={labelStyle}>Capítulo relacionado</span>
+                  <CommunityPostComposerFieldLabel>Capítulo relacionado</CommunityPostComposerFieldLabel>
 
                   <input
                     disabled={publicandoPost || !obraRelacionadaBusca.trim()}
@@ -7110,7 +7111,7 @@ export default function ComunidadePage() {
 
               <CommunityPostComposerField>
                 <CommunityPostComposerPublicationHeader>
-                  <span style={labelStyle}>Publicação</span>
+                  <CommunityPostComposerFieldLabel>Publicação</CommunityPostComposerFieldLabel>
 
                   <CommunityPostComposerPublicationTools>
                     <CommunityPostComposerPollTemplateButton
@@ -7406,13 +7407,6 @@ const pageStyle: CSSProperties = {
 
 
 
-
-const labelStyle: CSSProperties = {
-  color: "var(--historietas-text-primary, #FFFFFF)",
-  fontSize: "11px",
-  fontWeight: 950,
-  ...safeTextStyle,
-};
 
 const inputStyle: CSSProperties = {
   width: "100%",
