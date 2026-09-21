@@ -73,6 +73,7 @@ import { CommunityPostComposerBackdrop } from "./components/community-post-compo
 import { CommunityPostComposerPanel } from "./components/community-post-composer-panel";
 import { CommunityPostComposerHeader } from "./components/community-post-composer-header";
 import { CommunityPostComposerForm } from "./components/community-post-composer-form";
+import { CommunityPostComposerFields } from "./components/community-post-composer-fields";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -7049,13 +7050,7 @@ export default function ComunidadePage() {
             </CommunityPostComposerHeader>
 
             <CommunityPostComposerForm onSubmit={publicarPost}>
-              <div
-                style={
-                  isDesktop
-                    ? postComposerFieldsGridStyle
-                    : postComposerFieldsStackStyle
-                }
-              >
+              <CommunityPostComposerFields desktop={isDesktop}>
                 <label style={fieldStyle}>
                   <span style={labelStyle}>Categoria</span>
 
@@ -7210,7 +7205,7 @@ export default function ComunidadePage() {
                     }}
                   />
                 </label>
-              </div>
+              </CommunityPostComposerFields>
 
               <label style={fieldStyle}>
                 <div style={postComposerPublicationHeaderStyle}>
@@ -7687,17 +7682,6 @@ const selectStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-
-const postComposerFieldsStackStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px",
-  minWidth: 0,
-};
-
-const postComposerFieldsGridStyle: CSSProperties = {
-  ...postComposerFieldsStackStyle,
-  gridTemplateColumns: "150px 190px minmax(0, 1fr)",
-};
 
 const postComposerSuggestionsSectionStyle: CSSProperties = {
   display: "grid",
