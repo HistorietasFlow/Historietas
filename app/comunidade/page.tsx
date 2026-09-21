@@ -130,6 +130,7 @@ import { CommunityCommentsQuickReactionsContainer } from "./components/community
 import { CommunityCommentsQuickReactionButton } from "./components/community-comments-quick-reaction-button";
 import { CommunityCommentsFormContainer } from "./components/community-comments-form-container";
 import { CommunityCommentsInputAvatar } from "./components/community-comments-input-avatar";
+import { CommunityCommentsInputBox } from "./components/community-comments-input-box";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3375,7 +3376,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
               (podeComentar ? usuarioNome : "H").slice(0, 1).toUpperCase()}
           </CommunityCommentsInputAvatar>
 
-          <div style={commentsInputBoxStyle}>
+          <CommunityCommentsInputBox>
             <textarea
               aria-label={
                 podeComentar ? "Adicionar comentário..." : "Entre para comentar."
@@ -3394,7 +3395,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
               rows={1}
               style={commentsSheetInputStyle}
             />
-          </div>
+          </CommunityCommentsInputBox>
 
           <button
             type="button"
@@ -7781,13 +7782,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsInputBoxStyle: CSSProperties = {
-  minWidth: 0,
-  minHeight: "38px",
-  display: "flex",
-  alignItems: "center",
-};
 
 const commentsSheetInputStyle: CSSProperties = {
   width: "100%",
