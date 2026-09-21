@@ -100,6 +100,7 @@ import { CommunityCommentsSheetHeaderSpacer } from "./components/community-comme
 import { CommunityCommentsSheetTitle } from "./components/community-comments-sheet-title";
 import { CommunityCommentsSortMenuContainer } from "./components/community-comments-sort-menu-container";
 import { CommunityCommentsSortMenuTrigger } from "./components/community-comments-sort-menu-trigger";
+import { CommunityCommentsSortMenuPanel } from "./components/community-comments-sort-menu-panel";
 import { CommunityLoadMorePostsContainer } from "./components/community-load-more-posts-container";
 import { CommunityLoadMorePostsButton } from "./components/community-load-more-posts-button";
 import { CommunityPostCard } from "./components/community-post-card";
@@ -3281,7 +3282,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
             </CommunityCommentsSortMenuTrigger>
 
             {menuOrdenacaoAberto ? (
-              <div style={commentsSortMenuStyle} role="menu">
+              <CommunityCommentsSortMenuPanel role="menu">
                 <button
                   type="button"
                   onClick={() => {
@@ -3315,7 +3316,7 @@ const ComentariosSheet = memo(function ComentariosSheet({
                 >
                   Recentes
                 </button>
-              </div>
+              </CommunityCommentsSortMenuPanel>
             ) : null}
           </CommunityCommentsSortMenuContainer>
         </CommunityCommentsSheetHeaderContainer>
@@ -7849,25 +7850,6 @@ const postOptionsButtonActiveStyle: CSSProperties = {
 
 
 
-
-const commentsSortMenuStyle: CSSProperties = {
-  position: "absolute",
-  top: "calc(100% + 6px)",
-  right: 0,
-  zIndex: 12,
-  width: "132px",
-  maxWidth: "calc(100vw - 24px)",
-  display: "grid",
-  gap: 0,
-  padding: "4px 8px",
-  boxSizing: "border-box",
-  borderRadius: "12px",
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "var(--historietas-comunidade-menu-98, rgba(0,0,0,0.98))",
-  boxShadow: "0 16px 36px rgba(0,0,0,0.48)",
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
-};
 
 const commentsSortMenuItemStyle: CSSProperties = {
   width: "100%",
