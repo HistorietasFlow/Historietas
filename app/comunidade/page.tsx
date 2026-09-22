@@ -54,6 +54,7 @@ import { obterPontuacaoPost } from "./components/community-post-score";
 import { obterLinkPublicacaoComunidade } from "./components/community-post-link";
 import { copiarTextoComFallback } from "./components/community-clipboard-copy";
 import { formatarTempoRelativoComentarioComunidade } from "./components/community-comment-relative-time";
+import { obterIdsComentarioComRespostasComunidade } from "./components/community-comment-response-ids";
 import { criarEstruturaComentariosComunidade } from "./components/community-comment-tree";
 import { salvarVotosEnquetesLocais } from "./components/community-local-poll-votes-saver";
 import { calcularTotalVotosEnquete } from "./components/community-poll-total-votes";
@@ -1685,31 +1686,6 @@ type RespostaComentarioComunidade = {
 };
 
 type OrdenacaoComentariosComunidade = "relevantes" | "recentes";
-
-function obterIdsComentarioComRespostasComunidade(
-  comentarios: ComentarioComunidade[],
-  comentarioId: string
-) {
-  const ids = new Set<string>([comentarioId]);
-  let encontrouNovos = true;
-
-  while (encontrouNovos) {
-    encontrouNovos = false;
-
-    comentarios.forEach((comentario) => {
-      if (
-        comentario.comentarioPaiId &&
-        ids.has(comentario.comentarioPaiId) &&
-        !ids.has(comentario.id)
-      ) {
-        ids.add(comentario.id);
-        encontrouNovos = true;
-      }
-    });
-  }
-
-  return ids;
-}
 
 type ComentariosSheetProps = {
   post: PostComunidade | null;
